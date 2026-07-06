@@ -1,0 +1,113 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using HarmonyLib;
+using RimWorld;
+using Verse;
+using WorkRoles.Core;
+
+namespace WorkRoles
+{
+    public static class CompiledJobOrders
+    {
+        private sealed class Entry
+        {
+            public List<WorkGiver> Normal;
+            public List<WorkGiver> Emergency;
+            public Dictionary<WorkTypeDef, int> Priorities;
+        }
+
+        private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
+
+        public static void Invalidate(Pawn pawn) => cache.Remove(pawn);
+
+        public static void InvalidateRole(int roleId)
+        {
+            var store = RoleStore.Current;
+            if (store == null) { cache.Clear(); return; }
+            foreach (var pawn in store.PawnsWithRole(roleId).ToList())
+                cache.Remove(pawn);
+        }
+
+        public static void InvalidateAll() => cache.Clear();
+
+        /// Returned lists are owned by the cache — callers must never mutate them.
+        public static List<WorkGiver> NormalFor(Pawn pawn) => For(pawn).Normal;
+        public static List<WorkGiver> EmergencyFor(Pawn pawn) => For(pawn).Emergency;
+
+        public static int PriorityFor(Pawn pawn, WorkTypeDef workType) =>
+            For(pawn).Priorities.TryGetValue(workType, out var bucket) ? bucket : 0;
+
+        private static Entry For(Pawn pawn)
+        {
+            if (!cache.TryGetValue(pawn, out var entry))
+            {
+                entry = Build(pawn);
+                cache[pawn] = entry;
+                SyncVanillaFallback(pawn, entry);
+            }
+            return entry;
+        }
+
+        /// Ensures the pawn's compiled order (and its vanilla fallback map) is current.
+        public static void EnsureFresh(Pawn pawn) => For(pawn);
+
+        private static readonly AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>> VanillaPriorities =
+            AccessTools.FieldRefAccess<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>("priorities");
+
+        /// Mirrors the compiled order into the dormant vanilla priorities map as 0-4
+        /// values, so removing the mod leaves the vanilla Work tab in a sane state.
+        /// Writes the private DefMap directly: SetPriority is swallowed for managed
+        /// pawns and its side effects (job interruption on 0) must not fire here.
+        private static void SyncVanillaFallback(Pawn pawn, Entry entry)
+        {
+            var workSettings = pawn.workSettings;
+            if (workSettings == null) return;
+            var map = VanillaPriorities(workSettings);
+            if (map == null) return;
+            int rankedCount = entry.Priorities.Count;
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+                int vanilla = entry.Priorities.TryGetValue(workType, out var rank)
+                    ? JobOrderCompiler.ToVanillaPriority(rank, rankedCount)
+                    : 0;
+                map[workType] = vanilla;
+            }
+        }
+
+        private static Entry Build(Pawn pawn)
+        {
+            var store = RoleStore.Current;
+            var roleEntries = new List<IReadOnlyList<JobEntry>>();
+            if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
+            {
+                foreach (var assignment in set.assignments)
+                {
+                    if (!assignment.enabled) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role != null && role.enabled)
+                        roleEntries.Add(role.entries);
+                }
+            }
+
+            Func<string, bool> pawnCanDo = giverDefName =>
+            {
+                var def = GameJobCatalog.Instance.GiverDef(giverDefName);
+                return def != null
+                    && !pawn.WorkTypeIsDisabled(def.workType)
+                    && !pawn.WorkTagIsDisabled(def.workTags);
+            };
+
+            var compiled = JobOrderCompiler.Compile(roleEntries, GameJobCatalog.Instance, pawnCanDo);
+
+            return new Entry
+            {
+                Normal = compiled.Normal.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
+                Emergency = compiled.Emergency.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
+                Priorities = compiled.WorkTypePriorities.ToDictionary(
+                    kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
+                    kv => kv.Value)
+            };
+        }
+    }
+}

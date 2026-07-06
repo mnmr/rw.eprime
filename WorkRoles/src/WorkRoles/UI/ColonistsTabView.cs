@@ -1,0 +1,766 @@
+using System.Collections.Generic;
+using System.Linq;
+using RimWorld;
+using UnityEngine;
+using Verse;
+using WorkRoles.Core;
+
+namespace WorkRoles.UI
+{
+    public class ColonistsTabView
+    {
+        private Vector2 paletteScroll;
+        private Vector2 tableScroll;
+        private Pawn selectedPawn;
+
+        private const float PaletteAreaHeight = 66f;   // two chip rows + padding
+        private const float RowHeight = 36f;
+        private const float PortraitSize = 30f;
+        private const float NameWidth = 150f;
+        private const float IconButton = 24f;
+        private const float ChipGap = 4f;
+        private const float StatsPanelMargin = 8f;
+        private const float DefaultWidth = 1010f;
+        private const float DefaultHeight = 684f;
+
+        private const float PortraitDisplaySize = 96f;
+
+        // Stats panel layout constants
+        private const float SkillColWidth = 200f;   // two columns (reduced from 240)
+        private const int   SkillCols = 2;
+        private const float CellH = 20f;
+        private const float StatsPadding = 12f;     // top+bottom padding inside box
+        private const float ColSepWidth = 2f;       // separator width
+        private const float ColSepMargin = 16f;     // space on each side of separator
+
+        // Text colours for skill level
+        private static readonly Color ColorDisabled   = new Color(0.45f, 0.45f, 0.45f);
+        private static readonly Color ColorLow        = new Color(0.65f, 0.65f, 0.65f);
+        private static readonly Color ColorPassMajor  = new Color(1f, 0.65f, 0.2f);
+        private static readonly Color ColorPassMinor  = new Color(0.95f, 0.9f, 0.55f);
+
+        // Recommendation cache (invalidated on pawn selection change and after assignment)
+        private Pawn _recCachePawn;
+        private List<Role> _recCached = new List<Role>();
+
+        public void Reset()
+        {
+            paletteScroll = Vector2.zero;
+            tableScroll = Vector2.zero;
+            selectedPawn = null;
+            InvalidateRecommendationCache();
+        }
+
+        private void InvalidateRecommendationCache()
+        {
+            _recCachePawn = null;
+            _recCached = new List<Role>();
+        }
+
+        // ----- Window sizing helpers -----
+
+        /// <summary>Height of the stats panel for a given pawn (or generic if null).</summary>
+        public static float StatsPanelHeight(Pawn pawn = null)
+        {
+            int lineCount = pawn != null ? SkillsTip.Lines(pawn).Count : 12;
+            int rows = (lineCount + SkillCols - 1) / SkillCols;
+            float portraitSection = PortraitDisplaySize + 2f + 20f; // portrait + gap + name label
+            float skillSection = rows * CellH;
+            float contentH = Mathf.Max(portraitSection, skillSection);
+            return contentH + StatsPadding * 2f;
+        }
+
+        public static float DesiredWidth()
+        {
+            var store = RoleStore.Current;
+            if (store == null || Find.CurrentMap == null) return DefaultWidth;
+
+            // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | [+] | gap | trailing
+            float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f + 16f;
+            float widestStrip = 0f;
+            var pawns = ListedPawns();
+            foreach (var pawn in pawns)
+            {
+                store.pawnSets.TryGetValue(pawn, out var set);
+                var assignments = set?.assignments ?? new List<RoleAssignment>();
+                // Measure all chips on a single line (desired width = single-line run)
+                float w = 0f;
+                foreach (var a in assignments)
+                {
+                    var role = store.RoleById(a.roleId);
+                    if (role == null) continue;
+                    w += RoleChipUI.WidthFor(role, showRemove: true) + ChipGap;
+                }
+                if (w > widestStrip) widestStrip = w;
+            }
+            return fixedLeft + widestStrip;
+        }
+
+        public static float DesiredHeight()
+        {
+            var store = RoleStore.Current;
+            if (store == null || Find.CurrentMap == null) return DefaultHeight;
+
+            float chrome = 80f;
+            float paletteSection = PaletteAreaHeight + 8f;
+            float statsPanel = StatsPanelHeight() + StatsPanelMargin;
+            float tableContent = 0f;
+            var pawns = ListedPawns();
+            foreach (var pawn in pawns)
+            {
+                store.pawnSets.TryGetValue(pawn, out var set);
+                var assignments = set?.assignments ?? new List<RoleAssignment>();
+                float stripW = DefaultWidth - 250f;
+                float stripH = MeasureStripHeight(stripW, assignments, store);
+                tableContent += Mathf.Max(RowHeight, stripH + 8f);
+            }
+            return chrome + paletteSection + tableContent + statsPanel;
+        }
+
+        private static float MeasureStripHeight(float stripWidth, List<RoleAssignment> assignments, RoleStore store)
+        {
+            if (assignments.Count == 0) return RoleChipUI.Height;
+            float x = 0f;
+            int lines = 1;
+            foreach (var a in assignments)
+            {
+                var role = store.RoleById(a.roleId);
+                if (role == null) continue;
+                float w = RoleChipUI.WidthFor(role, showRemove: true);
+                if (x + w > stripWidth && x > 0f)
+                {
+                    lines++;
+                    x = 0f;
+                }
+                x += w + ChipGap;
+            }
+            return lines * (RoleChipUI.Height + ChipGap) - ChipGap;
+        }
+
+        private static float LayoutChips(float stripWidth, List<RoleAssignment> assignments, RoleStore store,
+            List<(RoleAssignment assignment, Rect rect, int line)> result)
+        {
+            float x = 0f, y = 0f;
+            int line = 0;
+            foreach (var a in assignments)
+            {
+                var role = store.RoleById(a.roleId);
+                if (role == null) continue;
+                float w = RoleChipUI.WidthFor(role, showRemove: true);
+                if (x + w > stripWidth && x > 0f)
+                {
+                    line++;
+                    x = 0f;
+                    y += RoleChipUI.Height + ChipGap;
+                }
+                result.Add((a, new Rect(x, y, w, RoleChipUI.Height), line));
+                x += w + ChipGap;
+            }
+            float totalH = y + RoleChipUI.Height;
+            return totalH;
+        }
+
+        public void Draw(Rect rect)
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            RoleDrag.Update();
+
+            var pawns = ListedPawns();
+            if (selectedPawn == null || !pawns.Contains(selectedPawn))
+                selectedPawn = pawns.Count > 0 ? pawns[0] : null;
+
+            float statsPanelH = StatsPanelHeight(selectedPawn);
+            float tableBottom = rect.yMax - statsPanelH - StatsPanelMargin;
+            float tableTop = rect.y + PaletteAreaHeight + 8f;
+
+            DrawPalette(new Rect(rect.x, rect.y, rect.width, PaletteAreaHeight), store);
+
+            // Change 1: 2px light-grey solid separator instead of white DrawLineHorizontal
+            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y + PaletteAreaHeight + 4f, rect.width, 2f),
+                new Color(1f, 1f, 1f, 0.25f));
+
+            DrawTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store, pawns);
+            DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
+
+            DrawDragGhost(store);
+            RoleDrag.ResolveMouseUp();
+        }
+
+        // ----- Palette -----
+
+        private void DrawPalette(Rect rect, RoleStore store)
+        {
+            float rowWidth = rect.width - 16f;
+            float x = 0f, y = 0f;
+            var layout = new List<(Role role, Rect rect)>();
+            foreach (var role in store.roles)
+            {
+                float w = RoleChipUI.WidthFor(role, showRemove: false);
+                if (x + w > rowWidth && x > 0f) { x = 0f; y += RoleChipUI.Height + ChipGap; }
+                layout.Add((role, new Rect(x, y, w, RoleChipUI.Height)));
+                x += w + ChipGap;
+            }
+            float contentHeight = y + RoleChipUI.Height;
+
+            Widgets.BeginScrollView(rect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
+            foreach (var (role, chipRect) in layout)
+            {
+                int capturedId = role.id;
+                var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
+                    showRemove: false, dragSource: null,
+                    onClick: () => RoleCommands.ToggleRoleGlobal(capturedId));
+                if (Mouse.IsOver(chipRect))
+                    TooltipHandler.TipRegion(chipRect, RoleTip(role));
+            }
+            Widgets.EndScrollView();
+        }
+
+        private static string RoleTip(Role role)
+        {
+            var parts = role.entries.Select(e => e.DefName);
+            string state = role.enabled ? "enabled" : "DISABLED (click to enable)";
+            return $"{role.label} — {state}\n\n{string.Join(", ", parts)}\n\nClick: toggle globally. Drag onto a colonist to assign.";
+        }
+
+        // ----- Colonist table -----
+
+        private void DrawTable(Rect rect, RoleStore store, List<Pawn> pawns)
+        {
+            float stripWidth = rect.width - 16f - (PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f);
+            var rowHeights = new List<float>(pawns.Count);
+            float contentHeight = 0f;
+            foreach (var pawn in pawns)
+            {
+                store.pawnSets.TryGetValue(pawn, out var set);
+                var assignments = set?.assignments ?? new List<RoleAssignment>();
+                float stripH = MeasureStripHeight(stripWidth, assignments, store);
+                float h = Mathf.Max(RowHeight, stripH + 8f);
+                rowHeights.Add(h);
+                contentHeight += h;
+            }
+
+            Widgets.BeginScrollView(rect, ref tableScroll,
+                new Rect(0f, 0f, rect.width - 16f, contentHeight));
+            float y = 0f;
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                var pawn = pawns[i];
+                float rowH = rowHeights[i];
+                DrawRow(new Rect(0f, y, rect.width - 16f, rowH), pawn, store, stripWidth);
+                y += rowH;
+            }
+            Widgets.EndScrollView();
+        }
+
+        /// <summary>Returns the colonist list used by the Colonists tab (no baby pawns).</summary>
+        internal static List<Pawn> ListedPawns()
+        {
+            if (Find.CurrentMap == null) return new List<Pawn>();
+            return Find.CurrentMap.mapPawns.FreeColonistsSpawned
+                .Concat(Find.CurrentMap.mapPawns.SlavesOfColonySpawned)
+                .Where(p => !p.DevelopmentalStage.Baby())
+                .Distinct()
+                .ToList();
+        }
+
+        private void DrawRow(Rect rect, Pawn pawn, RoleStore store, float stripWidth)
+        {
+            if (pawn == selectedPawn)
+                Widgets.DrawHighlightSelected(rect);
+            else if (Mouse.IsOver(rect))
+                Widgets.DrawHighlight(rect);
+
+            var portraitRect = new Rect(rect.x, rect.y + (rect.height - PortraitSize) / 2f, PortraitSize, PortraitSize);
+            GUI.DrawTexture(portraitRect, PortraitsCache.Get(pawn, new Vector2(PortraitSize, PortraitSize), Rot4.South));
+
+            var nameRect = new Rect(portraitRect.xMax + 6f, rect.y, NameWidth, rect.height);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(nameRect, pawn.LabelShortCap);
+            Text.Anchor = TextAnchor.UpperLeft;
+
+            if (Widgets.ButtonInvisible(new Rect(rect.x, rect.y, portraitRect.width + 6f + NameWidth, rect.height)))
+                selectedPawn = pawn;
+
+            var copyRect = new Rect(nameRect.xMax + 2f, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
+            var pasteRect = new Rect(copyRect.xMax + 2f, copyRect.y, IconButton, IconButton);
+            if (Widgets.ButtonImage(copyRect, TexButton.Copy))
+            {
+                store.pawnSets.TryGetValue(pawn, out var toCopy);
+                RoleClipboard.CopyFrom(toCopy);
+                Messages.Message($"Copied {pawn.LabelShortCap}'s roles.", MessageTypeDefOf.NeutralEvent, historical: false);
+            }
+            Color pasteColor = RoleClipboard.HasContent ? Color.white : new Color(1f, 1f, 1f, 0.3f);
+            if (Widgets.ButtonImage(pasteRect, TexButton.Paste, pasteColor) && RoleClipboard.HasContent)
+                RoleCommands.PasteRoleSet(pawn, RoleClipboard.Content);
+
+            var stripRect = new Rect(pasteRect.xMax + 8f, rect.y, stripWidth, rect.height);
+            DrawChipStrip(stripRect, pawn, store, stripWidth);
+
+            var plusRect = new Rect(rect.xMax - IconButton, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
+            if (Widgets.ButtonImage(plusRect, TexButton.Plus))
+                OpenAddMenu(pawn, store);
+        }
+
+        private void DrawChipStrip(Rect stripRect, Pawn pawn, RoleStore store, float stripWidth)
+        {
+            store.pawnSets.TryGetValue(pawn, out var set);
+            var assignments = set?.assignments ?? new List<RoleAssignment>();
+
+            var layout = new List<(RoleAssignment assignment, Rect rect, int line)>();
+            float stripContentHeight = LayoutChips(stripWidth, assignments, store, layout);
+
+            float yOffset = stripRect.y + (stripRect.height - stripContentHeight) / 2f;
+
+            foreach (var (assignment, localRect, _) in layout)
+            {
+                var role = store.RoleById(assignment.roleId);
+                if (role == null) continue;
+                var chipRect = new Rect(stripRect.x + localRect.x, yOffset + localRect.y, localRect.width, localRect.height);
+
+                int capturedRoleId = role.id;
+                Pawn capturedPawn = pawn;
+                bool chipEnabled = role.enabled && assignment.enabled;
+                var click = RoleChipUI.Draw(chipRect, role,
+                    chipEnabled ? ChipStyle.Normal : ChipStyle.Disabled,
+                    showRemove: true, dragSource: pawn,
+                    onClick: () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRoleId));
+                if (click == ChipClick.Remove) RoleCommands.RemoveRoleFromPawn(pawn, role.id);
+            }
+
+            if (RoleDrag.Active && Mouse.IsOver(stripRect))
+            {
+                bool alreadyHasRole = store.pawnSets.TryGetValue(pawn, out var pawnSet)
+                    && pawnSet.assignments.Any(a => a.roleId == RoleDrag.RoleId);
+                bool isSamePawn = RoleDrag.SourcePawn == pawn;
+
+                if (alreadyHasRole && !isSamePawn)
+                {
+                    RoleDrag.HoverBlocked = true;
+                    Widgets.DrawBoxSolid(stripRect, new Color(0.8f, 0.2f, 0.2f, 0.12f));
+                }
+                else
+                {
+                    var mouse = Event.current.mousePosition;
+                    float mx = mouse.x - stripRect.x;
+                    float my = mouse.y - yOffset;
+                    int insertIndex = 0;
+                    for (int i = 0; i < layout.Count; i++)
+                    {
+                        var (_, r, _) = layout[i];
+                        if (my > r.yMax)
+                        {
+                            insertIndex = i + 1;
+                            continue;
+                        }
+                        if (my >= r.y && mx > r.x + r.width / 2f)
+                            insertIndex = i + 1;
+                    }
+
+                    RoleDrag.HoverPawn = pawn;
+                    RoleDrag.HoverInsertIndex = insertIndex;
+
+                    float markerX, markerY, markerH;
+                    if (insertIndex == 0 || layout.Count == 0)
+                    {
+                        markerX = stripRect.x - ChipGap / 2f;
+                        markerY = yOffset + 3f;
+                        markerH = RoleChipUI.Height - 6f;
+                    }
+                    else
+                    {
+                        int prevIdx = insertIndex - 1;
+                        var (_, prevR, _) = layout[prevIdx];
+                        markerX = stripRect.x + prevR.xMax - ChipGap / 2f;
+                        markerY = yOffset + prevR.y + 3f;
+                        markerH = prevR.height - 6f;
+                    }
+                    Widgets.DrawBoxSolid(new Rect(markerX - 1f, markerY, 2f, markerH), new Color(1f, 1f, 1f, 0.9f));
+                }
+            }
+        }
+
+        // ----- Stats panel -----
+
+        private void DrawStatsPanel(Rect rect, RoleStore store)
+        {
+            Widgets.DrawBoxSolidWithOutline(rect, new Color(0.08f, 0.08f, 0.08f, 0.9f), new Color(1f, 1f, 1f, 0.15f));
+            rect = rect.ContractedBy(StatsPadding);
+            if (selectedPawn == null) return;
+
+            // Left section: portrait framed + name below
+            float portraitBoxSize = PortraitDisplaySize;
+            var portraitFrameRect = new Rect(rect.x, rect.y, portraitBoxSize, portraitBoxSize);
+
+            // Draw portrait inside a thin outline box
+            Widgets.DrawBoxSolidWithOutline(portraitFrameRect,
+                new Color(0.05f, 0.05f, 0.05f, 1f),
+                new Color(1f, 1f, 1f, 0.25f));
+            GUI.DrawTexture(portraitFrameRect,
+                PortraitsCache.Get(selectedPawn, new Vector2(portraitBoxSize, portraitBoxSize), Rot4.South));
+
+            // Pawn name directly below portrait, centered
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.UpperCenter;
+            Widgets.Label(new Rect(rect.x, rect.y + portraitBoxSize + 2f, portraitBoxSize, 20f),
+                selectedPawn.LabelShortCap);
+            Text.Anchor = TextAnchor.UpperLeft;
+
+            // Change 2a: NO separator between portrait and col1 — 16f blank gap instead
+            float col1X = rect.x + portraitBoxSize + 16f;
+
+            // Two fixed-width skill columns
+            // Change 2b: col1→col2 separator: 2px wide, brighter, 16f on both sides
+            float col2X = col1X + SkillColWidth + ColSepMargin + ColSepWidth + ColSepMargin;
+
+            // Draw col1→col2 separator
+            float sep12X = col1X + SkillColWidth + ColSepMargin;
+            if (sep12X + ColSepWidth <= rect.xMax)
+            {
+                Widgets.DrawBoxSolid(new Rect(sep12X, rect.y, ColSepWidth, rect.height),
+                    new Color(1f, 1f, 1f, 0.4f));
+            }
+
+            // Change 2d: after second skill column — another 2px separator (same style), then Recommended Roles
+            float sep23X = col2X + SkillColWidth + ColSepMargin;
+            float recX = sep23X + ColSepWidth + ColSepMargin;
+            if (sep23X + ColSepWidth <= rect.xMax)
+            {
+                Widgets.DrawBoxSolid(new Rect(sep23X, rect.y, ColSepWidth, rect.height),
+                    new Color(1f, 1f, 1f, 0.4f));
+            }
+
+            // Draw skill lines in the two columns
+            var lines = SkillsTip.Lines(selectedPawn);
+            if (lines.Count == 0) return;
+
+            Text.Font = GameFont.Small;
+            for (int i = 0; i < lines.Count; i++)
+            {
+                int col = i % SkillCols;
+                int row = i / SkillCols;
+                var line = lines[i];
+
+                float cellX = (col == 0) ? col1X : col2X;
+                float cellY = rect.y + row * CellH;
+
+                // Skip if beyond available columns
+                if (col >= SkillCols) continue;
+
+                // Text colour priority
+                Color textColor;
+                if (line.Disabled || line.Level <= 1)
+                    textColor = ColorDisabled;
+                else if (line.Level <= 5)
+                    textColor = ColorLow;
+                else if (line.Passion == Passion.Major)
+                    textColor = ColorPassMajor;
+                else if (line.Passion == Passion.Minor)
+                    textColor = ColorPassMinor;
+                else
+                    textColor = Color.white;
+
+                float xCursor = cellX;
+
+                // 6×6 aptitude square (or reserved space for alignment)
+                if (line.Aptitude != 0)
+                {
+                    Color sqColor = line.Aptitude > 0 ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.8f, 0.2f, 0.2f);
+                    Widgets.DrawBoxSolid(new Rect(xCursor, cellY + (CellH - 6f) / 2f, 6f, 6f), sqColor);
+                }
+                xCursor += 8f; // reserve space for aptitude square alignment
+
+                // Skill label
+                GUI.color = textColor;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                string labelText = line.Label;
+                Vector2 labelSize = Text.CalcSize(labelText);
+                float labelMaxW = SkillColWidth - 8f - (16f + 4f) - 48f; // col width - aptitude space - icon+gap - value col
+                Widgets.Label(new Rect(xCursor, cellY, labelMaxW, CellH), labelText);
+
+                // Passion icon appended after label text
+                const float IconW = 16f;
+                float iconX = xCursor + Mathf.Min(labelSize.x, labelMaxW) + 4f;
+                if (line.Passion == Passion.Major)
+                {
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW), WorkRolesTex.PassionMajor);
+                }
+                else if (line.Passion == Passion.Minor)
+                {
+                    GUI.color = Color.white;
+                    GUI.DrawTexture(new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW), WorkRolesTex.PassionMinor);
+                }
+
+                // Value right-aligned in fixed 48f column at right edge of skill column
+                // Change 2c: value X positions use updated SkillColWidth (200f) and new layout
+                const float ValueW = 48f;
+                float valueX = (col == 0)
+                    ? (col1X + SkillColWidth - ValueW)
+                    : (col2X + SkillColWidth - ValueW);
+                GUI.color = textColor;
+                Text.Anchor = TextAnchor.MiddleRight;
+                Widgets.Label(new Rect(valueX, cellY, ValueW, CellH), line.ValueText);
+
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+            }
+
+            // Recommended Roles section
+            if (recX < rect.xMax)
+            {
+                float recW = rect.xMax - recX;
+                var recommendations = GetRecommendedRoles(store);
+
+                // Determine which roles are already assigned to this pawn
+                var assignedIds = new HashSet<int>();
+                if (store.pawnSets.TryGetValue(selectedPawn, out var recPawnSet))
+                    foreach (var a in recPawnSet.assignments) assignedIds.Add(a.roleId);
+
+                // Header
+                WrText.HeaderLabel(new Rect(recX, rect.y, recW, 28f), "Recommended Roles");
+
+                // Chips wrapping below header
+                float chipY = rect.y + 28f;
+                float chipX = recX;
+                foreach (var role in recommendations)
+                {
+                    bool isAssigned = assignedIds.Contains(role.id);
+                    // Already-assigned chips show the remove icon — reserve that extra width.
+                    float chipW = RoleChipUI.WidthFor(role, showRemove: isAssigned);
+                    if (chipX + chipW > recX + recW && chipX > recX)
+                    {
+                        chipX = recX;
+                        chipY += RoleChipUI.Height + ChipGap;
+                        if (chipY + RoleChipUI.Height > rect.yMax) break;
+                    }
+                    var chipRect = new Rect(chipX, chipY, chipW, RoleChipUI.Height);
+                    int capturedId = role.id;
+                    Pawn capturedPawn = selectedPawn;
+                    if (isAssigned)
+                    {
+                        // Already assigned: Subtle style, remove icon, body click inert.
+                        var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Subtle,
+                            showRemove: true, dragSource: null, onClick: null);
+                        if (click == ChipClick.Remove)
+                        {
+                            RoleCommands.RemoveRoleFromPawn(capturedPawn, capturedId);
+                            InvalidateRecommendationCache();
+                        }
+                        if (Mouse.IsOver(chipRect))
+                            TooltipHandler.TipRegion(chipRect, "Already assigned");
+                    }
+                    else
+                    {
+                        RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
+                            dragSource: null,
+                            onClick: () =>
+                            {
+                                // Insert at catalog-ordered position: find first assignment whose
+                                // role has a higher catalog index than the clicked role.
+                                var currentStore = RoleStore.Current;
+                                if (currentStore == null) return;
+                                int clickedCatalogIdx = currentStore.roles.IndexOf(currentStore.RoleById(capturedId));
+                                int insertIdx = -1;
+                                var pSet = currentStore.pawnSets.TryGetValue(capturedPawn, out var s) ? s : null;
+                                if (pSet != null)
+                                {
+                                    for (int ai = 0; ai < pSet.assignments.Count; ai++)
+                                    {
+                                        var r = currentStore.RoleById(pSet.assignments[ai].roleId);
+                                        if (r == null) continue;
+                                        int ci = currentStore.roles.IndexOf(r);
+                                        if (ci > clickedCatalogIdx) { insertIdx = ai; break; }
+                                    }
+                                }
+                                RoleCommands.AssignRole(capturedPawn, capturedId, insertIdx);
+                                // Invalidate so chip re-renders as already-assigned immediately
+                                InvalidateRecommendationCache();
+                            });
+                    }
+                    chipX += chipW + ChipGap;
+                }
+            }
+        }
+
+        // ----- Recommendation logic -----
+
+        private List<Role> GetRecommendedRoles(RoleStore store)
+        {
+            // Recompute only when selectedPawn changes; explicit invalidation handles assignment changes.
+            if (selectedPawn == _recCachePawn)
+                return _recCached;
+
+            _recCachePawn = selectedPawn;
+            _recCached = ComputeRecommendations(selectedPawn, store);
+            return _recCached;
+        }
+
+        private static List<Role> ComputeRecommendations(Pawn pawn, RoleStore store)
+        {
+            if (pawn == null || pawn.skills == null) return new List<Role>();
+
+            // Collect all skill levels across all colonists to find per-skill maximums
+            var allPawns = ListedPawns();
+            var skillMaxLevel = new Dictionary<SkillDef, int>();
+            foreach (var p in allPawns)
+            {
+                if (p.skills == null) continue;
+                foreach (var sr in p.skills.skills)
+                {
+                    if (!skillMaxLevel.TryGetValue(sr.def, out int cur) || sr.Level > cur)
+                        skillMaxLevel[sr.def] = sr.Level;
+                }
+            }
+
+            var result = new List<Role>();
+            int pawnsWithHunting = CountPawnsWithHuntingRole(store);
+
+            foreach (var role in store.roles)
+            {
+                // Collect work types for this role (from WorkType entries + parent types of WorkGiver entries)
+                var workTypes = new HashSet<WorkTypeDef>();
+                foreach (var entry in role.entries)
+                {
+                    if (entry.Kind == JobEntryKind.WorkType)
+                    {
+                        var wt = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
+                        if (wt != null) workTypes.Add(wt);
+                    }
+                    else
+                    {
+                        var wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
+                        if (wg?.workType != null) workTypes.Add(wg.workType);
+                    }
+                }
+
+                // Must be USABLE: at least one work type not disabled
+                bool usable = false;
+                foreach (var wt in workTypes)
+                {
+                    if (!pawn.WorkTypeIsDisabled(wt)) { usable = true; break; }
+                }
+                if (!usable) continue;
+
+                // Recommendation criteria
+                bool recommended = false;
+
+                // Rules 1–2: template check
+                string tmpl = role.templateDefName;
+                if (tmpl == "WS_Basics" || tmpl == "WS_Grunt")
+                {
+                    recommended = true;
+                }
+                else if (tmpl == "WS_Hunter"
+                    && pawn.equipment?.Primary?.def?.IsRangedWeapon == true)
+                {
+                    bool canUpSkill = (pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0) < 15;
+                    bool fewHunters = pawnsWithHunting < 3;
+                    if (canUpSkill || fewHunters) recommended = true;
+                }
+
+                if (!recommended)
+                {
+                    // Rules 4–7: skill checks across relevant skills of all role work types
+                    foreach (var wt in workTypes)
+                    {
+                        if (wt.relevantSkills == null) continue;
+                        foreach (var skillDef in wt.relevantSkills)
+                        {
+                            var sr = pawn.skills.GetSkill(skillDef);
+                            if (sr == null) continue;
+
+                            // Rule 4: Major passion
+                            if (sr.passion == Passion.Major) { recommended = true; break; }
+                            // Rule 5: Minor passion
+                            if (sr.passion == Passion.Minor) { recommended = true; break; }
+                            // Rule 6: Positive aptitude
+                            if (sr.Aptitude > 0) { recommended = true; break; }
+                            // Rule 7: Max level among all colonists (ties count)
+                            if (skillMaxLevel.TryGetValue(skillDef, out int maxLvl)
+                                && sr.Level >= maxLvl && sr.Level > 0)
+                            { recommended = true; break; }
+                        }
+                        if (recommended) break;
+                    }
+                }
+
+                if (recommended) result.Add(role);
+            }
+
+            return result;
+        }
+
+        // ----- Helpers -----
+
+        /// <summary>
+        /// Returns how many listed colonists have an ENABLED assignment of a globally-enabled role
+        /// whose entries cover the Hunting work type.
+        /// </summary>
+        private static int CountPawnsWithHuntingRole(RoleStore store)
+        {
+            int count = 0;
+            foreach (var pawn in ListedPawns())
+            {
+                if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
+                bool hasHunting = false;
+                foreach (var assignment in set.assignments)
+                {
+                    if (!assignment.enabled) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role == null || !role.enabled) continue;
+                    foreach (var entry in role.entries)
+                    {
+                        bool coversHunting = false;
+                        if (entry.Kind == JobEntryKind.WorkType)
+                        {
+                            coversHunting = entry.DefName == "Hunting";
+                        }
+                        else
+                        {
+                            var wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
+                            coversHunting = wg?.workType?.defName == "Hunting";
+                        }
+                        if (coversHunting) { hasHunting = true; break; }
+                    }
+                    if (hasHunting) break;
+                }
+                if (hasHunting) count++;
+            }
+            return count;
+        }
+
+        private static void OpenAddMenu(Pawn pawn, RoleStore store)
+        {
+            var assigned = store.pawnSets.TryGetValue(pawn, out var set)
+                ? set.assignments.Select(a => a.roleId).ToHashSet()
+                : new HashSet<int>();
+            var options = store.roles
+                .Where(r => !assigned.Contains(r.id))
+                .Select(r => new FloatMenuOption(r.label, () => RoleCommands.AssignRole(pawn, r.id)))
+                .ToList();
+            if (options.Count == 0)
+                options.Add(new FloatMenuOption("All roles assigned", null));
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private static void DrawDragGhost(RoleStore store)
+        {
+            if (!RoleDrag.Active) return;
+            var role = store.RoleById(RoleDrag.RoleId);
+            if (role == null) return;
+            var mouse = Event.current.mousePosition;
+            float w = RoleChipUI.WidthFor(role, showRemove: false);
+
+            Color ghostColor = RoleDrag.HoverBlocked
+                ? new Color(1f, 0.3f, 0.3f, 0.7f)
+                : new Color(1f, 1f, 1f, 0.7f);
+
+            GUI.color = ghostColor;
+            Widgets.DrawBoxSolid(new Rect(mouse.x + 10f, mouse.y + 6f, w, RoleChipUI.Height),
+                role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
+            Widgets.Label(new Rect(mouse.x + 18f, mouse.y + 8f, w, 22f), role.label);
+            GUI.color = Color.white;
+        }
+    }
+}

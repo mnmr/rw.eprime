@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <WorkRoles.RoleDef>
+    <defName>WS_Basics</defName>
+    <label>Basics</label>
+    <description>Emergency and self-care work every colonist should do.</description>
+    <autoAssign>true</autoAssign>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.278, 0.333, 0.412)</color>
+    <entries>
+      <li>WorkType:Firefighter</li>
+      <li>WorkType:Patient</li>
+      <li>WorkType:PatientBedRest</li>
+      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkType:BasicWorker</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Doctor</defName>
+    <label>Doctor</label>
+    <description>Medical care for colonists, prisoners and animals.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.600, 0.106, 0.106)</color>
+    <entries>
+      <li>WorkType:Doctor</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>WS_Childminder</defName>
+    <label>Carer</label>
+    <description>Childcare and teaching.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.341, 0.325, 0.306)</color>
+    <entries>
+      <li>WorkType:Childcare</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Warden</defName>
+    <label>Warden</label>
+    <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.341, 0.325, 0.306)</color>
+    <entries>
+      <li>WorkType:Warden</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Handler</defName>
+    <label>Handler</label>
+    <description>Animal taming, training and slaughter.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.067, 0.369, 0.349)</color>
+    <entries>
+      <li>WorkType:Handling</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Cook</defName>
+    <label>Cook</label>
+    <description>Meal preparation and butchering.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.082, 0.502, 0.239)</color>
+    <entries>
+      <li>WorkType:Cooking</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Hunter</defName>
+    <label>Hunter</label>
+    <description>Hunting wild animals for food.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.059, 0.463, 0.431)</color>
+    <entries>
+      <li>WorkType:Hunting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Builder</defName>
+    <label>Builder</label>
+    <description>Construction, repair and deconstruction.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.631, 0.384, 0.027)</color>
+    <entries>
+      <li>WorkType:Construction</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Farmer</defName>
+    <label>Farmer</label>
+    <description>Sowing, harvesting and plant cutting.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.302, 0.486, 0.059)</color>
+    <entries>
+      <li>WorkType:Growing</li>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Miner</defName>
+    <label>Miner</label>
+    <description>Mining and drilling.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.012, 0.412, 0.631)</color>
+    <entries>
+      <li>WorkType:Mining</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Smith</defName>
+    <label>Smith</label>
+    <description>Weapon and armor smithing.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.706, 0.325, 0.035)</color>
+    <entries>
+      <li>WorkType:Smithing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Tailor</defName>
+    <label>Tailor</label>
+    <description>Apparel creation.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.706, 0.325, 0.035)</color>
+    <entries>
+      <li>WorkType:Tailoring</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Artist</defName>
+    <label>Artist</label>
+    <description>Sculpting and artwork.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.494, 0.133, 0.808)</color>
+    <entries>
+      <li>WorkType:Art</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Crafter</defName>
+    <label>Crafter</label>
+    <description>General crafting: stonecutting, smelting, drugs and components.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.573, 0.251, 0.055)</color>
+    <entries>
+      <li>WorkType:Crafting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Grunt</defName>
+    <label>Grunt</label>
+    <description>Hauling and cleaning.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.267, 0.251, 0.235)</color>
+    <entries>
+      <li>WorkType:Hauling</li>
+      <li>WorkType:Cleaning</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Researcher</defName>
+    <label>Researcher</label>
+    <description>Research at a research bench.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.200, 0.255, 0.333)</color>
+    <entries>
+      <li>WorkType:Research</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
+    <defName>WS_DarkStudier</defName>
+    <label>Dark studier</label>
+    <description>Study of anomalous entities.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.200, 0.255, 0.333)</color>
+    <entries>
+      <li>WorkType:DarkStudy</li>
+    </entries>
+  </WorkRoles.RoleDef>
+</Defs>

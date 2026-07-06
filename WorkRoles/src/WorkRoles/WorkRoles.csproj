@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>WorkRoles</RootNamespace>
+    <AssemblyName>WorkRoles</AssemblyName>
+    <OutputPath>..\..\mod\1.6\Assemblies\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
+    <DebugType>portable</DebugType>
+    <RimWorldMods Condition="'$(RimWorldMods)' == ''">C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods</RimWorldMods>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <ProjectReference Include="..\WorkRoles.Core\WorkRoles.Core.csproj" />
+  </ItemGroup>
+  <Target Name="DeployToRimWorld" AfterTargets="Build">
+    <ItemGroup>
+      <ModFiles Include="$(MSBuildThisFileDirectory)..\..\mod\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(ModFiles)" DestinationFiles="@(ModFiles->'$(RimWorldMods)\WorkRoles\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+</Project>

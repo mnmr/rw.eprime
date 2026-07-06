@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+  <Operation Class="PatchOperationReplace">
+    <xpath>/Defs/MainButtonDef[defName="Work"]/tabWindowClass</xpath>
+    <value>
+      <tabWindowClass>WorkRoles.UI.MainTabWindow_WorkRoles</tabWindowClass>
+    </value>
+  </Operation>
+</Patch>
