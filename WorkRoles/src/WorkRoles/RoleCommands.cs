@@ -208,6 +208,20 @@ namespace WorkRoles
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
             if (assignment == null) return;
+            var role = Store.RoleById(roleId);
+            if (role != null && !role.enabled)
+            {
+                // Enabling a globally-disabled role on one pawn means "run it here only":
+                // the role comes back on globally, restricted to this pawn.
+                role.enabled = true;
+                foreach (var otherSet in Store.pawnSets.Values)
+                    foreach (var other in otherSet.assignments)
+                        if (other.roleId == roleId)
+                            other.enabled = false;
+                assignment.enabled = true;
+                CompiledJobOrders.InvalidateRole(roleId);
+                return;
+            }
             assignment.enabled = !assignment.enabled;
             CompiledJobOrders.Invalidate(pawn);
         }
