@@ -219,8 +219,8 @@ namespace WorkRoles.UI
         private static string RoleTip(Role role)
         {
             var parts = role.entries.Select(e => e.DefName);
-            string state = role.enabled ? "enabled" : "DISABLED (click to enable)";
-            return $"{role.label} — {state}\n\n{string.Join(", ", parts)}\n\nClick: toggle globally. Drag onto a colonist to assign.";
+            string state = role.enabled ? "WR_RoleTipEnabled".Translate() : "WR_RoleTipDisabled".Translate();
+            return "WR_RoleTip".Translate(role.label, state, string.Join(", ", parts), "WR_RoleTipHint".Translate());
         }
 
         // ----- Colonist table -----
@@ -288,7 +288,7 @@ namespace WorkRoles.UI
             {
                 store.pawnSets.TryGetValue(pawn, out var toCopy);
                 RoleClipboard.CopyFrom(toCopy);
-                Messages.Message($"Copied {pawn.LabelShortCap}'s roles.", MessageTypeDefOf.NeutralEvent, historical: false);
+                Messages.Message("WR_CopiedRoles".Translate(pawn.LabelShortCap), MessageTypeDefOf.NeutralEvent, historical: false);
             }
             Color pasteColor = RoleClipboard.HasContent ? Color.white : new Color(1f, 1f, 1f, 0.3f);
             if (Widgets.ButtonImage(pasteRect, TexButton.Paste, pasteColor) && RoleClipboard.HasContent)
@@ -518,9 +518,10 @@ namespace WorkRoles.UI
                     foreach (var a in recPawnSet.assignments) assignedIds.Add(a.roleId);
 
                 // Header
-                WrText.HeaderLabel(new Rect(recX, rect.y, recW, 28f), "Recommended Roles");
+                WrText.HeaderLabel(new Rect(recX, rect.y, recW, 28f), "WR_RecommendedRoles".Translate());
 
-                // Chips wrapping below header
+                // Chips wrapping below header; the bottom 28f is reserved for "Make It So".
+                float chipBottom = rect.yMax - 28f;
                 float chipY = rect.y + 28f;
                 float chipX = recX;
                 foreach (var role in recommendations)
@@ -532,7 +533,7 @@ namespace WorkRoles.UI
                     {
                         chipX = recX;
                         chipY += RoleChipUI.Height + ChipGap;
-                        if (chipY + RoleChipUI.Height > rect.yMax) break;
+                        if (chipY + RoleChipUI.Height > chipBottom) break;
                     }
                     var chipRect = new Rect(chipX, chipY, chipW, RoleChipUI.Height);
                     int capturedId = role.id;
@@ -548,7 +549,7 @@ namespace WorkRoles.UI
                             InvalidateRecommendationCache();
                         }
                         if (Mouse.IsOver(chipRect))
-                            TooltipHandler.TipRegion(chipRect, "Already assigned");
+                            TooltipHandler.TipRegion(chipRect, "WR_AlreadyAssigned".Translate());
                     }
                     else
                     {
@@ -556,31 +557,51 @@ namespace WorkRoles.UI
                             dragSource: null,
                             onClick: () =>
                             {
-                                // Insert at catalog-ordered position: find first assignment whose
-                                // role has a higher catalog index than the clicked role.
-                                var currentStore = RoleStore.Current;
-                                if (currentStore == null) return;
-                                int clickedCatalogIdx = currentStore.roles.IndexOf(currentStore.RoleById(capturedId));
-                                int insertIdx = -1;
-                                var pSet = currentStore.pawnSets.TryGetValue(capturedPawn, out var s) ? s : null;
-                                if (pSet != null)
-                                {
-                                    for (int ai = 0; ai < pSet.assignments.Count; ai++)
-                                    {
-                                        var r = currentStore.RoleById(pSet.assignments[ai].roleId);
-                                        if (r == null) continue;
-                                        int ci = currentStore.roles.IndexOf(r);
-                                        if (ci > clickedCatalogIdx) { insertIdx = ai; break; }
-                                    }
-                                }
-                                RoleCommands.AssignRole(capturedPawn, capturedId, insertIdx);
-                                // Invalidate so chip re-renders as already-assigned immediately
+                                AssignAtRecommendedPosition(capturedPawn, capturedId);
                                 InvalidateRecommendationCache();
                             });
                     }
                     chipX += chipW + ChipGap;
                 }
+
+                if (recommendations.Any(r => !assignedIds.Contains(r.id)))
+                {
+                    var makeItSoRect = new Rect(rect.xMax - 110f, rect.yMax - 26f, 106f, 24f);
+                    if (Widgets.ButtonText(makeItSoRect, "WR_MakeItSo".Translate()))
+                    {
+                        foreach (var role in recommendations)
+                            if (!assignedIds.Contains(role.id))
+                                AssignAtRecommendedPosition(selectedPawn, role.id);
+                        InvalidateRecommendationCache();
+                    }
+                }
             }
+        }
+
+        /// The recommendation list is a priority preview: display order IS assignment
+        /// order. Inserts the role before the pawn's first assignment that ranks later
+        /// in the recommendations; assignments outside the list keep their position.
+        private void AssignAtRecommendedPosition(Pawn pawn, int roleId)
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            var recommendations = GetRecommendedRoles(store);
+            int clickedRank = recommendations.FindIndex(r => r.id == roleId);
+            int insertIdx = -1;
+            if (clickedRank >= 0 && store.pawnSets.TryGetValue(pawn, out var set))
+            {
+                for (int i = 0; i < set.assignments.Count; i++)
+                {
+                    int assignmentId = set.assignments[i].roleId;
+                    int rank = recommendations.FindIndex(r => r.id == assignmentId);
+                    if (rank >= 0 && rank > clickedRank)
+                    {
+                        insertIdx = i;
+                        break;
+                    }
+                }
+            }
+            RoleCommands.AssignRole(pawn, roleId, insertIdx);
         }
 
         // ----- Recommendation logic -----
@@ -613,7 +634,18 @@ namespace WorkRoles.UI
                 }
             }
 
-            var result = new List<Role>();
+            // Recommendation groups, listed in display order; within a group, roles sort
+            // by the colonist's ability at the matched skill (best first).
+            const int GroupBasics = 0;
+            const int GroupWardenCarer = 1; // duty roles sit above the vocations, as in vanilla
+            const int GroupHunter = 2;      // training activity: must outrank the skilled work
+            const int GroupMajorPassion = 3;
+            const int GroupMinorPassion = 4;
+            const int GroupBestInColony = 5;
+            const int GroupAptitude = 6;
+            const int GroupGrunt = 7;
+
+            var scored = new List<(Role role, int group, float sortKey)>();
             int pawnsWithHunting = CountPawnsWithHuntingRole(store);
 
             foreach (var role in store.roles)
@@ -642,53 +674,67 @@ namespace WorkRoles.UI
                 }
                 if (!usable) continue;
 
-                // Recommendation criteria
-                bool recommended = false;
+                int group = int.MaxValue;
+                float sortKey = 0f;
 
-                // Rules 1–2: template check
-                string tmpl = role.templateDefName;
-                if (tmpl == "WS_Basics" || tmpl == "WS_Grunt")
+                void Candidate(int g, float key)
                 {
-                    recommended = true;
+                    if (g < group || (g == group && key > sortKey))
+                    {
+                        group = g;
+                        sortKey = key;
+                    }
+                }
+
+                string tmpl = role.templateDefName;
+                if (tmpl == "WS_Basics")
+                {
+                    Candidate(GroupBasics, 0f);
+                }
+                else if (tmpl == "WS_Grunt")
+                {
+                    Candidate(GroupGrunt, 0f);
                 }
                 else if (tmpl == "WS_Hunter"
                     && pawn.equipment?.Primary?.def?.IsRangedWeapon == true)
                 {
-                    bool canUpSkill = (pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0) < 15;
+                    int shooting = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0;
+                    bool canUpSkill = shooting < 15;
                     bool fewHunters = pawnsWithHunting < 3;
-                    if (canUpSkill || fewHunters) recommended = true;
+                    if (canUpSkill || fewHunters) Candidate(GroupHunter, shooting);
                 }
 
-                if (!recommended)
+                // Skill-based groups apply to every role and can outrank the template groups.
+                foreach (var wt in workTypes)
                 {
-                    // Rules 4–7: skill checks across relevant skills of all role work types
-                    foreach (var wt in workTypes)
+                    if (wt.relevantSkills == null) continue;
+                    foreach (var skillDef in wt.relevantSkills)
                     {
-                        if (wt.relevantSkills == null) continue;
-                        foreach (var skillDef in wt.relevantSkills)
-                        {
-                            var sr = pawn.skills.GetSkill(skillDef);
-                            if (sr == null) continue;
+                        var sr = pawn.skills.GetSkill(skillDef);
+                        if (sr == null || sr.TotallyDisabled) continue;
 
-                            // Rule 4: Major passion
-                            if (sr.passion == Passion.Major) { recommended = true; break; }
-                            // Rule 5: Minor passion
-                            if (sr.passion == Passion.Minor) { recommended = true; break; }
-                            // Rule 6: Positive aptitude
-                            if (sr.Aptitude > 0) { recommended = true; break; }
-                            // Rule 7: Max level among all colonists (ties count)
-                            if (skillMaxLevel.TryGetValue(skillDef, out int maxLvl)
-                                && sr.Level >= maxLvl && sr.Level > 0)
-                            { recommended = true; break; }
-                        }
-                        if (recommended) break;
+                        if (sr.passion == Passion.Major) Candidate(GroupMajorPassion, sr.Level);
+                        else if (sr.passion == Passion.Minor) Candidate(GroupMinorPassion, sr.Level);
+                        if (skillMaxLevel.TryGetValue(skillDef, out int maxLvl)
+                            && sr.Level >= maxLvl && sr.Level > 0)
+                            Candidate(GroupBestInColony, sr.Level);
+                        if (sr.Aptitude > 0) Candidate(GroupAptitude, sr.Aptitude * 1000f + sr.Level);
                     }
                 }
 
-                if (recommended) result.Add(role);
+                // Duty roles pin to their fixed slot regardless of which skill rule
+                // triggered them; the trigger's skill level remains the sort key.
+                if (group != int.MaxValue && (tmpl == "WS_Warden" || tmpl == "WS_Childminder"))
+                    group = GroupWardenCarer;
+
+                if (group != int.MaxValue) scored.Add((role, group, sortKey));
             }
 
-            return result;
+            return scored
+                .OrderBy(t => t.group)
+                .ThenByDescending(t => t.sortKey)
+                .Select(t => t.role)
+                .ToList();
         }
 
         // ----- Helpers -----
@@ -740,7 +786,7 @@ namespace WorkRoles.UI
                 .Select(r => new FloatMenuOption(r.label, () => RoleCommands.AssignRole(pawn, r.id)))
                 .ToList();
             if (options.Count == 0)
-                options.Add(new FloatMenuOption("All roles assigned", null));
+                options.Add(new FloatMenuOption("WR_AllRolesAssigned".Translate(), null));
             Find.WindowStack.Add(new FloatMenu(options));
         }
 

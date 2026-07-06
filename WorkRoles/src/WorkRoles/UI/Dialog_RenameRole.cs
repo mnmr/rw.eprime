@@ -16,7 +16,7 @@ namespace WorkRoles.UI
         public Dialog_RenameRole(Role role)
         {
             onConfirm = n => RoleCommands.RenameRole(role.id, n);
-            title = "Rename Role";
+            title = "WR_RenameRoleTitle".Translate();
             name = role.label;
             doCloseX = true;
             absorbInputAroundWindow = true;
@@ -51,7 +51,7 @@ namespace WorkRoles.UI
                 y += 34f;
             }
             name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
-            if (Widgets.ButtonText(new Rect(inRect.width / 2f - 60f, inRect.height - 35f, 120f, 30f), "OK"))
+            if (Widgets.ButtonText(new Rect(inRect.width / 2f - 60f, inRect.height - 35f, 120f, 30f), "WR_OK".Translate()))
             {
                 Apply();
                 Close();

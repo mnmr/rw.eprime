@@ -12,6 +12,8 @@ namespace WorkRoles
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
         public bool seeded;
+        public int basicsRoleId = -1;
+        public List<string> knownWorkTypes = new List<string>();
         private int nextRoleId = 1;
 
         private List<Pawn> pawnKeysWorkingList;
@@ -39,6 +41,8 @@ namespace WorkRoles
         public int NextId() => nextRoleId++;
 
         public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
+
+        public Role BasicsRole => RoleById(basicsRoleId);
 
         public Role RoleByTemplate(string templateDefName) =>
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
@@ -71,15 +75,21 @@ namespace WorkRoles
                         CompiledJobOrders.EnsureFresh(pawn);
             }
             Scribe_Values.Look(ref seeded, "seeded");
+            Scribe_Values.Look(ref basicsRoleId, "basicsRoleId", -1);
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);
+            Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
             Scribe_Collections.Look(ref pawnSets, "pawnSets", LookMode.Reference, LookMode.Deep,
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 roles ??= new List<Role>();
+                knownWorkTypes ??= new List<string>();
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
+                // Back-fill for saves that pre-date Part A.
+                if (basicsRoleId == -1)
+                    basicsRoleId = RoleByTemplate("WS_Basics")?.id ?? -1;
                 CompiledJobOrders.InvalidateAll();
             }
         }

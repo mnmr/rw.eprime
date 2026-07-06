@@ -16,6 +16,7 @@ namespace WorkRoles
         public string iconPath;
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string templateDefName;
+        public bool autoAssign;
         public List<JobEntry> entries = new List<JobEntry>();
 
         private List<string> scribeEntries;
@@ -29,6 +30,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref color, "color", Color.white);
             Scribe_Values.Look(ref iconPath, "iconPath");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
+            Scribe_Values.Look(ref autoAssign, "autoAssign");
             if (Scribe.mode == LoadSaveMode.Saving)
                 scribeEntries = entries.Select(e => e.Encode()).ToList();
             Scribe_Collections.Look(ref scribeEntries, "entries", LookMode.Value);

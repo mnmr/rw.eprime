@@ -17,6 +17,7 @@
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
     <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.6.0" />
     <ProjectReference Include="..\WorkRoles.Core\WorkRoles.Core.csproj" />
   </ItemGroup>
   <Target Name="DeployToRimWorld" AfterTargets="Build">

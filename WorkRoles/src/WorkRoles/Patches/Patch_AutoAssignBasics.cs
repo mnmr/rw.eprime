@@ -4,14 +4,23 @@ using Verse;
 
 namespace WorkRoles.Patches
 {
-    /// Covers recruits, freed slaves, wanderers — any pawn entering the player faction mid-game.
+    /// Faction transitions: joiners (recruits, freed slaves, wanderers) get the
+    /// auto-assign roles; pawns leaving the colony lose their role set.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.SetFaction))]
     public static class Patch_Pawn_SetFaction
     {
         public static void Postfix(Pawn __instance)
         {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            if (__instance.Faction != Faction.OfPlayer)
+            {
+                if (store.pawnSets.Remove(__instance))
+                    CompiledJobOrders.Invalidate(__instance);
+                return;
+            }
             if (Current.ProgramState != ProgramState.Playing) return;
-            Seeding.TryAssignRolesFromVanillaPriorities(__instance);
+            Seeding.TryAutoAssignBasics(__instance);
         }
     }
 
@@ -22,7 +31,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn ___pawn)
         {
             if (Current.ProgramState != ProgramState.Playing) return;
-            Seeding.TryAssignRolesFromVanillaPriorities(___pawn);
+            Seeding.TryAutoAssignBasics(___pawn);
         }
     }
 }

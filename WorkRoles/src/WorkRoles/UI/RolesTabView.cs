@@ -102,7 +102,7 @@ namespace WorkRoles.UI
 
             var selected = store.RoleById(selectedRoleId);
             if (selected != null) DrawEditor(editorRect, store, selected);
-            else Widgets.Label(editorRect, "Select or create a role.");
+            else Widgets.Label(editorRect, "WR_SelectOrCreateRole".Translate());
         }
 
         // ----- Left: role list + management buttons -----
@@ -149,7 +149,7 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (!role.enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
                 Widgets.Label(new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f, RowHeight),
-                    role.enabled ? role.label : role.label + " (off)");
+                    role.enabled ? role.label : "WR_RoleLabelOff".Translate(role.label).ToString());
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
 
@@ -161,16 +161,16 @@ namespace WorkRoles.UI
             // Three buttons — New / Copy / Delete
             float bw = (rect.width - 8f) / 3f;
             float by = rect.yMax - buttonsHeight + 4f;
-            if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f), "New"))
+            if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f), "WR_New".Translate()))
                 selectedRoleId = RoleCommands.CreateRole("New role")?.id ?? selectedRoleId;
 
-            if (Widgets.ButtonText(new Rect(rect.x + bw + 4f, by, bw, 30f), "Copy"))
+            if (Widgets.ButtonText(new Rect(rect.x + bw + 4f, by, bw, 30f), "WR_Copy".Translate()))
             {
                 var toCopy = RoleStore.Current.RoleById(selectedRoleId);
                 if (toCopy != null)
                 {
-                    string suggestedName = toCopy.label + " copy";
-                    Find.WindowStack.Add(new Dialog_RenameRole("Copy Role", suggestedName, enteredName =>
+                    string suggestedName = "WR_RoleCopyName".Translate(toCopy.label);
+                    Find.WindowStack.Add(new Dialog_RenameRole("WR_CopyRoleTitle".Translate(), suggestedName, enteredName =>
                     {
                         var newRole = RoleCommands.DuplicateRole(selectedRoleId, enteredName);
                         if (newRole != null) selectedRoleId = newRole.id;
@@ -178,14 +178,19 @@ namespace WorkRoles.UI
                 }
             }
 
-            if (Widgets.ButtonText(new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f), "Delete"))
+            bool isBasics = selectedRoleId == RoleStore.Current.basicsRoleId;
+            if (!isBasics) GUI.color = Color.white;
+            else GUI.color = new Color(1f, 1f, 1f, 0.4f);
+            if (Widgets.ButtonText(new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f), "WR_Delete".Translate(),
+                active: !isBasics))
             {
                 var role = RoleStore.Current.RoleById(selectedRoleId);
                 if (role != null)
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        $"Delete role '{role.label}'? It will be removed from all colonists.",
+                        "WR_DeleteConfirm".Translate(role.label),
                         () => RoleCommands.DeleteRole(role.id), destructive: true));
             }
+            GUI.color = Color.white;
         }
 
         // ----- Right: editor for the selected role -----
@@ -260,7 +265,7 @@ namespace WorkRoles.UI
             float row2Y = rowsStartY + TitleH;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
             Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(leftX, row2Y, leftW, AssignedRowH), "Assigned to");
+            Widgets.Label(new Rect(leftX, row2Y, leftW, AssignedRowH), "WR_AssignedTo".Translate());
             GUI.color = Color.white;
 
             // Row 3: colonist names, ordered by position in their assignment list
@@ -308,7 +313,7 @@ namespace WorkRoles.UI
             if (pawnPositions.Count == 0)
             {
                 GUI.color = new Color(0.5f, 0.5f, 0.5f);
-                Widgets.Label(rect, "Nobody");
+                Widgets.Label(rect, "WR_Nobody".Translate());
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
                 return;
@@ -361,7 +366,7 @@ namespace WorkRoles.UI
 
             if (remaining > 0)
             {
-                string moreText = $"+{remaining} others";
+                string moreText = "WR_PlusOthers".Translate(remaining);
                 GUI.color = SepColor;
                 Widgets.Label(new Rect(x, rect.y, rect.xMax - x, rect.height), moreText);
             }
@@ -375,7 +380,7 @@ namespace WorkRoles.UI
         private void DrawEntries(Rect rect, Role role)
         {
             // "Selected Jobs (ordered)" via WrText.HeaderLabel, 28f row
-            WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y, rect.width - 8f, 28f), "Selected Jobs (ordered)");
+            WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y, rect.width - 8f, 28f), "WR_SelectedJobs".Translate());
 
             // Column headers — 24f height so descenders aren't clipped
             float headerY = rect.y + 28f + 4f;
@@ -385,8 +390,8 @@ namespace WorkRoles.UI
 
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rect.x + 8f + 4f, headerY, typeW, 24f), "Type");
-            Widgets.Label(new Rect(rect.x + 8f + 4f + typeW, headerY, jobW, 24f), "Job");
+            Widgets.Label(new Rect(rect.x + 8f + 4f, headerY, typeW, 24f), "WR_TypeColumn".Translate());
+            Widgets.Label(new Rect(rect.x + 8f + 4f + typeW, headerY, jobW, 24f), "WR_JobColumn".Translate());
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
@@ -431,7 +436,7 @@ namespace WorkRoles.UI
                 // Job column
                 if (entry.Kind == JobEntryKind.WorkType)
                 {
-                    Widgets.Label(new Rect(row.x + 4f + typeW, row.y, jobW, RowHeight), "All jobs");
+                    Widgets.Label(new Rect(row.x + 4f + typeW, row.y, jobW, RowHeight), "WR_AllJobs".Translate());
                 }
                 else
                 {
@@ -442,7 +447,7 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 if (missing)
-                    TooltipHandler.TipRegion(row, entry.DefName + " is not present with the current mod list (inactive until its mod returns).");
+                    TooltipHandler.TipRegion(row, "WR_MissingDef".Translate(entry.DefName));
 
                 // up/down buttons + [x] remove
                 float btnY = row.y + (RowHeight - IconButton) / 2f;
@@ -473,7 +478,7 @@ namespace WorkRoles.UI
                 if (def != null)
                 {
                     typeLabel = (def.gerundLabel ?? def.labelShort ?? def.defName).CapitalizeFirst();
-                    jobLabel = "All jobs";
+                    jobLabel = "WR_AllJobs".Translate();
                     return;
                 }
             }
@@ -506,14 +511,14 @@ namespace WorkRoles.UI
             const float SearchH = 24f;
             float headerW = rect.width - SearchLabelW - SearchW - 8f;
 
-            WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y, headerW - 4f, 28f), "Available Jobs");
+            WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y, headerW - 4f, 28f), "WR_AvailableJobs".Translate());
 
             // "Search" label immediately left of field; group shifted 4f left from right edge
             const float SearchRightPad = 4f;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleRight;
-            Widgets.Label(new Rect(rect.xMax - SearchLabelW - SearchW - 4f - SearchRightPad, rect.y + (28f - SearchH) / 2f, SearchLabelW, SearchH), "Search");
+            Widgets.Label(new Rect(rect.xMax - SearchLabelW - SearchW - 4f - SearchRightPad, rect.y + (28f - SearchH) / 2f, SearchLabelW, SearchH), "WR_Search".Translate());
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
@@ -623,7 +628,7 @@ namespace WorkRoles.UI
                         // If both or neither are emergency, no suffix (just use base name).
                         int emergencyCount = siblings.Count(s => s.emergency);
                         if (emergencyCount == 1 && g.emergency)
-                            result[g] = baseName + " (emergency)";
+                            result[g] = baseName + "WR_EmergencySuffix".Translate();
                         else
                             result[g] = baseName;
                     }

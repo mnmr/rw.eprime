@@ -1,3 +1,4 @@
+using RimWorld;
 using Verse;
 
 namespace WorkRoles
@@ -10,6 +11,10 @@ namespace WorkRoles
         public override void FinalizeInit()
         {
             Seeding.SeedIfNeeded();
+            var generated = Seeding.EnsureWorkTypeCoverage();
+            if (generated.Count > 0)
+                Messages.Message("WR_NewWorkDetected".Translate(generated.ToCommaList()),
+                    MessageTypeDefOf.NeutralEvent, historical: false);
         }
     }
 }

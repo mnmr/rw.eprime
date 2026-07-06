@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Multiplayer.API;
 using Verse;
 using WorkRoles.Core;
 
@@ -13,6 +14,7 @@ namespace WorkRoles
 
         // ----- Role lifecycle -----
 
+        [SyncMethod]
         public static Role CreateRole(string label)
         {
             if (Store == null) return null;
@@ -21,7 +23,9 @@ namespace WorkRoles
             return role;
         }
 
-        public static Role CreateRoleFromDef(RoleDef def)
+        /// Engine-initiated (load-time seeding): runs inside the synced simulation
+        /// on every client, so it must NOT be a synced command.
+        internal static Role CreateRoleFromDef(RoleDef def)
         {
             if (Store == null || def == null) return null;
             var role = new Role
@@ -29,6 +33,7 @@ namespace WorkRoles
                 id = Store.NextId(),
                 label = def.label,
                 templateDefName = def.defName,
+                autoAssign = def.autoAssign,
                 hasCustomColor = def.hasCustomColor,
                 color = def.color,
                 iconPath = def.iconPath,
@@ -38,8 +43,10 @@ namespace WorkRoles
             return role;
         }
 
+        [SyncMethod]
         public static void DeleteRole(int roleId)
         {
+            if (Store != null && roleId == Store.basicsRoleId) return;
             var role = FindRole(roleId);
             if (role == null) return;
             CompiledJobOrders.InvalidateRole(roleId);
@@ -48,12 +55,14 @@ namespace WorkRoles
             Store.roles.Remove(role);
         }
 
+        [SyncMethod]
         public static void RenameRole(int roleId, string label)
         {
             var role = FindRole(roleId);
             if (role != null) role.label = label;
         }
 
+        [SyncMethod]
         public static void SetRoleColor(int roleId, UnityEngine.Color color)
         {
             var role = FindRole(roleId);
@@ -62,6 +71,7 @@ namespace WorkRoles
             role.hasCustomColor = true;
         }
 
+        [SyncMethod]
         public static void ToggleRoleGlobal(int roleId)
         {
             var role = FindRole(roleId);
@@ -70,6 +80,7 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        [SyncMethod]
         public static Role DuplicateRole(int roleId, string label = null)
         {
             var source = FindRole(roleId);
@@ -92,6 +103,7 @@ namespace WorkRoles
 
         /// Reorders the role catalog (palette / list order). UI-only ordering:
         /// no cache invalidation needed.
+        [SyncMethod]
         public static void MoveRoleInCatalog(int from, int to)
         {
             var roles = Store?.roles;
@@ -103,6 +115,7 @@ namespace WorkRoles
 
         // ----- Role content -----
 
+        [SyncMethod]
         public static void AddEntry(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
@@ -112,6 +125,7 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        [SyncMethod]
         public static void RemoveEntry(int roleId, int index)
         {
             var role = FindRole(roleId);
@@ -120,6 +134,7 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        [SyncMethod]
         public static void MoveEntry(int roleId, int from, int to)
         {
             var role = FindRole(roleId);
@@ -132,7 +147,31 @@ namespace WorkRoles
 
         // ----- Pawn assignments -----
 
+        [SyncMethod]
         public static void AssignRole(Pawn pawn, int roleId, int index = -1)
+            => AssignRoleDirect(pawn, roleId, index);
+
+        /// Engine-initiated path (coverage generation): creates a role without going through
+        /// sync interception — runs deterministically on every client at load time.
+        internal static Role CreateRoleDirect(string label, bool autoAssign = false)
+        {
+            if (Store == null) return null;
+            var role = new Role { id = Store.NextId(), label = label, autoAssign = autoAssign };
+            Store.roles.Add(role);
+            return role;
+        }
+
+        internal static void AddEntryDirect(int roleId, JobEntry entry)
+        {
+            var role = FindRole(roleId);
+            if (role == null) return;
+            role.entries.Add(entry);
+            CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        /// Engine-initiated path (seeding, joiner auto-assign): runs inside the synced
+        /// simulation on every client, so it must NOT go through sync interception.
+        internal static void AssignRoleDirect(Pawn pawn, int roleId, int index = -1)
         {
             if (Store == null || pawn == null || Store.RoleById(roleId) == null) return;
             var set = Store.SetFor(pawn);
@@ -142,6 +181,7 @@ namespace WorkRoles
             CompiledJobOrders.Invalidate(pawn);
         }
 
+        [SyncMethod]
         public static void RemoveRoleFromPawn(Pawn pawn, int roleId)
         {
             // TryGetValue, not SetFor: a removal against an unmanaged pawn must not
@@ -151,6 +191,7 @@ namespace WorkRoles
             CompiledJobOrders.Invalidate(pawn);
         }
 
+        [SyncMethod]
         public static void MoveRoleOnPawn(Pawn pawn, int from, int to)
         {
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
@@ -161,6 +202,7 @@ namespace WorkRoles
             CompiledJobOrders.Invalidate(pawn);
         }
 
+        [SyncMethod]
         public static void ToggleRoleForPawn(Pawn pawn, int roleId)
         {
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
@@ -170,6 +212,7 @@ namespace WorkRoles
             CompiledJobOrders.Invalidate(pawn);
         }
 
+        [SyncMethod]
         public static void PasteRoleSet(Pawn pawn, List<RoleAssignment> source)
         {
             if (Store == null || pawn == null || source == null) return;

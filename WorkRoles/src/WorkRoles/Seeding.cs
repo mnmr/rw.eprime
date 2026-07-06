@@ -16,6 +16,9 @@ namespace WorkRoles
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
+            store.basicsRoleId = store.RoleByTemplate("WS_Basics")?.id ?? -1;
+
+            EnsureWorkTypeCoverage();
 
             int assigned = 0;
             foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
@@ -42,10 +45,7 @@ namespace WorkRoles
             var scored = new List<(Role role, int score)>();
             foreach (var role in store.roles)
             {
-                var template = role.templateDefName != null
-                    ? DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName)
-                    : null;
-                if (template != null && template.autoAssign)
+                if (role.autoAssign)
                 {
                     autoAssign.Add(role);
                     continue;
@@ -57,11 +57,96 @@ namespace WorkRoles
             if (autoAssign.Count == 0 && scored.Count == 0) return false;
 
             foreach (var role in autoAssign)
-                RoleCommands.AssignRole(pawn, role.id);
+                RoleCommands.AssignRoleDirect(pawn, role.id);
             // OrderBy is stable: equal priorities keep catalog (work tab) order.
             foreach (var (role, _) in scored.OrderBy(t => t.score))
-                RoleCommands.AssignRole(pawn, role.id);
+                RoleCommands.AssignRoleDirect(pawn, role.id);
             return true;
+        }
+
+        /// Assigns only the auto-assign roles (Basics) — used for pawns joining mid-game,
+        /// mirroring vanilla's minimal auto-enable; vocational roles are the player's call
+        /// (the Recommended Roles panel covers it).
+        public static void TryAutoAssignBasics(Pawn pawn)
+        {
+            var store = RoleStore.Current;
+            if (store == null || !store.seeded) return;
+            if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return;
+            if (store.IsManaged(pawn)) return;
+
+            foreach (var role in store.roles)
+            {
+                if (role.autoAssign)
+                    RoleCommands.AssignRoleDirect(pawn, role.id);
+            }
+        }
+
+        /// Ensures every work type is reachable through some role. Runs on every load;
+        /// each work type is processed once per save (store.knownWorkTypes), so deleting
+        /// a generated role sticks. Returns labels of newly generated/extended roles.
+        public static List<string> EnsureWorkTypeCoverage()
+        {
+            var store = RoleStore.Current;
+            var result = new List<string>();
+            if (store == null || !store.seeded) return result;
+
+            // Build covered set: WorkType entries contribute directly; WorkGiver entries contribute their parent type.
+            var covered = new HashSet<string>();
+            foreach (var role in store.roles)
+            {
+                foreach (var entry in role.entries)
+                {
+                    if (entry.Kind == WorkRoles.Core.JobEntryKind.WorkType)
+                        covered.Add(entry.DefName);
+                    else
+                    {
+                        var parentType = GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
+                        if (parentType != null) covered.Add(parentType);
+                    }
+                }
+            }
+
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+                if (store.knownWorkTypes.Contains(workType.defName)) continue;
+
+                store.knownWorkTypes.Add(workType.defName);
+
+                if (covered.Contains(workType.defName)) continue;
+
+                if (workType.visible)
+                {
+                    string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
+                    var role = RoleCommands.CreateRoleDirect(label);
+                    if (role != null)
+                    {
+                        role.color = UnityEngine.Color.HSVToRGB(
+                            (workType.defName.GetHashCode() & 0x7FFFFFFF) % 360 / 360f, 0.5f, 0.55f);
+                        role.hasCustomColor = true;
+                        RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                        result.Add(label);
+                    }
+                }
+                else
+                {
+                    var basics = store.BasicsRole;
+                    if (basics == null)
+                    {
+                        Log.Warning($"[WorkRoles] EnsureWorkTypeCoverage: BasicsRole is null, cannot assign invisible work type '{workType.defName}'");
+                        continue;
+                    }
+                    RoleCommands.AddEntryDirect(basics.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                    result.Add(basics.label);
+                }
+            }
+
+            // Return distinct labels in encounter order.
+            var seen = new HashSet<string>();
+            var distinct = new List<string>();
+            foreach (var label in result)
+                if (seen.Add(label))
+                    distinct.Add(label);
+            return distinct;
         }
 
         /// Best (lowest non-zero) vanilla priority across the role's work-type entries;

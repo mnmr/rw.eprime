@@ -64,8 +64,8 @@ namespace WorkRoles.UI
 
             var tabs = new List<TabRecord>
             {
-                new TabRecord("Colonists", () => curTab = Tab.Colonists, curTab == Tab.Colonists),
-                new TabRecord("Roles", () => curTab = Tab.Roles, curTab == Tab.Roles),
+                new TabRecord("WR_ColonistsTab".Translate(), () => curTab = Tab.Colonists, curTab == Tab.Colonists),
+                new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, curTab == Tab.Roles),
             };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+
+  <!-- ===== Main tabs ===== -->
+  <WR_ColonistsTab>Colonists</WR_ColonistsTab>
+  <WR_RolesTab>Roles</WR_RolesTab>
+
+  <!-- ===== Colonists tab ===== -->
+
+  <!-- Palette role tooltip: {0}=role label, {1}=state phrase, {2}=job list, {3}=usage hint -->
+  <WR_RoleTip>{0} — {1}
+
+{2}
+
+{3}</WR_RoleTip>
+  <!-- State phrases used in WR_RoleTip {1} -->
+  <WR_RoleTipEnabled>enabled</WR_RoleTipEnabled>
+  <WR_RoleTipDisabled>DISABLED (click to enable)</WR_RoleTipDisabled>
+  <!-- Usage hint used in WR_RoleTip {3} -->
+  <WR_RoleTipHint>Click: toggle globally. Drag onto a colonist to assign.</WR_RoleTipHint>
+
+  <!-- Copy/paste row -->
+  <!-- {0} = pawn short name -->
+  <WR_CopiedRoles>Copied {0}'s roles.</WR_CopiedRoles>
+
+  <!-- Recommended Roles section -->
+  <WR_RecommendedRoles>Recommended Roles</WR_RecommendedRoles>
+  <WR_AlreadyAssigned>Already assigned</WR_AlreadyAssigned>
+  <WR_MakeItSo>Make It So</WR_MakeItSo>
+
+  <!-- Add-role float menu when all roles are already assigned -->
+  <WR_AllRolesAssigned>All roles assigned</WR_AllRolesAssigned>
+
+  <!-- ===== Roles tab ===== -->
+
+  <!-- Role list -->
+  <!-- {0} = role label -->
+  <WR_RoleLabelOff>{0} (off)</WR_RoleLabelOff>
+  <WR_SelectOrCreateRole>Select or create a role.</WR_SelectOrCreateRole>
+
+  <!-- Management buttons -->
+  <WR_New>New</WR_New>
+  <WR_Copy>Copy</WR_Copy>
+  <WR_Delete>Delete</WR_Delete>
+
+  <!-- Copy dialog: default suggested name; {0} = original role label -->
+  <WR_RoleCopyName>{0} copy</WR_RoleCopyName>
+  <!-- Copy dialog title -->
+  <WR_CopyRoleTitle>Copy Role</WR_CopyRoleTitle>
+
+  <!-- Delete confirmation; {0} = role label -->
+  <WR_DeleteConfirm>Delete role '{0}'? It will be removed from all colonists.</WR_DeleteConfirm>
+
+  <!-- Editor: assigned-to row -->
+  <WR_AssignedTo>Assigned to</WR_AssignedTo>
+  <!-- Shown when no colonist has the role -->
+  <WR_Nobody>Nobody</WR_Nobody>
+  <!-- Overflow suffix; {0} = remaining count -->
+  <WR_PlusOthers>+{0} others</WR_PlusOthers>
+
+  <!-- Available Jobs pane (left) -->
+  <WR_AvailableJobs>Available Jobs</WR_AvailableJobs>
+  <WR_Search>Search</WR_Search>
+
+  <!-- Selected Jobs pane (right) -->
+  <WR_SelectedJobs>Selected Jobs (ordered)</WR_SelectedJobs>
+  <!-- Column headers -->
+  <WR_TypeColumn>Type</WR_TypeColumn>
+  <WR_JobColumn>Job</WR_JobColumn>
+  <!-- Shown in Job column when the entry covers the whole work type -->
+  <WR_AllJobs>All jobs</WR_AllJobs>
+
+  <!-- Tooltip for a missing def; {0} = def name -->
+  <WR_MissingDef>{0} is not present with the current mod list (inactive until its mod returns).</WR_MissingDef>
+
+  <!-- Disambiguating suffix appended to identically-named emergency job givers -->
+  <WR_EmergencySuffix> (emergency)</WR_EmergencySuffix>
+
+  <!-- ===== Shared / dialogs ===== -->
+
+  <WR_RenameRoleTitle>Rename Role</WR_RenameRoleTitle>
+  <WR_OK>OK</WR_OK>
+
+  <!-- ===== Mod coverage (M5) ===== -->
+
+  <!-- {0} = comma-separated list of newly generated or extended role labels -->
+  <WR_NewWorkDetected>New work types detected. Roles created or extended: {0}</WR_NewWorkDetected>
+
+</LanguageData>
