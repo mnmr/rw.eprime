@@ -22,6 +22,30 @@ namespace WorkRoles.UI
         private const float RowHeight = 28f;
         private const float IconButton = 20f;
 
+        // Rules section (auto-role checkbox + active-hours grid + location dropdown).
+        // Integer-pixel grid geometry: fixed cell width, even gaps.
+        private const int HourCellW = 16;
+        private const int HourCellH = 20;
+        private const int HourCellGap = 2;
+        private const int HourGridW = 24 * (HourCellW + HourCellGap) - HourCellGap;
+        private const int HourLabelH = 18;
+        private const float AutoRowH = 24f;
+        private const float RulesSectionH = HourLabelH + 2f + HourCellH;
+        // Vanilla-schedule look: paint a color over a grey base.
+        private static readonly Color HourActiveColor = Hex("0E7490"); // Tailwind cyan-700
+        private static readonly Color HourInactiveColor = new Color(0.35f, 0.35f, 0.35f);
+
+        // Hour-grid paint state: accumulate locally while the button is held and
+        // commit ONE SetRoleActiveHours on release (avoids SyncMethod spam in MP).
+        private bool paintingHours;
+        private bool hourPaintValue;
+        private int pendingHoursMask;
+        private int paintRoleId = -1;
+
+        // A role is auto iff it has rules; this transient set only reveals the rule
+        // inputs for roles that don't have any yet (never scribed, never synced).
+        private readonly HashSet<int> rulesRevealed = new HashSet<int>();
+
         // Change 7: cache of disambiguated display names per WorkGiverDef.
         // Built once (defs don't change mid-game), invalidated by Reset().
         private static Dictionary<WorkGiverDef, string> _giverDisplayCache;
@@ -81,6 +105,9 @@ namespace WorkRoles.UI
             listScroll = entriesScroll = treeScroll = Vector2.zero;
             filter = "";
             selectedRoleId = -1;
+            paintingHours = false;
+            paintRoleId = -1;
+            rulesRevealed.Clear();
             _giverDisplayCache = null; // force rebuild on next use
         }
 
@@ -107,18 +134,66 @@ namespace WorkRoles.UI
 
         // ----- Left: role list + management buttons -----
 
+        /// The role list is a two-level tree: roles strictly covered by another role
+        /// nest under their tightest coverer (fewest entries; ties keep catalog order),
+        /// resolved up to a root so the display never exceeds two levels. Roots keep
+        /// catalog order and are the only draggable rows; children follow their root
+        /// by grouping while keeping their own catalog positions.
+        private static (List<Role> roots, List<(Role role, bool isChild)> rows) BuildRoleTree(RoleStore store)
+        {
+            var roles = store.roles;
+            // Tightest coverer per role (null = root).
+            var parent = new Dictionary<Role, Role>();
+            foreach (var role in roles)
+            {
+                Role best = null;
+                foreach (var other in roles)
+                    if (other.Covers(role) && (best == null || other.entries.Count < best.entries.Count))
+                        best = other;
+                parent[role] = best;
+            }
+            Role RootOf(Role role)
+            {
+                while (parent[role] != null) role = parent[role];
+                return role;
+            }
+
+            var roots = roles.Where(r => parent[r] == null).ToList();
+            var rows = new List<(Role role, bool isChild)>(roles.Count);
+            foreach (var root in roots)
+            {
+                rows.Add((root, false));
+                foreach (var role in roles)
+                    if (parent[role] != null && RootOf(role) == root)
+                        rows.Add((role, true));
+            }
+            return (roots, rows);
+        }
+
         private void DrawRoleList(Rect rect, RoleStore store)
         {
             float buttonsHeight = 34f;
             var scrollRect = new Rect(rect.x, rect.y, rect.width, rect.height - buttonsHeight - 6f);
             float contentHeight = store.roles.Count * RowHeight;
 
+            var (roots, rows) = BuildRoleTree(store);
+
             if (Event.current.type == EventType.Repaint)
             {
+                var capturedRoots = roots;
                 reorderableGroupId = ReorderableWidget.NewGroup(
                     (from, to) => {
+                        // Root-relative indices → catalog move: after the pre-removal
+                        // adjustment, the moved root lands at the catalog slot of the
+                        // root now occupying the target position (before it when moving
+                        // up, after it when moving down — matching MoveRoleInCatalog's
+                        // remove-then-insert semantics).
                         if (to > from) to--;
-                        RoleCommands.MoveRoleInCatalog(from, to);
+                        if (from < 0 || from >= capturedRoots.Count || to < 0 || to >= capturedRoots.Count || from == to)
+                            return;
+                        int catFrom = store.roles.IndexOf(capturedRoots[from]);
+                        int catTo = store.roles.IndexOf(capturedRoots[to]);
+                        RoleCommands.MoveRoleInCatalog(catFrom, catTo);
                     },
                     ReorderableDirection.Vertical,
                     scrollRect);
@@ -126,12 +201,14 @@ namespace WorkRoles.UI
 
             Widgets.BeginScrollView(scrollRect, ref listScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
-            for (int i = 0; i < store.roles.Count; i++)
+            for (int i = 0; i < rows.Count; i++)
             {
-                var role = store.roles[i];
+                var (role, isChild) = rows[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
+                float indent = isChild ? 18f : 0f;
 
-                bool dragging = ReorderableWidget.Reorderable(reorderableGroupId, row, useRightButton: false, highlightDragged: true);
+                bool dragging = !isChild
+                    && ReorderableWidget.Reorderable(reorderableGroupId, row, useRightButton: false, highlightDragged: true);
 
                 if (role.id == selectedRoleId) Widgets.DrawHighlightSelected(row);
                 else if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
@@ -140,18 +217,33 @@ namespace WorkRoles.UI
                     TooltipHandler.TipRegion(row,
                         $"{role.entries.Count} entries: {string.Join(", ", role.entries.Take(4).Select(e => e.DefName))}{(role.entries.Count > 4 ? ", …" : "")}");
 
-                var swatch = new Rect(Mathf.Round(row.x) + 6f, Mathf.Round(row.y) + 6f, 16f, 16f);
+                var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
                 GUI.color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
                 Widgets.DrawBox(swatch.ExpandedBy(1f));
                 GUI.color = Color.white;
 
+                string rowLabel = role.enabled ? role.label : "WR_RoleLabelOff".Translate(role.label).ToString();
+                var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (!role.enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
-                Widgets.Label(new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f, RowHeight),
-                    role.enabled ? role.label : "WR_RoleLabelOff".Translate(role.label).ToString());
+                Widgets.Label(labelRect, rowLabel);
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
+
+                if (role.HasRules)
+                {
+                    var markerRect = new Rect(labelRect.x + Text.CalcSize(rowLabel).x + 6f,
+                        row.y + (RowHeight - 16f) / 2f, 16f, 16f);
+                    if (markerRect.xMax <= labelRect.xMax)
+                    {
+                        var markerColor = RoleChipUI.RuleMarkerColor;
+                        if (!role.enabled) markerColor.a *= 0.5f;
+                        GUI.color = markerColor;
+                        GUI.DrawTexture(markerRect, TexButton.AutoRebuild);
+                        GUI.color = Color.white;
+                    }
+                }
 
                 if (!dragging && Widgets.ButtonInvisible(new Rect(row.x, row.y, row.width, row.height)))
                     selectedRoleId = role.id;
@@ -178,11 +270,8 @@ namespace WorkRoles.UI
                 }
             }
 
-            bool isBasics = selectedRoleId == RoleStore.Current.basicsRoleId;
-            if (!isBasics) GUI.color = Color.white;
-            else GUI.color = new Color(1f, 1f, 1f, 0.4f);
-            if (Widgets.ButtonText(new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f), "WR_Delete".Translate(),
-                active: !isBasics))
+            var deleteRect = new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f);
+            if (Widgets.ButtonText(deleteRect, "WR_Delete".Translate()))
             {
                 var role = RoleStore.Current.RoleById(selectedRoleId);
                 if (role != null)
@@ -190,7 +279,6 @@ namespace WorkRoles.UI
                         "WR_DeleteConfirm".Translate(role.label),
                         () => RoleCommands.DeleteRole(role.id), destructive: true));
             }
-            GUI.color = Color.white;
         }
 
         // ----- Right: editor for the selected role -----
@@ -209,9 +297,12 @@ namespace WorkRoles.UI
             const float TitleH = 30f;
             const float AssignedRowH = 22f;
             const float NamesRowH = 22f;
+            const float RulesRowGap = 6f;
             float swatchGridH = (SwatchSize + SwatchGap) * SwatchRows - SwatchGap;
             float leftContentH = TitleH + AssignedRowH + NamesRowH;
-            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH) + TopBoxPadding * 2f;
+            bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
+            float rulesH = AutoRowH + (rulesShown ? RulesRowGap + RulesSectionH : 0f);
+            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH) + RulesRowGap + rulesH + TopBoxPadding * 2f;
 
             var topBox = new Rect(rect.x, rect.y, rect.width, TopBoxHeight);
             Widgets.DrawBoxSolidWithOutline(topBox, new Color(0.08f, 0.08f, 0.08f, 0.9f), new Color(1f, 1f, 1f, 0.15f));
@@ -272,6 +363,13 @@ namespace WorkRoles.UI
             float row3Y = row2Y + AssignedRowH;
             DrawAssignedPawnNames(new Rect(leftX, row3Y, leftW, NamesRowH), role, store);
 
+            // Row 4 (full box width): auto-role opt-in; rule inputs only while it's on.
+            float autoY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH) + RulesRowGap;
+            DrawAutoRoleRow(new Rect(leftX, autoY, topBox.width - TopBoxPadding * 2f, AutoRowH), role, rulesShown);
+            if (rulesShown)
+                DrawRulesSection(new Rect(leftX, autoY + AutoRowH + RulesRowGap,
+                    topBox.width - TopBoxPadding * 2f, RulesSectionH), role);
+
             // BOTTOM: split vertically — left = job tree, right = entries table
             float bottomY = topBox.yMax + 6f;
             float bottomH = rect.yMax - bottomY;
@@ -287,6 +385,165 @@ namespace WorkRoles.UI
 
             DrawJobTree(treeRect, role);
             DrawEntries(entriesRect, role);
+        }
+
+        // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
+
+        private void DrawAutoRoleRow(Rect rect, Role role, bool shown)
+        {
+            Text.Font = GameFont.Small;
+            string label = "WR_AutoRole".Translate();
+            var boxRect = new Rect(rect.x, rect.y, Mathf.Min(Text.CalcSize(label).x + 34f, rect.width), rect.height);
+            TooltipHandler.TipRegion(boxRect, "WR_AutoRoleTip".Translate());
+            bool wanted = shown;
+            Widgets.CheckboxLabeled(boxRect, label, ref wanted);
+            if (wanted == shown) return;
+
+            if (wanted)
+            {
+                rulesRevealed.Add(role.id);
+            }
+            else if (role.HasRules)
+            {
+                // The checkbox derives from HasRules, so unchecking means clearing the rules.
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "WR_ClearRulesConfirm".Translate(role.label),
+                    () =>
+                    {
+                        RoleCommands.ClearRoleRules(role.id);
+                        rulesRevealed.Remove(role.id);
+                    },
+                    destructive: true));
+            }
+            else
+            {
+                rulesRevealed.Remove(role.id);
+            }
+        }
+
+        private void DrawRulesSection(Rect rect, Role role)
+        {
+            // Selecting another role mid-paint abandons the pending edit.
+            if (paintingHours && paintRoleId != role.id)
+                paintingHours = false;
+
+            int shownMask = paintingHours ? pendingHoursMask : role.activeHours;
+            bool mouseHeld = Input.GetMouseButton(0);
+            int x0 = Mathf.RoundToInt(rect.x);
+            int labelsY = Mathf.RoundToInt(rect.y);
+            int cellsY = labelsY + HourLabelH + 2;
+
+            // Hour headers: one per cell, Tiny and bottom-anchored (vanilla schedule style).
+            Text.Font = GameFont.Tiny;
+            Text.Anchor = TextAnchor.LowerCenter;
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            for (int h = 0; h < 24; h++)
+                Widgets.Label(new Rect(x0 + h * (HourCellW + HourCellGap), labelsY, HourCellW, HourLabelH), h.ToString());
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+            Text.Font = GameFont.Small;
+
+            var gridRect = new Rect(x0, cellsY, HourGridW, HourCellH);
+            if (Mouse.IsOver(gridRect))
+                TooltipHandler.TipRegion(gridRect, "WR_ActiveHours".Translate());
+
+            for (int h = 0; h < 24; h++)
+            {
+                var cell = new Rect(x0 + h * (HourCellW + HourCellGap), cellsY, HourCellW, HourCellH);
+                bool active = (shownMask & (1 << h)) != 0;
+                Widgets.DrawBoxSolid(cell, active ? HourActiveColor : HourInactiveColor);
+
+                if (!Mouse.IsOver(cell)) continue;
+                Widgets.DrawBox(cell, 2);
+
+                var e = Event.current;
+                if (e.type == EventType.MouseDown && e.button == 0)
+                {
+                    // Start painting: target value = inverse of the pressed cell
+                    // (simplified vanilla timetable pattern).
+                    paintingHours = true;
+                    paintRoleId = role.id;
+                    pendingHoursMask = role.activeHours;
+                    hourPaintValue = !active;
+                    ApplyHourPaint(h);
+                    e.Use();
+                }
+                else if (paintingHours && mouseHeld)
+                {
+                    ApplyHourPaint(h);
+                }
+            }
+
+            // Commit ONE synced command on release, and only when something changed.
+            if (paintingHours && !mouseHeld)
+            {
+                paintingHours = false;
+                if (pendingHoursMask != role.activeHours)
+                    RoleCommands.SetRoleActiveHours(role.id, pendingHoursMask);
+            }
+
+            // Location dropdown right of the grid.
+            const float LocBtnW = 110f;
+            float btnX = gridRect.xMax + 16f;
+            if (Widgets.ButtonText(new Rect(btnX, cellsY + (HourCellH - 24f) / 2f, LocBtnW, 24f),
+                    LocationLabel(role.location)))
+            {
+                int roleId = role.id;
+                Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                {
+                    new FloatMenuOption("WR_LocationAny".Translate(), () => RoleCommands.SetRoleLocation(roleId, RoleLocation.Any)),
+                    new FloatMenuOption("WR_LocationHome".Translate(), () => RoleCommands.SetRoleLocation(roleId, RoleLocation.HomeOnly)),
+                    new FloatMenuOption("WR_LocationAway".Translate(), () => RoleCommands.SetRoleLocation(roleId, RoleLocation.AwayOnly)),
+                }));
+            }
+
+            // Legend in the header row above the slots, right-aligned in the section.
+            const float LegendGap = 12f;
+            Text.Font = GameFont.Small;
+            string activeLabel = "WR_HoursActive".Translate();
+            string inactiveLabel = "WR_HoursInactive".Translate();
+            float legendW = LegendEntryWidth(activeLabel) + LegendGap + LegendEntryWidth(inactiveLabel);
+            float legendX = rect.xMax - legendW;
+            if (legendX >= gridRect.xMax + 8f)
+            {
+                legendX = DrawLegendEntry(legendX, labelsY, HourActiveColor, activeLabel);
+                DrawLegendEntry(legendX + LegendGap, labelsY, HourInactiveColor, inactiveLabel);
+            }
+        }
+
+        private const float LegendSwatch = 12f;
+
+        private static float LegendEntryWidth(string label)
+        {
+            Text.Font = GameFont.Small;
+            return LegendSwatch + 4f + Text.CalcSize(label).x;
+        }
+
+        private static float DrawLegendEntry(float x, float y, Color color, string label)
+        {
+            Text.Font = GameFont.Small;
+            var size = Text.CalcSize(label);
+            Widgets.DrawBoxSolid(new Rect(x, y + (HourLabelH - LegendSwatch) / 2f, LegendSwatch, LegendSwatch), color);
+            GUI.color = new Color(0.75f, 0.75f, 0.75f);
+            Widgets.Label(new Rect(x + LegendSwatch + 4f, y + (HourLabelH - size.y) / 2f, size.x + 2f, size.y), label);
+            GUI.color = Color.white;
+            return x + LegendSwatch + 4f + size.x;
+        }
+
+        private void ApplyHourPaint(int hour)
+        {
+            if (hourPaintValue) pendingHoursMask |= 1 << hour;
+            else pendingHoursMask &= ~(1 << hour);
+        }
+
+        private static string LocationLabel(RoleLocation location)
+        {
+            switch (location)
+            {
+                case RoleLocation.HomeOnly: return "WR_LocationHome".Translate();
+                case RoleLocation.AwayOnly: return "WR_LocationAway".Translate();
+                default: return "WR_LocationAny".Translate();
+            }
         }
 
         // ----- Assigned pawn names row -----

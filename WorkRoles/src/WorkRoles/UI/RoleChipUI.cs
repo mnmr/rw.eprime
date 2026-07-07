@@ -10,7 +10,8 @@ namespace WorkRoles.UI
     {
         Normal,     // standard chip
         Disabled,   // role off globally or per-pawn: strong dim + red strike-through
-        Subtle      // already-assigned recommendation: bg at ~75% brightness, NO strike, full-brightness label
+        Subtle,     // already-assigned recommendation: bg at ~75% brightness, NO strike, full-brightness label
+        AutoOff     // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
     }
 
     public static class RoleChipUI
@@ -21,11 +22,15 @@ namespace WorkRoles.UI
         public static readonly Color DefaultChipColor = new Color(0.25f, 0.35f, 0.45f);
         private static readonly Color OutlineColor = new Color(1f, 1f, 1f, 0.25f);
         private static readonly Color LabelColor = new Color(0.95f, 0.95f, 0.95f);
+        // #e8e6e0 at 0.85 alpha — tint for the auto-role marker icon.
+        public static readonly Color RuleMarkerColor = new Color(232f / 255f, 230f / 255f, 224f / 255f, 0.85f);
 
         public static float WidthFor(Role role, bool showRemove)
         {
             Text.Font = GameFont.Small;
-            return Text.CalcSize(role.label).x + PadX * 2f + (showRemove ? RemoveSize + 2f : 0f);
+            return Text.CalcSize(role.label).x + PadX * 2f
+                + (showRemove ? RemoveSize + 2f : 0f)
+                + (role.HasRules ? RemoveSize + 2f : 0f);
         }
 
         /// Draws a chip. Clicks are resolved centrally via RoleDrag.ResolveMouseUp.
@@ -37,6 +42,7 @@ namespace WorkRoles.UI
             switch (style)
             {
                 case ChipStyle.Disabled:
+                case ChipStyle.AutoOff:
                     bg = new Color(bg.r * 0.4f, bg.g * 0.4f, bg.b * 0.4f);
                     break;
                 case ChipStyle.Subtle:
@@ -47,13 +53,24 @@ namespace WorkRoles.UI
 
             Widgets.DrawBoxSolidWithOutline(rect, bg, OutlineColor);
 
+            // Auto-role marker: mirrors the remove icon's slot, on the left of the label.
+            float labelX = rect.x + PadX;
+            if (role.HasRules)
+            {
+                var markerRect = new Rect(rect.x + 3f, rect.y + (rect.height - RemoveSize) / 2f, RemoveSize, RemoveSize);
+                GUI.color = RuleMarkerColor;
+                GUI.DrawTexture(markerRect, TexButton.AutoRebuild);
+                GUI.color = Color.white;
+                labelX += RemoveSize + 2f;
+            }
+
             Rect removeRect = new Rect(rect.xMax - RemoveSize - 3f, rect.y + (rect.height - RemoveSize) / 2f, RemoveSize, RemoveSize);
-            Rect labelRect = new Rect(rect.x + PadX, rect.y, rect.width - PadX * 2f - (showRemove ? RemoveSize + 2f : 0f), rect.height);
+            Rect labelRect = new Rect(labelX, rect.y, rect.xMax - labelX - PadX - (showRemove ? RemoveSize + 2f : 0f), rect.height);
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
 
-            if (style == ChipStyle.Disabled)
+            if (style == ChipStyle.Disabled || style == ChipStyle.AutoOff)
                 GUI.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f);
             else if (style == ChipStyle.Subtle)
                 GUI.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f);

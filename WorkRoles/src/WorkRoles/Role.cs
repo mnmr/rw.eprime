@@ -8,6 +8,8 @@ namespace WorkRoles
 {
     public class Role : IExposable
     {
+        public const int AllHours = 0xFFFFFF;
+
         public int id;
         public string label;
         public bool enabled = true;
@@ -17,9 +19,23 @@ namespace WorkRoles
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string templateDefName;
         public bool autoAssign;
+        public int activeHours = AllHours;   // bit h set = active during local hour h
+        public RoleLocation location = RoleLocation.Any;
         public List<JobEntry> entries = new List<JobEntry>();
 
         private List<string> scribeEntries;
+
+        public bool HasRules => activeHours != AllHours || location != RoleLocation.Any;
+
+        /// True when this role's entries strictly include every entry of other.
+        public bool Covers(Role other)
+        {
+            if (other == null || other == this) return false;
+            if (other.entries.Count == 0 || other.entries.Count >= entries.Count) return false;
+            foreach (var entry in other.entries)
+                if (!entries.Contains(entry)) return false;
+            return true;
+        }
 
         public void ExposeData()
         {
@@ -31,6 +47,8 @@ namespace WorkRoles
             Scribe_Values.Look(ref iconPath, "iconPath");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
             Scribe_Values.Look(ref autoAssign, "autoAssign");
+            Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
+            Scribe_Values.Look(ref location, "location", RoleLocation.Any);
             if (Scribe.mode == LoadSaveMode.Saving)
                 scribeEntries = entries.Select(e => e.Encode()).ToList();
             Scribe_Collections.Look(ref scribeEntries, "entries", LookMode.Value);

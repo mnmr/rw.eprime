@@ -70,6 +70,21 @@ namespace WorkRoles.UI
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);
             TabDrawer.DrawTabs(content, tabs);
+
+            // Colony-wide action buttons in the window's top-right corner, beside the tab strip.
+            const float ActionBtnW = 130f;
+            const float ActionBtnH = 28f;
+            const float ActionBtnGap = 8f;
+            float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
+            var combineRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
+            var fixRect = new Rect(combineRect.x - ActionBtnGap - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
+            TooltipHandler.TipRegion(combineRect, "WR_CombineAllTip".Translate());
+            if (Widgets.ButtonText(combineRect, "WR_CombineAll".Translate()))
+                colonistsTab.ShowCombinePreview();
+            TooltipHandler.TipRegion(fixRect, "WR_FixMyColonyTip".Translate());
+            if (Widgets.ButtonText(fixRect, "WR_FixMyColony".Translate()))
+                colonistsTab.ShowFixPreview();
+
             content = content.ContractedBy(8f);
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);
             else rolesTab.Draw(content);

@@ -7,6 +7,10 @@
 
   <!-- ===== Colonists tab ===== -->
 
+  <!-- Palette group headers -->
+  <WR_PaletteManual>Manual roles</WR_PaletteManual>
+  <WR_PaletteAuto>Auto roles</WR_PaletteAuto>
+
   <!-- Palette role tooltip: {0}=role label, {1}=state phrase, {2}=job list, {3}=usage hint -->
   <WR_RoleTip>{0} — {1}
 
@@ -18,6 +22,28 @@
   <WR_RoleTipDisabled>DISABLED (click to enable)</WR_RoleTipDisabled>
   <!-- Usage hint used in WR_RoleTip {3} -->
   <WR_RoleTipHint>Click: toggle globally. Drag onto a colonist to assign.</WR_RoleTipHint>
+
+  <!-- Filter row -->
+  <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
+  <WR_ClearFilters>Clear filters</WR_ClearFilters>
+  <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
+  <WR_CombineAll>Combine All</WR_CombineAll>
+  <WR_CombineAllTip>Collapse each colonist's roles into combined roles where a single role covers them exactly (order and toggles preserved).</WR_CombineAllTip>
+  <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
+  <WR_FixMyColonyTip>Assign every colonist their recommended roles.</WR_FixMyColonyTip>
+
+  <!-- Per-row merge icon -->
+  <WR_CombinePawnTip>Combine this colonist's roles where a single role covers them exactly (order and toggles preserved).</WR_CombinePawnTip>
+
+  <!-- Change preview dialog -->
+  <WR_Apply>Apply</WR_Apply>
+  <WR_Cancel>Cancel</WR_Cancel>
+  <WR_PreviewNoChanges>No changes.</WR_PreviewNoChanges>
+  <!-- {0} = joined member role labels, {1} = combined role label -->
+  <WR_PreviewCombineLine>{0} → {1}</WR_PreviewCombineLine>
+  <!-- {0} = role label being added -->
+  <WR_PreviewAddLine>+ {0}</WR_PreviewAddLine>
+  <WR_PreviewStale>The colony changed while the preview was open; nothing was applied.</WR_PreviewStale>
 
   <!-- Copy/paste row -->
   <!-- {0} = pawn short name -->
@@ -75,6 +101,23 @@
 
   <!-- Disambiguating suffix appended to identically-named emergency job givers -->
   <WR_EmergencySuffix> (emergency)</WR_EmergencySuffix>
+
+  <!-- Editor: rules section (auto-role opt-in, active hours, location) -->
+  <WR_AutoRole>Auto role</WR_AutoRole>
+  <WR_AutoRoleTip>Auto roles turn themselves on and off based on rules: active hours and location. A role is auto whenever any rule is set.</WR_AutoRoleTip>
+  <!-- {0} = role label -->
+  <WR_ClearRulesConfirm>Remove all rules from '{0}'? It becomes a manual role again.</WR_ClearRulesConfirm>
+  <WR_ActiveHours>Active hours</WR_ActiveHours>
+  <WR_HoursActive>Active</WR_HoursActive>
+  <WR_HoursInactive>Inactive</WR_HoursInactive>
+  <WR_LocationAny>Anywhere</WR_LocationAny>
+  <WR_LocationHome>Home only</WR_LocationHome>
+  <WR_LocationAway>Away only</WR_LocationAway>
+
+  <!-- Chip tooltips when a rule suppresses the role -->
+  <WR_SuppressedHours>Off: outside active hours</WR_SuppressedHours>
+  <WR_SuppressedAway>Off: away from home</WR_SuppressedAway>
+  <WR_SuppressedHome>Off: at home</WR_SuppressedHome>
 
   <!-- ===== Shared / dialogs ===== -->
 

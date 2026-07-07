@@ -16,7 +16,6 @@ namespace WorkRoles
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
-            store.basicsRoleId = store.RoleByTemplate("WS_Basics")?.id ?? -1;
 
             EnsureWorkTypeCoverage();
 
@@ -28,12 +27,18 @@ namespace WorkRoles
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
         }
 
-        /// Derives a pawn's role set from its vanilla work priorities. Must read priorities
-        /// BEFORE assigning anything: an unmanaged pawn's GetPriority passes through to
-        /// vanilla values; the first assignment makes the pawn managed and reads then
-        /// return WorkRoles ranks. Auto-assign roles go first (catalog order), then one
-        /// role per vocation the pawn had enabled, best vanilla priority first (ties keep
-        /// catalog order).
+        /// Derives a pawn's role set from its vanilla work priorities, losslessly where
+        /// the catalog allows. Must read priorities BEFORE assigning anything: an
+        /// unmanaged pawn's GetPriority passes through to vanilla values; the first
+        /// assignment makes the pawn managed and reads then return WorkRoles ranks.
+        ///
+        /// Rules:
+        /// - A multi-type role (Basics, Farmer, Grunt) is used only when every member
+        ///   type the pawn is capable of is enabled at ONE shared priority; otherwise
+        ///   each enabled member gets its single-type role at its own priority.
+        /// - Roles with no work-type entries are never assigned here.
+        /// - Roles are ordered by vanilla priority; ties keep catalog order.
+        /// The result reproduces the pawn's vanilla priority grid exactly.
         public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn)
         {
             var store = RoleStore.Current;
@@ -41,32 +46,75 @@ namespace WorkRoles
             if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return false;
             if (store.IsManaged(pawn)) return false;
 
-            var autoAssign = new List<Role>();
-            var scored = new List<(Role role, int score)>();
-            foreach (var role in store.roles)
+            var workSettings = pawn.workSettings;
+            bool everWork = workSettings != null && workSettings.EverWork;
+
+            int PriorityOf(WorkTypeDef workType)
+                => everWork && !pawn.WorkTypeIsDisabled(workType) ? workSettings.GetPriority(workType) : 0;
+
+            List<WorkTypeDef> MemberTypes(Role role)
             {
-                if (role.autoAssign)
+                var types = new List<WorkTypeDef>();
+                foreach (var entry in role.entries)
                 {
-                    autoAssign.Add(role);
-                    continue;
+                    if (entry.Kind != JobEntryKind.WorkType) continue;
+                    var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
+                    if (workType != null) types.Add(workType);
                 }
-                int score = BestVanillaPriorityFor(pawn, role);
-                if (score > 0) scored.Add((role, score));
+                return types;
             }
 
-            if (autoAssign.Count == 0 && scored.Count == 0) return false;
+            Role SingleRoleFor(WorkTypeDef workType)
+            {
+                foreach (var role in store.roles)
+                {
+                    if (role.entries.Count != 1) continue;
+                    var entry = role.entries[0];
+                    if (entry.Kind == JobEntryKind.WorkType && entry.DefName == workType.defName)
+                        return role;
+                }
+                return null;
+            }
 
-            foreach (var role in autoAssign)
-                RoleCommands.AssignRoleDirect(pawn, role.id);
-            // OrderBy is stable: equal priorities keep catalog (work tab) order.
-            foreach (var (role, _) in scored.OrderBy(t => t.score))
+            var picked = new List<(Role role, int score)>();
+            var consumed = new HashSet<string>();
+
+            // Multi-type roles: only when all capable members share one enabled priority.
+            foreach (var role in store.roles)
+            {
+                var capable = MemberTypes(role).Where(t => !pawn.WorkTypeIsDisabled(t)).ToList();
+                if (capable.Count < 2 || capable.Any(t => consumed.Contains(t.defName))) continue;
+                int shared = PriorityOf(capable[0]);
+                if (shared == 0 || capable.Any(t => PriorityOf(t) != shared)) continue;
+                picked.Add((role, shared));
+                foreach (var member in capable) consumed.Add(member.defName);
+            }
+
+            // Everything still enabled gets its single-type role at its own priority.
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+                if (consumed.Contains(workType.defName)) continue;
+                int priority = PriorityOf(workType);
+                if (priority == 0) continue;
+                var single = SingleRoleFor(workType);
+                if (single == null) continue;
+                picked.Add((single, priority));
+                consumed.Add(workType.defName);
+            }
+
+            if (picked.Count == 0) return false;
+
+            var catalogIndex = new Dictionary<int, int>();
+            for (int i = 0; i < store.roles.Count; i++) catalogIndex[store.roles[i].id] = i;
+
+            foreach (var (role, _) in picked.OrderBy(t => t.score).ThenBy(t => catalogIndex[t.role.id]))
                 RoleCommands.AssignRoleDirect(pawn, role.id);
             return true;
         }
 
-        /// Assigns only the auto-assign roles (Basics) — used for pawns joining mid-game,
-        /// mirroring vanilla's minimal auto-enable; vocational roles are the player's call
-        /// (the Recommended Roles panel covers it).
+        /// Assigns only the auto-assign roles (Basics) — used for pawns joining
+        /// mid-game, mirroring vanilla's minimal auto-enable; vocational roles are the
+        /// player's call (the Recommended Roles panel covers it).
         public static void TryAutoAssignBasics(Pawn pawn)
         {
             var store = RoleStore.Current;
@@ -83,7 +131,7 @@ namespace WorkRoles
 
         /// Ensures every work type is reachable through some role. Runs on every load;
         /// each work type is processed once per save (store.knownWorkTypes), so deleting
-        /// a generated role sticks. Returns labels of newly generated/extended roles.
+        /// a generated role sticks. Returns labels of newly generated roles.
         public static List<string> EnsureWorkTypeCoverage()
         {
             var store = RoleStore.Current;
@@ -92,7 +140,7 @@ namespace WorkRoles
 
             // Build covered set: WorkType entries contribute directly; WorkGiver entries contribute their parent type.
             var covered = new HashSet<string>();
-            foreach (var role in store.roles)
+            void AddCovered(Role role)
             {
                 foreach (var entry in role.entries)
                 {
@@ -105,6 +153,10 @@ namespace WorkRoles
                     }
                 }
             }
+            foreach (var role in store.roles)
+                AddCovered(role);
+            if (store.allRole != null)
+                AddCovered(store.allRole);
 
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
@@ -129,14 +181,11 @@ namespace WorkRoles
                 }
                 else
                 {
-                    var basics = store.BasicsRole;
-                    if (basics == null)
-                    {
-                        Log.Warning($"[WorkRoles] EnsureWorkTypeCoverage: BasicsRole is null, cannot assign invisible work type '{workType.defName}'");
-                        continue;
-                    }
-                    RoleCommands.AddEntryDirect(basics.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
-                    result.Add(basics.label);
+                    // Invisible work types go to the engine-internal All role — every
+                    // colonist does them implicitly; not reported (the role is secret).
+                    store.EnsureAllRole().entries.Add(
+                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                    CompiledJobOrders.InvalidateAll();
                 }
             }
 
@@ -149,22 +198,5 @@ namespace WorkRoles
             return distinct;
         }
 
-        /// Best (lowest non-zero) vanilla priority across the role's work-type entries;
-        /// 0 when the pawn had none of them enabled.
-        private static int BestVanillaPriorityFor(Pawn pawn, Role role)
-        {
-            var workSettings = pawn.workSettings;
-            if (workSettings == null || !workSettings.EverWork) return 0;
-            int best = 0;
-            foreach (var entry in role.entries)
-            {
-                if (entry.Kind != JobEntryKind.WorkType) continue;
-                var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                if (workType == null || pawn.WorkTypeIsDisabled(workType)) continue;
-                int priority = workSettings.GetPriority(workType);
-                if (priority > 0 && (best == 0 || priority < best)) best = priority;
-            }
-            return best;
-        }
     }
 }

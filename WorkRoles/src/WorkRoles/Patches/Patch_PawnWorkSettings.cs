@@ -55,6 +55,21 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
     }
 
+    /// Location rules depend on which map (if any) holds the pawn — recompile on
+    /// every map entry so Home/Away gating tracks the pawn's actual location.
+    [HarmonyPatch(typeof(Pawn), nameof(Pawn.SpawnSetup))]
+    public static class Patch_Pawn_SpawnSetup
+    {
+        public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
+    }
+
+    /// ...and on every map exit (caravan departure, kidnapping, pod launch, ...).
+    [HarmonyPatch(typeof(Pawn), nameof(Pawn.ExitMap))]
+    public static class Patch_Pawn_ExitMap
+    {
+        public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
+    }
+
     /// Evict destroyed pawns so the static cache and store don't pin them (review issue).
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Destroy))]
     public static class Patch_Pawn_Destroy

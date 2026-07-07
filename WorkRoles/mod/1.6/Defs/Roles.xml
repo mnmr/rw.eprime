@@ -17,6 +17,17 @@
   </WorkRoles.RoleDef>
 
   <WorkRoles.RoleDef>
+    <defName>WS_Rescuer</defName>
+    <label>Rescuer</label>
+    <description>Rescuing downed colonists.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.118, 0.161, 0.231)</color>
+    <entries>
+      <li>WorkGiver:DoctorRescue</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
     <defName>WS_Doctor</defName>
     <label>Doctor</label>
     <description>Medical care for colonists, prisoners and animals.</description>
@@ -29,7 +40,7 @@
 
   <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
     <defName>WS_Childminder</defName>
-    <label>Carer</label>
+    <label>Childcare</label>
     <description>Childcare and teaching.</description>
     <hasCustomColor>true</hasCustomColor>
     <color>(0.341, 0.325, 0.306)</color>
@@ -82,6 +93,17 @@
     </entries>
   </WorkRoles.RoleDef>
 
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Odyssey">
+    <defName>WS_Fisher</defName>
+    <label>Fisher</label>
+    <description>Fishing.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.055, 0.455, 0.565)</color>
+    <entries>
+      <li>WorkType:Fishing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
   <WorkRoles.RoleDef>
     <defName>WS_Builder</defName>
     <label>Builder</label>
@@ -101,6 +123,28 @@
     <color>(0.302, 0.486, 0.059)</color>
     <entries>
       <li>WorkType:Growing</li>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Grower</defName>
+    <label>Grower</label>
+    <description>Sowing and harvesting in growing zones.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.247, 0.384, 0.071)</color>
+    <entries>
+      <li>WorkType:Growing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_PlantCutter</defName>
+    <label>Plant Cutter</label>
+    <description>Cutting and harvesting wild plants and trees.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.247, 0.384, 0.071)</color>
+    <entries>
       <li>WorkType:PlantCutting</li>
     </entries>
   </WorkRoles.RoleDef>
@@ -173,6 +217,28 @@
   </WorkRoles.RoleDef>
 
   <WorkRoles.RoleDef>
+    <defName>WS_Hauler</defName>
+    <label>Hauler</label>
+    <description>Hauling items.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.161, 0.145, 0.141)</color>
+    <entries>
+      <li>WorkType:Hauling</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Cleaner</defName>
+    <label>Cleaner</label>
+    <description>Cleaning.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.161, 0.145, 0.141)</color>
+    <entries>
+      <li>WorkType:Cleaning</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
     <defName>WS_Researcher</defName>
     <label>Researcher</label>
     <description>Research at a research bench.</description>
@@ -185,12 +251,56 @@
 
   <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
     <defName>WS_DarkStudier</defName>
-    <label>Dark studier</label>
+    <label>Anomaly Study</label>
     <description>Study of anomalous entities.</description>
     <hasCustomColor>true</hasCustomColor>
     <color>(0.200, 0.255, 0.333)</color>
     <entries>
       <li>WorkType:DarkStudy</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Firefighter</defName>
+    <label>Firefighter</label>
+    <description>Fighting fires.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.118, 0.161, 0.231)</color>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Patient</defName>
+    <label>Patient</label>
+    <description>Accepting medical treatment.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.118, 0.161, 0.231)</color>
+    <entries>
+      <li>WorkType:Patient</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Bedrest</defName>
+    <label>Bedrest</label>
+    <description>Resting in bed when ill or injured.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.118, 0.161, 0.231)</color>
+    <entries>
+      <li>WorkType:PatientBedRest</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Laborer</defName>
+    <label>Laborer</label>
+    <description>Miscellaneous simple tasks.</description>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.118, 0.161, 0.231)</color>
+    <entries>
+      <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
 </Defs>

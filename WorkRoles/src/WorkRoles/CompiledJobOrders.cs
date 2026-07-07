@@ -31,6 +31,16 @@ namespace WorkRoles
 
         public static void InvalidateAll() => cache.Clear();
 
+        /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
+        public static void InvalidateAllTimeRuled()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            foreach (var role in store.roles)
+                if (role.activeHours != Role.AllHours)
+                    InvalidateRole(role.id);
+        }
+
         /// Returned lists are owned by the cache — callers must never mutate them.
         public static List<WorkGiver> NormalFor(Pawn pawn) => For(pawn).Normal;
         public static List<WorkGiver> EmergencyFor(Pawn pawn) => For(pawn).Emergency;
@@ -79,15 +89,22 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             var roleEntries = new List<IReadOnlyList<JobEntry>>();
-            if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
+            if (store != null)
             {
-                foreach (var assignment in set.assignments)
+                if (store.pawnSets.TryGetValue(pawn, out var set))
                 {
-                    if (!assignment.enabled) continue;
-                    var role = store.RoleById(assignment.roleId);
-                    if (role != null && role.enabled)
-                        roleEntries.Add(role.entries);
+                    foreach (var assignment in set.assignments)
+                    {
+                        if (!assignment.enabled) continue;
+                        var role = store.RoleById(assignment.roleId);
+                        if (role != null && role.enabled && RoleRules.Pass(role, pawn))
+                            roleEntries.Add(role.entries);
+                    }
                 }
+                // The engine-internal All role (invisible modded work types) is always
+                // on for everyone: appended last, so it never outranks assigned roles.
+                if (store.allRole != null && store.allRole.entries.Count > 0)
+                    roleEntries.Add(store.allRole.entries);
             }
 
             Func<string, bool> pawnCanDo = giverDefName =>

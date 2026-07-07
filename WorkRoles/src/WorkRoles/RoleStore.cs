@@ -12,7 +12,9 @@ namespace WorkRoles
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
         public bool seeded;
-        public int basicsRoleId = -1;
+        /// Engine-internal role carrying invisible modded work types; lives outside
+        /// the catalog (never in roles, never shown in UI, never assigned to pawns).
+        public Role allRole;
         public List<string> knownWorkTypes = new List<string>();
         private int nextRoleId = 1;
 
@@ -42,7 +44,12 @@ namespace WorkRoles
 
         public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
 
-        public Role BasicsRole => RoleById(basicsRoleId);
+        /// Lazily creates the engine-internal All role (label is internal-only).
+        public Role EnsureAllRole()
+        {
+            allRole ??= new Role { id = NextId(), label = "All" };
+            return allRole;
+        }
 
         public Role RoleByTemplate(string templateDefName) =>
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
@@ -75,7 +82,7 @@ namespace WorkRoles
                         CompiledJobOrders.EnsureFresh(pawn);
             }
             Scribe_Values.Look(ref seeded, "seeded");
-            Scribe_Values.Look(ref basicsRoleId, "basicsRoleId", -1);
+            Scribe_Deep.Look(ref allRole, "allRole");
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
@@ -87,9 +94,6 @@ namespace WorkRoles
                 knownWorkTypes ??= new List<string>();
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
-                // Back-fill for saves that pre-date Part A.
-                if (basicsRoleId == -1)
-                    basicsRoleId = RoleByTemplate("WS_Basics")?.id ?? -1;
                 CompiledJobOrders.InvalidateAll();
             }
         }

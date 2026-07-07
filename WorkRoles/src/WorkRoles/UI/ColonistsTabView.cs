@@ -13,7 +13,16 @@ namespace WorkRoles.UI
         private Vector2 tableScroll;
         private Pawn selectedPawn;
 
-        private const float PaletteAreaHeight = 66f;   // two chip rows + padding
+        // View-local table filters (never synced, never persisted).
+        private string colonistFilter = "";
+        private int roleFilterId = -1;
+
+        private const float PaletteMaxHeight = 150f;   // palette scrolls beyond this
+        private const float PalettePadding = 6f;
+        private const float GroupLabelHeight = 22f;
+        private const float PaletteColumnGap = 16f;
+        private const float PaletteColumnMinW = 200f;
+        private const float FilterRowH = 28f;
         private const float RowHeight = 36f;
         private const float PortraitSize = 30f;
         private const float NameWidth = 150f;
@@ -48,6 +57,8 @@ namespace WorkRoles.UI
             paletteScroll = Vector2.zero;
             tableScroll = Vector2.zero;
             selectedPawn = null;
+            colonistFilter = "";
+            roleFilterId = -1;
             InvalidateRecommendationCache();
         }
 
@@ -75,8 +86,8 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null || Find.CurrentMap == null) return DefaultWidth;
 
-            // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | [+] | gap | trailing
-            float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f + 16f;
+            // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | merge | gap | [+] | gap | trailing
+            float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 2f + IconButton + 4f + 16f;
             float widestStrip = 0f;
             var pawns = ListedPawns();
             foreach (var pawn in pawns)
@@ -102,7 +113,7 @@ namespace WorkRoles.UI
             if (store == null || Find.CurrentMap == null) return DefaultHeight;
 
             float chrome = 80f;
-            float paletteSection = PaletteAreaHeight + 8f;
+            float paletteSection = PaletteHeight(store, DesiredWidth() - 16f) + 8f + FilterRowH + 4f;
             float statsPanel = StatsPanelHeight() + StatsPanelMargin;
             float tableContent = 0f;
             var pawns = ListedPawns();
@@ -172,15 +183,19 @@ namespace WorkRoles.UI
 
             float statsPanelH = StatsPanelHeight(selectedPawn);
             float tableBottom = rect.yMax - statsPanelH - StatsPanelMargin;
-            float tableTop = rect.y + PaletteAreaHeight + 8f;
+            float paletteH = PaletteHeight(store, rect.width - 16f);
+            float filterTop = rect.y + paletteH + 8f;
+            float tableTop = filterTop + FilterRowH + 4f;
 
-            DrawPalette(new Rect(rect.x, rect.y, rect.width, PaletteAreaHeight), store);
+            DrawPalette(new Rect(rect.x, rect.y, rect.width, paletteH), store);
 
             // Change 1: 2px light-grey solid separator instead of white DrawLineHorizontal
-            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y + PaletteAreaHeight + 4f, rect.width, 2f),
+            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y + paletteH + 4f, rect.width, 2f),
                 new Color(1f, 1f, 1f, 0.25f));
 
-            DrawTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store, pawns);
+            DrawFilterRow(new Rect(rect.x, filterTop, rect.width, FilterRowH), store);
+            DrawTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store,
+                FilteredPawns(pawns, store));
             DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
 
             DrawDragGhost(store);
@@ -189,22 +204,81 @@ namespace WorkRoles.UI
 
         // ----- Palette -----
 
+        /// Lays out the palette as two side-by-side labeled columns — manual roles
+        /// left, auto roles (any role with rules) right — with column widths scaled
+        /// to role counts but at least PaletteColumnMinW each. While one kind is
+        /// absent the palette is a single full-width run (unlabeled when no auto
+        /// role exists). Returns content height; separatorX is -1 with one column.
+        /// Pass null lists to measure only.
+        private static float LayoutPalette(RoleStore store, float rowWidth,
+            List<(Role role, Rect rect)> chips, List<(string label, Rect rect)> headers, out float separatorX)
+        {
+            separatorX = -1f;
+            var manual = new List<Role>();
+            var auto = new List<Role>();
+            foreach (var role in store.roles)
+                (role.HasRules ? auto : manual).Add(role);
+
+            float LayoutGroup(List<Role> roles, float x0, float colWidth, float y0)
+            {
+                float x = 0f, y = y0;
+                foreach (var role in roles)
+                {
+                    float w = RoleChipUI.WidthFor(role, showRemove: false);
+                    if (x + w > colWidth && x > 0f) { x = 0f; y += RoleChipUI.Height + ChipGap; }
+                    chips?.Add((role, new Rect(x0 + x, y, w, RoleChipUI.Height)));
+                    x += w + ChipGap;
+                }
+                return y + RoleChipUI.Height;
+            }
+
+            if (auto.Count == 0)
+                return LayoutGroup(manual, 0f, rowWidth, 0f);
+
+            const float HeaderChipGap = 2f;
+
+            if (manual.Count == 0)
+            {
+                headers?.Add(("WR_PaletteAuto".Translate(), new Rect(0f, 0f, rowWidth, GroupLabelHeight)));
+                return LayoutGroup(auto, 0f, rowWidth, GroupLabelHeight + HeaderChipGap);
+            }
+
+            float manualW = rowWidth * manual.Count / (manual.Count + auto.Count);
+            manualW = Mathf.Clamp(manualW, PaletteColumnMinW, rowWidth - PaletteColumnMinW - PaletteColumnGap);
+            float autoX = manualW + PaletteColumnGap;
+            float autoW = rowWidth - autoX;
+            separatorX = manualW + PaletteColumnGap / 2f;
+
+            headers?.Add(("WR_PaletteManual".Translate(), new Rect(0f, 0f, manualW, GroupLabelHeight)));
+            headers?.Add(("WR_PaletteAuto".Translate(), new Rect(autoX, 0f, autoW, GroupLabelHeight)));
+            float manualH = LayoutGroup(manual, 0f, manualW, GroupLabelHeight + HeaderChipGap);
+            float autoH = LayoutGroup(auto, autoX, autoW, GroupLabelHeight + HeaderChipGap);
+            return Mathf.Max(manualH, autoH);
+        }
+
+        private static float PaletteHeight(RoleStore store, float rowWidth)
+            => Mathf.Min(LayoutPalette(store, rowWidth, null, null, out _) + PalettePadding, PaletteMaxHeight);
+
         private void DrawPalette(Rect rect, RoleStore store)
         {
             float rowWidth = rect.width - 16f;
-            float x = 0f, y = 0f;
-            var layout = new List<(Role role, Rect rect)>();
-            foreach (var role in store.roles)
-            {
-                float w = RoleChipUI.WidthFor(role, showRemove: false);
-                if (x + w > rowWidth && x > 0f) { x = 0f; y += RoleChipUI.Height + ChipGap; }
-                layout.Add((role, new Rect(x, y, w, RoleChipUI.Height)));
-                x += w + ChipGap;
-            }
-            float contentHeight = y + RoleChipUI.Height;
+            var chips = new List<(Role role, Rect rect)>();
+            var headers = new List<(string label, Rect rect)>();
+            float contentHeight = LayoutPalette(store, rowWidth, chips, headers, out float separatorX);
 
             Widgets.BeginScrollView(rect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
-            foreach (var (role, chipRect) in layout)
+
+            Text.Font = GameFont.Small;
+            GUI.color = new Color(1f, 1f, 1f, 0.9f);
+            foreach (var (label, headerRect) in headers)
+                Widgets.Label(headerRect, label);
+            GUI.color = Color.white;
+
+            if (separatorX >= 0f)
+                Widgets.DrawBoxSolid(new Rect(separatorX - 1f, 0f, 2f, contentHeight),
+                    new Color(1f, 1f, 1f, 0.25f));
+
+            foreach (var (role, chipRect) in chips)
             {
                 int capturedId = role.id;
                 var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
@@ -214,6 +288,90 @@ namespace WorkRoles.UI
                     TooltipHandler.TipRegion(chipRect, RoleTip(role));
             }
             Widgets.EndScrollView();
+        }
+
+        // ----- Filter row -----
+
+        private void DrawFilterRow(Rect rect, RoleStore store)
+        {
+            const float SearchLabelW = 46f;
+            const float SearchW = 150f;
+            const float SearchH = 24f;
+            const float RoleBtnW = 150f;
+            float y = rect.y + (rect.height - SearchH) / 2f;
+
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(new Rect(rect.x, y, SearchLabelW, SearchH), "WR_Search".Translate());
+            Text.Anchor = TextAnchor.UpperLeft;
+            colonistFilter = Widgets.TextField(new Rect(rect.x + SearchLabelW + 4f, y, SearchW, SearchH), colonistFilter);
+
+            // Deleted roles drop the filter rather than filtering everyone out.
+            if (roleFilterId != -1 && store.RoleById(roleFilterId) == null)
+                roleFilterId = -1;
+
+            float btnX = rect.x + SearchLabelW + 4f + SearchW + 12f;
+            string btnLabel = roleFilterId == -1
+                ? "WR_FilterAllRoles".Translate()
+                : store.RoleById(roleFilterId).label;
+            if (Widgets.ButtonText(new Rect(btnX, y, RoleBtnW, SearchH), btnLabel))
+            {
+                var options = new List<FloatMenuOption>
+                {
+                    new FloatMenuOption("WR_FilterAllRoles".Translate(), () => roleFilterId = -1)
+                };
+                foreach (var role in store.roles)
+                {
+                    int id = role.id;
+                    options.Add(new FloatMenuOption(role.label, () => roleFilterId = id));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
+            if (!colonistFilter.NullOrEmpty() || roleFilterId != -1)
+            {
+                var clearRect = new Rect(btnX + RoleBtnW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
+                TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
+                if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
+                {
+                    colonistFilter = "";
+                    roleFilterId = -1;
+                }
+            }
+        }
+
+        private bool FiltersActive => !colonistFilter.NullOrEmpty() || roleFilterId != -1;
+
+        private List<Pawn> FilteredPawns(List<Pawn> pawns, RoleStore store)
+        {
+            if (!FiltersActive) return pawns;
+
+            // The role filter also matches "included roles": roles whose entries the
+            // selected role covers (picking Farmer shows Grower/Plant Cutter holders too).
+            HashSet<int> matchIds = null;
+            if (roleFilterId != -1)
+            {
+                matchIds = new HashSet<int> { roleFilterId };
+                var selected = store.RoleById(roleFilterId);
+                if (selected != null)
+                    foreach (var role in store.roles)
+                        if (selected.Covers(role))
+                            matchIds.Add(role.id);
+            }
+
+            var result = new List<Pawn>();
+            foreach (var pawn in pawns)
+            {
+                if (!colonistFilter.NullOrEmpty()
+                    && pawn.LabelShortCap.IndexOf(colonistFilter, System.StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+                if (matchIds != null)
+                {
+                    store.pawnSets.TryGetValue(pawn, out var set);
+                    if (set == null || !set.assignments.Any(a => matchIds.Contains(a.roleId))) continue;
+                }
+                result.Add(pawn);
+            }
+            return result;
         }
 
         private static string RoleTip(Role role)
@@ -227,7 +385,17 @@ namespace WorkRoles.UI
 
         private void DrawTable(Rect rect, RoleStore store, List<Pawn> pawns)
         {
-            float stripWidth = rect.width - 16f - (PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f);
+            if (pawns.Count == 0 && FiltersActive)
+            {
+                Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                Widgets.Label(rect, "WR_NoFilterMatches".Translate());
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+                return;
+            }
+
+            float stripWidth = rect.width - 16f - (PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 2f + IconButton + 4f);
             var rowHeights = new List<float>(pawns.Count);
             float contentHeight = 0f;
             foreach (var pawn in pawns)
@@ -300,6 +468,13 @@ namespace WorkRoles.UI
             var plusRect = new Rect(rect.xMax - IconButton, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
             if (Widgets.ButtonImage(plusRect, TexButton.Plus))
                 OpenAddMenu(pawn, store);
+
+            var mergeRect = new Rect(plusRect.x - IconButton - 2f, plusRect.y, IconButton, IconButton);
+            bool canCombine = RoleCommands.CanCombineFor(pawn);
+            TooltipHandler.TipRegion(mergeRect, "WR_CombinePawnTip".Translate());
+            Color mergeColor = canCombine ? Color.white : new Color(1f, 1f, 1f, 0.3f);
+            if (Widgets.ButtonImage(mergeRect, WorkRolesTex.Merge, mergeColor) && canCombine)
+                RoleCommands.CombineAssignedRolesFor(pawn);
         }
 
         private void DrawChipStrip(Rect stripRect, Pawn pawn, RoleStore store, float stripWidth)
@@ -321,11 +496,20 @@ namespace WorkRoles.UI
                 int capturedRoleId = role.id;
                 Pawn capturedPawn = pawn;
                 bool chipEnabled = role.enabled && assignment.enabled;
-                var click = RoleChipUI.Draw(chipRect, role,
-                    chipEnabled ? ChipStyle.Normal : ChipStyle.Disabled,
+                // Rules only matter once both toggles are on; suppression is absolute,
+                // so a suppressed chip takes no body click (remove/drag still work).
+                bool suppressed = chipEnabled && !RoleRules.Pass(role, pawn);
+                ChipStyle style = !chipEnabled ? ChipStyle.Disabled
+                    : suppressed ? ChipStyle.AutoOff
+                    : ChipStyle.Normal;
+                var click = RoleChipUI.Draw(chipRect, role, style,
                     showRemove: true, dragSource: pawn,
-                    onClick: () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRoleId));
+                    onClick: suppressed
+                        ? (System.Action)null
+                        : () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRoleId));
                 if (click == ChipClick.Remove) RoleCommands.RemoveRoleFromPawn(pawn, role.id);
+                if (suppressed && Mouse.IsOver(chipRect))
+                    TooltipHandler.TipRegion(chipRect, SuppressionTip(role, pawn));
             }
 
             if (RoleDrag.Active && Mouse.IsOver(stripRect))
@@ -377,6 +561,17 @@ namespace WorkRoles.UI
                     }
                     Widgets.DrawBoxSolid(new Rect(markerX - 1f, markerY, 2f, markerH), new Color(1f, 1f, 1f, 0.9f));
                 }
+            }
+        }
+
+        private static string SuppressionTip(Role role, Pawn pawn)
+        {
+            switch (RoleRules.FailReason(role, pawn))
+            {
+                case RuleFailReason.OutsideHours: return "WR_SuppressedHours".Translate();
+                case RuleFailReason.AwayFromHome: return "WR_SuppressedAway".Translate();
+                case RuleFailReason.AtHome: return "WR_SuppressedHome".Translate();
+                default: return "";
             }
         }
 
@@ -585,7 +780,11 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return;
-            var recommendations = GetRecommendedRoles(store);
+            AssignAtRecommendedPosition(pawn, roleId, store, GetRecommendedRoles(store));
+        }
+
+        private static void AssignAtRecommendedPosition(Pawn pawn, int roleId, RoleStore store, List<Role> recommendations)
+        {
             int clickedRank = recommendations.FindIndex(r => r.id == roleId);
             int insertIdx = -1;
             if (clickedRank >= 0 && store.pawnSets.TryGetValue(pawn, out var set))
@@ -602,6 +801,79 @@ namespace WorkRoles.UI
                 }
             }
             RoleCommands.AssignRole(pawn, roleId, insertIdx);
+        }
+
+        /// Runs the colony-wide lossless combine and refreshes the recommendation cache.
+        public void CombineAll()
+        {
+            RoleCommands.CombineAssignedRoles();
+            InvalidateRecommendationCache();
+        }
+
+        private static List<Dialog_ChangesPreview.PawnChanges> BuildCombineEntries()
+        {
+            var entries = new List<Dialog_ChangesPreview.PawnChanges>();
+            foreach (var pawn in ListedPawns())
+            {
+                var steps = RoleCommands.CombinePlanFor(pawn);
+                if (steps.Count == 0) continue;
+                var lines = steps
+                    .Select(s => "WR_PreviewCombineLine".Translate(
+                        string.Join(" + ", s.members.Select(m => m.label)), s.combo.label).ToString())
+                    .ToList();
+                entries.Add(new Dialog_ChangesPreview.PawnChanges { pawn = pawn, lines = lines });
+            }
+            return entries;
+        }
+
+        private static List<Dialog_ChangesPreview.PawnChanges> BuildFixEntries()
+        {
+            var entries = new List<Dialog_ChangesPreview.PawnChanges>();
+            var store = RoleStore.Current;
+            if (store == null) return entries;
+            foreach (var pawn in ListedPawns())
+            {
+                var recommendations = ComputeRecommendations(pawn, store);
+                var assignedIds = new HashSet<int>();
+                if (store.pawnSets.TryGetValue(pawn, out var set))
+                    foreach (var a in set.assignments) assignedIds.Add(a.roleId);
+                var lines = recommendations
+                    .Where(r => !assignedIds.Contains(r.id))
+                    .Select(r => "WR_PreviewAddLine".Translate(r.label).ToString())
+                    .ToList();
+                if (lines.Count == 0) continue;
+                entries.Add(new Dialog_ChangesPreview.PawnChanges { pawn = pawn, lines = lines });
+            }
+            return entries;
+        }
+
+        /// Opens the per-colonist change preview for Combine All; applies on confirm.
+        public void ShowCombinePreview()
+            => Find.WindowStack.Add(new Dialog_ChangesPreview(
+                "WR_CombineAll".Translate(), BuildCombineEntries(), CombineAll, BuildCombineEntries));
+
+        /// Opens the per-colonist change preview for Fix My Colony; applies on confirm.
+        public void ShowFixPreview()
+            => Find.WindowStack.Add(new Dialog_ChangesPreview(
+                "WR_FixMyColony".Translate(), BuildFixEntries(), FixMyColony, BuildFixEntries));
+
+        /// Applies the recommendation engine to every listed colonist: each pawn gets
+        /// every recommended role it doesn't already hold, at its recommended position.
+        public void FixMyColony()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            foreach (var pawn in ListedPawns())
+            {
+                var recommendations = ComputeRecommendations(pawn, store);
+                var assignedIds = new HashSet<int>();
+                if (store.pawnSets.TryGetValue(pawn, out var set))
+                    foreach (var a in set.assignments) assignedIds.Add(a.roleId);
+                foreach (var role in recommendations)
+                    if (!assignedIds.Contains(role.id))
+                        AssignAtRecommendedPosition(pawn, role.id, store, recommendations);
+            }
+            InvalidateRecommendationCache();
         }
 
         // ----- Recommendation logic -----
@@ -730,11 +1002,15 @@ namespace WorkRoles.UI
                 if (group != int.MaxValue) scored.Add((role, group, sortKey));
             }
 
-            return scored
+            var ordered = scored
                 .OrderBy(t => t.group)
                 .ThenByDescending(t => t.sortKey)
                 .Select(t => t.role)
                 .ToList();
+
+            // A combo beats its parts: never recommend a role another recommended role covers
+            // (no Grower next to Farmer, no Firefighter next to Basics).
+            return ordered.Where(role => !ordered.Any(other => other.Covers(role))).ToList();
         }
 
         // ----- Helpers -----

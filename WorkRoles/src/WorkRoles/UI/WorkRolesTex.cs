@@ -9,5 +9,6 @@ namespace WorkRoles.UI
     {
         public static readonly Texture2D PassionMinor = ContentFinder<Texture2D>.Get("UI/Icons/PassionMinor");
         public static readonly Texture2D PassionMajor = ContentFinder<Texture2D>.Get("UI/Icons/PassionMajor");
+        public static readonly Texture2D Merge = ContentFinder<Texture2D>.Get("UI/Buttons/Dev/Collapse");
     }
 }

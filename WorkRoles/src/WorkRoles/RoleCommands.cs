@@ -46,7 +46,6 @@ namespace WorkRoles
         [SyncMethod]
         public static void DeleteRole(int roleId)
         {
-            if (Store != null && roleId == Store.basicsRoleId) return;
             var role = FindRole(roleId);
             if (role == null) return;
             CompiledJobOrders.InvalidateRole(roleId);
@@ -95,6 +94,8 @@ namespace WorkRoles
                 hasCustomColor = source.hasCustomColor,
                 color = source.color,
                 iconPath = source.iconPath,
+                activeHours = source.activeHours,
+                location = source.location,
                 entries = new List<JobEntry>(source.entries)
             };
             Store.roles.Add(copy);
@@ -111,6 +112,37 @@ namespace WorkRoles
             var role = roles[from];
             roles.RemoveAt(from);
             roles.Insert(to, role);
+        }
+
+        // ----- Role rules -----
+
+        [SyncMethod]
+        public static void SetRoleActiveHours(int roleId, int hoursMask)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.activeHours == hoursMask) return;
+            role.activeHours = hoursMask;
+            CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        [SyncMethod]
+        public static void SetRoleLocation(int roleId, RoleLocation location)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.location == location) return;
+            role.location = location;
+            CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        /// Turns an auto role back into a manual one (a role is auto iff any rule is set).
+        [SyncMethod]
+        public static void ClearRoleRules(int roleId)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.HasRules) return;
+            role.activeHours = Role.AllHours;
+            role.location = RoleLocation.Any;
+            CompiledJobOrders.InvalidateRole(roleId);
         }
 
         // ----- Role content -----
@@ -224,6 +256,96 @@ namespace WorkRoles
             }
             assignment.enabled = !assignment.enabled;
             CompiledJobOrders.Invalidate(pawn);
+        }
+
+        /// Colony-wide lossless collapse (see CombineCore).
+        [SyncMethod]
+        public static void CombineAssignedRoles()
+        {
+            if (Store == null) return;
+            foreach (var kv in Store.pawnSets)
+                if (CombineCore(kv.Value.assignments, null, dryRun: false))
+                    CompiledJobOrders.Invalidate(kv.Key);
+        }
+
+        /// Lossless collapse for one pawn.
+        [SyncMethod]
+        public static void CombineAssignedRolesFor(Pawn pawn)
+        {
+            if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
+            if (CombineCore(set.assignments, null, dryRun: false))
+                CompiledJobOrders.Invalidate(pawn);
+        }
+
+        /// Whether a combine would change this pawn's role set (no mutation).
+        public static bool CanCombineFor(Pawn pawn)
+            => Store != null && pawn != null && Store.pawnSets.TryGetValue(pawn, out var set)
+               && CombineCore(set.assignments, null, dryRun: true);
+
+        /// Full combine simulation for one pawn, without touching its role set:
+        /// runs the exact apply algorithm on a clone and reports each collapse.
+        public static List<(Role combo, List<Role> members)> CombinePlanFor(Pawn pawn)
+        {
+            var steps = new List<(Role combo, List<Role> members)>();
+            if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return steps;
+            var clone = set.assignments
+                .Select(a => new RoleAssignment { roleId = a.roleId, enabled = a.enabled })
+                .ToList();
+            CombineCore(clone, steps, dryRun: false);
+            return steps;
+        }
+
+        /// Lossless collapse: each CONSECUTIVE block of assigned roles whose entry sets
+        /// union to EXACTLY a covering catalog role's entry set (and whose per-pawn
+        /// toggles agree) is replaced by one assignment of that role. Consecutiveness
+        /// guarantees no priority reshuffle relative to the pawn's other roles;
+        /// rule-carrying or disabled roles never participate. Later combos see earlier
+        /// replacements, so collapses cascade within one call.
+        /// dryRun: no mutation, returns true at the first possible collapse.
+        private static bool CombineCore(List<RoleAssignment> assignments,
+            List<(Role combo, List<Role> members)> steps, bool dryRun)
+        {
+            bool changed = false;
+            foreach (var combo in Store.roles)
+            {
+                if (!combo.enabled || combo.HasRules) continue;
+                if (assignments.Any(a => a.roleId == combo.id)) continue;
+
+                // Candidates: assigned roles the combo covers, globally enabled, rule-free.
+                var members = new List<int>();
+                for (int i = 0; i < assignments.Count; i++)
+                {
+                    var role = Store.RoleById(assignments[i].roleId);
+                    if (role != null && role.enabled && !role.HasRules && combo.Covers(role))
+                        members.Add(i);
+                }
+                if (members.Count < 2) continue;
+
+                // Members must form one consecutive block in the assignment list.
+                if (members[members.Count - 1] - members[0] != members.Count - 1) continue;
+
+                // All per-pawn toggles must agree, and the union of the members'
+                // entry sets must equal the combo's entry set exactly.
+                bool sharedEnabled = assignments[members[0]].enabled;
+                var union = new HashSet<JobEntry>();
+                bool flagsAgree = true;
+                foreach (int i in members)
+                {
+                    if (assignments[i].enabled != sharedEnabled) { flagsAgree = false; break; }
+                    union.UnionWith(Store.RoleById(assignments[i].roleId).entries);
+                }
+                if (!flagsAgree || !union.SetEquals(combo.entries)) continue;
+
+                if (dryRun) return true;
+
+                steps?.Add((combo, members.Select(i => Store.RoleById(assignments[i].roleId)).ToList()));
+
+                int blockStart = members[0];
+                assignments.RemoveRange(blockStart, members.Count);
+                assignments.Insert(blockStart, new RoleAssignment { roleId = combo.id, enabled = sharedEnabled });
+                changed = true;
+            }
+            return changed;
         }
 
         [SyncMethod]
