@@ -5,7 +5,7 @@ using Verse;
 
 namespace WorkRoles.UI
 {
-    /// Window-scoped drag state for palette buttons and role chips.
+    /// Window-scoped drag state for palette buttons, role chips, and role-tree rows.
     /// Press → move beyond threshold = drag; release without threshold = click
     /// (completed centrally in ResolveMouseUp via rawType, which survives event consumption).
     public static class RoleDrag
@@ -26,6 +26,10 @@ namespace WorkRoles.UI
         // Drop target registered by whichever row the mouse is over this frame.
         public static Pawn HoverPawn;
         public static int HoverInsertIndex = -1;
+
+        /// Generic drop registered by the hovered target (Roles tab role tree):
+        /// invoked on mouse-up, taking precedence over the pawn drop context.
+        public static Action HoverDropAction;
 
         // Visual feedback: true when dragging over a pawn that already has the role.
         public static bool HoverBlocked;
@@ -53,6 +57,7 @@ namespace WorkRoles.UI
             HoverPawn = null;
             HoverInsertIndex = -1;
             HoverBlocked = false;
+            HoverDropAction = null;
         }
 
         /// Call once per frame AFTER drawing tab content: resolves drops and clears
@@ -65,6 +70,13 @@ namespace WorkRoles.UI
             {
                 // Short press = click: invoke the registered callback.
                 pendingClickAction?.Invoke();
+                Cancel();
+                return;
+            }
+
+            if (Active && HoverDropAction != null)
+            {
+                HoverDropAction();
                 Cancel();
                 return;
             }
@@ -112,6 +124,7 @@ namespace WorkRoles.UI
             HoverPawn = null;
             HoverInsertIndex = -1;
             HoverBlocked = false;
+            HoverDropAction = null;
             pendingClickAction = null;
         }
     }

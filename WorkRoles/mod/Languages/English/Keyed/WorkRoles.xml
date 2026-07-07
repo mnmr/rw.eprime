@@ -28,21 +28,22 @@
   <WR_ClearFilters>Clear filters</WR_ClearFilters>
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
   <WR_CombineAll>Combine All</WR_CombineAll>
-  <WR_CombineAllTip>Collapse each colonist's roles into combined roles where a single role covers them exactly (order and toggles preserved).</WR_CombineAllTip>
+  <WR_CombineAllTip>Collapse each colonist's roles into combined roles that provide the same jobs (order and toggles preserved).</WR_CombineAllTip>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
-  <WR_FixMyColonyTip>Assign every colonist their recommended roles.</WR_FixMyColonyTip>
+  <WR_FixMyColonyTip>Replace every colonist's roles with their recommended roles.</WR_FixMyColonyTip>
 
-  <!-- Per-row merge icon -->
-  <WR_CombinePawnTip>Combine this colonist's roles where a single role covers them exactly (order and toggles preserved).</WR_CombinePawnTip>
+  <!-- Per-row combine button -->
+  <WR_Combine>Combine</WR_Combine>
+  <!-- Chip right-click menu -->
+  <WR_Split>Split</WR_Split>
+  <WR_CombinePawnTip>Combine this colonist's roles into combined roles that provide the same jobs (order and toggles preserved).</WR_CombinePawnTip>
 
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
   <WR_Cancel>Cancel</WR_Cancel>
   <WR_PreviewNoChanges>No changes.</WR_PreviewNoChanges>
-  <!-- {0} = joined member role labels, {1} = combined role label -->
-  <WR_PreviewCombineLine>{0} → {1}</WR_PreviewCombineLine>
-  <!-- {0} = role label being added -->
-  <WR_PreviewAddLine>+ {0}</WR_PreviewAddLine>
+  <WR_PreviewAdded>Added</WR_PreviewAdded>
+  <WR_PreviewRemoved>Removed</WR_PreviewRemoved>
   <WR_PreviewStale>The colony changed while the preview was open; nothing was applied.</WR_PreviewStale>
 
   <!-- Copy/paste row -->

@@ -177,6 +177,90 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        /// Min index in entries of any of child's entries (int.MaxValue when none present).
+        internal static int BlockStart(List<JobEntry> entries, Role child)
+        {
+            int min = int.MaxValue;
+            foreach (var entry in child.entries)
+            {
+                int idx = entries.IndexOf(entry);
+                if (idx >= 0 && idx < min) min = idx;
+            }
+            return min;
+        }
+
+        /// Adds child's entries (those parent lacks) to parent as one contiguous run in
+        /// the child's own entry order, inserted before beforeChildId's entry block (-1
+        /// or not found = append at end). Coverage then renders child under parent in
+        /// the role tree. When parent already covers child, a given position moves the
+        /// child's block instead (MoveChildBefore semantics); with no position (-1)
+        /// nothing changes.
+        [SyncMethod]
+        public static void NestRoleInto(int parentId, int childId, int beforeChildId)
+        {
+            var parent = FindRole(parentId);
+            var child = FindRole(childId);
+            if (parent == null || child == null || parentId == childId) return;
+
+            if (parent.Covers(child))
+            {
+                if (beforeChildId == -1) return;
+                if (MoveChildCore(parent, child, beforeChildId))
+                    CompiledJobOrders.InvalidateRole(parentId);
+                return;
+            }
+
+            var missing = child.entries.Where(e => !parent.entries.Contains(e)).ToList();
+            if (missing.Count == 0) return;
+
+            int insertAt = parent.entries.Count;
+            var before = FindRole(beforeChildId);
+            if (before != null)
+            {
+                int blockStart = BlockStart(parent.entries, before);
+                if (blockStart != int.MaxValue) insertAt = blockStart;
+            }
+            parent.entries.InsertRange(insertAt, missing);
+            CompiledJobOrders.InvalidateRole(parentId);
+        }
+
+        /// Reorders parent's entries by moving childId's entry block: removes every
+        /// entry of child from parent, reinserts them contiguously (child entry order)
+        /// before beforeChildId's block, computed AFTER removal (-1 = append at end).
+        [SyncMethod]
+        public static void MoveChildBefore(int parentId, int childId, int beforeChildId)
+        {
+            var parent = FindRole(parentId);
+            var child = FindRole(childId);
+            if (parent == null || child == null || parentId == childId || !parent.Covers(child)) return;
+            if (MoveChildCore(parent, child, beforeChildId))
+                CompiledJobOrders.InvalidateRole(parentId);
+        }
+
+        /// Shared block move; returns false when the reinsertion reproduces the
+        /// current order (no-op: caller skips invalidation).
+        private static bool MoveChildCore(Role parent, Role child, int beforeChildId)
+        {
+            var before = FindRole(beforeChildId);
+            if (before == child) return false;
+
+            var childSet = new HashSet<JobEntry>(child.entries);
+            var remaining = parent.entries.Where(e => !childSet.Contains(e)).ToList();
+
+            int insertAt = remaining.Count;
+            if (before != null)
+            {
+                int blockStart = BlockStart(remaining, before);
+                if (blockStart != int.MaxValue) insertAt = blockStart;
+            }
+
+            var result = new List<JobEntry>(remaining);
+            result.InsertRange(insertAt, child.entries);
+            if (result.SequenceEqual(parent.entries)) return false;
+            parent.entries = result;
+            return true;
+        }
+
         // ----- Pawn assignments -----
 
         [SyncMethod]
@@ -295,28 +379,34 @@ namespace WorkRoles
             return steps;
         }
 
-        /// Lossless collapse: each CONSECUTIVE block of assigned roles whose entry sets
-        /// union to EXACTLY a covering catalog role's entry set (and whose per-pawn
-        /// toggles agree) is replaced by one assignment of that role. Consecutiveness
+        /// Lossless collapse, seeding-combo semantics: a catalog role replaces a
+        /// CONSECUTIVE block of two or more assigned roles when it covers each of them
+        /// and every one of its work-type entries is provided by the block (job-giver
+        /// extras ride along, exactly as they do when seeding picks a combo). The
+        /// combo's own assignment joins the block when present, so a combo absorbs
+        /// adjacent roles it covers. Per-pawn toggles must agree; consecutiveness
         /// guarantees no priority reshuffle relative to the pawn's other roles;
-        /// rule-carrying or disabled roles never participate. Later combos see earlier
-        /// replacements, so collapses cascade within one call.
+        /// rule-carrying or disabled roles never participate. Loosest combos are tried
+        /// first — the goal is the smallest role set that represents the chosen
+        /// priorities — and later combos see earlier replacements, so collapses
+        /// cascade within one call.
         /// dryRun: no mutation, returns true at the first possible collapse.
         private static bool CombineCore(List<RoleAssignment> assignments,
             List<(Role combo, List<Role> members)> steps, bool dryRun)
         {
             bool changed = false;
-            foreach (var combo in Store.roles)
+            foreach (var combo in Store.roles.OrderByDescending(r => r.entries.Count))
             {
                 if (!combo.enabled || combo.HasRules) continue;
-                if (assignments.Any(a => a.roleId == combo.id)) continue;
 
-                // Candidates: assigned roles the combo covers, globally enabled, rule-free.
+                // Candidates: assigned roles the combo covers (plus the combo's own
+                // assignment), globally enabled, rule-free.
                 var members = new List<int>();
                 for (int i = 0; i < assignments.Count; i++)
                 {
                     var role = Store.RoleById(assignments[i].roleId);
-                    if (role != null && role.enabled && !role.HasRules && combo.Covers(role))
+                    if (role != null && role.enabled && !role.HasRules
+                        && (role == combo || combo.Covers(role)))
                         members.Add(i);
                 }
                 if (members.Count < 2) continue;
@@ -324,8 +414,8 @@ namespace WorkRoles
                 // Members must form one consecutive block in the assignment list.
                 if (members[members.Count - 1] - members[0] != members.Count - 1) continue;
 
-                // All per-pawn toggles must agree, and the union of the members'
-                // entry sets must equal the combo's entry set exactly.
+                // All per-pawn toggles must agree, and the block must provide every
+                // work-type entry of the combo (its giver extras are tolerated).
                 bool sharedEnabled = assignments[members[0]].enabled;
                 var union = new HashSet<JobEntry>();
                 bool flagsAgree = true;
@@ -334,7 +424,8 @@ namespace WorkRoles
                     if (assignments[i].enabled != sharedEnabled) { flagsAgree = false; break; }
                     union.UnionWith(Store.RoleById(assignments[i].roleId).entries);
                 }
-                if (!flagsAgree || !union.SetEquals(combo.entries)) continue;
+                if (!flagsAgree) continue;
+                if (combo.entries.Any(e => e.Kind == JobEntryKind.WorkType && !union.Contains(e))) continue;
 
                 if (dryRun) return true;
 
@@ -346,6 +437,53 @@ namespace WorkRoles
                 changed = true;
             }
             return changed;
+        }
+
+        /// The largest covered roles that together reproduce role's entries, walking
+        /// them in the role's own order (the inverse of loosest-first combining).
+        /// Null when the catalog cannot fully reproduce them or one role would remain.
+        public static List<Role> SplitParts(Role role)
+        {
+            if (Store == null || role == null) return null;
+            var remaining = new HashSet<JobEntry>(role.entries);
+            var parts = new List<Role>();
+            foreach (var entry in role.entries)
+            {
+                if (!remaining.Contains(entry)) continue;
+                Role best = null;
+                foreach (var candidate in Store.roles)
+                {
+                    if (!role.Covers(candidate) || candidate.HasRules) continue;
+                    if (!candidate.entries.Contains(entry)) continue;
+                    if (!candidate.entries.All(remaining.Contains)) continue;
+                    if (best == null || candidate.entries.Count > best.entries.Count) best = candidate;
+                }
+                if (best == null) return null;
+                parts.Add(best);
+                foreach (var covered in best.entries) remaining.Remove(covered);
+            }
+            return parts.Count >= 2 ? parts : null;
+        }
+
+        /// Un-combines one assignment: replaces the role with its SplitParts at the
+        /// same position, keeping the per-pawn toggle; parts the pawn already holds
+        /// elsewhere are not duplicated.
+        [SyncMethod]
+        public static void SplitRoleForPawn(Pawn pawn, int roleId)
+        {
+            if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
+            int index = set.assignments.FindIndex(a => a.roleId == roleId);
+            if (index < 0) return;
+            var parts = SplitParts(Store.RoleById(roleId));
+            if (parts == null) return;
+            bool enabled = set.assignments[index].enabled;
+            set.assignments.RemoveAt(index);
+            foreach (var part in parts)
+            {
+                if (set.assignments.Any(a => a.roleId == part.id)) continue;
+                set.assignments.Insert(index++, new RoleAssignment { roleId = part.id, enabled = enabled });
+            }
+            CompiledJobOrders.Invalidate(pawn);
         }
 
         [SyncMethod]

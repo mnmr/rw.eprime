@@ -15,7 +15,6 @@ namespace WorkRoles.UI
         private int selectedRoleId = -1;
         private string filter = "";
         private readonly HashSet<string> expanded = new HashSet<string>();
-        private int reorderableGroupId = -1;
         private int entriesReorderableGroupId = -1;
 
         private const float ListWidth = 260f;
@@ -115,6 +114,7 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return;
+            RoleDrag.Update();
             if (selectedRoleId == -1 && store.roles.Count > 0)
                 selectedRoleId = store.roles[0].id;
 
@@ -130,6 +130,9 @@ namespace WorkRoles.UI
             var selected = store.RoleById(selectedRoleId);
             if (selected != null) DrawEditor(editorRect, store, selected);
             else Widgets.Label(editorRect, "WR_SelectOrCreateRole".Translate());
+
+            DrawDragGhost(store);
+            RoleDrag.ResolveMouseUp();
         }
 
         // ----- Left: role list + management buttons -----
@@ -137,9 +140,11 @@ namespace WorkRoles.UI
         /// The role list is a two-level tree: roles strictly covered by another role
         /// nest under their tightest coverer (fewest entries; ties keep catalog order),
         /// resolved up to a root so the display never exceeds two levels. Roots keep
-        /// catalog order and are the only draggable rows; children follow their root
-        /// by grouping while keeping their own catalog positions.
-        private static (List<Role> roots, List<(Role role, bool isChild)> rows) BuildRoleTree(RoleStore store)
+        /// catalog order; each root's children sort by where their entry block starts
+        /// inside the root's entry list (ties keep catalog order), so child display
+        /// order IS the parent's entry order. Rows carry their displayed root so drag
+        /// targeting can resolve parent/sibling relationships.
+        internal static (List<Role> roots, List<(Role role, Role parent)> rows) BuildRoleTree(RoleStore store)
         {
             var roles = store.roles;
             // Tightest coverer per role (null = root).
@@ -159,13 +164,16 @@ namespace WorkRoles.UI
             }
 
             var roots = roles.Where(r => parent[r] == null).ToList();
-            var rows = new List<(Role role, bool isChild)>(roles.Count);
+            var rows = new List<(Role role, Role parent)>(roles.Count);
             foreach (var root in roots)
             {
-                rows.Add((root, false));
-                foreach (var role in roles)
-                    if (parent[role] != null && RootOf(role) == root)
-                        rows.Add((role, true));
+                rows.Add((root, null));
+                // The root covers every displayed descendant, so every child entry
+                // has a position in the root's entry list.
+                foreach (var child in roles
+                    .Where(r => parent[r] != null && RootOf(r) == root)
+                    .OrderBy(r => RoleCommands.BlockStart(root.entries, r)))
+                    rows.Add((child, root));
             }
             return (roots, rows);
         }
@@ -178,40 +186,29 @@ namespace WorkRoles.UI
 
             var (roots, rows) = BuildRoleTree(store);
 
-            if (Event.current.type == EventType.Repaint)
-            {
-                var capturedRoots = roots;
-                reorderableGroupId = ReorderableWidget.NewGroup(
-                    (from, to) => {
-                        // Root-relative indices → catalog move: after the pre-removal
-                        // adjustment, the moved root lands at the catalog slot of the
-                        // root now occupying the target position (before it when moving
-                        // up, after it when moving down — matching MoveRoleInCatalog's
-                        // remove-then-insert semantics).
-                        if (to > from) to--;
-                        if (from < 0 || from >= capturedRoots.Count || to < 0 || to >= capturedRoots.Count || from == to)
-                            return;
-                        int catFrom = store.roles.IndexOf(capturedRoots[from]);
-                        int catTo = store.roles.IndexOf(capturedRoots[to]);
-                        RoleCommands.MoveRoleInCatalog(catFrom, catTo);
-                    },
-                    ReorderableDirection.Vertical,
-                    scrollRect);
-            }
+            // Dragged-role context, resolved against this frame's tree.
+            Role dragged = null;
+            Role draggedParent = null;
+            if (RoleDrag.Active)
+                foreach (var (role, parent) in rows)
+                    if (role.id == RoleDrag.RoleId)
+                    {
+                        dragged = role;
+                        draggedParent = parent;
+                        break;
+                    }
 
             Widgets.BeginScrollView(scrollRect, ref listScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
             for (int i = 0; i < rows.Count; i++)
             {
-                var (role, isChild) = rows[i];
+                var (role, parentRole) = rows[i];
+                bool isChild = parentRole != null;
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 float indent = isChild ? 18f : 0f;
 
-                bool dragging = !isChild
-                    && ReorderableWidget.Reorderable(reorderableGroupId, row, useRightButton: false, highlightDragged: true);
-
                 if (role.id == selectedRoleId) Widgets.DrawHighlightSelected(row);
-                else if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
+                else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
 
                 if (Mouse.IsOver(row))
                     TooltipHandler.TipRegion(row,
@@ -245,8 +242,18 @@ namespace WorkRoles.UI
                     }
                 }
 
-                if (!dragging && Widgets.ButtonInvisible(new Rect(row.x, row.y, row.width, row.height)))
-                    selectedRoleId = role.id;
+                // Press registers a potential drag + click callback; a release inside
+                // the 6px threshold selects (resolved centrally in ResolveMouseUp).
+                var e = Event.current;
+                if (e.type == EventType.MouseDown && e.button == 0 && row.Contains(e.mousePosition))
+                {
+                    int capturedId = role.id;
+                    RoleDrag.OnPress(capturedId, null, () => selectedRoleId = capturedId);
+                    e.Use();
+                }
+
+                if (dragged != null && Mouse.IsOver(row))
+                    RegisterRowDrop(store, roots, rows, i, row, dragged, draggedParent);
             }
             Widgets.EndScrollView();
 
@@ -279,6 +286,156 @@ namespace WorkRoles.UI
                         "WR_DeleteConfirm".Translate(role.label),
                         () => RoleCommands.DeleteRole(role.id), destructive: true));
             }
+        }
+
+        // ----- Role-tree drag & drop -----
+
+        /// Drop-zone targeting for the hovered row while a role drag is active.
+        /// Dragging a root: the middle 50% of another root row nests into it; the
+        /// top/bottom 25% edge zones insert into the catalog before/after that root's
+        /// GROUP (root row + its children); a child row nests at that position in the
+        /// parent's entry list (top half = before it, bottom half = after it).
+        /// Dragging a child: siblings reorder the parent's entries (top/bottom half),
+        /// and the bottom half of the parent row moves it to first position.
+        /// Everything else — including the dragged row and its own children — blocks.
+        private void RegisterRowDrop(RoleStore store, List<Role> roots,
+            List<(Role role, Role parent)> rows, int i, Rect row, Role dragged, Role draggedParent)
+        {
+            var (role, parentRole) = rows[i];
+
+            if (role == dragged || parentRole == dragged)
+            {
+                RoleDrag.HoverBlocked = true;
+                Widgets.DrawBoxSolid(row, new Color(0.8f, 0.2f, 0.2f, 0.12f));
+                return;
+            }
+
+            float my = Event.current.mousePosition.y - row.y;
+            Role NextSibling() => i + 1 < rows.Count && rows[i + 1].parent == parentRole ? rows[i + 1].role : null;
+
+            if (draggedParent == null) // dragging a root
+            {
+                if (parentRole == null) // over another root row
+                {
+                    if (my < row.height * 0.25f)
+                    {
+                        RegisterCatalogInsert(store, roots, dragged, role, row, row.y);
+                    }
+                    else if (my > row.height * 0.75f)
+                    {
+                        int groupEnd = i;
+                        while (groupEnd + 1 < rows.Count && rows[groupEnd + 1].parent != null) groupEnd++;
+                        int nextRootIdx = roots.IndexOf(role) + 1;
+                        Role nextRoot = nextRootIdx < roots.Count ? roots[nextRootIdx] : null;
+                        RegisterCatalogInsert(store, roots, dragged, nextRoot, row, (groupEnd + 1) * RowHeight);
+                    }
+                    else
+                    {
+                        Widgets.DrawHighlight(row);
+                        int pid = role.id, cid = dragged.id;
+                        RoleDrag.HoverDropAction = () => RoleCommands.NestRoleInto(pid, cid, -1);
+                    }
+                }
+                else // over a child row: nest into its parent at this position
+                {
+                    int beforeId;
+                    float markerY;
+                    if (my < row.height / 2f) { beforeId = role.id; markerY = row.y; }
+                    else { beforeId = NextSibling()?.id ?? -1; markerY = row.yMax; }
+                    DrawInsertMarker(row, markerY);
+                    int pid = parentRole.id, cid = dragged.id, captured = beforeId;
+                    RoleDrag.HoverDropAction = () => RoleCommands.NestRoleInto(pid, cid, captured);
+                }
+            }
+            else // dragging a child of draggedParent
+            {
+                if (parentRole == draggedParent) // sibling: reorder the parent's entries
+                {
+                    int beforeId;
+                    float markerY;
+                    if (my < row.height / 2f) { beforeId = role.id; markerY = row.y; }
+                    else { beforeId = NextSibling()?.id ?? -1; markerY = row.yMax; }
+                    // Same-position drops show the marker but register no command.
+                    DrawInsertMarker(row, markerY);
+                    if (MoveChildIsNoOp(rows, draggedParent, dragged, beforeId)) return;
+                    int pid = draggedParent.id, cid = dragged.id, captured = beforeId;
+                    RoleDrag.HoverDropAction = () => RoleCommands.MoveChildBefore(pid, cid, captured);
+                }
+                else if (role == draggedParent && my >= row.height / 2f)
+                {
+                    // Bottom half of the parent row: move to first position (a marker-only
+                    // no-op when the dragged child is already first).
+                    Role first = rows.First(t => t.parent == draggedParent).role;
+                    DrawInsertMarker(row, row.yMax);
+                    if (first == dragged) return;
+                    int pid = draggedParent.id, cid = dragged.id, beforeId = first.id;
+                    RoleDrag.HoverDropAction = () => RoleCommands.MoveChildBefore(pid, cid, beforeId);
+                }
+                else
+                {
+                    RoleDrag.HoverBlocked = true;
+                    Widgets.DrawBoxSolid(row, new Color(0.8f, 0.2f, 0.2f, 0.12f));
+                }
+            }
+        }
+
+        /// Root edge-zone drop: insert the dragged root before insertBeforeRoot in the
+        /// catalog (null = after the last root). After the pre-removal adjustment, the
+        /// moved root lands at the catalog slot of the root now occupying the target
+        /// position (before it when moving up, after it when moving down — matching
+        /// MoveRoleInCatalog's remove-then-insert semantics). Same-position drops show
+        /// the marker but register no command.
+        private static void RegisterCatalogInsert(RoleStore store, List<Role> roots,
+            Role dragged, Role insertBeforeRoot, Rect row, float markerY)
+        {
+            DrawInsertMarker(row, markerY);
+            int from = roots.IndexOf(dragged);
+            int insertPos = insertBeforeRoot != null ? roots.IndexOf(insertBeforeRoot) : roots.Count;
+            if (from < 0 || insertPos < 0) return;
+            int to = insertPos > from ? insertPos - 1 : insertPos;
+            if (to == from) return;
+            int catFrom = store.roles.IndexOf(dragged);
+            int catTo = store.roles.IndexOf(roots[to]);
+            RoleDrag.HoverDropAction = () => RoleCommands.MoveRoleInCatalog(catFrom, catTo);
+        }
+
+        /// A sibling drop that recreates the current display order (before itself,
+        /// before its own next sibling, or append while already last) is a no-op.
+        private static bool MoveChildIsNoOp(List<(Role role, Role parent)> rows, Role parent, Role child, int beforeId)
+        {
+            var siblings = rows.Where(t => t.parent == parent).Select(t => t.role).ToList();
+            int cur = siblings.IndexOf(child);
+            if (cur < 0) return false;
+            if (beforeId == child.id) return true;
+            if (beforeId == -1) return cur == siblings.Count - 1;
+            return cur + 1 < siblings.Count && siblings[cur + 1].id == beforeId;
+        }
+
+        /// 2px horizontal insertion marker across the row width at the given boundary.
+        private static void DrawInsertMarker(Rect row, float y)
+            => Widgets.DrawBoxSolid(new Rect(row.x, y - 1f, row.width, 2f), new Color(1f, 1f, 1f, 0.9f));
+
+        /// Floating drag ghost: the row's swatch square + label following the cursor,
+        /// red-tinted while over a blocked target.
+        private static void DrawDragGhost(RoleStore store)
+        {
+            if (!RoleDrag.Active) return;
+            var role = store.RoleById(RoleDrag.RoleId);
+            if (role == null) return;
+            var mouse = Event.current.mousePosition;
+            Color tint = RoleDrag.HoverBlocked
+                ? new Color(1f, 0.3f, 0.3f, 0.7f)
+                : new Color(1f, 1f, 1f, 0.7f);
+
+            Text.Font = GameFont.Small;
+            float labelW = Text.CalcSize(role.label).x + 4f;
+            GUI.color = tint;
+            Widgets.DrawBoxSolid(new Rect(mouse.x + 10f, mouse.y + 6f, 16f, 16f),
+                role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(new Rect(mouse.x + 32f, mouse.y + 2f, labelW, 24f), role.label);
+            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.color = Color.white;
         }
 
         // ----- Right: editor for the selected role -----

@@ -4,7 +4,7 @@ using Verse;
 
 namespace WorkRoles.UI
 {
-    public enum ChipClick { None, Remove }
+    public enum ChipClick { None, Remove, Context }
 
     public enum ChipStyle
     {
@@ -35,7 +35,9 @@ namespace WorkRoles.UI
 
         /// Draws a chip. Clicks are resolved centrally via RoleDrag.ResolveMouseUp.
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
-        public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick)
+        /// interactive: false renders a display-only chip (no clicks, no drag).
+        public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
+            bool interactive = true)
         {
             Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
 
@@ -87,7 +89,14 @@ namespace WorkRoles.UI
             if (showRemove)
                 GUI.DrawTexture(removeRect, TexButton.Delete);
 
+            if (!interactive) return ChipClick.None;
+
             var e = Event.current;
+            if (e.type == EventType.MouseDown && e.button == 1 && rect.Contains(e.mousePosition))
+            {
+                e.Use();
+                return ChipClick.Context;
+            }
             if (e.type == EventType.MouseDown && e.button == 0 && rect.Contains(e.mousePosition))
             {
                 if (showRemove && removeRect.Contains(e.mousePosition))

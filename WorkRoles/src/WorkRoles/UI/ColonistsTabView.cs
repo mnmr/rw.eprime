@@ -23,6 +23,7 @@ namespace WorkRoles.UI
         private const float PaletteColumnGap = 16f;
         private const float PaletteColumnMinW = 200f;
         private const float FilterRowH = 28f;
+        private const float CombineBtnW = 70f;
         private const float RowHeight = 36f;
         private const float PortraitSize = 30f;
         private const float NameWidth = 150f;
@@ -86,8 +87,8 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null || Find.CurrentMap == null) return DefaultWidth;
 
-            // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | merge | gap | [+] | gap | trailing
-            float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 2f + IconButton + 4f + 16f;
+            // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | combine | gap | [+] | gap | trailing
+            float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + CombineBtnW + 4f + IconButton + 4f + 16f;
             float widestStrip = 0f;
             var pawns = ListedPawns();
             foreach (var pawn in pawns)
@@ -216,7 +217,9 @@ namespace WorkRoles.UI
             separatorX = -1f;
             var manual = new List<Role>();
             var auto = new List<Role>();
-            foreach (var role in store.roles)
+            // Role-tree display order: each root followed by its children in the
+            // parent's job order, matching the Roles tab.
+            foreach (var (role, _) in RolesTabView.BuildRoleTree(store).rows)
                 (role.HasRules ? auto : manual).Add(role);
 
             float LayoutGroup(List<Role> roles, float x0, float colWidth, float y0)
@@ -395,7 +398,7 @@ namespace WorkRoles.UI
                 return;
             }
 
-            float stripWidth = rect.width - 16f - (PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 2f + IconButton + 4f);
+            float stripWidth = rect.width - 16f - (PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + CombineBtnW + 4f + IconButton + 4f);
             var rowHeights = new List<float>(pawns.Count);
             float contentHeight = 0f;
             foreach (var pawn in pawns)
@@ -469,12 +472,14 @@ namespace WorkRoles.UI
             if (Widgets.ButtonImage(plusRect, TexButton.Plus))
                 OpenAddMenu(pawn, store);
 
-            var mergeRect = new Rect(plusRect.x - IconButton - 2f, plusRect.y, IconButton, IconButton);
-            bool canCombine = RoleCommands.CanCombineFor(pawn);
-            TooltipHandler.TipRegion(mergeRect, "WR_CombinePawnTip".Translate());
-            Color mergeColor = canCombine ? Color.white : new Color(1f, 1f, 1f, 0.3f);
-            if (Widgets.ButtonImage(mergeRect, WorkRolesTex.Merge, mergeColor) && canCombine)
-                RoleCommands.CombineAssignedRolesFor(pawn);
+            // Combine button: only visible when a combine would change this row.
+            if (RoleCommands.CanCombineFor(pawn))
+            {
+                var combineRect = new Rect(plusRect.x - CombineBtnW - 4f, rect.y + (rect.height - 24f) / 2f, CombineBtnW, 24f);
+                TooltipHandler.TipRegion(combineRect, "WR_CombinePawnTip".Translate());
+                if (Widgets.ButtonText(combineRect, "WR_Combine".Translate()))
+                    RoleCommands.CombineAssignedRolesFor(pawn);
+            }
         }
 
         private void DrawChipStrip(Rect stripRect, Pawn pawn, RoleStore store, float stripWidth)
@@ -508,6 +513,12 @@ namespace WorkRoles.UI
                         ? (System.Action)null
                         : () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRoleId));
                 if (click == ChipClick.Remove) RoleCommands.RemoveRoleFromPawn(pawn, role.id);
+                if (click == ChipClick.Context && RoleCommands.SplitParts(role) != null)
+                    Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                    {
+                        new FloatMenuOption("WR_Split".Translate(),
+                            () => RoleCommands.SplitRoleForPawn(capturedPawn, capturedRoleId))
+                    }));
                 if (suppressed && Mouse.IsOver(chipRect))
                     TooltipHandler.TipRegion(chipRect, SuppressionTip(role, pawn));
             }
@@ -759,16 +770,13 @@ namespace WorkRoles.UI
                     chipX += chipW + ChipGap;
                 }
 
-                if (recommendations.Any(r => !assignedIds.Contains(r.id)))
+                bool anyChange = recommendations.Any(r => !assignedIds.Contains(r.id))
+                    || assignedIds.Any(id => recommendations.All(r => r.id != id));
+                if (recommendations.Count > 0 && anyChange)
                 {
                     var makeItSoRect = new Rect(rect.xMax - 110f, rect.yMax - 26f, 106f, 24f);
                     if (Widgets.ButtonText(makeItSoRect, "WR_MakeItSo".Translate()))
-                    {
-                        foreach (var role in recommendations)
-                            if (!assignedIds.Contains(role.id))
-                                AssignAtRecommendedPosition(selectedPawn, role.id);
-                        InvalidateRecommendationCache();
-                    }
+                        ShowMakeItSoPreview(selectedPawn);
                 }
             }
         }
@@ -810,41 +818,94 @@ namespace WorkRoles.UI
             InvalidateRecommendationCache();
         }
 
-        private static List<Dialog_ChangesPreview.PawnChanges> BuildCombineEntries()
+        private static List<Dialog_ChangesPreview.PawnPreview> BuildCombineEntries()
         {
-            var entries = new List<Dialog_ChangesPreview.PawnChanges>();
+            var entries = new List<Dialog_ChangesPreview.PawnPreview>();
             foreach (var pawn in ListedPawns())
             {
                 var steps = RoleCommands.CombinePlanFor(pawn);
                 if (steps.Count == 0) continue;
                 var lines = steps
-                    .Select(s => "WR_PreviewCombineLine".Translate(
-                        string.Join(" + ", s.members.Select(m => m.label)), s.combo.label).ToString())
+                    .Select(s => new Dialog_ChangesPreview.Line { roles = s.members, arrowResult = s.combo })
                     .ToList();
-                entries.Add(new Dialog_ChangesPreview.PawnChanges { pawn = pawn, lines = lines });
+                entries.Add(new Dialog_ChangesPreview.PawnPreview { pawn = pawn, lines = lines });
             }
             return entries;
         }
 
-        private static List<Dialog_ChangesPreview.PawnChanges> BuildFixEntries()
+        /// The full recommended role set for the pawn (recommendation order; retained
+        /// roles keep their per-pawn toggle, new ones start enabled). Null when the
+        /// pawn has no recommendations or already matches (no adds, no removes —
+        /// order-only differences are left alone).
+        private static List<RoleAssignment> RecommendedSet(Pawn pawn, RoleStore store,
+            List<Role> added, List<Role> removed)
         {
-            var entries = new List<Dialog_ChangesPreview.PawnChanges>();
+            var recommendations = ComputeRecommendations(pawn, store);
+            if (recommendations.Count == 0) return null;
+            store.pawnSets.TryGetValue(pawn, out var set);
+            var existing = set?.assignments ?? new List<RoleAssignment>();
+
+            var recIds = new HashSet<int>(recommendations.Select(r => r.id));
+            foreach (var a in existing)
+            {
+                if (recIds.Contains(a.roleId)) continue;
+                var role = store.RoleById(a.roleId);
+                if (role != null) removed?.Add(role);
+            }
+
+            var target = new List<RoleAssignment>();
+            bool anyAdded = false;
+            foreach (var role in recommendations)
+            {
+                var current = existing.FirstOrDefault(a => a.roleId == role.id);
+                if (current == null)
+                {
+                    anyAdded = true;
+                    added?.Add(role);
+                }
+                target.Add(new RoleAssignment { roleId = role.id, enabled = current?.enabled ?? true });
+            }
+
+            if (!anyAdded && existing.Count == target.Count) return null;
+            return target;
+        }
+
+        private static List<Dialog_ChangesPreview.PawnPreview> BuildFixEntries(Pawn only)
+        {
+            var entries = new List<Dialog_ChangesPreview.PawnPreview>();
             var store = RoleStore.Current;
             if (store == null) return entries;
             foreach (var pawn in ListedPawns())
             {
-                var recommendations = ComputeRecommendations(pawn, store);
-                var assignedIds = new HashSet<int>();
-                if (store.pawnSets.TryGetValue(pawn, out var set))
-                    foreach (var a in set.assignments) assignedIds.Add(a.roleId);
-                var lines = recommendations
-                    .Where(r => !assignedIds.Contains(r.id))
-                    .Select(r => "WR_PreviewAddLine".Translate(r.label).ToString())
-                    .ToList();
-                if (lines.Count == 0) continue;
-                entries.Add(new Dialog_ChangesPreview.PawnChanges { pawn = pawn, lines = lines });
+                if (only != null && pawn != only) continue;
+                var added = new List<Role>();
+                var removed = new List<Role>();
+                if (RecommendedSet(pawn, store, added, removed) == null) continue;
+                var entry = new Dialog_ChangesPreview.PawnPreview { pawn = pawn };
+                if (added.Count > 0)
+                    entry.lines.Add(new Dialog_ChangesPreview.Line
+                    { label = "WR_PreviewAdded".Translate(), roles = added });
+                if (removed.Count > 0)
+                    entry.lines.Add(new Dialog_ChangesPreview.Line
+                    { label = "WR_PreviewRemoved".Translate(), roles = removed, style = ChipStyle.Disabled });
+                entries.Add(entry);
             }
             return entries;
+        }
+
+        /// Replaces role sets with the recommended set (all pawns, or just one).
+        private void ApplyFix(Pawn only)
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            foreach (var pawn in ListedPawns())
+            {
+                if (only != null && pawn != only) continue;
+                var target = RecommendedSet(pawn, store, null, null);
+                if (target != null)
+                    RoleCommands.PasteRoleSet(pawn, target);
+            }
+            InvalidateRecommendationCache();
         }
 
         /// Opens the per-colonist change preview for Combine All; applies on confirm.
@@ -855,26 +916,12 @@ namespace WorkRoles.UI
         /// Opens the per-colonist change preview for Fix My Colony; applies on confirm.
         public void ShowFixPreview()
             => Find.WindowStack.Add(new Dialog_ChangesPreview(
-                "WR_FixMyColony".Translate(), BuildFixEntries(), FixMyColony, BuildFixEntries));
+                "WR_FixMyColony".Translate(), BuildFixEntries(null), () => ApplyFix(null), () => BuildFixEntries(null)));
 
-        /// Applies the recommendation engine to every listed colonist: each pawn gets
-        /// every recommended role it doesn't already hold, at its recommended position.
-        public void FixMyColony()
-        {
-            var store = RoleStore.Current;
-            if (store == null) return;
-            foreach (var pawn in ListedPawns())
-            {
-                var recommendations = ComputeRecommendations(pawn, store);
-                var assignedIds = new HashSet<int>();
-                if (store.pawnSets.TryGetValue(pawn, out var set))
-                    foreach (var a in set.assignments) assignedIds.Add(a.roleId);
-                foreach (var role in recommendations)
-                    if (!assignedIds.Contains(role.id))
-                        AssignAtRecommendedPosition(pawn, role.id, store, recommendations);
-            }
-            InvalidateRecommendationCache();
-        }
+        /// Opens the single-pawn change preview for Make It So; applies on confirm.
+        private void ShowMakeItSoPreview(Pawn pawn)
+            => Find.WindowStack.Add(new Dialog_ChangesPreview(
+                "WR_MakeItSo".Translate(), BuildFixEntries(pawn), () => ApplyFix(pawn), () => BuildFixEntries(pawn)));
 
         // ----- Recommendation logic -----
 
