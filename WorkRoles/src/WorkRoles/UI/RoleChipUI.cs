@@ -24,6 +24,25 @@ namespace WorkRoles.UI
         private static readonly Color LabelColor = new Color(0.95f, 0.95f, 0.95f);
         // #e8e6e0 at 0.85 alpha — tint for the auto-role marker icon.
         public static readonly Color RuleMarkerColor = new Color(232f / 255f, 230f / 255f, 224f / 255f, 0.85f);
+        private static readonly Color RemovedColor = new Color(0.88f, 0.32f, 0.32f, 0.9f);
+        private static readonly Color PinnedColor = new Color(0.85f, 0.85f, 0.85f, 0.9f);
+
+        /// Red border marking a chip whose role is about to be removed.
+        public static void DrawRemovedOutline(Rect rect)
+        {
+            GUI.color = RemovedColor;
+            Widgets.DrawBox(rect);
+            GUI.color = Color.white;
+        }
+
+        /// Light-grey border marking a pinned assignment (same decoration style
+        /// as the removed border).
+        public static void DrawPinnedOutline(Rect rect)
+        {
+            GUI.color = PinnedColor;
+            Widgets.DrawBox(rect);
+            GUI.color = Color.white;
+        }
 
         public static float WidthFor(Role role, bool showRemove)
         {

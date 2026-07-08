@@ -38,6 +38,7 @@ namespace WorkRoles
         {
             sync.Bind(ref assignment.roleId);
             sync.Bind(ref assignment.enabled);
+            sync.Bind(ref assignment.pinned);
         }
     }
 }

@@ -7,9 +7,9 @@
 
   <!-- ===== Colonists tab ===== -->
 
-  <!-- Palette group headers -->
-  <WR_PaletteManual>Manual roles</WR_PaletteManual>
-  <WR_PaletteAuto>Auto roles</WR_PaletteAuto>
+  <!-- Palette cluster labels (skill clusters use the skill's own label) -->
+  <WR_ClusterEveryone>Everyone</WR_ClusterEveryone>
+  <WR_ClusterUnskilled>Unskilled</WR_ClusterUnskilled>
 
   <!-- Palette role tooltip: {0}=role label, {1}=state phrase, {2}=job list, {3}=usage hint -->
   <WR_RoleTip>{0} — {1}
@@ -27,24 +27,33 @@
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
   <WR_ClearFilters>Clear filters</WR_ClearFilters>
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
-  <WR_CombineAll>Combine All</WR_CombineAll>
-  <WR_CombineAllTip>Collapse each colonist's roles into combined roles that provide the same jobs (order and toggles preserved).</WR_CombineAllTip>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
   <WR_FixMyColonyTip>Replace every colonist's roles with their recommended roles.</WR_FixMyColonyTip>
-
-  <!-- Per-row combine button -->
-  <WR_Combine>Combine</WR_Combine>
-  <!-- Chip right-click menu -->
-  <WR_Split>Split</WR_Split>
-  <WR_CombinePawnTip>Combine this colonist's roles into combined roles that provide the same jobs (order and toggles preserved).</WR_CombinePawnTip>
 
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
   <WR_Cancel>Cancel</WR_Cancel>
+  <WR_SelectAll>Select all</WR_SelectAll>
   <WR_PreviewNoChanges>No changes.</WR_PreviewNoChanges>
-  <WR_PreviewAdded>Added</WR_PreviewAdded>
-  <WR_PreviewRemoved>Removed</WR_PreviewRemoved>
   <WR_PreviewStale>The colony changed while the preview was open; nothing was applied.</WR_PreviewStale>
+
+  <!-- Recommendation reason tooltips; {0} = skill label where present -->
+  <WR_ReasonEveryone>Auto-assigned to everyone.</WR_ReasonEveryone>
+  <WR_ReasonDuty>Duty work: prisoners and children come first.</WR_ReasonDuty>
+  <WR_ReasonHunter>Carries a ranged weapon; hunting also trains Shooting.</WR_ReasonHunter>
+  <WR_ReasonUnskilled>Unskilled work anyone can do.</WR_ReasonUnskilled>
+  <WR_ReasonMajorPassion>Burning passion for {0}.</WR_ReasonMajorPassion>
+  <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
+  <WR_ReasonBest>Best in the colony at {0}.</WR_ReasonBest>
+  <WR_ReasonAptitude>Gene or trait aptitude for {0}.</WR_ReasonAptitude>
+  <WR_ReasonEssential>The colony always needs someone {0}.</WR_ReasonEssential>
+  <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
+  <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
+
+  <!-- Assignment pinning (chip right-click) -->
+  <WR_PinAssignment>Pin</WR_PinAssignment>
+  <WR_UnpinAssignment>Unpin</WR_UnpinAssignment>
+  <WR_PinnedTip>Pinned: Fix My Colony and Make It So never touch this assignment.</WR_PinnedTip>
 
   <!-- Copy/paste row -->
   <!-- {0} = pawn short name -->
@@ -53,6 +62,7 @@
   <!-- Recommended Roles section -->
   <WR_RecommendedRoles>Recommended Roles</WR_RecommendedRoles>
   <WR_AlreadyAssigned>Already assigned</WR_AlreadyAssigned>
+  <WR_WillBeRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_WillBeRemoved>
   <WR_MakeItSo>Make It So</WR_MakeItSo>
 
   <!-- Add-role float menu when all roles are already assigned -->
@@ -70,10 +80,12 @@
   <WR_Copy>Copy</WR_Copy>
   <WR_Delete>Delete</WR_Delete>
 
-  <!-- Copy dialog: default suggested name; {0} = original role label -->
-  <WR_RoleCopyName>{0} copy</WR_RoleCopyName>
-  <!-- Copy dialog title -->
+  <!-- New/Copy dialogs (both prompt for a unique role name) -->
+  <WR_NewRoleTitle>New Role</WR_NewRoleTitle>
   <WR_CopyRoleTitle>Copy Role</WR_CopyRoleTitle>
+  <!-- {0} = original role label -->
+  <WR_CopySource>Copying {0}</WR_CopySource>
+  <WR_NameTaken>A role with this name already exists.</WR_NameTaken>
 
   <!-- Delete confirmation; {0} = role label -->
   <WR_DeleteConfirm>Delete role '{0}'? It will be removed from all colonists.</WR_DeleteConfirm>
@@ -106,6 +118,12 @@
   <!-- Editor: rules section (auto-role opt-in, active hours, location) -->
   <WR_AutoRole>Auto role</WR_AutoRole>
   <WR_AutoRoleTip>Auto roles turn themselves on and off based on rules: active hours and location. A role is auto whenever any rule is set.</WR_AutoRoleTip>
+  <WR_AutoAssign>Auto-assign to newcomers</WR_AutoAssign>
+  <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role, and recommendations always place auto-assign roles first.</WR_AutoAssignTip>
+  <!-- Editor: custom color swatch row -->
+  <WR_CustomSwatchEmpty>Empty slot: click to pick a custom color. Custom colors are shared across all roles.</WR_CustomSwatchEmpty>
+  <WR_CustomSwatchTip>Click to use this color. Right-click to redefine the slot.</WR_CustomSwatchTip>
+
   <!-- {0} = role label -->
   <WR_ClearRulesConfirm>Remove all rules from '{0}'? It becomes a manual role again.</WR_ClearRulesConfirm>
   <WR_ActiveHours>Active hours</WR_ActiveHours>
@@ -119,6 +137,11 @@
   <WR_SuppressedHours>Off: outside active hours</WR_SuppressedHours>
   <WR_SuppressedAway>Off: away from home</WR_SuppressedAway>
   <WR_SuppressedHome>Off: at home</WR_SuppressedHome>
+
+  <!-- ===== Bill dialog: worker role restriction ===== -->
+  <!-- {0} = role label; used in the worker dropdown and as its button label -->
+  <WR_BillRoleOption>Role: {0}</WR_BillRoleOption>
+  <WR_BillWorkerRoleTip>Only colonists actively holding this role work this bill; a rule-based role applies its rules (e.g. active hours). Selecting a worker clears the role restriction and vice versa.</WR_BillWorkerRoleTip>
 
   <!-- ===== Shared / dialogs ===== -->
 

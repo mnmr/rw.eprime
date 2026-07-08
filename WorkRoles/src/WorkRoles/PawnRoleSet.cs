@@ -7,11 +7,15 @@ namespace WorkRoles
     {
         public int roleId;
         public bool enabled = true;
+        /// Pinned assignments are never added, removed or moved by Fix My Colony /
+        /// Make It So — the player's placement wins.
+        public bool pinned;
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref roleId, "roleId");
             Scribe_Values.Look(ref enabled, "enabled", true);
+            Scribe_Values.Look(ref pinned, "pinned");
         }
     }
 

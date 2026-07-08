@@ -129,6 +129,13 @@ namespace WorkRoles
             }
         }
 
+        /// Visible modded work types that belong to everyone rather than a vocation:
+        /// appended to Basics instead of getting a generated role.
+        private static readonly HashSet<string> EveryoneWorkTypes = new HashSet<string>
+        {
+            "HaulingUrgent", // Allow Tool's "haul urgently"
+        };
+
         /// Ensures every work type is reachable through some role. Runs on every load;
         /// each work type is processed once per save (store.knownWorkTypes), so deleting
         /// a generated role sticks. Returns labels of newly generated roles.
@@ -166,14 +173,27 @@ namespace WorkRoles
 
                 if (covered.Contains(workType.defName)) continue;
 
-                if (workType.visible)
+                var basics = EveryoneWorkTypes.Contains(workType.defName)
+                    ? store.RoleByTemplate("WS_Basics")
+                    : null;
+                if (basics != null)
+                {
+                    RoleCommands.AddEntryDirect(basics.id,
+                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                    result.Add(basics.label);
+                }
+                else if (workType.visible)
                 {
                     string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
-                        role.color = UnityEngine.Color.HSVToRGB(
-                            (workType.defName.GetHashCode() & 0x7FFFFFFF) % 360 / 360f, 0.5f, 0.55f);
+                        // Everyone-work stays in Basics' color family (slate-700,
+                        // one step below Basics); other types get a stable hash hue.
+                        role.color = EveryoneWorkTypes.Contains(workType.defName)
+                            ? new UnityEngine.Color(0.200f, 0.255f, 0.333f)
+                            : UnityEngine.Color.HSVToRGB(
+                                (workType.defName.GetHashCode() & 0x7FFFFFFF) % 360 / 360f, 0.5f, 0.55f);
                         role.hasCustomColor = true;
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                         result.Add(label);

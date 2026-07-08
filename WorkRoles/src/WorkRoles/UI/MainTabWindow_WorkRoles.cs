@@ -26,7 +26,11 @@ namespace WorkRoles.UI
             get
             {
                 float w = Mathf.Min(ColonistsTabView.DesiredWidth() + 200f, Verse.UI.screenWidth);
-                float h = Mathf.Min(ColonistsTabView.DesiredHeight(), Verse.UI.screenHeight - 35f);
+                // Whichever tab wants more height wins (small colonies would
+                // otherwise cramp the Roles tab), capped at the screen.
+                float h = Mathf.Min(
+                    Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
+                    Verse.UI.screenHeight - 35f);
                 return new Vector2(w, h);
             }
         }
@@ -43,7 +47,9 @@ namespace WorkRoles.UI
         {
             // Grow-only mid-session resize: if content grew, expand windowRect; never shrink.
             float targetW = Mathf.Min(ColonistsTabView.DesiredWidth() + 200f, Verse.UI.screenWidth);
-            float targetH = Mathf.Min(ColonistsTabView.DesiredHeight(), Verse.UI.screenHeight - 35f);
+            float targetH = Mathf.Min(
+                Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
+                Verse.UI.screenHeight - 35f);
 
             bool grew = false;
             if (targetW > windowRect.width + 1f)
@@ -64,26 +70,31 @@ namespace WorkRoles.UI
 
             var tabs = new List<TabRecord>
             {
-                new TabRecord("WR_ColonistsTab".Translate(), () => curTab = Tab.Colonists, curTab == Tab.Colonists),
+                new TabRecord("WR_ColonistsTab".Translate(), () =>
+                {
+                    // Role edits on the Roles tab aren't tracked; recompute the
+                    // suggestion plan whenever the user comes back.
+                    if (curTab != Tab.Colonists) colonistsTab.InvalidateRecommendationCache();
+                    curTab = Tab.Colonists;
+                }, curTab == Tab.Colonists),
                 new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, curTab == Tab.Roles),
             };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);
             TabDrawer.DrawTabs(content, tabs);
 
-            // Colony-wide action buttons in the window's top-right corner, beside the tab strip.
-            const float ActionBtnW = 130f;
-            const float ActionBtnH = 28f;
-            const float ActionBtnGap = 8f;
-            float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
-            var combineRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
-            var fixRect = new Rect(combineRect.x - ActionBtnGap - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
-            TooltipHandler.TipRegion(combineRect, "WR_CombineAllTip".Translate());
-            if (Widgets.ButtonText(combineRect, "WR_CombineAll".Translate()))
-                colonistsTab.ShowCombinePreview();
-            TooltipHandler.TipRegion(fixRect, "WR_FixMyColonyTip".Translate());
-            if (Widgets.ButtonText(fixRect, "WR_FixMyColony".Translate()))
-                colonistsTab.ShowFixPreview();
+            // Colony-wide action button in the window's top-right corner, beside the
+            // tab strip — Colonists tab only (that's whose content it acts on).
+            if (curTab == Tab.Colonists)
+            {
+                const float ActionBtnW = 130f;
+                const float ActionBtnH = 28f;
+                float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
+                var fixRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
+                TooltipHandler.TipRegion(fixRect, "WR_FixMyColonyTip".Translate());
+                if (Widgets.ButtonText(fixRect, "WR_FixMyColony".Translate()))
+                    colonistsTab.ShowFixPreview();
+            }
 
             content = content.ContractedBy(8f);
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);

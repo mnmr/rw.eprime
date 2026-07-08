@@ -5,15 +5,18 @@ namespace WorkRoles.UI
 {
     public static class WrText
     {
-        /// Medium font scaled down — a header size between GameFont.Small and Medium.
-        public static void HeaderLabel(Rect rect, string text, float scale = 0.85f)
+        /// Medium-font glyphs start ~8px below the label rect's top (internal
+        /// leading), measured against the stats panel's portrait frame.
+        private const float MediumTopBearing = 8f;
+
+        /// Section header: Medium font, drawn plainly (no matrix scaling — a scale
+        /// pivot drifts with the header's on-screen position and UI scale), shifted
+        /// up by the font's top bearing so the VISIBLE text top sits at rect.y.
+        public static void HeaderLabel(Rect rect, string text)
         {
-            var oldMatrix = GUI.matrix;
             var oldFont = Text.Font;
             Text.Font = GameFont.Medium;
-            GUIUtility.ScaleAroundPivot(new Vector2(scale, scale), new Vector2(rect.x, rect.y));
-            Widgets.Label(new Rect(rect.x, rect.y, rect.width / scale, rect.height / scale), text);
-            GUI.matrix = oldMatrix;
+            Widgets.Label(new Rect(rect.x, rect.y - MediumTopBearing, rect.width, rect.height + MediumTopBearing), text);
             Text.Font = oldFont;
         }
     }

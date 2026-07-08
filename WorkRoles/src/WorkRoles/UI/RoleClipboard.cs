@@ -14,7 +14,7 @@ namespace WorkRoles.UI
             copied = set == null
                 ? new List<RoleAssignment>()
                 : set.assignments
-                    .Select(a => new RoleAssignment { roleId = a.roleId, enabled = a.enabled })
+                    .Select(a => new RoleAssignment { roleId = a.roleId, enabled = a.enabled, pinned = a.pinned })
                     .ToList();
     }
 }

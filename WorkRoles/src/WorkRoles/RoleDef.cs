@@ -14,6 +14,16 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
+        // Skill gates (recommendations and the Fix My Colony coverage pass).
+        // A minimum gate defines the "full" role of a training path; the pawn must
+        // reach the level — or be best in colony, which always passes. A maximum
+        // gate defines the training role: recommended only below the level, and
+        // (when gateNeedsPassion) only with a passion in the skill.
+        public string gateSkill;
+        public int gateMinLevel;
+        public int gateMaxLevel;
+        public bool gateNeedsPassion;
+
         public List<JobEntry> ParsedEntries()
         {
             var parsed = new List<JobEntry>();

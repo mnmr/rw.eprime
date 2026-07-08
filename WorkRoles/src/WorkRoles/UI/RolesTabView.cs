@@ -51,7 +51,8 @@ namespace WorkRoles.UI
 
         // Change 4: Tailwind v3 colour palette — 19 families × 3 shades (800, 700, 600; neutral and 500 removed).
         // Laid out as 3 rows (800 top, 600 bottom) × 19 columns.
-        private static readonly Color[] Swatches;
+        internal static readonly Color[] Swatches;
+        private static readonly string[] SwatchNames;
 
         private static Color Hex(string h)
         {
@@ -89,14 +90,38 @@ namespace WorkRoles.UI
                 /* rose     */ { "9F1239", "BE123C", "E11D48" },
             };
 
+            var familyNames = new[]
+            {
+                "Slate", "Stone", "Red", "Orange", "Amber", "Yellow", "Lime", "Green", "Emerald",
+                "Teal", "Cyan", "Sky", "Blue", "Indigo", "Violet", "Purple", "Fuchsia", "Pink", "Rose",
+            };
+            var shadeNames = new[] { "800", "700", "600" };
+
             int numFamilies = families.GetLength(0); // 19
             int numShades   = families.GetLength(1); // 3
 
             // shade-major order: swatches[shade * numFamilies + family]
             Swatches = new Color[numShades * numFamilies];
+            SwatchNames = new string[numShades * numFamilies];
             for (int shade = 0; shade < numShades; shade++)
                 for (int family = 0; family < numFamilies; family++)
+                {
                     Swatches[shade * numFamilies + family] = Hex(families[family, shade]);
+                    SwatchNames[shade * numFamilies + family] = familyNames[family] + " " + shadeNames[shade];
+                }
+        }
+
+        /// Content-driven height for window sizing: the role list on the left and
+        /// the editor's collapsed job tree on the right are the tall pieces.
+        public static float DesiredHeight()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return 684f;
+            float chrome = 120f; // tabs, margins, editor gaps
+            float list = store.roles.Count * RowHeight + 40f;
+            int visibleTypes = DefDatabase<WorkTypeDef>.AllDefsListForReading.Count(wt => wt.visible);
+            float editor = 190f + 32f + visibleTypes * 26f; // top box + tree header + collapsed roots
+            return chrome + Mathf.Max(list, editor);
         }
 
         public void Reset()
@@ -261,15 +286,20 @@ namespace WorkRoles.UI
             float bw = (rect.width - 8f) / 3f;
             float by = rect.yMax - buttonsHeight + 4f;
             if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f), "WR_New".Translate()))
-                selectedRoleId = RoleCommands.CreateRole("New role")?.id ?? selectedRoleId;
+            {
+                Find.WindowStack.Add(new Dialog_RenameRole("WR_NewRoleTitle".Translate(), null, enteredName =>
+                {
+                    var newRole = RoleCommands.CreateRole(enteredName);
+                    if (newRole != null) selectedRoleId = newRole.id;
+                }));
+            }
 
             if (Widgets.ButtonText(new Rect(rect.x + bw + 4f, by, bw, 30f), "WR_Copy".Translate()))
             {
                 var toCopy = RoleStore.Current.RoleById(selectedRoleId);
                 if (toCopy != null)
                 {
-                    string suggestedName = "WR_RoleCopyName".Translate(toCopy.label);
-                    Find.WindowStack.Add(new Dialog_RenameRole("WR_CopyRoleTitle".Translate(), suggestedName, enteredName =>
+                    Find.WindowStack.Add(new Dialog_RenameRole("WR_CopyRoleTitle".Translate(), toCopy.label, enteredName =>
                     {
                         var newRole = RoleCommands.DuplicateRole(selectedRoleId, enteredName);
                         if (newRole != null) selectedRoleId = newRole.id;
@@ -296,7 +326,10 @@ namespace WorkRoles.UI
         /// GROUP (root row + its children); a child row nests at that position in the
         /// parent's entry list (top half = before it, bottom half = after it).
         /// Dragging a child: siblings reorder the parent's entries (top/bottom half),
-        /// and the bottom half of the parent row moves it to first position.
+        /// and the bottom half of the parent row moves it to first position. Root-row
+        /// edge zones un-nest it — its exact entries leave the parent and it re-roots
+        /// at that catalog gap — unless the child is purely semantic (none of its
+        /// entries appear exactly in the parent: intrinsically covered, cannot leave).
         /// Everything else — including the dragged row and its own children — blocks.
         private void RegisterRowDrop(RoleStore store, List<Role> roots,
             List<(Role role, Role parent)> rows, int i, Rect row, Role dragged, Role draggedParent)
@@ -349,6 +382,10 @@ namespace WorkRoles.UI
             }
             else // dragging a child of draggedParent
             {
+                // A child with no exact entries in its parent is intrinsically
+                // covered: it cannot be un-nested, so root gaps stay blocked.
+                bool canUnnest = dragged.entries.Any(e => draggedParent.entries.Contains(e));
+
                 if (parentRole == draggedParent) // sibling: reorder the parent's entries
                 {
                     int beforeId;
@@ -361,15 +398,46 @@ namespace WorkRoles.UI
                     int pid = draggedParent.id, cid = dragged.id, captured = beforeId;
                     RoleDrag.HoverDropAction = () => RoleCommands.MoveChildBefore(pid, cid, captured);
                 }
-                else if (role == draggedParent && my >= row.height / 2f)
+                else if (role == draggedParent)
                 {
-                    // Bottom half of the parent row: move to first position (a marker-only
-                    // no-op when the dragged child is already first).
-                    Role first = rows.First(t => t.parent == draggedParent).role;
-                    DrawInsertMarker(row, row.yMax);
-                    if (first == dragged) return;
-                    int pid = draggedParent.id, cid = dragged.id, beforeId = first.id;
-                    RoleDrag.HoverDropAction = () => RoleCommands.MoveChildBefore(pid, cid, beforeId);
+                    if (canUnnest && my < row.height * 0.25f)
+                    {
+                        // Gap before the parent's own group: un-nest, re-root just above it.
+                        RegisterChildUnnest(store, dragged, draggedParent, role, row, row.y);
+                    }
+                    else if (my >= row.height / 2f)
+                    {
+                        // Bottom half of the parent row: move to first position (a marker-only
+                        // no-op when the dragged child is already first).
+                        Role first = rows.First(t => t.parent == draggedParent).role;
+                        DrawInsertMarker(row, row.yMax);
+                        if (first == dragged) return;
+                        int pid = draggedParent.id, cid = dragged.id, beforeId = first.id;
+                        RoleDrag.HoverDropAction = () => RoleCommands.MoveChildBefore(pid, cid, beforeId);
+                    }
+                    else
+                    {
+                        RoleDrag.HoverBlocked = true;
+                        Widgets.DrawBoxSolid(row, new Color(0.8f, 0.2f, 0.2f, 0.12f));
+                    }
+                }
+                else if (parentRole == null && canUnnest
+                    && (my < row.height * 0.25f || my > row.height * 0.75f))
+                {
+                    // Root-row edge zones: un-nest into the catalog gap before/after
+                    // that root's group.
+                    if (my < row.height * 0.25f)
+                    {
+                        RegisterChildUnnest(store, dragged, draggedParent, role, row, row.y);
+                    }
+                    else
+                    {
+                        int groupEnd = i;
+                        while (groupEnd + 1 < rows.Count && rows[groupEnd + 1].parent != null) groupEnd++;
+                        int nextRootIdx = roots.IndexOf(role) + 1;
+                        Role nextRoot = nextRootIdx < roots.Count ? roots[nextRootIdx] : null;
+                        RegisterChildUnnest(store, dragged, draggedParent, nextRoot, row, (groupEnd + 1) * RowHeight);
+                    }
                 }
                 else
                 {
@@ -377,6 +445,36 @@ namespace WorkRoles.UI
                     Widgets.DrawBoxSolid(row, new Color(0.8f, 0.2f, 0.2f, 0.12f));
                 }
             }
+        }
+
+        /// Root-gap drop while dragging a child: un-nests it from its parent, then
+        /// moves it in the catalog so it re-roots at that gap (insertBeforeRoot ==
+        /// null = after the last root's group). The un-nest always changes the parent
+        /// (purely semantic children are blocked upstream); the catalog move is
+        /// skipped when it would reproduce the current order.
+        private static void RegisterChildUnnest(RoleStore store, Role dragged, Role draggedParent,
+            Role insertBeforeRoot, Rect row, float markerY)
+        {
+            DrawInsertMarker(row, markerY);
+            int catFrom = store.roles.IndexOf(dragged);
+            if (catFrom < 0) return;
+            int catTo;
+            if (insertBeforeRoot == null)
+            {
+                catTo = store.roles.Count - 1;
+            }
+            else
+            {
+                catTo = store.roles.IndexOf(insertBeforeRoot);
+                if (catTo < 0) return;
+                if (catFrom < catTo) catTo--;
+            }
+            int pid = draggedParent.id, cid = dragged.id, from = catFrom, to = catTo;
+            RoleDrag.HoverDropAction = () =>
+            {
+                RoleCommands.UnnestRole(pid, cid);
+                if (from != to) RoleCommands.MoveRoleInCatalog(from, to);
+            };
         }
 
         /// Root edge-zone drop: insert the dragged root before insertBeforeRoot in the
@@ -455,7 +553,8 @@ namespace WorkRoles.UI
             const float AssignedRowH = 22f;
             const float NamesRowH = 22f;
             const float RulesRowGap = 6f;
-            float swatchGridH = (SwatchSize + SwatchGap) * SwatchRows - SwatchGap;
+            // +1 row: player-defined custom swatch slots under the Tailwind grid.
+            float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + 1) - SwatchGap;
             float leftContentH = TitleH + AssignedRowH + NamesRowH;
             bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
             float rulesH = AutoRowH + (rulesShown ? RulesRowGap + RulesSectionH : 0f);
@@ -481,8 +580,62 @@ namespace WorkRoles.UI
                 Widgets.DrawBoxSolid(swatchRect, Swatches[i]);
                 if (role.hasCustomColor && role.color.IndistinguishableFrom(Swatches[i]))
                     Widgets.DrawBox(swatchRect.ExpandedBy(2f));
+                TooltipHandler.TipRegion(swatchRect, SwatchNames[i]);
                 if (Widgets.ButtonInvisible(swatchRect))
                     RoleCommands.SetRoleColor(role.id, Swatches[i]);
+            }
+
+            // Custom row: player-defined slots. Empty slot = pick a color (applies
+            // it too); filled = click to apply, right-click to redefine.
+            var custom = store.customSwatches;
+            float customY = swatchStartY + SwatchRows * (SwatchSize + SwatchGap);
+            for (int c = 0; c < SwatchCols; c++)
+            {
+                var slotRect = new Rect(swatchStartX + c * (SwatchSize + SwatchGap), customY, SwatchSize, SwatchSize);
+                var slotColor = c < custom.Count ? custom[c] : UnityEngine.Color.clear;
+                bool empty = slotColor.a < 0.5f;
+                int capturedSlot = c;
+                int capturedRoleId = role.id;
+
+                void OpenPicker(bool applyToRole)
+                {
+                    Find.WindowStack.Add(new Dialog_RoleColorPicker(
+                        role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor,
+                        picked =>
+                        {
+                            RoleCommands.SetCustomSwatch(capturedSlot, picked);
+                            if (applyToRole) RoleCommands.SetRoleColor(capturedRoleId, picked);
+                        }));
+                }
+
+                if (empty)
+                {
+                    Widgets.DrawBoxSolid(slotRect, new Color(0.14f, 0.14f, 0.14f));
+                    GUI.color = new Color(1f, 1f, 1f, 0.35f);
+                    Widgets.DrawBox(slotRect);
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    Widgets.Label(slotRect, "+");
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    GUI.color = Color.white;
+                    TooltipHandler.TipRegion(slotRect, "WR_CustomSwatchEmpty".Translate());
+                    if (Widgets.ButtonInvisible(slotRect))
+                        OpenPicker(applyToRole: true);
+                }
+                else
+                {
+                    Widgets.DrawBoxSolid(slotRect, slotColor);
+                    if (role.hasCustomColor && role.color.IndistinguishableFrom(slotColor))
+                        Widgets.DrawBox(slotRect.ExpandedBy(2f));
+                    TooltipHandler.TipRegion(slotRect, "WR_CustomSwatchTip".Translate());
+                    if (Widgets.ButtonInvisible(slotRect))
+                        RoleCommands.SetRoleColor(role.id, slotColor);
+                    var e = Event.current;
+                    if (e.type == EventType.MouseDown && e.button == 1 && slotRect.Contains(e.mousePosition))
+                    {
+                        e.Use();
+                        OpenPicker(applyToRole: false);
+                    }
+                }
             }
 
             // LEFT half: three rows — name+pencil, "Assigned to", colonist names
@@ -554,6 +707,17 @@ namespace WorkRoles.UI
             TooltipHandler.TipRegion(boxRect, "WR_AutoRoleTip".Translate());
             bool wanted = shown;
             Widgets.CheckboxLabeled(boxRect, label, ref wanted);
+
+            // Auto-assign to newcomers: player-settable on any role.
+            string assignLabel = "WR_AutoAssign".Translate();
+            var assignRect = new Rect(boxRect.xMax + 24f, rect.y,
+                Mathf.Min(Text.CalcSize(assignLabel).x + 34f, rect.xMax - boxRect.xMax - 24f), rect.height);
+            TooltipHandler.TipRegion(assignRect, "WR_AutoAssignTip".Translate());
+            bool autoAssign = role.autoAssign;
+            Widgets.CheckboxLabeled(assignRect, assignLabel, ref autoAssign);
+            if (autoAssign != role.autoAssign)
+                RoleCommands.SetRoleAutoAssign(role.id, autoAssign);
+
             if (wanted == shown) return;
 
             if (wanted)

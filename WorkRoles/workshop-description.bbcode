@@ -4,7 +4,7 @@ WorkRoles replaces the Work tab with role-based work management. No setup requir
 
 Instead of assigning priority numbers, you assign a set of ordered roles to colonists. A role is simply a named set of ordered jobs. Priorities are calculated and set automatically behind the scenes.
 
-The system makes it easy to manage both small and large colonies. Roles make work assignments readable, reusable and quick to change.
+Set up a role once, hand it to any number of colonists, and adjust everyone by editing one list.
 
 [h1]Key Features[/h1]
 [list]
@@ -13,32 +13,39 @@ The system makes it easy to manage both small and large colonies. Roles make wor
 [*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign "Emergency Harvester" to half the colony at high priority but disabled, and when blight or a cold snap hits, one click re-tasks everyone to the fields.
 [*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
 [*][b]Modded Jobs:[/b] Work types and jobs added by other mods appear automatically, no compatibility patches needed.
-[*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day, or only when home or away. An easy way to make colonists assume extra responsibilities while away on missions.
-[*][b]Combo Roles:[/b] Basics, Farmer and Grunt combine jobs that are often paired at equal priority.
-[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills and training opportunities.
-[*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered.
+[*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day, or only when home or away. Allows colonists to assume extra responsibilities while away on missions.
+[*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
+[*][b]Combo Roles:[/b] These combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role editor.
+[*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
+[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
+[*][b]Fix My Colony:[/b] Apply recommendations across all colonists, with a preview to see what would change.
+[*][b]Role Pinning:[/b] Pin role assignments that you don't want the recommendation engine to touch.
 [*][b]Copy & Paste:[/b] Transfer complete role sets between colonists.
 [*][b]Drag & Drop:[/b] Assign or re-order colonist roles by dragging.
-[*][b]Multiplayer Ready:[/b] Full RimWorld Multiplayer support.
+[*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
 [*][b]Translation Ready:[/b] All text resources are read from resource files (get in touch if you want to help translate).
 [*][b]Designed for Performance:[/b] Everything is pre-computed at assignment and nothing runs per-tick.
 [/list]
 
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
 
+[img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-drag-drop.png[/img]
+
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-advisor.png[/img]
 
 [h1]Worth Noting[/h1]
 [list]
 [*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
-[*][b]Seeding Combo Roles:[/b] The Basics role covers patient, rescue, firefighting and bed rest. Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
-[*][b]Invisible Jobs:[/b] Some mods add "invisible" jobs that all colonists should be able to do; these are added invisibly to all colonists.
+[*][b]Combo Roles:[/b] The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
+[*][b]Extra Roles:[/b] Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
+[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles quietly enables these for everyone, as vanilla would.
 [/list]
 
 [h1]Compatibility[/h1]
 [list]
 [*][b]Work Tab Mods:[/b] Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
 [*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
+[*]Tested alongside Better Workbench Management, AllowTool, PUAH+ and many others.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
 [/list]
 
