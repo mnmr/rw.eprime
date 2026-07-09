@@ -13,8 +13,8 @@ namespace WorkRoles
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
         public bool seeded;
-        /// Engine-internal role carrying invisible modded work types; lives outside
-        /// the catalog (never in roles, never shown in UI, never assigned to pawns).
+        /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
+        /// PostLoadInit migrates it into the catalog as the managed role.
         public Role allRole;
         public List<string> knownWorkTypes = new List<string>();
         /// Player-defined swatch slots for the role editor (alpha 0 = empty slot).
@@ -51,12 +51,8 @@ namespace WorkRoles
 
         public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
 
-        /// Lazily creates the engine-internal All role (label is internal-only).
-        public Role EnsureAllRole()
-        {
-            allRole ??= new Role { id = NextId(), label = "All" };
-            return allRole;
-        }
+        /// The engine-managed Odd Jobs role (invisible modded work types), or null.
+        public Role ManagedRole => roles.FirstOrDefault(r => r.managed);
 
         public Role RoleByTemplate(string templateDefName) =>
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
@@ -107,6 +103,20 @@ namespace WorkRoles
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
                 billRoles ??= new Dictionary<Bill, int>();
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.DeletedOrDereferenced);
+                // Migration: the once-hidden All role becomes the visible,
+                // engine-managed Odd Jobs catalog role, assigned to every managed
+                // pawn at the last position (its old implicit spot).
+                if (allRole != null)
+                {
+                    allRole.managed = true;
+                    allRole.autoAssign = true;
+                    allRole.label = "WR_OddJobsRole".Translate();
+                    roles.Add(allRole);
+                    foreach (var set in pawnSets.Values)
+                        if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != allRole.id))
+                            set.assignments.Add(new RoleAssignment { roleId = allRole.id });
+                    allRole = null;
+                }
                 CompiledJobOrders.InvalidateAll();
             }
         }

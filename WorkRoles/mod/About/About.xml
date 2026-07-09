@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.0.2</modVersion>
+  <modVersion>1.0.3</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -48,19 +48,34 @@ Key Features:
 - Drag &amp; Drop: Assign or re-order colonist roles by dragging.
 - Multiplayer Support: Fully RimWorld Multiplayer compatible.
 - Translation Ready: All text resources are read from resource files (get in touch if you want to help translate).
-- Designed for Performance: Everything is pre-computed at assignment and nothing runs per-tick.
+- Designed for Performance: Everything is pre-computed at assignment and nothing runs per-tick. If you use auto-roles, priorities do get invalidated and recomputed every game hour (shouldn't be measurable).
 
 Worth Noting:
 - Seeded Roles: An initial role set is seeded into the game, covering all detected work types and jobs. 
 - Combo Roles: The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
 - Extra Roles: Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
-- Invisible Jobs: Some mods add hidden jobs with no work-type checkbox; WorkRoles quietly enables these for everyone, as vanilla would.
+- Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put "No firefighting" before Basics (which has Firefighting).
+- Invisible Jobs: Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role (enabled by default from seeding, but removable and reorderable).
+
+How It Works:
+- Each colonist's ordered roles compile into one strict job order: earlier roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
+- The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so pawn AI behaves exactly as it would with a hand-tuned priority grid.
+- Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+- Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
+- Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+- In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-- Tested alongside Better Workbench Management, AllowTool, PUAH+ and many others.
-- Work Tab Mods: Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
+- Integrates with Vanilla Skills Expanded and Alpha Skills when installed (not requirements).
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
+- Multiplayer compatible.
 - Requires Harmony.
+
+Known Incompatible:
+- Work Tab Mods: Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
+- Priority-Setting Mods: Anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will).
+- Colony Groups works, except for the group work-priority presets (which sets priorities).
 
 Disclaimer:
 - This was created with the help of Claude Code. Since this is controversial (and more than I'd have thought), let me just say that I've worked as C# developer since it was released (yes, that old). I do backend/web development, and it was pretty invaluable to get help with RimWorld UI widgets and not having to hand-roll System.Drawing calls (if you don't know what that is, just think of something painful). The mod is free and was created in my spare time, and without AI it likely wouldn't exist.

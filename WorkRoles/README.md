@@ -24,25 +24,41 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 - **Drag & Drop:** assign or re-order colonist roles by dragging.
 - **Multiplayer Support:** fully RimWorld Multiplayer compatible.
 - **Translation Ready:** all text resources are read from resource files (get in touch if you want to help translate).
-- **Designed for Performance:** everything is pre-computed at assignment and nothing runs per-tick.
+- **Designed for Performance:** everything is pre-computed at assignment and nothing runs per-tick. If you use auto-roles, priorities do get invalidated and recomputed every game hour (shouldn't be measurable).
 
 ## Worth noting
 
 - **Seeded Roles:** an initial role set is seeded into the game, covering all detected work types and jobs.
 - **Combo Roles:** the Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
 - **Extra Roles:** convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
-- **Invisible Jobs:** some mods add hidden jobs with no work-type checkbox; WorkRoles quietly enables these for everyone, as vanilla would.
+- **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put "No firefighting" before Basics (which has Firefighting).
+- **Invisible Jobs:** some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role (enabled by default from seeding, but removable and reorderable).
 
 ## How it works
 
-The engine compiles each pawn's ordered roles into one strict job order and feeds it to the game through the same lists vanilla's job selection already consumes (`Pawn_WorkSettings`), so pawn AI behavior needs no changes. Emergency-flagged jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them. Other mods that read priorities get the values WorkRoles computed; priority *writes* are owned by WorkRoles for managed pawns. The mod continuously mirrors role priorities into vanilla's 0–4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+Each colonist's ordered roles compile into one strict job order: earlier roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position. The compiled order is fed to the game through the same lists vanilla's job selection already consumes (`Pawn_WorkSettings`), so pawn AI behaves exactly as it would with a hand-tuned priority grid and needs no changes.
+
+Everything is computed when assignments or roles change, then cached — no per-tick patches. Auto roles (time or location rules) additionally recompute once per in-game hour, which is when their rules can change state.
+
+Emergency-flagged jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+
+Other mods that read priorities get the values WorkRoles computed; priority *writes* are owned by WorkRoles for managed pawns — which is why priority-setting mods don't mix. The mod continuously mirrors role priorities into vanilla's 0–4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+
+In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 
 ## Compatibility
 
 - Requires [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077).
 - Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-- Tested alongside Better Workbench Management, AllowTool, PUAH+ and many others.
-- **Incompatible** with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
+- Integrates with Vanilla Skills Expanded and Alpha Skills when installed (not requirements).
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
+- Multiplayer compatible.
+
+## Known incompatible
+
+- **Work Tab Mods:** not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
+- **Priority-Setting Mods:** anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will).
+- Colony Groups works, except for the group work-priority presets (which sets priorities).
 
 ## Building from source
 

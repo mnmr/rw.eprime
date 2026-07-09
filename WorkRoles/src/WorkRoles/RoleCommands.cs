@@ -35,6 +35,7 @@ namespace WorkRoles
                 label = def.label,
                 templateDefName = def.defName,
                 autoAssign = def.autoAssign,
+                blocker = def.blocker,
                 hasCustomColor = def.hasCustomColor,
                 color = def.color,
                 iconPath = def.iconPath,
@@ -56,11 +57,21 @@ namespace WorkRoles
                     MessageTypeDefOf.PositiveEvent, historical: false);
         }
 
+        /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
+        [SyncMethod]
+        public static void SetRoleBlocker(int roleId, bool value)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.blocker == value) return;
+            role.blocker = value;
+            CompiledJobOrders.InvalidateRole(roleId);
+        }
+
         [SyncMethod]
         public static void DeleteRole(int roleId)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || role.managed) return;
             CompiledJobOrders.InvalidateRole(roleId);
             foreach (var set in Store.pawnSets.Values)
                 set.assignments.RemoveAll(a => a.roleId == roleId);
@@ -192,7 +203,7 @@ namespace WorkRoles
         public static void AddEntry(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || role.managed) return;
             if (index < 0 || index > role.entries.Count) index = role.entries.Count;
             role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);
@@ -202,7 +213,7 @@ namespace WorkRoles
         public static void RemoveEntry(int roleId, int index)
         {
             var role = FindRole(roleId);
-            if (role == null || index < 0 || index >= role.entries.Count) return;
+            if (role == null || role.managed || index < 0 || index >= role.entries.Count) return;
             role.entries.RemoveAt(index);
             CompiledJobOrders.InvalidateRole(roleId);
         }

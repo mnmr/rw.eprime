@@ -87,6 +87,7 @@ namespace WorkRoles
             {
                 foreach (var role in store.roles)
                 {
+                    if (role.blocker || role.managed) continue;
                     if (role.entries.Count != 1) continue;
                     var entry = role.entries[0];
                     if (entry.Kind == JobEntryKind.WorkType && entry.DefName == workType.defName)
@@ -99,8 +100,11 @@ namespace WorkRoles
             var consumed = new HashSet<string>();
 
             // Multi-type roles: only when all capable members share one enabled priority.
+            // Blockers (vetoes, not work) and the managed role (assigned by coverage)
+            // never migrate from priorities.
             foreach (var role in store.roles)
             {
+                if (role.blocker || role.managed) continue;
                 var capable = MemberTypes(role).Where(t => !pawn.WorkTypeIsDisabled(t)).ToList();
                 if (capable.Count < 2 || capable.Any(t => consumed.Contains(t.defName))) continue;
                 int shared = PriorityOf(capable[0]);
@@ -202,10 +206,29 @@ namespace WorkRoles
                 }
                 else
                 {
-                    // Invisible work types go to the engine-internal All role — every
-                    // colonist does them implicitly; not reported (the role is secret).
-                    store.EnsureAllRole().entries.Add(
+                    // Invisible work types go to the engine-managed Odd Jobs role: an
+                    // ordinary catalog role (reorderable, assignable, auto-assigned to
+                    // everyone) whose ENTRIES only the engine writes.
+                    var oddJobs = store.ManagedRole;
+                    if (oddJobs == null)
+                    {
+                        oddJobs = new Role
+                        {
+                            id = store.NextId(),
+                            label = "WR_OddJobsRole".Translate(),
+                            managed = true,
+                            autoAssign = true,
+                            hasCustomColor = true,
+                            color = new UnityEngine.Color(0.278f, 0.333f, 0.412f), // slate-600
+                        };
+                        store.roles.Add(oddJobs);
+                        foreach (var set in store.pawnSets.Values)
+                            if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != oddJobs.id))
+                                set.assignments.Add(new RoleAssignment { roleId = oddJobs.id });
+                    }
+                    oddJobs.entries.Add(
                         new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                    result.Add(oddJobs.label);
                     CompiledJobOrders.InvalidateAll();
                 }
             }
@@ -238,9 +261,8 @@ namespace WorkRoles
         {
             var covered = new HashSet<string>();
             foreach (var role in store.roles)
-                AddCoveredEntries(covered, role.entries);
-            if (store.allRole != null)
-                AddCoveredEntries(covered, store.allRole.entries);
+                if (!role.blocker) // a blocker's entries are vetoes, not coverage
+                    AddCoveredEntries(covered, role.entries);
             return covered;
         }
 
@@ -258,7 +280,8 @@ namespace WorkRoles
             {
                 if (store.RoleByTemplate(def.defName) != null) continue;
                 result.Add(def.label);
-                AddCoveredEntries(covered, def.ParsedEntries());
+                if (!def.blocker) // a blocker's entries are vetoes, not coverage
+                    AddCoveredEntries(covered, def.ParsedEntries());
             }
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (workType.visible && !covered.Contains(workType.defName))

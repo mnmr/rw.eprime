@@ -176,10 +176,14 @@ namespace WorkRoles.UI
             var parent = new Dictionary<Role, Role>();
             foreach (var role in roles)
             {
+                // Blockers and the managed role never nest and never parent:
+                // their entry overlap is not a provides-relationship.
                 Role best = null;
-                foreach (var other in roles)
-                    if (other.Covers(role) && (best == null || other.entries.Count < best.entries.Count))
-                        best = other;
+                if (!role.blocker && !role.managed)
+                    foreach (var other in roles)
+                        if (!other.blocker && !other.managed && other.Covers(role)
+                            && (best == null || other.entries.Count < best.entries.Count))
+                            best = other;
                 parent[role] = best;
             }
             Role RootOf(Role role)
@@ -255,7 +259,7 @@ namespace WorkRoles.UI
 
                 if (role.HasRules)
                 {
-                    var markerRect = new Rect(labelRect.x + Text.CalcSize(rowLabel).x + 6f,
+                    var markerRect = new Rect(labelRect.x + WrText.FitWidth(rowLabel) + 4f,
                         row.y + (RowHeight - 16f) / 2f, 16f, 16f);
                     if (markerRect.xMax <= labelRect.xMax)
                     {
@@ -308,13 +312,15 @@ namespace WorkRoles.UI
             }
 
             var deleteRect = new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f);
-            if (Widgets.ButtonText(deleteRect, "WR_Delete".Translate()))
+            var selectedRole = RoleStore.Current.RoleById(selectedRoleId);
+            bool deletable = selectedRole != null && !selectedRole.managed;
+            if (selectedRole != null && selectedRole.managed)
+                TooltipHandler.TipRegion(deleteRect, "WR_CannotDeleteManaged".Translate());
+            if (Widgets.ButtonText(deleteRect, "WR_Delete".Translate(), active: deletable) && deletable)
             {
-                var role = RoleStore.Current.RoleById(selectedRoleId);
-                if (role != null)
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        "WR_DeleteConfirm".Translate(role.label),
-                        () => RoleCommands.DeleteRole(role.id), destructive: true));
+                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    "WR_DeleteConfirm".Translate(selectedRole.label),
+                    () => RoleCommands.DeleteRole(selectedRole.id), destructive: true));
             }
         }
 
@@ -526,7 +532,7 @@ namespace WorkRoles.UI
                 : new Color(1f, 1f, 1f, 0.7f);
 
             Text.Font = GameFont.Small;
-            float labelW = Text.CalcSize(role.label).x + 4f;
+            float labelW = WrText.FitWidth(role.label) + 4f;
             GUI.color = tint;
             Widgets.DrawBoxSolid(new Rect(mouse.x + 10f, mouse.y + 6f, 16f, 16f),
                 role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
@@ -693,7 +699,17 @@ namespace WorkRoles.UI
             Widgets.DrawLineVertical(rect.x + halfW + 3f, bottomY, bottomH);
             GUI.color = Color.white;
 
-            DrawJobTree(treeRect, role);
+            if (role.managed)
+            {
+                // Engine-owned entries: no job tree; a note explains the container.
+                GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                Widgets.Label(treeRect.ContractedBy(8f), "WR_ManagedEntriesNote".Translate());
+                GUI.color = Color.white;
+            }
+            else
+            {
+                DrawJobTree(treeRect, role);
+            }
             DrawEntries(entriesRect, role);
         }
 
@@ -717,6 +733,20 @@ namespace WorkRoles.UI
             Widgets.CheckboxLabeled(assignRect, assignLabel, ref autoAssign);
             if (autoAssign != role.autoAssign)
                 RoleCommands.SetRoleAutoAssign(role.id, autoAssign);
+
+            // Blocker: the role's jobs become vetoes (hidden on the managed role).
+            if (!role.managed)
+            {
+                string blockLabel = "WR_BlockerRole".Translate();
+                var blockRect = new Rect(assignRect.xMax + 24f, rect.y,
+                    Mathf.Min(Text.CalcSize(blockLabel).x + 34f, Mathf.Max(0f, rect.xMax - assignRect.xMax - 24f)),
+                    rect.height);
+                TooltipHandler.TipRegion(blockRect, "WR_BlockerRoleTip".Translate());
+                bool blocker = role.blocker;
+                Widgets.CheckboxLabeled(blockRect, blockLabel, ref blocker);
+                if (blocker != role.blocker)
+                    RoleCommands.SetRoleBlocker(role.id, blocker);
+            }
 
             if (wanted == shown) return;
 
@@ -837,18 +867,19 @@ namespace WorkRoles.UI
         private static float LegendEntryWidth(string label)
         {
             Text.Font = GameFont.Small;
-            return LegendSwatch + 4f + Text.CalcSize(label).x;
+            return LegendSwatch + 4f + WrText.FitWidth(label);
         }
 
         private static float DrawLegendEntry(float x, float y, Color color, string label)
         {
             Text.Font = GameFont.Small;
-            var size = Text.CalcSize(label);
+            float labelW = WrText.FitWidth(label);
+            float labelH = Text.CalcSize(label).y;
             Widgets.DrawBoxSolid(new Rect(x, y + (HourLabelH - LegendSwatch) / 2f, LegendSwatch, LegendSwatch), color);
             GUI.color = new Color(0.75f, 0.75f, 0.75f);
-            Widgets.Label(new Rect(x + LegendSwatch + 4f, y + (HourLabelH - size.y) / 2f, size.x + 2f, size.y), label);
+            Widgets.Label(new Rect(x + LegendSwatch + 4f, y + (HourLabelH - labelH) / 2f, labelW, labelH), label);
             GUI.color = Color.white;
-            return x + LegendSwatch + 4f + size.x;
+            return x + LegendSwatch + 4f + labelW;
         }
 
         private void ApplyHourPaint(int hour)
@@ -899,7 +930,7 @@ namespace WorkRoles.UI
 
             Color SepColor = new Color(0.55f, 0.55f, 0.55f);
             const string Sep = ", ";
-            float sepW = Text.CalcSize(Sep).x;
+            float sepW = WrText.FitWidth(Sep);
             // Reserve enough width so "+99 others" always fits at the right edge.
             const float OverflowReserve = 70f;
 
@@ -910,7 +941,7 @@ namespace WorkRoles.UI
             {
                 var (pawn, _) = pawnPositions[i];
                 string name = pawn.LabelShortCap;
-                float nameW = Text.CalcSize(name).x;
+                float nameW = WrText.FitWidth(name);
                 bool hasNext = i < pawnPositions.Count - 1;
 
                 // Determine how much space remains after this name (sep + overflow reserve if more names follow).

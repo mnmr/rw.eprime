@@ -16,6 +16,8 @@ namespace WorkRoles.UI
         // View-local table filters (never synced, never persisted).
         private string colonistFilter = "";
         private int roleFilterId = -1;
+        private enum KindFilter { All, ColonistsOnly, SlavesOnly }
+        private KindFilter kindFilter = KindFilter.All;
 
         private const float PaletteMaxHeight = 260f;   // palette scrolls beyond this
         private const float PalettePadding = 6f;
@@ -223,10 +225,12 @@ namespace WorkRoles.UI
         private static List<PaletteCluster> BuildPaletteClusters(RoleStore store)
         {
             var skillClusters = new List<PaletteCluster>();
-            PaletteCluster everyone = null, unskilled = null;
+            PaletteCluster everyone = null, unskilled = null, modChores = null;
 
             PaletteCluster ClusterFor(Role root)
             {
+                if (root.managed)
+                    return modChores ??= new PaletteCluster { label = "WR_ClusterModChores".Translate() };
                 if (root.autoAssign)
                     return everyone ??= new PaletteCluster { label = "WR_ClusterEveryone".Translate() };
                 var skills = RelevantSkillsOf(root);
@@ -249,6 +253,7 @@ namespace WorkRoles.UI
             if (everyone != null) result.Add(everyone);
             result.AddRange(skillClusters);
             if (unskilled != null) result.Add(unskilled);
+            if (modChores != null) result.Add(modChores);
             return result;
         }
 
@@ -267,7 +272,7 @@ namespace WorkRoles.UI
                 foreach (var role in cluster.roles)
                     w += RoleChipUI.WidthFor(role, showRemove: false) + ChipGap;
                 Text.Font = GameFont.Tiny;
-                w = Mathf.Max(w, Text.CalcSize(cluster.label).x);
+                w = Mathf.Max(w, WrText.FitWidth(cluster.label));
                 Text.Font = GameFont.Small;
                 w = Mathf.Min(w, rowWidth);
 
@@ -360,19 +365,40 @@ namespace WorkRoles.UI
                 Find.WindowStack.Add(new FloatMenu(options));
             }
 
-            if (!colonistFilter.NullOrEmpty() || roleFilterId != -1)
+            // Pawn-kind dropdown: colonists and slaves / colonists only / slaves only.
+            float kindX = btnX + RoleBtnW + 8f;
+            string kindLabel = kindFilter == KindFilter.ColonistsOnly ? "WR_ShowColonists".Translate()
+                : kindFilter == KindFilter.SlavesOnly ? "WR_ShowSlaves".Translate()
+                : "WR_ShowAll".Translate();
+            if (Widgets.ButtonText(new Rect(kindX, y, RoleBtnW, SearchH), kindLabel))
             {
-                var clearRect = new Rect(btnX + RoleBtnW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
+                Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                {
+                    new FloatMenuOption("WR_ShowAll".Translate(), () => kindFilter = KindFilter.All),
+                    new FloatMenuOption("WR_ShowColonists".Translate(), () => kindFilter = KindFilter.ColonistsOnly),
+                    new FloatMenuOption("WR_ShowSlaves".Translate(), () => kindFilter = KindFilter.SlavesOnly),
+                }));
+            }
+
+            if (FiltersActive)
+            {
+                var clearRect = new Rect(kindX + RoleBtnW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
                 TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                 {
                     colonistFilter = "";
                     roleFilterId = -1;
+                    kindFilter = KindFilter.All;
                 }
             }
         }
 
-        private bool FiltersActive => !colonistFilter.NullOrEmpty() || roleFilterId != -1;
+        /// Genes that make a pawn terrified of fire (Biotech's pyrophobia; extend
+        /// here if mods add equivalents). Drives the No Firefighting plan rule.
+        private static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
+
+        private bool FiltersActive =>
+            !colonistFilter.NullOrEmpty() || roleFilterId != -1 || kindFilter != KindFilter.All;
 
         private List<Pawn> FilteredPawns(List<Pawn> pawns, RoleStore store)
         {
@@ -388,13 +414,15 @@ namespace WorkRoles.UI
                 var selected = store.RoleById(roleFilterId);
                 if (selected != null)
                     foreach (var role in store.roles)
-                        if (role.Covers(selected))
+                        if (!role.blocker && role.Covers(selected))
                             matchIds.Add(role.id);
             }
 
             var result = new List<Pawn>();
             foreach (var pawn in pawns)
             {
+                if (kindFilter == KindFilter.ColonistsOnly && pawn.IsSlaveOfColony) continue;
+                if (kindFilter == KindFilter.SlavesOnly && !pawn.IsSlaveOfColony) continue;
                 if (!colonistFilter.NullOrEmpty()
                     && pawn.LabelShortCap.IndexOf(colonistFilter, System.StringComparison.OrdinalIgnoreCase) < 0)
                     continue;
@@ -478,7 +506,10 @@ namespace WorkRoles.UI
 
             var nameRect = new Rect(portraitRect.xMax + 6f, rect.y, NameWidth, rect.height);
             Text.Anchor = TextAnchor.MiddleLeft;
+            // Slaves get the game's own sandy-yellow name color, as in vanilla lists.
+            GUI.color = pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white;
             Widgets.Label(nameRect, pawn.LabelShortCap);
+            GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             if (Widgets.ButtonInvisible(new Rect(rect.x, rect.y, portraitRect.width + 6f + NameWidth, rect.height)))
@@ -639,11 +670,13 @@ namespace WorkRoles.UI
             GUI.DrawTexture(portraitFrameRect,
                 PortraitsCache.Get(selectedPawn, new Vector2(portraitBoxSize, portraitBoxSize), Rot4.South));
 
-            // Pawn name directly below portrait, centered
+            // Pawn name directly below portrait, centered (slaves in vanilla's color)
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperCenter;
+            GUI.color = selectedPawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(selectedPawn) : Color.white;
             Widgets.Label(new Rect(rect.x, rect.y + portraitBoxSize + 2f, portraitBoxSize, 20f),
                 selectedPawn.LabelShortCap);
+            GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             // Change 2a: NO separator between portrait and col1 — 16f blank gap instead
@@ -673,6 +706,7 @@ namespace WorkRoles.UI
             // Draw skill lines in the two columns
             var lines = SkillsTip.Lines(selectedPawn);
             if (lines.Count == 0) return;
+            var expertises = Expertise.For(selectedPawn);
 
             Text.Font = GameFont.Small;
             for (int i = 0; i < lines.Count; i++)
@@ -687,15 +721,16 @@ namespace WorkRoles.UI
                 // Skip if beyond available columns
                 if (col >= SkillCols) continue;
 
-                // Text colour priority
+                // Text colour priority (custom VSE passions map by learn-rate score)
+                int passionScore = Passions.ScoreOf(line.Passion);
                 Color textColor;
                 if (line.Disabled || line.Level <= 1)
                     textColor = ColorDisabled;
                 else if (line.Level <= 5)
                     textColor = ColorLow;
-                else if (line.Passion == Passion.Major)
+                else if (passionScore == 2)
                     textColor = ColorPassMajor;
-                else if (line.Passion == Passion.Minor)
+                else if (passionScore == 1)
                     textColor = ColorPassMinor;
                 else
                     textColor = Color.white;
@@ -710,26 +745,48 @@ namespace WorkRoles.UI
                 }
                 xCursor += 8f; // reserve space for aptitude square alignment
 
-                // Skill label
+                // Skill label (wrap off: a long modded skill name must clip, not
+                // wrap out of the single-line cell)
                 GUI.color = textColor;
                 Text.Anchor = TextAnchor.MiddleLeft;
                 string labelText = line.Label;
                 Vector2 labelSize = Text.CalcSize(labelText);
                 float labelMaxW = SkillColWidth - 8f - (16f + 4f) - 48f; // col width - aptitude space - icon+gap - value col
+                bool wrapWas = Text.WordWrap;
+                Text.WordWrap = false;
                 Widgets.Label(new Rect(xCursor, cellY, labelMaxW, CellH), labelText);
+                Text.WordWrap = wrapWas;
 
-                // Passion icon appended after label text
+                // Passion icon appended after label text; VSE custom passions draw
+                // their own def icon with the passion's name as tooltip.
                 const float IconW = 16f;
                 float iconX = xCursor + Mathf.Min(labelSize.x, labelMaxW) + 4f;
-                if (line.Passion == Passion.Major)
+                var passionTex = line.Passion == Passion.Major ? WorkRolesTex.PassionMajor
+                    : line.Passion == Passion.Minor ? WorkRolesTex.PassionMinor
+                    : Passions.CustomIcon(line.Passion);
+                if (passionTex != null)
                 {
                     GUI.color = Color.white;
-                    GUI.DrawTexture(new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW), WorkRolesTex.PassionMajor);
+                    var iconRect = new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW);
+                    GUI.DrawTexture(iconRect, passionTex);
+                    string passionLabel = Passions.CustomLabel(line.Passion);
+                    if (passionLabel != null && Mouse.IsOver(iconRect))
+                        TooltipHandler.TipRegion(iconRect, passionLabel);
+                    iconX += IconW + 2f;
                 }
-                else if (line.Passion == Passion.Minor)
+
+                // VSE expertise marker: gold square on the expertise's skill line,
+                // tooltip carries the full description (name, level, effects).
+                foreach (var expertise in expertises)
                 {
+                    if (expertise.Skill != line.Def) continue;
                     GUI.color = Color.white;
-                    GUI.DrawTexture(new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW), WorkRolesTex.PassionMinor);
+                    var markRect = new Rect(iconX, cellY + (CellH - 6f) / 2f, 6f, 6f);
+                    Widgets.DrawBoxSolid(markRect, new Color(1f, 0.85f, 0.3f));
+                    var tipRect = new Rect(iconX - 3f, cellY, 12f, CellH);
+                    if (Mouse.IsOver(tipRect))
+                        TooltipHandler.TipRegion(tipRect, expertise.Description);
+                    iconX += 8f;
                 }
 
                 // Value right-aligned in fixed 48f column at right edge of skill column
@@ -879,14 +936,33 @@ namespace WorkRoles.UI
         private static Role RoleProviding(RoleStore store, string workType, string template)
         {
             var shipped = store.roles.FirstOrDefault(r => r.templateDefName == template);
-            if (shipped != null && shipped.enabled && !shipped.HasRules) return shipped;
+            if (shipped != null && shipped.enabled && !shipped.HasRules && !shipped.blocker) return shipped;
             Role best = null;
             foreach (var role in store.roles)
             {
-                if (!role.enabled || role.HasRules || !HasWorkTypeEntry(role, workType)) continue;
+                if (!role.enabled || role.HasRules || role.blocker || !HasWorkTypeEntry(role, workType)) continue;
                 if (best == null || role.entries.Count < best.entries.Count) best = role;
             }
             return best;
+        }
+
+        /// The medic-style role backing the doctoring redundancy floor: the shipped
+        /// template when usable, else any enabled rule-free role made purely of
+        /// Doctor-work jobs without being a full doctor (covering the Doctor role).
+        private static Role MedicRole(RoleStore store, Role doctorRole)
+        {
+            var shipped = store.RoleByTemplate("WS_Medic");
+            if (shipped != null && shipped.enabled && !shipped.HasRules) return shipped;
+            foreach (var role in store.roles)
+            {
+                if (!role.enabled || role.HasRules || role.blocker || role == doctorRole || role.entries.Count == 0) continue;
+                if (doctorRole != null && role.Covers(doctorRole)) continue;
+                bool allDoctorWork = role.entries.All(e =>
+                    e.Kind == JobEntryKind.WorkGiver
+                    && DefDatabase<WorkGiverDef>.GetNamedSilentFail(e.DefName)?.workType?.defName == "Doctor");
+                if (allDoctorWork) return role;
+            }
+            return null;
         }
 
         /// Whether the role touches the Hunting work type (whole type or any job).
@@ -929,12 +1005,16 @@ namespace WorkRoles.UI
             var existing = set?.assignments ?? new List<RoleAssignment>();
             var hunterRole = store.RoleById(hunterRoleId);
 
-            // Protected assignments (rule-carrying roles, player-pinned) never move:
-            // they skip normal placement and re-enter at their original position.
+            // Protected assignments (rule-carrying roles, blockers, player-pinned)
+            // never move: they skip normal placement and re-enter at their original
+            // position.
             var protectedIds = new HashSet<int>();
             foreach (var a in existing)
-                if (a.pinned || store.RoleById(a.roleId)?.HasRules == true)
+            {
+                var role = store.RoleById(a.roleId);
+                if (a.pinned || role?.HasRules == true || role?.blocker == true)
                     protectedIds.Add(a.roleId);
+            }
 
             var target = new List<RoleAssignment>();
             void Add(int roleId)
@@ -1028,9 +1108,10 @@ namespace WorkRoles.UI
             return target;
         }
 
-        /// Protected assignments — rule-carrying (auto) roles and player-pinned
-        /// ones — are never stripped or moved by a replace plan: each re-enters the
-        /// target at min(original index, target count), keeping its per-pawn toggle.
+        /// Protected assignments — rule-carrying (auto) roles, blockers and
+        /// player-pinned ones — are never stripped or moved by a replace plan: each
+        /// re-enters the target at min(original index, target count), keeping its
+        /// per-pawn toggle.
         private static void PinProtectedRoles(List<RoleAssignment> existing,
             List<RoleAssignment> target, RoleStore store)
         {
@@ -1038,7 +1119,7 @@ namespace WorkRoles.UI
             {
                 var role = store.RoleById(existing[i].roleId);
                 if (role == null) continue;
-                if (!role.HasRules && !existing[i].pinned) continue;
+                if (!role.HasRules && !role.blocker && !existing[i].pinned) continue;
                 if (target.Any(a => a.roleId == existing[i].roleId)) continue;
                 int at = Mathf.Min(i, target.Count);
                 target.Insert(at, new RoleAssignment
@@ -1169,18 +1250,26 @@ namespace WorkRoles.UI
             const int GroupBasics = 0;
             const int GroupWardenCarer = 1; // duty roles sit above the vocations, as in vanilla
             const int GroupHunter = 2;      // training activity: must outrank the skilled work
-            const int GroupMajorPassion = 3;
-            const int GroupMinorPassion = 4;
-            const int GroupBestInColony = 5;
-            const int GroupAptitude = 6;
-            const int GroupGrunt = 7;
+            const int GroupExpertise = 3;   // VSE skill specialization: rarer and stronger than passion
+            const int GroupMajorPassion = 4;
+            const int GroupMinorPassion = 5;
+            const int GroupBestInColony = 6;
+            const int GroupAptitude = 7;
+            const int GroupGrunt = 8;
+
+            // VSE expertise (empty without the mod): skill -> expertise label.
+            var expertiseBySkill = new Dictionary<SkillDef, string>();
+            foreach (var expertise in Expertise.For(pawn))
+                expertiseBySkill[expertise.Skill] = expertise.Label;
 
             var scored = new List<(Role role, int group, float sortKey)>();
 
             foreach (var role in store.roles)
             {
-                // Auto (rule-carrying) roles are player-built automation: never recommended.
-                if (role.HasRules) continue;
+                // Auto (rule-carrying) roles are player-built automation and blockers
+                // are vetoes: neither is ever recommended by the skill pass (the
+                // colony plan places safety blockers like No Firefighting itself).
+                if (role.HasRules || role.blocker) continue;
 
                 var workTypes = WorkTypesOf(role);
 
@@ -1237,8 +1326,10 @@ namespace WorkRoles.UI
                         var sr = pawn.skills.GetSkill(skillDef);
                         if (sr == null || sr.TotallyDisabled) continue;
 
-                        if (sr.passion == Passion.Major) Candidate(GroupMajorPassion, sr.Level, skillDef);
-                        else if (sr.passion == Passion.Minor) Candidate(GroupMinorPassion, sr.Level, skillDef);
+                        if (expertiseBySkill.ContainsKey(skillDef)) Candidate(GroupExpertise, sr.Level, skillDef);
+                        int passionScore = Passions.Score(sr);
+                        if (passionScore == 2) Candidate(GroupMajorPassion, sr.Level, skillDef);
+                        else if (passionScore == 1) Candidate(GroupMinorPassion, sr.Level, skillDef);
                         if (skillMaxLevel.TryGetValue(skillDef, out int maxLvl)
                             && sr.Level >= maxLvl && sr.Level > 0)
                             Candidate(GroupBestInColony, sr.Level, skillDef);
@@ -1250,7 +1341,8 @@ namespace WorkRoles.UI
                 // everyone/grunt/hunting roles): when two or more other colonists
                 // hold the role and beat this pawn at its matched skill, the colony
                 // doesn't need a third — passion or not.
-                bool skillCandidacy = group == GroupMajorPassion || group == GroupMinorPassion
+                bool skillCandidacy = group == GroupExpertise
+                    || group == GroupMajorPassion || group == GroupMinorPassion
                     || group == GroupBestInColony || group == GroupAptitude;
                 if (skillCandidacy && matchedSkill != null
                     && !role.autoAssign && !IsUnskilledRole(role) && !huntingRole)
@@ -1286,6 +1378,9 @@ namespace WorkRoles.UI
                             : group == GroupWardenCarer ? "WR_ReasonDuty".Translate()
                             : group == GroupHunter ? "WR_ReasonHunter".Translate()
                             : group == GroupGrunt ? "WR_ReasonUnskilled".Translate()
+                            : group == GroupExpertise ? "WR_ReasonExpertise".Translate(
+                                matchedSkill != null && expertiseBySkill.TryGetValue(matchedSkill, out var expertiseLabel)
+                                    ? expertiseLabel : skillLabel)
                             : group == GroupMajorPassion ? "WR_ReasonMajorPassion".Translate(skillLabel)
                             : group == GroupMinorPassion ? "WR_ReasonMinorPassion".Translate(skillLabel)
                             : group == GroupBestInColony ? "WR_ReasonBest".Translate(skillLabel)
@@ -1331,7 +1426,7 @@ namespace WorkRoles.UI
                 if (level < def.gateMinLevel && !best) return false;
             }
             if (def.gateMaxLevel > 0 && level >= def.gateMaxLevel) return false;
-            if (def.gateNeedsPassion && (sr == null || sr.TotallyDisabled || sr.passion == Passion.None))
+            if (def.gateNeedsPassion && Passions.Score(sr) == 0)
                 return false;
             return true;
         }
@@ -1432,7 +1527,7 @@ namespace WorkRoles.UI
 
             foreach (var role in store.roles)
             {
-                if (!role.enabled || role.HasRules || role.autoAssign) continue;
+                if (!role.enabled || role.HasRules || role.autoAssign || role.blocker || role.managed) continue;
                 if (role.templateDefName == "WS_Artist") continue; // min 0: not required
                 var relevantSkills = RelevantSkillsOf(role);
                 if (relevantSkills.Count == 0) continue; // not skill-associated
@@ -1469,9 +1564,7 @@ namespace WorkRoles.UI
                         }
                         if (!has) continue;
 
-                        int passion = sr == null ? 0
-                            : sr.passion == Passion.Major ? 2
-                            : sr.passion == Passion.Minor ? 1 : 0;
+                        int passion = Passions.Score(sr);
                         shooters.Add((pawn, level, passion));
                         hunterTiers[pawn] = level < 15 ? 0 : level < 19 ? 1 : 2;
                         SetReason(pawn, role.id, "WR_ReasonHunter".Translate());
@@ -1499,7 +1592,7 @@ namespace WorkRoles.UI
                         var sr = pawn.skills.GetSkill(skillDef);
                         if (sr == null || sr.TotallyDisabled) continue;
                         if (sr.Level > level) level = sr.Level;
-                        int p = sr.passion == Passion.Major ? 2 : sr.passion == Passion.Minor ? 1 : 0;
+                        int p = Passions.Score(sr);
                         if (p > passion) passion = p;
                     }
                     eligible.Add((pawn, level, passion, virtualSets[pawn].Count));
@@ -1536,6 +1629,101 @@ namespace WorkRoles.UI
                 }
             }
 
+            // Doctoring redundancy floor: the plan must field at least TWO pawns able
+            // to tend — two doctors or a doctor/medic pair. Coverage reaches 2 on its
+            // own in larger colonies; this tops up small ones. The backup slot goes to
+            // the best remaining candidate: a Doctor-gate passer as Doctor, else a
+            // Medic trainee (gates), else — a backup must always exist — the best pawn
+            // by Medicine level as Medic, gates waived. A skilled joiner later takes
+            // the slot over naturally on the next plan.
+            var doctorRole = RoleProviding(store, "Doctor", "WS_Doctor");
+            var medicRole = MedicRole(store, doctorRole);
+            if (doctorRole != null || medicRole != null)
+            {
+                bool ProvidesDoctoring(int id)
+                {
+                    if (doctorRole != null && id == doctorRole.id) return true;
+                    if (medicRole != null && id == medicRole.id) return true;
+                    if (doctorRole == null) return false;
+                    var covering = store.RoleById(id);
+                    return covering != null && !covering.blocker && covering.Covers(doctorRole);
+                }
+
+                int doctoring = pawns.Count(p => virtualSets[p].Any(ProvidesDoctoring));
+                if (doctoring == 1) // 0 means nobody can tend at all; nothing to back up
+                {
+                    var doctorType = DefDatabase<WorkTypeDef>.GetNamedSilentFail("Doctor");
+                    var ranked = new List<(Pawn pawn, int level, int passion, int load)>();
+                    foreach (var pawn in pawns)
+                    {
+                        if (pawn.skills == null) continue;
+                        if (doctorType != null && pawn.WorkTypeIsDisabled(doctorType)) continue;
+                        if (virtualSets[pawn].Any(ProvidesDoctoring)) continue;
+                        var sr = pawn.skills.GetSkill(SkillDefOf.Medicine);
+                        int level = sr != null && !sr.TotallyDisabled ? sr.Level : 0;
+                        ranked.Add((pawn, level, Passions.Score(sr), virtualSets[pawn].Count));
+                    }
+                    ranked = ranked
+                        .OrderByDescending(t => t.level)
+                        .ThenByDescending(t => t.passion)
+                        .ThenBy(t => t.load)
+                        .ToList();
+
+                    Pawn backup = null;
+                    Role backupRole = null;
+                    if (doctorRole != null)
+                        backup = ranked.FirstOrDefault(c => PassesTemplateGates(doctorRole, c.pawn, skillMaxLevel)).pawn;
+                    if (backup != null)
+                        backupRole = doctorRole;
+                    else if (medicRole != null)
+                    {
+                        backup = ranked.FirstOrDefault(c => PassesTemplateGates(medicRole, c.pawn, skillMaxLevel)).pawn;
+                        if (backup == null && ranked.Count > 0) backup = ranked[0].pawn; // gates waived
+                        backupRole = medicRole;
+                    }
+                    else if (ranked.Count > 0)
+                    {
+                        backup = ranked[0].pawn; // no medic-style role in the catalog: waive Doctor's gate
+                        backupRole = doctorRole;
+                    }
+
+                    if (backup != null && backupRole != null)
+                    {
+                        virtualSets[backup].Add(backupRole.id);
+                        if (!essentialGrants.TryGetValue(backup, out var granted))
+                            essentialGrants[backup] = granted = new List<int>();
+                        granted.Add(backupRole.id);
+                        SetReason(backup, backupRole.id, "WR_ReasonEssential".Translate(
+                            doctorType?.gerundLabel ?? "Doctor"));
+                    }
+                }
+            }
+
+            // Fire-safety pass: pawns genetically terrified of fire (e.g. Biotech's
+            // pyrophobia) get the No Firefighting blocker placed FIRST, so it vetoes
+            // Basics' firefighting below it. Content-first resolution: the shipped
+            // template, else any enabled rule-free blocker carrying the Firefighter
+            // work type.
+            var fireBlocker = store.RoleByTemplate("WS_NoFirefighting");
+            if (fireBlocker != null && (!fireBlocker.enabled || fireBlocker.HasRules || !fireBlocker.blocker))
+                fireBlocker = null;
+            fireBlocker ??= store.roles.FirstOrDefault(r =>
+                r.enabled && !r.HasRules && r.blocker && HasWorkTypeEntry(r, "Firefighter"));
+            var fireGrants = new HashSet<Pawn>();
+            if (fireBlocker != null)
+            {
+                foreach (var pawn in pawns)
+                {
+                    if (pawn.genes == null
+                        || !pawn.genes.GenesListForReading.Any(g => FireFearGenes.Contains(g.def.defName)))
+                        continue;
+                    if (!virtualSets[pawn].Contains(fireBlocker.id))
+                        virtualSets[pawn].Add(fireBlocker.id);
+                    fireGrants.Add(pawn);
+                    SetReason(pawn, fireBlocker.id, "WR_ReasonFireFear".Translate());
+                }
+            }
+
             // Pass 3: backup + ordering (see BuildOrderedTarget), then diff vs real
             // assignments.
             foreach (var pawn in pawns)
@@ -1554,6 +1742,19 @@ namespace WorkRoles.UI
                 var target = BuildOrderedTarget(pawn, store,
                     ComputeRecommendations(pawn, store, VirtualView, recReasons), virtualSets[pawn],
                     promoted, hunterTier, hunterRole?.id ?? -1);
+
+                // The fire-safety blocker leads the list: it must sit above Basics
+                // (and everything else) to veto firefighting.
+                if (fireBlocker != null && fireGrants.Contains(pawn))
+                {
+                    int fireIdx = target.FindIndex(a => a.roleId == fireBlocker.id);
+                    if (fireIdx > 0)
+                    {
+                        var grant = target[fireIdx];
+                        target.RemoveAt(fireIdx);
+                        target.Insert(0, grant);
+                    }
+                }
 
                 var plan = new PawnFixPlan { pawn = pawn, target = target, reasons = recReasons };
                 if (coverageReasons.TryGetValue(pawn, out var granted2))

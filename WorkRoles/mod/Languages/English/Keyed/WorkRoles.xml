@@ -10,6 +10,17 @@
   <!-- Palette cluster labels (skill clusters use the skill's own label) -->
   <WR_ClusterEveryone>Everyone</WR_ClusterEveryone>
   <WR_ClusterUnskilled>Unskilled</WR_ClusterUnskilled>
+  <WR_ClusterModChores>Mod chores</WR_ClusterModChores>
+
+  <!-- Engine-managed Odd Jobs role (invisible modded work types) -->
+  <WR_OddJobsRole>Odd Jobs</WR_OddJobsRole>
+  <WR_ManagedEntriesNote>This role collects jobs that mods add without a Work tab presence. WorkRoles manages its contents automatically: new hidden jobs appear here, and jobs vanish when their mod is removed. You can rename, recolor, reorder, assign and toggle it like any other role — only its job list is off-limits.</WR_ManagedEntriesNote>
+  <WR_CannotDeleteManaged>Odd Jobs cannot be deleted: it is where hidden modded jobs are collected. Unassign or disable it instead.</WR_CannotDeleteManaged>
+
+  <!-- Blocker roles -->
+  <WR_BlockerRole>Blocker role</WR_BlockerRole>
+  <WR_BlockerRoleTip>A blocker role's jobs are never done: they are blocked ("will not do") even when a later role includes them. Roles ABOVE the blocker still win, so you can allow exceptions by placing a role higher.</WR_BlockerRoleTip>
+  <WR_ReasonFireFear>Genetically terrified of fire: blocks firefighting.</WR_ReasonFireFear>
 
   <!-- Palette role tooltip: {0}=role label, {1}=state phrase, {2}=job list, {3}=usage hint -->
   <WR_RoleTip>{0} — {1}
@@ -25,6 +36,9 @@
 
   <!-- Filter row -->
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
+  <WR_ShowAll>Colonists and slaves</WR_ShowAll>
+  <WR_ShowColonists>Colonists only</WR_ShowColonists>
+  <WR_ShowSlaves>Slaves only</WR_ShowSlaves>
   <WR_ClearFilters>Clear filters</WR_ClearFilters>
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
@@ -42,6 +56,7 @@
   <WR_ReasonDuty>Duty work: prisoners and children come first.</WR_ReasonDuty>
   <WR_ReasonHunter>Carries a ranged weapon; hunting also trains Shooting.</WR_ReasonHunter>
   <WR_ReasonUnskilled>Unskilled work anyone can do.</WR_ReasonUnskilled>
+  <WR_ReasonExpertise>Expertise: {0}.</WR_ReasonExpertise>
   <WR_ReasonMajorPassion>Burning passion for {0}.</WR_ReasonMajorPassion>
   <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
   <WR_ReasonBest>Best in the colony at {0}.</WR_ReasonBest>

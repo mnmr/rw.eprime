@@ -1,4 +1,5 @@
 using System;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -47,9 +48,9 @@ namespace WorkRoles.UI
         public static float WidthFor(Role role, bool showRemove)
         {
             Text.Font = GameFont.Small;
-            return Text.CalcSize(role.label).x + PadX * 2f
+            return WrText.FitWidth(role.label) + PadX * 2f
                 + (showRemove ? RemoveSize + 2f : 0f)
-                + (role.HasRules ? RemoveSize + 2f : 0f);
+                + (role.HasRules || role.blocker ? RemoveSize + 2f : 0f);
         }
 
         /// Draws a chip. Clicks are resolved centrally via RoleDrag.ResolveMouseUp.
@@ -74,13 +75,14 @@ namespace WorkRoles.UI
 
             Widgets.DrawBoxSolidWithOutline(rect, bg, OutlineColor);
 
-            // Auto-role marker: mirrors the remove icon's slot, on the left of the label.
+            // Auto-role / blocker marker: mirrors the remove icon's slot, on the
+            // left of the label. A blocker's veto icon wins over the rules icon.
             float labelX = rect.x + PadX;
-            if (role.HasRules)
+            if (role.HasRules || role.blocker)
             {
                 var markerRect = new Rect(rect.x + 3f, rect.y + (rect.height - RemoveSize) / 2f, RemoveSize, RemoveSize);
                 GUI.color = RuleMarkerColor;
-                GUI.DrawTexture(markerRect, TexButton.AutoRebuild);
+                GUI.DrawTexture(markerRect, role.blocker ? TexCommand.ForbidOn : TexButton.AutoRebuild);
                 GUI.color = Color.white;
                 labelX += RemoveSize + 2f;
             }
@@ -90,6 +92,11 @@ namespace WorkRoles.UI
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
+            // Never wrap: a rect that comes up a pixel short at fractional UI
+            // scales must clip the last glyph, not spill a second line out of
+            // the chip.
+            bool wrap = Text.WordWrap;
+            Text.WordWrap = false;
 
             if (style == ChipStyle.Disabled || style == ChipStyle.AutoOff)
                 GUI.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f);
@@ -100,6 +107,7 @@ namespace WorkRoles.UI
 
             Widgets.Label(labelRect, role.label);
             GUI.color = Color.white;
+            Text.WordWrap = wrap;
             Text.Anchor = TextAnchor.UpperLeft;
 
             if (style == ChipStyle.Disabled)

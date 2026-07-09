@@ -24,6 +24,9 @@ namespace WorkRoles
         public int gateMaxLevel;
         public bool gateNeedsPassion;
 
+        /// Blocker role: its jobs are never done and are vetoed in all later roles.
+        public bool blocker;
+
         public List<JobEntry> ParsedEntries()
         {
             var parsed = new List<JobEntry>();

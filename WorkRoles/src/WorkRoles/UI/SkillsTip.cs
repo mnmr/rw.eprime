@@ -7,6 +7,7 @@ namespace WorkRoles.UI
 {
     public readonly struct SkillLine
     {
+        public readonly SkillDef Def;
         public readonly string Label;      // skill label, capitalized, NO colon
         public readonly string ValueText;  // "12.37" (F2) or "-" when disabled
         public readonly Passion Passion;
@@ -14,8 +15,9 @@ namespace WorkRoles.UI
         public readonly int Level;         // raw level; 0 when disabled
         public readonly bool Disabled;
 
-        public SkillLine(string label, string valueText, Passion passion, int aptitude, int level, bool disabled)
+        public SkillLine(SkillDef def, string label, string valueText, Passion passion, int aptitude, int level, bool disabled)
         {
+            Def = def;
             Label = label;
             ValueText = valueText;
             Passion = passion;
@@ -48,6 +50,7 @@ namespace WorkRoles.UI
                     valueText = fractional.ToString("F2");
                 }
                 result.Add(new SkillLine(
+                    def: s.def,
                     label: skillLabel,
                     valueText: valueText,
                     passion: s.passion,

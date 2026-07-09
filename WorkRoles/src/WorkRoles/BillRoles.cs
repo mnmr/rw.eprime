@@ -32,6 +32,7 @@ namespace WorkRoles
 
             foreach (var role in store.roles)
             {
+                if (role.blocker) continue; // vetoes can't work a bill
                 bool matches = false;
                 foreach (var entry in role.entries)
                 {

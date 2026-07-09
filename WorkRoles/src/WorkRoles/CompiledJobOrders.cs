@@ -88,23 +88,16 @@ namespace WorkRoles
         private static Entry Build(Pawn pawn)
         {
             var store = RoleStore.Current;
-            var roleEntries = new List<IReadOnlyList<JobEntry>>();
-            if (store != null)
+            var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
+            if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
             {
-                if (store.pawnSets.TryGetValue(pawn, out var set))
+                foreach (var assignment in set.assignments)
                 {
-                    foreach (var assignment in set.assignments)
-                    {
-                        if (!assignment.enabled) continue;
-                        var role = store.RoleById(assignment.roleId);
-                        if (role != null && role.enabled && RoleRules.Pass(role, pawn))
-                            roleEntries.Add(role.entries);
-                    }
+                    if (!assignment.enabled) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role != null && role.enabled && RoleRules.Pass(role, pawn))
+                        roleEntries.Add((role.entries, role.blocker));
                 }
-                // The engine-internal All role (invisible modded work types) is always
-                // on for everyone: appended last, so it never outranks assigned roles.
-                if (store.allRole != null && store.allRole.entries.Count > 0)
-                    roleEntries.Add(store.allRole.entries);
             }
 
             Func<string, bool> pawnCanDo = giverDefName =>

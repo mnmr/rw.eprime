@@ -10,30 +10,43 @@ namespace WorkRoles.Core
             IJobCatalog catalog,
             Func<string, bool> pawnCanDo)
         {
+            var slices = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
+            foreach (var entries in orderedEnabledRoleEntries)
+                slices.Add((entries, false));
+            return Compile(slices, catalog, pawnCanDo);
+        }
+
+        /// First claim on a job wins: a blocker role's claim marks the job blocked
+        /// (never done, vetoed in all later roles); a normal role's claim ranks it.
+        public static CompiledOrder Compile(
+            IEnumerable<(IReadOnlyList<JobEntry> entries, bool blocker)> orderedEnabledRoles,
+            IJobCatalog catalog,
+            Func<string, bool> pawnCanDo)
+        {
             var result = new CompiledOrder();
             var seen = new HashSet<string>();
 
-            void TryAdd(string giverDefName)
+            void TryAdd(string giverDefName, bool block)
             {
                 if (seen.Contains(giverDefName)) return;
                 if (catalog.WorkTypeOf(giverDefName) == null) return;
                 if (!pawnCanDo(giverDefName)) return;
                 seen.Add(giverDefName);
-                result.AllInOrder.Add(giverDefName);
+                if (!block) result.AllInOrder.Add(giverDefName);
             }
 
-            foreach (var roleEntries in orderedEnabledRoleEntries)
+            foreach (var (roleEntries, blocker) in orderedEnabledRoles)
             {
                 foreach (var entry in roleEntries)
                 {
                     if (entry.Kind == JobEntryKind.WorkGiver)
                     {
-                        TryAdd(entry.DefName);
+                        TryAdd(entry.DefName, blocker);
                     }
                     else
                     {
                         foreach (var giver in catalog.WorkGiversOf(entry.DefName))
-                            TryAdd(giver);
+                            TryAdd(giver, blocker);
                     }
                 }
             }

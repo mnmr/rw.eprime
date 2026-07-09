@@ -52,6 +52,18 @@
   </WorkRoles.RoleDef>
 
   <WorkRoles.RoleDef>
+    <defName>WS_NoFirefighting</defName>
+    <label>No Firefighting</label>
+    <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
+    <blocker>true</blocker>
+    <hasCustomColor>true</hasCustomColor>
+    <color>(0.624, 0.071, 0.224)</color>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
     <defName>WS_Medic</defName>
     <label>Medic</label>
     <description>Tending, feeding and rescuing patients — no operations.</description>

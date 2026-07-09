@@ -24,7 +24,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Drag & Drop:[/b] Assign or re-order colonist roles by dragging.
 [*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
 [*][b]Translation Ready:[/b] All text resources are read from resource files (get in touch if you want to help translate).
-[*][b]Designed for Performance:[/b] Everything is pre-computed at assignment and nothing runs per-tick.
+[*][b]Designed for Performance:[/b] Everything is pre-computed at assignment and nothing runs per-tick. If you use auto-roles, priorities do get invalidated and recomputed every game hour (shouldn't be measurable).
 [/list]
 
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
@@ -36,15 +36,34 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
 [*][b]Combo Roles:[/b] The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
 [*][b]Extra Roles:[/b] Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
-[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles quietly enables these for everyone, as vanilla would.
+[*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put "No firefighting" before Basics (which has Firefighting).
+[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role (enabled by default from seeding, but removable and reorderable).
+[/list]
+
+[h1]How It Works[/h1]
+[list]
+[*]Each colonist's ordered roles compile into one strict job order: earlier roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
+[*]The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so pawn AI behaves exactly as it would with a hand-tuned priority grid.
+[*]Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+[*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
+[*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+[*]In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 [/list]
 
 [h1]Compatibility[/h1]
 [list]
-[*][b]Work Tab Mods:[/b] Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
 [*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-[*]Tested alongside Better Workbench Management, AllowTool, PUAH+ and many others.
+[*]Integrates with Vanilla Skills Expanded and Alpha Skills when installed (not requirements).
+[*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
+[*]Multiplayer compatible.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
+[/list]
+
+[h1]Known Incompatible[/h1]
+[list]
+[*][b]Work Tab Mods:[/b] Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
+[*][b]Priority-Setting Mods:[/b] Anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will).
+[*]Colony Groups works, except for the group work-priority presets (which sets priorities).
 [/list]
 
 [h1]Disclaimer[/h1]

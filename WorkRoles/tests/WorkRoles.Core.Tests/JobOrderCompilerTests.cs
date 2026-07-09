@@ -37,6 +37,50 @@ public class JobOrderCompilerTests
     }
 
     [Test]
+    public async Task BlockerClaimsJobsFirst_LaterRolesCannotAddThem()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Firefighter", "FightFires")
+            .WithWorkType("Hauling", "HaulGeneral");
+        // Blocker vetoes Firefighter; the later role still provides Hauling.
+        var roles = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>
+        {
+            (new List<JobEntry> { WT("Firefighter") }, true),
+            (new List<JobEntry> { WT("Firefighter"), WT("Hauling") }, false),
+        };
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        await Assert.That(Flat(result.AllInOrder)).IsEqualTo("HaulGeneral");
+        await Assert.That(result.WorkTypePriorities.ContainsKey("Firefighter")).IsFalse();
+    }
+
+    [Test]
+    public async Task RoleAboveBlockerStillProvidesItsJobs()
+    {
+        var catalog = new FakeCatalog().WithWorkType("Doctor", "TendPatients");
+        // Earlier roles win: the provider above the blocker keeps the job.
+        var roles = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>
+        {
+            (new List<JobEntry> { WT("Doctor") }, false),
+            (new List<JobEntry> { WT("Doctor") }, true),
+        };
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        await Assert.That(Flat(result.AllInOrder)).IsEqualTo("TendPatients");
+    }
+
+    [Test]
+    public async Task BlockerCanVetoSingleJobWhileTypeStaysAvailable()
+    {
+        var catalog = new FakeCatalog().WithWorkType("Doctor", "TendPatients", "FeedPatients");
+        var roles = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>
+        {
+            (new List<JobEntry> { WG("FeedPatients") }, true),
+            (new List<JobEntry> { WT("Doctor") }, false),
+        };
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        await Assert.That(Flat(result.AllInOrder)).IsEqualTo("TendPatients");
+    }
+
+    [Test]
     public async Task RolesConcatenateInOrder_FirstMentionWins()
     {
         var catalog = new FakeCatalog()

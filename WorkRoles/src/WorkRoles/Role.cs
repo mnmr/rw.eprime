@@ -19,6 +19,11 @@ namespace WorkRoles
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string templateDefName;
         public bool autoAssign;
+        /// Blocker role: its jobs are never done and are vetoed in all later roles.
+        public bool blocker;
+        /// Engine-managed container (Odd Jobs): entries are written by work-type
+        /// coverage, not the player; the role cannot be deleted.
+        public bool managed;
         public int activeHours = AllHours;   // bit h set = active during local hour h
         public RoleLocation location = RoleLocation.Any;
         public List<JobEntry> entries = new List<JobEntry>();
@@ -47,6 +52,8 @@ namespace WorkRoles
             Scribe_Values.Look(ref iconPath, "iconPath");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
             Scribe_Values.Look(ref autoAssign, "autoAssign");
+            Scribe_Values.Look(ref blocker, "blocker");
+            Scribe_Values.Look(ref managed, "managed");
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             Scribe_Values.Look(ref location, "location", RoleLocation.Any);
             if (Scribe.mode == LoadSaveMode.Saving)
