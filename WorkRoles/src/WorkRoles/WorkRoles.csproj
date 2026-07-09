@@ -11,6 +11,8 @@
     <GenerateDependencyFile>false</GenerateDependencyFile>
     <ProduceReferenceAssembly>false</ProduceReferenceAssembly>
     <DebugType>portable</DebugType>
+    <!-- No pdbs in the shipped mod folder -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
     <RimWorldMods Condition="'$(RimWorldMods)' == ''">C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods</RimWorldMods>
   </PropertyGroup>
   <ItemGroup>

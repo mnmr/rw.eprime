@@ -5,5 +5,7 @@
     <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>WorkRoles.Core</RootNamespace>
+    <!-- No pdbs in the shipped mod folder (the game assembly copies this project's output) -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
   </PropertyGroup>
 </Project>

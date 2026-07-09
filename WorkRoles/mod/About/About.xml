@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.0.0</modVersion>
+  <modVersion>1.0.1</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -63,6 +63,6 @@ Compatibility:
 - Requires Harmony.
 
 Disclaimer:
-- This was created with the help of Claude Code. I'm a C# developer, but would likely not have ventured into modding without the assistance.
+- This was created with the help of Claude Code. Since this is controversial (and more than I'd have thought), let me just say that I've worked as C# developer since it was released (yes, that old). I do backend/web development, and it was pretty invaluable to get help with RimWorld UI widgets and not having to hand-roll System.Drawing calls (if you don't know what that is, just think of something painful). The mod is free and was created in my spare time, and without AI it likely wouldn't exist.
   </description>
 </ModMetaData>

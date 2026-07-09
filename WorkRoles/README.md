@@ -60,7 +60,10 @@ dotnet test --project tests/WorkRoles.Core.Tests/WorkRoles.Core.Tests.csproj
 
 ## Disclaimer
 
-This was created with the help of Claude Code. I'm a developer, but would likely not have ventured into modding without the assistance.
+This was created with the help of Claude Code. Since this is controversial (and more than I'd have thought), let me just say that I've worked as C# developer since it was released (yes, that old). 
+I do backend/web development, and it was pretty invaluable to get help with RimWorld UI widgets and not having to hand-roll System.Drawing calls (if you don't know what that is, just think of something painful). 
+The mod is free and was created in my spare time, and without AI it likely wouldn't exist.
+
 
 ## License
 

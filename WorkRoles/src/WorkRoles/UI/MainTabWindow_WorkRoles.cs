@@ -21,18 +21,20 @@ namespace WorkRoles.UI
             draggable = false;   // main tab windows are not draggable
         }
 
-        public override Vector2 RequestedTabSize
+        public override Vector2 RequestedTabSize => TargetSize();
+
+        /// Width floors at the design width (fixed chrome overlaps below it) and
+        /// grows with the widest chip strip; whichever tab wants more height wins
+        /// (small colonies would otherwise cramp the Roles tab). Both capped at
+        /// the screen.
+        private static Vector2 TargetSize()
         {
-            get
-            {
-                float w = Mathf.Min(ColonistsTabView.DesiredWidth() + 200f, Verse.UI.screenWidth);
-                // Whichever tab wants more height wins (small colonies would
-                // otherwise cramp the Roles tab), capped at the screen.
-                float h = Mathf.Min(
-                    Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
-                    Verse.UI.screenHeight - 35f);
-                return new Vector2(w, h);
-            }
+            float w = Mathf.Clamp(ColonistsTabView.DesiredWidth() + 200f,
+                ColonistsTabView.DefaultWidth, Verse.UI.screenWidth);
+            float h = Mathf.Min(
+                Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
+                Verse.UI.screenHeight - 35f);
+            return new Vector2(w, h);
         }
 
         public override void PreOpen()
@@ -46,20 +48,17 @@ namespace WorkRoles.UI
         public override void DoWindowContents(Rect inRect)
         {
             // Grow-only mid-session resize: if content grew, expand windowRect; never shrink.
-            float targetW = Mathf.Min(ColonistsTabView.DesiredWidth() + 200f, Verse.UI.screenWidth);
-            float targetH = Mathf.Min(
-                Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
-                Verse.UI.screenHeight - 35f);
+            var target = TargetSize();
 
             bool grew = false;
-            if (targetW > windowRect.width + 1f)
+            if (target.x > windowRect.width + 1f)
             {
-                windowRect.width = targetW;
+                windowRect.width = target.x;
                 grew = true;
             }
-            if (targetH > windowRect.height + 1f)
+            if (target.y > windowRect.height + 1f)
             {
-                windowRect.height = targetH;
+                windowRect.height = target.y;
                 grew = true;
             }
             if (grew)

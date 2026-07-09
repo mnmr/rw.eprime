@@ -29,7 +29,9 @@ namespace WorkRoles.UI
         private const float IconButton = 24f;
         private const float ChipGap = 4f;
         private const float StatsPanelMargin = 8f;
-        private const float DefaultWidth = 1010f;
+        /// Design width: fixed chrome (tab strip + FMC button, filter row, editor
+        /// swatch grid) fits at this size, so it doubles as the window's min width.
+        internal const float DefaultWidth = 1010f;
         private const float DefaultHeight = 684f;
 
         private const float PortraitDisplaySize = 96f;
