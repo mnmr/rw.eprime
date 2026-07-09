@@ -82,17 +82,32 @@ namespace WorkRoles.UI
             Widgets.DrawMenuSection(content);
             TabDrawer.DrawTabs(content, tabs);
 
-            // Colony-wide action button in the window's top-right corner, beside the
-            // tab strip — Colonists tab only (that's whose content it acts on).
+            // Per-tab action button in the window's top-right corner, beside the tab
+            // strip: Fix My Colony on Colonists, Restore Roles on Roles.
+            const float ActionBtnW = 130f;
+            const float ActionBtnH = 28f;
+            float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
+            var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
             if (curTab == Tab.Colonists)
             {
-                const float ActionBtnW = 130f;
-                const float ActionBtnH = 28f;
-                float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
-                var fixRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
-                TooltipHandler.TipRegion(fixRect, "WR_FixMyColonyTip".Translate());
-                if (Widgets.ButtonText(fixRect, "WR_FixMyColony".Translate()))
+                TooltipHandler.TipRegion(actionRect, "WR_FixMyColonyTip".Translate());
+                if (Widgets.ButtonText(actionRect, "WR_FixMyColony".Translate()))
                     colonistsTab.ShowFixPreview();
+            }
+            else
+            {
+                TooltipHandler.TipRegion(actionRect, "WR_RestoreRolesTip".Translate());
+                if (Widgets.ButtonText(actionRect, "WR_RestoreRoles".Translate()))
+                {
+                    var missing = Seeding.MissingSeededRoles();
+                    if (missing.Count == 0)
+                        Messages.Message("WR_NothingToRestore".Translate(),
+                            MessageTypeDefOf.RejectInput, historical: false);
+                    else
+                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                            "WR_RestoreRolesConfirm".Translate(missing.ToCommaList()),
+                            RoleCommands.RestoreMissingRoles));
+                }
             }
 
             content = content.ContractedBy(8f);

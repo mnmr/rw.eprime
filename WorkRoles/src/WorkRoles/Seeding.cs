@@ -13,7 +13,16 @@ namespace WorkRoles
             var store = RoleStore.Current;
             if (store == null || store.seeded) return;
 
-            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            var defs = DefDatabase<RoleDef>.AllDefsListForReading;
+            if (defs.Count == 0)
+            {
+                // Def-load failure (bad mod interaction). Leave 'seeded' unset so a
+                // fixed modlist seeds normally on the next load.
+                Log.Error("[WorkRoles] no RoleDefs loaded; seeding skipped and will retry next load");
+                return;
+            }
+
+            foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
 
@@ -21,8 +30,18 @@ namespace WorkRoles
 
             int assigned = 0;
             foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
-                if (TryAssignRolesFromVanillaPriorities(pawn))
-                    assigned++;
+            {
+                try
+                {
+                    if (TryAssignRolesFromVanillaPriorities(pawn))
+                        assigned++;
+                }
+                catch (System.Exception e)
+                {
+                    // One corrupt pawn must not abort migration for the rest.
+                    Log.Error($"[WorkRoles] failed to migrate priorities of {pawn?.LabelShort ?? "unknown pawn"}: {e}");
+                }
+            }
 
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
         }
@@ -145,25 +164,7 @@ namespace WorkRoles
             var result = new List<string>();
             if (store == null || !store.seeded) return result;
 
-            // Build covered set: WorkType entries contribute directly; WorkGiver entries contribute their parent type.
-            var covered = new HashSet<string>();
-            void AddCovered(Role role)
-            {
-                foreach (var entry in role.entries)
-                {
-                    if (entry.Kind == WorkRoles.Core.JobEntryKind.WorkType)
-                        covered.Add(entry.DefName);
-                    else
-                    {
-                        var parentType = GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
-                        if (parentType != null) covered.Add(parentType);
-                    }
-                }
-            }
-            foreach (var role in store.roles)
-                AddCovered(role);
-            if (store.allRole != null)
-                AddCovered(store.allRole);
+            var covered = CoveredWorkTypes(store);
 
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
@@ -218,5 +219,74 @@ namespace WorkRoles
             return distinct;
         }
 
+        /// WorkType entries contribute directly; WorkGiver entries contribute their parent type.
+        private static void AddCoveredEntries(HashSet<string> covered, List<JobEntry> entries)
+        {
+            foreach (var entry in entries)
+            {
+                if (entry.Kind == JobEntryKind.WorkType)
+                    covered.Add(entry.DefName);
+                else
+                {
+                    var parentType = GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
+                    if (parentType != null) covered.Add(parentType);
+                }
+            }
+        }
+
+        private static HashSet<string> CoveredWorkTypes(RoleStore store)
+        {
+            var covered = new HashSet<string>();
+            foreach (var role in store.roles)
+                AddCoveredEntries(covered, role.entries);
+            if (store.allRole != null)
+                AddCoveredEntries(covered, store.allRole.entries);
+            return covered;
+        }
+
+        /// Labels of everything RestoreMissingRoles would recreate: catalog roles
+        /// whose template def has no role in the store, plus visible work types that
+        /// no role — current or about-to-be-restored — covers.
+        public static List<string> MissingSeededRoles()
+        {
+            var store = RoleStore.Current;
+            var result = new List<string>();
+            if (store == null) return result;
+
+            var covered = CoveredWorkTypes(store);
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                if (store.RoleByTemplate(def.defName) != null) continue;
+                result.Add(def.label);
+                AddCoveredEntries(covered, def.ParsedEntries());
+            }
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                if (workType.visible && !covered.Contains(workType.defName))
+                    result.Add((workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst());
+            return result;
+        }
+
+        /// Recreates whatever MissingSeededRoles reports: catalog roles from their
+        /// defs, then regenerated coverage for still-uncovered work types (their
+        /// knownWorkTypes entries are forgotten so EnsureWorkTypeCoverage reprocesses
+        /// them). Existing roles are never touched. Returns labels of restored roles.
+        public static List<string> RestoreMissingRoles()
+        {
+            var store = RoleStore.Current;
+            var result = new List<string>();
+            if (store == null) return result;
+
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                if (store.RoleByTemplate(def.defName) != null) continue;
+                var role = RoleCommands.CreateRoleFromDef(def);
+                if (role != null) result.Add(role.label);
+            }
+
+            var covered = CoveredWorkTypes(store);
+            store.knownWorkTypes.RemoveAll(wt => !covered.Contains(wt));
+            result.AddRange(EnsureWorkTypeCoverage());
+            return result;
+        }
     }
 }

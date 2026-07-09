@@ -24,7 +24,7 @@
   </ItemGroup>
   <Target Name="DeployToRimWorld" AfterTargets="Build">
     <ItemGroup>
-      <ModFiles Include="$(MSBuildThisFileDirectory)..\..\mod\**\*.*" />
+      <ModFiles Include="$(MSBuildThisFileDirectory)..\..\mod\**\*.*" Exclude="$(MSBuildThisFileDirectory)..\..\mod\**\*.pdb" />
     </ItemGroup>
     <Copy SourceFiles="@(ModFiles)" DestinationFiles="@(ModFiles->'$(RimWorldMods)\WorkRoles\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>

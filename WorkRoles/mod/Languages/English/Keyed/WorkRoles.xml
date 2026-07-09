@@ -70,6 +70,15 @@
 
   <!-- ===== Roles tab ===== -->
 
+  <!-- Restore button (top-right corner, Roles tab) -->
+  <WR_RestoreRoles>Restore Roles</WR_RestoreRoles>
+  <WR_RestoreRolesTip>Recreate missing pre-made roles. Existing roles are not modified.</WR_RestoreRolesTip>
+  <!-- {0} = comma-separated role labels -->
+  <WR_RestoreRolesConfirm>Restore these roles?\n\n{0}</WR_RestoreRolesConfirm>
+  <WR_NothingToRestore>Nothing to restore: all pre-made roles are present.</WR_NothingToRestore>
+  <!-- {0} = comma-separated role labels -->
+  <WR_RolesRestored>Restored: {0}</WR_RolesRestored>
+
   <!-- Role list -->
   <!-- {0} = role label -->
   <WR_RoleLabelOff>{0} (off)</WR_RoleLabelOff>

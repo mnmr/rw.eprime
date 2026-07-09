@@ -44,6 +44,18 @@ namespace WorkRoles
             return role;
         }
 
+        /// Recreates seeded roles missing from the catalog (deleted, or never seeded
+        /// due to a load-time failure) and coverage roles for uncovered work types.
+        [SyncMethod]
+        public static void RestoreMissingRoles()
+        {
+            if (Store == null) return;
+            var restored = Seeding.RestoreMissingRoles();
+            if (restored.Count > 0)
+                Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
+                    MessageTypeDefOf.PositiveEvent, historical: false);
+        }
+
         [SyncMethod]
         public static void DeleteRole(int roleId)
         {
