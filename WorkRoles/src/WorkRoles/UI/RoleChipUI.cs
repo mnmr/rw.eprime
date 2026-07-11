@@ -45,10 +45,13 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
         }
 
-        public static float WidthFor(Role role, bool showRemove)
+        public static float WidthFor(Role role, bool showRemove,
+            ChipDisplay display = ChipDisplay.Normal, string abbrev = null)
         {
             Text.Font = GameFont.Small;
-            return WrText.FitWidth(role.label) + PadX * 2f
+            float labelW = display == ChipDisplay.Minimal ? 10f
+                : WrText.FitWidth(display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label);
+            return labelW + PadX * 2f
                 + (showRemove ? RemoveSize + 2f : 0f)
                 + (role.HasRules || role.blocker ? RemoveSize + 2f : 0f);
         }
@@ -57,7 +60,7 @@ namespace WorkRoles.UI
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
         /// interactive: false renders a display-only chip (no clicks, no drag).
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
-            bool interactive = true)
+            bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null)
         {
             Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
 
@@ -105,10 +108,16 @@ namespace WorkRoles.UI
             else
                 GUI.color = LabelColor;
 
-            Widgets.Label(labelRect, role.label);
+            if (display != ChipDisplay.Minimal)
+                Widgets.Label(labelRect,
+                    display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label);
             GUI.color = Color.white;
             Text.WordWrap = wrap;
             Text.Anchor = TextAnchor.UpperLeft;
+
+            // Compact/minimal chips no longer identify themselves — tooltip does.
+            if (display != ChipDisplay.Normal && Mouse.IsOver(rect))
+                TooltipHandler.TipRegion(rect, role.label);
 
             if (style == ChipStyle.Disabled)
                 Widgets.DrawLineHorizontal(labelRect.x, rect.y + rect.height / 2f, labelRect.width, new Color(1f, 0.3f, 0.3f, 0.75f));

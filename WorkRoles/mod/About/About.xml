@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.0.3</modVersion>
+  <modVersion>1.1.0</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -41,9 +41,7 @@ Key Features:
 - Bill Support: Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
 - Combo Roles: These combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role editor.
 - Deep Job Control: The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
-- Smart Recommendations: A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
-- Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
-- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch.
+- Smart Recommendations: A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. See below for details.
 - Copy &amp; Paste: Transfer complete role sets between colonists.
 - Drag &amp; Drop: Assign or re-order colonist roles by dragging.
 - Multiplayer Support: Fully RimWorld Multiplayer compatible.
@@ -65,17 +63,40 @@ How It Works:
 - Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
 - In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 
+Recommendation Logic:
+- Colony Needs: Almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
+- Skill Gates: Roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
+- Training: If a pawn should be a Doctor, Builder or Cook but has insufficient skill (10, 8 and 8, respectively), an upskilling role will be recommended instead (Medic for Doctor, Handyman for Builder, Butcher/Brewer for Cook). Colony needs override this.
+- Hunting: Recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
+- Coverage: Roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
+- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; Pinned roles render with a white border.
+- Apply Per Colonist: Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
+- Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
+- Passions: Roles suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
+- Genetics: Pawns genetically terrified of fire automatically get "No Firefighting" (blocker role) placed before Basics.
+- Ordering: Everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor. 
+- Untouched: Auto (rule-carrying) roles and blockers are never suggested, moved or removed.
+
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-- Integrates with Vanilla Skills Expanded and Alpha Skills when installed (not requirements).
-- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
 - Multiplayer compatible.
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
 - Requires Harmony.
+
+Mod integrations (these will be used when installed, but are not requirements):
+- Vanilla Skills Expanded and Alpha Skills (expertise outranks passions for recommendations; icons for passions/apathies)
+- Grouped Pawns Lists (for rendering colonists in groups; this also provides groups from Colony Groups)
 
 Known Incompatible:
 - Work Tab Mods: Not compatible with other mods that replace the Work tab (Fluffy's Work Tab forks, Better Work Tab, Enhanced Work Tab, among others).
 - Priority-Setting Mods: Anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will).
-- Colony Groups works, except for the group work-priority presets (which sets priorities).
+- If you've tested and found WorkRoles to be incompatible with another mod, let me know so I can add it here.
+
+Specific Mods: (these are mods I've checked for compatibility)
+- Colony Groups: works, except for the group work-priority presets (which sets priorities).
+- Complex Jobs: Moves jobs to new work types - should work fine.
+- Keep Building: Auto-creates work bills - should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
+ 
 
 Disclaimer:
 - This was created with the help of Claude Code. Since this is controversial (and more than I'd have thought), let me just say that I've worked as C# developer since it was released (yes, that old). I do backend/web development, and it was pretty invaluable to get help with RimWorld UI widgets and not having to hand-roll System.Drawing calls (if you don't know what that is, just think of something painful). The mod is free and was created in my spare time, and without AI it likely wouldn't exist.

@@ -96,7 +96,8 @@ namespace WorkRoles
                     if (!assignment.enabled) continue;
                     var role = store.RoleById(assignment.roleId);
                     if (role != null && role.enabled && RoleRules.Pass(role, pawn))
-                        roleEntries.Add((role.entries, role.blocker));
+                        roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
+                            role.entries, role.workTypeSnapshots, GameJobCatalog.Instance), role.blocker));
                 }
             }
 

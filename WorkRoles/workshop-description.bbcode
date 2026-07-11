@@ -17,9 +17,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
 [*][b]Combo Roles:[/b] These combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role editor.
 [*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
-[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
-[*][b]Fix My Colony:[/b] Apply recommendations across all colonists, with a preview to see what would change.
-[*][b]Role Pinning:[/b] Pin role assignments that you don't want the recommendation engine to touch.
+[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. See below for details.
 [*][b]Copy & Paste:[/b] Transfer complete role sets between colonists.
 [*][b]Drag & Drop:[/b] Assign or re-order colonist roles by dragging.
 [*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
@@ -48,6 +46,22 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
 [*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
 [*]In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
+[/list]
+
+[h1]Recommendation Logic[/h1]
+[list]
+[*][b]Colony Needs:[/b] Almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
+[*][b]Skill Gates:[/b] Roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
+[*][b]Training:[/b] If a pawn should be a Doctor, Builder or Cook but has insufficient skill (10, 8 and 8, respectively), an upskilling role will be recommended instead (Medic for Doctor, Handyman for Builder, Butcher/Brewer for Cook). Colony needs override this.
+[*][b]Hunting:[/b] Recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
+[*][b]Coverage:[/b] Roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
+[*][b]Role Pinning:[/b] Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles render with a white border.
+[*][b]Apply Per Colonist:[/b] Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
+[*][b]Fix My Colony:[/b] Apply recommendations across all colonists, with a preview to see what would change.
+[*][b]Passions:[/b] Role suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
+[*][b]Genetics:[/b] Pawns genetically terrified of fire automatically get "No Firefighting" (blocker role) placed before Basics.
+[*][b]Ordering:[/b] Everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor.
+[*][b]Untouched:[/b] Auto (rule-carrying) roles and blockers are never suggested, moved or removed.
 [/list]
 
 [h1]Compatibility[/h1]

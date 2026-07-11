@@ -45,13 +45,31 @@ namespace WorkRoles
             return role;
         }
 
-        /// Recreates seeded roles missing from the catalog (deleted, or never seeded
-        /// due to a load-time failure) and coverage roles for uncovered work types.
+        /// Applies an import on every client: the raw XML travels with the command
+        /// and each client rebuilds the same deterministic plan, so the row-index
+        /// selections from the preview stay valid everywhere.
         [SyncMethod]
-        public static void RestoreMissingRoles()
+        public static void ApplyImport(string xml,
+            bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
+            bool rolesInclude, bool rolesOverwrite, List<int> roleRows)
+        {
+            if (Store == null || xml.NullOrEmpty()) return;
+            var doc = RoleIO.Parse(xml);
+            if (doc.error != null) return;
+            string summary = RoleIO.Apply(Store, doc,
+                paletteInclude, paletteOverwrite, paletteRows,
+                rolesInclude, rolesOverwrite, roleRows);
+            Messages.Message(summary, MessageTypeDefOf.PositiveEvent, historical: false);
+        }
+
+        /// Applies the restore items selected in the Restore Roles preview:
+        /// recreates missing seeded roles, regenerates coverage for uncovered work
+        /// types, and backfills vanilla jobs that mods moved out of roles.
+        [SyncMethod]
+        public static void RestoreSelected(List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds)
         {
             if (Store == null) return;
-            var restored = Seeding.RestoreMissingRoles();
+            var restored = Seeding.RestoreSelected(templateDefs, workTypes, backfillRoleIds);
             if (restored.Count > 0)
                 Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
                     MessageTypeDefOf.PositiveEvent, historical: false);

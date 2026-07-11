@@ -54,6 +54,10 @@ namespace WorkRoles.UI
         internal static readonly Color[] Swatches;
         private static readonly string[] SwatchNames;
 
+        /// Export-format name of a built-in swatch: "slate-600" style.
+        internal static string ExportSwatchName(int index) =>
+            SwatchNames[index].ToLowerInvariant().Replace(' ', '-');
+
         private static Color Hex(string h)
         {
             int r = System.Convert.ToInt32(h.Substring(0, 2), 16);
@@ -118,7 +122,7 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return 684f;
             float chrome = 120f; // tabs, margins, editor gaps
-            float list = store.roles.Count * RowHeight + 40f;
+            float list = store.roles.Count * RowHeight + 70f; // rows + buttons + filter row
             int visibleTypes = DefDatabase<WorkTypeDef>.AllDefsListForReading.Count(wt => wt.visible);
             float editor = 190f + 32f + visibleTypes * 26f; // top box + tree header + collapsed roots
             return chrome + Mathf.Max(list, editor);
@@ -128,6 +132,8 @@ namespace WorkRoles.UI
         {
             listScroll = entriesScroll = treeScroll = Vector2.zero;
             filter = "";
+            roleSearch = "";
+            jobFilterDefName = null;
             selectedRoleId = -1;
             paintingHours = false;
             paintRoleId = -1;
@@ -207,13 +213,93 @@ namespace WorkRoles.UI
             return (roots, rows);
         }
 
+        // Role list filters (view-local): label search + a single job whose
+        // holders should be listed.
+        private string roleSearch = "";
+        private string jobFilterDefName;
+
+        private bool ListFiltersActive => !roleSearch.NullOrEmpty() || jobFilterDefName != null;
+
+        /// A role matches the job filter when its entries carry the job itself or
+        /// the job's whole work type.
+        private bool MatchesListFilters(Role role)
+        {
+            if (!roleSearch.NullOrEmpty()
+                && (role.label == null
+                    || role.label.IndexOf(roleSearch, System.StringComparison.OrdinalIgnoreCase) < 0))
+                return false;
+            if (jobFilterDefName != null)
+            {
+                var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterDefName);
+                string parentType = giver?.workType?.defName;
+                bool has = role.entries.Any(e =>
+                    e.Kind == JobEntryKind.WorkGiver
+                        ? e.DefName == jobFilterDefName
+                        : parentType != null && e.DefName == parentType);
+                if (!has) return false;
+            }
+            return true;
+        }
+
+        private void DrawListFilterRow(Rect rect)
+        {
+            const float JobBtnW = 110f;
+            float searchW = rect.width - JobBtnW - 8f - (ListFiltersActive ? 22f : 0f);
+            roleSearch = Widgets.TextField(new Rect(rect.x, rect.y, searchW, rect.height), roleSearch);
+
+            var jobRect = new Rect(rect.x + searchW + 4f, rect.y, JobBtnW, rect.height);
+            var giverDef = jobFilterDefName == null ? null
+                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterDefName);
+            string jobLabel = giverDef != null
+                ? GetGiverDisplayName(giverDef)
+                : "WR_FilterAnyJob".Translate().ToString();
+            if (Widgets.ButtonText(jobRect, jobLabel))
+            {
+                var options = new List<FloatMenuOption>
+                {
+                    new FloatMenuOption("WR_FilterAnyJob".Translate(), () => jobFilterDefName = null),
+                };
+                foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading
+                    .Where(d => d.workType != null)
+                    .OrderBy(GetGiverDisplayName, System.StringComparer.OrdinalIgnoreCase))
+                {
+                    var captured = def.defName;
+                    options.Add(new FloatMenuOption(GetGiverDisplayName(def), () => jobFilterDefName = captured));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
+            if (ListFiltersActive)
+            {
+                var clearRect = new Rect(jobRect.xMax + 4f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
+                TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
+                if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
+                {
+                    roleSearch = "";
+                    jobFilterDefName = null;
+                }
+            }
+        }
+
         private void DrawRoleList(Rect rect, RoleStore store)
         {
             float buttonsHeight = 34f;
-            var scrollRect = new Rect(rect.x, rect.y, rect.width, rect.height - buttonsHeight - 6f);
-            float contentHeight = store.roles.Count * RowHeight;
+            const float FilterRowH = 30f;
+            DrawListFilterRow(new Rect(rect.x, rect.y, rect.width, FilterRowH - 6f));
+            var scrollRect = new Rect(rect.x, rect.y + FilterRowH, rect.width,
+                rect.height - buttonsHeight - 6f - FilterRowH);
 
             var (roots, rows) = BuildRoleTree(store);
+            // Filtered view: a flat list of matching roles; drag reordering is
+            // disabled (positions wouldn't mean anything against a partial list).
+            bool filtered = ListFiltersActive;
+            if (filtered)
+            {
+                rows = store.roles.Where(MatchesListFilters)
+                    .Select(r => (role: r, parent: (Role)null)).ToList();
+                roots = rows.Select(t => t.role).ToList();
+            }
+            float contentHeight = rows.Count * RowHeight;
 
             // Dragged-role context, resolved against this frame's tree.
             Role dragged = null;
@@ -281,7 +367,7 @@ namespace WorkRoles.UI
                     e.Use();
                 }
 
-                if (dragged != null && Mouse.IsOver(row))
+                if (!filtered && dragged != null && Mouse.IsOver(row))
                     RegisterRowDrop(store, roots, rows, i, row, dragged, draggedParent);
             }
             Widgets.EndScrollView();

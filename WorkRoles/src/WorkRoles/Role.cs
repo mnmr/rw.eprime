@@ -27,8 +27,14 @@ namespace WorkRoles
         public int activeHours = AllHours;   // bit h set = active during local hour h
         public RoleLocation location = RoleLocation.Any;
         public List<JobEntry> entries = new List<JobEntry>();
+        /// Engine-maintained, per work-type entry: every giver defName ever seen
+        /// under that type (union-only, refreshed each load). Lets the role keep
+        /// jobs that mods later move to another work type — see
+        /// JobOrderCompiler.WithMovedSnapshotGivers. Invisible to the editor.
+        public Dictionary<string, List<string>> workTypeSnapshots = new Dictionary<string, List<string>>();
 
         private List<string> scribeEntries;
+        private Dictionary<string, string> scribeSnapshots;
 
         public bool HasRules => activeHours != AllHours || location != RoleLocation.Any;
 
@@ -67,8 +73,26 @@ namespace WorkRoles
                         if (JobEntry.TryDecode(raw, out var entry))
                             entries.Add(entry);
             }
+
+            // Snapshots scribe as workType -> comma-joined giver defNames (defNames
+            // cannot contain commas). Absent in old saves: reseeded on load.
+            if (Scribe.mode == LoadSaveMode.Saving && workTypeSnapshots.Count > 0)
+                scribeSnapshots = workTypeSnapshots.ToDictionary(
+                    kv => kv.Key, kv => string.Join(",", kv.Value));
+            Scribe_Collections.Look(ref scribeSnapshots, "workTypeSnapshots", LookMode.Value, LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                workTypeSnapshots = new Dictionary<string, List<string>>();
+                if (scribeSnapshots != null)
+                    foreach (var kv in scribeSnapshots)
+                        workTypeSnapshots[kv.Key] = kv.Value.Split(',').ToList();
+            }
+
             if (Scribe.mode == LoadSaveMode.Saving || Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
                 scribeEntries = null;
+                scribeSnapshots = null;
+            }
         }
     }
 }

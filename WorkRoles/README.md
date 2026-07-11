@@ -17,9 +17,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 - **Bill Support:** configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
 - **Combo Roles:** these combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role editor.
 - **Deep Job Control:** the role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
-- **Smart Recommendations:** a per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
-- **Fix My Colony:** apply recommendations across all colonists, with a preview to see what would change.
-- **Role Pinning:** pin role assignments that you don't want the recommendation engine to touch.
+- **Smart Recommendations:** a per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. See below for details.
 - **Copy & Paste:** transfer complete role sets between colonists.
 - **Drag & Drop:** assign or re-order colonist roles by dragging.
 - **Multiplayer Support:** fully RimWorld Multiplayer compatible.
@@ -45,6 +43,21 @@ Emergency-flagged jobs (firefighting, urgent tending) go to the game's emergency
 Other mods that read priorities get the values WorkRoles computed; priority *writes* are owned by WorkRoles for managed pawns — which is why priority-setting mods don't mix. The mod continuously mirrors role priorities into vanilla's 0–4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
 
 In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
+
+## Recommendation logic
+
+- **Colony Needs:** almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
+- **Skill Gates:** roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
+- **Training:** if a pawn should be a Doctor, Builder or Cook but has insufficient skill (10, 8 and 8, respectively), an upskilling role will be recommended instead (Medic for Doctor, Handyman for Builder, Butcher/Brewer for Cook). Colony needs override this.
+- **Hunting:** recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
+- **Coverage:** roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
+- **Role Pinning:** pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles render with a white border.
+- **Apply Per Colonist:** click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
+- **Fix My Colony:** apply recommendations across all colonists, with a preview to see what would change.
+- **Passions:** role suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
+- **Genetics:** pawns genetically terrified of fire automatically get "No Firefighting" (blocker role) placed before Basics.
+- **Ordering:** everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor.
+- **Untouched:** auto (rule-carrying) roles and blockers are never suggested, moved or removed.
 
 ## Compatibility
 

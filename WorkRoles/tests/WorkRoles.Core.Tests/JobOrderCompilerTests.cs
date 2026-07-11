@@ -37,6 +37,26 @@ public class JobOrderCompilerTests
     }
 
     [Test]
+    public async Task MovedSnapshotGiversStayInTheRole()
+    {
+        // The catalog reflects the CURRENT state: TendAnimals was moved out of
+        // Doctor into Veterinary by a mod. The role's snapshot remembers it.
+        var catalog = new FakeCatalog()
+            .WithWorkType("Doctor", "TendPatients")
+            .WithWorkType("Veterinary", "TendAnimals");
+        var entries = new List<JobEntry> { WT("Doctor") };
+        var snapshot = new Dictionary<string, List<string>>
+        {
+            ["Doctor"] = new List<string> { "TendPatients", "TendAnimals", "RemovedByMod" },
+        };
+        var expanded = JobOrderCompiler.WithMovedSnapshotGivers(entries, snapshot, catalog);
+        // Still-member TendPatients expands via the work type (no duplicate entry);
+        // moved TendAnimals becomes an explicit giver; missing defs are skipped.
+        var result = JobOrderCompiler.Compile(Roles(expanded.ToArray()), catalog, _ => true);
+        await Assert.That(Flat(result.AllInOrder)).IsEqualTo("TendPatients,TendAnimals");
+    }
+
+    [Test]
     public async Task BlockerClaimsJobsFirst_LaterRolesCannotAddThem()
     {
         var catalog = new FakeCatalog()

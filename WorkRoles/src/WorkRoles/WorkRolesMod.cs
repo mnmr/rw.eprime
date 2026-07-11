@@ -8,8 +8,11 @@ namespace WorkRoles
     {
         public const string HarmonyId = "mnmr.workroles";
 
+        public static WorkRolesSettings Settings { get; private set; }
+
         public WorkRolesMod(ModContentPack content) : base(content)
         {
+            Settings = GetSettings<WorkRolesSettings>();
             var harmony = new Harmony(HarmonyId);
             harmony.PatchAll();
             // Grow the bill dialog's worker-selection section to fit the role

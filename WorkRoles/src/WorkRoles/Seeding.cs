@@ -33,8 +33,24 @@ namespace WorkRoles
             {
                 try
                 {
-                    if (TryAssignRolesFromVanillaPriorities(pawn))
-                        assigned++;
+                    // Capture the pre-migration grid: after the first assignment the
+                    // pawn is managed and priority reads answer from roles.
+                    var before = pawn.IsColonist || pawn.IsSlaveOfColony ? CapablePriorities(pawn) : null;
+                    if (!TryAssignRolesFromVanillaPriorities(pawn)) continue;
+                    assigned++;
+
+                    // Self-check: every work type the pawn had enabled must survive
+                    // migration. A drop here is a catalog/planner bug — scream.
+                    foreach (var pair in before)
+                    {
+                        if (pair.Value == 0) continue;
+                        // Giver-less work types (Patient, Bed rest) never rank in the
+                        // compiled order; they can't be checked this way.
+                        if (!GameJobCatalog.Instance.WorkGiversOf(pair.Key).Any()) continue;
+                        var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(pair.Key);
+                        if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
+                            Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                    }
                 }
                 catch (System.Exception e)
                 {
@@ -46,18 +62,12 @@ namespace WorkRoles
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
         }
 
-        /// Derives a pawn's role set from its vanilla work priorities, losslessly where
-        /// the catalog allows. Must read priorities BEFORE assigning anything: an
-        /// unmanaged pawn's GetPriority passes through to vanilla values; the first
-        /// assignment makes the pawn managed and reads then return WorkRoles ranks.
-        ///
-        /// Rules:
-        /// - A multi-type role (Basics, Farmer, Grunt) is used only when every member
-        ///   type the pawn is capable of is enabled at ONE shared priority; otherwise
-        ///   each enabled member gets its single-type role at its own priority.
-        /// - Roles with no work-type entries are never assigned here.
-        /// - Roles are ordered by vanilla priority; ties keep catalog order.
-        /// The result reproduces the pawn's vanilla priority grid exactly.
+        /// Derives a pawn's role set from its vanilla work priorities via the
+        /// Core MigrationPlanner (see its doc for the rules — the planner is
+        /// unit-tested against the shipped Roles.xml). Must read priorities BEFORE
+        /// assigning anything: an unmanaged pawn's GetPriority passes through to
+        /// vanilla values; the first assignment makes the pawn managed and reads
+        /// then return WorkRoles ranks.
         public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn)
         {
             var store = RoleStore.Current;
@@ -65,74 +75,29 @@ namespace WorkRoles
             if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return false;
             if (store.IsManaged(pawn)) return false;
 
+            var plan = MigrationPlanner.Plan(
+                store.roles.Select(r => new MigrationRole(r.id, r.entries, r.blocker || r.managed)).ToList(),
+                CapablePriorities(pawn),
+                DefDatabase<WorkTypeDef>.AllDefsListForReading.Select(wt => wt.defName).ToList(),
+                GameJobCatalog.Instance);
+            if (plan.Count == 0) return false;
+
+            foreach (var roleId in plan)
+                RoleCommands.AssignRoleDirect(pawn, roleId);
+            return true;
+        }
+
+        /// The pawn's vanilla priorities for CAPABLE work types only (absent key =
+        /// incapable, value 0 = capable but unassigned).
+        private static Dictionary<string, int> CapablePriorities(Pawn pawn)
+        {
             var workSettings = pawn.workSettings;
             bool everWork = workSettings != null && workSettings.EverWork;
-
-            int PriorityOf(WorkTypeDef workType)
-                => everWork && !pawn.WorkTypeIsDisabled(workType) ? workSettings.GetPriority(workType) : 0;
-
-            List<WorkTypeDef> MemberTypes(Role role)
-            {
-                var types = new List<WorkTypeDef>();
-                foreach (var entry in role.entries)
-                {
-                    if (entry.Kind != JobEntryKind.WorkType) continue;
-                    var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                    if (workType != null) types.Add(workType);
-                }
-                return types;
-            }
-
-            Role SingleRoleFor(WorkTypeDef workType)
-            {
-                foreach (var role in store.roles)
-                {
-                    if (role.blocker || role.managed) continue;
-                    if (role.entries.Count != 1) continue;
-                    var entry = role.entries[0];
-                    if (entry.Kind == JobEntryKind.WorkType && entry.DefName == workType.defName)
-                        return role;
-                }
-                return null;
-            }
-
-            var picked = new List<(Role role, int score)>();
-            var consumed = new HashSet<string>();
-
-            // Multi-type roles: only when all capable members share one enabled priority.
-            // Blockers (vetoes, not work) and the managed role (assigned by coverage)
-            // never migrate from priorities.
-            foreach (var role in store.roles)
-            {
-                if (role.blocker || role.managed) continue;
-                var capable = MemberTypes(role).Where(t => !pawn.WorkTypeIsDisabled(t)).ToList();
-                if (capable.Count < 2 || capable.Any(t => consumed.Contains(t.defName))) continue;
-                int shared = PriorityOf(capable[0]);
-                if (shared == 0 || capable.Any(t => PriorityOf(t) != shared)) continue;
-                picked.Add((role, shared));
-                foreach (var member in capable) consumed.Add(member.defName);
-            }
-
-            // Everything still enabled gets its single-type role at its own priority.
+            var priorities = new Dictionary<string, int>();
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-            {
-                if (consumed.Contains(workType.defName)) continue;
-                int priority = PriorityOf(workType);
-                if (priority == 0) continue;
-                var single = SingleRoleFor(workType);
-                if (single == null) continue;
-                picked.Add((single, priority));
-                consumed.Add(workType.defName);
-            }
-
-            if (picked.Count == 0) return false;
-
-            var catalogIndex = new Dictionary<int, int>();
-            for (int i = 0; i < store.roles.Count; i++) catalogIndex[store.roles[i].id] = i;
-
-            foreach (var (role, _) in picked.OrderBy(t => t.score).ThenBy(t => catalogIndex[t.role.id]))
-                RoleCommands.AssignRoleDirect(pawn, role.id);
-            return true;
+                if (!pawn.WorkTypeIsDisabled(workType))
+                    priorities[workType.defName] = everWork ? workSettings.GetPriority(workType) : 0;
+            return priorities;
         }
 
         /// Assigns only the auto-assign roles (Basics) — used for pawns joining
@@ -242,73 +207,132 @@ namespace WorkRoles
             return distinct;
         }
 
-        /// WorkType entries contribute directly; WorkGiver entries contribute their parent type.
-        private static void AddCoveredEntries(HashSet<string> covered, List<JobEntry> entries)
-        {
-            foreach (var entry in entries)
-            {
-                if (entry.Kind == JobEntryKind.WorkType)
-                    covered.Add(entry.DefName);
-                else
-                {
-                    var parentType = GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
-                    if (parentType != null) covered.Add(parentType);
-                }
-            }
-        }
-
-        private static HashSet<string> CoveredWorkTypes(RoleStore store)
-        {
-            var covered = new HashSet<string>();
-            foreach (var role in store.roles)
-                if (!role.blocker) // a blocker's entries are vetoes, not coverage
-                    AddCoveredEntries(covered, role.entries);
-            return covered;
-        }
-
-        /// Labels of everything RestoreMissingRoles would recreate: catalog roles
-        /// whose template def has no role in the store, plus visible work types that
-        /// no role — current or about-to-be-restored — covers.
-        public static List<string> MissingSeededRoles()
+        /// Union-only snapshot maintenance, every load: remember each giver ever
+        /// seen under a role's work-type entries, so jobs a mod later moves to a
+        /// different work type stay in the role (compile-time expansion in
+        /// CompiledJobOrders via JobOrderCompiler.WithMovedSnapshotGivers).
+        public static void RefreshWorkTypeSnapshots()
         {
             var store = RoleStore.Current;
-            var result = new List<string>();
+            if (store == null) return;
+            bool changed = false;
+            foreach (var role in store.roles)
+                foreach (var entry in role.entries)
+                {
+                    if (entry.Kind != JobEntryKind.WorkType) continue;
+                    if (!role.workTypeSnapshots.TryGetValue(entry.DefName, out var known))
+                        role.workTypeSnapshots[entry.DefName] = known = new List<string>();
+                    foreach (var giver in GameJobCatalog.Instance.WorkGiversOf(entry.DefName))
+                        if (!known.Contains(giver))
+                        {
+                            known.Add(giver);
+                            changed = true;
+                        }
+                }
+            if (changed) CompiledJobOrders.InvalidateAll();
+        }
+
+        /// Coverage math lives in Core (WorkTypeCoverage) with tests.
+        private static HashSet<string> CoveredWorkTypes(RoleStore store) =>
+            WorkTypeCoverage.CoveredWorkTypes(
+                store.roles.Select(r => ((IReadOnlyList<JobEntry>)r.entries, r.blocker)),
+                GameJobCatalog.Instance);
+
+        /// One selectable line in the Restore Roles preview. Exactly one of the
+        /// payload fields is set: a missing template to recreate, an uncovered work
+        /// type to regenerate, or a role whose snapshots gain moved vanilla givers.
+        public class RestoreItem
+        {
+            public string label;
+            public string templateDef;
+            public string workType;
+            public int backfillRoleId = -1;
+        }
+
+        /// Everything Restore Roles could do right now: recreate missing template
+        /// roles, regenerate coverage for work types nothing covers, and recover
+        /// vanilla jobs that mods moved out of roles' work types.
+        public static List<RestoreItem> ComputeRestoreItems()
+        {
+            var store = RoleStore.Current;
+            var result = new List<RestoreItem>();
             if (store == null) return result;
 
             var covered = CoveredWorkTypes(store);
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
             {
                 if (store.RoleByTemplate(def.defName) != null) continue;
-                result.Add(def.label);
+                result.Add(new RestoreItem { label = def.label, templateDef = def.defName });
                 if (!def.blocker) // a blocker's entries are vetoes, not coverage
-                    AddCoveredEntries(covered, def.ParsedEntries());
+                    WorkTypeCoverage.AddCoveredEntries(covered, def.ParsedEntries(), GameJobCatalog.Instance);
             }
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (workType.visible && !covered.Contains(workType.defName))
-                    result.Add((workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst());
+                    result.Add(new RestoreItem
+                    {
+                        label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst(),
+                        workType = workType.defName,
+                    });
+            foreach (var role in store.roles)
+            {
+                var moved = MovedVanillaGiversFor(role);
+                if (moved == null) continue;
+                int count = moved.Sum(kv => kv.Value.Count);
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreMovedJobs".Translate(role.label, count),
+                    backfillRoleId = role.id,
+                });
+            }
             return result;
         }
 
-        /// Recreates whatever MissingSeededRoles reports: catalog roles from their
-        /// defs, then regenerated coverage for still-uncovered work types (their
-        /// knownWorkTypes entries are forgotten so EnsureWorkTypeCoverage reprocesses
-        /// them). Existing roles are never touched. Returns labels of restored roles.
-        public static List<string> RestoreMissingRoles()
+        /// Moved-giver detection lives in Core (WorkTypeCoverage) with tests.
+        private static Dictionary<string, List<string>> MovedVanillaGiversFor(Role role) =>
+            WorkTypeCoverage.MovedGivers(role.entries, role.workTypeSnapshots,
+                VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
+
+        /// Applies the selected restore items. Each application self-guards against
+        /// staleness (an already-present template or covered work type no-ops).
+        /// Returns labels of what was actually restored.
+        public static List<string> RestoreSelected(
+            List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds)
         {
             var store = RoleStore.Current;
             var result = new List<string>();
             if (store == null) return result;
 
-            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            if (templateDefs != null)
+                foreach (var defName in templateDefs)
+                {
+                    if (store.RoleByTemplate(defName) != null) continue;
+                    var role = RoleCommands.CreateRoleFromDef(DefDatabase<RoleDef>.GetNamedSilentFail(defName));
+                    if (role != null) result.Add(role.label);
+                }
+
+            if (workTypes != null && workTypes.Count > 0)
             {
-                if (store.RoleByTemplate(def.defName) != null) continue;
-                var role = RoleCommands.CreateRoleFromDef(def);
-                if (role != null) result.Add(role.label);
+                var covered = CoveredWorkTypes(store);
+                store.knownWorkTypes.RemoveAll(wt => workTypes.Contains(wt) && !covered.Contains(wt));
+                result.AddRange(EnsureWorkTypeCoverage());
             }
 
-            var covered = CoveredWorkTypes(store);
-            store.knownWorkTypes.RemoveAll(wt => !covered.Contains(wt));
-            result.AddRange(EnsureWorkTypeCoverage());
+            if (backfillRoleIds != null)
+                foreach (var roleId in backfillRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    if (role == null) continue;
+                    var moved = MovedVanillaGiversFor(role);
+                    if (moved == null) continue;
+                    foreach (var kv in moved)
+                    {
+                        if (!role.workTypeSnapshots.TryGetValue(kv.Key, out var known))
+                            role.workTypeSnapshots[kv.Key] = known = new List<string>();
+                        known.AddRange(kv.Value);
+                    }
+                    result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
+                    CompiledJobOrders.InvalidateRole(roleId);
+                }
             return result;
         }
     }

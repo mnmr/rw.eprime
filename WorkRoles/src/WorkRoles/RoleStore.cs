@@ -19,6 +19,10 @@ namespace WorkRoles
         public List<string> knownWorkTypes = new List<string>();
         /// Player-defined swatch slots for the role editor (alpha 0 = empty slot).
         public List<UnityEngine.Color> customSwatches = new List<UnityEngine.Color>();
+        /// Slot names (index-aligned with customSwatches): auto-named "custom-N",
+        /// renamed only by editing an export file — imported names stick. Used by
+        /// export/import to merge palettes by name.
+        public List<string> customSwatchNames = new List<string>();
         /// Per-bill role restrictions (see BillRoles). Mutate via RoleCommands.
         public Dictionary<Bill, int> billRoles = new Dictionary<Bill, int>();
         private int nextRoleId = 1;
@@ -48,6 +52,16 @@ namespace WorkRoles
         }
 
         public int NextId() => nextRoleId++;
+
+        /// Keeps slot names index-aligned with the swatch list (auto-name gaps).
+        public void SyncSwatchNames()
+        {
+            while (customSwatchNames.Count < customSwatches.Count)
+                customSwatchNames.Add($"custom-{customSwatchNames.Count + 1}");
+            foreach (var i in Enumerable.Range(0, customSwatchNames.Count))
+                if (customSwatchNames[i].NullOrEmpty())
+                    customSwatchNames[i] = $"custom-{i + 1}";
+        }
 
         public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
 
@@ -90,6 +104,7 @@ namespace WorkRoles
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
             Scribe_Collections.Look(ref customSwatches, "customSwatches", LookMode.Value);
+            Scribe_Collections.Look(ref customSwatchNames, "customSwatchNames", LookMode.Value);
             Scribe_Collections.Look(ref pawnSets, "pawnSets", LookMode.Reference, LookMode.Deep,
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
@@ -99,6 +114,8 @@ namespace WorkRoles
                 roles ??= new List<Role>();
                 knownWorkTypes ??= new List<string>();
                 customSwatches ??= new List<UnityEngine.Color>();
+                customSwatchNames ??= new List<string>();
+                SyncSwatchNames();
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
                 billRoles ??= new Dictionary<Bill, int>();

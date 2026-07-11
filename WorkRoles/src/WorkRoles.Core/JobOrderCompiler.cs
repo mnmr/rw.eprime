@@ -66,6 +66,32 @@ namespace WorkRoles.Core
             return result;
         }
 
+        /// Entries plus, after each work-type entry, synthetic giver entries for
+        /// snapshot members a mod has MOVED to another work type — so the role
+        /// keeps jobs it was built around. Members still under the type expand
+        /// dynamically as usual; givers that no longer exist are skipped.
+        public static IReadOnlyList<JobEntry> WithMovedSnapshotGivers(
+            IReadOnlyList<JobEntry> entries,
+            IReadOnlyDictionary<string, List<string>> workTypeSnapshots,
+            IJobCatalog catalog)
+        {
+            if (workTypeSnapshots == null || workTypeSnapshots.Count == 0) return entries;
+            var expanded = new List<JobEntry>(entries.Count + 4);
+            foreach (var entry in entries)
+            {
+                expanded.Add(entry);
+                if (entry.Kind != JobEntryKind.WorkType) continue;
+                if (!workTypeSnapshots.TryGetValue(entry.DefName, out var known) || known == null) continue;
+                foreach (var giver in known)
+                {
+                    var currentType = catalog.WorkTypeOf(giver);
+                    if (currentType != null && currentType != entry.DefName)
+                        expanded.Add(new JobEntry(JobEntryKind.WorkGiver, giver));
+                }
+            }
+            return expanded;
+        }
+
         /// Projects a work type's unique rank onto the vanilla 1..4 priority scale
         /// (quartiles over the ranked count). Callers map absent work types to 0.
         public static int ToVanillaPriority(int rank, int rankedCount)

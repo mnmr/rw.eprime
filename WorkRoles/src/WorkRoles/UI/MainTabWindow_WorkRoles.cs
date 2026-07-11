@@ -99,14 +99,53 @@ namespace WorkRoles.UI
                 TooltipHandler.TipRegion(actionRect, "WR_RestoreRolesTip".Translate());
                 if (Widgets.ButtonText(actionRect, "WR_RestoreRoles".Translate()))
                 {
-                    var missing = Seeding.MissingSeededRoles();
-                    if (missing.Count == 0)
+                    var items = Seeding.ComputeRestoreItems();
+                    if (items.Count == 0)
                         Messages.Message("WR_NothingToRestore".Translate(),
                             MessageTypeDefOf.RejectInput, historical: false);
                     else
-                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                            "WR_RestoreRolesConfirm".Translate(missing.ToCommaList()),
-                            RoleCommands.RestoreMissingRoles));
+                        Find.WindowStack.Add(new Dialog_RestorePreview(items));
+                }
+
+                // Role catalog export: human-editable XML in the save-data folder
+                // (sharing, backups, cross-playthrough reuse). Import ships with
+                // its merge/preview design.
+                const float IoBtnW = 90f;
+                var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
+                TooltipHandler.TipRegion(exportRect, "WR_ExportTip".Translate(RoleIO.ExportFile));
+                if (Widgets.ButtonText(exportRect, "WR_Export".Translate()))
+                    Find.WindowStack.Add(new Dialog_ExportPreview(RoleIO.BuildXml(RoleStore.Current)));
+
+                var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
+                TooltipHandler.TipRegion(importRect, "WR_ImportTip".Translate(RoleIO.ExportFile));
+                if (Widgets.ButtonText(importRect, "WR_Import".Translate()))
+                {
+                    void OpenImport(string xml, string sourceProblem)
+                    {
+                        if (xml == null)
+                        {
+                            Messages.Message(sourceProblem, MessageTypeDefOf.RejectInput, historical: false);
+                            return;
+                        }
+                        var doc = RoleIO.Parse(xml);
+                        if (doc.error != null)
+                            Messages.Message("WR_ImportParseFailed".Translate(doc.error),
+                                MessageTypeDefOf.RejectInput, historical: false);
+                        else
+                            Find.WindowStack.Add(new Dialog_ImportPreview(xml, doc));
+                    }
+                    Find.WindowStack.Add(new FloatMenu(new System.Collections.Generic.List<FloatMenuOption>
+                    {
+                        new FloatMenuOption("WR_ImportFromFile".Translate(RoleIO.ExportFile), () =>
+                            OpenImport(
+                                System.IO.File.Exists(RoleIO.ExportFile)
+                                    ? System.IO.File.ReadAllText(RoleIO.ExportFile) : null,
+                                "WR_ImportFileMissing".Translate(RoleIO.ExportFile))),
+                        new FloatMenuOption("WR_ImportFromClipboard".Translate(), () =>
+                            OpenImport(
+                                GUIUtility.systemCopyBuffer.NullOrEmpty() ? null : GUIUtility.systemCopyBuffer,
+                                "WR_ImportClipboardEmpty".Translate())),
+                    }));
                 }
             }
 

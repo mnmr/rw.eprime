@@ -32,13 +32,23 @@
   <WR_RoleTipEnabled>enabled</WR_RoleTipEnabled>
   <WR_RoleTipDisabled>DISABLED (click to enable)</WR_RoleTipDisabled>
   <!-- Usage hint used in WR_RoleTip {3} -->
-  <WR_RoleTipHint>Click: toggle globally. Drag onto a colonist to assign.</WR_RoleTipHint>
+  <WR_RoleTipHint>Click: toggle globally. Shift-click: assign to the selected colonist. Drag onto a colonist to assign.</WR_RoleTipHint>
 
   <!-- Filter row -->
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
   <WR_ShowAll>Colonists and slaves</WR_ShowAll>
   <WR_ShowColonists>Colonists only</WR_ShowColonists>
   <WR_ShowSlaves>Slaves only</WR_ShowSlaves>
+  <WR_ChipsNormal>Chips: Full names</WR_ChipsNormal>
+  <WR_ChipsCompact>Chips: Initials</WR_ChipsCompact>
+  <WR_ChipsMinimal>Chips: Squares</WR_ChipsMinimal>
+  <WR_OrderBar>Order: Colonist bar</WR_OrderBar>
+  <WR_OrderAZ>Order: A-Z</WR_OrderAZ>
+  <WR_DisplayOptions>Display options</WR_DisplayOptions>
+  <WR_SkillsButton>Skills</WR_SkillsButton>
+  <!-- {0} = active skill columns, {1} = maximum -->
+  <WR_SkillsButtonCount>Skills ({0}/{1})</WR_SkillsButtonCount>
+  <WR_ColColonist>Colonist</WR_ColColonist>
   <WR_ClearFilters>Clear filters</WR_ClearFilters>
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
@@ -64,6 +74,11 @@
   <WR_ReasonEssential>The colony always needs someone {0}.</WR_ReasonEssential>
   <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
   <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
+  <!-- Training-role suffix: {0} = full role label, {1} = skill label, {2} = required level -->
+  <WR_ReasonTraining>Training role: works toward {0} ({1} {2}+).</WR_ReasonTraining>
+
+  <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
+  <WR_SkillTipAptitude>Aptitude {0} (genes/traits)</WR_SkillTipAptitude>
 
   <!-- Assignment pinning (chip right-click) -->
   <WR_PinAssignment>Pin</WR_PinAssignment>
@@ -88,13 +103,58 @@
   <!-- Restore button (top-right corner, Roles tab) -->
   <WR_RestoreRoles>Restore Roles</WR_RestoreRoles>
   <WR_RestoreRolesTip>Recreate missing pre-made roles. Existing roles are not modified.</WR_RestoreRolesTip>
-  <!-- {0} = comma-separated role labels -->
-  <WR_RestoreRolesConfirm>Restore these roles?\n\n{0}</WR_RestoreRolesConfirm>
-  <WR_NothingToRestore>Nothing to restore: all pre-made roles are present.</WR_NothingToRestore>
+  <WR_RestoreRolesTitle>Restore Roles</WR_RestoreRolesTitle>
+
+  <!-- Import/Export (Roles tab, top-right); {0} = file path, or count for messages -->
+  <WR_Export>Export</WR_Export>
+  <WR_Import>Import</WR_Import>
+  <WR_ExportTip>Write all role definitions (not assignments) to:\n{0}</WR_ExportTip>
+  <WR_ImportTip>Add the role definitions from:\n{0}</WR_ImportTip>
+  <WR_ExportTitle>Export Roles</WR_ExportTitle>
+  <WR_CopyClipboard>Copy to Clipboard</WR_CopyClipboard>
+  <WR_CopyPath>Copy Path</WR_CopyPath>
+  <WR_Save>Save</WR_Save>
+  <WR_LocGameData>Game data folder</WR_LocGameData>
+  <WR_LocDesktop>Desktop</WR_LocDesktop>
+  <WR_LocUserHome>User home</WR_LocUserHome>
+  <WR_LocCustom>Custom...</WR_LocCustom>
+  <WR_BadFileName>Enter a valid file name.</WR_BadFileName>
+  <WR_BadDirectory>Enter a valid directory path.</WR_BadDirectory>
+
+  <!-- Import: {0} = file path, error text, color hex, role names or counts -->
+  <WR_ImportTitle>Import Roles</WR_ImportTitle>
+  <WR_ImportFromFile>From file: {0}</WR_ImportFromFile>
+  <WR_ImportFromClipboard>From clipboard</WR_ImportFromClipboard>
+  <WR_ImportFileMissing>No file found at {0}</WR_ImportFileMissing>
+  <WR_ImportClipboardEmpty>The clipboard is empty.</WR_ImportClipboardEmpty>
+  <WR_ImportParseFailed>Could not read roles: {0}</WR_ImportParseFailed>
+  <WR_SectionPalette>Palette</WR_SectionPalette>
+  <WR_SectionRoles>Roles</WR_SectionRoles>
+  <WR_ModeMerge>Merge</WR_ModeMerge>
+  <WR_ModeOverwrite>Overwrite</WR_ModeOverwrite>
+  <WR_RowNew>{0} (new)</WR_RowNew>
+  <WR_RowUpdate>{0} (update)</WR_RowUpdate>
+  <!-- {0} = slot name, {1} = hex, {2} = affected role labels -->
+  <WR_RowRecolors>{0} → {1} (recolors: {2})</WR_RowRecolors>
+  <WR_RowNewColor>{0} {1} (new color)</WR_RowNewColor>
+  <WR_NothingToMerge>Everything matches: nothing to merge.</WR_NothingToMerge>
+  <WR_PaletteOverwriteInfo>Replaces all custom colors with the file's {0} palette entries.</WR_PaletteOverwriteInfo>
+  <WR_OverwriteReplaces>Applies all {0} roles from the file.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Deletes (not in file): {0}</WR_OverwriteDeletes>
+  <!-- {0}-{3} = added/updated/deleted/palette-change counts -->
+  <WR_ImportSummary>Import complete: {0} added, {1} updated, {2} deleted, {3} palette changes.</WR_ImportSummary>
+  <WR_CopiedToClipboard>Copied to clipboard.</WR_CopiedToClipboard>
+  <!-- {0} = file path or error message -->
+  <WR_ExportSaved>Saved to {0}</WR_ExportSaved>
+  <WR_ExportFailed>Could not save: {0}</WR_ExportFailed>
+  <!-- {0} = role label, {1} = number of jobs moved away by mods -->
+  <WR_RestoreMovedJobs>{0} (recover {1} moved jobs)</WR_RestoreMovedJobs>
+  <WR_NothingToRestore>Nothing to restore: all pre-made roles are present and no jobs were moved.</WR_NothingToRestore>
   <!-- {0} = comma-separated role labels -->
   <WR_RolesRestored>Restored: {0}</WR_RolesRestored>
 
   <!-- Role list -->
+  <WR_FilterAnyJob>Any job</WR_FilterAnyJob>
   <!-- {0} = role label -->
   <WR_RoleLabelOff>{0} (off)</WR_RoleLabelOff>
   <WR_SelectOrCreateRole>Select or create a role.</WR_SelectOrCreateRole>
