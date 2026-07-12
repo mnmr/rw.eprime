@@ -26,9 +26,10 @@ namespace WorkRoles
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
 
-            EnsureWorkTypeCoverage();
+            var generated = EnsureWorkTypeCoverage();
 
             int assigned = 0;
+            var failures = new List<string>();
             foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
             {
                 try
@@ -49,17 +50,51 @@ namespace WorkRoles
                         if (!GameJobCatalog.Instance.WorkGiversOf(pair.Key).Any()) continue;
                         var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(pair.Key);
                         if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
+                        {
                             Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                            failures.Add("WR_SeedDropFailure".Translate(
+                                pawn.LabelShort, workType.labelShort ?? pair.Key, pair.Value));
+                        }
                     }
                 }
                 catch (System.Exception e)
                 {
                     // One corrupt pawn must not abort migration for the rest.
                     Log.Error($"[WorkRoles] failed to migrate priorities of {pawn?.LabelShort ?? "unknown pawn"}: {e}");
+                    failures.Add("WR_SeedPawnFailure".Translate(
+                        pawn?.LabelShort ?? "?", e.Message));
                 }
             }
 
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
+            ShowSeedReport(store.roles.Count, assigned, generated, failures);
+        }
+
+        /// Once-per-save seeding summary. Adding the mod to an existing save
+        /// always reports (the player should see what migration did); a fresh
+        /// game only surfaces failures — seeding is the expected path there.
+        /// Client-local UI: the report strings are never stored or synced.
+        private static void ShowSeedReport(int roleCount, int assigned,
+            List<string> generated, List<string> failures)
+        {
+            bool newGame = Find.TickManager.TicksGame == 0;
+            if (newGame && failures.Count == 0) return;
+            var body = new System.Text.StringBuilder();
+            body.Append("WR_SeedReportBody".Translate(roleCount, assigned));
+            if (generated.Count > 0)
+                body.Append("\n\n").Append("WR_SeedReportGenerated".Translate(generated.ToCommaList()));
+            if (failures.Count > 0)
+            {
+                body.Append("\n\n<color=#ff6666>").Append("WR_SeedReportFailures".Translate());
+                foreach (var failure in failures)
+                    body.Append("\n  - ").Append(failure);
+                body.Append("</color>");
+            }
+            // Deferred like the SetPriority watcher: seeding runs during load,
+            // the dialog must appear once loading ends.
+            LongEventHandler.ExecuteWhenFinished(() =>
+                Find.WindowStack.Add(new Dialog_MessageBox(body.ToString(),
+                    title: "WR_SeedReportTitle".Translate())));
         }
 
         /// Derives a pawn's role set from its vanilla work priorities via the
@@ -84,7 +119,63 @@ namespace WorkRoles
 
             foreach (var roleId in plan)
                 RoleCommands.AssignRoleDirect(pawn, roleId);
+            // The planner excludes the managed role, but invisible modded work
+            // (e.g. Allow Tool's Finish Off) was active in vanilla and must keep
+            // running — every migrated pawn carries Odd Jobs.
+            AssignOddJobs(pawn);
             return true;
+        }
+
+        /// Assigns Odd Jobs below the everyone tier (Basics and other auto-assign
+        /// roles) and doctoring, above vocations: its jobs (finish off, urgent
+        /// hauls) are short, urgent work — but never ahead of the essentials.
+        internal static void AssignOddJobs(Pawn pawn)
+        {
+            var store = RoleStore.Current;
+            var oddJobs = store?.ManagedRole;
+            if (oddJobs == null) return;
+            var set = store.SetFor(pawn);
+            if (set.assignments.Any(a => a.roleId == oddJobs.id)) return;
+            RoleCommands.AssignRoleDirect(pawn, oddJobs.id, OddJobsInsertIndex(store, set.assignments));
+        }
+
+        /// Creates Odd Jobs if missing; pawns already managed (the mod-added-to-
+        /// existing-save load where it appears) get it at its ranked position.
+        /// Null while the player-deleted opt-out is in force.
+        private static Role EnsureOddJobsRole(RoleStore store)
+        {
+            var oddJobs = store.ManagedRole;
+            if (oddJobs != null) return oddJobs;
+            if (store.oddJobsDeleted) return null;
+            oddJobs = new Role
+            {
+                id = store.NextId(),
+                label = "WR_OddJobsRole".Translate(),
+                managed = true,
+                autoAssign = true,
+                hasCustomColor = true,
+                color = new UnityEngine.Color(0.278f, 0.333f, 0.412f), // slate-600
+            };
+            store.roles.Add(oddJobs);
+            foreach (var set in store.pawnSets.Values)
+                if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != oddJobs.id))
+                    set.assignments.Insert(OddJobsInsertIndex(store, set.assignments),
+                        new RoleAssignment { roleId = oddJobs.id });
+            return oddJobs;
+        }
+
+        private static int OddJobsInsertIndex(RoleStore store, List<RoleAssignment> assignments)
+        {
+            int index = 0;
+            for (int i = 0; i < assignments.Count; i++)
+            {
+                var role = store.RoleById(assignments[i].roleId);
+                if (role == null || role.managed) continue;
+                if (role.autoAssign
+                    || role.templateDefName == "WS_Doctor" || role.templateDefName == "WS_Medic")
+                    index = i + 1;
+            }
+            return index;
         }
 
         /// The pawn's vanilla priorities for CAPABLE work types only (absent key =
@@ -112,9 +203,10 @@ namespace WorkRoles
 
             foreach (var role in store.roles)
             {
-                if (role.autoAssign)
+                if (role.autoAssign && !role.managed)
                     RoleCommands.AssignRoleDirect(pawn, role.id);
             }
+            AssignOddJobs(pawn); // placed by its rule, not catalog order
         }
 
         /// Visible modded work types that belong to everyone rather than a vocation:
@@ -123,6 +215,45 @@ namespace WorkRoles
         {
             "HaulingUrgent", // Allow Tool's "haul urgently"
         };
+
+        /// Stable string hash (FNV-1a): string.GetHashCode is not guaranteed
+        /// identical across runtimes, and seeded colors must match in MP.
+        private static uint Fnv1a(string text)
+        {
+            uint hash = 2166136261u;
+            foreach (char c in text)
+            {
+                hash ^= c;
+                hash *= 16777619u;
+            }
+            return hash;
+        }
+
+        private static UnityEngine.Color PaletteColor(string defName)
+        {
+            var def = DefDatabase<PaletteDef>.GetNamedSilentFail(defName);
+            return def?.color ?? new UnityEngine.Color(0.200f, 0.255f, 0.333f);
+        }
+
+        /// Snaps an arbitrary color to the nearest palette entry (RGB distance).
+        private static UnityEngine.Color NearestPaletteColor(UnityEngine.Color target)
+        {
+            var best = new UnityEngine.Color(0.200f, 0.255f, 0.333f);
+            float bestDist = float.MaxValue;
+            foreach (var def in DefDatabase<PaletteDef>.AllDefsListForReading)
+            {
+                float dr = def.color.r - target.r;
+                float dg = def.color.g - target.g;
+                float db = def.color.b - target.b;
+                float dist = dr * dr + dg * dg + db * db;
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = def.color;
+                }
+            }
+            return best;
+        }
 
         /// Ensures every work type is reachable through some role. Runs on every load;
         /// each work type is processed once per save (store.knownWorkTypes), so deleting
@@ -134,6 +265,12 @@ namespace WorkRoles
             if (store == null || !store.seeded) return result;
 
             var covered = CoveredWorkTypes(store);
+
+            // Odd Jobs exists from seeding on — a stable anchor for the Locked
+            // group and for mods that add/remove hidden jobs mid-game, even with
+            // 0 jobs — unless the player deleted it (null then; an opt-out that
+            // holds until Restore Roles brings it back).
+            var oddJobs = EnsureOddJobsRole(store);
 
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
@@ -158,39 +295,27 @@ namespace WorkRoles
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
-                        // Everyone-work stays in Basics' color family (slate-700,
-                        // one step below Basics); other types get a stable hash hue.
+                        // Palette colors only, chosen deterministically across MP
+                        // clients: Everyone-work stays in Basics' family
+                        // (slate-700); other types hash (FNV-1a — stable, unlike
+                        // string.GetHashCode) to a hue and snap to the nearest
+                        // palette color.
                         role.color = EveryoneWorkTypes.Contains(workType.defName)
-                            ? new UnityEngine.Color(0.200f, 0.255f, 0.333f)
-                            : UnityEngine.Color.HSVToRGB(
-                                (workType.defName.GetHashCode() & 0x7FFFFFFF) % 360 / 360f, 0.5f, 0.55f);
+                            ? PaletteColor("slate-700")
+                            : NearestPaletteColor(UnityEngine.Color.HSVToRGB(
+                                Fnv1a(workType.defName) % 360u / 360f, 0.5f, 0.55f));
                         role.hasCustomColor = true;
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                         result.Add(label);
                     }
                 }
-                else
+                else if (oddJobs != null)
                 {
                     // Invisible work types go to the engine-managed Odd Jobs role: an
                     // ordinary catalog role (reorderable, assignable, auto-assigned to
-                    // everyone) whose ENTRIES only the engine writes.
-                    var oddJobs = store.ManagedRole;
-                    if (oddJobs == null)
-                    {
-                        oddJobs = new Role
-                        {
-                            id = store.NextId(),
-                            label = "WR_OddJobsRole".Translate(),
-                            managed = true,
-                            autoAssign = true,
-                            hasCustomColor = true,
-                            color = new UnityEngine.Color(0.278f, 0.333f, 0.412f), // slate-600
-                        };
-                        store.roles.Add(oddJobs);
-                        foreach (var set in store.pawnSets.Values)
-                            if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != oddJobs.id))
-                                set.assignments.Add(new RoleAssignment { roleId = oddJobs.id });
-                    }
+                    // everyone) whose ENTRIES only the engine writes. With Odd Jobs
+                    // deleted the type is only marked known; restoring the role
+                    // re-opens these types and collects them again.
                     oddJobs.entries.Add(
                         new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                     result.Add(oddJobs.label);
@@ -240,13 +365,15 @@ namespace WorkRoles
 
         /// One selectable line in the Restore Roles preview. Exactly one of the
         /// payload fields is set: a missing template to recreate, an uncovered work
-        /// type to regenerate, or a role whose snapshots gain moved vanilla givers.
+        /// type to regenerate, a role whose snapshots gain moved vanilla givers, or
+        /// the deleted Odd Jobs role to bring back.
         public class RestoreItem
         {
             public string label;
             public string templateDef;
             public string workType;
             public int backfillRoleId = -1;
+            public bool oddJobs;
         }
 
         /// Everything Restore Roles could do right now: recreate missing template
@@ -257,6 +384,9 @@ namespace WorkRoles
             var store = RoleStore.Current;
             var result = new List<RestoreItem>();
             if (store == null) return result;
+
+            if (store.oddJobsDeleted && store.ManagedRole == null)
+                result.Add(new RestoreItem { label = "WR_OddJobsRole".Translate(), oddJobs = true });
 
             var covered = CoveredWorkTypes(store);
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
@@ -296,11 +426,30 @@ namespace WorkRoles
         /// staleness (an already-present template or covered work type no-ops).
         /// Returns labels of what was actually restored.
         public static List<string> RestoreSelected(
-            List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds)
+            List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds,
+            bool oddJobs = false)
         {
             var store = RoleStore.Current;
             var result = new List<string>();
             if (store == null) return result;
+
+            if (oddJobs && store.oddJobsDeleted)
+            {
+                store.oddJobsDeleted = false;
+                // Re-open the invisible work types skipped while deleted, then let
+                // coverage recreate the role, its entries and its assignments.
+                var stillCovered = CoveredWorkTypes(store);
+                store.knownWorkTypes.RemoveAll(wt =>
+                {
+                    var def = DefDatabase<WorkTypeDef>.GetNamedSilentFail(wt);
+                    return def != null && !def.visible && !stillCovered.Contains(wt);
+                });
+                var labels = EnsureWorkTypeCoverage();
+                result.AddRange(labels);
+                var managed = store.ManagedRole;
+                if (managed != null && !labels.Contains(managed.label))
+                    result.Add(managed.label); // recreated with no hidden jobs around
+            }
 
             if (templateDefs != null)
                 foreach (var defName in templateDefs)

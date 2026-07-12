@@ -17,15 +17,40 @@ public class RoleAbbreviationsTests
     }
 
     [Test]
-    public async Task LadderFallsThroughVowelAndLastLetterToNumbers()
+    public async Task LadderFallsThroughVowelLastLetterAndSingleToNumbers()
     {
         // All start "Co": Cook takes "Co"; Cooler falls to vowel "Co"->taken,
-        // then first+last "Cr"; Coder: "Co" taken, vowel "Co" taken, last "Cr"
-        // taken -> numbered.
-        var map = Build("Cook", "Cooler", "Coder");
+        // then first+last "Cr"; Coder: "Co", vowel "Co", last "Cr" all taken
+        // -> bare "C"; Copper: everything including "C" taken -> numbered.
+        var map = Build("Cook", "Cooler", "Coder", "Copper");
         await Assert.That(map[0]).IsEqualTo("Co");
         await Assert.That(map[1]).IsEqualTo("Cr");   // first+last of "Cooler"
-        await Assert.That(map[2]).IsEqualTo("C1");   // everything collided
+        await Assert.That(map[2]).IsEqualTo("C");    // single letter before numbers
+        await Assert.That(map[3]).IsEqualTo("C1");   // everything collided
+    }
+
+    [Test]
+    public async Task MultiWordInitialsAreReserved_SingleWordsFallThrough()
+    {
+        // "Haul urgently" owns HU even listed second; Hunter may not squat on
+        // "Hu" (uniqueness stays case-insensitive) and falls to first+last.
+        var map = Build("Hunter", "Haul urgently");
+        await Assert.That(map[0]).IsEqualTo("Hr");
+        await Assert.That(map[1]).IsEqualTo("HU");
+
+        // With Hr reserved too, Hunter drops all the way to a bare letter.
+        var crowded = Build("Hunter", "Haul urgently", "Harvest ripe");
+        await Assert.That(crowded[0]).IsEqualTo("H");
+        await Assert.That(crowded[2]).IsEqualTo("HR");
+    }
+
+    [Test]
+    public async Task SpecialCharactersNeverAppearInAbbreviations()
+    {
+        var map = Build("Cook (Michelin)", "(Fancy) Chef", "!!!");
+        await Assert.That(map[0]).IsEqualTo("CM");  // not "C("
+        await Assert.That(map[1]).IsEqualTo("FC");  // parens stripped, word kept
+        await Assert.That(map[2]).IsEqualTo("R1");  // nothing usable: R-numbered
     }
 
     [Test]

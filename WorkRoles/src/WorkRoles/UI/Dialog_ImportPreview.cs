@@ -131,10 +131,17 @@ namespace WorkRoles.UI
             if (include)
             {
                 bool merge = !overwrite;
-                if (Widgets.RadioButtonLabeled(new Rect(width * 0.45f, y, width * 0.25f, RowH - 2f),
-                        "WR_ModeMerge".Translate(), merge)) overwrite = false;
-                if (Widgets.RadioButtonLabeled(new Rect(width * 0.72f, y, width * 0.28f, RowH - 2f),
-                        "WR_ModeOverwrite".Translate(), overwrite)) overwrite = true;
+                // Tight rects: RadioButtonLabeled pins the circle to the rect's
+                // right edge, so a wide rect strands the label far from it.
+                const float RadioW = 24f;
+                string mergeLabel = "WR_ModeMerge".Translate();
+                string overwriteLabel = "WR_ModeOverwrite".Translate();
+                var mergeRect = new Rect(width * 0.45f, y,
+                    WrText.FitWidth(mergeLabel) + 8f + RadioW, RowH - 2f);
+                var overwriteRect = new Rect(mergeRect.xMax + 24f, y,
+                    WrText.FitWidth(overwriteLabel) + 8f + RadioW, RowH - 2f);
+                if (Widgets.RadioButtonLabeled(mergeRect, mergeLabel, merge)) overwrite = false;
+                if (Widgets.RadioButtonLabeled(overwriteRect, overwriteLabel, overwrite)) overwrite = true;
             }
             y += RowH;
             if (!include) return;

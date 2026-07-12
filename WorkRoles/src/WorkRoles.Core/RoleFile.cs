@@ -33,17 +33,19 @@ namespace WorkRoles.Core
     }
 
     /// One role as the export file carries it. colorRef is a color NAME (built-in
-    /// swatch or palette entry) or a #hex literal; location is the raw enum word.
+    /// swatch or palette entry); locations hold LocationRules
+    /// tokens with NAMES instead of save-local ids ("settlement:Boarwood").
     public class FileRole
     {
         public string label;
         public string templateDef;
+        public string group;   // role-list group name; null = the Default group
         public string colorRef;
         public bool autoAssign;
         public bool blocker;
         public bool enabled = true;
         public int activeHours = AllHours;
-        public string location;
+        public List<string> locations = new List<string>();
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -52,29 +54,62 @@ namespace WorkRoles.Core
     public class RoleFileDocument
     {
         public List<(string name, ColorRgb color)> palette = new List<(string, ColorRgb)>();
+        /// User group names in display order (the Default group is never listed).
+        public List<string> groups = new List<string>();
         public List<FileRole> roles = new List<FileRole>();
         public string error; // set when nothing usable could be parsed
     }
 
     /// The export file format: human-readable, hand-editable XML, versioned at the
     /// root, independent of the mod's save/sync internals. Parsing is LENIENT —
-    /// malformed roles or palette entries are skipped, not fatal.
+    /// malformed roles or palette entries are skipped, not fatal — and XML
+    /// comments are ignored everywhere (only elements are read).
     public static class RoleFile
     {
         public const string FormatVersion = "1";
 
+        // Hand-editing help, embedded in every export. Non-obvious parts only.
+        private const string FormatNotes = @"
+  Format notes:
+  - Palette entries define custom colors (#rrggbb). Roles reference a color by
+    NAME only: a palette entry or a built-in color name (e.g. ""red-800"").
+  - A Role's <Options> only lists non-defaults. ActiveHours is a 24-character
+    bitstring, hour 0 leftmost, 1 = active. <Locations> holds any of:
+    <Settlements/> (any settlement), <Caravans/> (caravans and away maps),
+    <Settlement name=""...""/> and <Ship name=""...""/> (matched by name).
+  - The order of <Jobs> IS the priority order. <WorkType> covers every job of
+    that work type, including jobs mods add later; <WorkGiver> is one job.
+  - <Groups> lists role-list groups in display order; a Role joins one via its
+    group attribute (unlisted names still work; no attribute = Default).
+";
+        private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
+
         public static string Build(RoleFileDocument doc)
         {
-            var root = new XElement("Roles", new XAttribute("version", FormatVersion));
+            var root = new XElement("WorkRoles", new XAttribute("version", FormatVersion));
+            root.Add(new XComment(FormatNotes));
+
+            var palette = new XElement("Palette");
             if (doc.palette.Count > 0)
-            {
-                var palette = new XElement("Palette");
                 foreach (var (name, color) in doc.palette)
                     palette.Add(new XElement("Color", new XAttribute("name", name), color.Hex()));
-                root.Add(palette);
+            else
+                palette.Add(new XComment(PaletteSample)); // syntax sample, not imported
+            root.Add(palette);
+
+            if (doc.groups.Count > 0)
+            {
+                // Element form so future per-group options land as attributes.
+                var groups = new XElement("Groups");
+                foreach (var name in doc.groups)
+                    groups.Add(new XElement("Group", new XAttribute("name", name)));
+                root.Add(groups);
             }
+
+            var roles = new XElement("Roles");
             foreach (var role in doc.roles)
-                root.Add(Encode(role));
+                roles.Add(Encode(role));
+            root.Add(roles);
             return root.ToString();
         }
 
@@ -83,6 +118,8 @@ namespace WorkRoles.Core
             var element = new XElement("Role", new XAttribute("name", role.label ?? ""));
             if (!string.IsNullOrEmpty(role.templateDef))
                 element.Add(new XAttribute("id", role.templateDef));
+            if (!string.IsNullOrEmpty(role.group))
+                element.Add(new XAttribute("group", role.group));
 
             var options = new XElement("Options");
             if (!string.IsNullOrEmpty(role.colorRef))
@@ -95,8 +132,27 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Enabled", "false"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
-            if (!string.IsNullOrEmpty(role.location) && role.location != "Any")
-                options.Add(new XElement("Location", role.location));
+            if (role.locations.Count > 0)
+            {
+                // Structured elements so names (XLinq-escaped) survive any
+                // characters a player can type.
+                var locations = new XElement("Locations");
+                foreach (var token in role.locations)
+                {
+                    if (token == LocationRules.Settlements)
+                        locations.Add(new XElement("Settlements"));
+                    else if (token == LocationRules.Caravans)
+                        locations.Add(new XElement("Caravans"));
+                    else if (token.StartsWith(LocationRules.SettlementPrefix))
+                        locations.Add(new XElement("Settlement",
+                            new XAttribute("name", token.Substring(LocationRules.SettlementPrefix.Length))));
+                    else if (token.StartsWith(LocationRules.ShipPrefix))
+                        locations.Add(new XElement("Ship",
+                            new XAttribute("name", token.Substring(LocationRules.ShipPrefix.Length))));
+                }
+                if (locations.HasElements)
+                    options.Add(locations);
+            }
             if (options.HasElements)
                 element.Add(options);
 
@@ -128,7 +184,16 @@ namespace WorkRoles.Core
                     && doc.palette.All(p => p.name != name))
                     doc.palette.Add((name, color));
             }
-            foreach (var roleEl in root.Elements("Role"))
+            foreach (var groupEl in root.Element("Groups")?.Elements("Group")
+                     ?? Enumerable.Empty<XElement>())
+            {
+                string name = groupEl.Attribute("name")?.Value?.Trim();
+                if (!string.IsNullOrEmpty(name)
+                    && !doc.groups.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    doc.groups.Add(name);
+            }
+            foreach (var roleEl in root.Element("Roles")?.Elements("Role")
+                     ?? Enumerable.Empty<XElement>())
             {
                 var role = ParseRole(roleEl);
                 if (role != null) doc.roles.Add(role);
@@ -142,7 +207,13 @@ namespace WorkRoles.Core
         {
             string label = el.Attribute("name")?.Value;
             if (string.IsNullOrEmpty(label)) return null;
-            var role = new FileRole { label = label, templateDef = el.Attribute("id")?.Value };
+            var role = new FileRole
+            {
+                label = label,
+                templateDef = el.Attribute("id")?.Value,
+                group = el.Attribute("group")?.Value?.Trim(),
+            };
+            if (string.IsNullOrEmpty(role.group)) role.group = null;
             var options = el.Element("Options");
             if (options != null)
             {
@@ -150,7 +221,17 @@ namespace WorkRoles.Core
                 role.autoAssign = options.Element("AutoAssign")?.Value.Trim() == "true";
                 role.blocker = options.Element("Blocker")?.Value.Trim() == "true";
                 role.enabled = options.Element("Enabled")?.Value.Trim() != "false";
-                role.location = options.Element("Location")?.Value.Trim();
+                foreach (var loc in options.Element("Locations")?.Elements()
+                         ?? Enumerable.Empty<XElement>())
+                {
+                    string name = loc.Attribute("name")?.Value;
+                    if (loc.Name == "Settlements") role.locations.Add(LocationRules.Settlements);
+                    else if (loc.Name == "Caravans") role.locations.Add(LocationRules.Caravans);
+                    else if (loc.Name == "Settlement" && !string.IsNullOrEmpty(name))
+                        role.locations.Add(LocationRules.SettlementPrefix + name);
+                    else if (loc.Name == "Ship" && !string.IsNullOrEmpty(name))
+                        role.locations.Add(LocationRules.ShipPrefix + name);
+                }
                 string bits = options.Element("ActiveHours")?.Value.Trim();
                 if (bits != null && bits.Length == 24)
                     role.activeHours = BitsToHours(bits);

@@ -10,6 +10,9 @@ namespace WorkRoles
         /// Entries as "WorkType:DefName" or "WorkGiver:DefName" strings (tolerant of missing defs).
         public List<string> entries = new List<string>();
         public bool autoAssign;
+        /// A PaletteDef defName ("slate-700"); preferred over the inline pair.
+        public string colorRef;
+        /// Inline one-off color (kept for mods that don't want a palette entry).
         public Color color = Color.white;
         public bool hasCustomColor;
         public string iconPath;
@@ -36,6 +39,27 @@ namespace WorkRoles
                 else Log.Warning($"[WorkRoles] RoleDef {defName}: unparseable entry '{raw}'");
             }
             return parsed;
+        }
+
+        /// The def's color: colorRef resolves through PaletteDef, else the
+        /// inline color/hasCustomColor pair.
+        public (bool has, Color color) ResolvedColor()
+        {
+            if (!colorRef.NullOrEmpty())
+            {
+                var palette = DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef);
+                if (palette != null) return (true, palette.color);
+            }
+            return (hasCustomColor, color);
+        }
+
+        public override IEnumerable<string> ConfigErrors()
+        {
+            foreach (var error in base.ConfigErrors())
+                yield return error;
+            if (!colorRef.NullOrEmpty()
+                && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
+                yield return $"unknown colorRef '{colorRef}'";
         }
     }
 }

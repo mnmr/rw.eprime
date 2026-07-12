@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using RimWorld;
 using Verse;
 
@@ -6,13 +5,31 @@ namespace WorkRoles
 {
     public class WorkRolesGameComponent : GameComponent
     {
-        // Last observed local hour per map (map.uniqueID) and per player caravan
-        // (WorldObject.ID). Non-scribed: after load the compiled cache is fully
-        // invalidated anyway, so first observation just records without invalidating.
-        private readonly Dictionary<int, int> lastMapHour = new Dictionary<int, int>();
-        private readonly Dictionary<int, int> lastCaravanHour = new Dictionary<int, int>();
+        // Game tick of the next local-hour boundary. Local hours advance when
+        // absolute ticks cross a 2500 boundary — the longitude offset is a
+        // whole number of hours (GenDate.LocalTicksOffsetFromLongitude), so one
+        // global schedule covers every map and caravan, and the per-tick cost
+        // is a single comparison. (A caravan crossing a timezone mid-hour is
+        // caught on the crossing tick by Patch_WorldObject_SetTile.) Ticks are
+        // never skipped, only batched: TickManager runs DoSingleTick
+        // sequentially at every speed.
+        private int nextHourCheckTick;
 
         public WorkRolesGameComponent(Game game) { }
+
+        // Committing state from a dialog callback mid-OnGUI can change control
+        // layout between a frame's Layout and event passes (IMGUI errors).
+        // Update runs before the frame's GUI events, pause included.
+        private static readonly System.Collections.Generic.Queue<System.Action> deferredUi
+            = new System.Collections.Generic.Queue<System.Action>();
+
+        public static void RunOutsideOnGUI(System.Action action) => deferredUi.Enqueue(action);
+
+        public override void GameComponentUpdate()
+        {
+            while (deferredUi.Count > 0)
+                deferredUi.Dequeue()();
+        }
 
         // Runs after both "new game started" and "save loaded".
         public override void FinalizeInit()
@@ -27,35 +44,18 @@ namespace WorkRoles
 
         public override void GameComponentTick()
         {
-            if (Find.TickManager.TicksGame % 250 != 0) return;
+            int now = Find.TickManager.TicksGame;
+            if (now < nextHourCheckTick) return;
+            nextHourCheckTick = now + 2500 - (int)GenMath.PositiveMod(GenTicks.TicksAbs, 2500);
+
             var store = RoleStore.Current;
             if (store == null) return;
-
-            // Cheap linear scan: only bother tracking hours when a time rule exists.
-            bool anyTimeRule = false;
             foreach (var role in store.roles)
-                if (role.activeHours != Role.AllHours) { anyTimeRule = true; break; }
-            if (!anyTimeRule) return;
-
-            bool hourChanged = false;
-            foreach (var map in Find.Maps)
-            {
-                int hour = GenLocalDate.HourInteger(map);
-                if (lastMapHour.TryGetValue(map.uniqueID, out var prev) && prev != hour)
-                    hourChanged = true;
-                lastMapHour[map.uniqueID] = hour;
-            }
-            foreach (var caravan in Find.WorldObjects.Caravans)
-            {
-                if (!caravan.IsPlayerControlled) continue;
-                int hour = GenLocalDate.HourInteger(caravan.Tile);
-                if (lastCaravanHour.TryGetValue(caravan.ID, out var prev) && prev != hour)
-                    hourChanged = true;
-                lastCaravanHour[caravan.ID] = hour;
-            }
-
-            if (hourChanged)
-                CompiledJobOrders.InvalidateAllTimeRuled();
+                if (role.activeHours != Role.AllHours)
+                {
+                    CompiledJobOrders.InvalidateAllTimeRuled();
+                    return;
+                }
         }
     }
 }

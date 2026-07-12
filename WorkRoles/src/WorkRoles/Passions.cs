@@ -13,8 +13,13 @@ namespace WorkRoles
     /// defs are read once via reflection (no hard dependency) and bucketed by the
     /// tier VSE itself assigns them (PassionColor Major/Minor), so recommendations
     /// and the stats panel treat each custom passion like its nearest vanilla one.
+    /// [StaticConstructorOnStartup] quiets the vanilla texture-field heuristic:
+    /// the icons array is a lazy cache only ever touched from UI code (main
+    /// thread), never during static init — but the scanner can't know that.
+    [StaticConstructorOnStartup]
     public static class Passions
     {
+
         // VSE's PassionColor enum: Disabled = 0, Main = 1, Minor = 2, Major = 3.
         private const int PassionColorMinor = 2;
         private const int PassionColorMajor = 3;

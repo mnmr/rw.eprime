@@ -20,6 +20,21 @@ namespace WorkRoles.UI
         protected override float ForcedColorValue => -1f; // free value channel
         protected override bool ShowColorTemperatureBar => false;
 
+        /// The base dialog's fixed height fits 8 palette rows (9 columns, 28px
+        /// per row); our swatch grid needs more. The extra 16f absorbs the
+        /// header/text rows varying with UI scale — exact fits keep breaking.
+        public override Vector2 InitialSize
+        {
+            get
+            {
+                var size = base.InitialSize;
+                int paletteRows = Mathf.CeilToInt(pickable.Count / 9f);
+                if (paletteRows > 8)
+                    size.y += 28f * (paletteRows - 8) + 16f;
+                return size;
+            }
+        }
+
         public Dialog_RoleColorPicker(Color current, Action<Color> onSave)
             : base(Widgets.ColorComponents.All, Widgets.ColorComponents.All)
         {

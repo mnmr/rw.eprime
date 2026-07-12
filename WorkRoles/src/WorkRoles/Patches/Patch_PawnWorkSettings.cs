@@ -41,10 +41,13 @@ namespace WorkRoles.Patches
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(Pawn_WorkSettings.SetPriority))]
-        public static bool SetPriorityPrefix(Pawn ___pawn)
+        public static bool SetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, int priority)
         {
             // Managed pawns: the role store is the single source of truth (spec §6).
-            return !IsManaged(___pawn);
+            if (!IsManaged(___pawn)) return true;
+            // The swallowed write came from another mod — tell the player once.
+            PrioritySetWatcher.OnBlockedSetPriority(___pawn, w, priority);
+            return false;
         }
     }
 

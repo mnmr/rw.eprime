@@ -14,8 +14,10 @@ namespace WorkRoles.UI
             => Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
 
         /// Medium-font glyphs start ~8px below the label rect's top (internal
-        /// leading), measured against the stats panel's portrait frame.
-        private const float MediumTopBearing = 8f;
+        /// leading), measured against the stats panel's portrait frame. Public:
+        /// callers that WANT that leading as visible spacing (headers directly
+        /// under a panel edge) add it back onto rect.y.
+        internal const float MediumTopBearing = 8f;
 
         /// Section header: Medium font, drawn plainly (no matrix scaling — a scale
         /// pivot drifts with the header's on-screen position and UI scale), shifted

@@ -15,7 +15,7 @@ public class RoleFileTests
         blocker = true,
         enabled = false,
         activeHours = RoleFile.BitsToHours("111111000000000000000000"),
-        location = "AwayOnly",
+        locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -46,7 +46,9 @@ public class RoleFileTests
         await Assert.That(role.blocker).IsTrue();
         await Assert.That(role.enabled).IsFalse();
         await Assert.That(RoleFile.HoursToBits(role.activeHours)).IsEqualTo("111111000000000000000000");
-        await Assert.That(role.location).IsEqualTo("AwayOnly");
+        // Location names round-trip any characters a player can type (XLinq escapes).
+        await Assert.That(string.Join("|", role.locations))
+            .IsEqualTo("caravans|settlement:Bö & <Wood> \"Camp\"|ship:The Wanderer");
         await Assert.That(string.Join(",", role.entries.Select(e => e.Encode())))
             .IsEqualTo("WorkGiver:FightFires,WorkType:Hauling"); // ORDER preserved across kinds
 
@@ -58,15 +60,71 @@ public class RoleFileTests
     }
 
     [Test]
-    public async Task DefaultsProduceMinimalXmlWithoutOptions()
+    public async Task DefaultsProduceMinimalOptions_AndScaffoldingIsAlwaysPresent()
     {
         var doc = new RoleFileDocument
         {
             roles = { new FileRole { label = "Plain", entries = { new(JobEntryKind.WorkType, "Mining") } } },
         };
         string xml = RoleFile.Build(doc);
-        await Assert.That(xml.Contains("<Options>")).IsFalse();
-        await Assert.That(xml.Contains("<Palette>")).IsFalse();
+        // No Options ELEMENT (the format-notes comment mentions the word).
+        var role = System.Xml.Linq.XElement.Parse(xml).Element("Roles")!.Element("Role")!;
+        await Assert.That(role.Element("Options") == null).IsTrue();
+        // Scaffolding: WorkRoles root, format-notes comment, Palette (with a
+        // commented syntax sample when empty) and Roles always present.
+        await Assert.That(xml.StartsWith("<WorkRoles")).IsTrue();
+        await Assert.That(xml.Contains("<Palette>")).IsTrue();
+        await Assert.That(xml.Contains("Format notes")).IsTrue();
+        await Assert.That(xml.Contains("<!-- <Color name=\"ocean\">#0e7490</Color> -->")).IsTrue();
+        // The sample is a comment: importing our own export adds no palette slot.
+        var parsed = RoleFile.Parse(xml);
+        await Assert.That(parsed.palette.Count).IsEqualTo(0);
+        await Assert.That(parsed.roles.Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task GroupsRoundTripInOrderWithSpecialCharacters_AndDefaultStaysImplicit()
+    {
+        var doc = new RoleFileDocument
+        {
+            groups = { "Zulu & \"Friends\"", "Älpha" },
+            roles =
+            {
+                new FileRole { label = "A", group = "Älpha", entries = { new(JobEntryKind.WorkType, "Mining") } },
+                new FileRole { label = "B", entries = { new(JobEntryKind.WorkType, "Hauling") } },
+                new FileRole { label = "C", group = "Unlisted", entries = { new(JobEntryKind.WorkType, "Cooking") } },
+            },
+        };
+        var parsed = RoleFile.Parse(RoleFile.Build(doc));
+        await Assert.That(parsed.error == null).IsTrue();
+        // Order preserved, names escaped; unlisted names survive on the role.
+        await Assert.That(parsed.groups).IsEquivalentTo(new[] { "Zulu & \"Friends\"", "Älpha" });
+        await Assert.That(parsed.roles[0].group).IsEqualTo("Älpha");
+        await Assert.That(parsed.roles[1].group == null).IsTrue(); // Default stays implicit
+        await Assert.That(parsed.roles[2].group).IsEqualTo("Unlisted");
+    }
+
+    [Test]
+    public async Task DuplicateGroupNamesDedupCaseInsensitively()
+    {
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"1\"><Palette/>" +
+            "<Groups><Group name=\"Kitchen\"/><Group name=\"kitchen\"/><Group name=\"Farm\"/></Groups>" +
+            "<Roles><Role name=\"A\"><Jobs><WorkType>Mining</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.groups).IsEquivalentTo(new[] { "Kitchen", "Farm" });
+    }
+
+    [Test]
+    public async Task CommentsAreIgnoredEverywhereOnImport()
+    {
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"1\"><!-- header --><Palette><!-- sample --></Palette>" +
+            "<Roles><!-- note --><Role name=\"Ok\"><Jobs><!-- inline --><WorkType>Mining</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.palette.Count).IsEqualTo(0);
+        await Assert.That(parsed.roles.Count).IsEqualTo(1);
+        await Assert.That(parsed.roles[0].entries.Count).IsEqualTo(1);
     }
 
     [Test]
@@ -74,9 +132,9 @@ public class RoleFileTests
     {
         // Nameless role skipped; bad palette hex skipped; unknown elements ignored.
         var parsed = RoleFile.Parse(
-            "<Roles version=\"1\"><Palette><Color name=\"x\">notahex</Color></Palette>" +
+            "<WorkRoles version=\"1\"><Palette><Color name=\"x\">notahex</Color></Palette><Roles>" +
             "<Role><Jobs><WorkType>Mining</WorkType></Jobs></Role>" +
-            "<Role name=\"Ok\"><Junk/><Jobs><WorkGiver>Smelt</WorkGiver><Mystery>z</Mystery></Jobs></Role></Roles>");
+            "<Role name=\"Ok\"><Junk/><Jobs><WorkGiver>Smelt</WorkGiver><Mystery>z</Mystery></Jobs></Role></Roles></WorkRoles>");
         await Assert.That(parsed.error == null).IsTrue();
         await Assert.That(parsed.palette.Count).IsEqualTo(0);
         await Assert.That(parsed.roles.Count).IsEqualTo(1);
@@ -87,7 +145,7 @@ public class RoleFileTests
     public async Task GarbageAndEmptyDocumentsReportErrors()
     {
         await Assert.That(RoleFile.Parse("not xml at all").error != null).IsTrue();
-        await Assert.That(RoleFile.Parse("<Roles version=\"1\"/>").error).IsEqualTo("empty document");
+        await Assert.That(RoleFile.Parse("<WorkRoles version=\"1\"/>").error).IsEqualTo("empty document");
     }
 
     [Test]

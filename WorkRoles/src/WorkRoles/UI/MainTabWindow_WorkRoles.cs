@@ -37,16 +37,145 @@ namespace WorkRoles.UI
             return new Vector2(w, h);
         }
 
+        /// Re-applies the persisted size each open, clamped between the content
+        /// minimums and the screen; bottom-left anchor holds.
+        protected override void SetInitialSizeAndPosition()
+        {
+            base.SetInitialSizeAndPosition();
+            var settings = WorkRolesMod.Settings;
+            if (settings == null || (settings.windowWidth <= 0f && settings.windowHeight <= 0f))
+                return;
+            var min = TargetSize();
+            if (settings.windowWidth > 0f)
+                windowRect.width = Mathf.Clamp(settings.windowWidth, min.x, Verse.UI.screenWidth);
+            if (settings.windowHeight > 0f)
+                windowRect.height = Mathf.Clamp(settings.windowHeight, min.y, Verse.UI.screenHeight - 35f);
+            windowRect.x = 0f;
+            windowRect.y = Verse.UI.screenHeight - 35f - windowRect.height;
+        }
+
+        private bool resizing;
+        private float resizeBottom;    // screen-space bottom edge, pinned while dragging
+        private Vector2 resizeGrab;    // grab point: (distance from right edge, distance from top)
+        private Rect pendingResize;
+
+        /// Resize grip in its own immediate window (the contents group clips
+        /// the corner; plain ExtraOnGUI paints under GUI windows). Grows width
+        /// right and height UP — the bottom is pinned. Double-click = auto.
+        internal const float GripSize = 18f;
+        private const int GripWindowId = 147723001;
+
+        public override void ExtraOnGUI()
+        {
+            base.ExtraOnGUI();
+            var gripScreen = new Rect(windowRect.xMax - GripSize - 2f, windowRect.y + 2f, GripSize, GripSize);
+            // Dialog layer: clicking our window refocuses it to the top of
+            // GameUI, which would bury a same-layer grip.
+            Find.WindowStack.ImmediateWindow(GripWindowId, gripScreen, WindowLayer.Dialog,
+                () => GripContents(gripScreen), doBackground: false, absorbInputAroundWindow: false, 0f);
+        }
+
+        private void GripContents(Rect gripScreen)
+        {
+            var settings = WorkRolesMod.Settings;
+            var local = new Rect(0f, 0f, GripSize, GripSize);
+            TooltipHandler.TipRegion(local, "WR_ResizeGripTip".Translate());
+            // Reddish = player-sized. UV flip, not rotation: GUI matrix
+            // rotation misplaces draws inside GUI windows.
+            bool custom = settings != null && (settings.windowWidth > 0f || settings.windowHeight > 0f);
+            GUI.color = custom ? new Color(1f, 0.5f, 0.45f) : Color.white;
+            GUI.DrawTextureWithTexCoords(local, TexUI.WinExpandWidget, new Rect(0f, 1f, 1f, -1f));
+            GUI.color = Color.white;
+
+            var e = Event.current;
+            if (e.type == EventType.MouseDown && e.button == 0 && local.Contains(e.mousePosition))
+            {
+                if (e.clickCount == 2 && settings != null)
+                {
+                    settings.windowWidth = settings.windowHeight = 0f;
+                    settings.Write();
+                    resizing = false;
+                    SetInitialSizeAndPosition();
+                }
+                else
+                {
+                    var screenMouse = gripScreen.position + e.mousePosition;
+                    resizing = true;
+                    resizeBottom = windowRect.yMax;
+                    resizeGrab = new Vector2(windowRect.xMax - screenMouse.x, screenMouse.y - windowRect.y);
+                    pendingResize = windowRect;
+                }
+                e.Use();
+            }
+
+            if (!resizing) return;
+            if (e.type == EventType.Repaint)
+            {
+                // Real cursor in screen-UI coords (game-window origin, y down).
+                var gamePx = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
+                var mouseUI = gamePx / Prefs.UIScale;
+
+                var min = TargetSize();
+                float width = Mathf.Clamp(mouseUI.x + resizeGrab.x, min.x, Verse.UI.screenWidth);
+                float top = mouseUI.y - resizeGrab.y;
+                float height = Mathf.Clamp(resizeBottom - top, min.y, Verse.UI.screenHeight - 35f);
+                pendingResize = new Rect(0f, resizeBottom - height, width, height);
+
+                // Warp only when a clamp stops the window: the cursor rides the
+                // handle instead of drifting over other UI. Windows-only.
+                var grabUI = new Vector2(pendingResize.width - resizeGrab.x, pendingResize.y + resizeGrab.y);
+                if ((mouseUI - grabUI).sqrMagnitude > 4f && Win32Cursor.TryGetPos(out var desktopPx))
+                {
+                    var desktopOrigin = desktopPx - gamePx;
+                    Win32Cursor.SetPos(desktopOrigin + grabUI * Prefs.UIScale);
+                }
+            }
+            if (e.type == EventType.MouseUp || !Input.GetMouseButton(0))
+            {
+                resizing = false;
+                if (settings != null)
+                {
+                    settings.windowWidth = pendingResize.width;
+                    settings.windowHeight = pendingResize.height;
+                    settings.Write();
+                }
+                if (e.type == EventType.MouseUp) e.Use();
+            }
+        }
+
+        /// Drag rect applies between frames: mid-event windowRect changes
+        /// desync Layout from later passes.
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            if (resizing)
+                windowRect = pendingResize;
+        }
+
         public override void PreOpen()
         {
             base.PreOpen();
             RoleDrag.Cancel();
             colonistsTab.Reset();
             rolesTab.Reset();
+            KeyOverride.Apply();
+        }
+
+        public override void PostClose()
+        {
+            base.PostClose();
+            KeyOverride.Restore();
         }
 
         public override void DoWindowContents(Rect inRect)
         {
+            // Keyboard navigation runs before any widget sees the event, and
+            // only while no text field owns the keyboard (typing in the search
+            // box stays typing).
+            if (curTab == Tab.Colonists && Event.current.type == EventType.KeyDown
+                && GUIUtility.keyboardControl == 0 && colonistsTab.HandleKey(Event.current))
+                Event.current.Use();
+
             // Grow-only mid-session resize: if content grew, expand windowRect; never shrink.
             var target = TargetSize();
 
@@ -90,8 +219,15 @@ namespace WorkRoles.UI
             var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
             if (curTab == Tab.Colonists)
             {
-                TooltipHandler.TipRegion(actionRect, "WR_FixMyColonyTip".Translate());
-                if (Widgets.ButtonText(actionRect, "WR_FixMyColony".Translate()))
+                // Colony planning is per location: with pawns from several maps
+                // (or caravans) in view, Fix My Colony disables.
+                bool spansLocations = ColonistsTabView.ScopeSpansMultipleLocations;
+                TooltipHandler.TipRegion(actionRect, spansLocations
+                    ? "WR_FixNeedsSingleLocation".Translate()
+                    : "WR_FixMyColonyTip".Translate());
+                if (Widgets.ButtonText(actionRect, "WR_FixMyColony".Translate(), drawBackground: true,
+                        doMouseoverSound: true, active: !spansLocations)
+                    && !spansLocations)
                     colonistsTab.ShowFixPreview();
             }
             else
@@ -107,9 +243,6 @@ namespace WorkRoles.UI
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
 
-                // Role catalog export: human-editable XML in the save-data folder
-                // (sharing, backups, cross-playthrough reuse). Import ships with
-                // its merge/preview design.
                 const float IoBtnW = 90f;
                 var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 TooltipHandler.TipRegion(exportRect, "WR_ExportTip".Translate(RoleIO.ExportFile));
@@ -119,39 +252,54 @@ namespace WorkRoles.UI
                 var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 TooltipHandler.TipRegion(importRect, "WR_ImportTip".Translate(RoleIO.ExportFile));
                 if (Widgets.ButtonText(importRect, "WR_Import".Translate()))
-                {
-                    void OpenImport(string xml, string sourceProblem)
-                    {
-                        if (xml == null)
-                        {
-                            Messages.Message(sourceProblem, MessageTypeDefOf.RejectInput, historical: false);
-                            return;
-                        }
-                        var doc = RoleIO.Parse(xml);
-                        if (doc.error != null)
-                            Messages.Message("WR_ImportParseFailed".Translate(doc.error),
-                                MessageTypeDefOf.RejectInput, historical: false);
-                        else
-                            Find.WindowStack.Add(new Dialog_ImportPreview(xml, doc));
-                    }
-                    Find.WindowStack.Add(new FloatMenu(new System.Collections.Generic.List<FloatMenuOption>
-                    {
-                        new FloatMenuOption("WR_ImportFromFile".Translate(RoleIO.ExportFile), () =>
-                            OpenImport(
-                                System.IO.File.Exists(RoleIO.ExportFile)
-                                    ? System.IO.File.ReadAllText(RoleIO.ExportFile) : null,
-                                "WR_ImportFileMissing".Translate(RoleIO.ExportFile))),
-                        new FloatMenuOption("WR_ImportFromClipboard".Translate(), () =>
-                            OpenImport(
-                                GUIUtility.systemCopyBuffer.NullOrEmpty() ? null : GUIUtility.systemCopyBuffer,
-                                "WR_ImportClipboardEmpty".Translate())),
-                    }));
-                }
+                    Find.WindowStack.Add(new Dialog_ImportSource());
             }
 
             content = content.ContractedBy(8f);
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);
             else rolesTab.Draw(content);
+
+            // A wheel event that survives the draw wasn't over any inner
+            // scroll view (table, palette, stats): scroll the colonist table
+            // with it rather than letting the map zoom on it.
+            if (curTab == Tab.Colonists && Event.current.type == EventType.ScrollWheel)
+            {
+                colonistsTab.ScrollTable(Event.current.delta.y);
+                Event.current.Use();
+            }
+        }
+    }
+
+    /// Unity has no portable cursor-warp API: Windows-only, no-ops elsewhere.
+    internal static class Win32Cursor
+    {
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct Point { public int X, Y; }
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool GetCursorPos(out Point p);
+
+        [System.Runtime.InteropServices.DllImport("user32.dll")]
+        private static extern bool SetCursorPos(int x, int y);
+
+        private static bool Available =>
+            Application.platform == RuntimePlatform.WindowsPlayer
+            || Application.platform == RuntimePlatform.WindowsEditor;
+
+        public static bool TryGetPos(out Vector2 px)
+        {
+            if (Available && GetCursorPos(out var p))
+            {
+                px = new Vector2(p.X, p.Y);
+                return true;
+            }
+            px = default;
+            return false;
+        }
+
+        public static void SetPos(Vector2 px)
+        {
+            if (Available) SetCursorPos((int)px.x, (int)px.y);
         }
     }
 }

@@ -39,6 +39,9 @@ namespace WorkRoles
                 }
             foreach (int slot in usedSlots)
                 doc.palette.Add((store.customSwatchNames[slot], ToRgb(store.customSwatches[slot])));
+            foreach (var group in store.groups)
+                if (group.id != RoleGroup.DefaultId)
+                    doc.groups.Add(group.label);
             foreach (var role in store.roles)
             {
                 if (role.managed) continue;
@@ -46,16 +49,43 @@ namespace WorkRoles
                 {
                     label = role.label,
                     templateDef = role.templateDefName,
-                    colorRef = role.hasCustomColor ? EncodeColorRef(role.color, store) : null,
+                    group = role.groupId == RoleGroup.DefaultId ? null
+                        : store.GroupById(role.groupId)?.label,
+                    colorRef = role.hasCustomColor ? EncodeColorRef(role.color, store, doc) : null,
                     autoAssign = role.autoAssign,
                     blocker = role.blocker,
                     enabled = role.enabled,
                     activeHours = role.activeHours,
-                    location = role.location.ToString(),
+                    locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
                     entries = role.entries.ToList(),
                 });
             }
             return RoleFile.Build(doc);
+        }
+
+        /// Specific locations export by NAME (ids are save-local); stale tokens
+        /// (a location that no longer exists) drop out of the export.
+        private static string FileLocationToken(string token)
+        {
+            if (token == LocationRules.Settlements || token == LocationRules.Caravans) return token;
+            bool ship = token.StartsWith(LocationRules.ShipPrefix);
+            string id = token.Substring(token.IndexOf(':') + 1);
+            var loc = ColonyScope.Locations().FirstOrDefault(l => l.Id == id);
+            if (loc == null) return null;
+            return (ship ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Label;
+        }
+
+        /// Import direction: resolve exported names against this save's
+        /// locations (case-insensitive); unresolved names drop out.
+        private static string RuntimeLocationToken(string fileToken)
+        {
+            if (fileToken == LocationRules.Settlements || fileToken == LocationRules.Caravans) return fileToken;
+            bool ship = fileToken.StartsWith(LocationRules.ShipPrefix);
+            string name = fileToken.Substring(fileToken.IndexOf(':') + 1);
+            var loc = ColonyScope.Locations().FirstOrDefault(l => l.IsShip == ship
+                && string.Equals(l.Label, name, System.StringComparison.OrdinalIgnoreCase));
+            if (loc == null) return null;
+            return (ship ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Id;
         }
 
         /// Writes xml to path, creating directories; returns an error or null.
@@ -80,8 +110,12 @@ namespace WorkRoles
         private static ColorRgb ToRgb(Color c) => new ColorRgb(c.r, c.g, c.b);
 
         /// Built-in swatch -> its Tailwind name ("red-800"); custom-slot color ->
-        /// the slot's palette name; anything else -> plain hex.
-        private static string EncodeColorRef(Color color, RoleStore store)
+        /// the slot's palette name; PaletteDef color (only differs from the
+        /// swatch grid when a mod re-hexes a shipped entry) -> its defName.
+        /// Anything else (colors from pre-palette saves) joins the export's
+        /// palette under a generated name: roles ALWAYS reference colors by
+        /// name, hex lives only in <Palette>.
+        private static string EncodeColorRef(Color color, RoleStore store, RoleFileDocument doc)
         {
             var swatches = RolesTabView.Swatches;
             for (int i = 0; i < swatches.Length; i++)
@@ -90,7 +124,28 @@ namespace WorkRoles
             int slot = CustomSlotOf(color, store);
             if (slot >= 0)
                 return store.customSwatchNames[slot];
-            return ToRgb(color).Hex();
+            foreach (var def in DefDatabase<PaletteDef>.AllDefsListForReading)
+                if (color.IndistinguishableFrom(def.color))
+                    return def.defName;
+            foreach (var (name, rgb) in doc.palette)
+                if (ToUnity(rgb).IndistinguishableFrom(color))
+                    return name; // same unnamed color twice -> one entry
+            string generated = NextCustomName(store, doc);
+            doc.palette.Add((generated, ToRgb(color)));
+            return generated;
+        }
+
+        /// First free "custom-N" name (a user slot could legitimately be named
+        /// custom-1; slot names outrank the file palette on import, so skip those).
+        private static string NextCustomName(RoleStore store, RoleFileDocument doc)
+        {
+            for (int i = 1; ; i++)
+            {
+                string name = "custom-" + i;
+                if (!doc.palette.Any(p => p.Item1 == name)
+                    && !store.customSwatchNames.Contains(name))
+                    return name;
+            }
         }
 
         /// The custom slot exactly matching the color, or -1. Built-in swatches
@@ -109,8 +164,9 @@ namespace WorkRoles
         private static readonly Color FallbackColor = RolesTabView.Swatches[2 * 19]; // slate-600
 
         /// Resolves a role's color reference: built-in Tailwind name, then a store
-        /// slot name, then the file's palette, then hex; unknown names fall back to
-        /// slate-600. Null = no custom color.
+        /// slot name, then the file's palette, then a PaletteDef, then hex
+        /// (undocumented leniency for hand-edited files); unknown names fall back
+        /// to slate-600. Null = no custom color.
         private static (bool has, Color color) ResolveColor(string colorRef, RoleStore store, RoleFileDocument doc)
         {
             if (colorRef.NullOrEmpty()) return (false, default);
@@ -124,6 +180,9 @@ namespace WorkRoles
             foreach (var (name, color) in doc.palette)
                 if (name == colorRef)
                     return (true, ToUnity(color));
+            var paletteDef = DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef);
+            if (paletteDef != null)
+                return (true, paletteDef.color);
             if (ColorRgb.TryParseHex(colorRef, out var hex))
                 return (true, ToUnity(hex));
             return (true, FallbackColor);
@@ -212,7 +271,7 @@ namespace WorkRoles
                 var oldNames = store.customSwatchNames.ToList();
                 store.customSwatches.Clear();
                 store.customSwatchNames.Clear();
-                foreach (var (name, rgb) in doc.palette.Take(32))
+                foreach (var (name, rgb) in doc.palette.Take(RoleStore.MaxCustomSwatches))
                 {
                     store.customSwatches.Add(ToUnity(rgb));
                     store.customSwatchNames.Add(name);
@@ -257,6 +316,29 @@ namespace WorkRoles
 
             if (rolesInclude)
             {
+                // Groups travel with the roles section: merge appends missing
+                // groups at the end; overwrite adopts the file's order (Default
+                // stays pinned, groups the file doesn't know keep their spot).
+                if (rolesOverwrite)
+                {
+                    var ordered = new List<RoleGroup>();
+                    var defaultGroup = store.GroupById(RoleGroup.DefaultId);
+                    if (defaultGroup != null) ordered.Add(defaultGroup);
+                    foreach (var name in doc.groups)
+                        ordered.Add(store.GroupByName(name)
+                            ?? new RoleGroup { id = store.NextGroupId(), label = name });
+                    foreach (var group in store.groups)
+                        if (!ordered.Contains(group)) ordered.Add(group);
+                    store.groups.Clear();
+                    store.groups.AddRange(ordered);
+                }
+                else
+                {
+                    foreach (var name in doc.groups)
+                        if (store.GroupByName(name) == null)
+                            store.groups.Add(new RoleGroup { id = store.NextGroupId(), label = name });
+                }
+
                 var rows = RoleRows(store, doc);
                 var selected = rolesOverwrite
                     ? Enumerable.Range(0, rows.Count).ToList()
@@ -294,16 +376,35 @@ namespace WorkRoles
                     target.blocker = row.role.blocker;
                     target.enabled = row.role.enabled;
                     target.activeHours = row.role.activeHours;
-                    target.location = System.Enum.TryParse(row.role.location, out RoleLocation loc)
-                        ? loc : RoleLocation.Any;
+                    target.locationTokens = row.role.locations
+                        .Select(RuntimeLocationToken).Where(t => t != null).ToList();
+                    target.groupId = GroupIdFor(row.role.group, store);
                     target.entries = row.role.entries.ToList();
                     target.workTypeSnapshots.Clear();
                 }
+                RoleCommands.SweepEmptyGroups();
                 CompiledJobOrders.InvalidateAll();
                 Seeding.RefreshWorkTypeSnapshots();
             }
 
             return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges);
+        }
+
+        /// Resolves a file group name to a group id, creating unknown groups
+        /// (leniency: a role may reference a name missing from <Groups>).
+        private static int GroupIdFor(string name, RoleStore store)
+        {
+            if (name.NullOrEmpty()) return RoleGroup.DefaultId;
+            // Hand-edited files may name Default explicitly (we never write it).
+            if (string.Equals(name.Trim(), "Default", System.StringComparison.Ordinal))
+                return store.EnsureDefaultGroup().id;
+            var group = store.GroupByName(name);
+            if (group == null)
+            {
+                group = new RoleGroup { id = store.NextGroupId(), label = name.Trim() };
+                store.groups.Add(group);
+            }
+            return group.id;
         }
 
         private static void RecolorRoles(RoleStore store, Color from, Color? to)
@@ -324,7 +425,7 @@ namespace WorkRoles
 
         private static int FreeSlot(RoleStore store)
         {
-            for (int i = 0; i < 32; i++)
+            for (int i = 0; i < RoleStore.MaxCustomSwatches; i++)
                 if (i >= store.customSwatches.Count || store.customSwatches[i].a < 0.5f)
                     return i;
             return -1;

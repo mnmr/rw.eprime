@@ -15,13 +15,14 @@ namespace WorkRoles
 
         // ----- Role lifecycle -----
 
+        // Void on purpose: MP defers synced execution, so a return value would
+        // be null for the caller. The UI selects the new role by watching for
+        // its label (RolesTabView.pendingSelectLabel).
         [SyncMethod]
-        public static Role CreateRole(string label)
+        public static void CreateRole(string label)
         {
-            if (Store == null) return null;
-            var role = new Role { id = Store.NextId(), label = label };
-            Store.roles.Add(role);
-            return role;
+            if (Store == null) return;
+            Store.roles.Add(new Role { id = Store.NextId(), label = label });
         }
 
         /// Engine-initiated (load-time seeding): runs inside the synced simulation
@@ -29,6 +30,7 @@ namespace WorkRoles
         internal static Role CreateRoleFromDef(RoleDef def)
         {
             if (Store == null || def == null) return null;
+            var (hasColor, color) = def.ResolvedColor();
             var role = new Role
             {
                 id = Store.NextId(),
@@ -36,8 +38,8 @@ namespace WorkRoles
                 templateDefName = def.defName,
                 autoAssign = def.autoAssign,
                 blocker = def.blocker,
-                hasCustomColor = def.hasCustomColor,
-                color = def.color,
+                hasCustomColor = hasColor,
+                color = color,
                 iconPath = def.iconPath,
                 entries = def.ParsedEntries()
             };
@@ -64,12 +66,14 @@ namespace WorkRoles
 
         /// Applies the restore items selected in the Restore Roles preview:
         /// recreates missing seeded roles, regenerates coverage for uncovered work
-        /// types, and backfills vanilla jobs that mods moved out of roles.
+        /// types, backfills vanilla jobs that mods moved out of roles, and brings
+        /// back a player-deleted Odd Jobs.
         [SyncMethod]
-        public static void RestoreSelected(List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds)
+        public static void RestoreSelected(List<string> templateDefs, List<string> workTypes,
+            List<int> backfillRoleIds, bool oddJobs)
         {
             if (Store == null) return;
-            var restored = Seeding.RestoreSelected(templateDefs, workTypes, backfillRoleIds);
+            var restored = Seeding.RestoreSelected(templateDefs, workTypes, backfillRoleIds, oddJobs);
             if (restored.Count > 0)
                 Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
                     MessageTypeDefOf.PositiveEvent, historical: false);
@@ -89,12 +93,154 @@ namespace WorkRoles
         public static void DeleteRole(int roleId)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
+            // Deleting Odd Jobs is a player opt-out: coverage stops recreating
+            // it (and stops collecting invisible work types) until restored.
+            if (role.managed) Store.oddJobsDeleted = true;
             CompiledJobOrders.InvalidateRole(roleId);
             foreach (var set in Store.pawnSets.Values)
                 set.assignments.RemoveAll(a => a.roleId == roleId);
             Store.billRoles.RemoveAll(kv => kv.Value == roleId);
             Store.roles.Remove(role);
+            SweepEmptyGroups();
+        }
+
+        // ----- Role groups (purely organizational: no priority impact) -----
+
+        /// User groups with no stored member disappear; Default (id 0) included —
+        /// it re-materializes on demand with the same id and label.
+        internal static void SweepEmptyGroups()
+        {
+            Store?.groups.RemoveAll(g => Store.roles.All(r => r.groupId != g.id));
+        }
+
+        /// Empty/null = the Default group. The sentinel is language-independent
+        /// on purpose: command args travel between MP clients, and comparing
+        /// against a locally-translated name inside the command body would
+        /// resolve differently per language — a guaranteed desync.
+        private static RoleGroup ResolveOrCreateGroup(string groupName)
+        {
+            groupName = groupName?.Trim();
+            if (groupName.NullOrEmpty()) return Store.EnsureDefaultGroup();
+            var group = Store.GroupByName(groupName);
+            if (group != null) return group;
+            group = new RoleGroup { id = Store.NextGroupId(), label = groupName };
+            Store.groups.Add(group);
+            return group;
+        }
+
+        /// The role plus (optionally) its same-group tree-children, catalog order.
+        /// Overlay members (rules/blocker/managed) never ride along — they don't
+        /// display under the parent.
+        private static List<Role> MovingBlock(Role role, bool withChildren)
+        {
+            var moving = new List<Role> { role };
+            if (withChildren)
+                foreach (var other in Store.roles)
+                    if (other.groupId == role.groupId && other != role
+                        && !other.blocker && !other.managed && !other.HasRules
+                        && role.Covers(other))
+                        moving.Add(other);
+            return moving;
+        }
+
+        /// Moves a role (and, when asked, its current same-group tree-children)
+        /// into the named group, creating it if needed. Children are resolved
+        /// inside the command from synced state, so every client agrees.
+        [SyncMethod]
+        public static void SetRoleGroup(int roleId, string groupName, bool withChildren)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed) return;
+            var group = ResolveOrCreateGroup(groupName);
+            if (group == null) return;
+            foreach (var moved in MovingBlock(role, withChildren))
+                moved.groupId = group.id;
+            SweepEmptyGroups();
+        }
+
+        /// Drag drop: SetRoleGroup plus a catalog reposition — the moved block
+        /// lands just before beforeRoleId (-1 = end), which fixes its place
+        /// within the target group's span (catalog order is display order).
+        [SyncMethod]
+        public static void MoveRoleTo(int roleId, string groupName, int beforeRoleId, bool withChildren)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed) return;
+            var group = ResolveOrCreateGroup(groupName);
+            if (group == null) return;
+            var moving = MovingBlock(role, withChildren);
+            foreach (var moved in moving)
+                moved.groupId = group.id;
+            var before = beforeRoleId >= 0 ? FindRole(beforeRoleId) : null;
+            if (before == null || !moving.Contains(before))
+            {
+                Store.roles.RemoveAll(moving.Contains);
+                int insertAt = before != null ? Store.roles.IndexOf(before) : Store.roles.Count;
+                Store.roles.InsertRange(insertAt, moving);
+            }
+            SweepEmptyGroups();
+        }
+
+        [SyncMethod]
+        public static void RenameGroup(int groupId, string name)
+        {
+            var group = Store?.GroupById(groupId);
+            if (group == null || groupId == RoleGroup.DefaultId || name.NullOrEmpty()) return;
+            group.label = name.Trim();
+        }
+
+        /// Reorders the group list (display order). Default stays pinned first.
+        [SyncMethod]
+        public static void MoveGroupInList(int from, int to)
+        {
+            var groups = Store?.groups;
+            if (groups == null || from < 0 || from >= groups.Count || to < 0 || to >= groups.Count || from == to) return;
+            if (groups[from].id == RoleGroup.DefaultId) return;
+            var group = groups[from];
+            groups.RemoveAt(from);
+            groups.Insert(to, group);
+            if (groups.Count > 1 && groups[0].id != RoleGroup.DefaultId)
+            {
+                int defaultIdx = groups.FindIndex(g => g.id == RoleGroup.DefaultId);
+                if (defaultIdx > 0)
+                {
+                    var def = groups[defaultIdx];
+                    groups.RemoveAt(defaultIdx);
+                    groups.Insert(0, def);
+                }
+            }
+        }
+
+        /// Composition: the parent gains the child's jobs (appended; job order is
+        /// edited in the Selected Jobs pane) and the child moves into the
+        /// parent's group so coverage nesting shows it there.
+        [SyncMethod]
+        public static void IncludeRole(int parentId, int childId)
+        {
+            var parent = FindRole(parentId);
+            var child = FindRole(childId);
+            if (parent == null || child == null || parent == child
+                || parent.managed || child.managed || child.blocker) return;
+            foreach (var entry in child.entries)
+                if (!parent.entries.Contains(entry))
+                    parent.entries.Add(entry);
+            child.groupId = parent.groupId;
+            SweepEmptyGroups();
+            CompiledJobOrders.InvalidateRole(parentId);
+        }
+
+        /// Un-composition: the parent loses the child's jobs (the child role
+        /// itself is untouched and un-nests by no longer being covered).
+        [SyncMethod]
+        public static void ExcludeChild(int parentId, int childId)
+        {
+            var parent = FindRole(parentId);
+            var child = FindRole(childId);
+            if (parent == null || child == null || parent == child || parent.managed) return;
+            var childSet = new HashSet<JobEntry>(child.entries);
+            if (parent.entries.RemoveAll(e => childSet.Contains(e)) > 0)
+                CompiledJobOrders.InvalidateRole(parentId);
         }
 
         [SyncMethod]
@@ -125,7 +271,7 @@ namespace WorkRoles
         [SyncMethod]
         public static void SetCustomSwatch(int index, UnityEngine.Color color)
         {
-            if (Store == null || index < 0 || index >= 32) return;
+            if (Store == null || index < 0 || index >= RoleStore.MaxCustomSwatches) return;
             while (Store.customSwatches.Count <= index)
                 Store.customSwatches.Add(UnityEngine.Color.clear);
             Store.customSwatches[index] = color;
@@ -140,11 +286,12 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        // Void like CreateRole: MP-deferred execution eats return values.
         [SyncMethod]
-        public static Role DuplicateRole(int roleId, string label = null)
+        public static void DuplicateRole(int roleId, string label = null)
         {
             var source = FindRole(roleId);
-            if (source == null) return null;
+            if (source == null) return;
             var copy = new Role
             {
                 id = Store.NextId(),
@@ -156,11 +303,11 @@ namespace WorkRoles
                 color = source.color,
                 iconPath = source.iconPath,
                 activeHours = source.activeHours,
-                location = source.location,
+                locationTokens = new List<string>(source.locationTokens),
+                groupId = source.groupId,
                 entries = new List<JobEntry>(source.entries)
             };
             Store.roles.Add(copy);
-            return copy;
         }
 
         /// Reorders the role catalog (palette / list order). UI-only ordering:
@@ -186,12 +333,24 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        /// Adds/removes one location token; the role is active wherever any of
+        /// its tokens match (none = anywhere).
         [SyncMethod]
-        public static void SetRoleLocation(int roleId, RoleLocation location)
+        public static void ToggleRoleLocation(int roleId, string token)
         {
             var role = FindRole(roleId);
-            if (role == null || role.location == location) return;
-            role.location = location;
+            if (role == null || token.NullOrEmpty()) return;
+            if (!role.locationTokens.Remove(token))
+                role.locationTokens.Add(token);
+            CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        [SyncMethod]
+        public static void ClearRoleLocations(int roleId)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.locationTokens.Count == 0) return;
+            role.locationTokens.Clear();
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
@@ -211,7 +370,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || !role.HasRules) return;
             role.activeHours = Role.AllHours;
-            role.location = RoleLocation.Any;
+            role.locationTokens.Clear();
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
@@ -257,97 +416,6 @@ namespace WorkRoles
                 if (idx >= 0 && idx < min) min = idx;
             }
             return min;
-        }
-
-        /// Adds child's entries (those parent lacks) to parent as one contiguous run in
-        /// the child's own entry order, inserted before beforeChildId's entry block (-1
-        /// or not found = append at end). Coverage then renders child under parent in
-        /// the role tree. When parent already covers child, a given position moves the
-        /// child's block instead (MoveChildBefore semantics); with no position (-1)
-        /// nothing changes.
-        [SyncMethod]
-        public static void NestRoleInto(int parentId, int childId, int beforeChildId)
-        {
-            var parent = FindRole(parentId);
-            var child = FindRole(childId);
-            if (parent == null || child == null || parentId == childId) return;
-
-            if (parent.Covers(child))
-            {
-                if (beforeChildId == -1) return;
-                if (MoveChildCore(parent, child, beforeChildId))
-                    CompiledJobOrders.InvalidateRole(parentId);
-                return;
-            }
-
-            var missing = child.entries.Where(e => !parent.entries.Contains(e)).ToList();
-            if (missing.Count == 0) return;
-
-            int insertAt = parent.entries.Count;
-            var before = FindRole(beforeChildId);
-            if (before != null)
-            {
-                int blockStart = BlockStart(parent.entries, before);
-                if (blockStart != int.MaxValue) insertAt = blockStart;
-            }
-            parent.entries.InsertRange(insertAt, missing);
-            CompiledJobOrders.InvalidateRole(parentId);
-        }
-
-        /// Reorders parent's entries by moving childId's entry block: removes every
-        /// entry of child from parent, reinserts them contiguously (child entry order)
-        /// before beforeChildId's block, computed AFTER removal (-1 = append at end).
-        [SyncMethod]
-        public static void MoveChildBefore(int parentId, int childId, int beforeChildId)
-        {
-            var parent = FindRole(parentId);
-            var child = FindRole(childId);
-            if (parent == null || child == null || parentId == childId || !parent.Covers(child)) return;
-            if (MoveChildCore(parent, child, beforeChildId))
-                CompiledJobOrders.InvalidateRole(parentId);
-        }
-
-        /// Removes from parent every entry that child carries EXACTLY, pulling an
-        /// exact-entry child out of its parent (it re-roots unless another role
-        /// still covers it). Purely semantic children — covered only through a
-        /// parent work-type entry — have nothing to remove: no-op.
-        [SyncMethod]
-        public static void UnnestRole(int parentId, int childId)
-        {
-            var parent = FindRole(parentId);
-            var child = FindRole(childId);
-            if (parent == null || child == null || parentId == childId || !parent.Covers(child)) return;
-            var childSet = new HashSet<JobEntry>(child.entries);
-            int removed = parent.entries.RemoveAll(e => childSet.Contains(e));
-            if (removed > 0)
-                CompiledJobOrders.InvalidateRole(parentId);
-        }
-
-        /// Shared block move; returns false when the reinsertion reproduces the
-        /// current order (no-op: caller skips invalidation). A purely semantic
-        /// child (no exact entries in parent) has no block to move: no-op, so a
-        /// reorder never injects its entries into the parent.
-        private static bool MoveChildCore(Role parent, Role child, int beforeChildId)
-        {
-            var before = FindRole(beforeChildId);
-            if (before == child) return false;
-
-            var childSet = new HashSet<JobEntry>(child.entries);
-            var remaining = parent.entries.Where(e => !childSet.Contains(e)).ToList();
-            if (remaining.Count == parent.entries.Count) return false;
-
-            int insertAt = remaining.Count;
-            if (before != null)
-            {
-                int blockStart = BlockStart(remaining, before);
-                if (blockStart != int.MaxValue) insertAt = blockStart;
-            }
-
-            var result = new List<JobEntry>(remaining);
-            result.InsertRange(insertAt, child.entries);
-            if (result.SequenceEqual(parent.entries)) return false;
-            parent.entries = result;
-            return true;
         }
 
         // ----- Pawn assignments -----

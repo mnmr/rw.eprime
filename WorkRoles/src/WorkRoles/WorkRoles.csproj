@@ -25,7 +25,15 @@
   <Target Name="DeployToRimWorld" AfterTargets="Build">
     <ItemGroup>
       <ModFiles Include="$(MSBuildThisFileDirectory)..\..\mod\**\*.*" Exclude="$(MSBuildThisFileDirectory)..\..\mod\**\*.pdb" />
+      <!-- Deployed files the repo no longer ships get deleted — a stale def
+           referencing removed types loads and errors (and broke Numbers once).
+           PublishedFileId.txt is Steam-written and must always survive. -->
+      <DeployedFiles Include="$(RimWorldMods)\WorkRoles\**\*.*"
+                     Exclude="$(RimWorldMods)\WorkRoles\About\PublishedFileId.txt" />
+      <StaleDeployedFiles Include="@(DeployedFiles)"
+                          Exclude="@(ModFiles->'$(RimWorldMods)\WorkRoles\%(RecursiveDir)%(Filename)%(Extension)')" />
     </ItemGroup>
+    <Delete Files="@(StaleDeployedFiles)" />
     <Copy SourceFiles="@(ModFiles)" DestinationFiles="@(ModFiles->'$(RimWorldMods)\WorkRoles\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
   </Target>
 </Project>

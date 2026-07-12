@@ -1,6 +1,7 @@
 namespace WorkRoles
 {
-    /// Location rule for a role: where the pawn must be for the role to apply.
+    /// Legacy save format only: pre-1.1 roles scribed a single Home/Away value,
+    /// migrated to LocationRules tokens on load (Role.ExposeData).
     public enum RoleLocation
     {
         Any,

@@ -3,6 +3,7 @@
 
   <!-- ===== Main tabs ===== -->
   <WR_ColonistsTab>Colonists</WR_ColonistsTab>
+  <WR_ResizeGripTip>Drag to resize the window (it can only grow from its content-fitted size). Double-click to return to automatic sizing.</WR_ResizeGripTip>
   <WR_RolesTab>Roles</WR_RolesTab>
 
   <!-- ===== Colonists tab ===== -->
@@ -15,36 +16,57 @@
   <!-- Engine-managed Odd Jobs role (invisible modded work types) -->
   <WR_OddJobsRole>Odd Jobs</WR_OddJobsRole>
   <WR_ManagedEntriesNote>This role collects jobs that mods add without a Work tab presence. WorkRoles manages its contents automatically: new hidden jobs appear here, and jobs vanish when their mod is removed. You can rename, recolor, reorder, assign and toggle it like any other role — only its job list is off-limits.</WR_ManagedEntriesNote>
-  <WR_CannotDeleteManaged>Odd Jobs cannot be deleted: it is where hidden modded jobs are collected. Unassign or disable it instead.</WR_CannotDeleteManaged>
+  <!-- {0} = the Odd Jobs role's (possibly renamed) label -->
+  <WR_DeleteOddJobsWarning>'{0}' collects work that mods add without a Work tab presence — hidden jobs that can appear and disappear as your mod list changes. Without it, colonists will never do such work.\n\nIf you know none of your mods add hidden jobs, it is safe to delete. Restore Roles (top right) can recreate it later.\n\nDelete '{0}'? It will be removed from all colonists.</WR_DeleteOddJobsWarning>
 
   <!-- Blocker roles -->
   <WR_BlockerRole>Blocker role</WR_BlockerRole>
   <WR_BlockerRoleTip>A blocker role's jobs are never done: they are blocked ("will not do") even when a later role includes them. Roles ABOVE the blocker still win, so you can allow exceptions by placing a role higher.</WR_BlockerRoleTip>
   <WR_ReasonFireFear>Genetically terrified of fire: blocks firefighting.</WR_ReasonFireFear>
 
-  <!-- Palette role tooltip: {0}=role label, {1}=state phrase, {2}=job list, {3}=usage hint -->
-  <WR_RoleTip>{0} — {1}
-
-{2}
-
-{3}</WR_RoleTip>
-  <!-- State phrases used in WR_RoleTip {1} -->
+  <!-- Palette role tooltip -->
   <WR_RoleTipEnabled>enabled</WR_RoleTipEnabled>
   <WR_RoleTipDisabled>DISABLED (click to enable)</WR_RoleTipDisabled>
-  <!-- Usage hint used in WR_RoleTip {3} -->
   <WR_RoleTipHint>Click: toggle globally. Shift-click: assign to the selected colonist. Drag onto a colonist to assign.</WR_RoleTipHint>
+  <WR_TipJobs>Jobs: {0}</WR_TipJobs>
+  <WR_TipWholeType>{0} (all jobs)</WR_TipWholeType>
+  <WR_TipRelevantSkills>Relevant skills: {0}</WR_TipRelevantSkills>
+  <!-- {0} = skill label, {1} = level -->
+  <WR_TipRequires>Requires {0} {1}+ (or colony best).</WR_TipRequires>
+  <WR_TipBestFits>Best fits: {0}</WR_TipBestFits>
+  <WR_FitExpertise>expertise</WR_FitExpertise>
+  <WR_FitBurning>burning passion</WR_FitBurning>
+  <WR_FitPassion>passion</WR_FitPassion>
+  <WR_TipMore>+{0} more</WR_TipMore>
 
   <!-- Filter row -->
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
-  <WR_ShowAll>Colonists and slaves</WR_ShowAll>
-  <WR_ShowColonists>Colonists only</WR_ShowColonists>
-  <WR_ShowSlaves>Slaves only</WR_ShowSlaves>
+  <!-- {0} = scope name (location or Everywhere/Current location) -->
+  <WR_ScopeAll>Everywhere</WR_ScopeAll>
+  <WR_ScopeCurrent>Current location</WR_ScopeCurrent>
+  <WR_ShipFallback>Gravship</WR_ShipFallback>
+  <WR_ShipTip>The gravship — only while it is not parked at a settlement (a settlement tile wins).</WR_ShipTip>
+  <WR_GroupNone>No grouping</WR_GroupNone>
+  <WR_GroupFaction>Faction</WR_GroupFaction>
+  <WR_GroupRace>Race</WR_GroupRace>
+  <WR_GroupGender>Gender</WR_GroupGender>
+  <WR_GroupXenotype>Xenotype</WR_GroupXenotype>
+  <WR_GroupIdeo>Ideoligion</WR_GroupIdeo>
+  <WR_GroupSlaves>Slavery</WR_GroupSlaves>
+  <WR_GroupTitleColonists>Colonists</WR_GroupTitleColonists>
+  <WR_GroupTitleSlaves>Slaves</WR_GroupTitleSlaves>
+  <WR_GroupColonyGroups>Colony Groups</WR_GroupColonyGroups>
+  <WR_GroupTitleUngrouped>Ungrouped</WR_GroupTitleUngrouped>
   <WR_ChipsNormal>Chips: Full names</WR_ChipsNormal>
   <WR_ChipsCompact>Chips: Initials</WR_ChipsCompact>
   <WR_ChipsMinimal>Chips: Squares</WR_ChipsMinimal>
-  <WR_OrderBar>Order: Colonist bar</WR_OrderBar>
-  <WR_OrderAZ>Order: A-Z</WR_OrderAZ>
+  <WR_OrderSuffixBar>(Tab order)</WR_OrderSuffixBar>
+  <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
+  <WR_DisplayButton>Display</WR_DisplayButton>
   <WR_DisplayOptions>Display options</WR_DisplayOptions>
+  <WR_CopyRolesTip>Copy this colonist's roles.</WR_CopyRolesTip>
+  <WR_PasteRolesTip>Paste the copied roles onto this colonist.</WR_PasteRolesTip>
+  <WR_AddRoleTip>Assign a role.</WR_AddRoleTip>
   <WR_SkillsButton>Skills</WR_SkillsButton>
   <!-- {0} = active skill columns, {1} = maximum -->
   <WR_SkillsButtonCount>Skills ({0}/{1})</WR_SkillsButtonCount>
@@ -53,6 +75,17 @@
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
   <WR_FixMyColonyTip>Replace every colonist's roles with their recommended roles.</WR_FixMyColonyTip>
+  <WR_FixNeedsSingleLocation>Recommendations are computed per location. Narrow the scope filter to a single settlement or ship to use Fix My Colony.</WR_FixNeedsSingleLocation>
+
+  <!-- Swallowed SetPriority warning; {0} = mod name, {1} = work types, {2} = colonist count -->
+  <WR_SetPriorityBlockedTitle>WorkRoles manages priorities</WR_SetPriorityBlockedTitle>
+  <WR_SetPriorityBlockedBody>{0} attempted to set work priorities ({1}) on {2} colonist(s).
+
+WorkRoles owns priorities for role-managed colonists, so the change was ignored — the mod's other features are unaffected.
+
+To get a similar effect with roles: on the Roles tab, create or edit a role containing that work and place it where you want it in each colonist's role list — or use a blocker role to forbid the work entirely.
+
+This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
@@ -114,19 +147,21 @@
   <WR_CopyClipboard>Copy to Clipboard</WR_CopyClipboard>
   <WR_CopyPath>Copy Path</WR_CopyPath>
   <WR_Save>Save</WR_Save>
+  <WR_ExportLocationLabel>Export location</WR_ExportLocationLabel>
   <WR_LocGameData>Game data folder</WR_LocGameData>
   <WR_LocDesktop>Desktop</WR_LocDesktop>
   <WR_LocUserHome>User home</WR_LocUserHome>
   <WR_LocCustom>Custom...</WR_LocCustom>
+  <WR_EnterPath>Enter path</WR_EnterPath>
   <WR_BadFileName>Enter a valid file name.</WR_BadFileName>
   <WR_BadDirectory>Enter a valid directory path.</WR_BadDirectory>
 
   <!-- Import: {0} = file path, error text, color hex, role names or counts -->
   <WR_ImportTitle>Import Roles</WR_ImportTitle>
-  <WR_ImportFromFile>From file: {0}</WR_ImportFromFile>
   <WR_ImportFromClipboard>From clipboard</WR_ImportFromClipboard>
+  <WR_ImportLocationLabel>Import location</WR_ImportLocationLabel>
+  <WR_ImportClipboardInvalid>The clipboard does not contain a WorkRoles export.</WR_ImportClipboardInvalid>
   <WR_ImportFileMissing>No file found at {0}</WR_ImportFileMissing>
-  <WR_ImportClipboardEmpty>The clipboard is empty.</WR_ImportClipboardEmpty>
   <WR_ImportParseFailed>Could not read roles: {0}</WR_ImportParseFailed>
   <WR_SectionPalette>Palette</WR_SectionPalette>
   <WR_SectionRoles>Roles</WR_SectionRoles>
@@ -202,7 +237,7 @@
   <!-- Editor: rules section (auto-role opt-in, active hours, location) -->
   <WR_AutoRole>Auto role</WR_AutoRole>
   <WR_AutoRoleTip>Auto roles turn themselves on and off based on rules: active hours and location. A role is auto whenever any rule is set.</WR_AutoRoleTip>
-  <WR_AutoAssign>Auto-assign to newcomers</WR_AutoAssign>
+  <WR_AutoAssign>Auto-assign</WR_AutoAssign>
   <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role, and recommendations always place auto-assign roles first.</WR_AutoAssignTip>
   <!-- Editor: custom color swatch row -->
   <WR_CustomSwatchEmpty>Empty slot: click to pick a custom color. Custom colors are shared across all roles.</WR_CustomSwatchEmpty>
@@ -214,13 +249,44 @@
   <WR_HoursActive>Active</WR_HoursActive>
   <WR_HoursInactive>Inactive</WR_HoursInactive>
   <WR_LocationAny>Anywhere</WR_LocationAny>
-  <WR_LocationHome>Home only</WR_LocationHome>
-  <WR_LocationAway>Away only</WR_LocationAway>
+  <WR_LocationSettlements>Settlements</WR_LocationSettlements>
+  <WR_LocationCaravans>Caravans</WR_LocationCaravans>
+  <!-- {0} = number of selected locations -->
+  <WR_LocationCount>{0} locations</WR_LocationCount>
+  <WR_LocationGone>(gone)</WR_LocationGone>
+  <WR_InvalidRoleTip>This role can never apply: it has no jobs, or every location it names no longer exists.</WR_InvalidRoleTip>
+
+  <!-- Role-list groups -->
+  <WR_GroupDefault>Default</WR_GroupDefault>
+  <WR_GroupAutoRules>Auto-Roles</WR_GroupAutoRules>
+  <WR_GroupLocked>Locked</WR_GroupLocked>
+  <WR_GroupLabel>Group</WR_GroupLabel>
+  <!-- {0} = the role's current group name -->
+  <WR_GroupButton>Group: {0}</WR_GroupButton>
+  <WR_GroupNewOption>New...</WR_GroupNewOption>
+  <WR_NewGroupTitle>New group</WR_NewGroupTitle>
+  <WR_RenameGroup>Rename group</WR_RenameGroup>
+  <WR_RenameGroupTitle>Rename group</WR_RenameGroupTitle>
+  <WR_GroupOverlayTip>Roles with rules display under Auto-Roles (managed roles under Locked). The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
+  <WR_IncludeRole>Include role...</WR_IncludeRole>
+  <!-- {0} = the group the included role currently lives in -->
+  <WR_IncludeMove>(will move from {0})</WR_IncludeMove>
+  <!-- {0} = the parent role's name -->
+  <WR_RemoveFromParent>Remove from {0}</WR_RemoveFromParent>
+  <WR_NothingToInclude>Nothing to include</WR_NothingToInclude>
+  <WR_TreeNested>Nested</WR_TreeNested>
+  <WR_TreeFlat>Flat</WR_TreeFlat>
+  <WR_TreeToggleTip>Toggle nesting of covered roles under their combo role.</WR_TreeToggleTip>
+  <WR_DisplayModeLabel>Display Mode</WR_DisplayModeLabel>
+  <WR_JobFilterLabel>Job Filter</WR_JobFilterLabel>
+  <WR_PaletteBySkills>Skills</WR_PaletteBySkills>
+  <WR_PaletteByGroups>Groups</WR_PaletteByGroups>
+  <WR_PaletteHidden>Hidden</WR_PaletteHidden>
+  <WR_PaletteModeTip>Arrange the palette by relevant skill or by your role groups in their own order — or hide it entirely. Click to cycle.</WR_PaletteModeTip>
 
   <!-- Chip tooltips when a rule suppresses the role -->
   <WR_SuppressedHours>Off: outside active hours</WR_SuppressedHours>
-  <WR_SuppressedAway>Off: away from home</WR_SuppressedAway>
-  <WR_SuppressedHome>Off: at home</WR_SuppressedHome>
+  <WR_SuppressedLocation>Off: not at this role's locations</WR_SuppressedLocation>
 
   <!-- ===== Bill dialog: worker role restriction ===== -->
   <!-- {0} = role label; used in the worker dropdown and as its button label -->
@@ -236,5 +302,15 @@
 
   <!-- {0} = comma-separated list of newly generated or extended role labels -->
   <WR_NewWorkDetected>New work types detected. Roles created or extended: {0}</WR_NewWorkDetected>
+
+  <!-- Seeding report; body: {0} = role count, {1} = colonist count -->
+  <WR_SeedReportTitle>WorkRoles set up</WR_SeedReportTitle>
+  <WR_SeedReportBody>Created {0} roles and assigned role sets to {1} colonist(s) based on their work priorities.</WR_SeedReportBody>
+  <WR_SeedReportGenerated>Generated for modded work: {0}.</WR_SeedReportGenerated>
+  <WR_SeedReportFailures>Some work could not be migrated:</WR_SeedReportFailures>
+  <!-- {0} = colonist, {1} = work type, {2} = old priority -->
+  <WR_SeedDropFailure>{0}: lost {1} (was priority {2})</WR_SeedDropFailure>
+  <!-- {0} = colonist, {1} = error text -->
+  <WR_SeedPawnFailure>{0}: migration failed ({1})</WR_SeedPawnFailure>
 
 </LanguageData>

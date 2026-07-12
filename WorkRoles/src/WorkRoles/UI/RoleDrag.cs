@@ -14,12 +14,15 @@ namespace WorkRoles.UI
 
         public static bool Active { get; private set; }
         public static int RoleId { get; private set; }
+        /// Group-header drag (role-list group reorder); -1 when dragging a role.
+        public static int GroupId { get; private set; } = -1;
         /// Pawn the chip was dragged from; null when dragging from the palette.
         public static Pawn SourcePawn { get; private set; }
 
         private static bool pending;
         private static Vector2 pressPos;
         private static int pendingRoleId;
+        private static int pendingGroupId = -1;
         private static Pawn pendingSource;
         private static Action pendingClickAction;
 
@@ -40,7 +43,20 @@ namespace WorkRoles.UI
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;   // raw screen pixels, GUI-independent
             pendingRoleId = roleId;
+            pendingGroupId = -1;
             pendingSource = source;
+            pendingClickAction = clickAction;
+        }
+
+        /// Press on a role-list group header: short release = clickAction
+        /// (collapse toggle), threshold crossed = group reorder drag.
+        public static void OnPressGroup(int groupId, Action clickAction)
+        {
+            pending = true;
+            pressPos = (Vector2)UnityEngine.Input.mousePosition;
+            pendingRoleId = -1;
+            pendingGroupId = groupId;
+            pendingSource = null;
             pendingClickAction = clickAction;
         }
 
@@ -52,6 +68,7 @@ namespace WorkRoles.UI
             {
                 Active = true;
                 RoleId = pendingRoleId;
+                GroupId = pendingGroupId;
                 SourcePawn = pendingSource;
             }
             HoverPawn = null;
@@ -120,6 +137,8 @@ namespace WorkRoles.UI
         {
             pending = false;
             Active = false;
+            GroupId = -1;
+            pendingGroupId = -1;
             SourcePawn = null;
             HoverPawn = null;
             HoverInsertIndex = -1;

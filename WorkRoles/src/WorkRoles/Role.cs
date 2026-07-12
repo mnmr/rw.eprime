@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -24,8 +24,12 @@ namespace WorkRoles
         /// Engine-managed container (Odd Jobs): entries are written by work-type
         /// coverage, not the player; the role cannot be deleted.
         public bool managed;
+        /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
+        /// rule-carrying roles DISPLAY under Auto-Roles, managed under Locked.
+        public int groupId = RoleGroup.DefaultId;
         public int activeHours = AllHours;   // bit h set = active during local hour h
-        public RoleLocation location = RoleLocation.Any;
+        /// LocationRules tokens; empty = active anywhere.
+        public List<string> locationTokens = new List<string>();
         public List<JobEntry> entries = new List<JobEntry>();
         /// Engine-maintained, per work-type entry: every giver defName ever seen
         /// under that type (union-only, refreshed each load). Lets the role keep
@@ -35,8 +39,9 @@ namespace WorkRoles
 
         private List<string> scribeEntries;
         private Dictionary<string, string> scribeSnapshots;
+        private string scribeLocations;
 
-        public bool HasRules => activeHours != AllHours || location != RoleLocation.Any;
+        public bool HasRules => activeHours != AllHours || locationTokens.Count > 0;
 
         /// True when this role's entries strictly include every entry of other.
         public bool Covers(Role other)
@@ -60,8 +65,25 @@ namespace WorkRoles
             Scribe_Values.Look(ref autoAssign, "autoAssign");
             Scribe_Values.Look(ref blocker, "blocker");
             Scribe_Values.Look(ref managed, "managed");
+            Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
-            Scribe_Values.Look(ref location, "location", RoleLocation.Any);
+            // Location tokens scribe comma-joined (ids are numeric, category
+            // words fixed — no commas possible).
+            if (Scribe.mode == LoadSaveMode.Saving && locationTokens.Count > 0)
+                scribeLocations = string.Join(",", locationTokens);
+            Scribe_Values.Look(ref scribeLocations, "locations");
+            // Pre-1.1 saves carried a Home/Away enum instead.
+            RoleLocation legacyLocation = RoleLocation.Any;
+            Scribe_Values.Look(ref legacyLocation, "location", RoleLocation.Any);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                locationTokens = scribeLocations.NullOrEmpty()
+                    ? new List<string>()
+                    : scribeLocations.Split(',').ToList();
+                if (locationTokens.Count == 0 && legacyLocation != RoleLocation.Any)
+                    locationTokens.Add(legacyLocation == RoleLocation.HomeOnly
+                        ? LocationRules.Settlements : LocationRules.Caravans);
+            }
             if (Scribe.mode == LoadSaveMode.Saving)
                 scribeEntries = entries.Select(e => e.Encode()).ToList();
             Scribe_Collections.Look(ref scribeEntries, "entries", LookMode.Value);
@@ -92,6 +114,7 @@ namespace WorkRoles
             {
                 scribeEntries = null;
                 scribeSnapshots = null;
+                scribeLocations = null;
             }
         }
     }

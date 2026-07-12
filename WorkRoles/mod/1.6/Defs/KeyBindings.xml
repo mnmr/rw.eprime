@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <KeyBindingCategoryDef>
+    <defName>WR_Keys</defName>
+    <label>WorkRoles</label>
+    <description>Keyboard navigation inside the WorkRoles tab.</description>
+  </KeyBindingCategoryDef>
+
+  <KeyBindingDef>
+    <defName>WR_PrevColonist</defName>
+    <label>previous colonist</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>UpArrow</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>WR_NextColonist</defName>
+    <label>next colonist</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>DownArrow</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>WR_FirstColonist</defName>
+    <label>first colonist (Ctrl: ignore groups)</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>Home</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>WR_LastColonist</defName>
+    <label>last colonist (Ctrl: ignore groups)</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>End</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>WR_PrevPage</defName>
+    <label>previous page/group</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>PageUp</defaultKeyCodeA>
+  </KeyBindingDef>
+
+  <KeyBindingDef>
+    <defName>WR_NextPage</defName>
+    <label>next page/group</label>
+    <category>WR_Keys</category>
+    <defaultKeyCodeA>PageDown</defaultKeyCodeA>
+  </KeyBindingDef>
+
+</Defs>

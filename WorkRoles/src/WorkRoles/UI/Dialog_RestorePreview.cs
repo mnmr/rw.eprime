@@ -74,7 +74,8 @@ namespace WorkRoles.UI
                 RoleCommands.RestoreSelected(
                     selected.Where(i => i.templateDef != null).Select(i => i.templateDef).ToList(),
                     selected.Where(i => i.workType != null).Select(i => i.workType).ToList(),
-                    selected.Where(i => i.backfillRoleId != -1).Select(i => i.backfillRoleId).ToList());
+                    selected.Where(i => i.backfillRoleId != -1).Select(i => i.backfillRoleId).ToList(),
+                    selected.Any(i => i.oddJobs));
                 Close();
             }
         }

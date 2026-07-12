@@ -11,6 +11,7 @@ namespace WorkRoles.UI
         private readonly string title;
         private readonly string sourceLabel;      // copy mode: the original role's name
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
+        private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
 
         public override Vector2 InitialSize => new Vector2(360f, sourceLabel == null ? 160f : 186f);
@@ -36,6 +37,20 @@ namespace WorkRoles.UI
             this.sourceLabel = sourceLabel;
             requireUniqueName = true;
             name = "";
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            closeOnAccept = true;
+        }
+
+        /// Generic name prompt (new/rename group): optionally prefilled, any
+        /// non-empty name is acceptable (for a new group, an existing group's
+        /// name simply joins it), explicit Cancel beside OK.
+        public Dialog_RenameRole(string title, Action<string> onConfirm, string initialName = "")
+        {
+            this.onConfirm = onConfirm;
+            this.title = title;
+            showCancel = true;
+            name = initialName ?? "";
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
@@ -89,8 +104,13 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
             }
 
-            if (Widgets.ButtonText(new Rect(inRect.width / 2f - 60f, inRect.height - 35f, 120f, 30f),
-                    "WR_OK".Translate(), active: NameValid) && NameValid)
+            var okRect = showCancel
+                ? new Rect(inRect.width - 120f, inRect.height - 35f, 120f, 30f)
+                : new Rect(inRect.width / 2f - 60f, inRect.height - 35f, 120f, 30f);
+            if (showCancel
+                && Widgets.ButtonText(new Rect(0f, inRect.height - 35f, 120f, 30f), "WR_Cancel".Translate()))
+                Close();
+            if (Widgets.ButtonText(okRect, "WR_OK".Translate(), active: NameValid) && NameValid)
             {
                 Apply();
                 Close();

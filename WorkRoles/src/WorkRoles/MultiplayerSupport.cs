@@ -13,8 +13,12 @@ namespace WorkRoles
     {
         static MultiplayerSupport()
         {
-            if (!MP.enabled) return;
-            MP.RegisterAll();
+            // Timed including the MP.enabled read: it's potentially the first
+            // touch of the MP API bridge by any mod in load order, so lazy init
+            // on the Multiplayer side would land on our clock.
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            if (MP.enabled) MP.RegisterAll();
+            StartupTiming.Record("multiplayer registration", sw.ElapsedMilliseconds);
         }
 
         [SyncWorker(shouldConstruct = false)]

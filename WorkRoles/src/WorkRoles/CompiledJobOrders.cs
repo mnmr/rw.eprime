@@ -19,7 +19,10 @@ namespace WorkRoles
 
         private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
 
-        public static void Invalidate(Pawn pawn) => cache.Remove(pawn);
+        public static void Invalidate(Pawn pawn)
+        {
+            cache.Remove(pawn);
+        }
 
         public static void InvalidateRole(int roleId)
         {
@@ -29,7 +32,10 @@ namespace WorkRoles
                 cache.Remove(pawn);
         }
 
-        public static void InvalidateAll() => cache.Clear();
+        public static void InvalidateAll()
+        {
+            cache.Clear();
+        }
 
         /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
         public static void InvalidateAllTimeRuled()

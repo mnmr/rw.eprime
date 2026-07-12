@@ -130,6 +130,55 @@ public class ColonyPlannerTests
     }
 
     [Test]
+    public async Task ExistingRuleCarryingAssignmentJoinsTheVirtualSet_AndItsCoverageSuppressesDealing()
+    {
+        // The pawn holds a rule-carrying combo spanning Cooking+Doctor: it
+        // joins the virtual view and, covering the single Cook role, stops
+        // the coverage pass from dealing Cook on top.
+        var nightShift = new RecRole
+        {
+            Id = 5, HasRules = true, WorkTypes = { "Cooking", "Doctor" },
+            Entries = new List<JobEntry> { WT("Cooking"), WT("Doctor") },
+        };
+        var cook = Role(1, "Cooking");
+        var pawn = Pawn();
+        pawn.Rec.SkillLevels["Cooking"] = 5;
+        pawn.Existing.Add(new PlannedAssignment { RoleId = 5 });
+
+        var result = ColonyPlanner.Compute(new List<RecRole> { cook, nightShift },
+            new List<PlanPawn> { pawn }, NoBest, Skills, NoEssentials, -1, -1, -1, -1);
+        await Assert.That(result.VirtualSets[0].Contains(5)).IsTrue();
+        await Assert.That(result.VirtualSets[0].Contains(1)).IsFalse();
+    }
+
+    [Test]
+    public async Task DoctoringBackup_GatePasserGetsDoctor_NoMedicRoleWaivesTheGate()
+    {
+        var doctor = Role(1, "Doctor");
+        doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10; doctor.Gated = true;
+        var medic = new RecRole
+        {
+            Id = 2, WorkTypes = { "Doctor" },
+            Entries = new List<JobEntry> { new(JobEntryKind.WorkGiver, "Tend") },
+            GateSkill = "Medicine", GateMaxLevel = 10, GateNeedsPassion = true, Gated = true,
+        };
+        var essentials = new Dictionary<int, int> { [1] = 0 };
+
+        // The backup candidate passes Doctor's min-10 gate: full Doctor, not Medic.
+        var gatePasser = ColonyPlanner.Compute(new List<RecRole> { doctor, medic },
+            new List<PlanPawn> { Pawn(medicine: 15), Pawn(medicine: 12) },
+            new Dictionary<string, int> { ["Medicine"] = 15 }, Skills, essentials, -1, 1, 2, -1);
+        await Assert.That(gatePasser.VirtualSets[1].Contains(1)).IsTrue();
+        await Assert.That(gatePasser.VirtualSets[1].Contains(2)).IsFalse();
+
+        // No medic-style role in the catalog: Doctor lands with the gate waived.
+        var noMedic = ColonyPlanner.Compute(new List<RecRole> { doctor },
+            new List<PlanPawn> { Pawn(medicine: 15), Pawn(medicine: 2) },
+            new Dictionary<string, int> { ["Medicine"] = 15 }, Skills, essentials, -1, 1, -1, -1);
+        await Assert.That(noMedic.VirtualSets[1].Contains(1)).IsTrue();
+    }
+
+    [Test]
     public async Task SubRolesAreNotDealt_TheirCovererIs()
     {
         var grower = new RecRole { Id = 1, WorkTypes = { "Cooking" }, Entries = new List<JobEntry> { WT("Cooking") } };

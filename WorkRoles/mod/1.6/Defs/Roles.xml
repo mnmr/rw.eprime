@@ -1,12 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Defs>
   <WorkRoles.RoleDef>
     <defName>WS_Basics</defName>
     <label>Basics</label>
     <description>Emergency and self-care work every colonist should do.</description>
     <autoAssign>true</autoAssign>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.278, 0.333, 0.412)</color>
+    <colorRef>slate-600</colorRef>
     <entries>
       <li>WorkType:Firefighter</li>
       <li>WorkType:Patient</li>
@@ -20,8 +19,7 @@
     <defName>WS_Rescuer</defName>
     <label>Rescuer</label>
     <description>Rescuing downed colonists.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.118, 0.161, 0.231)</color>
+    <colorRef>slate-800</colorRef>
     <entries>
       <li>WorkGiver:DoctorRescue</li>
     </entries>
@@ -31,8 +29,7 @@
     <defName>WS_Doctor</defName>
     <label>Doctor</label>
     <description>Medical care for colonists, prisoners and animals.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.600, 0.106, 0.106)</color>
+    <colorRef>red-800</colorRef>
     <gateSkill>Medicine</gateSkill>
     <gateMinLevel>10</gateMinLevel>
     <entries>
@@ -56,8 +53,7 @@
     <label>No Firefighting</label>
     <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
     <blocker>true</blocker>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.624, 0.071, 0.224)</color>
+    <colorRef>rose-800</colorRef>
     <entries>
       <li>WorkType:Firefighter</li>
     </entries>
@@ -67,8 +63,7 @@
     <defName>WS_Medic</defName>
     <label>Medic</label>
     <description>Tending, feeding and rescuing patients — no operations.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.498, 0.114, 0.114)</color>
+    <colorRef>red-900</colorRef>
     <gateSkill>Medicine</gateSkill>
     <gateMaxLevel>10</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -89,8 +84,7 @@
     <defName>WS_Childminder</defName>
     <label>Childcare</label>
     <description>Childcare and teaching.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.082, 0.369, 0.459)</color>
+    <colorRef>cyan-800</colorRef>
     <entries>
       <li>WorkType:Childcare</li>
     </entries>
@@ -100,8 +94,7 @@
     <defName>WS_Warden</defName>
     <label>Warden</label>
     <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.082, 0.369, 0.459)</color>
+    <colorRef>cyan-800</colorRef>
     <entries>
       <li>WorkType:Warden</li>
     </entries>
@@ -111,8 +104,7 @@
     <defName>WS_Handler</defName>
     <label>Handler</label>
     <description>Animal taming, training and slaughter.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.067, 0.369, 0.349)</color>
+    <colorRef>teal-800</colorRef>
     <entries>
       <li>WorkType:Handling</li>
     </entries>
@@ -122,8 +114,7 @@
     <defName>WS_Cook</defName>
     <label>Cook</label>
     <description>Meal preparation and butchering.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.082, 0.502, 0.239)</color>
+    <colorRef>green-700</colorRef>
     <gateSkill>Cooking</gateSkill>
     <gateMinLevel>8</gateMinLevel>
     <entries>
@@ -139,8 +130,7 @@
     <defName>WS_Butcher</defName>
     <label>Butcher</label>
     <description>Butchering creatures.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.086, 0.396, 0.204)</color>
+    <colorRef>green-800</colorRef>
     <gateSkill>Cooking</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -153,8 +143,7 @@
     <defName>WS_Brewer</defName>
     <label>Brewer</label>
     <description>Brewing wort at the brewery.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.086, 0.396, 0.204)</color>
+    <colorRef>green-800</colorRef>
     <gateSkill>Cooking</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -167,8 +156,7 @@
     <defName>WS_Hunter</defName>
     <label>Hunter</label>
     <description>Hunting wild animals for food.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.059, 0.463, 0.431)</color>
+    <colorRef>teal-700</colorRef>
     <entries>
       <li>WorkType:Hunting</li>
     </entries>
@@ -178,8 +166,7 @@
     <defName>WS_Fisher</defName>
     <label>Fisher</label>
     <description>Fishing.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.067, 0.369, 0.349)</color>
+    <colorRef>teal-800</colorRef>
     <entries>
       <li>WorkType:Fishing</li>
     </entries>
@@ -189,8 +176,7 @@
     <defName>WS_Builder</defName>
     <label>Builder</label>
     <description>Construction, repair and deconstruction.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.631, 0.384, 0.027)</color>
+    <colorRef>yellow-700</colorRef>
     <gateSkill>Construction</gateSkill>
     <gateMinLevel>8</gateMinLevel>
     <entries>
@@ -218,8 +204,7 @@
     <defName>WS_Repairer</defName>
     <label>Handyman</label>
     <description>All construction work except constructing new buildings.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.522, 0.302, 0.055)</color>
+    <colorRef>yellow-800</colorRef>
     <gateSkill>Construction</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -245,8 +230,7 @@
     <defName>WS_Farmer</defName>
     <label>Farmer</label>
     <description>Sowing, harvesting and plant cutting.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.302, 0.486, 0.059)</color>
+    <colorRef>lime-700</colorRef>
     <entries>
       <li>WorkType:Growing</li>
       <li>WorkType:PlantCutting</li>
@@ -257,8 +241,7 @@
     <defName>WS_Grower</defName>
     <label>Grower</label>
     <description>Sowing and harvesting in growing zones.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.247, 0.384, 0.071)</color>
+    <colorRef>lime-800</colorRef>
     <entries>
       <li>WorkType:Growing</li>
     </entries>
@@ -268,8 +251,7 @@
     <defName>WS_PlantCutter</defName>
     <label>Plant Cutter</label>
     <description>Cutting and harvesting wild plants and trees.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.247, 0.384, 0.071)</color>
+    <colorRef>lime-800</colorRef>
     <entries>
       <li>WorkType:PlantCutting</li>
     </entries>
@@ -279,8 +261,7 @@
     <defName>WS_Miner</defName>
     <label>Miner</label>
     <description>Mining and drilling.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.012, 0.412, 0.631)</color>
+    <colorRef>sky-700</colorRef>
     <entries>
       <li>WorkType:Mining</li>
     </entries>
@@ -290,8 +271,7 @@
     <defName>WS_Smith</defName>
     <label>Smith</label>
     <description>Weapon and armor smithing.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.706, 0.325, 0.035)</color>
+    <colorRef>amber-700</colorRef>
     <entries>
       <li>WorkType:Smithing</li>
       <!-- Redundant at compile time (Smithing already includes it); listed so
@@ -304,8 +284,7 @@
     <defName>WS_Fabricator</defName>
     <label>Fabricator</label>
     <description>Fabricating things at the fabrication bench.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.573, 0.251, 0.055)</color>
+    <colorRef>amber-800</colorRef>
     <entries>
       <li>WorkGiver:DoBillsFabricationBench</li>
     </entries>
@@ -315,8 +294,7 @@
     <defName>WS_Tailor</defName>
     <label>Tailor</label>
     <description>Apparel creation.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.706, 0.325, 0.035)</color>
+    <colorRef>amber-700</colorRef>
     <entries>
       <li>WorkType:Tailoring</li>
     </entries>
@@ -326,8 +304,7 @@
     <defName>WS_Artist</defName>
     <label>Artist</label>
     <description>Sculpting and artwork.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.494, 0.133, 0.808)</color>
+    <colorRef>purple-700</colorRef>
     <entries>
       <li>WorkType:Art</li>
     </entries>
@@ -337,8 +314,7 @@
     <defName>WS_Crafter</defName>
     <label>Crafter</label>
     <description>General crafting: stonecutting, smelting, drugs and components.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.706, 0.325, 0.035)</color>
+    <colorRef>amber-700</colorRef>
     <entries>
       <li>WorkType:Crafting</li>
     </entries>
@@ -348,8 +324,7 @@
     <defName>WS_Grunt</defName>
     <label>Grunt</label>
     <description>Hauling and cleaning.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.267, 0.251, 0.235)</color>
+    <colorRef>stone-700</colorRef>
     <entries>
       <li>WorkType:Hauling</li>
       <li>WorkType:Cleaning</li>
@@ -360,8 +335,7 @@
     <defName>WS_Hauler</defName>
     <label>Hauler</label>
     <description>Hauling items.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.161, 0.145, 0.141)</color>
+    <colorRef>stone-800</colorRef>
     <entries>
       <li>WorkType:Hauling</li>
     </entries>
@@ -371,8 +345,7 @@
     <defName>WS_Cleaner</defName>
     <label>Cleaner</label>
     <description>Cleaning.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.161, 0.145, 0.141)</color>
+    <colorRef>stone-800</colorRef>
     <entries>
       <li>WorkType:Cleaning</li>
     </entries>
@@ -382,8 +355,7 @@
     <defName>WS_Researcher</defName>
     <label>Researcher</label>
     <description>Research at a research bench.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.200, 0.255, 0.333)</color>
+    <colorRef>slate-700</colorRef>
     <entries>
       <li>WorkType:Research</li>
     </entries>
@@ -393,8 +365,7 @@
     <defName>WS_DarkStudier</defName>
     <label>Anomaly Study</label>
     <description>Study of anomalous entities.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.200, 0.255, 0.333)</color>
+    <colorRef>slate-700</colorRef>
     <entries>
       <li>WorkType:DarkStudy</li>
     </entries>
@@ -404,8 +375,7 @@
     <defName>WS_Firefighter</defName>
     <label>Firefighter</label>
     <description>Fighting fires.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.118, 0.161, 0.231)</color>
+    <colorRef>slate-800</colorRef>
     <entries>
       <li>WorkType:Firefighter</li>
     </entries>
@@ -415,8 +385,7 @@
     <defName>WS_Patient</defName>
     <label>Patient</label>
     <description>Accepting medical treatment.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.118, 0.161, 0.231)</color>
+    <colorRef>slate-800</colorRef>
     <entries>
       <li>WorkType:Patient</li>
     </entries>
@@ -426,8 +395,7 @@
     <defName>WS_Bedrest</defName>
     <label>Bedrest</label>
     <description>Resting in bed when ill or injured.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.118, 0.161, 0.231)</color>
+    <colorRef>slate-800</colorRef>
     <entries>
       <li>WorkType:PatientBedRest</li>
     </entries>
@@ -437,8 +405,7 @@
     <defName>WS_Laborer</defName>
     <label>Laborer</label>
     <description>Miscellaneous simple tasks.</description>
-    <hasCustomColor>true</hasCustomColor>
-    <color>(0.118, 0.161, 0.231)</color>
+    <colorRef>slate-800</colorRef>
     <entries>
       <li>WorkType:BasicWorker</li>
     </entries>

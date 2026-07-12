@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Named colors for role definitions (Tailwind vocabulary, matching the
+       editor's swatches and the export format). Roles reference one via
+       <colorRef>; re-hex an entry by patch to retheme every role using it. -->
+
+  <WorkRoles.PaletteDef><defName>slate-600</defName><hex>#475569</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>slate-700</defName><hex>#334155</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>slate-800</defName><hex>#1e293b</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>stone-700</defName><hex>#44403c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>stone-800</defName><hex>#292524</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>red-800</defName><hex>#991b1b</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>red-900</defName><hex>#7f1d1d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>rose-800</defName><hex>#9f1239</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>cyan-800</defName><hex>#155e75</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>teal-700</defName><hex>#0f766e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>teal-800</defName><hex>#115e59</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>green-700</defName><hex>#15803d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>green-800</defName><hex>#166534</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>yellow-700</defName><hex>#a16207</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>yellow-800</defName><hex>#854d0e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>lime-700</defName><hex>#4d7c0f</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>lime-800</defName><hex>#3f6212</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>sky-700</defName><hex>#0369a1</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>amber-700</defName><hex>#b45309</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>amber-800</defName><hex>#92400e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>purple-700</defName><hex>#7e22ce</hex></WorkRoles.PaletteDef>
+</Defs>

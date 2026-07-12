@@ -13,10 +13,15 @@ namespace WorkRoles
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
         public bool seeded;
+        /// Player deleted Odd Jobs (knows no mod adds invisible jobs): coverage
+        /// won't recreate it until Restore Roles is asked to bring it back.
+        public bool oddJobsDeleted;
         /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as the managed role.
         public Role allRole;
         public List<string> knownWorkTypes = new List<string>();
+        /// Custom swatch slot count: the editor's two rows of 19.
+        public const int MaxCustomSwatches = 38;
         /// Player-defined swatch slots for the role editor (alpha 0 = empty slot).
         public List<UnityEngine.Color> customSwatches = new List<UnityEngine.Color>();
         /// Slot names (index-aligned with customSwatches): auto-named "custom-N",
@@ -25,7 +30,10 @@ namespace WorkRoles
         public List<string> customSwatchNames = new List<string>();
         /// Per-bill role restrictions (see BillRoles). Mutate via RoleCommands.
         public Dictionary<Bill, int> billRoles = new Dictionary<Bill, int>();
+        /// Role-list groups in display order. Mutate via RoleCommands.
+        public List<RoleGroup> groups = new List<RoleGroup>();
         private int nextRoleId = 1;
+        private int nextGroupId = 1; // 0 reserved for the Default group
 
         private List<Pawn> pawnKeysWorkingList;
         private List<PawnRoleSet> setValuesWorkingList;
@@ -52,6 +60,28 @@ namespace WorkRoles
         }
 
         public int NextId() => nextRoleId++;
+
+        public int NextGroupId() => nextGroupId++;
+
+        public RoleGroup GroupById(int id) => groups.FirstOrDefault(g => g.id == id);
+
+        public RoleGroup GroupByName(string name) => groups.FirstOrDefault(g =>
+            string.Equals(g.label, name?.Trim(), System.StringComparison.OrdinalIgnoreCase));
+
+        /// The Default group (id 0), materialized on demand: pinned first,
+        /// swept like any user group when it empties. The stored label is
+        /// INVARIANT (never the translated name — this is scribed, synced
+        /// state); the UI renders id 0 from the keyed string.
+        public RoleGroup EnsureDefaultGroup()
+        {
+            var group = GroupById(RoleGroup.DefaultId);
+            if (group == null)
+            {
+                group = new RoleGroup { id = RoleGroup.DefaultId, label = "Default" };
+                groups.Insert(0, group);
+            }
+            return group;
+        }
 
         /// Keeps slot names index-aligned with the swatch list (auto-name gaps).
         public void SyncSwatchNames()
@@ -99,9 +129,12 @@ namespace WorkRoles
                         CompiledJobOrders.EnsureFresh(pawn);
             }
             Scribe_Values.Look(ref seeded, "seeded");
+            Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
             Scribe_Deep.Look(ref allRole, "allRole");
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);
+            Scribe_Values.Look(ref nextGroupId, "nextGroupId", 1);
+            Scribe_Collections.Look(ref groups, "groups", LookMode.Deep);
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
             Scribe_Collections.Look(ref customSwatches, "customSwatches", LookMode.Value);
             Scribe_Collections.Look(ref customSwatchNames, "customSwatchNames", LookMode.Value);
@@ -112,6 +145,7 @@ namespace WorkRoles
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 roles ??= new List<Role>();
+                groups ??= new List<RoleGroup>();
                 knownWorkTypes ??= new List<string>();
                 customSwatches ??= new List<UnityEngine.Color>();
                 customSwatchNames ??= new List<string>();
