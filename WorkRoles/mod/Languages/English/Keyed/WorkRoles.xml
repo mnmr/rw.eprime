@@ -174,8 +174,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RowNewColor>{0} {1} (new color)</WR_RowNewColor>
   <WR_NothingToMerge>Everything matches: nothing to merge.</WR_NothingToMerge>
   <WR_PaletteOverwriteInfo>Replaces all custom colors with the file's {0} palette entries.</WR_PaletteOverwriteInfo>
-  <WR_OverwriteReplaces>Applies all {0} roles from the file.</WR_OverwriteReplaces>
-  <WR_OverwriteDeletes>Deletes (not in file): {0}</WR_OverwriteDeletes>
+  <WR_OverwriteReplaces>Applies all {0} roles from the file. Matching roles (same pre-made role, else same name) keep their colonist assignments.</WR_OverwriteReplaces>
+  <WR_OverwriteDeletes>Deletes (not in file): {0} — colonists lose these assignments.</WR_OverwriteDeletes>
   <!-- {0}-{3} = added/updated/deleted/palette-change counts -->
   <WR_ImportSummary>Import complete: {0} added, {1} updated, {2} deleted, {3} palette changes.</WR_ImportSummary>
   <WR_CopiedToClipboard>Copied to clipboard.</WR_CopiedToClipboard>
