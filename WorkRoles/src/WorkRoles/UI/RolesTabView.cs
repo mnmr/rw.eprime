@@ -3,6 +3,7 @@ using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 using WorkRoles.Core;
 
 namespace WorkRoles.UI
@@ -1615,9 +1616,22 @@ namespace WorkRoles.UI
 
                     var checkboxRect = new Rect(row.x + 26f, row.y + (row.height - 24f) / 2f, 24f, 24f);
                     var currentState = GetWorkTypeState(role, type);
-                    var newState = Widgets.CheckboxMulti(checkboxRect, currentState);
-                    if (newState != currentState)
-                        ApplyWorkTypeState(role, type, newState);
+                    // Right-click: add every job as its own reorderable entry.
+                    var te = Event.current;
+                    if (te.type == EventType.MouseDown && te.button == 1 && row.Contains(te.mousePosition))
+                    {
+                        te.Use();
+                        var capturedType = type;
+                        Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                        {
+                            new FloatMenuOption("WR_AddAllJobs".Translate(), () =>
+                                AddAllGivers(role, capturedType)),
+                        }));
+                    }
+                    bool typeAdds = currentState == MultiCheckboxState.Off;
+                    if (MultiCheckboxClicked(checkboxRect, currentState, typeAdds))
+                        ApplyWorkTypeState(role, type,
+                            typeAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
                     // The label toggles like the arrow — a far bigger target.
                     var typeLabelRect = new Rect(row.x + 54f, row.y, row.width - 54f, RowHeight);
@@ -1634,9 +1648,14 @@ namespace WorkRoles.UI
 
                     var checkboxRect = new Rect(row.x + 42f, row.y + (row.height - 24f) / 2f, 24f, 24f);
                     var currentState = GetGiverState(role, type, giver);
-                    var newState = Widgets.CheckboxMulti(checkboxRect, currentState);
-                    if (newState != currentState)
-                        ApplyGiverState(role, type, giver, newState);
+                    // ~ = covered via the work type; a click promotes to an own
+                    // (reorderable) entry.
+                    if (currentState == MultiCheckboxState.Partial)
+                        TooltipHandler.TipRegion(row, "WR_CoveredByTypeTip".Translate());
+                    bool giverAdds = currentState != MultiCheckboxState.On;
+                    if (MultiCheckboxClicked(checkboxRect, currentState, giverAdds))
+                        ApplyGiverState(role, type, giver,
+                            giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
                     Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), giverName);
                 }
@@ -1698,113 +1717,91 @@ namespace WorkRoles.UI
 
         // ----- Tri-state helpers -----
 
+        /// CheckboxMulti look-alike whose click sound matches OUR action — the
+        /// vanilla widget keys the sound to the state it proposes, which is
+        /// wrong for the promote-from-~ click.
+        private static bool MultiCheckboxClicked(Rect rect, MultiCheckboxState state, bool adds)
+        {
+            var tex = state == MultiCheckboxState.On ? Widgets.CheckboxOnTex
+                : state == MultiCheckboxState.Off ? Widgets.CheckboxOffTex
+                : Widgets.CheckboxPartialTex;
+            if (!Widgets.ButtonImage(rect, tex)) return false;
+            (adds ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
+            return true;
+        }
+
+        /// Binary: On iff the WorkType entry itself is in the list (it also
+        /// covers future modded jobs — not the same as all givers individually).
         private static MultiCheckboxState GetWorkTypeState(Role role, WorkTypeDef type)
         {
-            bool hasTypeEntry = role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
-            if (hasTypeEntry) return MultiCheckboxState.On;
-
-            var givers = type.workGiversByPriority;
-            if (givers.Count == 0) return MultiCheckboxState.Off;
-
-            int giverMatches = givers.Count(g => role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == g.defName));
-            if (giverMatches == 0) return MultiCheckboxState.Off;
-            if (giverMatches == givers.Count) return MultiCheckboxState.On;
-            return MultiCheckboxState.Partial;
+            return role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName)
+                ? MultiCheckboxState.On
+                : MultiCheckboxState.Off;
         }
 
+        /// On = own entry (reorderable); Partial = covered via the work type.
         private static MultiCheckboxState GetGiverState(Role role, WorkTypeDef type, WorkGiverDef giver)
         {
-            bool hasTypeEntry = role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
-            if (hasTypeEntry) return MultiCheckboxState.On;
-            bool hasGiverEntry = role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName);
-            return hasGiverEntry ? MultiCheckboxState.On : MultiCheckboxState.Off;
+            if (role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName))
+                return MultiCheckboxState.On;
+            return role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName)
+                ? MultiCheckboxState.Partial
+                : MultiCheckboxState.Off;
         }
 
+        /// Adds/removes only the WorkType entry itself — giver entries (and the
+        /// player's ordering of them) are never touched from here.
         private static void ApplyWorkTypeState(Role role, WorkTypeDef type, MultiCheckboxState newState)
         {
             if (newState == MultiCheckboxState.On)
             {
-                var toRemove = new List<int>();
-                for (int j = 0; j < role.entries.Count; j++)
-                {
-                    var e = role.entries[j];
-                    if (e.Kind == JobEntryKind.WorkGiver
-                        && type.workGiversByPriority.Any(g => g.defName == e.DefName))
-                        toRemove.Add(j);
-                }
-                for (int k = toRemove.Count - 1; k >= 0; k--)
-                    RoleCommands.RemoveEntry(role.id, toRemove[k]);
                 if (!role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName))
                     RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkType, type.defName));
             }
-            else // Off
+            else
             {
-                var toRemove = new List<int>();
-                for (int j = 0; j < role.entries.Count; j++)
-                {
-                    var e = role.entries[j];
-                    if (e.Kind == JobEntryKind.WorkType && e.DefName == type.defName)
-                        toRemove.Add(j);
-                    else if (e.Kind == JobEntryKind.WorkGiver
-                             && type.workGiversByPriority.Any(g => g.defName == e.DefName))
-                        toRemove.Add(j);
-                }
-                for (int k = toRemove.Count - 1; k >= 0; k--)
-                    RoleCommands.RemoveEntry(role.id, toRemove[k]);
+                int typeIdx = role.entries.FindIndex(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
+                if (typeIdx >= 0)
+                    RoleCommands.RemoveEntry(role.id, typeIdx);
             }
         }
 
+        /// Giver entries and a WorkType entry may coexist: an entry placed above
+        /// the type outranks it (the compiler keeps a job's earliest position),
+        /// which is how single jobs get ordered inside an all-jobs selection.
         private static void ApplyGiverState(Role role, WorkTypeDef type, WorkGiverDef giver, MultiCheckboxState newState)
         {
             if (newState == MultiCheckboxState.On)
             {
-                if (!role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName))
+                if (role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName))
+                    return;
+                // Above the type entry when one exists — below it, the entry
+                // would never win a position.
+                int typeIdx = role.entries.FindIndex(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
+                if (typeIdx >= 0)
+                    RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkGiver, giver.defName), typeIdx);
+                else
                     RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkGiver, giver.defName));
-
-                // Collapse to WorkType entry if all givers are now individually present
-                var allGivers = type.workGiversByPriority;
-                bool allPresent = allGivers.Count > 0
-                    && allGivers.All(g => role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == g.defName));
-
-                if (allPresent)
-                {
-                    int insertAt = int.MaxValue;
-                    var toRemove = new List<int>();
-                    for (int j = 0; j < role.entries.Count; j++)
-                    {
-                        var e = role.entries[j];
-                        if (e.Kind == JobEntryKind.WorkGiver
-                            && allGivers.Any(g => g.defName == e.DefName))
-                        {
-                            toRemove.Add(j);
-                            if (j < insertAt) insertAt = j;
-                        }
-                    }
-                    for (int k = toRemove.Count - 1; k >= 0; k--)
-                        RoleCommands.RemoveEntry(role.id, toRemove[k]);
-                    if (insertAt == int.MaxValue) insertAt = role.entries.Count;
-                    RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkType, type.defName), insertAt);
-                }
             }
-            else // Off
+            else // Off: only ever removes the giver's own entry
             {
                 int giverIdx = role.entries.FindIndex(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName);
                 if (giverIdx >= 0)
-                {
                     RoleCommands.RemoveEntry(role.id, giverIdx);
-                    return;
-                }
+            }
+        }
 
-                // Covered by a parent WorkType entry: remove it, re-add all OTHER givers
-                int typeIdx = role.entries.FindIndex(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
-                if (typeIdx >= 0)
-                {
-                    RoleCommands.RemoveEntry(role.id, typeIdx);
-                    int insertAt = typeIdx;
-                    var otherGivers = type.workGiversByPriority.Where(g => g.defName != giver.defName).ToList();
-                    for (int k = otherGivers.Count - 1; k >= 0; k--)
-                        RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkGiver, otherGivers[k].defName), insertAt);
-                }
+        /// Every giver of the type as its own reorderable entry (existing ones
+        /// kept in place), above the type entry when present.
+        private static void AddAllGivers(Role role, WorkTypeDef type)
+        {
+            int insertAt = role.entries.FindIndex(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName);
+            if (insertAt < 0) insertAt = role.entries.Count;
+            foreach (var giver in type.workGiversByPriority)
+            {
+                if (role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName)) continue;
+                RoleCommands.AddEntry(role.id, new JobEntry(JobEntryKind.WorkGiver, giver.defName), insertAt);
+                insertAt++;
             }
         }
     }

@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.1 — 2026-07-13
+
+  - Changed: Changed job assignment to treat work types and jobs independently. When all sub-jobs for a work type are selected, the UI no longer collapses to the work type. To also make the role cover any future jobs appearing under the work type (from mods), you must have the work type in the role as well.
+  
 ## 1.1.0 — 2026-07-12
 
 ### Added

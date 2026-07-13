@@ -227,6 +227,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_JobColumn>Job</WR_JobColumn>
   <!-- Shown in Job column when the entry covers the whole work type -->
   <WR_AllJobs>All jobs</WR_AllJobs>
+  <WR_CoveredByTypeTip>Covered by the work type. Click to give this job its own (reorderable) entry.</WR_CoveredByTypeTip>
+  <WR_AddAllJobs>Add all jobs (individually, reorderable)</WR_AddAllJobs>
 
   <!-- Tooltip for a missing def; {0} = def name -->
   <WR_MissingDef>{0} is not present with the current mod list (inactive until its mod returns).</WR_MissingDef>
