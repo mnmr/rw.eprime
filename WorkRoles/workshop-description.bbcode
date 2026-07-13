@@ -9,13 +9,12 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [h1]Key Features[/h1]
 [list]
 [*][b]No Priorities:[/b] A role is an ordered list of jobs (whole work types like Cooking or single jobs like Smelting). A colonist's roles combine into one clear work order: earlier roles win, and within a role, earlier jobs win. If no role mentions a job, the colonist never does it.
-[*][b]No Setup:[/b] Seeds pre-made roles (Doctor, Smith, Hauler, ...) covering every vanilla and official DLC work type. Auto-assigns roles to match existing priorities.
+[*][b]No Setup:[/b] Seeds pre-made roles covering every vanilla and official DLC work type. Auto-assigns roles to match existing priorities.
 [*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign "Emergency Harvester" to half the colony at high priority but disabled, and when blight or a cold snap hits, one click re-tasks everyone to the fields.
 [*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
 [*][b]Modded Jobs:[/b] Work types and jobs added by other mods appear automatically, no compatibility patches needed.
 [*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day or at specific locations (settlements, the gravship, caravans).
 [*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
-[*][b]Combo Roles:[/b] These combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role list.
 [*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
 [*][b]Role Groups:[/b] Organize the role list into named, collapsible groups (drag to move or reorder). Roles with rules gather under Auto-Roles automatically.
 [*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. See below for details.
@@ -23,12 +22,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Import/Export:[/b] Easily share or backup your role setup. Import allows overwrite or merge.
 [*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
 [*][b]Translation Ready:[/b] All text resources are read from resource files.
-[/list]
-
-[h1]Performance[/h1]
-[list]
-[*][b]Designed for Performance:[/b] Everything is pre-computed at assignment.
-[*][b]Cache Invalidation:[/b] If you use auto-roles, priorities get invalidated and recomputed every game hour (every 2500 ticks; not measurable).
+[*][b]Designed for Performance:[/b] Everything is pre-computed at assignment, nothing runs per-tick.
 [/list]
 
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
@@ -40,8 +34,8 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
 [*][b]Combo Roles:[/b] The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
 [*][b]Extra Roles:[/b] Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
-[*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put "No firefighting" before Basics (which has Firefighting).
-[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role (enabled by default from seeding, lives in the Locked group). If none of your mods add hidden jobs you can delete it - Restore Roles brings it back.
+[*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment).
+[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role.
 [/list]
 
 [h1]How It Works[/h1]
@@ -51,23 +45,14 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*]Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
 [*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
 [*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
-[*]In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 [/list]
 
 [h1]Recommendation Logic[/h1]
 [list]
-[*][b]Colony Needs:[/b] Almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
-[*][b]Skill Gates:[/b] Roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
-[*][b]Training:[/b] If a pawn should be a Doctor, Builder or Cook but has insufficient skill (10, 8 and 8, respectively), an upskilling role will be recommended instead (Medic for Doctor, Handyman for Builder, Butcher/Brewer for Cook). Colony needs override this.
-[*][b]Hunting:[/b] Recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
-[*][b]Coverage:[/b] Roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
-[*][b]Role Pinning:[/b] Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
-[*][b]Apply Per Colonist:[/b] Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
-[*][b]Fix My Colony:[/b] Apply recommendations across all colonists, with a preview to see what would change.
-[*][b]Passions:[/b] Role suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
-[*][b]Genetics:[/b] Pawns genetically terrified of fire automatically get "No Firefighting" (blocker role) placed before Basics.
-[*][b]Ordering:[/b] Everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor.
-[*][b]Untouched:[/b] Auto (rule-carrying) roles and blockers are never suggested, moved or removed.
+[*][b]Analysis:[/b] Looks across all colonists in a location to ensure recommendations are balanced across the colony.
+[*][b]Suggestions:[/b] Suggests based on passions, genetics/traits, skill levels and training needs.
+[*][b]Applying:[/b] Cherry-pick individual recommendations or apply across all or selected colonists.
+[*][b]Full Spec:[/b] Check [url=https://github.com/mnmr/rw.workroles/README.md]README[/url] for a more comprehensive description (Workshop pages have character limits).
 [/list]
 
 [h1]Compatibility[/h1]
