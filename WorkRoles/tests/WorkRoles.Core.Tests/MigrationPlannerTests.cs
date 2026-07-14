@@ -64,7 +64,7 @@ public class MigrationPlannerTests
         var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
         var roles = new List<MigrationRole>();
         int id = 1;
-        foreach (var def in XElement.Load(path).Elements())
+        foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
             var entries = new List<JobEntry>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())

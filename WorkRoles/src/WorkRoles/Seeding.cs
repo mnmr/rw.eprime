@@ -22,6 +22,10 @@ namespace WorkRoles
                 return;
             }
 
+            // Groups first, in authored order — roles then land in them by label.
+            foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
+                         .OrderBy(d => d.order))
+                RoleCommands.EnsureGroup(groupDef.label);
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
@@ -229,6 +233,24 @@ namespace WorkRoles
             "HaulingUrgent", // Allow Tool's "haul urgently"
         };
 
+        /// Index in the role where a work type belongs by naturalPriority
+        /// (before the first entry of lower effective priority), so
+        /// everyone-types slot where vanilla's Work tab would put them
+        /// instead of trailing the role.
+        private static int NaturalInsertIndex(Role role, WorkTypeDef workType)
+        {
+            for (int i = 0; i < role.entries.Count; i++)
+            {
+                var entry = role.entries[i];
+                var type = entry.Kind == WorkRoles.Core.JobEntryKind.WorkType
+                    ? DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName)
+                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName)?.workType;
+                if (type != null && type.naturalPriority < workType.naturalPriority)
+                    return i;
+            }
+            return role.entries.Count;
+        }
+
         /// Stable string hash (FNV-1a): string.GetHashCode is not guaranteed
         /// identical across runtimes, and seeded colors and def fingerprints
         /// must match in MP.
@@ -249,21 +271,23 @@ namespace WorkRoles
             return def?.color ?? new UnityEngine.Color(0.200f, 0.255f, 0.333f);
         }
 
-        /// Snaps an arbitrary color to the nearest palette entry (RGB distance).
+        /// Snaps an arbitrary color to the nearest editor swatch (RGB distance)
+        /// — the exact values the palette grid highlights against, and a wider
+        /// gamut than the shipped PaletteDefs.
         private static UnityEngine.Color NearestPaletteColor(UnityEngine.Color target)
         {
             var best = new UnityEngine.Color(0.200f, 0.255f, 0.333f);
             float bestDist = float.MaxValue;
-            foreach (var def in DefDatabase<PaletteDef>.AllDefsListForReading)
+            foreach (var swatch in UI.RolesTabView.Swatches)
             {
-                float dr = def.color.r - target.r;
-                float dg = def.color.g - target.g;
-                float db = def.color.b - target.b;
+                float dr = swatch.r - target.r;
+                float dg = swatch.g - target.g;
+                float db = swatch.b - target.b;
                 float dist = dr * dr + dg * dg + db * db;
                 if (dist < bestDist)
                 {
                     bestDist = dist;
-                    best = def.color;
+                    best = swatch;
                 }
             }
             return best;
@@ -300,7 +324,8 @@ namespace WorkRoles
                 if (basics != null)
                 {
                     RoleCommands.AddEntryDirect(basics.id,
-                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName),
+                        NaturalInsertIndex(basics, workType));
                     result.Add(basics.label);
                 }
                 else if (workType.visible)

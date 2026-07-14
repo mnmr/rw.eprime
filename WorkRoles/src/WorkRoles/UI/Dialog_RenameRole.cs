@@ -13,6 +13,7 @@ namespace WorkRoles.UI
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
         private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
+        private bool focusedField;
 
         public override Vector2 InitialSize => new Vector2(360f, sourceLabel == null ? 160f : 186f);
 
@@ -92,8 +93,14 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
                 y += 26f;
             }
+            GUI.SetNextControlName("WR_RenameField");
             name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
             y += 32f;
+            if (!focusedField)
+            {
+                Verse.UI.FocusControl("WR_RenameField", this);
+                focusedField = true;
+            }
 
             if (requireUniqueName && !name.Trim().NullOrEmpty() && NameTaken)
             {

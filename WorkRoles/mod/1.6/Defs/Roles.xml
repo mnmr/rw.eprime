@@ -1,16 +1,26 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Defs>
+  <!-- Role-list groups, in display order. -->
+  <WorkRoles.RoleGroupDef><defName>WS_GroupEssentials</defName><label>Essentials</label><order>1</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupAnimals</defName><label>Animals</label><order>2</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupPlants</defName><label>Plants</label><order>3</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupIndoors</defName><label>Indoors</label><order>4</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupOutdoors</defName><label>Outdoors</label><order>5</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupFood</defName><label>Food</label><order>6</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupResearch</defName><label>Research</label><order>7</order></WorkRoles.RoleGroupDef>
+
   <WorkRoles.RoleDef>
     <defName>WS_Basics</defName>
     <label>Basics</label>
     <description>Emergency and self-care work every colonist should do.</description>
     <autoAssign>true</autoAssign>
     <colorRef>slate-600</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Firefighter</li>
       <li>WorkType:Patient</li>
-      <li>WorkGiver:DoctorRescue</li>
       <li>WorkType:PatientBedRest</li>
+      <li>WorkGiver:DoctorRescue</li>
       <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
@@ -20,6 +30,7 @@
     <label>Rescuer</label>
     <description>Rescuing downed colonists.</description>
     <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkGiver:DoctorRescue</li>
     </entries>
@@ -30,6 +41,7 @@
     <label>Doctor</label>
     <description>Medical care for colonists, prisoners and animals.</description>
     <colorRef>red-800</colorRef>
+    <group>Essentials</group>
     <gateSkill>Medicine</gateSkill>
     <gateMinLevel>10</gateMinLevel>
     <entries>
@@ -39,10 +51,11 @@
 
   <WorkRoles.RoleDef>
     <defName>WS_NoFirefighting</defName>
-    <label>No Firefighting</label>
+    <label>Pyrophobe</label>
     <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
     <blocker>true</blocker>
     <colorRef>rose-800</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Firefighter</li>
     </entries>
@@ -51,21 +64,38 @@
   <WorkRoles.RoleDef>
     <defName>WS_Medic</defName>
     <label>Medic</label>
-    <description>Tending, feeding and rescuing patients — no operations.</description>
+    <description>Medical work except operating on colonists.</description>
     <colorRef>red-900</colorRef>
+    <group>Essentials</group>
     <gateSkill>Medicine</gateSkill>
     <gateMaxLevel>10</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
       <li>WorkGiver:DoctorTendToHumanlikes</li>
-      <li>WorkGiver:DoctorTendToSelfEmergency</li>
       <li>WorkGiver:DoctorTendToSelf</li>
-      <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorTendToSelfEmergency</li>
       <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorFeedHumanlikes</li>
       <li>WorkGiver:DoctorTendToAnimals</li>
       <li>WorkGiver:DoctorFeedAnimals</li>
       <li>WorkGiver:VisitSickPawn</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
+      <li>WorkGiver:TakeToBedToOperate</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoctorTendToEntities</li>
+      <li>WorkGiver:DoBillsMedicalAnimalOperation</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Laborer</defName>
+    <label>Laborer</label>
+    <description>Miscellaneous simple tasks.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -73,9 +103,67 @@
     <defName>WS_Childminder</defName>
     <label>Childcare</label>
     <description>Childcare and teaching.</description>
-    <colorRef>cyan-800</colorRef>
+    <colorRef>cyan-700</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Childcare</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Firefighter</defName>
+    <label>Firefighter</label>
+    <description>Fighting fires.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Patient</defName>
+    <label>Patient</label>
+    <description>Accepting medical treatment.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkType:Patient</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Bedrest</defName>
+    <label>Bedrest</label>
+    <description>Resting in bed when ill or injured.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkType:PatientBedRest</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Jailor</defName>
+    <label>Jailor</label>
+    <description>Prisoner logistics: feeding, escorting, suppression, release and executions.</description>
+    <colorRef>cyan-900</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkGiver:DoExecution</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExecuteEntity</li>
+      <li>WorkGiver:ExecuteGuiltyColonist</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ExecuteSlave</li>
+      <li>WorkGiver:ReleasePrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:EmancipateSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ActivitySuppression</li>
+      <li>WorkGiver:TakePrisonerToBed</li>
+      <li>WorkGiver:FeedPrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ImprisonSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:DeliverHemogenToPrisoner</li>
+      <li>WorkGiver:DeliverFoodToPrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ReleaseEntity</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:SuppressSlave</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -84,6 +172,7 @@
     <label>Warden</label>
     <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
     <colorRef>cyan-800</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Warden</li>
     </entries>
@@ -94,6 +183,7 @@
     <label>Handler</label>
     <description>Animal taming, training and slaughter.</description>
     <colorRef>teal-800</colorRef>
+    <group>Animals</group>
     <entries>
       <li>WorkType:Handling</li>
     </entries>
@@ -104,6 +194,7 @@
     <label>Cook</label>
     <description>Meal preparation and butchering.</description>
     <colorRef>green-700</colorRef>
+    <group>Food</group>
     <gateSkill>Cooking</gateSkill>
     <gateMinLevel>8</gateMinLevel>
     <entries>
@@ -116,6 +207,7 @@
     <label>Butcher</label>
     <description>Butchering creatures.</description>
     <colorRef>green-800</colorRef>
+    <group>Food</group>
     <gateSkill>Cooking</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -129,6 +221,7 @@
     <label>Brewer</label>
     <description>Brewing wort at the brewery.</description>
     <colorRef>green-800</colorRef>
+    <group>Food</group>
     <gateSkill>Cooking</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
@@ -142,6 +235,7 @@
     <label>Hunter</label>
     <description>Hunting wild animals for food.</description>
     <colorRef>teal-700</colorRef>
+    <group>Animals</group>
     <entries>
       <li>WorkType:Hunting</li>
     </entries>
@@ -152,6 +246,7 @@
     <label>Fisher</label>
     <description>Fishing.</description>
     <colorRef>teal-800</colorRef>
+    <group>Animals</group>
     <entries>
       <li>WorkType:Fishing</li>
     </entries>
@@ -162,6 +257,7 @@
     <label>Builder</label>
     <description>Construction, repair and deconstruction.</description>
     <colorRef>yellow-700</colorRef>
+    <group>Indoors</group>
     <gateSkill>Construction</gateSkill>
     <gateMinLevel>8</gateMinLevel>
     <entries>
@@ -174,24 +270,25 @@
     <label>Handyman</label>
     <description>All construction work except constructing new buildings.</description>
     <colorRef>yellow-800</colorRef>
+    <group>Indoors</group>
     <gateSkill>Construction</gateSkill>
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
     <entries>
-      <li>WorkGiver:FixBrokenDownBuilding</li>
-      <li>WorkGiver:Uninstall</li>
-      <li>WorkGiver:BuildRoofs</li>
-      <li>WorkGiver:RemoveRoofs</li>
-      <li>WorkGiver:DeconstructForBlueprint</li>
-      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
-      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
-      <li>WorkGiver:FillIn</li>
-      <li>WorkGiver:Deconstruct</li>
       <li>WorkGiver:Repair</li>
+      <li>WorkGiver:FixBrokenDownBuilding</li>
+      <li>WorkGiver:Deconstruct</li>
+      <li>WorkGiver:DeconstructForBlueprint</li>
+      <li>WorkGiver:Uninstall</li>
+      <li>WorkGiver:FillIn</li>
       <li>WorkGiver:ConstructRemoveFloors</li>
       <li>WorkGiver:ConstructRemoveFoundations</li>
-      <li>WorkGiver:ConstructSmoothFloors</li>
+      <li>WorkGiver:BuildRoofs</li>
+      <li>WorkGiver:RemoveRoofs</li>
+      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
+      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
       <li>WorkGiver:ConstructSmoothWalls</li>
+      <li>WorkGiver:ConstructSmoothFloors</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -200,6 +297,7 @@
     <label>Farmer</label>
     <description>Sowing, harvesting and plant cutting.</description>
     <colorRef>lime-700</colorRef>
+    <group>Plants</group>
     <entries>
       <li>WorkType:Growing</li>
       <li>WorkType:PlantCutting</li>
@@ -211,6 +309,7 @@
     <label>Grower</label>
     <description>Sowing and harvesting in growing zones.</description>
     <colorRef>lime-800</colorRef>
+    <group>Plants</group>
     <entries>
       <li>WorkType:Growing</li>
     </entries>
@@ -221,6 +320,7 @@
     <label>Plant Cutter</label>
     <description>Cutting and harvesting wild plants and trees.</description>
     <colorRef>lime-800</colorRef>
+    <group>Plants</group>
     <entries>
       <li>WorkType:PlantCutting</li>
     </entries>
@@ -231,8 +331,20 @@
     <label>Miner</label>
     <description>Mining and drilling.</description>
     <colorRef>sky-700</colorRef>
+    <group>Outdoors</group>
     <entries>
       <li>WorkType:Mining</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Tailor</defName>
+    <label>Tailor</label>
+    <description>Apparel creation.</description>
+    <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
+    <entries>
+      <li>WorkType:Tailoring</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -241,6 +353,7 @@
     <label>Smith</label>
     <description>Weapon and armor smithing.</description>
     <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
     <entries>
       <li>WorkType:Smithing</li>
     </entries>
@@ -251,18 +364,42 @@
     <label>Fabricator</label>
     <description>Fabricating things at the fabrication bench.</description>
     <colorRef>amber-800</colorRef>
+    <group>Indoors</group>
     <entries>
       <li>WorkGiver:DoBillsFabricationBench</li>
     </entries>
   </WorkRoles.RoleDef>
 
   <WorkRoles.RoleDef>
-    <defName>WS_Tailor</defName>
-    <label>Tailor</label>
-    <description>Apparel creation.</description>
-    <colorRef>amber-700</colorRef>
+    <defName>WS_Crafter</defName>
+    <label>Crafter</label>
+    <description>General crafting: stonecutting, smelting, drugs and components.</description>
+    <colorRef>orange-700</colorRef>
+    <group>Indoors</group>
     <entries>
-      <li>WorkType:Tailoring</li>
+      <li>WorkType:Crafting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Researcher</defName>
+    <label>Researcher</label>
+    <description>Research at a research bench.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <entries>
+      <li>WorkType:Research</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
+    <defName>WS_DarkStudier</defName>
+    <label>Anomaly Study</label>
+    <description>Study of anomalous entities.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <entries>
+      <li>WorkType:DarkStudy</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -271,18 +408,76 @@
     <label>Artist</label>
     <description>Sculpting and artwork.</description>
     <colorRef>purple-700</colorRef>
+    <group>Indoors</group>
     <entries>
       <li>WorkType:Art</li>
     </entries>
   </WorkRoles.RoleDef>
 
   <WorkRoles.RoleDef>
-    <defName>WS_Crafter</defName>
-    <label>Crafter</label>
-    <description>General crafting: stonecutting, smelting, drugs and components.</description>
-    <colorRef>amber-700</colorRef>
+    <defName>WS_Nurse</defName>
+    <label>Nurse</label>
+    <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
+    <colorRef>red-900</colorRef>
+    <group>Essentials</group>
     <entries>
-      <li>WorkType:Crafting</li>
+      <li>WorkGiver:DoctorTendToSelfEmergency</li>
+      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorTendToAnimals</li>
+      <li>WorkGiver:DoctorFeedAnimals</li>
+      <li>WorkGiver:VisitSickPawn</li>
+      <li>WorkGiver:TakeToBedToOperate</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_DrugMaker</defName>
+    <label>Drug Maker</label>
+    <description>Drug production at the drug lab and serum centrifuge.</description>
+    <colorRef>orange-800</colorRef>
+    <group>Indoors</group>
+    <entries>
+      <li>WorkGiver:DoBillsProduceDrugs</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Painter</defName>
+    <label>Painter</label>
+    <description>Painting and paint removal.</description>
+    <colorRef>purple-800</colorRef>
+    <group>Indoors</group>
+    <entries>
+      <li>WorkGiver:RemovePaintBuilding</li>
+      <li>WorkGiver:RemovePaintFloor</li>
+      <li>WorkGiver:PaintBuilding</li>
+      <li>WorkGiver:PaintFloor</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToBlueprints</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToFrames</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructFinishFrames</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Herder</defName>
+    <label>Herder</label>
+    <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
+    <colorRef>teal-900</colorRef>
+    <group>Animals</group>
+    <entries>
+      <li>WorkGiver:TakeRoamingAnimalsToPen</li>
+      <li>WorkGiver:HandlingFeedPatientAnimals</li>
+      <li>WorkGiver:TakeToPen</li>
+      <li>WorkGiver:Slaughter</li>
+      <li>WorkGiver:ReleaseToWild</li>
+      <li>WorkGiver:Milk</li>
+      <li>WorkGiver:Shear</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_AnimalResource</li>
+      <li>WorkGiver:RebalanceAnimalsInPens</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -291,6 +486,7 @@
     <label>Grunt</label>
     <description>Hauling and cleaning.</description>
     <colorRef>stone-700</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Hauling</li>
       <li>WorkType:Cleaning</li>
@@ -302,6 +498,7 @@
     <label>Hauler</label>
     <description>Hauling items.</description>
     <colorRef>stone-800</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Hauling</li>
     </entries>
@@ -312,68 +509,9 @@
     <label>Cleaner</label>
     <description>Cleaning.</description>
     <colorRef>stone-800</colorRef>
+    <group>Essentials</group>
     <entries>
       <li>WorkType:Cleaning</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Researcher</defName>
-    <label>Researcher</label>
-    <description>Research at a research bench.</description>
-    <colorRef>slate-700</colorRef>
-    <entries>
-      <li>WorkType:Research</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
-    <defName>WS_DarkStudier</defName>
-    <label>Anomaly Study</label>
-    <description>Study of anomalous entities.</description>
-    <colorRef>slate-700</colorRef>
-    <entries>
-      <li>WorkType:DarkStudy</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Firefighter</defName>
-    <label>Firefighter</label>
-    <description>Fighting fires.</description>
-    <colorRef>slate-800</colorRef>
-    <entries>
-      <li>WorkType:Firefighter</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Patient</defName>
-    <label>Patient</label>
-    <description>Accepting medical treatment.</description>
-    <colorRef>slate-800</colorRef>
-    <entries>
-      <li>WorkType:Patient</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Bedrest</defName>
-    <label>Bedrest</label>
-    <description>Resting in bed when ill or injured.</description>
-    <colorRef>slate-800</colorRef>
-    <entries>
-      <li>WorkType:PatientBedRest</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Laborer</defName>
-    <label>Laborer</label>
-    <description>Miscellaneous simple tasks.</description>
-    <colorRef>slate-800</colorRef>
-    <entries>
-      <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
 </Defs>

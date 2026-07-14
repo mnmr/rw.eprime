@@ -76,7 +76,7 @@ public class ColonyScenarioTests
         var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
         var catalog = new Catalog();
         int id = 1;
-        foreach (var def in XElement.Load(path).Elements())
+        foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
             string defName = def.Element("defName")?.Value.Trim() ?? $"?{id}";
             var entries = new List<JobEntry>();
@@ -307,12 +307,16 @@ public class ColonyScenarioTests
     [Arguments(10, 33)] [Arguments(50, 44)] [Arguments(50, 66)]
     public async Task FireTerrorGetsTheBlocker_NobodyElseDoes(int size, int seed)
     {
+        // The shipped catalog no longer seeds a fire blocker; the pass only
+        // fires when a player-made one exists, and never grants without it.
         var run = Execute(size, seed);
+        bool hasBlocker = run.Catalog.FireBlockerId != -1;
         for (int i = 0; i < run.Pawns.Count; i++)
         {
-            await Assert.That(run.Colony.FireGranted[i]).IsEqualTo(run.Pawns[i].FireFear)
+            await Assert.That(run.Colony.FireGranted[i])
+                .IsEqualTo(run.Pawns[i].FireFear && hasBlocker)
                 .Because($"fire blocker mismatch on pawn {i} (size {size}, seed {seed})");
-            if (run.Pawns[i].FireFear)
+            if (run.Pawns[i].FireFear && hasBlocker)
                 await Assert.That(run.Colony.VirtualSets[i].Contains(run.Catalog.FireBlockerId)).IsTrue()
                     .Because($"fire-fearing pawn {i} lacks the blocker (size {size}, seed {seed})");
         }

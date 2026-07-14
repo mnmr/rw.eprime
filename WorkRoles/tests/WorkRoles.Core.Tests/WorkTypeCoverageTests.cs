@@ -33,7 +33,7 @@ public class WorkTypeCoverageTests
             catalog.WithWorkType(group.Key, group.Select(kv => kv.Key).ToArray());
 
         var roles = new List<(IReadOnlyList<JobEntry>, bool)>();
-        foreach (var def in XElement.Load(path).Elements())
+        foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
             var entries = new List<JobEntry>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())

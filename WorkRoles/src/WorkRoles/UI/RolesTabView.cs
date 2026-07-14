@@ -1538,6 +1538,13 @@ namespace WorkRoles.UI
                     TooltipHandler.TipRegion(row, "WR_MissingDef".Translate(entry.DefName));
                 else if (dead)
                     TooltipHandler.TipRegion(row, "WR_DeadEntryTip".Translate());
+                if (!missing && Mouse.IsOver(row))
+                {
+                    string skillTip = entry.Kind == JobEntryKind.WorkType
+                        ? JobSkillProfiles.WorkTypeTip(entry.DefName)
+                        : JobSkillProfiles.GiverTip(entry.DefName);
+                    if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                }
 
                 float btnY = row.y + (RowHeight - IconButton) / 2f;
                 float removeX = row.xMax - IconButton - 2f;
@@ -1723,6 +1730,11 @@ namespace WorkRoles.UI
                     {
                         if (!expanded.Add(type.defName)) expanded.Remove(type.defName);
                     }
+                    if (Mouse.IsOver(row))
+                    {
+                        string skillTip = JobSkillProfiles.WorkTypeTip(type.defName);
+                        if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                    }
                 }
                 else
                 {
@@ -1741,6 +1753,11 @@ namespace WorkRoles.UI
                             giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
                     Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), giverName);
+                    if (Mouse.IsOver(row))
+                    {
+                        string skillTip = JobSkillProfiles.GiverTip(giver.defName);
+                        if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                    }
                 }
                 Text.Anchor = TextAnchor.UpperLeft;
             }

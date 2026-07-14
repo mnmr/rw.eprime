@@ -30,6 +30,13 @@ namespace WorkRoles
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
 
+        /// Role-list group label (a RoleGroupDef label); empty = Default.
+        public string group;
+        /// Time rule: 24-char bitstring, hour 0 leftmost, '1' = active. Null = always.
+        public string activeHours;
+        /// Location rule: any of Settlements, Caravans. Empty = anywhere.
+        public List<string> locations = new List<string>();
+
         public List<JobEntry> ParsedEntries()
         {
             var parsed = new List<JobEntry>();
@@ -50,6 +57,7 @@ namespace WorkRoles
         {
             var text = string.Join("\n",
                 label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
+                group, activeHours, string.Join("|", locations),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }

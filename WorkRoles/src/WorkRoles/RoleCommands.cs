@@ -45,9 +45,25 @@ namespace WorkRoles
                 iconPath = def.iconPath,
                 entries = def.ParsedEntries()
             };
+            if (!def.group.NullOrEmpty())
+                role.groupId = ResolveOrCreateGroup(def.group).id;
+            if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
+                role.activeHours = RoleFile.BitsToHours(def.activeHours);
+            foreach (var location in def.locations)
+            {
+                if (string.Equals(location, "Settlements", System.StringComparison.OrdinalIgnoreCase))
+                    role.locationTokens.Add(LocationRules.Settlements);
+                else if (string.Equals(location, "Caravans", System.StringComparison.OrdinalIgnoreCase))
+                    role.locationTokens.Add(LocationRules.Caravans);
+                else
+                    Log.Warning($"[WorkRoles] RoleDef {def.defName}: unknown location '{location}'");
+            }
             Store.roles.Add(role);
             return role;
         }
+
+        /// Seeding path for group creation: runs inside the synced simulation.
+        internal static RoleGroup EnsureGroup(string label) => ResolveOrCreateGroup(label);
 
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan, so the row-index
@@ -483,11 +499,12 @@ namespace WorkRoles
             return role;
         }
 
-        internal static void AddEntryDirect(int roleId, JobEntry entry)
+        internal static void AddEntryDirect(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
             if (role == null || role.entries.Contains(entry)) return;
-            role.entries.Add(entry);
+            if (index < 0 || index > role.entries.Count) index = role.entries.Count;
+            role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);
         }
 

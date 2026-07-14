@@ -1,28 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
-  <!-- Named colors for role definitions (Tailwind vocabulary, matching the
-       editor's swatches and the export format). Roles reference one via
-       <colorRef>; re-hex an entry by patch to retheme every role using it. -->
+  <!-- Named colors for role definitions (Tailwind v3 vocabulary — the complete
+       set of the editor's swatches, shades 600-900, and the export format's
+       built-in names). Roles reference one via <colorRef>; re-hex an entry by
+       patch to retheme every role using it. PaletteDefTests pins this file to
+       the canonical hex values. -->
 
-  <WorkRoles.PaletteDef><defName>slate-600</defName><hex>#475569</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>slate-700</defName><hex>#334155</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>slate-900</defName><hex>#0f172a</hex></WorkRoles.PaletteDef>
   <WorkRoles.PaletteDef><defName>slate-800</defName><hex>#1e293b</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>stone-700</defName><hex>#44403c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>slate-700</defName><hex>#334155</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>slate-600</defName><hex>#475569</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>stone-900</defName><hex>#1c1917</hex></WorkRoles.PaletteDef>
   <WorkRoles.PaletteDef><defName>stone-800</defName><hex>#292524</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>red-800</defName><hex>#991b1b</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>stone-700</defName><hex>#44403c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>stone-600</defName><hex>#57534e</hex></WorkRoles.PaletteDef>
+
   <WorkRoles.PaletteDef><defName>red-900</defName><hex>#7f1d1d</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>rose-800</defName><hex>#9f1239</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>cyan-800</defName><hex>#155e75</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>teal-700</defName><hex>#0f766e</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>teal-800</defName><hex>#115e59</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>green-700</defName><hex>#15803d</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>green-800</defName><hex>#166534</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>yellow-700</defName><hex>#a16207</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>yellow-800</defName><hex>#854d0e</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>lime-700</defName><hex>#4d7c0f</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>lime-800</defName><hex>#3f6212</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>sky-700</defName><hex>#0369a1</hex></WorkRoles.PaletteDef>
-  <WorkRoles.PaletteDef><defName>amber-700</defName><hex>#b45309</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>red-800</defName><hex>#991b1b</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>red-700</defName><hex>#b91c1c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>red-600</defName><hex>#dc2626</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>orange-900</defName><hex>#7c2d12</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>orange-800</defName><hex>#9a3412</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>orange-700</defName><hex>#c2410c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>orange-600</defName><hex>#ea580c</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>amber-900</defName><hex>#78350f</hex></WorkRoles.PaletteDef>
   <WorkRoles.PaletteDef><defName>amber-800</defName><hex>#92400e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>amber-700</defName><hex>#b45309</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>amber-600</defName><hex>#d97706</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>yellow-900</defName><hex>#713f12</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>yellow-800</defName><hex>#854d0e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>yellow-700</defName><hex>#a16207</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>yellow-600</defName><hex>#ca8a04</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>lime-900</defName><hex>#365314</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>lime-800</defName><hex>#3f6212</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>lime-700</defName><hex>#4d7c0f</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>lime-600</defName><hex>#65a30d</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>green-900</defName><hex>#14532d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>green-800</defName><hex>#166534</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>green-700</defName><hex>#15803d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>green-600</defName><hex>#16a34a</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>emerald-900</defName><hex>#064e3b</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>emerald-800</defName><hex>#065f46</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>emerald-700</defName><hex>#047857</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>emerald-600</defName><hex>#059669</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>teal-900</defName><hex>#134e4a</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>teal-800</defName><hex>#115e59</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>teal-700</defName><hex>#0f766e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>teal-600</defName><hex>#0d9488</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>cyan-900</defName><hex>#164e63</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>cyan-800</defName><hex>#155e75</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>cyan-700</defName><hex>#0e7490</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>cyan-600</defName><hex>#0891b2</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>sky-900</defName><hex>#0c4a6e</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>sky-800</defName><hex>#075985</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>sky-700</defName><hex>#0369a1</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>sky-600</defName><hex>#0284c7</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>blue-900</defName><hex>#1e3a8a</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>blue-800</defName><hex>#1e40af</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>blue-700</defName><hex>#1d4ed8</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>blue-600</defName><hex>#2563eb</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>indigo-900</defName><hex>#312e81</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>indigo-800</defName><hex>#3730a3</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>indigo-700</defName><hex>#4338ca</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>indigo-600</defName><hex>#4f46e5</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>violet-900</defName><hex>#4c1d95</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>violet-800</defName><hex>#5b21b6</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>violet-700</defName><hex>#6d28d9</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>violet-600</defName><hex>#7c3aed</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>purple-900</defName><hex>#581c87</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>purple-800</defName><hex>#6b21a8</hex></WorkRoles.PaletteDef>
   <WorkRoles.PaletteDef><defName>purple-700</defName><hex>#7e22ce</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>purple-600</defName><hex>#9333ea</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>fuchsia-900</defName><hex>#701a75</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>fuchsia-800</defName><hex>#86198f</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>fuchsia-700</defName><hex>#a21caf</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>fuchsia-600</defName><hex>#c026d3</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>pink-900</defName><hex>#831843</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>pink-800</defName><hex>#9d174d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>pink-700</defName><hex>#be185d</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>pink-600</defName><hex>#db2777</hex></WorkRoles.PaletteDef>
+
+  <WorkRoles.PaletteDef><defName>rose-900</defName><hex>#881337</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>rose-800</defName><hex>#9f1239</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>rose-700</defName><hex>#be123c</hex></WorkRoles.PaletteDef>
+  <WorkRoles.PaletteDef><defName>rose-600</defName><hex>#e11d48</hex></WorkRoles.PaletteDef>
 </Defs>

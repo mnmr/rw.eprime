@@ -27,8 +27,8 @@ namespace WorkRoles.Core
     ///   type the pawn is capable of is enabled at ONE shared priority; otherwise
     ///   each enabled type gets its single-type role at its own priority.
     /// - A "single-type role" carries the whole work type and nothing outside it:
-    ///   same-type giver entries (listed so training subsets are literal — Doctor
-    ///   carries Medic's givers) do not disqualify it.
+    ///   same-type giver entries do not disqualify it, foreign entries do —
+    ///   migration must never enable work the grid didn't have.
     /// - Roles order by vanilla priority; ties keep catalog order.
     public static class MigrationPlanner
     {

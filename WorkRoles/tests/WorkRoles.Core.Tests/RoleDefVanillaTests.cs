@@ -25,11 +25,15 @@ public class RoleDefVanillaTests
         var path = Path.Combine(dir!.FullName, "mod", "1.6", "Defs", "Roles.xml");
 
         var roles = new List<RoleXml>();
-        foreach (var def in XElement.Load(path).Elements())
+        foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
             var entries = new List<JobEntry>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
             {
+                // Third-party-gated entries don't load in a vanilla+DLC game;
+                // the tests emulate that runtime. DLC gates (Ludeon.*) do load.
+                string mayRequire = li.Attribute("MayRequire")?.Value;
+                if (mayRequire != null && !mayRequire.StartsWith("Ludeon.")) continue;
                 if (JobEntry.TryDecode(li.Value.Trim(), out var entry)) entries.Add(entry);
                 else throw new InvalidDataException($"unparseable entry '{li.Value}'");
             }
@@ -100,8 +104,14 @@ public class RoleDefVanillaTests
     /// inside the parent's, however either role spells its entries.
     [Test]
     [Arguments("WS_Doctor", "WS_Medic")]
+    [Arguments("WS_Doctor", "WS_Nurse")]
     [Arguments("WS_Doctor", "WS_Rescuer")]
+    [Arguments("WS_Medic", "WS_Nurse")]
     [Arguments("WS_Medic", "WS_Rescuer")]
+    [Arguments("WS_Warden", "WS_Jailor")]
+    [Arguments("WS_Handler", "WS_Herder")]
+    [Arguments("WS_Artist", "WS_Painter")]
+    [Arguments("WS_Crafter", "WS_DrugMaker")]
     [Arguments("WS_Basics", "WS_Rescuer")]
     [Arguments("WS_Basics", "WS_Firefighter")]
     [Arguments("WS_Basics", "WS_Patient")]
