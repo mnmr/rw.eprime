@@ -1005,6 +1005,14 @@ namespace WorkRoles.UI
             Widgets.Label(new Rect(arrowRect.xMax + 6f, rect.y, rect.width - arrowRect.xMax - 10f, rect.height),
                 section.Title + " (" + section.Members.Count + ")");
             Text.Anchor = TextAnchor.UpperLeft;
+            // Priority grid for the group (before ButtonInvisible so it wins).
+            var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
+            TooltipHandler.TipRegion(gridRect, "WR_ShowPriorityGridTip".Translate());
+            if (Widgets.ButtonImage(gridRect, TexButton.Info))
+            {
+                Find.WindowStack.Add(new Dialog_PriorityGrid(section.Members.ToList(), section.Title));
+                return;
+            }
             Widgets.DrawHighlightIfMouseover(rect);
             if (Widgets.ButtonInvisible(rect)) ToggleCollapsed(section.Key);
         }

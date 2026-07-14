@@ -247,20 +247,127 @@ public class JobOrderCompilerTests
         await Assert.That(Flat(result.Normal)).IsEqualTo("HaulGeneral,h2,h3");
     }
 
+    /// Vanilla replays priority numbers ascending, each left-to-right over the
+    /// Work-tab columns; replaying the projected numbers must reproduce the
+    /// internal rank order.
+    private static string Replay(Dictionary<string, int> buckets, Dictionary<string, int> columns)
+        => string.Join(",", buckets.OrderBy(kv => kv.Value).ThenBy(kv => columns[kv.Key]).Select(kv => kv.Key));
+
     [Test]
-    public async Task VanillaProjectionBucketsRanksIntoQuartiles()
+    public async Task VanillaProjectionReplaysInternalOrder()
     {
-        // 8 ranked work types -> ranks 1,2 => 1; 3,4 => 2; 5,6 => 3; 7,8 => 4.
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(1, 8)).IsEqualTo(1);
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(2, 8)).IsEqualTo(1);
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(3, 8)).IsEqualTo(2);
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(8, 8)).IsEqualTo(4);
-        // Fewer than four ranked types spread from 1 without reaching 4.
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(1, 2)).IsEqualTo(1);
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(2, 2)).IsEqualTo(3);
-        // Single ranked type is priority 1; invalid input is 0.
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(1, 1)).IsEqualTo(1);
-        await Assert.That(JobOrderCompiler.ToVanillaPriority(0, 5)).IsEqualTo(0);
+        var columns = new Dictionary<string, int> { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3 };
+        var ranks = new Dictionary<string, int> { ["B"] = 1, ["A"] = 2, ["D"] = 3, ["C"] = 4 };
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n]);
+        await Assert.That(buckets["B"]).IsEqualTo(1);
+        await Assert.That(buckets["A"]).IsEqualTo(2);  // left of B: needs a later number
+        await Assert.That(buckets["D"]).IsEqualTo(2);  // right of A: same number keeps order
+        await Assert.That(buckets["C"]).IsEqualTo(3);  // left of D again
+        await Assert.That(Replay(buckets, columns)).IsEqualTo("B,A,D,C");
+    }
+
+    [Test]
+    public async Task VanillaProjectionInColumnOrderStaysAtOne()
+    {
+        var columns = new Dictionary<string, int> { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3 };
+        var ranks = new Dictionary<string, int> { ["A"] = 1, ["B"] = 2, ["C"] = 3, ["D"] = 4 };
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n]);
+        await Assert.That(buckets.Values.Distinct().Single()).IsEqualTo(1);
+        await Assert.That(Replay(buckets, columns)).IsEqualTo("A,B,C,D");
+    }
+
+    [Test]
+    public async Task VanillaProjectionSaturatesAtFour()
+    {
+        // Full reverse of column order needs one number per type; the tail
+        // beyond four lumps into 4 (order there falls back to column order).
+        var columns = new Dictionary<string, int>
+            { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3, ["E"] = 4 };
+        var ranks = new Dictionary<string, int>
+            { ["E"] = 1, ["D"] = 2, ["C"] = 3, ["B"] = 4, ["A"] = 5 };
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n]);
+        await Assert.That(buckets["E"]).IsEqualTo(1);
+        await Assert.That(buckets["D"]).IsEqualTo(2);
+        await Assert.That(buckets["C"]).IsEqualTo(3);
+        await Assert.That(buckets["B"]).IsEqualTo(4);
+        await Assert.That(buckets["A"]).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task VanillaProjectionOfNothingIsEmpty()
+    {
+        var buckets = JobOrderCompiler.ToVanillaPriorities(new Dictionary<string, int>(), _ => 0);
+        await Assert.That(buckets).IsEmpty();
+    }
+
+    [Test]
+    public async Task VanillaProjectionPinsBasicsToOneWhenLumping()
+    {
+        // P2,P1 head then a fully reversed tail: five direction changes, so the
+        // plain pass lumps W and Z together at 4 in the wrong replay order.
+        var columns = new Dictionary<string, int>
+            { ["P2"] = 0, ["P1"] = 1, ["W"] = 2, ["Z"] = 3, ["Y"] = 4, ["X"] = 5 };
+        var ranks = new Dictionary<string, int>
+            { ["P1"] = 1, ["P2"] = 2, ["X"] = 3, ["Y"] = 4, ["Z"] = 5, ["W"] = 6 };
+        var categories = new VanillaProjectionCategories { Basics = ["P1", "P2"] };
+
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n], categories);
+        // Pinning the head to 1 frees the numbers the tail needs.
+        await Assert.That(buckets["P1"]).IsEqualTo(1);
+        await Assert.That(buckets["P2"]).IsEqualTo(1);
+        await Assert.That(buckets["X"]).IsEqualTo(1);  // right of the pinned block
+        await Assert.That(buckets["Y"]).IsEqualTo(2);
+        await Assert.That(buckets["Z"]).IsEqualTo(3);
+        await Assert.That(buckets["W"]).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task VanillaProjectionSpreadsSpareNumbersByCategory()
+    {
+        // Everything in column order collapses to all-1s; the spread bumps
+        // skilled work (and after) to 2, grunt (and after) to 3, research to 4.
+        var columns = new Dictionary<string, int>
+            { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3, ["E"] = 4 };
+        var ranks = new Dictionary<string, int>
+            { ["A"] = 1, ["B"] = 2, ["C"] = 3, ["D"] = 4, ["E"] = 5 };
+        var categories = new VanillaProjectionCategories
+        {
+            Basics = ["A", "B"],
+            Skilled = ["C", "E"],
+            Grunt = ["D"],
+            Research = ["E"],
+        };
+
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n], categories);
+        await Assert.That(buckets["A"]).IsEqualTo(1);
+        await Assert.That(buckets["B"]).IsEqualTo(1);
+        await Assert.That(buckets["C"]).IsEqualTo(2);
+        await Assert.That(buckets["D"]).IsEqualTo(3);
+        await Assert.That(buckets["E"]).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task VanillaProjectionSpreadStopsWhenFourIsReached()
+    {
+        // The skilled bump alone reaches 4: grunt and research stay untouched.
+        var columns = new Dictionary<string, int>
+            { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3 };
+        var ranks = new Dictionary<string, int>
+            { ["A"] = 1, ["C"] = 2, ["B"] = 3, ["D"] = 4 };  // one inversion: B left of C
+        var categories = new VanillaProjectionCategories
+        {
+            Skilled = ["A"],
+            Grunt = ["D"],
+            Research = ["D"],
+        };
+
+        // Base pass: A=1, C=1, B=2, D=2. Skilled bump from A shifts everything: 2,2,3,3.
+        // Still no 4 -> grunt bump from D: D=4. Research untouched after that.
+        var buckets = JobOrderCompiler.ToVanillaPriorities(ranks, n => columns[n], categories);
+        await Assert.That(buckets["A"]).IsEqualTo(2);
+        await Assert.That(buckets["C"]).IsEqualTo(2);
+        await Assert.That(buckets["B"]).IsEqualTo(3);
+        await Assert.That(buckets["D"]).IsEqualTo(4);
     }
 
     [Test]

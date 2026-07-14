@@ -16,6 +16,10 @@ namespace WorkRoles
         /// Player deleted Odd Jobs (knows no mod adds invisible jobs): coverage
         /// won't recreate it until Restore Roles is asked to bring it back.
         public bool oddJobsDeleted;
+        /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
+        /// World state, not a mod setting: other mods consume the values in
+        /// sim-relevant code, so MP clients must agree.
+        public bool reportVanillaPriorities;
         /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as the managed role.
         public Role allRole;
@@ -130,6 +134,7 @@ namespace WorkRoles
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
+            Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities");
             Scribe_Deep.Look(ref allRole, "allRole");
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);

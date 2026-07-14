@@ -18,6 +18,7 @@ namespace WorkRoles.UI
         public static readonly Texture2D LocationMarker;
         public static readonly Texture2D PinMarker;
         public static readonly Texture2D DisplayOptions;
+        public static readonly Texture2D Logo;
 
         static WorkRolesTex()
         {
@@ -29,6 +30,7 @@ namespace WorkRoles.UI
             LocationMarker = ContentFinder<Texture2D>.Get("WorkRoles/LocationPin");
             PinMarker = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
+            Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
             StartupTiming.Record("textures", sw.ElapsedMilliseconds);
         }
     }

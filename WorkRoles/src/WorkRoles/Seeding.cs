@@ -26,6 +26,19 @@ namespace WorkRoles
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
 
+            // Role ranks read as numbers; default vanilla's per-save "manual
+            // priorities" switch on at adoption. Applied once — turning it off
+            // in Options afterwards sticks. Direct write, not the SyncMethod:
+            // seeding already runs in the synced simulation on every client.
+            var playSettings = Current.Game?.playSettings;
+            if (playSettings != null && !playSettings.useWorkPriorities)
+            {
+                playSettings.useWorkPriorities = true;
+                foreach (var pawn in PawnsFinder.AllMapsWorldAndTemporary_Alive)
+                    if (pawn.Faction == Faction.OfPlayer && pawn.workSettings != null)
+                        pawn.workSettings.Notify_UseWorkPrioritiesChanged();
+            }
+
             var generated = EnsureWorkTypeCoverage();
 
             int assigned = 0;
@@ -217,8 +230,9 @@ namespace WorkRoles
         };
 
         /// Stable string hash (FNV-1a): string.GetHashCode is not guaranteed
-        /// identical across runtimes, and seeded colors must match in MP.
-        private static uint Fnv1a(string text)
+        /// identical across runtimes, and seeded colors and def fingerprints
+        /// must match in MP.
+        internal static uint Fnv1a(string text)
         {
             uint hash = 2166136261u;
             foreach (char c in text)

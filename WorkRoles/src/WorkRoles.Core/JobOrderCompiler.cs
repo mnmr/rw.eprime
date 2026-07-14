@@ -1,8 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace WorkRoles.Core
 {
+    /// Work-type category sets (defNames) steering the vanilla projection's
+    /// pin-and-spread fallbacks.
+    public sealed class VanillaProjectionCategories
+    {
+        /// The Basics role's work types: pinned to 1 when four numbers can't hold the order.
+        public HashSet<string> Basics = new HashSet<string>();
+        /// Types using any skill; first spread target when numbers go unused.
+        public HashSet<string> Skilled = new HashSet<string>();
+        /// Unskilled non-basics types (hauling, cleaning); second spread target.
+        public HashSet<string> Grunt = new HashSet<string>();
+        /// Intellectual types; last spread target.
+        public HashSet<string> Research = new HashSet<string>();
+    }
+
     public static class JobOrderCompiler
     {
         public static CompiledOrder Compile(
@@ -92,12 +107,92 @@ namespace WorkRoles.Core
             return expanded;
         }
 
-        /// Projects a work type's unique rank onto the vanilla 1..4 priority scale
-        /// (quartiles over the ranked count). Callers map absent work types to 0.
-        public static int ToVanillaPriority(int rank, int rankedCount)
+        /// Projects ranked work types onto vanilla's 1-4 scale so that vanilla's
+        /// replay — all 1s in Work-tab column order, then 2s, 3s, 4s — reproduces
+        /// the internal rank order: a new number starts whenever a type sits LEFT
+        /// of its rank-predecessor (the same number would run it first).
+        ///
+        /// Four numbers can't always suffice. When the tail lumps into 4, the
+        /// always-on basics head is pinned to 1 and the projection redone —
+        /// numbers spent ordering the head buy back order where it matters.
+        /// When numbers go UNUSED, category bumps spread the range instead:
+        /// skilled work (and everything ranked after it) moves down a number,
+        /// then grunt work, then research — approximating vanilla's feel.
+        public static Dictionary<string, int> ToVanillaPriorities(
+            IReadOnlyDictionary<string, int> workTypeRanks,
+            Func<string, int> columnOf,
+            VanillaProjectionCategories categories = null)
         {
-            if (rank < 1 || rankedCount < 1) return 0;
-            return 1 + (rank - 1) * 4 / rankedCount;
+            var buckets = Project(workTypeRanks, columnOf, null, out bool lumped);
+
+            HashSet<string> pinned = null;
+            if (lumped && categories != null)
+            {
+                pinned = new HashSet<string>(workTypeRanks.Keys.Where(categories.Basics.Contains));
+                if (pinned.Count == 0)
+                    pinned = null;
+                else if (pinned.Any(t => buckets[t] != 1))
+                    buckets = Project(workTypeRanks, columnOf, pinned, out _);
+            }
+
+            int Max() => buckets.Count == 0 ? 0 : buckets.Values.Max();
+            void BumpFromFirst(HashSet<string> category)
+            {
+                int firstRank = int.MaxValue;
+                foreach (var pair in workTypeRanks)
+                    if (category.Contains(pair.Key) && pair.Value < firstRank)
+                        firstRank = pair.Value;
+                if (firstRank == int.MaxValue) return;
+                foreach (var pair in workTypeRanks)
+                    if (pair.Value >= firstRank && (pinned == null || !pinned.Contains(pair.Key)))
+                        buckets[pair.Key] = Math.Min(4, buckets[pair.Key] + 1);
+            }
+
+            if (categories != null && buckets.Count > 0 && Max() < 4)
+            {
+                BumpFromFirst(categories.Skilled);
+                if (Max() < 4) BumpFromFirst(categories.Grunt);
+                if (Max() < 4)
+                    foreach (var workType in buckets.Keys.ToList())
+                        if (categories.Research.Contains(workType)
+                            && (pinned == null || !pinned.Contains(workType)))
+                            buckets[workType] = Math.Min(4, buckets[workType] + 1);
+            }
+            return buckets;
+        }
+
+        /// One greedy pass. Pinned types take 1 and act as the walk's already-
+        /// consumed head: the remaining types continue from the pinned block's
+        /// rightmost column, so nothing sorts ahead of it inside number 1.
+        private static Dictionary<string, int> Project(
+            IReadOnlyDictionary<string, int> workTypeRanks,
+            Func<string, int> columnOf,
+            HashSet<string> pinnedToOne,
+            out bool lumped)
+        {
+            var buckets = new Dictionary<string, int>();
+            int bucket = 1;
+            int previousColumn = int.MinValue;
+            lumped = false;
+            if (pinnedToOne != null)
+                foreach (var workType in pinnedToOne)
+                {
+                    buckets[workType] = 1;
+                    previousColumn = Math.Max(previousColumn, columnOf(workType));
+                }
+            foreach (var pair in workTypeRanks.OrderBy(kv => kv.Value))
+            {
+                if (pinnedToOne != null && pinnedToOne.Contains(pair.Key)) continue;
+                int column = columnOf(pair.Key);
+                if (column < previousColumn)
+                {
+                    if (bucket < 4) bucket++;
+                    else lumped = true;
+                }
+                buckets[pair.Key] = bucket;
+                previousColumn = column;
+            }
+            return buckets;
         }
     }
 }

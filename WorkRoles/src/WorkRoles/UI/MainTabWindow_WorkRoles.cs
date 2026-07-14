@@ -7,11 +7,12 @@ namespace WorkRoles.UI
 {
     public class MainTabWindow_WorkRoles : MainTabWindow
     {
-        private enum Tab { Colonists, Roles }
+        private enum Tab { Colonists, Roles, Options }
 
         private Tab curTab = Tab.Colonists;
         private readonly ColonistsTabView colonistsTab = new ColonistsTabView();
         private readonly RolesTabView rolesTab = new RolesTabView();
+        private readonly OptionsTabView optionsTab = new OptionsTabView();
 
         private const float TabHeight = 32f;
 
@@ -206,6 +207,7 @@ namespace WorkRoles.UI
                     curTab = Tab.Colonists;
                 }, curTab == Tab.Colonists),
                 new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, curTab == Tab.Roles),
+                new TabRecord("WR_OptionsTab".Translate(), () => curTab = Tab.Options, curTab == Tab.Options),
             };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);
@@ -230,7 +232,7 @@ namespace WorkRoles.UI
                     && !spansLocations)
                     colonistsTab.ShowFixPreview();
             }
-            else
+            else if (curTab == Tab.Roles)
             {
                 TooltipHandler.TipRegion(actionRect, "WR_RestoreRolesTip".Translate());
                 if (Widgets.ButtonText(actionRect, "WR_RestoreRoles".Translate()))
@@ -257,7 +259,8 @@ namespace WorkRoles.UI
 
             content = content.ContractedBy(8f);
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);
-            else rolesTab.Draw(content);
+            else if (curTab == Tab.Roles) rolesTab.Draw(content);
+            else optionsTab.Draw(content);
 
             // A wheel event that survives the draw wasn't over any inner
             // scroll view (table, palette, stats): scroll the colonist table

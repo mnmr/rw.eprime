@@ -11,9 +11,13 @@ namespace WorkRoles
 
         public static WorkRolesSettings Settings { get; private set; }
 
+        /// About.xml modVersion of the running mod (stamped on seeded roles).
+        public static string Version { get; private set; }
+
         public WorkRolesMod(ModContentPack content) : base(content)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
+            Version = content.ModMetaData?.ModVersion;
             Settings = GetSettings<WorkRolesSettings>();
             StartupTiming.Record("settings", sw.ElapsedMilliseconds);
 

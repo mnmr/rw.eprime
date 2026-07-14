@@ -36,6 +36,8 @@ namespace WorkRoles
                 id = Store.NextId(),
                 label = def.label,
                 templateDefName = def.defName,
+                templateVersion = WorkRolesMod.Version,
+                templateHash = def.StableHash(),
                 autoAssign = def.autoAssign,
                 blocker = def.blocker,
                 hasCustomColor = hasColor,
@@ -77,6 +79,28 @@ namespace WorkRoles
             if (restored.Count > 0)
                 Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
                     MessageTypeDefOf.PositiveEvent, historical: false);
+        }
+
+        /// Vanilla's manual-priorities flag — per-save game state whose only
+        /// vanilla UI is the Work tab we replace, so the Options tab hosts it.
+        /// Synced: unmanaged pawns' priority reads change under it.
+        [SyncMethod]
+        public static void SetUseWorkPriorities(bool value)
+        {
+            var playSettings = Current.Game?.playSettings;
+            if (playSettings == null || playSettings.useWorkPriorities == value) return;
+            playSettings.useWorkPriorities = value;
+            foreach (var pawn in PawnsFinder.AllMapsWorldAndTemporary_Alive)
+                if (pawn.Faction == Faction.OfPlayer && pawn.workSettings != null)
+                    pawn.workSettings.Notify_UseWorkPrioritiesChanged();
+        }
+
+        /// GetPriority range for readers like Numbers: raw ranks or vanilla 0-4.
+        [SyncMethod]
+        public static void SetReportVanillaPriorities(bool value)
+        {
+            if (Store == null || Store.reportVanillaPriorities == value) return;
+            Store.reportVanillaPriorities = value;
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).

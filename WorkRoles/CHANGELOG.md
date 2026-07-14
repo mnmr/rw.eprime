@@ -1,8 +1,13 @@
 ﻿# Changelog
 
+## 1.1.2 — 2026-07-14
+
+- Added: An Options tab to control how priorities are provided to other mods that don't know about WorkRoles (e.g. Numbers and RimHUD).
+- Added: You can now open a priority grid viewer to see what priorities WorkRoles generates from the role assignments, so you can verify that everything works as expected.
+
 ## 1.1.1 — 2026-07-13
 
-  - Changed: Changed job assignment to treat work types and jobs independently. When all sub-jobs for a work type are selected, the UI no longer collapses to the work type. To also make the role cover any future jobs appearing under the work type (from mods), you must have the work type in the role as well.
+- Changed: Changed job assignment to treat work types and jobs independently. When all sub-jobs for a work type are selected, the UI no longer collapses to the work type. To also make the role cover any future jobs appearing under the work type (from mods), you must have the work type in the role as well.
   
 ## 1.1.0 — 2026-07-12
 
@@ -30,20 +35,20 @@
 ## 1.0.3 — 2026-07-09
 
 - Fixed: Some UI elements didn't scale properly, so would render oddly depending on the interface UI scale setting.
-- Changed: made the Odd Jobs role visible (a container for invisible modded jobs that can come and go, depending on the mod).
+- Changed: Made the Odd Jobs role visible (a container for invisible modded jobs that can come and go, depending on the mod).
 - Added: Blocker roles, as a mechanism to explicitly exclude pawns from doing the jobs it lists. Configure via the "Blocker role" checkbox in the role editor. Seed now includes a "No Firefighting" blocker role that recommendations place it above Basics for pawns genetically terrified of fire.
 - Added: Render slave names using vanilla color and add a filter option for colonist type (colonists and slaves, colonists only, slaves only).
 - Added: Vanilla Skills Expanded / Alpha Skills integration (in the colonist stats panel and recommendation engine, where expertise now outranks burning passion).
 
 ## 1.0.2 — 2026-07-09
 
-- Fixed: role seeding could fail due to bad mod interactions, causing the save to be marked as seeded without actually creating any roles.
-- Fixed: one corrupt pawn could abort the priorities-to-roles migration for all remaining pawns.
-- Added: a "Restore Roles" button on the Roles tab (top-right corner) that re-creates missing pre-made roles (with preview).
+- Fixed: Role seeding could fail due to bad mod interactions, causing the save to be marked as seeded without actually creating any roles.
+- Fixed: One corrupt pawn could abort the priorities-to-roles migration for all remaining pawns.
+- Added: A "Restore Roles" button on the Roles tab (top-right corner) that re-creates missing pre-made roles (with preview).
 
 ## 1.0.1 — 2026-07-09
 
-- Fixed: the main window didn't enforce a min width, so when colonists only had few roles assigned, the roles tab ended up with not enough space.
+- Fixed: The main window didn't enforce a min width, so when colonists only had few roles assigned, the roles tab ended up with not enough space.
 
 ## 1.0.0 — 2026-07-08
 

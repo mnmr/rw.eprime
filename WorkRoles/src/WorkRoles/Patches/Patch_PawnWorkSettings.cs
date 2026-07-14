@@ -35,7 +35,11 @@ namespace WorkRoles.Patches
         public static bool GetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, ref int __result)
         {
             if (!IsManaged(___pawn)) return true;
-            __result = CompiledJobOrders.PriorityFor(___pawn, w);
+            // Raw ranks (1..N) by default; optionally vanilla 0-4 for readers
+            // like Numbers that expect that range (Options tab toggle).
+            __result = RoleStore.Current?.reportVanillaPriorities == true
+                ? CompiledJobOrders.VanillaPriorityFor(___pawn, w)
+                : CompiledJobOrders.PriorityFor(___pawn, w);
             return false;
         }
 

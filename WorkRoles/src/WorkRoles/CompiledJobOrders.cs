@@ -15,6 +15,8 @@ namespace WorkRoles
             public List<WorkGiver> Normal;
             public List<WorkGiver> Emergency;
             public Dictionary<WorkTypeDef, int> Priorities;
+            /// Rank order projected onto vanilla's 1-4 scale (order-faithful).
+            public Dictionary<WorkTypeDef, int> VanillaBuckets;
         }
 
         private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
@@ -54,6 +56,14 @@ namespace WorkRoles
         public static int PriorityFor(Pawn pawn, WorkTypeDef workType) =>
             For(pawn).Priorities.TryGetValue(workType, out var bucket) ? bucket : 0;
 
+        /// The rank projected onto vanilla's 0-4 scale, such that vanilla's
+        /// replay of the numbers reproduces the internal order where four
+        /// numbers suffice (same values as the dormant fallback map).
+        public static int VanillaPriorityFor(Pawn pawn, WorkTypeDef workType)
+        {
+            return For(pawn).VanillaBuckets.TryGetValue(workType, out var bucket) ? bucket : 0;
+        }
+
         private static Entry For(Pawn pawn)
         {
             if (!cache.TryGetValue(pawn, out var entry))
@@ -81,14 +91,32 @@ namespace WorkRoles
             if (workSettings == null) return;
             var map = VanillaPriorities(workSettings);
             if (map == null) return;
-            int rankedCount = entry.Priorities.Count;
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                map[workType] = entry.VanillaBuckets.TryGetValue(workType, out var bucket) ? bucket : 0;
+        }
+
+        private static VanillaProjectionCategories BuildProjectionCategories(RoleStore store)
+        {
+            var categories = new VanillaProjectionCategories();
+            var basics = store?.roles.FirstOrDefault(r => r.templateDefName == "WS_Basics");
+            if (basics != null)
+                foreach (var entry in basics.entries)
+                {
+                    var type = entry.Kind == JobEntryKind.WorkType
+                        ? entry.DefName
+                        : GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
+                    if (type != null) categories.Basics.Add(type);
+                }
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
-                int vanilla = entry.Priorities.TryGetValue(workType, out var rank)
-                    ? JobOrderCompiler.ToVanillaPriority(rank, rankedCount)
-                    : 0;
-                map[workType] = vanilla;
+                bool skilled = !workType.relevantSkills.NullOrEmpty();
+                if (skilled) categories.Skilled.Add(workType.defName);
+                if (skilled && workType.relevantSkills.Contains(SkillDefOf.Intellectual))
+                    categories.Research.Add(workType.defName);
+                if (!skilled && !categories.Basics.Contains(workType.defName))
+                    categories.Grunt.Add(workType.defName);
             }
+            return categories;
         }
 
         private static Entry Build(Pawn pawn)
@@ -117,11 +145,22 @@ namespace WorkRoles
 
             var compiled = JobOrderCompiler.Compile(roleEntries, GameJobCatalog.Instance, pawnCanDo);
 
+            // Work-tab column order — how vanilla replays equal priority numbers.
+            var columns = new Dictionary<string, int>();
+            foreach (var workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
+                columns[workType.defName] = columns.Count;
+            var buckets = JobOrderCompiler.ToVanillaPriorities(compiled.WorkTypePriorities,
+                name => columns.TryGetValue(name, out var column) ? column : int.MaxValue,
+                BuildProjectionCategories(store));
+
             return new Entry
             {
                 Normal = compiled.Normal.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
                 Emergency = compiled.Emergency.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
                 Priorities = compiled.WorkTypePriorities.ToDictionary(
+                    kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
+                    kv => kv.Value),
+                VanillaBuckets = buckets.ToDictionary(
                     kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
                     kv => kv.Value)
             };

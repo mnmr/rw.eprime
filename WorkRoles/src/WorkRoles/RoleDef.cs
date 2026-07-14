@@ -41,6 +41,19 @@ namespace WorkRoles
             return parsed;
         }
 
+        /// Stable fingerprint of the def's substance (label, flags, entries).
+        /// Colors and gates are excluded: gates are read live from the def, and
+        /// color drift shouldn't read as role drift. Computed on demand, never
+        /// stored in XML; saves stamp it per seeded role so later loads can tell
+        /// def drift from player edits.
+        public uint StableHash()
+        {
+            var text = string.Join("\n",
+                label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
+                string.Join("|", entries));
+            return Seeding.Fnv1a(text);
+        }
+
         /// The def's color: colorRef resolves through PaletteDef, else the
         /// inline color/hasCustomColor pair.
         public (bool has, Color color) ResolvedColor()

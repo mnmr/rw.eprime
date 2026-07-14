@@ -18,6 +18,10 @@ namespace WorkRoles
         public string iconPath;
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
         public string templateDefName;
+        /// Mod version and def fingerprint (RoleDef.StableHash) captured when the
+        /// role was created from its template — lets loads detect def drift.
+        public string templateVersion;
+        public uint templateHash;
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -62,6 +66,8 @@ namespace WorkRoles
             Scribe_Values.Look(ref color, "color", Color.white);
             Scribe_Values.Look(ref iconPath, "iconPath");
             Scribe_Values.Look(ref templateDefName, "templateDefName");
+            Scribe_Values.Look(ref templateVersion, "templateVersion");
+            Scribe_Values.Look(ref templateHash, "templateHash");
             Scribe_Values.Look(ref autoAssign, "autoAssign");
             Scribe_Values.Look(ref blocker, "blocker");
             Scribe_Values.Look(ref managed, "managed");
