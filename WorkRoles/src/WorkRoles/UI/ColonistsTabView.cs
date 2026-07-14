@@ -271,8 +271,12 @@ namespace WorkRoles.UI
                 return cluster;
             }
 
+            // Tree rows repeat a child under every covering root; the palette
+            // shows each role once, clustered under its first appearance.
+            var seen = new HashSet<int>();
             foreach (var (role, parent) in RolesTabView.BuildRoleTree(store).rows)
-                ClusterFor(parent ?? role).roles.Add(role);
+                if (seen.Add(role.id))
+                    ClusterFor(parent ?? role).roles.Add(role);
 
             var result = new List<PaletteCluster>();
             if (everyone != null) result.Add(everyone);
@@ -746,7 +750,7 @@ namespace WorkRoles.UI
                 var selected = store.RoleById(roleFilterId);
                 if (selected != null)
                     foreach (var role in store.roles)
-                        if (!role.blocker && role.Covers(selected))
+                        if (!role.blocker && role.CoversOrMatches(selected))
                             matchIds.Add(role.id);
             }
 
@@ -1863,7 +1867,7 @@ namespace WorkRoles.UI
             foreach (var role in store.roles)
             {
                 if (!role.enabled || role.HasRules || role.blocker || role == doctorRole || role.entries.Count == 0) continue;
-                if (doctorRole != null && role.Covers(doctorRole)) continue;
+                if (doctorRole != null && role.CoversOrMatches(doctorRole)) continue;
                 bool allDoctorWork = role.entries.All(e =>
                     e.Kind == JobEntryKind.WorkGiver
                     && DefDatabase<WorkGiverDef>.GetNamedSilentFail(e.DefName)?.workType?.defName == "Doctor");
@@ -1916,7 +1920,7 @@ namespace WorkRoles.UI
             var catalog = store.roles.Select(r => new TargetRole
             {
                 Id = r.id,
-                Entries = r.entries,
+                Coverage = r.Coverage(),
                 AutoAssign = r.autoAssign,
                 HasRules = r.HasRules,
                 Blocker = r.blocker,
@@ -2071,7 +2075,7 @@ namespace WorkRoles.UI
             return new RecRole
             {
                 Id = role.id,
-                Entries = role.entries,
+                Coverage = role.Coverage(),
                 AutoAssign = role.autoAssign,
                 HasRules = role.HasRules,
                 Blocker = role.blocker,

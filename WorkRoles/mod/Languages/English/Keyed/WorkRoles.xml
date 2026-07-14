@@ -243,6 +243,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Tooltip for a missing def; {0} = def name -->
   <WR_MissingDef>{0} is not present with the current mod list (inactive until its mod returns).</WR_MissingDef>
 
+  <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
+  <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
+
   <!-- Disambiguating suffix appended to identically-named emergency job givers -->
   <WR_EmergencySuffix> (emergency)</WR_EmergencySuffix>
 

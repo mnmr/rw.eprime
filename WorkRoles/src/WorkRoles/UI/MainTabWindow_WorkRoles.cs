@@ -165,6 +165,7 @@ namespace WorkRoles.UI
         public override void PostClose()
         {
             base.PostClose();
+            rolesTab.CommitEdits();
             KeyOverride.Restore();
         }
 
@@ -204,10 +205,15 @@ namespace WorkRoles.UI
                     // Role edits on the Roles tab aren't tracked; recompute the
                     // suggestion plan whenever the user comes back.
                     if (curTab != Tab.Colonists) colonistsTab.InvalidateRecommendationCache();
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
                     curTab = Tab.Colonists;
                 }, curTab == Tab.Colonists),
                 new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, curTab == Tab.Roles),
-                new TabRecord("WR_OptionsTab".Translate(), () => curTab = Tab.Options, curTab == Tab.Options),
+                new TabRecord("WR_OptionsTab".Translate(), () =>
+                {
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
+                    curTab = Tab.Options;
+                }, curTab == Tab.Options),
             };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);

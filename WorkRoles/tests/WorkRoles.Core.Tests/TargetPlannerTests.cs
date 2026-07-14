@@ -6,15 +6,14 @@ namespace WorkRoles.Core.Tests;
 /// Roles, Make It So and Fix My Colony.
 public class TargetPlannerTests
 {
-    private static JobEntry WT(string defName) => new(JobEntryKind.WorkType, defName);
-
+    /// Coverage tokens stand in for expanded giver sets.
     private static TargetRole Role(int id, bool auto = false, bool rules = false,
         bool blocker = false, bool unskilled = false, bool doctoring = false,
-        float priority = 0f, params JobEntry[] entries) => new()
+        float priority = 0f, params string[] coverage) => new()
     {
         Id = id, AutoAssign = auto, HasRules = rules, Blocker = blocker,
         Unskilled = unskilled, Doctoring = doctoring, NaturalPriority = priority,
-        Entries = entries.ToList(),
+        Coverage = new HashSet<string>(coverage),
     };
 
     private static PlannedAssignment Held(int id, bool enabled = true, bool pinned = false) =>
@@ -100,9 +99,8 @@ public class TargetPlannerTests
     [Test]
     public async Task UnskilledExtrasSinkToTheTail_AndCoveredOnesDrop()
     {
-        var haul = Role(10, unskilled: true, entries: WT("Hauling"));
-        var grunt = Role(12, unskilled: true);
-        grunt.Entries = new List<JobEntry> { WT("Hauling"), WT("Cleaning") };
+        var haul = Role(10, unskilled: true, coverage: "Hauling");
+        var grunt = Role(12, unskilled: true, coverage: new[] { "Hauling", "Cleaning" });
         var skilled = Role(3);
 
         // No coverer in the plan: the unskilled extra tails after skilled recs.
@@ -123,10 +121,9 @@ public class TargetPlannerTests
     [Test]
     public async Task CoveredUnskilledSinglesDropInFavorOfTheirCoverer()
     {
-        var hauler = Role(10, unskilled: true, entries: WT("Hauling"));
-        var cleaner = Role(11, unskilled: true, entries: WT("Cleaning"));
-        var grunt = Role(12, unskilled: true);
-        grunt.Entries = new List<JobEntry> { WT("Hauling"), WT("Cleaning") };
+        var hauler = Role(10, unskilled: true, coverage: "Hauling");
+        var cleaner = Role(11, unskilled: true, coverage: "Cleaning");
+        var grunt = Role(12, unskilled: true, coverage: new[] { "Hauling", "Cleaning" });
         var catalog = new List<TargetRole> { hauler, cleaner, grunt };
 
         var existing = new List<PlannedAssignment> { Held(10), Held(11) };
@@ -138,9 +135,8 @@ public class TargetPlannerTests
     [Test]
     public async Task PinnedCoveredSingleSurvives()
     {
-        var hauler = Role(10, unskilled: true, entries: WT("Hauling"));
-        var grunt = Role(12, unskilled: true);
-        grunt.Entries = new List<JobEntry> { WT("Hauling"), WT("Cleaning") };
+        var hauler = Role(10, unskilled: true, coverage: "Hauling");
+        var grunt = Role(12, unskilled: true, coverage: new[] { "Hauling", "Cleaning" });
         var plan = TargetPlanner.Build(
             new List<PlannedAssignment> { Held(10, pinned: true) },
             new List<TargetRole> { hauler, grunt },

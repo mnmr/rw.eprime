@@ -9,8 +9,8 @@
     <entries>
       <li>WorkType:Firefighter</li>
       <li>WorkType:Patient</li>
-      <li>WorkType:PatientBedRest</li>
       <li>WorkGiver:DoctorRescue</li>
+      <li>WorkType:PatientBedRest</li>
       <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
@@ -34,17 +34,6 @@
     <gateMinLevel>10</gateMinLevel>
     <entries>
       <li>WorkType:Doctor</li>
-      <!-- Redundant at compile time (Doctor already includes them); listed so
-           Medic is a literal subset of Doctor. -->
-      <li>WorkGiver:DoctorTendEmergency</li>
-      <li>WorkGiver:DoctorTendToHumanlikes</li>
-      <li>WorkGiver:DoctorTendToSelf</li>
-      <li>WorkGiver:DoctorTendToSelfEmergency</li>
-      <li>WorkGiver:DoctorRescue</li>
-      <li>WorkGiver:DoctorFeedHumanlikes</li>
-      <li>WorkGiver:DoctorTendToAnimals</li>
-      <li>WorkGiver:DoctorFeedAnimals</li>
-      <li>WorkGiver:VisitSickPawn</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -70,10 +59,10 @@
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
       <li>WorkGiver:DoctorTendToHumanlikes</li>
-      <li>WorkGiver:DoctorTendToSelf</li>
       <li>WorkGiver:DoctorTendToSelfEmergency</li>
-      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorTendToSelf</li>
       <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorRescue</li>
       <li>WorkGiver:DoctorTendToAnimals</li>
       <li>WorkGiver:DoctorFeedAnimals</li>
       <li>WorkGiver:VisitSickPawn</li>
@@ -119,10 +108,6 @@
     <gateMinLevel>8</gateMinLevel>
     <entries>
       <li>WorkType:Cooking</li>
-      <!-- Redundant at compile time (Cooking already includes them); listed so
-           Butcher and Brewer are literal subsets of Cook. -->
-      <li>WorkGiver:DoBillsButcherFlesh</li>
-      <li>WorkGiver:DoBillsBrew</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -181,22 +166,6 @@
     <gateMinLevel>8</gateMinLevel>
     <entries>
       <li>WorkType:Construction</li>
-      <!-- Redundant at compile time (Construction already includes them); listed
-           so Handyman is a literal subset of Builder. -->
-      <li>WorkGiver:Repair</li>
-      <li>WorkGiver:FixBrokenDownBuilding</li>
-      <li>WorkGiver:Deconstruct</li>
-      <li>WorkGiver:DeconstructForBlueprint</li>
-      <li>WorkGiver:Uninstall</li>
-      <li>WorkGiver:FillIn</li>
-      <li>WorkGiver:ConstructRemoveFloors</li>
-      <li>WorkGiver:ConstructRemoveFoundations</li>
-      <li>WorkGiver:BuildRoofs</li>
-      <li>WorkGiver:RemoveRoofs</li>
-      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
-      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
-      <li>WorkGiver:ConstructSmoothWalls</li>
-      <li>WorkGiver:ConstructSmoothFloors</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -209,20 +178,20 @@
     <gateMaxLevel>8</gateMaxLevel>
     <gateNeedsPassion>true</gateNeedsPassion>
     <entries>
-      <li>WorkGiver:Repair</li>
       <li>WorkGiver:FixBrokenDownBuilding</li>
-      <li>WorkGiver:Deconstruct</li>
-      <li>WorkGiver:DeconstructForBlueprint</li>
       <li>WorkGiver:Uninstall</li>
-      <li>WorkGiver:FillIn</li>
-      <li>WorkGiver:ConstructRemoveFloors</li>
-      <li>WorkGiver:ConstructRemoveFoundations</li>
       <li>WorkGiver:BuildRoofs</li>
       <li>WorkGiver:RemoveRoofs</li>
+      <li>WorkGiver:DeconstructForBlueprint</li>
       <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
       <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
-      <li>WorkGiver:ConstructSmoothWalls</li>
+      <li>WorkGiver:FillIn</li>
+      <li>WorkGiver:Deconstruct</li>
+      <li>WorkGiver:Repair</li>
+      <li>WorkGiver:ConstructRemoveFloors</li>
+      <li>WorkGiver:ConstructRemoveFoundations</li>
       <li>WorkGiver:ConstructSmoothFloors</li>
+      <li>WorkGiver:ConstructSmoothWalls</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -274,9 +243,6 @@
     <colorRef>amber-700</colorRef>
     <entries>
       <li>WorkType:Smithing</li>
-      <!-- Redundant at compile time (Smithing already includes it); listed so
-           Fabricator is a literal subset of Smith. -->
-      <li>WorkGiver:DoBillsFabricationBench</li>
     </entries>
   </WorkRoles.RoleDef>
 

@@ -379,7 +379,8 @@ namespace WorkRoles
                     target.locationTokens = row.role.locations
                         .Select(RuntimeLocationToken).Where(t => t != null).ToList();
                     target.groupId = GroupIdFor(row.role.group, store);
-                    target.entries = row.role.entries.ToList();
+                    // Hand-edited files can repeat an entry; first occurrence wins.
+                    target.entries = row.role.entries.Distinct().ToList();
                     target.workTypeSnapshots.Clear();
                 }
                 RoleCommands.SweepEmptyGroups();

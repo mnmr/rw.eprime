@@ -40,6 +40,15 @@ namespace WorkRoles
             if (generated.Count > 0)
                 Messages.Message("WR_NewWorkDetected".Translate(generated.ToCommaList()),
                     MessageTypeDefOf.NeutralEvent, historical: false);
+
+            // Dead entries are visible (dimmed) while editing but scrubbed at
+            // rest; older saves carry subset-marker givers that coverage-based
+            // nesting no longer needs.
+            var store = RoleStore.Current;
+            if (store != null)
+                foreach (var role in store.roles)
+                    if (RoleCommands.ScrubDeadEntriesDirect(role))
+                        CompiledJobOrders.InvalidateRole(role.id);
         }
 
         public override void GameComponentTick()

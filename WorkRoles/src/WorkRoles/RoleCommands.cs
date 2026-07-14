@@ -405,9 +405,34 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null || role.managed) return;
+            // UI checks run before the synced command lands, so duplicates can
+            // still race in (two MP clients adding the same entry).
+            if (role.entries.Contains(entry)) return;
             if (index < 0 || index > role.entries.Count) index = role.entries.Count;
             role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        /// Removes entries with no effect (claimed above, duplicates). Behavior-
+        /// neutral: dead entries change neither the compiled order nor coverage.
+        /// The editor shows them dimmed while editing and commits the scrub when
+        /// the player leaves the role.
+        [SyncMethod]
+        public static void ScrubDeadEntries(int roleId)
+        {
+            var role = FindRole(roleId);
+            if (role != null && ScrubDeadEntriesDirect(role))
+                CompiledJobOrders.InvalidateRole(roleId);
+        }
+
+        /// Engine path (load sweep): runs in the synced simulation on every client.
+        internal static bool ScrubDeadEntriesDirect(Role role)
+        {
+            var dead = JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
+            if (dead.Count == 0) return false;
+            foreach (int index in dead.OrderByDescending(i => i))
+                role.entries.RemoveAt(index);
+            return true;
         }
 
         [SyncMethod]
@@ -461,7 +486,7 @@ namespace WorkRoles
         internal static void AddEntryDirect(int roleId, JobEntry entry)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || role.entries.Contains(entry)) return;
             role.entries.Add(entry);
             CompiledJobOrders.InvalidateRole(roleId);
         }

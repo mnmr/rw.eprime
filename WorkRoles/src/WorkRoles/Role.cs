@@ -44,17 +44,32 @@ namespace WorkRoles
         private List<string> scribeEntries;
         private Dictionary<string, string> scribeSnapshots;
         private string scribeLocations;
+        private HashSet<string> coverageCache;
 
         public bool HasRules => activeHours != AllHours || locationTokens.Count > 0;
 
-        /// True when this role's entries strictly include every entry of other.
+        /// Expanded job coverage — the nesting/redundancy identity, independent of
+        /// how the entries spell it. Cached; entry edits invalidate through
+        /// CompiledJobOrders.InvalidateRole/InvalidateAll.
+        public HashSet<string> Coverage()
+            => coverageCache ?? (coverageCache = CoverageMath.CoverageOf(entries, GameJobCatalog.Instance));
+
+        public void InvalidateCoverage() => coverageCache = null;
+
+        /// True when this role's coverage strictly includes other's (equal
+        /// coverage does not cover — equals are siblings).
         public bool Covers(Role other)
         {
             if (other == null || other == this) return false;
-            if (other.entries.Count == 0 || other.entries.Count >= entries.Count) return false;
-            foreach (var entry in other.entries)
-                if (!entries.Contains(entry)) return false;
-            return true;
+            return CoverageMath.Covers(Coverage(), other.Coverage());
+        }
+
+        /// True when this role's coverage includes or matches other's
+        /// (capability queries: an equal role provides the same jobs).
+        public bool CoversOrMatches(Role other)
+        {
+            if (other == null || other == this) return false;
+            return CoverageMath.CoversOrMatches(Coverage(), other.Coverage());
         }
 
         public void ExposeData()

@@ -6,13 +6,13 @@ namespace WorkRoles.Core.Tests;
 /// duty pinning, content-keyed groups and covered-role suppression.
 public class RecommendationEngineTests
 {
-    private static JobEntry WT(string defName) => new(JobEntryKind.WorkType, defName);
-
-    private static RecRole Skilled(int id, string workType, params JobEntry[] entries) => new()
+    /// Coverage tokens stand in for expanded giver sets; the default is one
+    /// token named after the work type.
+    private static RecRole Skilled(int id, string workType, params string[] coverage) => new()
     {
         Id = id,
         WorkTypes = { workType },
-        Entries = entries.Length > 0 ? entries.ToList() : new List<JobEntry> { WT(workType) },
+        Coverage = coverage.Length > 0 ? new HashSet<string>(coverage) : new HashSet<string> { workType },
     };
 
     private static readonly Dictionary<string, IReadOnlyList<string>> Skills = new()
@@ -83,7 +83,7 @@ public class RecommendationEngineTests
         pawn.SkillLevels["Medicine"] = 4; pawn.PassionScores["Medicine"] = 1;
         var doctor = Skilled(1, "Doctor");
         doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10;
-        var medic = Skilled(2, "Doctor", WT("DoctorLite"));
+        var medic = Skilled(2, "Doctor", "DoctorLite");
         medic.GateSkill = "Medicine"; medic.GateMaxLevel = 10; medic.GateNeedsPassion = true;
         var catalog = new List<RecRole> { doctor, medic };
 
@@ -106,9 +106,9 @@ public class RecommendationEngineTests
     {
         var pawn = Pawn();
         pawn.SkillLevels["Cooking"] = 6; pawn.PassionScores["Cooking"] = 1;
-        var basics = new RecRole { Id = 1, AutoAssign = true, NaturalPriority = 100f, WorkTypes = { "Hauling" }, Entries = new List<JobEntry> { WT("Firefighter"), WT("Patient") } };
-        var grunt = new RecRole { Id = 2, Unskilled = true, WorkTypes = { "Hauling" }, Entries = new List<JobEntry> { WT("Hauling") } };
-        var hunter = new RecRole { Id = 3, Hunting = true, WorkTypes = { "Hunting" }, Entries = new List<JobEntry> { WT("Hunting") } };
+        var basics = new RecRole { Id = 1, AutoAssign = true, NaturalPriority = 100f, WorkTypes = { "Hauling" }, Coverage = ["Firefighter", "Patient"] };
+        var grunt = new RecRole { Id = 2, Unskilled = true, WorkTypes = { "Hauling" }, Coverage = ["Hauling"] };
+        var hunter = new RecRole { Id = 3, Hunting = true, WorkTypes = { "Hunting" }, Coverage = ["Hunting"] };
         var cook = Skilled(4, "Cooking");
         var catalog = new List<RecRole> { basics, grunt, hunter, cook };
 
@@ -125,8 +125,8 @@ public class RecommendationEngineTests
     public async Task CoveredRolesAreDroppedInFavorOfTheCombo()
     {
         var pawn = Pawn();
-        var firefighter = new RecRole { Id = 1, Unskilled = true, WorkTypes = { "Hauling" }, Entries = new List<JobEntry> { WT("Firefighter") } };
-        var basics = new RecRole { Id = 2, AutoAssign = true, NaturalPriority = 1f, WorkTypes = { "Hauling" }, Entries = new List<JobEntry> { WT("Firefighter"), WT("Patient") } };
+        var firefighter = new RecRole { Id = 1, Unskilled = true, WorkTypes = { "Hauling" }, Coverage = ["Firefighter"] };
+        var basics = new RecRole { Id = 2, AutoAssign = true, NaturalPriority = 1f, WorkTypes = { "Hauling" }, Coverage = ["Firefighter", "Patient"] };
         var recs = RecommendationEngine.Compute(
             new List<RecRole> { firefighter, basics }, pawn, NoBest, Skills);
         await Assert.That(Ids(recs)).IsEqualTo("2");

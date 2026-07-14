@@ -102,7 +102,8 @@ namespace WorkRoles.Core
                 // (training roles have their own low-skill audience) or resolved as
                 // an essential/Hunter (those must be dealt to keep their guarantee).
                 if (!role.Gated && !essentialRankByRoleId.ContainsKey(role.Id) && role.Id != hunterRoleId
-                    && catalog.Any(o => o.Enabled && !o.HasRules && EntryMath.Covers(o.Entries, role.Entries)))
+                    && catalog.Any(o => o.Enabled && !o.HasRules
+                        && CoverageMath.MakesRedundant(o.Coverage, o.Id, role.Coverage, role.Id)))
                     continue;
 
                 // Hunter ignores top-N: EVERY pawn with a ranged weapon hunts, but at
@@ -121,7 +122,7 @@ namespace WorkRoles.Core
                         var ids = virtualSets[i];
                         bool has = ids.Contains(role.Id);
                         if (!has && !ids.Any(id => RoleOf(id) is RecRole covering
-                                && EntryMath.Covers(covering.Entries, role.Entries)))
+                                && CoverageMath.MakesRedundant(covering.Coverage, covering.Id, role.Coverage, role.Id)))
                         {
                             ids.Add(role.Id);
                             has = true;
@@ -170,7 +171,8 @@ namespace WorkRoles.Core
                     var ids = virtualSets[candidate.index];
                     if (ids.Contains(role.Id)) continue;
                     if (ids.Any(id => RoleOf(id) is RecRole covering
-                            && EntryMath.Covers(covering.Entries, role.Entries))) continue;
+                            && CoverageMath.MakesRedundant(covering.Coverage, covering.Id, role.Coverage, role.Id)))
+                        continue;
                     ids.Add(role.Id);
                     holders++;
                     if (essentialRankByRoleId.TryGetValue(role.Id, out int rank))
@@ -196,7 +198,7 @@ namespace WorkRoles.Core
                     if (doctorRole == null) return false;
                     var covering = RoleOf(id);
                     return covering != null && !covering.Blocker
-                        && EntryMath.Covers(covering.Entries, doctorRole.Entries);
+                        && CoverageMath.CoversOrMatches(covering.Coverage, doctorRole.Coverage);
                 }
 
                 int doctoring = virtualSets.Count(ids => ids.Any(ProvidesDoctoring));

@@ -60,6 +60,17 @@ public class ColonyScenarioTests
         return dir?.FullName ?? throw new InvalidOperationException("repo root not found");
     }
 
+    /// The vanilla job catalog, for expanding role entries into coverage.
+    private static readonly FakeCatalog JobCatalog = BuildJobCatalog();
+
+    private static FakeCatalog BuildJobCatalog()
+    {
+        var catalog = new FakeCatalog();
+        foreach (var group in VanillaGiverBaseline.GiverWorkType.GroupBy(kv => kv.Value))
+            catalog.WithWorkType(group.Key, group.Select(kv => kv.Key).ToArray());
+        return catalog;
+    }
+
     private static Catalog Shipped()
     {
         var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
@@ -89,7 +100,7 @@ public class ColonyScenarioTests
             var rec = new RecRole
             {
                 Id = id,
-                Entries = entries,
+                Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
                 AutoAssign = autoAssign,
                 Blocker = blocker,
                 Unskilled = unskilled,
@@ -115,7 +126,7 @@ public class ColonyScenarioTests
                 Unskilled = unskilled,
                 Doctoring = workTypes.Contains("Doctor") && !blocker,
                 NaturalPriority = autoAssign ? 100f : 0f,
-                Entries = entries,
+                Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
             });
 
             catalog.DefNames[id] = defName;
@@ -217,7 +228,7 @@ public class ColonyScenarioTests
     private static bool ProvidesDoctoring(Run run, int id) =>
         id == run.Catalog.DoctorId || id == run.Catalog.MedicId
         || (!RecOf(run, id).Blocker
-            && EntryMath.Covers(RecOf(run, id).Entries, RecOf(run, run.Catalog.DoctorId).Entries));
+            && CoverageMath.CoversOrMatches(RecOf(run, id).Coverage, RecOf(run, run.Catalog.DoctorId).Coverage));
 
     // ----- invariants -----
 
@@ -232,7 +243,8 @@ public class ColonyScenarioTests
             int roleId = run.Catalog.DefNames.First(kv => kv.Value == template).Key;
             if (!run.Pawns.Any(p => p.Rec.CapableWorkTypes.Contains(workType))) continue;
             bool covered = run.Colony.VirtualSets.Any(ids => ids.Contains(roleId)
-                || ids.Any(other => EntryMath.Covers(RecOf(run, other).Entries, RecOf(run, roleId).Entries)));
+                || ids.Any(other => CoverageMath.MakesRedundant(
+                    RecOf(run, other).Coverage, other, RecOf(run, roleId).Coverage, roleId)));
             await Assert.That(covered).IsTrue()
                 .Because($"{template} uncovered (size {size}, seed {seed})");
         }

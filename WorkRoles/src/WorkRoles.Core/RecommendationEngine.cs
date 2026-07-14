@@ -20,7 +20,8 @@ namespace WorkRoles.Core
     public class RecRole
     {
         public int Id;
-        public IReadOnlyList<JobEntry> Entries = new List<JobEntry>();
+        /// Expanded job coverage (CoverageMath.CoverageOf) — the nesting/redundancy identity.
+        public HashSet<string> Coverage = new HashSet<string>();
         public bool AutoAssign;
         public bool HasRules;
         public bool Blocker;
@@ -143,7 +144,9 @@ namespace WorkRoles.Core
             var result = new List<Recommendation>();
             foreach (var (role, group, _, skill) in ordered)
             {
-                if (ordered.Any(other => EntryMath.Covers(other.role.Entries, role.Entries))) continue;
+                if (ordered.Any(other =>
+                        CoverageMath.MakesRedundant(other.role.Coverage, other.role.Id, role.Coverage, role.Id)))
+                    continue;
                 result.Add(new Recommendation
                 {
                     RoleId = role.Id,
@@ -187,17 +190,4 @@ namespace WorkRoles.Core
         }
     }
 
-    /// Entry-list relations shared by the planners.
-    public static class EntryMath
-    {
-        /// True when a's entries strictly include every entry of b.
-        public static bool Covers(IReadOnlyList<JobEntry> a, IReadOnlyList<JobEntry> b)
-        {
-            if (ReferenceEquals(a, b)) return false;
-            if (b.Count == 0 || b.Count >= a.Count) return false;
-            foreach (var entry in b)
-                if (!a.Contains(entry)) return false;
-            return true;
-        }
-    }
 }

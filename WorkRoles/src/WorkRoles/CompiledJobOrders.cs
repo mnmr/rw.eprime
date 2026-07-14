@@ -30,6 +30,7 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             if (store == null) { cache.Clear(); return; }
+            store.RoleById(roleId)?.InvalidateCoverage();
             foreach (var pawn in store.PawnsWithRole(roleId).ToList())
                 cache.Remove(pawn);
         }
@@ -37,6 +38,10 @@ namespace WorkRoles
         public static void InvalidateAll()
         {
             cache.Clear();
+            var store = RoleStore.Current;
+            if (store != null)
+                foreach (var role in store.roles)
+                    role.InvalidateCoverage();
         }
 
         /// Recompile every pawn holding a role with a time rule (hour boundary crossed).

@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.1.3 — 2026-07-14
+
+- Fixed: Role editor fixes and UI polish.
+- Changed: Reworked how the recommendation engine finds training roles, so it can provide better suggestions and work with player-made roles.
+
 ## 1.1.2 — 2026-07-14
 
 - Added: An Options tab to control how priorities are provided to other mods that don't know about WorkRoles (e.g. Numbers and RimHUD).

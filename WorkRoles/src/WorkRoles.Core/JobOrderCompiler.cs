@@ -81,6 +81,34 @@ namespace WorkRoles.Core
             return result;
         }
 
+        /// Indexes of entries with no effect under first-claim-wins: a giver
+        /// already claimed above it (by its work type or a duplicate), or a
+        /// duplicate work type. A work type BELOW its own givers is not dead —
+        /// it claims the type's remaining jobs and catches future ones. Unknown
+        /// entries (absent DLC/mods) are never dead: they wake when their def returns.
+        public static HashSet<int> DeadEntryIndexes(IReadOnlyList<JobEntry> entries, IJobCatalog catalog)
+        {
+            var dead = new HashSet<int>();
+            var claimed = new HashSet<string>();
+            var seenTypes = new HashSet<string>();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                var entry = entries[i];
+                if (entry.Kind == JobEntryKind.WorkType)
+                {
+                    if (!seenTypes.Add(entry.DefName)) { dead.Add(i); continue; }
+                    foreach (var giver in catalog.WorkGiversOf(entry.DefName))
+                        claimed.Add(giver);
+                }
+                else
+                {
+                    if (catalog.WorkTypeOf(entry.DefName) == null) continue;
+                    if (!claimed.Add(entry.DefName)) dead.Add(i);
+                }
+            }
+            return dead;
+        }
+
         /// Entries plus, after each work-type entry, synthetic giver entries for
         /// snapshot members a mod has MOVED to another work type — so the role
         /// keeps jobs it was built around. Members still under the type expand

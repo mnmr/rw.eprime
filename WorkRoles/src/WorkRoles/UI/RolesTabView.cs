@@ -130,6 +130,29 @@ namespace WorkRoles.UI
             return chrome + Mathf.Max(list, editor);
         }
 
+        /// Set on selection change; the next job-tree draw expands and scrolls
+        /// to the selected role's first entry.
+        private bool scrollJobTreeToSelection;
+
+        private void SelectRole(int id)
+        {
+            if (id == selectedRoleId) return;
+            CommitEdits();
+            selectedRoleId = id;
+            scrollJobTreeToSelection = true;
+        }
+
+        /// Editing a role ended (selection change, tab switch, window close):
+        /// scrub its dead entries. Issued as a synced command only when there is
+        /// something to scrub.
+        public void CommitEdits()
+        {
+            var role = RoleStore.Current?.RoleById(selectedRoleId);
+            if (role != null
+                && JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance).Count > 0)
+                RoleCommands.ScrubDeadEntries(role.id);
+        }
+
         public void Reset()
         {
             listScroll = entriesScroll = treeScroll = Vector2.zero;
@@ -149,7 +172,7 @@ namespace WorkRoles.UI
             if (store == null) return;
             RoleDrag.Update();
             if (selectedRoleId == -1 && store.roles.Count > 0)
-                selectedRoleId = store.roles[0].id;
+                SelectRole(store.roles[0].id);
 
             var listRect = new Rect(rect.x, rect.y, ListWidth, rect.height);
             var editorRect = new Rect(rect.x + ListWidth + 12f, rect.y, rect.width - ListWidth - 12f, rect.height);
@@ -169,46 +192,37 @@ namespace WorkRoles.UI
 
         // ----- Left: role list + management buttons -----
 
-        /// The role list is a two-level tree: roles strictly covered by another role
-        /// nest under their tightest coverer (fewest entries; ties keep catalog order),
-        /// resolved up to a root so the display never exceeds two levels. Roots keep
-        /// catalog order; each root's children sort by where their entry block starts
-        /// inside the root's entry list (ties keep catalog order), so child display
-        /// order IS the parent's entry order. Rows carry their displayed root so drag
-        /// targeting can resolve parent/sibling relationships.
+        /// The role list is a two-level tree: a role strictly covered by another
+        /// eligible role nests, and displays under EVERY covering root (Rescuer
+        /// under both Basics and Doctor). Roots keep catalog order; each root's
+        /// children sort by where their entry block starts inside the root's
+        /// entry list (ties keep catalog order). Rows carry their displayed root
+        /// so drag targeting can resolve parent/sibling relationships.
         internal static (List<Role> roots, List<(Role role, Role parent)> rows) BuildRoleTree(List<Role> roles)
         {
-            // Tightest coverer per role (null = root).
-            var parent = new Dictionary<Role, Role>();
-            foreach (var role in roles)
-            {
-                // Blockers and the managed role never nest and never parent:
-                // their entry overlap is not a provides-relationship. Auto
-                // (rule-carrying) roles never parent either — a normal role
-                // must not appear conditional by nesting under one.
-                Role best = null;
-                if (!role.blocker && !role.managed)
-                    foreach (var other in roles)
-                        if (!other.blocker && !other.managed && !other.HasRules && other.Covers(role)
-                            && (best == null || other.entries.Count < best.entries.Count))
-                            best = other;
-                parent[role] = best;
-            }
-            Role RootOf(Role role)
-            {
-                while (parent[role] != null) role = parent[role];
-                return role;
-            }
+            // Blockers and the managed role never nest and never parent: their
+            // entry overlap is not a provides-relationship. Auto (rule-carrying)
+            // roles never parent either — a normal role must not appear
+            // conditional by nesting under one.
+            bool CanNest(Role r) => !r.blocker && !r.managed;
+            bool CanParent(Role r) => !r.blocker && !r.managed && !r.HasRules;
 
-            var roots = roles.Where(r => parent[r] == null).ToList();
+            var nested = new HashSet<Role>();
+            foreach (var role in roles)
+                if (CanNest(role) && roles.Any(o => CanParent(o) && o.Covers(role)))
+                    nested.Add(role);
+
+            var roots = roles.Where(r => !nested.Contains(r)).ToList();
             var rows = new List<(Role role, Role parent)>(roles.Count);
             foreach (var root in roots)
             {
                 rows.Add((root, null));
-                // The root covers every displayed descendant, so every child entry
-                // has a position in the root's entry list.
+                if (!CanParent(root)) continue;
+                // Children with entries literally present in the root's list sort
+                // by that position; coverage-only children (root expresses their
+                // jobs via a work type) have no position and keep catalog order.
                 foreach (var child in roles
-                    .Where(r => parent[r] != null && RootOf(r) == root)
+                    .Where(r => nested.Contains(r) && root.Covers(r))
                     .OrderBy(r => RoleCommands.BlockStart(root.entries, r)))
                     rows.Add((child, root));
             }
@@ -389,9 +403,16 @@ namespace WorkRoles.UI
             const float JobBtnW = 220f;
 
             float y1 = rect.y + LabelH;
-            float searchW = rect.width - ToggleW - 8f;
+            float searchW = rect.width - ToggleW - 8f - 22f;
             FilterCaption(new Rect(rect.x, rect.y, searchW, LabelH), "WR_Search");
             roleSearch = Widgets.TextField(new Rect(rect.x, y1, searchW, InputH), roleSearch);
+            if (!roleSearch.NullOrEmpty()
+                && Widgets.ButtonImage(new Rect(rect.x + searchW + 4f, y1 + (InputH - 18f) / 2f, 18f, 18f),
+                    TexButton.CloseXSmall))
+            {
+                roleSearch = "";
+                GUIUtility.keyboardControl = 0; // release the field's edit buffer
+            }
 
             // Nested/flat toggle: auto-nesting of covered roles on or off.
             var toggleRect = new Rect(rect.xMax - ToggleW, y1, ToggleW, InputH);
@@ -436,15 +457,11 @@ namespace WorkRoles.UI
                 Find.WindowStack.Add(new FloatMenu(options));
             }
 
-            if (ListFiltersActive)
+            if (jobFilterDefName != null)
             {
                 var clearRect = new Rect(jobRect.xMax + 6f, y2 + (InputH - 18f) / 2f, 18f, 18f);
-                TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
-                {
-                    roleSearch = "";
                     jobFilterDefName = null;
-                }
             }
         }
 
@@ -463,7 +480,7 @@ namespace WorkRoles.UI
                 for (int i = store.roles.Count - 1; i >= 0; i--)
                     if (store.roles[i].label == pendingSelectLabel)
                     {
-                        selectedRoleId = store.roles[i].id;
+                        SelectRole(store.roles[i].id);
                         pendingSelectLabel = null;
                         scrollToSelected = true;
                         break;
@@ -587,7 +604,7 @@ namespace WorkRoles.UI
                 if (e.type == EventType.MouseDown && e.button == 0 && row.Contains(e.mousePosition))
                 {
                     int capturedId = role.id;
-                    RoleDrag.OnPress(capturedId, null, () => selectedRoleId = capturedId);
+                    RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
                     e.Use();
                 }
 
@@ -686,10 +703,13 @@ namespace WorkRoles.UI
                 e.Use();
             }
 
-            // Role drop on the header: into this group, at the top.
+            // Role drop on the header: into this group, at the top. A nested
+            // child dropped on its OWN group's header is a no-op — blocked.
             if (dragged != null && Mouse.IsOver(row))
             {
-                if (!section.dropTarget)
+                bool nestedHere = section.rows != null
+                    && section.rows.Any(t => t.role == dragged && t.parent != null);
+                if (!section.dropTarget || nestedHere)
                 {
                     RoleDrag.HoverBlocked = true;
                     Widgets.DrawBoxSolid(row, BlockedTint);
@@ -729,7 +749,12 @@ namespace WorkRoles.UI
             List<(RoleSection section, Role role, Role parent)> display, int i, Rect row, Role dragged)
         {
             var (section, role, parent) = display[i];
-            if (!section.dropTarget || role == dragged || parent == dragged)
+            // A nested child's within-group drop is a no-op — its display
+            // position comes from the tree, not the catalog order — so only
+            // cross-group drops (where its rows don't appear) accept it.
+            bool nestedHere = section.rows != null
+                && section.rows.Any(t => t.role == dragged && t.parent != null);
+            if (!section.dropTarget || role == dragged || parent == dragged || nestedHere)
             {
                 RoleDrag.HoverBlocked = true;
                 Widgets.DrawBoxSolid(row, BlockedTint);
@@ -1451,6 +1476,7 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(scrollRect, ref entriesScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
 
+            var deadEntries = DeadEntryIndexes(role);
             for (int i = 0; i < role.entries.Count; i++)
             {
                 var entry = role.entries[i];
@@ -1463,9 +1489,11 @@ namespace WorkRoles.UI
                 string typeLabel, jobLabel;
                 bool missing = false;
                 GetEntryLabels(entry, out typeLabel, out jobLabel, out missing);
+                bool dead = !missing && deadEntries.Contains(i);
 
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (missing) GUI.color = new Color(1f, 0.4f, 0.4f, 0.8f);
+                else if (dead) GUI.color = new Color(1f, 1f, 1f, 0.45f);
                 // Long names truncate to their column (never wrap into the next
                 // row); the tooltip carries the full name — same treatment as
                 // the job filter button.
@@ -1492,6 +1520,8 @@ namespace WorkRoles.UI
 
                 if (missing)
                     TooltipHandler.TipRegion(row, "WR_MissingDef".Translate(entry.DefName));
+                else if (dead)
+                    TooltipHandler.TipRegion(row, "WR_DeadEntryTip".Translate());
 
                 float btnY = row.y + (RowHeight - IconButton) / 2f;
                 float removeX = row.xMax - IconButton - 2f;
@@ -1510,6 +1540,9 @@ namespace WorkRoles.UI
             }
             Widgets.EndScrollView();
         }
+
+        private static HashSet<int> DeadEntryIndexes(Role role)
+            => JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
 
         private static void GetEntryLabels(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
         {
@@ -1564,11 +1597,30 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            filter = Widgets.TextField(new Rect(rect.xMax - SearchW - SearchRightPad, rect.y + (28f - SearchH) / 2f, SearchW, SearchH), filter);
+            float fieldY = rect.y + (28f - SearchH) / 2f;
+            filter = Widgets.TextField(
+                new Rect(rect.xMax - SearchW - SearchRightPad, fieldY, SearchW - 22f, SearchH), filter);
+            if (!filter.NullOrEmpty()
+                && Widgets.ButtonImage(new Rect(rect.xMax - SearchRightPad - 18f, fieldY + (SearchH - 18f) / 2f, 18f, 18f),
+                    TexButton.CloseXSmall))
+            {
+                filter = "";
+                GUIUtility.keyboardControl = 0; // release the field's edit buffer
+            }
 
             float treeTopY = rect.y + 28f + 4f;
             var scrollRect = new Rect(rect.x, treeTopY, rect.width, rect.height - 28f - 4f);
             bool filtering = !filter.NullOrEmpty();
+
+            // Selection changed: surface the role's first entry (expand its work
+            // type when the entry is a job, so the row exists to scroll to).
+            (WorkTypeDef type, WorkGiverDef giver)? treeTarget = null;
+            if (scrollJobTreeToSelection)
+            {
+                treeTarget = FirstEntryTreeTarget(role);
+                if (treeTarget?.giver != null)
+                    expanded.Add(treeTarget.Value.type.defName);
+            }
 
             var nodes = new List<(WorkTypeDef type, WorkGiverDef giver)>();
             foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading
@@ -1588,6 +1640,19 @@ namespace WorkRoles.UI
                 if (filtering || expanded.Contains(type.defName))
                     foreach (var giver in (filtering && !typeMatches) ? matchingGivers : givers.ToList())
                         nodes.Add((type, giver));
+            }
+
+            if (scrollJobTreeToSelection)
+            {
+                scrollJobTreeToSelection = false;
+                if (treeTarget != null)
+                {
+                    int target = nodes.FindIndex(n =>
+                        n.type == treeTarget.Value.type && n.giver == treeTarget.Value.giver);
+                    if (target >= 0)
+                        treeScroll.y = Mathf.Max(0f,
+                            target * RowHeight - (scrollRect.height - RowHeight) / 2f);
+                }
             }
 
             Widgets.BeginScrollView(scrollRect, ref treeScroll,
@@ -1628,7 +1693,9 @@ namespace WorkRoles.UI
                                 AddAllGivers(role, capturedType)),
                         }));
                     }
-                    bool typeAdds = currentState == MultiCheckboxState.Off;
+                    // ~ (some jobs selected) clicks like Off: it adds the type
+                    // entry; the jobs' own entries stay above it, still live.
+                    bool typeAdds = currentState != MultiCheckboxState.On;
                     if (MultiCheckboxClicked(checkboxRect, currentState, typeAdds))
                         ApplyWorkTypeState(role, type,
                             typeAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
@@ -1665,6 +1732,26 @@ namespace WorkRoles.UI
 
             bool Matches(string label) =>
                 label != null && label.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// The tree row for the role's first resolvable entry: the work-type
+        /// header for a WorkType entry, the giver row for a WorkGiver entry.
+        private static (WorkTypeDef type, WorkGiverDef giver)? FirstEntryTreeTarget(Role role)
+        {
+            foreach (var entry in role.entries)
+            {
+                if (entry.Kind == JobEntryKind.WorkType)
+                {
+                    var type = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
+                    if (type != null) return (type, null);
+                }
+                else
+                {
+                    var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
+                    if (giver?.workType != null) return (giver.workType, giver);
+                }
+            }
+            return null;
         }
 
         // ----- Disambiguated display names for WorkGiverDefs -----
@@ -1730,12 +1817,16 @@ namespace WorkRoles.UI
             return true;
         }
 
-        /// Binary: On iff the WorkType entry itself is in the list (it also
-        /// covers future modded jobs — not the same as all givers individually).
+        /// On = the WorkType entry itself is in the list (it also covers future
+        /// modded jobs — not the same as all givers individually); Partial = no
+        /// type entry, but some of its jobs have their own entries.
         private static MultiCheckboxState GetWorkTypeState(Role role, WorkTypeDef type)
         {
-            return role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName)
-                ? MultiCheckboxState.On
+            if (role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName))
+                return MultiCheckboxState.On;
+            return type.workGiversByPriority.Any(g =>
+                role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == g.defName))
+                ? MultiCheckboxState.Partial
                 : MultiCheckboxState.Off;
         }
 

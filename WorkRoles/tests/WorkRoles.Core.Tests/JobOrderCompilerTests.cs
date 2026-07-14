@@ -294,6 +294,39 @@ public class JobOrderCompilerTests
     }
 
     [Test]
+    public async Task DeadEntries_ClaimedAboveAndDuplicatesAreDead_TypeBelowGiversIsNot()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Cooking", "Cook", "Butcher", "Brew")
+            .WithWorkType("Hauling", "HaulGeneral");
+        var entries = new List<JobEntry>
+        {
+            new(JobEntryKind.WorkGiver, "Cook"),        // 0: above its type — alive
+            new(JobEntryKind.WorkType, "Cooking"),      // 1: claims Butcher+Brew — alive
+            new(JobEntryKind.WorkGiver, "Butcher"),     // 2: claimed by the type above — dead
+            new(JobEntryKind.WorkType, "Cooking"),      // 3: duplicate type — dead
+            new(JobEntryKind.WorkGiver, "Cook"),        // 4: duplicate giver — dead
+            new(JobEntryKind.WorkGiver, "HaulGeneral"), // 5: alive
+            new(JobEntryKind.WorkType, "ModdedGone"),   // 6: unknown — never dead
+            new(JobEntryKind.WorkGiver, "ModdedJob"),   // 7: unknown — never dead
+        };
+        var dead = JobOrderCompiler.DeadEntryIndexes(entries, catalog);
+        await Assert.That(dead.OrderBy(i => i)).IsEquivalentTo(new[] { 2, 3, 4 });
+    }
+
+    [Test]
+    public async Task DeadEntries_CleanRoleHasNone()
+    {
+        var catalog = new FakeCatalog().WithWorkType("Cooking", "Cook", "Butcher", "Brew");
+        var entries = new List<JobEntry>
+        {
+            new(JobEntryKind.WorkGiver, "Butcher"),
+            new(JobEntryKind.WorkType, "Cooking"),  // below its giver: claims the rest
+        };
+        await Assert.That(JobOrderCompiler.DeadEntryIndexes(entries, catalog)).IsEmpty();
+    }
+
+    [Test]
     public async Task VanillaProjectionOfNothingIsEmpty()
     {
         var buckets = JobOrderCompiler.ToVanillaPriorities(new Dictionary<string, int>(), _ => 0);

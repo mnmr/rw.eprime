@@ -6,8 +6,6 @@ namespace WorkRoles.Core.Tests;
 /// tiers, the doctoring floor and fire safety.
 public class ColonyPlannerTests
 {
-    private static JobEntry WT(string defName) => new(JobEntryKind.WorkType, defName);
-
     private static readonly Dictionary<string, IReadOnlyList<string>> Skills = new()
     {
         ["Doctor"] = new List<string> { "Medicine" },
@@ -15,9 +13,10 @@ public class ColonyPlannerTests
         ["Hunting"] = new List<string> { "Shooting" },
     };
 
+    /// Coverage tokens stand in for expanded giver sets, one per work type.
     private static RecRole Role(int id, string workType) => new()
     {
-        Id = id, WorkTypes = { workType }, Entries = new List<JobEntry> { WT(workType) },
+        Id = id, WorkTypes = { workType }, Coverage = [workType],
     };
 
     private static PlanPawn Pawn(int medicine = 0, int medicinePassion = 0, bool gun = false, int shooting = 0)
@@ -88,8 +87,7 @@ public class ColonyPlannerTests
         doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10; doctor.Gated = true;
         var medic = new RecRole
         {
-            Id = 2, WorkTypes = { "Doctor" },
-            Entries = new List<JobEntry> { new(JobEntryKind.WorkGiver, "Tend") },
+            Id = 2, WorkTypes = { "Doctor" }, Coverage = ["Tend"],
             GateSkill = "Medicine", GateMaxLevel = 10, GateNeedsPassion = true, Gated = true,
         };
         var catalog = new List<RecRole> { doctor, medic };
@@ -117,7 +115,7 @@ public class ColonyPlannerTests
         var blocker = new RecRole
         {
             Id = 9, Blocker = true, WorkTypes = { "Firefighter" },
-            Entries = new List<JobEntry> { WT("Firefighter") },
+            Coverage = ["Firefighter"],
         };
         var scared = Pawn(); scared.FireFear = true;
         var calm = Pawn();
@@ -138,7 +136,7 @@ public class ColonyPlannerTests
         var nightShift = new RecRole
         {
             Id = 5, HasRules = true, WorkTypes = { "Cooking", "Doctor" },
-            Entries = new List<JobEntry> { WT("Cooking"), WT("Doctor") },
+            Coverage = ["Cooking", "Doctor"],
         };
         var cook = Role(1, "Cooking");
         var pawn = Pawn();
@@ -158,8 +156,7 @@ public class ColonyPlannerTests
         doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10; doctor.Gated = true;
         var medic = new RecRole
         {
-            Id = 2, WorkTypes = { "Doctor" },
-            Entries = new List<JobEntry> { new(JobEntryKind.WorkGiver, "Tend") },
+            Id = 2, WorkTypes = { "Doctor" }, Coverage = ["Tend"],
             GateSkill = "Medicine", GateMaxLevel = 10, GateNeedsPassion = true, Gated = true,
         };
         var essentials = new Dictionary<int, int> { [1] = 0 };
@@ -181,11 +178,11 @@ public class ColonyPlannerTests
     [Test]
     public async Task SubRolesAreNotDealt_TheirCovererIs()
     {
-        var grower = new RecRole { Id = 1, WorkTypes = { "Cooking" }, Entries = new List<JobEntry> { WT("Cooking") } };
+        var grower = new RecRole { Id = 1, WorkTypes = { "Cooking" }, Coverage = ["Cooking"] };
         var farmer = new RecRole
         {
             Id = 2, WorkTypes = { "Cooking" },
-            Entries = new List<JobEntry> { WT("Cooking"), WT("Doctor") },
+            Coverage = ["Cooking", "Doctor"],
         };
         var pawn = Pawn(); pawn.Rec.SkillLevels["Cooking"] = 6;
         var result = ColonyPlanner.Compute(new List<RecRole> { grower, farmer },

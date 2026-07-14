@@ -84,8 +84,20 @@ public class RoleDefVanillaTests
                 .Because($"no role covers giver {giver}");
     }
     
-    /// The role tree's parent/child pairs rest on literal entry subsets
-    /// (EntryMath.Covers): each child's entries must appear verbatim in the parent.
+    /// The vanilla job catalog, for expanding role entries into coverage.
+    private static readonly FakeCatalog JobCatalog = BuildJobCatalog();
+
+    private static FakeCatalog BuildJobCatalog()
+    {
+        var catalog = new FakeCatalog();
+        foreach (var group in VanillaGiverBaseline.GiverWorkType.GroupBy(kv => kv.Value))
+            catalog.WithWorkType(group.Key, group.Select(kv => kv.Key).ToArray());
+        return catalog;
+    }
+
+    /// The role tree's parent/child pairs rest on coverage subsets
+    /// (CoverageMath.Covers): each child's expanded job set must sit strictly
+    /// inside the parent's, however either role spells its entries.
     [Test]
     [Arguments("WS_Doctor", "WS_Medic")]
     [Arguments("WS_Doctor", "WS_Rescuer")]
@@ -105,9 +117,9 @@ public class RoleDefVanillaTests
     [Arguments("WS_Grunt", "WS_Cleaner")]
     public async Task ParentRolesCoverTheirChildren(string parent, string child)
     {
-        var parentEntries = Roles.Single(r => r.DefName == parent).Entries;
-        var childEntries = Roles.Single(r => r.DefName == child).Entries;
-        await Assert.That(EntryMath.Covers(parentEntries, childEntries)).IsTrue()
-            .Because($"{child} is not a literal subset of {parent}");
+        var parentCoverage = CoverageMath.CoverageOf(Roles.Single(r => r.DefName == parent).Entries, JobCatalog);
+        var childCoverage = CoverageMath.CoverageOf(Roles.Single(r => r.DefName == child).Entries, JobCatalog);
+        await Assert.That(CoverageMath.Covers(parentCoverage, childCoverage)).IsTrue()
+            .Because($"{child}'s coverage is not strictly inside {parent}'s");
     }
 }

@@ -7,7 +7,8 @@ namespace WorkRoles.Core
     public class TargetRole
     {
         public int Id;
-        public IReadOnlyList<JobEntry> Entries = new List<JobEntry>();
+        /// Expanded job coverage (CoverageMath.CoverageOf) — the nesting/redundancy identity.
+        public HashSet<string> Coverage = new HashSet<string>();
         public bool AutoAssign;
         public bool HasRules;
         public bool Blocker;
@@ -70,10 +71,7 @@ namespace WorkRoles.Core
             bool Covers(TargetRole a, TargetRole b)
             {
                 if (a == null || b == null || ReferenceEquals(a, b)) return false;
-                if (b.Entries.Count == 0 || b.Entries.Count >= a.Entries.Count) return false;
-                foreach (var entry in b.Entries)
-                    if (!a.Entries.Contains(entry)) return false;
-                return true;
+                return CoverageMath.MakesRedundant(a.Coverage, a.Id, b.Coverage, b.Id);
             }
 
             bool CoveredByPlan(int roleId)
