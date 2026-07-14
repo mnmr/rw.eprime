@@ -271,11 +271,12 @@ namespace WorkRoles.UI
                 return cluster;
             }
 
-            // Tree rows repeat a child under every covering root; the palette
-            // shows each role once, clustered under its first appearance.
+            // Tree rows repeat a child under every covering root (including
+            // virtual cross-group rows); the palette shows each role once,
+            // clustered under its first real appearance.
             var seen = new HashSet<int>();
-            foreach (var (role, parent) in RolesTabView.BuildRoleTree(store).rows)
-                if (seen.Add(role.id))
+            foreach (var (role, parent, virtualRow) in RolesTabView.BuildRoleTree(store).rows)
+                if (!virtualRow && seen.Add(role.id))
                     ClusterFor(parent ?? role).roles.Add(role);
 
             var result = new List<PaletteCluster>();
@@ -297,7 +298,10 @@ namespace WorkRoles.UI
                 .Select(section => new PaletteCluster
                 {
                     label = section.title,
-                    roles = section.rows.Select(t => t.role).ToList(),
+                    // Real rows only, once each: virtual cross-group rows and
+                    // same-group duplicates stay a role-tree display device.
+                    roles = section.rows.Where(t => !t.virtualRow)
+                        .Select(t => t.role).Distinct().ToList(),
                 })
                 .ToList();
         }
@@ -1024,7 +1028,7 @@ namespace WorkRoles.UI
         private void DrawRow(Rect rect, Pawn pawn, RoleStore store)
         {
             GUI.color = new Color(1f, 1f, 1f, 0.2f);
-            Widgets.DrawLineHorizontal(rect.x, rect.y, rect.width);
+            WrText.LineHorizontal(rect.x, rect.y, rect.width);
             GUI.color = Color.white;
 
             if (pawn == selectedPawn)
@@ -1055,7 +1059,7 @@ namespace WorkRoles.UI
             if (pawn.Downed)
             {
                 GUI.color = new Color(1f, 0f, 0f, 0.5f);
-                Widgets.DrawLineHorizontal(rect.x, rect.center.y, rect.width);
+                WrText.LineHorizontal(rect.x, rect.center.y, rect.width);
                 GUI.color = Color.white;
             }
         }

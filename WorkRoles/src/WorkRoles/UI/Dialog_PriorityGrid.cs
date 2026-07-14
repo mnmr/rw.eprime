@@ -102,9 +102,9 @@ namespace WorkRoles.UI
                 WrText.InclinedLabel(headRect, workTypes[c].labelShort.CapitalizeFirst(), LabelAngle);
                 TooltipHandler.TipRegion(new Rect(x, 0f, ColW, headerH + bodyH),
                     workTypes[c].gerundLabel.CapitalizeFirst());
-                // Column separator, vanilla Work-tab style.
+                // Column separator, vanilla Work-tab style (pixel-snapped).
                 GUI.color = new Color(1f, 1f, 1f, 0.12f);
-                Widgets.DrawLineVertical(x, headerH - 2f, bodyH + 2f);
+                WrText.LineVertical(x, headerH - 2f, bodyH + 2f);
                 GUI.color = Color.white;
             }
 
@@ -123,7 +123,9 @@ namespace WorkRoles.UI
                 {
                     var wt = workTypes[c];
                     if (pawn.WorkTypeIsDisabled(wt)) continue; // vanilla leaves these blank
-                    var box = new Rect(NameW + c * ColW + (ColW - 25f) / 2f, y + (RowH - 25f) / 2f, 25f, 25f);
+                    // Floored centering: (ColW - 25) / 2 is 0.5, and a half-pixel
+                    // x smears the box textures at every UI scale.
+                    var box = new Rect(NameW + c * ColW + Mathf.Floor((ColW - 25f) / 2f), y + (RowH - 25f) / 2f, 25f, 25f);
                     DrawWorkBoxBackground(box, pawn, wt);
                     bool managed = store != null && store.IsManaged(pawn);
                     int priority = managed

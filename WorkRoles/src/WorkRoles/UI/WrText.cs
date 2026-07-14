@@ -1,5 +1,6 @@
 using System;
 using HarmonyLib;
+using LudeonTK;
 using UnityEngine;
 using Verse;
 
@@ -65,6 +66,16 @@ namespace WorkRoles.UI
             GUI.matrix = originalMatrix;
             Text.Font = oldFont;
         }
+
+        /// Pixel-snapped 1px lines, tinted by the ambient GUI.color: an
+        /// unsnapped hairline blurs (or doubles) at fractional UI scales.
+        public static void LineVertical(float x, float y, float length)
+            => GUI.DrawTexture(UIScaling.AdjustRectToUIScaling(new Rect(x, y, 1f, length)),
+                BaseContent.WhiteTex);
+
+        public static void LineHorizontal(float x, float y, float length)
+            => GUI.DrawTexture(UIScaling.AdjustRectToUIScaling(new Rect(x, y, length, 1f)),
+                BaseContent.WhiteTex);
 
         /// Width that safely fits a single-line label at any UI scale, measured
         /// with the CURRENT font. Text.CalcSize measures in virtual units, but at

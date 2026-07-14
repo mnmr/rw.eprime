@@ -179,7 +179,7 @@ namespace WorkRoles.UI
             DrawRoleList(listRect, store);
 
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            Widgets.DrawLineVertical(rect.x + ListWidth + 6f, rect.y, rect.height);
+            WrText.LineVertical(rect.x + ListWidth + 6f, rect.y, rect.height);
             GUI.color = Color.white;
 
             var selected = store.RoleById(selectedRoleId);
@@ -193,48 +193,52 @@ namespace WorkRoles.UI
         // ----- Left: role list + management buttons -----
 
         /// The role list is a two-level tree: a role strictly covered by another
-        /// eligible role nests, and displays under EVERY covering root (Rescuer
-        /// under both Basics and Doctor). Roots keep catalog order; each root's
-        /// children sort by where their entry block starts inside the root's
-        /// entry list (ties keep catalog order). Rows carry their displayed root
-        /// so drag targeting can resolve parent/sibling relationships.
-        internal static (List<Role> roots, List<(Role role, Role parent)> rows) BuildRoleTree(List<Role> roles)
+        /// eligible role displays under EVERY covering root, across groups
+        /// (Rescuer under both Basics and Doctor, wherever they live). A row
+        /// whose role belongs to another group is VIRTUAL: rendered dashed,
+        /// never draggable, and it simply stops being generated when the
+        /// coverage breaks — the role's real row lives in its own group (nested
+        /// there, or as a root when nothing in its group covers it). Roots keep
+        /// catalog order; each root's children sort by where their entry block
+        /// starts inside the root's entry list (ties keep catalog order).
+        internal static (List<Role> roots, List<(Role role, Role parent, bool virtualRow)> rows)
+            BuildRoleTree(List<Role> members, List<Role> allRoles)
         {
             // Blockers and the managed role never nest and never parent: their
             // entry overlap is not a provides-relationship. Auto (rule-carrying)
-            // roles never parent either — a normal role must not appear
-            // conditional by nesting under one.
-            bool CanNest(Role r) => !r.blocker && !r.managed;
-            bool CanParent(Role r) => !r.blocker && !r.managed && !r.HasRules;
+            // roles stay in their overlay — they neither parent nor nest here.
+            bool Eligible(Role r) => !r.blocker && !r.managed && !r.HasRules;
 
+            var memberSet = new HashSet<Role>(members);
             var nested = new HashSet<Role>();
-            foreach (var role in roles)
-                if (CanNest(role) && roles.Any(o => CanParent(o) && o.Covers(role)))
+            foreach (var role in members)
+                if (Eligible(role) && members.Any(o => Eligible(o) && o.Covers(role)))
                     nested.Add(role);
 
-            var roots = roles.Where(r => !nested.Contains(r)).ToList();
-            var rows = new List<(Role role, Role parent)>(roles.Count);
+            var roots = members.Where(r => !nested.Contains(r)).ToList();
+            var rows = new List<(Role role, Role parent, bool virtualRow)>(members.Count);
             foreach (var root in roots)
             {
-                rows.Add((root, null));
-                if (!CanParent(root)) continue;
+                rows.Add((root, null, false));
+                if (!Eligible(root)) continue;
                 // Children with entries literally present in the root's list sort
                 // by that position; coverage-only children (root expresses their
                 // jobs via a work type) have no position and keep catalog order.
-                foreach (var child in roles
-                    .Where(r => nested.Contains(r) && root.Covers(r))
+                foreach (var child in allRoles
+                    .Where(r => Eligible(r) && root.Covers(r))
                     .OrderBy(r => RoleCommands.BlockStart(root.entries, r)))
-                    rows.Add((child, root));
+                    rows.Add((child, root, !memberSet.Contains(child)));
             }
             return (roots, rows);
         }
 
         /// Group-aware whole-catalog tree (palette clustering): every display
-        /// section's tree concatenated — nesting never crosses groups.
-        internal static (List<Role> roots, List<(Role role, Role parent)> rows) BuildRoleTree(RoleStore store)
+        /// section's tree concatenated.
+        internal static (List<Role> roots, List<(Role role, Role parent, bool virtualRow)> rows)
+            BuildRoleTree(RoleStore store)
         {
             var roots = new List<Role>();
-            var rows = new List<(Role role, Role parent)>();
+            var rows = new List<(Role role, Role parent, bool virtualRow)>();
             foreach (var section in BuildSections(store, nested: true))
             {
                 roots.AddRange(section.roots);
@@ -259,7 +263,7 @@ namespace WorkRoles.UI
             public bool dropTarget; // accepts role drops
             public List<Role> members = new List<Role>();
             public List<Role> roots;
-            public List<(Role role, Role parent)> rows;
+            public List<(Role role, Role parent, bool virtualRow)> rows;
         }
 
         /// Sections in display order: Default (when it has a face), user groups
@@ -332,11 +336,11 @@ namespace WorkRoles.UI
             foreach (var section in sections)
             {
                 if (nested && section != auto && section != locked)
-                    (section.roots, section.rows) = BuildRoleTree(section.members);
+                    (section.roots, section.rows) = BuildRoleTree(section.members, store.roles);
                 else
                 {
                     section.roots = section.members;
-                    section.rows = section.members.Select(r => (r, (Role)null)).ToList();
+                    section.rows = section.members.Select(r => (r, (Role)null, false)).ToList();
                 }
             }
             return sections;
@@ -504,20 +508,20 @@ namespace WorkRoles.UI
                         && section.rows.Any(t => t.role.id == selectedRoleId))
                         ToggleSectionCollapsed(section.key);
 
-            var display = new List<(RoleSection section, Role role, Role parent)>();
+            var display = new List<(RoleSection section, Role role, Role parent, bool virtualRow)>();
             if (filtered)
             {
                 foreach (var match in store.roles.Where(MatchesListFilters))
-                    display.Add((null, match, null));
+                    display.Add((null, match, null, false));
             }
             else
             {
                 foreach (var section in sections)
                 {
-                    display.Add((section, null, null));
+                    display.Add((section, null, null, false));
                     if (!IsSectionCollapsed(section.key))
-                        foreach (var (member, memberParent) in section.rows)
-                            display.Add((section, member, memberParent));
+                        foreach (var (member, memberParent, virtualRow) in section.rows)
+                            display.Add((section, member, memberParent, virtualRow));
                 }
             }
             float contentHeight = display.Count * RowHeight;
@@ -543,7 +547,7 @@ namespace WorkRoles.UI
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
             for (int i = 0; i < display.Count; i++)
             {
-                var (section, role, parentRole) = display[i];
+                var (section, role, parentRole, virtualRow) = display[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (role == null)
                 {
@@ -565,6 +569,9 @@ namespace WorkRoles.UI
                 GUI.color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
                 Widgets.DrawBox(swatch.ExpandedBy(1f));
                 GUI.color = Color.white;
+                if (virtualRow && Mouse.IsOver(row))
+                    TooltipHandler.TipRegion(row, "WR_VirtualRoleTip".Translate(
+                        store.GroupById(role.groupId)?.label ?? "WR_GroupDefault".Translate().ToString()));
 
                 string rowLabel = role.enabled ? role.label : "WR_RoleLabelOff".Translate(role.label).ToString();
                 var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
@@ -574,6 +581,9 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (!role.enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
                 else if (invalid) GUI.color = new Color(0.55f, 0.55f, 0.55f);
+                // Italics = virtual row: the role belongs to another group and
+                // appears here only because this parent covers it.
+                if (virtualRow) Text.CurFontStyle.fontStyle = FontStyle.Italic;
                 Widgets.Label(labelRect, rowLabel);
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
@@ -582,7 +592,9 @@ namespace WorkRoles.UI
 
                 // Marker strip after the label: the same icons the chips carry
                 // (pin excluded — it marks assignments, not role definitions).
+                // Measured before the italic reset so markers clear the label.
                 float markerX = labelRect.x + WrText.FitWidth(rowLabel) + 4f;
+                if (virtualRow) Text.CurFontStyle.fontStyle = FontStyle.Normal;
                 void ListMarker(Texture2D tex, bool tinted)
                 {
                     var markerRect = new Rect(markerX, row.y + (RowHeight - 16f) / 2f, 16f, 16f);
@@ -600,11 +612,13 @@ namespace WorkRoles.UI
 
                 // Press registers a potential drag + click callback; a release inside
                 // the 6px threshold selects (resolved centrally in ResolveMouseUp).
+                // Virtual rows never drag — they select on press.
                 var e = Event.current;
                 if (e.type == EventType.MouseDown && e.button == 0 && row.Contains(e.mousePosition))
                 {
                     int capturedId = role.id;
-                    RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
+                    if (virtualRow) SelectRole(capturedId);
+                    else RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
                     e.Use();
                 }
 
@@ -675,7 +689,7 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.85f, 0.85f, 0.85f);
             Widgets.Label(new Rect(arrowRect.xMax + 6f, row.y, row.width - 60f, row.height),
-                $"{section.title} ({section.rows.Count})");
+                $"{section.title} ({section.members.Count})");
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
@@ -708,7 +722,7 @@ namespace WorkRoles.UI
             if (dragged != null && Mouse.IsOver(row))
             {
                 bool nestedHere = section.rows != null
-                    && section.rows.Any(t => t.role == dragged && t.parent != null);
+                    && section.rows.Any(t => t.role == dragged && t.parent != null && !t.virtualRow);
                 if (!section.dropTarget || nestedHere)
                 {
                     RoleDrag.HoverBlocked = true;
@@ -746,14 +760,14 @@ namespace WorkRoles.UI
         /// its children) = after its block. Landing in another group moves the
         /// role (and its tree-children) there; overlay sections block.
         private static void RegisterRoleDrop(
-            List<(RoleSection section, Role role, Role parent)> display, int i, Rect row, Role dragged)
+            List<(RoleSection section, Role role, Role parent, bool virtualRow)> display, int i, Rect row, Role dragged)
         {
-            var (section, role, parent) = display[i];
-            // A nested child's within-group drop is a no-op — its display
-            // position comes from the tree, not the catalog order — so only
-            // cross-group drops (where its rows don't appear) accept it.
+            var (section, role, parent, _) = display[i];
+            // A nested child's within-own-group drop is a no-op — its display
+            // position comes from the tree, not the catalog order. Its virtual
+            // rows elsewhere don't block: dropping there moves it to that group.
             bool nestedHere = section.rows != null
-                && section.rows.Any(t => t.role == dragged && t.parent != null);
+                && section.rows.Any(t => t.role == dragged && t.parent != null && !t.virtualRow);
             if (!section.dropTarget || role == dragged || parent == dragged || nestedHere)
             {
                 RoleDrag.HoverBlocked = true;
@@ -840,7 +854,9 @@ namespace WorkRoles.UI
 
         /// 2px horizontal insertion marker across the row width at the given boundary.
         private static void DrawInsertMarker(Rect row, float y)
-            => Widgets.DrawBoxSolid(new Rect(row.x, y - 1f, row.width, 2f), new Color(1f, 1f, 1f, 0.9f));
+            => Widgets.DrawBoxSolid(
+                LudeonTK.UIScaling.AdjustRectToUIScaling(new Rect(row.x, y - 1f, row.width, 2f)),
+                new Color(1f, 1f, 1f, 0.9f));
 
         /// Floating drag ghost: the row's swatch square + label following the cursor,
         /// red-tinted while over a blocked target.
@@ -1061,7 +1077,7 @@ namespace WorkRoles.UI
             var entriesRect = new Rect(rect.x + halfW + 6f, bottomY, halfW, bottomH);
 
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            Widgets.DrawLineVertical(rect.x + halfW + 3f, bottomY, bottomH);
+            WrText.LineVertical(rect.x + halfW + 3f, bottomY, bottomH);
             GUI.color = Color.white;
 
             if (role.managed)

@@ -147,7 +147,11 @@ namespace WorkRoles.UI
                 TooltipHandler.TipRegion(rect, role.label);
 
             if (style == ChipStyle.Disabled)
-                Widgets.DrawLineHorizontal(labelRect.x, rect.y + rect.height / 2f, labelRect.width, new Color(1f, 0.3f, 0.3f, 0.75f));
+            {
+                GUI.color = new Color(1f, 0.3f, 0.3f, 0.75f);
+                WrText.LineHorizontal(labelRect.x, rect.y + rect.height / 2f, labelRect.width);
+                GUI.color = Color.white;
+            }
 
             if (showRemove)
                 GUI.DrawTexture(removeRect, TexButton.Delete);
