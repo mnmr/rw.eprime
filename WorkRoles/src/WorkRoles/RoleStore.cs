@@ -19,10 +19,10 @@ namespace WorkRoles
         /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
-        public bool reportVanillaPriorities;
-        /// User-configured recommendation order (role ids); empty = the
-        /// vanilla-grid-derived default. Merged over the derived order on use,
-        /// so new roles slot in without touching this.
+        public bool reportVanillaPriorities = true;
+        /// The user's recommendation order template (role ids); empty = the
+        /// vanilla-grid-derived default. A pure override: unlisted roles are
+        /// not merged in — they place dynamically (RecommendationOrder).
         public List<int> recommendationOrder = new List<int>();
         /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as the managed role.
@@ -140,7 +140,7 @@ namespace WorkRoles
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
-            Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities");
+            Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
                 recommendationOrder = new List<int>();
