@@ -77,28 +77,56 @@ public class RecommendationEngineTests
     }
 
     [Test]
-    public async Task GatesMinLevelWithBestInColonyEscape_MaxLevelWithPassion()
+    public async Task TrainingBands_MinWithBestInColonyEscape_MaxPromotesToTarget()
     {
         var pawn = Pawn();
         pawn.SkillLevels["Medicine"] = 4; pawn.PassionScores["Medicine"] = 1;
         var doctor = Skilled(1, "Doctor");
-        doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10;
+        doctor.TrainSkill = "Medicine"; doctor.TrainMin = 10;
         var medic = Skilled(2, "Doctor", "DoctorLite");
-        medic.GateSkill = "Medicine"; medic.GateMaxLevel = 10; medic.GateNeedsPassion = true;
+        medic.TrainSkill = "Medicine"; medic.TrainMax = 10; medic.TrainTargets.Add(1);
         var catalog = new List<RecRole> { doctor, medic };
 
-        // Below the gate with passion: Medic only.
+        // Below Doctor's band: Medic only.
         var below = RecommendationEngine.Compute(catalog, pawn, new Dictionary<string, int> { ["Medicine"] = 12 }, Skills);
         await Assert.That(Ids(below)).IsEqualTo("2");
 
-        // Best in colony at 4: the min gate opens (escape), max gate keeps Medic too.
+        // Best in colony at 4: the min band opens (escape), Medic's band still fits too.
         var best = RecommendationEngine.Compute(catalog, pawn, new Dictionary<string, int> { ["Medicine"] = 4 }, Skills);
         await Assert.That(Ids(best)).IsEqualTo("1,2");
 
-        // No passion: Medic's gate closes.
-        pawn.PassionScores["Medicine"] = 0;
-        var noPassion = RecommendationEngine.Compute(catalog, pawn, new Dictionary<string, int> { ["Medicine"] = 12 }, Skills);
-        await Assert.That(Ids(noPassion)).IsEqualTo("");
+        // Past Medic's ceiling: outgrown — only the target qualifies.
+        pawn.SkillLevels["Medicine"] = 12;
+        var outgrown = RecommendationEngine.Compute(catalog, pawn, new Dictionary<string, int> { ["Medicine"] = 12 }, Skills);
+        await Assert.That(Ids(outgrown)).IsEqualTo("1");
+    }
+
+    [Test]
+    public async Task UnavailableRolesAreNeverRecommended()
+    {
+        var pawn = Pawn();
+        pawn.SkillLevels["Cooking"] = 8; pawn.PassionScores["Cooking"] = 2;
+        var cook = Skilled(1, "Cooking");
+        cook.Available = false; // bench neither built nor researched
+        var recs = RecommendationEngine.Compute(
+            new List<RecRole> { cook }, pawn, NoBest, Skills);
+        await Assert.That(recs.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task CoveredTrainTargetSurvivesTheComboDrop()
+    {
+        // Fabricator-under-Smith: the subset specialization is the coverer's
+        // train target, so both are recommended (the plan slots it above).
+        var pawn = Pawn();
+        pawn.SkillLevels["Crafting"] = 9; pawn.PassionScores["Crafting"] = 2;
+        var smith = Skilled(1, "Crafting", "MakeWeapons", "Fabricate");
+        var fabricator = Skilled(2, "Crafting", "Fabricate");
+        fabricator.TrainMin = 7; fabricator.TrainSkill = "Crafting";
+        smith.TrainSkill = "Crafting"; smith.TrainTargets.Add(2);
+        var recs = RecommendationEngine.Compute(
+            new List<RecRole> { smith, fabricator }, pawn, NoBest, Skills);
+        await Assert.That(Ids(recs)).IsEqualTo("1,2");
     }
 
     [Test]

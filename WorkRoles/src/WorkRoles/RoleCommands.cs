@@ -43,6 +43,11 @@ namespace WorkRoles
                 hasCustomColor = hasColor,
                 color = color,
                 iconPath = def.iconPath,
+                trainSkill = def.trainSkill,
+                trainMin = def.trainMinLevel,
+                trainMax = def.trainMaxLevel,
+                minHolders = def.minHolders,
+                maxHolders = def.maxHolders,
                 entries = def.ParsedEntries()
             };
             if (!def.group.NullOrEmpty())
@@ -64,6 +69,23 @@ namespace WorkRoles
 
         /// Seeding path for group creation: runs inside the synced simulation.
         internal static RoleGroup EnsureGroup(string label) => ResolveOrCreateGroup(label);
+
+        /// Resolves def train-target names to role ids, after every def has
+        /// landed (a def may target one seeded later). Engine path: seeding and
+        /// Restore Roles run inside the synced simulation.
+        internal static void ResolveTemplateTrainTargets(Role role)
+        {
+            if (Store == null || role.templateDefName == null) return;
+            var def = DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+            if (def == null) return;
+            role.trainTargets.Clear();
+            foreach (var targetDef in def.trainTargets)
+            {
+                var target = Store.RoleByTemplate(targetDef);
+                if (target != null && target.id != role.id)
+                    role.trainTargets.Add(target.id);
+            }
+        }
 
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan, so the row-index

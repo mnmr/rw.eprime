@@ -15,6 +15,8 @@ namespace WorkRoles.Core
         public bool Unskilled;          // no relevant skills
         public bool Doctoring;          // touches the Doctor work type
         public float NaturalPriority;   // max member work-type priority (auto block order)
+        /// Roles this one trains toward (resolved ids).
+        public List<int> TrainTargets = new List<int>();
     }
 
     public struct PlannedAssignment
@@ -159,6 +161,41 @@ namespace WorkRoles.Core
                         var hunter = target[hunterIdx];
                         target.RemoveAt(hunterIdx);
                         target.Insert(lastDoctoring, hunter);
+                    }
+                }
+            }
+
+            // Training relations shape the final order: a planned train target
+            // that COVERS its training role replaces it outright; one that
+            // doesn't moves directly above it, supplementing the trainer's jobs
+            // (Fabricator slots above Smith).
+            for (int i = 0; i < target.Count; i++)
+            {
+                var trainer = RoleOf(target[i].RoleId);
+                if (trainer == null || trainer.TrainTargets.Count == 0) continue;
+                bool replaced = false;
+                foreach (int trainedId in trainer.TrainTargets)
+                {
+                    var trained = RoleOf(trainedId);
+                    if (trained == null || !target.Any(a => a.RoleId == trainedId)) continue;
+                    if (CoverageMath.CoversOrMatches(trained.Coverage, trainer.Coverage))
+                    {
+                        target.RemoveAt(i);
+                        i--;
+                        replaced = true;
+                        break;
+                    }
+                }
+                if (replaced) continue;
+                foreach (int trainedId in trainer.TrainTargets)
+                {
+                    int at = target.FindIndex(a => a.RoleId == trainedId);
+                    int trainerAt = target.FindIndex(a => a.RoleId == trainer.Id);
+                    if (trainerAt >= 0 && at > trainerAt)
+                    {
+                        var entry = target[at];
+                        target.RemoveAt(at);
+                        target.Insert(trainerAt, entry);
                     }
                 }
             }

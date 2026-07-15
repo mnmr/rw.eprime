@@ -17,15 +17,19 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        // Skill gates (recommendations and the Fix My Colony coverage pass).
-        // A minimum gate defines the "full" role of a training path; the pawn must
-        // reach the level — or be best in colony, which always passes. A maximum
-        // gate defines the training role: recommended only below the level, and
-        // (when gateNeedsPassion) only with a passion in the skill.
-        public string gateSkill;
-        public int gateMinLevel;
-        public int gateMaxLevel;
-        public bool gateNeedsPassion;
+        // Training defaults, copied onto the runtime role at creation (the role
+        // carries the live, player-editable values). A pawn inside
+        // [trainMinLevel, trainMaxLevel) fits the role; at trainMaxLevel it has
+        // outgrown it and the targets apply instead.
+        public string trainSkill;
+        public int trainMinLevel;
+        public int trainMaxLevel;
+        /// RoleDef defNames this role trains toward.
+        public List<string> trainTargets = new List<string>();
+        /// Colony holder bounds for the coverage pass: minHolders = floor;
+        /// maxHolders -1 = engine default, 0 = never dealt, N = cap.
+        public int minHolders;
+        public int maxHolders = -1;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -48,16 +52,18 @@ namespace WorkRoles
             return parsed;
         }
 
-        /// Stable fingerprint of the def's substance (label, flags, entries).
-        /// Colors and gates are excluded: gates are read live from the def, and
-        /// color drift shouldn't read as role drift. Computed on demand, never
-        /// stored in XML; saves stamp it per seeded role so later loads can tell
-        /// def drift from player edits.
+        /// Stable fingerprint of the def's substance — everything copied onto
+        /// roles at creation (colors excluded: color drift shouldn't read as
+        /// role drift). Computed on demand, never stored in XML; saves stamp it
+        /// per seeded role so later loads can tell def drift from player edits.
         public uint StableHash()
         {
             var text = string.Join("\n",
                 label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 group, activeHours, string.Join("|", locations),
+                trainSkill, trainMinLevel.ToString(), trainMaxLevel.ToString(),
+                string.Join("|", trainTargets),
+                minHolders.ToString(), maxHolders.ToString(),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -81,6 +87,12 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
+            if (!trainSkill.NullOrEmpty()
+                && DefDatabase<RimWorld.SkillDef>.GetNamedSilentFail(trainSkill) == null)
+                yield return $"unknown trainSkill '{trainSkill}'";
+            foreach (var target in trainTargets)
+                if (DefDatabase<RoleDef>.GetNamedSilentFail(target) == null)
+                    yield return $"unknown trainTarget '{target}'";
         }
     }
 }

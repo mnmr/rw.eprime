@@ -16,6 +16,12 @@ public class RoleFileTests
         enabled = false,
         activeHours = RoleFile.BitsToHours("111111000000000000000000"),
         locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
+        trainSkill = "Medicine",
+        trainMin = 5,
+        trainMax = 15,
+        trainTargets = { "Doctor" },
+        minHolders = 1,
+        maxHolders = 3,
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -51,12 +57,20 @@ public class RoleFileTests
             .IsEqualTo("caravans|settlement:Bö & <Wood> \"Camp\"|ship:The Wanderer");
         await Assert.That(string.Join(",", role.entries.Select(e => e.Encode())))
             .IsEqualTo("WorkGiver:FightFires,WorkType:Hauling"); // ORDER preserved across kinds
+        await Assert.That(role.trainSkill).IsEqualTo("Medicine");
+        await Assert.That(role.trainMin).IsEqualTo(5);
+        await Assert.That(role.trainMax).IsEqualTo(15);
+        await Assert.That(string.Join(",", role.trainTargets)).IsEqualTo("Doctor");
+        await Assert.That(role.minHolders).IsEqualTo(1);
+        await Assert.That(role.maxHolders).IsEqualTo(3);
 
         var plain = parsed.roles[1];
         await Assert.That(plain.templateDef == null).IsTrue();
         await Assert.That(plain.colorRef == null).IsTrue();
         await Assert.That(plain.enabled).IsTrue();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
+        await Assert.That(plain.trainSkill == null).IsTrue();
+        await Assert.That(plain.maxHolders).IsEqualTo(-1);
     }
 
     [Test]

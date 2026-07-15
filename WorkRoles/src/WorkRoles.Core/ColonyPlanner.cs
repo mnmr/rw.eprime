@@ -37,14 +37,14 @@ namespace WorkRoles.Core
     /// 2. Coverage: every enabled, rule-free, non-auto, skill-associated role is
     ///    dealt to the best eligible pawns (gates pass; ranked by matched skill,
     ///    then passion, then fewest virtual roles) until max(1, ceil(pawns/6))
-    ///    hold it — or the role's WantOverride. Sub-roles are skipped in favor of
-    ///    their coverer unless gated/essential/Hunter. Hunter is exempt from
-    ///    top-N: every gun carrier hunts, tiered by Shooting (&lt;15 / &lt;19 / 19+),
-    ///    with at least one tier-0 hunter.
+    ///    hold it — clamped by the role's MinHolders/MaxHolders (0 = never dealt).
+    ///    Sub-roles are skipped in favor of their coverer unless gated/essential/
+    ///    Hunter. Hunter is exempt from top-N: every gun carrier hunts, tiered by
+    ///    Shooting (&lt;15 / &lt;19 / 19+), with at least one tier-0 hunter.
     /// 3. Doctoring floor: at least TWO pawns able to tend — two doctors or a
-    ///    doctor/medic pair; the backup prefers a Doctor-gate passer, then a Medic
+    ///    doctor/medic pair; the backup prefers a Doctor-band passer, then a Medic
     ///    trainee, then the best pawn by Medicine with gates waived.
-    /// 4. Fire safety: fire-fearing pawns get the No Firefighting blocker.
+    /// 4. Fire safety: fire-fearing pawns get the firefighting blocker.
     public static class ColonyPlanner
     {
         public static ColonyPlanResult Compute(
@@ -95,7 +95,7 @@ namespace WorkRoles.Core
             foreach (var role in catalog)
             {
                 if (!role.Enabled || role.HasRules || role.AutoAssign || role.Blocker || role.Managed) continue;
-                if (role.SkipCoverage) continue;
+                if (role.MaxHolders == 0) continue; // explicitly never dealt
                 var relevantSkills = RelevantSkills(role);
                 if (relevantSkills.Count == 0) continue; // not skill-associated
                 // Sub-roles are not dealt — their coverer is — unless gated
@@ -160,7 +160,8 @@ namespace WorkRoles.Core
                     eligible.Add((i, level, passion, virtualSets[i].Count));
                 }
 
-                int want = role.WantOverride > 0 ? role.WantOverride : coverage;
+                int want = role.MaxHolders > 0 ? role.MaxHolders : coverage;
+                if (role.MinHolders > want) want = role.MinHolders;
                 int holders = virtualSets.Count(ids => ids.Contains(role.Id));
                 foreach (var candidate in eligible
                     .OrderByDescending(t => t.level)

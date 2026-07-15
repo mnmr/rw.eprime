@@ -75,6 +75,7 @@ public class ColonyScenarioTests
     {
         var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
         var catalog = new Catalog();
+        var trainTargetNames = new Dictionary<int, List<string>>();
         int id = 1;
         foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
@@ -92,7 +93,7 @@ public class ColonyScenarioTests
                 if (workType != null && !workTypes.Contains(workType)) workTypes.Add(workType);
             }
 
-            string gateSkill = def.Element("gateSkill")?.Value.Trim();
+            string trainSkill = def.Element("trainSkill")?.Value.Trim();
             bool blocker = def.Element("blocker")?.Value.Trim() == "true";
             bool autoAssign = def.Element("autoAssign")?.Value.Trim() == "true";
             bool unskilled = workTypes.All(wt => !SkillsByWorkType.ContainsKey(wt));
@@ -105,17 +106,18 @@ public class ColonyScenarioTests
                 Blocker = blocker,
                 Unskilled = unskilled,
                 Hunting = workTypes.Contains("Hunting"),
-                GateSkill = gateSkill,
-                GateMinLevel = int.TryParse(def.Element("gateMinLevel")?.Value, out var mn) ? mn : 0,
-                GateMaxLevel = int.TryParse(def.Element("gateMaxLevel")?.Value, out var mx) ? mx : 0,
-                GateNeedsPassion = def.Element("gateNeedsPassion")?.Value.Trim() == "true",
+                TrainSkill = trainSkill,
+                TrainMin = int.TryParse(def.Element("trainMinLevel")?.Value, out var mn) ? mn : 0,
+                TrainMax = int.TryParse(def.Element("trainMaxLevel")?.Value, out var mx) ? mx : 0,
+                MinHolders = int.TryParse(def.Element("minHolders")?.Value, out var mnh) ? mnh : 0,
+                MaxHolders = int.TryParse(def.Element("maxHolders")?.Value, out var mxh) ? mxh : -1,
                 Enabled = true,
-                Gated = gateSkill != null,
-                SkipCoverage = defName == "WS_Artist",
-                WantOverride = defName == "WS_Researcher" ? 3 : 0,
+                Gated = trainSkill != null,
             };
             rec.WorkTypes.AddRange(workTypes);
             catalog.Recs.Add(rec);
+            trainTargetNames[id] = def.Element("trainTargets")?.Elements("li")
+                .Select(li => li.Value.Trim()).ToList() ?? new List<string>();
 
             catalog.Targets.Add(new TargetRole
             {
@@ -136,6 +138,18 @@ public class ColonyScenarioTests
             if (defName == "WS_NoFirefighting") catalog.FireBlockerId = id;
             id++;
         }
+        // Train targets resolve after every def has landed.
+        var idByDef = catalog.DefNames.ToDictionary(kv => kv.Value, kv => kv.Key);
+        foreach (var rec in catalog.Recs)
+            if (trainTargetNames.TryGetValue(rec.Id, out var names))
+                rec.TrainTargets.AddRange(names
+                    .Where(idByDef.ContainsKey).Select(n => idByDef[n]));
+        foreach (var targetRole in catalog.Targets)
+        {
+            var rec = catalog.Recs.First(r => r.Id == targetRole.Id);
+            targetRole.TrainTargets.AddRange(rec.TrainTargets);
+        }
+
         for (int rank = 0; rank < Essentials.Length; rank++)
             foreach (var kv in catalog.DefNames)
                 if (kv.Value == Essentials[rank].template)
@@ -262,7 +276,7 @@ public class ColonyScenarioTests
             // doctoring (redundancy floor), researcher (bench override).
             if (role.AutoAssign || role.Blocker || role.Unskilled || role.Hunting) continue;
             if (role.Id == run.Catalog.DoctorId || role.Id == run.Catalog.MedicId) continue;
-            if (role.WantOverride > 0 || role.SkipCoverage) continue;
+            if (role.MinHolders > 0 || role.MaxHolders >= 0) continue; // own holder bounds
             int holders = run.Colony.VirtualSets.Count(ids => ids.Contains(role.Id));
             await Assert.That(holders <= cap).IsTrue()
                 .Because($"{run.Catalog.DefNames[role.Id]} held by {holders} > cap {cap} (size {size}, seed {seed})");

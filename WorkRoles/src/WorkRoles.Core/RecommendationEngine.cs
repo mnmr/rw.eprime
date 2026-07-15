@@ -31,15 +31,22 @@ namespace WorkRoles.Core
         // Colony-plan facts (ignored by per-pawn scoring):
         public bool Enabled = true;
         public bool Managed;
-        public bool Gated;                   // hunting or def-gated (training paths)
-        public bool SkipCoverage;            // Artist: no colony minimum
-        public int WantOverride;             // >0 replaces the default holder count (Researcher)
+        public bool Gated;                   // hunting or band-gated (training paths)
         public List<string> WorkTypes = new List<string>(); // member work type defNames
-        // Template gates (resolved from the role's def game-side; null = ungated).
-        public string GateSkill;
-        public int GateMinLevel;
-        public int GateMaxLevel;
-        public bool GateNeedsPassion;
+        // Training band: a pawn inside [TrainMin, TrainMax) fits the role; at
+        // TrainMax it has outgrown it and its targets apply instead.
+        public string TrainSkill;            // null = no band
+        public int TrainMin;
+        public int TrainMax;                 // 0 = open-ended
+        /// Roles this one trains toward (resolved ids).
+        public List<int> TrainTargets = new List<int>();
+        /// Colony holder bounds: MinHolders = coverage floor; MaxHolders -1 =
+        /// engine default, 0 = never dealt, N = cap.
+        public int MinHolders;
+        public int MaxHolders = -1;
+        /// False while none of the role's bench work can exist yet (nothing
+        /// built, nothing researched): not recommendable.
+        public bool Available = true;
     }
 
     public enum RecReason
@@ -140,12 +147,16 @@ namespace WorkRoles.Core
                 .ToList();
 
             // A combo beats its parts: never recommend a role another recommended
-            // role covers (no Grower next to Farmer, no Firefighter next to Basics).
+            // role covers (no Grower next to Farmer, no Firefighter next to Basics)
+            // — unless the covered role is a train TARGET of the coverer
+            // (Fabricator under Smith): the subset specialization survives so the
+            // plan can slot it above its trainer.
             var result = new List<Recommendation>();
             foreach (var (role, group, _, skill) in ordered)
             {
                 if (ordered.Any(other =>
-                        CoverageMath.MakesRedundant(other.role.Coverage, other.role.Id, role.Coverage, role.Id)))
+                        CoverageMath.MakesRedundant(other.role.Coverage, other.role.Id, role.Coverage, role.Id)
+                        && !other.role.TrainTargets.Contains(role.Id)))
                     continue;
                 result.Add(new Recommendation
                 {
@@ -166,26 +177,25 @@ namespace WorkRoles.Core
         }
 
         /// Hard recommendation gates. Hunter's gate is a ranged weapon — every gun
-        /// carrier hunts (placement is skill-tiered in the colony plan). Every
-        /// other gate comes from the role's template def: a minimum gate passes at
-        /// the level or when best in colony; a maximum gate passes below the level,
-        /// with a passion when the def demands one.
+        /// carrier hunts (placement is skill-tiered in the colony plan). Skilled
+        /// roles gate on their training band: below TrainMin fails (unless best in
+        /// colony), at or past TrainMax the pawn has outgrown the role — its train
+        /// targets qualify through their own bands instead.
         public static bool PassesGates(RecRole role, RecPawn pawn,
             IReadOnlyDictionary<string, int> skillMaxLevels)
         {
+            if (!role.Available) return false;
             if (role.Hunting)
                 return pawn.HasRangedWeapon;
-            if (role.GateSkill == null) return true;
+            if (role.TrainSkill == null) return true;
 
-            int level = pawn.SkillLevels.TryGetValue(role.GateSkill, out var l) ? l : 0;
-            if (role.GateMinLevel > 0)
+            int level = pawn.SkillLevels.TryGetValue(role.TrainSkill, out var l) ? l : 0;
+            if (role.TrainMin > 0)
             {
-                bool best = level > 0 && skillMaxLevels.TryGetValue(role.GateSkill, out int max) && level >= max;
-                if (level < role.GateMinLevel && !best) return false;
+                bool best = level > 0 && skillMaxLevels.TryGetValue(role.TrainSkill, out int max) && level >= max;
+                if (level < role.TrainMin && !best) return false;
             }
-            if (role.GateMaxLevel > 0 && level >= role.GateMaxLevel) return false;
-            int passion = pawn.PassionScores.TryGetValue(role.GateSkill, out var p) ? p : 0;
-            if (role.GateNeedsPassion && passion == 0) return false;
+            if (role.TrainMax > 0 && level >= role.TrainMax) return false;
             return true;
         }
     }

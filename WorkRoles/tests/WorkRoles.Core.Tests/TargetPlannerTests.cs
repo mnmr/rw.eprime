@@ -183,6 +183,32 @@ public class TargetPlannerTests
     }
 
     [Test]
+    public async Task TrainTargetSlotsAboveItsTrainer()
+    {
+        // Fabricator (subset target) supplements Smith: it moves directly above.
+        var smith = Role(1, coverage: new[] { "MakeWeapons", "Fabricate" });
+        smith.TrainTargets.Add(2);
+        var fabricator = Role(2, coverage: "Fabricate");
+        var plan = TargetPlanner.Build(new List<PlannedAssignment>(),
+            new List<TargetRole> { smith, fabricator },
+            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, -1, -1);
+        await Assert.That(Ids(plan)).IsEqualTo("2,1");
+    }
+
+    [Test]
+    public async Task CoveringTrainTargetReplacesItsTrainer()
+    {
+        // Doctor covers Medic: promotion replaces instead of supplementing.
+        var medic = Role(1, coverage: "Tend");
+        medic.TrainTargets.Add(2);
+        var doctor = Role(2, coverage: new[] { "Tend", "Operate" });
+        var plan = TargetPlanner.Build(new List<PlannedAssignment>(),
+            new List<TargetRole> { medic, doctor },
+            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, -1, -1);
+        await Assert.That(Ids(plan)).IsEqualTo("2");
+    }
+
+    [Test]
     public async Task RetainedRolesKeepTheirToggle_NewOnesStartEnabled()
     {
         var catalog = new List<TargetRole> { Role(1), Role(2) };

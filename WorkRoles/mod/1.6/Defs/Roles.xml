@@ -42,8 +42,8 @@
     <description>Medical care for colonists, prisoners and animals.</description>
     <colorRef>red-800</colorRef>
     <group>Essentials</group>
-    <gateSkill>Medicine</gateSkill>
-    <gateMinLevel>10</gateMinLevel>
+    <trainSkill>Medicine</trainSkill>
+    <trainMinLevel>15</trainMinLevel>
     <entries>
       <li>WorkType:Doctor</li>
     </entries>
@@ -67,9 +67,10 @@
     <description>Medical work except operating on colonists.</description>
     <colorRef>red-900</colorRef>
     <group>Essentials</group>
-    <gateSkill>Medicine</gateSkill>
-    <gateMaxLevel>10</gateMaxLevel>
-    <gateNeedsPassion>true</gateNeedsPassion>
+    <trainSkill>Medicine</trainSkill>
+    <trainMinLevel>5</trainMinLevel>
+    <trainMaxLevel>15</trainMaxLevel>
+    <trainTargets><li>WS_Doctor</li></trainTargets>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
       <li>WorkGiver:DoctorTendToHumanlikes</li>
@@ -101,7 +102,7 @@
 
   <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
     <defName>WS_Childminder</defName>
-    <label>Childcare</label>
+    <label>Caretaker</label>
     <description>Childcare and teaching.</description>
     <colorRef>cyan-700</colorRef>
     <group>Essentials</group>
@@ -195,8 +196,8 @@
     <description>Meal preparation and butchering.</description>
     <colorRef>green-700</colorRef>
     <group>Food</group>
-    <gateSkill>Cooking</gateSkill>
-    <gateMinLevel>8</gateMinLevel>
+    <trainSkill>Cooking</trainSkill>
+    <trainMinLevel>8</trainMinLevel>
     <entries>
       <li>WorkType:Cooking</li>
     </entries>
@@ -208,9 +209,9 @@
     <description>Butchering creatures.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <gateSkill>Cooking</gateSkill>
-    <gateMaxLevel>8</gateMaxLevel>
-    <gateNeedsPassion>true</gateNeedsPassion>
+    <trainSkill>Cooking</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Cook</li></trainTargets>
     <entries>
       <li>WorkGiver:DoBillsButcherFlesh</li>
     </entries>
@@ -222,9 +223,9 @@
     <description>Brewing wort at the brewery.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <gateSkill>Cooking</gateSkill>
-    <gateMaxLevel>8</gateMaxLevel>
-    <gateNeedsPassion>true</gateNeedsPassion>
+    <trainSkill>Cooking</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Cook</li></trainTargets>
     <entries>
       <li>WorkGiver:DoBillsBrew</li>
     </entries>
@@ -258,8 +259,8 @@
     <description>Construction, repair and deconstruction.</description>
     <colorRef>yellow-700</colorRef>
     <group>Indoors</group>
-    <gateSkill>Construction</gateSkill>
-    <gateMinLevel>8</gateMinLevel>
+    <trainSkill>Construction</trainSkill>
+    <trainMinLevel>8</trainMinLevel>
     <entries>
       <li>WorkType:Construction</li>
     </entries>
@@ -271,9 +272,9 @@
     <description>All construction work except constructing new buildings.</description>
     <colorRef>yellow-800</colorRef>
     <group>Indoors</group>
-    <gateSkill>Construction</gateSkill>
-    <gateMaxLevel>8</gateMaxLevel>
-    <gateNeedsPassion>true</gateNeedsPassion>
+    <trainSkill>Construction</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Builder</li></trainTargets>
     <entries>
       <li>WorkGiver:Repair</li>
       <li>WorkGiver:FixBrokenDownBuilding</li>
@@ -343,6 +344,8 @@
     <description>Apparel creation.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets><li>WS_Fabricator</li></trainTargets>
     <entries>
       <li>WorkType:Tailoring</li>
     </entries>
@@ -354,6 +357,8 @@
     <description>Weapon and armor smithing.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets><li>WS_Fabricator</li></trainTargets>
     <entries>
       <li>WorkType:Smithing</li>
     </entries>
@@ -365,6 +370,8 @@
     <description>Fabricating things at the fabrication bench.</description>
     <colorRef>amber-800</colorRef>
     <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainMinLevel>7</trainMinLevel>
     <entries>
       <li>WorkGiver:DoBillsFabricationBench</li>
     </entries>
@@ -376,6 +383,15 @@
     <description>General crafting: stonecutting, smelting, drugs and components.</description>
     <colorRef>orange-700</colorRef>
     <group>Indoors</group>
+    <!-- No band ceiling: the targets supplement rather than cover this role,
+         so outgrowing it must not abandon its jobs. -->
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets>
+      <li>WS_DrugMaker</li>
+      <li>WS_Smith</li>
+      <li>WS_Tailor</li>
+      <li>WS_Fabricator</li>
+    </trainTargets>
     <entries>
       <li>WorkType:Crafting</li>
     </entries>
@@ -387,6 +403,7 @@
     <description>Research at a research bench.</description>
     <colorRef>slate-700</colorRef>
     <group>Research</group>
+    <maxHolders>3</maxHolders>
     <entries>
       <li>WorkType:Research</li>
     </entries>
@@ -409,6 +426,7 @@
     <description>Sculpting and artwork.</description>
     <colorRef>purple-700</colorRef>
     <group>Indoors</group>
+    <maxHolders>0</maxHolders>
     <entries>
       <li>WorkType:Art</li>
     </entries>
@@ -420,6 +438,9 @@
     <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
     <colorRef>red-900</colorRef>
     <group>Essentials</group>
+    <trainSkill>Medicine</trainSkill>
+    <trainMaxLevel>5</trainMaxLevel>
+    <trainTargets><li>WS_Medic</li></trainTargets>
     <entries>
       <li>WorkGiver:DoctorTendToSelfEmergency</li>
       <li>WorkGiver:DoctorRescue</li>
@@ -439,6 +460,8 @@
     <description>Drug production at the drug lab and serum centrifuge.</description>
     <colorRef>orange-800</colorRef>
     <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainMinLevel>4</trainMinLevel>
     <entries>
       <li>WorkGiver:DoBillsProduceDrugs</li>
       <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>

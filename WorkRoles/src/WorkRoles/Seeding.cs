@@ -28,6 +28,9 @@ namespace WorkRoles
                 RoleCommands.EnsureGroup(groupDef.label);
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
+            // Second pass: train targets may reference defs seeded later.
+            foreach (var role in store.roles)
+                RoleCommands.ResolveTemplateTrainTargets(role);
             store.seeded = true;
 
             // Role ranks read as numbers; default vanilla's per-save "manual
@@ -491,12 +494,19 @@ namespace WorkRoles
             }
 
             if (templateDefs != null)
+            {
+                var restored = new List<Role>();
                 foreach (var defName in templateDefs)
                 {
                     if (store.RoleByTemplate(defName) != null) continue;
                     var role = RoleCommands.CreateRoleFromDef(DefDatabase<RoleDef>.GetNamedSilentFail(defName));
-                    if (role != null) result.Add(role.label);
+                    if (role != null) { result.Add(role.label); restored.Add(role); }
                 }
+                // Only the restored roles get their def targets resolved —
+                // existing roles' (possibly player-edited) targets stay put.
+                foreach (var role in restored)
+                    RoleCommands.ResolveTemplateTrainTargets(role);
+            }
 
             if (workTypes != null && workTypes.Count > 0)
             {

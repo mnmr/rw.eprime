@@ -28,6 +28,19 @@ namespace WorkRoles
         /// Engine-managed container (Odd Jobs): entries are written by work-type
         /// coverage, not the player; the role cannot be deleted.
         public bool managed;
+        // Training band + targets and colony holder bounds — live, player-
+        // editable values (seeded from the template def's defaults). A pawn
+        // inside [trainMin, trainMax) fits the role; at trainMax it has
+        // outgrown it and the targets apply instead.
+        public string trainSkill;
+        public int trainMin;
+        public int trainMax;
+        /// Role ids this role trains toward.
+        public List<int> trainTargets = new List<int>();
+        /// Coverage bounds: minHolders = floor; maxHolders -1 = engine default,
+        /// 0 = never dealt, N = cap.
+        public int minHolders;
+        public int maxHolders = -1;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles, managed under Locked.
         public int groupId = RoleGroup.DefaultId;
@@ -86,6 +99,14 @@ namespace WorkRoles
             Scribe_Values.Look(ref autoAssign, "autoAssign");
             Scribe_Values.Look(ref blocker, "blocker");
             Scribe_Values.Look(ref managed, "managed");
+            Scribe_Values.Look(ref trainSkill, "trainSkill");
+            Scribe_Values.Look(ref trainMin, "trainMin");
+            Scribe_Values.Look(ref trainMax, "trainMax");
+            Scribe_Collections.Look(ref trainTargets, "trainTargets", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars && trainTargets == null)
+                trainTargets = new List<int>();
+            Scribe_Values.Look(ref minHolders, "minHolders");
+            Scribe_Values.Look(ref maxHolders, "maxHolders", -1);
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (ids are numeric, category

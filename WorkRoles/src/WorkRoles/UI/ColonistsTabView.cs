@@ -594,20 +594,16 @@ namespace WorkRoles.UI
         }
 
         /// "Trains toward X (Skill 8+)." reason suffix for training roles (roles
-        /// whose template def carries a maximum skill gate), so players see why
+        /// with train targets and a band ceiling), so players see why
         /// Butcher/Medic/... shows up instead of the full role. Empty otherwise.
         private static string TrainingSuffix(Role role)
         {
-            var def = role.templateDefName == null ? null
-                : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-            if (def == null || def.gateMaxLevel <= 0 || def.gateSkill == null) return "";
-            var skill = DefDatabase<SkillDef>.GetNamedSilentFail(def.gateSkill);
-            var fullDef = DefDatabase<RoleDef>.AllDefsListForReading.FirstOrDefault(d =>
-                d.gateSkill == def.gateSkill && d.gateMinLevel == def.gateMaxLevel);
-            if (skill == null || fullDef == null) return "";
-            string fullLabel = RoleStore.Current?.RoleByTemplate(fullDef.defName)?.label ?? fullDef.label;
+            if (role.trainMax <= 0 || role.trainSkill == null || role.trainTargets.Count == 0) return "";
+            var skill = DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill);
+            var target = RoleStore.Current?.RoleById(role.trainTargets[0]);
+            if (skill == null || target == null) return "";
             return "\n\n" + "WR_ReasonTraining".Translate(
-                fullLabel, skill.skillLabel.CapitalizeFirst(), def.gateMaxLevel);
+                target.label, skill.skillLabel.CapitalizeFirst(), role.trainMax);
         }
 
         /// Genes that make a pawn terrified of fire (Biotech's pyrophobia; extend
@@ -796,13 +792,13 @@ namespace WorkRoles.UI
                 sb.Append('\n').Append("WR_TipRelevantSkills".Translate(
                     skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList()));
 
-            if (def?.gateSkill != null
-                && DefDatabase<SkillDef>.GetNamedSilentFail(def.gateSkill) is SkillDef gateSkill)
+            if (role.trainSkill != null
+                && DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill) is SkillDef trainSkill)
             {
-                if (def.gateMinLevel > 0)
+                if (role.trainMin > 0)
                     sb.Append('\n').Append("WR_TipRequires".Translate(
-                        gateSkill.skillLabel.CapitalizeFirst(), def.gateMinLevel));
-                if (def.gateMaxLevel > 0)
+                        trainSkill.skillLabel.CapitalizeFirst(), role.trainMin));
+                if (role.trainMax > 0)
                     sb.Append('\n').Append(TrainingSuffix(role).TrimStart('\n'));
             }
 
@@ -1887,11 +1883,32 @@ namespace WorkRoles.UI
         /// Whether the role carries a gate (a hunting role's weapon gate counts).
         /// Gated roles keep their special coverage dealing.
         private static bool HasGate(Role role)
+            => ProvidesHunting(role) || role.trainSkill != null;
+
+        /// A role is unavailable while none of its covered work can exist yet:
+        /// every covered giver is bench work and no bench is built on a player
+        /// map or researched. Unresearched-only roles (Fabricator before
+        /// Advanced Fabrication) aren't recommended; researched-but-unbuilt
+        /// ones are — recommendations shouldn't need rechecking per bench built.
+        private static bool RoleAvailable(Role role)
         {
-            if (ProvidesHunting(role)) return true;
-            if (role.templateDefName == null) return false;
-            var def = DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-            return def?.gateSkill != null;
+            bool sawGiver = false;
+            foreach (var giverName in role.Coverage())
+            {
+                var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(giverName);
+                if (giver == null) continue;
+                sawGiver = true;
+                if (giver.fixedBillGiverDefs.NullOrEmpty()) return true; // non-bench work
+                foreach (var bench in giver.fixedBillGiverDefs)
+                {
+                    if (bench == null) continue;
+                    if (bench.IsResearchFinished) return true;
+                    if (Find.Maps.Any(m => m.IsPlayerHome
+                            && m.listerBuildings.ColonistsHaveBuilding(bench)))
+                        return true;
+                }
+            }
+            return !sawGiver; // empty roles stay "available" (invalid is handled elsewhere)
         }
 
         /// Whether the role trains no skill — grunt work (Grunt, Hauler, Cleaner, …).
@@ -1931,6 +1948,7 @@ namespace WorkRoles.UI
                 Unskilled = IsUnskilledRole(r),
                 Doctoring = WorkTypesOf(r).Any(wt => wt.defName == "Doctor"),
                 NaturalPriority = MaxNaturalPriority(r),
+                TrainTargets = r.trainTargets.ToList(),
             }).ToList();
 
             var planned = TargetPlanner.Build(
@@ -2072,10 +2090,8 @@ namespace WorkRoles.UI
         /// One catalog role projected into the Core engines' shape.
         private static RecRole RecRoleOf(Role role)
         {
-            var def = role.templateDefName == null ? null
-                : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-            bool gateSkillKnown = def?.gateSkill != null
-                && DefDatabase<SkillDef>.GetNamedSilentFail(def.gateSkill) != null;
+            bool trainSkillKnown = role.trainSkill != null
+                && DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill) != null;
             return new RecRole
             {
                 Id = role.id,
@@ -2087,16 +2103,16 @@ namespace WorkRoles.UI
                 Hunting = ProvidesHunting(role),
                 NaturalPriority = MaxNaturalPriority(role),
                 WorkTypes = WorkTypesOf(role).Select(wt => wt.defName).ToList(),
-                GateSkill = gateSkillKnown ? def.gateSkill : null,
-                GateMinLevel = def?.gateMinLevel ?? 0,
-                GateMaxLevel = def?.gateMaxLevel ?? 0,
-                GateNeedsPassion = def?.gateNeedsPassion ?? false,
+                TrainSkill = trainSkillKnown ? role.trainSkill : null,
+                TrainMin = role.trainMin,
+                TrainMax = role.trainMax,
+                TrainTargets = role.trainTargets.ToList(),
+                MinHolders = role.minHolders,
+                MaxHolders = role.maxHolders,
+                Available = RoleAvailable(role),
                 Enabled = role.enabled,
                 Managed = role.managed,
                 Gated = HasGate(role),
-                SkipCoverage = role.templateDefName == "WS_Artist", // min 0: not required
-                WantOverride = role.templateDefName == "WS_Researcher"
-                    ? Mathf.Max(3, CountResearchBenches()) : 0,
             };
         }
 
@@ -2323,19 +2339,6 @@ namespace WorkRoles.UI
                 plans.Add(plan);
             }
             return plans;
-        }
-
-        /// Research benches on player home maps (Researcher coverage scales with it).
-        private static int CountResearchBenches()
-        {
-            int count = 0;
-            foreach (var map in Find.Maps)
-            {
-                if (!map.IsPlayerHome) continue;
-                foreach (var building in map.listerBuildings.allBuildingsColonist)
-                    if (building is Building_ResearchBench) count++;
-            }
-            return count;
         }
 
         // ----- Helpers -----

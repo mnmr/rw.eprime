@@ -84,11 +84,11 @@ public class ColonyPlannerTests
     public async Task DoctoringFloor_MedicTraineePreferred_ThenGatesWaived()
     {
         var doctor = Role(1, "Doctor");
-        doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10; doctor.Gated = true;
+        doctor.TrainSkill = "Medicine"; doctor.TrainMin = 10; doctor.Gated = true;
         var medic = new RecRole
         {
             Id = 2, WorkTypes = { "Doctor" }, Coverage = ["Tend"],
-            GateSkill = "Medicine", GateMaxLevel = 10, GateNeedsPassion = true, Gated = true,
+            TrainSkill = "Medicine", TrainMax = 10, Gated = true,
         };
         var catalog = new List<RecRole> { doctor, medic };
         var essentials = new Dictionary<int, int> { [1] = 0 };
@@ -153,11 +153,11 @@ public class ColonyPlannerTests
     public async Task DoctoringBackup_GatePasserGetsDoctor_NoMedicRoleWaivesTheGate()
     {
         var doctor = Role(1, "Doctor");
-        doctor.GateSkill = "Medicine"; doctor.GateMinLevel = 10; doctor.Gated = true;
+        doctor.TrainSkill = "Medicine"; doctor.TrainMin = 10; doctor.Gated = true;
         var medic = new RecRole
         {
             Id = 2, WorkTypes = { "Doctor" }, Coverage = ["Tend"],
-            GateSkill = "Medicine", GateMaxLevel = 10, GateNeedsPassion = true, Gated = true,
+            TrainSkill = "Medicine", TrainMax = 10, Gated = true,
         };
         var essentials = new Dictionary<int, int> { [1] = 0 };
 
