@@ -26,7 +26,7 @@
     <label>Core</label>
     <description>Emergency work every colonist must do: firefighting, being treated and rescuing.</description>
     <autoAssign>true</autoAssign>
-    <colorRef>slate-500</colorRef>
+    <colorRef>slate-700</colorRef>
     <group>Essentials</group>
     <entries>
       <li>WorkType:Firefighter</li>

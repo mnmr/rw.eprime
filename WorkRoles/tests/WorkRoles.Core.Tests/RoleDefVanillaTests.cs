@@ -43,6 +43,27 @@ public class RoleDefVanillaTests
     }
 
     [Test]
+    public async Task EveryColorRefResolvesInThePalette()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "WorkRoles.slnx")))
+            dir = dir.Parent;
+        var defsDir = Path.Combine(dir!.FullName, "mod", "1.6", "Defs");
+        var palette = XElement.Load(Path.Combine(defsDir, "Palette.xml"))
+            .Elements("WorkRoles.PaletteDef")
+            .Select(d => d.Element("defName")!.Value)
+            .ToHashSet();
+        foreach (var def in XElement.Load(Path.Combine(defsDir, "Roles.xml"))
+                     .Elements("WorkRoles.RoleDef"))
+        {
+            string colorRef = def.Element("colorRef")?.Value.Trim();
+            if (colorRef == null) continue;
+            await Assert.That(palette.Contains(colorRef)).IsTrue()
+                .Because($"{def.Element("defName")?.Value}: unknown colorRef '{colorRef}'");
+        }
+    }
+
+    [Test]
     public async Task EveryEntryExistsInVanilla()
     {
         foreach (var role in Roles)
