@@ -19,6 +19,7 @@ public class ColonyScenarioTests
         public List<TargetRole> Targets = new();
         public Dictionary<int, string> DefNames = new();
         public Dictionary<int, int> EssentialRank = new();
+        public List<int> OrderTemplate = new();
         public int HunterId = -1, DoctorId = -1, MedicId = -1, FireBlockerId = -1;
     }
 
@@ -109,8 +110,10 @@ public class ColonyScenarioTests
                 TrainSkill = trainSkill,
                 TrainMin = int.TryParse(def.Element("trainMinLevel")?.Value, out var mn) ? mn : 0,
                 TrainMax = int.TryParse(def.Element("trainMaxLevel")?.Value, out var mx) ? mx : 0,
-                MinHolders = int.TryParse(def.Element("minHolders")?.Value, out var mnh) ? mnh : 0,
-                MaxHolders = int.TryParse(def.Element("maxHolders")?.Value, out var mxh) ? mxh : -1,
+                MinHolders = int.TryParse(def.Element("minHolders")?.Value, out var mnh) ? mnh : -1,
+                NaturalPriority = workTypes
+                    .Select(wt => VanillaWorkOrder.NaturalPriority.TryGetValue(wt, out var np) ? np : 0)
+                    .DefaultIfEmpty(0).Max(),
                 Enabled = true,
                 Gated = trainSkill != null,
             };
@@ -149,6 +152,17 @@ public class ColonyScenarioTests
             var rec = catalog.Recs.First(r => r.Id == targetRole.Id);
             targetRole.TrainTargets.AddRange(rec.TrainTargets);
         }
+
+        // The recommendation order template, as the game adapter derives it:
+        // the vanilla grid's columns — normal roles no other normal role
+        // covers (autos and trainers count as coverers) — by member work-type
+        // naturalPriority, descending.
+        catalog.OrderTemplate = catalog.Recs
+            .Where(r => !r.Blocker && !r.AutoAssign && !r.Hunting
+                && !catalog.Recs.Any(o => o != r && !o.Blocker
+                    && CoverageMath.MakesRedundant(o.Coverage, o.Id, r.Coverage, r.Id)))
+            .OrderByDescending(r => r.NaturalPriority)
+            .Select(r => r.Id).ToList();
 
         for (int rank = 0; rank < Essentials.Length; rank++)
             foreach (var kv in catalog.DefNames)
@@ -226,13 +240,15 @@ public class ColonyScenarioTests
             catalog.EssentialRank, catalog.HunterId, catalog.DoctorId, catalog.MedicId,
             catalog.FireBlockerId);
         var run = new Run { Catalog = catalog, Pawns = pawns, Colony = colony };
+        var positions = RecommendationOrder.PositionsFor(catalog.Recs, catalog.OrderTemplate);
         for (int i = 0; i < pawns.Count; i++)
         {
             var recs = RecommendationEngine
-                .Compute(catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType)
+                .Compute(catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType, catalog.OrderTemplate)
                 .Select(r => r.RoleId).ToList();
             run.Targets.Add(TargetPlanner.Build(pawns[i].Existing, catalog.Targets, recs,
-                colony.VirtualSets[i], colony.Promoted[i], colony.HunterTiers[i], catalog.HunterId));
+                colony.VirtualSets[i], colony.Promoted[i], positions,
+                colony.HunterTiers[i], catalog.HunterId));
         }
         return run;
     }
@@ -276,7 +292,7 @@ public class ColonyScenarioTests
             // doctoring (redundancy floor), researcher (bench override).
             if (role.AutoAssign || role.Blocker || role.Unskilled || role.Hunting) continue;
             if (role.Id == run.Catalog.DoctorId || role.Id == run.Catalog.MedicId) continue;
-            if (role.MinHolders > 0 || role.MaxHolders >= 0) continue; // own holder bounds
+            if (role.MinHolders >= 0) continue; // own colonist count
             int holders = run.Colony.VirtualSets.Count(ids => ids.Contains(role.Id));
             await Assert.That(holders <= cap).IsTrue()
                 .Because($"{run.Catalog.DefNames[role.Id]} held by {holders} > cap {cap} (size {size}, seed {seed})");
@@ -359,27 +375,42 @@ public class ColonyScenarioTests
     }
 
     [Test]
-    [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
-    public async Task TargetsLeadWithAutosAndSinkPlainUnskilled(int size, int seed)
+    public async Task DefaultTemplateIsTheVanillaGridColumns()
     {
+        // Pins the shipped default: one chip per vanilla-grid work column
+        // (Hunting is dynamic, Core/Basics are autos, everything covered or
+        // specialized floats).
+        var catalog = Shipped();
+        var names = catalog.OrderTemplate.Select(id => catalog.DefNames[id]);
+        await Assert.That(string.Join(",", names)).IsEqualTo(
+            "WS_Doctor,WS_Childminder,WS_Warden,WS_Handler,WS_Cook,WS_Builder,"
+            + "WS_Farmer,WS_Miner,WS_Smith,WS_Tailor,WS_Artist,WS_Crafter,"
+            + "WS_Fisher,WS_Grunt,WS_DarkStudier,WS_Researcher");
+    }
+
+    [Test]
+    [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
+    public async Task TargetsFollowTheTemplateOrder(int size, int seed)
+    {
+        // The plan's order IS the recommendation-order template — the single
+        // ordering every surface shows; autos interleave by work priority
+        // (Core above Doctor, Basics below). Hunter (tiers), doctoring
+        // demotion and protected assignments are the only sanctioned
+        // deviations.
         var run = Execute(size, seed);
+        var positions = RecommendationOrder.PositionsFor(run.Catalog.Recs, run.Catalog.OrderTemplate);
         for (int i = 0; i < run.Targets.Count; i++)
         {
             var ids = run.Targets[i].Select(a => a.RoleId).ToList();
-            bool IsAuto(int id) => RecOf(run, id).AutoAssign;
-            bool IsPlainSkilled(int id) => !IsAuto(id) && !RecOf(run, id).Unskilled
-                && !RecOf(run, id).Blocker;
-            bool IsPlainUnskilled(int id) => RecOf(run, id).Unskilled && !RecOf(run, id).Blocker;
-            int lastAuto = ids.FindLastIndex(IsAuto);
-            int firstPlainSkilled = ids.FindIndex(IsPlainSkilled);
-            if (lastAuto >= 0 && firstPlainSkilled >= 0)
-                await Assert.That(lastAuto < firstPlainSkilled || run.Colony.Promoted[i].Count > 0).IsTrue()
-                    .Because($"autos trail skilled recs for pawn {i} (size {size}, seed {seed})");
-            int lastPlainSkilled = ids.FindLastIndex(IsPlainSkilled);
-            int firstPlainUnskilled = ids.FindIndex(IsPlainUnskilled);
-            if (lastPlainSkilled >= 0 && firstPlainUnskilled >= 0)
-                await Assert.That(firstPlainUnskilled > lastPlainSkilled).IsTrue()
-                    .Because($"unskilled precedes skilled for pawn {i} (size {size}, seed {seed})");
+            bool Exempt(int id) => id == run.Catalog.HunterId
+                || RecOf(run, id).Blocker || RecOf(run, id).HasRules
+                || run.Pawns[i].Existing.Any(a => a.RoleId == id && a.Pinned);
+            var plain = ids.Where(id => !Exempt(id)).ToList();
+            for (int k = 1; k < plain.Count; k++)
+                await Assert.That(positions[plain[k - 1]] <= positions[plain[k]]).IsTrue()
+                    .Because($"{run.Catalog.DefNames[plain[k - 1]]} outranks "
+                        + $"{run.Catalog.DefNames[plain[k]]} against the template "
+                        + $"for pawn {i} (size {size}, seed {seed})");
         }
     }
 

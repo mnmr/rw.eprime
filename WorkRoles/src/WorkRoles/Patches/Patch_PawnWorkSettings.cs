@@ -53,6 +53,18 @@ namespace WorkRoles.Patches
             PrioritySetWatcher.OnBlockedSetPriority(___pawn, w, priority);
             return false;
         }
+
+        [HarmonyPrefix]
+        [HarmonyPatch(nameof(Pawn_WorkSettings.DisableAll))]
+        public static bool DisableAllPrefix(Pawn ___pawn)
+        {
+            // Vanilla's only call is pre-game pawn prep, so a managed pawn here
+            // means another mod — same single-source policy as SetPriority
+            // (null work type = "all work" in the watcher dialog).
+            if (!IsManaged(___pawn)) return true;
+            PrioritySetWatcher.OnBlockedSetPriority(___pawn, null, 0);
+            return false;
+        }
     }
 
     /// Capability changes (health/traits/genes/age) alter what a pawn can do -> recompile.

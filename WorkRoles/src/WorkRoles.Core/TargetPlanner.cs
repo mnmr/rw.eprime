@@ -26,15 +26,16 @@ namespace WorkRoles.Core
         public bool Pinned;
     }
 
-    /// Assembles a pawn's replacement role list: autoAssign roles (Basics) lead;
-    /// Hunter tier 0 comes next, then promoted essentials, then Hunter tier 1;
-    /// then the pawn's DESIGNATED unskilled roles (held before its first skilled
-    /// role, or all of them when it holds no skilled role); then the skilled
-    /// recommendations in order, then colony-plan extras, then the unskilled tail,
-    /// then Hunter tier 2 dead last. Hunting never outranks doctoring. Covered
-    /// unskilled singles never ride alongside their coverer. Protected assignments
-    /// (rule-carrying, blockers, pinned) skip normal placement and re-enter at
-    /// their original position. Retained roles keep their per-pawn toggle.
+    /// Assembles a pawn's replacement role list. MEMBERSHIP comes from the
+    /// pawn's existing roles, its recommendations and the colony plan's grants
+    /// (covered unskilled singles never ride alongside their coverer). ORDER
+    /// is the recommendation-order template: every role — autos included —
+    /// sorts by its template position, the same ordering every other surface
+    /// uses. Hunter tiers override: tier 0 hunts before all skilled work,
+    /// tier 2 dead last, and hunting never outranks doctoring. Protected
+    /// assignments (rule-carrying, blockers, pinned) skip
+    /// normal placement and re-enter at their original position. Retained
+    /// roles keep their per-pawn toggle.
     public static class TargetPlanner
     {
         public static List<PlannedAssignment> Build(
@@ -43,6 +44,7 @@ namespace WorkRoles.Core
             IReadOnlyList<int> recommendations,
             IReadOnlyList<int> extraIds,
             IReadOnlyList<int> promoted,
+            IReadOnlyDictionary<int, long> positions,
             int hunterTier, int hunterRoleId)
         {
             var byId = catalog.ToDictionary(r => r.Id);
@@ -141,6 +143,25 @@ namespace WorkRoles.Core
                     if (r != null && !r.HasRules && r.Unskilled && !CoveredByPlan(id)) Add(id);
                 }
             if (hunterTier == 2 && hunterKnown) Add(hunterRoleId);
+
+            // Template-driven ordering (membership was settled above): every
+            // role — autos included — sorts by its template position. Hunter
+            // tiers override: tier 0 sits between the above-template autos
+            // (-100) and the first template slot (0), so food comes before all
+            // skilled work but never before emergencies; tier 2 goes dead
+            // last. OrderBy is stable, so ties keep assembly order.
+            long PositionKey(int roleId)
+            {
+                if (hunterKnown && roleId == hunterRoleId)
+                {
+                    if (hunterTier == 0) return -50;
+                    if (hunterTier == 2) return long.MaxValue;
+                }
+                return positions != null && positions.TryGetValue(roleId, out long p) ? p : 0L;
+            }
+            var ordered = target.OrderBy(a => PositionKey(a.RoleId)).ToList();
+            target.Clear();
+            target.AddRange(ordered);
 
             // Hunting never outranks doctoring: when the target holds both, the
             // hunter role demotes to just after the last doctoring role above it.

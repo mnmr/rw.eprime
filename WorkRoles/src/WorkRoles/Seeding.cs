@@ -374,6 +374,37 @@ namespace WorkRoles
             return distinct;
         }
 
+        /// Saves from 1.1.2 and earlier can carry empty role sets (last role removed
+        /// or deleted), whose save-time fallback sync zeroed the pawn's real vanilla
+        /// priorities — the pawn idled with no work enabled. Drops the sets and
+        /// re-initializes any pawn the wipe left with nothing enabled. Runs in
+        /// FinalizeInit: map pawns aren't loaded yet at world PostLoadInit, and
+        /// ProgramState isn't Playing yet so EnableAndInitialize's auto-assign
+        /// postfix stays inert.
+        public static void SweepEmptyRoleSets()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            var empty = store.pawnSets
+                .Where(kv => kv.Value.assignments.Count == 0)
+                .Select(kv => kv.Key).ToList();
+            foreach (var pawn in empty)
+            {
+                store.pawnSets.Remove(pawn);
+                CompiledJobOrders.Invalidate(pawn);
+                var workSettings = pawn?.workSettings;
+                if (pawn == null || pawn.Destroyed || pawn.Dead
+                    || workSettings == null || !workSettings.EverWork) continue;
+                bool anyEnabled = DefDatabase<WorkTypeDef>.AllDefsListForReading
+                    .Any(wt => workSettings.GetPriority(wt) > 0);
+                if (!anyEnabled)
+                {
+                    workSettings.EnableAndInitialize();
+                    Log.Message($"[WorkRoles] restored work priorities of {pawn.LabelShort} (zeroed by empty role set)");
+                }
+            }
+        }
+
         /// Union-only snapshot maintenance, every load: remember each giver ever
         /// seen under a role's work-type entries, so jobs a mod later moves to a
         /// different work type stay in the role (compile-time expansion in

@@ -65,9 +65,13 @@ namespace WorkRoles
             if (settings == null || settings.warnedPriorityMods.Contains(key)) return;
             settings.warnedPriorityMods.Add(key);
             settings.Write();
+            // No work types = a blocked DisableAll sweep.
+            string types = warning.workTypes.Count > 0
+                ? warning.workTypes.ToCommaList()
+                : "WR_AllWork".Translate().ToString();
             Find.WindowStack.Add(new Dialog_MessageBox(
                 "WR_SetPriorityBlockedBody".Translate(warning.modName,
-                    warning.workTypes.ToCommaList(), warning.pawns.Count),
+                    types, warning.pawns.Count),
                 title: "WR_SetPriorityBlockedTitle".Translate()));
         }
 

@@ -21,7 +21,6 @@ public class RoleFileTests
         trainMax = 15,
         trainTargets = { "Doctor" },
         minHolders = 1,
-        maxHolders = 3,
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -62,7 +61,6 @@ public class RoleFileTests
         await Assert.That(role.trainMax).IsEqualTo(15);
         await Assert.That(string.Join(",", role.trainTargets)).IsEqualTo("Doctor");
         await Assert.That(role.minHolders).IsEqualTo(1);
-        await Assert.That(role.maxHolders).IsEqualTo(3);
 
         var plain = parsed.roles[1];
         await Assert.That(plain.templateDef == null).IsTrue();
@@ -70,7 +68,19 @@ public class RoleFileTests
         await Assert.That(plain.enabled).IsTrue();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
         await Assert.That(plain.trainSkill == null).IsTrue();
-        await Assert.That(plain.maxHolders).IsEqualTo(-1);
+        await Assert.That(plain.minHolders).IsEqualTo(-1);
+    }
+
+    [Test]
+    public async Task LegacyMaxZeroHoldersImportAsNeverDealt()
+    {
+        // v2 files from 1.1.x carried never-dealt as max="0".
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"2\"><Palette/><Roles>" +
+            "<Role name=\"Statue\"><Options><Holders max=\"0\"/></Options>" +
+            "<Jobs><WorkType>Art</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(0);
     }
 
     [Test]

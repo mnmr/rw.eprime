@@ -32,6 +32,13 @@ namespace WorkRoles.Patches
         {
             if (Current.ProgramState != ProgramState.Playing) return;
             Seeding.TryAutoAssignBasics(___pawn);
+            // A re-init on a managed pawn zeroed the dormant vanilla map and its
+            // SetPriority rebuild was swallowed — restore the projection now.
+            if (RoleStore.Current?.IsManaged(___pawn) == true)
+            {
+                CompiledJobOrders.Invalidate(___pawn);
+                CompiledJobOrders.EnsureFresh(___pawn);
+            }
         }
     }
 }

@@ -1951,6 +1951,12 @@ namespace WorkRoles.UI
                 TrainTargets = r.trainTargets.ToList(),
             }).ToList();
 
+            // The same position map the recommendation list sorts by — one
+            // ordering source for every surface.
+            var positions = RecommendationOrder.PositionsFor(
+                store.roles.Select(RecRoleOf).ToList(),
+                ResolvedRecommendationOrder(store));
+
             var planned = TargetPlanner.Build(
                 existing.Select(a => new PlannedAssignment
                 { RoleId = a.roleId, Enabled = a.enabled, Pinned = a.pinned }).ToList(),
@@ -1958,6 +1964,7 @@ namespace WorkRoles.UI
                 recommendations.Select(r => r.id).ToList(),
                 extraIds,
                 promoted,
+                positions,
                 hunterTier, hunterRoleId);
 
             return planned.Select(p => new RoleAssignment
@@ -2077,7 +2084,8 @@ namespace WorkRoles.UI
                     if (sr.TotallyDisabled) continue;
                     view.SkillLevels[sr.def.defName] = sr.Level;
                     view.PassionScores[sr.def.defName] = Passions.Score(sr);
-                    if (sr.Aptitude > 0) view.Aptitudes[sr.def.defName] = sr.Aptitude;
+                    // Negatives too: apathy mutes the skill's recommendation signals.
+                    if (sr.Aptitude != 0) view.Aptitudes[sr.def.defName] = sr.Aptitude;
                 }
             foreach (var expertise in Expertise.For(pawn))
                 view.ExpertiseSkills.Add(expertise.Skill.defName);
@@ -2087,8 +2095,41 @@ namespace WorkRoles.UI
             return view;
         }
 
+        /// A role the recommendation order template may pin (the Add menu's
+        /// candidate pool).
+        internal static bool IsPinnableRole(Role role)
+            => !role.blocker && !role.autoAssign && !role.HasRules && !role.managed;
+
+        /// Any normal role — autos and trainers included — covers a role out
+        /// of the default template.
+        private static bool IsCovererCandidate(Role role)
+            => !role.blocker && !role.HasRules && !role.managed;
+
+        /// A role the DEFAULT template lists: the vanilla grid's columns —
+        /// normal roles no other normal role covers. Trainers qualify when
+        /// coverage-maximal (Smith, Crafter); covered roles float after their
+        /// coverer, hunting roles take the dynamic duty slot instead.
+        internal static bool IsTemplateRole(Role role, RoleStore store)
+            => IsPinnableRole(role) && !ProvidesHunting(role)
+               && !store.roles.Any(other => other != role && IsCovererCandidate(other)
+                   && CoverageMath.MakesRedundant(other.Coverage(), other.id, role.Coverage(), role.id));
+
+        /// The recommendation order template: the user's stored list when
+        /// edited (minus deleted roles), else the vanilla-grid-derived default
+        /// (member work types' naturalPriority).
+        internal static List<int> ResolvedRecommendationOrder(RoleStore store)
+        {
+            var derived = store.roles
+                .Where(r => IsTemplateRole(r, store))
+                .OrderByDescending(MaxNaturalPriority)
+                .Select(r => r.id)
+                .ToList();
+            var valid = new HashSet<int>(store.roles.Where(IsPinnableRole).Select(r => r.id));
+            return RecommendationOrder.Resolve(store.recommendationOrder, derived, valid);
+        }
+
         /// One catalog role projected into the Core engines' shape.
-        private static RecRole RecRoleOf(Role role)
+        internal static RecRole RecRoleOf(Role role)
         {
             bool trainSkillKnown = role.trainSkill != null
                 && DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill) != null;
@@ -2108,7 +2149,6 @@ namespace WorkRoles.UI
                 TrainMax = role.trainMax,
                 TrainTargets = role.trainTargets.ToList(),
                 MinHolders = role.minHolders,
-                MaxHolders = role.maxHolders,
                 Available = RoleAvailable(role),
                 Enabled = role.enabled,
                 Managed = role.managed,
@@ -2138,11 +2178,22 @@ namespace WorkRoles.UI
         {
             if (pawn == null || pawn.skills == null) return new List<Role>();
 
+            var catalog = store.roles.Select(RecRoleOf).ToList();
+            // Childcare is only needed work while the colony has children;
+            // without any, the best-in-colony draft for it stays quiet.
+            bool children = pawn.MapHeld != null
+                && pawn.MapHeld.mapPawns.FreeColonistsSpawned.Any(p => !p.DevelopmentalStage.Adult());
+            if (!children)
+                foreach (var role in catalog)
+                    if (role.MinHolders > 0 && role.WorkTypes.Contains("Childcare"))
+                        role.MinHolders = 0;
+
             var recommendations = RecommendationEngine.Compute(
-                store.roles.Select(RecRoleOf).ToList(),
+                catalog,
                 RecPawnOf(pawn),
                 SkillMaxLevelsByName(MapColonists(pawn.MapHeld)), // colony-best is per location
-                WorkTypeSkillMap());
+                WorkTypeSkillMap(),
+                ResolvedRecommendationOrder(store));
 
             // VSE expertise (empty without the mod): skill defName -> label.
             var expertiseBySkill = new Dictionary<string, string>();

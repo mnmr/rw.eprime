@@ -95,6 +95,10 @@ namespace WorkRoles.UI
             }
             GUI.SetNextControlName("WR_RenameField");
             name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
+            // Chips, list rows and dialogs all size to the name; cap it well
+            // above the longest seeded label.
+            const int MaxNameLength = 30;
+            if (name.Length > MaxNameLength) name = name.Substring(0, MaxNameLength);
             y += 32f;
             if (!focusedField)
             {

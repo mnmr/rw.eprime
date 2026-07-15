@@ -65,7 +65,6 @@ namespace WorkRoles
                         .Select(id => store.RoleById(id)?.label)
                         .Where(l => l != null).ToList(),
                     minHolders = role.minHolders,
-                    maxHolders = role.maxHolders,
                     entries = role.entries.ToList(),
                 });
             }
@@ -392,7 +391,6 @@ namespace WorkRoles
                     target.trainMin = row.role.trainMin;
                     target.trainMax = row.role.trainMax;
                     target.minHolders = row.role.minHolders;
-                    target.maxHolders = row.role.maxHolders;
                     pendingTrainTargets.Add((target, row.role.trainTargets));
                     target.groupId = GroupIdFor(row.role.group, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.

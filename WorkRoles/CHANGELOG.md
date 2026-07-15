@@ -1,9 +1,14 @@
 ﻿# Changelog
 
-## 1.1.3 — 2026-07-14
+## 1.1.3 — 2026-07-15
 
-- Fixed: Role editor fixes and UI polish.
+- Added: Configurable training goals, skill gates and promotion targets. Flag roles as "Training role" to adjust options.
+- Added: Customizable template to set the default order of assignments that the recommendation engine uses.
 - Changed: Reworked how the recommendation engine finds training roles, so it can provide better suggestions and work with player-made roles.
+- Changed: Improved the seeded/default roles, so they include training roles with sensible defaults.
+- Fixed: Role editor fixes and UI polish, as well as support for training roles.
+- Fixed: Fixed an issue where all pawn priorities were reset when no roles were assigned, which could have affected mechs. Loading should now self-heal this.
+- Fixed: Other mods disabling or re-initializing work settings on role-managed colonists could corrupt the stored fallback priorities. Such changes are now blocked (with the usual one-time notice) or repaired immediately, and removing a pawn's last role hands back the priorities their roles last produced.
 
 ## 1.1.2 — 2026-07-14
 

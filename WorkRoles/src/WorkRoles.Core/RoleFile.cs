@@ -46,14 +46,13 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        // Training band + targets (role NAMES; resolved on import) and colony
-        // holder bounds (maxHolders -1 = engine default, 0 = never dealt).
+        // Training band + targets (role NAMES; resolved on import) and the
+        // colonist count (-1 = auto/omitted, 0 = never dealt, N = scaled min).
         public string trainSkill;
         public int trainMin;
         public int trainMax;
         public List<string> trainTargets = new List<string>();
-        public int minHolders;
-        public int maxHolders = -1;
+        public int minHolders = -1;
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -157,13 +156,8 @@ namespace WorkRoles.Core
                     training.Add(new XElement("Target", target));
                 options.Add(training);
             }
-            if (role.minHolders > 0 || role.maxHolders >= 0)
-            {
-                var holders = new XElement("Holders");
-                if (role.minHolders > 0) holders.Add(new XAttribute("min", role.minHolders));
-                if (role.maxHolders >= 0) holders.Add(new XAttribute("max", role.maxHolders));
-                options.Add(holders);
-            }
+            if (role.minHolders >= 0)
+                options.Add(new XElement("Holders", new XAttribute("min", role.minHolders)));
             if (role.locations.Count > 0)
             {
                 // Structured elements so names (XLinq-escaped) survive any
@@ -281,7 +275,9 @@ namespace WorkRoles.Core
                 if (holders != null)
                 {
                     if (int.TryParse(holders.Attribute("min")?.Value, out int min)) role.minHolders = min;
-                    if (int.TryParse(holders.Attribute("max")?.Value, out int max)) role.maxHolders = max;
+                    // Legacy files carried never-dealt in max="0".
+                    if (int.TryParse(holders.Attribute("max")?.Value, out int max) && max == 0)
+                        role.minHolders = 0;
                 }
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())

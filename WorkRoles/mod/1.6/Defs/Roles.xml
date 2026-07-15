@@ -10,17 +10,43 @@
   <WorkRoles.RoleGroupDef><defName>WS_GroupResearch</defName><label>Research</label><order>7</order></WorkRoles.RoleGroupDef>
 
   <WorkRoles.RoleDef>
-    <defName>WS_Basics</defName>
-    <label>Basics</label>
-    <description>Emergency and self-care work every colonist should do.</description>
+    <defName>WS_NoFirefighting</defName>
+    <label>Pyrophobe</label>
+    <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
+    <blocker>true</blocker>
+    <colorRef>rose-800</colorRef>
+    <group>Essentials</group>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Core</defName>
+    <label>Core</label>
+    <description>Emergency work every colonist must do: firefighting, being treated and rescuing.</description>
     <autoAssign>true</autoAssign>
-    <colorRef>slate-600</colorRef>
+    <colorRef>slate-500</colorRef>
     <group>Essentials</group>
     <entries>
       <li>WorkType:Firefighter</li>
       <li>WorkType:Patient</li>
-      <li>WorkType:PatientBedRest</li>
       <li>WorkGiver:DoctorRescue</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Basics</defName>
+    <label>Basics</label>
+    <description>Self-care and simple work every colonist should do.</description>
+    <autoAssign>true</autoAssign>
+    <colorRef>slate-600</colorRef>
+    <group>Essentials</group>
+    <!-- Sits below Doctor in vanilla's grid (bed rest 1200 vs doctoring 1300),
+         so emergencies (Core) rank above doctoring and this below. Allow Tool's
+         urgent hauling is appended here at seed time (Seeding.EveryoneWorkTypes). -->
+    <entries>
+      <li>WorkType:PatientBedRest</li>
       <li>WorkType:BasicWorker</li>
     </entries>
   </WorkRoles.RoleDef>
@@ -44,20 +70,9 @@
     <group>Essentials</group>
     <trainSkill>Medicine</trainSkill>
     <trainMinLevel>15</trainMinLevel>
+    <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Doctor</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_NoFirefighting</defName>
-    <label>Pyrophobe</label>
-    <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
-    <blocker>true</blocker>
-    <colorRef>rose-800</colorRef>
-    <group>Essentials</group>
-    <entries>
-      <li>WorkType:Firefighter</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -71,6 +86,7 @@
     <trainMinLevel>5</trainMinLevel>
     <trainMaxLevel>15</trainMaxLevel>
     <trainTargets><li>WS_Doctor</li></trainTargets>
+    <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
       <li>WorkGiver:DoctorTendToHumanlikes</li>
@@ -106,6 +122,8 @@
     <description>Childcare and teaching.</description>
     <colorRef>cyan-700</colorRef>
     <group>Essentials</group>
+    <!-- Needed work only while the colony has children; the adapter zeroes it otherwise. -->
+    <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Childcare</li>
     </entries>
@@ -150,6 +168,9 @@
     <description>Prisoner logistics: feeding, escorting, suppression, release and executions.</description>
     <colorRef>cyan-900</colorRef>
     <group>Essentials</group>
+    <trainSkill>Social</trainSkill>
+    <trainTargets><li>WS_Warden</li></trainTargets>
+    <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoExecution</li>
       <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExecuteEntity</li>
@@ -174,333 +195,9 @@
     <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
     <colorRef>cyan-800</colorRef>
     <group>Essentials</group>
+    <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Warden</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Handler</defName>
-    <label>Handler</label>
-    <description>Animal taming, training and slaughter.</description>
-    <colorRef>teal-800</colorRef>
-    <group>Animals</group>
-    <entries>
-      <li>WorkType:Handling</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Cook</defName>
-    <label>Cook</label>
-    <description>Meal preparation and butchering.</description>
-    <colorRef>green-700</colorRef>
-    <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMinLevel>8</trainMinLevel>
-    <entries>
-      <li>WorkType:Cooking</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Butcher</defName>
-    <label>Butcher</label>
-    <description>Butchering creatures.</description>
-    <colorRef>green-800</colorRef>
-    <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Cook</li></trainTargets>
-    <entries>
-      <li>WorkGiver:DoBillsButcherFlesh</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Brewer</defName>
-    <label>Brewer</label>
-    <description>Brewing wort at the brewery.</description>
-    <colorRef>green-800</colorRef>
-    <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Cook</li></trainTargets>
-    <entries>
-      <li>WorkGiver:DoBillsBrew</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Hunter</defName>
-    <label>Hunter</label>
-    <description>Hunting wild animals for food.</description>
-    <colorRef>teal-700</colorRef>
-    <group>Animals</group>
-    <entries>
-      <li>WorkType:Hunting</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Odyssey">
-    <defName>WS_Fisher</defName>
-    <label>Fisher</label>
-    <description>Fishing.</description>
-    <colorRef>teal-800</colorRef>
-    <group>Animals</group>
-    <entries>
-      <li>WorkType:Fishing</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Builder</defName>
-    <label>Builder</label>
-    <description>Construction, repair and deconstruction.</description>
-    <colorRef>yellow-700</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Construction</trainSkill>
-    <trainMinLevel>8</trainMinLevel>
-    <entries>
-      <li>WorkType:Construction</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Repairer</defName>
-    <label>Handyman</label>
-    <description>All construction work except constructing new buildings.</description>
-    <colorRef>yellow-800</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Construction</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Builder</li></trainTargets>
-    <entries>
-      <li>WorkGiver:Repair</li>
-      <li>WorkGiver:FixBrokenDownBuilding</li>
-      <li>WorkGiver:Deconstruct</li>
-      <li>WorkGiver:DeconstructForBlueprint</li>
-      <li>WorkGiver:Uninstall</li>
-      <li>WorkGiver:FillIn</li>
-      <li>WorkGiver:ConstructRemoveFloors</li>
-      <li>WorkGiver:ConstructRemoveFoundations</li>
-      <li>WorkGiver:BuildRoofs</li>
-      <li>WorkGiver:RemoveRoofs</li>
-      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
-      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
-      <li>WorkGiver:ConstructSmoothWalls</li>
-      <li>WorkGiver:ConstructSmoothFloors</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Farmer</defName>
-    <label>Farmer</label>
-    <description>Sowing, harvesting and plant cutting.</description>
-    <colorRef>lime-700</colorRef>
-    <group>Plants</group>
-    <entries>
-      <li>WorkType:Growing</li>
-      <li>WorkType:PlantCutting</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Grower</defName>
-    <label>Grower</label>
-    <description>Sowing and harvesting in growing zones.</description>
-    <colorRef>lime-800</colorRef>
-    <group>Plants</group>
-    <entries>
-      <li>WorkType:Growing</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_PlantCutter</defName>
-    <label>Plant Cutter</label>
-    <description>Cutting and harvesting wild plants and trees.</description>
-    <colorRef>lime-800</colorRef>
-    <group>Plants</group>
-    <entries>
-      <li>WorkType:PlantCutting</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Miner</defName>
-    <label>Miner</label>
-    <description>Mining and drilling.</description>
-    <colorRef>sky-700</colorRef>
-    <group>Outdoors</group>
-    <entries>
-      <li>WorkType:Mining</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Tailor</defName>
-    <label>Tailor</label>
-    <description>Apparel creation.</description>
-    <colorRef>amber-700</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets><li>WS_Fabricator</li></trainTargets>
-    <entries>
-      <li>WorkType:Tailoring</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Smith</defName>
-    <label>Smith</label>
-    <description>Weapon and armor smithing.</description>
-    <colorRef>amber-700</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets><li>WS_Fabricator</li></trainTargets>
-    <entries>
-      <li>WorkType:Smithing</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Fabricator</defName>
-    <label>Fabricator</label>
-    <description>Fabricating things at the fabrication bench.</description>
-    <colorRef>amber-800</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainMinLevel>7</trainMinLevel>
-    <entries>
-      <li>WorkGiver:DoBillsFabricationBench</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Crafter</defName>
-    <label>Crafter</label>
-    <description>General crafting: stonecutting, smelting, drugs and components.</description>
-    <colorRef>orange-700</colorRef>
-    <group>Indoors</group>
-    <!-- No band ceiling: the targets supplement rather than cover this role,
-         so outgrowing it must not abandon its jobs. -->
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets>
-      <li>WS_DrugMaker</li>
-      <li>WS_Smith</li>
-      <li>WS_Tailor</li>
-      <li>WS_Fabricator</li>
-    </trainTargets>
-    <entries>
-      <li>WorkType:Crafting</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Researcher</defName>
-    <label>Researcher</label>
-    <description>Research at a research bench.</description>
-    <colorRef>slate-700</colorRef>
-    <group>Research</group>
-    <maxHolders>3</maxHolders>
-    <entries>
-      <li>WorkType:Research</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
-    <defName>WS_DarkStudier</defName>
-    <label>Anomaly Study</label>
-    <description>Study of anomalous entities.</description>
-    <colorRef>slate-700</colorRef>
-    <group>Research</group>
-    <entries>
-      <li>WorkType:DarkStudy</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Artist</defName>
-    <label>Artist</label>
-    <description>Sculpting and artwork.</description>
-    <colorRef>purple-700</colorRef>
-    <group>Indoors</group>
-    <maxHolders>0</maxHolders>
-    <entries>
-      <li>WorkType:Art</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Nurse</defName>
-    <label>Nurse</label>
-    <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
-    <colorRef>red-900</colorRef>
-    <group>Essentials</group>
-    <trainSkill>Medicine</trainSkill>
-    <trainMaxLevel>5</trainMaxLevel>
-    <trainTargets><li>WS_Medic</li></trainTargets>
-    <entries>
-      <li>WorkGiver:DoctorTendToSelfEmergency</li>
-      <li>WorkGiver:DoctorRescue</li>
-      <li>WorkGiver:DoctorFeedHumanlikes</li>
-      <li>WorkGiver:DoctorTendToAnimals</li>
-      <li>WorkGiver:DoctorFeedAnimals</li>
-      <li>WorkGiver:VisitSickPawn</li>
-      <li>WorkGiver:TakeToBedToOperate</li>
-      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
-      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_DrugMaker</defName>
-    <label>Drug Maker</label>
-    <description>Drug production at the drug lab and serum centrifuge.</description>
-    <colorRef>orange-800</colorRef>
-    <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainMinLevel>4</trainMinLevel>
-    <entries>
-      <li>WorkGiver:DoBillsProduceDrugs</li>
-      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Painter</defName>
-    <label>Painter</label>
-    <description>Painting and paint removal.</description>
-    <colorRef>purple-800</colorRef>
-    <group>Indoors</group>
-    <entries>
-      <li>WorkGiver:RemovePaintBuilding</li>
-      <li>WorkGiver:RemovePaintFloor</li>
-      <li>WorkGiver:PaintBuilding</li>
-      <li>WorkGiver:PaintFloor</li>
-      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToBlueprints</li>
-      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToFrames</li>
-      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructFinishFrames</li>
-    </entries>
-  </WorkRoles.RoleDef>
-
-  <WorkRoles.RoleDef>
-    <defName>WS_Herder</defName>
-    <label>Herder</label>
-    <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
-    <colorRef>teal-900</colorRef>
-    <group>Animals</group>
-    <entries>
-      <li>WorkGiver:TakeRoamingAnimalsToPen</li>
-      <li>WorkGiver:HandlingFeedPatientAnimals</li>
-      <li>WorkGiver:TakeToPen</li>
-      <li>WorkGiver:Slaughter</li>
-      <li>WorkGiver:ReleaseToWild</li>
-      <li>WorkGiver:Milk</li>
-      <li>WorkGiver:Shear</li>
-      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_AnimalResource</li>
-      <li>WorkGiver:RebalanceAnimalsInPens</li>
     </entries>
   </WorkRoles.RoleDef>
 
@@ -537,4 +234,357 @@
       <li>WorkType:Cleaning</li>
     </entries>
   </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Handler</defName>
+    <label>Handler</label>
+    <description>Animal taming, training and slaughter.</description>
+    <colorRef>teal-800</colorRef>
+    <group>Animals</group>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Handling</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Cook</defName>
+    <label>Cook</label>
+    <description>Meal preparation and butchering.</description>
+    <colorRef>green-700</colorRef>
+    <group>Food</group>
+    <trainSkill>Cooking</trainSkill>
+    <trainMinLevel>8</trainMinLevel>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Cooking</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Butcher</defName>
+    <label>Butcher</label>
+    <description>Butchering creatures.</description>
+    <colorRef>green-800</colorRef>
+    <group>Food</group>
+    <trainSkill>Cooking</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Cook</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:DoBillsButcherFlesh</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Brewer</defName>
+    <label>Brewer</label>
+    <description>Brewing wort at the brewery.</description>
+    <colorRef>green-800</colorRef>
+    <group>Food</group>
+    <trainSkill>Cooking</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Cook</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:DoBillsBrew</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Hunter</defName>
+    <label>Hunter</label>
+    <description>Hunting wild animals for food.</description>
+    <colorRef>teal-700</colorRef>
+    <group>Animals</group>
+    <entries>
+      <li>WorkType:Hunting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Odyssey">
+    <defName>WS_Fisher</defName>
+    <label>Fisher</label>
+    <description>Fishing.</description>
+    <colorRef>teal-800</colorRef>
+    <group>Animals</group>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkType:Fishing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Builder</defName>
+    <label>Builder</label>
+    <description>Construction, repair and deconstruction.</description>
+    <colorRef>yellow-700</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Construction</trainSkill>
+    <trainMinLevel>8</trainMinLevel>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Construction</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Repairer</defName>
+    <label>Handyman</label>
+    <description>All construction work except constructing new buildings.</description>
+    <colorRef>yellow-800</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Construction</trainSkill>
+    <trainMaxLevel>8</trainMaxLevel>
+    <trainTargets><li>WS_Builder</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:Repair</li>
+      <li>WorkGiver:FixBrokenDownBuilding</li>
+      <li>WorkGiver:Deconstruct</li>
+      <li>WorkGiver:DeconstructForBlueprint</li>
+      <li>WorkGiver:Uninstall</li>
+      <li>WorkGiver:FillIn</li>
+      <li>WorkGiver:ConstructRemoveFloors</li>
+      <li>WorkGiver:ConstructRemoveFoundations</li>
+      <li>WorkGiver:BuildRoofs</li>
+      <li>WorkGiver:RemoveRoofs</li>
+      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
+      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
+      <li>WorkGiver:ConstructSmoothWalls</li>
+      <li>WorkGiver:ConstructSmoothFloors</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Farmer</defName>
+    <label>Farmer</label>
+    <description>Sowing, harvesting and plant cutting.</description>
+    <colorRef>lime-700</colorRef>
+    <group>Plants</group>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Growing</li>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Grower</defName>
+    <label>Grower</label>
+    <description>Sowing and harvesting in growing zones.</description>
+    <colorRef>lime-800</colorRef>
+    <group>Plants</group>
+    <trainSkill>Plants</trainSkill>
+    <trainTargets><li>WS_Farmer</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkType:Growing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_PlantCutter</defName>
+    <label>Plant Cutter</label>
+    <description>Cutting and harvesting wild plants and trees.</description>
+    <colorRef>lime-800</colorRef>
+    <group>Plants</group>
+    <trainSkill>Plants</trainSkill>
+    <trainTargets><li>WS_Farmer</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Miner</defName>
+    <label>Miner</label>
+    <description>Mining and drilling.</description>
+    <colorRef>sky-700</colorRef>
+    <group>Outdoors</group>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Mining</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Tailor</defName>
+    <label>Tailor</label>
+    <description>Apparel creation.</description>
+    <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets><li>WS_Fabricator</li></trainTargets>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Tailoring</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Smith</defName>
+    <label>Smith</label>
+    <description>Weapon and armor smithing.</description>
+    <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets><li>WS_Fabricator</li></trainTargets>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Smithing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Fabricator</defName>
+    <label>Fabricator</label>
+    <description>Fabricating things at the fabrication bench.</description>
+    <colorRef>amber-800</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainMinLevel>7</trainMinLevel>
+    <entries>
+      <li>WorkGiver:DoBillsFabricationBench</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Crafter</defName>
+    <label>Crafter</label>
+    <description>General crafting: stonecutting, smelting, drugs and components.</description>
+    <colorRef>orange-700</colorRef>
+    <group>Indoors</group>
+    <!-- No band ceiling: the targets supplement rather than cover this role,
+         so outgrowing it must not abandon its jobs. -->
+    <trainSkill>Crafting</trainSkill>
+    <trainTargets>
+      <li>WS_DrugMaker</li>
+      <li>WS_Smith</li>
+      <li>WS_Tailor</li>
+      <li>WS_Fabricator</li>
+    </trainTargets>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Crafting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Researcher</defName>
+    <label>Researcher</label>
+    <description>Research at a research bench.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:Research</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
+    <defName>WS_DarkStudier</defName>
+    <label>Anomalist</label>
+    <description>Study of anomalous entities.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <!-- The whole def is Anomaly-only, so this need is DLC-conditional for free. -->
+    <minHolders>1</minHolders>
+    <entries>
+      <li>WorkType:DarkStudy</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Artist</defName>
+    <label>Artist</label>
+    <description>Sculpting and artwork.</description>
+    <colorRef>purple-700</colorRef>
+    <group>Indoors</group>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkType:Art</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Nurse</defName>
+    <label>Nurse</label>
+    <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
+    <colorRef>red-900</colorRef>
+    <group>Essentials</group>
+    <trainSkill>Medicine</trainSkill>
+    <trainMaxLevel>5</trainMaxLevel>
+    <trainTargets><li>WS_Medic</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:DoctorTendToSelfEmergency</li>
+      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorTendToAnimals</li>
+      <li>WorkGiver:DoctorFeedAnimals</li>
+      <li>WorkGiver:VisitSickPawn</li>
+      <li>WorkGiver:TakeToBedToOperate</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_DrugMaker</defName>
+    <label>Drug Maker</label>
+    <description>Drug production at the drug lab and serum centrifuge.</description>
+    <colorRef>orange-800</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Crafting</trainSkill>
+    <trainMinLevel>4</trainMinLevel>
+    <entries>
+      <li>WorkGiver:DoBillsProduceDrugs</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Painter</defName>
+    <label>Painter</label>
+    <description>Painting and paint removal.</description>
+    <colorRef>purple-800</colorRef>
+    <group>Indoors</group>
+    <trainSkill>Artistic</trainSkill>
+    <trainTargets><li>WS_Artist</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:RemovePaintBuilding</li>
+      <li>WorkGiver:RemovePaintFloor</li>
+      <li>WorkGiver:PaintBuilding</li>
+      <li>WorkGiver:PaintFloor</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToBlueprints</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToFrames</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructFinishFrames</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Herder</defName>
+    <label>Herder</label>
+    <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
+    <colorRef>teal-900</colorRef>
+    <group>Animals</group>
+    <trainSkill>Animals</trainSkill>
+    <trainTargets><li>WS_Handler</li></trainTargets>
+    <minHolders>0</minHolders>
+    <entries>
+      <li>WorkGiver:TakeRoamingAnimalsToPen</li>
+      <li>WorkGiver:HandlingFeedPatientAnimals</li>
+      <li>WorkGiver:TakeToPen</li>
+      <li>WorkGiver:Slaughter</li>
+      <li>WorkGiver:ReleaseToWild</li>
+      <li>WorkGiver:Milk</li>
+      <li>WorkGiver:Shear</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_AnimalResource</li>
+      <li>WorkGiver:RebalanceAnimalsInPens</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
 </Defs>

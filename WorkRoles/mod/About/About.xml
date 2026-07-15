@@ -54,10 +54,11 @@ Performance:
 
 Worth Noting:
 - Seeded Roles: An initial role set is seeded into the game, covering all detected work types and jobs. 
-- Combo Roles: The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
-- Extra Roles: Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
-- Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put "No firefighting" before Basics (which has Firefighting).
-- Invisible Jobs: Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role (enabled by default from seeding, lives in the Locked group). If none of your mods add hidden jobs you can delete it - Restore Roles brings it back.
+- Combo Roles: Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
+- Training Roles: Roles that the recommendation engine uses to upskill colonists until they're ready for the target role (Medic, Butcher, Jailor, etc).
+- Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobia before Basics (which has Firefighting).
+- Extra Roles: Convenience roles that make work prioritization easier (Fabricator, Drug Maker).
+- Odd Jobs: Some mods add hidden jobs with no work-type checkbox; WorkRoles collects these in an "Odd Jobs" role.
 
 How It Works:
 - Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
@@ -70,14 +71,14 @@ How It Works:
 Recommendation Logic:
 - Colony Needs: Almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
 - Skill Gates: Roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
-- Training: If a pawn should be a Doctor, Builder or Cook but has insufficient skill (10, 8 and 8, respectively), an upskilling role will be recommended instead (Medic for Doctor, Handyman for Builder, Butcher/Brewer for Cook). Colony needs override this.
+- Training: If a pawn has insufficient skill for a target role, an upskilling role will be recommended instead. Colony needs override this to ensure work coverage.
 - Hunting: Recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
 - Coverage: Roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
 - Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
 - Apply Per Colonist: Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
 - Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
 - Passions: Roles suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
-- Genetics: Pawns genetically terrified of fire automatically get "No Firefighting" (blocker role) placed before Basics.
+- Genetics: Pawns genetically terrified of fire automatically get Pyrophobia (blocker role) placed before Basics.
 - Ordering: Everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor. 
 - Untouched: Auto (rule-carrying) roles and blockers are never suggested, moved or removed.
 

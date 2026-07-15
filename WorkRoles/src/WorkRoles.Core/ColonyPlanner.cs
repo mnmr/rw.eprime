@@ -36,8 +36,9 @@ namespace WorkRoles.Core
     ///    the pawn's assigned rule-carrying roles.
     /// 2. Coverage: every enabled, rule-free, non-auto, skill-associated role is
     ///    dealt to the best eligible pawns (gates pass; ranked by matched skill,
-    ///    then passion, then fewest virtual roles) until max(1, ceil(pawns/6))
-    ///    hold it — clamped by the role's MinHolders/MaxHolders (0 = never dealt).
+    ///    then passion, then fewest virtual roles). The deal count scales with
+    ///    colony size (one unit per 6 colonists): MinHolders -1 (auto) wants one
+    ///    unit, N wants N units, 0 is never dealt (interest-driven only).
     ///    Sub-roles are skipped in favor of their coverer unless gated/essential/
     ///    Hunter. Hunter is exempt from top-N: every gun carrier hunts, tiered by
     ///    Shooting (&lt;15 / &lt;19 / 19+), with at least one tier-0 hunter.
@@ -95,7 +96,7 @@ namespace WorkRoles.Core
             foreach (var role in catalog)
             {
                 if (!role.Enabled || role.HasRules || role.AutoAssign || role.Blocker || role.Managed) continue;
-                if (role.MaxHolders == 0) continue; // explicitly never dealt
+                if (role.MinHolders == 0) continue; // never dealt: interest-driven only
                 var relevantSkills = RelevantSkills(role);
                 if (relevantSkills.Count == 0) continue; // not skill-associated
                 // Sub-roles are not dealt — their coverer is — unless gated
@@ -160,8 +161,7 @@ namespace WorkRoles.Core
                     eligible.Add((i, level, passion, virtualSets[i].Count));
                 }
 
-                int want = role.MaxHolders > 0 ? role.MaxHolders : coverage;
-                if (role.MinHolders > want) want = role.MinHolders;
+                int want = role.MinHolders > 0 ? role.MinHolders * coverage : coverage;
                 int holders = virtualSets.Count(ids => ids.Contains(role.Id));
                 foreach (var candidate in eligible
                     .OrderByDescending(t => t.level)

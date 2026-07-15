@@ -34,7 +34,7 @@ public class TargetPlannerTests
         };
         var plan = TargetPlanner.Build(new List<PlannedAssignment>(), catalog,
             recommendations: new List<int> { 3, 4 }, extraIds: null, promoted: null,
-            hunterTier: -1, hunterRoleId: -1);
+            positions: null, hunterTier: -1, hunterRoleId: -1);
         await Assert.That(Ids(plan)).IsEqualTo("2,1,3,4");
     }
 
@@ -50,7 +50,7 @@ public class TargetPlannerTests
         };
         var existing = new List<PlannedAssignment> { Held(4, enabled: false), Held(2) };
         var plan = TargetPlanner.Build(existing, catalog,
-            new List<int> { 3 }, null, null, -1, -1);
+            new List<int> { 3 }, null, null, null, -1, -1);
         // Blocker back at index 0 (with its per-pawn toggle), rules-role at 1.
         await Assert.That(Ids(plan)).IsEqualTo("4,2,1,3");
         await Assert.That(plan[0].Enabled).IsFalse();
@@ -70,10 +70,10 @@ public class TargetPlannerTests
         };
         var unpinned = TargetPlanner.Build(
             new List<PlannedAssignment> { Held(4), Held(2) },
-            catalog, new List<int> { 3 }, null, null, -1, -1);
+            catalog, new List<int> { 3 }, null, null, null, -1, -1);
         var pinned = TargetPlanner.Build(
             new List<PlannedAssignment> { Held(4, pinned: true), Held(2, pinned: true) },
-            catalog, new List<int> { 3 }, null, null, -1, -1);
+            catalog, new List<int> { 3 }, null, null, null, -1, -1);
         await Assert.That(Ids(pinned)).IsEqualTo(Ids(unpinned));
     }
 
@@ -92,7 +92,7 @@ public class TargetPlannerTests
         };
         var plan = TargetPlanner.Build(new List<PlannedAssignment>(), catalog,
             recommendations: new List<int> { 2, 4 },
-            extraIds: new List<int> { 4, 3, 5 }, promoted: null, -1, -1);
+            extraIds: new List<int> { 4, 3, 5 }, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("1,2,4,3");
     }
 
@@ -107,14 +107,14 @@ public class TargetPlannerTests
         var tailed = TargetPlanner.Build(new List<PlannedAssignment>(),
             new List<TargetRole> { haul, skilled },
             recommendations: new List<int> { 3 },
-            extraIds: new List<int> { 10 }, promoted: null, -1, -1);
+            extraIds: new List<int> { 10 }, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(tailed)).IsEqualTo("3,10");
 
         // Grunt in the plan covers Hauling: the unskilled extra drops.
         var covered = TargetPlanner.Build(new List<PlannedAssignment>(),
             new List<TargetRole> { haul, grunt, skilled },
             recommendations: new List<int> { 12, 3 },
-            extraIds: new List<int> { 10 }, promoted: null, -1, -1);
+            extraIds: new List<int> { 10 }, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(covered)).IsEqualTo("3,12");
     }
 
@@ -128,7 +128,7 @@ public class TargetPlannerTests
 
         var existing = new List<PlannedAssignment> { Held(10), Held(11) };
         var plan = TargetPlanner.Build(existing, catalog,
-            recommendations: new List<int> { 12 }, extraIds: null, promoted: null, -1, -1);
+            recommendations: new List<int> { 12 }, extraIds: null, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("12");
     }
 
@@ -140,7 +140,7 @@ public class TargetPlannerTests
         var plan = TargetPlanner.Build(
             new List<PlannedAssignment> { Held(10, pinned: true) },
             new List<TargetRole> { hauler, grunt },
-            new List<int> { 12 }, null, null, -1, -1);
+            new List<int> { 12 }, null, null, null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("10,12");
     }
 
@@ -156,17 +156,51 @@ public class TargetPlannerTests
         };
         // Tier 0: hunter would lead after autos — but doctoring wins.
         var tier0 = TargetPlanner.Build(new List<PlannedAssignment>(), catalog,
-            new List<int> { 4 }, null, promoted: new List<int> { 2 }, hunterTier: 0, hunterRoleId: 3);
+            new List<int> { 4 }, null, promoted: new List<int> { 2 }, positions: null,
+            hunterTier: 0, hunterRoleId: 3);
         await Assert.That(Ids(tier0)).IsEqualTo("1,2,3,4");
 
         // Tier 2: dead last.
         var tier2 = TargetPlanner.Build(new List<PlannedAssignment>(), catalog,
-            new List<int> { 4 }, null, promoted: new List<int> { 2 }, hunterTier: 2, hunterRoleId: 3);
+            new List<int> { 4 }, null, promoted: new List<int> { 2 }, positions: null,
+            hunterTier: 2, hunterRoleId: 3);
         await Assert.That(Ids(tier2)).IsEqualTo("1,2,4,3");
     }
 
     [Test]
-    public async Task DesignatedUnskilledKeepEarlySlot_TrailingUnskilledGoLate()
+    public async Task TemplateOrdersThePlan_UnskilledIncluded()
+    {
+        // Grunt sits at Hauling's template slot, ABOVE Researcher — the old
+        // unskilled-tail bucket must not override the template.
+        var grunt = Role(10, unskilled: true, coverage: "Haul");
+        var researcher = Role(20, coverage: "Research");
+        var plan = TargetPlanner.Build(new List<PlannedAssignment>(),
+            new List<TargetRole> { grunt, researcher },
+            recommendations: new List<int> { 20, 10 }, extraIds: null, promoted: null,
+            positions: new Dictionary<int, long> { [10] = 0, [20] = 1000 }, -1, -1);
+        await Assert.That(Ids(plan)).IsEqualTo("10,20");
+    }
+
+    [Test]
+    public async Task EssentialGrantsFollowTheTemplate_NotTheFront()
+    {
+        // A coverage-granted essential (Cook) lands at its template slot, not
+        // promoted above duty work (Warden) the template puts first.
+        var catalog = new List<TargetRole>
+        {
+            Role(1, auto: true, priority: 5f),
+            Role(2, coverage: "Recruit"),  // Warden rec
+            Role(3, coverage: "Cook"),     // essential grant
+        };
+        var plan = TargetPlanner.Build(new List<PlannedAssignment>(), catalog,
+            recommendations: new List<int> { 2 },
+            extraIds: new List<int> { 3 }, promoted: new List<int> { 3 },
+            positions: new Dictionary<int, long> { [2] = 0, [3] = 1000 }, -1, -1);
+        await Assert.That(Ids(plan)).IsEqualTo("1,2,3");
+    }
+
+    [Test]
+    public async Task WithoutAPositionMapAssemblyOrderStands()
     {
         var catalog = new List<TargetRole>
         {
@@ -178,7 +212,7 @@ public class TargetPlannerTests
         // Hauler held BEFORE the first skilled role = designated; cleaner after = trailing.
         var existing = new List<PlannedAssignment> { Held(10), Held(20), Held(11) };
         var plan = TargetPlanner.Build(existing, catalog,
-            new List<int> { 20, 21 }, null, null, -1, -1);
+            new List<int> { 20, 21 }, null, null, null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("10,20,21,11");
     }
 
@@ -191,7 +225,7 @@ public class TargetPlannerTests
         var fabricator = Role(2, coverage: "Fabricate");
         var plan = TargetPlanner.Build(new List<PlannedAssignment>(),
             new List<TargetRole> { smith, fabricator },
-            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, -1, -1);
+            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("2,1");
     }
 
@@ -204,7 +238,7 @@ public class TargetPlannerTests
         var doctor = Role(2, coverage: new[] { "Tend", "Operate" });
         var plan = TargetPlanner.Build(new List<PlannedAssignment>(),
             new List<TargetRole> { medic, doctor },
-            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, -1, -1);
+            recommendations: new List<int> { 1, 2 }, extraIds: null, promoted: null, positions: null, -1, -1);
         await Assert.That(Ids(plan)).IsEqualTo("2");
     }
 
@@ -214,7 +248,7 @@ public class TargetPlannerTests
         var catalog = new List<TargetRole> { Role(1), Role(2) };
         var plan = TargetPlanner.Build(
             new List<PlannedAssignment> { Held(1, enabled: false) }, catalog,
-            new List<int> { 1, 2 }, null, null, -1, -1);
+            new List<int> { 1, 2 }, null, null, null, -1, -1);
         await Assert.That(plan.First(a => a.RoleId == 1).Enabled).IsFalse();
         await Assert.That(plan.First(a => a.RoleId == 2).Enabled).IsTrue();
     }

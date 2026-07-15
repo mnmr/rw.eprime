@@ -47,7 +47,6 @@ namespace WorkRoles
                 trainMin = def.trainMinLevel,
                 trainMax = def.trainMaxLevel,
                 minHolders = def.minHolders,
-                maxHolders = def.maxHolders,
                 entries = def.ParsedEntries()
             };
             if (!def.group.NullOrEmpty())
@@ -141,6 +140,54 @@ namespace WorkRoles
             Store.reportVanillaPriorities = value;
         }
 
+        /// Full replacement of the recommendation order (Options tab reorder).
+        [SyncMethod]
+        public static void SetRecommendationOrder(List<int> roleIds)
+        {
+            if (Store == null) return;
+            Store.recommendationOrder = roleIds ?? new List<int>();
+        }
+
+        /// Training band; a null skill clears the band (targets/holders are separate).
+        [SyncMethod]
+        public static void SetRoleTraining(int roleId, string skill, int min, int max)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed) return;
+            role.trainSkill = skill.NullOrEmpty() ? null : skill;
+            role.trainMin = role.trainSkill == null ? 0 : min;
+            role.trainMax = role.trainSkill == null ? 0 : max;
+        }
+
+        [SyncMethod]
+        public static void SetRoleTrainTargets(int roleId, List<int> targetIds)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed) return;
+            role.trainTargets = (targetIds ?? new List<int>())
+                .Where(id => id != roleId && Store.RoleById(id) != null)
+                .Distinct().ToList();
+        }
+
+        [SyncMethod]
+        public static void SetRoleHolders(int roleId, int min)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed) return;
+            role.minHolders = System.Math.Max(-1, min);
+        }
+
+        [SyncMethod]
+        public static void ClearRoleTraining(int roleId)
+        {
+            var role = FindRole(roleId);
+            if (role == null) return;
+            role.trainSkill = null;
+            role.trainMin = role.trainMax = 0;
+            role.trainTargets.Clear();
+            role.minHolders = -1;
+        }
+
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
         [SyncMethod]
         public static void SetRoleBlocker(int roleId, bool value)
@@ -160,8 +207,14 @@ namespace WorkRoles
             // it (and stops collecting invisible work types) until restored.
             if (role.managed) Store.oddJobsDeleted = true;
             CompiledJobOrders.InvalidateRole(roleId);
+            foreach (var kv in Store.pawnSets)
+                if (kv.Value.assignments.Count > 0 && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
+                    SyncFallbackBeforeUnmanage(kv.Key);
             foreach (var set in Store.pawnSets.Values)
                 set.assignments.RemoveAll(a => a.roleId == roleId);
+            // A pawn's last role going away must unmanage it fully — a lingering
+            // empty set would shadow its vanilla priorities (see RoleStore save sync).
+            Store.pawnSets.RemoveAll(kv => kv.Value.assignments.Count == 0);
             Store.billRoles.RemoveAll(kv => kv.Value == roleId);
             Store.roles.Remove(role);
             SweepEmptyGroups();
@@ -530,6 +583,15 @@ namespace WorkRoles
             CompiledJobOrders.InvalidateRole(roleId);
         }
 
+        /// Unmanaging returns authority to the pawn's vanilla priorities map — force
+        /// a rebuild+mirror first (a cached entry skips the mirror) so it holds the
+        /// roles' last projection, whatever other mods wrote to the dormant map.
+        private static void SyncFallbackBeforeUnmanage(Pawn pawn)
+        {
+            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.EnsureFresh(pawn);
+        }
+
         /// Engine-initiated path (seeding, joiner auto-assign): runs inside the synced
         /// simulation on every client, so it must NOT go through sync interception.
         internal static void AssignRoleDirect(Pawn pawn, int roleId, int index = -1)
@@ -548,7 +610,10 @@ namespace WorkRoles
             // TryGetValue, not SetFor: a removal against an unmanaged pawn must not
             // create (and scribe) an empty set for it.
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
+            if (set.assignments.TrueForAll(a => a.roleId == roleId))
+                SyncFallbackBeforeUnmanage(pawn);
             set.assignments.RemoveAll(a => a.roleId == roleId);
+            if (set.assignments.Count == 0) Store.pawnSets.Remove(pawn);
             CompiledJobOrders.Invalidate(pawn);
         }
 
@@ -600,12 +665,18 @@ namespace WorkRoles
         public static void PasteRoleSet(Pawn pawn, List<RoleAssignment> source)
         {
             if (Store == null || pawn == null || source == null) return;
-            var set = Store.SetFor(pawn);
             var seen = new HashSet<int>();
-            set.assignments = source
+            var assignments = source
                 .Where(a => seen.Add(a.roleId))
                 .Select(a => new RoleAssignment { roleId = a.roleId, enabled = a.enabled, pinned = a.pinned })
                 .ToList();
+            // Pasting an empty set unmanages the pawn — never store an empty set.
+            if (assignments.Count == 0)
+            {
+                if (Store.pawnSets.ContainsKey(pawn)) SyncFallbackBeforeUnmanage(pawn);
+                Store.pawnSets.Remove(pawn);
+            }
+            else Store.SetFor(pawn).assignments = assignments;
             CompiledJobOrders.Invalidate(pawn);
         }
     }

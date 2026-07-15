@@ -20,6 +20,10 @@ namespace WorkRoles
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
         public bool reportVanillaPriorities;
+        /// User-configured recommendation order (role ids); empty = the
+        /// vanilla-grid-derived default. Merged over the derived order on use,
+        /// so new roles slot in without touching this.
+        public List<int> recommendationOrder = new List<int>();
         /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as the managed role.
         public Role allRole;
@@ -128,13 +132,18 @@ namespace WorkRoles
             {
                 // The saved vanilla priority maps double as the mod-removal fallback —
                 // make sure every managed pawn's projection is current before writing.
-                foreach (var pawn in pawnSets.Keys)
-                    if (pawn != null && !pawn.Destroyed)
-                        CompiledJobOrders.EnsureFresh(pawn);
+                // Empty sets are skipped: an unmanaged pawn's projection is empty and
+                // syncing it would zero their real vanilla priorities.
+                foreach (var kv in pawnSets)
+                    if (kv.Key != null && !kv.Key.Destroyed && kv.Value.assignments.Count > 0)
+                        CompiledJobOrders.EnsureFresh(kv.Key);
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities");
+            Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
+                recommendationOrder = new List<int>();
             Scribe_Deep.Look(ref allRole, "allRole");
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);

@@ -92,6 +92,9 @@ namespace WorkRoles
         /// pawns and its side effects (job interruption on 0) must not fire here.
         private static void SyncVanillaFallback(Pawn pawn, Entry entry)
         {
+            // An unmanaged pawn's real vanilla priorities ARE its work settings —
+            // mirroring the (empty) projection over them would zero them.
+            if (RoleStore.Current?.IsManaged(pawn) != true) return;
             var workSettings = pawn.workSettings;
             if (workSettings == null) return;
             var map = VanillaPriorities(workSettings);

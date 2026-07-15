@@ -165,23 +165,37 @@ namespace WorkRoles.UI
             }
         }
 
+        /// Info text sizes to its wrapped height — deletion lists and multi-
+        /// sentence explanations span lines instead of clipping to one row.
         private static void DrawInfo(float width, ref float y, string text)
         {
+            float height = InfoHeight(width, text);
             GUI.color = new Color(0.7f, 0.7f, 0.7f);
-            Widgets.Label(new Rect(16f, y, width - 16f, RowH - 2f), text);
+            Widgets.Label(new Rect(16f, y, width - 16f, height), text);
             GUI.color = Color.white;
-            y += RowH;
+            y += height + 2f;
         }
+
+        private static float InfoHeight(float width, string text)
+            => Mathf.Max(RowH - 2f, Text.CalcHeight(text, width - 16f));
 
         private float MeasureContent(float width)
         {
             float y = 0f;
             y += RowH; // palette header
             if (paletteInclude)
-                y += RowH * Mathf.Max(1, paletteOverwrite ? PaletteOverwriteInfo().Count : paletteMergeUi.Count);
+                y += paletteOverwrite
+                    ? PaletteOverwriteInfo().Sum(line => InfoHeight(width, line) + 2f)
+                    : paletteMergeUi.Count == 0
+                        ? InfoHeight(width, "WR_NothingToMerge".Translate()) + 2f
+                        : RowH * paletteMergeUi.Count;
             y += SectionGap + RowH; // roles header
             if (rolesInclude)
-                y += RowH * Mathf.Max(1, rolesOverwrite ? RolesOverwriteInfo().Count : roleMergeUi.Count);
+                y += rolesOverwrite
+                    ? RolesOverwriteInfo().Sum(line => InfoHeight(width, line) + 2f)
+                    : roleMergeUi.Count == 0
+                        ? InfoHeight(width, "WR_NothingToMerge".Translate()) + 2f
+                        : RowH * roleMergeUi.Count;
             return y + RowH;
         }
     }

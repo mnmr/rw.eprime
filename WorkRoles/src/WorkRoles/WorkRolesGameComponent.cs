@@ -34,6 +34,7 @@ namespace WorkRoles
         // Runs after both "new game started" and "save loaded".
         public override void FinalizeInit()
         {
+            Seeding.SweepEmptyRoleSets();
             Seeding.SeedIfNeeded();
             Seeding.RefreshWorkTypeSnapshots();
             var generated = Seeding.EnsureWorkTypeCoverage();

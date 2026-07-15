@@ -37,10 +37,9 @@ namespace WorkRoles
         public int trainMax;
         /// Role ids this role trains toward.
         public List<int> trainTargets = new List<int>();
-        /// Coverage bounds: minHolders = floor; maxHolders -1 = engine default,
-        /// 0 = never dealt, N = cap.
-        public int minHolders;
-        public int maxHolders = -1;
+        /// Colonist count: -1 = auto (dealt at colony scale), 0 = never dealt
+        /// (interest-driven only), N = N per colony-scale unit + Best drafts.
+        public int minHolders = -1;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles, managed under Locked.
         public int groupId = RoleGroup.DefaultId;
@@ -105,8 +104,12 @@ namespace WorkRoles
             Scribe_Collections.Look(ref trainTargets, "trainTargets", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && trainTargets == null)
                 trainTargets = new List<int>();
-            Scribe_Values.Look(ref minHolders, "minHolders");
-            Scribe_Values.Look(ref maxHolders, "maxHolders", -1);
+            Scribe_Values.Look(ref minHolders, "minHolders", -1);
+            // Pre-1.2 saves: never-dealt lived in maxHolders 0.
+            int legacyMaxHolders = -1;
+            Scribe_Values.Look(ref legacyMaxHolders, "maxHolders", -1);
+            if (Scribe.mode == LoadSaveMode.LoadingVars && legacyMaxHolders == 0)
+                minHolders = 0;
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (ids are numeric, category

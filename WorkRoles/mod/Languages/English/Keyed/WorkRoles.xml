@@ -8,6 +8,10 @@
   <WR_OptNumericTip>Vanilla's "manual priorities" switch, per savegame. Off: priority grids (including mods like Numbers) draw checkmarks. On: they draw numbers. The vanilla Work tab hosted this switch; WorkRoles replaces that tab, so it lives here.</WR_OptNumericTip>
   <WR_OptVanillaRange>Report vanilla 0-4 priorities to other mods</WR_OptVanillaRange>
   <WR_OptVanillaRangeTip>WorkRoles orders work by unique priorities (sequential numbers starting with 1). Off: other mods see those priorities as-is. On: priorities are mapped onto vanilla's 0-4 range.</WR_OptVanillaRangeTip>
+  <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
+  <WR_OptRecOrderTip>The order recommendations list roles in, derived from the vanilla priority grid. Drag chips to reorder (e.g. Smith before Tailor); X unpins a role so it places dynamically again. Auto-assign roles always lead; unlisted roles slot in automatically: training roles after the role they train toward, sub-roles after the role that covers them, Hunter after the warden/childcare roles.</WR_OptRecOrderTip>
+  <WR_OptRecAdd>Add...</WR_OptRecAdd>
+  <WR_OptLockedTip>Pinned to this position. Hunting roles normally place dynamically (after the warden/childcare roles); remove this chip to restore that.</WR_OptLockedTip>
   <!-- {0} = group name -->
   <WR_PriorityGridTitle>Priorities: {0}</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Show the priority grid for this group's colonists (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
@@ -96,6 +100,8 @@ WorkRoles owns priorities for role-managed colonists, so the change was ignored 
 To get a similar effect with roles: on the Roles tab, create or edit a role containing that work and place it where you want it in each colonist's role list — or use a blocker role to forbid the work entirely.
 
 This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
+  <!-- Work-type slot in the notice when a mod tried to disable ALL work -->
+  <WR_AllWork>all work</WR_AllWork>
 
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
@@ -245,6 +251,24 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
+
+  <!-- Editor: training panel -->
+  <WR_TrainingRole>Training role</WR_TrainingRole>
+  <WR_TrainingRoleTip>Configure who this role is recommended to (a skill band) and which roles it trains toward. Unchecking clears the configuration.</WR_TrainingRoleTip>
+  <WR_TrainSkillButton>Skill: {0}</WR_TrainSkillButton>
+  <WR_TrainSkillNone>None</WR_TrainSkillNone>
+  <WR_TrainBandTip>Recommended for colonists whose skill lies inside this band. Below the minimum the role is withheld (unless they are the colony's best); at or past the maximum they have outgrown it and its targets apply instead. 21 = no upper bound.</WR_TrainBandTip>
+  <WR_TrainTargetsLabel>Trains toward:</WR_TrainTargetsLabel>
+  <!-- {0} = target role name -->
+  <WR_TrainTargetTip>Colonists who outgrow this role will be recommended {0} instead.</WR_TrainTargetTip>
+  <WR_TrainAddTarget>Add...</WR_TrainAddTarget>
+  <WR_HoldersLabel>Colonists:</WR_HoldersLabel>
+  <WR_HoldersTip>How many colonists the colony plan assigns this role to. Auto: scales with colony size (roughly 1 per 6 colonists). 0: never assigned automatically — colonists only get it through interest (passions, traits) or by hand. 1-8: at least that many, with larger colonies getting proportionally more (doubled at 12 colonists, tripled at 18). A number also marks the role as needed work: when nobody has passion for it, the colony's best colonist gets it recommended.</WR_HoldersTip>
+  <WR_HoldersAuto>Auto</WR_HoldersAuto>
+  <!-- {0} = role name -->
+  <WR_ClearTrainingConfirm>Clear the training configuration of "{0}"?</WR_ClearTrainingConfirm>
+  <WR_AutoOverTrainingConfirm>Auto-role rules and training are mutually exclusive. Clear "{0}"'s training configuration?</WR_AutoOverTrainingConfirm>
+  <WR_TrainingOverAutoConfirm>Auto-role rules and training are mutually exclusive. Clear "{0}"'s rules?</WR_TrainingOverAutoConfirm>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>

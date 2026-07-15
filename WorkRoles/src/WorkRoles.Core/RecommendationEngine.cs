@@ -9,7 +9,7 @@ namespace WorkRoles.Core
     {
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public Dictionary<string, int> PassionScores = new Dictionary<string, int>(); // 0/1/2
-        public Dictionary<string, int> Aptitudes = new Dictionary<string, int>();     // positive only
+        public Dictionary<string, int> Aptitudes = new Dictionary<string, int>();     // negative = apathy (mutes signals)
         public HashSet<string> ExpertiseSkills = new HashSet<string>();
         public HashSet<string> CapableWorkTypes = new HashSet<string>();
         public bool HasRangedWeapon;
@@ -40,10 +40,11 @@ namespace WorkRoles.Core
         public int TrainMax;                 // 0 = open-ended
         /// Roles this one trains toward (resolved ids).
         public List<int> TrainTargets = new List<int>();
-        /// Colony holder bounds: MinHolders = coverage floor; MaxHolders -1 =
-        /// engine default, 0 = never dealt, N = cap.
-        public int MinHolders;
-        public int MaxHolders = -1;
+        /// Colonist count: -1 = auto (dealt at colony scale, no draft), 0 =
+        /// never dealt by the planner (passion/trait recommendations still
+        /// apply), N = N per colony-scale unit AND the "needed work" marker
+        /// (best-in-colony only fires when > 0).
+        public int MinHolders = -1;
         /// False while none of the role's bench work can exist yet (nothing
         /// built, nothing researched): not recommendable.
         public bool Available = true;
@@ -62,18 +63,22 @@ namespace WorkRoles.Core
         public string SkillDefName; // matched skill; null for content-keyed reasons
     }
 
-    /// Per-pawn recommendation scoring: content-keyed groups (everyone / duty /
-    /// hunter / grunt) plus skill signals (expertise > burning passion > passion >
-    /// colony-best > aptitude), ordered by group then the pawn's ability at the
-    /// matched skill; a role covered by another recommended role is dropped (the
-    /// combo wins). Auto (rule-carrying) roles and blockers are never recommended.
+    /// Per-pawn recommendations: SELECTION is signal-driven (auto/grunt/hunter
+    /// membership, or a skill signal — expertise, passion, colony-best on
+    /// needed work, aptitude — for skilled roles, all gated by the training
+    /// band); ORDER is the recommendation template (vanilla-grid-derived,
+    /// user-configurable), with every role — autos included — slotting in via
+    /// RecommendationOrder.PositionOf. A role covered by
+    /// another recommended role is dropped (the combo wins). Rule-carrying
+    /// roles and blockers are never recommended.
     public static class RecommendationEngine
     {
         public static List<Recommendation> Compute(
             IReadOnlyList<RecRole> catalog,
             RecPawn pawn,
             IReadOnlyDictionary<string, int> skillMaxLevels,
-            IReadOnlyDictionary<string, IReadOnlyList<string>> workTypeSkills)
+            IReadOnlyDictionary<string, IReadOnlyList<string>> workTypeSkills,
+            IReadOnlyList<int> orderTemplate)
         {
             const int GroupBasics = 0;
             const int GroupWardenCarer = 1; // duty roles sit above the vocations, as in vanilla
@@ -120,15 +125,21 @@ namespace WorkRoles.Core
                     foreach (var skill in skills)
                     {
                         if (!pawn.SkillLevels.TryGetValue(skill, out int level)) continue;
+                        // Apathy (negative aptitude) mutes every signal for the skill.
+                        pawn.Aptitudes.TryGetValue(skill, out int aptitude);
+                        if (aptitude < 0) continue;
 
                         if (pawn.ExpertiseSkills.Contains(skill)) Candidate(GroupExpertise, level, skill);
                         int passionScore = pawn.PassionScores.TryGetValue(skill, out var p) ? p : 0;
                         if (passionScore == 2) Candidate(GroupMajorPassion, level, skill);
                         else if (passionScore == 1) Candidate(GroupMinorPassion, level, skill);
-                        if (skillMaxLevels.TryGetValue(skill, out int maxLevel)
+                        // Best-in-colony only drafts pawns into NEEDED work
+                        // (MinHolders > 0); optional roles ride on interest alone.
+                        if (role.MinHolders > 0
+                            && skillMaxLevels.TryGetValue(skill, out int maxLevel)
                             && level >= maxLevel && level > 0)
                             Candidate(GroupBestInColony, level, skill);
-                        if (pawn.Aptitudes.TryGetValue(skill, out int aptitude) && aptitude > 0)
+                        if (aptitude > 0)
                             Candidate(GroupAptitude, aptitude * 1000f + level, skill);
                     }
                 }
@@ -141,9 +152,16 @@ namespace WorkRoles.Core
                     scored.Add((role, group, sortKey, matchedSkill));
             }
 
+            // Order: every role — autos included — takes its template position;
+            // autos interleave by their work-type priority (Core above Doctor,
+            // Basics below). Work priority breaks position ties.
+            var templateIndex = new Dictionary<int, int>();
+            for (int i = 0; i < orderTemplate.Count; i++)
+                templateIndex[orderTemplate[i]] = i;
+            var byId = catalog.ToDictionary(r => r.Id);
             var ordered = scored
-                .OrderBy(t => t.group)
-                .ThenByDescending(t => t.sortKey)
+                .OrderBy(t => RecommendationOrder.PositionOf(t.role, templateIndex, byId))
+                .ThenByDescending(t => t.role.NaturalPriority)
                 .ToList();
 
             // A combo beats its parts: never recommend a role another recommended

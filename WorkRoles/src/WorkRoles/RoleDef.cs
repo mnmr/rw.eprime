@@ -26,10 +26,10 @@ namespace WorkRoles
         public int trainMaxLevel;
         /// RoleDef defNames this role trains toward.
         public List<string> trainTargets = new List<string>();
-        /// Colony holder bounds for the coverage pass: minHolders = floor;
-        /// maxHolders -1 = engine default, 0 = never dealt, N = cap.
-        public int minHolders;
-        public int maxHolders = -1;
+        /// Colonist count for the coverage pass: -1 = auto (dealt at colony
+        /// scale), 0 = never dealt (interest-driven only), N = N per
+        /// colony-scale unit + Best drafts.
+        public int minHolders = -1;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -63,7 +63,7 @@ namespace WorkRoles
                 group, activeHours, string.Join("|", locations),
                 trainSkill, trainMinLevel.ToString(), trainMaxLevel.ToString(),
                 string.Join("|", trainTargets),
-                minHolders.ToString(), maxHolders.ToString(),
+                minHolders.ToString(),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
