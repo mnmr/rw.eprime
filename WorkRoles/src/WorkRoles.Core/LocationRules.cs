@@ -37,9 +37,9 @@ namespace WorkRoles.Core
                 case Settlements: return place.IsSettlement;
                 case Caravans: return !place.IsSettlement && !place.IsShip;
             }
-            if (token.StartsWith(SettlementPrefix))
+            if (token.StartsWith(SettlementPrefix, System.StringComparison.Ordinal))
                 return place.IsSettlement && place.LocationId == token.Substring(SettlementPrefix.Length);
-            if (token.StartsWith(ShipPrefix))
+            if (token.StartsWith(ShipPrefix, System.StringComparison.Ordinal))
                 return place.IsShip && place.LocationId == token.Substring(ShipPrefix.Length);
             return false;
         }

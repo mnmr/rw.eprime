@@ -400,15 +400,15 @@ public class ColonyScenarioTests
     [Test]
     public async Task DefaultTemplateIsTheVanillaGridColumns()
     {
-        // Pins the shipped default: one chip per vanilla-grid work column
-        // (Hunting is dynamic, Core/Basics are autos, everything covered or
-        // specialized floats).
+        // Pins the shipped default: one chip per vanilla-grid work column,
+        // autos included at their priority slots (Core above Doctor, Basics
+        // below). Hunting is dynamic; everything covered or specialized floats.
         var catalog = Shipped();
         var names = catalog.OrderTemplate.Select(id => catalog.DefNames[id]);
         await Assert.That(string.Join(",", names)).IsEqualTo(
-            "WS_Doctor,WS_Childminder,WS_Warden,WS_Handler,WS_Cook,WS_Builder,"
-            + "WS_Farmer,WS_Miner,WS_Smith,WS_Tailor,WS_Artist,WS_Crafter,"
-            + "WS_Fisher,WS_Grunt,WS_DarkStudier,WS_Researcher");
+            "WS_Core,WS_Doctor,WS_Basics,WS_Childminder,WS_Warden,WS_Handler,"
+            + "WS_Cook,WS_Builder,WS_Farmer,WS_Miner,WS_Smith,WS_Tailor,"
+            + "WS_Artist,WS_Crafter,WS_Fisher,WS_Grunt,WS_DarkStudier,WS_Researcher");
     }
 
     [Test]

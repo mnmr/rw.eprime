@@ -676,7 +676,10 @@ namespace WorkRoles
         {
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
-            if (assignment != null) assignment.pinned = !assignment.pinned;
+            if (assignment == null) return;
+            assignment.pinned = !assignment.pinned;
+            // Pins shape the plan and the chip's marker width.
+            UiVersion.Bump();
         }
 
         [SyncMethod]

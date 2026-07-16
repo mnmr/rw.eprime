@@ -137,19 +137,8 @@ namespace WorkRoles.UI
                 Mathf.Max(viewRect.height, listRect.height));
             if (RoleDrag.Active && order.Contains(RoleDrag.RoleId) && Mouse.IsOver(hoverRect))
             {
-                var mouse = Event.current.mousePosition;
-                int insertIndex = 0;
-                for (int i = 0; i < layout.Count; i++)
-                {
-                    var r = layout[i];
-                    if (mouse.y > r.yMax)
-                    {
-                        insertIndex = i + 1;
-                        continue;
-                    }
-                    if (mouse.y >= r.y && mouse.x > r.x + r.width / 2f)
-                        insertIndex = i + 1;
-                }
+                int insertIndex = RoleDrag.ChipInsertIndex(
+                    Event.current.mousePosition, layout, r => r);
 
                 float markerX, markerY;
                 if (insertIndex == 0 || layout.Count == 0)

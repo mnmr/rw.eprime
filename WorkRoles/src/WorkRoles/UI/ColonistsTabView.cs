@@ -85,8 +85,13 @@ namespace WorkRoles.UI
             Expertise.InvalidateSnapshot();
         }
 
-        /// Public so tab switches can invalidate after Roles-tab edits.
+        /// Reset-time only: every plan input (roles, assignments, pins, training,
+        /// recommendation order, pawn membership) bumps UiVersion when its command
+        /// EXECUTES — click-site invalidation would rebuild from pre-command state
+        /// in MP and never fire on other clients.
         public void InvalidateRecommendationCache() => _planCache = null;
+
+        private int _planCacheStamp = -1;
 
         /// The colony plan is per location: anchored to the selected pawn's map
         /// (recommendations stay map-scoped even when the view spans locations).
@@ -94,8 +99,9 @@ namespace WorkRoles.UI
         {
             var map = selectedPawn?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
-            if (_planCache == null || _planCacheMapId != mapId)
+            if (_planCache == null || _planCacheStamp != UiVersion.Current || _planCacheMapId != mapId)
             {
+                _planCacheStamp = UiVersion.Current;
                 _planCacheMapId = mapId;
                 _planCache = BuildColonyFixPlan(map);
             }
@@ -230,8 +236,7 @@ namespace WorkRoles.UI
                 {
                     var role = store.RoleById(a.roleId);
                     if (role == null) continue;
-                    w += RoleChipUI.WidthFor(role, showRemove: true, TableChips,
-                        AbbrevIfCompact(store, role), a.pinned) + ChipGap;
+                    w += TableChipWidth(store, role, a.pinned) + ChipGap;
                 }
                 if (w > widestStrip) widestStrip = w;
             }
@@ -266,6 +271,11 @@ namespace WorkRoles.UI
             return chrome + paletteSection + tableContent + statsPanel;
         }
 
+        /// The one width formula for a table chip — measurement and layout must
+        /// never disagree.
+        private static float TableChipWidth(RoleStore store, Role role, bool pinned) =>
+            RoleChipUI.WidthFor(role, showRemove: true, TableChips, AbbrevIfCompact(store, role), pinned);
+
         private static float MeasureStripHeight(float stripWidth, List<RoleAssignment> assignments, RoleStore store)
         {
             if (assignments.Count == 0) return RoleChipUI.Height;
@@ -275,8 +285,7 @@ namespace WorkRoles.UI
             {
                 var role = store.RoleById(a.roleId);
                 if (role == null) continue;
-                float w = RoleChipUI.WidthFor(role, showRemove: true, TableChips,
-                    AbbrevIfCompact(store, role), a.pinned);
+                float w = TableChipWidth(store, role, a.pinned);
                 if (x + w > stripWidth && x > 0f)
                 {
                     lines++;
@@ -296,8 +305,7 @@ namespace WorkRoles.UI
             {
                 var role = store.RoleById(a.roleId);
                 if (role == null) continue;
-                float w = RoleChipUI.WidthFor(role, showRemove: true, TableChips,
-                    AbbrevIfCompact(store, role), a.pinned);
+                float w = TableChipWidth(store, role, a.pinned);
                 if (x + w > stripWidth && x > 0f)
                 {
                     line++;
@@ -545,10 +553,17 @@ namespace WorkRoles.UI
                     {
                         if (Event.current != null && Event.current.shift)
                         {
+                            // TryGetValue, not SetFor: pawnSets is synced world
+                            // state — a read-only check must not create entries
+                            // locally outside the synced command.
                             var target = selectedPawn;
-                            if (target != null
-                                && !(RoleStore.Current?.SetFor(target).assignments.Any(a => a.roleId == capturedId) ?? true))
-                                RoleCommands.AssignRole(target, capturedId);
+                            var checkStore = RoleStore.Current;
+                            if (target != null && checkStore != null)
+                            {
+                                checkStore.pawnSets.TryGetValue(target, out var targetSet);
+                                if (targetSet == null || !targetSet.assignments.Any(a => a.roleId == capturedId))
+                                    RoleCommands.AssignRole(target, capturedId);
+                            }
                         }
                         else
                         {
@@ -1716,11 +1731,7 @@ namespace WorkRoles.UI
                     {
                         new FloatMenuOption(
                             assignment.pinned ? "WR_UnpinAssignment".Translate() : "WR_PinAssignment".Translate(),
-                            () =>
-                            {
-                                RoleCommands.ToggleAssignmentPin(menuPawn, menuRoleId);
-                                InvalidateRecommendationCache();
-                            })
+                            () => RoleCommands.ToggleAssignmentPin(menuPawn, menuRoleId))
                     }));
                 }
                 if (assignment.pinned && Mouse.IsOver(chipRect))
@@ -1743,20 +1754,9 @@ namespace WorkRoles.UI
                 else
                 {
                     var mouse = Event.current.mousePosition;
-                    float mx = mouse.x - stripRect.x;
-                    float my = mouse.y - yOffset;
-                    int insertIndex = 0;
-                    for (int i = 0; i < layout.Count; i++)
-                    {
-                        var (_, r, _) = layout[i];
-                        if (my > r.yMax)
-                        {
-                            insertIndex = i + 1;
-                            continue;
-                        }
-                        if (my >= r.y && mx > r.x + r.width / 2f)
-                            insertIndex = i + 1;
-                    }
+                    int insertIndex = RoleDrag.ChipInsertIndex(
+                        new Vector2(mouse.x - stripRect.x, mouse.y - yOffset),
+                        layout, t => t.rect);
 
                     RoleDrag.HoverPawn = pawn;
                     RoleDrag.HoverInsertIndex = insertIndex;
@@ -2011,10 +2011,7 @@ namespace WorkRoles.UI
                         var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Subtle,
                             showRemove: true, dragSource: null, onClick: null);
                         if (click == ChipClick.Remove)
-                        {
                             RoleCommands.RemoveRoleFromPawn(capturedPawn, capturedId);
-                            InvalidateRecommendationCache();
-                        }
                         if (state == Dialog_ChangesPreview.ChipState.Removed)
                         {
                             RoleChipUI.DrawRemovedOutline(chipRect);
@@ -2038,11 +2035,7 @@ namespace WorkRoles.UI
                         {
                             Pawn clickPawn = selectedPawn;
                             int clickId = role.id;
-                            onClick = () =>
-                            {
-                                AssignAtRecommendedPosition(clickPawn, clickId);
-                                InvalidateRecommendationCache();
-                            };
+                            onClick = () => AssignAtRecommendedPosition(clickPawn, clickId);
                         }
                         RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
                             dragSource: null, onClick: onClick);
@@ -2295,7 +2288,6 @@ namespace WorkRoles.UI
                 if (plan.added.Count == 0 && plan.removed.Count == 0) continue;
                 RoleCommands.PasteRoleSet(plan.pawn, plan.target);
             }
-            InvalidateRecommendationCache();
         }
 
         /// Opens the per-colonist change preview for Fix My Colony; applies to the

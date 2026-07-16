@@ -75,19 +75,25 @@ public class RecommendationOrderTests
     }
 
     [Test]
-    public async Task AutoRolesAreNeitherPinnedNorAddable()
+    public async Task AutoRolesArePinnedInTheDefaultTemplateAtTheirPrioritySlot()
     {
-        // Always-on roles interleave by work priority on their own; pinning
-        // them is meaningless, so both surfaces exclude them BY DESIGN.
+        // Autos occupy real positions in the recommendation order (Core above
+        // Doctor, Basics below), so the template shows them like any role:
+        // visible, draggable, removable back to dynamic placement.
         var doctor = Role(1, 1300f, "Tend");
         var core = Role(3, 1400f, "Fight", "Rescue");
         core.AutoAssign = true;
-        var catalog = new List<RecRole> { doctor, core };
+        var basics = Role(4, 1200f, "Rest");
+        basics.AutoAssign = true;
+        var catalog = new List<RecRole> { doctor, core, basics };
 
         var derived = RecommendationOrder.ResolveTemplate(new List<int>(), catalog);
-        await Assert.That(derived.Contains(3)).IsFalse();
-        await Assert.That(RecommendationOrder.AddCandidates(catalog, derived).Contains(3))
-            .IsFalse();
+        await Assert.That(string.Join(",", derived)).IsEqualTo("3,1,4");
+
+        // Unpinned (removed) autos become Add candidates like anything else.
+        var withoutCore = new List<int> { 1, 4 };
+        await Assert.That(RecommendationOrder.AddCandidates(catalog, withoutCore).Contains(3))
+            .IsTrue();
     }
 
     [Test]
@@ -108,7 +114,8 @@ public class RecommendationOrderTests
         foreach (var role in catalog.Where(RecommendationOrder.IsPinnable))
             await Assert.That(reachable.Contains(role.Id)).IsTrue()
                 .Because($"role {role.Id} is neither pinned nor addable");
-        await Assert.That(reachable.Contains(auto.Id)).IsFalse();
+        // Autos included: every non-blocker, rule-free role is reachable.
+        await Assert.That(reachable.Contains(auto.Id)).IsTrue();
     }
 
     [Test]

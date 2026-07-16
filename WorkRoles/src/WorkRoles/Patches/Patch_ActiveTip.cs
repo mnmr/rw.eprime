@@ -14,7 +14,13 @@ namespace WorkRoles.Patches
     {
         private const float SafetyMaxWidth = 500f;
 
+        // Keyed by tip text: composed skill-fact tips are long and unique, so a
+        // byte-identical collision with a foreign tooltip is theoretical (and
+        // would merely widen it). Cleared on language switch with the tip caches
+        // that re-register on rebuild.
         private static readonly HashSet<string> wide = new HashSet<string>();
+
+        internal static void Clear() => wide.Clear();
 
         internal static string RegisterWide(string text)
         {

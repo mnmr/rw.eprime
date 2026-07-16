@@ -14,8 +14,10 @@ namespace WorkRoles.Core
         private const long Slot = 1000;
 
         /// A role the template may pin — and the Add menu therefore offers.
+        /// Autos included: they hold real positions in the order (Core above
+        /// Doctor, Basics below), so the panel must show and move them too.
         public static bool IsPinnable(RecRole role)
-            => !role.Blocker && !role.AutoAssign && !role.HasRules && !role.Managed;
+            => !role.Blocker && !role.HasRules && !role.Managed;
 
         /// Whether any other normal role's coverage makes this one redundant
         /// (autos and trainers count: Core knocks out Rescuer, Smith knocks
@@ -59,12 +61,18 @@ namespace WorkRoles.Core
 
         /// Every role's sort position in one map — the shared ordering the
         /// recommendation list and the target plan both consume.
+        private static Dictionary<int, int> TemplateIndexOf(IReadOnlyList<int> template)
+        {
+            var index = new Dictionary<int, int>();
+            for (int i = 0; i < template.Count; i++)
+                index[template[i]] = i;
+            return index;
+        }
+
         public static Dictionary<int, long> PositionsFor(
             IReadOnlyList<RecRole> catalog, IReadOnlyList<int> template)
         {
-            var templateIndex = new Dictionary<int, int>();
-            for (int i = 0; i < template.Count; i++)
-                templateIndex[template[i]] = i;
+            var templateIndex = TemplateIndexOf(template);
             var byId = catalog.ToDictionary(r => r.Id);
             return catalog.ToDictionary(r => r.Id, r => PositionOf(r, templateIndex, byId));
         }
@@ -74,10 +82,7 @@ namespace WorkRoles.Core
         public static int InsertIndex(RecRole role, IReadOnlyList<int> template,
             IReadOnlyDictionary<int, RecRole> byId)
         {
-            var templateIndex = new Dictionary<int, int>();
-            for (int i = 0; i < template.Count; i++)
-                templateIndex[template[i]] = i;
-            long position = PositionOf(role, templateIndex, byId);
+            long position = PositionOf(role, TemplateIndexOf(template), byId);
             for (int i = 0; i < template.Count; i++)
                 if (position < i * Slot)
                     return i;

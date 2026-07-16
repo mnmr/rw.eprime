@@ -5,7 +5,6 @@ using System.Text;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
-using WorkRoles.UI;
 
 namespace WorkRoles
 {
@@ -125,10 +124,10 @@ namespace WorkRoles
         /// name, hex lives only in <Palette>.
         private static string EncodeColorRef(Color color, RoleStore store, RoleFileDocument doc)
         {
-            var swatches = RolesTabView.Swatches;
+            var swatches = SwatchPalette.Swatches;
             for (int i = 0; i < swatches.Length; i++)
                 if (color.IndistinguishableFrom(swatches[i]))
-                    return RolesTabView.ExportSwatchName(i);
+                    return SwatchPalette.ExportName(i);
             int slot = CustomSlotOf(color, store);
             if (slot >= 0)
                 return store.customSwatchNames[slot];
@@ -160,7 +159,7 @@ namespace WorkRoles
         /// win (a color equal to both exports as its Tailwind name).
         private static int CustomSlotOf(Color color, RoleStore store)
         {
-            foreach (var swatch in RolesTabView.Swatches)
+            foreach (var swatch in SwatchPalette.Swatches)
                 if (color.IndistinguishableFrom(swatch))
                     return -1;
             for (int i = 0; i < store.customSwatches.Count; i++)
@@ -169,7 +168,7 @@ namespace WorkRoles
             return -1;
         }
 
-        private static readonly Color FallbackColor = RolesTabView.Swatches[2 * 19]; // slate-600
+        private static readonly Color FallbackColor = SwatchPalette.Swatches[2 * 19]; // slate-600
 
         /// Resolves a role's color reference: built-in Tailwind name, then a store
         /// slot name, then the file's palette, then a PaletteDef, then hex
@@ -178,9 +177,9 @@ namespace WorkRoles
         private static (bool has, Color color) ResolveColor(string colorRef, RoleStore store, RoleFileDocument doc)
         {
             if (colorRef.NullOrEmpty()) return (false, default);
-            var swatches = RolesTabView.Swatches;
+            var swatches = SwatchPalette.Swatches;
             for (int i = 0; i < swatches.Length; i++)
-                if (RolesTabView.ExportSwatchName(i) == colorRef)
+                if (SwatchPalette.ExportName(i) == colorRef)
                     return (true, swatches[i]);
             int slot = store.customSwatchNames.IndexOf(colorRef);
             if (slot >= 0 && slot < store.customSwatches.Count && store.customSwatches[slot].a >= 0.5f)

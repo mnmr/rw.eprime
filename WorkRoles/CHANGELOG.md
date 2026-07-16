@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.5 — 2026-07-16
+
+- Fixed: Flaws in the recommendation engine rework. Recommendations should now work as expected, training role suggestions depend on the available role set. If your game was created with an earlier version you may need to restore roles or manually configure roles as training roles.
+
 ## 1.1.4 — 2026-07-16
 
 - Fixed: Performance fixes.

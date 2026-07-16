@@ -184,6 +184,10 @@ namespace WorkRoles
             return oddJobs;
         }
 
+        /// Templates Odd Jobs must slot BELOW (alongside auto-assign roles):
+        /// doctoring outranks its short urgent work.
+        private static readonly string[] AboveOddJobsTemplates = { "WS_Doctor", "WS_Medic" };
+
         private static int OddJobsInsertIndex(RoleStore store, List<RoleAssignment> assignments)
         {
             int index = 0;
@@ -191,8 +195,7 @@ namespace WorkRoles
             {
                 var role = store.RoleById(assignments[i].roleId);
                 if (role == null || role.managed) continue;
-                if (role.autoAssign
-                    || role.templateDefName == "WS_Doctor" || role.templateDefName == "WS_Medic")
+                if (role.autoAssign || AboveOddJobsTemplates.Contains(role.templateDefName))
                     index = i + 1;
             }
             return index;
@@ -281,7 +284,7 @@ namespace WorkRoles
         {
             var best = new UnityEngine.Color(0.200f, 0.255f, 0.333f);
             float bestDist = float.MaxValue;
-            foreach (var swatch in UI.RolesTabView.Swatches)
+            foreach (var swatch in SwatchPalette.Swatches)
             {
                 float dr = swatch.r - target.r;
                 float dg = swatch.g - target.g;

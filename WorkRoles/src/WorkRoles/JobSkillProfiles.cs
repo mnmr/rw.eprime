@@ -67,6 +67,18 @@ namespace WorkRoles
         private static Dictionary<string, GiverProfile> byGiver;
         private static Dictionary<string, WorkTypeProfile> byType;
 
+        /// Language switch: every cached label and composed tip is translated
+        /// text — drop the lot and rebuild lazily (see Patch_Language).
+        internal static void ClearCaches()
+        {
+            byGiver = null;
+            byType = null;
+        }
+
+        /// Defensive label: a modded SkillDef may omit skillLabel.
+        private static string SkillLabel(SkillDef skill) =>
+            (skill.skillLabel ?? skill.label ?? skill.defName).CapitalizeFirst();
+
         public static GiverProfile ForGiver(string defName)
         {
             EnsureBuilt();
@@ -104,13 +116,13 @@ namespace WorkRoles
                     XpGivers = members.Count(p => p.GivesXp),
                 };
                 // Per skill, the highest requirement any member content carries.
+                // Only Top renders in the type tip; summing Gated here would
+                // double-count recipes shared between bill givers.
                 foreach (var group in members.SelectMany(p => p.Requirements).GroupBy(r => r.SkillLabel))
                     profile.Requirements.Add(new SkillRange
                     {
                         SkillLabel = group.Key,
-                        Floor = group.Min(r => r.Floor),
                         Top = group.Max(r => r.Top),
-                        Gated = group.Sum(r => r.Gated),
                     });
                 byType[workType.defName] = profile;
             }
@@ -131,7 +143,7 @@ namespace WorkRoles
                 // lab teaches Cooking/Intellectual under a Crafting type).
                 profile.TrainedSkills = recipes
                     .Where(r => r.workSkill != null && r.workSkillLearnFactor > 0f)
-                    .Select(r => r.workSkill.skillLabel.CapitalizeFirst().ToString())
+                    .Select(r => SkillLabel(r.workSkill))
                     .Distinct().ToList();
                 profile.GivesXp = profile.TrainedSkills.Count > 0;
                 foreach (var group in recipes
@@ -141,7 +153,7 @@ namespace WorkRoles
                     .GroupBy(req => req.skill))
                     profile.Requirements.Add(new SkillRange
                     {
-                        SkillLabel = group.Key.skillLabel.CapitalizeFirst(),
+                        SkillLabel = SkillLabel(group.Key),
                         Floor = group.Min(req => req.minLevel),
                         Top = group.Max(req => req.minLevel),
                         Gated = group.Count(),
@@ -188,7 +200,7 @@ namespace WorkRoles
         private static List<string> SkillLabels(List<SkillDef> skills)
             => skills.NullOrEmpty()
                 ? new List<string>()
-                : skills.Select(s => s.skillLabel.CapitalizeFirst().ToString()).ToList();
+                : skills.Select(SkillLabel).ToList();
 
         private static SkillRange ConstructionRange()
         {
@@ -214,7 +226,7 @@ namespace WorkRoles
         private static SkillRange RangeOf(List<int> levels, SkillDef skill)
             => new SkillRange
             {
-                SkillLabel = skill.skillLabel.CapitalizeFirst(),
+                SkillLabel = SkillLabel(skill),
                 Floor = levels.Count > 0 ? levels.Min() : 0,
                 Top = levels.Count > 0 ? levels.Max() : 0,
                 Gated = levels.Count,
@@ -233,15 +245,16 @@ namespace WorkRoles
                 : JobSkillMath.RisingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.75f, 0.9f, 1f });
             if (milestones.Count <= 1) return null;
 
-            string skill = need.skill.skillLabel.CapitalizeFirst();
-            var lines = new List<string> { stat.LabelCap + ":" };
+            string skill = SkillLabel(need.skill);
+            var lines = new List<string> { "WR_SkillTipCurveHeader".Translate(stat.LabelCap).ToString() };
             foreach (var (level, value) in milestones)
                 lines.Add("    " + "WR_SkillTipCurveLevel".Translate(
                     value.ToStringPercent(), skill, level));
             return string.Join("\n", lines);
         }
 
-        // ----- Tooltip composition (cached; defs and language are session-fixed) -----
+        // ----- Tooltip composition (cached; defs are session-fixed, a language
+        // switch clears via ClearCaches) -----
 
         public static string GiverTip(string defName)
         {

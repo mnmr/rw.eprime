@@ -9,7 +9,7 @@
   <WR_OptVanillaRange>Report vanilla 0-4 priorities to other mods</WR_OptVanillaRange>
   <WR_OptVanillaRangeTip>WorkRoles orders work by unique priorities (sequential numbers starting with 1). Off: other mods see those priorities as-is. On: priorities are mapped onto vanilla's 0-4 range.</WR_OptVanillaRangeTip>
   <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
-  <WR_OptRecOrderTip>The order recommendations list roles in, derived from the vanilla priority grid. Drag chips to reorder (e.g. Smith before Tailor); X unpins a role so it places dynamically again. Auto-assign roles always lead; unlisted roles slot in automatically: training roles after the role they train toward, sub-roles after the role that covers them, Hunter after the warden/childcare roles.</WR_OptRecOrderTip>
+  <WR_OptRecOrderTip>The order recommendations list roles in, derived from the vanilla priority grid — auto-assigned roles included. Drag chips to reorder (e.g. Smith before Tailor); X unpins a role so it places dynamically again. Unlisted roles slot in automatically: training roles after the role they train toward, sub-roles after the role that covers them, Hunter after the warden/childcare roles.</WR_OptRecOrderTip>
   <WR_OptRecAdd>Add...</WR_OptRecAdd>
   <WR_OptLockedTip>Pinned to this position. Hunting roles normally place dynamically (after the warden/childcare roles); remove this chip to restore that.</WR_OptLockedTip>
   <!-- {0} = group name -->
@@ -280,7 +280,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} skill, {1} level or level range, {2} gated count, {3} total count -->
   <WR_SkillTipRequiresBills>Requires: {0} {1} ({2} of {3} bills are skill-gated)</WR_SkillTipRequiresBills>
   <WR_SkillTipRequiresItems>Requires: {0} {1} ({2} items are skill-gated)</WR_SkillTipRequiresItems>
-  <!-- Curve milestone line (indented under the stat's label): {0} value, {1} skill, {2} level -->
+  <!-- Curve header ({0} = stat label) and milestone line (indented under it): {0} value, {1} skill, {2} level -->
+  <WR_SkillTipCurveHeader>{0}:</WR_SkillTipCurveHeader>
   <WR_SkillTipCurveLevel>{0} at {1} {2}</WR_SkillTipCurveLevel>
   <WR_SkillTipTypeXp>{0} of {1} jobs give XP</WR_SkillTipTypeXp>
   <WR_SkillTipTypeGated>Skill-gated content up to {0} {1}</WR_SkillTipTypeGated>

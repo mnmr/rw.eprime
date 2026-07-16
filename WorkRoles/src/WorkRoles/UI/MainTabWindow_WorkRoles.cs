@@ -236,9 +236,6 @@ namespace WorkRoles.UI
             {
                 new TabRecord("WR_ColonistsTab".Translate(), () =>
                 {
-                    // Role edits on the Roles tab aren't tracked; recompute the
-                    // suggestion plan whenever the user comes back.
-                    if (curTab != Tab.Colonists) colonistsTab.InvalidateRecommendationCache();
                     if (curTab == Tab.Roles) rolesTab.CommitEdits();
                     curTab = Tab.Colonists;
                 }, () => curTab == Tab.Colonists),

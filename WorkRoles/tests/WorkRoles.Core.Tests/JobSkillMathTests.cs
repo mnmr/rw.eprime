@@ -43,6 +43,21 @@ public class JobSkillMathTests
     public async Task FlatCurveMinimumIsLevelZero()
         => await Assert.That(JobSkillMath.LevelOfMinimum(new[] { 1f, 1f, 1f })).IsEqualTo(0);
 
+    [Test]
+    public async Task EmptyCurveYieldsNoMilestones()
+    {
+        await Assert.That(JobSkillMath.RisingMilestones(new float[0], new[] { 0.5f })).IsEmpty();
+        await Assert.That(JobSkillMath.FallingMilestones(new float[0], new[] { 0.5f })).IsEmpty();
+    }
+
+    [Test]
+    public async Task UnsortedTargetsYieldTheSameMilestonesAsSorted()
+    {
+        var sorted = JobSkillMath.RisingMilestones(SurgerySuccess, new[] { 0.5f, 0.75f, 1f });
+        var unsorted = JobSkillMath.RisingMilestones(SurgerySuccess, new[] { 1f, 0.5f, 0.75f });
+        await Assert.That(unsorted).IsEquivalentTo(sorted);
+    }
+
     private static readonly float[] StandardTargets = { 0.5f, 0.75f, 0.9f, 1f };
 
     [Test]

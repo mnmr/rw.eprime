@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 
 namespace WorkRoles.Core
 {
@@ -32,8 +33,12 @@ namespace WorkRoles.Core
         public static List<(int level, float value)> RisingMilestones(
             IReadOnlyList<float> valuesPerLevel, IReadOnlyList<float> targets)
         {
-            var milestones = new List<(int level, float value)> { (0, valuesPerLevel[0]) };
-            foreach (var target in targets)
+            var milestones = new List<(int level, float value)>();
+            if (valuesPerLevel == null || valuesPerLevel.Count == 0) return milestones;
+            milestones.Add((0, valuesPerLevel[0]));
+            // Ascending walk: an out-of-order smaller target would otherwise be
+            // silently dropped by the monotonic-level guard below.
+            foreach (var target in targets.OrderBy(t => t))
             {
                 int level = LevelReaching(valuesPerLevel, target);
                 if (level > milestones[milestones.Count - 1].level)
@@ -48,8 +53,12 @@ namespace WorkRoles.Core
         public static List<(int level, float value)> FallingMilestones(
             IReadOnlyList<float> valuesPerLevel, IReadOnlyList<float> fractionsOfStart)
         {
-            var milestones = new List<(int level, float value)> { (0, valuesPerLevel[0]) };
-            foreach (var fraction in fractionsOfStart)
+            var milestones = new List<(int level, float value)>();
+            if (valuesPerLevel == null || valuesPerLevel.Count == 0) return milestones;
+            milestones.Add((0, valuesPerLevel[0]));
+            // Descending walk (larger fraction = earlier drop) for the same
+            // reason RisingMilestones sorts ascending.
+            foreach (var fraction in fractionsOfStart.OrderByDescending(f => f))
             {
                 float target = valuesPerLevel[0] * fraction;
                 for (int i = 0; i < valuesPerLevel.Count; i++)

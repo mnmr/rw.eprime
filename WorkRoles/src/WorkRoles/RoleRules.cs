@@ -30,7 +30,7 @@ namespace WorkRoles
                 if (hour >= 0 && (role.activeHours & (1 << hour)) == 0) return RuleFailReason.OutsideHours;
             }
             if (role.locationTokens.Count > 0
-                && !LocationRules.Matches(role.locationTokens, UI.ColonyScope.PlaceOf(pawn)))
+                && !LocationRules.Matches(role.locationTokens, ColonyScope.PlaceOf(pawn)))
                 return RuleFailReason.WrongLocation;
             return RuleFailReason.None;
         }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -131,6 +132,27 @@ namespace WorkRoles.UI
                 }
             }
             Cancel();
+        }
+
+        /// Insert slot within a wrapped chip flow (mouse in the same coordinate
+        /// space as the rects): fully below a line lands after its last chip;
+        /// within a line, a chip's right half advances the slot. Shared by every
+        /// chip-strip drop target.
+        public static int ChipInsertIndex<T>(Vector2 mouse, List<T> chips, Func<T, Rect> rectOf)
+        {
+            int insertIndex = 0;
+            for (int i = 0; i < chips.Count; i++)
+            {
+                var r = rectOf(chips[i]);
+                if (mouse.y > r.yMax)
+                {
+                    insertIndex = i + 1;
+                    continue;
+                }
+                if (mouse.y >= r.y && mouse.x > r.x + r.width / 2f)
+                    insertIndex = i + 1;
+            }
+            return insertIndex;
         }
 
         public static void Cancel()
