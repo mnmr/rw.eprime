@@ -17,6 +17,11 @@ namespace WorkRoles.UI
         private readonly string title;
         private readonly List<WorkTypeDef> workTypes;
         private readonly float headerH;
+        // Precomputed per-open: Truncate and CapitalizeFirst allocate per call,
+        // and the pawn/column lists are fixed for the dialog's lifetime.
+        private readonly string[] pawnNames;
+        private readonly string[] columnLabels;
+        private readonly string[] columnTips;
         private Vector2 scroll;
         /// Local view state only — never written back to the synced setting.
         private bool showVanilla;
@@ -33,16 +38,25 @@ namespace WorkRoles.UI
             this.title = title;
             showVanilla = RoleStore.Current?.reportVanillaPriorities == true;
             workTypes = WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder.Where(w => w.visible).ToList();
+            columnLabels = new string[workTypes.Count];
+            columnTips = new string[workTypes.Count];
             // Inclined labels need diagonal headroom: width*sin + height*cos.
             float maxLabel = 0f;
             using (new TextBlock(GameFont.Small))
-                foreach (var wt in workTypes)
+            {
+                for (int c = 0; c < workTypes.Count; c++)
                 {
-                    var size = Text.CalcSize(wt.labelShort.CapitalizeFirst());
+                    columnLabels[c] = workTypes[c].labelShort.CapitalizeFirst();
+                    columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst();
+                    var size = Text.CalcSize(columnLabels[c]);
                     maxLabel = Mathf.Max(maxLabel,
                         size.x * Mathf.Sin(Mathf.Deg2Rad * LabelAngle)
                         + size.y * Mathf.Cos(Mathf.Deg2Rad * LabelAngle));
                 }
+                pawnNames = new string[pawns.Count];
+                for (int r = 0; r < pawns.Count; r++)
+                    pawnNames[r] = pawns[r].LabelShortCap.Truncate(NameW - 6f);
+            }
             headerH = Mathf.Clamp(maxLabel + 8f, 40f, 140f);
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
@@ -99,16 +113,20 @@ namespace WorkRoles.UI
             {
                 float x = NameW + c * ColW;
                 var headRect = new Rect(x, 0f, ColW, headerH);
-                WrText.InclinedLabel(headRect, workTypes[c].labelShort.CapitalizeFirst(), LabelAngle);
+                WrText.InclinedLabel(headRect, columnLabels[c], LabelAngle);
                 TooltipHandler.TipRegion(new Rect(x, 0f, ColW, headerH + bodyH),
-                    workTypes[c].gerundLabel.CapitalizeFirst());
+                    columnTips[c]);
                 // Column separator, vanilla Work-tab style (pixel-snapped).
                 GUI.color = new Color(1f, 1f, 1f, 0.12f);
                 WrText.LineVertical(x, headerH - 2f, bodyH + 2f);
                 GUI.color = Color.white;
             }
 
-            for (int r = 0; r < pawns.Count; r++)
+            // Cull to the scroll viewport: big groups drew every row off-screen.
+            int firstRow = Mathf.Max(0, Mathf.FloorToInt((scroll.y - headerH) / RowH));
+            int lastRow = Mathf.Min(pawns.Count - 1,
+                Mathf.CeilToInt((scroll.y + outRect.height - headerH) / RowH));
+            for (int r = firstRow; r <= lastRow; r++)
             {
                 var pawn = pawns[r];
                 float y = headerH + r * RowH;
@@ -116,9 +134,10 @@ namespace WorkRoles.UI
                     Widgets.DrawBoxSolid(new Rect(0f, y, viewRect.width, RowH), new Color(1f, 1f, 1f, 0.04f));
 
                 Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(2f, y, NameW - 6f, RowH), pawn.LabelShortCap.Truncate(NameW - 6f));
+                Widgets.Label(new Rect(2f, y, NameW - 6f, RowH), pawnNames[r]);
                 Text.Anchor = TextAnchor.UpperLeft;
 
+                bool managed = store != null && store.IsManaged(pawn);
                 for (int c = 0; c < workTypes.Count; c++)
                 {
                     var wt = workTypes[c];
@@ -127,7 +146,6 @@ namespace WorkRoles.UI
                     // x smears the box textures at every UI scale.
                     var box = new Rect(NameW + c * ColW + Mathf.Floor((ColW - 25f) / 2f), y + (RowH - 25f) / 2f, 25f, 25f);
                     DrawWorkBoxBackground(box, pawn, wt);
-                    bool managed = store != null && store.IsManaged(pawn);
                     int priority = managed
                         ? (showVanilla
                             ? CompiledJobOrders.VanillaPriorityFor(pawn, wt)

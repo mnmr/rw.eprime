@@ -24,7 +24,6 @@ namespace WorkRoles.Core
     public class ColonyPlanResult
     {
         public List<List<int>> VirtualSets = new List<List<int>>();
-        public List<List<int>> Promoted = new List<List<int>>();  // essential grants, rank order; null when none
         public List<int> HunterTiers = new List<int>();           // -1 = not a hunter
         public List<bool> FireGranted = new List<bool>();
         public List<PlanGrant> Grants = new List<PlanGrant>();
@@ -60,7 +59,6 @@ namespace WorkRoles.Core
             RecRole RoleOf(int id) => byId.TryGetValue(id, out var role) ? role : null;
 
             var result = new ColonyPlanResult();
-            var essentialGrants = new Dictionary<int, List<int>>(); // pawn index -> role ids
             var hunterTiers = new Dictionary<int, int>();
 
             // Pass 1: virtual sets.
@@ -177,14 +175,9 @@ namespace WorkRoles.Core
                     ids.Add(role.Id);
                     holders++;
                     if (essentialRankByRoleId.TryGetValue(role.Id, out int rank))
-                    {
-                        AddEssentialGrant(essentialGrants, candidate.index, role.Id);
                         Grant(candidate.index, role.Id, PlanReason.Essential, rank);
-                    }
                     else
-                    {
                         Grant(candidate.index, role.Id, PlanReason.Coverage);
-                    }
                 }
             }
 
@@ -248,7 +241,6 @@ namespace WorkRoles.Core
                     if (backup >= 0 && backupRoleId != -1)
                     {
                         virtualSets[backup].Add(backupRoleId);
-                        AddEssentialGrant(essentialGrants, backup, backupRoleId);
                         Grant(backup, backupRoleId, PlanReason.Essential, -1);
                     }
                 }
@@ -271,21 +263,10 @@ namespace WorkRoles.Core
             for (int i = 0; i < pawns.Count; i++)
             {
                 result.VirtualSets.Add(virtualSets[i]);
-                result.Promoted.Add(essentialGrants.TryGetValue(i, out var granted)
-                    ? granted.OrderBy(id => essentialRankByRoleId.TryGetValue(id, out var rank)
-                        ? rank : int.MaxValue).ToList()
-                    : null);
                 result.HunterTiers.Add(hunterTiers.TryGetValue(i, out var tier) ? tier : -1);
                 result.FireGranted.Add(fireGranted[i]);
             }
             return result;
-        }
-
-        private static void AddEssentialGrant(Dictionary<int, List<int>> grants, int pawnIndex, int roleId)
-        {
-            if (!grants.TryGetValue(pawnIndex, out var list))
-                grants[pawnIndex] = list = new List<int>();
-            list.Add(roleId);
         }
     }
 }

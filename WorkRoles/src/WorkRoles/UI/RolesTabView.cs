@@ -171,6 +171,10 @@ namespace WorkRoles.UI
             paintRoleId = -1;
             rulesRevealed.Clear();
             _giverDisplayCache = null; // force rebuild on next use
+            // Opening re-snapshots everything on this tab.
+            InvalidateSectionsSnapshot();
+            deadEntriesStamp = holdersStamp = -1;
+            displayStamp = treeNodesStamp = -1;
         }
 
         public void Draw(Rect rect)
@@ -271,13 +275,34 @@ namespace WorkRoles.UI
             public List<Role> members = new List<Role>();
             public List<Role> roots;
             public List<(Role role, Role parent, bool virtualRow)> rows;
+            /// "Title (N)", composed once per snapshot — headers draw per pass.
+            public string displayTitle;
+        }
+
+        // Open-window snapshot (see UiVersion) of the coverage-nested section
+        // tree; one slot per nesting flag (list and palette disagree on it).
+        private static readonly List<RoleSection>[] sectionsCache = new List<RoleSection>[2];
+        private static readonly int[] sectionsCacheStamp = { -1, -1 };
+
+        internal static void InvalidateSectionsSnapshot()
+            => sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
+
+        internal static List<RoleSection> BuildSections(RoleStore store, bool nested)
+        {
+            int slot = nested ? 1 : 0;
+            if (sectionsCache[slot] == null || sectionsCacheStamp[slot] != UiVersion.Current)
+            {
+                sectionsCacheStamp[slot] = UiVersion.Current;
+                sectionsCache[slot] = BuildSectionsUncached(store, nested);
+            }
+            return sectionsCache[slot];
         }
 
         /// Sections in display order: Default (when it has a face), user groups
         /// (their order), Auto-Roles (hidden when empty), Locked (Odd Jobs exists
         /// from seeding, even with no jobs — the section only disappears while
         /// the player has deleted the role).
-        internal static List<RoleSection> BuildSections(RoleStore store, bool nested)
+        private static List<RoleSection> BuildSectionsUncached(RoleStore store, bool nested)
         {
             var sections = new List<RoleSection>();
             var byGroupId = new Dictionary<int, RoleSection>();
@@ -349,12 +374,17 @@ namespace WorkRoles.UI
                     section.roots = section.members;
                     section.rows = section.members.Select(r => (r, (Role)null, false)).ToList();
                 }
+                section.displayTitle = section.title + " (" + section.members.Count + ")";
             }
             return sections;
         }
 
         private static bool IsSectionCollapsed(string key) =>
             WorkRolesMod.Settings?.collapsedRoleGroups.Contains(key) == true;
+
+        // Collapse toggles are UI-local (no UiVersion traffic): the display-row
+        // snapshot keys on this revision instead.
+        private static int collapseRev;
 
         private static void ToggleSectionCollapsed(string key)
         {
@@ -363,6 +393,7 @@ namespace WorkRoles.UI
             if (!settings.collapsedRoleGroups.Remove(key))
                 settings.collapsedRoleGroups.Add(key);
             settings.Write();
+            collapseRev++;
         }
 
         // Role list filters (view-local): label search + a single job whose
@@ -483,6 +514,16 @@ namespace WorkRoles.UI
         private string pendingSelectLabel;
         private bool scrollToSelected;
 
+        // Open-window snapshot of the flattened display rows (sections plus
+        // expanded members, or the filtered flat list). Keyed on plain fields —
+        // a composed key string would itself allocate per pass.
+        private List<(RoleSection section, Role role, Role parent, bool virtualRow)> displayCache;
+        private int displayStamp = -1;
+        private int displayCollapseRev = -1;
+        private bool displayNested;
+        private string displaySearch;
+        private string displayJobFilter;
+
         private void DrawRoleList(Rect rect, RoleStore store)
         {
             float buttonsHeight = 34f;
@@ -515,22 +556,33 @@ namespace WorkRoles.UI
                         && section.rows.Any(t => t.role.id == selectedRoleId))
                         ToggleSectionCollapsed(section.key);
 
-            var display = new List<(RoleSection section, Role role, Role parent, bool virtualRow)>();
-            if (filtered)
+            if (displayCache == null || displayStamp != UiVersion.Current
+                || displayCollapseRev != collapseRev || displayNested != nested
+                || displaySearch != roleSearch || displayJobFilter != jobFilterDefName)
             {
-                foreach (var match in store.roles.Where(MatchesListFilters))
-                    display.Add((null, match, null, false));
-            }
-            else
-            {
-                foreach (var section in sections)
+                displayStamp = UiVersion.Current;
+                displayCollapseRev = collapseRev;
+                displayNested = nested;
+                displaySearch = roleSearch;
+                displayJobFilter = jobFilterDefName;
+                displayCache = new List<(RoleSection, Role, Role, bool)>();
+                if (filtered)
                 {
-                    display.Add((section, null, null, false));
-                    if (!IsSectionCollapsed(section.key))
-                        foreach (var (member, memberParent, virtualRow) in section.rows)
-                            display.Add((section, member, memberParent, virtualRow));
+                    foreach (var match in store.roles.Where(MatchesListFilters))
+                        displayCache.Add((null, match, null, false));
+                }
+                else
+                {
+                    foreach (var section in sections)
+                    {
+                        displayCache.Add((section, null, null, false));
+                        if (!IsSectionCollapsed(section.key))
+                            foreach (var (member, memberParent, virtualRow) in section.rows)
+                                displayCache.Add((section, member, memberParent, virtualRow));
+                    }
                 }
             }
+            var display = displayCache;
             float contentHeight = display.Count * RowHeight;
 
             if (scrollToSelected)
@@ -568,8 +620,7 @@ namespace WorkRoles.UI
                 else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
 
                 if (Mouse.IsOver(row))
-                    TooltipHandler.TipRegion(row,
-                        $"{role.entries.Count} entries: {string.Join(", ", role.entries.Take(4).Select(e => e.DefName))}{(role.entries.Count > 4 ? ", …" : "")}");
+                    TooltipHandler.TipRegion(row, RowTip(role));
 
                 var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
@@ -696,7 +747,7 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.85f, 0.85f, 0.85f);
             Widgets.Label(new Rect(arrowRect.xMax + 6f, row.y, row.width - 60f, row.height),
-                $"{section.title} ({section.members.Count})");
+                section.displayTitle);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
@@ -1614,6 +1665,25 @@ namespace WorkRoles.UI
             else pendingHoursMask &= ~(1 << hour);
         }
 
+        // Only one row is hovered at a time: a single (role, stamp) slot stops
+        // the entries summary from re-joining every hover pass.
+        private static int rowTipStamp = -1;
+        private static int rowTipRoleId = -1;
+        private static string rowTipCache;
+
+        private static string RowTip(Role role)
+        {
+            if (rowTipCache == null || rowTipStamp != UiVersion.Current || rowTipRoleId != role.id)
+            {
+                rowTipStamp = UiVersion.Current;
+                rowTipRoleId = role.id;
+                rowTipCache = $"{role.entries.Count} entries: "
+                    + $"{string.Join(", ", role.entries.Take(4).Select(e => e.DefName))}"
+                    + (role.entries.Count > 4 ? ", …" : "");
+            }
+            return rowTipCache;
+        }
+
         /// A role that can never act: no jobs (managed roles legitimately sit
         /// empty), or every location it names is gone.
         internal static bool RoleInvalid(Role role) =>
@@ -1646,20 +1716,29 @@ namespace WorkRoles.UI
 
         // ----- Assigned pawn names row -----
 
+        // Open-window snapshot of the selected role's holders.
+        private static List<(Pawn pawn, int position)> holdersCache;
+        private static int holdersStamp = -1;
+        private static int holdersRoleId = -1;
+
         private static void DrawAssignedPawnNames(Rect rect, Role role, RoleStore store)
         {
-            var allPawns = ColonistsTabView.ListedPawns();
-            var pawnPositions = new List<(Pawn pawn, int position)>();
-            foreach (var pawn in allPawns)
+            if (holdersCache == null || holdersStamp != UiVersion.Current || holdersRoleId != role.id)
             {
-                if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
-                int idx = set.assignments.FindIndex(a => a.roleId == role.id);
-                if (idx < 0) continue;
-                pawnPositions.Add((pawn, idx + 1)); // 1-based position = priority
+                holdersStamp = UiVersion.Current;
+                holdersRoleId = role.id;
+                holdersCache = new List<(Pawn, int)>();
+                foreach (var pawn in ColonistsTabView.ListedPawns())
+                {
+                    if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
+                    int idx = set.assignments.FindIndex(a => a.roleId == role.id);
+                    if (idx < 0) continue;
+                    holdersCache.Add((pawn, idx + 1)); // 1-based position = priority
+                }
+                // Sort ascending by position so highest-priority pawns appear first
+                holdersCache.Sort((a, b) => a.position.CompareTo(b.position));
             }
-
-            // Sort ascending by position so highest-priority pawns appear first
-            pawnPositions.Sort((a, b) => a.position.CompareTo(b.position));
+            var pawnPositions = holdersCache;
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1838,10 +1917,43 @@ namespace WorkRoles.UI
             Widgets.EndScrollView();
         }
 
+        // Open-window snapshot: entry edits arrive as synced commands, which bump
+        // the stamp on execution (locally and on other MP clients alike).
+        private static HashSet<int> deadEntriesCache;
+        private static int deadEntriesStamp = -1;
+        private static int deadEntriesRoleId = -1;
+
         private static HashSet<int> DeadEntryIndexes(Role role)
-            => JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
+        {
+            if (deadEntriesCache == null || deadEntriesStamp != UiVersion.Current
+                || deadEntriesRoleId != role.id)
+            {
+                deadEntriesStamp = UiVersion.Current;
+                deadEntriesRoleId = role.id;
+                deadEntriesCache = JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
+            }
+            return deadEntriesCache;
+        }
+
+        // Def labels are fixed for the session: cache per (kind, defName) so the
+        // entry rows stop doing def lookups + CapitalizeFirst allocs per pass.
+        private static readonly Dictionary<(JobEntryKind kind, string defName), (string type, string job, bool missing)>
+            entryLabelCache = new Dictionary<(JobEntryKind, string), (string, string, bool)>();
 
         private static void GetEntryLabels(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
+        {
+            var key = (entry.Kind, entry.DefName);
+            if (!entryLabelCache.TryGetValue(key, out var labels))
+            {
+                GetEntryLabelsUncached(entry, out var type, out var job, out var gone);
+                entryLabelCache[key] = labels = (type, job, gone);
+            }
+            typeLabel = labels.type;
+            jobLabel = labels.job;
+            missing = labels.missing;
+        }
+
+        private static void GetEntryLabelsUncached(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
         {
             missing = false;
             if (entry.Kind == JobEntryKind.WorkType)
@@ -1872,6 +1984,44 @@ namespace WorkRoles.UI
         }
 
         // ----- Available Jobs: the work type / giver tree -----
+
+        // Open-window snapshot of the job-tree rows; expand/collapse is UI-local
+        // state, so the key carries its revision alongside the search text.
+        private List<(WorkTypeDef type, WorkGiverDef giver)> treeNodesCache;
+        private int treeNodesStamp = -1;
+        private int treeNodesRev = -1;
+        private string treeNodesFilter;
+        private int treeRev;
+
+        private List<(WorkTypeDef type, WorkGiverDef giver)> TreeNodes(bool filtering)
+        {
+            if (treeNodesCache != null && treeNodesStamp == UiVersion.Current
+                && treeNodesRev == treeRev && treeNodesFilter == filter)
+                return treeNodesCache;
+            treeNodesStamp = UiVersion.Current;
+            treeNodesRev = treeRev;
+            treeNodesFilter = filter;
+            var nodes = treeNodesCache = new List<(WorkTypeDef, WorkGiverDef)>();
+            foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading
+                .OrderByDescending(t => t.naturalPriority))
+            {
+                var givers = type.workGiversByPriority;
+                string typeDisplayName = (type.gerundLabel ?? type.labelShort ?? type.defName).CapitalizeFirst();
+                bool typeMatches = !filtering || Matches(typeDisplayName);
+
+                var matchingGivers = filtering
+                    ? givers.Where(g => Matches(GetGiverDisplayName(g))).ToList()
+                    : givers.ToList();
+
+                if (filtering && !typeMatches && matchingGivers.Count == 0) continue;
+
+                nodes.Add((type, (WorkGiverDef)null));
+                if (filtering || expanded.Contains(type.defName))
+                    foreach (var giver in (filtering && !typeMatches) ? matchingGivers : givers.ToList())
+                        nodes.Add((type, giver));
+            }
+            return nodes;
+        }
 
         private void DrawJobTree(Rect rect, Role role)
         {
@@ -1915,29 +2065,11 @@ namespace WorkRoles.UI
             if (scrollJobTreeToSelection)
             {
                 treeTarget = FirstEntryTreeTarget(role);
-                if (treeTarget?.giver != null)
-                    expanded.Add(treeTarget.Value.type.defName);
+                if (treeTarget?.giver != null && expanded.Add(treeTarget.Value.type.defName))
+                    treeRev++;
             }
 
-            var nodes = new List<(WorkTypeDef type, WorkGiverDef giver)>();
-            foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading
-                .OrderByDescending(t => t.naturalPriority))
-            {
-                var givers = type.workGiversByPriority;
-                string typeDisplayName = (type.gerundLabel ?? type.labelShort ?? type.defName).CapitalizeFirst();
-                bool typeMatches = !filtering || Matches(typeDisplayName);
-
-                var matchingGivers = filtering
-                    ? givers.Where(g => Matches(GetGiverDisplayName(g))).ToList()
-                    : givers.ToList();
-
-                if (filtering && !typeMatches && matchingGivers.Count == 0) continue;
-
-                nodes.Add((type, null));
-                if (filtering || expanded.Contains(type.defName))
-                    foreach (var giver in (filtering && !typeMatches) ? matchingGivers : givers.ToList())
-                        nodes.Add((type, giver));
-            }
+            var nodes = TreeNodes(filtering);
 
             if (scrollJobTreeToSelection)
             {
@@ -1974,6 +2106,7 @@ namespace WorkRoles.UI
                         isExpanded ? TexButton.Collapse : TexButton.Reveal))
                     {
                         if (!expanded.Add(type.defName)) expanded.Remove(type.defName);
+                        treeRev++;
                     }
 
                     var checkboxRect = new Rect(row.x + 26f, row.y + (row.height - 24f) / 2f, 24f, 24f);
@@ -2036,10 +2169,10 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
             }
             Widgets.EndScrollView();
-
-            bool Matches(string label) =>
-                label != null && label.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
+
+        private bool Matches(string label) =>
+            label != null && label.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
 
         /// The tree row for the role's first resolvable entry: the work-type
         /// header for a WorkType entry, the giver row for a WorkGiver entry.
@@ -2127,22 +2260,42 @@ namespace WorkRoles.UI
         /// On = the WorkType entry itself is in the list (it also covers future
         /// modded jobs — not the same as all givers individually); Partial = no
         /// type entry, but some of its jobs have their own entries.
+        // Open-window snapshot of the selected role's entry defNames: checkbox
+        // states scanned role.entries with nested LINQ per visible row otherwise.
+        // Entry edits are synced commands, so the stamp catches every change.
+        private static int entrySetsStamp = -1;
+        private static int entrySetsRoleId = -1;
+        private static readonly HashSet<string> entryTypeSet = new HashSet<string>();
+        private static readonly HashSet<string> entryGiverSet = new HashSet<string>();
+
+        private static void EnsureEntrySets(Role role)
+        {
+            if (entrySetsStamp == UiVersion.Current && entrySetsRoleId == role.id) return;
+            entrySetsStamp = UiVersion.Current;
+            entrySetsRoleId = role.id;
+            entryTypeSet.Clear();
+            entryGiverSet.Clear();
+            foreach (var entry in role.entries)
+                (entry.Kind == JobEntryKind.WorkType ? entryTypeSet : entryGiverSet).Add(entry.DefName);
+        }
+
         private static MultiCheckboxState GetWorkTypeState(Role role, WorkTypeDef type)
         {
-            if (role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName))
-                return MultiCheckboxState.On;
-            return type.workGiversByPriority.Any(g =>
-                role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == g.defName))
-                ? MultiCheckboxState.Partial
-                : MultiCheckboxState.Off;
+            EnsureEntrySets(role);
+            if (entryTypeSet.Contains(type.defName)) return MultiCheckboxState.On;
+            var givers = type.workGiversByPriority;
+            for (int i = 0; i < givers.Count; i++)
+                if (entryGiverSet.Contains(givers[i].defName))
+                    return MultiCheckboxState.Partial;
+            return MultiCheckboxState.Off;
         }
 
         /// On = own entry (reorderable); Partial = covered via the work type.
         private static MultiCheckboxState GetGiverState(Role role, WorkTypeDef type, WorkGiverDef giver)
         {
-            if (role.entries.Any(e => e.Kind == JobEntryKind.WorkGiver && e.DefName == giver.defName))
-                return MultiCheckboxState.On;
-            return role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == type.defName)
+            EnsureEntrySets(role);
+            if (entryGiverSet.Contains(giver.defName)) return MultiCheckboxState.On;
+            return entryTypeSet.Contains(type.defName)
                 ? MultiCheckboxState.Partial
                 : MultiCheckboxState.Off;
         }

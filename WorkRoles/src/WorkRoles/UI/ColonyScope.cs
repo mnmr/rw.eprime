@@ -11,7 +11,27 @@ namespace WorkRoles.UI
     /// scope-aware pawn enumerator for the colonist table.
     internal static class ColonyScope
     {
+        // Open-window snapshot (UiVersion + map count): several draw paths hit
+        // this per row/pass, and each rebuild walks all maps with gravship
+        // lookups. Callers must never mutate the returned list.
+        private static List<LocationInfo> locationsCache;
+        private static int locationsStamp = -1;
+        private static int locationsMapCount = -1;
+
         internal static List<LocationInfo> Locations()
+        {
+            var maps = Find.Maps;
+            if (locationsCache == null || locationsStamp != UiVersion.Current
+                || locationsMapCount != maps.Count)
+            {
+                locationsStamp = UiVersion.Current;
+                locationsMapCount = maps.Count;
+                locationsCache = BuildLocations();
+            }
+            return locationsCache;
+        }
+
+        private static List<LocationInfo> BuildLocations()
         {
             var result = new List<LocationInfo>();
             foreach (var map in Find.Maps)

@@ -13,16 +13,49 @@ namespace WorkRoles.Core
     {
         private const long Slot = 1000;
 
-        /// The effective template: the user's stored list (minus deleted
-        /// roles), or the derived default when never edited. Stored is a pure
-        /// override — unlisted roles are not merged in; they float via
-        /// PositionOf.
-        public static List<int> Resolve(IReadOnlyList<int> stored, IReadOnlyList<int> derived,
-            ISet<int> valid)
+        /// A role the template may pin — and the Add menu therefore offers.
+        public static bool IsPinnable(RecRole role)
+            => !role.Blocker && !role.AutoAssign && !role.HasRules && !role.Managed;
+
+        /// Whether any other normal role's coverage makes this one redundant
+        /// (autos and trainers count: Core knocks out Rescuer, Smith knocks
+        /// out Fabricator).
+        private static bool IsCovered(RecRole role, IReadOnlyList<RecRole> catalog)
+            => catalog.Any(other => other.Id != role.Id
+                && !other.Blocker && !other.HasRules && !other.Managed
+                && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id));
+
+        /// The derived default template: the vanilla grid's columns — pinnable
+        /// non-hunting roles no other normal role covers — by work-type
+        /// priority, descending.
+        public static List<int> DeriveTemplate(IReadOnlyList<RecRole> catalog)
+            => catalog
+                .Where(r => IsPinnable(r) && !r.Hunting && !IsCovered(r, catalog))
+                .OrderByDescending(r => r.NaturalPriority)
+                .Select(r => r.Id)
+                .ToList();
+
+        /// The effective template: the user's stored list (minus deleted or
+        /// unpinnable roles), or the derived default when never edited. Stored
+        /// is a pure override — unlisted roles are not merged in; they float
+        /// via PositionOf.
+        public static List<int> ResolveTemplate(IReadOnlyList<int> stored,
+            IReadOnlyList<RecRole> catalog)
         {
-            if (stored == null || stored.Count == 0) return derived.ToList();
-            return stored.Where(valid.Contains).Distinct().ToList();
+            if (stored == null || stored.Count == 0) return DeriveTemplate(catalog);
+            var pinnable = new HashSet<int>(catalog.Where(IsPinnable).Select(r => r.Id));
+            return stored.Where(pinnable.Contains).Distinct().ToList();
         }
+
+        /// Unpinned roles the Add menu offers. Together with the template this
+        /// spans every pinnable role: nothing a player creates can be neither
+        /// listed nor addable.
+        public static List<int> AddCandidates(IReadOnlyList<RecRole> catalog,
+            IReadOnlyList<int> template)
+            => catalog
+                .Where(r => IsPinnable(r) && !template.Contains(r.Id))
+                .Select(r => r.Id)
+                .ToList();
 
         /// Every role's sort position in one map — the shared ordering the
         /// recommendation list and the target plan both consume.

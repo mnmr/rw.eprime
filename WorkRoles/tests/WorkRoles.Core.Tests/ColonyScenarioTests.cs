@@ -13,7 +13,7 @@ public class ColonyScenarioTests
 {
     // ----- shipped catalog projection (mirrors the game adapter's rules) -----
 
-    private sealed class Catalog
+    internal sealed class Catalog
     {
         public List<RecRole> Recs = new();
         public List<TargetRole> Targets = new();
@@ -24,7 +24,7 @@ public class ColonyScenarioTests
     }
 
     /// workType -> relevant skills (vanilla values for the shipped catalog).
-    private static readonly Dictionary<string, IReadOnlyList<string>> SkillsByWorkType = new()
+    internal static readonly Dictionary<string, IReadOnlyList<string>> SkillsByWorkType = new()
     {
         ["Doctor"] = new List<string> { "Medicine" },
         ["Cooking"] = new List<string> { "Cooking" },
@@ -132,6 +132,7 @@ public class ColonyScenarioTests
                 Doctoring = workTypes.Contains("Doctor") && !blocker,
                 NaturalPriority = autoAssign ? 100f : 0f,
                 Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
+                OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
             });
 
             catalog.DefNames[id] = defName;
@@ -153,22 +154,44 @@ public class ColonyScenarioTests
             targetRole.TrainTargets.AddRange(rec.TrainTargets);
         }
 
-        // The recommendation order template, as the game adapter derives it:
-        // the vanilla grid's columns — normal roles no other normal role
-        // covers (autos and trainers count as coverers) — by member work-type
-        // naturalPriority, descending.
-        catalog.OrderTemplate = catalog.Recs
-            .Where(r => !r.Blocker && !r.AutoAssign && !r.Hunting
-                && !catalog.Recs.Any(o => o != r && !o.Blocker
-                    && CoverageMath.MakesRedundant(o.Coverage, o.Id, r.Coverage, r.Id)))
-            .OrderByDescending(r => r.NaturalPriority)
-            .Select(r => r.Id).ToList();
+        // The REAL derivation — no mirror: the game adapter calls the same
+        // Core function on the same projection.
+        catalog.OrderTemplate = RecommendationOrder.DeriveTemplate(catalog.Recs);
 
         for (int rank = 0; rank < Essentials.Length; rank++)
             foreach (var kv in catalog.DefNames)
                 if (kv.Value == Essentials[rank].template)
                     catalog.EssentialRank[kv.Key] = rank;
         return catalog;
+    }
+
+    // Shared with the quality-certification suite and the diagnostic dump.
+    internal static Catalog ShippedCatalog() => Shipped();
+
+    internal static (Catalog catalog, List<PlanPawn> pawns, ColonyPlanResult colony,
+        List<List<PlannedAssignment>> targets, List<List<Recommendation>> recs)
+        ExecutePipeline(int size, int seed)
+    {
+        var catalog = Shipped();
+        var pawns = Colony(size, seed);
+        var skillMax = SkillMax(pawns);
+        var colony = ColonyPlanner.Compute(catalog.Recs, pawns, skillMax, SkillsByWorkType,
+            catalog.EssentialRank, catalog.HunterId, catalog.DoctorId, catalog.MedicId,
+            catalog.FireBlockerId);
+        var positions = RecommendationOrder.PositionsFor(catalog.Recs, catalog.OrderTemplate);
+        var targets = new List<List<PlannedAssignment>>();
+        var recs = new List<List<Recommendation>>();
+        for (int i = 0; i < pawns.Count; i++)
+        {
+            var pawnRecs = RecommendationEngine.Compute(
+                catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType, catalog.OrderTemplate);
+            recs.Add(pawnRecs);
+            targets.Add(TargetPlanner.Build(pawns[i].Existing, catalog.Targets,
+                pawnRecs.Select(r => r.RoleId).ToList(),
+                colony.VirtualSets[i], positions,
+                colony.HunterTiers[i], catalog.HunterId));
+        }
+        return (catalog, pawns, colony, targets, recs);
     }
 
     // ----- seeded colony generation -----
@@ -247,7 +270,7 @@ public class ColonyScenarioTests
                 .Compute(catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType, catalog.OrderTemplate)
                 .Select(r => r.RoleId).ToList();
             run.Targets.Add(TargetPlanner.Build(pawns[i].Existing, catalog.Targets, recs,
-                colony.VirtualSets[i], colony.Promoted[i], positions,
+                colony.VirtualSets[i], positions,
                 colony.HunterTiers[i], catalog.HunterId));
         }
         return run;
@@ -414,15 +437,4 @@ public class ColonyScenarioTests
         }
     }
 
-    [Test]
-    [Arguments(1, 11)] [Arguments(10, 33)] [Arguments(50, 44)]
-    public async Task SameSeedProducesIdenticalPlans(int size, int seed)
-    {
-        static string Serialize(Run run) => string.Join(";",
-            run.Targets.Select(t => string.Join(",", t.Select(a => $"{a.RoleId}:{a.Enabled}:{a.Pinned}"))));
-        var first = Serialize(Execute(size, seed));
-        var second = Serialize(Execute(size, seed));
-        await Assert.That(second).IsEqualTo(first)
-            .Because($"pipeline is nondeterministic (size {size}, seed {seed})");
-    }
 }

@@ -29,6 +29,33 @@ namespace WorkRoles.Core
             return coverage;
         }
 
+        /// The covered givers in the role's own job order (entry order, work
+        /// types expanded in catalog order) — the sequence a combining coverer
+        /// must preserve.
+        public static List<string> OrderedCoverageOf(IEnumerable<JobEntry> entries, IJobCatalog catalog)
+        {
+            var seen = new HashSet<string>();
+            var ordered = new List<string>();
+            void Add(string giver)
+            {
+                if (seen.Add(giver)) ordered.Add(giver);
+            }
+            foreach (var entry in entries)
+            {
+                if (entry.Kind == JobEntryKind.WorkGiver)
+                {
+                    if (catalog.WorkTypeOf(entry.DefName) != null)
+                        Add(entry.DefName);
+                }
+                else
+                {
+                    foreach (var giver in catalog.WorkGiversOf(entry.DefName))
+                        Add(giver);
+                }
+            }
+            return ordered;
+        }
+
         /// a strictly covers b: proper superset. Equal coverage does NOT cover —
         /// equals are siblings in the role tree.
         public static bool Covers(HashSet<string> a, HashSet<string> b)

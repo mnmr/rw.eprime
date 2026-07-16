@@ -159,7 +159,7 @@ public class RecommendationEngineTests
         var pawn = Pawn();
         pawn.SkillLevels["Cooking"] = 8; pawn.PassionScores["Cooking"] = 2;
         var cook = Skilled(1, "Cooking");
-        cook.Available = false; // bench neither built nor researched
+        cook.Available = false; // bench research unfinished
         var recs = RecommendationEngine.Compute(
             new List<RecRole> { cook }, pawn, NoBest, Skills, Template(1));
         await Assert.That(recs.Count).IsEqualTo(0);

@@ -17,17 +17,26 @@ namespace WorkRoles
             public Dictionary<WorkTypeDef, int> Priorities;
             /// Rank order projected onto vanilla's 1-4 scale (order-faithful).
             public Dictionary<WorkTypeDef, int> VanillaBuckets;
+            /// Flat def-index mirrors of the two maps: the GetPriority prefix
+            /// runs thousands of times per second — array reads, no hashing.
+            public int[] PriorityByIndex;
+            public int[] VanillaByIndex;
         }
 
         private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
 
         public static void Invalidate(Pawn pawn)
         {
-            cache.Remove(pawn);
+            // Bump only for pawns the UI can show: this runs on EVERY pawn's
+            // spawn/despawn/death (animals, raiders included), and each bump
+            // tears down the open window's snapshots.
+            if (cache.Remove(pawn) || pawn.IsColonist || pawn.IsSlaveOfColony)
+                UiVersion.Bump();
         }
 
         public static void InvalidateRole(int roleId)
         {
+            UiVersion.Bump();
             var store = RoleStore.Current;
             if (store == null) { cache.Clear(); return; }
             store.RoleById(roleId)?.InvalidateCoverage();
@@ -37,6 +46,7 @@ namespace WorkRoles
 
         public static void InvalidateAll()
         {
+            UiVersion.Bump();
             cache.Clear();
             var store = RoleStore.Current;
             if (store != null)
@@ -58,15 +68,19 @@ namespace WorkRoles
         public static List<WorkGiver> NormalFor(Pawn pawn) => For(pawn).Normal;
         public static List<WorkGiver> EmergencyFor(Pawn pawn) => For(pawn).Emergency;
 
-        public static int PriorityFor(Pawn pawn, WorkTypeDef workType) =>
-            For(pawn).Priorities.TryGetValue(workType, out var bucket) ? bucket : 0;
+        public static int PriorityFor(Pawn pawn, WorkTypeDef workType)
+        {
+            var byIndex = For(pawn).PriorityByIndex;
+            return workType.index < byIndex.Length ? byIndex[workType.index] : 0;
+        }
 
         /// The rank projected onto vanilla's 0-4 scale, such that vanilla's
         /// replay of the numbers reproduces the internal order where four
         /// numbers suffice (same values as the dormant fallback map).
         public static int VanillaPriorityFor(Pawn pawn, WorkTypeDef workType)
         {
-            return For(pawn).VanillaBuckets.TryGetValue(workType, out var bucket) ? bucket : 0;
+            var byIndex = For(pawn).VanillaByIndex;
+            return workType.index < byIndex.Length ? byIndex[workType.index] : 0;
         }
 
         private static Entry For(Pawn pawn)
@@ -161,7 +175,7 @@ namespace WorkRoles
                 name => columns.TryGetValue(name, out var column) ? column : int.MaxValue,
                 BuildProjectionCategories(store));
 
-            return new Entry
+            var entry = new Entry
             {
                 Normal = compiled.Normal.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
                 Emergency = compiled.Emergency.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
@@ -172,6 +186,12 @@ namespace WorkRoles
                     kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
                     kv => kv.Value)
             };
+            int defCount = DefDatabase<WorkTypeDef>.DefCount;
+            entry.PriorityByIndex = new int[defCount];
+            entry.VanillaByIndex = new int[defCount];
+            foreach (var kv in entry.Priorities) entry.PriorityByIndex[kv.Key.index] = kv.Value;
+            foreach (var kv in entry.VanillaBuckets) entry.VanillaByIndex[kv.Key.index] = kv.Value;
+            return entry;
         }
     }
 }

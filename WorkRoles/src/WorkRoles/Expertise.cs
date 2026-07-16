@@ -37,11 +37,31 @@ namespace WorkRoles
 
         private static readonly List<Entry> Empty = new List<Entry>();
 
+        // Open-window snapshot (UiVersion): reflection on a per-cell/per-pass
+        // path is banned — skill cells and fit tooltips call For constantly.
+        private static readonly Dictionary<Pawn, List<Entry>> cache = new Dictionary<Pawn, List<Entry>>();
+        private static int cacheStamp = -1;
+
+        /// Window open: expertise gained since the last snapshot must show.
+        internal static void InvalidateSnapshot() => cacheStamp = -1;
+
         /// The pawn's expertises; empty when VSE is absent or the pawn has none.
         public static List<Entry> For(Pawn pawn)
         {
             EnsureInit();
             if (trackerOf == null || pawn == null || pawn.skills == null) return Empty;
+            if (cacheStamp != UiVersion.Current)
+            {
+                cache.Clear();
+                cacheStamp = UiVersion.Current;
+            }
+            if (!cache.TryGetValue(pawn, out var entries))
+                cache[pawn] = entries = ForUncached(pawn);
+            return entries;
+        }
+
+        private static List<Entry> ForUncached(Pawn pawn)
+        {
             try
             {
                 var tracker = trackerOf.Invoke(null, new object[] { pawn });

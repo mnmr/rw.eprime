@@ -47,7 +47,7 @@ public class ColonyPlannerTests
     }
 
     [Test]
-    public async Task EssentialGrantsArePromotedInRankOrder()
+    public async Task EssentialGrantsCarryTheEssentialReason()
     {
         var doctor = Role(1, "Doctor");
         var cook = Role(2, "Cooking");
@@ -57,7 +57,6 @@ public class ColonyPlannerTests
             new List<PlanPawn> { pawn }, NoBest, Skills,
             new Dictionary<int, int> { [1] = 0, [2] = 1 }, // Doctor rank 0, Cook rank 1
             -1, -1, -1, -1);
-        await Assert.That(string.Join(",", result.Promoted[0])).IsEqualTo("1,2");
         await Assert.That(result.Grants.Count(g => g.Reason == PlanReason.Essential)).IsEqualTo(2);
     }
 

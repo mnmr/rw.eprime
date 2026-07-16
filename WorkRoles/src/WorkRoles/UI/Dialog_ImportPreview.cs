@@ -61,11 +61,18 @@ namespace WorkRoles.UI
                     ? "WR_RowNew".Translate(r.role.label)
                     : "WR_RowUpdate".Translate(r.role.label)).ToString(),
             }).ToList();
+            // Fixed for the dialog's lifetime (doc and row lists never change
+            // while open) — building them per pass re-ran OverwriteDeletes.
+            paletteOverwriteInfo = PaletteOverwriteInfo();
+            rolesOverwriteInfo = RolesOverwriteInfo();
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
             doCloseX = true;
             draggable = true;
         }
+
+        private readonly List<string> paletteOverwriteInfo;
+        private readonly List<string> rolesOverwriteInfo;
 
         private static string ColorHexOf(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c).ToLowerInvariant();
 
@@ -82,10 +89,10 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
             float y = 0f;
             DrawSection(rowW, ref y, "WR_SectionPalette".Translate(),
-                ref paletteInclude, ref paletteOverwrite, paletteMergeUi, PaletteOverwriteInfo());
+                ref paletteInclude, ref paletteOverwrite, paletteMergeUi, paletteOverwriteInfo);
             y += SectionGap;
             DrawSection(rowW, ref y, "WR_SectionRoles".Translate(),
-                ref rolesInclude, ref rolesOverwrite, roleMergeUi, RolesOverwriteInfo());
+                ref rolesInclude, ref rolesOverwrite, roleMergeUi, rolesOverwriteInfo);
             Widgets.EndScrollView();
 
             float btnY = inRect.yMax - ButtonH;
@@ -185,14 +192,14 @@ namespace WorkRoles.UI
             y += RowH; // palette header
             if (paletteInclude)
                 y += paletteOverwrite
-                    ? PaletteOverwriteInfo().Sum(line => InfoHeight(width, line) + 2f)
+                    ? paletteOverwriteInfo.Sum(line => InfoHeight(width, line) + 2f)
                     : paletteMergeUi.Count == 0
                         ? InfoHeight(width, "WR_NothingToMerge".Translate()) + 2f
                         : RowH * paletteMergeUi.Count;
             y += SectionGap + RowH; // roles header
             if (rolesInclude)
                 y += rolesOverwrite
-                    ? RolesOverwriteInfo().Sum(line => InfoHeight(width, line) + 2f)
+                    ? rolesOverwriteInfo.Sum(line => InfoHeight(width, line) + 2f)
                     : roleMergeUi.Count == 0
                         ? InfoHeight(width, "WR_NothingToMerge".Translate()) + 2f
                         : RowH * roleMergeUi.Count;

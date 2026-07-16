@@ -23,6 +23,7 @@ namespace WorkRoles
         {
             if (Store == null) return;
             Store.roles.Add(new Role { id = Store.NextId(), label = label });
+            UiVersion.Bump();
         }
 
         /// Engine-initiated (load-time seeding): runs inside the synced simulation
@@ -100,6 +101,7 @@ namespace WorkRoles
             string summary = RoleIO.Apply(Store, doc,
                 paletteInclude, paletteOverwrite, paletteRows,
                 rolesInclude, rolesOverwrite, roleRows);
+            UiVersion.Bump();
             Messages.Message(summary, MessageTypeDefOf.PositiveEvent, historical: false);
         }
 
@@ -113,6 +115,7 @@ namespace WorkRoles
         {
             if (Store == null) return;
             var restored = Seeding.RestoreSelected(templateDefs, workTypes, backfillRoleIds, oddJobs);
+            UiVersion.Bump();
             if (restored.Count > 0)
                 Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
                     MessageTypeDefOf.PositiveEvent, historical: false);
@@ -146,6 +149,7 @@ namespace WorkRoles
         {
             if (Store == null) return;
             Store.recommendationOrder = roleIds ?? new List<int>();
+            UiVersion.Bump();
         }
 
         /// Training band; a null skill clears the band (targets/holders are separate).
@@ -157,6 +161,7 @@ namespace WorkRoles
             role.trainSkill = skill.NullOrEmpty() ? null : skill;
             role.trainMin = role.trainSkill == null ? 0 : min;
             role.trainMax = role.trainSkill == null ? 0 : max;
+            UiVersion.Bump();
         }
 
         [SyncMethod]
@@ -167,6 +172,7 @@ namespace WorkRoles
             role.trainTargets = (targetIds ?? new List<int>())
                 .Where(id => id != roleId && Store.RoleById(id) != null)
                 .Distinct().ToList();
+            UiVersion.Bump();
         }
 
         [SyncMethod]
@@ -175,6 +181,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null || role.managed) return;
             role.minHolders = System.Math.Max(-1, min);
+            UiVersion.Bump();
         }
 
         [SyncMethod]
@@ -186,6 +193,7 @@ namespace WorkRoles
             role.trainMin = role.trainMax = 0;
             role.trainTargets.Clear();
             role.minHolders = -1;
+            UiVersion.Bump();
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
@@ -272,6 +280,7 @@ namespace WorkRoles
             foreach (var moved in MovingBlock(role, withChildren))
                 moved.groupId = group.id;
             SweepEmptyGroups();
+            UiVersion.Bump();
         }
 
         /// Drag drop: SetRoleGroup plus a catalog reposition — the moved block
@@ -295,6 +304,7 @@ namespace WorkRoles
                 Store.roles.InsertRange(insertAt, moving);
             }
             SweepEmptyGroups();
+            UiVersion.Bump();
         }
 
         [SyncMethod]
@@ -303,6 +313,7 @@ namespace WorkRoles
             var group = Store?.GroupById(groupId);
             if (group == null || groupId == RoleGroup.DefaultId || name.NullOrEmpty()) return;
             group.label = name.Trim();
+            UiVersion.Bump();
         }
 
         /// Reorders the group list (display order). Default stays pinned first.
@@ -325,6 +336,7 @@ namespace WorkRoles
                     groups.Insert(0, def);
                 }
             }
+            UiVersion.Bump();
         }
 
         /// Composition: the parent gains the child's jobs (appended; job order is
@@ -362,7 +374,9 @@ namespace WorkRoles
         public static void RenameRole(int roleId, string label)
         {
             var role = FindRole(roleId);
-            if (role != null) role.label = label;
+            if (role == null) return;
+            role.label = label;
+            UiVersion.Bump();
         }
 
         [SyncMethod]
@@ -379,7 +393,9 @@ namespace WorkRoles
         public static void SetRoleAutoAssign(int roleId, bool value)
         {
             var role = FindRole(roleId);
-            if (role != null) role.autoAssign = value;
+            if (role == null) return;
+            role.autoAssign = value;
+            UiVersion.Bump();
         }
 
         /// Defines one of the shared custom swatch slots in the role editor.
@@ -423,6 +439,7 @@ namespace WorkRoles
                 entries = new List<JobEntry>(source.entries)
             };
             Store.roles.Add(copy);
+            UiVersion.Bump();
         }
 
         /// Reorders the role catalog (palette / list order). UI-only ordering:
@@ -435,6 +452,7 @@ namespace WorkRoles
             var role = roles[from];
             roles.RemoveAt(from);
             roles.Insert(to, role);
+            UiVersion.Bump();
         }
 
         // ----- Role rules -----

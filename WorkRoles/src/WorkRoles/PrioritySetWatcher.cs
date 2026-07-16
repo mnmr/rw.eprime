@@ -28,6 +28,14 @@ namespace WorkRoles
         private static readonly Dictionary<string, PendingWarning> pending =
             new Dictionary<string, PendingWarning>();
 
+        /// Tick whose stack walk resolved to an already-warned (or unknown)
+        /// caller. Identifying the caller costs a stack capture; a mod sweeping
+        /// every pawn each tick would otherwise pay it per pawn forever after
+        /// its one-time dialog. Settling the tick bounds that to one walk/tick;
+        /// a different, unwarned mod writing in the same tick is caught on the
+        /// next one.
+        private static int settledTick = -1;
+
         internal static void OnBlockedSetPriority(Pawn pawn, WorkTypeDef workType, int priority)
         {
             var settings = WorkRolesMod.Settings;
@@ -39,10 +47,12 @@ namespace WorkRoles
             if (workType != null
                 && (priority > 0) == (CompiledJobOrders.PriorityFor(pawn, workType) > 0))
                 return;
+            int tick = Find.TickManager.TicksGame;
+            if (tick == settledTick) return;
             var mod = CallingMod();
-            if (mod == null) return;
+            if (mod == null) { settledTick = tick; return; }
             string key = WorldKey() + "|" + mod.PackageId;
-            if (settings.warnedPriorityMods.Contains(key)) return;
+            if (settings.warnedPriorityMods.Contains(key)) { settledTick = tick; return; }
 
             if (!pending.TryGetValue(key, out var warning))
             {

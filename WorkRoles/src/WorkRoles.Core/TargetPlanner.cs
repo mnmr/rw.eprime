@@ -9,6 +9,9 @@ namespace WorkRoles.Core
         public int Id;
         /// Expanded job coverage (CoverageMath.CoverageOf) — the nesting/redundancy identity.
         public HashSet<string> Coverage = new HashSet<string>();
+        /// Coverage in the role's own job order — combining coverers must
+        /// preserve it. Null = no order data (combining stays permissive).
+        public List<string> OrderedCoverage;
         public bool AutoAssign;
         public bool HasRules;
         public bool Blocker;
@@ -43,7 +46,6 @@ namespace WorkRoles.Core
             IReadOnlyList<TargetRole> catalog,
             IReadOnlyList<int> recommendations,
             IReadOnlyList<int> extraIds,
-            IReadOnlyList<int> promoted,
             IReadOnlyDictionary<int, long> positions,
             int hunterTier, int hunterRoleId)
         {
@@ -78,6 +80,36 @@ namespace WorkRoles.Core
                 return CoverageMath.MakesRedundant(a.Coverage, a.Id, b.Coverage, b.Id);
             }
 
+            // A coverer folds held roles in only when their relative order
+            // matches its own job order (Hauler+Cleaner fold into Grunt;
+            // Cleaner+Hauler keep both and Grunt stays out — combining must
+            // never reshuffle the pawn's priorities).
+            int FirstCoveredIndex(TargetRole coverer, TargetRole held)
+            {
+                if (coverer.OrderedCoverage == null) return -1;
+                for (int i = 0; i < coverer.OrderedCoverage.Count; i++)
+                    if (held.Coverage.Contains(coverer.OrderedCoverage[i])) return i;
+                return -1;
+            }
+            bool OrderCompatible(TargetRole coverer)
+            {
+                if (coverer == null) return true;
+                int last = -1;
+                foreach (var a in existing)
+                {
+                    if (a.Pinned) continue;
+                    var held = RoleOf(a.RoleId);
+                    if (held == null || held.Id == coverer.Id) continue;
+                    if (!CoverageMath.MakesRedundant(coverer.Coverage, coverer.Id, held.Coverage, held.Id))
+                        continue;
+                    int first = FirstCoveredIndex(coverer, held);
+                    if (first < 0) continue;
+                    if (first < last) return false;
+                    last = first;
+                }
+                return true;
+            }
+
             bool CoveredByPlan(int roleId)
             {
                 var role = RoleOf(roleId);
@@ -85,19 +117,16 @@ namespace WorkRoles.Core
                 foreach (var a in target)
                     if (Covers(RoleOf(a.RoleId), role)) return true;
                 foreach (var recId in recommendations)
-                    if (Covers(RoleOf(recId), role)) return true;
+                    if (Covers(RoleOf(recId), role) && OrderCompatible(RoleOf(recId))) return true;
                 return false;
             }
 
-            // Auto-assign roles lead, ordered by their work-type priority (the flag
-            // grants membership in the block; content decides the order within it).
+            // Membership: every auto role (priority order keeps assembly
+            // deterministic when no position map is given), plus the hunter
+            // when tiered in; order comes from the template pass below.
             foreach (var role in catalog.Where(r => r.AutoAssign).OrderByDescending(r => r.NaturalPriority))
                 Add(role.Id);
-
-            if (hunterTier == 0 && hunterKnown) Add(hunterRoleId);
-            if (promoted != null)
-                foreach (var id in promoted) Add(id);
-            if (hunterTier == 1 && hunterKnown) Add(hunterRoleId);
+            if (hunterTier >= 0 && hunterTier < 2 && hunterKnown) Add(hunterRoleId);
 
             int firstSkilled = -1;
             for (int i = 0; i < existing.Count; i++)
@@ -120,6 +149,7 @@ namespace WorkRoles.Core
                 var role = RoleOf(recId);
                 if (role == null) continue;
                 if (role.AutoAssign || IsTieredHunter(recId)) continue;
+                if (!OrderCompatible(role)) continue;
                 if (role.Unskilled) { recUnskilled.Add(recId); continue; }
                 Add(recId);
             }
@@ -128,7 +158,7 @@ namespace WorkRoles.Core
                 foreach (var id in extraIds)
                 {
                     var r = RoleOf(id);
-                    if (r == null || IsTieredHunter(id)) continue;
+                    if (r == null || IsTieredHunter(id) || !OrderCompatible(r)) continue;
                     if (!r.HasRules && !r.AutoAssign && !r.Unskilled) Add(id);
                 }
 
@@ -140,7 +170,9 @@ namespace WorkRoles.Core
                 foreach (var id in extraIds)
                 {
                     var r = RoleOf(id);
-                    if (r != null && !r.HasRules && r.Unskilled && !CoveredByPlan(id)) Add(id);
+                    if (r == null || r.HasRules || !r.Unskilled) continue;
+                    if (!OrderCompatible(r) || CoveredByPlan(id)) continue;
+                    Add(id);
                 }
             if (hunterTier == 2 && hunterKnown) Add(hunterRoleId);
 

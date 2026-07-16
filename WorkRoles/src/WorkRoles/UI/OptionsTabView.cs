@@ -16,6 +16,43 @@ namespace WorkRoles.UI
         private static readonly Color LockedColor = new Color(0.95f, 0.8f, 0.2f, 0.9f);
         private Vector2 orderScroll;
 
+        // Open-window snapshot (UiVersion): resolving the template projects the
+        // whole catalog through RecRoleOf — that ran twice per pass before.
+        private int snapStamp = -1;
+        private float snapWidth = -1f;
+        private List<int> order;
+        private Dictionary<int, RecRole> byId;
+        private List<Role> orderRoles;
+        private readonly List<Rect> layout = new List<Rect>();
+        private float layoutHeight;
+
+        // Drag drop, rebuilt only when the reorder target changes (see p2 in
+        // DrawRecommendationOrder): RoleDrag clears its slot every frame.
+        private int dropStamp = -1;
+        private int dropFrom = -1;
+        private int dropTo = -1;
+        private System.Action dropAction;
+
+        public void Reset()
+        {
+            orderScroll = Vector2.zero;
+            snapStamp = -1;
+        }
+
+        private void EnsureSnapshot(RoleStore store, float chipWidth)
+        {
+            if (snapStamp == UiVersion.Current && snapWidth == chipWidth) return;
+            snapStamp = UiVersion.Current;
+            snapWidth = chipWidth;
+            // One projection serves both the resolver and the byId lookup.
+            var recRoles = store.roles.Select(ColonistsTabView.RecRoleOf).ToList();
+            order = RecommendationOrder.ResolveTemplate(store.recommendationOrder, recRoles);
+            byId = recRoles.ToDictionary(r => r.Id);
+            orderRoles = order.Select(store.RoleById).Where(r => r != null).ToList();
+            layout.Clear();
+            layoutHeight = LayoutChips(chipWidth, orderRoles, layout);
+        }
+
         public void Draw(Rect rect)
         {
             var store = RoleStore.Current;
@@ -55,11 +92,8 @@ namespace WorkRoles.UI
         /// pin unlisted roles at their suggested spot.
         private void DrawRecommendationOrder(Rect rect, RoleStore store)
         {
-            var order = ColonistsTabView.ResolvedRecommendationOrder(store);
             // Full catalog: coverage anchors (autos included) shape positions.
-            var byId = store.roles
-                .Select(ColonistsTabView.RecRoleOf)
-                .ToDictionary(r => r.Id);
+            EnsureSnapshot(store, rect.width - 20f);
 
             Text.Font = GameFont.Small;
             var headerRect = new Rect(rect.x, rect.y, rect.width - 110f, 24f);
@@ -72,16 +106,14 @@ namespace WorkRoles.UI
                 OpenAddMenu(store, order, byId);
 
             float listY = rect.y + 30f;
-            var roles = order.Select(store.RoleById).Where(r => r != null).ToList();
-            var layout = new List<Rect>();
-            float contentH = LayoutChips(rect.width - 20f, roles, layout);
-
             var listRect = new Rect(rect.x, listY, rect.width, rect.yMax - listY);
-            var viewRect = new Rect(0f, 0f, listRect.width - 16f, contentH);
+            var viewRect = new Rect(0f, 0f, listRect.width - 16f, layoutHeight);
             Widgets.BeginScrollView(listRect, ref orderScroll, viewRect);
 
-            foreach (var (role, chipRect) in roles.Zip(layout, (r, rc) => (r, rc)))
+            for (int i = 0; i < orderRoles.Count; i++)
             {
+                var role = orderRoles[i];
+                var chipRect = layout[i];
                 var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Normal,
                     showRemove: true, dragSource: null, onClick: null);
                 if (click == ChipClick.Remove)
@@ -139,13 +171,25 @@ namespace WorkRoles.UI
                 int to = insertIndex > from ? insertIndex - 1 : insertIndex;
                 if (to != from)
                 {
-                    var edited = order.ToList();
-                    RoleDrag.HoverDropAction = () =>
+                    // RoleDrag clears its slot every frame, so reassignment is
+                    // per pass — but the list copy and closure are rebuilt only
+                    // when the reorder target (or the order itself) changes.
+                    if (dropStamp != snapStamp || dropFrom != from || dropTo != to)
                     {
-                        edited.RemoveAt(from);
-                        edited.Insert(to, draggedId);
-                        RoleCommands.SetRecommendationOrder(edited);
-                    };
+                        dropStamp = snapStamp;
+                        dropFrom = from;
+                        dropTo = to;
+                        var edited = order.ToList();
+                        RoleDrag.HoverDropAction = () =>
+                        {
+                            edited.RemoveAt(from);
+                            edited.Insert(to, draggedId);
+                            RoleCommands.SetRecommendationOrder(edited);
+                        };
+                        dropAction = RoleDrag.HoverDropAction;
+                    }
+                    else
+                        RoleDrag.HoverDropAction = dropAction;
                 }
             }
 
@@ -153,23 +197,25 @@ namespace WorkRoles.UI
         }
 
         /// Pin an unlisted role: it enters at its suggested (dynamic) spot,
-        /// not at the end.
+        /// not at the end. Candidate selection is Core logic (AddCandidates);
+        /// this only maps ids to labels.
         private static void OpenAddMenu(RoleStore store, List<int> order,
             Dictionary<int, RecRole> byId)
         {
             var options = new List<FloatMenuOption>();
-            foreach (var role in store.roles
-                .Where(r => ColonistsTabView.IsPinnableRole(r) && !order.Contains(r.id))
-                .OrderBy(r => r.label))
+            foreach (int id in RecommendationOrder.AddCandidates(byId.Values.ToList(), order)
+                         .OrderBy(candidate => store.RoleById(candidate)?.label))
             {
-                var captured = role;
+                var role = store.RoleById(id);
+                if (role == null) continue;
+                int captured = id;
                 options.Add(new FloatMenuOption(role.label, () =>
                 {
                     var edited = order.ToList();
-                    int at = byId.TryGetValue(captured.id, out var rec)
+                    int at = byId.TryGetValue(captured, out var rec)
                         ? RecommendationOrder.InsertIndex(rec, edited, byId)
                         : edited.Count;
-                    edited.Insert(at, captured.id);
+                    edited.Insert(at, captured);
                     RoleCommands.SetRecommendationOrder(edited);
                 }));
             }

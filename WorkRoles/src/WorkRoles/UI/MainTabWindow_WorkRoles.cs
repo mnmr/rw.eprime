@@ -159,6 +159,7 @@ namespace WorkRoles.UI
             RoleDrag.Cancel();
             colonistsTab.Reset();
             rolesTab.Reset();
+            optionsTab.Reset();
             KeyOverride.Apply();
         }
 
@@ -169,7 +170,38 @@ namespace WorkRoles.UI
             KeyOverride.Restore();
         }
 
+        private List<TabRecord> tabs;
+
+        // Dev-mode draw cost readout (EMA over GUI passes): the number that
+        // proves the snapshot caches hold — idle should read well under 1ms.
+        private static readonly System.Diagnostics.Stopwatch drawTimer = new System.Diagnostics.Stopwatch();
+        private float drawMsEma = -1f;
+
         public override void DoWindowContents(Rect inRect)
+        {
+            drawTimer.Restart();
+            try
+            {
+                DrawContents(inRect);
+            }
+            finally
+            {
+                drawTimer.Stop();
+                float ms = (float)drawTimer.Elapsed.TotalMilliseconds;
+                drawMsEma = drawMsEma < 0f ? ms : drawMsEma * 0.95f + ms * 0.05f;
+                if (Prefs.DevMode)
+                {
+                    Text.Font = GameFont.Tiny;
+                    GUI.color = new Color(1f, 1f, 1f, 0.4f);
+                    Widgets.Label(new Rect(inRect.x + 4f, inRect.yMax - 14f, 200f, 14f),
+                        $"draw {drawMsEma:0.00} ms/pass");
+                    GUI.color = Color.white;
+                    Text.Font = GameFont.Small;
+                }
+            }
+        }
+
+        private void DrawContents(Rect inRect)
         {
             // Keyboard navigation runs before any widget sees the event, and
             // only while no text field owns the keyboard (typing in the search
@@ -198,7 +230,9 @@ namespace WorkRoles.UI
                 windowRect.y = Verse.UI.screenHeight - 35f - windowRect.height;
             }
 
-            var tabs = new List<TabRecord>
+            // Built once (Func<bool> selection getters): a fresh list with three
+            // closures per pass is pure GC pressure.
+            tabs ??= new List<TabRecord>
             {
                 new TabRecord("WR_ColonistsTab".Translate(), () =>
                 {
@@ -207,13 +241,13 @@ namespace WorkRoles.UI
                     if (curTab != Tab.Colonists) colonistsTab.InvalidateRecommendationCache();
                     if (curTab == Tab.Roles) rolesTab.CommitEdits();
                     curTab = Tab.Colonists;
-                }, curTab == Tab.Colonists),
-                new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, curTab == Tab.Roles),
+                }, () => curTab == Tab.Colonists),
+                new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, () => curTab == Tab.Roles),
                 new TabRecord("WR_OptionsTab".Translate(), () =>
                 {
                     if (curTab == Tab.Roles) rolesTab.CommitEdits();
                     curTab = Tab.Options;
-                }, curTab == Tab.Options),
+                }, () => curTab == Tab.Options),
             };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);

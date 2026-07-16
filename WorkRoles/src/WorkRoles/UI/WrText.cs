@@ -82,8 +82,24 @@ namespace WorkRoles.UI
         /// fractional UI scales (0.9, 1.25, …) physical-pixel glyph rounding can
         /// render text a few pixels wider than measured — an exact-fit rect then
         /// wraps or clips. 2% + 2px absorbs the drift; ceil lands on whole pixels.
+        /// Memoized: CalcSize is the bottom of every chip/label measurement and
+        /// runs thousands of times per frame otherwise (see UiVersion).
+        private static readonly System.Collections.Generic.Dictionary<(GameFont, string), float> fitWidths
+            = new System.Collections.Generic.Dictionary<(GameFont, string), float>();
+        private static int fitWidthsStamp = -1;
+
         public static float FitWidth(string text)
-            => Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
+        {
+            if (fitWidthsStamp != UiVersion.Current)
+            {
+                fitWidths.Clear();
+                fitWidthsStamp = UiVersion.Current;
+            }
+            var key = (Text.Font, text);
+            if (!fitWidths.TryGetValue(key, out float width))
+                fitWidths[key] = width = Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
+            return width;
+        }
 
         /// Medium-font glyphs start ~8px below the label rect's top (internal
         /// leading), measured against the stats panel's portrait frame. Public:

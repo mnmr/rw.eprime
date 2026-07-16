@@ -34,10 +34,13 @@ namespace WorkRoles.Patches
         [HarmonyPatch(nameof(Pawn_WorkSettings.GetPriority))]
         public static bool GetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, ref int __result)
         {
-            if (!IsManaged(___pawn)) return true;
+            // Hottest patched path (JobGiver_Work): one store fetch, then flat
+            // array reads inside CompiledJobOrders.
+            var store = RoleStore.Current;
+            if (store == null || !store.IsManaged(___pawn)) return true;
             // Raw ranks (1..N) by default; optionally vanilla 0-4 for readers
             // like Numbers that expect that range (Options tab toggle).
-            __result = RoleStore.Current?.reportVanillaPriorities == true
+            __result = store.reportVanillaPriorities
                 ? CompiledJobOrders.VanillaPriorityFor(___pawn, w)
                 : CompiledJobOrders.PriorityFor(___pawn, w);
             return false;

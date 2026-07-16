@@ -45,8 +45,8 @@ namespace WorkRoles.Core
         /// apply), N = N per colony-scale unit AND the "needed work" marker
         /// (best-in-colony only fires when > 0).
         public int MinHolders = -1;
-        /// False while none of the role's bench work can exist yet (nothing
-        /// built, nothing researched): not recommendable.
+        /// False while all of the role's work sits behind unfinished research:
+        /// not recommendable. Built status is ignored.
         public bool Available = true;
     }
 

@@ -28,8 +28,12 @@ public class RecommendationOrderTests
     [Test]
     public async Task EmptyStoredOrderYieldsTheDerivedDefault()
     {
-        var resolved = RecommendationOrder.Resolve(
-            new List<int>(), new List<int> { 3, 1, 2 }, new HashSet<int> { 1, 2, 3 });
+        // Distinct coverage, priority order 3 > 1 > 2.
+        var catalog = new List<RecRole>
+        {
+            Role(1, 200f, "A"), Role(2, 100f, "B"), Role(3, 300f, "C"),
+        };
+        var resolved = RecommendationOrder.ResolveTemplate(new List<int>(), catalog);
         await Assert.That(string.Join(",", resolved)).IsEqualTo("3,1,2");
     }
 
@@ -38,11 +42,73 @@ public class RecommendationOrderTests
     {
         // 9 was deleted; 5 exists but is unpinned — it floats via PositionOf
         // instead of merging back in.
-        var resolved = RecommendationOrder.Resolve(
-            stored: new List<int> { 9, 2, 1 },
-            derived: new List<int> { 1, 5, 2 },
-            valid: new HashSet<int> { 1, 2, 5 });
+        var catalog = new List<RecRole>
+        {
+            Role(1, 200f, "A"), Role(2, 100f, "B"), Role(5, 150f, "E"),
+        };
+        var resolved = RecommendationOrder.ResolveTemplate(new List<int> { 9, 2, 1 }, catalog);
         await Assert.That(string.Join(",", resolved)).IsEqualTo("2,1");
+    }
+
+    [Test]
+    public async Task RolesCreatedAfterTheStoredOrderAreAddable()
+    {
+        // The in-game Add-bug shape: a save whose stored order predates a
+        // newly created, coverage-maximal role. The new role is not a chip
+        // (stored wins) so Add MUST offer it.
+        var doctor = Role(1, 1300f, "Tend");
+        var cook = Role(2, 1000f, "Cook");
+        var core = Role(3, 1400f, "Fight", "Rescue"); // created later
+        var catalog = new List<RecRole> { doctor, cook, core };
+
+        var resolved = RecommendationOrder.ResolveTemplate(new List<int> { 1, 2 }, catalog);
+        await Assert.That(string.Join(",", resolved)).IsEqualTo("1,2");
+        await Assert.That(RecommendationOrder.AddCandidates(catalog, resolved))
+            .Contains(3);
+
+        // Never-edited store: the same role enters the DEFAULT template by
+        // itself — a chip, and therefore absent from Add.
+        var derived = RecommendationOrder.ResolveTemplate(new List<int>(), catalog);
+        await Assert.That(derived.Contains(3)).IsTrue();
+        await Assert.That(RecommendationOrder.AddCandidates(catalog, derived).Contains(3))
+            .IsFalse();
+    }
+
+    [Test]
+    public async Task AutoRolesAreNeitherPinnedNorAddable()
+    {
+        // Always-on roles interleave by work priority on their own; pinning
+        // them is meaningless, so both surfaces exclude them BY DESIGN.
+        var doctor = Role(1, 1300f, "Tend");
+        var core = Role(3, 1400f, "Fight", "Rescue");
+        core.AutoAssign = true;
+        var catalog = new List<RecRole> { doctor, core };
+
+        var derived = RecommendationOrder.ResolveTemplate(new List<int>(), catalog);
+        await Assert.That(derived.Contains(3)).IsFalse();
+        await Assert.That(RecommendationOrder.AddCandidates(catalog, derived).Contains(3))
+            .IsFalse();
+    }
+
+    [Test]
+    public async Task EveryPinnableRoleIsPinnedOrAddable()
+    {
+        // The invariant behind the Options Add menu: no role a player creates
+        // can be neither listed nor offered.
+        var covered = Role(1, 100f, "A");
+        var coverer = Role(2, 200f, "A", "B");
+        var auto = Role(3, 900f, "X"); auto.AutoAssign = true;
+        var hunter = Role(4, 300f, "H"); hunter.Hunting = true;
+        var trainer = Role(5, 150f, "T"); trainer.TrainTargets.Add(2);
+        var catalog = new List<RecRole> { covered, coverer, auto, hunter, trainer };
+
+        var template = RecommendationOrder.ResolveTemplate(new List<int>(), catalog);
+        var addable = RecommendationOrder.AddCandidates(catalog, template);
+        var reachable = template.Concat(addable).ToHashSet();
+        foreach (var role in catalog.Where(RecommendationOrder.IsPinnable))
+            await Assert.That(reachable.Contains(role.Id)).IsTrue()
+                .Because($"role {role.Id} is neither pinned nor addable");
+        await Assert.That(reachable.Contains(auto.Id)).IsFalse();
     }
 
     [Test]
