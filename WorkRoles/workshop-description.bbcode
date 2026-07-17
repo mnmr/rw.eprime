@@ -32,10 +32,10 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [h1]Worth Noting[/h1]
 [list]
 [*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
-[*][b]Combo Roles:[/b] The Basics role covers patient, rescue, firefighting and bed rest. Haul urgently from AllowTool is also added to Basics (if installed). Grunt combines hauling and cleaning. Farmer combines planting and harvesting.
-[*][b]Extra Roles:[/b] Convenience roles that the recommendation engine uses (Fabricator, Medic, Butcher, Brewer).
+[*][b]Combo Roles:[/b] Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
 [*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment).
-[*][b]Invisible Jobs:[/b] Some mods add hidden jobs with no work-type checkbox; WorkRoles adds these to the "Odd Jobs" role.
+[*][b]Extra Roles:[/b] Training roles that enable role progression and convenience roles to make prioritization easier.
+[*][b]Modded Jobs:[/b] Jobs added by mods are unassigned by default; the role editor warns when a job isn't in any role. AllowTool jobs are assigned automatically (Haul urgently to Basics, Finish off to Herder/Hunter).
 [/list]
 
 [h1]How It Works[/h1]
@@ -50,7 +50,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [h1]Recommendation Logic[/h1]
 [list]
 [*][b]Analysis:[/b] Looks across all colonists in a location to ensure recommendations are balanced across the colony.
-[*][b]Suggestions:[/b] Suggests based on passions, genetics/traits, skill levels and training needs.
+[*][b]Suggestions:[/b] Suggests based on passions, genetics/traits, skill levels and training paths.
 [*][b]Applying:[/b] Cherry-pick individual recommendations or apply across all or selected colonists.
 [*][b]Full Spec:[/b] Check [url=https://github.com/mnmr/rw.workroles/README.md]README[/url] for a more comprehensive description (Workshop pages have character limits).
 [/list]

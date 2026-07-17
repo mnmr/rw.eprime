@@ -17,18 +17,8 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        // Training defaults, copied onto the runtime role at creation (the role
-        // carries the live, player-editable values). A pawn inside
-        // [trainMinLevel, trainMaxLevel) fits the role; at trainMaxLevel it has
-        // outgrown it and the targets apply instead.
-        public string trainSkill;
-        public int trainMinLevel;
-        public int trainMaxLevel;
-        /// RoleDef defNames this role trains toward.
-        public List<string> trainTargets = new List<string>();
         /// Colonist count for the coverage pass: -1 = auto (dealt at colony
-        /// scale), 0 = never dealt (interest-driven only), N = N per
-        /// colony-scale unit + Best drafts.
+        /// scale), 0 = never dealt (interest-driven only), N = needed.
         public int minHolders = -1;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
@@ -58,11 +48,10 @@ namespace WorkRoles
         /// per seeded role so later loads can tell def drift from player edits.
         public uint StableHash()
         {
+            // Hash-input change is safe: templateHash has no readers yet.
             var text = string.Join("\n",
                 label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 group, activeHours, string.Join("|", locations),
-                trainSkill, trainMinLevel.ToString(), trainMaxLevel.ToString(),
-                string.Join("|", trainTargets),
                 minHolders.ToString(),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
@@ -87,12 +76,6 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
-            if (!trainSkill.NullOrEmpty()
-                && DefDatabase<RimWorld.SkillDef>.GetNamedSilentFail(trainSkill) == null)
-                yield return $"unknown trainSkill '{trainSkill}'";
-            foreach (var target in trainTargets)
-                if (DefDatabase<RoleDef>.GetNamedSilentFail(target) == null)
-                    yield return $"unknown trainTarget '{target}'";
         }
     }
 }

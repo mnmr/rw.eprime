@@ -34,7 +34,7 @@
   <WR_AddNew>Add New</WR_AddNew>
   <WR_NewPathTitle>New training path</WR_NewPathTitle>
   <WR_PathsPanelCaption>Training Paths (click to edit an existing path)</WR_PathsPanelCaption>
-  <WR_WhenPanelCaption>Role progression: Here you can define at what skill the displayed roles are recommended. Overlapping roles complement. Assignment order is row-reverse (bottom row first).</WR_WhenPanelCaption>
+  <WR_WhenPanelCaption>Role progression: Here you can define at what skill the displayed roles are recommended. Overlapping roles complement.</WR_WhenPanelCaption>
   <WR_PathEditorHeader>Training Path Editor</WR_PathEditorHeader>
   <WR_PathNameLabel>Name:</WR_PathNameLabel>
   <WR_RenamePathTitle>Rename training path</WR_RenamePathTitle>
@@ -172,20 +172,15 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Recommendation reason tooltips; {0} = skill label where present -->
   <WR_ReasonEveryone>Auto-assigned to everyone.</WR_ReasonEveryone>
-  <WR_ReasonDuty>Duty work: prisoners and children come first.</WR_ReasonDuty>
   <WR_ReasonHunter>Carries a ranged weapon; hunting also trains Shooting.</WR_ReasonHunter>
-  <WR_ReasonUnskilled>Unskilled work anyone can do.</WR_ReasonUnskilled>
   <WR_ReasonExpertise>Expertise: {0}.</WR_ReasonExpertise>
   <WR_ReasonMajorPassion>Burning passion for {0}.</WR_ReasonMajorPassion>
   <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
-  <WR_ReasonBest>Best in the colony at {0}.</WR_ReasonBest>
   <WR_ReasonAptitude>Gene or trait aptitude for {0}.</WR_ReasonAptitude>
-  <WR_ReasonEssential>The colony always needs someone {0}.</WR_ReasonEssential>
   <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
+  <!-- {0} = the needed role the trainee works toward -->
+  <WR_ReasonInTraining>In training: fills a {0} slot while skilling up through the training path.</WR_ReasonInTraining>
   <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
-  <!-- Training-role suffix: {0} = full role label, {1} = skill label, {2} = required level -->
-  <WR_ReasonTraining>Training role: works toward {0} ({1} {2}+).</WR_ReasonTraining>
-
   <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
   <WR_SkillTipAptitude>Aptitude {0} (genes/traits)</WR_SkillTipAptitude>
 
@@ -342,9 +337,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
-  <!-- Editor: training substitutions, colonist count, skills used -->
-  <WR_AllowTrainingSubs>Allow training substitutions</WR_AllowTrainingSubs>
-  <WR_AllowTrainingSubsTip>When a colonist does not yet meet this role's threshold in a skill progression (Options tab), the preceding role in the progression may be recommended as a stand-in.</WR_AllowTrainingSubsTip>
+  <!-- Editor: in-training allowance, colonist count, skills used -->
+  <WR_InTrainingLabel>In training:</WR_InTrainingLabel>
+  <WR_InTrainingTip>Of the needed colonists, how many may still be in training — holding an earlier role from a training path that leads here — instead of holding this role itself.</WR_InTrainingTip>
   <WR_HoldersLabel>Colonists:</WR_HoldersLabel>
   <WR_HoldersTipWhat>Controls how many colonists the recommendation engine will assign this role to.</WR_HoldersTipWhat>
   <WR_HoldersTipAuto>a preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
@@ -352,6 +347,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoldersTipCount>recommended to colonists until the colony need is met</WR_HoldersTipCount>
   <WR_HoldersTipNever>never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
+  <!-- Holders button while Auto is selected; {0} = the resolved colony target -->
+  <WR_HoldersAutoCount>Auto ({0})</WR_HoldersAutoCount>
   <WR_HoldersNever>Never</WR_HoldersNever>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 

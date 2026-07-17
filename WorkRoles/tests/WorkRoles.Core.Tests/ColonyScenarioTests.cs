@@ -1,26 +1,21 @@
 using System.Xml.Linq;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.Core.Tests;
 
-/// Colony-scale scenario tests: the full planning pipeline (ColonyPlanner ->
-/// RecommendationEngine -> TargetPlanner) over the SHIPPED role catalog with
-/// seeded pseudo-random colonies (sizes 1/3/10/50; varied skills, passions,
-/// expertise, capability profiles, weapons, fire-terror). Assertions are
-/// INVARIANTS, not exact plans; failures name the size and seed so a colony
-/// can be replayed.
+/// Colony-scale scenario tests: the rule-pipeline engine over the SHIPPED
+/// roles + training paths with seeded pseudo-random colonies. Assertions are
+/// INVARIANTS, not exact plans; failures name the size and seed.
 public class ColonyScenarioTests
 {
-    // ----- shipped catalog projection (mirrors the game adapter's rules) -----
-
     internal sealed class Catalog
     {
-        public List<RecRole> Recs = new();
-        public List<TargetRole> Targets = new();
+        public List<RoleView> Roles = new();
+        public List<PathView> Paths = new();
         public Dictionary<int, string> DefNames = new();
-        public Dictionary<int, int> EssentialRank = new();
         public List<int> OrderTemplate = new();
-        public int HunterId = -1, DoctorId = -1, MedicId = -1, FireBlockerId = -1;
+        public int HunterId = -1, FireBlockerId = -1;
     }
 
     /// workType -> relevant skills (vanilla values for the shipped catalog).
@@ -46,13 +41,6 @@ public class ColonyScenarioTests
         ["Fishing"] = new List<string> { "Animals" },
     };
 
-    private static readonly (string workType, string template)[] Essentials =
-    {
-        ("Doctor", "WS_Doctor"), ("Cooking", "WS_Cook"), ("Construction", "WS_Builder"),
-        ("Growing", "WS_Farmer"), ("Mining", "WS_Miner"), ("Smithing", "WS_Smith"),
-        ("Tailoring", "WS_Tailor"), ("Crafting", "WS_Crafter"),
-    };
-
     private static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
@@ -72,129 +60,94 @@ public class ColonyScenarioTests
         return catalog;
     }
 
-    private static Catalog Shipped()
+    /// Test-side primary skill (the game adapter uses the XP tables instead).
+    private static string PrimarySkillOf(HashSet<string> coverage)
     {
-        var path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
+        var counts = new Dictionary<string, int>();
+        foreach (var giver in coverage)
+            if (VanillaGiverBaseline.GiverWorkType.TryGetValue(giver, out var wt)
+                && SkillsByWorkType.TryGetValue(wt, out var skills))
+                foreach (var s in skills)
+                    counts[s] = counts.TryGetValue(s, out int c) ? c + 1 : 1;
+        return counts.Count == 0 ? null
+            : counts.OrderByDescending(kv => kv.Value)
+                .ThenBy(kv => kv.Key, StringComparer.Ordinal).First().Key;
+    }
+
+    internal static Catalog Shipped()
+    {
+        var defsDir = Path.Combine(RepoRoot(), "mod", "1.6", "Defs");
         var catalog = new Catalog();
-        var trainTargetNames = new Dictionary<int, List<string>>();
+        var idByDef = new Dictionary<string, int>();
         int id = 1;
-        foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
+        foreach (var def in XElement.Load(Path.Combine(defsDir, "Roles.xml"))
+                     .Elements("WorkRoles.RoleDef"))
         {
             string defName = def.Element("defName")?.Value.Trim() ?? $"?{id}";
             var entries = new List<JobEntry>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
                 if (JobEntry.TryDecode(li.Value.Trim(), out var entry))
                     entries.Add(entry);
-
             var workTypes = new List<string>();
             foreach (var entry in entries)
             {
                 string workType = entry.Kind == JobEntryKind.WorkType ? entry.DefName
-                    : VanillaGiverBaseline.GiverWorkType.TryGetValue(entry.DefName, out var parent) ? parent : null;
+                    : VanillaGiverBaseline.GiverWorkType.TryGetValue(entry.DefName, out var parent)
+                        ? parent : null;
                 if (workType != null && !workTypes.Contains(workType)) workTypes.Add(workType);
             }
-
-            string trainSkill = def.Element("trainSkill")?.Value.Trim();
-            bool blocker = def.Element("blocker")?.Value.Trim() == "true";
-            bool autoAssign = def.Element("autoAssign")?.Value.Trim() == "true";
-            bool unskilled = workTypes.All(wt => !SkillsByWorkType.ContainsKey(wt));
-
-            var rec = new RecRole
+            var coverage = CoverageMath.CoverageOf(entries, JobCatalog);
+            var role = new RoleView
             {
                 Id = id,
-                Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
-                AutoAssign = autoAssign,
-                Blocker = blocker,
-                Unskilled = unskilled,
+                Coverage = coverage,
+                OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
+                AutoAssign = def.Element("autoAssign")?.Value.Trim() == "true",
+                Blocker = def.Element("blocker")?.Value.Trim() == "true",
+                Unskilled = workTypes.All(wt => !SkillsByWorkType.ContainsKey(wt)),
                 Hunting = workTypes.Contains("Hunting"),
-                TrainSkill = trainSkill,
-                TrainMin = int.TryParse(def.Element("trainMinLevel")?.Value, out var mn) ? mn : 0,
-                TrainMax = int.TryParse(def.Element("trainMaxLevel")?.Value, out var mx) ? mx : 0,
+                // Defs ARE the Auto defaults, so the def value is the resolved count.
                 MinHolders = int.TryParse(def.Element("minHolders")?.Value, out var mnh) ? mnh : -1,
                 NaturalPriority = workTypes
                     .Select(wt => VanillaWorkOrder.NaturalPriority.TryGetValue(wt, out var np) ? np : 0)
                     .DefaultIfEmpty(0).Max(),
-                Enabled = true,
-                Gated = trainSkill != null,
+                PrimarySkill = PrimarySkillOf(coverage),
             };
-            rec.WorkTypes.AddRange(workTypes);
-            catalog.Recs.Add(rec);
-            trainTargetNames[id] = def.Element("trainTargets")?.Elements("li")
-                .Select(li => li.Value.Trim()).ToList() ?? new List<string>();
-
-            catalog.Targets.Add(new TargetRole
-            {
-                Id = id,
-                AutoAssign = autoAssign,
-                HasRules = false,
-                Blocker = blocker,
-                Unskilled = unskilled,
-                Doctoring = workTypes.Contains("Doctor") && !blocker,
-                NaturalPriority = autoAssign ? 100f : 0f,
-                Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
-                OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
-            });
-
+            role.WorkTypes.AddRange(workTypes);
+            catalog.Roles.Add(role);
             catalog.DefNames[id] = defName;
+            idByDef[defName] = id;
             if (defName == "WS_Hunter") catalog.HunterId = id;
-            if (defName == "WS_Doctor") catalog.DoctorId = id;
-            if (defName == "WS_Medic") catalog.MedicId = id;
             if (defName == "WS_NoFirefighting") catalog.FireBlockerId = id;
             id++;
         }
-        // Train targets resolve after every def has landed.
-        var idByDef = catalog.DefNames.ToDictionary(kv => kv.Value, kv => kv.Key);
-        foreach (var rec in catalog.Recs)
-            if (trainTargetNames.TryGetValue(rec.Id, out var names))
-                rec.TrainTargets.AddRange(names
-                    .Where(idByDef.ContainsKey).Select(n => idByDef[n]));
-        foreach (var targetRole in catalog.Targets)
+        int pathId = 1;
+        foreach (var def in XElement.Load(Path.Combine(defsDir, "TrainingPaths.xml"))
+                     .Elements("WorkRoles.TrainingPathDef"))
         {
-            var rec = catalog.Recs.First(r => r.Id == targetRole.Id);
-            targetRole.TrainTargets.AddRange(rec.TrainTargets);
+            var path = new PathView { Id = pathId++ };
+            foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
+            {
+                string roleDef = li.Element("role")?.Value.Trim();
+                if (roleDef == null || !idByDef.TryGetValue(roleDef, out int roleId)) continue;
+                path.RoleIds.Add(roleId);
+                path.BandMins.Add(int.TryParse(li.Element("min")?.Value, out var mn) ? mn : 0);
+                path.BandMaxes.Add(int.TryParse(li.Element("max")?.Value, out var mx)
+                    ? mx : SkillProgressionMath.MaxLevel);
+            }
+            string anchor = def.Element("anchorRole")?.Value.Trim();
+            if (anchor != null && idByDef.TryGetValue(anchor, out int anchorId))
+                path.AnchorRoleId = anchorId;
+            path.AnchorBefore = def.Element("anchorBefore")?.Value.Trim() != "false";
+            if (path.RoleIds.Count >= 2) catalog.Paths.Add(path);
         }
-
         // The REAL derivation — no mirror: the game adapter calls the same
         // Core function on the same projection.
-        catalog.OrderTemplate = RecommendationOrder.DeriveTemplate(catalog.Recs);
-
-        for (int rank = 0; rank < Essentials.Length; rank++)
-            foreach (var kv in catalog.DefNames)
-                if (kv.Value == Essentials[rank].template)
-                    catalog.EssentialRank[kv.Key] = rank;
+        catalog.OrderTemplate = OrderTemplate.DeriveTemplate(catalog.Roles);
         return catalog;
     }
 
-    // Shared with the quality-certification suite and the diagnostic dump.
     internal static Catalog ShippedCatalog() => Shipped();
-
-    internal static (Catalog catalog, List<PlanPawn> pawns, ColonyPlanResult colony,
-        List<List<PlannedAssignment>> targets, List<List<Recommendation>> recs)
-        ExecutePipeline(int size, int seed)
-    {
-        var catalog = Shipped();
-        var pawns = Colony(size, seed);
-        var skillMax = SkillMax(pawns);
-        var colony = ColonyPlanner.Compute(catalog.Recs, pawns, skillMax, SkillsByWorkType,
-            catalog.EssentialRank, catalog.HunterId, catalog.DoctorId, catalog.MedicId,
-            catalog.FireBlockerId);
-        var positions = RecommendationOrder.PositionsFor(catalog.Recs, catalog.OrderTemplate);
-        var targets = new List<List<PlannedAssignment>>();
-        var recs = new List<List<Recommendation>>();
-        for (int i = 0; i < pawns.Count; i++)
-        {
-            var pawnRecs = RecommendationEngine.Compute(
-                catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType, catalog.OrderTemplate);
-            recs.Add(pawnRecs);
-            targets.Add(TargetPlanner.Build(pawns[i].Existing, catalog.Targets,
-                pawnRecs.Select(r => r.RoleId).ToList(),
-                colony.VirtualSets[i], positions,
-                colony.HunterTiers[i], catalog.HunterId));
-        }
-        return (catalog, pawns, colony, targets, recs);
-    }
-
-    // ----- seeded colony generation -----
 
     private static readonly string[] AllSkills =
     {
@@ -202,136 +155,137 @@ public class ColonyScenarioTests
         "Artistic", "Intellectual", "Shooting", "Animals", "Social",
     };
 
-    private static List<PlanPawn> Colony(int size, int seed)
+    private static List<PawnView> GenColony(int size, int seed)
     {
         var rand = new Random(seed);
         var allTypes = SkillsByWorkType.Keys
-            .Concat(new[] { "Hauling", "Cleaning", "Firefighter", "Patient", "PatientBedRest", "BasicWorker" })
+            .Concat(new[] { "Hauling", "Cleaning", "Firefighter", "Patient",
+                "PatientBedRest", "BasicWorker" })
             .Distinct().ToArray();
-        var pawns = new List<PlanPawn>();
+        var pawns = new List<PawnView>();
         for (int i = 0; i < size; i++)
         {
-            var pawn = new PlanPawn();
+            var pawn = new PawnView();
             foreach (var skill in AllSkills)
             {
-                pawn.Rec.SkillLevels[skill] = rand.Next(0, 15);
+                pawn.SkillLevels[skill] = rand.Next(0, 15);
                 int roll = rand.Next(100);
-                pawn.Rec.PassionScores[skill] = roll < 8 ? 2 : roll < 28 ? 1 : 0;
-                if (rand.Next(100) < 4) pawn.Rec.ExpertiseSkills.Add(skill);
+                pawn.PassionScores[skill] = roll < 8 ? 2 : roll < 28 ? 1 : 0;
+                if (rand.Next(100) < 4) pawn.ExpertiseSkills.Add(skill);
             }
-            pawn.Rec.CapableWorkTypes.UnionWith(allTypes);
-            if (rand.Next(100) < 10) // incapable of violence
-                pawn.Rec.CapableWorkTypes.Remove("Hunting");
-            if (rand.Next(100) < 10) // incapable of dumb labor
-                pawn.Rec.CapableWorkTypes.ExceptWith(new[] { "Hauling", "Cleaning", "PlantCutting" });
-            if (rand.Next(100) < 8) // incapable of caring
-                pawn.Rec.CapableWorkTypes.ExceptWith(new[] { "Doctor", "Childcare" });
-            pawn.Rec.HasRangedWeapon = rand.Next(100) < 40;
-            pawn.Rec.ShootingLevel = pawn.Rec.SkillLevels["Shooting"];
+            pawn.CapableWorkTypes.UnionWith(allTypes);
+            if (rand.Next(100) < 10) pawn.CapableWorkTypes.Remove("Hunting");
+            if (rand.Next(100) < 10)
+                pawn.CapableWorkTypes.ExceptWith(new[] { "Hauling", "Cleaning", "PlantCutting" });
+            if (rand.Next(100) < 8)
+                pawn.CapableWorkTypes.ExceptWith(new[] { "Doctor", "Childcare" });
+            pawn.HasRangedWeapon = rand.Next(100) < 40;
+            pawn.ShootingLevel = pawn.SkillLevels["Shooting"];
             pawn.FireFear = rand.Next(100) < 5;
             pawns.Add(pawn);
         }
         return pawns;
     }
 
-    private static Dictionary<string, int> SkillMax(List<PlanPawn> pawns)
+    internal static ColonyView Build(Catalog catalog, List<PawnView> pawns)
     {
-        var max = new Dictionary<string, int>();
+        var colony = new ColonyView
+        {
+            Roles = catalog.Roles,
+            Paths = catalog.Paths,
+            OrderTemplate = catalog.OrderTemplate,
+            WorkTypeSkills = SkillsByWorkType,
+            HunterRoleId = catalog.HunterId,
+            FireBlockerRoleId = catalog.FireBlockerId,
+            Pawns = pawns,
+        };
         foreach (var pawn in pawns)
-            foreach (var kv in pawn.Rec.SkillLevels)
-                if (!max.TryGetValue(kv.Key, out var m) || kv.Value > m)
-                    max[kv.Key] = kv.Value;
-        return max;
+            foreach (var kv in pawn.SkillLevels)
+                if (!colony.SkillMaxLevels.TryGetValue(kv.Key, out int max) || kv.Value > max)
+                    colony.SkillMaxLevels[kv.Key] = kv.Value;
+        return colony;
     }
 
-    // ----- pipeline execution (mirrors BuildColonyFixPlan's Core calls) -----
-
-    private sealed class Run
-    {
-        public Catalog Catalog;
-        public List<PlanPawn> Pawns;
-        public ColonyPlanResult Colony;
-        public List<List<PlannedAssignment>> Targets = new();
-    }
-
-    private static Run Execute(int size, int seed)
+    internal static (Catalog catalog, ColonyView colony, List<PawnResult> results)
+        Execute(int size, int seed)
     {
         var catalog = Shipped();
-        var pawns = Colony(size, seed);
-        var skillMax = SkillMax(pawns);
-        var colony = ColonyPlanner.Compute(catalog.Recs, pawns, skillMax, SkillsByWorkType,
-            catalog.EssentialRank, catalog.HunterId, catalog.DoctorId, catalog.MedicId,
-            catalog.FireBlockerId);
-        var run = new Run { Catalog = catalog, Pawns = pawns, Colony = colony };
-        var positions = RecommendationOrder.PositionsFor(catalog.Recs, catalog.OrderTemplate);
-        for (int i = 0; i < pawns.Count; i++)
-        {
-            var recs = RecommendationEngine
-                .Compute(catalog.Recs, pawns[i].Rec, skillMax, SkillsByWorkType, catalog.OrderTemplate)
-                .Select(r => r.RoleId).ToList();
-            run.Targets.Add(TargetPlanner.Build(pawns[i].Existing, catalog.Targets, recs,
-                colony.VirtualSets[i], positions,
-                colony.HunterTiers[i], catalog.HunterId));
-        }
-        return run;
+        var colony = Build(catalog, GenColony(size, seed));
+        return (catalog, colony, RecsEngine.Run(colony));
     }
 
-    private static RecRole RecOf(Run run, int id) => run.Catalog.Recs.First(r => r.Id == id);
+    private static RoleView RoleOf(Catalog catalog, int id)
+        => catalog.Roles.First(r => r.Id == id);
 
-    private static bool ProvidesDoctoring(Run run, int id) =>
-        id == run.Catalog.DoctorId || id == run.Catalog.MedicId
-        || (!RecOf(run, id).Blocker
-            && CoverageMath.CoversOrMatches(RecOf(run, id).Coverage, RecOf(run, run.Catalog.DoctorId).Coverage));
+    private static bool Holds(PawnResult result, Catalog catalog, RoleView role)
+        => result.Assignments.Any(a => a.RoleId == role.Id
+            || (RoleOf(catalog, a.RoleId) is RoleView other && !other.Blocker
+                && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id)));
+
+    /// Mirror of EngineContext.PassesBands (INTEREST gating) for invariant
+    /// checks. The need-driven floor ignores this — see the draft rule.
+    private static bool PassesBands(ColonyView colony, int pawnIndex, RoleView role)
+    {
+        bool member = false;
+        foreach (var path in colony.Paths)
+        {
+            int entry = path.RoleIds.IndexOf(role.Id);
+            if (entry < 0) continue;
+            member = true;
+            if (role.PrimarySkill == null) return true;
+            int level = colony.Pawns[pawnIndex].SkillLevels
+                .TryGetValue(role.PrimarySkill, out int l) ? l : 0;
+            if (PathMath.InsideBand(path, entry, level)) return true;
+            if (level > 0 && level < path.BandMins[entry]
+                && colony.SkillMaxLevels.TryGetValue(role.PrimarySkill, out int max)
+                && level >= max)
+                return true;
+        }
+        return !member;
+    }
 
     // ----- invariants -----
 
     [Test]
     [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
     [Arguments(10, 55)] [Arguments(50, 66)]
-    public async Task EssentialWorkIsCoveredWheneverAnyoneCan(int size, int seed)
+    public async Task NeededRolesAreCoveredWheneverAnyCapablePawnExists(int size, int seed)
     {
-        var run = Execute(size, seed);
-        foreach (var (workType, template) in Essentials)
+        // minHolders is an ABSOLUTE floor: bands gate interest, never the
+        // need-driven fill. Generated pawns carry no apathy, so every capable
+        // pawn is eligible for a needed role regardless of skill level.
+        var (catalog, colony, results) = Execute(size, seed);
+        foreach (var role in catalog.Roles)
         {
-            int roleId = run.Catalog.DefNames.First(kv => kv.Value == template).Key;
-            if (!run.Pawns.Any(p => p.Rec.CapableWorkTypes.Contains(workType))) continue;
-            bool covered = run.Colony.VirtualSets.Any(ids => ids.Contains(roleId)
-                || ids.Any(other => CoverageMath.MakesRedundant(
-                    RecOf(run, other).Coverage, other, RecOf(run, roleId).Coverage, roleId)));
+            if (role.MinHolders < 1 || role.Blocker || role.HasRules || role.Hunting) continue;
+            bool anyCapable = Enumerable.Range(0, colony.Pawns.Count).Any(i =>
+                role.WorkTypes.Any(colony.Pawns[i].CapableWorkTypes.Contains));
+            if (!anyCapable) continue;
+            // Covered directly, by a coverer, or (allowance) by a trainee.
+            bool covered = results.Any(r => Holds(r, catalog, role))
+                || results.Any(r => r.Reasons.Values
+                    .Any(reason => reason.TowardRoleId == role.Id));
             await Assert.That(covered).IsTrue()
-                .Because($"{template} uncovered (size {size}, seed {seed})");
+                .Because($"{catalog.DefNames[role.Id]} uncovered (size {size}, seed {seed})");
         }
     }
 
     [Test]
     [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)] [Arguments(50, 66)]
-    public async Task DealtRolesStayWithinTheCoverageCap(int size, int seed)
+    public async Task DraftGrantsStayWithinTheScaledWant(int size, int seed)
     {
-        var run = Execute(size, seed);
-        int cap = Math.Max(1, (size + 5) / 6);
-        foreach (var role in run.Catalog.Recs)
+        var (catalog, colony, results) = Execute(size, seed);
+        var scaling = new UnitScaling();
+        foreach (var role in catalog.Roles)
         {
-            // Special allocations have their own rules: hunters (every gun),
-            // doctoring (redundancy floor), researcher (bench override).
-            if (role.AutoAssign || role.Blocker || role.Unskilled || role.Hunting) continue;
-            if (role.Id == run.Catalog.DoctorId || role.Id == run.Catalog.MedicId) continue;
-            if (role.MinHolders >= 0) continue; // own colonist count
-            int holders = run.Colony.VirtualSets.Count(ids => ids.Contains(role.Id));
-            await Assert.That(holders <= cap).IsTrue()
-                .Because($"{run.Catalog.DefNames[role.Id]} held by {holders} > cap {cap} (size {size}, seed {seed})");
+            int want = scaling.Want(role, size);
+            if (want <= 0) continue;
+            int drafted = results.Count(r =>
+                r.Reasons.TryGetValue(role.Id, out var reason) && reason.RuleId == "draft");
+            await Assert.That(drafted <= want).IsTrue()
+                .Because($"{catalog.DefNames[role.Id]} drafted {drafted} > want {want} "
+                    + $"(size {size}, seed {seed})");
         }
-    }
-
-    [Test]
-    [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
-    [Arguments(10, 55)] [Arguments(50, 66)]
-    public async Task DoctoringFloorHolds(int size, int seed)
-    {
-        var run = Execute(size, seed);
-        int capable = run.Pawns.Count(p => p.Rec.CapableWorkTypes.Contains("Doctor"));
-        int providers = run.Colony.VirtualSets.Count(ids => ids.Any(id => ProvidesDoctoring(run, id)));
-        await Assert.That(providers >= Math.Min(2, capable)).IsTrue()
-            .Because($"doctoring providers {providers} < min(2, capable {capable}) (size {size}, seed {seed})");
     }
 
     [Test]
@@ -339,70 +293,98 @@ public class ColonyScenarioTests
     [Arguments(10, 55)] [Arguments(50, 66)]
     public async Task ArmedCapablePawnsHunt_OthersNever_OneTierZeroWhenAnyHunt(int size, int seed)
     {
-        var run = Execute(size, seed);
-        for (int i = 0; i < run.Pawns.Count; i++)
+        var (_, colony, results) = Execute(size, seed);
+        for (int i = 0; i < colony.Pawns.Count; i++)
         {
-            bool armedCapable = run.Pawns[i].Rec.HasRangedWeapon
-                && run.Pawns[i].Rec.CapableWorkTypes.Contains("Hunting");
+            bool armedCapable = colony.Pawns[i].HasRangedWeapon
+                && colony.Pawns[i].CapableWorkTypes.Contains("Hunting");
             if (armedCapable)
-                await Assert.That(run.Colony.HunterTiers[i] >= 0).IsTrue()
+                await Assert.That(results[i].HunterTier >= 0).IsTrue()
                     .Because($"armed capable pawn {i} does not hunt (size {size}, seed {seed})");
             else
-                await Assert.That(run.Colony.HunterTiers[i]).IsEqualTo(-1)
+                await Assert.That(results[i].HunterTier).IsEqualTo(-1)
                     .Because($"pawn {i} hunts without gun/capability (size {size}, seed {seed})");
         }
-        if (run.Colony.HunterTiers.Any(t => t >= 0))
-            await Assert.That(run.Colony.HunterTiers.Any(t => t == 0)).IsTrue()
+        if (results.Any(r => r.HunterTier >= 0))
+            await Assert.That(results.Any(r => r.HunterTier == 0)).IsTrue()
                 .Because($"hunters exist but no tier 0 (size {size}, seed {seed})");
     }
 
     [Test]
     [Arguments(10, 33)] [Arguments(50, 44)] [Arguments(50, 66)]
-    public async Task FireTerrorGetsTheBlocker_NobodyElseDoes(int size, int seed)
+    public async Task FireTerrorGetsTheBlockerFirst_NobodyElseDoes(int size, int seed)
     {
-        // The shipped catalog no longer seeds a fire blocker; the pass only
-        // fires when a player-made one exists, and never grants without it.
-        var run = Execute(size, seed);
-        bool hasBlocker = run.Catalog.FireBlockerId != -1;
-        for (int i = 0; i < run.Pawns.Count; i++)
+        // The shipped catalog seeds WS_NoFirefighting; a fearing pawn gets it
+        // at the TOP of its list (the veto must precede everything).
+        var (catalog, colony, results) = Execute(size, seed);
+        bool hasBlocker = catalog.FireBlockerId != -1;
+        for (int i = 0; i < colony.Pawns.Count; i++)
         {
-            await Assert.That(run.Colony.FireGranted[i])
-                .IsEqualTo(run.Pawns[i].FireFear && hasBlocker)
+            await Assert.That(results[i].FireGranted)
+                .IsEqualTo(colony.Pawns[i].FireFear && hasBlocker)
                 .Because($"fire blocker mismatch on pawn {i} (size {size}, seed {seed})");
-            if (run.Pawns[i].FireFear && hasBlocker)
-                await Assert.That(run.Colony.VirtualSets[i].Contains(run.Catalog.FireBlockerId)).IsTrue()
-                    .Because($"fire-fearing pawn {i} lacks the blocker (size {size}, seed {seed})");
+            if (results[i].FireGranted)
+                await Assert.That(results[i].Assignments[0].RoleId)
+                    .IsEqualTo(catalog.FireBlockerId)
+                    .Because($"fire blocker not first for pawn {i} (size {size}, seed {seed})");
         }
     }
 
     [Test]
     [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
     [Arguments(10, 55)] [Arguments(50, 66)]
-    public async Task NoGrantWithoutCapability_NoGateBreaks(int size, int seed)
+    public async Task NoAssignmentWithoutCapability_InterestRespectsBands(int size, int seed)
     {
-        var run = Execute(size, seed);
-        var skillMax = SkillMax(run.Pawns);
-        for (int i = 0; i < run.Pawns.Count; i++)
-            foreach (var id in run.Colony.VirtualSets[i])
+        var (catalog, colony, results) = Execute(size, seed);
+        for (int i = 0; i < results.Count; i++)
+            foreach (var assignment in results[i].Assignments)
             {
-                var role = RecOf(run, id);
+                var role = RoleOf(catalog, assignment.RoleId);
                 if (role.Blocker) continue; // vetoes need no capability
                 if (role.WorkTypes.Count > 0)
-                    await Assert.That(role.WorkTypes.Any(run.Pawns[i].Rec.CapableWorkTypes.Contains)).IsTrue()
-                        .Because($"pawn {i} granted {run.Catalog.DefNames[id]} without capability (size {size}, seed {seed})");
-                // The doctoring floor may deliberately waive gates; everything else must pass.
-                if (role.Gated && id != run.Catalog.DoctorId && id != run.Catalog.MedicId)
-                    await Assert.That(RecommendationEngine.PassesGates(role, run.Pawns[i].Rec, skillMax)).IsTrue()
-                        .Because($"pawn {i} granted gated {run.Catalog.DefNames[id]} without passing (size {size}, seed {seed})");
+                    await Assert.That(role.WorkTypes
+                            .Any(colony.Pawns[i].CapableWorkTypes.Contains)).IsTrue()
+                        .Because($"pawn {i} got {catalog.DefNames[role.Id]} without capability "
+                            + $"(size {size}, seed {seed})");
+                // Only INTEREST (signal) assignments gate on bands; the
+                // need-driven floor (draft/allowance) may place below-band.
+                if (results[i].Reasons.TryGetValue(assignment.RoleId, out var reason)
+                    && reason.RuleId == "signals")
+                    await Assert.That(PassesBands(colony, i, role)).IsTrue()
+                        .Because($"pawn {i} got {catalog.DefNames[role.Id]} outside its band "
+                            + $"(size {size}, seed {seed})");
             }
+    }
+
+    [Test]
+    [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
+    public async Task AssignmentsFollowTheTemplateOutsidePathBlocksAndOverrides(int size, int seed)
+    {
+        var (catalog, colony, results) = Execute(size, seed);
+        var positions = Ordering.BasePositions(catalog.Roles, catalog.OrderTemplate);
+        var pathMembers = catalog.Paths
+            .Where(p => p.AnchorRoleId != -1)
+            .SelectMany(p => p.RoleIds).ToHashSet();
+        for (int i = 0; i < results.Count; i++)
+        {
+            bool Exempt(int roleId) => roleId == catalog.HunterId
+                || roleId == catalog.FireBlockerId
+                || RoleOf(catalog, roleId).Blocker
+                || pathMembers.Contains(roleId);
+            var plain = results[i].Assignments
+                .Select(a => a.RoleId).Where(rid => !Exempt(rid)).ToList();
+            for (int k = 1; k < plain.Count; k++)
+                await Assert.That(positions[plain[k - 1]] <= positions[plain[k]]).IsTrue()
+                    .Because($"{catalog.DefNames[plain[k - 1]]} outranks "
+                        + $"{catalog.DefNames[plain[k]]} for pawn {i} (size {size}, seed {seed})");
+        }
     }
 
     [Test]
     public async Task DefaultTemplateIsTheVanillaGridColumns()
     {
         // Pins the shipped default: one chip per vanilla-grid work column,
-        // autos included at their priority slots (Core above Doctor, Basics
-        // below). Hunting is dynamic; everything covered or specialized floats.
+        // autos included at their priority slots.
         var catalog = Shipped();
         var names = catalog.OrderTemplate.Select(id => catalog.DefNames[id]);
         await Assert.That(string.Join(",", names)).IsEqualTo(
@@ -410,31 +392,4 @@ public class ColonyScenarioTests
             + "WS_Cook,WS_Builder,WS_Farmer,WS_Miner,WS_Smith,WS_Tailor,"
             + "WS_Artist,WS_Crafter,WS_Fisher,WS_Grunt,WS_DarkStudier,WS_Researcher");
     }
-
-    [Test]
-    [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
-    public async Task TargetsFollowTheTemplateOrder(int size, int seed)
-    {
-        // The plan's order IS the recommendation-order template — the single
-        // ordering every surface shows; autos interleave by work priority
-        // (Core above Doctor, Basics below). Hunter (tiers), doctoring
-        // demotion and protected assignments are the only sanctioned
-        // deviations.
-        var run = Execute(size, seed);
-        var positions = RecommendationOrder.PositionsFor(run.Catalog.Recs, run.Catalog.OrderTemplate);
-        for (int i = 0; i < run.Targets.Count; i++)
-        {
-            var ids = run.Targets[i].Select(a => a.RoleId).ToList();
-            bool Exempt(int id) => id == run.Catalog.HunterId
-                || RecOf(run, id).Blocker || RecOf(run, id).HasRules
-                || run.Pawns[i].Existing.Any(a => a.RoleId == id && a.Pinned);
-            var plain = ids.Where(id => !Exempt(id)).ToList();
-            for (int k = 1; k < plain.Count; k++)
-                await Assert.That(positions[plain[k - 1]] <= positions[plain[k]]).IsTrue()
-                    .Because($"{run.Catalog.DefNames[plain[k - 1]]} outranks "
-                        + $"{run.Catalog.DefNames[plain[k]]} against the template "
-                        + $"for pawn {i} (size {size}, seed {seed})");
-        }
-    }
-
 }

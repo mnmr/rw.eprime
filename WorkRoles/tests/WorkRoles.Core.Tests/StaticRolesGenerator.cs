@@ -26,12 +26,7 @@ public class StaticRolesGenerator
             string label = def.Element("label")!.Value;
             bool auto = def.Element("autoAssign")?.Value == "true";
             bool blocker = def.Element("blocker")?.Value == "true";
-            string trainSkill = def.Element("trainSkill")?.Value.Trim();
-            int.TryParse(def.Element("trainMinLevel")?.Value, out int trainMin);
-            int.TryParse(def.Element("trainMaxLevel")?.Value, out int trainMax);
             int minHolders = int.TryParse(def.Element("minHolders")?.Value, out int mh) ? mh : -1;
-            var targets = (def.Element("trainTargets")?.Elements("li") ?? Enumerable.Empty<XElement>())
-                .Select(li => li.Value.Trim()).ToList();
             var entries = new List<string>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
             {
@@ -50,8 +45,7 @@ public class StaticRolesGenerator
 
             sb.AppendLine($"        new RoleSpec({Quote(label)}, {Quote(defName)},");
             sb.AppendLine($"            AutoAssign: {(auto ? "true" : "false")}, Blocker: {(blocker ? "true" : "false")},");
-            sb.AppendLine($"            TrainSkill: {Quote(trainSkill)}, TrainMin: {trainMin}, TrainMax: {trainMax},");
-            sb.AppendLine($"            TrainTargets: {Array(targets)}, MinHolders: {minHolders},");
+            sb.AppendLine($"            MinHolders: {minHolders},");
             sb.AppendLine($"            Entries: {Array(entries)}),");
         }
         sb.AppendLine("    };");

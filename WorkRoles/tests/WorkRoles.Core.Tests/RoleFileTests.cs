@@ -16,11 +16,8 @@ public class RoleFileTests
         enabled = false,
         activeHours = RoleFile.BitsToHours("111111000000000000000000"),
         locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
-        trainSkill = "Medicine",
-        trainMin = 5,
-        trainMax = 15,
-        trainTargets = { "Doctor" },
-        minHolders = 1,
+        minHolders = 2,
+        inTrainingAllowance = 1,
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -56,18 +53,15 @@ public class RoleFileTests
             .IsEqualTo("caravans|settlement:Bö & <Wood> \"Camp\"|ship:The Wanderer");
         await Assert.That(string.Join(",", role.entries.Select(e => e.Encode())))
             .IsEqualTo("WorkGiver:FightFires,WorkType:Hauling"); // ORDER preserved across kinds
-        await Assert.That(role.trainSkill).IsEqualTo("Medicine");
-        await Assert.That(role.trainMin).IsEqualTo(5);
-        await Assert.That(role.trainMax).IsEqualTo(15);
-        await Assert.That(string.Join(",", role.trainTargets)).IsEqualTo("Doctor");
-        await Assert.That(role.minHolders).IsEqualTo(1);
+        await Assert.That(role.minHolders).IsEqualTo(2);
+        await Assert.That(role.inTrainingAllowance).IsEqualTo(1);
 
         var plain = parsed.roles[1];
         await Assert.That(plain.templateDef == null).IsTrue();
         await Assert.That(plain.colorRef == null).IsTrue();
         await Assert.That(plain.enabled).IsTrue();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
-        await Assert.That(plain.trainSkill == null).IsTrue();
+        await Assert.That(plain.inTrainingAllowance).IsEqualTo(0);
         await Assert.That(plain.minHolders).IsEqualTo(-1);
     }
 
@@ -178,7 +172,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("3");
+            .IsEqualTo("4");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -323,5 +317,44 @@ public class RoleFileTests
         await Assert.That(ColorRgb.TryParseHex("99551b", out _)).IsFalse();
         await Assert.That(ColorRgb.TryParseHex("#99551", out _)).IsFalse();
         await Assert.That(ColorRgb.TryParseHex("#zzzzzz", out _)).IsFalse();
+    }
+
+    [Test]
+    public async Task OlderFilesWithTrainingElementsStillParse_TrainingIsIgnored()
+    {
+        // v2/v3 files carry <Training>; v4 readers skip it without error.
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"3\"><Palette/><Roles>" +
+            "<Role name=\"Medic\"><Options>" +
+            "<Training skill=\"Medicine\" min=\"5\" max=\"15\"><Target>Doctor</Target></Training>" +
+            "<Holders min=\"1\"/></Options>" +
+            "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(1);
+        await Assert.That(parsed.roles[0].inTrainingAllowance).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task NeverHoldersRoundTripsInV4()
+    {
+        var doc = new RoleFileDocument
+        {
+            roles = { new FileRole { label = "Statue", minHolders = -2,
+                entries = { new(JobEntryKind.WorkType, "Art") } } },
+        };
+        var parsed = RoleFile.Parse(RoleFile.Build(doc));
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(-2);
+    }
+
+    [Test]
+    public async Task NegativeInTrainingAttributeReadsAsZero()
+    {
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"4\"><Palette/><Roles>" +
+            "<Role name=\"Doc\"><Options><Holders min=\"2\" inTraining=\"-3\"/></Options>" +
+            "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].inTrainingAllowance).IsEqualTo(0);
     }
 }

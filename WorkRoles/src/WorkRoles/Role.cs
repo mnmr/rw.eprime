@@ -25,21 +25,12 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        // Training band + targets and colony holder bounds — live, player-
-        // editable values (seeded from the template def's defaults). A pawn
-        // inside [trainMin, trainMax) fits the role; at trainMax it has
-        // outgrown it and the targets apply instead.
-        public string trainSkill;
-        public int trainMin;
-        public int trainMax;
-        /// Role ids this role trains toward.
-        public List<int> trainTargets = new List<int>();
-        /// Colonist count: -1 = auto (dealt at colony scale), 0 = never dealt
-        /// (interest-driven only), N = N per colony-scale unit + Best drafts.
+        /// Colonist count: -2 = never recommended, -1 = auto (resolves to the
+        /// RoleDef default; player roles 0), 0 = interest-only, N = needed.
         public int minHolders = -1;
-        /// When a colonist does not yet meet this role's progression threshold,
-        /// the preceding chain role may be recommended as a stand-in.
-        public bool allowTrainingSubstitutions;
+        /// Of the resolved minHolders, how many slots a colonist still in
+        /// training (lower-band path partner) may fill.
+        public int inTrainingAllowance;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
@@ -84,6 +75,16 @@ namespace WorkRoles
             return CoverageMath.CoversOrMatches(Coverage(), other.Coverage());
         }
 
+        /// The effective colonist count: Auto (-1) falls back to the seeding
+        /// def's default; player-created roles default to 0 (interest-only).
+        public int ResolvedMinHolders()
+        {
+            if (minHolders != -1) return minHolders;
+            var def = templateDefName == null ? null
+                : DefDatabase<RoleDef>.GetNamedSilentFail(templateDefName);
+            return def?.minHolders ?? 0;
+        }
+
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id");
@@ -101,19 +102,15 @@ namespace WorkRoles
             // the role as an ordinary player role, keeping entries and holders.
             bool legacyManaged = false;
             Scribe_Values.Look(ref legacyManaged, "managed");
-            Scribe_Values.Look(ref trainSkill, "trainSkill");
-            Scribe_Values.Look(ref trainMin, "trainMin");
-            Scribe_Values.Look(ref trainMax, "trainMax");
-            Scribe_Collections.Look(ref trainTargets, "trainTargets", LookMode.Value);
-            if (Scribe.mode == LoadSaveMode.LoadingVars && trainTargets == null)
-                trainTargets = new List<int>();
+            // Retired train-band fields (trainSkill/trainMin/trainMax/
+            // trainTargets/allowTrainingSubs) are simply not read from old saves.
             Scribe_Values.Look(ref minHolders, "minHolders", -1);
             // Pre-1.2 saves: never-dealt lived in maxHolders 0.
             int legacyMaxHolders = -1;
             Scribe_Values.Look(ref legacyMaxHolders, "maxHolders", -1);
             if (Scribe.mode == LoadSaveMode.LoadingVars && legacyMaxHolders == 0)
                 minHolders = 0;
-            Scribe_Values.Look(ref allowTrainingSubstitutions, "allowTrainingSubs");
+            Scribe_Values.Look(ref inTrainingAllowance, "inTrainingAllowance");
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (ids are numeric, category

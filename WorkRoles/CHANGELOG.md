@@ -2,9 +2,9 @@
 
 ## 1.2.0 — 2026-07-17
 
-- Added: Training paths allow player customizable role progression definitions (under Options).
-- Added: Import/export (and restore) extended to include role groups and training paths.
-- Changed: Recommendation engine now suggests training paths; extra suggestions come from colony needs. Use Restore to seed default training paths for existing saves.
+- Added: Recommendation Tuning (under Options). Specify the default recommendation order for roles, and tweak training paths (role progression definitions aka "what trains what").
+- Added: Import/export (and restore) extended to include role groups and recommendation tuning options.
+- Changed: Recommendation engine has been fully rewritten to use training paths and configurable per-role assignment minimums, allowing it to provide suggestions that reflect how you want them to be.
 
 ## 1.1.4 — 2026-07-16
 

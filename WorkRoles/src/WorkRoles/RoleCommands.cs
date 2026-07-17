@@ -4,6 +4,7 @@ using Multiplayer.API;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -44,9 +45,6 @@ namespace WorkRoles
                 hasCustomColor = hasColor,
                 color = color,
                 iconPath = def.iconPath,
-                trainSkill = def.trainSkill,
-                trainMin = def.trainMinLevel,
-                trainMax = def.trainMaxLevel,
                 minHolders = def.minHolders,
                 entries = def.ParsedEntries()
             };
@@ -69,23 +67,6 @@ namespace WorkRoles
 
         /// Seeding path for group creation: runs inside the synced simulation.
         internal static RoleGroup EnsureGroup(string label) => ResolveOrCreateGroup(label);
-
-        /// Resolves def train-target names to role ids, after every def has
-        /// landed (a def may target one seeded later). Engine path: seeding and
-        /// Restore Defaults run inside the synced simulation.
-        internal static void ResolveTemplateTrainTargets(Role role)
-        {
-            if (Store == null || role.templateDefName == null) return;
-            var def = DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-            if (def == null) return;
-            role.trainTargets.Clear();
-            foreach (var targetDef in def.trainTargets)
-            {
-                var target = Store.RoleByTemplate(targetDef);
-                if (target != null && target.id != role.id)
-                    role.trainTargets.Add(target.id);
-            }
-        }
 
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan, so the row-index
@@ -152,47 +133,29 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
-        /// Training band; a null skill clears the band (targets/holders are separate).
-        [SyncMethod]
-        public static void SetRoleTraining(int roleId, string skill, int min, int max)
-        {
-            var role = FindRole(roleId);
-            if (role == null) return;
-            role.trainSkill = skill.NullOrEmpty() ? null : skill;
-            role.trainMin = role.trainSkill == null ? 0 : min;
-            role.trainMax = role.trainSkill == null ? 0 : max;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleTrainTargets(int roleId, List<int> targetIds)
-        {
-            var role = FindRole(roleId);
-            if (role == null) return;
-            role.trainTargets = (targetIds ?? new List<int>())
-                .Where(id => id != roleId && Store.RoleById(id) != null)
-                .Distinct().ToList();
-            UiVersion.Bump();
-        }
-
         [SyncMethod]
         public static void SetRoleHolders(int roleId, int min)
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            role.minHolders = System.Math.Max(RecRole.NeverHolders, min);
+            role.minHolders = System.Math.Max(RoleView.NeverHolders, min);
+            // The allowance is a share of minHolders: shrink it along.
+            role.inTrainingAllowance = System.Math.Min(role.inTrainingAllowance,
+                System.Math.Max(0, role.ResolvedMinHolders()));
             UiVersion.Bump();
         }
 
+        /// How many of the role's needed slots a colonist still in training
+        /// may fill. Clamped to the resolved colonist count.
         [SyncMethod]
-        public static void ClearRoleTraining(int roleId)
+        public static void SetRoleInTrainingAllowance(int roleId, int count)
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            role.trainSkill = null;
-            role.trainMin = role.trainMax = 0;
-            role.trainTargets.Clear();
-            role.minHolders = -1;
+            int clamped = System.Math.Max(0, System.Math.Min(count,
+                System.Math.Max(0, role.ResolvedMinHolders())));
+            if (role.inTrainingAllowance == clamped) return;
+            role.inTrainingAllowance = clamped;
             UiVersion.Bump();
         }
 
@@ -271,15 +234,6 @@ namespace WorkRoles
             if (Store == null) return;
             if (Store.trainingPaths.RemoveAll(p => p.id == pathId) > 0)
                 UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleAllowTrainingSubstitutions(int roleId, bool value)
-        {
-            var role = FindRole(roleId);
-            if (role == null || role.allowTrainingSubstitutions == value) return;
-            role.allowTrainingSubstitutions = value;
-            UiVersion.Bump();
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).

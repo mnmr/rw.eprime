@@ -5,6 +5,7 @@ using UnityEngine;
 using Verse;
 using Verse.Sound;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.UI
 {
@@ -941,7 +942,7 @@ namespace WorkRoles.UI
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
                 TitleH + AssignedRowH + 2f + GroupRowH + HoldersRowH + SkillsRowH,
-                CheckRowH * 4f);
+                CheckRowH * 3f);
             bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
             float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
@@ -1046,16 +1047,15 @@ namespace WorkRoles.UI
             float rowsStartY = topBox.y + TopBoxPadding;
 
             // Checkbox column: right-aligned in the left container, from the TOP —
-            // Auto-assign, Blocker, Auto role, Allow training substitutions stacked.
+            // Auto-assign, Blocker, Auto role stacked (3 rows).
             // Measured first so the title and pencil know their room.
             Text.Font = GameFont.Small;
             float checksW = Mathf.Max(
                 Mathf.Max(WrText.FitWidth("WR_AutoAssign".Translate()),
                     WrText.FitWidth("WR_BlockerRole".Translate())),
-                Mathf.Max(WrText.FitWidth("WR_AutoRole".Translate()),
-                    WrText.FitWidth("WR_AllowTrainingSubs".Translate()))) + 30f;
+                WrText.FitWidth("WR_AutoRole".Translate())) + 30f;
             float checksX = leftContainerW + topBox.x - checksW;
-            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 4f),
+            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 3f),
                 role, rulesShown, CheckRowH);
 
             // Title with the rename pencil directly AFTER the name (the right
@@ -1226,15 +1226,21 @@ namespace WorkRoles.UI
                 }
             }
 
-            var subsRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(subsRect, "WR_AllowTrainingSubsTip".Translate());
-            bool subs = role.allowTrainingSubstitutions;
-            Widgets.CheckboxLabeled(subsRect, "WR_AllowTrainingSubs".Translate(), ref subs);
-            if (subs != role.allowTrainingSubstitutions)
-                RoleCommands.SetRoleAllowTrainingSubstitutions(role.id, subs);
         }
 
-        /// Colonist-count picker: Auto / 0..8 / Never (see the holders tip).
+        // The engine's own scaling shows the exact target Auto resolves to for
+        // the listed colony (zero-alloc probe: UI thread only).
+        private static readonly UnitScaling holdersScaling = new UnitScaling();
+        private static readonly RoleView holdersProbe = new RoleView();
+
+        private int AutoHolderWant(Role role)
+        {
+            holdersProbe.MinHolders = role.ResolvedMinHolders();
+            return holdersScaling.Want(holdersProbe, listedPawns?.Invoke().Count ?? 0);
+        }
+
+        /// Colonist-count picker: Auto / 0..8 / Never (see the holders tip),
+        /// plus the in-training allowance for structural training targets.
         private void DrawHoldersRow(Rect rect, Role role)
         {
             Text.Font = GameFont.Small;
@@ -1248,10 +1254,10 @@ namespace WorkRoles.UI
 
             var btnRect = new Rect(rect.x + labelW + 8f, rect.y, 72f, rect.height);
             TooltipHandler.TipRegion(btnRect, holdersTipCache);
-            string shown = role.minHolders == RecRole.NeverHolders
+            string shown = role.minHolders == RoleView.NeverHolders
                 ? "WR_HoldersNever".Translate().ToString()
                 : role.minHolders < 0
-                    ? "WR_HoldersAuto".Translate().ToString()
+                    ? "WR_HoldersAutoCount".Translate(AutoHolderWant(role)).ToString()
                     : role.minHolders.ToString();
             if (Widgets.ButtonText(btnRect, shown))
             {
@@ -1268,7 +1274,51 @@ namespace WorkRoles.UI
                         () => RoleCommands.SetRoleHolders(captured, value)));
                 }
                 options.Add(new FloatMenuOption("WR_HoldersNever".Translate(),
-                    () => RoleCommands.SetRoleHolders(captured, RecRole.NeverHolders)));
+                    () => RoleCommands.SetRoleHolders(captured, RoleView.NeverHolders)));
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
+            DrawInTrainingPicker(rect, btnRect.xMax, role);
+        }
+
+        /// Allowance picker, structural training targets only (a path lists
+        /// the role above lower-band entries). Disabled while the resolved
+        /// colonist count is not a positive need.
+        private static void DrawInTrainingPicker(Rect rect, float x, Role role)
+        {
+            var store = RoleStore.Current;
+            if (store == null || !store.IsTrainingTarget(role.id)) return;
+            int resolved = role.ResolvedMinHolders();
+            bool enabled = resolved >= 1;
+
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            string label = "WR_InTrainingLabel".Translate();
+            float labelW = WrText.FitWidth(label);
+            Widgets.Label(new Rect(x + 14f, rect.y, labelW, rect.height), label);
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+
+            var btnRect = new Rect(x + 14f + labelW + 8f, rect.y, 48f, rect.height);
+            TooltipHandler.TipRegion(btnRect, "WR_InTrainingTip".Translate());
+            if (!enabled)
+            {
+                GUI.color = new Color(1f, 1f, 1f, 0.4f);
+                Widgets.ButtonText(btnRect, "0", active: false);
+                GUI.color = Color.white;
+                return;
+            }
+            if (Widgets.ButtonText(btnRect, role.inTrainingAllowance.ToString()))
+            {
+                int captured = role.id;
+                var options = new List<FloatMenuOption>();
+                for (int n = 0; n <= resolved; n++)
+                {
+                    int value = n;
+                    options.Add(new FloatMenuOption(value.ToString(),
+                        () => RoleCommands.SetRoleInTrainingAllowance(captured, value)));
+                }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
         }

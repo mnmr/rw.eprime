@@ -4,6 +4,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.UI
 {
@@ -25,11 +26,11 @@ namespace WorkRoles.UI
         private Vector2 tabScroll;
 
         // Open-window snapshot (UiVersion): resolving the template projects the
-        // whole catalog through RecRoleOf — that ran twice per pass before.
+        // whole catalog through RoleViewOf — that ran twice per pass before.
         private int orderStamp = -1;
         private float orderWidth = -1f;
         private List<int> orderCache;
-        private Dictionary<int, RecRole> orderById;
+        private Dictionary<int, RoleView> orderById;
         private List<Role> orderRoles;
         private readonly List<Rect> orderLayout = new List<Rect>();
         private Rect orderAddRect; // Add Role button, last element of the chip flow
@@ -275,9 +276,9 @@ namespace WorkRoles.UI
             orderStamp = UiVersion.Current;
             orderWidth = chipWidth;
             // One projection serves both the resolver and the orderById lookup.
-            var recRoles = store.roles.Select(ColonistsTabView.RecRoleOf).ToList();
-            orderCache = RecommendationOrder.ResolveTemplate(store.recommendationOrder, recRoles);
-            orderById = recRoles.ToDictionary(r => r.Id);
+            var views = store.roles.Select(RecsAdapter.RoleViewOf).ToList();
+            orderCache = OrderTemplate.ResolveTemplate(store.recommendationOrder, views);
+            orderById = views.ToDictionary(r => r.Id);
             orderRoles = orderCache.Select(store.RoleById).Where(r => r != null).ToList();
             orderLayout.Clear();
             orderLayoutHeight = LayoutChips(chipWidth, orderRoles, orderLayout, out orderAddRect);
@@ -313,12 +314,21 @@ namespace WorkRoles.UI
             // The whole y-flow is laid out up front: the scroll view needs
             // contentH before anything draws.
             float y = 12f;
-            var compatHeader = new Rect(flowX, y, flowW, 28f);
-            y += 32f;
-            var numericRect = new Rect(flowX, y, flowW, 28f);
-            y += 34f;
-            var rangeRect = new Rect(flowX, y, flowW, 28f);
-            y += 40f;
+            // Compatibility Settings live in their own column right of the main
+            // flow; a window too narrow for both stacks them on top as before.
+            float rightX = flowX + flowW + 24f;
+            float rightW = Mathf.Min(viewW - rightX - 8f, 420f);
+            bool sideBySide = rightW >= 240f;
+            float compatX = sideBySide ? rightX : flowX;
+            float compatW = sideBySide ? rightW : flowW;
+            float cy = 12f;
+            var compatHeader = new Rect(compatX, cy, compatW, 28f);
+            cy += 32f;
+            var numericRect = new Rect(compatX, cy, compatW, 28f);
+            cy += 34f;
+            var rangeRect = new Rect(compatX, cy, compatW, 28f);
+            cy += 40f;
+            if (!sideBySide) y = cy;
             var tuningHeader = new Rect(flowX, y, flowW, 28f);
             y += 32f;
             float recHeaderY = y;
@@ -497,10 +507,10 @@ namespace WorkRoles.UI
         /// not at the end. Candidate selection is Core logic (AddCandidates);
         /// this only maps ids to labels.
         private static void OpenAddMenu(RoleStore store, List<int> order,
-            Dictionary<int, RecRole> byId)
+            Dictionary<int, RoleView> byId)
         {
             var options = new List<FloatMenuOption>();
-            foreach (int id in RecommendationOrder.AddCandidates(byId.Values.ToList(), order)
+            foreach (int id in OrderTemplate.AddCandidates(byId.Values.ToList(), order)
                          .OrderBy(candidate => store.RoleById(candidate)?.label))
             {
                 var role = store.RoleById(id);
@@ -510,7 +520,7 @@ namespace WorkRoles.UI
                 {
                     var edited = order.ToList();
                     int at = byId.TryGetValue(captured, out var rec)
-                        ? RecommendationOrder.InsertIndex(rec, edited, byId)
+                        ? OrderTemplate.InsertIndex(rec, edited, byId.Values.ToList())
                         : edited.Count;
                     edited.Insert(at, captured);
                     RoleCommands.SetRecommendationOrder(edited);

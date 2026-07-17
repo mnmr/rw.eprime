@@ -43,7 +43,7 @@ public class StaticColonyTests
     {
         foreach (var spec in StaticColony.Pawns)
         {
-            var pawn = StaticColony.ToRecPawn(spec);
+            var pawn = StaticColony.ToPawnView(spec);
 
             for (int i = 0; i < StaticColony.Skills.Length; i++)
                 await Assert.That(pawn.SkillLevels[StaticColony.Skills[i]]).IsEqualTo(spec.Levels[i])

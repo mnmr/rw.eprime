@@ -61,14 +61,8 @@ namespace WorkRoles
                     enabled = role.enabled,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
-                    trainSkill = role.trainSkill,
-                    trainMin = role.trainMin,
-                    trainMax = role.trainMax,
-                    // Targets travel by role NAME (ids are save-local).
-                    trainTargets = role.trainTargets
-                        .Select(id => store.RoleById(id)?.label)
-                        .Where(l => l != null).ToList(),
                     minHolders = role.minHolders,
+                    inTrainingAllowance = role.inTrainingAllowance,
                     entries = role.entries.ToList(),
                 });
             }
@@ -387,7 +381,6 @@ namespace WorkRoles
                         deleted++;
                     }
                 }
-                var pendingTrainTargets = new List<(Role role, List<string> names)>();
                 foreach (int index in selected)
                 {
                     if (index < 0 || index >= rows.Count) continue;
@@ -415,23 +408,16 @@ namespace WorkRoles
                     target.activeHours = row.role.activeHours;
                     target.locationTokens = row.role.locations
                         .Select(RuntimeLocationToken).Where(t => t != null).ToList();
-                    target.trainSkill = row.role.trainSkill;
-                    target.trainMin = row.role.trainMin;
-                    target.trainMax = row.role.trainMax;
                     target.minHolders = row.role.minHolders;
-                    pendingTrainTargets.Add((target, row.role.trainTargets));
+                    // Clamp AFTER minHolders landed: the allowance is a share of it.
+                    target.inTrainingAllowance = System.Math.Max(0, System.Math.Min(
+                        row.role.inTrainingAllowance,
+                        System.Math.Max(0, target.ResolvedMinHolders())));
                     target.groupId = GroupIdFor(row.role.group, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
                     target.entries = row.role.entries.Distinct().ToList();
                     target.workTypeSnapshots.Clear();
                 }
-                // Train targets resolve by NAME once every imported role exists
-                // (a role may target one applied later in the file).
-                foreach (var (role, names) in pendingTrainTargets)
-                    role.trainTargets = names
-                        .Select(n => store.roles.FirstOrDefault(r => r != role
-                            && string.Equals(r.label, n, System.StringComparison.OrdinalIgnoreCase))?.id)
-                        .Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
                 RoleCommands.SweepEmptyGroups();
                 CompiledJobOrders.InvalidateAll();
                 Seeding.RefreshWorkTypeSnapshots();

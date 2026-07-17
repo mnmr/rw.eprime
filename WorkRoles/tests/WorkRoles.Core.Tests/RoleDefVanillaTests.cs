@@ -66,34 +66,18 @@ public class RoleDefVanillaTests
     [Test]
     public async Task EveryDefCrossReferenceResolves()
     {
-        // Every identifier a def references must exist: trainSkill in
-        // vanilla's skill list, trainTargets among the file's defNames,
-        // group among the file's RoleGroupDef labels.
-        var vanillaSkills = new HashSet<string>
-        {
-            "Shooting", "Melee", "Construction", "Mining", "Cooking", "Plants",
-            "Animals", "Crafting", "Artistic", "Medicine", "Social", "Intellectual",
-        };
+        // Every identifier a def references must exist: group among the
+        // file's RoleGroupDef labels.
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null && !File.Exists(Path.Combine(dir.FullName, "WorkRoles.slnx")))
             dir = dir.Parent;
         var root = XElement.Load(Path.Combine(dir!.FullName, "mod", "1.6", "Defs", "Roles.xml"));
-        var defNames = root.Elements("WorkRoles.RoleDef")
-            .Select(d => d.Element("defName")!.Value).ToHashSet();
         var groups = root.Elements("WorkRoles.RoleGroupDef")
             .Select(d => d.Element("label")!.Value).ToHashSet();
 
         foreach (var def in root.Elements("WorkRoles.RoleDef"))
         {
             string name = def.Element("defName")!.Value;
-            string trainSkill = def.Element("trainSkill")?.Value.Trim();
-            if (trainSkill != null)
-                await Assert.That(vanillaSkills.Contains(trainSkill)).IsTrue()
-                    .Because($"{name}: unknown trainSkill '{trainSkill}'");
-            foreach (var target in def.Element("trainTargets")?.Elements("li")
-                         ?? Enumerable.Empty<XElement>())
-                await Assert.That(defNames.Contains(target.Value.Trim())).IsTrue()
-                    .Because($"{name}: unknown trainTarget '{target.Value}'");
             string group = def.Element("group")?.Value.Trim();
             if (group != null)
                 await Assert.That(groups.Contains(group)).IsTrue()

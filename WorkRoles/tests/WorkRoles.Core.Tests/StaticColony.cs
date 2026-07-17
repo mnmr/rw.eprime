@@ -246,9 +246,9 @@ public static class StaticColony
     /// Flattens a spec into the engine's pawn shape — the step-1 projection,
     /// test-side. Attitude flags map to the engine's aptitude sign: talented
     /// = +1, apathy = -1 (magnitudes carry no meaning of their own).
-    public static RecPawn ToRecPawn(PawnSpec spec)
+    public static WorkRoles.Core.Recs.PawnView ToPawnView(PawnSpec spec)
     {
-        var pawn = new RecPawn
+        var pawn = new WorkRoles.Core.Recs.PawnView
         {
             HasRangedWeapon = spec.HasGun,
         };

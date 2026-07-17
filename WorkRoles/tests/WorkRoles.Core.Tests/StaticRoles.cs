@@ -8,11 +8,7 @@ public sealed record RoleSpec(
     string DefName,
     bool AutoAssign,
     bool Blocker,
-    string TrainSkill,
-    int TrainMin,
-    int TrainMax,
-    string[] TrainTargets,   // defNames within the same set
-    int MinHolders,          // -1 = auto, 0 = never dealt, N = scaled count
+    int MinHolders,          // def default = the resolved value in fixtures
     string[] Entries);       // "WorkType:X" / "WorkGiver:Y"
 
 /// Phase-1 static role sets, switchable by name so the same pawns can be
@@ -29,198 +25,159 @@ public static class StaticRoles
     {
         new RoleSpec("Pyrophobe", "WS_NoFirefighting",
             AutoAssign: false, Blocker: true,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Firefighter" }),
         new RoleSpec("Core", "WS_Core",
             AutoAssign: true, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Firefighter", "WorkType:Patient", "WorkGiver:DoctorRescue" }),
         new RoleSpec("Basics", "WS_Basics",
             AutoAssign: true, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:PatientBedRest", "WorkType:BasicWorker" }),
         new RoleSpec("Rescuer", "WS_Rescuer",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkGiver:DoctorRescue" }),
         new RoleSpec("Doctor", "WS_Doctor",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Medicine", TrainMin: 15, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Doctor" }),
         new RoleSpec("Medic", "WS_Medic",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Medicine", TrainMin: 5, TrainMax: 15,
-            TrainTargets: new[] { "WS_Doctor" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:DoctorTendEmergency", "WorkGiver:DoctorTendToHumanlikes", "WorkGiver:DoctorTendToSelf", "WorkGiver:DoctorTendToSelfEmergency", "WorkGiver:DoctorRescue", "WorkGiver:DoctorFeedHumanlikes", "WorkGiver:DoctorTendToAnimals", "WorkGiver:DoctorFeedAnimals", "WorkGiver:VisitSickPawn", "WorkGiver:ExtractBioferrite", "WorkGiver:TakeToBedToOperate", "WorkGiver:FeedHemogen", "WorkGiver:DoctorTendToEntities", "WorkGiver:DoBillsMedicalAnimalOperation" }),
         new RoleSpec("Laborer", "WS_Laborer",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:BasicWorker" }),
         new RoleSpec("Caretaker", "WS_Childminder",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Childcare" }),
         new RoleSpec("Firefighter", "WS_Firefighter",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Firefighter" }),
         new RoleSpec("Patient", "WS_Patient",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Patient" }),
         new RoleSpec("Bedrest", "WS_Bedrest",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:PatientBedRest" }),
         new RoleSpec("Jailor", "WS_Jailor",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Social", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Warden" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:ExecuteEntity", "WorkGiver:DoExecution", "WorkGiver:ExecuteGuiltyColonist", "WorkGiver:ExecuteSlave", "WorkGiver:EmancipateSlave", "WorkGiver:ReleasePrisoner", "WorkGiver:ActivitySuppression", "WorkGiver:TakePrisonerToBed", "WorkGiver:FeedPrisoner", "WorkGiver:ImprisonSlave", "WorkGiver:DeliverHemogenToPrisoner", "WorkGiver:DeliverFoodToPrisoner", "WorkGiver:SuppressSlave", "WorkGiver:ReleaseEntity", "WorkGiver:ChatWithPrisoner" }),
         new RoleSpec("Warden", "WS_Warden",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Warden" }),
         new RoleSpec("Grunt", "WS_Grunt",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Hauling", "WorkType:Cleaning" }),
         new RoleSpec("Hauler", "WS_Hauler",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Hauling" }),
         new RoleSpec("Cleaner", "WS_Cleaner",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Cleaning" }),
         new RoleSpec("Handler", "WS_Handler",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Handling" }),
         new RoleSpec("Cook", "WS_Cook",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Cooking", TrainMin: 8, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Cooking" }),
         new RoleSpec("Butcher", "WS_Butcher",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Cooking", TrainMin: 0, TrainMax: 8,
-            TrainTargets: new[] { "WS_Cook" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:DoBillsButcherFlesh" }),
         new RoleSpec("Brewer", "WS_Brewer",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Cooking", TrainMin: 0, TrainMax: 8,
-            TrainTargets: new[] { "WS_Cook" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:DoBillsBrew" }),
         new RoleSpec("Hunter", "WS_Hunter",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkType:Hunting" }),
         new RoleSpec("Fisher", "WS_Fisher",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkType:Fishing" }),
         new RoleSpec("Builder", "WS_Builder",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Construction", TrainMin: 8, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Construction" }),
         new RoleSpec("Handyman", "WS_Repairer",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Construction", TrainMin: 0, TrainMax: 8,
-            TrainTargets: new[] { "WS_Builder" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:Repair", "WorkGiver:FixBrokenDownBuilding", "WorkGiver:Deconstruct", "WorkGiver:DeconstructForBlueprint", "WorkGiver:Uninstall", "WorkGiver:FillIn", "WorkGiver:ConstructRemoveFloors", "WorkGiver:ConstructRemoveFoundations", "WorkGiver:BuildRoofs", "WorkGiver:RemoveRoofs", "WorkGiver:ConstructDeliverResourcesToFrames", "WorkGiver:ConstructDeliverResourcesToBlueprints", "WorkGiver:ConstructSmoothWalls", "WorkGiver:ConstructSmoothFloors" }),
         new RoleSpec("Farmer", "WS_Farmer",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Growing", "WorkType:PlantCutting" }),
         new RoleSpec("Grower", "WS_Grower",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Plants", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Farmer" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkType:Growing" }),
         new RoleSpec("Plant Cutter", "WS_PlantCutter",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Plants", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Farmer" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkType:PlantCutting" }),
         new RoleSpec("Miner", "WS_Miner",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Mining" }),
         new RoleSpec("Tailor", "WS_Tailor",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Crafting", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Fabricator" }, MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Tailoring" }),
         new RoleSpec("Smith", "WS_Smith",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Crafting", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Fabricator" }, MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Smithing" }),
         new RoleSpec("Fabricator", "WS_Fabricator",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Crafting", TrainMin: 7, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkGiver:DoBillsFabricationBench" }),
         new RoleSpec("Crafter", "WS_Crafter",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Crafting", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_DrugMaker", "WS_Smith", "WS_Tailor", "WS_Fabricator" }, MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Crafting" }),
         new RoleSpec("Researcher", "WS_Researcher",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:Research" }),
         new RoleSpec("Anomalist", "WS_DarkStudier",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 1,
+            MinHolders: 1,
             Entries: new[] { "WorkType:DarkStudy" }),
         new RoleSpec("Artist", "WS_Artist",
             AutoAssign: false, Blocker: false,
-            TrainSkill: null, TrainMin: 0, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkType:Art" }),
         new RoleSpec("Nurse", "WS_Nurse",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Medicine", TrainMin: 0, TrainMax: 5,
-            TrainTargets: new[] { "WS_Medic" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:DoctorTendToSelfEmergency", "WorkGiver:DoctorRescue", "WorkGiver:DoctorFeedHumanlikes", "WorkGiver:DoctorTendToAnimals", "WorkGiver:DoctorFeedAnimals", "WorkGiver:VisitSickPawn", "WorkGiver:TakeToBedToOperate", "WorkGiver:FeedHemogen", "WorkGiver:ExtractBioferrite" }),
         new RoleSpec("Drug Maker", "WS_DrugMaker",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Crafting", TrainMin: 4, TrainMax: 0,
-            TrainTargets: new string[0], MinHolders: -1,
+            MinHolders: -1,
             Entries: new[] { "WorkGiver:DoBillsProduceDrugs", "WorkGiver:DoBillsSerumCentrifuge" }),
         new RoleSpec("Painter", "WS_Painter",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Artistic", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Artist" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:RemovePaintBuilding", "WorkGiver:RemovePaintFloor", "WorkGiver:PaintBuilding", "WorkGiver:PaintFloor" }),
         new RoleSpec("Herder", "WS_Herder",
             AutoAssign: false, Blocker: false,
-            TrainSkill: "Animals", TrainMin: 0, TrainMax: 0,
-            TrainTargets: new[] { "WS_Handler" }, MinHolders: 0,
+            MinHolders: 0,
             Entries: new[] { "WorkGiver:TakeRoamingAnimalsToPen", "WorkGiver:HandlingFeedPatientAnimals", "WorkGiver:TakeToPen", "WorkGiver:Slaughter", "WorkGiver:ReleaseToWild", "WorkGiver:Milk", "WorkGiver:Shear", "WorkGiver:RebalanceAnimalsInPens" }),
     };
 
@@ -264,24 +221,35 @@ public static class StaticRoles
         return workTypes;
     }
 
-    /// Projects a set into the engine shape (ids = table order, 1-based;
-    /// train targets resolved by defName).
-    public static List<RecRole> ToRecRoles(IReadOnlyList<RoleSpec> set)
+    /// Test-side primary skill: most frequent work-type relevant skill across
+    /// the coverage (the game adapter uses the accurate XP tables instead).
+    public static string PrimarySkillOf(RoleSpec spec)
     {
-        var idByDef = new Dictionary<string, int>();
-        for (int i = 0; i < set.Count; i++)
-            idByDef[set[i].DefName] = i + 1;
+        var counts = new Dictionary<string, int>();
+        foreach (var giver in CoverageMath.CoverageOf(ParsedEntries(spec), JobCatalog))
+            if (VanillaGiverBaseline.GiverWorkType.TryGetValue(giver, out var wt)
+                && ColonyScenarioTests.SkillsByWorkType.TryGetValue(wt, out var skills))
+                foreach (var s in skills)
+                    counts[s] = counts.TryGetValue(s, out int c) ? c + 1 : 1;
+        return counts.Count == 0 ? null
+            : counts.OrderByDescending(kv => kv.Value)
+                .ThenBy(kv => kv.Key, StringComparer.Ordinal).First().Key;
+    }
 
-        var roles = new List<RecRole>();
+    /// Projects a set into the engine shape (ids = table order, 1-based).
+    public static List<WorkRoles.Core.Recs.RoleView> ToRoleViews(IReadOnlyList<RoleSpec> set)
+    {
+        var roles = new List<WorkRoles.Core.Recs.RoleView>();
         for (int i = 0; i < set.Count; i++)
         {
             var spec = set[i];
             var entries = ParsedEntries(spec);
             var workTypes = WorkTypesOf(spec);
-            var rec = new RecRole
+            var role = new WorkRoles.Core.Recs.RoleView
             {
                 Id = i + 1,
                 Coverage = CoverageMath.CoverageOf(entries, JobCatalog),
+                OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
                 AutoAssign = spec.AutoAssign,
                 Blocker = spec.Blocker,
                 Unskilled = workTypes.All(wt => !ColonyScenarioTests.SkillsByWorkType.ContainsKey(wt)),
@@ -289,44 +257,12 @@ public static class StaticRoles
                 NaturalPriority = workTypes
                     .Select(wt => VanillaWorkOrder.NaturalPriority.TryGetValue(wt, out int p) ? p : 0)
                     .DefaultIfEmpty(0).Max(),
-                TrainSkill = spec.TrainSkill,
-                TrainMin = spec.TrainMin,
-                TrainMax = spec.TrainMax,
                 MinHolders = spec.MinHolders,
-                Enabled = true,
-                Gated = spec.TrainSkill != null,
+                PrimarySkill = PrimarySkillOf(spec),
             };
-            rec.WorkTypes.AddRange(workTypes);
-            rec.TrainTargets.AddRange(spec.TrainTargets
-                .Where(idByDef.ContainsKey).Select(defName => idByDef[defName]));
-            roles.Add(rec);
+            role.WorkTypes.AddRange(workTypes);
+            roles.Add(role);
         }
         return roles;
     }
-
-    /// Projects a set into the planner shape (same ids as ToRecRoles).
-    public static List<TargetRole> ToTargetRoles(IReadOnlyList<RoleSpec> set)
-    {
-        var recs = ToRecRoles(set);
-        var targets = new List<TargetRole>();
-        for (int i = 0; i < set.Count; i++)
-        {
-            var entries = ParsedEntries(set[i]);
-            targets.Add(new TargetRole
-            {
-                Id = recs[i].Id,
-                Coverage = recs[i].Coverage,
-                OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
-                AutoAssign = recs[i].AutoAssign,
-                HasRules = false,
-                Blocker = recs[i].Blocker,
-                Unskilled = recs[i].Unskilled,
-                Doctoring = recs[i].WorkTypes.Contains("Doctor") && !recs[i].Blocker,
-                NaturalPriority = recs[i].NaturalPriority,
-                TrainTargets = recs[i].TrainTargets.ToList(),
-            });
-        }
-        return targets;
-    }
-
 }

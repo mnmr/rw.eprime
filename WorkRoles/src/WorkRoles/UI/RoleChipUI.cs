@@ -37,7 +37,7 @@ namespace WorkRoles.UI
         /// Prefix markers: blocker, time rule, location rule, and — on plain
         /// manual roles only — the assignment pin. Blockers and rule-carrying
         /// roles are already plan-protected, so a pin there would be redundant
-        /// (TargetPlannerTests.PinningBlockersOrRuleCarryingRolesChangesNothing).
+        /// (RecsOrderingTests.ProtectedAssignmentsReenterAtTheirOriginalIndexWithToggles).
         private static int MarkerCount(Role role, bool pinned) =>
             (role.blocker ? 1 : 0)
             + (role.activeHours != Role.AllHours ? 1 : 0)

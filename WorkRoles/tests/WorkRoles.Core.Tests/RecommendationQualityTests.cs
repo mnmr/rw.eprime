@@ -1,41 +1,37 @@
-using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.Core.Tests;
 
-/// Certifies recommendation output against the shipped defs on seeded
-/// colonies. Rules live here only once the user has ratified them.
+/// Certifies engine output against the shipped defs on seeded colonies.
+/// Rules live here only once the user has ratified them.
 public class RecommendationQualityTests
 {
-    /// The recommendation list is template-monotonic, autos included: what
-    /// the Options tab shows is the order every pawn's suggestions follow.
+    /// Every assignment the engine invents carries a reason the UI can show
+    /// (protected re-entries and kept chores excepted — these colonies start
+    /// with no existing assignments, so every entry must have one).
     [Test]
     [Arguments(6, 7)] [Arguments(10, 33)] [Arguments(50, 44)]
-    public async Task RecommendationsFollowTheTemplate(int size, int seed)
+    public async Task EveryAssignmentCarriesAReason(int size, int seed)
     {
-        var (catalog, _, _, _, recs) = ColonyScenarioTests.ExecutePipeline(size, seed);
-        var positions = RecommendationOrder.PositionsFor(catalog.Recs, catalog.OrderTemplate);
-        for (int i = 0; i < recs.Count; i++)
-        {
-            var ids = recs[i].Select(r => r.RoleId).ToList();
-            for (int k = 1; k < ids.Count; k++)
-                await Assert.That(positions[ids[k - 1]] <= positions[ids[k]]).IsTrue()
-                    .Because($"{catalog.DefNames[ids[k - 1]]} outranks {catalog.DefNames[ids[k]]} "
-                        + $"in pawn {i}'s recommendations (size {size}, seed {seed})");
-        }
+        var (catalog, _, results) = ColonyScenarioTests.Execute(size, seed);
+        for (int i = 0; i < results.Count; i++)
+            foreach (var assignment in results[i].Assignments)
+                await Assert.That(results[i].Reasons.ContainsKey(assignment.RoleId)).IsTrue()
+                    .Because($"{catalog.DefNames[assignment.RoleId]} has no reason "
+                        + $"for pawn {i} (size {size}, seed {seed})");
     }
 
     /// Every pinnable shipped role is either in the default template or an
-    /// Add-menu candidate — certifies the CORE logic the Options tab calls
-    /// (the in-game surface additionally depends on the adapter projection).
+    /// Add-menu candidate — certifies the CORE logic the Options tab calls.
     [Test]
     public async Task EveryShippedRoleIsPinnedOrAddable()
     {
         var catalog = ColonyScenarioTests.ShippedCatalog();
-        var template = RecommendationOrder.ResolveTemplate(new List<int>(), catalog.Recs);
+        var template = OrderTemplate.ResolveTemplate(new List<int>(), catalog.Roles);
         var reachable = template
-            .Concat(RecommendationOrder.AddCandidates(catalog.Recs, template))
+            .Concat(OrderTemplate.AddCandidates(catalog.Roles, template))
             .ToHashSet();
-        foreach (var role in catalog.Recs.Where(RecommendationOrder.IsPinnable))
+        foreach (var role in catalog.Roles.Where(OrderTemplate.IsPinnable))
             await Assert.That(reachable.Contains(role.Id)).IsTrue()
                 .Because($"{catalog.DefNames[role.Id]} is neither pinned nor addable");
     }

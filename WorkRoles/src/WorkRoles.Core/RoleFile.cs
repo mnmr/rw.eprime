@@ -46,13 +46,10 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        // Training band + targets (role NAMES; resolved on import) and the
-        // colonist count (-1 = auto/omitted, 0 = never dealt, N = scaled min).
-        public string trainSkill;
-        public int trainMin;
-        public int trainMax;
-        public List<string> trainTargets = new List<string>();
+        /// Colonist count: -2 never, -1 auto/omitted, 0 interest-only, N needed.
         public int minHolders = -1;
+        /// Of minHolders, how many slots a lower-band path partner may fill.
+        public int inTrainingAllowance;
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -90,9 +87,11 @@ namespace WorkRoles.Core
     public static class RoleFile
     {
         /// v2 added <Training> and <Holders>; v3 <TrainingPaths> and
-        /// <RecommendationOrder>. Parsing is lenient across versions (older
-        /// readers ignore unknown elements, newer ones default absentees).
-        public const string FormatVersion = "3";
+        /// <RecommendationOrder>; v4 retired <Training> (paths own training)
+        /// and gave <Holders> the inTraining attribute + a stored Never (-2).
+        /// Parsing is lenient across versions (older readers ignore unknown
+        /// elements, newer ones default absentees and skip retired ones).
+        public const string FormatVersion = "4";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -107,10 +106,11 @@ namespace WorkRoles.Core
     that work type, including jobs mods add later; <WorkGiver> is one job.
   - <Groups> lists role-list groups in display order; a Role joins one via its
     group attribute (unlisted names still work; no attribute = Default).
-  - <Training skill=""Medicine"" min=""5"" max=""15""> holds <Target> role names the
-    role trains toward; a pawn below min or at/past max is not recommended.
-    <Holders min=""1"" max=""3""/> bounds how many colonists the colony plan deals
-    the role to (max 0 = never dealt).
+  - <Holders min=""2"" inTraining=""1""/> is the role's colonist count: -1 (or
+    absent) = automatic, 0 = only recommended on interest, N = needed by the
+    colony, -2 = never recommended. inTraining says how many of the N slots a
+    colonist still in training (a lower-band role from a shared training path)
+    may fill.
   - A <TrainingPaths> <Path> lists <Role min=""0"" max=""8"">name</Role> skill bands
     on the 0..21 axis (21 = open top, spans at least 4 levels); the entry order
     is the assignment order. An optional color=""name"" attribute colors the
@@ -199,19 +199,13 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Enabled", "false"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
-            if (!string.IsNullOrEmpty(role.trainSkill) || role.trainTargets.Count > 0)
+            if (role.minHolders != -1 || role.inTrainingAllowance > 0)
             {
-                var training = new XElement("Training");
-                if (!string.IsNullOrEmpty(role.trainSkill))
-                    training.Add(new XAttribute("skill", role.trainSkill));
-                if (role.trainMin > 0) training.Add(new XAttribute("min", role.trainMin));
-                if (role.trainMax > 0) training.Add(new XAttribute("max", role.trainMax));
-                foreach (var target in role.trainTargets)
-                    training.Add(new XElement("Target", target));
-                options.Add(training);
+                var holders = new XElement("Holders", new XAttribute("min", role.minHolders));
+                if (role.inTrainingAllowance > 0)
+                    holders.Add(new XAttribute("inTraining", role.inTrainingAllowance));
+                options.Add(holders);
             }
-            if (role.minHolders >= 0)
-                options.Add(new XElement("Holders", new XAttribute("min", role.minHolders)));
             if (role.locations.Count > 0)
             {
                 // Structured elements so names (XLinq-escaped) survive any
@@ -373,23 +367,17 @@ namespace WorkRoles.Core
                 string bits = options.Element("ActiveHours")?.Value.Trim();
                 if (bits != null && bits.Length == 24)
                     role.activeHours = BitsToHours(bits);
-                var training = options.Element("Training");
-                if (training != null)
-                {
-                    role.trainSkill = training.Attribute("skill")?.Value?.Trim();
-                    if (int.TryParse(training.Attribute("min")?.Value, out int min)) role.trainMin = min;
-                    if (int.TryParse(training.Attribute("max")?.Value, out int max)) role.trainMax = max;
-                    foreach (var target in training.Elements("Target"))
-                        if (!string.IsNullOrEmpty(target.Value?.Trim()))
-                            role.trainTargets.Add(target.Value.Trim());
-                }
+                // <Training> (v2/v3) is retired: skipped, never read.
                 var holders = options.Element("Holders");
                 if (holders != null)
                 {
-                    if (int.TryParse(holders.Attribute("min")?.Value, out int min)) role.minHolders = min;
+                    if (int.TryParse(holders.Attribute("min")?.Value, out int min) && min >= -2)
+                        role.minHolders = min;
                     // Legacy files carried never-dealt in max="0".
                     if (int.TryParse(holders.Attribute("max")?.Value, out int max) && max == 0)
                         role.minHolders = 0;
+                    if (int.TryParse(holders.Attribute("inTraining")?.Value, out int allowance))
+                        role.inTrainingAllowance = System.Math.Max(0, allowance);
                 }
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())

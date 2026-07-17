@@ -4,6 +4,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.UI
 {
@@ -388,7 +389,7 @@ namespace WorkRoles.UI
             {
                 if (root.autoAssign)
                     return everyone ??= new PaletteCluster { label = "WR_ClusterEveryone".Translate() };
-                var skills = RelevantSkillsOf(root);
+                var skills = RecsAdapter.RelevantSkillsOf(root);
                 if (skills.Count == 0)
                     return unskilled ??= new PaletteCluster { label = "WR_ClusterUnskilled".Translate() };
                 string label = skills[0].LabelCap;
@@ -769,23 +770,6 @@ namespace WorkRoles.UI
             }
         }
 
-        /// "Trains toward X (Skill 8+)." reason suffix for training roles (roles
-        /// with train targets and a band ceiling), so players see why
-        /// Butcher/Medic/... shows up instead of the full role. Empty otherwise.
-        private static string TrainingSuffix(Role role)
-        {
-            if (role.trainMax <= 0 || role.trainSkill == null || role.trainTargets.Count == 0) return "";
-            var skill = DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill);
-            var target = RoleStore.Current?.RoleById(role.trainTargets[0]);
-            if (skill == null || target == null) return "";
-            return "\n\n" + "WR_ReasonTraining".Translate(
-                target.label, skill.skillLabel.CapitalizeFirst(), role.trainMax);
-        }
-
-        /// Genes that make a pawn terrified of fire (Biotech's pyrophobia; extend
-        /// here if mods add equivalents). Drives the No Firefighting plan rule.
-        private static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
-
         private ChipDisplay TableChips => profile.GetTableChips();
 
         private string AbbrevIfCompact(RoleStore store, Role role) =>
@@ -984,7 +968,7 @@ namespace WorkRoles.UI
 
             var facts = model.AddSection();
             facts.Fact("WR_TipJobsLabel".Translate(), JobSummary(role));
-            var skills = RelevantSkillsOf(role);
+            var skills = RecsAdapter.RelevantSkillsOf(role);
             if (skills.Count > 0)
                 facts.Fact("WR_TipSkillsLabel".Translate(),
                     skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList());
@@ -2229,139 +2213,6 @@ namespace WorkRoles.UI
             RoleCommands.AssignRole(pawn, roleId, insertIdx);
         }
 
-        /// Work the colony must never be without: the work type that defines
-        /// it, and the shipped role preferred to provide it. Drives the
-        /// coverage pass's essential exemption and the grant reason tooltips.
-        private static readonly (string workType, string template)[] Essentials =
-        {
-            ("Doctor", "WS_Doctor"),
-            ("Cooking", "WS_Cook"),
-            ("Construction", "WS_Builder"),
-            ("Growing", "WS_Farmer"),
-            ("Mining", "WS_Miner"),
-            ("Smithing", "WS_Smith"),
-            ("Tailoring", "WS_Tailor"),
-            ("Crafting", "WS_Crafter"),
-        };
-
-        /// Whether the role's entries include the whole work type.
-        private static bool HasWorkTypeEntry(Role role, string workType)
-            => role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == workType);
-
-        /// The role providing a work type: the shipped template when it exists, is
-        /// enabled and rule-free; otherwise the smallest enabled rule-free role
-        /// carrying the whole work type (catalog-order ties). Keeps essentials and
-        /// Hunter logic working when players replace the shipped catalog.
-        private static Role RoleProviding(RoleStore store, string workType, string template)
-        {
-            var shipped = store.roles.FirstOrDefault(r => r.templateDefName == template);
-            if (shipped != null && shipped.enabled && !shipped.HasRules && !shipped.blocker) return shipped;
-            Role best = null;
-            foreach (var role in store.roles)
-            {
-                if (!role.enabled || role.HasRules || role.blocker || !HasWorkTypeEntry(role, workType)) continue;
-                if (best == null || role.entries.Count < best.entries.Count) best = role;
-            }
-            return best;
-        }
-
-        /// The medic-style role backing the doctoring redundancy floor: the shipped
-        /// template when usable, else any enabled rule-free role made purely of
-        /// Doctor-work jobs without being a full doctor (covering the Doctor role).
-        private static Role MedicRole(RoleStore store, Role doctorRole)
-        {
-            var shipped = store.RoleByTemplate("WS_Medic");
-            if (shipped != null && shipped.enabled && !shipped.HasRules) return shipped;
-            foreach (var role in store.roles)
-            {
-                if (!role.enabled || role.HasRules || role.blocker || role == doctorRole || role.entries.Count == 0) continue;
-                if (doctorRole != null && role.CoversOrMatches(doctorRole)) continue;
-                bool allDoctorWork = role.entries.All(e =>
-                    e.Kind == JobEntryKind.WorkGiver
-                    && DefDatabase<WorkGiverDef>.GetNamedSilentFail(e.DefName)?.workType?.defName == "Doctor");
-                if (allDoctorWork) return role;
-            }
-            return null;
-        }
-
-        /// Whether the role touches the Hunting work type (whole type or any job).
-        private static bool ProvidesHunting(Role role)
-            => WorkTypesOf(role).Any(wt => wt.defName == "Hunting");
-
-        /// Whether the role carries a gate (a hunting role's weapon gate counts).
-        /// Gated roles keep their special coverage dealing.
-        private static bool HasGate(Role role)
-            => ProvidesHunting(role) || role.trainSkill != null;
-
-        /// A role is unavailable while none of its covered work is researched:
-        /// every covered giver is bench work behind unfinished research
-        /// (Fabricator before Advanced Fabrication). Built-status is ignored —
-        /// recommendations must not flap per bench built or destroyed.
-        private static bool RoleAvailable(Role role)
-        {
-            bool sawGiver = false;
-            foreach (var giverName in role.Coverage())
-            {
-                var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(giverName);
-                if (giver == null) continue;
-                sawGiver = true;
-                if (giver.fixedBillGiverDefs.NullOrEmpty()) return true; // non-bench work
-                foreach (var bench in giver.fixedBillGiverDefs)
-                    if (bench != null && bench.IsResearchFinished)
-                        return true;
-            }
-            return !sawGiver; // empty roles stay "available" (invalid is handled elsewhere)
-        }
-
-        /// Whether the role trains no skill — grunt work (Grunt, Hauler, Cleaner, …).
-        private static bool IsUnskilledRole(Role role)
-            => !role.autoAssign && !role.HasRules && RelevantSkillsOf(role).Count == 0;
-
-        /// Assembles a pawn's replacement role list via TargetPlanner (see its
-        /// header for the ordering rules): membership from existing roles,
-        /// recommendations and colony grants; order from the template.
-        private static List<RoleAssignment> BuildOrderedTarget(Pawn pawn, RoleStore store,
-            List<Role> recommendations, List<int> extraIds,
-            int hunterTier = -1, int hunterRoleId = -1)
-        {
-            store.pawnSets.TryGetValue(pawn, out var set);
-            var existing = set?.assignments ?? new List<RoleAssignment>();
-
-            // The ordering rules live in Core (TargetPlanner) with tests; this
-            // adapter only projects game types into the planner's views.
-            var catalog = store.roles.Select(r => new TargetRole
-            {
-                Id = r.id,
-                Coverage = r.Coverage(),
-                OrderedCoverage = CoverageMath.OrderedCoverageOf(r.entries, GameJobCatalog.Instance),
-                AutoAssign = r.autoAssign,
-                HasRules = r.HasRules,
-                Blocker = r.blocker,
-                Unskilled = IsUnskilledRole(r),
-                Doctoring = WorkTypesOf(r).Any(wt => wt.defName == "Doctor"),
-                NaturalPriority = MaxNaturalPriority(r),
-                TrainTargets = r.trainTargets.ToList(),
-            }).ToList();
-
-            // The same position map the recommendation list sorts by — one
-            // ordering source for every surface.
-            var positions = RecommendationOrder.PositionsFor(
-                store.roles.Select(RecRoleOf).ToList(),
-                ResolvedRecommendationOrder(store));
-
-            var planned = TargetPlanner.Build(
-                existing.Select(a => new PlannedAssignment
-                { RoleId = a.roleId, Enabled = a.enabled, Pinned = a.pinned }).ToList(),
-                catalog,
-                recommendations.Select(r => r.id).ToList(),
-                extraIds,
-                positions,
-                hunterTier, hunterRoleId);
-
-            return planned.Select(p => new RoleAssignment
-            { roleId = p.RoleId, enabled = p.Enabled, pinned = p.Pinned }).ToList();
-        }
-
         /// One wrapped chip line in target order: kept roles dimmed
         /// already-assigned style, added roles normal, removed roles struck
         /// corner-to-corner and slotted back in near their original position.
@@ -2460,136 +2311,6 @@ namespace WorkRoles.UI
             return result;
         }
 
-        /// One pawn projected into the Core engines' shape.
-        private static RecPawn RecPawnOf(Pawn pawn)
-        {
-            var view = new RecPawn
-            {
-                HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
-                ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
-            };
-            if (pawn.skills != null)
-                foreach (var sr in pawn.skills.skills)
-                {
-                    if (sr.TotallyDisabled) continue;
-                    view.SkillLevels[sr.def.defName] = sr.Level;
-                    view.PassionScores[sr.def.defName] = Passions.Score(sr);
-                    // Negatives too: apathy mutes the skill's recommendation signals.
-                    if (sr.Aptitude != 0) view.Aptitudes[sr.def.defName] = sr.Aptitude;
-                }
-            foreach (var expertise in Expertise.For(pawn))
-                view.ExpertiseSkills.Add(expertise.Skill.defName);
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-                if (!pawn.WorkTypeIsDisabled(workType))
-                    view.CapableWorkTypes.Add(workType.defName);
-            return view;
-        }
-
-        /// The recommendation order template — Core owns the semantics
-        /// (derivation, override resolution, pinnability); this adapter only
-        /// projects the store.
-        internal static List<int> ResolvedRecommendationOrder(RoleStore store)
-            => RecommendationOrder.ResolveTemplate(store.recommendationOrder,
-                store.roles.Select(RecRoleOf).ToList());
-
-        /// One catalog role projected into the Core engines' shape.
-        internal static RecRole RecRoleOf(Role role)
-        {
-            bool trainSkillKnown = role.trainSkill != null
-                && DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill) != null;
-            return new RecRole
-            {
-                Id = role.id,
-                Coverage = role.Coverage(),
-                AutoAssign = role.autoAssign,
-                HasRules = role.HasRules,
-                Blocker = role.blocker,
-                Unskilled = IsUnskilledRole(role),
-                Hunting = ProvidesHunting(role),
-                NaturalPriority = MaxNaturalPriority(role),
-                WorkTypes = WorkTypesOf(role).Select(wt => wt.defName).ToList(),
-                TrainSkill = trainSkillKnown ? role.trainSkill : null,
-                TrainMin = role.trainMin,
-                TrainMax = role.trainMax,
-                TrainTargets = role.trainTargets.ToList(),
-                MinHolders = role.minHolders,
-                Available = RoleAvailable(role),
-                Enabled = role.enabled,
-                Gated = HasGate(role),
-            };
-        }
-
-        /// workType defName -> relevant skill defNames, for the roles' work types.
-        private static Dictionary<string, IReadOnlyList<string>> WorkTypeSkillMap()
-        {
-            var map = new Dictionary<string, IReadOnlyList<string>>();
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-                if (workType.relevantSkills != null && workType.relevantSkills.Count > 0)
-                    map[workType.defName] = workType.relevantSkills.Select(s => s.defName).ToList();
-            return map;
-        }
-
-        private static Dictionary<string, int> SkillMaxLevelsByName(List<Pawn> pawns) =>
-            SkillMaxLevels(pawns).ToDictionary(kv => kv.Key.defName, kv => kv.Value);
-
-        /// Computes the recommendation list via the Core engine (see
-        /// RecommendationEngine for the rules); this adapter projects game state
-        /// and maps reason codes to translated tooltips. When reasons is given,
-        /// each recommended role's id maps to a human-readable trigger.
-        private static List<Role> ComputeRecommendations(Pawn pawn, RoleStore store,
-            Dictionary<int, string> reasons = null)
-        {
-            if (pawn == null || pawn.skills == null) return new List<Role>();
-
-            var catalog = store.roles.Select(RecRoleOf).ToList();
-            // Childcare is only needed work while the colony has children;
-            // without any, the best-in-colony draft for it stays quiet.
-            bool children = pawn.MapHeld != null
-                && pawn.MapHeld.mapPawns.FreeColonistsSpawned.Any(p => !p.DevelopmentalStage.Adult());
-            if (!children)
-                foreach (var role in catalog)
-                    if (role.MinHolders > 0 && role.WorkTypes.Contains("Childcare"))
-                        role.MinHolders = 0;
-
-            var recommendations = RecommendationEngine.Compute(
-                catalog,
-                RecPawnOf(pawn),
-                SkillMaxLevelsByName(MapColonists(pawn.MapHeld)), // colony-best is per location
-                WorkTypeSkillMap(),
-                ResolvedRecommendationOrder(store));
-
-            // VSE expertise (empty without the mod): skill defName -> label.
-            var expertiseBySkill = new Dictionary<string, string>();
-            foreach (var expertise in Expertise.For(pawn))
-                expertiseBySkill[expertise.Skill.defName] = expertise.Label;
-
-            var result = new List<Role>();
-            foreach (var rec in recommendations)
-            {
-                var role = store.RoleById(rec.RoleId);
-                if (role == null) continue;
-                result.Add(role);
-                if (reasons == null) continue;
-                string skillLabel = rec.SkillDefName == null ? ""
-                    : DefDatabase<SkillDef>.GetNamedSilentFail(rec.SkillDefName)?.skillLabel.CapitalizeFirst() ?? "";
-                reasons[role.id] =
-                    rec.Reason == RecReason.Everyone ? "WR_ReasonEveryone".Translate()
-                    : rec.Reason == RecReason.Duty ? "WR_ReasonDuty".Translate()
-                    : rec.Reason == RecReason.Hunter ? "WR_ReasonHunter".Translate()
-                    : rec.Reason == RecReason.Unskilled ? "WR_ReasonUnskilled".Translate()
-                    : rec.Reason == RecReason.Expertise ? "WR_ReasonExpertise".Translate(
-                        rec.SkillDefName != null && expertiseBySkill.TryGetValue(rec.SkillDefName, out var expertiseLabel)
-                            ? expertiseLabel : skillLabel)
-                    : rec.Reason == RecReason.MajorPassion ? "WR_ReasonMajorPassion".Translate(skillLabel)
-                    : rec.Reason == RecReason.MinorPassion ? "WR_ReasonMinorPassion".Translate(skillLabel)
-                    : rec.Reason == RecReason.Best ? "WR_ReasonBest".Translate(skillLabel)
-                    : "WR_ReasonAptitude".Translate(skillLabel);
-                reasons[role.id] += TrainingSuffix(role);
-            }
-            return result;
-        }
-
-
         // ----- Colony fix plan -----
 
         /// One planned pawn in a colony fix: the full target assignment list plus
@@ -2604,138 +2325,33 @@ namespace WorkRoles.UI
             public Dictionary<int, string> reasons = new Dictionary<int, string>();
         }
 
-        /// The highest vanilla work-tab priority among the role's work types —
-        /// content-derived placement for auto-assign roles.
-        private static int MaxNaturalPriority(Role role)
-        {
-            int max = 0;
-            foreach (var wt in WorkTypesOf(role))
-                if (wt.naturalPriority > max) max = wt.naturalPriority;
-            return max;
-        }
-
-        /// Multi-pass plan for Fix My Colony.
-        /// 1. Virtual set per pawn: the autoAssign catalog roles (catalog order) plus
-        ///    the pawn's assigned rule-carrying roles (pinned, original order).
-        /// 2. Coverage pass: every enabled, rule-free, non-autoAssign, skill-associated
-        ///    catalog role is dealt out until N pawns hold it (N scales with colony
-        ///    size). Eligible pawns (capable + template gates against the virtual view)
-        ///    rank by matched skill descending, then passion (major > minor > none),
-        ///    then fewer virtual roles (spread the load); pawns whose virtual set
-        ///    already contains a covering role are skipped (overlap minimization).
-        ///    Hunter is exempt from top-N: every ranged-armed pawn with Shooting
-        ///    below 15 hunts, topped up to at least two hunters from sub-20 shooters.
-        /// 3. Backup + ordering pass: recommendations computed against the virtual
-        ///    view lead, remaining virtual-set roles append in virtual order; each
-        ///    kept role retains the pawn's per-pawn toggle; assigned rule-carrying
-        ///    roles pin at their original position.
-        /// Every pawn gets a plan entry (the Recommended Roles panel reads them);
-        /// appliers skip pawns with neither additions nor removals, so order-only
-        /// differences are left alone.
+        /// One engine run builds every pawn's plan: RecsAdapter projects the
+        /// game state, RecsEngine.Run applies the rule pipeline, and this
+        /// method only maps results to PawnFixPlans (diff + reason text).
         private static List<PawnFixPlan> BuildColonyFixPlan(Map map)
         {
             var plans = new List<PawnFixPlan>();
             var store = RoleStore.Current;
             if (store == null) return plans;
             var pawns = MapColonists(map);
+            var results = RecsEngine.Run(RecsAdapter.BuildColonyView(store, pawns));
 
-            // The colony passes (virtual sets, coverage, doctoring floor, fire
-            // safety) live in Core (ColonyPlanner) with tests; this adapter projects
-            // game state, resolves the special roles by content, and maps reason
-            // codes to translated tooltips.
-            var essentialRank = new Dictionary<int, int>();
-            for (int i = 0; i < Essentials.Length; i++)
-            {
-                var essential = RoleProviding(store, Essentials[i].workType, Essentials[i].template);
-                if (essential != null && !essentialRank.ContainsKey(essential.id))
-                    essentialRank[essential.id] = i;
-            }
-            var hunterRole = RoleProviding(store, "Hunting", "WS_Hunter");
-            var doctorRole = RoleProviding(store, "Doctor", "WS_Doctor");
-            var medicRole = MedicRole(store, doctorRole);
-            // Fire blocker: the shipped template, else any enabled rule-free
-            // blocker carrying the Firefighter work type.
-            var fireBlocker = store.RoleByTemplate("WS_NoFirefighting");
-            if (fireBlocker != null && (!fireBlocker.enabled || fireBlocker.HasRules || !fireBlocker.blocker))
-                fireBlocker = null;
-            fireBlocker ??= store.roles.FirstOrDefault(r =>
-                r.enabled && !r.HasRules && r.blocker && HasWorkTypeEntry(r, "Firefighter"));
-
-            var planPawns = pawns.Select(pawn =>
-            {
-                store.pawnSets.TryGetValue(pawn, out var pawnSet);
-                return new PlanPawn
-                {
-                    Rec = RecPawnOf(pawn),
-                    Existing = (pawnSet?.assignments ?? new List<RoleAssignment>())
-                        .Select(a => new PlannedAssignment
-                        { RoleId = a.roleId, Enabled = a.enabled, Pinned = a.pinned })
-                        .ToList(),
-                    FireFear = pawn.genes != null
-                        && pawn.genes.GenesListForReading.Any(g => FireFearGenes.Contains(g.def.defName)),
-                };
-            }).ToList();
-
-            var colonyPlan = ColonyPlanner.Compute(
-                store.roles.Select(RecRoleOf).ToList(), planPawns,
-                SkillMaxLevelsByName(pawns), WorkTypeSkillMap(), essentialRank,
-                hunterRole?.id ?? -1, doctorRole?.id ?? -1, medicRole?.id ?? -1,
-                fireBlocker?.id ?? -1);
-
-            // Grant reason codes -> translated tooltips.
-            var doctorType = DefDatabase<WorkTypeDef>.GetNamedSilentFail("Doctor");
-            var coverageReasons = new Dictionary<Pawn, Dictionary<int, string>>();
-            foreach (var grant in colonyPlan.Grants)
-            {
-                var pawn = pawns[grant.PawnIndex];
-                if (!coverageReasons.TryGetValue(pawn, out var reasonsByRole))
-                    coverageReasons[pawn] = reasonsByRole = new Dictionary<int, string>();
-                string reason;
-                if (grant.Reason == PlanReason.Hunter)
-                    reason = "WR_ReasonHunter".Translate();
-                else if (grant.Reason == PlanReason.FireFear)
-                    reason = "WR_ReasonFireFear".Translate();
-                else if (grant.Reason == PlanReason.Coverage)
-                    reason = "WR_ReasonCoverage".Translate() + TrainingSuffix(store.RoleById(grant.RoleId));
-                else if (grant.EssentialRank >= 0)
-                    reason = "WR_ReasonEssential".Translate(
-                        DefDatabase<WorkTypeDef>.GetNamedSilentFail(Essentials[grant.EssentialRank].workType)?.gerundLabel
-                        ?? Essentials[grant.EssentialRank].workType);
-                else // the doctoring backup
-                    reason = "WR_ReasonEssential".Translate(doctorType?.gerundLabel ?? "Doctor");
-                reasonsByRole[grant.RoleId] = reason;
-            }
-
-            // Final pass: per-pawn ordering (see TargetPlanner via
-            // BuildOrderedTarget), then diff vs real assignments.
             for (int i = 0; i < pawns.Count; i++)
             {
                 var pawn = pawns[i];
                 store.pawnSets.TryGetValue(pawn, out var set);
                 var existing = set?.assignments ?? new List<RoleAssignment>();
+                var target = results[i].Assignments
+                    .Select(a => new RoleAssignment
+                    { roleId = a.RoleId, enabled = a.Enabled, pinned = a.Pinned })
+                    .ToList();
 
-                var recReasons = new Dictionary<int, string>();
-                var target = BuildOrderedTarget(pawn, store,
-                    ComputeRecommendations(pawn, store, recReasons), colonyPlan.VirtualSets[i],
-                    colonyPlan.HunterTiers[i], hunterRole?.id ?? -1);
-
-                // The fire-safety blocker leads the list: it must sit above Basics
-                // (and everything else) to veto firefighting.
-                if (fireBlocker != null && colonyPlan.FireGranted[i])
+                var plan = new PawnFixPlan { pawn = pawn, target = target };
+                foreach (var kv in results[i].Reasons)
                 {
-                    int fireIdx = target.FindIndex(a => a.roleId == fireBlocker.id);
-                    if (fireIdx > 0)
-                    {
-                        var grant = target[fireIdx];
-                        target.RemoveAt(fireIdx);
-                        target.Insert(0, grant);
-                    }
+                    string text = ReasonText(store, pawn, kv.Value);
+                    if (text != null) plan.reasons[kv.Key] = text;
                 }
-
-                var plan = new PawnFixPlan { pawn = pawn, target = target, reasons = recReasons };
-                if (coverageReasons.TryGetValue(pawn, out var granted))
-                    foreach (var kv in granted)
-                        plan.reasons[kv.Key] = kv.Value; // coverage story beats the skill story
                 var targetIds = new HashSet<int>(target.Select(a => a.roleId));
                 var existingIds = new HashSet<int>(existing.Select(a => a.roleId));
                 foreach (var a in target)
@@ -2755,55 +2371,42 @@ namespace WorkRoles.UI
             return plans;
         }
 
+        /// Engine reasons -> translated tooltips. Null = no tooltip (kept
+        /// chores need none).
+        private static string ReasonText(RoleStore store, Pawn pawn, Reason reason)
+        {
+            string skill = reason.SkillDefName == null ? ""
+                : DefDatabase<SkillDef>.GetNamedSilentFail(reason.SkillDefName)
+                    ?.skillLabel.CapitalizeFirst() ?? "";
+            switch (reason.RuleId)
+            {
+                case "auto": return "WR_ReasonEveryone".Translate();
+                case "hunter": return "WR_ReasonHunter".Translate();
+                case "fire": return "WR_ReasonFireFear".Translate();
+                case "retention": return null;
+                case "draft": return "WR_ReasonCoverage".Translate();
+                case "allowance":
+                    return "WR_ReasonInTraining".Translate(
+                        store.RoleById(reason.TowardRoleId)?.label ?? "?");
+                case "signals":
+                    if (reason.Source == SignalSource.Expertise)
+                    {
+                        // VSE names the specialization (e.g. "Chef") when known.
+                        foreach (var expertise in Expertise.For(pawn))
+                            if (expertise.Skill.defName == reason.SkillDefName)
+                                return "WR_ReasonExpertise".Translate(expertise.Label);
+                        return "WR_ReasonExpertise".Translate(skill);
+                    }
+                    return reason.Source == SignalSource.MajorPassion
+                            ? "WR_ReasonMajorPassion".Translate(skill)
+                        : reason.Source == SignalSource.MinorPassion
+                            ? "WR_ReasonMinorPassion".Translate(skill)
+                        : "WR_ReasonAptitude".Translate(skill);
+                default: return "WR_ReasonCoverage".Translate();
+            }
+        }
+
         // ----- Helpers -----
-
-        /// Per-skill maximum level across the given pawns.
-        private static Dictionary<SkillDef, int> SkillMaxLevels(List<Pawn> pawns)
-        {
-            var result = new Dictionary<SkillDef, int>();
-            foreach (var p in pawns)
-            {
-                if (p.skills == null) continue;
-                foreach (var sr in p.skills.skills)
-                    if (!result.TryGetValue(sr.def, out int cur) || sr.Level > cur)
-                        result[sr.def] = sr.Level;
-            }
-            return result;
-        }
-
-        /// Work types a role touches: WorkType entries directly, WorkGiver entries
-        /// through their parent work type.
-        private static HashSet<WorkTypeDef> WorkTypesOf(Role role)
-        {
-            var workTypes = new HashSet<WorkTypeDef>();
-            foreach (var entry in role.entries)
-            {
-                if (entry.Kind == JobEntryKind.WorkType)
-                {
-                    var wt = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                    if (wt != null) workTypes.Add(wt);
-                }
-                else
-                {
-                    var wg = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
-                    if (wg?.workType != null) workTypes.Add(wg.workType);
-                }
-            }
-            return workTypes;
-        }
-
-        /// Distinct relevant skills across a role's member work types.
-        private static List<SkillDef> RelevantSkillsOf(Role role)
-        {
-            var skills = new List<SkillDef>();
-            foreach (var wt in WorkTypesOf(role))
-            {
-                if (wt.relevantSkills == null) continue;
-                foreach (var skillDef in wt.relevantSkills)
-                    if (!skills.Contains(skillDef)) skills.Add(skillDef);
-            }
-            return skills;
-        }
 
         internal static void OpenAddMenu(Pawn pawn, RoleStore store)
         {

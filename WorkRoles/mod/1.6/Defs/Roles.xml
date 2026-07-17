@@ -68,8 +68,6 @@
     <description>Medical care for colonists, prisoners and animals.</description>
     <colorRef>red-800</colorRef>
     <group>Essentials</group>
-    <trainSkill>Medicine</trainSkill>
-    <trainMinLevel>15</trainMinLevel>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Doctor</li>
@@ -82,10 +80,6 @@
     <description>Medical work except operating on colonists.</description>
     <colorRef>red-900</colorRef>
     <group>Essentials</group>
-    <trainSkill>Medicine</trainSkill>
-    <trainMinLevel>5</trainMinLevel>
-    <trainMaxLevel>15</trainMaxLevel>
-    <trainTargets><li>WS_Doctor</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
@@ -168,8 +162,6 @@
     <description>Prisoner handling except interrogation, enslavement and conversion: feeding, escorting, chatting, suppression, release and executions.</description>
     <colorRef>cyan-900</colorRef>
     <group>Essentials</group>
-    <trainSkill>Social</trainSkill>
-    <trainTargets><li>WS_Warden</li></trainTargets>
     <minHolders>0</minHolders>
     <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
          EnslavePrisoner and ConvertPrisoner; ChatWithPrisoner trains Social,
@@ -257,8 +249,6 @@
     <description>Meal preparation and butchering.</description>
     <colorRef>green-700</colorRef>
     <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMinLevel>8</trainMinLevel>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Cooking</li>
@@ -271,9 +261,6 @@
     <description>Butchering creatures.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Cook</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoBillsButcherFlesh</li>
@@ -286,9 +273,6 @@
     <description>Brewing wort at the brewery.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <trainSkill>Cooking</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Cook</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoBillsBrew</li>
@@ -327,8 +311,6 @@
     <description>Construction, repair and deconstruction.</description>
     <colorRef>yellow-700</colorRef>
     <group>Indoors</group>
-    <trainSkill>Construction</trainSkill>
-    <trainMinLevel>8</trainMinLevel>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Construction</li>
@@ -341,9 +323,6 @@
     <description>All construction work except constructing new buildings.</description>
     <colorRef>yellow-800</colorRef>
     <group>Indoors</group>
-    <trainSkill>Construction</trainSkill>
-    <trainMaxLevel>8</trainMaxLevel>
-    <trainTargets><li>WS_Builder</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:Repair</li>
@@ -382,8 +361,6 @@
     <description>Sowing and harvesting in growing zones.</description>
     <colorRef>lime-800</colorRef>
     <group>Plants</group>
-    <trainSkill>Plants</trainSkill>
-    <trainTargets><li>WS_Farmer</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkType:Growing</li>
@@ -396,8 +373,6 @@
     <description>Cutting and harvesting wild plants and trees.</description>
     <colorRef>lime-800</colorRef>
     <group>Plants</group>
-    <trainSkill>Plants</trainSkill>
-    <trainTargets><li>WS_Farmer</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkType:PlantCutting</li>
@@ -422,8 +397,6 @@
     <description>Apparel creation.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets><li>WS_Fabricator</li></trainTargets>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Tailoring</li>
@@ -436,8 +409,6 @@
     <description>Weapon and armor smithing.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets><li>WS_Fabricator</li></trainTargets>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Smithing</li>
@@ -450,8 +421,6 @@
     <description>Fabricating things at the fabrication bench.</description>
     <colorRef>amber-800</colorRef>
     <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainMinLevel>7</trainMinLevel>
     <entries>
       <li>WorkGiver:DoBillsFabricationBench</li>
     </entries>
@@ -463,15 +432,6 @@
     <description>General crafting: stonecutting, smelting, drugs and components.</description>
     <colorRef>orange-700</colorRef>
     <group>Indoors</group>
-    <!-- No band ceiling: the targets supplement rather than cover this role,
-         so outgrowing it must not abandon its jobs. -->
-    <trainSkill>Crafting</trainSkill>
-    <trainTargets>
-      <li>WS_DrugMaker</li>
-      <li>WS_Smith</li>
-      <li>WS_Tailor</li>
-      <li>WS_Fabricator</li>
-    </trainTargets>
     <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Crafting</li>
@@ -521,9 +481,6 @@
     <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
     <colorRef>red-900</colorRef>
     <group>Essentials</group>
-    <trainSkill>Medicine</trainSkill>
-    <trainMaxLevel>5</trainMaxLevel>
-    <trainTargets><li>WS_Medic</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:DoctorTendToSelfEmergency</li>
@@ -544,8 +501,6 @@
     <description>Drug production at the drug lab and serum centrifuge.</description>
     <colorRef>orange-800</colorRef>
     <group>Indoors</group>
-    <trainSkill>Crafting</trainSkill>
-    <trainMinLevel>4</trainMinLevel>
     <entries>
       <li>WorkGiver:DoBillsProduceDrugs</li>
       <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>
@@ -558,8 +513,6 @@
     <description>Painting and paint removal.</description>
     <colorRef>purple-800</colorRef>
     <group>Indoors</group>
-    <trainSkill>Artistic</trainSkill>
-    <trainTargets><li>WS_Artist</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:RemovePaintBuilding</li>
@@ -578,13 +531,14 @@
     <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
     <colorRef>teal-900</colorRef>
     <group>Animals</group>
-    <trainSkill>Animals</trainSkill>
-    <trainTargets><li>WS_Handler</li></trainTargets>
     <minHolders>0</minHolders>
     <entries>
       <li>WorkGiver:TakeRoamingAnimalsToPen</li>
       <li>WorkGiver:HandlingFeedPatientAnimals</li>
       <li>WorkGiver:TakeToPen</li>
+      <!-- Allow Tool's finish-off is herder's work too: with Slaughter, so
+           downed livestock is dispatched like designated slaughter. -->
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:FinishingOff</li>
       <li>WorkGiver:Slaughter</li>
       <li>WorkGiver:ReleaseToWild</li>
       <li>WorkGiver:Milk</li>

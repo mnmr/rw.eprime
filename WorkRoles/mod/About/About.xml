@@ -55,10 +55,9 @@ Performance:
 Worth Noting:
 - Seeded Roles: An initial role set is seeded into the game, covering all detected work types and jobs. 
 - Combo Roles: Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
-- Training Roles: Roles that the recommendation engine uses to upskill colonists until they're ready for the target role (Medic, Butcher, Jailor, etc).
 - Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobia before Basics (which has Firefighting).
-- Extra Roles: Convenience roles that make work prioritization easier (Fabricator, Drug Maker).
-- Odd Jobs: Some mods add hidden jobs with no work-type checkbox; WorkRoles collects these in an "Odd Jobs" role.
+- Extra Roles: Training roles that enable role progression and convenience roles to make prioritization easier.
+- Modded Jobs: Jobs added by mods are unassigned by default. The role editor shows a warning when it detects a job that isn't in any role. AllowTool jobs are automatically assigned (Haul urgently to Basics, Finish off to Herder/Hunter).
 
 How It Works:
 - Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
@@ -69,23 +68,21 @@ How It Works:
 - In multiplayer, every change (role edits, assignments, toggles) is a synced command, so all players stay in agreement.
 
 Recommendation Logic:
-- Colony Needs: Almost every job should be assigned to someone, but how many depends on the job and colony size. The current logic insists on at least two Doctors (one can be a Medic), three Researchers (scales if you have enough research benches) and has no minimum for artists.
-- Skill Gates: Roles with jobs that require sufficient skill (like Doctor) are only assigned if skill is high enough or to serve colony needs.
-- Training: If a pawn has insufficient skill for a target role, an upskilling role will be recommended instead. Colony needs override this to ensure work coverage.
-- Hunting: Recommended for everyone with a gun as a way to improve shooting skill, but with different priority (position in the role list) depending on current skill.
-- Coverage: Roles are ordered by each colonist's own skills and passions (so overlapping specialists naturally spread out).
-- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
+- Colony Needs: Ensures that every essential role is assigned to at least one pawn. Roles are configured to be essential by specifying a min assignment requirement.
+- Intelligent Defaults: WorkRoles seeds roles with reasonable defaults (but you can override these to set your own requirements).
+- Training Paths: Design your own role progressions or use the default set to flexibly configure how pawns should progress as their skill improves.
+- Shiny Happy People: Training paths are suggested based on colonist genes, traits, aptitudes and passions, to make sure pawns primarily do what they like.
+- Hunting: Recommended for everyone with a gun as a way to improve shooting skill, but at different priority based on current skill level.
 - Apply Per Colonist: Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
 - Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
-- Passions: Roles suggestions come from colonist passions (burning first), then colony-best-skill, then gene/trait aptitude. If you're using Vanilla Skills Expanded or Alpha Skills, then expertise outranks passions.
+- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
+- Untouched: Auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
 - Genetics: Pawns genetically terrified of fire automatically get Pyrophobia (blocker role) placed before Basics.
-- Ordering: Everyone-roles first (Basics) -> Doctor/Medic -> Duty work (Warden/Childcare) -> Skilled work (Smith, Cook, etc) -> Grunt work. Hunter can slot in anywhere after Doctor. 
-- Untouched: Auto (rule-carrying) roles and blockers are never suggested, moved or removed.
 
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 - Multiplayer compatible.
-- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many, many others.
 - Requires Harmony.
 
 Mod integrations (these will be used when installed, but are not requirements):
