@@ -197,11 +197,62 @@ namespace WorkRoles.UI
             return best != null && best.hasCustomColor ? best.color : RoleChipUI.DefaultChipColor;
         }
 
+        // Open-window snapshot of this tab's structured tips: static content,
+        // rebuilt (and re-registered) only when the stamp moves.
+        private int optTipsStamp = -1;
+        private string numericTipCache;
+        private string rangeTipCache;
+        private string recOrderTipCache;
+        private string trainingTipCache;
+        private string anchorTipCache;
+
+        private void EnsureOptionTips()
+        {
+            if (optTipsStamp == UiVersion.Current) return;
+            optTipsStamp = UiVersion.Current;
+
+            var numeric = new TipModel { Title = "WR_OptNumeric".Translate() };
+            numeric.AddSection().Text("WR_OptNumericTipWhat".Translate());
+            numeric.AddSection()
+                .Fact("WR_TipOff".Translate(), "WR_OptNumericTipOff".Translate())
+                .Fact("WR_TipOn".Translate(), "WR_OptNumericTipOn".Translate());
+            numeric.AddSection().Text("WR_OptNumericTipWhy".Translate(), dim: true);
+            numericTipCache = Patches.Patch_ActiveTip_TipRect.Register(numeric);
+
+            var range = new TipModel { Title = "WR_OptVanillaRange".Translate() };
+            range.AddSection().Text("WR_OptVanillaRangeTipWhat".Translate());
+            range.AddSection()
+                .Fact("WR_TipOff".Translate(), "WR_OptVanillaRangeTipOff".Translate())
+                .Fact("WR_TipOn".Translate(), "WR_OptVanillaRangeTipOn".Translate());
+            rangeTipCache = Patches.Patch_ActiveTip_TipRect.Register(range);
+
+            var recOrder = new TipModel { Title = "WR_RecOrderHeader".Translate() };
+            recOrder.AddSection().Text("WR_OptRecOrderTipWhat".Translate());
+            recOrder.AddSection()
+                .Action("WR_ActDrag".Translate(), "WR_ActRecDrag".Translate())
+                .Action("WR_ActX".Translate(), "WR_ActRecX".Translate());
+            recOrder.AddSection().Text("WR_OptRecOrderTipAuto".Translate(), dim: true);
+            recOrderTipCache = Patches.Patch_ActiveTip_TipRect.Register(recOrder);
+
+            var training = new TipModel { Title = "WR_TrainingSection".Translate() };
+            training.AddSection().Text("WR_TrainingTipWhat".Translate());
+            training.AddSection()
+                .Text("WR_TrainingTipBands".Translate(), dim: true)
+                .Text("WR_TrainingTipOrder".Translate(), dim: true);
+            trainingTipCache = Patches.Patch_ActiveTip_TipRect.Register(training);
+
+            var anchor = new TipModel { Title = "WR_CustomizeAssignment".Translate() };
+            anchor.AddSection().Text("WR_AnchorTipWhat".Translate());
+            anchor.AddSection().Text("WR_AnchorTipWhy".Translate(), dim: true);
+            anchorTipCache = Patches.Patch_ActiveTip_TipRect.Register(anchor);
+        }
+
         public void Reset()
         {
             tabScroll = Vector2.zero;
             orderStamp = -1;
             pathStamp = -1;
+            optTipsStamp = -1;
             selectedPathId = -1;
             pendingSelectPathName = null;
             anchorRevealed.Clear();
@@ -257,6 +308,7 @@ namespace WorkRoles.UI
 
             EnsureSnapshot(store, flowW - RecPanelPad * 2f);
             EnsurePathSnapshot(store, flowW - ChipsPanelPad * 2f);
+            EnsureOptionTips();
 
             // The whole y-flow is laid out up front: the scroll view needs
             // contentH before anything draws.
@@ -304,14 +356,14 @@ namespace WorkRoles.UI
             WrText.HeaderLabel(compatHeader, "WR_CompatSection".Translate());
 
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
-            TooltipHandler.TipRegion(numericRect, "WR_OptNumericTip".Translate());
+            TooltipHandler.TipRegion(numericRect, numericTipCache);
             bool numericNew = numeric;
             Widgets.CheckboxLabeled(numericRect, "WR_OptNumeric".Translate(), ref numericNew);
             if (numericNew != numeric)
                 RoleCommands.SetUseWorkPriorities(numericNew);
 
             bool vanillaRange = store.reportVanillaPriorities;
-            TooltipHandler.TipRegion(rangeRect, "WR_OptVanillaRangeTip".Translate());
+            TooltipHandler.TipRegion(rangeRect, rangeTipCache);
             bool vanillaNew = vanillaRange;
             Widgets.CheckboxLabeled(rangeRect, "WR_OptVanillaRange".Translate(), ref vanillaNew);
             if (vanillaNew != vanillaRange)
@@ -319,11 +371,11 @@ namespace WorkRoles.UI
 
             WrText.HeaderLabel(tuningHeader, "WR_TuningSection".Translate());
             MiniHeader(flowX, recHeaderY, flowW, "WR_RecOrderHeader".Translate(),
-                "WR_OptRecOrderTip".Translate());
+                recOrderTipCache);
             DrawRecommendationOrder(recPanel, store);
 
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
-                "WR_TrainingSectionTip".Translate());
+                trainingTipCache);
             Text.Font = GameFont.Tiny;
             GUI.color = CaptionColor;
             Widgets.Label(captionRect, "WR_PathsPanelCaption".Translate());
@@ -604,7 +656,7 @@ namespace WorkRoles.UI
         /// Grey caption + Before/After toggle + the anchor as a role chip (or
         /// a Pick-role button while unset). The group right-aligns under the
         /// Customize toggle. Reads snapshot only.
-        private static void DrawPathAnchorRow(Rect rect, RoleStore store, PathView view)
+        private void DrawPathAnchorRow(Rect rect, RoleStore store, PathView view)
         {
             Text.Font = GameFont.Small;
             string caption = "WR_AnchorLabel".Translate();
@@ -615,7 +667,7 @@ namespace WorkRoles.UI
                 : 110f;
             float x = rect.xMax - (captionW + 4f + 70f + 8f + tailW);
             TooltipHandler.TipRegion(new Rect(x, rect.y, rect.xMax - x, rect.height),
-                "WR_AnchorTip".Translate());
+                anchorTipCache);
 
             // MiddleLeft over the row height: the caption shares the text
             // baseline with the Before/After button and the chip.

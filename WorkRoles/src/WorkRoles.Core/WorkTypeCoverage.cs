@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core
 {
-    /// Coverage math shared by seeding and Restore Roles: which work types the
+    /// Coverage math shared by seeding and Restore Defaults: which work types the
     /// catalog reaches, and which vanilla givers a mod has moved out of a role's
     /// work types.
     public static class WorkTypeCoverage

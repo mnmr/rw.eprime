@@ -24,6 +24,9 @@ namespace WorkRoles
 
         public sealed class GiverProfile
         {
+            /// Undecorated def label — never the disambiguated display name;
+            /// provenance belongs only to the source footer.
+            public string Title;
             /// Skills the work uses (performance), from the work type.
             public List<string> UsedSkills = new List<string>();
             /// Skills the work grants XP in (bill givers: from recipes).
@@ -35,13 +38,17 @@ namespace WorkRoles
             public List<string> RelevantSkillDefNames = new List<string>();
             public bool GivesXp;
             public List<SkillRange> Requirements = new List<SkillRange>();
-            public string CurveLine;  // pre-formatted stat curve fact, or null
-            public string SourceLine; // "Work giver: defName (mod)" footer
+            public string CurveHeader; // stat label, or null when no curve
+            public List<(string label, string value)> CurveRows;
+            public string SourceLine;  // "Work giver: defName (mod)" footer
             public string TipCache;
         }
 
         public sealed class WorkTypeProfile
         {
+            /// Undecorated def label (see GiverProfile.Title).
+            public string Title;
+            public string Description;
             public List<string> TrainedSkills = new List<string>();
             public int XpGivers, TotalGivers;
             public List<SkillRange> Requirements = new List<SkillRange>();
@@ -261,9 +268,12 @@ namespace WorkRoles
                     .ToList();
                 var profile = new WorkTypeProfile
                 {
+                    Title = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst(),
                     TrainedSkills = SkillLabels(workType.relevantSkills),
                     TotalGivers = members.Count,
                     XpGivers = members.Count(p => p.GivesXp),
+                    // The vanilla Work-tab text players already know leads the tip.
+                    Description = workType.description,
                     SourceLine = SourceLineFor(workType, "WR_SkillTipTypeSource"),
                 };
                 // Per skill, the highest requirement any member content carries.
@@ -283,6 +293,7 @@ namespace WorkRoles
         {
             var profile = new GiverProfile
             {
+                Title = (giver.label ?? giver.defName).CapitalizeFirst(),
                 UsedSkills = SkillLabels(giver.workType.relevantSkills),
             };
             profile.RelevantSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
@@ -328,6 +339,11 @@ namespace WorkRoles
                     profile.TrainedSkills = xpSkills
                         .Select(d => DefDatabase<SkillDef>.GetNamedSilentFail(d))
                         .Where(s => s != null).Select(SkillLabel).ToList();
+                    // Curation drift (game update, renamed skill) must be loud,
+                    // not a silently shorter facts list.
+                    if (profile.TrainedSkills.Count < xpSkills.Length)
+                        Log.Warning($"[WorkRoles] XP table for {giver.defName} names unknown skill(s): "
+                            + xpSkills.Where(d => DefDatabase<SkillDef>.GetNamedSilentFail(d) == null).ToCommaList());
                 }
                 else
                 {
@@ -343,20 +359,21 @@ namespace WorkRoles
                     profile.Requirements.Add(SowingRange());
             }
 
-            profile.CurveLine = CurveLineFor(giver.defName);
+            FillCurveFacts(profile, giver.defName);
             profile.SourceLine = SourceLineFor(giver, "WR_SkillTipGiverSource");
             return profile;
         }
 
         /// Identity footer: the def's internal name and the mod that defines
-        /// it. modContentPack is null for runtime-generated defs.
+        /// it. modContentPack is null for runtime-generated defs. Rendered as
+        /// a dim TextRow — the string itself stays uncolorized.
         private static string SourceLineFor(Def def, string key)
         {
             string mod = def.modContentPack == null
                 ? "WR_SkillTipUnknownMod".Translate().ToString()
                 : def.modContentPack.IsCoreMod ? "RimWorld"
                 : def.modContentPack.Name;
-            return key.Translate(def.defName, mod).ToString();
+            return key.Translate(def.defName, mod);
         }
 
         /// The recipes a bill giver can work: its fixed benches' recipes, or —
@@ -422,25 +439,24 @@ namespace WorkRoles
                 Gated = levels.Count,
             };
 
-        private static string CurveLineFor(string giverDefName)
+        private static void FillCurveFacts(GiverProfile profile, string giverDefName)
         {
-            if (!CurveStatByGiver.TryGetValue(giverDefName, out var statName)) return null;
+            if (!CurveStatByGiver.TryGetValue(giverDefName, out var statName)) return;
             var stat = DefDatabase<StatDef>.GetNamedSilentFail(statName);
             var need = stat?.skillNeedFactors?.OfType<SkillNeed_Direct>()
                 .FirstOrDefault(n => n.skill != null && !n.valuesPerLevel.NullOrEmpty());
-            if (need == null) return null;
+            if (need == null) return;
 
             var milestones = LowerIsBetter.Contains(statName)
                 ? JobSkillMath.FallingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.1f })
                 : JobSkillMath.RisingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.75f, 0.9f, 1f });
-            if (milestones.Count <= 1) return null;
+            if (milestones.Count <= 1) return;
 
-            string skill = SkillLabel(need.skill);
-            var lines = new List<string> { "WR_SkillTipCurveHeader".Translate(stat.LabelCap).ToString() };
+            profile.CurveHeader = stat.LabelCap;
+            profile.CurveRows = new List<(string, string)>();
             foreach (var (level, value) in milestones)
-                lines.Add("    " + "WR_SkillTipCurveLevel".Translate(
-                    value.ToStringPercent(), skill, level));
-            return string.Join("\n", lines);
+                profile.CurveRows.Add((
+                    "WR_TipLevelN".Translate(level).ToString(), value.ToStringPercent()));
         }
 
         // ----- Tooltip composition (cached; defs are session-fixed, a language
@@ -451,7 +467,7 @@ namespace WorkRoles
             var profile = ForGiver(defName);
             if (profile == null) return null;
             return profile.TipCache ?? (profile.TipCache =
-                Patches.Patch_ActiveTip_TipRect.RegisterWide(ComposeGiverTip(profile)));
+                Patches.Patch_ActiveTip_TipRect.Register(BuildGiverModel(profile)));
         }
 
         public static string WorkTypeTip(string defName)
@@ -459,41 +475,51 @@ namespace WorkRoles
             var profile = ForWorkType(defName);
             if (profile == null) return null;
             return profile.TipCache ?? (profile.TipCache =
-                Patches.Patch_ActiveTip_TipRect.RegisterWide(ComposeTypeTip(profile)));
+                Patches.Patch_ActiveTip_TipRect.Register(BuildTypeModel(profile)));
         }
 
-        private static string ComposeGiverTip(GiverProfile profile)
+        private static TipModel BuildGiverModel(GiverProfile profile)
         {
-            var lines = new List<string>();
+            var model = new TipModel { Title = profile.Title };
+            var facts = model.AddSection();
             if (profile.UsedSkills.Count > 0)
-                lines.Add("WR_SkillTipSkills".Translate(profile.UsedSkills.ToCommaList()).ToString());
-            lines.Add(profile.TrainedSkills.Count == 0
-                ? "WR_SkillTipTrainsNothing".Translate().ToString()
-                : "WR_SkillTipTrains".Translate(profile.TrainedSkills.ToCommaList()).ToString());
+                facts.Fact("WR_TipSkillsLabel".Translate(), profile.UsedSkills.ToCommaList());
+            facts.Fact("WR_TipTrainsLabel".Translate(), profile.TrainedSkills.Count == 0
+                ? "WR_TipTrainsNothing".Translate().ToString()
+                : profile.TrainedSkills.ToCommaList());
             foreach (var range in profile.Requirements)
-                lines.Add(range.Total > 0
-                    ? "WR_SkillTipRequiresBills".Translate(
+                facts.Fact("WR_TipRequiresLabel".Translate(), range.Total > 0
+                    ? "WR_TipReqBills".Translate(
                         range.SkillLabel, LevelRange(range), range.Gated, range.Total).ToString()
-                    : "WR_SkillTipRequiresItems".Translate(
+                    : "WR_TipReqItems".Translate(
                         range.SkillLabel, LevelRange(range), range.Gated).ToString());
-            if (profile.CurveLine != null)
-                lines.Add(profile.CurveLine);
+            if (profile.CurveRows != null)
+            {
+                var curve = model.AddSection(profile.CurveHeader);
+                foreach (var (label, value) in profile.CurveRows)
+                    curve.Fact(label, value);
+            }
             if (profile.SourceLine != null)
-                lines.Add(profile.SourceLine);
-            return string.Join("\n", lines);
+                model.AddSection().Text(profile.SourceLine, dim: true);
+            return model;
         }
 
-        private static string ComposeTypeTip(WorkTypeProfile profile)
+        private static TipModel BuildTypeModel(WorkTypeProfile profile)
         {
-            var lines = new List<string>();
+            var model = new TipModel { Title = profile.Title };
+            if (!profile.Description.NullOrEmpty())
+                model.AddSection().Text(profile.Description);
+            var facts = model.AddSection();
             if (profile.TrainedSkills.Count > 0)
-                lines.Add("WR_SkillTipSkills".Translate(profile.TrainedSkills.ToCommaList()).ToString());
-            lines.Add("WR_SkillTipTypeXp".Translate(profile.XpGivers, profile.TotalGivers).ToString());
+                facts.Fact("WR_TipSkillsLabel".Translate(), profile.TrainedSkills.ToCommaList());
+            facts.Fact("WR_TipXpLabel".Translate(),
+                "WR_TipXpValue".Translate(profile.XpGivers, profile.TotalGivers));
             foreach (var range in profile.Requirements)
-                lines.Add("WR_SkillTipTypeGated".Translate(range.SkillLabel, range.Top).ToString());
+                facts.Fact("WR_TipRequiresLabel".Translate(),
+                    "WR_TipTypeGated".Translate(range.SkillLabel, range.Top));
             if (profile.SourceLine != null)
-                lines.Add(profile.SourceLine);
-            return string.Join("\n", lines);
+                model.AddSection().Text(profile.SourceLine, dim: true);
+            return model;
         }
 
         private static string LevelRange(SkillRange range)

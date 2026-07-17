@@ -6,18 +6,31 @@
   <WR_OptionsTab>Options</WR_OptionsTab>
   <WR_CompatSection>Compatibility Settings</WR_CompatSection>
   <WR_OptNumeric>Show numeric priorities in grids</WR_OptNumeric>
-  <WR_OptNumericTip>Vanilla's "manual priorities" switch, per savegame. Off: priority grids (including mods like Numbers) draw checkmarks. On: they draw numbers. The vanilla Work tab hosted this switch; WorkRoles replaces that tab, so it lives here.</WR_OptNumericTip>
+  <!-- Structured option tips: what-it-is TextRow, Off/On facts, dim rationale -->
+  <WR_TipOff>Off</WR_TipOff>
+  <WR_TipOn>On</WR_TipOn>
+  <WR_OptNumericTipWhat>Vanilla's "manual priorities" switch, per savegame.</WR_OptNumericTipWhat>
+  <WR_OptNumericTipOff>priority grids (including mods like Numbers) draw checkmarks</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>priority grids draw numbers</WR_OptNumericTipOn>
+  <WR_OptNumericTipWhy>It lives here because WorkRoles replaces the vanilla Work tab that hosted it.</WR_OptNumericTipWhy>
   <WR_OptVanillaRange>Report vanilla 0-4 priorities to other mods</WR_OptVanillaRange>
-  <WR_OptVanillaRangeTip>WorkRoles orders work by unique priorities (sequential numbers starting with 1). Off: other mods see those priorities as-is. On: priorities are mapped onto vanilla's 0-4 range.</WR_OptVanillaRangeTip>
+  <WR_OptVanillaRangeTipWhat>WorkRoles orders work by unique priorities (sequential numbers starting with 1).</WR_OptVanillaRangeTipWhat>
+  <WR_OptVanillaRangeTipOff>other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
   <!-- Options: Recommendations Tuning (WR_OptRecOrder also labels the import preview section) -->
   <WR_TuningSection>Recommendations Tuning</WR_TuningSection>
   <WR_RecOrderHeader>Default Role Recommendation Order</WR_RecOrderHeader>
   <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
-  <WR_OptRecOrderTip>The order recommendations list roles in, derived from the vanilla priority grid — auto-assigned roles included. Drag chips to reorder (e.g. Smith before Tailor); X unpins a role so it places dynamically again. Unlisted roles slot in automatically: training roles after the role they train toward, sub-roles after the role that covers them, Hunter after the warden/childcare roles.</WR_OptRecOrderTip>
-  <WR_OptLockedTip>Pinned to this position. Hunting roles normally place dynamically (after the warden/childcare roles); remove this chip to restore that.</WR_OptLockedTip>
+  <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid — auto-assigned roles included.</WR_OptRecOrderTipWhat>
+  <WR_ActRecDrag>reorder the chips</WR_ActRecDrag>
+  <WR_ActRecX>unpin the role so it places dynamically again</WR_ActRecX>
+  <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
+  <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
   <!-- Options: Training Paths -->
   <WR_TrainingSection>Training Paths</WR_TrainingSection>
-  <WR_TrainingSectionTip>Named role progressions: each role carries a skill band where it is recommended. Overlapping bands coexist; where bands do not overlap the later role replaces the earlier. The role order in a path is also its assignment order.</WR_TrainingSectionTip>
+  <WR_TrainingTipWhat>Named role progressions: each role carries a skill band where it is recommended.</WR_TrainingTipWhat>
+  <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
+  <WR_TrainingTipOrder>The role order in a path is also its assignment order.</WR_TrainingTipOrder>
   <WR_AddNew>Add New</WR_AddNew>
   <WR_NewPathTitle>New training path</WR_NewPathTitle>
   <WR_PathsPanelCaption>Training Paths (click to edit an existing path)</WR_PathsPanelCaption>
@@ -34,7 +47,8 @@
   <WR_AnchorBefore>Before</WR_AnchorBefore>
   <WR_AnchorAfter>After</WR_AnchorAfter>
   <WR_PickRole>Pick role</WR_PickRole>
-  <WR_AnchorTip>Where unlocked roles land in a colonist's assignment list: in path order, before or after the anchor role. Unlock timing comes from the skill bands; this controls placement.</WR_AnchorTip>
+  <WR_AnchorTipWhat>Where unlocked roles land in a colonist's assignment list: in path order, before or after the anchor role.</WR_AnchorTipWhat>
+  <WR_AnchorTipWhy>Unlock timing comes from the skill bands; this controls placement.</WR_AnchorTipWhy>
   <WR_PathColorTitle>Path color</WR_PathColorTitle>
   <WR_PathColorDefault>Default (highest role)</WR_PathColorDefault>
   <WR_PathColorTip>Click to pick this path's color. By default it follows the role with the highest skill band.</WR_PathColorTip>
@@ -57,27 +71,48 @@
   <WR_OddJobsRole>Odd Jobs</WR_OddJobsRole>
   <WR_ManagedEntriesNote>This role collects jobs that mods add without a Work tab presence. WorkRoles manages its contents automatically: new hidden jobs appear here, and jobs vanish when their mod is removed. You can rename, recolor, reorder, assign and toggle it like any other role — only its job list is off-limits.</WR_ManagedEntriesNote>
   <!-- {0} = the Odd Jobs role's (possibly renamed) label -->
-  <WR_DeleteOddJobsWarning>'{0}' collects work that mods add without a Work tab presence — hidden jobs that can appear and disappear as your mod list changes. Without it, colonists will never do such work.\n\nIf you know none of your mods add hidden jobs, it is safe to delete. Restore Roles (top right) can recreate it later.\n\nDelete '{0}'? It will be removed from all colonists.</WR_DeleteOddJobsWarning>
+  <WR_DeleteOddJobsWarning>'{0}' collects work that mods add without a Work tab presence — hidden jobs that can appear and disappear as your mod list changes. Without it, colonists will never do such work.\n\nIf you know none of your mods add hidden jobs, it is safe to delete. Restore Defaults (top right) can recreate it later.\n\nDelete '{0}'? It will be removed from all colonists.</WR_DeleteOddJobsWarning>
 
   <!-- Blocker roles -->
   <WR_BlockerRole>Blocker role</WR_BlockerRole>
-  <WR_BlockerRoleTip>A blocker role's jobs are never done: they are blocked ("will not do") even when a later role includes them. Roles ABOVE the blocker still win, so you can allow exceptions by placing a role higher.</WR_BlockerRoleTip>
+  <WR_BlockerRoleTipWhat>A blocker role's jobs are never done: they are blocked ("will not do") even when a later role includes them.</WR_BlockerRoleTipWhat>
+  <WR_BlockerRoleTipWhy>Roles placed above the blocker still win, so you can allow exceptions by placing a role higher.</WR_BlockerRoleTipWhy>
   <WR_ReasonFireFear>Genetically terrified of fire: blocks firefighting.</WR_ReasonFireFear>
 
-  <!-- Palette role tooltip -->
+  <!-- Unified role tooltip (palette chips, tree rows, assignment chips) -->
   <WR_RoleTipEnabled>enabled</WR_RoleTipEnabled>
-  <WR_RoleTipDisabled>DISABLED (click to enable)</WR_RoleTipDisabled>
-  <WR_RoleTipHint>Click: toggle globally. Shift-click: assign to the selected colonist. Drag onto a colonist to assign.</WR_RoleTipHint>
-  <WR_TipJobs>Jobs: {0}</WR_TipJobs>
+  <WR_RoleTipDisabled>DISABLED</WR_RoleTipDisabled>
+  <!-- Badge-line rule markers (dim, after the enabled state) -->
+  <WR_BadgeBlocker>blocker</WR_BadgeBlocker>
+  <WR_BadgeHours>limited hours</WR_BadgeHours>
+  <WR_BadgeLocation>limited locations</WR_BadgeLocation>
+  <!-- Fact labels and section headers -->
+  <WR_TipJobsLabel>Jobs</WR_TipJobsLabel>
+  <WR_TipSkillsLabel>Skills</WR_TipSkillsLabel>
+  <WR_TipEntriesLabel>Entries</WR_TipEntriesLabel>
+  <WR_TipTrainingHeader>Training</WR_TipTrainingHeader>
+  <WR_TipBestFitsLabel>Best fits</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (all jobs)</WR_TipWholeType>
-  <WR_TipRelevantSkills>Relevant skills: {0}</WR_TipRelevantSkills>
-  <!-- {0} = skill label, {1} = level -->
-  <WR_TipRequires>Requires {0} {1}+ (or colony best).</WR_TipRequires>
-  <WR_TipBestFits>Best fits: {0}</WR_TipBestFits>
   <WR_FitExpertise>expertise</WR_FitExpertise>
   <WR_FitBurning>burning passion</WR_FitBurning>
   <WR_FitPassion>passion</WR_FitPassion>
   <WR_TipMore>+{0} more</WR_TipMore>
+  <!-- Action tokens (shared) and per-context descriptions -->
+  <WR_ActClick>Click</WR_ActClick>
+  <WR_ActShiftClick>Shift-click</WR_ActShiftClick>
+  <WR_ActDrag>Drag</WR_ActDrag>
+  <WR_ActRightClick>Right-click</WR_ActRightClick>
+  <WR_ActX>X</WR_ActX>
+  <WR_ActPaletteClick>toggle the role globally</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>assign to the selected colonist</WR_ActPaletteShiftClick>
+  <WR_ActPaletteDrag>assign to a colonist</WR_ActPaletteDrag>
+  <WR_ActTreeClick>select for editing</WR_ActTreeClick>
+  <WR_ActTreeDrag>reorder or move between groups</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>compose the role (include/exclude)</WR_ActTreeRightClick>
+  <WR_ActChipClick>toggle for this colonist</WR_ActChipClick>
+  <WR_ActChipRightClick>pin options</WR_ActChipRightClick>
+  <WR_ActChipDrag>reorder or move to another colonist</WR_ActChipDrag>
+  <WR_ActChipX>remove</WR_ActChipX>
 
   <!-- Filter row -->
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
@@ -158,6 +193,10 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
   <WR_SkillTipAptitude>Aptitude {0} (genes/traits)</WR_SkillTipAptitude>
 
+  <!-- Passion icon tooltip fact labels -->
+  <WR_TipLearnRate>Learn rate</WR_TipLearnRate>
+  <WR_TipForgetRate>Forget rate</WR_TipForgetRate>
+
   <!-- Assignment pinning (chip right-click) -->
   <WR_PinAssignment>Pin</WR_PinAssignment>
   <WR_UnpinAssignment>Unpin</WR_UnpinAssignment>
@@ -179,9 +218,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- ===== Roles tab ===== -->
 
   <!-- Restore button (top-right corner, Roles tab) -->
-  <WR_RestoreRoles>Restore Roles</WR_RestoreRoles>
-  <WR_RestoreRolesTip>Recreate missing pre-made roles. Existing roles are not modified.</WR_RestoreRolesTip>
-  <WR_RestoreRolesTitle>Restore Roles</WR_RestoreRolesTitle>
+  <WR_RestoreDefaults>Restore Defaults</WR_RestoreDefaults>
+  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, return pre-made roles to their default groups and colors, and reset the recommendation order. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTitle>Restore Defaults</WR_RestoreDefaultsTitle>
 
   <!-- Import/Export (Roles tab, top-right); {0} = file path, or count for messages -->
   <WR_Export>Export</WR_Export>
@@ -231,7 +270,29 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ExportFailed>Could not save: {0}</WR_ExportFailed>
   <!-- {0} = role label, {1} = number of jobs moved away by mods -->
   <WR_RestoreMovedJobs>{0} (recover {1} moved jobs)</WR_RestoreMovedJobs>
-  <WR_NothingToRestore>Nothing to restore: all pre-made roles are present and no jobs were moved.</WR_NothingToRestore>
+  <!-- {0} = training path name -->
+  <WR_RestorePathItem>{0} (training path)</WR_RestorePathItem>
+  <!-- {0} = role label, {1} = the role's default group name -->
+  <WR_RestoreGroupItem>{0} (move to group '{1}')</WR_RestoreGroupItem>
+  <!-- {0} = role label -->
+  <WR_RestoreColorItem>{0} (restore default color)</WR_RestoreColorItem>
+  <WR_RestoreRecOrder>Recommendation order (reset to default)</WR_RestoreRecOrder>
+  <!-- Restore preview: warning line when highlighted items would undo player changes -->
+  <WR_RestoreOverwriteWarning>⚠ Highlighted items will overwrite changes you made.</WR_RestoreOverwriteWarning>
+  <!-- Appended to a missing-role item whose label an existing role already uses -->
+  <WR_RestoreDuplicateHint>(a role with this name already exists)</WR_RestoreDuplicateHint>
+  <!-- Restore preview row tooltips: what applying the item does -->
+  <WR_RestoreExplainRole>Creates the role from the mod's template.</WR_RestoreExplainRole>
+  <WR_RestoreExplainCoverage>Generates a role covering this work type.</WR_RestoreExplainCoverage>
+  <!-- {0} = number of jobs -->
+  <WR_RestoreExplainBackfill>Re-adds {0} jobs that mods moved.</WR_RestoreExplainBackfill>
+  <WR_RestoreExplainOddJobs>Recreates Odd Jobs and assigns it to every colonist.</WR_RestoreExplainOddJobs>
+  <!-- {0} = the role's default group name -->
+  <WR_RestoreExplainGroup>Moves the role back to group '{0}'.</WR_RestoreExplainGroup>
+  <WR_RestoreExplainColor>Resets the color to the template default.</WR_RestoreExplainColor>
+  <WR_RestoreExplainRecOrder>Clears your custom order.</WR_RestoreExplainRecOrder>
+  <WR_RestoreExplainPath>Creates the training path.</WR_RestoreExplainPath>
+  <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups and colors, the recommendation order is the default, and no jobs were moved.</WR_NothingToRestore>
   <!-- {0} = comma-separated role labels -->
   <WR_RolesRestored>Restored: {0}</WR_RolesRestored>
 
@@ -287,7 +348,11 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_AllowTrainingSubs>Allow training substitutions</WR_AllowTrainingSubs>
   <WR_AllowTrainingSubsTip>When a colonist does not yet meet this role's threshold in a skill progression (Options tab), the preceding role in the progression may be recommended as a stand-in.</WR_AllowTrainingSubsTip>
   <WR_HoldersLabel>Colonists:</WR_HoldersLabel>
-  <WR_HoldersTip>Controls how many colonists the recommendation engine will assign this role to:\n    Auto: use a preconfigured default based on the jobs a role contains.\n    0: role will only be recommended to colonists with passion/aptitude for the skills used\n    1..8: role will be recommended to colonists until colony needs (1..8) are met\n    Never: this role will never be recommended.</WR_HoldersTip>
+  <WR_HoldersTipWhat>Controls how many colonists the recommendation engine will assign this role to.</WR_HoldersTipWhat>
+  <WR_HoldersTipAuto>a preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
+  <WR_HoldersTipZero>only recommended to colonists with passion or aptitude for the skills used</WR_HoldersTipZero>
+  <WR_HoldersTipCount>recommended to colonists until the colony need is met</WR_HoldersTipCount>
+  <WR_HoldersTipNever>never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
   <WR_HoldersNever>Never</WR_HoldersNever>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
@@ -296,17 +361,19 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>
 
   <!-- Editor: skill facts on work types and jobs, derived from game data -->
-  <WR_SkillTipSkills>Skills: {0}</WR_SkillTipSkills>
-  <WR_SkillTipTrains>Trains: {0}</WR_SkillTipTrains>
-  <WR_SkillTipTrainsNothing>Trains: nothing (no skill XP)</WR_SkillTipTrainsNothing>
+  <WR_TipTrainsLabel>Trains</WR_TipTrainsLabel>
+  <WR_TipTrainsNothing>nothing (no skill XP)</WR_TipTrainsNothing>
+  <WR_TipRequiresLabel>Requires</WR_TipRequiresLabel>
   <!-- {0} skill, {1} level or level range, {2} gated count, {3} total count -->
-  <WR_SkillTipRequiresBills>Requires: {0} {1} ({2} of {3} bills are skill-gated)</WR_SkillTipRequiresBills>
-  <WR_SkillTipRequiresItems>Requires: {0} {1} ({2} items are skill-gated)</WR_SkillTipRequiresItems>
-  <!-- Curve header ({0} = stat label) and milestone line (indented under it): {0} value, {1} skill, {2} level -->
-  <WR_SkillTipCurveHeader>{0}:</WR_SkillTipCurveHeader>
-  <WR_SkillTipCurveLevel>{0} at {1} {2}</WR_SkillTipCurveLevel>
-  <WR_SkillTipTypeXp>{0} of {1} jobs give XP</WR_SkillTipTypeXp>
-  <WR_SkillTipTypeGated>Skill-gated content up to {0} {1}</WR_SkillTipTypeGated>
+  <WR_TipReqBills>{0} {1} ({2} of {3} bills are skill-gated)</WR_TipReqBills>
+  <WR_TipReqItems>{0} {1} ({2} items are skill-gated)</WR_TipReqItems>
+  <!-- Curve milestone fact label; {0} = level -->
+  <WR_TipLevelN>level {0}</WR_TipLevelN>
+  <WR_TipXpLabel>Gives XP</WR_TipXpLabel>
+  <!-- {0} = XP-giving jobs, {1} = total jobs -->
+  <WR_TipXpValue>{0} of {1} jobs</WR_TipXpValue>
+  <!-- {0} = skill label, {1} = highest gated level -->
+  <WR_TipTypeGated>content up to {0} {1}</WR_TipTypeGated>
   <!-- Identity footer: {0} = defName, {1} = source mod name -->
   <WR_SkillTipGiverSource>Work giver: {0} ({1})</WR_SkillTipGiverSource>
   <WR_SkillTipTypeSource>Work type: {0} ({1})</WR_SkillTipTypeSource>

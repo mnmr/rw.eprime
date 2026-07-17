@@ -39,8 +39,8 @@ namespace WorkRoles
             Seeding.RefreshWorkTypeSnapshots();
             var generated = Seeding.EnsureWorkTypeCoverage();
             if (generated.Count > 0)
-                Messages.Message("WR_NewWorkDetected".Translate(generated.ToCommaList()),
-                    MessageTypeDefOf.NeutralEvent, historical: false);
+                UI.WrToast.Show("WR_NewWorkDetected".Translate(generated.ToCommaList()),
+                    MessageTypeDefOf.NeutralEvent);
 
             // Dead entries are visible (dimmed) while editing but scrubbed at
             // rest; older saves carry subset-marker givers that coverage-based

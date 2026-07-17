@@ -194,7 +194,7 @@ namespace WorkRoles.UI
                 if (SamePlan(entries, rebuild()))
                     onApply?.Invoke(entries.Where(e => e.included).Select(e => e.pawn).ToHashSet());
                 else
-                    Messages.Message("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput, historical: false);
+                    WrToast.Show("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput);
                 Close();
             }
         }

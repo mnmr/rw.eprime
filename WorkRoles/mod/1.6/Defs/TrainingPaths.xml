@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Default training paths, seeded once per save after the roles (Seeding.
+       SeedTrainingPaths). Roles are RoleDef defNames; entries whose role is
+       missing (DLC/mod gated) are skipped at seed time. -->
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathDrugMaker</defName>
+    <label>Drug Maker</label>
+    <order>1</order>
+    <anchorRole>WS_Basics</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Researcher</role><min>0</min><max>21</max></li>
+      <li><role>WS_Crafter</role><min>0</min><max>21</max></li>
+      <li><role>WS_DrugMaker</role><min>12</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathFabricator</defName>
+    <label>Fabricator</label>
+    <order>2</order>
+    <anchorRole>WS_Basics</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Fabricator</role><min>8</min><max>21</max></li>
+      <li><role>WS_Smith</role><min>4</min><max>21</max></li>
+      <li><role>WS_Crafter</role><min>0</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathCook</defName>
+    <label>Cook</label>
+    <order>3</order>
+    <anchorRole>WS_Basics</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Butcher</role><min>0</min><max>8</max></li>
+      <li><role>WS_Brewer</role><min>0</min><max>8</max></li>
+      <li><role>WS_Cook</role><min>8</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathFarmer</defName>
+    <label>Farmer</label>
+    <order>4</order>
+    <anchorRole>WS_Miner</anchorRole>
+    <entries>
+      <li><role>WS_PlantCutter</role><min>0</min><max>12</max></li>
+      <li><role>WS_Grower</role><min>4</min><max>21</max></li>
+      <li><role>WS_Farmer</role><min>12</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathSocialist</defName>
+    <label>Socialist</label>
+    <order>5</order>
+    <entries>
+      <li><role>WS_Jailor</role><min>0</min><max>4</max></li>
+      <li><role>WS_Warden</role><min>4</min><max>21</max></li>
+      <li><role>WS_Childminder</role><min>6</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathArtist</defName>
+    <label>Artist</label>
+    <order>6</order>
+    <entries>
+      <li><role>WS_Painter</role><min>0</min><max>8</max></li>
+      <li><role>WS_Artist</role><min>8</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathHandler</defName>
+    <label>Handler</label>
+    <order>7</order>
+    <entries>
+      <li><role>WS_Herder</role><min>0</min><max>8</max></li>
+      <li><role>WS_Handler</role><min>8</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathBuilder</defName>
+    <label>Builder</label>
+    <order>8</order>
+    <anchorRole>WS_Basics</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Repairer</role><min>0</min><max>8</max></li>
+      <li><role>WS_Builder</role><min>8</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathSmith</defName>
+    <label>Smith</label>
+    <order>9</order>
+    <anchorRole>WS_Fabricator</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Crafter</role><min>0</min><max>21</max></li>
+      <li><role>WS_Smith</role><min>4</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathTailor</defName>
+    <label>Tailor</label>
+    <order>10</order>
+    <anchorRole>WS_Smith</anchorRole>
+    <entries>
+      <li><role>WS_Crafter</role><min>0</min><max>21</max></li>
+      <li><role>WS_Tailor</role><min>2</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+  <WorkRoles.TrainingPathDef>
+    <defName>WS_PathDoctor</defName>
+    <label>Doctor</label>
+    <order>11</order>
+    <anchorRole>WS_Core</anchorRole>
+    <anchorBefore>false</anchorBefore>
+    <entries>
+      <li><role>WS_Nurse</role><min>0</min><max>5</max></li>
+      <li><role>WS_Medic</role><min>5</min><max>15</max></li>
+      <li><role>WS_Doctor</role><min>15</min><max>21</max></li>
+    </entries>
+  </WorkRoles.TrainingPathDef>
+
+</Defs>

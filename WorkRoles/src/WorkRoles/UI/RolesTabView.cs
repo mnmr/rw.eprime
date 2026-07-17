@@ -14,6 +14,10 @@ namespace WorkRoles.UI
         // colonist table owns the scope and its pawn snapshot).
         internal System.Func<List<Pawn>> listedPawns;
 
+        // Unified role tip (TreeRow context), injected by MainTabWindow: the
+        // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
+        internal System.Func<Role, string> roleTip;
+
         private Vector2 listScroll;
         private Vector2 entriesScroll;
         private Vector2 treeScroll;
@@ -97,6 +101,32 @@ namespace WorkRoles.UI
                 RoleCommands.ScrubDeadEntries(role.id);
         }
 
+        // Open-window snapshot of the editor's structured tips: static
+        // content, rebuilt (and re-registered) only when the stamp moves.
+        private int editorTipsStamp = -1;
+        private string blockerTipCache;
+        private string holdersTipCache;
+
+        private void EnsureEditorTips()
+        {
+            if (editorTipsStamp == UiVersion.Current) return;
+            editorTipsStamp = UiVersion.Current;
+
+            var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
+            blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
+            blocker.AddSection().Text("WR_BlockerRoleTipWhy".Translate(), dim: true);
+            blockerTipCache = Patches.Patch_ActiveTip_TipRect.Register(blocker);
+
+            var holders = new TipModel();
+            holders.AddSection().Text("WR_HoldersTipWhat".Translate());
+            holders.AddSection()
+                .Fact("WR_HoldersAuto".Translate(), "WR_HoldersTipAuto".Translate())
+                .Fact("0", "WR_HoldersTipZero".Translate())
+                .Fact("1..8", "WR_HoldersTipCount".Translate())
+                .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
+            holdersTipCache = Patches.Patch_ActiveTip_TipRect.Register(holders);
+        }
+
         public void Reset()
         {
             listScroll = entriesScroll = treeScroll = Vector2.zero;
@@ -111,7 +141,7 @@ namespace WorkRoles.UI
             // Opening re-snapshots everything on this tab.
             InvalidateSectionsSnapshot();
             deadEntriesStamp = holdersStamp = skillsUsedStamp = -1;
-            displayStamp = treeNodesStamp = -1;
+            displayStamp = treeNodesStamp = editorTipsStamp = -1;
         }
 
         public void Draw(Rect rect)
@@ -556,8 +586,8 @@ namespace WorkRoles.UI
                 if (role.id == selectedRoleId) Widgets.DrawHighlightSelected(row);
                 else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
 
-                if (Mouse.IsOver(row))
-                    TooltipHandler.TipRegion(row, RowTip(role));
+                if (Mouse.IsOver(row) && roleTip != null)
+                    TooltipHandler.TipRegion(row, roleTip(role));
 
                 var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
@@ -583,7 +613,7 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
                 if (invalid && Mouse.IsOver(row))
-                    TooltipHandler.TipRegion(row, "WR_InvalidRoleTip".Translate());
+                    TooltipHandler.TipRegion(row, TipText.Warning("WR_InvalidRoleTip".Translate()));
 
                 // Marker strip after the label: the same icons the chips carry
                 // (pin excluded — it marks assignments, not role definitions).
@@ -894,6 +924,7 @@ namespace WorkRoles.UI
 
         private void DrawEditor(Rect rect, RoleStore store, Role role)
         {
+            EnsureEditorTips();
             const float SwatchSize = 18f;
             const float SwatchGap = 2f;
             const int SwatchCols = 19;
@@ -1186,7 +1217,7 @@ namespace WorkRoles.UI
             if (!role.managed)
             {
                 var blockRect = new Rect(rect.x, y, rect.width, rowH);
-                TooltipHandler.TipRegion(blockRect, "WR_BlockerRoleTip".Translate());
+                TooltipHandler.TipRegion(blockRect, blockerTipCache);
                 bool blocker = role.blocker;
                 Widgets.CheckboxLabeled(blockRect, "WR_BlockerRole".Translate(), ref blocker);
                 if (blocker != role.blocker)
@@ -1231,8 +1262,8 @@ namespace WorkRoles.UI
                 RoleCommands.SetRoleAllowTrainingSubstitutions(role.id, subs);
         }
 
-        /// Colonist-count picker: Auto / 0..8 / Never (see WR_HoldersTip).
-        private static void DrawHoldersRow(Rect rect, Role role)
+        /// Colonist-count picker: Auto / 0..8 / Never (see the holders tip).
+        private void DrawHoldersRow(Rect rect, Role role)
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1244,7 +1275,7 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.UpperLeft;
 
             var btnRect = new Rect(rect.x + labelW + 8f, rect.y, 72f, rect.height);
-            TooltipHandler.TipRegion(btnRect, "WR_HoldersTip".Translate());
+            TooltipHandler.TipRegion(btnRect, holdersTipCache);
             string shown = role.minHolders == RecRole.NeverHolders
                 ? "WR_HoldersNever".Translate().ToString()
                 : role.minHolders < 0
@@ -1469,25 +1500,6 @@ namespace WorkRoles.UI
             else pendingHoursMask &= ~(1 << hour);
         }
 
-        // Only one row is hovered at a time: a single (role, stamp) slot stops
-        // the entries summary from re-joining every hover pass.
-        private static int rowTipStamp = -1;
-        private static int rowTipRoleId = -1;
-        private static string rowTipCache;
-
-        private static string RowTip(Role role)
-        {
-            if (rowTipCache == null || rowTipStamp != UiVersion.Current || rowTipRoleId != role.id)
-            {
-                rowTipStamp = UiVersion.Current;
-                rowTipRoleId = role.id;
-                rowTipCache = $"{role.entries.Count} entries: "
-                    + $"{string.Join(", ", role.entries.Take(4).Select(e => e.DefName))}"
-                    + (role.entries.Count > 4 ? ", …" : "");
-            }
-            return rowTipCache;
-        }
-
         /// A role that can never act: no jobs (managed roles legitimately sit
         /// empty), or every location it names is gone.
         internal static bool RoleInvalid(Role role) =>
@@ -1692,7 +1704,7 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 if (missing)
-                    TooltipHandler.TipRegion(row, "WR_MissingDef".Translate(entry.DefName));
+                    TooltipHandler.TipRegion(row, TipText.Warning("WR_MissingDef".Translate(entry.DefName)));
                 else if (dead)
                     TooltipHandler.TipRegion(row, "WR_DeadEntryTip".Translate());
                 if (!missing && Mouse.IsOver(row))

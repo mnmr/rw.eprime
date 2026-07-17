@@ -47,7 +47,9 @@ namespace WorkRoles.UI
                 for (int c = 0; c < workTypes.Count; c++)
                 {
                     columnLabels[c] = workTypes[c].labelShort.CapitalizeFirst();
-                    columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst();
+                    // Vanilla's Work tab shows the type description; match it.
+                    columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst()
+                        + (workTypes[c].description.NullOrEmpty() ? "" : "\n" + workTypes[c].description);
                     var size = Text.CalcSize(columnLabels[c]);
                     maxLabel = Mathf.Max(maxLabel,
                         size.x * Mathf.Sin(Mathf.Deg2Rad * LabelAngle)

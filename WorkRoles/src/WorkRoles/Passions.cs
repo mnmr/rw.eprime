@@ -31,6 +31,9 @@ namespace WorkRoles
         private static Texture2D[] icons;  // lazy: first request loads the texture
         private static bool[] iconTried;
         private static System.Reflection.PropertyInfo iconProp;
+        // Rate fields are defensive reflection: absent on older VSE versions.
+        private static System.Reflection.FieldInfo learnRateField;
+        private static System.Reflection.FieldInfo forgetRateField;
 
         /// 2 = major-tier passion, 1 = minor-tier, 0 = passionless or
         /// counter-productive (e.g. VSE's Apathy).
@@ -73,6 +76,48 @@ namespace WorkRoles
             return labels != null && i < labels.Length ? labels[i] : null;
         }
 
+        /// Description of a custom passion (the Def base field); null for
+        /// vanilla values and unknown bytes.
+        public static string CustomDescription(Passion passion)
+        {
+            var def = CustomDef(passion);
+            return (def as Def)?.description;
+        }
+
+        /// Learn-rate multiplier: vanilla's hardcoded LearnRateFactor values,
+        /// or the VSE def's learnRateFactor; null when unknown.
+        public static float? LearnRateFactor(Passion passion)
+        {
+            if (passion == Passion.None) return 0.35f;
+            if (passion == Passion.Minor) return 1f;
+            if (passion == Passion.Major) return 1.5f;
+            return ReadRate(learnRateField, CustomDef(passion));
+        }
+
+        /// Forget-rate multiplier of a custom passion; null when unknown
+        /// (vanilla passions carry none of their own).
+        public static float? ForgetRateFactor(Passion passion)
+        {
+            int i = (int)passion;
+            if (i <= 2) return null;
+            return ReadRate(forgetRateField, CustomDef(passion));
+        }
+
+        private static object CustomDef(Passion passion)
+        {
+            int i = (int)passion;
+            if (i <= 2) return null;
+            EnsureInit();
+            return defs != null && i < defs.Length ? defs[i] : null;
+        }
+
+        private static float? ReadRate(System.Reflection.FieldInfo field, object def)
+        {
+            if (field == null || def == null) return null;
+            try { return Convert.ToSingle(field.GetValue(def)); }
+            catch { return null; }
+        }
+
         private static void EnsureInit()
         {
             if (initialized) return;
@@ -88,6 +133,8 @@ namespace WorkRoles
                 var colorField = AccessTools.Field(defType, "color");
                 var isBadField = AccessTools.Field(defType, "isBad");
                 iconProp = AccessTools.Property(defType, "Icon");
+                learnRateField = AccessTools.Field(defType, "learnRateFactor");
+                forgetRateField = AccessTools.Field(defType, "forgetRateFactor");
 
                 defs = new object[arr.Length];
                 arr.CopyTo(defs, 0);
@@ -114,6 +161,8 @@ namespace WorkRoles
                 defs = null;
                 scores = null;
                 labels = null;
+                learnRateField = null;
+                forgetRateField = null;
             }
         }
     }

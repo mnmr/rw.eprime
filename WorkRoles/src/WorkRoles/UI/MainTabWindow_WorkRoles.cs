@@ -22,6 +22,7 @@ namespace WorkRoles.UI
             draggable = false;   // main tab windows are not draggable
             // The Roles tab's holder list mirrors whatever the colonist table lists.
             rolesTab.listedPawns = () => colonistsTab.ListedPawns();
+            rolesTab.roleTip = role => colonistsTab.RoleTipText(role, RoleTipContext.TreeRow);
         }
 
         public override Vector2 RequestedTabSize => TargetSize();
@@ -253,7 +254,7 @@ namespace WorkRoles.UI
             TabDrawer.DrawTabs(content, tabs);
 
             // Per-tab action button in the window's top-right corner, beside the tab
-            // strip: Fix My Colony on Colonists, Restore Roles on Roles.
+            // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
             const float ActionBtnW = 130f;
             const float ActionBtnH = 28f;
             float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
@@ -273,13 +274,12 @@ namespace WorkRoles.UI
             }
             else if (curTab == Tab.Roles)
             {
-                TooltipHandler.TipRegion(actionRect, "WR_RestoreRolesTip".Translate());
-                if (Widgets.ButtonText(actionRect, "WR_RestoreRoles".Translate()))
+                TooltipHandler.TipRegion(actionRect, "WR_RestoreDefaultsTip".Translate());
+                if (Widgets.ButtonText(actionRect, "WR_RestoreDefaults".Translate()))
                 {
                     var items = Seeding.ComputeRestoreItems();
                     if (items.Count == 0)
-                        Messages.Message("WR_NothingToRestore".Translate(),
-                            MessageTypeDefOf.RejectInput, historical: false);
+                        WrToast.Show("WR_NothingToRestore".Translate(), MessageTypeDefOf.RejectInput);
                     else
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
@@ -309,6 +309,9 @@ namespace WorkRoles.UI
                 colonistsTab.ScrollTable(Event.current.delta.y);
                 Event.current.Use();
             }
+
+            // Last on purpose: toasts paint over everything the window drew.
+            WrToast.Draw(inRect);
         }
     }
 

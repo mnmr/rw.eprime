@@ -129,6 +129,23 @@ public class RoleFileTests
     }
 
     [Test]
+    public async Task ResolvePathEntriesDropsUnknownAndDuplicateRolesKeepingBandsAligned()
+    {
+        var path = new FileTrainingPath
+        {
+            name = "Frontline",
+            entries = { ("Shooter", 0, 8), ("Deleted", 5, 10), ("Sniper", 6, 21), ("Shooter", 2, 4) },
+        };
+        // "Deleted" resolves nowhere (import after the role was removed); the
+        // second "Shooter" is a duplicate — both drop WITH their bands.
+        var resolved = RoleFile.ResolvePathEntries(path,
+            name => name == "Shooter" ? 1 : name == "Sniper" ? 2 : (int?)null);
+        await Assert.That(resolved.ids).IsEquivalentTo(new[] { 1, 2 });
+        await Assert.That(resolved.mins).IsEquivalentTo(new[] { 0, 6 });
+        await Assert.That(resolved.maxes).IsEquivalentTo(new[] { 8, 21 });
+    }
+
+    [Test]
     public async Task TrainingPathsAndRecommendationOrderRoundTrip()
     {
         var doc = new RoleFileDocument

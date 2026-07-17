@@ -136,17 +136,20 @@ namespace WorkRoles.UI
                 || (orderInclude && doc.recommendationOrder.Count > 0);
             if (Widgets.ButtonText(applyRect, "WR_Apply".Translate(), active: canApply) && canApply)
             {
-                int flags = (paletteInclude ? (int)RoleCommands.ImportFlags.Palette : 0)
-                    | (paletteOverwrite ? (int)RoleCommands.ImportFlags.PaletteOverwrite : 0)
-                    | (rolesInclude ? (int)RoleCommands.ImportFlags.Roles : 0)
-                    | (rolesOverwrite ? (int)RoleCommands.ImportFlags.RolesOverwrite : 0)
-                    | (pathsInclude ? (int)RoleCommands.ImportFlags.Paths : 0)
-                    | (pathsOverwrite ? (int)RoleCommands.ImportFlags.PathsOverwrite : 0)
-                    | (orderInclude ? (int)RoleCommands.ImportFlags.Order : 0);
-                RoleCommands.ApplyImport(xml, flags,
-                    SelectedIndices(paletteMergeUi),
-                    SelectedIndices(roleMergeUi),
-                    SelectedIndices(pathMergeUi));
+                RoleCommands.ApplyImport(new ImportSelection
+                {
+                    xml = xml,
+                    palette = paletteInclude,
+                    paletteOverwrite = paletteOverwrite,
+                    roles = rolesInclude,
+                    rolesOverwrite = rolesOverwrite,
+                    paths = pathsInclude,
+                    pathsOverwrite = pathsOverwrite,
+                    order = orderInclude,
+                    paletteRows = SelectedIndices(paletteMergeUi),
+                    roleRows = SelectedIndices(roleMergeUi),
+                    pathRows = SelectedIndices(pathMergeUi),
+                });
                 Close();
             }
         }
@@ -237,8 +240,30 @@ namespace WorkRoles.UI
         private static float InfoHeight(float width, string text)
             => Mathf.Max(RowH - 2f, Text.CalcHeight(text, width - 16f));
 
+        // Cached: InfoHeight runs Text.CalcHeight, per pass while the dialog
+        // idles open otherwise. Keys are every input the math reads.
+        private float measuredWidth = -1f;
+        private float measuredHeight;
+        private bool measuredPaletteInc, measuredPaletteOver;
+        private bool measuredRolesInc, measuredRolesOver;
+        private bool measuredPathsInc, measuredPathsOver, measuredOrderInc;
+
         private float MeasureContent(float width)
         {
+            if (measuredWidth == width
+                && measuredPaletteInc == paletteInclude && measuredPaletteOver == paletteOverwrite
+                && measuredRolesInc == rolesInclude && measuredRolesOver == rolesOverwrite
+                && measuredPathsInc == pathsInclude && measuredPathsOver == pathsOverwrite
+                && measuredOrderInc == orderInclude)
+                return measuredHeight;
+            measuredWidth = width;
+            measuredPaletteInc = paletteInclude;
+            measuredPaletteOver = paletteOverwrite;
+            measuredRolesInc = rolesInclude;
+            measuredRolesOver = rolesOverwrite;
+            measuredPathsInc = pathsInclude;
+            measuredPathsOver = pathsOverwrite;
+            measuredOrderInc = orderInclude;
             float y = 0f;
             y += RowH; // palette header
             if (paletteInclude)
@@ -268,7 +293,7 @@ namespace WorkRoles.UI
                 if (orderInclude)
                     y += InfoHeight(width, "WR_RecOrderReplaceInfo".Translate(doc.recommendationOrder.Count)) + 2f;
             }
-            return y + RowH;
+            return measuredHeight = y + RowH;
         }
     }
 }

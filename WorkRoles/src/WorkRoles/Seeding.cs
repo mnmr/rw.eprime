@@ -32,6 +32,7 @@ namespace WorkRoles
             foreach (var role in store.roles)
                 RoleCommands.ResolveTemplateTrainTargets(role);
             store.seeded = true;
+            SeedTrainingPaths(store);
 
             // Role ranks read as numbers; default vanilla's per-save "manual
             // priorities" switch on at adoption. Applied once — turning it off
@@ -88,6 +89,91 @@ namespace WorkRoles
 
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
             ShowSeedReport(store.roles.Count, assigned, generated, failures);
+        }
+
+        /// Runs only alongside role seeding (members resolve by RoleDef template):
+        /// older saves adopt the paths via Restore Defaults — auto-seeding there
+        /// could duplicate player-made paths.
+        private static void SeedTrainingPaths(RoleStore store)
+        {
+            if (store.pathsSeeded) return;
+            foreach (var def in DefDatabase<TrainingPathDef>.AllDefsListForReading
+                         .OrderBy(d => d.order))
+                CreatePathFromDef(store, def);
+            store.pathsSeeded = true;
+        }
+
+        /// RoleDef reference -> live role: template link first, then a unique
+        /// case-insensitive match on the def's label (survives player renames).
+        private static Role ResolvePathRole(RoleStore store, string roleDefName)
+        {
+            if (roleDefName.NullOrEmpty()) return null;
+            var role = store.RoleByTemplate(roleDefName);
+            if (role != null) return role;
+            string label = DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName)?.label;
+            if (label.NullOrEmpty()) return null;
+            Role match = null;
+            foreach (var candidate in store.roles)
+                if (string.Equals(candidate.label, label, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match != null) return null; // ambiguous: no match
+                    match = candidate;
+                }
+            return match;
+        }
+
+        /// Builds one path from its def, skipping entries whose role is missing
+        /// (DLC/mod gated); null when fewer than 2 entries resolve (a 0-1 role
+        /// path is a no-op) or bands are invalid.
+        internal static TrainingPath CreatePathFromDef(RoleStore store, TrainingPathDef def)
+        {
+            var roleIds = new List<int>();
+            var mins = new List<int>();
+            var maxes = new List<int>();
+            var unresolved = new List<string>();
+            foreach (var entry in def.entries)
+            {
+                if (entry.role.NullOrEmpty()) continue;
+                var role = ResolvePathRole(store, entry.role);
+                if (role == null) { unresolved.Add(entry.role); continue; }
+                if (roleIds.Contains(role.id)) continue;
+                roleIds.Add(role.id);
+                mins.Add(entry.min);
+                maxes.Add(entry.max);
+            }
+            if (roleIds.Count < 2)
+            {
+                Log.Message($"[WorkRoles] training path '{def.label}' not created: "
+                    + $"only {roleIds.Count} role(s) resolved (unresolved: {unresolved.ToCommaList()})");
+                return null;
+            }
+            if (!SkillProgressionMath.Validate(roleIds.Count, mins, maxes))
+            {
+                // Load sanitize would silently drop it next session — refuse loudly.
+                Log.Warning($"[WorkRoles] TrainingPathDef {def.defName}: invalid bands; skipped");
+                return null;
+            }
+            var path = new TrainingPath
+            {
+                id = store.NextPathId(),
+                name = def.label,
+                roleIds = roleIds,
+                bandMins = mins,
+                bandMaxes = maxes,
+                anchorRoleId = ResolvePathRole(store, def.anchorRole)?.id ?? -1,
+                anchorBefore = def.anchorBefore,
+            };
+            if (!def.colorRef.NullOrEmpty())
+            {
+                var palette = DefDatabase<PaletteDef>.GetNamedSilentFail(def.colorRef);
+                if (palette != null)
+                {
+                    path.hasCustomColor = true;
+                    path.color = palette.color;
+                }
+            }
+            store.trainingPaths.Add(path);
+            return path;
         }
 
         /// Once-per-save seeding summary. Adding the mod to an existing save
@@ -313,7 +399,7 @@ namespace WorkRoles
             // Odd Jobs exists from seeding on — a stable anchor for the Locked
             // group and for mods that add/remove hidden jobs mid-game, even with
             // 0 jobs — unless the player deleted it (null then; an opt-out that
-            // holds until Restore Roles brings it back).
+            // holds until Restore Defaults brings it back).
             var oddJobs = EnsureOddJobsRole(store);
 
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
@@ -439,22 +525,58 @@ namespace WorkRoles
                 store.roles.Select(r => ((IReadOnlyList<JobEntry>)r.entries, r.blocker)),
                 GameJobCatalog.Instance);
 
-        /// One selectable line in the Restore Roles preview. Exactly one of the
+        /// One selectable line in the Restore Defaults preview. Exactly one of the
         /// payload fields is set: a missing template to recreate, an uncovered work
-        /// type to regenerate, a role whose snapshots gain moved vanilla givers, or
-        /// the deleted Odd Jobs role to bring back.
+        /// type to regenerate, a role whose snapshots gain moved vanilla givers,
+        /// a role whose group or color drifted from its def, the deleted Odd Jobs
+        /// role, a missing default training path, or the recommendation-order reset.
         public class RestoreItem
         {
             public string label;
+            /// What applying this item does (preview row tooltip).
+            public string explanation;
             public string templateDef;
             public string workType;
             public int backfillRoleId = -1;
+            public int groupRoleId = -1;
+            public int colorRoleId = -1;
             public bool oddJobs;
+            public string pathDef;
+            public bool recommendationOrder;
+
+            /// Applying would undo a deliberate player change (drift/opt-out
+            /// types): the preview highlights these with a warning tint.
+            public bool UndoesUserChange =>
+                groupRoleId != -1 || colorRoleId != -1 || oddJobs || recommendationOrder;
         }
 
-        /// Everything Restore Roles could do right now: recreate missing template
-        /// roles, regenerate coverage for work types nothing covers, and recover
-        /// vanilla jobs that mods moved out of roles' work types.
+        /// The role's def-declared group differs from where it sits now, by
+        /// label (empty def group = Default).
+        private static bool GroupDrifted(RoleStore store, Role role, RoleDef def)
+        {
+            if (def.group.NullOrEmpty())
+                return role.groupId != RoleGroup.DefaultId;
+            var current = store.GroupById(role.groupId);
+            return current == null || !string.Equals(current.label, def.group.Trim(),
+                System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string DefGroupLabel(RoleDef def) => def.group.NullOrEmpty()
+            ? "WR_GroupDefault".Translate().ToString() : def.group.Trim();
+
+        /// The role's color differs from what its def resolves today.
+        private static bool ColorDrifted(Role role, RoleDef def)
+        {
+            var (has, color) = def.ResolvedColor();
+            if (has != role.hasCustomColor) return true;
+            return has && !role.color.IndistinguishableFrom(color);
+        }
+
+        /// Everything Restore Defaults could do right now: recreate missing
+        /// template roles and default training paths, regenerate coverage for work
+        /// types nothing covers, recover vanilla jobs that mods moved out of roles'
+        /// work types, return drifted roles to their def's group and color, and
+        /// reset the recommendation order.
         public static List<RestoreItem> ComputeRestoreItems()
         {
             var store = RoleStore.Current;
@@ -462,21 +584,38 @@ namespace WorkRoles
             if (store == null) return result;
 
             if (store.oddJobsDeleted && store.ManagedRole == null)
-                result.Add(new RestoreItem { label = "WR_OddJobsRole".Translate(), oddJobs = true });
+                result.Add(new RestoreItem
+                {
+                    label = "WR_OddJobsRole".Translate(),
+                    explanation = "WR_RestoreExplainOddJobs".Translate(),
+                    oddJobs = true,
+                });
 
+            // Coverage items come from LIVE roles only: a missing seeded def's
+            // work types stay listed, so declining its role item still offers a
+            // generated role. Applying both is safe — RestoreSelected creates
+            // roles first, then coverage skips types they cover.
             var covered = CoveredWorkTypes(store);
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
             {
                 if (store.RoleByTemplate(def.defName) != null) continue;
-                result.Add(new RestoreItem { label = def.label, templateDef = def.defName });
-                if (!def.blocker) // a blocker's entries are vetoes, not coverage
-                    WorkTypeCoverage.AddCoveredEntries(covered, def.ParsedEntries(), GameJobCatalog.Instance);
+                bool labelTaken = store.roles.Any(r => string.Equals(r.label, def.label,
+                    System.StringComparison.OrdinalIgnoreCase));
+                result.Add(new RestoreItem
+                {
+                    label = labelTaken
+                        ? def.label + " " + "WR_RestoreDuplicateHint".Translate()
+                        : def.label,
+                    explanation = "WR_RestoreExplainRole".Translate(),
+                    templateDef = def.defName,
+                });
             }
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (workType.visible && !covered.Contains(workType.defName))
                     result.Add(new RestoreItem
                     {
                         label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst(),
+                        explanation = "WR_RestoreExplainCoverage".Translate(),
                         workType = workType.defName,
                     });
             foreach (var role in store.roles)
@@ -487,10 +626,79 @@ namespace WorkRoles
                 result.Add(new RestoreItem
                 {
                     label = "WR_RestoreMovedJobs".Translate(role.label, count),
+                    explanation = "WR_RestoreExplainBackfill".Translate(count),
                     backfillRoleId = role.id,
                 });
             }
+            // Seeded roles whose group drifted from their def; restoring moves
+            // them back (recreating the group if the player deleted it).
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !GroupDrifted(store, role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)),
+                    explanation = "WR_RestoreExplainGroup".Translate(DefGroupLabel(def)),
+                    groupRoleId = role.id,
+                });
+            }
+            // Seeded roles whose color drifted from their def; restoring recolors
+            // them back to the def's resolved color.
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !ColorDrifted(role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreColorItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainColor".Translate(),
+                    colorRoleId = role.id,
+                });
+            }
+            // Default paths missing by NAME (deleted or pre-paths save); existing
+            // same-name paths are the player's and stay untouched. Paths that
+            // would resolve < 2 entries even after the missing-role items apply
+            // are suppressed — they could never be created (perpetual no-ops).
+            foreach (var def in DefDatabase<TrainingPathDef>.AllDefsListForReading
+                         .OrderBy(d => d.order))
+                if (!store.trainingPaths.Any(p => string.Equals(p.name, def.label,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    && RestorablePathEntryCount(store, def) >= 2)
+                    result.Add(new RestoreItem
+                    {
+                        label = "WR_RestorePathItem".Translate(def.label),
+                        explanation = "WR_RestoreExplainPath".Translate(),
+                        pathDef = def.defName,
+                    });
+            if (store.recommendationOrder.Count > 0)
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreRecOrder".Translate(),
+                    explanation = "WR_RestoreExplainRecOrder".Translate(),
+                    recommendationOrder = true,
+                });
             return result;
+        }
+
+        /// Entries a Restore Defaults pass could resolve for this path def:
+        /// live-resolvable roles plus missing seeded defs (offered as their own
+        /// restore items, which apply before paths).
+        private static int RestorablePathEntryCount(RoleStore store, TrainingPathDef def)
+        {
+            var counted = new HashSet<string>();
+            int count = 0;
+            foreach (var entry in def.entries)
+            {
+                if (entry.role.NullOrEmpty() || !counted.Add(entry.role)) continue;
+                if (ResolvePathRole(store, entry.role) != null
+                    || (DefDatabase<RoleDef>.GetNamedSilentFail(entry.role) != null
+                        && store.RoleByTemplate(entry.role) == null))
+                    count++;
+            }
+            return count;
         }
 
         /// Moved-giver detection lives in Core (WorkTypeCoverage) with tests.
@@ -499,17 +707,21 @@ namespace WorkRoles
                 VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
 
         /// Applies the selected restore items. Each application self-guards against
-        /// staleness (an already-present template or covered work type no-ops).
-        /// Returns labels of what was actually restored.
-        public static List<string> RestoreSelected(
-            List<string> templateDefs, List<string> workTypes, List<int> backfillRoleIds,
-            bool oddJobs = false)
+        /// staleness (an already-present template, path name or covered work type
+        /// no-ops). Returns labels of what was actually restored.
+        public static List<string> RestoreSelected(RestoreSelection selection)
         {
             var store = RoleStore.Current;
             var result = new List<string>();
-            if (store == null) return result;
+            if (store == null || selection == null) return result;
+            var templateDefs = selection.templateDefs;
+            var workTypes = selection.workTypes;
+            var backfillRoleIds = selection.backfillRoleIds;
+            var pathDefs = selection.pathDefs;
+            var groupRoleIds = selection.groupRoleIds;
+            var colorRoleIds = selection.colorRoleIds;
 
-            if (oddJobs && store.oddJobsDeleted)
+            if (selection.oddJobs && store.oddJobsDeleted)
             {
                 store.oddJobsDeleted = false;
                 // Re-open the invisible work types skipped while deleted, then let
@@ -565,6 +777,54 @@ namespace WorkRoles
                     result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
                     CompiledJobOrders.InvalidateRole(roleId);
                 }
+
+            if (groupRoleIds != null)
+            {
+                bool anyMoved = false;
+                foreach (var roleId in groupRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (def == null || !GroupDrifted(store, role, def)) continue;
+                    role.groupId = RoleCommands.EnsureGroup(def.group).id;
+                    result.Add("WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)));
+                    anyMoved = true;
+                }
+                if (anyMoved) RoleCommands.SweepEmptyGroups();
+            }
+
+            if (colorRoleIds != null)
+                foreach (var roleId in colorRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (def == null || !ColorDrifted(role, def)) continue;
+                    var (has, color) = def.ResolvedColor();
+                    role.hasCustomColor = has;
+                    role.color = color;
+                    result.Add("WR_RestoreColorItem".Translate(role.label));
+                }
+
+            // After the roles: a path's members may have been restored just above.
+            if (pathDefs != null)
+                foreach (var defName in pathDefs)
+                {
+                    var def = DefDatabase<TrainingPathDef>.GetNamedSilentFail(defName);
+                    if (def == null) continue;
+                    if (store.trainingPaths.Any(p => string.Equals(p.name, def.label,
+                            System.StringComparison.OrdinalIgnoreCase))) continue;
+                    var path = CreatePathFromDef(store, def);
+                    if (path != null) result.Add(path.name);
+                }
+
+            if (selection.recommendationOrder && store.recommendationOrder.Count > 0)
+            {
+                // Empty = the derived default order.
+                store.recommendationOrder = new List<int>();
+                result.Add("WR_RestoreRecOrder".Translate());
+            }
             return result;
         }
     }

@@ -7,6 +7,10 @@ using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
+    /// Which surface a role tooltip serves; content is shared, only the
+    /// actions section and pawn facts differ.
+    public enum RoleTipContext { Palette, TreeRow, AssignmentChip }
+
     public class ColonistsTabView
     {
         // What varies between table instances (pawn source, settings storage,
@@ -67,6 +71,7 @@ namespace WorkRoles.UI
         private static readonly Color ColorLow        = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color ColorPassMajor  = new Color(1f, 0.65f, 0.2f);
         private static readonly Color ColorPassMinor  = new Color(0.95f, 0.9f, 0.55f);
+        private static readonly Color ColorExpertise  = new Color(1f, 0.85f, 0.3f); // grid marker gold
 
         // Colony suggestion plan: the Recommended Roles panel, Make It So and Fix My
         // Colony all read this one plan, so they always agree. Computed lazily,
@@ -87,7 +92,7 @@ namespace WorkRoles.UI
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
             pawnsStamp = sizeStamp = paletteStamp = rulesPassStamp = statsStamp
-                = chipLayoutStamp = sectionsStamp = -1;
+                = chipLayoutStamp = sectionsStamp = roleTipStamp = passionTipStamp = -1;
             Expertise.InvalidateSnapshot();
         }
 
@@ -149,12 +154,20 @@ namespace WorkRoles.UI
         private List<Expertise.Entry> statsExpertise;
         private Dictionary<SkillDef, List<string>> statsTraitGains;
 
+        private float[] statsLabelWidths;
+
         private void EnsureStats(Pawn pawn)
         {
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return;
             statsStamp = UiVersion.Current;
             statsPawn = pawn;
             statsLines = SkillsTip.Lines(pawn);
+            // Label widths measured with the snapshot: the draw loop places the
+            // passion icon after the (possibly clipped) label text.
+            statsLabelWidths = new float[statsLines.Count];
+            using (new TextBlock(GameFont.Small))
+                for (int i = 0; i < statsLines.Count; i++)
+                    statsLabelWidths[i] = Text.CalcSize(statsLines[i].Label).x;
             statsExpertise = Expertise.For(pawn);
             // Trait skill bonuses per skill (baked into levels at creation), for
             // the per-cell breakdown tooltip.
@@ -578,7 +591,7 @@ namespace WorkRoles.UI
                 var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
                     showRemove: false, dragSource: null, onClick: onClick);
                 if (Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, RoleTip(role));
+                    TooltipHandler.TipRegion(chipRect, RoleTipText(role, RoleTipContext.Palette));
             }
             Widgets.EndScrollView();
         }
@@ -929,44 +942,119 @@ namespace WorkRoles.UI
             return result;
         }
 
-        /// Palette chip tooltip: name + state, the template's description, a
-        /// readable job summary, relevant skills, skill gates, and the colonists
-        /// best suited (expertise > burning passion > passion) — everything the
-        /// vanilla work-column blurb offers and the fit list on top.
-        private string RoleTip(Role role)
+        // Open-window snapshot of the unified role tips: models are built and
+        // registered once per (role, context[, pawn]) per stamp, never per pass.
+        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn), string> roleTipCache
+            = new Dictionary<(int, RoleTipContext, Pawn), string>();
+        private int roleTipStamp = -1;
+
+        /// The one role tooltip: palette chips, tree rows and assignment chips
+        /// share the content; context varies the actions and pawn facts.
+        internal string RoleTipText(Role role, RoleTipContext context, Pawn pawn = null)
         {
-            var sb = new System.Text.StringBuilder();
-            string state = role.enabled ? "WR_RoleTipEnabled".Translate() : "WR_RoleTipDisabled".Translate();
-            sb.Append(role.label).Append(" — ").Append(state);
+            var store = RoleStore.Current;
+            if (store == null) return role.label;
+            if (roleTipStamp != UiVersion.Current)
+            {
+                roleTipCache.Clear();
+                roleTipStamp = UiVersion.Current;
+            }
+            var key = (role.id, context, pawn);
+            if (!roleTipCache.TryGetValue(key, out var text))
+                roleTipCache[key] = text =
+                    Patches.Patch_ActiveTip_TipRect.Register(BuildRoleTip(store, role, context, pawn));
+            return text;
+        }
+
+        private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn pawn)
+        {
+            var model = new TipModel { Title = role.label };
+
+            string badge = (role.enabled ? "WR_RoleTipEnabled" : "WR_RoleTipDisabled").Translate();
+            var markers = new List<string>();
+            if (role.blocker) markers.Add("WR_BadgeBlocker".Translate());
+            if (role.activeHours != Role.AllHours) markers.Add("WR_BadgeHours".Translate());
+            if (role.locationTokens.Count > 0) markers.Add("WR_BadgeLocation".Translate());
+            if (markers.Count > 0)
+                badge += TipText.Dim(" · " + string.Join(" · ", markers));
+            model.Badge = badge;
+            model.BadgeColor = role.enabled ? TipText.DimColor : TipText.WarningColor;
 
             var def = role.templateDefName == null ? null
                 : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
             if (!def?.description.NullOrEmpty() ?? false)
-                sb.Append("\n\n").Append(def.description);
+                model.AddSection().Text(def.description);
 
-            sb.Append("\n\n").Append("WR_TipJobs".Translate(JobSummary(role)));
-
+            var facts = model.AddSection();
+            facts.Fact("WR_TipJobsLabel".Translate(), JobSummary(role));
             var skills = RelevantSkillsOf(role);
             if (skills.Count > 0)
-                sb.Append('\n').Append("WR_TipRelevantSkills".Translate(
-                    skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList()));
+                facts.Fact("WR_TipSkillsLabel".Translate(),
+                    skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList());
+            if (context == RoleTipContext.TreeRow && role.entries.Count > 0)
+                facts.Fact("WR_TipEntriesLabel".Translate(), EntriesSummary(role));
 
-            if (role.trainSkill != null
-                && DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill) is SkillDef trainSkill)
+            TipSection training = null;
+            foreach (var path in store.trainingPaths)
             {
-                if (role.trainMin > 0)
-                    sb.Append('\n').Append("WR_TipRequires".Translate(
-                        trainSkill.skillLabel.CapitalizeFirst(), role.trainMin));
-                if (role.trainMax > 0)
-                    sb.Append('\n').Append(TrainingSuffix(role).TrimStart('\n'));
+                int idx = path.roleIds.IndexOf(role.id);
+                if (idx < 0) continue;
+                training ??= model.AddSection("WR_TipTrainingHeader".Translate());
+                int lo = path.bandMins[idx], hi = path.bandMaxes[idx];
+                string band = hi >= SkillProgressionMath.MaxLevel ? lo + "+" : lo + "–" + hi;
+                training.Fact(path.name, band, path.hasCustomColor ? path.color : (Color?)null);
             }
 
             string fits = BestFits(role, skills);
             if (!fits.NullOrEmpty())
-                sb.Append("\n\n").Append("WR_TipBestFits".Translate(fits));
+                model.AddSection("WR_TipBestFitsLabel".Translate()).Text(fits);
 
-            sb.Append("\n\n").Append("WR_RoleTipHint".Translate());
-            return sb.ToString();
+            if (context == RoleTipContext.AssignmentChip && pawn != null)
+            {
+                store.pawnSets.TryGetValue(pawn, out var set);
+                var assignment = set?.assignments.FirstOrDefault(a => a.roleId == role.id);
+                TipSection state = null;
+                if (role.enabled && assignment?.enabled == true && !RulesPass(role, pawn))
+                {
+                    string reason = SuppressionReason(role, pawn);
+                    if (!reason.NullOrEmpty())
+                        (state = model.AddSection()).Text(TipText.Warning(reason));
+                }
+                if (assignment?.pinned == true)
+                    (state ?? model.AddSection()).Text("WR_PinnedTip".Translate(), dim: true);
+            }
+
+            var actions = model.AddSection();
+            switch (context)
+            {
+                case RoleTipContext.Palette:
+                    actions.Action("WR_ActClick".Translate(), "WR_ActPaletteClick".Translate())
+                        .Action("WR_ActShiftClick".Translate(), "WR_ActPaletteShiftClick".Translate())
+                        .Action("WR_ActDrag".Translate(), "WR_ActPaletteDrag".Translate());
+                    break;
+                case RoleTipContext.TreeRow:
+                    actions.Action("WR_ActClick".Translate(), "WR_ActTreeClick".Translate())
+                        .Action("WR_ActDrag".Translate(), "WR_ActTreeDrag".Translate())
+                        .Action("WR_ActRightClick".Translate(), "WR_ActTreeRightClick".Translate());
+                    break;
+                case RoleTipContext.AssignmentChip:
+                    actions.Action("WR_ActClick".Translate(), "WR_ActChipClick".Translate())
+                        .Action("WR_ActRightClick".Translate(), "WR_ActChipRightClick".Translate())
+                        .Action("WR_ActDrag".Translate(), "WR_ActChipDrag".Translate())
+                        .Action("WR_ActX".Translate(), "WR_ActChipX".Translate());
+                    break;
+            }
+            return model;
+        }
+
+        /// First few entry defNames, WR_TipMore overflow (tree rows only).
+        private static string EntriesSummary(Role role)
+        {
+            const int Cap = 4;
+            var parts = role.entries.Take(Cap).Select(e => e.DefName).ToList();
+            if (role.entries.Count > Cap)
+                parts.Add("WR_TipMore".Translate(role.entries.Count - Cap).ToString());
+            return parts.ToCommaList();
         }
 
         /// Whole work types as "X (all jobs)", single jobs by display name;
@@ -1024,7 +1112,11 @@ namespace WorkRoles.UI
                 string tag = score == 3 ? "WR_FitExpertise".Translate()
                     : score == 2 ? "WR_FitBurning".Translate()
                     : "WR_FitPassion".Translate();
-                ranked.Add(($"{pawn.LabelShortCap} ({tag})", score, bestLevel));
+                // Tier colors mirror the grid markers: expertise gold, passions
+                // orange/yellow — the tip teaches the same palette as the table.
+                var tierColor = score == 3 ? ColorExpertise
+                    : score == 2 ? ColorPassMajor : ColorPassMinor;
+                ranked.Add(($"{pawn.LabelShortCap} ({tag})".Colorize(tierColor), score, bestLevel));
             }
             if (ranked.Count == 0) return null;
             var top = ranked
@@ -1321,8 +1413,8 @@ namespace WorkRoles.UI
             {
                 store.pawnSets.TryGetValue(selectedPawn, out var toCopy);
                 RoleClipboard.CopyFrom(toCopy);
-                Messages.Message("WR_CopiedRoles".Translate(selectedPawn.LabelShortCap),
-                    MessageTypeDefOf.NeutralEvent, historical: false);
+                WrToast.Show("WR_CopiedRoles".Translate(selectedPawn.LabelShortCap),
+                    MessageTypeDefOf.NeutralEvent);
                 return true;
             }
             if (ev.control && ev.keyCode == KeyCode.V && selectedPawn != null && RoleClipboard.HasContent)
@@ -1536,7 +1628,7 @@ namespace WorkRoles.UI
             {
                 store.pawnSets.TryGetValue(pawn, out var toCopy);
                 RoleClipboard.CopyFrom(toCopy);
-                Messages.Message("WR_CopiedRoles".Translate(pawn.LabelShortCap), MessageTypeDefOf.NeutralEvent, historical: false);
+                WrToast.Show("WR_CopiedRoles".Translate(pawn.LabelShortCap), MessageTypeDefOf.NeutralEvent);
             }
             Color pasteColor = RoleClipboard.HasContent ? Color.white : new Color(1f, 1f, 1f, 0.3f);
             TooltipHandler.TipRegion(pasteRect, "WR_PasteRolesTip".Translate());
@@ -1747,10 +1839,9 @@ namespace WorkRoles.UI
                             () => RoleCommands.ToggleAssignmentPin(menuPawn, menuRoleId))
                     }));
                 }
-                if (assignment.pinned && Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, "WR_PinnedTip".Translate());
-                if (suppressed && Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, SuppressionTip(role, pawn));
+                if (Mouse.IsOver(chipRect))
+                    TooltipHandler.TipRegion(chipRect,
+                        RoleTipText(role, RoleTipContext.AssignmentChip, pawn));
             }
 
             if (RoleDrag.Active && Mouse.IsOver(stripRect))
@@ -1794,7 +1885,7 @@ namespace WorkRoles.UI
             }
         }
 
-        private static string SuppressionTip(Role role, Pawn pawn)
+        private static string SuppressionReason(Role role, Pawn pawn)
         {
             switch (RoleRules.FailReason(role, pawn))
             {
@@ -1805,6 +1896,47 @@ namespace WorkRoles.UI
         }
 
         // ----- Stats panel -----
+
+        // Open-window snapshot of the passion-icon tips, one per passion byte
+        // (vanilla and VSE custom alike); null marks an unknown byte.
+        private readonly Dictionary<Passion, string> passionTipCache = new Dictionary<Passion, string>();
+        private int passionTipStamp = -1;
+
+        private string PassionTipText(Passion passion)
+        {
+            if (passionTipStamp != UiVersion.Current)
+            {
+                passionTipCache.Clear();
+                passionTipStamp = UiVersion.Current;
+            }
+            if (!passionTipCache.TryGetValue(passion, out var text))
+                passionTipCache[passion] = text = BuildPassionTip(passion);
+            return text;
+        }
+
+        private static string BuildPassionTip(Passion passion)
+        {
+            string name = passion == Passion.Minor
+                ? ("PassionMinor".CanTranslate() ? "PassionMinor".Translate().ToString() : "Minor interest")
+                : passion == Passion.Major
+                    ? ("PassionMajor".CanTranslate() ? "PassionMajor".Translate().ToString() : "Major interest")
+                    : Passions.CustomLabel(passion);
+            // Unknown byte: the one-line label fallback (null = no tooltip).
+            if (name.NullOrEmpty()) return Passions.CustomLabel(passion);
+
+            var model = new TipModel { Title = name };
+            var facts = model.AddSection();
+            float? learn = Passions.LearnRateFactor(passion);
+            if (learn != null)
+                facts.Fact("WR_TipLearnRate".Translate(), "×" + learn.Value.ToString("0.##"));
+            float? forget = Passions.ForgetRateFactor(passion);
+            if (forget != null)
+                facts.Fact("WR_TipForgetRate".Translate(), "×" + forget.Value.ToString("0.##"));
+            string description = Passions.CustomDescription(passion);
+            if (!description.NullOrEmpty())
+                model.AddSection().Text(description);
+            return Patches.Patch_ActiveTip_TipRect.Register(model);
+        }
 
         private void DrawStatsPanel(Rect rect, RoleStore store)
         {
@@ -1924,7 +2056,7 @@ namespace WorkRoles.UI
                 GUI.color = textColor;
                 Text.Anchor = TextAnchor.MiddleLeft;
                 string labelText = line.Label;
-                Vector2 labelSize = Text.CalcSize(labelText);
+                float labelWidth = statsLabelWidths[i];
                 float labelMaxW = SkillColWidth - (16f + 4f) - 48f; // col width - icon+gap - value col
                 bool wrapWas = Text.WordWrap;
                 Text.WordWrap = false;
@@ -1934,7 +2066,7 @@ namespace WorkRoles.UI
                 // Passion icon appended after label text; VSE custom passions draw
                 // their own def icon with the passion's name as tooltip.
                 const float IconW = 16f;
-                float iconX = xCursor + Mathf.Min(labelSize.x, labelMaxW) + 4f;
+                float iconX = xCursor + Mathf.Min(labelWidth, labelMaxW) + 4f;
                 var passionTex = line.Passion == Passion.Major ? WorkRolesTex.PassionMajor
                     : line.Passion == Passion.Minor ? WorkRolesTex.PassionMinor
                     : Passions.CustomIcon(line.Passion);
@@ -1943,9 +2075,12 @@ namespace WorkRoles.UI
                     GUI.color = Color.white;
                     var iconRect = new Rect(iconX, cellY + (CellH - IconW) / 2f, IconW, IconW);
                     GUI.DrawTexture(iconRect, passionTex);
-                    string passionLabel = Passions.CustomLabel(line.Passion);
-                    if (passionLabel != null && Mouse.IsOver(iconRect))
-                        TooltipHandler.TipRegion(iconRect, passionLabel);
+                    if (Mouse.IsOver(iconRect))
+                    {
+                        string passionTip = PassionTipText(line.Passion);
+                        if (passionTip != null)
+                            TooltipHandler.TipRegion(iconRect, passionTip);
+                    }
                     iconX += IconW + 2f;
                 }
 

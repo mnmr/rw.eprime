@@ -72,7 +72,7 @@ namespace WorkRoles
 
         /// Resolves def train-target names to role ids, after every def has
         /// landed (a def may target one seeded later). Engine path: seeding and
-        /// Restore Roles run inside the synced simulation.
+        /// Restore Defaults run inside the synced simulation.
         internal static void ResolveTemplateTrainTargets(Role role)
         {
             if (Store == null || role.templateDefName == null) return;
@@ -90,53 +90,36 @@ namespace WorkRoles
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan, so the row-index
         /// selections from the preview stay valid everywhere.
-
-        // MP's Harmony invoker chokes on wide signatures (Mono ILGenerator
-        // bug): synced args pack into flags to stay compact.
-        [System.Flags]
-        public enum ImportFlags
-        {
-            None = 0,
-            Palette = 1,
-            PaletteOverwrite = 2,
-            Roles = 4,
-            RolesOverwrite = 8,
-            Paths = 16,
-            PathsOverwrite = 32,
-            Order = 64,
-        }
-
         [SyncMethod]
-        public static void ApplyImport(string xml, int flags,
-            List<int> paletteRows, List<int> roleRows, List<int> pathRows)
+        public static void ApplyImport(ImportSelection selection)
         {
-            if (Store == null || xml.NullOrEmpty()) return;
-            var doc = RoleIO.Parse(xml);
+            if (Store == null || selection == null || selection.xml.NullOrEmpty()) return;
+            var doc = RoleIO.Parse(selection.xml);
             if (doc.error != null) return;
-            var f = (ImportFlags)flags;
             string summary = RoleIO.Apply(Store, doc,
-                f.HasFlag(ImportFlags.Palette), f.HasFlag(ImportFlags.PaletteOverwrite), paletteRows,
-                f.HasFlag(ImportFlags.Roles), f.HasFlag(ImportFlags.RolesOverwrite), roleRows,
-                f.HasFlag(ImportFlags.Paths), f.HasFlag(ImportFlags.PathsOverwrite), pathRows,
-                f.HasFlag(ImportFlags.Order));
+                selection.palette, selection.paletteOverwrite, selection.paletteRows,
+                selection.roles, selection.rolesOverwrite, selection.roleRows,
+                selection.paths, selection.pathsOverwrite, selection.pathRows,
+                selection.order);
             UiVersion.Bump();
-            Messages.Message(summary, MessageTypeDefOf.PositiveEvent, historical: false);
+            UI.WrToast.Show(summary, MessageTypeDefOf.PositiveEvent);
         }
 
-        /// Applies the restore items selected in the Restore Roles preview:
-        /// recreates missing seeded roles, regenerates coverage for uncovered work
-        /// types, backfills vanilla jobs that mods moved out of roles, and brings
-        /// back a player-deleted Odd Jobs.
+        /// Applies the restore items selected in the Restore Defaults preview:
+        /// recreates missing seeded roles and default training paths, regenerates
+        /// coverage for uncovered work types, backfills vanilla jobs that mods
+        /// moved out of roles, moves and recolors drifted roles back to their def,
+        /// brings back a player-deleted Odd Jobs, and resets the recommendation
+        /// order.
         [SyncMethod]
-        public static void RestoreSelected(List<string> templateDefs, List<string> workTypes,
-            List<int> backfillRoleIds, bool oddJobs)
+        public static void RestoreSelected(RestoreSelection selection)
         {
-            if (Store == null) return;
-            var restored = Seeding.RestoreSelected(templateDefs, workTypes, backfillRoleIds, oddJobs);
+            if (Store == null || selection == null) return;
+            var restored = Seeding.RestoreSelected(selection);
             UiVersion.Bump();
             if (restored.Count > 0)
-                Messages.Message("WR_RolesRestored".Translate(restored.ToCommaList()),
-                    MessageTypeDefOf.PositiveEvent, historical: false);
+                UI.WrToast.Show("WR_RolesRestored".Translate(restored.ToCommaList()),
+                    MessageTypeDefOf.PositiveEvent);
         }
 
         /// Vanilla's manual-priorities flag — per-save game state whose only

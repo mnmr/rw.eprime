@@ -44,5 +44,72 @@ namespace WorkRoles
             sync.Bind(ref assignment.enabled);
             sync.Bind(ref assignment.pinned);
         }
+
+        // List binding hand-rolled as count+elements (like SyncJobEntry's
+        // fields): the SyncWorker API guarantees only primitive Binds.
+        private static void BindList(SyncWorker sync, ref System.Collections.Generic.List<int> list)
+        {
+            if (sync.isWriting)
+            {
+                sync.Write(list?.Count ?? 0);
+                if (list != null)
+                    foreach (int value in list)
+                        sync.Write(value);
+            }
+            else
+            {
+                int count = sync.Read<int>();
+                list = new System.Collections.Generic.List<int>(count);
+                for (int i = 0; i < count; i++)
+                    list.Add(sync.Read<int>());
+            }
+        }
+
+        private static void BindList(SyncWorker sync, ref System.Collections.Generic.List<string> list)
+        {
+            if (sync.isWriting)
+            {
+                sync.Write(list?.Count ?? 0);
+                if (list != null)
+                    foreach (string value in list)
+                        sync.Write(value);
+            }
+            else
+            {
+                int count = sync.Read<int>();
+                list = new System.Collections.Generic.List<string>(count);
+                for (int i = 0; i < count; i++)
+                    list.Add(sync.Read<string>());
+            }
+        }
+
+        [SyncWorker(shouldConstruct = true)]
+        private static void SyncImportSelection(SyncWorker sync, ref ImportSelection selection)
+        {
+            sync.Bind(ref selection.xml);
+            sync.Bind(ref selection.palette);
+            sync.Bind(ref selection.paletteOverwrite);
+            sync.Bind(ref selection.roles);
+            sync.Bind(ref selection.rolesOverwrite);
+            sync.Bind(ref selection.paths);
+            sync.Bind(ref selection.pathsOverwrite);
+            sync.Bind(ref selection.order);
+            BindList(sync, ref selection.paletteRows);
+            BindList(sync, ref selection.roleRows);
+            BindList(sync, ref selection.pathRows);
+        }
+
+        [SyncWorker(shouldConstruct = true)]
+        private static void SyncRestoreSelection(SyncWorker sync, ref RestoreSelection selection)
+        {
+            BindList(sync, ref selection.templateDefs);
+            BindList(sync, ref selection.workTypes);
+            BindList(sync, ref selection.backfillRoleIds);
+            BindList(sync, ref selection.pathDefs);
+            BindList(sync, ref selection.groupRoleIds);
+            BindList(sync, ref selection.colorRoleIds);
+            sync.Bind(ref selection.oddJobs);
+            sync.Bind(ref selection.recommendationOrder);
+        }
     }
 }

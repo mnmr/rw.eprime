@@ -1,4 +1,3 @@
-using LudeonTK;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -14,6 +13,8 @@ namespace WorkRoles.UI
 
         private readonly string xml;
         private Vector2 scroll;
+        private float measuredWidth = -1f;
+        private float textHeight;
 
         public override Vector2 InitialSize => new Vector2(680f, 660f);
 
@@ -48,9 +49,22 @@ namespace WorkRoles.UI
             float locRowY = customRowY - RowH;
             float captionRowY = locRowY - CaptionRowH;
 
+            // DevGUI.TextAreaScrollable measures at full width in the label style yet
+            // renders scrollbar-narrowed in the text-area style, clipping the tail:
+            // measure with the exact render style at the exact render width instead.
             float textTop = inRect.y + TitleH;
-            DevGUI.TextAreaScrollable(new Rect(inRect.x, textTop, inRect.width, captionRowY - 6f - textTop),
-                xml, ref scroll, readOnly: true);
+            var outRect = new Rect(inRect.x, textTop, inRect.width, captionRowY - 6f - textTop);
+            float viewWidth = outRect.width - GenUI.ScrollBarWidth;
+            var style = Text.CurTextAreaReadOnlyStyle;
+            if (measuredWidth != viewWidth)
+            {
+                textHeight = style.CalcHeight(new GUIContent(xml), viewWidth);
+                measuredWidth = viewWidth;
+            }
+            var viewRect = new Rect(0f, 0f, viewWidth, Mathf.Max(textHeight, outRect.height));
+            Widgets.BeginScrollView(outRect, ref scroll, viewRect);
+            GUI.TextArea(viewRect, xml, style);
+            Widgets.EndScrollView();
 
             string path = ResolvedPath(out string problem);
 

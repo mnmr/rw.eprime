@@ -14,8 +14,11 @@ namespace WorkRoles
         /// Mutate only via RoleCommands — direct writes bypass cache invalidation.
         public Dictionary<Pawn, PawnRoleSet> pawnSets = new Dictionary<Pawn, PawnRoleSet>();
         public bool seeded;
+        /// Default training paths seeded (only ever set alongside role seeding;
+        /// pre-existing saves adopt them via Restore Defaults instead).
+        public bool pathsSeeded;
         /// Player deleted Odd Jobs (knows no mod adds invisible jobs): coverage
-        /// won't recreate it until Restore Roles is asked to bring it back.
+        /// won't recreate it until Restore Defaults is asked to bring it back.
         public bool oddJobsDeleted;
         /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
         /// World state, not a mod setting: other mods consume the values in
@@ -148,6 +151,7 @@ namespace WorkRoles
                         CompiledJobOrders.EnsureFresh(kv.Key);
             }
             Scribe_Values.Look(ref seeded, "seeded");
+            Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
             Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
