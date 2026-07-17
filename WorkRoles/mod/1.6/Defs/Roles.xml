@@ -165,27 +165,31 @@
   <WorkRoles.RoleDef>
     <defName>WS_Jailor</defName>
     <label>Jailor</label>
-    <description>Prisoner logistics: feeding, escorting, suppression, release and executions.</description>
+    <description>Prisoner handling except interrogation, enslavement and conversion: feeding, escorting, chatting, suppression, release and executions.</description>
     <colorRef>cyan-900</colorRef>
     <group>Essentials</group>
     <trainSkill>Social</trainSkill>
     <trainTargets><li>WS_Warden</li></trainTargets>
     <minHolders>0</minHolders>
+    <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
+         EnslavePrisoner and ConvertPrisoner; ChatWithPrisoner trains Social,
+         making this a real trainer toward Warden. -->
     <entries>
-      <li>WorkGiver:DoExecution</li>
       <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExecuteEntity</li>
+      <li>WorkGiver:DoExecution</li>
       <li>WorkGiver:ExecuteGuiltyColonist</li>
       <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ExecuteSlave</li>
-      <li>WorkGiver:ReleasePrisoner</li>
       <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:EmancipateSlave</li>
+      <li>WorkGiver:ReleasePrisoner</li>
       <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ActivitySuppression</li>
       <li>WorkGiver:TakePrisonerToBed</li>
       <li>WorkGiver:FeedPrisoner</li>
       <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ImprisonSlave</li>
       <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:DeliverHemogenToPrisoner</li>
       <li>WorkGiver:DeliverFoodToPrisoner</li>
-      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ReleaseEntity</li>
       <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:SuppressSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ReleaseEntity</li>
+      <li>WorkGiver:ChatWithPrisoner</li>
     </entries>
   </WorkRoles.RoleDef>
 

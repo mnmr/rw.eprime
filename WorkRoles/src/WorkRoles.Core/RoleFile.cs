@@ -58,12 +58,28 @@ namespace WorkRoles.Core
         public const int AllHours = 0xFFFFFF;
     }
 
+    /// One training path as the file carries it: role NAMES with skill bands
+    /// (resolved to ids on import), plus the optional assignment anchor.
+    public class FileTrainingPath
+    {
+        public string name;
+        public string colorRef;   // color NAME, like a role's; null = no override
+        public string anchorRole; // null = no anchor
+        public bool anchorBefore = true;
+        public List<(string role, int min, int max)> entries =
+            new List<(string, int, int)>();
+    }
+
     public class RoleFileDocument
     {
         public List<(string name, ColorRgb color)> palette = new List<(string, ColorRgb)>();
         /// User group names in display order (the Default group is never listed).
         public List<string> groups = new List<string>();
         public List<FileRole> roles = new List<FileRole>();
+        public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
+        /// The stored recommendation-order template as role names; empty = the
+        /// derived default (never exported).
+        public List<string> recommendationOrder = new List<string>();
         public string error; // set when nothing usable could be parsed
     }
 
@@ -73,9 +89,10 @@ namespace WorkRoles.Core
     /// comments are ignored everywhere (only elements are read).
     public static class RoleFile
     {
-        /// v2 added <Training> and <Holders>; parsing is lenient across versions
-        /// (older readers ignore unknown elements, newer ones default absentees).
-        public const string FormatVersion = "2";
+        /// v2 added <Training> and <Holders>; v3 <TrainingPaths> and
+        /// <RecommendationOrder>. Parsing is lenient across versions (older
+        /// readers ignore unknown elements, newer ones default absentees).
+        public const string FormatVersion = "3";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -94,6 +111,13 @@ namespace WorkRoles.Core
     role trains toward; a pawn below min or at/past max is not recommended.
     <Holders min=""1"" max=""3""/> bounds how many colonists the colony plan deals
     the role to (max 0 = never dealt).
+  - A <TrainingPaths> <Path> lists <Role min=""0"" max=""8"">name</Role> skill bands
+    on the 0..21 axis (21 = open top, spans at least 4 levels); the entry order
+    is the assignment order. An optional color=""name"" attribute colors the
+    path's chip (same color names as roles). <Anchor>name</Anchor> is where
+    members slot into a colonist's list — before that role unless before=""false"".
+  - <RecommendationOrder> lists <Role> names: importing it replaces the stored
+    recommendation order (unlisted roles keep placing dynamically).
 ";
         private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
 
@@ -123,6 +147,36 @@ namespace WorkRoles.Core
             foreach (var role in doc.roles)
                 roles.Add(Encode(role));
             root.Add(roles);
+
+            if (doc.trainingPaths.Count > 0)
+            {
+                var paths = new XElement("TrainingPaths");
+                foreach (var path in doc.trainingPaths)
+                {
+                    var el = new XElement("Path", new XAttribute("name", path.name ?? ""));
+                    if (!string.IsNullOrEmpty(path.colorRef))
+                        el.Add(new XAttribute("color", path.colorRef));
+                    if (!string.IsNullOrEmpty(path.anchorRole))
+                    {
+                        var anchor = new XElement("Anchor", path.anchorRole);
+                        if (!path.anchorBefore) anchor.Add(new XAttribute("before", "false"));
+                        el.Add(anchor);
+                    }
+                    foreach (var (role, min, max) in path.entries)
+                        el.Add(new XElement("Role",
+                            new XAttribute("min", min), new XAttribute("max", max), role));
+                    paths.Add(el);
+                }
+                root.Add(paths);
+            }
+
+            if (doc.recommendationOrder.Count > 0)
+            {
+                var order = new XElement("RecommendationOrder");
+                foreach (var label in doc.recommendationOrder)
+                    order.Add(new XElement("Role", label));
+                root.Add(order);
+            }
             return root.ToString();
         }
 
@@ -224,9 +278,67 @@ namespace WorkRoles.Core
                 var role = ParseRole(roleEl);
                 if (role != null) doc.roles.Add(role);
             }
+            foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
+                     ?? Enumerable.Empty<XElement>())
+            {
+                var path = ParseTrainingPath(pathEl);
+                if (path != null) doc.trainingPaths.Add(path);
+            }
+            foreach (var roleEl in root.Element("RecommendationOrder")?.Elements("Role")
+                     ?? Enumerable.Empty<XElement>())
+            {
+                string label = roleEl.Value?.Trim();
+                if (!string.IsNullOrEmpty(label)) doc.recommendationOrder.Add(label);
+            }
             if (doc.roles.Count == 0 && doc.palette.Count == 0 && doc.error == null)
                 doc.error = "empty document";
             return doc;
+        }
+
+        private static FileTrainingPath ParseTrainingPath(XElement el)
+        {
+            string name = el.Attribute("name")?.Value?.Trim();
+            if (string.IsNullOrEmpty(name)) return null;
+            var path = new FileTrainingPath { name = name };
+            string colorRef = el.Attribute("color")?.Value?.Trim();
+            if (!string.IsNullOrEmpty(colorRef)) path.colorRef = colorRef;
+            var anchor = el.Element("Anchor");
+            if (!string.IsNullOrEmpty(anchor?.Value?.Trim()))
+            {
+                path.anchorRole = anchor.Value.Trim();
+                path.anchorBefore = anchor.Attribute("before")?.Value?.Trim() != "false";
+            }
+            foreach (var roleEl in el.Elements("Role"))
+            {
+                string label = roleEl.Value?.Trim();
+                int.TryParse(roleEl.Attribute("min")?.Value, out int min);
+                int.TryParse(roleEl.Attribute("max")?.Value, out int max);
+                // Bands the geometry rules reject are skipped, not fatal.
+                if (string.IsNullOrEmpty(label)
+                    || min < 0 || max > SkillProgressionMath.MaxLevel
+                    || max - min < SkillProgressionMath.MinSpan) continue;
+                path.entries.Add((label, min, max));
+            }
+            return path;
+        }
+
+        /// Resolves a path's entry names via idOf (null = unknown role):
+        /// unresolved or duplicate entries drop, their bands ride along.
+        public static (List<int> ids, List<int> mins, List<int> maxes) ResolvePathEntries(
+            FileTrainingPath path, Func<string, int?> idOf)
+        {
+            var ids = new List<int>();
+            var mins = new List<int>();
+            var maxes = new List<int>();
+            foreach (var (role, min, max) in path.entries)
+            {
+                int? id = idOf(role);
+                if (id == null || ids.Contains(id.Value)) continue;
+                ids.Add(id.Value);
+                mins.Add(min);
+                maxes.Add(max);
+            }
+            return (ids, mins, maxes);
         }
 
         private static FileRole ParseRole(XElement el)

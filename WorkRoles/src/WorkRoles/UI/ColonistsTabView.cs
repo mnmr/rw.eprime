@@ -9,6 +9,12 @@ namespace WorkRoles.UI
 {
     public class ColonistsTabView
     {
+        // What varies between table instances (pawn source, settings storage,
+        // optional panels) lives in the profile.
+        private readonly ColonistsViewProfile profile;
+
+        public ColonistsTabView(ColonistsViewProfile profile) => this.profile = profile;
+
         private Vector2 paletteScroll;
         private Pawn selectedPawn;
 
@@ -16,12 +22,12 @@ namespace WorkRoles.UI
         // group sections and per-pawn rows (chip strips make row heights vary).
         private Vector2 tableScroll;
         private float lastTableViewH = 400f;
-        internal static float EstimatedStripWidth = 300f;
+        private float EstimatedStripWidth = 300f;
         private const float TableHeaderH = 30f;
         private const float GroupHeaderH = 30f;
 
         // Pawn scope (session-local; defaults to the current location).
-        private static ScopeOption scope;
+        private ScopeOption scope;
 
         // View-local table filters (never synced, never persisted).
         private const string SearchControlName = "WR_ColonistSearch";
@@ -65,8 +71,9 @@ namespace WorkRoles.UI
         // Colony suggestion plan: the Recommended Roles panel, Make It So and Fix My
         // Colony all read this one plan, so they always agree. Computed lazily,
         // invalidated on any role/assignment change.
-        private List<PawnFixPlan> _planCache;
-        private int _planCacheMapId = -1;
+        private List<PawnFixPlan> planCache;
+        private int planStamp = -1;
+        private int planMapId = -1;
 
         public void Reset()
         {
@@ -79,9 +86,8 @@ namespace WorkRoles.UI
             InvalidateRecommendationCache();
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
-            pawnsStamp = sizeStamp = paletteStamp = rulesPassStamp = statsStamp = -1;
-            chipLayoutStamp = -1;
-            sectionsStamp = -1;
+            pawnsStamp = sizeStamp = paletteStamp = rulesPassStamp = statsStamp
+                = chipLayoutStamp = sectionsStamp = -1;
             Expertise.InvalidateSnapshot();
         }
 
@@ -89,9 +95,7 @@ namespace WorkRoles.UI
         /// recommendation order, pawn membership) bumps UiVersion when its command
         /// EXECUTES — click-site invalidation would rebuild from pre-command state
         /// in MP and never fire on other clients.
-        public void InvalidateRecommendationCache() => _planCache = null;
-
-        private int _planCacheStamp = -1;
+        public void InvalidateRecommendationCache() => planCache = null;
 
         /// The colony plan is per location: anchored to the selected pawn's map
         /// (recommendations stay map-scoped even when the view spans locations).
@@ -99,13 +103,13 @@ namespace WorkRoles.UI
         {
             var map = selectedPawn?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
-            if (_planCache == null || _planCacheStamp != UiVersion.Current || _planCacheMapId != mapId)
+            if (planCache == null || planStamp != UiVersion.Current || planMapId != mapId)
             {
-                _planCacheStamp = UiVersion.Current;
-                _planCacheMapId = mapId;
-                _planCache = BuildColonyFixPlan(map);
+                planStamp = UiVersion.Current;
+                planMapId = mapId;
+                planCache = BuildColonyFixPlan(map);
             }
-            return _planCache;
+            return planCache;
         }
 
         private PawnFixPlan PlanFor(Pawn pawn) => GetPlan().FirstOrDefault(p => p.pawn == pawn);
@@ -139,13 +143,13 @@ namespace WorkRoles.UI
         // Open-window snapshot of the selected pawn's stats-panel data.
         // Deliberately stale: skill XP drifts continuously with no change event
         // to hook, so a level-up shows on the next bump or window reopen.
-        private static int statsStamp = -1;
-        private static Pawn statsPawn;
-        private static List<SkillLine> statsLines;
-        private static List<Expertise.Entry> statsExpertise;
-        private static Dictionary<SkillDef, List<string>> statsTraitGains;
+        private int statsStamp = -1;
+        private Pawn statsPawn;
+        private List<SkillLine> statsLines;
+        private List<Expertise.Entry> statsExpertise;
+        private Dictionary<SkillDef, List<string>> statsTraitGains;
 
-        private static void EnsureStats(Pawn pawn)
+        private void EnsureStats(Pawn pawn)
         {
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return;
             statsStamp = UiVersion.Current;
@@ -173,7 +177,7 @@ namespace WorkRoles.UI
         }
 
         /// <summary>Height of the stats panel for a given pawn (or generic if null).</summary>
-        public static float StatsPanelHeight(Pawn pawn = null)
+        public float StatsPanelHeight(Pawn pawn = null)
         {
             int lineCount = 12;
             if (pawn != null)
@@ -191,13 +195,13 @@ namespace WorkRoles.UI
         // Open-window snapshot of the desired window size: both walk every
         // pawn's chips through text measurement, so they recompute only when
         // the stamp, map, chip display or skill columns change.
-        private static int sizeStamp = -1;
-        private static int sizeMapId = -1;
-        private static int sizeKey = -1;
-        private static float desiredWidthCache;
-        private static float desiredHeightCache;
+        private int sizeStamp = -1;
+        private int sizeMapId = -1;
+        private int sizeKey = -1;
+        private float desiredWidthCache;
+        private float desiredHeightCache;
 
-        private static void EnsureSizes()
+        private void EnsureSizes()
         {
             EnsureSkillColumnsLoaded();
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
@@ -210,14 +214,14 @@ namespace WorkRoles.UI
             desiredHeightCache = ComputeDesiredHeight();
         }
 
-        public static float DesiredWidth()
+        public float DesiredWidth()
         {
             if (RoleStore.Current == null || Find.CurrentMap == null) return DefaultWidth;
             EnsureSizes();
             return desiredWidthCache;
         }
 
-        private static float ComputeDesiredWidth()
+        private float ComputeDesiredWidth()
         {
             var store = RoleStore.Current;
             if (store == null || Find.CurrentMap == null) return DefaultWidth;
@@ -243,14 +247,14 @@ namespace WorkRoles.UI
             return fixedLeft + SkillColumnsWidth() + widestStrip;
         }
 
-        public static float DesiredHeight()
+        public float DesiredHeight()
         {
             if (RoleStore.Current == null || Find.CurrentMap == null) return DefaultHeight;
             EnsureSizes();
             return desiredHeightCache;
         }
 
-        private static float ComputeDesiredHeight()
+        private float ComputeDesiredHeight()
         {
             var store = RoleStore.Current;
             if (store == null || Find.CurrentMap == null) return DefaultHeight;
@@ -273,10 +277,10 @@ namespace WorkRoles.UI
 
         /// The one width formula for a table chip — measurement and layout must
         /// never disagree.
-        private static float TableChipWidth(RoleStore store, Role role, bool pinned) =>
+        private float TableChipWidth(RoleStore store, Role role, bool pinned) =>
             RoleChipUI.WidthFor(role, showRemove: true, TableChips, AbbrevIfCompact(store, role), pinned);
 
-        private static float MeasureStripHeight(float stripWidth, List<RoleAssignment> assignments, RoleStore store)
+        private float MeasureStripHeight(float stripWidth, List<RoleAssignment> assignments, RoleStore store)
         {
             if (assignments.Count == 0) return RoleChipUI.Height;
             float x = 0f;
@@ -296,7 +300,7 @@ namespace WorkRoles.UI
             return lines * (RoleChipUI.Height + ChipGap) - ChipGap;
         }
 
-        private static float LayoutChips(float stripWidth, List<RoleAssignment> assignments, RoleStore store,
+        private float LayoutChips(float stripWidth, List<RoleAssignment> assignments, RoleStore store,
             List<(RoleAssignment assignment, Rect rect, int line)> result)
         {
             float x = 0f, y = 0f;
@@ -473,14 +477,14 @@ namespace WorkRoles.UI
 
         // Open-window snapshot of the palette layout (it rebuilds the whole
         // role tree): single slot keyed by stamp, width and arrangement.
-        private static int paletteStamp = -1;
-        private static float paletteLayoutW = -1f;
-        private static int paletteLayoutMode = -1;
-        private static float paletteContentH;
-        private static readonly List<(Role role, Rect rect)> paletteChips = new List<(Role, Rect)>();
-        private static readonly List<(string label, Rect rect)> paletteLabels = new List<(string, Rect)>();
+        private int paletteStamp = -1;
+        private float paletteLayoutW = -1f;
+        private int paletteLayoutMode = -1;
+        private float paletteContentH;
+        private readonly List<(Role role, Rect rect)> paletteChips = new List<(Role, Rect)>();
+        private readonly List<(string label, Rect rect)> paletteLabels = new List<(string, Rect)>();
 
-        private static float PaletteLayout(RoleStore store, float rowWidth)
+        private float PaletteLayout(RoleStore store, float rowWidth)
         {
             int mode = (int)(WorkRolesMod.Settings?.paletteMode ?? PaletteMode.Skills);
             if (paletteStamp != UiVersion.Current || paletteLayoutW != rowWidth || paletteLayoutMode != mode)
@@ -495,7 +499,7 @@ namespace WorkRoles.UI
             return paletteContentH;
         }
 
-        private static float PaletteHeight(RoleStore store, float rowWidth)
+        private float PaletteHeight(RoleStore store, float rowWidth)
             => WorkRolesMod.Settings?.paletteMode == PaletteMode.Hidden
                 ? 26f // just the mode button, so the palette can come back
                 : Mathf.Min(PaletteLayout(store, rowWidth) + PalettePadding, PaletteMaxHeight);
@@ -638,7 +642,7 @@ namespace WorkRoles.UI
             // come from the pawn snapshot — ListedPawns keeps them fresh).
             float scopeX = btnX + RoleBtnW + 8f;
             ListedPawns();
-            var scopeOptions = scopeOptionsSnapshot ?? new List<ScopeOption>();
+            var scopeOptions = pawnsScopeOptions ?? new List<ScopeOption>();
             if (Widgets.ButtonText(new Rect(scopeX, y, RoleBtnW, SearchH), ColonyScope.LabelOf(scope)))
             {
                 var menu = new List<FloatMenuOption>();
@@ -670,8 +674,7 @@ namespace WorkRoles.UI
             // Right cluster: grouping, Skills column picker, and the Display
             // options button. Display prefs are per-player ModSettings, never
             // world state.
-            var settings = WorkRolesMod.Settings;
-            if (settings != null)
+            if (WorkRolesMod.Settings != null)
             {
                 const float DisplayBtnW = 90f;
                 var displayRect = new Rect(rect.xMax - DisplayBtnW, y, DisplayBtnW, SearchH);
@@ -679,11 +682,11 @@ namespace WorkRoles.UI
                 if (Widgets.ButtonText(displayRect, "WR_DisplayButton".Translate()))
                 {
                     string ChipsLabel(ChipDisplay d) =>
-                        (settings.chipDisplay == d ? "✓ " : "") +
+                        (TableChips == d ? "✓ " : "") +
                         (d == ChipDisplay.Compact ? "WR_ChipsCompact".Translate()
                         : d == ChipDisplay.Minimal ? "WR_ChipsMinimal".Translate()
                         : "WR_ChipsNormal".Translate());
-                    void SetChips(ChipDisplay d) { settings.chipDisplay = d; settings.Write(); }
+                    void SetChips(ChipDisplay d) => profile.SetTableChips(d);
                     Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
                     {
                         new FloatMenuOption(ChipsLabel(ChipDisplay.Normal), () => SetChips(ChipDisplay.Normal)),
@@ -692,47 +695,52 @@ namespace WorkRoles.UI
                     }));
                 }
 
-                const float SkillsBtnW = 110f;
-                var skillsRect = new Rect(displayRect.x - 8f - SkillsBtnW, y, SkillsBtnW, SearchH);
-                string skillsLabel = skillColumns.Count == 0
-                    ? "WR_SkillsButton".Translate().ToString()
-                    : "WR_SkillsButtonCount".Translate(skillColumns.Count, MaxSkillColumns).ToString();
-                if (Widgets.ButtonText(skillsRect, skillsLabel))
+                float groupRight = displayRect.x; // group button abuts Display when the skills UI is off
+                if (profile.ShowSkills)
                 {
-                    var options = new List<FloatMenuOption>();
-                    foreach (var skill in DefDatabase<SkillDef>.AllDefsListForReading)
+                    const float SkillsBtnW = 110f;
+                    var skillsRect = new Rect(displayRect.x - 8f - SkillsBtnW, y, SkillsBtnW, SearchH);
+                    string skillsLabel = skillColumns.Count == 0
+                        ? "WR_SkillsButton".Translate().ToString()
+                        : "WR_SkillsButtonCount".Translate(skillColumns.Count, MaxSkillColumns).ToString();
+                    if (Widgets.ButtonText(skillsRect, skillsLabel))
                     {
-                        var captured = skill;
-                        bool added = skillColumns.Contains(skill);
-                        string label = (added ? "✓ " : "") + skill.skillLabel.CapitalizeFirst();
-                        options.Add(new FloatMenuOption(label, () =>
+                        var options = new List<FloatMenuOption>();
+                        foreach (var skill in DefDatabase<SkillDef>.AllDefsListForReading)
                         {
-                            if (added) // re-selecting toggles the column off
+                            var captured = skill;
+                            bool added = skillColumns.Contains(skill);
+                            string label = (added ? "✓ " : "") + skill.skillLabel.CapitalizeFirst();
+                            options.Add(new FloatMenuOption(label, () =>
                             {
-                                if (settings.sortColumn == captured.defName) SetSort("");
-                                skillColumns.Remove(captured);
+                                if (added) // re-selecting toggles the column off
+                                {
+                                    if (profile.GetSortColumn() == captured.defName) SetSort("");
+                                    skillColumns.Remove(captured);
+                                    SaveSkillColumns();
+                                    return;
+                                }
+                                if (skillColumns.Count >= MaxSkillColumns)
+                                {
+                                    // Full: the oldest column (front of the list —
+                                    // columns append in selection order) gives way.
+                                    if (profile.GetSortColumn() == skillColumns[0].defName) SetSort("");
+                                    skillColumns.RemoveAt(0);
+                                }
+                                skillColumns.Add(captured);
                                 SaveSkillColumns();
-                                return;
-                            }
-                            if (skillColumns.Count >= MaxSkillColumns)
-                            {
-                                // Full: the oldest column (front of the list —
-                                // columns append in selection order) gives way.
-                                if (settings.sortColumn == skillColumns[0].defName) SetSort("");
-                                skillColumns.RemoveAt(0);
-                            }
-                            skillColumns.Add(captured);
-                            SaveSkillColumns();
-                            SetSort(captured.defName); // adding a column sorts by it
-                        }));
+                                SetSort(captured.defName); // adding a column sorts by it
+                            }));
+                        }
+                        Find.WindowStack.Add(new FloatMenu(options));
                     }
-                    Find.WindowStack.Add(new FloatMenu(options));
+                    groupRight = skillsRect.x;
                 }
 
                 // Grouping sits with the display controls: it changes how the
                 // table renders, not which pawns it lists.
                 const float GroupBtnW = 130f;
-                var groupRect = new Rect(skillsRect.x - 8f - GroupBtnW, y, GroupBtnW, SearchH);
+                var groupRect = new Rect(groupRight - 8f - GroupBtnW, y, GroupBtnW, SearchH);
                 if (Widgets.ButtonText(groupRect, CurrentGroupSource.Label))
                 {
                     var menu = new List<FloatMenuOption>();
@@ -740,10 +748,9 @@ namespace WorkRoles.UI
                     {
                         var captured = source;
                         menu.Add(new FloatMenuOption(
-                            (settings.groupBy == captured.Key ? "✓ " : "") + captured.Label, () =>
+                            (profile.GetGroupBy() == captured.Key ? "✓ " : "") + captured.Label, () =>
                             {
-                                settings.groupBy = captured.Key;
-                                settings.Write();
+                                profile.SetGroupBy(captured.Key);
                                 ColonyGroupsDataSource.InvalidateSnapshot();
                             }));
                     }
@@ -769,21 +776,22 @@ namespace WorkRoles.UI
         /// here if mods add equivalents). Drives the No Firefighting plan rule.
         private static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
 
-        private static ChipDisplay TableChips => WorkRolesMod.Settings?.chipDisplay ?? ChipDisplay.Normal;
+        private ChipDisplay TableChips => profile.GetTableChips();
 
-        private static string AbbrevIfCompact(RoleStore store, Role role) =>
+        private string AbbrevIfCompact(RoleStore store, Role role) =>
             TableChips == ChipDisplay.Compact ? AbbrevFor(store, role) : null;
 
+        // Role-catalog-scoped (not per view), so deliberately shared statics.
         private static Dictionary<int, string> abbrevCache;
-        private static int abbrevSignature;
+        private static int abbrevStamp;
 
         private static string AbbrevFor(RoleStore store, Role role)
         {
             // Renames and role changes bump UiVersion, so the stamp replaces
             // the old per-call label-hash signature.
-            if (abbrevCache == null || abbrevSignature != UiVersion.Current)
+            if (abbrevCache == null || abbrevStamp != UiVersion.Current)
             {
-                abbrevSignature = UiVersion.Current;
+                abbrevStamp = UiVersion.Current;
                 abbrevCache = RoleAbbreviations.Build(
                     store.roles.Select(r => (r.id, r.label)).ToList());
             }
@@ -792,48 +800,43 @@ namespace WorkRoles.UI
 
         // Abbreviation building lives in Core (RoleAbbreviations) with tests.
 
-        // Skill columns (static so the static window sizing sees them; mirrored to
-        // ModSettings so the table reopens exactly as closed). Clicking a column
-        // header sorts by it — one fixed order per column.
-        private static readonly List<SkillDef> skillColumns = new List<SkillDef>();
-        private static bool skillColumnsLoaded;
+        // Skill columns (mirrored to the profile's storage so the table reopens
+        // exactly as closed). Clicking a column header sorts by it — one fixed
+        // order per column.
+        private readonly List<SkillDef> skillColumns = new List<SkillDef>();
+        private bool skillColumnsLoaded;
         private const int MaxSkillColumns = 3;
         private const float SkillCellContentW = 82f; // "12.37" + passion/aptitude/expertise icons
 
-        private static void EnsureSkillColumnsLoaded()
+        private void EnsureSkillColumnsLoaded()
         {
             if (skillColumnsLoaded) return;
             skillColumnsLoaded = true;
-            var settings = WorkRolesMod.Settings;
-            if (settings?.skillColumns != null)
-                foreach (var defName in settings.skillColumns)
+            var saved = profile.GetSkillColumns();
+            if (saved != null)
+                foreach (var defName in saved)
                 {
                     var def = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
                     if (def != null && !skillColumns.Contains(def) && skillColumns.Count < MaxSkillColumns)
                         skillColumns.Add(def);
                 }
             // A persisted sort must belong to a live column.
-            if (settings != null && !settings.sortColumn.NullOrEmpty()
-                && !skillColumns.Any(s => s.defName == settings.sortColumn))
-                settings.sortColumn = "";
+            string sort = profile.GetSortColumn();
+            if (!sort.NullOrEmpty() && !skillColumns.Any(s => s.defName == sort))
+                profile.SetSortColumn("");
         }
 
-        private static void SaveSkillColumns()
-        {
-            var settings = WorkRolesMod.Settings;
-            if (settings == null) return;
-            settings.skillColumns = skillColumns.Select(d => d.defName).ToList();
-            settings.Write();
-        }
+        private void SaveSkillColumns() =>
+            profile.SetSkillColumns(skillColumns.Select(d => d.defName).ToList());
 
         /// Header label (localized) or cell content, whichever is wider.
-        internal static float SkillColumnWidth(SkillDef skill)
+        internal float SkillColumnWidth(SkillDef skill)
         {
             Text.Font = GameFont.Small;
             return Mathf.Max(SkillCellContentW, WrText.FitWidth(skill.skillLabel.CapitalizeFirst()) + 18f);
         }
 
-        private static float SkillColumnsWidth()
+        private float SkillColumnsWidth()
         {
             EnsureSkillColumnsLoaded();
             float w = 0f;
@@ -851,10 +854,10 @@ namespace WorkRoles.UI
         /// Table display order (view-only; plan logic is order-independent): the
         /// vanilla colonist bar's order — including manual drag-reordering — or
         /// A-Z; an active skill sort (header click) overrides, highest first.
-        private static List<Pawn> OrderedForDisplay(List<Pawn> pawns)
+        private List<Pawn> OrderedForDisplay(List<Pawn> pawns)
         {
             List<Pawn> ordered;
-            if (WorkRolesMod.Settings?.colonistOrder == ColonistOrder.Alphabetical)
+            if (profile.GetColonistOrder() == ColonistOrder.Alphabetical)
                 ordered = pawns.OrderBy(p => p.LabelShortCap, System.StringComparer.OrdinalIgnoreCase).ToList();
             else
             {
@@ -877,18 +880,16 @@ namespace WorkRoles.UI
             return ordered;
         }
 
-        private static SkillDef SortSkill()
+        private SkillDef SortSkill()
         {
-            string sort = WorkRolesMod.Settings?.sortColumn;
+            string sort = profile.GetSortColumn();
             return sort.NullOrEmpty() ? null : DefDatabase<SkillDef>.GetNamedSilentFail(sort);
         }
 
-        private static void SetSort(string column)
+        private void SetSort(string column)
         {
-            var settings = WorkRolesMod.Settings;
-            if (settings == null || settings.sortColumn == column) return;
-            settings.sortColumn = column;
-            settings.Write();
+            if (profile.GetSortColumn() == column) return;
+            profile.SetSortColumn(column);
         }
 
         private bool FiltersActive =>
@@ -932,7 +933,7 @@ namespace WorkRoles.UI
         /// readable job summary, relevant skills, skill gates, and the colonists
         /// best suited (expertise > burning passion > passion) — everything the
         /// vanilla work-column blurb offers and the fit list on top.
-        private static string RoleTip(Role role)
+        private string RoleTip(Role role)
         {
             var sb = new System.Text.StringBuilder();
             string state = role.enabled ? "WR_RoleTipEnabled".Translate() : "WR_RoleTipDisabled".Translate();
@@ -998,7 +999,7 @@ namespace WorkRoles.UI
 
         /// Colonists best suited to the role's skills: expertise beats burning
         /// passion beats passion; ties broken by skill level. Capped at six.
-        private static string BestFits(Role role, List<SkillDef> skills)
+        private string BestFits(Role role, List<SkillDef> skills)
         {
             if (skills.Count == 0) return null;
             var ranked = new List<(string label, int score, float level)>();
@@ -1103,8 +1104,8 @@ namespace WorkRoles.UI
         /// clears a skill sort, or toggles Tab order/A-Z when none is active)
         // Cached header label ("Colonist" + order suffix): Translate + Colorize
         // concat is an allocation per pass otherwise.
-        private static string colonistHeaderCache;
-        private static ColonistOrder colonistHeaderOrder;
+        private string colonistHeaderCache;
+        private ColonistOrder colonistHeaderOrder;
 
         /// and skill columns (click sorts by that skill, highest first — the
         /// sorting column's label renders in the passion yellow; X removes).
@@ -1112,10 +1113,9 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Small;
             var sortSkill = SortSkill();
-            var settings = WorkRolesMod.Settings;
 
             var nameRect = new Rect(rect.x, rect.y, 264f, rect.height);
-            var order = settings?.colonistOrder ?? ColonistOrder.ColonistBar;
+            var order = profile.GetColonistOrder();
             if (colonistHeaderCache == null || colonistHeaderOrder != order)
             {
                 colonistHeaderOrder = order;
@@ -1132,12 +1132,8 @@ namespace WorkRoles.UI
             if (Widgets.ButtonInvisible(nameRect))
             {
                 if (sortSkill != null) SetSort("");
-                else if (settings != null)
-                {
-                    settings.colonistOrder = settings.colonistOrder == ColonistOrder.Alphabetical
-                        ? ColonistOrder.ColonistBar : ColonistOrder.Alphabetical;
-                    settings.Write();
-                }
+                else profile.SetColonistOrder(order == ColonistOrder.Alphabetical
+                    ? ColonistOrder.ColonistBar : ColonistOrder.Alphabetical);
             }
 
             float x = rect.x + 264f;
@@ -1233,17 +1229,17 @@ namespace WorkRoles.UI
 
         // ----- Grouping -----
 
-        private static GroupSourceDef CurrentGroupSource =>
-            GroupSources.All().FirstOrDefault(s => s.Key == (WorkRolesMod.Settings?.groupBy ?? "none"))
+        private GroupSourceDef CurrentGroupSource =>
+            GroupSources.All().FirstOrDefault(s => s.Key == profile.GetGroupBy())
                 ?? GroupSources.All()[0];
 
-        private static bool Grouped => CurrentGroupSource.Partition != null;
+        private bool Grouped => CurrentGroupSource.Partition != null;
 
         // Open-window snapshot of the full display pipeline (filter -> order ->
         // group). Keyed on every UI-local input as plain fields (a composed key
         // string would itself allocate per pass); sim-side changes arrive via
         // the UiVersion stamp.
-        private List<GroupSection<Pawn>> sectionsSnapshot;
+        private List<GroupSection<Pawn>> sectionsCache;
         private int sectionsStamp = -1;
         private int sectionsMapId = -1;
         private string sectionsFilter;
@@ -1255,33 +1251,32 @@ namespace WorkRoles.UI
         private List<GroupSection<Pawn>> Sections(RoleStore store)
         {
             var pawns = ListedPawns();
-            var settings = WorkRolesMod.Settings;
-            var order = settings?.colonistOrder ?? ColonistOrder.ColonistBar;
-            if (sectionsSnapshot == null || sectionsStamp != UiVersion.Current
+            var order = profile.GetColonistOrder();
+            if (sectionsCache == null || sectionsStamp != UiVersion.Current
                 || sectionsMapId != pawnsMapId || sectionsFilter != colonistFilter
-                || sectionsRoleFilter != roleFilterId || sectionsGroupBy != settings?.groupBy
-                || sectionsSort != settings?.sortColumn || sectionsOrder != order)
+                || sectionsRoleFilter != roleFilterId || sectionsGroupBy != profile.GetGroupBy()
+                || sectionsSort != profile.GetSortColumn() || sectionsOrder != order)
             {
                 sectionsStamp = UiVersion.Current;
                 sectionsMapId = pawnsMapId;
                 sectionsFilter = colonistFilter;
                 sectionsRoleFilter = roleFilterId;
-                sectionsGroupBy = settings?.groupBy;
-                sectionsSort = settings?.sortColumn;
+                sectionsGroupBy = profile.GetGroupBy();
+                sectionsSort = profile.GetSortColumn();
                 sectionsOrder = order;
-                sectionsSnapshot = GroupedSections(OrderedForDisplay(FilteredPawns(pawns, store)));
+                sectionsCache = GroupedSections(OrderedForDisplay(FilteredPawns(pawns, store)));
                 sectionTitles.Clear();
-                foreach (var section in sectionsSnapshot)
+                foreach (var section in sectionsCache)
                     sectionTitles[section.Key] = section.Title + " (" + section.Members.Count + ")";
             }
-            return sectionsSnapshot;
+            return sectionsCache;
         }
 
         /// "Title (N)" per section, composed with the snapshot — headers draw per pass.
         private readonly Dictionary<string, string> sectionTitles = new Dictionary<string, string>();
 
         /// The visible sections: one flat section, or Core-partitioned groups.
-        private static List<GroupSection<Pawn>> GroupedSections(List<Pawn> pawns)
+        private List<GroupSection<Pawn>> GroupedSections(List<Pawn> pawns)
         {
             var source = CurrentGroupSource;
             if (source.Partition == null)
@@ -1294,16 +1289,16 @@ namespace WorkRoles.UI
 
         // Group keys are already grouping-prefixed ("faction|Zorble"), so they
         // double as the persisted collapse ids.
-        private static bool IsCollapsed(string groupKey) =>
-            WorkRolesMod.Settings?.collapsedGroups.Contains(groupKey) == true;
+        private bool IsCollapsed(string groupKey) =>
+            profile.GetCollapsedGroups()?.Contains(groupKey) == true;
 
-        private static void ToggleCollapsed(string groupKey)
+        private void ToggleCollapsed(string groupKey)
         {
-            var settings = WorkRolesMod.Settings;
-            if (settings == null) return;
-            if (!settings.collapsedGroups.Remove(groupKey))
-                settings.collapsedGroups.Add(groupKey);
-            settings.Write();
+            var collapsed = profile.GetCollapsedGroups();
+            if (collapsed == null) return;
+            if (!collapsed.Remove(groupKey))
+                collapsed.Add(groupKey);
+            profile.SetCollapsedGroups(collapsed);
         }
 
         // ----- Keyboard navigation -----
@@ -1407,7 +1402,7 @@ namespace WorkRoles.UI
             return true;
         }
 
-        private static float RowHeightOf(Pawn pawn) =>
+        private float RowHeightOf(Pawn pawn) =>
             Mathf.Max(RowHeight, Mathf.CeilToInt(StripHeightFor(pawn) + 8f));
 
         private void Select(Pawn pawn)
@@ -1449,13 +1444,13 @@ namespace WorkRoles.UI
             else if (bottom > tableScroll.y + lastTableViewH) tableScroll.y = bottom - lastTableViewH;
         }
 
-        internal static SkillDef SkillColumnAt(int index)
+        internal SkillDef SkillColumnAt(int index)
         {
             EnsureSkillColumnsLoaded();
             return index >= 0 && index < skillColumns.Count ? skillColumns[index] : null;
         }
 
-        internal static void RemoveSkillColumn(int index)
+        internal void RemoveSkillColumn(int index)
         {
             EnsureSkillColumnsLoaded();
             if (index >= 0 && index < skillColumns.Count)
@@ -1467,37 +1462,37 @@ namespace WorkRoles.UI
 
         // Open-window snapshot (see UiVersion): pawn list, scope options and the
         // spans-locations flag rebuild only when the stamp or current map moves.
-        private static int pawnsStamp = -1;
-        private static int pawnsMapId = -1;
-        private static List<Pawn> pawnsSnapshot;
-        private static List<ScopeOption> scopeOptionsSnapshot;
-        private static bool spansSnapshot;
+        private int pawnsStamp = -1;
+        private int pawnsMapId = -1;
+        private List<Pawn> pawnsCache;
+        private List<ScopeOption> pawnsScopeOptions;
+        private bool pawnsSpans;
 
-        internal static void InvalidatePawnSnapshot() => pawnsStamp = -1;
+        internal void InvalidatePawnSnapshot() => pawnsStamp = -1;
 
         /// <summary>The colonist list under the active scope (no baby pawns).</summary>
-        internal static List<Pawn> ListedPawns()
+        internal List<Pawn> ListedPawns()
         {
             if (Find.CurrentMap == null) return new List<Pawn>();
             int mapId = Find.CurrentMap.uniqueID;
-            if (pawnsSnapshot == null || pawnsStamp != UiVersion.Current || pawnsMapId != mapId)
+            if (pawnsCache == null || pawnsStamp != UiVersion.Current || pawnsMapId != mapId)
             {
                 pawnsStamp = UiVersion.Current;
                 pawnsMapId = mapId;
-                scopeOptionsSnapshot = ScopeEngine.BuildOptions(ColonyScope.Locations());
-                scope = ScopeEngine.Revalidate(scope, scopeOptionsSnapshot);
-                pawnsSnapshot = ColonyScope.PawnsIn(scope);
-                spansSnapshot = ScopeEngine.SpansMultipleLocations(
-                    pawnsSnapshot.Select(ColonyScope.LocationIdOf));
+                pawnsScopeOptions = ScopeEngine.BuildOptions(ColonyScope.Locations());
+                scope = ScopeEngine.Revalidate(scope, pawnsScopeOptions);
+                pawnsCache = profile.PawnsIn(scope);
+                pawnsSpans = ScopeEngine.SpansMultipleLocations(
+                    pawnsCache.Select(ColonyScope.LocationIdOf));
             }
-            return pawnsSnapshot;
+            return pawnsCache;
         }
 
         /// True when the listed pawns come from more than one map/caravan —
         /// colony planning wants a single location (Fix My Colony disables).
-        internal static bool ScopeSpansMultipleLocations
+        internal bool ScopeSpansMultipleLocations
         {
-            get { ListedPawns(); return spansSnapshot; }
+            get { ListedPawns(); return pawnsSpans; }
         }
 
         /// Colonists and slaves of one map, for location-scoped planning.
@@ -1554,13 +1549,13 @@ namespace WorkRoles.UI
         // Open-window snapshot of per-pawn chip layouts at the table's strip
         // width: the table body (heights + chip rects) becomes dictionary reads.
         // Floored like EstimatedStripWidth so draw and measure share one key.
-        private static readonly Dictionary<Pawn, (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)>
+        private readonly Dictionary<Pawn, (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)>
             chipLayouts = new Dictionary<Pawn, (List<(RoleAssignment, Rect, int)>, float)>();
-        private static int chipLayoutStamp = -1;
-        private static float chipLayoutWidth = -1f;
-        private static int chipLayoutDisplay = -1;
+        private int chipLayoutStamp = -1;
+        private float chipLayoutWidth = -1f;
+        private int chipLayoutDisplay = -1;
 
-        private static (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)
+        private (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)
             ChipLayoutFor(Pawn pawn, RoleStore store, float stripWidth)
         {
             stripWidth = Mathf.Max(300f, stripWidth);
@@ -1583,7 +1578,7 @@ namespace WorkRoles.UI
             return entry;
         }
 
-        internal static float StripHeightFor(Pawn pawn)
+        internal float StripHeightFor(Pawn pawn)
         {
             var store = RoleStore.Current;
             if (store == null) return RoleChipUI.Height;
@@ -1593,7 +1588,7 @@ namespace WorkRoles.UI
         /// One skill cell: fractional level in the stats panel's color language,
         /// then passion icon, aptitude square and expertise square; breakdown
         /// tooltip (traits, aptitude, custom passion) on hover.
-        internal static void DrawSkillCell(Rect cell, Pawn pawn, SkillDef skill)
+        internal void DrawSkillCell(Rect cell, Pawn pawn, SkillDef skill)
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1668,6 +1663,7 @@ namespace WorkRoles.UI
 
         // Open-window snapshot of rule outcomes: Pass hits the map (gravship
         // lookup) per chip otherwise. Hour flips and map moves bump the stamp.
+        // Keyed by role+pawn (not per view), so deliberately shared statics.
         private static readonly Dictionary<(int roleId, Pawn pawn), bool> rulesPassCache
             = new Dictionary<(int, Pawn), bool>();
         private static int rulesPassStamp = -1;
@@ -1714,8 +1710,25 @@ namespace WorkRoles.UI
                     && chipRect.Contains(pressEvent.mousePosition))
                 {
                     Pawn capturedPawn = pawn;
-                    int capturedRoleId = role.id;
-                    onClick = () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRoleId);
+                    Role capturedRole = role;
+                    onClick = () =>
+                    {
+                        // Enabling a globally-disabled role via ToggleRoleForPawn
+                        // re-enables it globally and turns it off for every other
+                        // holder — too big a blast radius for a silent chip click.
+                        if (!capturedRole.enabled)
+                            Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                            {
+                                new FloatMenuOption(
+                                    "WR_EnableHereOnly".Translate(capturedRole.label, capturedPawn.LabelShortCap),
+                                    () => RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRole.id)),
+                                new FloatMenuOption(
+                                    "WR_EnableGlobally".Translate(capturedRole.label),
+                                    () => RoleCommands.ToggleRoleGlobal(capturedRole.id)),
+                            }));
+                        else
+                            RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRole.id);
+                    };
                 }
                 var click = RoleChipUI.Draw(chipRect, role, style,
                     showRemove: true, dragSource: pawn,
@@ -1978,7 +1991,7 @@ namespace WorkRoles.UI
             // Recommended Roles section: mirrors the Make It So outcome — kept roles
             // subtle, additions normal, removals struck — so the panel IS the preview
             // and the button applies directly.
-            if (recX < rect.xMax)
+            if (profile.ShowRecommendations && recX < rect.xMax)
             {
                 float recW = rect.xMax - recX;
                 EnsurePreview(store, selectedPawn);

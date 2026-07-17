@@ -36,6 +36,12 @@ namespace WorkRoles
                     int slot = CustomSlotOf(role.color, store);
                     if (slot >= 0) usedSlots.Add(slot);
                 }
+            foreach (var path in store.trainingPaths)
+                if (path.hasCustomColor)
+                {
+                    int slot = CustomSlotOf(path.color, store);
+                    if (slot >= 0) usedSlots.Add(slot);
+                }
             foreach (int slot in usedSlots)
                 doc.palette.Add((store.customSwatchNames[slot], ToRgb(store.customSwatches[slot])));
             foreach (var group in store.groups)
@@ -67,6 +73,27 @@ namespace WorkRoles
                     entries = role.entries.ToList(),
                 });
             }
+            foreach (var path in store.trainingPaths)
+            {
+                // Members and anchor travel by role NAME (ids are save-local).
+                var filePath = new FileTrainingPath
+                {
+                    name = path.name,
+                    colorRef = path.hasCustomColor ? EncodeColorRef(path.color, store, doc) : null,
+                    anchorRole = store.RoleById(path.anchorRoleId)?.label,
+                    anchorBefore = path.anchorBefore,
+                };
+                for (int i = 0; i < path.roleIds.Count; i++)
+                {
+                    string label = store.RoleById(path.roleIds[i])?.label;
+                    if (label != null)
+                        filePath.entries.Add((label, path.bandMins[i], path.bandMaxes[i]));
+                }
+                doc.trainingPaths.Add(filePath);
+            }
+            // Only the stored template travels (empty = the derived default).
+            doc.recommendationOrder = store.recommendationOrder
+                .Select(id => store.RoleById(id)?.label).Where(l => l != null).ToList();
             return RoleFile.Build(doc);
         }
 
@@ -264,12 +291,15 @@ namespace WorkRoles
         }
 
         /// Applies an import. Selections are row indices into PaletteMergeRows /
-        /// RoleRows; ignored in overwrite modes (wholesale). Returns a summary.
+        /// RoleRows / doc.trainingPaths; ignored in overwrite modes (wholesale).
+        /// Returns a summary.
         public static string Apply(RoleStore store, RoleFileDocument doc,
             bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
-            bool rolesInclude, bool rolesOverwrite, List<int> roleRows)
+            bool rolesInclude, bool rolesOverwrite, List<int> roleRows,
+            bool pathsInclude, bool pathsOverwrite, List<int> pathRows,
+            bool orderInclude)
         {
-            int paletteChanges = 0, updated = 0, added = 0, deleted = 0;
+            int paletteChanges = 0, updated = 0, added = 0, deleted = 0, pathsAdded = 0;
             store.SyncSwatchNames();
 
             if (paletteInclude && paletteOverwrite)
@@ -408,8 +438,51 @@ namespace WorkRoles
                 Seeding.RefreshWorkTypeSnapshots();
             }
 
-            return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges);
+            // Paths and the order resolve names AFTER roles landed (they may
+            // reference roles this same import just added).
+            if (pathsInclude)
+            {
+                if (pathsOverwrite) store.trainingPaths.Clear();
+                var selectedPaths = pathsOverwrite
+                    ? Enumerable.Range(0, doc.trainingPaths.Count).ToList()
+                    : (pathRows ?? new List<int>());
+                foreach (int index in selectedPaths)
+                {
+                    if (index < 0 || index >= doc.trainingPaths.Count) continue;
+                    var filePath = doc.trainingPaths[index];
+                    var (ids, mins, maxes) = RoleFile.ResolvePathEntries(filePath,
+                        n => RoleByLabel(store, n)?.id);
+                    var (hasPathColor, pathColor) = ResolveColor(filePath.colorRef, store, doc);
+                    // Always a NEW path (names are not identities); unknown names
+                    // dropped already, an unknown anchor means no anchor.
+                    store.trainingPaths.Add(new TrainingPath
+                    {
+                        id = store.NextPathId(),
+                        name = filePath.name,
+                        roleIds = ids,
+                        bandMins = mins,
+                        bandMaxes = maxes,
+                        anchorRoleId = RoleByLabel(store, filePath.anchorRole)?.id ?? -1,
+                        anchorBefore = filePath.anchorBefore,
+                        hasCustomColor = hasPathColor,
+                        color = hasPathColor ? pathColor : Color.white,
+                    });
+                    pathsAdded++;
+                }
+            }
+            if (orderInclude && doc.recommendationOrder.Count > 0)
+            {
+                store.recommendationOrder = doc.recommendationOrder
+                    .Select(n => RoleByLabel(store, n)?.id)
+                    .Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
+            }
+
+            return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges, pathsAdded);
         }
+
+        private static Role RoleByLabel(RoleStore store, string name) =>
+            name.NullOrEmpty() ? null : store.roles.FirstOrDefault(r =>
+                string.Equals(r.label, name, System.StringComparison.OrdinalIgnoreCase));
 
         /// Resolves a file group name to a group id, creating unknown groups
         /// (leniency: a role may reference a name missing from <Groups>).

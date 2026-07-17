@@ -1,5 +1,4 @@
 using System;
-using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -19,7 +18,7 @@ namespace WorkRoles.UI
     {
         public const float Height = 24f;
         private const float PadX = 8f;
-        private const float RemoveSize = 16f;
+        private const float RemoveSize = ChipUI.RemoveSize;
         public static readonly Color DefaultChipColor = new Color(0.25f, 0.35f, 0.45f);
         private static readonly Color OutlineColor = new Color(1f, 1f, 1f, 0.25f);
         private static readonly Color LabelColor = new Color(0.95f, 0.95f, 0.95f);
@@ -69,6 +68,25 @@ namespace WorkRoles.UI
                 + markers * (RemoveSize + 2f);
         }
 
+        /// Band chip: role colors/label like a normal chip, plus inner grip
+        /// bars at both ends and the X inset past the right grip. Display-only.
+        public static void DrawBandChip(Rect rect, Role role)
+        {
+            var spec = new ChipSpec
+            {
+                Bg = role.hasCustomColor ? role.color : DefaultChipColor,
+                Outline = OutlineColor,
+                LabelColor = LabelColor,
+                Label = role.label,
+                ShowRemove = true,
+                Grips = true,
+                LabelInsetLeft = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f,
+                // Right grip zone + the X slot (2px to the grip, 4px to the label).
+                LabelInsetRight = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f + RemoveSize + 4f,
+            };
+            ChipUI.Draw(rect, in spec);
+        }
+
         /// Draws a chip. Clicks are resolved centrally via RoleDrag.ResolveMouseUp.
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
         /// interactive: false renders a display-only chip (no clicks, no drag).
@@ -89,14 +107,33 @@ namespace WorkRoles.UI
                 // Normal: bg unchanged
             }
 
-            Widgets.DrawBoxSolidWithOutline(rect, bg, OutlineColor);
+            Color labelColor =
+                style == ChipStyle.Disabled || style == ChipStyle.AutoOff
+                    ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f)
+                : style == ChipStyle.Subtle
+                    ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f)
+                : LabelColor;
+
+            // Compact initials get a uniform 4px inset (the exact-measure slack
+            // covers it) so text stays left-aligned across rows.
+            var spec = new ChipSpec
+            {
+                Bg = bg,
+                Outline = OutlineColor,
+                LabelColor = labelColor,
+                Label = display == ChipDisplay.Minimal ? null
+                    : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,
+                ShowRemove = showRemove,
+                LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
+                    + MarkerCount(role, pinned) * (RemoveSize + 2f),
+                LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
+                StrikeThrough = style == ChipStyle.Disabled,
+            };
+            ChipUI.Draw(rect, in spec);
 
             // Prefix markers mirror the remove icon's slot, left of the label:
             // blocker veto, time rule, location rule, pin (plain roles only).
-            // Compact initials get a uniform 4px inset (the exact-measure slack
-            // covers it) so text stays left-aligned across rows.
-            float labelX = rect.x
-                + (display == ChipDisplay.Compact ? 4f : PadFor(display));
+            // Drawn on top of the box; the label inset already reserves the slots.
             {
                 float markerX = rect.x + 3f;
                 void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
@@ -107,7 +144,6 @@ namespace WorkRoles.UI
                     GUI.DrawTexture(markerRect, tex);
                     GUI.color = Color.white;
                     markerX += RemoveSize + 2f;
-                    labelX += RemoveSize + 2f;
                 }
                 if (role.blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
                 if (role.activeHours != Role.AllHours) Marker(WorkRolesTex.TimeMarker, tinted: true);
@@ -117,46 +153,13 @@ namespace WorkRoles.UI
                 if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker, tinted: true, size: 13f);
             }
 
-            Rect removeRect = new Rect(rect.xMax - RemoveSize - 3f, rect.y + (rect.height - RemoveSize) / 2f, RemoveSize, RemoveSize);
-            Rect labelRect = new Rect(labelX, rect.y, rect.xMax - labelX - PadFor(display) - (showRemove ? RemoveSize + 2f : 0f), rect.height);
-
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            // Never wrap: a rect that comes up a pixel short at fractional UI
-            // scales must clip the last glyph, not spill a second line out of
-            // the chip.
-            bool wrap = Text.WordWrap;
-            Text.WordWrap = false;
-
-            if (style == ChipStyle.Disabled || style == ChipStyle.AutoOff)
-                GUI.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f);
-            else if (style == ChipStyle.Subtle)
-                GUI.color = new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f);
-            else
-                GUI.color = LabelColor;
-
-            if (display != ChipDisplay.Minimal)
-                Widgets.Label(labelRect,
-                    display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label);
-            GUI.color = Color.white;
-            Text.WordWrap = wrap;
-            Text.Anchor = TextAnchor.UpperLeft;
-
             // Abbreviated chips: the tooltip carries the identity.
             if (display != ChipDisplay.Normal && Mouse.IsOver(rect))
                 TooltipHandler.TipRegion(rect, role.label);
 
-            if (style == ChipStyle.Disabled)
-            {
-                GUI.color = new Color(1f, 0.3f, 0.3f, 0.75f);
-                WrText.LineHorizontal(labelRect.x, rect.y + rect.height / 2f, labelRect.width);
-                GUI.color = Color.white;
-            }
-
-            if (showRemove)
-                GUI.DrawTexture(removeRect, TexButton.Delete);
-
             if (!interactive) return ChipClick.None;
+
+            Rect removeRect = ChipUI.RemoveRect(rect);
 
             var e = Event.current;
             if (e.type == EventType.MouseDown && e.button == 1 && rect.Contains(e.mousePosition))

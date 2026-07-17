@@ -40,6 +40,9 @@ namespace WorkRoles
         {
             var settings = WorkRolesMod.Settings;
             if (settings == null) return;
+            // No world, no per-savegame dedup key — a pre-world write would file
+            // under "none" and collide with (or suppress) a real world's warning.
+            if (Find.World == null) return;
             // A write roles already satisfy is a non-issue: the mod wanted the
             // work on (or off) and it already is — e.g. AllowTool re-enabling
             // Finish Off when Odd Jobs carries it. Warn only when the mod's

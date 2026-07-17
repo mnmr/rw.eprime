@@ -94,7 +94,8 @@ namespace WorkRoles.Core
             foreach (var role in catalog)
             {
                 if (!role.Enabled || role.HasRules || role.AutoAssign || role.Blocker || role.Managed) continue;
-                if (role.MinHolders == 0) continue; // never dealt: interest-driven only
+                // 0 = never dealt (interest-driven only); Never = not even that.
+                if (role.MinHolders == 0 || role.MinHolders == RecRole.NeverHolders) continue;
                 var relevantSkills = RelevantSkills(role);
                 if (relevantSkills.Count == 0) continue; // not skill-associated
                 // Sub-roles are not dealt — their coverer is — unless gated

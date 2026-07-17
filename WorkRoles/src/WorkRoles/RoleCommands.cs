@@ -90,17 +90,35 @@ namespace WorkRoles
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan, so the row-index
         /// selections from the preview stay valid everywhere.
+
+        // MP's Harmony invoker chokes on wide signatures (Mono ILGenerator
+        // bug): synced args pack into flags to stay compact.
+        [System.Flags]
+        public enum ImportFlags
+        {
+            None = 0,
+            Palette = 1,
+            PaletteOverwrite = 2,
+            Roles = 4,
+            RolesOverwrite = 8,
+            Paths = 16,
+            PathsOverwrite = 32,
+            Order = 64,
+        }
+
         [SyncMethod]
-        public static void ApplyImport(string xml,
-            bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
-            bool rolesInclude, bool rolesOverwrite, List<int> roleRows)
+        public static void ApplyImport(string xml, int flags,
+            List<int> paletteRows, List<int> roleRows, List<int> pathRows)
         {
             if (Store == null || xml.NullOrEmpty()) return;
             var doc = RoleIO.Parse(xml);
             if (doc.error != null) return;
+            var f = (ImportFlags)flags;
             string summary = RoleIO.Apply(Store, doc,
-                paletteInclude, paletteOverwrite, paletteRows,
-                rolesInclude, rolesOverwrite, roleRows);
+                f.HasFlag(ImportFlags.Palette), f.HasFlag(ImportFlags.PaletteOverwrite), paletteRows,
+                f.HasFlag(ImportFlags.Roles), f.HasFlag(ImportFlags.RolesOverwrite), roleRows,
+                f.HasFlag(ImportFlags.Paths), f.HasFlag(ImportFlags.PathsOverwrite), pathRows,
+                f.HasFlag(ImportFlags.Order));
             UiVersion.Bump();
             Messages.Message(summary, MessageTypeDefOf.PositiveEvent, historical: false);
         }
@@ -180,7 +198,7 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null || role.managed) return;
-            role.minHolders = System.Math.Max(-1, min);
+            role.minHolders = System.Math.Max(RecRole.NeverHolders, min);
             UiVersion.Bump();
         }
 
@@ -193,6 +211,92 @@ namespace WorkRoles
             role.trainMin = role.trainMax = 0;
             role.trainTargets.Clear();
             role.minHolders = -1;
+            UiVersion.Bump();
+        }
+
+        // Void + name-watch selection, same reason as CreateRole.
+        [SyncMethod]
+        public static void CreateTrainingPath(string name)
+        {
+            if (Store == null || name.NullOrEmpty()) return;
+            Store.trainingPaths.Add(new TrainingPath { id = Store.NextPathId(), name = name });
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void RenameTrainingPath(int pathId, string name)
+        {
+            var path = Store?.PathById(pathId);
+            if (path == null || name.NullOrEmpty() || path.name == name) return;
+            path.name = name;
+            UiVersion.Bump();
+        }
+
+        /// One command both sets and clears the path's display color override.
+        [SyncMethod]
+        public static void SetTrainingPathColor(int pathId, bool hasColor, UnityEngine.Color color)
+        {
+            var path = Store?.PathById(pathId);
+            if (path == null) return;
+            path.hasCustomColor = hasColor;
+            path.color = hasColor ? color : UnityEngine.Color.white;
+            UiVersion.Bump();
+        }
+
+        /// Whole-path band upsert. Hard validation: a synced command from a
+        /// stale snapshot must never land corrupt geometry.
+        [SyncMethod]
+        public static void SetTrainingPathBands(int pathId,
+            List<int> roleIds, List<int> bandMins, List<int> bandMaxes)
+        {
+            var path = Store?.PathById(pathId);
+            if (path == null) return;
+            roleIds = roleIds ?? new List<int>();
+            bandMins = (bandMins ?? new List<int>()).ToList();
+            bandMaxes = (bandMaxes ?? new List<int>()).ToList();
+            // Bands ride along when a stale id drops out, so filter as tuples.
+            for (int i = roleIds.Count - 1; i >= 0; i--)
+                if (Store.RoleById(roleIds[i]) == null
+                    || roleIds.IndexOf(roleIds[i]) != i)
+                {
+                    roleIds.RemoveAt(i);
+                    if (i < bandMins.Count) bandMins.RemoveAt(i);
+                    if (i < bandMaxes.Count) bandMaxes.RemoveAt(i);
+                }
+            if (roleIds.Count > 0
+                && !SkillProgressionMath.Validate(roleIds.Count, bandMins, bandMaxes)) return;
+            path.roleIds = roleIds;
+            path.bandMins = roleIds.Count == 0 ? new List<int>() : bandMins;
+            path.bandMaxes = roleIds.Count == 0 ? new List<int>() : bandMaxes;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetTrainingPathAnchor(int pathId, int anchorRoleId, bool before)
+        {
+            var path = Store?.PathById(pathId);
+            if (path == null) return;
+            if (anchorRoleId != -1 && Store.RoleById(anchorRoleId) == null) return;
+            if (path.anchorRoleId == anchorRoleId && path.anchorBefore == before) return;
+            path.anchorRoleId = anchorRoleId;
+            path.anchorBefore = before;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void DeleteTrainingPath(int pathId)
+        {
+            if (Store == null) return;
+            if (Store.trainingPaths.RemoveAll(p => p.id == pathId) > 0)
+                UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetRoleAllowTrainingSubstitutions(int roleId, bool value)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.managed || role.allowTrainingSubstitutions == value) return;
+            role.allowTrainingSubstitutions = value;
             UiVersion.Bump();
         }
 
@@ -224,6 +328,21 @@ namespace WorkRoles
             // empty set would shadow its vanilla priorities (see RoleStore save sync).
             Store.pawnSets.RemoveAll(kv => kv.Value.assignments.Count == 0);
             Store.billRoles.RemoveAll(kv => kv.Value == roleId);
+            // Training paths: drop the deleted role's (id, min, max) entry;
+            // emptied paths survive — they are named containers, not ephemeral.
+            foreach (var path in Store.trainingPaths)
+            {
+                int at = path.roleIds.IndexOf(roleId);
+                if (at >= 0)
+                {
+                    // Parallel-list alignment is guaranteed by load sanitize +
+                    // validated commands; raw RemoveAt is safe here.
+                    path.roleIds.RemoveAt(at);
+                    path.bandMins.RemoveAt(at);
+                    path.bandMaxes.RemoveAt(at);
+                }
+                if (path.anchorRoleId == roleId) path.anchorRoleId = -1;
+            }
             Store.roles.Remove(role);
             SweepEmptyGroups();
         }

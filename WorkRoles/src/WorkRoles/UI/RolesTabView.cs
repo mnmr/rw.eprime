@@ -10,6 +10,10 @@ namespace WorkRoles.UI
 {
     public class RolesTabView
     {
+        // Pawn source for the holders row, injected by MainTabWindow (the
+        // colonist table owns the scope and its pawn snapshot).
+        internal System.Func<List<Pawn>> listedPawns;
+
         private Vector2 listScroll;
         private Vector2 entriesScroll;
         private Vector2 treeScroll;
@@ -32,8 +36,6 @@ namespace WorkRoles.UI
         private const float AutoRowH = 24f;
         // Legend row + hour-number row + cell row.
         private const float RulesSectionH = HourLabelH + 2f + HourLabelH + 2f + HourCellH;
-        private const float TrainingRowH = 28f;
-        private const float TrainingSectionH = TrainingRowH * 3f + 8f;
         // Vanilla-schedule look: paint a color over a grey base.
         private static readonly Color HourActiveColor = SwatchPalette.Hex("0E7490"); // Tailwind cyan-700
         private static readonly Color HourInactiveColor = new Color(0.35f, 0.35f, 0.35f);
@@ -48,15 +50,10 @@ namespace WorkRoles.UI
         // A role is auto iff it has rules; this transient set only reveals the rule
         // inputs for roles that don't have any yet (never scribed, never synced).
         private readonly HashSet<int> rulesRevealed = new HashSet<int>();
-        private readonly HashSet<int> trainingRevealed = new HashSet<int>();
-        // Slider edits in flight: committed as ONE synced command on release
-        // (dragging must not spam MP).
-        private IntRange pendingBand;
-        private int bandRoleId = -1;
 
         // Disambiguated display names per WorkGiverDef. Built once (defs don't
         // change mid-game), invalidated by Reset().
-        private static Dictionary<WorkGiverDef, string> _giverDisplayCache;
+        private static Dictionary<WorkGiverDef, string> giverDisplayCache;
 
         // Built-in swatch table lives game-side (SwatchPalette): import/export
         // and seeding consume it too.
@@ -110,10 +107,10 @@ namespace WorkRoles.UI
             paintingHours = false;
             paintRoleId = -1;
             rulesRevealed.Clear();
-            _giverDisplayCache = null; // force rebuild on next use
+            giverDisplayCache = null; // force rebuild on next use
             // Opening re-snapshots everything on this tab.
             InvalidateSectionsSnapshot();
-            deadEntriesStamp = holdersStamp = -1;
+            deadEntriesStamp = holdersStamp = skillsUsedStamp = -1;
             displayStamp = treeNodesStamp = -1;
         }
 
@@ -911,6 +908,8 @@ namespace WorkRoles.UI
             const float TitleH = 30f;
             const float AssignedRowH = 22f;
             const float GroupRowH = 26f;
+            const float HoldersRowH = 28f;
+            const float SkillsRowH = 22f;
             const float CheckRowH = 24f;
             const float RulesRowGap = 6f;
             var customSlots = store.customSwatches;
@@ -919,13 +918,13 @@ namespace WorkRoles.UI
             bool secondCustomRowUsed = customSlots.Skip(SwatchCols).Any(c => c.a >= 0.5f);
             int customRows = firstCustomRowFull || secondCustomRowUsed ? 2 : 1;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
-            float leftContentH = Mathf.Max(TitleH + AssignedRowH + 2f + GroupRowH, CheckRowH * 4f);
+            float leftContentH = Mathf.Max(
+                TitleH + AssignedRowH + 2f + GroupRowH
+                    + (role.managed ? 0f : HoldersRowH + SkillsRowH),
+                CheckRowH * 4f);
             bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
-            bool trainingShown = !role.managed
-                && (HasTrainingConfig(role) || trainingRevealed.Contains(role.id));
             float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
-                + (trainingShown ? RulesRowGap + TrainingSectionH : 0f)
                 + TopBoxPadding * 2f;
 
             var topBox = new Rect(rect.x, rect.y, rect.width, TopBoxHeight);
@@ -1027,17 +1026,17 @@ namespace WorkRoles.UI
             float rowsStartY = topBox.y + TopBoxPadding;
 
             // Checkbox column: right-aligned in the left container, from the TOP —
-            // Auto-assign, Blocker role, Auto role, Training role stacked. Measured
-            // first so the title and pencil know their room.
+            // Auto-assign, Blocker, Auto role, Allow training substitutions stacked.
+            // Measured first so the title and pencil know their room.
             Text.Font = GameFont.Small;
             float checksW = Mathf.Max(
                 Mathf.Max(WrText.FitWidth("WR_AutoAssign".Translate()),
                     WrText.FitWidth("WR_BlockerRole".Translate())),
                 Mathf.Max(WrText.FitWidth("WR_AutoRole".Translate()),
-                    WrText.FitWidth("WR_TrainingRole".Translate()))) + 30f;
+                    WrText.FitWidth("WR_AllowTrainingSubs".Translate()))) + 30f;
             float checksX = leftContainerW + topBox.x - checksW;
             DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 4f),
-                role, store, rulesShown, trainingShown, CheckRowH);
+                role, rulesShown, CheckRowH);
 
             // Title with the rename pencil directly AFTER the name (the right
             // column now belongs to the four toggles).
@@ -1069,18 +1068,20 @@ namespace WorkRoles.UI
             DrawGroupPickerRow(new Rect(leftX, row2Y + AssignedRowH + 2f,
                 checksX - 8f - leftX, GroupRowH - 4f), role, store);
 
-            // Expanding sections (full box width): rules while the auto-role
-            // opt-in is on, then the training panel while its toggle is on.
+            if (!role.managed)
+            {
+                float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
+                DrawHoldersRow(new Rect(leftX, row4Y, checksX - 8f - leftX, HoldersRowH - 4f), role);
+                DrawSkillsUsedRow(new Rect(leftX, row4Y + HoldersRowH,
+                    checksX - 8f - leftX, SkillsRowH), role);
+            }
+
+            // Expanding section (full box width): rules while the auto-role
+            // opt-in is on.
             float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH) + RulesRowGap;
             if (rulesShown)
-            {
                 DrawRulesSection(new Rect(leftX, sectionY,
                     topBox.width - TopBoxPadding * 2f, RulesSectionH), role);
-                sectionY += RulesSectionH + RulesRowGap;
-            }
-            if (trainingShown)
-                DrawTrainingSection(new Rect(leftX, sectionY,
-                    topBox.width - TopBoxPadding * 2f, TrainingSectionH), role, store);
 
             // BOTTOM: split vertically — left = job tree, right = entries table
             float bottomY = topBox.yMax + 6f;
@@ -1165,21 +1166,10 @@ namespace WorkRoles.UI
         // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
 
         /// The editor's checkbox column: Auto-assign, Blocker role (not on the
-        /// managed role) and the Auto role opt-in, whose checkbox derives from
-        /// HasRules — unchecking clears the rules (confirmed), checking reveals
-        /// the rules section. CheckboxLabeled pins the boxes to the column's
-        /// right edge, so they align under the pencil.
-        /// Whether the role carries any training/holder configuration — this
-        /// keeps the panel visible. The "Training role" CHECKBOX is narrower:
-        /// only roles that train TOWARD another (trainTargets) are training
-        /// roles; a band or colonist count alone (Cook, Builder, Fabricator)
-        /// marks a destination, not a trainer.
-        private static bool HasTrainingConfig(Role role)
-            => role.trainSkill != null || role.trainTargets.Count > 0
-               || role.minHolders >= 0;
-
-        private void DrawEditorChecks(Rect rect, Role role, RoleStore store,
-            bool rulesShown, bool trainingShown, float rowH)
+        /// managed role), the Auto role opt-in and Allow training substitutions.
+        /// Auto role opt-in derives from HasRules — unchecking clears the rules
+        /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
+        private void DrawEditorChecks(Rect rect, Role role, bool rulesShown, float rowH)
         {
             Text.Font = GameFont.Small;
             float y = rect.y;
@@ -1211,21 +1201,7 @@ namespace WorkRoles.UI
             y += rowH;
             if (rulesWanted != rulesShown)
             {
-                if (rulesWanted && trainingShown)
-                {
-                    // Auto rules and training are mutually exclusive: a
-                    // rule-carrying role is never recommended, so training
-                    // config on it would be inert.
-                    Find.WindowStack.Add(new Dialog_SmallConfirm(
-                        "WR_AutoOverTrainingConfirm".Translate(role.label),
-                        () =>
-                        {
-                            RoleCommands.ClearRoleTraining(role.id);
-                            trainingRevealed.Remove(role.id);
-                            rulesRevealed.Add(role.id);
-                        }));
-                }
-                else if (rulesWanted)
+                if (rulesWanted)
                 {
                     rulesRevealed.Add(role.id);
                 }
@@ -1247,215 +1223,34 @@ namespace WorkRoles.UI
             }
 
             if (role.managed) return;
-            var trainRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(trainRect, "WR_TrainingRoleTip".Translate());
-            bool isTraining = role.trainTargets.Count > 0 || trainingRevealed.Contains(role.id);
-            bool trainWanted = isTraining;
-            Widgets.CheckboxLabeled(trainRect, "WR_TrainingRole".Translate(), ref trainWanted);
-            if (trainWanted == isTraining) return;
-            if (trainWanted && rulesShown)
-            {
-                Find.WindowStack.Add(new Dialog_SmallConfirm(
-                    "WR_TrainingOverAutoConfirm".Translate(role.label),
-                    () =>
-                    {
-                        if (role.HasRules) RoleCommands.ClearRoleRules(role.id);
-                        rulesRevealed.Remove(role.id);
-                        EnableTraining(role, store);
-                    }));
-            }
-            else if (trainWanted)
-            {
-                EnableTraining(role, store);
-            }
-            else if (role.trainTargets.Count > 0)
-            {
-                Find.WindowStack.Add(new Dialog_SmallConfirm(
-                    "WR_ClearTrainingConfirm".Translate(role.label),
-                    () =>
-                    {
-                        RoleCommands.ClearRoleTraining(role.id);
-                        trainingRevealed.Remove(role.id);
-                    }));
-            }
-            else
-            {
-                trainingRevealed.Remove(role.id);
-            }
+            var subsRect = new Rect(rect.x, y, rect.width, rowH);
+            TooltipHandler.TipRegion(subsRect, "WR_AllowTrainingSubsTip".Translate());
+            bool subs = role.allowTrainingSubstitutions;
+            Widgets.CheckboxLabeled(subsRect, "WR_AllowTrainingSubs".Translate(), ref subs);
+            if (subs != role.allowTrainingSubstitutions)
+                RoleCommands.SetRoleAllowTrainingSubstitutions(role.id, subs);
         }
 
-        /// Opens the training panel; a fresh role gets derived defaults — the
-        /// skill its jobs train, its tightest covering roles as targets, and a
-        /// band ceiling at the cheapest target's floor.
-        private void EnableTraining(Role role, RoleStore store)
-        {
-            trainingRevealed.Add(role.id);
-            if (role.trainTargets.Count > 0) return;
-            var targets = DefaultTrainTargets(role, store);
-            if (role.trainSkill == null)
-            {
-                string skill = DominantSkillOf(role);
-                int bandMax = 0;
-                foreach (int id in targets)
-                {
-                    var target = store.RoleById(id);
-                    if (target != null && target.trainMin > 0
-                        && (bandMax == 0 || target.trainMin < bandMax))
-                        bandMax = target.trainMin;
-                }
-                if (skill != null) RoleCommands.SetRoleTraining(role.id, skill, 0, bandMax);
-            }
-            if (targets.Count > 0) RoleCommands.SetRoleTrainTargets(role.id, targets);
-            // Training roles are never force-dealt: trainees come from interest.
-            if (role.minHolders < 0) RoleCommands.SetRoleHolders(role.id, 0);
-        }
-
-        /// The role's tightest covering roles (the tree parents) — the natural
-        /// "trains toward" prefill.
-        private static List<int> DefaultTrainTargets(Role role, RoleStore store)
-        {
-            var candidates = store.roles
-                .Where(o => o != role && !o.managed && !o.blocker && !o.HasRules && o.Covers(role))
-                .ToList();
-            if (candidates.Count == 0) return new List<int>();
-            int tightest = candidates.Min(o => o.Coverage().Count);
-            return candidates.Where(o => o.Coverage().Count == tightest)
-                .Select(o => o.id).ToList();
-        }
-
-        /// The skill the role's jobs predominantly train — the prefill for a
-        /// freshly enabled training panel.
-        private static string DominantSkillOf(Role role)
-        {
-            var counts = new Dictionary<string, int>();
-            foreach (var giverName in role.Coverage())
-            {
-                var skills = DefDatabase<WorkGiverDef>.GetNamedSilentFail(giverName)
-                    ?.workType?.relevantSkills;
-                if (skills == null) continue;
-                foreach (var skill in skills)
-                    counts[skill.defName] = counts.TryGetValue(skill.defName, out int c) ? c + 1 : 1;
-            }
-            return counts.Count == 0 ? null
-                : counts.OrderByDescending(kv => kv.Value).ThenBy(kv => kv.Key).First().Key;
-        }
-
-        /// Training panel: skill + band (min..max, 20 = open-ended), the roles
-        /// this one trains toward, and the colony holder bounds. Band drags
-        /// commit as ONE synced command on release.
-        private void DrawTrainingSection(Rect rect, Role role, RoleStore store)
+        /// Colonist-count picker: Auto / 0..8 / Never (see WR_HoldersTip).
+        private static void DrawHoldersRow(Rect rect, Role role)
         {
             Text.Font = GameFont.Small;
-            float y = rect.y;
-
-            // Row 1: skill picker + band slider.
-            string skillLabel = role.trainSkill == null
-                ? "WR_TrainSkillNone".Translate().ToString()
-                : DefDatabase<SkillDef>.GetNamedSilentFail(role.trainSkill)?.skillLabel.CapitalizeFirst()
-                  ?? role.trainSkill;
-            var skillRect = new Rect(rect.x, y, 170f, TrainingRowH - 4f);
-            if (Widgets.ButtonText(skillRect, "WR_TrainSkillButton".Translate(skillLabel)))
-            {
-                int roleId = role.id;
-                var options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("WR_TrainSkillNone".Translate(),
-                        () => RoleCommands.SetRoleTraining(roleId, null, 0, 0)),
-                };
-                foreach (var skill in DefDatabase<SkillDef>.AllDefsListForReading
-                             .OrderBy(s => s.skillLabel.ToString()))
-                {
-                    var captured = skill.defName;
-                    options.Add(new FloatMenuOption(skill.skillLabel.CapitalizeFirst(),
-                        () => RoleCommands.SetRoleTraining(roleId, captured, 0, 0)));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-            if (role.trainSkill != null)
-            {
-                // Slider ends mid-panel, matching the auto-role section's reach.
-                var bandRect = new Rect(skillRect.xMax + 12f, y - 4f,
-                    rect.x + rect.width / 2f - skillRect.xMax - 12f, TrainingRowH);
-                TooltipHandler.TipRegion(bandRect, "WR_TrainBandTip".Translate());
-                var band = bandRoleId == role.id
-                    ? pendingBand
-                    : new IntRange(role.trainMin, role.trainMax == 0 ? 21 : role.trainMax);
-                var before = band;
-                Widgets.IntRange(bandRect, 87210 + role.id, ref band, 0, 21);
-                if (band != before)
-                {
-                    pendingBand = band;
-                    bandRoleId = role.id;
-                }
-                if (bandRoleId == role.id && !Input.GetMouseButton(0))
-                {
-                    bandRoleId = -1;
-                    int max = pendingBand.max >= 21 ? 0 : pendingBand.max; // 21 = open-ended (skills cap at 20)
-                    if (pendingBand.min != role.trainMin || max != role.trainMax)
-                        RoleCommands.SetRoleTraining(role.id, role.trainSkill, pendingBand.min, max);
-                }
-            }
-            y += TrainingRowH;
-
-            // Row 2: train targets as removable chips + Add.
+            Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string targetsLabel = "WR_TrainTargetsLabel".Translate();
-            float targetsLabelW = WrText.FitWidth(targetsLabel);
-            Widgets.Label(new Rect(rect.x, y + 3f, targetsLabelW, TrainingRowH), targetsLabel);
+            string label = "WR_HoldersLabel".Translate();
+            float labelW = WrText.FitWidth(label);
+            Widgets.Label(new Rect(rect.x, rect.y, labelW, rect.height), label);
             GUI.color = Color.white;
-            float x = rect.x + targetsLabelW + 6f;
-            foreach (int targetId in role.trainTargets
-                         .OrderBy(id => store.RoleById(id)?.label, System.StringComparer.OrdinalIgnoreCase)
-                         .ToList())
-            {
-                var target = store.RoleById(targetId);
-                if (target == null) continue;
-                float w = RoleChipUI.WidthFor(target, showRemove: true, ChipDisplay.Normal, null, false);
-                if (x + w > rect.xMax - 70f) break; // keep room for Add
-                var chipRect = new Rect(x, y + (TrainingRowH - 4f - RoleChipUI.Height) / 2f,
-                    w, RoleChipUI.Height);
-                TooltipHandler.TipRegion(chipRect, "WR_TrainTargetTip".Translate(target.label));
-                var click = RoleChipUI.Draw(chipRect, target, ChipStyle.Normal,
-                    showRemove: true, dragSource: null, onClick: null);
-                if (click == ChipClick.Remove)
-                    RoleCommands.SetRoleTrainTargets(role.id,
-                        role.trainTargets.Where(id => id != targetId).ToList());
-                x += w + 4f;
-            }
-            if (Widgets.ButtonText(new Rect(x, y, 64f, TrainingRowH - 4f), "WR_TrainAddTarget".Translate()))
-            {
-                int roleId = role.id;
-                var current = role.trainTargets;
-                var options = new List<FloatMenuOption>();
-                foreach (var candidate in store.roles)
-                {
-                    // Rule-carrying (auto) roles are never recommended, so a
-                    // promotion could never surface them: not valid targets.
-                    if (candidate.id == role.id || candidate.managed || candidate.blocker
-                        || candidate.HasRules || current.Contains(candidate.id)) continue;
-                    var captured = candidate.id;
-                    options.Add(new FloatMenuOption(candidate.label, () =>
-                        RoleCommands.SetRoleTrainTargets(roleId,
-                            current.Concat(new[] { captured }).ToList())));
-                }
-                if (options.Count > 0) Find.WindowStack.Add(new FloatMenu(options));
-            }
-            y += TrainingRowH;
+            Text.Anchor = TextAnchor.UpperLeft;
 
-            // Row 3: the colonist count as a picker. Auto = dealt at colony
-            // scale; 0 = never dealt (interest-driven only); N = N per
-            // colony-scale unit, and Best drafts into the role.
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string holdersLabel = "WR_HoldersLabel".Translate();
-            float holdersLabelW = WrText.FitWidth(holdersLabel);
-            Widgets.Label(new Rect(rect.x, y + 3f, holdersLabelW, TrainingRowH), holdersLabel);
-            GUI.color = Color.white;
-            var holdersRect = new Rect(rect.x + holdersLabelW + 12f, y, 72f, TrainingRowH - 4f);
-            TooltipHandler.TipRegion(holdersRect, "WR_HoldersTip".Translate());
-            string holdersText = role.minHolders < 0
-                ? "WR_HoldersAuto".Translate().ToString()
-                : role.minHolders.ToString();
-            if (Widgets.ButtonText(holdersRect, holdersText))
+            var btnRect = new Rect(rect.x + labelW + 8f, rect.y, 72f, rect.height);
+            TooltipHandler.TipRegion(btnRect, "WR_HoldersTip".Translate());
+            string shown = role.minHolders == RecRole.NeverHolders
+                ? "WR_HoldersNever".Translate().ToString()
+                : role.minHolders < 0
+                    ? "WR_HoldersAuto".Translate().ToString()
+                    : role.minHolders.ToString();
+            if (Widgets.ButtonText(btnRect, shown))
             {
                 int captured = role.id;
                 var options = new List<FloatMenuOption>
@@ -1469,8 +1264,77 @@ namespace WorkRoles.UI
                     options.Add(new FloatMenuOption(value.ToString(),
                         () => RoleCommands.SetRoleHolders(captured, value)));
                 }
+                options.Add(new FloatMenuOption("WR_HoldersNever".Translate(),
+                    () => RoleCommands.SetRoleHolders(captured, RecRole.NeverHolders)));
                 Find.WindowStack.Add(new FloatMenu(options));
             }
+        }
+
+        // Open-window snapshot of the selected role's used skills, most
+        // frequent first (index 0 = primary).
+        private static List<(string label, bool primary)> skillsUsedCache;
+        private static int skillsUsedStamp = -1;
+        private static int skillsUsedRoleId = -1;
+
+        private static List<(string label, bool primary)> SkillsUsedOf(Role role)
+        {
+            if (skillsUsedCache == null || skillsUsedStamp != UiVersion.Current
+                || skillsUsedRoleId != role.id)
+            {
+                skillsUsedStamp = UiVersion.Current;
+                skillsUsedRoleId = role.id;
+                var counts = new Dictionary<SkillDef, int>();
+                foreach (var giverName in role.Coverage())
+                {
+                    var skills = DefDatabase<WorkGiverDef>.GetNamedSilentFail(giverName)
+                        ?.workType?.relevantSkills;
+                    if (skills == null) continue;
+                    foreach (var skill in skills)
+                        counts[skill] = counts.TryGetValue(skill, out int c) ? c + 1 : 1;
+                }
+                string LabelOf(SkillDef s) =>
+                    (s.skillLabel ?? s.label ?? s.defName).CapitalizeFirst();
+                skillsUsedCache = counts
+                    .OrderByDescending(kv => kv.Value)
+                    .ThenBy(kv => LabelOf(kv.Key), System.StringComparer.OrdinalIgnoreCase)
+                    .Select((kv, i) => (LabelOf(kv.Key), i == 0))
+                    .ToList();
+            }
+            return skillsUsedCache;
+        }
+
+        /// "Skills used:" with the primary (most frequent) skill white and the
+        /// rest slightly dimmed; labels that don't fit are dropped silently.
+        private static void DrawSkillsUsedRow(Rect rect, Role role)
+        {
+            var skills = SkillsUsedOf(role);
+            if (skills.Count == 0) return;
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            string caption = "WR_SkillsUsedLabel".Translate();
+            float captionW = WrText.FitWidth(caption);
+            Widgets.Label(new Rect(rect.x, rect.y, captionW, rect.height), caption);
+            float x = rect.x + captionW + 6f;
+            const string Sep = ", ";
+            float sepW = WrText.FitWidth(Sep);
+            for (int i = 0; i < skills.Count; i++)
+            {
+                var (label, primary) = skills[i];
+                float w = WrText.FitWidth(label);
+                if (x + w > rect.xMax) break;
+                GUI.color = primary ? Color.white : new Color(0.72f, 0.72f, 0.72f);
+                Widgets.Label(new Rect(x, rect.y, w, rect.height), label);
+                x += w;
+                if (i < skills.Count - 1 && x + sepW <= rect.xMax)
+                {
+                    GUI.color = new Color(0.55f, 0.55f, 0.55f);
+                    Widgets.Label(new Rect(x, rect.y, sepW, rect.height), Sep);
+                    x += sepW;
+                }
+            }
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
         }
 
         private void DrawRulesSection(Rect rect, Role role)
@@ -1661,14 +1525,14 @@ namespace WorkRoles.UI
         private static int holdersStamp = -1;
         private static int holdersRoleId = -1;
 
-        private static void DrawAssignedPawnNames(Rect rect, Role role, RoleStore store)
+        private void DrawAssignedPawnNames(Rect rect, Role role, RoleStore store)
         {
             if (holdersCache == null || holdersStamp != UiVersion.Current || holdersRoleId != role.id)
             {
                 holdersStamp = UiVersion.Current;
                 holdersRoleId = role.id;
                 holdersCache = new List<(Pawn, int)>();
-                foreach (var pawn in ColonistsTabView.ListedPawns())
+                foreach (var pawn in listedPawns())
                 {
                     if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
                     int idx = set.assignments.FindIndex(a => a.roleId == role.id);
@@ -2178,9 +2042,9 @@ namespace WorkRoles.UI
 
         internal static string GetGiverDisplayName(WorkGiverDef g)
         {
-            if (_giverDisplayCache == null)
-                _giverDisplayCache = BuildGiverDisplayCache();
-            if (_giverDisplayCache.TryGetValue(g, out var name))
+            if (giverDisplayCache == null)
+                giverDisplayCache = BuildGiverDisplayCache();
+            if (giverDisplayCache.TryGetValue(g, out var name))
                 return name;
             return (g.label ?? g.defName).CapitalizeFirst();
         }

@@ -10,7 +10,7 @@ namespace WorkRoles.UI
         private enum Tab { Colonists, Roles, Options }
 
         private Tab curTab = Tab.Colonists;
-        private readonly ColonistsTabView colonistsTab = new ColonistsTabView();
+        private readonly ColonistsTabView colonistsTab = new ColonistsTabView(ColonistsViewProfile.Colonists());
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
 
@@ -20,6 +20,8 @@ namespace WorkRoles.UI
         {
             resizeable = false;
             draggable = false;   // main tab windows are not draggable
+            // The Roles tab's holder list mirrors whatever the colonist table lists.
+            rolesTab.listedPawns = () => colonistsTab.ListedPawns();
         }
 
         public override Vector2 RequestedTabSize => TargetSize();
@@ -28,12 +30,12 @@ namespace WorkRoles.UI
         /// grows with the widest chip strip; whichever tab wants more height wins
         /// (small colonies would otherwise cramp the Roles tab). Both capped at
         /// the screen.
-        private static Vector2 TargetSize()
+        private Vector2 TargetSize()
         {
-            float w = Mathf.Clamp(ColonistsTabView.DesiredWidth() + 200f,
+            float w = Mathf.Clamp(colonistsTab.DesiredWidth() + 200f,
                 ColonistsTabView.DefaultWidth, Verse.UI.screenWidth);
             float h = Mathf.Min(
-                Mathf.Max(ColonistsTabView.DesiredHeight(), RolesTabView.DesiredHeight()),
+                Mathf.Max(colonistsTab.DesiredHeight(), RolesTabView.DesiredHeight()),
                 Verse.UI.screenHeight - 35f);
             return new Vector2(w, h);
         }
@@ -260,7 +262,7 @@ namespace WorkRoles.UI
             {
                 // Colony planning is per location: with pawns from several maps
                 // (or caravans) in view, Fix My Colony disables.
-                bool spansLocations = ColonistsTabView.ScopeSpansMultipleLocations;
+                bool spansLocations = colonistsTab.ScopeSpansMultipleLocations;
                 TooltipHandler.TipRegion(actionRect, spansLocations
                     ? "WR_FixNeedsSingleLocation".Translate()
                     : "WR_FixMyColonyTip".Translate());

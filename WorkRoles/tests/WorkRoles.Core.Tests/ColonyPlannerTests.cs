@@ -189,4 +189,16 @@ public class ColonyPlannerTests
         await Assert.That(result.VirtualSets[0].Contains(1)).IsFalse(); // covered: skipped
         await Assert.That(result.VirtualSets[0].Contains(2)).IsTrue();
     }
+
+    [Test]
+    public async Task NeverRolesAreNeverDealt()
+    {
+        var cook = Role(1, "Cooking");
+        cook.MinHolders = RecRole.NeverHolders;
+        var pawns = Enumerable.Range(0, 6).Select(_ => Pawn()).ToList();
+        foreach (var p in pawns) p.Rec.SkillLevels["Cooking"] = 5;
+        var result = ColonyPlanner.Compute(new List<RecRole> { cook }, pawns,
+            NoBest, Skills, NoEssentials, -1, -1, -1, -1);
+        await Assert.That(result.VirtualSets.Count(ids => ids.Contains(1))).IsEqualTo(0);
+    }
 }

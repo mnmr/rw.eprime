@@ -129,6 +129,132 @@ public class RoleFileTests
     }
 
     [Test]
+    public async Task TrainingPathsAndRecommendationOrderRoundTrip()
+    {
+        var doc = new RoleFileDocument
+        {
+            groups = { "Combat" },
+            roles =
+            {
+                new FileRole { label = "Shooter", group = "Combat", entries = { new(JobEntryKind.WorkType, "Hunting") } },
+                new FileRole { label = "Sniper", group = "Combat", entries = { new(JobEntryKind.WorkType, "Hunting") } },
+                new FileRole { label = "Doctor", entries = { new(JobEntryKind.WorkType, "Doctor") } },
+            },
+            trainingPaths =
+            {
+                new FileTrainingPath
+                {
+                    name = "Frontline",
+                    colorRef = "red-800",
+                    anchorRole = "Doctor",
+                    entries = { ("Shooter", 0, 8), ("Sniper", 6, 21) }, // 21 = open top
+                },
+                new FileTrainingPath
+                {
+                    name = "Medics & \"Friends\"",
+                    anchorRole = "Doctor",
+                    anchorBefore = false,
+                    entries = { ("Doctor", 4, 21) },
+                },
+            },
+            recommendationOrder = { "Doctor", "Shooter", "Sniper" },
+        };
+        string xml = RoleFile.Build(doc);
+        await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
+            .IsEqualTo("3");
+
+        var parsed = RoleFile.Parse(xml);
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].group).IsEqualTo("Combat");
+        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(2);
+        var first = parsed.trainingPaths[0];
+        await Assert.That(first.name).IsEqualTo("Frontline");
+        await Assert.That(first.colorRef).IsEqualTo("red-800");
+        await Assert.That(first.anchorRole).IsEqualTo("Doctor");
+        await Assert.That(first.anchorBefore).IsTrue();
+        await Assert.That(string.Join("|", first.entries.Select(e => $"{e.role}:{e.min}-{e.max}")))
+            .IsEqualTo("Shooter:0-8|Sniper:6-21");
+        var second = parsed.trainingPaths[1];
+        await Assert.That(second.name).IsEqualTo("Medics & \"Friends\"");
+        await Assert.That(second.colorRef == null).IsTrue(); // no override: attribute absent
+        await Assert.That(second.anchorBefore).IsFalse();
+        await Assert.That(string.Join("|", second.entries.Select(e => $"{e.role}:{e.min}-{e.max}")))
+            .IsEqualTo("Doctor:4-21");
+        await Assert.That(parsed.recommendationOrder)
+            .IsEquivalentTo(new[] { "Doctor", "Shooter", "Sniper" }); // ORDER is the payload
+    }
+
+    [Test]
+    public async Task AnchorlessPathAndEmptyOrderStayAbsent()
+    {
+        var doc = new RoleFileDocument
+        {
+            roles = { new FileRole { label = "A", entries = { new(JobEntryKind.WorkType, "Mining") } } },
+            trainingPaths = { new FileTrainingPath { name = "Solo", entries = { ("A", 0, 21) } } },
+        };
+        string xml = RoleFile.Build(doc);
+        // Element checks, not Contains: the format-notes comment names both.
+        var root = System.Xml.Linq.XElement.Parse(xml);
+        // Empty stored order: no section at all (absent != empty override).
+        await Assert.That(root.Element("RecommendationOrder") == null).IsTrue();
+        await Assert.That(root.Element("TrainingPaths")!.Element("Path")!.Element("Anchor") == null).IsTrue();
+        await Assert.That(root.Element("TrainingPaths")!.Element("Path")!.Attribute("color") == null).IsTrue();
+        var parsed = RoleFile.Parse(xml);
+        await Assert.That(parsed.trainingPaths[0].anchorRole == null).IsTrue();
+        await Assert.That(parsed.trainingPaths[0].anchorBefore).IsTrue();
+        await Assert.That(parsed.recommendationOrder.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task FilesWithoutVersionOrNewSectionsParseAsBefore()
+    {
+        // A v1 file: no version attribute, no v2/v3 sections.
+        var parsed = RoleFile.Parse(
+            "<WorkRoles><Palette/><Roles>" +
+            "<Role name=\"Ok\"><Options><Color>red-800</Color></Options>" +
+            "<Jobs><WorkType>Mining</WorkType></Jobs></Role></Roles></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles.Count).IsEqualTo(1);
+        await Assert.That(parsed.roles[0].colorRef).IsEqualTo("red-800");
+        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(0);
+        await Assert.That(parsed.recommendationOrder.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task PathParsingSkipsNamelessPathsAndBadBands()
+    {
+        var parsed = RoleFile.Parse(
+            "<WorkRoles version=\"3\"><Palette/>" +
+            "<Roles><Role name=\"A\"><Jobs><WorkType>Mining</WorkType></Jobs></Role></Roles>" +
+            "<TrainingPaths><Path><Role min=\"0\" max=\"21\">A</Role></Path>" +
+            "<Path name=\"Ok\"><Role min=\"0\" max=\"3\">A</Role>" + // span < 4
+            "<Role min=\"-1\" max=\"8\">A</Role><Role min=\"0\" max=\"22\">A</Role>" +
+            "<Role min=\"4\" max=\"12\"></Role><Role min=\"4\" max=\"12\">B</Role></Path>" +
+            "</TrainingPaths></WorkRoles>");
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(1); // nameless skipped
+        await Assert.That(string.Join("|", parsed.trainingPaths[0].entries.Select(e => e.role + ":" + e.min + "-" + e.max)))
+            .IsEqualTo("B:4-12");
+    }
+
+    [Test]
+    public async Task UnknownPathEntryNameDropsThatEntryAndKeepsTheRest()
+    {
+        var path = new FileTrainingPath
+        {
+            name = "P",
+            entries = { ("Known", 0, 8), ("Unknown", 6, 14), ("Known", 8, 21), ("Other", 10, 21) },
+        };
+        var byName = new Dictionary<string, int> { ["Known"] = 7, ["Other"] = 9 };
+        var (ids, mins, maxes) = RoleFile.ResolvePathEntries(path,
+            n => byName.TryGetValue(n, out int id) ? id : (int?)null);
+        // Unknown drops with its band; a duplicate id keeps its first band.
+        await Assert.That(ids).IsEquivalentTo(new[] { 7, 9 });
+        await Assert.That(mins).IsEquivalentTo(new[] { 0, 10 });
+        await Assert.That(maxes).IsEquivalentTo(new[] { 8, 21 });
+    }
+
+    [Test]
     public async Task DuplicateGroupNamesDedupCaseInsensitively()
     {
         var parsed = RoleFile.Parse(

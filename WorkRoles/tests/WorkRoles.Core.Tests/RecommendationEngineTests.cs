@@ -224,4 +224,16 @@ public class RecommendationEngineTests
             new List<RecRole> { auto, blocker }, pawn, NoBest, Skills, Template());
         await Assert.That(recs.Count).IsEqualTo(0);
     }
+
+    [Test]
+    public async Task NeverRolesAreNeverRecommended()
+    {
+        var pawn = Pawn();
+        pawn.SkillLevels["Cooking"] = 8; pawn.PassionScores["Cooking"] = 2;
+        var cook = Skilled(1, "Cooking");
+        cook.MinHolders = RecRole.NeverHolders;
+        var recs = RecommendationEngine.Compute(new List<RecRole> { cook }, pawn,
+            new Dictionary<string, int> { ["Cooking"] = 8 }, Skills, Template(1));
+        await Assert.That(recs.Count).IsEqualTo(0);
+    }
 }

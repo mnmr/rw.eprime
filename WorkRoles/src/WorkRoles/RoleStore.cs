@@ -3,6 +3,7 @@ using System.Linq;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
@@ -40,8 +41,11 @@ namespace WorkRoles
         public Dictionary<Bill, int> billRoles = new Dictionary<Bill, int>();
         /// Role-list groups in display order. Mutate via RoleCommands.
         public List<RoleGroup> groups = new List<RoleGroup>();
+        /// Named training paths (Options tab). Mutate via RoleCommands.
+        public List<TrainingPath> trainingPaths = new List<TrainingPath>();
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
+        private int nextPathId = 1;
 
         private List<Pawn> pawnKeysWorkingList;
         private List<PawnRoleSet> setValuesWorkingList;
@@ -71,10 +75,15 @@ namespace WorkRoles
 
         public int NextGroupId() => nextGroupId++;
 
+        public int NextPathId() => nextPathId++;
+
         public RoleGroup GroupById(int id) => groups.FirstOrDefault(g => g.id == id);
 
         public RoleGroup GroupByName(string name) => groups.FirstOrDefault(g =>
             string.Equals(g.label, name?.Trim(), System.StringComparison.OrdinalIgnoreCase));
+
+        public TrainingPath PathById(int id) =>
+            trainingPaths.FirstOrDefault(p => p.id == id);
 
         /// The Default group (id 0), materialized on demand: pinned first,
         /// swept like any user group when it empties. The stored label is
@@ -156,6 +165,8 @@ namespace WorkRoles
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
+            Scribe_Values.Look(ref nextPathId, "nextPathId", 1);
+            Scribe_Collections.Look(ref trainingPaths, "trainingPaths", LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 roles ??= new List<Role>();
@@ -168,6 +179,17 @@ namespace WorkRoles
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
                 billRoles ??= new Dictionary<Bill, int>();
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.DeletedOrDereferenced);
+                trainingPaths ??= new List<TrainingPath>();
+                // Empty paths survive (named containers); only non-empty corrupt geometry drops.
+                trainingPaths.RemoveAll(p =>
+                    p == null
+                    || (p.roleIds.Count > 0 && !SkillProgressionMath.Validate(p.roleIds.Count, p.bandMins, p.bandMaxes)));
+                foreach (var path in trainingPaths)
+                    if (path.roleIds.Count == 0 && (path.bandMins.Count > 0 || path.bandMaxes.Count > 0))
+                    {
+                        path.bandMins.Clear();
+                        path.bandMaxes.Clear();
+                    }
                 // Migration: the once-hidden All role becomes the visible,
                 // engine-managed Odd Jobs catalog role, assigned to every managed
                 // pawn at the last position (its old implicit spot).
@@ -182,6 +204,12 @@ namespace WorkRoles
                             set.assignments.Add(new RoleAssignment { roleId = allRole.id });
                     allRole = null;
                 }
+                // Corrupt-save hygiene (after the allRole migration, so its id
+                // resolves): assignments referencing deleted roles are inert but
+                // count as managed; drop them and any set they empty.
+                foreach (var set in pawnSets.Values)
+                    set.assignments?.RemoveAll(a => RoleById(a.roleId) == null);
+                pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
                 CompiledJobOrders.InvalidateAll();
             }
         }

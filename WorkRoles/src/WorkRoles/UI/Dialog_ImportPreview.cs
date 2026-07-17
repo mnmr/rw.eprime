@@ -33,8 +33,12 @@ namespace WorkRoles.UI
         private bool paletteOverwrite;
         private bool rolesInclude = true;
         private bool rolesOverwrite;
+        private bool pathsInclude;
+        private bool pathsOverwrite;
+        private bool orderInclude;
         private readonly List<Row> paletteMergeUi;
         private readonly List<Row> roleMergeUi;
+        private readonly List<Row> pathMergeUi;
         private Vector2 scroll;
 
         public override Vector2 InitialSize => new Vector2(560f, 640f);
@@ -61,10 +65,22 @@ namespace WorkRoles.UI
                     ? "WR_RowNew".Translate(r.role.label)
                     : "WR_RowUpdate".Translate(r.role.label)).ToString(),
             }).ToList();
+            // Paths always import as new (names are not identities); their rows
+            // index doc.trainingPaths directly.
+            pathsInclude = doc.trainingPaths.Count > 0;
+            orderInclude = doc.recommendationOrder.Count > 0;
+            pathMergeUi = doc.trainingPaths.Select(p => new Row
+            {
+                label = "WR_RowNew".Translate(p.name).ToString(),
+            }).ToList();
             // Fixed for the dialog's lifetime (doc and row lists never change
             // while open) — building them per pass re-ran OverwriteDeletes.
             paletteOverwriteInfo = PaletteOverwriteInfo();
             rolesOverwriteInfo = RolesOverwriteInfo();
+            pathsOverwriteInfo = new List<string>
+            {
+                "WR_PathsOverwriteInfo".Translate(doc.trainingPaths.Count).ToString(),
+            };
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
             doCloseX = true;
@@ -73,6 +89,7 @@ namespace WorkRoles.UI
 
         private readonly List<string> paletteOverwriteInfo;
         private readonly List<string> rolesOverwriteInfo;
+        private readonly List<string> pathsOverwriteInfo;
 
         private static string ColorHexOf(Color c) => "#" + ColorUtility.ToHtmlStringRGB(c).ToLowerInvariant();
 
@@ -93,6 +110,19 @@ namespace WorkRoles.UI
             y += SectionGap;
             DrawSection(rowW, ref y, "WR_SectionRoles".Translate(),
                 ref rolesInclude, ref rolesOverwrite, roleMergeUi, rolesOverwriteInfo);
+            // v3 sections appear only when the file carries them (v1/v2 files
+            // simply lack the data — nothing to toggle).
+            if (doc.trainingPaths.Count > 0)
+            {
+                y += SectionGap;
+                DrawSection(rowW, ref y, "WR_TrainingSection".Translate(),
+                    ref pathsInclude, ref pathsOverwrite, pathMergeUi, pathsOverwriteInfo);
+            }
+            if (doc.recommendationOrder.Count > 0)
+            {
+                y += SectionGap;
+                DrawOrderSection(rowW, ref y);
+            }
             Widgets.EndScrollView();
 
             float btnY = inRect.yMax - ButtonH;
@@ -101,14 +131,35 @@ namespace WorkRoles.UI
             if (Widgets.ButtonText(cancelRect, "WR_Cancel".Translate()))
                 Close();
             bool canApply = (paletteInclude && (paletteOverwrite || paletteMergeUi.Any(r => r.included)))
-                || (rolesInclude && (rolesOverwrite || roleMergeUi.Any(r => r.included)));
+                || (rolesInclude && (rolesOverwrite || roleMergeUi.Any(r => r.included)))
+                || (pathsInclude && (pathsOverwrite || pathMergeUi.Any(r => r.included)))
+                || (orderInclude && doc.recommendationOrder.Count > 0);
             if (Widgets.ButtonText(applyRect, "WR_Apply".Translate(), active: canApply) && canApply)
             {
-                RoleCommands.ApplyImport(xml,
-                    paletteInclude, paletteOverwrite, SelectedIndices(paletteMergeUi),
-                    rolesInclude, rolesOverwrite, SelectedIndices(roleMergeUi));
+                int flags = (paletteInclude ? (int)RoleCommands.ImportFlags.Palette : 0)
+                    | (paletteOverwrite ? (int)RoleCommands.ImportFlags.PaletteOverwrite : 0)
+                    | (rolesInclude ? (int)RoleCommands.ImportFlags.Roles : 0)
+                    | (rolesOverwrite ? (int)RoleCommands.ImportFlags.RolesOverwrite : 0)
+                    | (pathsInclude ? (int)RoleCommands.ImportFlags.Paths : 0)
+                    | (pathsOverwrite ? (int)RoleCommands.ImportFlags.PathsOverwrite : 0)
+                    | (orderInclude ? (int)RoleCommands.ImportFlags.Order : 0);
+                RoleCommands.ApplyImport(xml, flags,
+                    SelectedIndices(paletteMergeUi),
+                    SelectedIndices(roleMergeUi),
+                    SelectedIndices(pathMergeUi));
                 Close();
             }
+        }
+
+        /// One toggle, no rows: the order is a single template — applying it
+        /// replaces the stored one wholesale.
+        private void DrawOrderSection(float width, ref float y)
+        {
+            Widgets.CheckboxLabeled(new Rect(0f, y, width * 0.4f, RowH - 2f),
+                "WR_OptRecOrder".Translate(), ref orderInclude);
+            y += RowH;
+            if (orderInclude)
+                DrawInfo(width, ref y, "WR_RecOrderReplaceInfo".Translate(doc.recommendationOrder.Count));
         }
 
         private static List<int> SelectedIndices(List<Row> rows) =>
@@ -203,6 +254,20 @@ namespace WorkRoles.UI
                     : roleMergeUi.Count == 0
                         ? InfoHeight(width, "WR_NothingToMerge".Translate()) + 2f
                         : RowH * roleMergeUi.Count;
+            if (pathMergeUi.Count > 0)
+            {
+                y += SectionGap + RowH; // paths header
+                if (pathsInclude)
+                    y += pathsOverwrite
+                        ? pathsOverwriteInfo.Sum(line => InfoHeight(width, line) + 2f)
+                        : RowH * pathMergeUi.Count;
+            }
+            if (doc.recommendationOrder.Count > 0)
+            {
+                y += SectionGap + RowH; // order toggle
+                if (orderInclude)
+                    y += InfoHeight(width, "WR_RecOrderReplaceInfo".Translate(doc.recommendationOrder.Count)) + 2f;
+            }
             return y + RowH;
         }
     }

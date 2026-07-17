@@ -1,8 +1,10 @@
 ﻿# Changelog
 
-## 1.1.5 — 2026-07-16
+## 1.2.0 — 2026-07-17
 
-- Fixed: Flaws in the recommendation engine rework. Recommendations should now work as expected, training role suggestions depend on the available role set. If your game was created with an earlier version you may need to restore roles or manually configure roles as training roles.
+- Added: Training paths allow player customizable role progression definitions (under Options).
+- Added: Import/export (and restore) extended to include role groups and training paths.
+- Changed: Recommendation engine now suggests training paths; extra suggestions come from colony needs. Use Restore to seed default training paths for existing saves.
 
 ## 1.1.4 — 2026-07-16
 

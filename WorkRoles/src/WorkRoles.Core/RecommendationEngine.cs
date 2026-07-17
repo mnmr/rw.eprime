@@ -40,6 +40,8 @@ namespace WorkRoles.Core
         public int TrainMax;                 // 0 = open-ended
         /// Roles this one trains toward (resolved ids).
         public List<int> TrainTargets = new List<int>();
+        /// minHolders sentinel: the role is never recommended and never dealt.
+        public const int NeverHolders = -2;
         /// Colonist count: -1 = auto (dealt at colony scale, no draft), 0 =
         /// never dealt by the planner (passion/trait recommendations still
         /// apply), N = N per colony-scale unit AND the "needed work" marker
@@ -95,6 +97,7 @@ namespace WorkRoles.Core
             foreach (var role in catalog)
             {
                 if (role.HasRules || role.Blocker) continue;
+                if (role.MinHolders == RecRole.NeverHolders) continue;
                 if (!role.WorkTypes.Any(pawn.CapableWorkTypes.Contains)) continue;
                 if (!PassesGates(role, pawn, skillMaxLevels)) continue;
 

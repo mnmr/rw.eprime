@@ -86,7 +86,7 @@ public static class StaticRoles
             AutoAssign: false, Blocker: false,
             TrainSkill: "Social", TrainMin: 0, TrainMax: 0,
             TrainTargets: new[] { "WS_Warden" }, MinHolders: 0,
-            Entries: new[] { "WorkGiver:DoExecution", "WorkGiver:ExecuteEntity", "WorkGiver:ExecuteGuiltyColonist", "WorkGiver:ExecuteSlave", "WorkGiver:ReleasePrisoner", "WorkGiver:EmancipateSlave", "WorkGiver:ActivitySuppression", "WorkGiver:TakePrisonerToBed", "WorkGiver:FeedPrisoner", "WorkGiver:ImprisonSlave", "WorkGiver:DeliverHemogenToPrisoner", "WorkGiver:DeliverFoodToPrisoner", "WorkGiver:ReleaseEntity", "WorkGiver:SuppressSlave" }),
+            Entries: new[] { "WorkGiver:ExecuteEntity", "WorkGiver:DoExecution", "WorkGiver:ExecuteGuiltyColonist", "WorkGiver:ExecuteSlave", "WorkGiver:EmancipateSlave", "WorkGiver:ReleasePrisoner", "WorkGiver:ActivitySuppression", "WorkGiver:TakePrisonerToBed", "WorkGiver:FeedPrisoner", "WorkGiver:ImprisonSlave", "WorkGiver:DeliverHemogenToPrisoner", "WorkGiver:DeliverFoodToPrisoner", "WorkGiver:SuppressSlave", "WorkGiver:ReleaseEntity", "WorkGiver:ChatWithPrisoner" }),
         new RoleSpec("Warden", "WS_Warden",
             AutoAssign: false, Blocker: false,
             TrainSkill: null, TrainMin: 0, TrainMax: 0,

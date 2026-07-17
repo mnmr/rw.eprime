@@ -40,6 +40,9 @@ namespace WorkRoles
         /// Colonist count: -1 = auto (dealt at colony scale), 0 = never dealt
         /// (interest-driven only), N = N per colony-scale unit + Best drafts.
         public int minHolders = -1;
+        /// When a colonist does not yet meet this role's progression threshold,
+        /// the preceding chain role may be recommended as a stand-in.
+        public bool allowTrainingSubstitutions;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles, managed under Locked.
         public int groupId = RoleGroup.DefaultId;
@@ -110,6 +113,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref legacyMaxHolders, "maxHolders", -1);
             if (Scribe.mode == LoadSaveMode.LoadingVars && legacyMaxHolders == 0)
                 minHolders = 0;
+            Scribe_Values.Look(ref allowTrainingSubstitutions, "allowTrainingSubs");
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (ids are numeric, category
