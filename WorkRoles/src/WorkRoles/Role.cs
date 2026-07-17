@@ -25,9 +25,6 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        /// Engine-managed container (Odd Jobs): entries are written by work-type
-        /// coverage, not the player; the role cannot be deleted.
-        public bool managed;
         // Training band + targets and colony holder bounds — live, player-
         // editable values (seeded from the template def's defaults). A pawn
         // inside [trainMin, trainMax) fits the role; at trainMax it has
@@ -44,7 +41,7 @@ namespace WorkRoles
         /// the preceding chain role may be recommended as a stand-in.
         public bool allowTrainingSubstitutions;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
-        /// rule-carrying roles DISPLAY under Auto-Roles, managed under Locked.
+        /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
         public int activeHours = AllHours;   // bit h set = active during local hour h
         /// LocationRules tokens; empty = active anywhere.
@@ -100,7 +97,10 @@ namespace WorkRoles
             Scribe_Values.Look(ref templateHash, "templateHash");
             Scribe_Values.Look(ref autoAssign, "autoAssign");
             Scribe_Values.Look(ref blocker, "blocker");
-            Scribe_Values.Look(ref managed, "managed");
+            // Retired engine-managed flag (Odd Jobs): consumed so old saves load
+            // the role as an ordinary player role, keeping entries and holders.
+            bool legacyManaged = false;
+            Scribe_Values.Look(ref legacyManaged, "managed");
             Scribe_Values.Look(ref trainSkill, "trainSkill");
             Scribe_Values.Look(ref trainMin, "trainMin");
             Scribe_Values.Look(ref trainMax, "trainMax");

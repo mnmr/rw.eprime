@@ -93,7 +93,7 @@ namespace WorkRoles.Core
             int coverage = System.Math.Max(1, (pawns.Count + 5) / 6);
             foreach (var role in catalog)
             {
-                if (!role.Enabled || role.HasRules || role.AutoAssign || role.Blocker || role.Managed) continue;
+                if (!role.Enabled || role.HasRules || role.AutoAssign || role.Blocker) continue;
                 // 0 = never dealt (interest-driven only); Never = not even that.
                 if (role.MinHolders == 0 || role.MinHolders == RecRole.NeverHolders) continue;
                 var relevantSkills = RelevantSkills(role);

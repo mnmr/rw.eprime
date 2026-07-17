@@ -17,14 +17,14 @@ namespace WorkRoles.Core
         /// Autos included: they hold real positions in the order (Core above
         /// Doctor, Basics below), so the panel must show and move them too.
         public static bool IsPinnable(RecRole role)
-            => !role.Blocker && !role.HasRules && !role.Managed;
+            => !role.Blocker && !role.HasRules;
 
         /// Whether any other normal role's coverage makes this one redundant
         /// (autos and trainers count: Core knocks out Rescuer, Smith knocks
         /// out Fabricator).
         private static bool IsCovered(RecRole role, IReadOnlyList<RecRole> catalog)
             => catalog.Any(other => other.Id != role.Id
-                && !other.Blocker && !other.HasRules && !other.Managed
+                && !other.Blocker && !other.HasRules
                 && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id));
 
         /// The derived default template: the vanilla grid's columns — pinnable
@@ -155,7 +155,7 @@ namespace WorkRoles.Core
             foreach (var candidate in byId.Values)
             {
                 if (candidate.Id == role.Id) continue;
-                if (candidate.Blocker || candidate.HasRules || candidate.Managed) continue;
+                if (candidate.Blocker || candidate.HasRules) continue;
                 if (!CoverageMath.MakesRedundant(candidate.Coverage, candidate.Id, role.Coverage, role.Id)) continue;
                 if (tightest == null
                     || candidate.Coverage.Count < tightest.Coverage.Count

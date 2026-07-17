@@ -30,7 +30,6 @@ namespace WorkRoles.Core
         public float NaturalPriority;
         // Colony-plan facts (ignored by per-pawn scoring):
         public bool Enabled = true;
-        public bool Managed;
         public bool Gated;                   // hunting or band-gated (training paths)
         public List<string> WorkTypes = new List<string>(); // member work type defNames
         // Training band: a pawn inside [TrainMin, TrainMax) fits the role; at

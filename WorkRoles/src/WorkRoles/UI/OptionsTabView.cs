@@ -700,12 +700,12 @@ namespace WorkRoles.UI
         }
 
         /// Clearing runs through the Customize checkbox, so the menu only
-        /// lists candidates: normal roles (not blocker/managed/rules), alphabetical.
+        /// lists candidates: normal roles (not blocker/rules), alphabetical.
         private static void OpenAnchorMenu(RoleStore store, PathView view)
         {
             var options = new List<FloatMenuOption>();
             foreach (var role in store.roles
-                         .Where(r => !r.blocker && !r.managed && !r.HasRules)
+                         .Where(r => !r.blocker && !r.HasRules)
                          .OrderBy(r => r.label, System.StringComparer.OrdinalIgnoreCase))
             {
                 int capturedId = role.id;
@@ -754,7 +754,7 @@ namespace WorkRoles.UI
         }
 
         private static bool IsNormal(Role role) =>
-            !role.blocker && !role.managed && !role.HasRules;
+            !role.blocker && !role.HasRules;
 
         /// Tier 1 plain, tier 2 greyed (mods can rewire XP in driver code, so
         /// players may know better). The first role gets the full axis; later

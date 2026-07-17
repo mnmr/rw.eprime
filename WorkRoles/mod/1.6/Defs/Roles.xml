@@ -302,6 +302,9 @@
     <colorRef>teal-700</colorRef>
     <group>Animals</group>
     <entries>
+      <!-- Allow Tool's finish-off jobs are hunter's work: above Hunting, so
+           downed prey is dispatched before new prey is engaged. -->
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:FinishingOff</li>
       <li>WorkType:Hunting</li>
     </entries>
   </WorkRoles.RoleDef>

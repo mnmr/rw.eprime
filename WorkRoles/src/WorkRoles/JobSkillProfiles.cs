@@ -273,7 +273,7 @@ namespace WorkRoles
                     TotalGivers = members.Count,
                     XpGivers = members.Count(p => p.GivesXp),
                     // The vanilla Work-tab text players already know leads the tip.
-                    Description = workType.description,
+                    Description = StripSelfAttribution(workType.description, workType.modContentPack),
                     SourceLine = SourceLineFor(workType, "WR_SkillTipTypeSource"),
                 };
                 // Per skill, the highest requirement any member content carries.
@@ -287,6 +287,16 @@ namespace WorkRoles
                     });
                 byType[workType.defName] = profile;
             }
+        }
+
+        /// Mods often end descriptions with an "added by X" line; the source
+        /// footer already carries provenance, so those lines are dropped.
+        private static string StripSelfAttribution(string description, ModContentPack mod)
+        {
+            if (description == null || mod?.Name == null || description.IndexOf('\n') < 0)
+                return description;
+            return string.Join("\n", description.Split('\n').Where(line =>
+                line.IndexOf(mod.Name, System.StringComparison.OrdinalIgnoreCase) < 0)).TrimEnd();
         }
 
         private static GiverProfile BuildGiver(WorkGiverDef giver)

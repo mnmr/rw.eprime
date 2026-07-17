@@ -6,8 +6,8 @@ namespace WorkRoles
     /// presentational: never consulted by recommendations, plans or compiled
     /// orders. Id 0 is reserved for the auto-created "Default" group (fixed
     /// label, recreated on demand); like any user group it is swept when empty.
-    /// The Auto-Roles and Locked sections are NOT groups — their membership is
-    /// derived (HasRules / managed) and a member's stored group is remembered.
+    /// The Auto-Roles section is NOT a group — its membership is derived
+    /// (HasRules) and a member's stored group is remembered.
     public class RoleGroup : IExposable
     {
         public const int DefaultId = 0;

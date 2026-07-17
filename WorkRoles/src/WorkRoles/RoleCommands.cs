@@ -109,8 +109,7 @@ namespace WorkRoles
         /// recreates missing seeded roles and default training paths, regenerates
         /// coverage for uncovered work types, backfills vanilla jobs that mods
         /// moved out of roles, moves and recolors drifted roles back to their def,
-        /// brings back a player-deleted Odd Jobs, and resets the recommendation
-        /// order.
+        /// and resets the recommendation order.
         [SyncMethod]
         public static void RestoreSelected(RestoreSelection selection)
         {
@@ -158,7 +157,7 @@ namespace WorkRoles
         public static void SetRoleTraining(int roleId, string skill, int min, int max)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             role.trainSkill = skill.NullOrEmpty() ? null : skill;
             role.trainMin = role.trainSkill == null ? 0 : min;
             role.trainMax = role.trainSkill == null ? 0 : max;
@@ -169,7 +168,7 @@ namespace WorkRoles
         public static void SetRoleTrainTargets(int roleId, List<int> targetIds)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             role.trainTargets = (targetIds ?? new List<int>())
                 .Where(id => id != roleId && Store.RoleById(id) != null)
                 .Distinct().ToList();
@@ -180,7 +179,7 @@ namespace WorkRoles
         public static void SetRoleHolders(int roleId, int min)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             role.minHolders = System.Math.Max(RecRole.NeverHolders, min);
             UiVersion.Bump();
         }
@@ -278,7 +277,7 @@ namespace WorkRoles
         public static void SetRoleAllowTrainingSubstitutions(int roleId, bool value)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed || role.allowTrainingSubstitutions == value) return;
+            if (role == null || role.allowTrainingSubstitutions == value) return;
             role.allowTrainingSubstitutions = value;
             UiVersion.Bump();
         }
@@ -298,9 +297,6 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            // Deleting Odd Jobs is a player opt-out: coverage stops recreating
-            // it (and stops collecting invisible work types) until restored.
-            if (role.managed) Store.oddJobsDeleted = true;
             CompiledJobOrders.InvalidateRole(roleId);
             foreach (var kv in Store.pawnSets)
                 if (kv.Value.assignments.Count > 0 && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
@@ -355,7 +351,7 @@ namespace WorkRoles
         }
 
         /// The role plus (optionally) its same-group tree-children, catalog order.
-        /// Overlay members (rules/blocker/managed) never ride along — they don't
+        /// Overlay members (rules/blocker) never ride along — they don't
         /// display under the parent.
         private static List<Role> MovingBlock(Role role, bool withChildren)
         {
@@ -363,7 +359,7 @@ namespace WorkRoles
             if (withChildren)
                 foreach (var other in Store.roles)
                     if (other.groupId == role.groupId && other != role
-                        && !other.blocker && !other.managed && !other.HasRules
+                        && !other.blocker && !other.HasRules
                         && role.Covers(other))
                         moving.Add(other);
             return moving;
@@ -376,7 +372,7 @@ namespace WorkRoles
         public static void SetRoleGroup(int roleId, string groupName, bool withChildren)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             var group = ResolveOrCreateGroup(groupName);
             if (group == null) return;
             foreach (var moved in MovingBlock(role, withChildren))
@@ -392,7 +388,7 @@ namespace WorkRoles
         public static void MoveRoleTo(int roleId, string groupName, int beforeRoleId, bool withChildren)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             var group = ResolveOrCreateGroup(groupName);
             if (group == null) return;
             var moving = MovingBlock(role, withChildren);
@@ -449,8 +445,7 @@ namespace WorkRoles
         {
             var parent = FindRole(parentId);
             var child = FindRole(childId);
-            if (parent == null || child == null || parent == child
-                || parent.managed || child.managed || child.blocker) return;
+            if (parent == null || child == null || parent == child || child.blocker) return;
             foreach (var entry in child.entries)
                 if (!parent.entries.Contains(entry))
                     parent.entries.Add(entry);
@@ -466,7 +461,7 @@ namespace WorkRoles
         {
             var parent = FindRole(parentId);
             var child = FindRole(childId);
-            if (parent == null || child == null || parent == child || parent.managed) return;
+            if (parent == null || child == null || parent == child) return;
             var childSet = new HashSet<JobEntry>(child.entries);
             if (parent.entries.RemoveAll(e => childSet.Contains(e)) > 0)
                 CompiledJobOrders.InvalidateRole(parentId);
@@ -615,7 +610,7 @@ namespace WorkRoles
         public static void AddEntry(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed) return;
+            if (role == null) return;
             // UI checks run before the synced command lands, so duplicates can
             // still race in (two MP clients adding the same entry).
             if (role.entries.Contains(entry)) return;
@@ -650,7 +645,7 @@ namespace WorkRoles
         public static void RemoveEntry(int roleId, int index)
         {
             var role = FindRole(roleId);
-            if (role == null || role.managed || index < 0 || index >= role.entries.Count) return;
+            if (role == null || index < 0 || index >= role.entries.Count) return;
             role.entries.RemoveAt(index);
             CompiledJobOrders.InvalidateRole(roleId);
         }

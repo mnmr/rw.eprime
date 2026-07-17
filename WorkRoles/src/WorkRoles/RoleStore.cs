@@ -17,9 +17,6 @@ namespace WorkRoles
         /// Default training paths seeded (only ever set alongside role seeding;
         /// pre-existing saves adopt them via Restore Defaults instead).
         public bool pathsSeeded;
-        /// Player deleted Odd Jobs (knows no mod adds invisible jobs): coverage
-        /// won't recreate it until Restore Defaults is asked to bring it back.
-        public bool oddJobsDeleted;
         /// GetPriority reports the vanilla 0-4 projection instead of raw ranks.
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
@@ -28,8 +25,8 @@ namespace WorkRoles
         /// vanilla-grid-derived default. A pure override: unlisted roles are
         /// not merged in — they place dynamically (RecommendationOrder).
         public List<int> recommendationOrder = new List<int>();
-        /// Legacy scribe slot: pre-Odd-Jobs saves carry the hidden All role here;
-        /// PostLoadInit migrates it into the catalog as the managed role.
+        /// Legacy scribe slot: very old saves carry the hidden All role here;
+        /// PostLoadInit migrates it into the catalog as an ordinary role.
         public Role allRole;
         public List<string> knownWorkTypes = new List<string>();
         /// Custom swatch slot count: the editor's two rows of 19.
@@ -115,9 +112,6 @@ namespace WorkRoles
 
         public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
 
-        /// The engine-managed Odd Jobs role (invisible modded work types), or null.
-        public Role ManagedRole => roles.FirstOrDefault(r => r.managed);
-
         public Role RoleByTemplate(string templateDefName) =>
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
 
@@ -152,7 +146,6 @@ namespace WorkRoles
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
-            Scribe_Values.Look(ref oddJobsDeleted, "oddJobsDeleted");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
@@ -194,12 +187,11 @@ namespace WorkRoles
                         path.bandMins.Clear();
                         path.bandMaxes.Clear();
                     }
-                // Migration: the once-hidden All role becomes the visible,
-                // engine-managed Odd Jobs catalog role, assigned to every managed
-                // pawn at the last position (its old implicit spot).
+                // Migration: the once-hidden All role becomes an ordinary catalog
+                // role, assigned to every managed pawn at the last position (its
+                // old implicit spot).
                 if (allRole != null)
                 {
-                    allRole.managed = true;
                     allRole.autoAssign = true;
                     allRole.label = "WR_OddJobsRole".Translate();
                     roles.Add(allRole);

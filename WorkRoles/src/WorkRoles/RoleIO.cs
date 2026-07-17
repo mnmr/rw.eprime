@@ -24,14 +24,14 @@ namespace WorkRoles
         public static RoleFileDocument Parse(string xml) => RoleFile.Parse(xml);
 
         /// The full export document — the custom palette slots the exported roles
-        /// actually USE, plus every non-managed role — as indented XML text.
+        /// actually USE, plus every role — as indented XML text.
         public static string BuildXml(RoleStore store)
         {
             store.SyncSwatchNames();
             var doc = new RoleFileDocument();
             var usedSlots = new SortedSet<int>();
             foreach (var role in store.roles)
-                if (!role.managed && role.hasCustomColor)
+                if (role.hasCustomColor)
                 {
                     int slot = CustomSlotOf(role.color, store);
                     if (slot >= 0) usedSlots.Add(slot);
@@ -49,7 +49,6 @@ namespace WorkRoles
                     doc.groups.Add(group.label);
             foreach (var role in store.roles)
             {
-                if (role.managed) continue;
                 doc.roles.Add(new FileRole
                 {
                     label = role.label,
@@ -249,7 +248,7 @@ namespace WorkRoles
                 var byTemplate = store.RoleByTemplate(imported.templateDef);
                 if (byTemplate != null) return byTemplate;
             }
-            return store.roles.FirstOrDefault(r => !r.managed && r.label == imported.label);
+            return store.roles.FirstOrDefault(r => r.label == imported.label);
         }
 
         /// Palette rows for MERGE mode: identical name+color entries are omitted.
@@ -283,11 +282,11 @@ namespace WorkRoles
             return rows;
         }
 
-        /// Roles deleted by an overwrite: in the catalog (non-managed) but not in the file.
+        /// Roles deleted by an overwrite: in the catalog but not in the file.
         public static List<Role> OverwriteDeletes(RoleStore store, RoleFileDocument doc)
         {
             var kept = new HashSet<Role>(RoleRows(store, doc).Where(r => r.existing != null).Select(r => r.existing));
-            return store.roles.Where(r => !r.managed && !kept.Contains(r)).ToList();
+            return store.roles.Where(r => !kept.Contains(r)).ToList();
         }
 
         /// Applies an import. Selections are row indices into PaletteMergeRows /

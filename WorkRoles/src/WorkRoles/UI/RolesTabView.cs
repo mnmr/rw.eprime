@@ -141,7 +141,7 @@ namespace WorkRoles.UI
             // Opening re-snapshots everything on this tab.
             InvalidateSectionsSnapshot();
             deadEntriesStamp = holdersStamp = skillsUsedStamp = -1;
-            displayStamp = treeNodesStamp = editorTipsStamp = -1;
+            displayStamp = treeNodesStamp = editorTipsStamp = uncoveredStamp = -1;
         }
 
         public void Draw(Rect rect)
@@ -182,10 +182,10 @@ namespace WorkRoles.UI
         internal static (List<Role> roots, List<(Role role, Role parent, bool virtualRow)> rows)
             BuildRoleTree(List<Role> members, List<Role> allRoles)
         {
-            // Blockers and the managed role never nest and never parent: their
-            // entry overlap is not a provides-relationship. Auto (rule-carrying)
-            // roles stay in their overlay — they neither parent nor nest here.
-            bool Eligible(Role r) => !r.blocker && !r.managed && !r.HasRules;
+            // Blockers never nest and never parent: their entry overlap is not a
+            // provides-relationship. Auto (rule-carrying) roles stay in their
+            // overlay — they neither parent nor nest here.
+            bool Eligible(Role r) => !r.blocker && !r.HasRules;
 
             var memberSet = new HashSet<Role>(members);
             var nested = new HashSet<Role>();
@@ -225,12 +225,12 @@ namespace WorkRoles.UI
             return (roots, rows);
         }
 
-        /// One display section of the role list: a user group, or a derived
-        /// overlay (Auto-Roles = rule-carrying roles, Locked = managed) — a
-        /// member's stored group is remembered while it displays in an overlay.
+        /// One display section of the role list: a user group, or the derived
+        /// Auto-Roles overlay (rule-carrying roles) — a member's stored group is
+        /// remembered while it displays in the overlay.
         internal sealed class RoleSection
         {
-            public string key;      // collapse-state key: "g<id>", "auto", "locked"
+            public string key;      // collapse-state key: "g<id>", "auto"
             public string title;
             /// Group name for commands: "" = Default (a language-independent
             /// sentinel — synced args must never carry translated names).
@@ -266,9 +266,7 @@ namespace WorkRoles.UI
         }
 
         /// Sections in display order: Default (when it has a face), user groups
-        /// (their order), Auto-Roles (hidden when empty), Locked (Odd Jobs exists
-        /// from seeding, even with no jobs — the section only disappears while
-        /// the player has deleted the role).
+        /// (their order), Auto-Roles (hidden when empty).
         private static List<RoleSection> BuildSectionsUncached(RoleStore store, bool nested)
         {
             var sections = new List<RoleSection>();
@@ -308,12 +306,10 @@ namespace WorkRoles.UI
             }
 
             var auto = new RoleSection { key = "auto", title = "WR_GroupAutoRules".Translate() };
-            var locked = new RoleSection { key = "locked", title = "WR_GroupLocked".Translate() };
 
             foreach (var role in store.roles)
             {
-                if (role.managed) locked.members.Add(role);
-                else if (role.HasRules) auto.members.Add(role);
+                if (role.HasRules) auto.members.Add(role);
                 else SectionOf(role.groupId).members.Add(role);
             }
 
@@ -330,11 +326,10 @@ namespace WorkRoles.UI
                     sections.Add(section);
             }
             if (auto.members.Count > 0) sections.Add(auto);
-            if (locked.members.Count > 0) sections.Add(locked);
 
             foreach (var section in sections)
             {
-                if (nested && section != auto && section != locked)
+                if (nested && section != auto)
                     (section.roots, section.rows) = BuildRoleTree(section.members, store.roles);
                 else
                 {
@@ -687,12 +682,8 @@ namespace WorkRoles.UI
             if (Widgets.ButtonText(deleteRect, "WR_Delete".Translate(), active: selectedRole != null)
                 && selectedRole != null)
             {
-                // Odd Jobs gets its own warning: the role looks pointless when
-                // empty, but deleting it opts out of invisible modded work.
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                    selectedRole.managed
-                        ? "WR_DeleteOddJobsWarning".Translate(selectedRole.label)
-                        : "WR_DeleteConfirm".Translate(selectedRole.label),
+                    "WR_DeleteConfirm".Translate(selectedRole.label),
                     () => RoleCommands.DeleteRole(selectedRole.id), destructive: true));
             }
         }
@@ -827,9 +818,8 @@ namespace WorkRoles.UI
         private static void ShowRoleContextMenu(RoleStore store, Role role, Role parent)
         {
             var options = new List<FloatMenuOption>();
-            if (!role.managed)
-                options.Add(new FloatMenuOption("WR_IncludeRole".Translate(),
-                    () => ShowIncludeMenu(store, role)));
+            options.Add(new FloatMenuOption("WR_IncludeRole".Translate(),
+                () => ShowIncludeMenu(store, role)));
             if (parent != null)
             {
                 int pid = parent.id, cid = role.id;
@@ -847,8 +837,8 @@ namespace WorkRoles.UI
                 Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        /// Candidates for inclusion: any non-blocker, non-managed role the target
-        /// doesn't already cover. Cross-group entries render subdued with a
+        /// Candidates for inclusion: any non-blocker role the target doesn't
+        /// already cover. Cross-group entries render subdued with a
         /// "(will move from X)" suffix — inclusion pulls them into the group.
         private static void ShowIncludeMenu(RoleStore store, Role parent)
         {
@@ -856,7 +846,7 @@ namespace WorkRoles.UI
             foreach (var candidate in store.roles
                 .OrderBy(r => r.label, System.StringComparer.OrdinalIgnoreCase))
             {
-                if (candidate == parent || candidate.managed || candidate.blocker) continue;
+                if (candidate == parent || candidate.blocker) continue;
                 if (candidate.entries.Count > 0
                     && candidate.entries.All(e => parent.entries.Contains(e))) continue;
                 string label = candidate.label;
@@ -950,8 +940,7 @@ namespace WorkRoles.UI
             int customRows = firstCustomRowFull || secondCustomRowUsed ? 2 : 1;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
-                TitleH + AssignedRowH + 2f + GroupRowH
-                    + (role.managed ? 0f : HoldersRowH + SkillsRowH),
+                TitleH + AssignedRowH + 2f + GroupRowH + HoldersRowH + SkillsRowH,
                 CheckRowH * 4f);
             bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
             float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
@@ -1099,13 +1088,10 @@ namespace WorkRoles.UI
             DrawGroupPickerRow(new Rect(leftX, row2Y + AssignedRowH + 2f,
                 checksX - 8f - leftX, GroupRowH - 4f), role, store);
 
-            if (!role.managed)
-            {
-                float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
-                DrawHoldersRow(new Rect(leftX, row4Y, checksX - 8f - leftX, HoldersRowH - 4f), role);
-                DrawSkillsUsedRow(new Rect(leftX, row4Y + HoldersRowH,
-                    checksX - 8f - leftX, SkillsRowH), role);
-            }
+            float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
+            DrawHoldersRow(new Rect(leftX, row4Y, checksX - 8f - leftX, HoldersRowH - 4f), role);
+            DrawSkillsUsedRow(new Rect(leftX, row4Y + HoldersRowH,
+                checksX - 8f - leftX, SkillsRowH), role);
 
             // Expanding section (full box width): rules while the auto-role
             // opt-in is on.
@@ -1126,17 +1112,7 @@ namespace WorkRoles.UI
             WrText.LineVertical(rect.x + halfW + 3f, bottomY, bottomH);
             GUI.color = Color.white;
 
-            if (role.managed)
-            {
-                // Engine-owned entries: no job tree; a note explains the container.
-                GUI.color = new Color(0.6f, 0.6f, 0.6f);
-                Widgets.Label(treeRect.ContractedBy(8f), "WR_ManagedEntriesNote".Translate());
-                GUI.color = Color.white;
-            }
-            else
-            {
-                DrawJobTree(treeRect, role);
-            }
+            DrawJobTree(treeRect, role);
             DrawEntries(entriesRect, role);
         }
 
@@ -1144,14 +1120,14 @@ namespace WorkRoles.UI
         /// existing groups plus "New..." (a name dialog; the role moves in, so
         /// no empty group ever exists). A parent moves WITH its nested roles —
         /// a combo role separated from its children would un-nest both. Overlay
-        /// members (Auto-Roles/Locked) show a disabled "Group: Auto-Roles" /
-        /// "Group: Locked" instead — the stored group resumes when rules clear.
+        /// members (Auto-Roles) show a disabled "Group: Auto-Roles" instead —
+        /// the stored group resumes when rules clear.
         private void DrawGroupPickerRow(Rect rect, Role role, RoleStore store)
         {
             Text.Font = GameFont.Small;
-            bool overlay = role.managed || role.HasRules;
+            bool overlay = role.HasRules;
             string current = overlay
-                ? (role.managed ? "WR_GroupLocked" : "WR_GroupAutoRules").Translate().ToString()
+                ? "WR_GroupAutoRules".Translate().ToString()
                 : role.groupId == RoleGroup.DefaultId
                     ? "WR_GroupDefault".Translate().ToString()
                     : store.GroupById(role.groupId)?.label
@@ -1196,8 +1172,8 @@ namespace WorkRoles.UI
 
         // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
 
-        /// The editor's checkbox column: Auto-assign, Blocker role (not on the
-        /// managed role), the Auto role opt-in and Allow training substitutions.
+        /// The editor's checkbox column: Auto-assign, Blocker role, the Auto
+        /// role opt-in and Allow training substitutions.
         /// Auto role opt-in derives from HasRules — unchecking clears the rules
         /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
         private void DrawEditorChecks(Rect rect, Role role, bool rulesShown, float rowH)
@@ -1213,17 +1189,14 @@ namespace WorkRoles.UI
                 RoleCommands.SetRoleAutoAssign(role.id, autoAssign);
             y += rowH;
 
-            // Blocker: the role's jobs become vetoes (hidden on the managed role).
-            if (!role.managed)
-            {
-                var blockRect = new Rect(rect.x, y, rect.width, rowH);
-                TooltipHandler.TipRegion(blockRect, blockerTipCache);
-                bool blocker = role.blocker;
-                Widgets.CheckboxLabeled(blockRect, "WR_BlockerRole".Translate(), ref blocker);
-                if (blocker != role.blocker)
-                    RoleCommands.SetRoleBlocker(role.id, blocker);
-                y += rowH;
-            }
+            // Blocker: the role's jobs become vetoes.
+            var blockRect = new Rect(rect.x, y, rect.width, rowH);
+            TooltipHandler.TipRegion(blockRect, blockerTipCache);
+            bool blocker = role.blocker;
+            Widgets.CheckboxLabeled(blockRect, "WR_BlockerRole".Translate(), ref blocker);
+            if (blocker != role.blocker)
+                RoleCommands.SetRoleBlocker(role.id, blocker);
+            y += rowH;
 
             var autoRect = new Rect(rect.x, y, rect.width, rowH);
             TooltipHandler.TipRegion(autoRect, "WR_AutoRoleTip".Translate());
@@ -1253,7 +1226,6 @@ namespace WorkRoles.UI
                 }
             }
 
-            if (role.managed) return;
             var subsRect = new Rect(rect.x, y, rect.width, rowH);
             TooltipHandler.TipRegion(subsRect, "WR_AllowTrainingSubsTip".Translate());
             bool subs = role.allowTrainingSubstitutions;
@@ -1500,10 +1472,9 @@ namespace WorkRoles.UI
             else pendingHoursMask &= ~(1 << hour);
         }
 
-        /// A role that can never act: no jobs (managed roles legitimately sit
-        /// empty), or every location it names is gone.
+        /// A role that can never act: no jobs, or every location it names is gone.
         internal static bool RoleInvalid(Role role) =>
-            (role.entries.Count == 0 && !role.managed)
+            role.entries.Count == 0
             || (role.locationTokens.Count > 0 && role.locationTokens.All(StaleLocationToken));
 
         private static bool StaleLocationToken(string token)
@@ -1804,6 +1775,37 @@ namespace WorkRoles.UI
 
         // ----- Available Jobs: the work type / giver tree -----
 
+        /// Shared warning tint: uncovered tree rows and the panel's prefix.
+        internal static readonly Color WarningYellow = new Color(0.95f, 0.85f, 0.3f);
+
+        // Open-window snapshot of jobs no non-blocker role provides: givers,
+        // their work types, and the composed warning line (null = all covered).
+        private static HashSet<string> uncoveredGivers;
+        private static HashSet<string> uncoveredTypes;
+        private static string uncoveredWarning;
+        private static int uncoveredStamp = -1;
+
+        private static void EnsureUncoveredSnapshot(RoleStore store)
+        {
+            if (uncoveredGivers != null && uncoveredStamp == UiVersion.Current) return;
+            uncoveredStamp = UiVersion.Current;
+            var covered = new HashSet<string>();
+            foreach (var role in store.roles)
+                if (!role.blocker)
+                    covered.UnionWith(role.Coverage());
+            uncoveredGivers = new HashSet<string>();
+            uncoveredTypes = new HashSet<string>();
+            foreach (var giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
+            {
+                if (giver.workType == null || covered.Contains(giver.defName)) continue;
+                uncoveredGivers.Add(giver.defName);
+                uncoveredTypes.Add(giver.workType.defName);
+            }
+            uncoveredWarning = uncoveredGivers.Count == 0 ? null
+                : "WR_WarningPrefix".Translate().ToString().Colorize(WarningYellow)
+                    + " " + "WR_UnusedJobsWarning".Translate(uncoveredGivers.Count);
+        }
+
         // Open-window snapshot of the job-tree rows; expand/collapse is UI-local
         // state, so the key carries its revision alongside the search text.
         private List<(WorkTypeDef type, WorkGiverDef giver)> treeNodesCache;
@@ -1874,8 +1876,15 @@ namespace WorkRoles.UI
                 GUIUtility.keyboardControl = 0; // release the field's edit buffer
             }
 
+            EnsureUncoveredSnapshot(RoleStore.Current);
             float treeTopY = rect.y + 28f + 4f;
-            var scrollRect = new Rect(rect.x, treeTopY, rect.width, rect.height - 28f - 4f);
+            if (uncoveredWarning != null)
+            {
+                float warnH = Text.CalcHeight(uncoveredWarning, rect.width - 8f);
+                Widgets.Label(new Rect(rect.x + 4f, treeTopY, rect.width - 8f, warnH), uncoveredWarning);
+                treeTopY += warnH + 4f;
+            }
+            var scrollRect = new Rect(rect.x, treeTopY, rect.width, rect.yMax - treeTopY);
             bool filtering = !filter.NullOrEmpty();
 
             // Selection changed: surface the role's first entry (expand its work
@@ -1951,7 +1960,9 @@ namespace WorkRoles.UI
 
                     // The label toggles like the arrow — a far bigger target.
                     var typeLabelRect = new Rect(row.x + 54f, row.y, row.width - 54f, RowHeight);
+                    if (uncoveredTypes.Contains(type.defName)) GUI.color = WarningYellow;
                     Widgets.Label(typeLabelRect, typeDisplayName + countHint);
+                    GUI.color = Color.white;
                     if (Widgets.ButtonInvisible(typeLabelRect))
                     {
                         if (!expanded.Add(type.defName)) expanded.Remove(type.defName);
@@ -1978,7 +1989,9 @@ namespace WorkRoles.UI
                         ApplyGiverState(role, type, giver,
                             giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
+                    if (uncoveredGivers.Contains(giver.defName)) GUI.color = WarningYellow;
                     Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), giverName);
+                    GUI.color = Color.white;
                     if (Mouse.IsOver(row))
                     {
                         string skillTip = JobSkillProfiles.GiverTip(giver.defName);

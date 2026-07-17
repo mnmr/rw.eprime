@@ -68,8 +68,14 @@ public class MigrationPlannerTests
         {
             var entries = new List<JobEntry>();
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
+            {
+                // Third-party-gated entries don't load in a vanilla+DLC game;
+                // the round trip emulates that runtime. DLC gates (Ludeon.*) do load.
+                string mayRequire = li.Attribute("MayRequire")?.Value;
+                if (mayRequire != null && !mayRequire.StartsWith("Ludeon.")) continue;
                 if (JobEntry.TryDecode(li.Value.Trim(), out var entry))
                     entries.Add(entry);
+            }
             bool blocker = def.Element("blocker")?.Value.Trim() == "true";
             roles.Add(new MigrationRole(id++, entries, blocker));
         }

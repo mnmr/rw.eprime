@@ -382,12 +382,10 @@ namespace WorkRoles.UI
         private static List<PaletteCluster> BuildPaletteClusters(RoleStore store)
         {
             var skillClusters = new List<PaletteCluster>();
-            PaletteCluster everyone = null, unskilled = null, modChores = null;
+            PaletteCluster everyone = null, unskilled = null;
 
             PaletteCluster ClusterFor(Role root)
             {
-                if (root.managed)
-                    return modChores ??= new PaletteCluster { label = "WR_ClusterModChores".Translate() };
                 if (root.autoAssign)
                     return everyone ??= new PaletteCluster { label = "WR_ClusterEveryone".Translate() };
                 var skills = RelevantSkillsOf(root);
@@ -415,7 +413,6 @@ namespace WorkRoles.UI
             if (everyone != null) result.Add(everyone);
             result.AddRange(skillClusters);
             if (unskilled != null) result.Add(unskilled);
-            if (modChores != null) result.Add(modChores);
             return result;
         }
 
@@ -2518,7 +2515,6 @@ namespace WorkRoles.UI
                 MinHolders = role.minHolders,
                 Available = RoleAvailable(role),
                 Enabled = role.enabled,
-                Managed = role.managed,
                 Gated = HasGate(role),
             };
         }

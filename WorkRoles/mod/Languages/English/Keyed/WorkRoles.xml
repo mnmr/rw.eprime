@@ -65,13 +65,9 @@
   <!-- Palette cluster labels (skill clusters use the skill's own label) -->
   <WR_ClusterEveryone>Everyone</WR_ClusterEveryone>
   <WR_ClusterUnskilled>Unskilled</WR_ClusterUnskilled>
-  <WR_ClusterModChores>Mod chores</WR_ClusterModChores>
 
-  <!-- Engine-managed Odd Jobs role (invisible modded work types) -->
+  <!-- Label for the legacy hidden All role when a very old save migrates it into the catalog -->
   <WR_OddJobsRole>Odd Jobs</WR_OddJobsRole>
-  <WR_ManagedEntriesNote>This role collects jobs that mods add without a Work tab presence. WorkRoles manages its contents automatically: new hidden jobs appear here, and jobs vanish when their mod is removed. You can rename, recolor, reorder, assign and toggle it like any other role — only its job list is off-limits.</WR_ManagedEntriesNote>
-  <!-- {0} = the Odd Jobs role's (possibly renamed) label -->
-  <WR_DeleteOddJobsWarning>'{0}' collects work that mods add without a Work tab presence — hidden jobs that can appear and disappear as your mod list changes. Without it, colonists will never do such work.\n\nIf you know none of your mods add hidden jobs, it is safe to delete. Restore Defaults (top right) can recreate it later.\n\nDelete '{0}'? It will be removed from all colonists.</WR_DeleteOddJobsWarning>
 
   <!-- Blocker roles -->
   <WR_BlockerRole>Blocker role</WR_BlockerRole>
@@ -286,7 +282,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RestoreExplainCoverage>Generates a role covering this work type.</WR_RestoreExplainCoverage>
   <!-- {0} = number of jobs -->
   <WR_RestoreExplainBackfill>Re-adds {0} jobs that mods moved.</WR_RestoreExplainBackfill>
-  <WR_RestoreExplainOddJobs>Recreates Odd Jobs and assigns it to every colonist.</WR_RestoreExplainOddJobs>
   <!-- {0} = the role's default group name -->
   <WR_RestoreExplainGroup>Moves the role back to group '{0}'.</WR_RestoreExplainGroup>
   <WR_RestoreExplainColor>Resets the color to the template default.</WR_RestoreExplainColor>
@@ -327,6 +322,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Available Jobs pane (left) -->
   <WR_AvailableJobs>Available Jobs</WR_AvailableJobs>
   <WR_Search>Search</WR_Search>
+  <!-- Unused-jobs warning: prefix rendered yellow code-side; {0} = uncovered job count -->
+  <WR_WarningPrefix>Warning:</WR_WarningPrefix>
+  <WR_UnusedJobsWarning>You have {0} jobs that are not in any role.</WR_UnusedJobsWarning>
 
   <!-- Selected Jobs pane (right) -->
   <WR_SelectedJobs>Selected Jobs (ordered)</WR_SelectedJobs>
@@ -407,7 +405,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Role-list groups -->
   <WR_GroupDefault>Default</WR_GroupDefault>
   <WR_GroupAutoRules>Auto-Roles</WR_GroupAutoRules>
-  <WR_GroupLocked>Locked</WR_GroupLocked>
   <WR_GroupLabel>Group</WR_GroupLabel>
   <!-- {0} = the role's current group name -->
   <WR_GroupButton>Group: {0}</WR_GroupButton>
@@ -415,7 +412,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_NewGroupTitle>New group</WR_NewGroupTitle>
   <WR_RenameGroup>Rename group</WR_RenameGroup>
   <WR_RenameGroupTitle>Rename group</WR_RenameGroupTitle>
-  <WR_GroupOverlayTip>Roles with rules display under Auto-Roles (managed roles under Locked). The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
+  <WR_GroupOverlayTip>Roles with rules display under Auto-Roles. The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
   <WR_IncludeRole>Include role...</WR_IncludeRole>
   <!-- {0} = the group the included role currently lives in -->
   <WR_IncludeMove>(will move from {0})</WR_IncludeMove>

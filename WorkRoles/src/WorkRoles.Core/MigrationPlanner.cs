@@ -8,7 +8,7 @@ namespace WorkRoles.Core
     {
         public int Id { get; }
         public IReadOnlyList<JobEntry> Entries { get; }
-        /// Blockers and the engine-managed role never migrate from priorities.
+        /// Blockers never migrate from priorities.
         public bool Excluded { get; }
 
         public MigrationRole(int id, IReadOnlyList<JobEntry> entries, bool excluded)

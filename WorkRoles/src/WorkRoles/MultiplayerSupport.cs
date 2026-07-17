@@ -108,7 +108,6 @@ namespace WorkRoles
             BindList(sync, ref selection.pathDefs);
             BindList(sync, ref selection.groupRoleIds);
             BindList(sync, ref selection.colorRoleIds);
-            sync.Bind(ref selection.oddJobs);
             sync.Bind(ref selection.recommendationOrder);
         }
     }
