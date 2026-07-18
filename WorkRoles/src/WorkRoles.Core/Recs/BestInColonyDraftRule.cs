@@ -23,14 +23,13 @@ namespace WorkRoles.Core.Recs
             {
                 if (SkippedForCoverer(context, role)) continue;
                 int want = context.Want[role.Id];
-                // Trainees (allowance) already satisfy part of the floor.
-                int holders = context.HoldersOf(role.Id) + context.TraineeCredit(role);
+                int holders = context.HoldersOf(role.Id);
                 if (holders >= want) continue;
 
                 var eligible = new List<(int pawn, SignalBucket bucket, string skill, int level, bool inBand)>();
                 for (int i = 0; i < context.Colony.Pawns.Count; i++)
                 {
-                    if (context.CoversRole(i, role) || context.HoldsPartner(i, role)) continue;
+                    if (context.CoversRole(i, role)) continue;
                     if (!context.Capable(i, role)) continue;
                     var bucket = context.BestSignal(i, role, out string skill, out _);
                     if (bucket == SignalBucket.Awful) continue;

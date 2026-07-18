@@ -1,10 +1,13 @@
 ﻿# Changelog
 
-## 1.2.0 — 2026-07-17
+## 1.2.0 — 2026-07-19
 
-- Added: Recommendation Tuning (under Options). Specify the default recommendation order for roles, and tweak training paths (role progression definitions aka "what trains what").
-- Added: Import/export (and restore) extended to include role groups and recommendation tuning options.
-- Changed: Recommendation engine has been fully rewritten to use training paths and configurable per-role assignment minimums, allowing it to provide suggestions that reflect how you want them to be.
+- Added: Recommendation Tuning (under Options). Specify the default recommendation order for roles and customize training paths (role progression definitions).
+- Added: Import/export extended to include role groups and recommendation tuning options.
+- Changed: Restore Roles is now Restore Defaults and supports roles, groups, colors and recommendation tuning options.
+- Changed: Recommendation engine has been fully rewritten to use training paths and configurable per-role assignment ranges, so it can provide suggestions that reflect how you want them to be.
+- Fixed: Recommendation signals from Vanilla Skills Expanded and Alpha Skills weren't always working; it's now a pre-computed set of signal rules, backed by unit tests.
+- Fixed: Additional performance fixes and internal housekeeping.
 
 ## 1.1.4 — 2026-07-16
 

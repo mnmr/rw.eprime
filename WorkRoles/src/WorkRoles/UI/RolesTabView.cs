@@ -122,8 +122,7 @@ namespace WorkRoles.UI
             holders.AddSection().Text("WR_HoldersTipWhat".Translate());
             holders.AddSection()
                 .Fact("WR_HoldersAuto".Translate(), "WR_HoldersTipAuto".Translate())
-                .Fact("0", "WR_HoldersTipZero".Translate())
-                .Fact("1..8", "WR_HoldersTipCount".Translate())
+                .Fact("WR_HoldersCustom".Translate(), "WR_HoldersTipCustom".Translate())
                 .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
             holdersTipCache = Patches.Patch_ActiveTip_TipRect.Register(holders);
         }
@@ -1235,14 +1234,17 @@ namespace WorkRoles.UI
 
         private int AutoHolderWant(Role role)
         {
-            holdersProbe.MinHolders = role.ResolvedMinHolders();
+            holdersProbe.MinHolders = role.ResolvedAutoMinHolders();
             return holdersScaling.Want(holdersProbe, listedPawns?.Invoke().Count ?? 0);
         }
 
-        /// Colonist-count picker: Auto / 0..8 / Never (see the holders tip),
-        /// plus the in-training allowance for structural training targets.
+        /// Auto/Never/Custom toggle plus the Custom inclusive range pickers.
         private void DrawHoldersRow(Rect rect, Role role)
         {
+            // These roles are excluded from ordinary recommendations, so a
+            // holder target would be inert and misleading.
+            if (role.blocker || role.HasRules) return;
+
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
@@ -1252,75 +1254,68 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            var btnRect = new Rect(rect.x + labelW + 8f, rect.y, 72f, rect.height);
+            var btnRect = new Rect(rect.x + labelW + 6f, rect.y, 82f, rect.height);
             TooltipHandler.TipRegion(btnRect, holdersTipCache);
-            string shown = role.minHolders == RoleView.NeverHolders
-                ? "WR_HoldersNever".Translate().ToString()
-                : role.minHolders < 0
-                    ? "WR_HoldersAutoCount".Translate(AutoHolderWant(role)).ToString()
-                    : role.minHolders.ToString();
+            string shown = role.holderMode == RoleHolderMode.Auto
+                ? "WR_HoldersAutoCount".Translate(AutoHolderWant(role)).ToString()
+                : role.holderMode == RoleHolderMode.Never
+                    ? "WR_HoldersNever".Translate().ToString()
+                    : "WR_HoldersCustom".Translate().ToString();
             if (Widgets.ButtonText(btnRect, shown))
             {
-                int captured = role.id;
-                var options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("WR_HoldersAuto".Translate(),
-                        () => RoleCommands.SetRoleHolders(captured, -1)),
-                };
-                for (int n = 0; n <= 8; n++)
-                {
-                    int value = n;
-                    options.Add(new FloatMenuOption(value.ToString(),
-                        () => RoleCommands.SetRoleHolders(captured, value)));
-                }
-                options.Add(new FloatMenuOption("WR_HoldersNever".Translate(),
-                    () => RoleCommands.SetRoleHolders(captured, RoleView.NeverHolders)));
-                Find.WindowStack.Add(new FloatMenu(options));
+                var next = RoleHolderPolicy.Next(role.holderMode);
+                int initialMin = next == RoleHolderMode.Custom ? AutoHolderWant(role) : 0;
+                RoleCommands.SetRoleHolderMode(role.id, (int)next, initialMin);
             }
 
-            DrawInTrainingPicker(rect, btnRect.xMax, role);
+            if (role.holderMode != RoleHolderMode.Custom) return;
+            int colonists = System.Math.Min(RoleHolderRange.Uncapped,
+                listedPawns?.Invoke().Count ?? 0);
+            float x = btnRect.xMax + 8f;
+            DrawHolderRangePicker(rect, ref x, "WR_HoldersMin", role.minHolders,
+                colonists, role.id, maximum: false);
+            DrawHolderRangePicker(rect, ref x, "WR_HoldersMax", role.maxHolders,
+                colonists, role.id, maximum: true);
         }
 
-        /// Allowance picker, structural training targets only (a path lists
-        /// the role above lower-band entries). Disabled while the resolved
-        /// colonist count is not a positive need.
-        private static void DrawInTrainingPicker(Rect rect, float x, Role role)
+        private static void DrawHolderRangePicker(Rect rect, ref float x, string labelKey,
+            int current, int colonists, int roleId, bool maximum)
         {
-            var store = RoleStore.Current;
-            if (store == null || !store.IsTrainingTarget(role.id)) return;
-            int resolved = role.ResolvedMinHolders();
-            bool enabled = resolved >= 1;
-
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string label = "WR_InTrainingLabel".Translate();
+            string label = labelKey.Translate();
             float labelW = WrText.FitWidth(label);
-            Widgets.Label(new Rect(x + 14f, rect.y, labelW, rect.height), label);
+            Widgets.Label(new Rect(x, rect.y, labelW, rect.height), label);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            var btnRect = new Rect(x + 14f + labelW + 8f, rect.y, 48f, rect.height);
-            TooltipHandler.TipRegion(btnRect, "WR_InTrainingTip".Translate());
-            if (!enabled)
+            float buttonW = maximum ? 68f : 36f;
+            var btnRect = new Rect(x + labelW + 4f, rect.y, buttonW, rect.height);
+            string shown = maximum && current == RoleHolderRange.Uncapped
+                ? "WR_HoldersUncapped".Translate().ToString() : current.ToString();
+            if (Widgets.ButtonText(btnRect, shown))
             {
-                GUI.color = new Color(1f, 1f, 1f, 0.4f);
-                Widgets.ButtonText(btnRect, "0", active: false);
-                GUI.color = Color.white;
-                return;
-            }
-            if (Widgets.ButtonText(btnRect, role.inTrainingAllowance.ToString()))
-            {
-                int captured = role.id;
                 var options = new List<FloatMenuOption>();
-                for (int n = 0; n <= resolved; n++)
+                int numericMax = maximum
+                    ? System.Math.Min(colonists, RoleHolderRange.Uncapped - 1)
+                    : colonists;
+                for (int n = 0; n <= numericMax; n++)
                 {
                     int value = n;
                     options.Add(new FloatMenuOption(value.ToString(),
-                        () => RoleCommands.SetRoleInTrainingAllowance(captured, value)));
+                        () =>
+                        {
+                            if (maximum) RoleCommands.SetRoleHolderMax(roleId, value);
+                            else RoleCommands.SetRoleHolderMin(roleId, value);
+                        }));
                 }
+                if (maximum)
+                    options.Add(new FloatMenuOption("WR_HoldersUncapped".Translate(),
+                        () => RoleCommands.SetRoleHolderMax(roleId, RoleHolderRange.Uncapped)));
                 Find.WindowStack.Add(new FloatMenu(options));
             }
+            x = btnRect.xMax + 8f;
         }
 
         // Open-window snapshot of the selected role's used skills, most

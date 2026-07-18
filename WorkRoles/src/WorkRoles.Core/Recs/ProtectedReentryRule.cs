@@ -18,6 +18,7 @@ namespace WorkRoles.Core.Recs
             {
                 var role = context.RoleOf(existing[i].RoleId);
                 if (role == null) continue;
+                if (role.HolderMode == RoleHolderMode.Never) continue;
                 if (!role.HasRules && !role.Blocker && !existing[i].Pinned) continue;
                 if (result.Assignments.Any(a => a.RoleId == existing[i].RoleId)) continue;
                 result.Assignments.Insert(

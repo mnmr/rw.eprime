@@ -25,12 +25,11 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        /// Colonist count: -2 = never recommended, -1 = auto (resolves to the
-        /// RoleDef default; player roles 0), 0 = interest-only, N = needed.
-        public int minHolders = -1;
-        /// Of the resolved minHolders, how many slots a colonist still in
-        /// training (lower-band path partner) may fill.
-        public int inTrainingAllowance;
+        public RoleHolderMode holderMode;
+        /// Custom range stays stored while Auto or Never is selected.
+        public bool holderRangeSet;
+        public int minHolders;
+        public int maxHolders = RoleHolderRange.Uncapped;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
@@ -75,15 +74,19 @@ namespace WorkRoles
             return CoverageMath.CoversOrMatches(Coverage(), other.Coverage());
         }
 
-        /// The effective colonist count: Auto (-1) falls back to the seeding
-        /// def's default; player-created roles default to 0 (interest-only).
-        public int ResolvedMinHolders()
+        /// Auto falls back to the seeding def; player-created roles default to 0.
+        public int ResolvedAutoMinHolders()
         {
-            if (minHolders != -1) return minHolders;
             var def = templateDefName == null ? null
                 : DefDatabase<RoleDef>.GetNamedSilentFail(templateDefName);
             return def?.minHolders ?? 0;
         }
+
+        public int ResolvedMinHolders() => holderMode == RoleHolderMode.Custom
+            ? minHolders : holderMode == RoleHolderMode.Never ? 0 : ResolvedAutoMinHolders();
+
+        public int ResolvedMaxHolders() => holderMode == RoleHolderMode.Custom
+            ? maxHolders : RoleHolderRange.Uncapped;
 
         public void ExposeData()
         {
@@ -102,15 +105,20 @@ namespace WorkRoles
             // the role as an ordinary player role, keeping entries and holders.
             bool legacyManaged = false;
             Scribe_Values.Look(ref legacyManaged, "managed");
-            // Retired train-band fields (trainSkill/trainMin/trainMax/
-            // trainTargets/allowTrainingSubs) are simply not read from old saves.
-            Scribe_Values.Look(ref minHolders, "minHolders", -1);
-            // Pre-1.2 saves: never-dealt lived in maxHolders 0.
-            int legacyMaxHolders = -1;
-            Scribe_Values.Look(ref legacyMaxHolders, "maxHolders", -1);
-            if (Scribe.mode == LoadSaveMode.LoadingVars && legacyMaxHolders == 0)
-                minHolders = 0;
-            Scribe_Values.Look(ref inTrainingAllowance, "inTrainingAllowance");
+            // Old minHolders/maxHolders/inTrainingAllowance fields are ignored.
+            // Their recommendation values were not meaningful enough to migrate.
+            Scribe_Values.Look(ref holderMode, "holderMode", RoleHolderMode.Auto);
+            Scribe_Values.Look(ref holderRangeSet, "holderRangeSet");
+            Scribe_Values.Look(ref minHolders, "holderRangeMin");
+            Scribe_Values.Look(ref maxHolders, "holderRangeMax", RoleHolderRange.Uncapped);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                if (!System.Enum.IsDefined(typeof(RoleHolderMode), holderMode))
+                    holderMode = RoleHolderMode.Auto;
+                var normalized = RoleHolderPolicy.WithMin(minHolders, maxHolders, minHolders);
+                minHolders = normalized.min;
+                maxHolders = normalized.max;
+            }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (ids are numeric, category

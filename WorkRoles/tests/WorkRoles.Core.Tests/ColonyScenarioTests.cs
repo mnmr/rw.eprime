@@ -261,10 +261,7 @@ public class ColonyScenarioTests
             bool anyCapable = Enumerable.Range(0, colony.Pawns.Count).Any(i =>
                 role.WorkTypes.Any(colony.Pawns[i].CapableWorkTypes.Contains));
             if (!anyCapable) continue;
-            // Covered directly, by a coverer, or (allowance) by a trainee.
-            bool covered = results.Any(r => Holds(r, catalog, role))
-                || results.Any(r => r.Reasons.Values
-                    .Any(reason => reason.TowardRoleId == role.Id));
+            bool covered = results.Any(r => Holds(r, catalog, role));
             await Assert.That(covered).IsTrue()
                 .Because($"{catalog.DefNames[role.Id]} uncovered (size {size}, seed {seed})");
         }
@@ -347,7 +344,7 @@ public class ColonyScenarioTests
                         .Because($"pawn {i} got {catalog.DefNames[role.Id]} without capability "
                             + $"(size {size}, seed {seed})");
                 // Only INTEREST (signal) assignments gate on bands; the
-                // need-driven floor (draft/allowance) may place below-band.
+                // need-driven floor (draft) may place below-band.
                 if (results[i].Reasons.TryGetValue(assignment.RoleId, out var reason)
                     && reason.RuleId == "signals")
                     await Assert.That(PassesBands(colony, i, role)).IsTrue()

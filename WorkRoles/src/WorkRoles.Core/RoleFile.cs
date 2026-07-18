@@ -46,10 +46,10 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        /// Colonist count: -2 never, -1 auto/omitted, 0 interest-only, N needed.
-        public int minHolders = -1;
-        /// Of minHolders, how many slots a lower-band path partner may fill.
-        public int inTrainingAllowance;
+        public RoleHolderMode holderMode;
+        public bool holderRangeSet;
+        public int minHolders;
+        public int maxHolders = RoleHolderRange.Uncapped;
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -88,10 +88,11 @@ namespace WorkRoles.Core
     {
         /// v2 added <Training> and <Holders>; v3 <TrainingPaths> and
         /// <RecommendationOrder>; v4 retired <Training> (paths own training)
-        /// and gave <Holders> the inTraining attribute + a stored Never (-2).
+        /// and gave <Holders> an inTraining attribute; v5 replaces the old
+        /// holder floor/allowance with an explicit Auto/Never/Custom range.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "4";
+        public const string FormatVersion = "5";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -106,11 +107,9 @@ namespace WorkRoles.Core
     that work type, including jobs mods add later; <WorkGiver> is one job.
   - <Groups> lists role-list groups in display order; a Role joins one via its
     group attribute (unlisted names still work; no attribute = Default).
-  - <Holders min=""2"" inTraining=""1""/> is the role's colonist count: -1 (or
-    absent) = automatic, 0 = only recommended on interest, N = needed by the
-    colony, -2 = never recommended. inTraining says how many of the N slots a
-    colonist still in training (a lower-band role from a shared training path)
-    may fill.
+  - <Holders mode=""custom"" min=""2"" max=""4""/> sets an inclusive holder
+    range. mode may be auto, never, or custom. Auto is the default when the
+    element is absent. A max of 256 is displayed in-game as Uncapped.
   - A <TrainingPaths> <Path> lists <Role min=""0"" max=""8"">name</Role> skill bands
     on the 0..21 axis (21 = open top, spans at least 4 levels); the entry order
     is the assignment order. An optional color=""name"" attribute colors the
@@ -199,11 +198,17 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Enabled", "false"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
-            if (role.minHolders != -1 || role.inTrainingAllowance > 0)
+            if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
+                || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped)
             {
-                var holders = new XElement("Holders", new XAttribute("min", role.minHolders));
-                if (role.inTrainingAllowance > 0)
-                    holders.Add(new XAttribute("inTraining", role.inTrainingAllowance));
+                var holders = new XElement("Holders",
+                    new XAttribute("mode", role.holderMode.ToString().ToLowerInvariant()));
+                if (role.holderMode == RoleHolderMode.Custom || role.holderRangeSet
+                    || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped)
+                {
+                    holders.Add(new XAttribute("min", role.minHolders));
+                    holders.Add(new XAttribute("max", role.maxHolders));
+                }
                 options.Add(holders);
             }
             if (role.locations.Count > 0)
@@ -266,10 +271,12 @@ namespace WorkRoles.Core
                     && !doc.groups.Contains(name, StringComparer.OrdinalIgnoreCase))
                     doc.groups.Add(name);
             }
+            bool v5Holders = int.TryParse(root.Attribute("version")?.Value, out int version)
+                && version >= 5;
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
             {
-                var role = ParseRole(roleEl);
+                var role = ParseRole(roleEl, v5Holders);
                 if (role != null) doc.roles.Add(role);
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
@@ -335,7 +342,7 @@ namespace WorkRoles.Core
             return (ids, mins, maxes);
         }
 
-        private static FileRole ParseRole(XElement el)
+        private static FileRole ParseRole(XElement el, bool v5Holders)
         {
             string label = el.Attribute("name")?.Value;
             if (string.IsNullOrEmpty(label)) return null;
@@ -369,15 +376,21 @@ namespace WorkRoles.Core
                     role.activeHours = BitsToHours(bits);
                 // <Training> (v2/v3) is retired: skipped, never read.
                 var holders = options.Element("Holders");
-                if (holders != null)
+                if (holders != null && v5Holders)
                 {
-                    if (int.TryParse(holders.Attribute("min")?.Value, out int min) && min >= -2)
-                        role.minHolders = min;
-                    // Legacy files carried never-dealt in max="0".
-                    if (int.TryParse(holders.Attribute("max")?.Value, out int max) && max == 0)
-                        role.minHolders = 0;
-                    if (int.TryParse(holders.Attribute("inTraining")?.Value, out int allowance))
-                        role.inTrainingAllowance = System.Math.Max(0, allowance);
+                    string mode = holders.Attribute("mode")?.Value?.Trim();
+                    if (string.Equals(mode, "never", StringComparison.OrdinalIgnoreCase))
+                        role.holderMode = RoleHolderMode.Never;
+                    else if (string.Equals(mode, "custom", StringComparison.OrdinalIgnoreCase))
+                        role.holderMode = RoleHolderMode.Custom;
+                    if (int.TryParse(holders.Attribute("min")?.Value, out int min))
+                        role.minHolders = RoleHolderRange.Clamp(min);
+                    if (int.TryParse(holders.Attribute("max")?.Value, out int max))
+                        role.maxHolders = RoleHolderRange.Clamp(max);
+                    role.holderRangeSet = holders.Attribute("min") != null
+                        && holders.Attribute("max") != null;
+                    if (role.minHolders > role.maxHolders)
+                        role.maxHolders = role.minHolders;
                 }
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())

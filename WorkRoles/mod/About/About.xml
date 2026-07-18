@@ -71,13 +71,13 @@ Recommendation Logic:
 - Colony Needs: Ensures that every essential role is assigned to at least one pawn. Roles are configured to be essential by specifying a min assignment requirement.
 - Intelligent Defaults: WorkRoles seeds roles with reasonable defaults (but you can override these to set your own requirements).
 - Training Paths: Design your own role progressions or use the default set to flexibly configure how pawns should progress as their skill improves.
-- Shiny Happy People: Training paths are suggested based on colonist genes, traits, aptitudes and passions, to make sure pawns primarily do what they like.
+- Shiny Happy People: Training paths are suggested based on colonist genes, traits, passions and expertise, to make sure pawns primarily do what they like or are good at.
 - Hunting: Recommended for everyone with a gun as a way to improve shooting skill, but at different priority based on current skill level.
 - Apply Per Colonist: Click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
 - Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
-- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
+- Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on already assigned roles to pin them.
 - Untouched: Auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
-- Genetics: Pawns genetically terrified of fire automatically get Pyrophobia (blocker role) placed before Basics.
+- Genetics: Pawns terrified of fire automatically get Pyrophobia (blocker role) placed before Core (which has Firefighting).
 
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).

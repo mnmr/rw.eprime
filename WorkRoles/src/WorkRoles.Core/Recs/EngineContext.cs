@@ -103,6 +103,7 @@ namespace WorkRoles.Core.Recs
         public void AddCandidate(int pawnIndex, int roleId, Reason reason, SignalBucket strength,
             bool force = false)
         {
+            if (RoleOf(roleId)?.HolderMode == RoleHolderMode.Never) return;
             if (!force && Vetoed.Contains(roleId)) return;
             var byRole = Candidates[pawnIndex];
             if (!byRole.TryGetValue(roleId, out var existing) || strength > existing.Strength)
@@ -138,7 +139,7 @@ namespace WorkRoles.Core.Recs
         /// band, or the colony-best escape (below a min nobody better can
         /// meet). Roles in no path — and unskilled entries — never gate.
         /// Overlap coexists, disjoint supersedes. The need-driven floor
-        /// (draft/allowance) ignores this gate: minHolders is absolute.
+        /// draft ignores this gate: minHolders is absolute.
         public bool PassesBands(int pawnIndex, RoleView role)
         {
             bool member = false;
@@ -158,29 +159,5 @@ namespace WorkRoles.Core.Recs
             return !member;
         }
 
-        /// The pawn holds a lower-band partner of the role (a trainee toward it).
-        public bool HoldsPartner(int pawnIndex, RoleView role)
-        {
-            var byRole = Candidates[pawnIndex];
-            foreach (var path in Colony.Paths)
-            {
-                int entry = path.RoleIds.IndexOf(role.Id);
-                if (entry < 0) continue;
-                foreach (int i in PathMath.LowerBandEntries(path, entry))
-                    if (byRole.ContainsKey(path.RoleIds[i])) return true;
-            }
-            return false;
-        }
-
-        /// Floor slots that trainees satisfy: partner-holders capped by the
-        /// role's allowance (draft credits these before dealing directly).
-        public int TraineeCredit(RoleView role)
-        {
-            if (role.InTrainingAllowance <= 0) return 0;
-            int count = 0;
-            for (int i = 0; i < Colony.Pawns.Count; i++)
-                if (HoldsPartner(i, role)) count++;
-            return System.Math.Min(role.InTrainingAllowance, count);
-        }
     }
 }

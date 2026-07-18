@@ -17,7 +17,7 @@ public class RecsCoverageDraftTests
         needed.MinHolders = 2;
         var interestOnly = RecsTestBed.Role(3, "Cooking");   // 0
         var never = RecsTestBed.Role(4, "Cooking");
-        never.MinHolders = RoleView.NeverHolders;
+        never.HolderMode = RoleHolderMode.Never;
         await Assert.That(scaling.Want(auto, 6)).IsEqualTo(1);
         await Assert.That(scaling.Want(auto, 7)).IsEqualTo(2);
         await Assert.That(scaling.Want(needed, 6)).IsEqualTo(2);

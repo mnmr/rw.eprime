@@ -16,8 +16,9 @@ public class RoleFileTests
         enabled = false,
         activeHours = RoleFile.BitsToHours("111111000000000000000000"),
         locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
+        holderMode = RoleHolderMode.Custom,
         minHolders = 2,
-        inTrainingAllowance = 1,
+        maxHolders = 4,
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -54,19 +55,21 @@ public class RoleFileTests
         await Assert.That(string.Join(",", role.entries.Select(e => e.Encode())))
             .IsEqualTo("WorkGiver:FightFires,WorkType:Hauling"); // ORDER preserved across kinds
         await Assert.That(role.minHolders).IsEqualTo(2);
-        await Assert.That(role.inTrainingAllowance).IsEqualTo(1);
+        await Assert.That(role.maxHolders).IsEqualTo(4);
+        await Assert.That(role.holderMode).IsEqualTo(RoleHolderMode.Custom);
 
         var plain = parsed.roles[1];
         await Assert.That(plain.templateDef == null).IsTrue();
         await Assert.That(plain.colorRef == null).IsTrue();
         await Assert.That(plain.enabled).IsTrue();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
-        await Assert.That(plain.inTrainingAllowance).IsEqualTo(0);
-        await Assert.That(plain.minHolders).IsEqualTo(-1);
+        await Assert.That(plain.holderMode).IsEqualTo(RoleHolderMode.Auto);
+        await Assert.That(plain.minHolders).IsEqualTo(0);
+        await Assert.That(plain.maxHolders).IsEqualTo(RoleHolderRange.Uncapped);
     }
 
     [Test]
-    public async Task LegacyMaxZeroHoldersImportAsNeverDealt()
+    public async Task LegacyMaxZeroHoldersAreIgnored()
     {
         // v2 files from 1.1.x carried never-dealt as max="0".
         var parsed = RoleFile.Parse(
@@ -74,6 +77,7 @@ public class RoleFileTests
             "<Role name=\"Statue\"><Options><Holders max=\"0\"/></Options>" +
             "<Jobs><WorkType>Art</WorkType></Jobs></Role></Roles></WorkRoles>");
         await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
         await Assert.That(parsed.roles[0].minHolders).IsEqualTo(0);
     }
 
@@ -172,7 +176,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("4");
+            .IsEqualTo("5");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -330,31 +334,31 @@ public class RoleFileTests
             "<Holders min=\"1\"/></Options>" +
             "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
         await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(1);
-        await Assert.That(parsed.roles[0].inTrainingAllowance).IsEqualTo(0);
+        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
+        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(0);
     }
 
     [Test]
-    public async Task NeverHoldersRoundTripsInV4()
+    public async Task NeverModeRoundTripsInV5()
     {
         var doc = new RoleFileDocument
         {
-            roles = { new FileRole { label = "Statue", minHolders = -2,
+            roles = { new FileRole { label = "Statue", holderMode = RoleHolderMode.Never,
                 entries = { new(JobEntryKind.WorkType, "Art") } } },
         };
         var parsed = RoleFile.Parse(RoleFile.Build(doc));
         await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(-2);
+        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Never);
     }
 
     [Test]
-    public async Task NegativeInTrainingAttributeReadsAsZero()
+    public async Task LegacyInTrainingAttributeIsIgnored()
     {
         var parsed = RoleFile.Parse(
             "<WorkRoles version=\"4\"><Palette/><Roles>" +
             "<Role name=\"Doc\"><Options><Holders min=\"2\" inTraining=\"-3\"/></Options>" +
             "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
         await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].inTrainingAllowance).IsEqualTo(0);
+        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
     }
 }

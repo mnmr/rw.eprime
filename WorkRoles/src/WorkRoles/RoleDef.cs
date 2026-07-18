@@ -17,8 +17,7 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        /// Colonist count for the coverage pass: -1 = auto (dealt at colony
-        /// scale), 0 = never dealt (interest-driven only), N = needed.
+        /// Auto-mode default consumed by the existing recommendation scaling.
         public int minHolders = -1;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.

@@ -29,6 +29,7 @@ namespace WorkRoles
         public List<string> pathDefs = new List<string>();
         public List<int> groupRoleIds = new List<int>();
         public List<int> colorRoleIds = new List<int>();
+        public List<int> holderRoleIds = new List<int>();
         public bool recommendationOrder;
     }
 }

@@ -85,20 +85,6 @@ namespace WorkRoles
         public TrainingPath PathById(int id) =>
             trainingPaths.FirstOrDefault(p => p.id == id);
 
-        /// Structural training target: the role sits in a path where another
-        /// entry has a strictly lower band min (those entries train toward it).
-        public bool IsTrainingTarget(int roleId)
-        {
-            foreach (var path in trainingPaths)
-            {
-                int at = path.roleIds.IndexOf(roleId);
-                if (at < 0) continue;
-                for (int i = 0; i < path.roleIds.Count; i++)
-                    if (path.bandMins[i] < path.bandMins[at]) return true;
-            }
-            return false;
-        }
-
         /// The Default group (id 0), materialized on demand: pinned first,
         /// swept like any user group when it empties. The stored label is
         /// INVARIANT (never the translated name — this is scribed, synced

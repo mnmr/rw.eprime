@@ -101,6 +101,7 @@ namespace WorkRoles.UI
                     pathDefs = selected.Where(i => i.pathDef != null).Select(i => i.pathDef).ToList(),
                     groupRoleIds = selected.Where(i => i.groupRoleId != -1).Select(i => i.groupRoleId).ToList(),
                     colorRoleIds = selected.Where(i => i.colorRoleId != -1).Select(i => i.colorRoleId).ToList(),
+                    holderRoleIds = selected.Where(i => i.holderRoleId != -1).Select(i => i.holderRoleId).ToList(),
                     recommendationOrder = selected.Any(i => i.recommendationOrder),
                 });
                 Close();

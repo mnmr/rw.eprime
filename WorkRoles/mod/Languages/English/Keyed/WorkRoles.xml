@@ -178,8 +178,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
   <WR_ReasonAptitude>Gene or trait aptitude for {0}.</WR_ReasonAptitude>
   <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
-  <!-- {0} = the needed role the trainee works toward -->
-  <WR_ReasonInTraining>In training: fills a {0} slot while skilling up through the training path.</WR_ReasonInTraining>
   <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
   <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
   <WR_SkillTipAptitude>Aptitude {0} (genes/traits)</WR_SkillTipAptitude>
@@ -210,7 +208,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Restore button (top-right corner, Roles tab) -->
   <WR_RestoreDefaults>Restore Defaults</WR_RestoreDefaults>
-  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, return pre-made roles to their default groups and colors, and reset the recommendation order. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
+  <WR_RestoreDefaultsTip>Recreate missing pre-made roles and training paths, return pre-made roles to their default groups, colors, and holder settings, and reset the recommendation order. A preview lets you pick what to restore.</WR_RestoreDefaultsTip>
   <WR_RestoreDefaultsTitle>Restore Defaults</WR_RestoreDefaultsTitle>
 
   <!-- Import/Export (Roles tab, top-right); {0} = file path, or count for messages -->
@@ -267,6 +265,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RestoreGroupItem>{0} (move to group '{1}')</WR_RestoreGroupItem>
   <!-- {0} = role label -->
   <WR_RestoreColorItem>{0} (restore default color)</WR_RestoreColorItem>
+  <!-- {0} = role label -->
+  <WR_RestoreHoldersItem>{0} (restore holder defaults)</WR_RestoreHoldersItem>
   <WR_RestoreRecOrder>Recommendation order (reset to default)</WR_RestoreRecOrder>
   <!-- Restore preview: warning line when highlighted items would undo player changes -->
   <WR_RestoreOverwriteWarning>⚠ Highlighted items will overwrite changes you made.</WR_RestoreOverwriteWarning>
@@ -280,9 +280,10 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} = the role's default group name -->
   <WR_RestoreExplainGroup>Moves the role back to group '{0}'.</WR_RestoreExplainGroup>
   <WR_RestoreExplainColor>Resets the color to the template default.</WR_RestoreExplainColor>
+  <WR_RestoreExplainHolders>Resets the holder mode and range to the template-driven Auto default.</WR_RestoreExplainHolders>
   <WR_RestoreExplainRecOrder>Clears your custom order.</WR_RestoreExplainRecOrder>
   <WR_RestoreExplainPath>Creates the training path.</WR_RestoreExplainPath>
-  <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups and colors, the recommendation order is the default, and no jobs were moved.</WR_NothingToRestore>
+  <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups, colors, and holder settings, the recommendation order is the default, and no jobs were moved.</WR_NothingToRestore>
   <!-- {0} = comma-separated role labels -->
   <WR_RolesRestored>Restored: {0}</WR_RolesRestored>
 
@@ -337,19 +338,20 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
-  <!-- Editor: in-training allowance, colonist count, skills used -->
-  <WR_InTrainingLabel>In training:</WR_InTrainingLabel>
-  <WR_InTrainingTip>Of the needed colonists, how many may still be in training — holding an earlier role from a training path that leads here — instead of holding this role itself.</WR_InTrainingTip>
+  <!-- Editor: colonist range and skills used -->
   <WR_HoldersLabel>Colonists:</WR_HoldersLabel>
-  <WR_HoldersTipWhat>Controls how many colonists the recommendation engine will assign this role to.</WR_HoldersTipWhat>
+  <WR_HoldersTipWhat>Controls the desired range of colonists assigned this role.</WR_HoldersTipWhat>
   <WR_HoldersTipAuto>a preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
-  <WR_HoldersTipZero>only recommended to colonists with passion or aptitude for the skills used</WR_HoldersTipZero>
-  <WR_HoldersTipCount>recommended to colonists until the colony need is met</WR_HoldersTipCount>
+  <WR_HoldersTipCustom>an inclusive minimum and maximum selected by you</WR_HoldersTipCustom>
   <WR_HoldersTipNever>never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
   <!-- Holders button while Auto is selected; {0} = the resolved colony target -->
   <WR_HoldersAutoCount>Auto ({0})</WR_HoldersAutoCount>
   <WR_HoldersNever>Never</WR_HoldersNever>
+  <WR_HoldersCustom>Custom</WR_HoldersCustom>
+  <WR_HoldersMin>Min</WR_HoldersMin>
+  <WR_HoldersMax>Max</WR_HoldersMax>
+  <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->

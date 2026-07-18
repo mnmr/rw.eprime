@@ -465,7 +465,7 @@ namespace WorkRoles
         /// payload fields is set: a missing template to recreate, an uncovered work
         /// type to regenerate, a role whose snapshots gain moved vanilla givers,
         /// a role whose group or color drifted from its def, a missing default
-        /// training path, or the recommendation-order reset.
+        /// holder defaults, a missing training path, or the recommendation-order reset.
         public class RestoreItem
         {
             public string label;
@@ -476,13 +476,15 @@ namespace WorkRoles
             public int backfillRoleId = -1;
             public int groupRoleId = -1;
             public int colorRoleId = -1;
+            public int holderRoleId = -1;
             public string pathDef;
             public bool recommendationOrder;
 
             /// Applying would undo a deliberate player change (drift/opt-out
             /// types): the preview highlights these with a warning tint.
             public bool UndoesUserChange =>
-                groupRoleId != -1 || colorRoleId != -1 || recommendationOrder;
+                groupRoleId != -1 || colorRoleId != -1 || holderRoleId != -1
+                || recommendationOrder;
         }
 
         /// The role's def-declared group differs from where it sits now, by
@@ -507,10 +509,14 @@ namespace WorkRoles
             return has && !role.color.IndistinguishableFrom(color);
         }
 
+        private static bool HoldersDrifted(Role role) =>
+            role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
+            || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped;
+
         /// Everything Restore Defaults could do right now: recreate missing
         /// template roles and default training paths, regenerate coverage for work
         /// types nothing covers, recover vanilla jobs that mods moved out of roles'
-        /// work types, return drifted roles to their def's group and color, and
+        /// work types, return drifted roles to their def's group, color and holder policy, and
         /// reset the recommendation order.
         public static List<RestoreItem> ComputeRestoreItems()
         {
@@ -585,6 +591,18 @@ namespace WorkRoles
                     colorRoleId = role.id,
                 });
             }
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !HoldersDrifted(role)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreHoldersItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainHolders".Translate(),
+                    holderRoleId = role.id,
+                });
+            }
             // Default paths missing by NAME (deleted or pre-paths save); existing
             // same-name paths are the player's and stay untouched. Paths that
             // would resolve < 2 entries even after the missing-role items apply
@@ -647,6 +665,7 @@ namespace WorkRoles
             var pathDefs = selection.pathDefs;
             var groupRoleIds = selection.groupRoleIds;
             var colorRoleIds = selection.colorRoleIds;
+            var holderRoleIds = selection.holderRoleIds;
 
             if (templateDefs != null)
             {
@@ -710,6 +729,18 @@ namespace WorkRoles
                     role.hasCustomColor = has;
                     role.color = color;
                     result.Add("WR_RestoreColorItem".Translate(role.label));
+                }
+
+            if (holderRoleIds != null)
+                foreach (var roleId in holderRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    if (role == null || !HoldersDrifted(role)) continue;
+                    role.holderMode = RoleHolderMode.Auto;
+                    role.holderRangeSet = false;
+                    role.minHolders = 0;
+                    role.maxHolders = RoleHolderRange.Uncapped;
+                    result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 
             // After the roles: a path's members may have been restored just above.

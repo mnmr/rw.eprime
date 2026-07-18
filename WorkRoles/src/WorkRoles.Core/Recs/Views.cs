@@ -25,14 +25,10 @@ namespace WorkRoles.Core.Recs
         public bool Pinned;
     }
 
-    /// One catalog role as the rules see it. MinHolders arrives RESOLVED
-    /// (never Auto-with-a-def-default): the builder already mapped Auto to
-    /// the RoleDef default (player roles 0). Essential iff MinHolders >= 1.
+    /// One catalog role as the rules see it. Auto MinHolders arrives resolved
+    /// through the RoleDef; Custom carries the stored inclusive range.
     public class RoleView
     {
-        /// The role is never recommended and never drafted.
-        public const int NeverHolders = -2;
-
         public int Id;
         public HashSet<string> Coverage = new HashSet<string>();
         /// Coverage in the role's own job order; null = no order data
@@ -44,11 +40,11 @@ namespace WorkRoles.Core.Recs
         public bool Hunting;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
+        public RoleHolderMode HolderMode;
         /// -2 never, -1 auto-coverage (one scaled unit), 0 interest-only,
         /// N needed slots.
         public int MinHolders;
-        /// Of MinHolders, how many slots a lower-band path partner may fill.
-        public int InTrainingAllowance;
+        public int MaxHolders = RoleHolderRange.Uncapped;
         /// Measured skill for band gating (most XP-frequent across the role's
         /// jobs); null = unskilled entry, never gates.
         public string PrimarySkill;

@@ -23,9 +23,6 @@ namespace WorkRoles.Core.Recs
             new BandGatingRule(),
             new CoverageScalingRule(new UnitScaling()),
             new HunterRule(),
-            // Allowance reserves below-band floor slots for trainees; draft
-            // then fills the rest of the absolute floor directly.
-            new InTrainingAllowanceRule(),
             new BestInColonyDraftRule(),
             new FireSafetyRule(),
             new RetentionRule(),

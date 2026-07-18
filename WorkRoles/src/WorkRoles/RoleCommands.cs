@@ -4,7 +4,6 @@ using Multiplayer.API;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
-using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -45,7 +44,6 @@ namespace WorkRoles
                 hasCustomColor = hasColor,
                 color = color,
                 iconPath = def.iconPath,
-                minHolders = def.minHolders,
                 entries = def.ParsedEntries()
             };
             if (!def.group.NullOrEmpty())
@@ -90,7 +88,7 @@ namespace WorkRoles
         /// recreates missing seeded roles and default training paths, regenerates
         /// coverage for uncovered work types, backfills vanilla jobs that mods
         /// moved out of roles, moves and recolors drifted roles back to their def,
-        /// and resets the recommendation order.
+        /// restores holder defaults, and resets the recommendation order.
         [SyncMethod]
         public static void RestoreSelected(RestoreSelection selection)
         {
@@ -134,28 +132,51 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void SetRoleHolders(int roleId, int min)
+        public static void SetRoleHolderMode(int roleId, int modeValue, int initialMin)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
-            role.minHolders = System.Math.Max(RoleView.NeverHolders, min);
-            // The allowance is a share of minHolders: shrink it along.
-            role.inTrainingAllowance = System.Math.Min(role.inTrainingAllowance,
-                System.Math.Max(0, role.ResolvedMinHolders()));
+            if (role == null || !System.Enum.IsDefined(typeof(RoleHolderMode), modeValue)) return;
+            var mode = (RoleHolderMode)modeValue;
+            bool initialized = false;
+            if (mode == RoleHolderMode.Custom && !role.holderRangeSet)
+            {
+                role.minHolders = RoleHolderRange.Clamp(initialMin);
+                role.maxHolders = RoleHolderRange.Uncapped;
+                role.holderRangeSet = true;
+                initialized = true;
+            }
+            if (role.holderMode == mode)
+            {
+                if (initialized) UiVersion.Bump();
+                return;
+            }
+            role.holderMode = mode;
             UiVersion.Bump();
         }
 
-        /// How many of the role's needed slots a colonist still in training
-        /// may fill. Clamped to the resolved colonist count.
         [SyncMethod]
-        public static void SetRoleInTrainingAllowance(int roleId, int count)
+        public static void SetRoleHolderMin(int roleId, int value)
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            int clamped = System.Math.Max(0, System.Math.Min(count,
-                System.Math.Max(0, role.ResolvedMinHolders())));
-            if (role.inTrainingAllowance == clamped) return;
-            role.inTrainingAllowance = clamped;
+            var range = RoleHolderPolicy.WithMin(role.minHolders, role.maxHolders, value);
+            if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
+            role.minHolders = range.min;
+            role.maxHolders = range.max;
+            role.holderRangeSet = true;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetRoleHolderMax(int roleId, int value)
+        {
+            var role = FindRole(roleId);
+            if (role == null) return;
+            var range = RoleHolderPolicy.WithMax(role.minHolders, role.maxHolders, value);
+            if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
+            role.minHolders = range.min;
+            role.maxHolders = range.max;
+            role.holderRangeSet = true;
             UiVersion.Bump();
         }
 
@@ -484,6 +505,10 @@ namespace WorkRoles
                 hasCustomColor = source.hasCustomColor,
                 color = source.color,
                 iconPath = source.iconPath,
+                holderMode = source.holderMode,
+                holderRangeSet = source.holderRangeSet,
+                minHolders = source.minHolders,
+                maxHolders = source.maxHolders,
                 activeHours = source.activeHours,
                 locationTokens = new List<string>(source.locationTokens),
                 groupId = source.groupId,

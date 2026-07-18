@@ -11,7 +11,7 @@ namespace WorkRoles.Core.Recs
         {
             foreach (var role in context.Colony.Roles)
                 if (role.HasRules || role.Blocker || !role.Enabled || !role.Available
-                    || role.MinHolders == RoleView.NeverHolders)
+                    || role.HolderMode == RoleHolderMode.Never)
                     context.Vetoed.Add(role.Id);
         }
     }

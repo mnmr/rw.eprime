@@ -59,6 +59,7 @@ nunit-*.xml
 /specs
 /plans
 /temp
+/.worktrees/
 
 # Build artifacts shipped into the mod folder
 mod/1.6/Assemblies/

@@ -10,7 +10,10 @@ public class RecsExclusionAutoTests
     {
         var rules = RecsTestBed.Role(1, "Cooking"); rules.HasRules = true;
         var blocker = RecsTestBed.Role(2, "Cooking"); blocker.Blocker = true;
-        var never = RecsTestBed.Role(3, "Cooking"); never.MinHolders = RoleView.NeverHolders;
+        var never = RecsTestBed.Role(3, "Cooking");
+        never.HolderMode = RoleHolderMode.Never;
+        never.MinHolders = 2;
+        never.MaxHolders = 4;
         var locked = RecsTestBed.Role(4, "Cooking"); locked.Available = false;
         var disabled = RecsTestBed.Role(5, "Cooking"); disabled.Enabled = false;
         var plain = RecsTestBed.Role(6, "Cooking");
@@ -20,6 +23,36 @@ public class RecsExclusionAutoTests
         new ExclusionsRule().Apply(context);
         await Assert.That(string.Join(",", context.Vetoed.OrderBy(id => id)))
             .IsEqualTo("1,2,3,4,5");
+    }
+
+    [Test]
+    public async Task NeverModeCannotBeForceAdded()
+    {
+        var never = RecsTestBed.Role(1, "Cooking");
+        never.HolderMode = RoleHolderMode.Never;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { never }, RecsTestBed.Pawn()));
+
+        new ExclusionsRule().Apply(context);
+        context.AddCandidate(0, never.Id,
+            new Reason { RuleId = "forced" }, SignalBucket.Neutral, force: true);
+
+        await Assert.That(context.Candidates[0].ContainsKey(never.Id)).IsFalse();
+    }
+
+    [Test]
+    public async Task NeverModeCannotReturnThroughPinnedReentry()
+    {
+        var never = RecsTestBed.Role(1, "Cooking");
+        never.HolderMode = RoleHolderMode.Never;
+        var pawn = RecsTestBed.Pawn();
+        pawn.Existing.Add(new AssignmentView { RoleId = never.Id, Pinned = true });
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { never }, pawn));
+
+        new ProtectedReentryRule().Apply(context, 0);
+
+        await Assert.That(context.Results[0].Assignments.Count).IsEqualTo(0);
     }
 
     [Test]

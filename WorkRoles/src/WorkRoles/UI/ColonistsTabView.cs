@@ -5,6 +5,9 @@ using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
+using WorkRoles.Core.Signals;
+using WorkRoles.Signals;
+using SignalSource = WorkRoles.Core.Recs.SignalSource;
 
 namespace WorkRoles.UI
 {
@@ -17,6 +20,8 @@ namespace WorkRoles.UI
         // What varies between table instances (pawn source, settings storage,
         // optional panels) lives in the profile.
         private readonly ColonistsViewProfile profile;
+        private readonly PawnSignalSnapshotCache pawnSignalSnapshots =
+            new PawnSignalSnapshotCache();
 
         public ColonistsTabView(ColonistsViewProfile profile) => this.profile = profile;
 
@@ -89,6 +94,7 @@ namespace WorkRoles.UI
             colonistFilter = "";
             roleFilterId = -1;
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
+            pawnSignalSnapshots.Clear();
             InvalidateRecommendationCache();
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
@@ -102,6 +108,9 @@ namespace WorkRoles.UI
         /// EXECUTES — click-site invalidation would rebuild from pre-command state
         /// in MP and never fire on other clients.
         public void InvalidateRecommendationCache() => planCache = null;
+
+        /// The pawn's signals captured on first request for this window open.
+        internal SignalSnapshot SignalsFor(Pawn pawn) => pawnSignalSnapshots.Get(pawn);
 
         /// The colony plan is per location: anchored to the selected pawn's map
         /// (recommendations stay map-scoped even when the view spans locations).
@@ -2385,9 +2394,6 @@ namespace WorkRoles.UI
                 case "fire": return "WR_ReasonFireFear".Translate();
                 case "retention": return null;
                 case "draft": return "WR_ReasonCoverage".Translate();
-                case "allowance":
-                    return "WR_ReasonInTraining".Translate(
-                        store.RoleById(reason.TowardRoleId)?.label ?? "?");
                 case "signals":
                     if (reason.Source == SignalSource.Expertise)
                     {

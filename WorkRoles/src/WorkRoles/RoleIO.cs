@@ -61,8 +61,10 @@ namespace WorkRoles
                     enabled = role.enabled,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
+                    holderMode = role.holderMode,
+                    holderRangeSet = role.holderRangeSet,
                     minHolders = role.minHolders,
-                    inTrainingAllowance = role.inTrainingAllowance,
+                    maxHolders = role.maxHolders,
                     entries = role.entries.ToList(),
                 });
             }
@@ -408,11 +410,10 @@ namespace WorkRoles
                     target.activeHours = row.role.activeHours;
                     target.locationTokens = row.role.locations
                         .Select(RuntimeLocationToken).Where(t => t != null).ToList();
+                    target.holderMode = row.role.holderMode;
+                    target.holderRangeSet = row.role.holderRangeSet;
                     target.minHolders = row.role.minHolders;
-                    // Clamp AFTER minHolders landed: the allowance is a share of it.
-                    target.inTrainingAllowance = System.Math.Max(0, System.Math.Min(
-                        row.role.inTrainingAllowance,
-                        System.Math.Max(0, target.ResolvedMinHolders())));
+                    target.maxHolders = row.role.maxHolders;
                     target.groupId = GroupIdFor(row.role.group, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
                     target.entries = row.role.entries.Distinct().ToList();
