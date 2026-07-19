@@ -2,8 +2,8 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
-    /// Rule 4: path members must sit inside a containing band (measured on
-    /// the role's primary skill; colony-best escape opens unreachable mins).
+    /// Rule 4: path members must sit inside a containing strict band on every
+    /// required role skill.
     /// The interval test lives in EngineContext.PassesBands so the colony
     /// draft rule applies the same gate.
     public sealed class BandGatingRule : RecRule

@@ -176,7 +176,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("5");
+            .IsEqualTo("6");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();

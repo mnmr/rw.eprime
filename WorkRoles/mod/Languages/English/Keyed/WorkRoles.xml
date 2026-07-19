@@ -30,7 +30,7 @@
   <WR_TrainingSection>Training Paths</WR_TrainingSection>
   <WR_TrainingTipWhat>Named role progressions: each role carries a skill band where it is recommended.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
-  <WR_TrainingTipOrder>The role order in a path is also its assignment order.</WR_TrainingTipOrder>
+  <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the pawn's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
   <WR_AddNew>Add New</WR_AddNew>
   <WR_NewPathTitle>New training path</WR_NewPathTitle>
   <WR_PathsPanelCaption>Training Paths (click to edit an existing path)</WR_PathsPanelCaption>
@@ -226,12 +226,13 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecTipNeedOne>At least 1 colonist ({0} recommended)</WR_RecTipNeedOne>
   <WR_RecTipNeedMany>At least {0} colonists ({1} recommended)</WR_RecTipNeedMany>
   <WR_RecTipNeedNone>No required minimum ({0} recommended)</WR_RecTipNeedNone>
-  <WR_RecTipMaximum>{0} colonists (not currently enforced)</WR_RecTipMaximum>
+  <WR_RecTipMaximum>{0} colonists</WR_RecTipMaximum>
   <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Strong-or-better signals qualify this pawn.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionCoverageDraftRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Selected to meet required coverage.</WR_RecDecisionCoverageDraftRanked>
   <WR_RecDecisionCoverageDraftRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Selected to meet required coverage.</WR_RecDecisionCoverageDraftRankedNoSkill>
+  <WR_RecDecisionTraining>Assigned through a training waiver for {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionHunter>Carries a ranged weapon and is capable of hunting.</WR_RecDecisionHunter>
   <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
   <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
@@ -246,6 +247,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecDecisionBand>This pawn's skill level is outside the role's training band.</WR_RecDecisionBand>
   <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionMaximum>The configured maximum of {0} colonists was filled by higher-ranked candidates.</WR_RecDecisionMaximum>
   <WR_RecDecisionCoverageFilledRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRanked>
   <WR_RecDecisionCoverageFilledRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRankedNoSkill>
   <WR_RecDecisionCoverageAlreadyFullRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was already filled before additional candidates were selected.</WR_RecDecisionCoverageAlreadyFullRanked>
@@ -397,6 +399,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoldersTipWhat>Controls the desired range of colonists assigned this role.</WR_HoldersTipWhat>
   <WR_HoldersTipAuto>a preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
   <WR_HoldersTipCustom>an inclusive minimum and maximum selected by you</WR_HoldersTipCustom>
+  <WR_HoldersTipWaivers>minimum holder slots that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
   <WR_HoldersTipNever>never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
   <!-- Holders button while Auto is selected; {0} = the resolved colony target -->
@@ -405,6 +408,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoldersCustom>Custom</WR_HoldersCustom>
   <WR_HoldersMin>Min</WR_HoldersMin>
   <WR_HoldersMax>Max</WR_HoldersMax>
+  <WR_HoldersWaivers>Waivers</WR_HoldersWaivers>
   <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 

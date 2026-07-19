@@ -50,6 +50,7 @@ namespace WorkRoles.Core
         public bool holderRangeSet;
         public int minHolders;
         public int maxHolders = RoleHolderRange.Uncapped;
+        public int trainingWaivers;
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -89,10 +90,11 @@ namespace WorkRoles.Core
         /// v2 added <Training> and <Holders>; v3 <TrainingPaths> and
         /// <RecommendationOrder>; v4 retired <Training> (paths own training)
         /// and gave <Holders> an inTraining attribute; v5 replaces the old
-        /// holder floor/allowance with an explicit Auto/Never/Custom range.
+        /// holder floor/allowance with an explicit Auto/Never/Custom range;
+        /// v6 adds the Custom training-waiver count.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "5";
+        public const string FormatVersion = "6";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -107,12 +109,14 @@ namespace WorkRoles.Core
     that work type, including jobs mods add later; <WorkGiver> is one job.
   - <Groups> lists role-list groups in display order; a Role joins one via its
     group attribute (unlisted names still work; no attribute = Default).
-  - <Holders mode=""custom"" min=""2"" max=""4""/> sets an inclusive holder
-    range. mode may be auto, never, or custom. Auto is the default when the
-    element is absent. A max of 256 is displayed in-game as Uncapped.
+  - <Holders mode=""custom"" min=""2"" max=""4"" train=""1""/> sets an inclusive
+    holder range and permits one minimum holder to use matching training-path
+    roles instead. mode may be auto, never, or custom. Auto is the default when
+    the element is absent. A max of 256 is displayed in-game as Uncapped.
   - A <TrainingPaths> <Path> lists <Role min=""0"" max=""8"">name</Role> skill bands
-    on the 0..21 axis (21 = open top, spans at least 4 levels); the entry order
-    is the assignment order. An optional color=""name"" attribute colors the
+    on the 0..21 axis (21 = open top, spans at least 4 levels). Assignment order
+    uses band minimum descending, then the pawn's weakest role skill; entry order
+    is the final tie-breaker. An optional color=""name"" attribute colors the
     path's chip (same color names as roles). <Anchor>name</Anchor> is where
     members slot into a colonist's list — before that role unless before=""false"".
   - <RecommendationOrder> lists <Role> names: importing it replaces the stored
@@ -199,7 +203,8 @@ namespace WorkRoles.Core
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
             if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
-                || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped)
+                || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped
+                || role.trainingWaivers != 0)
             {
                 var holders = new XElement("Holders",
                     new XAttribute("mode", role.holderMode.ToString().ToLowerInvariant()));
@@ -208,6 +213,9 @@ namespace WorkRoles.Core
                 {
                     holders.Add(new XAttribute("min", role.minHolders));
                     holders.Add(new XAttribute("max", role.maxHolders));
+                    if (role.trainingWaivers > 0)
+                        holders.Add(new XAttribute("train", RoleHolderPolicy.WithTraining(
+                            role.minHolders, role.trainingWaivers)));
                 }
                 options.Add(holders);
             }
@@ -273,10 +281,11 @@ namespace WorkRoles.Core
             }
             bool v5Holders = int.TryParse(root.Attribute("version")?.Value, out int version)
                 && version >= 5;
+            bool v6Training = version >= 6;
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
             {
-                var role = ParseRole(roleEl, v5Holders);
+                var role = ParseRole(roleEl, v5Holders, v6Training);
                 if (role != null) doc.roles.Add(role);
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
@@ -342,7 +351,7 @@ namespace WorkRoles.Core
             return (ids, mins, maxes);
         }
 
-        private static FileRole ParseRole(XElement el, bool v5Holders)
+        private static FileRole ParseRole(XElement el, bool v5Holders, bool v6Training)
         {
             string label = el.Attribute("name")?.Value;
             if (string.IsNullOrEmpty(label)) return null;
@@ -391,6 +400,10 @@ namespace WorkRoles.Core
                         && holders.Attribute("max") != null;
                     if (role.minHolders > role.maxHolders)
                         role.maxHolders = role.minHolders;
+                    if (v6Training
+                        && int.TryParse(holders.Attribute("train")?.Value, out int train))
+                        role.trainingWaivers = RoleHolderPolicy.WithTraining(
+                            role.minHolders, train);
                 }
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())

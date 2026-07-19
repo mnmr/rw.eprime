@@ -11,7 +11,7 @@ namespace WorkRoles
     {
         public class Entry
         {
-            /// RoleDef defName; entry order is the assignment order.
+            /// RoleDef defName; entry order is the final stable tie-breaker.
             public string role;
             /// [min, max) skill band on the 0..21 axis (21 = open top).
             public int min;

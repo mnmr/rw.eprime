@@ -68,7 +68,7 @@
     <description>Medical care for colonists, prisoners and animals.</description>
     <colorRef>red-800</colorRef>
     <group>Essentials</group>
-    <minHolders>1</minHolders>
+    <minHolders waivers="1">2</minHolders>
     <entries>
       <li>WorkType:Doctor</li>
     </entries>
@@ -191,7 +191,7 @@
     <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
     <colorRef>cyan-800</colorRef>
     <group>Essentials</group>
-    <minHolders>1</minHolders>
+    <minHolders waivers="1">2</minHolders>
     <entries>
       <li>WorkType:Warden</li>
     </entries>
@@ -237,7 +237,7 @@
     <description>Animal taming, training and slaughter.</description>
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
-    <minHolders>1</minHolders>
+    <minHolders>0</minHolders>
     <entries>
       <li>WorkType:Handling</li>
     </entries>
@@ -348,7 +348,7 @@
     <description>Sowing, harvesting and plant cutting.</description>
     <colorRef>lime-700</colorRef>
     <group>Plants</group>
-    <minHolders>1</minHolders>
+    <minHolders waivers="1">2</minHolders>
     <entries>
       <li>WorkType:Growing</li>
       <li>WorkType:PlantCutting</li>
@@ -444,7 +444,7 @@
     <description>Research at a research bench.</description>
     <colorRef>slate-700</colorRef>
     <group>Research</group>
-    <minHolders>1</minHolders>
+    <minHolders>3</minHolders>
     <entries>
       <li>WorkType:Research</li>
     </entries>

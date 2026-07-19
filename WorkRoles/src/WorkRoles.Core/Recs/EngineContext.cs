@@ -47,6 +47,10 @@ namespace WorkRoles.Core.Recs
         public readonly List<Dictionary<int, Candidate>> Candidates = new List<Dictionary<int, Candidate>>();
         /// Coverage want per role id (CoverageScalingRule fills it).
         public readonly Dictionary<int, int> Want = new Dictionary<int, int>();
+        public readonly Dictionary<int, int> BaseWant = new Dictionary<int, int>();
+        public readonly Dictionary<int, int> InboundTraining = new Dictionary<int, int>();
+        public readonly List<HashSet<int>> TrainingToward = new List<HashSet<int>>();
+        public readonly List<HashSet<int>> HolderLimitRejected = new List<HashSet<int>>();
         /// Per pawn, by role id; includes eligible candidates that were not
         /// selected and candidates considered after coverage was already full.
         public readonly List<Dictionary<int, DraftRanking>> DraftRankings =
@@ -67,6 +71,8 @@ namespace WorkRoles.Core.Recs
                 HunterTiers[i] = -1;
                 Candidates.Add(new Dictionary<int, Candidate>());
                 DraftRankings.Add(new Dictionary<int, DraftRanking>());
+                TrainingToward.Add(new HashSet<int>());
+                HolderLimitRejected.Add(new HashSet<int>());
                 Results.Add(new PawnResult());
             }
         }
@@ -80,11 +86,69 @@ namespace WorkRoles.Core.Recs
             => skill != null && Colony.Pawns[pawnIndex].SkillLevels.TryGetValue(skill, out int level)
                 ? level : 0;
 
+        public IReadOnlyList<RoleSkillView> RequiredSkills(RoleView role)
+        {
+            var skills = role.Skills.Where(s => s.Required).ToList();
+            if (skills.Count == 0 && role.PrimarySkill != null)
+                skills.Add(new RoleSkillView
+                {
+                    SkillDefName = role.PrimarySkill,
+                    Primary = true,
+                });
+            return skills;
+        }
+
+        public bool InsideBand(int pawnIndex, RoleView role, PathView path, int entry)
+        {
+            var skills = RequiredSkills(role);
+            if (skills.Count == 0) return true;
+            foreach (var roleSkill in skills)
+            {
+                if (!Colony.Pawns[pawnIndex].SkillLevels.TryGetValue(
+                        roleSkill.SkillDefName, out int level)
+                    || !PathMath.InsideBand(path, entry, level))
+                    return false;
+            }
+            return true;
+        }
+
         /// The pawn's strongest signal over the role's work-type skills.
         /// Roles with no mapped skills read Neutral (content roles).
         public SignalBucket BestSignal(int pawnIndex, RoleView role, out string skill, out SignalSource source)
         {
             var pawn = Colony.Pawns[pawnIndex];
+            if (role.Skills.Count > 0)
+            {
+                foreach (var required in role.Skills
+                             .Where(s => s.Required)
+                             .OrderByDescending(s => s.Primary)
+                             .ThenByDescending(s => s.Importance)
+                             .ThenBy(s => s.SkillDefName))
+                {
+                    if (!pawn.SkillLevels.ContainsKey(required.SkillDefName)) continue;
+                    SignalBucket requiredBucket = pawn.SignalBuckets.TryGetValue(
+                        required.SkillDefName, out var classified)
+                        ? classified : SignalBucket.Neutral;
+                    if (requiredBucket != SignalBucket.Awful) continue;
+                    skill = required.SkillDefName;
+                    source = SignalSource.Aggregated;
+                    return SignalBucket.Awful;
+                }
+
+                var primary = role.Skills
+                    .Where(s => pawn.SkillLevels.ContainsKey(s.SkillDefName))
+                    .OrderByDescending(s => s.Primary)
+                    .ThenByDescending(s => s.Importance)
+                    .ThenBy(s => s.SkillDefName)
+                    .FirstOrDefault();
+                if (primary != null)
+                {
+                    skill = primary.SkillDefName;
+                    source = SignalSource.Aggregated;
+                    return pawn.SignalBuckets.TryGetValue(skill, out var classified)
+                        ? classified : SignalBucket.Neutral;
+                }
+            }
             skill = null;
             source = SignalSource.None;
             bool any = false;
@@ -131,8 +195,37 @@ namespace WorkRoles.Core.Recs
                 if (RoleOf(id) is RoleView other && !other.Blocker
                     && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id))
                     return true;
+            foreach (var assignment in Colony.Pawns[pawnIndex].Existing)
+            {
+                var assignedRole = RoleOf(assignment.RoleId);
+                if (assignedRole == null || assignedRole.HolderMode == RoleHolderMode.Never
+                    || (!assignment.Pinned && !assignedRole.HasRules && !assignedRole.Blocker))
+                    continue;
+                if (assignedRole.Id == role.Id
+                    || !assignedRole.Blocker && CoverageMath.MakesRedundant(
+                        assignedRole.Coverage, assignedRole.Id, role.Coverage, role.Id))
+                    return true;
+            }
             return false;
         }
+
+        public int ProtectedDirectHoldersOf(int roleId)
+        {
+            int count = 0;
+            for (int pawn = 0; pawn < Colony.Pawns.Count; pawn++)
+                if (Colony.Pawns[pawn].Existing.Any(assignment =>
+                    assignment.RoleId == roleId && assignment.Pinned))
+                    count++;
+            return count;
+        }
+
+        public bool HasProtectedDirectAssignment(int pawnIndex, int roleId)
+            => Colony.Pawns[pawnIndex].Existing.Any(assignment =>
+            {
+                if (assignment.RoleId != roleId) return false;
+                var role = RoleOf(roleId);
+                return assignment.Pinned || role != null && (role.HasRules || role.Blocker);
+            });
 
         /// Pawns whose candidates provide the role (directly or by coverage).
         public int HoldersOf(int roleId)
@@ -145,9 +238,20 @@ namespace WorkRoles.Core.Recs
             return count;
         }
 
-        /// Band gating for INTEREST candidates: inside some containing path's
-        /// band, or the colony-best escape (below a min nobody better can
-        /// meet). Roles in no path — and unskilled entries — never gate.
+        public int AllocatedHoldersOf(int roleId)
+        {
+            var role = RoleOf(roleId);
+            if (role == null) return 0;
+            int count = 0;
+            for (int i = 0; i < Candidates.Count; i++)
+                if (CoversRole(i, role) || TrainingToward[i].Contains(roleId))
+                    count++;
+            return count;
+        }
+
+        /// Band gating for INTEREST candidates: every required role skill must
+        /// sit inside some containing path's strict band. Roles in no path and
+        /// unskilled entries never gate.
         /// Overlap coexists, disjoint supersedes. The need-driven floor
         /// draft ignores this gate: minHolders is absolute.
         public bool PassesBands(int pawnIndex, RoleView role)
@@ -158,13 +262,8 @@ namespace WorkRoles.Core.Recs
                 int entry = path.RoleIds.IndexOf(role.Id);
                 if (entry < 0) continue;
                 member = true;
-                if (role.PrimarySkill == null) return true;
-                int level = SkillLevel(pawnIndex, role.PrimarySkill);
-                if (PathMath.InsideBand(path, entry, level)) return true;
-                if (level > 0 && level < path.BandMins[entry]
-                    && Colony.SkillMaxLevels.TryGetValue(role.PrimarySkill, out int max)
-                    && level >= max)
-                    return true;
+                if (RequiredSkills(role).Count == 0) return true;
+                if (InsideBand(pawnIndex, role, path, entry)) return true;
             }
             return !member;
         }

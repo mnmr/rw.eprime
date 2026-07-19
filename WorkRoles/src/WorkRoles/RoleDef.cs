@@ -17,8 +17,9 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        /// Auto-mode default consumed by the existing recommendation scaling.
-        public int minHolders = -1;
+        /// Auto-mode minimum and the number of minimum slots training roles may satisfy.
+        public RoleHolderMinimum minHolders = new RoleHolderMinimum();
+        public int maxHolders = RoleHolderRange.Uncapped;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -51,7 +52,8 @@ namespace WorkRoles
             var text = string.Join("\n",
                 label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 group, activeHours, string.Join("|", locations),
-                minHolders.ToString(),
+                minHolders.Count.ToString(), minHolders.Waivers.ToString(),
+                maxHolders.ToString(),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -75,6 +77,8 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
+            if (minHolders.Waivers > minHolders.Count)
+                yield return $"minHolders waivers ({minHolders.Waivers}) exceed its count ({minHolders.Count})";
         }
     }
 }

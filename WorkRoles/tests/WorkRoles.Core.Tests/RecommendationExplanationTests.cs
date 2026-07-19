@@ -6,6 +6,52 @@ namespace WorkRoles.Core.Tests;
 public class RecommendationExplanationTests
 {
     [Test]
+    public async Task TrainingAssignmentExplainsItsTargetRole()
+    {
+        RoleView medic = RecsTestBed.Role(1, "Doctor", "Medic");
+        RoleView doctor = RecsTestBed.Role(2, "Doctor", "Doctor");
+        doctor.HolderMode = RoleHolderMode.Custom;
+        doctor.MinHolders = 1;
+        doctor.TrainingWaivers = 1;
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Medicine"] = 8;
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { medic, doctor }, pawn);
+        colony.Paths.Add(RecsTestBed.Path(1,
+            (medic.Id, 5, 15), (doctor.Id, 15, 21)));
+
+        RoleRecommendationExplanation explanation =
+            RecsEngine.Run(colony)[0].Explanations[medic.Id];
+
+        await Assert.That(explanation.Decision).IsEqualTo(RecommendationDecision.Training);
+        await Assert.That(explanation.RelatedRoleId).IsEqualTo(doctor.Id);
+    }
+
+    [Test]
+    public async Task CandidateRejectedByMaximumExplainsTheConfiguredCap()
+    {
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.MaxHolders = 1;
+        PawnView lower = RecsTestBed.Pawn();
+        lower.SkillLevels["Crafting"] = 5;
+        lower.SignalBuckets["Crafting"] = SignalBucket.Strong;
+        lower.Existing.Add(new AssignmentView { RoleId = role.Id, Enabled = true });
+        PawnView higher = RecsTestBed.Pawn();
+        higher.SkillLevels["Crafting"] = 12;
+        higher.SignalBuckets["Crafting"] = SignalBucket.Strong;
+
+        RoleRecommendationExplanation explanation = RecsEngine.Run(
+            RecsTestBed.Colony(new List<RoleView> { role }, lower, higher))[0]
+            .Explanations[role.Id];
+
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.ConfiguredMaximumReached);
+        await Assert.That(explanation.ConfiguredMaximum).IsEqualTo(1);
+    }
+
+
+    [Test]
     public async Task StrongSignalExplainsQualificationAndCurrentCoverageFacts()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");

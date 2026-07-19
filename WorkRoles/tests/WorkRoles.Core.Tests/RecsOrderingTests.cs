@@ -209,7 +209,7 @@ public class RecsOrderingTests
     }
 
     [Test]
-    public async Task AnchoredAssignmentsStayBetweenTheirNearestSurvivingNeighbors()
+    public async Task PinnedAssignmentsStayAnchoredWhileAutoAssignedRolesFollowTheTemplate()
     {
         var a = RecsTestBed.Role(1, "A");
         var pinned = RecsTestBed.Role(2, "Pinned");
@@ -235,8 +235,8 @@ public class RecsOrderingTests
         new AnchorPreservationRule().Apply(context, 0);
 
         await Assert.That(RecsTestBed.Ids(context.Results[0]))
-            .IsEqualTo("4,1,2,3,5,6");
-        await Assert.That(context.Results[0].Assignments[2].Pinned).IsTrue();
+            .IsEqualTo("4,5,1,2,3,6");
+        await Assert.That(context.Results[0].Assignments[3].Pinned).IsTrue();
     }
 
     [Test]
@@ -302,6 +302,76 @@ public class RecsOrderingTests
         new AnchorPreservationRule().Apply(context, 0);
 
         await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("3,2,1");
+    }
+
+    [Test]
+    public async Task ConfiguredOrderPositionsCoreAndBasicsAroundOptionalMedic()
+    {
+        var core = RecsTestBed.Role(1, "Core"); core.AutoAssign = true;
+        var medic = RecsTestBed.Role(2, "Doctor");
+        var basics = RecsTestBed.Role(3, "BasicWorker"); basics.AutoAssign = true;
+        var skilled = RecsTestBed.Role(4, "Crafting");
+        var withMedic = RecsTestBed.Pawn();
+        withMedic.Existing.Add(new AssignmentView { RoleId = core.Id });
+        withMedic.Existing.Add(new AssignmentView { RoleId = skilled.Id });
+        withMedic.Existing.Add(new AssignmentView { RoleId = basics.Id });
+        var withoutMedic = RecsTestBed.Pawn();
+        withoutMedic.Existing.Add(new AssignmentView { RoleId = core.Id });
+        withoutMedic.Existing.Add(new AssignmentView { RoleId = skilled.Id });
+        withoutMedic.Existing.Add(new AssignmentView { RoleId = basics.Id });
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { core, medic, basics, skilled },
+            withMedic, withoutMedic);
+        colony.OrderTemplate = new List<int> { core.Id, medic.Id, basics.Id, skilled.Id };
+        var context = new EngineContext(colony);
+        Candidate(context, 0, core.Id);
+        Candidate(context, 0, medic.Id);
+        Candidate(context, 0, basics.Id);
+        Candidate(context, 0, skilled.Id);
+        Candidate(context, 1, core.Id);
+        Candidate(context, 1, basics.Id);
+        Candidate(context, 1, skilled.Id);
+
+        for (int pawnIndex = 0; pawnIndex < 2; pawnIndex++)
+        {
+            new OrderingRule().Apply(context, pawnIndex);
+            new ProtectedReentryRule().Apply(context, pawnIndex);
+            new AnchorPreservationRule().Apply(context, pawnIndex);
+        }
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3,4");
+        await Assert.That(RecsTestBed.Ids(context.Results[1])).IsEqualTo("1,3,4");
+    }
+
+    [Test]
+    public async Task TrainingPathPositionsDoctorAfterExistingCoreForEverySelectionReason()
+    {
+        var core = RecsTestBed.Role(1, "Core"); core.AutoAssign = true;
+        var doctor = RecsTestBed.Role(2, "Doctor");
+        var basics = RecsTestBed.Role(3, "BasicWorker"); basics.AutoAssign = true;
+        var skilled = RecsTestBed.Role(4, "Crafting");
+        var pawn = RecsTestBed.Pawn();
+        pawn.Existing.Add(new AssignmentView { RoleId = core.Id });
+        pawn.Existing.Add(new AssignmentView { RoleId = skilled.Id });
+        pawn.Existing.Add(new AssignmentView { RoleId = basics.Id });
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { core, doctor, basics, skilled }, pawn);
+        colony.OrderTemplate = new List<int> { core.Id, basics.Id, skilled.Id };
+        var path = RecsTestBed.Path(1, (doctor.Id, 15, 21));
+        path.AnchorRoleId = core.Id;
+        path.AnchorBefore = false;
+        colony.Paths.Add(path);
+        var context = new EngineContext(colony);
+        Candidate(context, 0, core.Id);
+        Candidate(context, 0, doctor.Id);
+        Candidate(context, 0, basics.Id);
+        Candidate(context, 0, skilled.Id);
+
+        new OrderingRule().Apply(context, 0);
+        new ProtectedReentryRule().Apply(context, 0);
+        new AnchorPreservationRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3,4");
     }
 
     [Test]

@@ -30,6 +30,7 @@ namespace WorkRoles
         public bool holderRangeSet;
         public int minHolders;
         public int maxHolders = RoleHolderRange.Uncapped;
+        public int trainingWaivers;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
@@ -75,18 +76,18 @@ namespace WorkRoles
         }
 
         /// Auto falls back to the seeding def; player-created roles default to 0.
-        public int ResolvedAutoMinHolders()
-        {
-            var def = templateDefName == null ? null
-                : DefDatabase<RoleDef>.GetNamedSilentFail(templateDefName);
-            return def?.minHolders ?? 0;
-        }
+        public int ResolvedAutoMinHolders() => RoleAutoDefaults.Resolve(this).Min;
 
         public int ResolvedMinHolders() => holderMode == RoleHolderMode.Custom
             ? minHolders : holderMode == RoleHolderMode.Never ? 0 : ResolvedAutoMinHolders();
 
         public int ResolvedMaxHolders() => holderMode == RoleHolderMode.Custom
-            ? maxHolders : RoleHolderRange.Uncapped;
+            ? maxHolders : holderMode == RoleHolderMode.Never
+                ? 0 : RoleAutoDefaults.Resolve(this).Max;
+
+        public int ResolvedTrainingWaivers() => holderMode == RoleHolderMode.Custom
+            ? RoleHolderPolicy.WithTraining(minHolders, trainingWaivers)
+            : holderMode == RoleHolderMode.Never ? 0 : RoleAutoDefaults.Resolve(this).Train;
 
         public void ExposeData()
         {
@@ -111,6 +112,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref holderRangeSet, "holderRangeSet");
             Scribe_Values.Look(ref minHolders, "holderRangeMin");
             Scribe_Values.Look(ref maxHolders, "holderRangeMax", RoleHolderRange.Uncapped);
+            Scribe_Values.Look(ref trainingWaivers, "trainingWaivers");
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 if (!System.Enum.IsDefined(typeof(RoleHolderMode), holderMode))
@@ -118,6 +120,7 @@ namespace WorkRoles
                 var normalized = RoleHolderPolicy.WithMin(minHolders, maxHolders, minHolders);
                 minHolders = normalized.min;
                 maxHolders = normalized.max;
+                trainingWaivers = RoleHolderPolicy.WithTraining(minHolders, trainingWaivers);
             }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);

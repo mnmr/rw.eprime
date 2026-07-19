@@ -123,6 +123,7 @@ namespace WorkRoles.UI
             holders.AddSection()
                 .Fact("WR_HoldersAuto".Translate(), "WR_HoldersTipAuto".Translate())
                 .Fact("WR_HoldersCustom".Translate(), "WR_HoldersTipCustom".Translate())
+                .Fact("WR_HoldersWaivers".Translate(), "WR_HoldersTipWaivers".Translate())
                 .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
             holdersTipCache = Patches.Patch_ActiveTip_TipRect.Register(holders);
         }
@@ -1243,7 +1244,7 @@ namespace WorkRoles.UI
         {
             // These roles are excluded from ordinary recommendations, so a
             // holder target would be inert and misleading.
-            if (role.blocker || role.HasRules) return;
+            if (role.autoAssign || role.blocker || role.HasRules) return;
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1276,6 +1277,33 @@ namespace WorkRoles.UI
                 colonists, role.id, maximum: false);
             DrawHolderRangePicker(rect, ref x, "WR_HoldersMax", role.maxHolders,
                 colonists, role.id, maximum: true);
+            DrawWaiverPicker(rect, ref x, role);
+        }
+
+        private static void DrawWaiverPicker(Rect rect, ref float x, Role role)
+        {
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            string label = "WR_HoldersWaivers".Translate();
+            float labelW = WrText.FitWidth(label);
+            Widgets.Label(new Rect(x, rect.y, labelW, rect.height), label);
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+
+            var btnRect = new Rect(x + labelW + 4f, rect.y, 36f, rect.height);
+            if (Widgets.ButtonText(btnRect, role.trainingWaivers.ToString()))
+            {
+                var options = new List<FloatMenuOption>();
+                for (int n = 0; n <= role.minHolders; n++)
+                {
+                    int value = n;
+                    options.Add(new FloatMenuOption(value.ToString(),
+                        () => RoleCommands.SetRoleTrainingWaivers(role.id, value)));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+            x = btnRect.xMax + 8f;
         }
 
         private static void DrawHolderRangePicker(Rect rect, ref float x, string labelKey,
@@ -1331,21 +1359,14 @@ namespace WorkRoles.UI
             {
                 skillsUsedStamp = UiVersion.Current;
                 skillsUsedRoleId = role.id;
-                var counts = new Dictionary<SkillDef, int>();
-                foreach (var giverName in role.Coverage())
+                string LabelOf(string defName)
                 {
-                    var skills = DefDatabase<WorkGiverDef>.GetNamedSilentFail(giverName)
-                        ?.workType?.relevantSkills;
-                    if (skills == null) continue;
-                    foreach (var skill in skills)
-                        counts[skill] = counts.TryGetValue(skill, out int c) ? c + 1 : 1;
+                    var skill = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
+                    return skill == null ? defName
+                        : (skill.skillLabel ?? skill.label ?? skill.defName).CapitalizeFirst();
                 }
-                string LabelOf(SkillDef s) =>
-                    (s.skillLabel ?? s.label ?? s.defName).CapitalizeFirst();
-                skillsUsedCache = counts
-                    .OrderByDescending(kv => kv.Value)
-                    .ThenBy(kv => LabelOf(kv.Key), System.StringComparer.OrdinalIgnoreCase)
-                    .Select((kv, i) => (LabelOf(kv.Key), i == 0))
+                skillsUsedCache = RoleSkillProfiles.ForRole(role)
+                    .Select(skill => (LabelOf(skill.SkillDefName), skill.Primary))
                     .ToList();
             }
             return skillsUsedCache;

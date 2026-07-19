@@ -27,7 +27,30 @@ public class RecsCoverageDraftTests
     }
 
     [Test]
-    public async Task ScalingSkipsVetoedAutoAssignUnskilledAndHunting()
+    public async Task CustomHolderMinimumIsAbsoluteAcrossColonySizes()
+    {
+        var scaling = new UnitScaling();
+        var role = RecsTestBed.Role(1, "Cooking");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.MinHolders = 2;
+
+        await Assert.That(scaling.Want(role, 6)).IsEqualTo(2);
+        await Assert.That(scaling.Want(role, 13)).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task AutoHolderDemandCannotExceedTheColonySize()
+    {
+        var scaling = new UnitScaling();
+        var role = RecsTestBed.Role(1, "Hauling");
+        role.HolderMode = RoleHolderMode.Auto;
+        role.MinHolders = 8;
+
+        await Assert.That(scaling.Want(role, 7)).IsEqualTo(7);
+    }
+
+    [Test]
+    public async Task ScalingSkipsVetoedAndAutoAssignedButIncludesUnskilledAndHunting()
     {
         var needed = RecsTestBed.Role(1, "Cooking"); needed.MinHolders = 1;
         var auto = RecsTestBed.Role(2, "Crafting"); auto.AutoAssign = true; auto.MinHolders = 1;
@@ -38,7 +61,7 @@ public class RecsCoverageDraftTests
             new List<RoleView> { needed, auto, grunt, hunter, vetoed }, RecsTestBed.Pawn()));
         context.Vetoed.Add(5);
         new CoverageScalingRule(new UnitScaling()).Apply(context);
-        await Assert.That(string.Join(",", context.Want.Keys.OrderBy(id => id))).IsEqualTo("1");
+        await Assert.That(string.Join(",", context.Want.Keys.OrderBy(id => id))).IsEqualTo("1,3,4");
     }
 
     [Test]

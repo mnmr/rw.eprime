@@ -66,7 +66,7 @@ public class RecsContextTests
     }
 
     [Test]
-    public async Task PassesBands_InsideOutsideEscapeAndOpenTop()
+    public async Task PassesBands_UsesStrictIntervalsAndOpenTop()
     {
         var medic = RecsTestBed.Role(1, "Doctor", "Tend");
         var doctor = RecsTestBed.Role(2, "Doctor");
@@ -76,28 +76,26 @@ public class RecsContextTests
         colony.Paths.Add(RecsTestBed.Path(1, (1, 5, 15), (2, 15, 21)));
         var context = new EngineContext(colony);
 
-        // low (4): outside Medic's 5-15 and NOT colony best (high has 16).
+        // low (4): outside Medic's strict 5-15 interval.
         await Assert.That(context.PassesBands(0, medic)).IsFalse();
         // high (16): inside Doctor's open-top 15-21; outgrew Medic.
         await Assert.That(context.PassesBands(1, doctor)).IsTrue();
         await Assert.That(context.PassesBands(1, medic)).IsFalse();
 
-        // Colony-best escape: with high gone, low's 4 opens Medic's min.
+        // Removing stronger colonists does not relax a strict band.
         var alone = new EngineContext(RecsTestBed.Colony(new List<RoleView> { medic, doctor }, low));
         alone.Colony.Paths.Add(RecsTestBed.Path(1, (1, 5, 15), (2, 15, 21)));
-        await Assert.That(alone.PassesBands(0, medic)).IsTrue();
-        // The escape opens a min, never a ceiling — and level 0 never escapes.
+        await Assert.That(alone.PassesBands(0, medic)).IsFalse();
         low.SkillLevels["Medicine"] = 0;
         var zero = new EngineContext(RecsTestBed.Colony(new List<RoleView> { medic, doctor }, low));
         zero.Colony.Paths.Add(RecsTestBed.Path(1, (1, 5, 15), (2, 15, 21)));
         await Assert.That(zero.PassesBands(0, medic)).IsFalse();
 
-        // The escape applies to TARGETS too (interest gating is uniform); the
-        // draft, not this gate, enforces the absolute floor.
+        // Targets are strict too; the draft may still promote a pawn for need.
         var best = RecsTestBed.Pawn(); best.SkillLevels["Medicine"] = 10;
         var soloDoc = new EngineContext(RecsTestBed.Colony(new List<RoleView> { medic, doctor }, best));
         soloDoc.Colony.Paths.Add(RecsTestBed.Path(1, (1, 5, 15), (2, 15, 21)));
-        await Assert.That(soloDoc.PassesBands(0, doctor)).IsTrue();
+        await Assert.That(soloDoc.PassesBands(0, doctor)).IsFalse();
     }
 
     [Test]

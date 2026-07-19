@@ -511,7 +511,8 @@ namespace WorkRoles
 
         private static bool HoldersDrifted(Role role) =>
             role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
-            || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped;
+            || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped
+            || role.trainingWaivers != 0;
 
         /// Everything Restore Defaults could do right now: recreate missing
         /// template roles and default training paths, regenerate coverage for work
@@ -740,6 +741,7 @@ namespace WorkRoles
                     role.holderRangeSet = false;
                     role.minHolders = 0;
                     role.maxHolders = RoleHolderRange.Uncapped;
+                    role.trainingWaivers = 0;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 

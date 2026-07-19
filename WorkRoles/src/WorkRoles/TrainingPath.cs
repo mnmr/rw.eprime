@@ -4,8 +4,9 @@ using Verse;
 
 namespace WorkRoles
 {
-    /// Named progression container: paths are skill-agnostic; stored roleIds order
-    /// is the role assignment order. Geometry per SkillProgressionMath.
+    /// Named progression container. Path eligibility derives from each role's
+    /// skill profile. Assignments order by band minimum descending; stored
+    /// role order only breaks equal-band, equal-readiness ties.
     /// Mutate via RoleCommands.
     public class TrainingPath : IExposable
     {

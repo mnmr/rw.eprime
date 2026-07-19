@@ -17,6 +17,7 @@ namespace WorkRoles
         public sealed class SkillRange
         {
             public string SkillLabel;
+            public string SkillDefName;
             public int Floor, Top;    // min/max required level among gated content
             public int Gated;         // content pieces carrying a requirement
             public int Total;         // 0 = open-ended pool (buildings, plants)
@@ -27,8 +28,10 @@ namespace WorkRoles
             /// Undecorated def label — never the disambiguated display name;
             /// provenance belongs only to the source footer.
             public string Title;
-            /// Skills the work uses (performance), from the work type.
+            /// Skills the work uses for performance, from recipes for bill work and otherwise from the work type.
             public List<string> UsedSkills = new List<string>();
+            /// Same skills as UsedSkills, by defName (language-independent).
+            public List<string> UsedSkillDefNames = new List<string>();
             /// Skills the work grants XP in (bill givers: from recipes).
             public List<string> TrainedSkills = new List<string>();
             /// Same skills as TrainedSkills, by defName (language-independent).
@@ -279,10 +282,12 @@ namespace WorkRoles
                 // Per skill, the highest requirement any member content carries.
                 // Only Top renders in the type tip; summing Gated here would
                 // double-count recipes shared between bill givers.
-                foreach (var group in members.SelectMany(p => p.Requirements).GroupBy(r => r.SkillLabel))
+                foreach (var group in members.SelectMany(p => p.Requirements)
+                             .GroupBy(r => r.SkillDefName))
                     profile.Requirements.Add(new SkillRange
                     {
-                        SkillLabel = group.Key,
+                        SkillLabel = group.First().SkillLabel,
+                        SkillDefName = group.Key,
                         Top = group.Max(r => r.Top),
                     });
                 byType[workType.defName] = profile;
@@ -306,6 +311,9 @@ namespace WorkRoles
                 Title = (giver.label ?? giver.defName).CapitalizeFirst(),
                 UsedSkills = SkillLabels(giver.workType.relevantSkills),
             };
+            profile.UsedSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
+                ? new List<string>()
+                : giver.workType.relevantSkills.Select(s => s.defName).ToList();
             profile.RelevantSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
                 ? new List<string>()
                 : giver.workType.relevantSkills.Select(s => s.defName).ToList();
@@ -316,6 +324,14 @@ namespace WorkRoles
                 // Bill work: XP and requirements come from the recipes themselves
                 // (a recipe's workSkill can differ from the work type — the drug
                 // lab teaches Cooking/Intellectual under a Crafting type).
+                profile.UsedSkills = recipes
+                    .Where(r => r.workSkill != null)
+                    .Select(r => SkillLabel(r.workSkill))
+                    .Distinct().ToList();
+                profile.UsedSkillDefNames = recipes
+                    .Where(r => r.workSkill != null)
+                    .Select(r => r.workSkill.defName)
+                    .Distinct().ToList();
                 profile.TrainedSkills = recipes
                     .Where(r => r.workSkill != null && r.workSkillLearnFactor > 0f)
                     .Select(r => SkillLabel(r.workSkill))
@@ -333,6 +349,7 @@ namespace WorkRoles
                     profile.Requirements.Add(new SkillRange
                     {
                         SkillLabel = SkillLabel(group.Key),
+                        SkillDefName = group.Key.defName,
                         Floor = group.Min(req => req.minLevel),
                         Top = group.Max(req => req.minLevel),
                         Gated = group.Count(),
@@ -444,6 +461,7 @@ namespace WorkRoles
             => new SkillRange
             {
                 SkillLabel = SkillLabel(skill),
+                SkillDefName = skill.defName,
                 Floor = levels.Count > 0 ? levels.Min() : 0,
                 Top = levels.Count > 0 ? levels.Max() : 0,
                 Gated = levels.Count,

@@ -24,6 +24,20 @@ namespace WorkRoles.Core.Recs
         public bool Pinned;
     }
 
+    /// One skill's role-level importance, derived from the role's actual jobs.
+    /// Every required skill participates in eligibility; Primary drives the
+    /// signal bucket used for qualification and ranking.
+    public sealed class RoleSkillView
+    {
+        public string SkillDefName;
+        public bool Primary;
+        public bool Required = true;
+        public int Importance = 1;
+        public int UsedJobs;
+        public int TrainedJobs;
+        public int RequiredContent;
+    }
+
     /// One catalog role as the rules see it. Auto MinHolders arrives resolved
     /// through the RoleDef; Custom carries the stored inclusive range.
     public class RoleView
@@ -44,6 +58,8 @@ namespace WorkRoles.Core.Recs
         /// N needed slots.
         public int MinHolders;
         public int MaxHolders = RoleHolderRange.Uncapped;
+        public int TrainingWaivers;
+        public List<RoleSkillView> Skills = new List<RoleSkillView>();
         /// Measured skill for band gating (most XP-frequent across the role's
         /// jobs); null = unskilled entry, never gates.
         public string PrimarySkill;

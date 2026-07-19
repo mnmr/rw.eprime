@@ -10,6 +10,7 @@ namespace WorkRoles.Core.Recs
         AutoAssigned,
         SignalQualified,
         CoverageDrafted,
+        Training,
         Hunter,
         FireSafety,
         Retained,
@@ -24,6 +25,7 @@ namespace WorkRoles.Core.Recs
         OutsideTrainingBand,
         CoveredByRecommendedRole,
         RequiredCoverageFilled,
+        ConfiguredMaximumReached,
         SignalBelowThreshold,
         NotSelected,
     }
@@ -76,6 +78,9 @@ namespace WorkRoles.Core.Recs
                     if (explanation.Recommended)
                     {
                         explanation.Decision = IncludedDecision(result, pawn, role);
+                        if (result.Reasons.TryGetValue(roleId, out Reason included)
+                            && included.TowardRoleId != -1)
+                            explanation.RelatedRoleId = included.TowardRoleId;
                     }
                     else
                     {
@@ -100,8 +105,10 @@ namespace WorkRoles.Core.Recs
             {
                 RoleId = role.Id,
                 RequiredHolders = context.Want.TryGetValue(role.Id, out int want) ? want : 0,
-                RecommendedHolders = context.HoldersOf(role.Id),
-                ConfiguredMaximum = role.MaxHolders,
+                RecommendedHolders = context.AllocatedHoldersOf(role.Id),
+                ConfiguredMaximum = new AdditiveTrainingDemandPolicy().Maximum(
+                    role.MaxHolders,
+                    context.InboundTraining.TryGetValue(role.Id, out int inbound) ? inbound : 0),
                 RequiredSkills = RequiredSkills(context, role),
                 SignalBucket = signal,
                 SignalSkillDefName = signalSkill,
@@ -121,11 +128,8 @@ namespace WorkRoles.Core.Recs
             EngineContext context,
             RoleView role)
         {
-            var skills = new SortedSet<string>(StringComparer.Ordinal);
-            foreach (string workType in role.WorkTypes)
-                if (context.Colony.WorkTypeSkills.TryGetValue(workType, out var mapped))
-                    foreach (string skill in mapped)
-                        if (!string.IsNullOrWhiteSpace(skill)) skills.Add(skill);
+            var skills = new SortedSet<string>(context.RequiredSkills(role)
+                .Select(skill => skill.SkillDefName), StringComparer.Ordinal);
             return skills.Count == 0 ? Array.Empty<string>() : skills.ToList();
         }
 
@@ -141,6 +145,7 @@ namespace WorkRoles.Core.Recs
                     case "auto": return RecommendationDecision.AutoAssigned;
                     case "signals": return RecommendationDecision.SignalQualified;
                     case "draft": return RecommendationDecision.CoverageDrafted;
+                    case "training": return RecommendationDecision.Training;
                     case "hunter": return RecommendationDecision.Hunter;
                     case "fire": return RecommendationDecision.FireSafety;
                     case "retention": return RecommendationDecision.Retained;
@@ -175,6 +180,8 @@ namespace WorkRoles.Core.Recs
                 return RecommendationDecision.HunterRequirementsNotMet;
             if (signal == SignalBucket.Awful)
                 return RecommendationDecision.AwfulSignal;
+            if (context.HolderLimitRejected[pawnIndex].Contains(role.Id))
+                return RecommendationDecision.ConfiguredMaximumReached;
             // Bands reject only Strong+ interest candidates. The coverage
             // draft uses band membership as ranking context but may still
             // select an out-of-band pawn to satisfy the required floor.

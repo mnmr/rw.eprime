@@ -2,7 +2,8 @@
 <Defs>
   <!-- Default training paths, seeded once per save after the roles (Seeding.
        SeedTrainingPaths). Roles are RoleDef defNames; entries whose role is
-       missing (DLC/mod gated) are skipped at seed time. -->
+       missing (DLC/mod gated) are skipped at seed time. Assignment priority
+       uses band minimum descending, then the pawn's weakest role skill. -->
 
   <WorkRoles.TrainingPathDef>
     <defName>WS_PathDrugMaker</defName>

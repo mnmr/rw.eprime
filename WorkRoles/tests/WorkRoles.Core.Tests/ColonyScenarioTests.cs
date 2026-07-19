@@ -235,13 +235,13 @@ public class ColonyScenarioTests
             int entry = path.RoleIds.IndexOf(role.Id);
             if (entry < 0) continue;
             member = true;
-            if (role.PrimarySkill == null) return true;
-            int level = colony.Pawns[pawnIndex].SkillLevels
-                .TryGetValue(role.PrimarySkill, out int l) ? l : 0;
-            if (PathMath.InsideBand(path, entry, level)) return true;
-            if (level > 0 && level < path.BandMins[entry]
-                && colony.SkillMaxLevels.TryGetValue(role.PrimarySkill, out int max)
-                && level >= max)
+            var skills = role.Skills.Where(s => s.Required).ToList();
+            if (skills.Count == 0 && role.PrimarySkill != null)
+                skills.Add(new RoleSkillView { SkillDefName = role.PrimarySkill });
+            if (skills.Count == 0) return true;
+            if (skills.All(skill => colony.Pawns[pawnIndex].SkillLevels
+                    .TryGetValue(skill.SkillDefName, out int level)
+                    && PathMath.InsideBand(path, entry, level)))
                 return true;
         }
         return !member;

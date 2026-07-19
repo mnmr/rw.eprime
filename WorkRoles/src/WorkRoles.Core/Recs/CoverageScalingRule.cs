@@ -13,9 +13,12 @@ namespace WorkRoles.Core.Recs
     {
         public int Want(RoleView role, int colonySize)
         {
+            if (role.HolderMode == RoleHolderMode.Custom)
+                return System.Math.Max(0, role.MinHolders);
             int units = System.Math.Max(1, (colonySize + 5) / 6);
-            if (role.MinHolders >= 1) return role.MinHolders * units;
-            return role.MinHolders == -1 ? units : 0;
+            if (role.MinHolders >= 1)
+                return System.Math.Min(colonySize, role.MinHolders * units);
+            return role.MinHolders == -1 ? System.Math.Min(colonySize, units) : 0;
         }
     }
 
@@ -33,9 +36,13 @@ namespace WorkRoles.Core.Recs
             foreach (var role in context.Colony.Roles)
             {
                 if (context.Vetoed.Contains(role.Id)) continue;
-                if (role.AutoAssign || role.Unskilled || role.Hunting) continue;
+                if (role.AutoAssign || role.HasRules || role.Blocker) continue;
                 int want = scaling.Want(role, context.Colony.Pawns.Count);
-                if (want > 0) context.Want[role.Id] = want;
+                if (want > 0)
+                {
+                    context.BaseWant[role.Id] = want;
+                    context.Want[role.Id] = want;
+                }
             }
         }
     }

@@ -23,7 +23,7 @@ namespace WorkRoles.Core.Recs
             {
                 if (SkippedForCoverer(context, role)) continue;
                 int want = context.Want[role.Id];
-                int holders = context.HoldersOf(role.Id);
+                int holders = context.AllocatedHoldersOf(role.Id);
                 int openSlots = System.Math.Max(0, want - holders);
 
                 var eligible = new List<(int pawn, SignalBucket bucket, string skill, int level, bool inBand)>();
@@ -31,6 +31,7 @@ namespace WorkRoles.Core.Recs
                 {
                     if (context.CoversRole(i, role)) continue;
                     if (!context.Capable(i, role)) continue;
+                    if (role.Hunting && !context.Colony.Pawns[i].HasRangedWeapon) continue;
                     var bucket = context.BestSignal(i, role, out string skill, out _);
                     if (bucket == SignalBucket.Awful) continue;
                     eligible.Add((i, bucket, skill, context.SkillLevel(i, skill),

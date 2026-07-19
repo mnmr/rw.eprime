@@ -26,7 +26,7 @@ namespace WorkRoles.Core.Recs
             {
                 if (!targetByRole.ContainsKey(assignment.RoleId)) continue;
                 var role = context.RoleOf(assignment.RoleId);
-                if (role != null && (assignment.Pinned || role.AutoAssign
+                if (role != null && (assignment.Pinned
                                      || role.HasRules || role.Blocker))
                     anchoredRoleIds.Add(assignment.RoleId);
             }

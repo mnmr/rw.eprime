@@ -65,6 +65,7 @@ namespace WorkRoles
                     holderRangeSet = role.holderRangeSet,
                     minHolders = role.minHolders,
                     maxHolders = role.maxHolders,
+                    trainingWaivers = role.trainingWaivers,
                     entries = role.entries.ToList(),
                 });
             }
@@ -414,6 +415,7 @@ namespace WorkRoles
                     target.holderRangeSet = row.role.holderRangeSet;
                     target.minHolders = row.role.minHolders;
                     target.maxHolders = row.role.maxHolders;
+                    target.trainingWaivers = row.role.trainingWaivers;
                     target.groupId = GroupIdFor(row.role.group, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
                     target.entries = row.role.entries.Distinct().ToList();

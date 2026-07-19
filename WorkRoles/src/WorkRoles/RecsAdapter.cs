@@ -50,25 +50,31 @@ namespace WorkRoles
             return colony;
         }
 
-        internal static RoleView RoleViewOf(Role role) => new RoleView
+        internal static RoleView RoleViewOf(Role role)
         {
-            Id = role.id,
-            Coverage = role.Coverage(),
-            OrderedCoverage = CoverageMath.OrderedCoverageOf(role.entries, GameJobCatalog.Instance),
-            AutoAssign = role.autoAssign,
-            HasRules = role.HasRules,
-            Blocker = role.blocker,
-            Hunting = ProvidesHunting(role),
-            NaturalPriority = MaxNaturalPriority(role),
-            WorkTypes = WorkTypesOf(role).Select(wt => wt.defName).ToList(),
-            HolderMode = role.holderMode,
-            MinHolders = role.ResolvedMinHolders(),
-            MaxHolders = role.ResolvedMaxHolders(),
-            PrimarySkill = PrimarySkillOf(role),
-            Unskilled = IsUnskilledRole(role),
-            Available = RoleAvailable(role),
-            Enabled = role.enabled,
-        };
+            var skills = RoleSkillProfiles.ForRole(role);
+            return new RoleView
+            {
+                Id = role.id,
+                Coverage = role.Coverage(),
+                OrderedCoverage = CoverageMath.OrderedCoverageOf(role.entries, GameJobCatalog.Instance),
+                AutoAssign = role.autoAssign,
+                HasRules = role.HasRules,
+                Blocker = role.blocker,
+                Hunting = ProvidesHunting(role),
+                NaturalPriority = MaxNaturalPriority(role),
+                WorkTypes = WorkTypesOf(role).Select(wt => wt.defName).ToList(),
+                HolderMode = role.holderMode,
+                MinHolders = role.ResolvedMinHolders(),
+                MaxHolders = role.ResolvedMaxHolders(),
+                TrainingWaivers = role.ResolvedTrainingWaivers(),
+                Skills = skills,
+                PrimarySkill = skills.FirstOrDefault(s => s.Primary)?.SkillDefName,
+                Unskilled = !role.autoAssign && !role.HasRules && skills.Count == 0,
+                Available = RoleAvailable(role),
+                Enabled = role.enabled,
+            };
+        }
 
         internal static PathView PathViewOf(TrainingPath path) => new PathView
         {
@@ -124,20 +130,8 @@ namespace WorkRoles
         /// skill across its covered givers (accurate per-giver data), ties
         /// alphabetical; null when no giver trains anything (never gates).
         internal static string PrimarySkillOf(Role role)
-        {
-            var counts = new Dictionary<string, int>();
-            foreach (var giverName in role.Coverage())
-            {
-                var profile = JobSkillProfiles.ForGiver(giverName);
-                if (profile == null) continue;
-                foreach (var skill in profile.TrainedSkillDefNames)
-                    counts[skill] = counts.TryGetValue(skill, out int c) ? c + 1 : 1;
-            }
-            return counts.Count == 0 ? null
-                : counts.OrderByDescending(kv => kv.Value)
-                    .ThenBy(kv => kv.Key, System.StringComparer.Ordinal)
-                    .First().Key;
-        }
+            => RoleSkillProfiles.ForRole(role)
+                .FirstOrDefault(skill => skill.Primary)?.SkillDefName;
 
         /// Work types a role touches: WorkType entries directly, WorkGiver
         /// entries through their parent work type.
@@ -174,7 +168,8 @@ namespace WorkRoles
         }
 
         internal static bool IsUnskilledRole(Role role)
-            => !role.autoAssign && !role.HasRules && RelevantSkillsOf(role).Count == 0;
+            => !role.autoAssign && !role.HasRules
+            && RoleSkillProfiles.ForRole(role).Count == 0;
 
         internal static bool ProvidesHunting(Role role)
             => WorkTypesOf(role).Any(wt => wt.defName == "Hunting");

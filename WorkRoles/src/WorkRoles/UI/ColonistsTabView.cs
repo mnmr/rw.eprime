@@ -2427,6 +2427,11 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionSignals".Translate();
                 case RecommendationDecision.CoverageDrafted:
                     return CoverageDraftDecisionText(explanation);
+                case RecommendationDecision.Training:
+                {
+                    Role target = RoleStore.Current?.RoleById(explanation.RelatedRoleId);
+                    return "WR_RecDecisionTraining".Translate(target?.label ?? "?");
+                }
                 case RecommendationDecision.Hunter:
                     return "WR_RecDecisionHunter".Translate();
                 case RecommendationDecision.FireSafety:
@@ -2458,6 +2463,8 @@ namespace WorkRoles.UI
                 }
                 case RecommendationDecision.RequiredCoverageFilled:
                     return CoverageFilledDecisionText(explanation);
+                case RecommendationDecision.ConfiguredMaximumReached:
+                    return "WR_RecDecisionMaximum".Translate(explanation.ConfiguredMaximum);
                 case RecommendationDecision.SignalBelowThreshold:
                     return "WR_RecDecisionWeakSignal".Translate();
                 case RecommendationDecision.NotSelected:

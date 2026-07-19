@@ -68,6 +68,7 @@ namespace WorkRoles.Core.Recs
                     var path = blocks[rank].path;
                     var members = Enumerable.Range(0, path.RoleIds.Count)
                         .OrderByDescending(i => path.BandMins[i])
+                        .ThenBy(i => PathRoleReadiness(context, pawnIndex, path.RoleIds[i]))
                         .ThenBy(i => i)
                         .Select(i => path.RoleIds[i])
                         .ToList();
@@ -91,6 +92,16 @@ namespace WorkRoles.Core.Recs
             if (colony.FireBlockerRoleId != -1 && keys.ContainsKey(colony.FireBlockerRoleId))
                 keys[colony.FireBlockerRoleId] = long.MinValue;   // veto must lead the list
             return keys;
+        }
+
+        private static int PathRoleReadiness(EngineContext context, int pawnIndex, int roleId)
+        {
+            var role = context.RoleOf(roleId);
+            if (role == null) return int.MaxValue;
+            return context.RequiredSkills(role)
+                .Select(skill => context.SkillLevel(pawnIndex, skill.SkillDefName))
+                .DefaultIfEmpty(int.MaxValue)
+                .Min();
         }
 
         private static long HunterPosition(ColonyView colony, int tier)

@@ -8,6 +8,48 @@ namespace WorkRoles.Core.Tests;
 public class RecsSignalBandTests
 {
     [Test]
+    public async Task RequiredAwfulSkillVetoesRoleAndSecondaryStrengthCannotQualifyIt()
+    {
+        var role = RecsTestBed.Role(1, "Crafting");
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Crafting", Primary = true, Importance = 3 });
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Intellectual", Importance = 1 });
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SkillLevels["Intellectual"] = 8;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Strong;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Awful;
+        var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
+
+        SignalBucket vetoed = context.BestSignal(0, role, out string vetoSkill, out _);
+        await Assert.That(vetoed).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(vetoSkill).IsEqualTo("Intellectual");
+
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Exceptional;
+        SignalBucket secondaryOnly = context.BestSignal(0, role, out string primarySkill, out _);
+        await Assert.That(secondaryOnly).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(primarySkill).IsEqualTo("Crafting");
+    }
+
+    [Test]
+    public async Task StrictRoleBandRequiresEveryRequiredSkillInsideTheBand()
+    {
+        var role = RecsTestBed.Role(1, "Crafting");
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Crafting", Primary = true, Importance = 3 });
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Intellectual", Importance = 1 });
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SkillLevels["Intellectual"] = 4;
+        var colony = RecsTestBed.Colony(new List<RoleView> { role }, pawn);
+        colony.Paths.Add(RecsTestBed.Path(1, (role.Id, 8, 21)));
+        var context = new EngineContext(colony);
+
+        await Assert.That(context.PassesBands(0, role)).IsFalse();
+        pawn.SkillLevels["Intellectual"] = 8;
+        await Assert.That(context.PassesBands(0, role)).IsTrue();
+    }
+
+    [Test]
     public async Task StrongOrBetterInterestCreatesCandidatesWithTheBucketAsStrength()
     {
         var cook = RecsTestBed.Role(1, "Cooking");

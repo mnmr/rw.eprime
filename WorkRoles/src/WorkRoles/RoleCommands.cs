@@ -140,8 +140,12 @@ namespace WorkRoles
             bool initialized = false;
             if (mode == RoleHolderMode.Custom && !role.holderRangeSet)
             {
-                role.minHolders = RoleHolderRange.Clamp(initialMin);
-                role.maxHolders = RoleHolderRange.Uncapped;
+                var defaults = RoleAutoDefaults.Resolve(role);
+                var custom = RoleHolderPolicy.InitialCustom(
+                    initialMin, defaults.Max, defaults.Train);
+                role.minHolders = custom.min;
+                role.maxHolders = custom.max;
+                role.trainingWaivers = custom.waivers;
                 role.holderRangeSet = true;
                 initialized = true;
             }
@@ -163,6 +167,8 @@ namespace WorkRoles
             if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
             role.minHolders = range.min;
             role.maxHolders = range.max;
+            role.trainingWaivers = RoleHolderPolicy.WithTraining(
+                role.minHolders, role.trainingWaivers);
             role.holderRangeSet = true;
             UiVersion.Bump();
         }
@@ -176,6 +182,18 @@ namespace WorkRoles
             if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
             role.minHolders = range.min;
             role.maxHolders = range.max;
+            role.holderRangeSet = true;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetRoleTrainingWaivers(int roleId, int value)
+        {
+            var role = FindRole(roleId);
+            if (role == null) return;
+            int training = RoleHolderPolicy.WithTraining(role.minHolders, value);
+            if (role.trainingWaivers == training) return;
+            role.trainingWaivers = training;
             role.holderRangeSet = true;
             UiVersion.Bump();
         }
@@ -509,6 +527,7 @@ namespace WorkRoles
                 holderRangeSet = source.holderRangeSet,
                 minHolders = source.minHolders,
                 maxHolders = source.maxHolders,
+                trainingWaivers = source.trainingWaivers,
                 activeHours = source.activeHours,
                 locationTokens = new List<string>(source.locationTokens),
                 groupId = source.groupId,
