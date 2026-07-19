@@ -23,6 +23,7 @@ namespace WorkRoles
         {
             if (Store == null) return;
             Store.roles.Add(new Role { id = Store.NextId(), label = label });
+            Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
 
@@ -60,6 +61,7 @@ namespace WorkRoles
                     Log.Warning($"[WorkRoles] RoleDef {def.defName}: unknown location '{location}'");
             }
             Store.roles.Add(role);
+            Store.InvalidateRoleIndex();
             return role;
         }
 
@@ -316,6 +318,7 @@ namespace WorkRoles
                 if (path.anchorRoleId == roleId) path.anchorRoleId = -1;
             }
             Store.roles.Remove(role);
+            Store.InvalidateRoleIndex();
             SweepEmptyGroups();
         }
 
@@ -393,6 +396,7 @@ namespace WorkRoles
                 Store.roles.RemoveAll(moving.Contains);
                 int insertAt = before != null ? Store.roles.IndexOf(before) : Store.roles.Count;
                 Store.roles.InsertRange(insertAt, moving);
+                Store.InvalidateRoleIndex();
             }
             SweepEmptyGroups();
             UiVersion.Bump();
@@ -534,6 +538,7 @@ namespace WorkRoles
                 entries = new List<JobEntry>(source.entries)
             };
             Store.roles.Add(copy);
+            Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
 
@@ -547,6 +552,7 @@ namespace WorkRoles
             var role = roles[from];
             roles.RemoveAt(from);
             roles.Insert(to, role);
+            Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
 
@@ -684,6 +690,7 @@ namespace WorkRoles
             if (Store == null) return null;
             var role = new Role { id = Store.NextId(), label = label, autoAssign = autoAssign };
             Store.roles.Add(role);
+            Store.InvalidateRoleIndex();
             return role;
         }
 

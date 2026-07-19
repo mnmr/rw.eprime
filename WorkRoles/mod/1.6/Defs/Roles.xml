@@ -201,6 +201,7 @@
     <defName>WS_Grunt</defName>
     <label>Grunt</label>
     <description>Hauling and cleaning.</description>
+    <autoAssign>true</autoAssign>
     <colorRef>stone-700</colorRef>
     <group>Essentials</group>
     <entries>
@@ -237,7 +238,7 @@
     <description>Animal taming, training and slaughter.</description>
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
-    <minHolders>0</minHolders>
+    <minHolders>1</minHolders>
     <entries>
       <li>WorkType:Handling</li>
     </entries>

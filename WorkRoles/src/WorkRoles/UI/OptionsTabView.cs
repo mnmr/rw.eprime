@@ -108,6 +108,10 @@ namespace WorkRoles.UI
         private const float ChipsPanelPad = 10f; // 4px air around the selection box (chip+1px)
         private const float RecPanelPad = 8f;
         private const float WhenPanelPad = 8f;
+        // Tiny-font captions over the paths and progression panels: full line
+        // height (16f clipped descenders) and one shared caption -> panel gap.
+        private const float PanelCaptionH = 18f;
+        private const float PanelCaptionGap = 2f;
 
         private void EnsurePathSnapshot(RoleStore store, float width)
         {
@@ -334,11 +338,19 @@ namespace WorkRoles.UI
             float recHeaderY = y;
             y += 30f;
             var recPanel = new Rect(flowX, y, flowW, orderLayoutHeight + RecPanelPad * 2f);
-            y = recPanel.yMax + 12f;
+            Text.Font = GameFont.Small;
+            string recOrderHelp = "WR_RecOrderHelp".Translate();
+            float recOrderHelpHeight = Text.CalcHeight(recOrderHelp, flowW);
+            var recOrderHelpRect = new Rect(flowX, recPanel.yMax + 8f, flowW, recOrderHelpHeight);
+            y = recOrderHelpRect.yMax + 12f;
             float pathsHeaderY = y;
             y += 30f;
-            var captionRect = new Rect(flowX, y, flowW, 16f);
-            y += 18f;
+            string trainingHelp = "WR_TrainingHelp".Translate();
+            float trainingHelpHeight = Text.CalcHeight(trainingHelp, flowW);
+            var trainingHelpRect = new Rect(flowX, y, flowW, trainingHelpHeight);
+            y = trainingHelpRect.yMax + 8f;
+            var captionRect = new Rect(flowX, y, flowW, PanelCaptionH);
+            y += PanelCaptionH + PanelCaptionGap;
             var chipsPanel = new Rect(flowX, y, flowW, pathChipsHeight + ChipsPanelPad * 2f);
             y = chipsPanel.yMax + 12f;
 
@@ -355,8 +367,8 @@ namespace WorkRoles.UI
             if (pathView != null)
             {
                 float whenPanelTop = editorY + 30f + 32f + (anchorShown ? 34f : 0f);
-                whenCaptionRect = new Rect(flowX, whenPanelTop, flowW, 16f);
-                whenPanel = new Rect(flowX, whenPanelTop + 18f,
+                whenCaptionRect = new Rect(flowX, whenPanelTop, flowW, PanelCaptionH);
+                whenPanel = new Rect(flowX, whenPanelTop + PanelCaptionH + PanelCaptionGap,
                     flowW, WhenPanelPad * 2f + RowsStartY + pathView.displayRows * BandRowH);
                 y = whenPanel.yMax;
             }
@@ -383,9 +395,11 @@ namespace WorkRoles.UI
             MiniHeader(flowX, recHeaderY, flowW, "WR_RecOrderHeader".Translate(),
                 recOrderTipCache);
             DrawRecommendationOrder(recPanel, store);
+            DrawHelpParagraph(recOrderHelpRect, recOrderHelp);
 
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
                 trainingTipCache);
+            DrawHelpParagraph(trainingHelpRect, trainingHelp);
             Text.Font = GameFont.Tiny;
             GUI.color = CaptionColor;
             Widgets.Label(captionRect, "WR_PathsPanelCaption".Translate());
@@ -399,7 +413,7 @@ namespace WorkRoles.UI
 
             Widgets.EndScrollView();
 
-            DrawDragGhost(store);
+            RoleChipUI.DrawDragGhost(store);
             RoleDrag.ResolveMouseUp();
         }
 
@@ -415,6 +429,14 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             if (tip != null) TooltipHandler.TipRegion(labelRect, tip);
             return y + 30f;
+        }
+
+        private static void DrawHelpParagraph(Rect rect, string text)
+        {
+            Text.Font = GameFont.Small;
+            GUI.color = CaptionColor;
+            Widgets.Label(rect, text);
+            GUI.color = Color.white;
         }
 
         private static Rect Offset(Rect r, Vector2 by) =>
@@ -1031,16 +1053,5 @@ namespace WorkRoles.UI
             return y + RoleChipUI.Height;
         }
 
-        private static void DrawDragGhost(RoleStore store)
-        {
-            if (!RoleDrag.Active) return;
-            var role = store.RoleById(RoleDrag.RoleId);
-            if (role == null) return;
-            var mouse = Event.current.mousePosition;
-            float w = RoleChipUI.WidthFor(role, showRemove: false);
-            var ghostRect = new Rect(mouse.x + 10f, mouse.y + 6f, w, RoleChipUI.Height);
-            RoleChipUI.Draw(ghostRect, role, ChipStyle.Normal, showRemove: false,
-                dragSource: null, onClick: null, interactive: false);
-        }
     }
 }

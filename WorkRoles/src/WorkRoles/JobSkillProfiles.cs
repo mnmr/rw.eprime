@@ -120,6 +120,9 @@ namespace WorkRoles
             ["Tame"] = new[] { "Animals" },
             ["Train"] = new[] { "Animals" },
             ["RebalanceAnimalsInPens"] = new string[0],
+            // Allow Tool: finish-off is an execution-style instant kill, no XP
+            // (same footing as Slaughter/DoExecution).
+            ["FinishOff"] = new string[0],
             ["CookFillHopper"] = new string[0],
             ["HunterHunt"] = new[] { "Shooting" },
             ["FixBrokenDownBuilding"] = new string[0],
@@ -544,7 +547,8 @@ namespace WorkRoles
                 "WR_TipXpValue".Translate(profile.XpGivers, profile.TotalGivers));
             foreach (var range in profile.Requirements)
                 facts.Fact("WR_TipRequiresLabel".Translate(),
-                    "WR_TipTypeGated".Translate(range.SkillLabel, range.Top));
+                    "WR_TipReqItems".Translate(
+                        range.SkillLabel, LevelRange(range), range.Gated).ToString());
             if (profile.SourceLine != null)
                 model.AddSection().Text(profile.SourceLine, dim: true);
             return model;

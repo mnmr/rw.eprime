@@ -35,6 +35,14 @@ namespace WorkRoles
         /// a different, unwarned mod writing in the same tick is caught on the
         /// next one.
         private static int settledTick = -1;
+        private static int settledWorldKey = int.MinValue;
+
+        // Priority writers normally sweep many pawns in one tick. Resolve the
+        // caller once for that tick, then keep aggregating the individual pawns
+        // and work types without another stack capture.
+        private static int callerTick = -1;
+        private static int callerWorldKey = int.MinValue;
+        private static ModContentPack callerMod;
 
         internal static void OnBlockedSetPriority(Pawn pawn, WorkTypeDef workType, int priority)
         {
@@ -42,7 +50,8 @@ namespace WorkRoles
             if (settings == null) return;
             // No world, no per-savegame dedup key — a pre-world write would file
             // under "none" and collide with (or suppress) a real world's warning.
-            if (Find.World == null) return;
+            var world = Find.World;
+            if (world == null) return;
             // A write roles already satisfy is a non-issue: the mod wanted the
             // work on (or off) and it already is — e.g. AllowTool re-enabling
             // Finish Off when Odd Jobs carries it. Warn only when the mod's
@@ -51,10 +60,16 @@ namespace WorkRoles
                 && (priority > 0) == (CompiledJobOrders.PriorityFor(pawn, workType) > 0))
                 return;
             int tick = Find.TickManager.TicksGame;
+            int worldKey = world.info.persistentRandomValue;
+            if (worldKey != settledWorldKey)
+            {
+                settledWorldKey = worldKey;
+                settledTick = -1;
+            }
             if (tick == settledTick) return;
-            var mod = CallingMod();
+            var mod = CallingMod(worldKey, tick);
             if (mod == null) { settledTick = tick; return; }
-            string key = WorldKey() + "|" + mod.PackageId;
+            string key = worldKey + "|" + mod.PackageId;
             if (settings.warnedPriorityMods.Contains(key)) { settledTick = tick; return; }
 
             if (!pending.TryGetValue(key, out var warning))
@@ -91,7 +106,17 @@ namespace WorkRoles
         /// The first stack frame owned by a mod assembly (ours, vanilla,
         /// Harmony, Multiplayer and system frames are skipped; unknown
         /// assemblies stay silent).
-        private static ModContentPack CallingMod()
+        private static ModContentPack CallingMod(int worldKey, int tick)
+        {
+            if (worldKey == callerWorldKey && tick == callerTick)
+                return callerMod;
+            callerWorldKey = worldKey;
+            callerTick = tick;
+            callerMod = ResolveCallingMod();
+            return callerMod;
+        }
+
+        private static ModContentPack ResolveCallingMod()
         {
             var trace = new StackTrace(2, false);
             for (int i = 0; i < trace.FrameCount; i++)
@@ -122,9 +147,5 @@ namespace WorkRoles
             }
             return null;
         }
-
-        /// Stable per-world key so the once-per-mod warning is per savegame.
-        private static string WorldKey() =>
-            Find.World?.info?.persistentRandomValue.ToString() ?? "none";
     }
 }

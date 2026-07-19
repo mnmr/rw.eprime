@@ -57,6 +57,17 @@ namespace WorkRoles.Core.Recs
     {
         internal static void Populate(EngineContext context)
         {
+            // Holder counts are frozen once the rules have run; computing them
+            // per role here (instead of per pawn per role) removes the run's
+            // only pawn-quadratic term.
+            var holders = new Dictionary<int, int>(context.Colony.Roles.Count);
+            var allocated = new Dictionary<int, int>(context.Colony.Roles.Count);
+            foreach (var role in context.Colony.Roles)
+            {
+                holders[role.Id] = context.HoldersOf(role.Id);
+                allocated[role.Id] = context.AllocatedHoldersOf(role.Id);
+            }
+
             for (int pawnIndex = 0; pawnIndex < context.Colony.Pawns.Count; pawnIndex++)
             {
                 PawnView pawn = context.Colony.Pawns[pawnIndex];
@@ -73,7 +84,8 @@ namespace WorkRoles.Core.Recs
                 {
                     RoleView role = context.RoleOf(roleId);
                     if (role == null) continue;
-                    var explanation = Facts(context, pawnIndex, role);
+                    var explanation = Facts(context, pawnIndex, role,
+                        allocated.TryGetValue(roleId, out int alloc) ? alloc : 0);
                     explanation.Recommended = recommended.Contains(roleId);
                     if (explanation.Recommended)
                     {
@@ -85,8 +97,9 @@ namespace WorkRoles.Core.Recs
                     else
                     {
                         explanation.Decision = RemovedDecision(
-                            context, pawnIndex, result, role,
-                            explanation.SignalBucket, out int relatedRoleId);
+                            context, pawnIndex, result, role, explanation.SignalBucket,
+                            holders.TryGetValue(roleId, out int held) ? held : 0,
+                            out int relatedRoleId);
                         explanation.RelatedRoleId = relatedRoleId;
                     }
                     result.Explanations[roleId] = explanation;
@@ -97,7 +110,8 @@ namespace WorkRoles.Core.Recs
         private static RoleRecommendationExplanation Facts(
             EngineContext context,
             int pawnIndex,
-            RoleView role)
+            RoleView role,
+            int allocatedHolders)
         {
             SignalBucket signal = context.BestSignal(
                 pawnIndex, role, out string signalSkill, out _);
@@ -105,10 +119,10 @@ namespace WorkRoles.Core.Recs
             {
                 RoleId = role.Id,
                 RequiredHolders = context.Want.TryGetValue(role.Id, out int want) ? want : 0,
-                RecommendedHolders = context.AllocatedHoldersOf(role.Id),
-                ConfiguredMaximum = new AdditiveTrainingDemandPolicy().Maximum(
-                    role.MaxHolders,
-                    context.InboundTraining.TryGetValue(role.Id, out int inbound) ? inbound : 0),
+                RecommendedHolders = allocatedHolders,
+                ConfiguredMaximum = context.EffectiveMaxHolders.TryGetValue(
+                    role.Id, out int effectiveMaximum)
+                    ? effectiveMaximum : RoleHolderRange.Uncapped,
                 RequiredSkills = RequiredSkills(context, role),
                 SignalBucket = signal,
                 SignalSkillDefName = signalSkill,
@@ -165,6 +179,7 @@ namespace WorkRoles.Core.Recs
             PawnResult result,
             RoleView role,
             SignalBucket signal,
+            int holders,
             out int relatedRoleId)
         {
             relatedRoleId = -1;
@@ -194,8 +209,7 @@ namespace WorkRoles.Core.Recs
             if (relatedRoleId != -1)
                 return RecommendationDecision.CoveredByRecommendedRole;
 
-            if (context.Want.TryGetValue(role.Id, out int want)
-                && context.HoldersOf(role.Id) >= want)
+            if (context.Want.TryGetValue(role.Id, out int want) && holders >= want)
                 return RecommendationDecision.RequiredCoverageFilled;
             if (signal < SignalBucket.Strong)
                 return RecommendationDecision.SignalBelowThreshold;
@@ -211,8 +225,7 @@ namespace WorkRoles.Core.Recs
             {
                 RoleView other = context.RoleOf(assignment.RoleId);
                 if (other == null || other.Id == role.Id || other.Blocker) continue;
-                if (CoverageMath.MakesRedundant(
-                        other.Coverage, other.Id, role.Coverage, role.Id))
+                if (context.Redundant(other.Id, role.Id))
                     return other.Id;
             }
             return -1;

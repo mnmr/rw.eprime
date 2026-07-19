@@ -81,8 +81,8 @@ namespace WorkRoles.UI
         private static readonly Color ColorDisabled   = new Color(0.45f, 0.45f, 0.45f);
         private static readonly Color ColorLow        = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color ColorPassMajor  = new Color(1f, 0.65f, 0.2f);
-        private static readonly Color ColorPassMinor  = new Color(0.95f, 0.9f, 0.55f);
-        private static readonly Color ColorExpertise  = new Color(1f, 0.85f, 0.3f); // grid marker gold
+        // Shared accent tint (also the role editor's tuning summary).
+        internal static readonly Color ColorPassMinor  = new Color(0.95f, 0.9f, 0.55f);
 
         // Colony suggestion plan: the Recommended Roles panel, Make It So and Fix My
         // Colony all read this one plan, so they always agree. Computed lazily,
@@ -100,12 +100,13 @@ namespace WorkRoles.UI
             roleFilterId = -1;
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
             pawnSignalSnapshots.Clear();
+            skillPresentations.Clear();
+            skillPresentationStamp = -1;
             InvalidateRecommendationCache();
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
             pawnsStamp = sizeStamp = paletteStamp = rulesPassStamp = statsStamp
                 = chipLayoutStamp = sectionsStamp = roleTipStamp = -1;
-            Expertise.InvalidateSnapshot();
         }
 
         /// Reset-time only: every plan input (roles, assignments, pins, training,
@@ -118,6 +119,15 @@ namespace WorkRoles.UI
         /// first request for this window open.
         internal PawnSignalSnapshot SignalSnapshotFor(Pawn pawn)
             => pawnSignalSnapshots.Get(pawn);
+
+        /// Window close: drop pawn-keyed snapshots so a save unloaded while the
+        /// window is closed cannot stay pinned through them.
+        internal void ReleaseSnapshots()
+        {
+            pawnSignalSnapshots.Clear();
+            skillPresentations.Clear();
+            skillPresentationStamp = -1;
+        }
 
         /// The colony plan is per location: anchored to the selected pawn's map
         /// (recommendations stay map-scoped even when the view spans locations).
@@ -174,6 +184,60 @@ namespace WorkRoles.UI
         private string[] statsSignalTips;
         private float statsSkillColWidth = SkillColWidth;
 
+        private sealed class SkillPresentation
+        {
+            internal SkillLine Line;
+            internal float LabelWidth;
+            internal SkillSignalView SignalView;
+            internal List<Texture2D> SignalIcons;
+            internal string Tooltip;
+        }
+
+        // Shared open-window presentation snapshot for the bottom stats panel
+        // and optional table skill columns. Signal reflection, icon lookup and
+        // structured tooltip composition happen once per pawn and skill.
+        private readonly Dictionary<(Pawn pawn, SkillDef skill), SkillPresentation>
+            skillPresentations = new Dictionary<(Pawn, SkillDef), SkillPresentation>();
+        private int skillPresentationStamp = -1;
+
+        private SkillPresentation PresentationFor(Pawn pawn, SkillLine line)
+        {
+            if (skillPresentationStamp != UiVersion.Current)
+            {
+                skillPresentations.Clear();
+                skillPresentationStamp = UiVersion.Current;
+            }
+
+            var key = (pawn, line.Def);
+            if (skillPresentations.TryGetValue(key, out SkillPresentation cached))
+                return cached;
+
+            PawnSignalSnapshot pawnSnapshot = SignalSnapshotFor(pawn);
+            SkillSignalView view = SignalPresentationPolicy.ForSkill(
+                pawnSnapshot.Signals, line.Def?.defName);
+            List<Texture2D> icons = SkillSignalPresentation.ResolveIcons(view);
+            float labelWidth;
+            using (new TextBlock(GameFont.Small))
+                labelWidth = Text.CalcSize(line.Label).x;
+
+            var result = new SkillPresentation
+            {
+                Line = line,
+                LabelWidth = labelWidth,
+                SignalView = view,
+                SignalIcons = icons,
+                Tooltip = SkillSignalPresentation.RegisterTooltip(
+                    pawn,
+                    line.Label,
+                    line.ValueText,
+                    SkillTextColor(line, view.PassionTier),
+                    view,
+                    pawnSnapshot.SkillBuckets.ForSkill(line.Def?.defName)?.Bucket),
+            };
+            skillPresentations.Add(key, result);
+            return result;
+        }
+
         private void EnsureStats(Pawn pawn)
         {
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return;
@@ -185,31 +249,21 @@ namespace WorkRoles.UI
             statsSignalIcons = new List<Texture2D>[statsLines.Count];
             statsSignalTips = new string[statsLines.Count];
             statsSkillColWidth = SkillColWidth;
-            PawnSignalSnapshot pawnSnapshot = SignalSnapshotFor(pawn);
-            SignalSnapshot snapshot = pawnSnapshot.Signals;
             using (new TextBlock(GameFont.Small))
             {
                 for (int i = 0; i < statsLines.Count; i++)
                 {
                     SkillLine line = statsLines[i];
-                    statsLabelWidths[i] = Text.CalcSize(statsLines[i].Label).x;
-                    SkillSignalView view = SignalPresentationPolicy.ForSkill(
-                        snapshot, line.Def?.defName);
-                    List<Texture2D> icons = SkillSignalPresentation.ResolveIcons(view);
-                    statsSignalViews[i] = view;
-                    statsSignalIcons[i] = icons;
-                    statsSignalTips[i] = SkillSignalPresentation.RegisterTooltip(
-                        pawn,
-                        line.Label,
-                        line.ValueText,
-                        SkillTextColor(line, view.PassionTier),
-                        view,
-                        pawnSnapshot.SkillBuckets.ForSkill(line.Def?.defName)?.Bucket);
+                    SkillPresentation presentation = PresentationFor(pawn, line);
+                    statsLabelWidths[i] = presentation.LabelWidth;
+                    statsSignalViews[i] = presentation.SignalView;
+                    statsSignalIcons[i] = presentation.SignalIcons;
+                    statsSignalTips[i] = presentation.Tooltip;
 
-                    float iconWidth = icons.Count == 0 ? 0f
+                    float iconWidth = presentation.SignalIcons.Count == 0 ? 0f
                         : SkillLabelDecoratorGap
-                            + icons.Count * SkillDecoratorSize
-                            + (icons.Count - 1) * SkillDecoratorGap;
+                            + presentation.SignalIcons.Count * SkillDecoratorSize
+                            + (presentation.SignalIcons.Count - 1) * SkillDecoratorGap;
                     float requiredWidth = statsLabelWidths[i] + iconWidth
                         + SkillValueGap + SkillValueWidth;
                     statsSkillColWidth = Mathf.Max(statsSkillColWidth, Mathf.Ceil(requiredWidth));
@@ -257,8 +311,12 @@ namespace WorkRoles.UI
         {
             EnsureSkillColumnsLoaded();
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
+            // Column IDENTITY, not count: swapping a column at the cap keeps the
+            // count identical and must still invalidate.
             int key = ((int)TableChips * 31 + skillColumns.Count) * 31
                 + (selectedPawn?.thingIDNumber ?? -1);
+            foreach (var column in skillColumns)
+                key = key * 31 + (column?.shortHash ?? 0);
             if (sizeStamp == UiVersion.Current && sizeMapId == mapId && sizeKey == key) return;
             sizeStamp = UiVersion.Current;
             sizeMapId = mapId;
@@ -331,8 +389,8 @@ namespace WorkRoles.UI
             {
                 store.pawnSets.TryGetValue(pawn, out var set);
                 var assignments = set?.assignments ?? new List<RoleAssignment>();
-                float stripW = DefaultWidth - 250f;
-                float stripH = MeasureStripHeight(stripW, assignments, store);
+                float stripW = TableStripWidth(desiredWidthCache);
+                float stripH = LayoutChips(stripW, assignments, store, result: null);
                 tableContent += Mathf.Max(RowHeight, stripH + 8f);
             }
             return chrome + paletteSection + tableContent + statsPanel;
@@ -343,25 +401,10 @@ namespace WorkRoles.UI
         private float TableChipWidth(RoleStore store, Role role, bool pinned) =>
             RoleChipUI.WidthFor(role, showRemove: true, TableChips, AbbrevIfCompact(store, role), pinned);
 
-        private float MeasureStripHeight(float stripWidth, List<RoleAssignment> assignments, RoleStore store)
-        {
-            if (assignments.Count == 0) return RoleChipUI.Height;
-            float x = 0f;
-            int lines = 1;
-            foreach (var a in assignments)
-            {
-                var role = store.RoleById(a.roleId);
-                if (role == null) continue;
-                float w = TableChipWidth(store, role, a.pinned);
-                if (x + w > stripWidth && x > 0f)
-                {
-                    lines++;
-                    x = 0f;
-                }
-                x += w + ChipGap;
-            }
-            return lines * (RoleChipUI.Height + ChipGap) - ChipGap;
-        }
+        /// The roles-column width used by both desired-height measurement and
+        /// live table layout.
+        private float TableStripWidth(float tableWidth) => Mathf.Max(300f,
+            tableWidth - 16f - 264f - SkillColumnsWidth() - 28f);
 
         private float LayoutChips(float stripWidth, List<RoleAssignment> assignments, RoleStore store,
             List<(RoleAssignment assignment, Rect rect, int line)> result)
@@ -379,7 +422,7 @@ namespace WorkRoles.UI
                     x = 0f;
                     y += RoleChipUI.Height + ChipGap;
                 }
-                result.Add((a, new Rect(x, y, w, RoleChipUI.Height), line));
+                result?.Add((a, new Rect(x, y, w, RoleChipUI.Height), line));
                 x += w + ChipGap;
             }
             float totalH = y + RoleChipUI.Height;
@@ -411,7 +454,7 @@ namespace WorkRoles.UI
             DrawPawnTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store);
             DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
 
-            DrawDragGhost(store);
+            RoleChipUI.DrawDragGhost(store);
             RoleDrag.ResolveMouseUp();
         }
 
@@ -438,10 +481,14 @@ namespace WorkRoles.UI
             {
                 if (root.autoAssign)
                     return everyone ??= new PaletteCluster { label = "WR_ClusterEveryone".Translate() };
-                var skills = RecsAdapter.RelevantSkillsOf(root);
-                if (skills.Count == 0)
+                // The XP-frequency primary skill, not the first entry's work
+                // type: an auxiliary lead entry (Hunter's finish-off) must not
+                // relabel the cluster.
+                var primary = DefDatabase<SkillDef>.GetNamedSilentFail(
+                    RecsAdapter.PrimarySkillOf(root) ?? "");
+                if (primary == null)
                     return unskilled ??= new PaletteCluster { label = "WR_ClusterUnskilled".Translate() };
-                string label = skills[0].LabelCap;
+                string label = primary.LabelCap;
                 var cluster = skillClusters.FirstOrDefault(c => c.label == label);
                 if (cluster == null)
                 {
@@ -485,17 +532,20 @@ namespace WorkRoles.UI
                 .ToList();
         }
 
-        /// Lays out the palette as one continuous chip flow: each line is a Tiny
-        /// label band above a chip row, a cluster starts right after its
-        /// predecessor (never pushed to a fresh line), and a cluster spanning
-        /// several lines repeats its label on every one. Returns content height;
-        /// pass null lists to measure only.
+        /// Lays out the palette line by line: each cluster stays WHOLE on one
+        /// line, placed on the earliest line with room (first fit), so later
+        /// clusters back-fill earlier gaps instead of opening fresh lines.
+        /// Splitting across lines is the fallback for a cluster wider than a
+        /// full line by itself; a split cluster repeats its Tiny label on every
+        /// line and leaves its last partial line open for back-fill. Returns
+        /// content height; pass null lists to measure only.
         private static float LayoutPalette(RoleStore store, float rowWidth,
             List<(Role role, Rect rect)> chips, List<(string label, Rect rect)> labels)
         {
             float lineH = ClusterLabelH + 2f + RoleChipUI.Height;
-            float x = 0f, y = 0f;
-            bool anyChip = false;
+            var cursors = new List<float>();   // per-line x cursor; index gives y
+            float YOf(int line) => line * (lineH + ClusterGapY);
+
             foreach (var cluster in PaletteClusters(store))
             {
                 if (cluster.roles.Count == 0) continue;
@@ -503,36 +553,77 @@ namespace WorkRoles.UI
                 float labelW = WrText.FitWidth(cluster.label);
                 Text.Font = GameFont.Small;
 
-                float segStart = 0f;
-                bool segmentOpen = false;
+                var widths = new List<float>(cluster.roles.Count);
+                float chipsW = 0f;
                 foreach (var role in cluster.roles)
                 {
                     float chipW = RoleChipUI.WidthFor(role, showRemove: false);
-                    // Opening a segment needs room for the label AND its first
-                    // chip; continuing one only for the next chip.
-                    float needed = segmentOpen ? chipW : Mathf.Max(labelW, chipW);
-                    if (x > 0f && x + needed > rowWidth)
-                    {
-                        x = 0f;
-                        y += lineH + ClusterGapY;
-                        segmentOpen = false;
-                    }
-                    if (!segmentOpen)
-                    {
-                        labels?.Add((cluster.label,
-                            new Rect(x, y, Mathf.Min(labelW, rowWidth - x), ClusterLabelH)));
-                        segStart = x;
-                        segmentOpen = true;
-                    }
-                    chips?.Add((role, new Rect(x, y + ClusterLabelH + 2f, chipW, RoleChipUI.Height)));
-                    anyChip = true;
-                    x += chipW + ChipGap;
+                    widths.Add(chipW);
+                    chipsW += (chipsW > 0f ? ChipGap : 0f) + chipW;
                 }
-                // Cluster done: the next one must clear this label too, then
-                // gets the inter-cluster gap (trailing chip gap stripped).
-                x = Mathf.Max(x - ChipGap, segStart + labelW) + ClusterGapX;
+                float clusterW = Mathf.Max(labelW, chipsW);
+
+                if (clusterW <= rowWidth)
+                {
+                    int line = -1;
+                    for (int i = 0; i < cursors.Count; i++)
+                    {
+                        float needed = (cursors[i] > 0f ? ClusterGapX : 0f) + clusterW;
+                        if (cursors[i] + needed <= rowWidth) { line = i; break; }
+                    }
+                    if (line < 0)
+                    {
+                        cursors.Add(0f);
+                        line = cursors.Count - 1;
+                    }
+                    float x = cursors[line] + (cursors[line] > 0f ? ClusterGapX : 0f);
+                    float y = YOf(line);
+                    labels?.Add((cluster.label, new Rect(x, y, labelW, ClusterLabelH)));
+                    float cx = x;
+                    for (int i = 0; i < widths.Count; i++)
+                    {
+                        chips?.Add((cluster.roles[i],
+                            new Rect(cx, y + ClusterLabelH + 2f, widths[i], RoleChipUI.Height)));
+                        cx += widths[i] + ChipGap;
+                    }
+                    cursors[line] = x + clusterW;
+                }
+                else
+                {
+                    // Fallback: wider than a full line. Wrap over fresh lines
+                    // (the same flow the whole palette used to use).
+                    cursors.Add(0f);
+                    int line = cursors.Count - 1;
+                    float x = 0f, segStart = 0f;
+                    bool segmentOpen = false;
+                    for (int i = 0; i < widths.Count; i++)
+                    {
+                        // Opening a segment needs room for the label AND its
+                        // first chip; continuing one only for the next chip.
+                        float needed = segmentOpen ? widths[i] : Mathf.Max(labelW, widths[i]);
+                        if (x > 0f && x + needed > rowWidth)
+                        {
+                            cursors.Add(0f);
+                            line = cursors.Count - 1;
+                            x = 0f;
+                            segmentOpen = false;
+                        }
+                        if (!segmentOpen)
+                        {
+                            labels?.Add((cluster.label,
+                                new Rect(x, YOf(line), Mathf.Min(labelW, rowWidth - x), ClusterLabelH)));
+                            segStart = x;
+                            segmentOpen = true;
+                        }
+                        chips?.Add((cluster.roles[i],
+                            new Rect(x, YOf(line) + ClusterLabelH + 2f, widths[i], RoleChipUI.Height)));
+                        x += widths[i] + ChipGap;
+                    }
+                    cursors[line] = Mathf.Max(x - ChipGap, segStart + labelW);
+                }
             }
-            return anyChip ? y + lineH : 0f;
+            return cursors.Count == 0 ? 0f
+                : cursors.Count * lineH + (cursors.Count - 1) * ClusterGapY;
         }
 
         // Open-window snapshot of the palette layout (it rebuilds the whole
@@ -849,7 +940,7 @@ namespace WorkRoles.UI
         private readonly List<SkillDef> skillColumns = new List<SkillDef>();
         private bool skillColumnsLoaded;
         private const int MaxSkillColumns = 3;
-        private const float SkillCellContentW = 82f; // "12.37" + passion/aptitude/expertise icons
+        private const float SkillCellContentW = 82f; // "12.37" + up to two signal decorators
 
         private void EnsureSkillColumnsLoaded()
         {
@@ -872,11 +963,25 @@ namespace WorkRoles.UI
         private void SaveSkillColumns() =>
             profile.SetSkillColumns(skillColumns.Select(d => d.defName).ToList());
 
+        // CapitalizeFirst allocates for lowercase labels; header labels are
+        // needed per column per pass, so memoize per def (language switch clears).
+        private static readonly Dictionary<SkillDef, string> skillHeaderLabels =
+            new Dictionary<SkillDef, string>();
+
+        internal static string SkillHeaderLabel(SkillDef skill)
+        {
+            if (!skillHeaderLabels.TryGetValue(skill, out string label))
+                skillHeaderLabels[skill] = label = skill.skillLabel.CapitalizeFirst();
+            return label;
+        }
+
+        internal static void ClearSkillHeaderLabelCache() => skillHeaderLabels.Clear();
+
         /// Header label (localized) or cell content, whichever is wider.
         internal float SkillColumnWidth(SkillDef skill)
         {
             Text.Font = GameFont.Small;
-            return Mathf.Max(SkillCellContentW, WrText.FitWidth(skill.skillLabel.CapitalizeFirst()) + 18f);
+            return Mathf.Max(SkillCellContentW, WrText.FitWidth(SkillHeaderLabel(skill)) + 18f);
         }
 
         private float SkillColumnsWidth()
@@ -998,17 +1103,21 @@ namespace WorkRoles.UI
 
         private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn pawn)
         {
-            var model = new TipModel { Title = role.label };
+            var model = new TipModel
+            {
+                Title = role.label.Colorize(ColorPassMinor),
+            };
 
-            string badge = (role.enabled ? "WR_RoleTipEnabled" : "WR_RoleTipDisabled").Translate();
+            string stateText = (role.enabled ? "WR_RoleTipEnabled" : "WR_RoleTipDisabled")
+                .Translate().ToString()
+                .Colorize(role.enabled ? RoleStateEnabled : RoleStateDisabled);
             var markers = new List<string>();
             if (role.blocker) markers.Add("WR_BadgeBlocker".Translate());
             if (role.activeHours != Role.AllHours) markers.Add("WR_BadgeHours".Translate());
             if (role.locationTokens.Count > 0) markers.Add("WR_BadgeLocation".Translate());
-            if (markers.Count > 0)
-                badge += TipText.Dim(" · " + string.Join(" · ", markers));
-            model.Badge = badge;
-            model.BadgeColor = role.enabled ? TipText.DimColor : TipText.WarningColor;
+            model.Badge = markers.Count > 0
+                ? stateText + TipText.Dim(" · " + string.Join(" · ", markers))
+                : stateText;
 
             var def = role.templateDefName == null ? null
                 : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
@@ -1016,26 +1125,26 @@ namespace WorkRoles.UI
                 model.AddSection().Text(def.description);
 
             var facts = model.AddSection();
-            facts.Fact("WR_TipJobsLabel".Translate(), JobSummary(role));
             var skills = RecsAdapter.RelevantSkillsOf(role);
             if (skills.Count > 0)
                 facts.Fact("WR_TipSkillsLabel".Translate(),
                     skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList());
-            if (context == RoleTipContext.TreeRow && role.entries.Count > 0)
-                facts.Fact("WR_TipEntriesLabel".Translate(), EntriesSummary(role));
-
-            TipSection training = null;
+            facts.Fact("WR_TipJobsLabel".Translate(), JobSummary(role));
             foreach (var path in store.trainingPaths)
             {
                 int idx = path.roleIds.IndexOf(role.id);
                 if (idx < 0) continue;
-                training ??= model.AddSection("WR_TipTrainingHeader".Translate());
                 int lo = path.bandMins[idx], hi = path.bandMaxes[idx];
-                string band = hi >= SkillProgressionMath.MaxLevel ? lo + "+" : lo + "–" + hi;
-                training.Fact(path.name, band, path.hasCustomColor ? path.color : (Color?)null);
+                string band = hi >= SkillProgressionMath.MaxLevel ? lo + "+" : lo + "-" + hi;
+                var target = store.RoleById(PathTargetRoleId(path));
+                string recommend = "WR_TipTrainingRecommend".Translate(band);
+                if (target?.id != role.id)
+                    recommend += " " + "WR_TipTrainingPath".Translate(
+                        (target?.label ?? path.name).Colorize(ColorPassMinor));
+                facts.Fact("WR_TipTrainingHeader".Translate(), recommend);
             }
 
-            string fits = BestFits(role, skills);
+            string fits = BestFits(skills);
             if (!fits.NullOrEmpty())
                 model.AddSection("WR_TipBestFitsLabel".Translate()).Text(fits);
 
@@ -1077,21 +1186,28 @@ namespace WorkRoles.UI
             return model;
         }
 
-        /// First few entry defNames, WR_TipMore overflow (tree rows only).
-        private static string EntriesSummary(Role role)
+        // Enabled/disabled badge tint; matches the verdict green/red family.
+        private static readonly Color RoleStateEnabled = new Color(0.55f, 0.8f, 0.45f);
+        private static readonly Color RoleStateDisabled = new Color(0.9f, 0.35f, 0.3f);
+
+        /// The path's target: the role holding its highest band.
+        private static int PathTargetRoleId(TrainingPath path)
         {
-            const int Cap = 4;
-            var parts = role.entries.Take(Cap).Select(e => e.DefName).ToList();
-            if (role.entries.Count > Cap)
-                parts.Add("WR_TipMore".Translate(role.entries.Count - Cap).ToString());
-            return parts.ToCommaList();
+            int target = -1, bestMin = int.MinValue;
+            for (int i = 0; i < path.roleIds.Count; i++)
+                if (path.bandMins[i] > bestMin)
+                {
+                    bestMin = path.bandMins[i];
+                    target = path.roleIds[i];
+                }
+            return target;
         }
 
         /// Whole work types as "X (all jobs)", single jobs by display name;
-        /// capped so mega-roles don't flood the tooltip.
+        /// one line: capped so mega-roles don't flood the tooltip.
         private static string JobSummary(Role role)
         {
-            const int Cap = 10;
+            const int Cap = 3;
             var parts = new List<string>();
             foreach (var entry in role.entries)
             {
@@ -1115,42 +1231,34 @@ namespace WorkRoles.UI
             return parts.ToCommaList();
         }
 
-        /// Colonists best suited to the role's skills: expertise beats burning
-        /// passion beats passion; ties broken by skill level. Capped at six.
-        private string BestFits(Role role, List<SkillDef> skills)
+        /// Colonists best suited to the role's skills according to the same
+        /// aggregated bucket verdicts consumed by recommendations. Verdict ties
+        /// are broken by skill level. Capped at six.
+        private string BestFits(List<SkillDef> skills)
         {
             if (skills.Count == 0) return null;
-            var ranked = new List<(string label, int score, float level)>();
+            var ranked = new List<(string label, SignalBucket bucket, int level)>();
             foreach (var pawn in ListedPawns())
             {
                 if (pawn.skills == null) continue;
-                var expertiseSkills = Expertise.For(pawn);
-                int score = 0;
-                float bestLevel = 0f;
+                var candidates = new List<SkillBucketCandidate>(skills.Count);
                 foreach (var skill in skills)
                 {
                     var sr = pawn.skills.GetSkill(skill);
                     if (sr == null || sr.TotallyDisabled) continue;
-                    int s = expertiseSkills.Any(e => e.Skill == skill) ? 3 : Passions.Score(sr);
-                    if (s > score || (s == score && sr.Level > bestLevel))
-                    {
-                        score = System.Math.Max(score, s);
-                        bestLevel = sr.Level;
-                    }
+                    candidates.Add(new SkillBucketCandidate(skill.defName, sr.Level));
                 }
-                if (score == 0) continue;
-                string tag = score == 3 ? "WR_FitExpertise".Translate()
-                    : score == 2 ? "WR_FitBurning".Translate()
-                    : "WR_FitPassion".Translate();
-                // Tier colors mirror the grid markers: expertise gold, passions
-                // orange/yellow — the tip teaches the same palette as the table.
-                var tierColor = score == 3 ? ColorExpertise
-                    : score == 2 ? ColorPassMajor : ColorPassMinor;
-                ranked.Add(($"{pawn.LabelShortCap} ({tag})".Colorize(tierColor), score, bestLevel));
+                SkillBucketChoice best = SkillBucketRanking.Best(
+                    SignalSnapshotFor(pawn).SkillBuckets, candidates);
+                if (best == null || best.Bucket < SignalBucket.Strong) continue;
+                string tag = SkillSignalPresentation.BucketLabel(best.Bucket);
+                Color tierColor = SkillSignalPresentation.VerdictColor(best.Bucket);
+                ranked.Add(($"{pawn.LabelShortCap} ({tag})".Colorize(tierColor),
+                    best.Bucket, best.SkillLevel));
             }
             if (ranked.Count == 0) return null;
             var top = ranked
-                .OrderByDescending(t => t.score)
+                .OrderByDescending(t => t.bucket)
                 .ThenByDescending(t => t.level)
                 .Take(6)
                 .Select(t => t.label)
@@ -1181,10 +1289,9 @@ namespace WorkRoles.UI
 
             // Chip strips wrap against the roles column; everything else is
             // fixed-width, so the row-height estimate is exact.
-            EstimatedStripWidth = Mathf.Max(300f,
-                rect.width - 16f - 264f - SkillColumnsWidth() - 28f);
+            EstimatedStripWidth = TableStripWidth(rect.width);
 
-            DrawTableHeader(new Rect(rect.x, rect.y, rect.width - 16f, TableHeaderH));
+            DrawTableHeader(new Rect(rect.x, rect.y, rect.width - 16f, TableHeaderH), store);
 
             bool grouped = Grouped;
             var outRect = new Rect(rect.x, rect.y + TableHeaderH, rect.width, rect.height - TableHeaderH);
@@ -1231,10 +1338,22 @@ namespace WorkRoles.UI
 
         /// and skill columns (click sorts by that skill, highest first — the
         /// sorting column's label renders in the passion yellow; X removes).
-        private void DrawTableHeader(Rect rect)
+        private void DrawTableHeader(Rect rect, RoleStore store)
         {
             Text.Font = GameFont.Small;
             var sortSkill = SortSkill();
+
+            // Priority grid over every listed colonist (the filtered table set).
+            var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
+            TooltipHandler.TipRegion(gridRect, "WR_ShowPriorityGridTip".Translate());
+            if (Widgets.ButtonImage(gridRect, TexButton.Info))
+            {
+                var listed = new List<Pawn>();
+                foreach (var section in Sections(store))
+                    listed.AddRange(section.Members);
+                Find.WindowStack.Add(new Dialog_PriorityGrid(listed));
+                return;
+            }
 
             var nameRect = new Rect(rect.x, rect.y, 264f, rect.height);
             var order = profile.GetColonistOrder();
@@ -1247,8 +1366,13 @@ namespace WorkRoles.UI
                     + orderSuffix.Colorize(new Color(1f, 1f, 1f, 0.45f));
             }
             Text.Anchor = TextAnchor.LowerLeft;
+            // A-Z is an explicit colonist sort: mark the header like a sorting
+            // skill column (bar order is the neutral default and stays white).
+            if (sortSkill == null && order == ColonistOrder.Alphabetical)
+                GUI.color = ColorPassMinor;
             Widgets.Label(new Rect(nameRect.x + 4f, nameRect.y, nameRect.width - 8f, nameRect.height - 2f),
                 colonistHeaderCache);
+            GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
             Widgets.DrawHighlightIfMouseover(nameRect);
             if (Widgets.ButtonInvisible(nameRect))
@@ -1276,7 +1400,7 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.LowerLeft;
                 if (sortSkill == skill) GUI.color = ColorPassMinor; // marks the sort column
                 Widgets.Label(new Rect(headerRect.x + 2f, headerRect.y, headerRect.width - 24f, headerRect.height - 2f),
-                    skill.skillLabel.CapitalizeFirst());
+                    SkillHeaderLabel(skill));
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.WordWrap = wrap;
@@ -1298,14 +1422,6 @@ namespace WorkRoles.UI
                 sectionTitles.TryGetValue(section.Key, out var title)
                     ? title : section.Title + " (" + section.Members.Count + ")");
             Text.Anchor = TextAnchor.UpperLeft;
-            // Priority grid for the group (before ButtonInvisible so it wins).
-            var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
-            TooltipHandler.TipRegion(gridRect, "WR_ShowPriorityGridTip".Translate());
-            if (Widgets.ButtonImage(gridRect, TexButton.Info))
-            {
-                Find.WindowStack.Add(new Dialog_PriorityGrid(section.Members.ToList(), section.Title));
-                return;
-            }
             Widgets.DrawHighlightIfMouseover(rect);
             if (Widgets.ButtonInvisible(rect)) ToggleCollapsed(section.Key);
         }
@@ -1351,9 +1467,17 @@ namespace WorkRoles.UI
 
         // ----- Grouping -----
 
-        private GroupSourceDef CurrentGroupSource =>
-            GroupSources.All().FirstOrDefault(s => s.Key == profile.GetGroupBy())
-                ?? GroupSources.All()[0];
+        private GroupSourceDef CurrentGroupSource
+        {
+            get
+            {
+                var sources = GroupSources.All();
+                string key = profile.GetGroupBy();
+                foreach (var source in sources)
+                    if (source.Key == key) return source;
+                return sources[0];
+            }
+        }
 
         private bool Grouped => CurrentGroupSource.Partition != null;
 
@@ -1566,12 +1690,6 @@ namespace WorkRoles.UI
             else if (bottom > tableScroll.y + lastTableViewH) tableScroll.y = bottom - lastTableViewH;
         }
 
-        internal SkillDef SkillColumnAt(int index)
-        {
-            EnsureSkillColumnsLoaded();
-            return index >= 0 && index < skillColumns.Count ? skillColumns[index] : null;
-        }
-
         internal void RemoveSkillColumn(int index)
         {
             EnsureSkillColumnsLoaded();
@@ -1707,9 +1825,8 @@ namespace WorkRoles.UI
             return ChipLayoutFor(pawn, store, EstimatedStripWidth).height;
         }
 
-        /// One skill cell: fractional level in the stats panel's color language,
-        /// then passion icon, aptitude square and expertise square; breakdown
-        /// tooltip (traits, aptitude, custom passion) on hover.
+        /// One skill cell: the same fractional level, signal-derived colour,
+        /// decorators and combined structured tooltip as the bottom stats panel.
         internal void DrawSkillCell(Rect cell, Pawn pawn, SkillDef skill)
         {
             Text.Font = GameFont.Small;
@@ -1724,63 +1841,28 @@ namespace WorkRoles.UI
                 return;
             }
 
-            float fractional = sr.Level + Mathf.Clamp(sr.xpSinceLastLevel / sr.XpRequiredForLevelUp, 0f, 0.99f);
-            int passionScore = Passions.ScoreOf(sr.passion);
-            GUI.color = sr.Level <= 1 ? ColorDisabled
-                : sr.Level <= 5 ? ColorLow
-                : passionScore == 2 ? ColorPassMajor
-                : passionScore == 1 ? ColorPassMinor
-                : Color.white;
-            Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f, cell.height), fractional.ToString("F2"));
+            SkillPresentation presentation = PresentationFor(pawn, SkillsTip.Line(sr));
+            Color textColor = SkillTextColor(
+                presentation.Line, presentation.SignalView.PassionTier);
+            GUI.color = textColor;
+            // Labels paint on Repaint only; layout and input passes only need
+            // the cached presentation and hover region.
+            if (Event.current.type == EventType.Repaint)
+                Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f, cell.height),
+                    presentation.Line.ValueText);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             float ix = cell.x + 48f;
-            var passionTex = sr.passion == Passion.Major ? WorkRolesTex.PassionMajor
-                : sr.passion == Passion.Minor ? WorkRolesTex.PassionMinor
-                : Passions.CustomIcon(sr.passion);
-            if (passionTex != null)
+            foreach (Texture2D texture in presentation.SignalIcons)
             {
-                GUI.DrawTexture(new Rect(ix, cell.y + (cell.height - 16f) / 2f, 16f, 16f), passionTex);
+                GUI.DrawTexture(new Rect(ix, cell.y + (cell.height - 16f) / 2f,
+                    16f, 16f), texture);
                 ix += 18f;
             }
-            if (sr.Aptitude != 0)
-            {
-                Widgets.DrawBoxSolid(new Rect(ix, cell.y + (cell.height - 6f) / 2f, 6f, 6f),
-                    sr.Aptitude > 0 ? new Color(0.2f, 0.8f, 0.2f) : new Color(0.8f, 0.2f, 0.2f));
-                ix += 8f;
-            }
-            foreach (var expertise in Expertise.For(pawn))
-            {
-                if (expertise.Skill != skill) continue;
-                Widgets.DrawBoxSolid(new Rect(ix, cell.y + (cell.height - 6f) / 2f, 6f, 6f),
-                    new Color(1f, 0.85f, 0.3f));
-                ix += 8f;
-                break;
-            }
 
-            if (Mouse.IsOver(cell))
-            {
-                var tip = new List<string>();
-                var traitList = pawn.story?.traits?.allTraits;
-                if (traitList != null)
-                    foreach (var trait in traitList)
-                    {
-                        if (trait.Suppressed) continue;
-                        var gains = trait.CurrentData?.skillGains;
-                        if (gains == null) continue;
-                        foreach (var gain in gains)
-                            if (gain.skill == skill && gain.amount != 0)
-                                tip.Add($"{trait.LabelCap} {gain.amount:+0;-0}");
-                    }
-                if (sr.Aptitude != 0)
-                    tip.Add("WR_SkillTipAptitude".Translate(sr.Aptitude.ToString("+0;-0")));
-                string customPassion = Passions.CustomLabel(sr.passion);
-                if (customPassion != null) tip.Add(customPassion);
-                if (tip.Count > 0)
-                    TooltipHandler.TipRegion(cell,
-                        skill.skillLabel.CapitalizeFirst() + "\n" + string.Join("\n", tip));
-            }
+            if (presentation.Tooltip != null && Mouse.IsOver(cell))
+                TooltipHandler.TipRegion(cell, presentation.Tooltip);
         }
 
         // Open-window snapshot of rule outcomes: Pass hits the map (gravship
@@ -2188,6 +2270,7 @@ namespace WorkRoles.UI
             var existing = set?.assignments ?? new List<RoleAssignment>();
             var existingIds = new HashSet<int>(existing.Select(a => a.roleId));
             var targetIds = new HashSet<int>(plan.target.Select(a => a.roleId));
+            SkillBucketSnapshot skillBuckets = SignalSnapshotFor(plan.pawn).SkillBuckets;
 
             var line = new Dialog_ChangesPreview.Line();
             foreach (var a in plan.target)
@@ -2198,7 +2281,9 @@ namespace WorkRoles.UI
                 var state = kept
                     ? Dialog_ChangesPreview.ChipState.Kept
                     : Dialog_ChangesPreview.ChipState.Added;
-                line.chips.Add((role, state, RecommendationTip(plan, role, state)));
+                plan.explanations.TryGetValue(role.id, out var explanation);
+                line.chips.Add((role, state, RecommendationPresentation.RegisterTooltip(
+                    store, role, state, explanation, skillBuckets)));
             }
             for (int i = 0; i < existing.Count; i++)
             {
@@ -2206,8 +2291,10 @@ namespace WorkRoles.UI
                 var role = store.RoleById(existing[i].roleId);
                 if (role == null) continue;
                 var state = Dialog_ChangesPreview.ChipState.Removed;
+                plan.explanations.TryGetValue(role.id, out var explanation);
                 line.chips.Insert(Mathf.Min(i, line.chips.Count),
-                    (role, state, RecommendationTip(plan, role, state)));
+                    (role, state, RecommendationPresentation.RegisterTooltip(
+                        store, role, state, explanation, skillBuckets)));
             }
 
             var entry = new Dialog_ChangesPreview.PawnPreview { pawn = plan.pawn };
@@ -2344,171 +2431,6 @@ namespace WorkRoles.UI
             return plans;
         }
 
-        private string RecommendationTip(
-            PawnFixPlan plan,
-            Role role,
-            Dialog_ChangesPreview.ChipState state)
-        {
-            var model = new TipModel { Title = role.label };
-            if (!plan.explanations.TryGetValue(role.id, out var explanation))
-            {
-                model.AddSection().Fact("WR_RecTipRecommendation".Translate(),
-                    state == Dialog_ChangesPreview.ChipState.Removed
-                        ? "WR_ReasonRemoved".Translate()
-                        : "WR_AlreadyAssigned".Translate());
-                return Patches.Patch_ActiveTip_TipRect.Register(model);
-            }
-
-            TipSection facts = model.AddSection();
-            if (!role.autoAssign && !role.blocker)
-            {
-                string need = explanation.RequiredHolders == 1
-                    ? "WR_RecTipNeedOne".Translate(explanation.RecommendedHolders)
-                    : explanation.RequiredHolders > 1
-                        ? "WR_RecTipNeedMany".Translate(
-                            explanation.RequiredHolders, explanation.RecommendedHolders)
-                        : "WR_RecTipNeedNone".Translate(explanation.RecommendedHolders);
-                facts.Fact("WR_RecTipColonyNeed".Translate(), need);
-                if (explanation.ConfiguredMaximum < RoleHolderRange.Uncapped)
-                    facts.Fact("WR_RecTipConfiguredMax".Translate(),
-                        "WR_RecTipMaximum".Translate(explanation.ConfiguredMaximum));
-            }
-
-            if (explanation.RequiredSkills.Count > 0)
-                facts.Fact("WR_RecTipSkills".Translate(),
-                    explanation.RequiredSkills.Select(SkillLabel).ToCommaList());
-
-            if (explanation.SignalSkillDefName != null)
-                facts.Fact("WR_RecTipSignalVerdict".Translate(),
-                    SignalVerdict(plan.pawn, explanation),
-                    SkillSignalPresentation.VerdictColor(explanation.SignalBucket));
-
-            facts.Fact("WR_RecTipRecommendation".Translate(),
-                RecommendationDecisionText(role, explanation));
-            return Patches.Patch_ActiveTip_TipRect.Register(model);
-        }
-
-        private string SignalVerdict(Pawn pawn, RoleRecommendationExplanation explanation)
-        {
-            string verdict = SkillSignalPresentation.BucketLabel(explanation.SignalBucket);
-            SkillBucketSignal bucket = SignalSnapshotFor(pawn).SkillBuckets
-                .ForSkill(explanation.SignalSkillDefName);
-            if (bucket == null) return verdict;
-
-            var sources = bucket.Contributions
-                .Where(contribution => contribution.IsClassified)
-                .Select(contribution => contribution.Signal.Ui.Label.NullOrEmpty()
-                    ? contribution.Signal.Source.DefName
-                    : contribution.Signal.Ui.Label)
-                .Where(label => !label.NullOrEmpty())
-                .Select(label => label.CapitalizeFirst())
-                .Distinct()
-                .ToList();
-            return sources.Count == 0
-                ? verdict
-                : verdict + " (" + string.Join(", ", sources) + ")";
-        }
-
-        private static string SkillLabel(string defName)
-        {
-            SkillDef skill = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
-            return skill?.skillLabel.CapitalizeFirst() ?? defName;
-        }
-
-        private static string RecommendationDecisionText(
-            Role role,
-            RoleRecommendationExplanation explanation)
-        {
-            switch (explanation.Decision)
-            {
-                case RecommendationDecision.AutoAssigned:
-                    return "WR_RecDecisionAuto".Translate();
-                case RecommendationDecision.SignalQualified:
-                    return "WR_RecDecisionSignals".Translate();
-                case RecommendationDecision.CoverageDrafted:
-                    return CoverageDraftDecisionText(explanation);
-                case RecommendationDecision.Training:
-                {
-                    Role target = RoleStore.Current?.RoleById(explanation.RelatedRoleId);
-                    return "WR_RecDecisionTraining".Translate(target?.label ?? "?");
-                }
-                case RecommendationDecision.Hunter:
-                    return "WR_RecDecisionHunter".Translate();
-                case RecommendationDecision.FireSafety:
-                    return "WR_RecDecisionFire".Translate();
-                case RecommendationDecision.Retained:
-                    return "WR_RecDecisionRetained".Translate();
-                case RecommendationDecision.ProtectedAssignment:
-                    return "WR_RecDecisionProtected".Translate();
-                case RecommendationDecision.HolderModeNever:
-                    return "WR_RecDecisionNever".Translate();
-                case RecommendationDecision.RoleDisabled:
-                    return "WR_RecDecisionDisabled".Translate();
-                case RecommendationDecision.RoleUnavailable:
-                    return "WR_RecDecisionUnavailable".Translate();
-                case RecommendationDecision.RoleExcluded:
-                    return "WR_RecDecisionExcluded".Translate();
-                case RecommendationDecision.PawnIncapable:
-                    return "WR_RecDecisionIncapable".Translate();
-                case RecommendationDecision.HunterRequirementsNotMet:
-                    return "WR_RecDecisionHunterRequirements".Translate();
-                case RecommendationDecision.AwfulSignal:
-                    return "WR_RecDecisionAwful".Translate();
-                case RecommendationDecision.OutsideTrainingBand:
-                    return "WR_RecDecisionBand".Translate();
-                case RecommendationDecision.CoveredByRecommendedRole:
-                {
-                    Role covering = RoleStore.Current?.RoleById(explanation.RelatedRoleId);
-                    return "WR_RecDecisionCovered".Translate(covering?.label ?? "?");
-                }
-                case RecommendationDecision.RequiredCoverageFilled:
-                    return CoverageFilledDecisionText(explanation);
-                case RecommendationDecision.ConfiguredMaximumReached:
-                    return "WR_RecDecisionMaximum".Translate(explanation.ConfiguredMaximum);
-                case RecommendationDecision.SignalBelowThreshold:
-                    return "WR_RecDecisionWeakSignal".Translate();
-                case RecommendationDecision.NotSelected:
-                    return "WR_RecDecisionNotSelected".Translate();
-                default:
-                    return explanation.Recommended
-                        ? "WR_RecDecisionRecommended".Translate()
-                        : "WR_RecDecisionNotSelected".Translate();
-            }
-        }
-
-        private static string CoverageDraftDecisionText(
-            RoleRecommendationExplanation explanation)
-        {
-            if (explanation.CandidateRank <= 0)
-                return "WR_RecDecisionCoverageDraft".Translate();
-            if (explanation.CandidateSkillDefName.NullOrEmpty())
-                return "WR_RecDecisionCoverageDraftRankedNoSkill".Translate(
-                    explanation.CandidateRank, explanation.CandidatePoolSize);
-            return "WR_RecDecisionCoverageDraftRanked".Translate(
-                explanation.CandidateRank,
-                explanation.CandidatePoolSize,
-                SkillLabel(explanation.CandidateSkillDefName),
-                explanation.CandidateSkillLevel);
-        }
-
-        private static string CoverageFilledDecisionText(
-            RoleRecommendationExplanation explanation)
-        {
-            if (explanation.CandidateRank <= 0)
-                return "WR_RecDecisionCoverageFilled".Translate();
-            string key = explanation.CoverageOpenSlots > 0
-                ? "WR_RecDecisionCoverageFilledRanked"
-                : "WR_RecDecisionCoverageAlreadyFullRanked";
-            if (explanation.CandidateSkillDefName.NullOrEmpty())
-                return (key + "NoSkill").Translate(
-                    explanation.CandidateRank, explanation.CandidatePoolSize);
-            return key.Translate(
-                explanation.CandidateRank,
-                explanation.CandidatePoolSize,
-                SkillLabel(explanation.CandidateSkillDefName),
-                explanation.CandidateSkillLevel);
-        }
-
         // ----- Helpers -----
 
         internal static void OpenAddMenu(Pawn pawn, RoleStore store)
@@ -2526,23 +2448,5 @@ namespace WorkRoles.UI
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        private static void DrawDragGhost(RoleStore store)
-        {
-            if (!RoleDrag.Active) return;
-            var role = store.RoleById(RoleDrag.RoleId);
-            if (role == null) return;
-            var mouse = Event.current.mousePosition;
-            float w = RoleChipUI.WidthFor(role, showRemove: false);
-
-            Color ghostColor = RoleDrag.HoverBlocked
-                ? new Color(1f, 0.3f, 0.3f, 0.7f)
-                : new Color(1f, 1f, 1f, 0.7f);
-
-            GUI.color = ghostColor;
-            Widgets.DrawBoxSolid(new Rect(mouse.x + 10f, mouse.y + 6f, w, RoleChipUI.Height),
-                role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
-            Widgets.Label(new Rect(mouse.x + 18f, mouse.y + 8f, w, 22f), role.label);
-            GUI.color = Color.white;
-        }
     }
 }

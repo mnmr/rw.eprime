@@ -12,11 +12,11 @@ namespace WorkRoles.Core.Signals
         private const string Vse = "vanillaexpanded.skills";
         private const string Alpha = "sarg.alphaskills";
 
-        private readonly Dictionary<string, SignalBucket> policies;
+        private readonly Dictionary<PolicyKey, SignalBucket> policies;
 
         public static readonly SignalClassificationCatalog Default = BuildDefault();
 
-        private SignalClassificationCatalog(Dictionary<string, SignalBucket> policies)
+        private SignalClassificationCatalog(Dictionary<PolicyKey, SignalBucket> policies)
         {
             this.policies = policies;
         }
@@ -37,7 +37,7 @@ namespace WorkRoles.Core.Signals
                 return true;
             }
 
-            if (policies.TryGetValue(Key(
+            if (policies.TryGetValue(new PolicyKey(
                     signal.Relation,
                     signal.Source.Kind,
                     signal.Source.PackageId,
@@ -53,7 +53,7 @@ namespace WorkRoles.Core.Signals
 
         private static SignalClassificationCatalog BuildDefault()
         {
-            var values = new Dictionary<string, SignalBucket>(StringComparer.Ordinal);
+            var values = new Dictionary<PolicyKey, SignalBucket>();
 
             Add(values, SignalRelation.Primary, SignalSourceKind.Passion, Core, "Minor", SignalBucket.Strong);
             Add(values, SignalRelation.Primary, SignalSourceKind.Passion, Core, "Major", SignalBucket.Great);
@@ -91,7 +91,7 @@ namespace WorkRoles.Core.Signals
         }
 
         private static void Add(
-            IDictionary<string, SignalBucket> values,
+            IDictionary<PolicyKey, SignalBucket> values,
             SignalRelation relation,
             SignalSourceKind kind,
             string packageId,
@@ -100,26 +100,65 @@ namespace WorkRoles.Core.Signals
             int? degree = null,
             string discriminator = null)
         {
-            string key = Key(relation, kind, packageId, defName, degree, discriminator);
+            var key = new PolicyKey(relation, kind, packageId, defName, degree, discriminator);
             if (values.ContainsKey(key))
                 throw new InvalidOperationException("Duplicate signal classification policy: " + key);
             values.Add(key, bucket);
         }
 
-        private static string Key(
-            SignalRelation relation,
-            SignalSourceKind kind,
-            string packageId,
-            string defName,
-            int? degree,
-            string discriminator) => string.Join("\u001f", new[]
+        /// Allocation-free policy key: package ids compare case-insensitively,
+        /// the rest ordinal — hot classification lookups never build strings.
+        private readonly struct PolicyKey : IEquatable<PolicyKey>
+        {
+            private readonly SignalRelation relation;
+            private readonly SignalSourceKind kind;
+            private readonly string packageId;
+            private readonly string defName;
+            private readonly int? degree;
+            private readonly string discriminator;
+
+            public PolicyKey(
+                SignalRelation relation,
+                SignalSourceKind kind,
+                string packageId,
+                string defName,
+                int? degree,
+                string discriminator)
             {
-                ((int)relation).ToString(),
-                ((int)kind).ToString(),
-                packageId?.ToLowerInvariant() ?? "",
-                defName ?? "",
-                degree?.ToString() ?? "",
-                discriminator ?? "",
-            });
+                this.relation = relation;
+                this.kind = kind;
+                this.packageId = packageId ?? "";
+                this.defName = defName ?? "";
+                this.degree = degree;
+                this.discriminator = discriminator ?? "";
+            }
+
+            public bool Equals(PolicyKey other) => relation == other.relation
+                && kind == other.kind
+                && StringComparer.OrdinalIgnoreCase.Equals(packageId, other.packageId)
+                && StringComparer.Ordinal.Equals(defName, other.defName)
+                && degree == other.degree
+                && StringComparer.Ordinal.Equals(discriminator, other.discriminator);
+
+            public override bool Equals(object obj) => obj is PolicyKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + (int)relation;
+                    hash = hash * 31 + (int)kind;
+                    hash = hash * 31 + StringComparer.OrdinalIgnoreCase.GetHashCode(packageId);
+                    hash = hash * 31 + StringComparer.Ordinal.GetHashCode(defName);
+                    hash = hash * 31 + (degree ?? int.MinValue);
+                    hash = hash * 31 + StringComparer.Ordinal.GetHashCode(discriminator);
+                    return hash;
+                }
+            }
+
+            public override string ToString() =>
+                relation + "/" + kind + "/" + packageId + "/" + defName + "/" + degree + "/" + discriminator;
+        }
     }
 }

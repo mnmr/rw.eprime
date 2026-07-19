@@ -66,7 +66,7 @@ namespace WorkRoles.UI
             GUI.TextArea(viewRect, xml, style);
             Widgets.EndScrollView();
 
-            string path = ResolvedPath(out string problem);
+            string path = CachedResolvedPath(out string problem, out _);
 
             DrawCaption(new Rect(inRect.x, captionRowY, 200f, CaptionRowH - 2f), "WR_ExportLocationLabel".Translate());
 

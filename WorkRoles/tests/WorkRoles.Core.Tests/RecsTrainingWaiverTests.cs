@@ -27,6 +27,12 @@ public class RecsTrainingWaiverTests
         return (colony, nurse, medic, doctor);
     }
 
+    private static List<PawnResult> RunTrainingOnly(ColonyView colony)
+        => RecsTestBed.Run(colony,
+            new CoverageScalingRule(new UnitScaling()),
+            new TrainingWaiverRule(new AdditiveTrainingDemandPolicy()),
+            new OrderingRule());
+
     [Test]
     public async Task TwoWaiversKeepBothSelectedMedicBandPawnsInTraining()
     {
@@ -61,6 +67,47 @@ public class RecsTrainingWaiverTests
         await Assert.That(RecsTestBed.Ids(results[0])).IsEqualTo(nurse.Id.ToString());
         await Assert.That(RecsTestBed.Ids(results[1])).IsEqualTo(doctor.Id.ToString());
         await Assert.That(RecsTestBed.Ids(results[2])).IsEqualTo(doctor.Id.ToString());
+    }
+
+    [Test]
+    public async Task EqualSkillPromotionPrefersTheBetterSignal()
+    {
+        var (colony, _, medic, doctor) = DoctorColony(1, 7, 7);
+        doctor.MinHolders = 2;
+        colony.Pawns[1].SignalBuckets["Medicine"] = SignalBucket.Strong;
+
+        List<PawnResult> results = RunTrainingOnly(colony);
+
+        await Assert.That(RecsTestBed.Ids(results[0])).IsEqualTo(medic.Id.ToString());
+        await Assert.That(RecsTestBed.Ids(results[1])).IsEqualTo(doctor.Id.ToString());
+    }
+
+    [Test]
+    public async Task SkillOutranksSignalWhenSelectingThePromotionCohort()
+    {
+        var (colony, _, medic, doctor) = DoctorColony(1, 8, 7, 5);
+        doctor.MinHolders = 2;
+        colony.Pawns[2].SignalBuckets["Medicine"] = SignalBucket.Strong;
+
+        List<PawnResult> results = RunTrainingOnly(colony);
+
+        await Assert.That(RecsTestBed.Ids(results[0])).IsEqualTo(doctor.Id.ToString());
+        await Assert.That(RecsTestBed.Ids(results[1])).IsEqualTo(medic.Id.ToString());
+        await Assert.That(RecsTestBed.Ids(results[2])).IsEqualTo(string.Empty);
+    }
+
+    [Test]
+    public async Task EqualSkillAndSignalPromotionPrefersTheYoungerPawn()
+    {
+        var (colony, _, medic, doctor) = DoctorColony(1, 7, 7);
+        doctor.MinHolders = 2;
+        colony.Pawns[0].BiologicalAgeTicks = 40;
+        colony.Pawns[1].BiologicalAgeTicks = 20;
+
+        List<PawnResult> results = RunTrainingOnly(colony);
+
+        await Assert.That(RecsTestBed.Ids(results[0])).IsEqualTo(medic.Id.ToString());
+        await Assert.That(RecsTestBed.Ids(results[1])).IsEqualTo(doctor.Id.ToString());
     }
 
     [Test]

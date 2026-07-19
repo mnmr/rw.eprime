@@ -57,19 +57,21 @@ namespace WorkRoles
 
         internal static bool IsSettlementMap(Map map) => map.IsPlayerHome && !IsShipMap(map);
 
-        /// The pawn's place, for Core location-rule matching.
+        /// The pawn's place, for Core location-rule matching. IsShipMap is
+        /// evaluated once (it hits GravshipUtility): settlement = home, not ship.
         internal static PawnPlace PlaceOf(Pawn pawn)
         {
             var map = pawn.MapHeld;
+            bool ship = map != null && IsShipMap(map);
             return new PawnPlace
             {
                 LocationId = LocationId(map),
-                IsSettlement = map != null && IsSettlementMap(map),
-                IsShip = map != null && IsShipMap(map),
+                IsSettlement = map != null && map.IsPlayerHome && !ship,
+                IsShip = ship,
             };
         }
 
-        internal static string LocationId(Map map) => map?.uniqueID.ToString();
+        internal static string LocationId(Map map) => map?.uniqueID.ToStringCached();
 
         internal static string LocationIdOf(Pawn pawn) => LocationId(pawn.MapHeld);
 

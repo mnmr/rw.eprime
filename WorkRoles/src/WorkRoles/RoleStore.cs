@@ -71,6 +71,10 @@ namespace WorkRoles
             }
         }
 
+        /// World teardown: drop the reference so the old world graph (pawn and
+        /// bill keyed maps) is collectable while the player sits in the menu.
+        internal static void ClearCached() => cached = null;
+
         public int NextId() => nextRoleId++;
 
         public int NextGroupId() => nextGroupId++;
@@ -110,7 +114,21 @@ namespace WorkRoles
                     customSwatchNames[i] = $"custom-{i + 1}";
         }
 
-        public Role RoleById(int id) => roles.FirstOrDefault(r => r.id == id);
+        // Hot path: chips resolve roles per visible row per GUI pass. The index
+        // rebuilds lazily; every roles-list mutation calls InvalidateRoleIndex.
+        private Dictionary<int, Role> roleIndex;
+
+        internal void InvalidateRoleIndex() => roleIndex = null;
+
+        public Role RoleById(int id)
+        {
+            if (roleIndex == null)
+            {
+                roleIndex = new Dictionary<int, Role>(roles.Count);
+                foreach (var role in roles) roleIndex[role.id] = role;
+            }
+            return roleIndex.TryGetValue(id, out var found) ? found : null;
+        }
 
         public Role RoleByTemplate(string templateDefName) =>
             roles.FirstOrDefault(r => r.templateDefName == templateDefName);
@@ -195,6 +213,7 @@ namespace WorkRoles
                     allRole.autoAssign = true;
                     allRole.label = "WR_OddJobsRole".Translate();
                     roles.Add(allRole);
+                    InvalidateRoleIndex();
                     foreach (var set in pawnSets.Values)
                         if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != allRole.id))
                             set.assignments.Add(new RoleAssignment { roleId = allRole.id });

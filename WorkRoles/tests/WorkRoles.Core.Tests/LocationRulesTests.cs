@@ -10,6 +10,12 @@ public class LocationRulesTests
     private static readonly PawnPlace OnRaidMap = new() { LocationId = "12" };
 
     [Test]
+    public async Task PawnPlaceIsAValueTypeForHotRuleChecks()
+    {
+        await Assert.That(typeof(PawnPlace).IsValueType).IsTrue();
+    }
+
+    [Test]
     public async Task NoTokensMatchesEverywhere()
     {
         await Assert.That(LocationRules.Matches(null, InCaravan)).IsTrue();

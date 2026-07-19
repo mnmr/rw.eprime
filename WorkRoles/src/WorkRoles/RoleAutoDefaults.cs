@@ -27,30 +27,47 @@ namespace WorkRoles
     {
         internal static RoleHolderDefaults Resolve(Role role)
         {
+            if (role.AutoDefaultsCache.HasValue)
+                return role.AutoDefaultsCache.Value;
+
             var exact = role.templateDefName == null ? null
                 : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-            if (exact != null) return FromDef(exact);
-
-            HashSet<string> coverage = role.Coverage();
-            string primary = RoleSkillProfiles.ForCoverage(coverage)
-                .FirstOrDefault(s => s.Primary)?.SkillDefName;
-            var defsByName = new Dictionary<string, RoleDef>();
-            var candidates = new List<RoleTemplateCandidate>();
-            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            RoleHolderDefaults resolved;
+            if (exact != null)
             {
-                if (def.autoAssign || def.blocker || def.HasRules()) continue;
-                var defCoverage = CoverageMath.CoverageOf(def.ParsedEntries(), GameJobCatalog.Instance);
-                string defPrimary = RoleSkillProfiles.ForCoverage(defCoverage)
-                    .FirstOrDefault(s => s.Primary)?.SkillDefName;
-                defsByName[def.defName] = def;
-                candidates.Add(new RoleTemplateCandidate(
-                    def.defName, defCoverage, defPrimary));
+                resolved = FromDef(exact);
             }
-            var match = RoleTemplateMatcher.Closest(coverage, primary, candidates);
-            if (match != null) return FromDef(defsByName[match.Key]);
-            bool unskilled = RoleSkillProfiles.ForCoverage(coverage).Count == 0;
-            return new RoleHolderDefaults(unskilled ? 8 : 1,
-                RoleHolderRange.Uncapped, 0);
+            else
+            {
+                HashSet<string> coverage = role.Coverage();
+                string primary = RoleSkillProfiles.ForCoverage(coverage)
+                    .FirstOrDefault(s => s.Primary)?.SkillDefName;
+                var defsByName = new Dictionary<string, RoleDef>();
+                var candidates = new List<RoleTemplateCandidate>();
+                foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+                {
+                    if (def.autoAssign || def.blocker || def.HasRules()) continue;
+                    var defCoverage = CoverageMath.CoverageOf(
+                        def.ParsedEntries(), GameJobCatalog.Instance);
+                    string defPrimary = RoleSkillProfiles.ForCoverage(defCoverage)
+                        .FirstOrDefault(s => s.Primary)?.SkillDefName;
+                    defsByName[def.defName] = def;
+                    candidates.Add(new RoleTemplateCandidate(
+                        def.defName, defCoverage, defPrimary));
+                }
+                var match = RoleTemplateMatcher.Closest(coverage, primary, candidates);
+                if (match != null)
+                    resolved = FromDef(defsByName[match.Key]);
+                else
+                {
+                    bool unskilled = RoleSkillProfiles.ForCoverage(coverage).Count == 0;
+                    resolved = new RoleHolderDefaults(unskilled ? 8 : 1,
+                        RoleHolderRange.Uncapped, 0);
+                }
+            }
+
+            role.AutoDefaultsCache = resolved;
+            return resolved;
         }
 
         private static RoleHolderDefaults FromDef(RoleDef def)

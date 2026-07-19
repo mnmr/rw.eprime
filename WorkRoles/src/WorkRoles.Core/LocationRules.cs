@@ -3,7 +3,7 @@ using System.Collections.Generic;
 namespace WorkRoles.Core
 {
     /// Where a pawn currently is, for location-rule matching.
-    public sealed class PawnPlace
+    public struct PawnPlace
     {
         public string LocationId;  // map id; null when off-map (caravan, world)
         public bool IsSettlement;  // a player settlement map

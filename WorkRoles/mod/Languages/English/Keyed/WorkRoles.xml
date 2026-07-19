@@ -10,24 +10,26 @@
   <WR_TipOff>Off</WR_TipOff>
   <WR_TipOn>On</WR_TipOn>
   <WR_OptNumericTipWhat>Vanilla's "manual priorities" switch, per savegame.</WR_OptNumericTipWhat>
-  <WR_OptNumericTipOff>priority grids (including mods like Numbers) draw checkmarks</WR_OptNumericTipOff>
-  <WR_OptNumericTipOn>priority grids draw numbers</WR_OptNumericTipOn>
+  <WR_OptNumericTipOff>Priority grids (including mods like Numbers) draw checkmarks</WR_OptNumericTipOff>
+  <WR_OptNumericTipOn>Priority grids draw numbers</WR_OptNumericTipOn>
   <WR_OptNumericTipWhy>It lives here because WorkRoles replaces the vanilla Work tab that hosted it.</WR_OptNumericTipWhy>
   <WR_OptVanillaRange>Report vanilla 0-4 priorities to other mods</WR_OptVanillaRange>
   <WR_OptVanillaRangeTipWhat>WorkRoles orders work by unique priorities (sequential numbers starting with 1).</WR_OptVanillaRangeTipWhat>
-  <WR_OptVanillaRangeTipOff>other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
-  <WR_OptVanillaRangeTipOn>priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
+  <WR_OptVanillaRangeTipOff>Other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
+  <WR_OptVanillaRangeTipOn>Priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
   <!-- Options: Recommendations Tuning (WR_OptRecOrder also labels the import preview section) -->
   <WR_TuningSection>Recommendations Tuning</WR_TuningSection>
   <WR_RecOrderHeader>Default Role Recommendation Order</WR_RecOrderHeader>
+  <WR_RecOrderHelp>Here you can define the order in which roles are suggested. Training paths (defined below) can override, except for research roles (which always use the default order).</WR_RecOrderHelp>
   <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
   <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid (auto-assigned roles included).</WR_OptRecOrderTipWhat>
-  <WR_ActRecDrag>reorder the chips</WR_ActRecDrag>
-  <WR_ActRecX>unpin the role so it places dynamically again</WR_ActRecX>
+  <WR_ActRecDrag>Reorder the chips</WR_ActRecDrag>
+  <WR_ActRecX>Unpin the role so it places dynamically again</WR_ActRecX>
   <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
   <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
   <!-- Options: Training Paths -->
   <WR_TrainingSection>Training Paths</WR_TrainingSection>
+  <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress through roles. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
   <WR_TrainingTipWhat>Named role progressions: each role carries a skill band where it is recommended.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the pawn's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
@@ -52,9 +54,8 @@
   <WR_PathColorTitle>Path color</WR_PathColorTitle>
   <WR_PathColorDefault>Default (highest role)</WR_PathColorDefault>
   <WR_PathColorTip>Click to pick this path's color. By default it follows the role with the highest skill band.</WR_PathColorTip>
-  <!-- {0} = group name -->
-  <WR_PriorityGridTitle>Priorities: {0}</WR_PriorityGridTitle>
-  <WR_ShowPriorityGridTip>Show the priority grid for this group's colonists (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
+  <WR_PriorityGridTitle>Priority Grid</WR_PriorityGridTitle>
+  <WR_ShowPriorityGridTip>Show the priority grid for all listed colonists, respecting the active role and location filters (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>WorkRoles priorities</WR_GridModeRaw>
   <WR_GridModeVanilla>Vanilla priorities</WR_GridModeVanilla>
   <WR_ResizeGripTip>Drag to resize the window (it can only grow from its content-fitted size). Double-click to return to automatic sizing.</WR_ResizeGripTip>
@@ -85,13 +86,12 @@
   <!-- Fact labels and section headers -->
   <WR_TipJobsLabel>Jobs</WR_TipJobsLabel>
   <WR_TipSkillsLabel>Skills</WR_TipSkillsLabel>
-  <WR_TipEntriesLabel>Entries</WR_TipEntriesLabel>
   <WR_TipTrainingHeader>Training</WR_TipTrainingHeader>
+  <!-- Training fact; {0} = skill band. The path segment ({0} = target role) is appended with a space unless the target is the role being viewed. -->
+  <WR_TipTrainingRecommend>Recommended for colonists with skill {0}</WR_TipTrainingRecommend>
+  <WR_TipTrainingPath>on their path to {0}</WR_TipTrainingPath>
   <WR_TipBestFitsLabel>Best fits</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (all jobs)</WR_TipWholeType>
-  <WR_FitExpertise>expertise</WR_FitExpertise>
-  <WR_FitBurning>burning passion</WR_FitBurning>
-  <WR_FitPassion>passion</WR_FitPassion>
   <WR_TipMore>+{0} more</WR_TipMore>
   <!-- Action tokens (shared) and per-context descriptions -->
   <WR_ActClick>Click</WR_ActClick>
@@ -99,16 +99,16 @@
   <WR_ActDrag>Drag</WR_ActDrag>
   <WR_ActRightClick>Right-click</WR_ActRightClick>
   <WR_ActX>X</WR_ActX>
-  <WR_ActPaletteClick>toggle the role globally</WR_ActPaletteClick>
-  <WR_ActPaletteShiftClick>assign to the selected colonist</WR_ActPaletteShiftClick>
-  <WR_ActPaletteDrag>assign to a colonist</WR_ActPaletteDrag>
-  <WR_ActTreeClick>select for editing</WR_ActTreeClick>
-  <WR_ActTreeDrag>reorder or move between groups</WR_ActTreeDrag>
-  <WR_ActTreeRightClick>compose the role (include/exclude)</WR_ActTreeRightClick>
-  <WR_ActChipClick>toggle for this colonist</WR_ActChipClick>
-  <WR_ActChipRightClick>pin options</WR_ActChipRightClick>
-  <WR_ActChipDrag>reorder or move to another colonist</WR_ActChipDrag>
-  <WR_ActChipX>remove</WR_ActChipX>
+  <WR_ActPaletteClick>Toggle the role globally</WR_ActPaletteClick>
+  <WR_ActPaletteShiftClick>Assign to the selected colonist</WR_ActPaletteShiftClick>
+  <WR_ActPaletteDrag>Assign to a colonist</WR_ActPaletteDrag>
+  <WR_ActTreeClick>Select for editing</WR_ActTreeClick>
+  <WR_ActTreeDrag>Reorder or move between groups</WR_ActTreeDrag>
+  <WR_ActTreeRightClick>Compose the role (include/exclude)</WR_ActTreeRightClick>
+  <WR_ActChipClick>Toggle for this colonist</WR_ActChipClick>
+  <WR_ActChipRightClick>Pin options</WR_ActChipRightClick>
+  <WR_ActChipDrag>Reorder or move to another colonist</WR_ActChipDrag>
+  <WR_ActChipX>Remove</WR_ActChipX>
 
   <!-- Filter row -->
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
@@ -173,20 +173,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Recommendation reason tooltips; {0} = skill label where present -->
   <WR_ReasonEveryone>Auto-assigned to everyone.</WR_ReasonEveryone>
   <WR_ReasonHunter>Carries a ranged weapon; hunting also trains Shooting.</WR_ReasonHunter>
-  <WR_ReasonExpertise>Expertise: {0}.</WR_ReasonExpertise>
-  <WR_ReasonMajorPassion>Burning passion for {0}.</WR_ReasonMajorPassion>
-  <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
-  <WR_ReasonAptitude>Gene or trait aptitude for {0}.</WR_ReasonAptitude>
   <WR_ReasonSignal>Recommendation signals favor {0}.</WR_ReasonSignal>
   <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
   <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
-  <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
-  <WR_SkillTipAptitude>Aptitude {0} (genes/traits)</WR_SkillTipAptitude>
-
-  <!-- Passion icon tooltip fact labels -->
-  <WR_TipLearnRate>Learn rate</WR_TipLearnRate>
-  <WR_TipForgetRate>Forget rate</WR_TipForgetRate>
-
   <!-- Combined signal tooltip for each skill in the bottom Colonists panel -->
   <WR_SignalColSignal>Signal</WR_SignalColSignal>
   <WR_SignalColEffects>Effects</WR_SignalColEffects>
@@ -374,9 +363,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Available Jobs pane (left) -->
   <WR_AvailableJobs>Available Jobs</WR_AvailableJobs>
   <WR_Search>Search</WR_Search>
-  <!-- Unused-jobs warning: prefix rendered yellow code-side; {0} = uncovered job count -->
+  <!-- Unused-jobs warning shown in the amber panel -->
   <WR_WarningPrefix>Warning:</WR_WarningPrefix>
-  <WR_UnusedJobsWarning>You have {0} jobs that are not in any role.</WR_UnusedJobsWarning>
+  <WR_UnusedJobsWarning>You have jobs that are not in any role.</WR_UnusedJobsWarning>
 
   <!-- Selected Jobs pane (right) -->
   <WR_SelectedJobs>Selected Jobs (ordered)</WR_SelectedJobs>
@@ -395,15 +384,12 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
   <!-- Editor: colonist range and skills used -->
-  <WR_HoldersLabel>Colonists:</WR_HoldersLabel>
   <WR_HoldersTipWhat>Controls the desired range of colonists assigned this role.</WR_HoldersTipWhat>
-  <WR_HoldersTipAuto>a preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
-  <WR_HoldersTipCustom>an inclusive minimum and maximum selected by you</WR_HoldersTipCustom>
-  <WR_HoldersTipWaivers>minimum holder slots that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
-  <WR_HoldersTipNever>never recommended</WR_HoldersTipNever>
+  <WR_HoldersTipAuto>A preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
+  <WR_HoldersTipCustom>An inclusive minimum and maximum selected by you</WR_HoldersTipCustom>
+  <WR_HoldersTipWaivers>Minimum holder slots that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
+  <WR_HoldersTipNever>Never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
-  <!-- Holders button while Auto is selected; {0} = the resolved colony target -->
-  <WR_HoldersAutoCount>Auto ({0})</WR_HoldersAutoCount>
   <WR_HoldersNever>Never</WR_HoldersNever>
   <WR_HoldersCustom>Custom</WR_HoldersCustom>
   <WR_HoldersMin>Min</WR_HoldersMin>
@@ -412,23 +398,32 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
+  <!-- Editor: collapsible recommendation tuning section -->
+  <WR_TuningHeader>Recommendations Tuning</WR_TuningHeader>
+  <WR_TuningHelp>Here you can customize inputs to the recommendation engine. Click to toggle through options.</WR_TuningHelp>
+  <WR_TuningAutoHelp>Uses WorkRoles defaults (scales with colony size)</WR_TuningAutoHelp>
+  <WR_TuningNeverHelp>Exclude this role from being recommended</WR_TuningNeverHelp>
+  <WR_TuningCustomHelp>Set your own limits</WR_TuningCustomHelp>
+  <WR_TuningMinHelp>How many colonists should at least get this role</WR_TuningMinHelp>
+  <WR_TuningMaxHelp>A conditional upper limit on assignments</WR_TuningMaxHelp>
+  <WR_TuningWaiversHelp>How many of the minimum may be substituted with a training role (e.g. Medic instead of Doctor)</WR_TuningWaiversHelp>
+
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>
 
   <!-- Editor: skill facts on work types and jobs, derived from game data -->
   <WR_TipTrainsLabel>Trains</WR_TipTrainsLabel>
-  <WR_TipTrainsNothing>nothing (no skill XP)</WR_TipTrainsNothing>
+  <WR_TipTrainsNothing>Nothing (no skill XP)</WR_TipTrainsNothing>
   <WR_TipRequiresLabel>Requires</WR_TipRequiresLabel>
   <!-- {0} skill, {1} level or level range, {2} gated count, {3} total count -->
   <WR_TipReqBills>{0} {1} ({2} of {3} bills are skill-gated)</WR_TipReqBills>
   <WR_TipReqItems>{0} {1} ({2} items are skill-gated)</WR_TipReqItems>
   <!-- Curve milestone fact label; {0} = level -->
-  <WR_TipLevelN>level {0}</WR_TipLevelN>
+  <WR_TipLevelN>Level {0}</WR_TipLevelN>
   <WR_TipXpLabel>Gives XP</WR_TipXpLabel>
   <!-- {0} = XP-giving jobs, {1} = total jobs -->
   <WR_TipXpValue>{0} of {1} jobs</WR_TipXpValue>
   <!-- {0} = skill label, {1} = highest gated level -->
-  <WR_TipTypeGated>content up to {0} {1}</WR_TipTypeGated>
   <!-- Identity footer: {0} = defName, {1} = source mod name -->
   <WR_SkillTipGiverSource>Work giver: {0} ({1})</WR_SkillTipGiverSource>
   <WR_SkillTipTypeSource>Work type: {0} ({1})</WR_SkillTipTypeSource>

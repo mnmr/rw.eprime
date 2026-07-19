@@ -91,7 +91,19 @@ namespace WorkRoles.Core.Signals
 
             public override bool Equals(object obj) => obj is LookupKey other && Equals(other);
 
-            public override int GetHashCode() => SignalHash.Of((int)kind, defName, degree);
+            // Hand-rolled: SignalHash.Of boxes, and this runs on every Find().
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + (int)kind;
+                    hash = hash * 31 + (defName == null
+                        ? 0 : StringComparer.Ordinal.GetHashCode(defName));
+                    hash = hash * 31 + (degree ?? int.MinValue);
+                    return hash;
+                }
+            }
         }
     }
 }

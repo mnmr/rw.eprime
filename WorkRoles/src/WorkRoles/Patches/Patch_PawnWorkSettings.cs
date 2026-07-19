@@ -103,10 +103,17 @@ namespace WorkRoles.Patches
         }
     }
 
-    /// Clear the static cache when the world is torn down (main menu / new game load).
+    /// Clear the static caches when the world is torn down (main menu / new
+    /// game load): compiled orders, the store reference (would otherwise pin
+    /// the old world graph) and the session-grown tooltip registry.
     [HarmonyPatch(typeof(MemoryUtility), nameof(MemoryUtility.ClearAllMapsAndWorld))]
     public static class Patch_MemoryUtility_ClearAllMapsAndWorld
     {
-        public static void Postfix() => CompiledJobOrders.InvalidateAll();
+        public static void Postfix()
+        {
+            CompiledJobOrders.InvalidateAll();
+            RoleStore.ClearCached();
+            Patch_ActiveTip_TipRect.Clear();
+        }
     }
 }

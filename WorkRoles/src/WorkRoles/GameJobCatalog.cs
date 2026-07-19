@@ -24,18 +24,6 @@ namespace WorkRoles
                 t => t.workGiversByPriority.Select(g => g.defName).ToList());
         }
 
-        public bool WorkGiverExists(string workGiverDefName)
-        {
-            EnsureBuilt();
-            return givers.ContainsKey(workGiverDefName);
-        }
-
-        public bool WorkTypeExists(string workTypeDefName)
-        {
-            EnsureBuilt();
-            return giversByType.ContainsKey(workTypeDefName);
-        }
-
         public IReadOnlyList<string> WorkGiversOf(string workTypeDefName)
         {
             EnsureBuilt();

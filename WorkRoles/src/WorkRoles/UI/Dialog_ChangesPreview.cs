@@ -13,7 +13,7 @@ namespace WorkRoles.UI
     /// (MP-friendly): at apply time the plan is recomputed, and if the colony changed
     /// in the meantime the request is dropped with a notification instead of
     /// applying a stale plan.
-    public class Dialog_ChangesPreview : Window
+    public class Dialog_ChangesPreview : Dialog_PreviewBase
     {
         public enum ChipState
         {
@@ -36,14 +36,10 @@ namespace WorkRoles.UI
             public bool included = true;
         }
 
-        private const float TitleH = 38f;
-        private const float SelectRowH = 26f;
         private const float PawnRowH = 24f;
         private const float LineGap = 4f;
         private const float GroupGap = 8f;
         private const float ChipGap = 4f;
-        private const float ButtonW = 120f;
-        private const float ButtonH = 32f;
 
         private readonly string title;
         private readonly List<PawnPreview> entries;
@@ -60,10 +56,6 @@ namespace WorkRoles.UI
             this.entries = entries;
             this.onApply = onApply;
             this.rebuild = rebuild;
-            absorbInputAroundWindow = true;
-            closeOnClickedOutside = true;
-            doCloseX = true;
-            draggable = true;
         }
 
         private static bool SamePlan(List<PawnPreview> a, List<PawnPreview> b)
@@ -149,24 +141,18 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH), title);
-            Text.Font = GameFont.Small;
-
-            float listTop = inRect.y + TitleH;
+            float listTop = DrawPreviewTitle(inRect, title);
             if (entries.Count > 0)
             {
                 // Select-all toggle above the list.
                 bool all = entries.All(e => e.included);
-                bool toggled = all;
-                Widgets.CheckboxLabeled(new Rect(inRect.x, listTop, 160f, 24f),
-                    "WR_SelectAll".Translate(), ref toggled);
+                bool toggled = DrawPreviewSelectAll(inRect, listTop, all);
                 if (toggled != all)
                     foreach (var entry in entries) entry.included = toggled;
-                listTop += SelectRowH;
+                listTop += PreviewSelectRowHeight;
             }
 
-            var listRect = new Rect(inRect.x, listTop, inRect.width, inRect.yMax - listTop - ButtonH - 8f);
+            var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             float contentH = entries.Count == 0 ? PawnRowH : DrawEntries(entries, rowW, draw: false);
 
@@ -183,13 +169,8 @@ namespace WorkRoles.UI
             }
             Widgets.EndScrollView();
 
-            float btnY = inRect.yMax - ButtonH;
-            var applyRect = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, ButtonH);
-            var cancelRect = new Rect(applyRect.x - 8f - ButtonW, btnY, ButtonW, ButtonH);
-            if (Widgets.ButtonText(cancelRect, "WR_Cancel".Translate()))
-                Close();
             bool canApply = entries.Any(e => e.included);
-            if (Widgets.ButtonText(applyRect, "WR_Apply".Translate(), active: canApply) && canApply)
+            if (DrawPreviewFooter(inRect, canApply))
             {
                 if (SamePlan(entries, rebuild()))
                     onApply?.Invoke(entries.Where(e => e.included).Select(e => e.pawn).ToHashSet());

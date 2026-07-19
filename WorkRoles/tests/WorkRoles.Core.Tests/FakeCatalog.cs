@@ -21,8 +21,6 @@ public sealed class FakeCatalog : IJobCatalog
         return this;
     }
 
-    public bool WorkGiverExists(string workGiverDefName) => giverToType.ContainsKey(workGiverDefName);
-    public bool WorkTypeExists(string workTypeDefName) => typeToGivers.ContainsKey(workTypeDefName);
     public IReadOnlyList<string> WorkGiversOf(string workTypeDefName) =>
         typeToGivers.TryGetValue(workTypeDefName, out var list) ? list : new List<string>();
     public string WorkTypeOf(string workGiverDefName) =>

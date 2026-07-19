@@ -47,6 +47,26 @@ namespace WorkRoles.UI
         private static bool PinShown(Role role, bool pinned) =>
             pinned && !role.blocker && !role.HasRules;
 
+        /// One role drag ghost for every tab. It uses the normal chip renderer
+        /// and adds a red veil and outline only when the current target rejects
+        /// the drop. Group drags remain a Roles-tab-specific label ghost.
+        public static void DrawDragGhost(RoleStore store)
+        {
+            if (!RoleDrag.Active || RoleDrag.GroupId >= 0 || store == null) return;
+            Role role = store.RoleById(RoleDrag.RoleId);
+            if (role == null) return;
+            Vector2 mouse = Event.current.mousePosition;
+            float width = WidthFor(role, showRemove: false);
+            var rect = new Rect(mouse.x + 10f, mouse.y + 6f, width, Height);
+            Draw(rect, role, ChipStyle.Normal, showRemove: false,
+                dragSource: null, onClick: null, interactive: false);
+            if (!RoleDrag.HoverBlocked) return;
+            Widgets.DrawBoxSolid(rect, new Color(0.65f, 0.05f, 0.05f, 0.3f));
+            GUI.color = new Color(1f, 0.3f, 0.3f, 0.9f);
+            Widgets.DrawBox(rect, 2);
+            GUI.color = Color.white;
+        }
+
         /// Compact chips run tight: exact-measured initials need no breathing room.
         private static float PadFor(ChipDisplay display) =>
             display == ChipDisplay.Compact ? 2f : PadX;

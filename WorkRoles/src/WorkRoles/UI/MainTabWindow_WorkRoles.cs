@@ -171,40 +171,16 @@ namespace WorkRoles.UI
             base.PostClose();
             rolesTab.CommitEdits();
             KeyOverride.Restore();
+            // Registered tips and pawn snapshots regrow on reopen (Reset forces
+            // every stamp stale); dropping them here caps session growth and
+            // releases pawns from unloaded saves.
+            colonistsTab.ReleaseSnapshots();
+            Patches.Patch_ActiveTip_TipRect.Clear();
         }
 
         private List<TabRecord> tabs;
 
-        // Dev-mode draw cost readout (EMA over GUI passes): the number that
-        // proves the snapshot caches hold — idle should read well under 1ms.
-        private static readonly System.Diagnostics.Stopwatch drawTimer = new System.Diagnostics.Stopwatch();
-        private float drawMsEma = -1f;
-
         public override void DoWindowContents(Rect inRect)
-        {
-            drawTimer.Restart();
-            try
-            {
-                DrawContents(inRect);
-            }
-            finally
-            {
-                drawTimer.Stop();
-                float ms = (float)drawTimer.Elapsed.TotalMilliseconds;
-                drawMsEma = drawMsEma < 0f ? ms : drawMsEma * 0.95f + ms * 0.05f;
-                if (Prefs.DevMode)
-                {
-                    Text.Font = GameFont.Tiny;
-                    GUI.color = new Color(1f, 1f, 1f, 0.4f);
-                    Widgets.Label(new Rect(inRect.x + 4f, inRect.yMax - 14f, 200f, 14f),
-                        $"draw {drawMsEma:0.00} ms/pass");
-                    GUI.color = Color.white;
-                    Text.Font = GameFont.Small;
-                }
-            }
-        }
-
-        private void DrawContents(Rect inRect)
         {
             // Keyboard navigation runs before any widget sees the event, and
             // only while no text field owns the keyboard (typing in the search

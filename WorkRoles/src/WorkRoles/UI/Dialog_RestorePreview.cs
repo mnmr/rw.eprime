@@ -10,7 +10,7 @@ namespace WorkRoles.UI
     /// recovery, group or color drift, or the recommendation-order reset), with a select-all toggle —
     /// mirroring the Fix My Colony preview's selection model. Application
     /// self-guards against staleness per item.
-    public class Dialog_RestorePreview : Window
+    public class Dialog_RestorePreview : Dialog_PreviewBase
     {
         private class Row
         {
@@ -18,11 +18,7 @@ namespace WorkRoles.UI
             public bool included = true;
         }
 
-        private const float TitleH = 38f;
-        private const float SelectRowH = 26f;
         private const float RowH = 26f;
-        private const float ButtonW = 120f;
-        private const float ButtonH = 32f;
 
         // Dim orange for items that would undo a player change (OptionsTabView's
         // LockedColor family, darkened for body text).
@@ -38,37 +34,37 @@ namespace WorkRoles.UI
         {
             rows = items.Select(i => new Row { item = i }).ToList();
             anyUndo = rows.Any(r => r.item.UndoesUserChange);
-            absorbInputAroundWindow = true;
-            closeOnClickedOutside = true;
-            doCloseX = true;
-            draggable = true;
         }
+
+        private string warnText;
+        private float warnH;
+        private float warnMeasuredW = -1f;
 
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH), "WR_RestoreDefaultsTitle".Translate());
-            Text.Font = GameFont.Small;
-
-            float listTop = inRect.y + TitleH;
+            float listTop = DrawPreviewTitle(inRect, "WR_RestoreDefaultsTitle".Translate());
             bool all = rows.All(r => r.included);
-            bool toggled = all;
-            Widgets.CheckboxLabeled(new Rect(inRect.x, listTop, 160f, 24f), "WR_SelectAll".Translate(), ref toggled);
+            bool toggled = DrawPreviewSelectAll(inRect, listTop, all);
             if (toggled != all)
                 foreach (var row in rows) row.included = toggled;
-            listTop += SelectRowH;
+            listTop += PreviewSelectRowHeight;
 
             if (anyUndo)
             {
-                string warning = "WR_RestoreOverwriteWarning".Translate();
-                float warnH = Text.CalcHeight(warning, inRect.width);
+                // Height cached by width: CalcHeight is a full layout pass.
+                if (!Mathf.Approximately(warnMeasuredW, inRect.width))
+                {
+                    warnText = "WR_RestoreOverwriteWarning".Translate();
+                    warnH = Text.CalcHeight(warnText, inRect.width);
+                    warnMeasuredW = inRect.width;
+                }
                 GUI.color = WarnColor;
-                Widgets.Label(new Rect(inRect.x, listTop, inRect.width, warnH), warning);
+                Widgets.Label(new Rect(inRect.x, listTop, inRect.width, warnH), warnText);
                 GUI.color = Color.white;
                 listTop += warnH + 4f;
             }
 
-            var listRect = new Rect(inRect.x, listTop, inRect.width, inRect.yMax - listTop - ButtonH - 8f);
+            var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, rows.Count * RowH));
             float y = 0f;
@@ -84,13 +80,8 @@ namespace WorkRoles.UI
             }
             Widgets.EndScrollView();
 
-            float btnY = inRect.yMax - ButtonH;
-            var applyRect = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, ButtonH);
-            var cancelRect = new Rect(applyRect.x - 8f - ButtonW, btnY, ButtonW, ButtonH);
-            if (Widgets.ButtonText(cancelRect, "WR_Cancel".Translate()))
-                Close();
             bool canApply = rows.Any(r => r.included);
-            if (Widgets.ButtonText(applyRect, "WR_Apply".Translate(), active: canApply) && canApply)
+            if (DrawPreviewFooter(inRect, canApply))
             {
                 var selected = rows.Where(r => r.included).Select(r => r.item).ToList();
                 RoleCommands.RestoreSelected(new RestoreSelection

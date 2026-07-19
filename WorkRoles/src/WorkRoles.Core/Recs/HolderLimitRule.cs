@@ -25,6 +25,7 @@ namespace WorkRoles.Core.Recs
                 int inbound = context.InboundTraining.TryGetValue(role.Id, out int count)
                     ? count : 0;
                 int maximum = demandPolicy.Maximum(role.MaxHolders, inbound);
+                context.EffectiveMaxHolders[role.Id] = maximum;
                 if (maximum >= RoleHolderRange.Uncapped) continue;
 
                 int available = System.Math.Max(0,
@@ -55,16 +56,10 @@ namespace WorkRoles.Core.Recs
                     context.HolderLimitRejected[item.Pawn].Add(role.Id);
                     if (role.Hunting) context.HunterTiers[item.Pawn] = -1;
                 }
-                if (role.Hunting && !context.HunterTiers.Any(tier => tier == 0))
-                {
-                    int lowest = Enumerable.Range(0, context.Colony.Pawns.Count)
-                        .Where(pawn => context.Candidates[pawn].ContainsKey(role.Id))
-                        .OrderBy(pawn => context.Colony.Pawns[pawn].ShootingLevel)
-                        .ThenBy(pawn => pawn)
-                        .DefaultIfEmpty(-1)
-                        .First();
-                    if (lowest >= 0) context.HunterTiers[lowest] = 0;
-                }
+                if (role.Hunting)
+                    HunterTiering.EnsureTierZero(context,
+                        Enumerable.Range(0, context.Colony.Pawns.Count)
+                            .Where(pawn => context.Candidates[pawn].ContainsKey(role.Id)));
             }
         }
     }

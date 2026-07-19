@@ -58,6 +58,10 @@ namespace WorkRoles.Core.Recs
         public readonly Dictionary<int, int> Want = new Dictionary<int, int>();
         public readonly Dictionary<int, int> BaseWant = new Dictionary<int, int>();
         public readonly Dictionary<int, int> InboundTraining = new Dictionary<int, int>();
+        /// Effective exact-role maximums computed by HolderLimitRule with its
+        /// injected demand policy. Explanations consume these decision facts
+        /// instead of independently re-running a policy.
+        public readonly Dictionary<int, int> EffectiveMaxHolders = new Dictionary<int, int>();
         public readonly List<HashSet<int>> TrainingToward = new List<HashSet<int>>();
         public readonly List<Dictionary<int, TrainingPathPlacement>> TrainingPathPlacements =
             new List<Dictionary<int, TrainingPathPlacement>>();
@@ -70,11 +74,24 @@ namespace WorkRoles.Core.Recs
         public readonly bool[] FireGranted;
         /// One per pawn; OrderingRule and ProtectedReentryRule fill them.
         public readonly List<PawnResult> Results = new List<PawnResult>();
+        public readonly Dictionary<int, PathView> PathsById;
+
+        // Run-invariant precomputes: roles/paths/coverage never change during a
+        // run, so pairwise redundancy, ordering skeleton and per-role skill
+        // lists are computed once instead of per pawn or per query.
+        private readonly Dictionary<int, HashSet<int>> redundantBy;
+        private readonly Dictionary<int, PathView> soloPathByRole;
+        private readonly Dictionary<int, IReadOnlyList<RoleSkillView>> requiredSkillsByRole =
+            new Dictionary<int, IReadOnlyList<RoleSkillView>>();
+        private readonly Dictionary<int, List<RoleSkillView>> orderedSkillsByRole =
+            new Dictionary<int, List<RoleSkillView>>();
+        private Dictionary<int, long> basePositions;
 
         public EngineContext(ColonyView colony)
         {
             Colony = colony;
             RolesById = colony.Roles.ToDictionary(r => r.Id);
+            PathsById = colony.Paths.ToDictionary(p => p.Id);
             HunterTiers = new int[colony.Pawns.Count];
             FireGranted = new bool[colony.Pawns.Count];
             for (int i = 0; i < colony.Pawns.Count; i++)
@@ -87,12 +104,58 @@ namespace WorkRoles.Core.Recs
                 HolderLimitRejected.Add(new HashSet<int>());
                 Results.Add(new PawnResult());
             }
+
+            redundantBy = new Dictionary<int, HashSet<int>>(colony.Roles.Count);
+            foreach (var role in colony.Roles)
+                redundantBy[role.Id] = new HashSet<int>();
+            foreach (var covering in colony.Roles)
+                foreach (var covered in colony.Roles)
+                    if (covering.Id != covered.Id && CoverageMath.MakesRedundant(
+                            covering.Coverage, covering.Id, covered.Coverage, covered.Id))
+                        redundantBy[covered.Id].Add(covering.Id);
+
+            soloPathByRole = new Dictionary<int, PathView>();
+            var multiPathRoles = new HashSet<int>();
+            foreach (var path in colony.Paths)
+                foreach (int roleId in path.RoleIds)
+                {
+                    if (multiPathRoles.Contains(roleId)) continue;
+                    if (soloPathByRole.ContainsKey(roleId))
+                    {
+                        soloPathByRole.Remove(roleId);
+                        multiPathRoles.Add(roleId);
+                    }
+                    else soloPathByRole[roleId] = path;
+                }
         }
 
         public RoleView RoleOf(int id) => RolesById.TryGetValue(id, out var role) ? role : null;
 
+        /// Precomputed CoverageMath.MakesRedundant over the run's role catalog.
+        public bool Redundant(int coveringRoleId, int coveredRoleId)
+            => redundantBy.TryGetValue(coveredRoleId, out var covering)
+               && covering.Contains(coveringRoleId);
+
+        /// The unique path containing the role, or null (none, or ambiguous).
+        public PathView SoloPathOf(int roleId)
+            => soloPathByRole.TryGetValue(roleId, out var path) ? path : null;
+
+        /// The pawn-independent ordering skeleton, computed once per run.
+        /// Callers must not mutate the returned dictionary.
+        public Dictionary<int, long> BasePositions()
+        {
+            if (basePositions == null)
+                basePositions = Ordering.BasePositions(Colony.Roles, Colony.OrderTemplate);
+            return basePositions;
+        }
+
         public bool Capable(int pawnIndex, RoleView role)
-            => role.WorkTypes.Any(Colony.Pawns[pawnIndex].CapableWorkTypes.Contains);
+        {
+            var capable = Colony.Pawns[pawnIndex].CapableWorkTypes;
+            foreach (var workType in role.WorkTypes)
+                if (capable.Contains(workType)) return true;
+            return false;
+        }
 
         public int SkillLevel(int pawnIndex, string skill)
             => skill != null && Colony.Pawns[pawnIndex].SkillLevels.TryGetValue(skill, out int level)
@@ -100,6 +163,7 @@ namespace WorkRoles.Core.Recs
 
         public IReadOnlyList<RoleSkillView> RequiredSkills(RoleView role)
         {
+            if (requiredSkillsByRole.TryGetValue(role.Id, out var cached)) return cached;
             var skills = role.Skills.Where(s => s.Required).ToList();
             if (skills.Count == 0 && role.PrimarySkill != null)
                 skills.Add(new RoleSkillView
@@ -107,7 +171,22 @@ namespace WorkRoles.Core.Recs
                     SkillDefName = role.PrimarySkill,
                     Primary = true,
                 });
+            requiredSkillsByRole[role.Id] = skills;
             return skills;
+        }
+
+        /// Skills by preference (primary, importance, name) — sorted once per
+        /// role per run so BestSignal can forward-scan.
+        private List<RoleSkillView> OrderedSkills(RoleView role)
+        {
+            if (orderedSkillsByRole.TryGetValue(role.Id, out var cached)) return cached;
+            var ordered = role.Skills
+                .OrderByDescending(s => s.Primary)
+                .ThenByDescending(s => s.Importance)
+                .ThenBy(s => s.SkillDefName)
+                .ToList();
+            orderedSkillsByRole[role.Id] = ordered;
+            return ordered;
         }
 
         public bool InsideBand(int pawnIndex, RoleView role, PathView path, int entry)
@@ -131,12 +210,10 @@ namespace WorkRoles.Core.Recs
             var pawn = Colony.Pawns[pawnIndex];
             if (role.Skills.Count > 0)
             {
-                foreach (var required in role.Skills
-                             .Where(s => s.Required)
-                             .OrderByDescending(s => s.Primary)
-                             .ThenByDescending(s => s.Importance)
-                             .ThenBy(s => s.SkillDefName))
+                var ordered = OrderedSkills(role);
+                foreach (var required in ordered)
                 {
+                    if (!required.Required) continue;
                     if (!pawn.SkillLevels.ContainsKey(required.SkillDefName)) continue;
                     SignalBucket requiredBucket = pawn.SignalBuckets.TryGetValue(
                         required.SkillDefName, out var classified)
@@ -147,14 +224,9 @@ namespace WorkRoles.Core.Recs
                     return SignalBucket.Awful;
                 }
 
-                var primary = role.Skills
-                    .Where(s => pawn.SkillLevels.ContainsKey(s.SkillDefName))
-                    .OrderByDescending(s => s.Primary)
-                    .ThenByDescending(s => s.Importance)
-                    .ThenBy(s => s.SkillDefName)
-                    .FirstOrDefault();
-                if (primary != null)
+                foreach (var primary in ordered)
                 {
+                    if (!pawn.SkillLevels.ContainsKey(primary.SkillDefName)) continue;
                     skill = primary.SkillDefName;
                     source = SignalSource.Aggregated;
                     return pawn.SignalBuckets.TryGetValue(skill, out var classified)
@@ -204,8 +276,7 @@ namespace WorkRoles.Core.Recs
             var byRole = Candidates[pawnIndex];
             if (byRole.ContainsKey(role.Id)) return true;
             foreach (var id in byRole.Keys)
-                if (RoleOf(id) is RoleView other && !other.Blocker
-                    && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id))
+                if (RoleOf(id) is RoleView other && !other.Blocker && Redundant(other.Id, role.Id))
                     return true;
             foreach (var assignment in Colony.Pawns[pawnIndex].Existing)
             {
@@ -214,8 +285,7 @@ namespace WorkRoles.Core.Recs
                     || (!assignment.Pinned && !assignedRole.HasRules && !assignedRole.Blocker))
                     continue;
                 if (assignedRole.Id == role.Id
-                    || !assignedRole.Blocker && CoverageMath.MakesRedundant(
-                        assignedRole.Coverage, assignedRole.Id, role.Coverage, role.Id))
+                    || !assignedRole.Blocker && Redundant(assignedRole.Id, role.Id))
                     return true;
             }
             return false;
@@ -269,12 +339,14 @@ namespace WorkRoles.Core.Recs
         public bool PassesBands(int pawnIndex, RoleView role)
         {
             bool member = false;
+            IReadOnlyList<RoleSkillView> skills = null;
             foreach (var path in Colony.Paths)
             {
                 int entry = path.RoleIds.IndexOf(role.Id);
                 if (entry < 0) continue;
                 member = true;
-                if (RequiredSkills(role).Count == 0) return true;
+                if (skills == null) skills = RequiredSkills(role);
+                if (skills.Count == 0) return true;
                 if (InsideBand(pawnIndex, role, path, entry)) return true;
             }
             return !member;

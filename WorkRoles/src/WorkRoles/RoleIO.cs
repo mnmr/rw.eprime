@@ -15,11 +15,16 @@ namespace WorkRoles
     {
         public const string DefaultFileName = "WorkRoles.xml";
 
+        // Session-fixed paths; the properties are read per frame from tooltips.
+        private static string gameDataDir;
+        private static string exportFile;
+
         /// Our folder under the game's per-user data root (beside Saves\, Config\).
         public static string GameDataDir =>
-            Path.Combine(GenFilePaths.SaveDataFolderPath, "WorkRoles");
+            gameDataDir ??= Path.Combine(GenFilePaths.SaveDataFolderPath, "WorkRoles");
 
-        public static string ExportFile => Path.Combine(GameDataDir, DefaultFileName);
+        public static string ExportFile =>
+            exportFile ??= Path.Combine(GameDataDir, DefaultFileName);
 
         public static RoleFileDocument Parse(string xml) => RoleFile.Parse(xml);
 
@@ -396,6 +401,7 @@ namespace WorkRoles
                         target.templateDefName = !row.role.templateDef.NullOrEmpty()
                             && store.RoleByTemplate(row.role.templateDef) == null ? row.role.templateDef : null;
                         store.roles.Add(target);
+                        store.InvalidateRoleIndex();
                         added++;
                     }
                     else

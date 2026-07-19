@@ -14,7 +14,6 @@ namespace WorkRoles.UI
     public class Dialog_PriorityGrid : Window
     {
         private readonly List<Pawn> pawns;
-        private readonly string title;
         private readonly List<WorkTypeDef> workTypes;
         private readonly float headerH;
         // Precomputed per-open: Truncate and CapitalizeFirst allocate per call,
@@ -32,10 +31,9 @@ namespace WorkRoles.UI
         private const float RowH = 27f;
         private const float LabelAngle = 45f;
 
-        public Dialog_PriorityGrid(List<Pawn> pawns, string title)
+        public Dialog_PriorityGrid(List<Pawn> pawns)
         {
             this.pawns = pawns;
-            this.title = title;
             showVanilla = RoleStore.Current?.reportVanillaPriorities == true;
             workTypes = WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder.Where(w => w.visible).ToList();
             columnLabels = new string[workTypes.Count];
@@ -84,7 +82,7 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH),
-                "WR_PriorityGridTitle".Translate(title));
+                "WR_PriorityGridTitle".Translate());
             Text.Font = GameFont.Small;
 
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;

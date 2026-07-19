@@ -102,6 +102,7 @@ namespace WorkRoles
                 throw new ArgumentNullException(nameof(signalSnapshot));
             var view = new PawnView
             {
+                BiologicalAgeTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue,
                 HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
                 ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
                 FireFear = pawn.genes != null
@@ -133,9 +134,15 @@ namespace WorkRoles
         /// The role's measured skill for band gating: the most XP-frequent
         /// skill across its covered givers (accurate per-giver data), ties
         /// alphabetical; null when no giver trains anything (never gates).
+        /// Cached on the role; entry edits invalidate with coverage.
         internal static string PrimarySkillOf(Role role)
-            => RoleSkillProfiles.ForRole(role)
+        {
+            if (role.TryGetPrimarySkillCache(out string cached)) return cached;
+            string primary = RoleSkillProfiles.ForRole(role)
                 .FirstOrDefault(skill => skill.Primary)?.SkillDefName;
+            role.SetPrimarySkillCache(primary);
+            return primary;
+        }
 
         /// Work types a role touches: WorkType entries directly, WorkGiver
         /// entries through their parent work type.

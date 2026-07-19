@@ -4,9 +4,10 @@ using System.Linq;
 namespace WorkRoles.Core.Recs
 {
     /// Allocates the minimum cohort of a path target. Strictly in-band pawns
-    /// receive the target role. The strongest remaining pawns are promoted
-    /// until the non-waived floor is met; the rest may consume training
-    /// waivers and receive every matching lower-band role.
+    /// receive the target role. The most-ready remaining pawns are promoted
+    /// until the non-waived floor is met; signals and biological age break
+    /// skill ties. The rest may consume training waivers and receive every
+    /// matching lower-band role.
     public sealed class TrainingWaiverRule : RecRule
     {
         private readonly ITrainingDemandPolicy demandPolicy;
@@ -24,8 +25,7 @@ namespace WorkRoles.Core.Recs
 
         public override void Apply(EngineContext context)
         {
-            var positions = Ordering.BasePositions(context.Colony.Roles,
-                context.Colony.OrderTemplate);
+            var positions = context.BasePositions();
             foreach (var target in context.Colony.Roles
                          .Where(r => r.TrainingWaivers > 0
                              && context.Want.TryGetValue(r.Id, out int want) && want > 0)
@@ -59,9 +59,10 @@ namespace WorkRoles.Core.Recs
 
             var selected = matches
                 .OrderByDescending(m => m.InTargetBand)
-                .ThenByDescending(m => m.Bucket)
                 .ThenByDescending(m => m.Readiness)
                 .ThenByDescending(m => m.WeightedLevel)
+                .ThenByDescending(m => m.Bucket)
+                .ThenBy(m => context.Colony.Pawns[m.Pawn].BiologicalAgeTicks)
                 .ThenBy(m => context.Candidates[m.Pawn].Count)
                 .ThenBy(m => m.Pawn)
                 .Take(open)
@@ -75,11 +76,10 @@ namespace WorkRoles.Core.Recs
             foreach (var match in selected.Where(m => m.InTargetBand))
                 AddTarget(context, target, match);
 
-            var below = selected.Where(m => !m.InTargetBand)
-                .OrderByDescending(m => m.Readiness)
-                .ThenByDescending(m => m.WeightedLevel)
-                .ThenBy(m => m.Pawn)
-                .ToList();
+            // selected is already ordered by these keys after InTargetBand.
+            // Filtering preserves that order, so a second comparer can only
+            // drift from the cohort selection contract.
+            var below = selected.Where(m => !m.InTargetBand).ToList();
             foreach (var match in below.Take(promotions))
                 AddTarget(context, target, match);
 

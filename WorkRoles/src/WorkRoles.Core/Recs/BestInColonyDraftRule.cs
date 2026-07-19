@@ -16,7 +16,7 @@ namespace WorkRoles.Core.Recs
 
         public override void Apply(EngineContext context)
         {
-            var positions = Ordering.BasePositions(context.Colony.Roles, context.Colony.OrderTemplate);
+            var positions = context.BasePositions();
             foreach (var role in context.Colony.Roles
                          .Where(r => context.Want.ContainsKey(r.Id))
                          .OrderBy(r => positions[r.Id]).ThenBy(r => r.Id))
@@ -78,7 +78,7 @@ namespace WorkRoles.Core.Recs
             if (context.Colony.Paths.Any(p => p.RoleIds.Contains(role.Id))) return false;
             return context.Colony.Roles.Any(other => other.Id != role.Id
                 && !context.Vetoed.Contains(other.Id)
-                && CoverageMath.MakesRedundant(other.Coverage, other.Id, role.Coverage, role.Id));
+                && context.Redundant(other.Id, role.Id));
         }
     }
 }

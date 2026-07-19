@@ -14,6 +14,7 @@ namespace WorkRoles.Patches
             JobSkillProfiles.ClearCaches();
             Patch_ActiveTip_TipRect.Clear();
             UI.RolesTabView.ClearEntryLabelCache();
+            UI.ColonistsTabView.ClearSkillHeaderLabelCache();
         }
     }
 }

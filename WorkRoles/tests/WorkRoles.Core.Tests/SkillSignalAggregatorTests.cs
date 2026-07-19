@@ -207,6 +207,40 @@ public class SkillSignalAggregatorTests
             brawlerMelee)).IsTrue();
     }
 
+    [Test]
+    public async Task BestFitRanksAggregatedBucketBeforeSkillLevelAndThenUsesLevel()
+    {
+        Signal cookingMinor = Known(
+            SignalSourceKind.Passion, "Minor", runtimeSkill: "Cooking");
+        Signal craftingMajor = Known(
+            SignalSourceKind.Passion, "Major", runtimeSkill: "Crafting");
+        Signal miningMinor = Known(
+            SignalSourceKind.Passion, "Minor", runtimeSkill: "Mining");
+        SkillBucketSnapshot buckets = SkillSignalAggregator.Aggregate(
+            new[] { "Cooking", "Crafting", "Mining" },
+            new SignalSnapshot(new[] { cookingMinor, craftingMajor, miningMinor }));
+
+        SkillBucketChoice result = SkillBucketRanking.Best(buckets, new[]
+        {
+            new SkillBucketCandidate("Cooking", 20),
+            new SkillBucketCandidate("Crafting", 2),
+            new SkillBucketCandidate("Mining", 12),
+        });
+
+        await Assert.That(result.SkillDefName).IsEqualTo("Crafting");
+        await Assert.That(result.Bucket).IsEqualTo(SignalBucket.Great);
+        await Assert.That(result.SkillLevel).IsEqualTo(2);
+
+        SkillBucketChoice tied = SkillBucketRanking.Best(buckets, new[]
+        {
+            new SkillBucketCandidate("Cooking", 5),
+            new SkillBucketCandidate("Mining", 12),
+        });
+        await Assert.That(tied.SkillDefName).IsEqualTo("Mining");
+        await Assert.That(tied.Bucket).IsEqualTo(SignalBucket.Strong);
+        await Assert.That(tied.SkillLevel).IsEqualTo(12);
+    }
+
     private static Signal Known(
         SignalSourceKind kind,
         string defName,

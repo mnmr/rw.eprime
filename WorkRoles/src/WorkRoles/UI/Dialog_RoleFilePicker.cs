@@ -45,6 +45,39 @@ namespace WorkRoles.UI
             }
         }
 
+        private Location cachedLocation;
+        private string cachedFileName;
+        private string cachedCustomDir;
+        private string cachedPath;
+        private string cachedProblem;
+        private bool cachedExists;
+        private bool cacheValid;
+
+        /// Path + existence, recomputed when the inputs change or on user
+        /// interaction — never on idle repaints (File.Exists is a syscall and
+        /// Desktop/UserHome resolution a shell call, several times per frame).
+        protected string CachedResolvedPath(out string problem, out bool exists)
+        {
+            var e = Event.current;
+            bool interact = e != null
+                && (e.type == EventType.MouseDown || e.type == EventType.KeyDown);
+            if (!cacheValid || interact
+                || cachedLocation != location
+                || !string.Equals(cachedFileName, fileName, StringComparison.Ordinal)
+                || !string.Equals(cachedCustomDir, customDir, StringComparison.Ordinal))
+            {
+                cachedLocation = location;
+                cachedFileName = fileName;
+                cachedCustomDir = customDir;
+                cachedPath = ResolvedPath(out cachedProblem);
+                cachedExists = cachedPath != null && File.Exists(cachedPath);
+                cacheValid = true;
+            }
+            problem = cachedProblem;
+            exists = cachedExists;
+            return cachedPath;
+        }
+
         /// Full destination, or null (with a reason) when not usable. The result
         /// uses the platform's directory separator throughout (game paths arrive
         /// with '/', Path.Combine joins with the native one — never mix them).

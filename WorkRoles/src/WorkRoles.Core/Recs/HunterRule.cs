@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WorkRoles.Core.Recs
 {
@@ -21,7 +20,7 @@ namespace WorkRoles.Core.Recs
         public override void Apply(EngineContext context)
         {
             var role = context.RoleOf(context.Colony.HunterRoleId);
-            var hunters = new List<(int pawn, int level)>();
+            var hunters = new List<int>();
             for (int i = 0; i < context.Colony.Pawns.Count; i++)
             {
                 var pawn = context.Colony.Pawns[i];
@@ -34,16 +33,9 @@ namespace WorkRoles.Core.Recs
                 context.HunterTiers[i] = pawn.ShootingLevel <= 10 ? 0
                     : pawn.ShootingLevel <= 15 ? 1
                     : pawn.ShootingLevel <= 18 ? 2 : 3;
-                hunters.Add((i, pawn.ShootingLevel));
+                hunters.Add(i);
             }
-            if (hunters.Count > 0 && !context.HunterTiers.Any(t => t == 0))
-            {
-                var best = hunters
-                    .OrderBy(h => h.level)
-                    .ThenBy(h => h.pawn)
-                    .First();
-                context.HunterTiers[best.pawn] = 0;
-            }
+            HunterTiering.EnsureTierZero(context, hunters);
         }
     }
 }

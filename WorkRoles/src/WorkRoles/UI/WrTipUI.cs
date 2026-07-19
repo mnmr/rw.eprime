@@ -58,8 +58,8 @@ namespace WorkRoles.UI
             bool oldWrap = Text.WordWrap;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
-            float ox = bgRect.x + Pad;
-            float oy = bgRect.y + Pad;
+            float ox = bgRect.x + Pad + model.Padding;
+            float oy = bgRect.y + Pad + model.Padding;
             foreach (Cmd cmd in geo.Cmds)
             {
                 GUI.color = cmd.Color;
@@ -92,11 +92,12 @@ namespace WorkRoles.UI
             var geo = new Geometry { MaxWidth = maxWidth };
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
-            float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - Pad * 2f;
+            float frame = Pad + model.Padding;
+            float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
             float contentW = Mathf.Min(NaturalWidth(model), contentMax);
             float contentH = Compose(model, contentW, geo);
             Text.Font = oldFont;
-            geo.Size = new Vector2(Mathf.Ceil(contentW + Pad * 2f), Mathf.Ceil(contentH + Pad * 2f));
+            geo.Size = new Vector2(Mathf.Ceil(contentW + frame * 2f), Mathf.Ceil(contentH + frame * 2f));
             model.RenderCache = geo;
             return geo;
         }
@@ -114,7 +115,7 @@ namespace WorkRoles.UI
             foreach (var section in model.Sections)
             {
                 if (!section.Header.NullOrEmpty()) w = Mathf.Max(w, WrText.FitWidth(section.Header));
-                float factCol = LabelColumnWidth(section);
+                float factCol = LabelColumnWidth(model);
                 foreach (var row in section.Rows)
                     switch (row)
                     {
@@ -163,20 +164,22 @@ namespace WorkRoles.UI
             return widths;
         }
 
-        /// Shared label/token column per section: alignment reads as one table.
-        private static float LabelColumnWidth(TipSection section)
+        /// Shared label/token column across the whole model: fact and action
+        /// sections align as one table.
+        private static float LabelColumnWidth(TipModel model)
         {
             float w = 0f;
-            foreach (var row in section.Rows)
-                switch (row)
-                {
-                    case TipFactRow fact:
-                        w = Mathf.Max(w, WrText.FitWidth(fact.Label));
-                        break;
-                    case TipActionRow action:
-                        w = Mathf.Max(w, WrText.FitWidth(action.InputToken));
-                        break;
-                }
+            foreach (var section in model.Sections)
+                foreach (var row in section.Rows)
+                    switch (row)
+                    {
+                        case TipFactRow fact:
+                            w = Mathf.Max(w, WrText.FitWidth(fact.Label));
+                            break;
+                        case TipActionRow action:
+                            w = Mathf.Max(w, WrText.FitWidth(action.InputToken));
+                            break;
+                    }
             return w;
         }
 
@@ -238,7 +241,7 @@ namespace WorkRoles.UI
                     y += lineH;
                 }
 
-                float labelCol = LabelColumnWidth(section);
+                float labelCol = LabelColumnWidth(model);
                 float valueX = labelCol + ColGap;
                 float valueW = Mathf.Max(24f, contentW - valueX);
 

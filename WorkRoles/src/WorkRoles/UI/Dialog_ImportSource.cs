@@ -14,6 +14,12 @@ namespace WorkRoles.UI
 
         public override Vector2 InitialSize => new Vector2(560f, 250f);
 
+        // Clipboard snapshot: reading systemCopyBuffer marshals the whole
+        // clipboard, so sniff at open and on clicks (returning to the game
+        // after copying elsewhere always involves one), never per repaint.
+        private string clip;
+        private bool clipUsable;
+
         public Dialog_ImportSource()
         {
             absorbInputAroundWindow = true;
@@ -22,8 +28,22 @@ namespace WorkRoles.UI
             draggable = true;
         }
 
+        public override void PreOpen()
+        {
+            base.PreOpen();
+            RefreshClipboard();
+        }
+
+        private void RefreshClipboard()
+        {
+            clip = GUIUtility.systemCopyBuffer;
+            clipUsable = !clip.NullOrEmpty() && clip.Contains("<WorkRoles");
+        }
+
         public override void DoWindowContents(Rect inRect)
         {
+            if (Event.current.type == EventType.MouseDown) RefreshClipboard();
+
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH), "WR_ImportTitle".Translate());
             Text.Font = GameFont.Small;
@@ -31,8 +51,6 @@ namespace WorkRoles.UI
             // From Clipboard top-right, mirroring export's Copy to Clipboard.
             // A quick sniff (the root element's name) gates it — parsing every
             // frame would be waste, and arbitrary clipboard text stays out.
-            string clip = GUIUtility.systemCopyBuffer;
-            bool clipUsable = !clip.NullOrEmpty() && clip.Contains("<WorkRoles");
             var clipRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, ButtonH);
             if (!clipUsable)
                 TooltipHandler.TipRegion(clipRect, "WR_ImportClipboardInvalid".Translate());
@@ -49,8 +67,7 @@ namespace WorkRoles.UI
             DrawCaption(new Rect(inRect.x, captionRowY, 200f, CaptionRowH - 2f), "WR_ImportLocationLabel".Translate());
             DrawLocationRows(inRect, locRowY, customRowY);
 
-            string path = ResolvedPath(out string problem);
-            bool exists = path != null && File.Exists(path);
+            string path = CachedResolvedPath(out string problem, out bool exists);
 
             var cancelRect = new Rect(inRect.x, btnY, ButtonW, ButtonH);
             var importRect = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, ButtonH);
@@ -58,7 +75,7 @@ namespace WorkRoles.UI
                 Close();
             if (problem != null)
                 TooltipHandler.TipRegion(importRect, problem);
-            else if (!exists)
+            else if (!exists && Mouse.IsOver(importRect))
                 TooltipHandler.TipRegion(importRect, "WR_ImportFileMissing".Translate(path));
             if (Widgets.ButtonText(importRect, "WR_Import".Translate(), active: exists) && exists)
             {

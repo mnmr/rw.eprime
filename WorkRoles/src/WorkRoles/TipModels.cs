@@ -13,6 +13,9 @@ namespace WorkRoles
         public string Title;
         public string Badge;
         public Color BadgeColor = Color.white;
+        /// Extra padding inside the tooltip, around all content (on top of the
+        /// vanilla 4px frame).
+        public float Padding = 8f;
         public List<TipSection> Sections = new List<TipSection>();
 
         // WrTipUI's cached geometry; models are immutable once registered, so

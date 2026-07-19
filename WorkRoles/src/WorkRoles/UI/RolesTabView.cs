@@ -56,6 +56,10 @@ namespace WorkRoles.UI
         // inputs for roles that don't have any yet (never scribed, never synced).
         private readonly HashSet<int> rulesRevealed = new HashSet<int>();
 
+        // Recommendations Tuning disclosure per role: collapsed by default,
+        // session-local UI state like rulesRevealed.
+        private readonly HashSet<int> tuningExpanded = new HashSet<int>();
+
         // Disambiguated display names per WorkGiverDef. Built once (defs don't
         // change mid-game), invalidated by Reset().
         private static Dictionary<WorkGiverDef, string> giverDisplayCache;
@@ -112,6 +116,7 @@ namespace WorkRoles.UI
         {
             if (editorTipsStamp == UiVersion.Current) return;
             editorTipsStamp = UiVersion.Current;
+            tuningLabelCol = tuningBtnW = -1f;
 
             var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
             blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
@@ -138,6 +143,7 @@ namespace WorkRoles.UI
             paintingHours = false;
             paintRoleId = -1;
             rulesRevealed.Clear();
+            tuningExpanded.Clear();
             giverDisplayCache = null; // force rebuild on next use
             // Opening re-snapshots everything on this tab.
             InvalidateSectionsSnapshot();
@@ -165,7 +171,8 @@ namespace WorkRoles.UI
             if (selected != null) DrawEditor(editorRect, store, selected);
             else Widgets.Label(editorRect, "WR_SelectOrCreateRole".Translate());
 
-            DrawDragGhost(store);
+            RoleChipUI.DrawDragGhost(store);
+            DrawGroupDragGhost(store);
             RoleDrag.ResolveMouseUp();
         }
 
@@ -567,7 +574,11 @@ namespace WorkRoles.UI
 
             Widgets.BeginScrollView(scrollRect, ref listScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
-            for (int i = 0; i < display.Count; i++)
+            // Fixed row height: only rows inside the viewport draw.
+            int firstRow = Mathf.Max(0, (int)(listScroll.y / RowHeight));
+            int lastRow = Mathf.Min(display.Count - 1,
+                (int)((listScroll.y + scrollRect.height) / RowHeight));
+            for (int i = firstRow; i <= lastRow; i++)
             {
                 var (section, role, parentRole, virtualRow) = display[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
@@ -874,39 +885,18 @@ namespace WorkRoles.UI
                 LudeonTK.UIScaling.AdjustRectToUIScaling(new Rect(row.x, y - 1f, row.width, 2f)),
                 new Color(1f, 1f, 1f, 0.9f));
 
-        /// Floating drag ghost: the row's swatch square + label following the cursor,
-        /// red-tinted while over a blocked target.
-        private static void DrawDragGhost(RoleStore store)
+        /// Group reorder ghost; role drags use RoleChipUI.DrawDragGhost.
+        private static void DrawGroupDragGhost(RoleStore store)
         {
-            if (!RoleDrag.Active) return;
-            if (RoleDrag.GroupId >= 0)
-            {
-                // Group reorder ghost: just the group name.
-                var group = store.GroupById(RoleDrag.GroupId);
-                if (group == null) return;
-                var m = Event.current.mousePosition;
-                Text.Font = GameFont.Small;
-                GUI.color = new Color(1f, 1f, 1f, 0.7f);
-                Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(m.x + 12f, m.y + 2f, WrText.FitWidth(group.label) + 4f, 24f), group.label);
-                Text.Anchor = TextAnchor.UpperLeft;
-                GUI.color = Color.white;
-                return;
-            }
-            var role = store.RoleById(RoleDrag.RoleId);
-            if (role == null) return;
+            if (!RoleDrag.Active || RoleDrag.GroupId < 0) return;
+            var group = store.GroupById(RoleDrag.GroupId);
+            if (group == null) return;
             var mouse = Event.current.mousePosition;
-            Color tint = RoleDrag.HoverBlocked
-                ? new Color(1f, 0.3f, 0.3f, 0.7f)
-                : new Color(1f, 1f, 1f, 0.7f);
-
             Text.Font = GameFont.Small;
-            float labelW = WrText.FitWidth(role.label) + 4f;
-            GUI.color = tint;
-            Widgets.DrawBoxSolid(new Rect(mouse.x + 10f, mouse.y + 6f, 16f, 16f),
-                role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
+            GUI.color = new Color(1f, 1f, 1f, 0.7f);
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(mouse.x + 32f, mouse.y + 2f, labelW, 24f), role.label);
+            Widgets.Label(new Rect(mouse.x + 12f, mouse.y + 2f,
+                WrText.FitWidth(group.label) + 4f, 24f), group.label);
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.color = Color.white;
         }
@@ -930,21 +920,28 @@ namespace WorkRoles.UI
             const float TitleH = 30f;
             const float AssignedRowH = 22f;
             const float GroupRowH = 26f;
-            const float HoldersRowH = 28f;
             const float SkillsRowH = 22f;
             const float CheckRowH = 24f;
             const float RulesRowGap = 6f;
             var customSlots = store.customSwatches;
-            bool firstCustomRowFull = customSlots.Count >= SwatchCols
-                && customSlots.Take(SwatchCols).All(c => c.a >= 0.5f);
-            bool secondCustomRowUsed = customSlots.Skip(SwatchCols).Any(c => c.a >= 0.5f);
+            bool firstCustomRowFull = customSlots.Count >= SwatchCols;
+            if (firstCustomRowFull)
+                for (int i = 0; i < SwatchCols; i++)
+                    if (customSlots[i].a < 0.5f) { firstCustomRowFull = false; break; }
+            bool secondCustomRowUsed = false;
+            for (int i = SwatchCols; i < customSlots.Count; i++)
+                if (customSlots[i].a >= 0.5f) { secondCustomRowUsed = true; break; }
             int customRows = firstCustomRowFull || secondCustomRowUsed ? 2 : 1;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
-                TitleH + AssignedRowH + 2f + GroupRowH + HoldersRowH + SkillsRowH,
+                TitleH + AssignedRowH + 2f + GroupRowH + SkillsRowH,
                 CheckRowH * 3f);
+            // Tuning is a block below the two halves, capped at the box centre
+            // (the alignment edge of the role-option checkboxes); rules follow.
+            float tuningW = rect.width / 2f - TopBoxPadding;
+            float tuningH = TuningHeight(role, tuningW);
             bool rulesShown = role.HasRules || rulesRevealed.Contains(role.id);
-            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
+            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH) + tuningH
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
                 + TopBoxPadding * 2f;
 
@@ -1089,13 +1086,14 @@ namespace WorkRoles.UI
                 checksX - 8f - leftX, GroupRowH - 4f), role, store);
 
             float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
-            DrawHoldersRow(new Rect(leftX, row4Y, checksX - 8f - leftX, HoldersRowH - 4f), role);
-            DrawSkillsUsedRow(new Rect(leftX, row4Y + HoldersRowH,
-                checksX - 8f - leftX, SkillsRowH), role);
+            DrawSkillsUsedRow(new Rect(leftX, row4Y, checksX - 8f - leftX, SkillsRowH), role);
+            DrawTuningSection(leftX,
+                topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH), tuningW, role);
 
             // Expanding section (full box width): rules while the auto-role
             // opt-in is on.
-            float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH) + RulesRowGap;
+            float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH)
+                + tuningH + RulesRowGap;
             if (rulesShown)
                 DrawRulesSection(new Rect(leftX, sectionY,
                     topBox.width - TopBoxPadding * 2f, RulesSectionH), role);
@@ -1239,29 +1237,169 @@ namespace WorkRoles.UI
             return holdersScaling.Want(holdersProbe, listedPawns?.Invoke().Count ?? 0);
         }
 
-        /// Auto/Never/Custom toggle plus the Custom inclusive range pickers.
-        private void DrawHoldersRow(Rect rect, Role role)
-        {
-            // These roles are excluded from ordinary recommendations, so a
-            // holder target would be inert and misleading.
-            if (role.autoAssign || role.blocker || role.HasRules) return;
+        private const float TuningHeaderRowH = 24f;
+        private const float TuningRowH = 24f;
+        private static readonly Color EditorDimText = new Color(0.6f, 0.6f, 0.6f);
+        private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
 
+        // Column metrics shared by measure and draw; rebuilt with the editor
+        // tips (language switches move the stamp).
+        private float tuningLabelCol = -1f;
+        private float tuningBtnW = -1f;
+
+        private void EnsureTuningMetrics()
+        {
+            if (tuningLabelCol >= 0f) return;
+            Text.Font = GameFont.Small;
+            tuningLabelCol = Mathf.Max(
+                Mathf.Max(WrText.FitWidth("WR_HoldersAuto".Translate()),
+                    Mathf.Max(WrText.FitWidth("WR_HoldersNever".Translate()),
+                        WrText.FitWidth("WR_HoldersCustom".Translate()))),
+                Mathf.Max(WrText.FitWidth("WR_HoldersMin".Translate()),
+                    Mathf.Max(WrText.FitWidth("WR_HoldersMax".Translate()),
+                        WrText.FitWidth("WR_HoldersWaivers".Translate())))) + 10f;
+            tuningBtnW = WrText.FitWidth("WR_HoldersUncapped".Translate()) + 16f;
+        }
+
+        /// Mode plus resolved min/max/waivers, e.g. "Auto: 2/*/1" (* = uncapped).
+        private string HolderSummary(Role role)
+        {
+            if (role.holderMode == RoleHolderMode.Never)
+                return "WR_HoldersNever".Translate();
+            bool auto = role.holderMode == RoleHolderMode.Auto;
+            int min = auto ? AutoHolderWant(role) : role.minHolders;
+            int max = auto ? role.ResolvedMaxHolders() : role.maxHolders;
+            int waivers = auto ? role.ResolvedTrainingWaivers() : role.trainingWaivers;
+            string maxText = max >= RoleHolderRange.Uncapped ? "*" : max.ToStringCached();
+            return (auto ? "WR_HoldersAuto" : "WR_HoldersCustom").Translate()
+                + ": " + min + "/" + maxText + "/" + waivers;
+        }
+
+        // Hidden entirely for roles excluded from ordinary recommendations (a
+        // holder target would be inert and misleading).
+        private bool TuningShown(Role role)
+            => !role.autoAssign && !role.blocker && !role.HasRules;
+
+        private float TuningHeight(Role role, float width)
+        {
+            if (!TuningShown(role)) return 0f;
+            float h = 4f + TuningHeaderRowH;
+            if (!tuningExpanded.Contains(role.id)) return h;
+            Text.Font = GameFont.Small;
+            EnsureTuningMetrics();
+            float descW = width - (tuningLabelCol + tuningBtnW + 8f);
+            h += 4f + Text.CalcHeight("WR_TuningHelp".Translate(), width) + 2f;
+            h += Mathf.Max(TuningRowH, Text.CalcHeight(ModeHelpKey(role).Translate(), descW));
+            if (role.holderMode == RoleHolderMode.Custom)
+                h += 4f
+                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningMinHelp".Translate(), descW))
+                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningMaxHelp".Translate(), descW))
+                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningWaiversHelp".Translate(), descW));
+            return h;
+        }
+
+        private static string ModeHelpKey(Role role)
+            => role.holderMode == RoleHolderMode.Auto ? "WR_TuningAutoHelp"
+                : role.holderMode == RoleHolderMode.Never ? "WR_TuningNeverHelp"
+                : "WR_TuningCustomHelp";
+
+        /// "Recommendations Tuning": group header (colonist-tab style, arrow on
+        /// the left, summary right-aligned while collapsed), then intro, the
+        /// mode toggle row (current mode's help beside the button) and, in
+        /// Custom mode, one row per picker with its help text.
+        private void DrawTuningSection(float x, float y, float width, Role role)
+        {
+            if (!TuningShown(role)) return;
+            y += 4f;
+            EnsureTuningMetrics();
+            bool expanded = tuningExpanded.Contains(role.id);
+
+            var headerRect = new Rect(x, y, width, TuningHeaderRowH);
+            Widgets.DrawBoxSolid(headerRect, new Color(1f, 1f, 1f, 0.06f));
+            var arrowRect = new Rect(x + 6f, y + (TuningHeaderRowH - 18f) / 2f, 18f, 18f);
+            GUI.DrawTexture(arrowRect, expanded ? TexButton.Collapse : TexButton.Reveal);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string label = "WR_HoldersLabel".Translate();
-            float labelW = WrText.FitWidth(label);
-            Widgets.Label(new Rect(rect.x, rect.y, labelW, rect.height), label);
+            Widgets.Label(new Rect(arrowRect.xMax + 6f, y,
+                width - (arrowRect.xMax - x) - 10f, TuningHeaderRowH), "WR_TuningHeader".Translate());
+            if (!expanded)
+            {
+                Text.Anchor = TextAnchor.MiddleRight;
+                GUI.color = ColonistsTabView.ColorPassMinor;
+                Widgets.Label(new Rect(x, y, width - 6f, TuningHeaderRowH), HolderSummary(role));
+                GUI.color = Color.white;
+            }
+            Text.Anchor = TextAnchor.UpperLeft;
+            Widgets.DrawHighlightIfMouseover(headerRect);
+            if (Widgets.ButtonInvisible(headerRect))
+            {
+                if (!tuningExpanded.Add(role.id)) tuningExpanded.Remove(role.id);
+            }
+            y += TuningHeaderRowH;
+            if (!expanded) return;
+            y += 4f;
+
+            string intro = "WR_TuningHelp".Translate();
+            float introH = Text.CalcHeight(intro, width);
+            GUI.color = EditorDimText;
+            Widgets.Label(new Rect(x, y, width, introH), intro);
+            GUI.color = Color.white;
+            y += introH + 2f;
+
+            DrawModeRow(x, ref y, width, role);
+
+            if (role.holderMode != RoleHolderMode.Custom) return;
+            y += 4f;
+            // Small colonies still get a workable range to plan ahead with.
+            int colonists = System.Math.Min(RoleHolderRange.Uncapped,
+                System.Math.Max(8, listedPawns?.Invoke().Count ?? 0));
+            var btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMin", "WR_TuningMinHelp");
+            DrawHolderRangeButton(btn, role.minHolders, colonists, role.id, maximum: false);
+            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMax", "WR_TuningMaxHelp");
+            DrawHolderRangeButton(btn, role.maxHolders, colonists, role.id, maximum: true);
+            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersWaivers", "WR_TuningWaiversHelp");
+            DrawWaiverButton(btn, role);
+        }
+
+        /// Label + help columns of a Custom picker row; the caller fills the
+        /// returned button rect between them.
+        private Rect DrawCustomRowFrame(float x, ref float y, float width,
+            string labelKey, string helpKey)
+        {
+            Text.Font = GameFont.Small;
+            float descX = tuningLabelCol + tuningBtnW + 8f;
+            string help = helpKey.Translate();
+            float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = EditorLabelText;
+            Widgets.Label(new Rect(x, y, tuningLabelCol, TuningRowH), labelKey.Translate());
+            GUI.color = EditorDimText;
+            Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
+            var btnRect = new Rect(x + tuningLabelCol, y, tuningBtnW, TuningRowH - 2f);
+            y += h;
+            return btnRect;
+        }
 
-            var btnRect = new Rect(rect.x + labelW + 6f, rect.y, 82f, rect.height);
-            TooltipHandler.TipRegion(btnRect, holdersTipCache);
+        /// Auto/Never/Custom toggle spanning the label+button columns, with the
+        /// current mode's help text beside it (aligned with the picker rows).
+        private void DrawModeRow(float x, ref float y, float width, Role role)
+        {
+            Text.Font = GameFont.Small;
+            float descX = tuningLabelCol + tuningBtnW + 8f;
+            string help = ModeHelpKey(role).Translate();
+            float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
+
+            // Auto surfaces all three resolved values; Custom keeps the bare
+            // mode word (the picker rows below carry the numbers).
             string shown = role.holderMode == RoleHolderMode.Auto
-                ? "WR_HoldersAutoCount".Translate(AutoHolderWant(role)).ToString()
+                ? HolderSummary(role)
                 : role.holderMode == RoleHolderMode.Never
                     ? "WR_HoldersNever".Translate().ToString()
                     : "WR_HoldersCustom".Translate().ToString();
+            var btnRect = new Rect(x, y, tuningLabelCol + tuningBtnW, TuningRowH - 2f);
+            TooltipHandler.TipRegion(btnRect, holdersTipCache);
             if (Widgets.ButtonText(btnRect, shown))
             {
                 var next = RoleHolderPolicy.Next(role.holderMode);
@@ -1269,81 +1407,51 @@ namespace WorkRoles.UI
                 RoleCommands.SetRoleHolderMode(role.id, (int)next, initialMin);
             }
 
-            if (role.holderMode != RoleHolderMode.Custom) return;
-            int colonists = System.Math.Min(RoleHolderRange.Uncapped,
-                listedPawns?.Invoke().Count ?? 0);
-            float x = btnRect.xMax + 8f;
-            DrawHolderRangePicker(rect, ref x, "WR_HoldersMin", role.minHolders,
-                colonists, role.id, maximum: false);
-            DrawHolderRangePicker(rect, ref x, "WR_HoldersMax", role.maxHolders,
-                colonists, role.id, maximum: true);
-            DrawWaiverPicker(rect, ref x, role);
-        }
-
-        private static void DrawWaiverPicker(Rect rect, ref float x, Role role)
-        {
-            Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string label = "WR_HoldersWaivers".Translate();
-            float labelW = WrText.FitWidth(label);
-            Widgets.Label(new Rect(x, rect.y, labelW, rect.height), label);
+            GUI.color = EditorDimText;
+            Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
-
-            var btnRect = new Rect(x + labelW + 4f, rect.y, 36f, rect.height);
-            if (Widgets.ButtonText(btnRect, role.trainingWaivers.ToString()))
-            {
-                var options = new List<FloatMenuOption>();
-                for (int n = 0; n <= role.minHolders; n++)
-                {
-                    int value = n;
-                    options.Add(new FloatMenuOption(value.ToString(),
-                        () => RoleCommands.SetRoleTrainingWaivers(role.id, value)));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
-            x = btnRect.xMax + 8f;
+            y += h;
         }
 
-        private static void DrawHolderRangePicker(Rect rect, ref float x, string labelKey,
+        private static void DrawWaiverButton(Rect btnRect, Role role)
+        {
+            if (!Widgets.ButtonText(btnRect, role.trainingWaivers.ToString())) return;
+            var options = new List<FloatMenuOption>();
+            for (int n = 0; n <= role.minHolders; n++)
+            {
+                int value = n;
+                options.Add(new FloatMenuOption(value.ToString(),
+                    () => RoleCommands.SetRoleTrainingWaivers(role.id, value)));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private static void DrawHolderRangeButton(Rect btnRect,
             int current, int colonists, int roleId, bool maximum)
         {
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
-            string label = labelKey.Translate();
-            float labelW = WrText.FitWidth(label);
-            Widgets.Label(new Rect(x, rect.y, labelW, rect.height), label);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-
-            float buttonW = maximum ? 68f : 36f;
-            var btnRect = new Rect(x + labelW + 4f, rect.y, buttonW, rect.height);
             string shown = maximum && current == RoleHolderRange.Uncapped
                 ? "WR_HoldersUncapped".Translate().ToString() : current.ToString();
-            if (Widgets.ButtonText(btnRect, shown))
+            if (!Widgets.ButtonText(btnRect, shown)) return;
+            var options = new List<FloatMenuOption>();
+            int numericMax = maximum
+                ? System.Math.Min(colonists, RoleHolderRange.Uncapped - 1)
+                : colonists;
+            for (int n = 0; n <= numericMax; n++)
             {
-                var options = new List<FloatMenuOption>();
-                int numericMax = maximum
-                    ? System.Math.Min(colonists, RoleHolderRange.Uncapped - 1)
-                    : colonists;
-                for (int n = 0; n <= numericMax; n++)
-                {
-                    int value = n;
-                    options.Add(new FloatMenuOption(value.ToString(),
-                        () =>
-                        {
-                            if (maximum) RoleCommands.SetRoleHolderMax(roleId, value);
-                            else RoleCommands.SetRoleHolderMin(roleId, value);
-                        }));
-                }
-                if (maximum)
-                    options.Add(new FloatMenuOption("WR_HoldersUncapped".Translate(),
-                        () => RoleCommands.SetRoleHolderMax(roleId, RoleHolderRange.Uncapped)));
-                Find.WindowStack.Add(new FloatMenu(options));
+                int value = n;
+                options.Add(new FloatMenuOption(value.ToString(),
+                    () =>
+                    {
+                        if (maximum) RoleCommands.SetRoleHolderMax(roleId, value);
+                        else RoleCommands.SetRoleHolderMin(roleId, value);
+                    }));
             }
-            x = btnRect.xMax + 8f;
+            if (maximum)
+                options.Add(new FloatMenuOption("WR_HoldersUncapped".Translate(),
+                    () => RoleCommands.SetRoleHolderMax(roleId, RoleHolderRange.Uncapped)));
+            Find.WindowStack.Add(new FloatMenu(options));
         }
 
         // Open-window snapshot of the selected role's used skills, most
@@ -1699,12 +1807,17 @@ namespace WorkRoles.UI
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
 
             var deadEntries = DeadEntryIndexes(role);
+            // Rows outside the viewport still register with ReorderableWidget
+            // (drag bookkeeping needs every row rect) but skip all text work.
+            float cullTop = entriesScroll.y - RowHeight;
+            float cullBottom = entriesScroll.y + scrollRect.height;
             for (int i = 0; i < role.entries.Count; i++)
             {
                 var entry = role.entries[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
 
                 bool dragging = ReorderableWidget.Reorderable(entriesReorderableGroupId, row, useRightButton: false, highlightDragged: true);
+                if (row.y > cullBottom || row.y < cullTop) continue;
 
                 if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
 
@@ -1723,7 +1836,7 @@ namespace WorkRoles.UI
                 Text.WordWrap = false;
 
                 var typeRect = new Rect(row.x + 4f, row.y, typeW, RowHeight);
-                string typeShown = typeLabel.Truncate(typeW - 4f);
+                string typeShown = TruncateCached(typeLabel, typeW - 4f, typeTruncCache, ref typeTruncW);
                 Widgets.Label(typeRect, typeShown);
                 if (typeShown != typeLabel)
                     TooltipHandler.TipRegion(typeRect, typeLabel);
@@ -1731,7 +1844,7 @@ namespace WorkRoles.UI
                 string jobText = entry.Kind == JobEntryKind.WorkType
                     ? "WR_AllJobs".Translate().ToString() : jobLabel;
                 var jobRect = new Rect(row.x + 4f + typeW, row.y, jobW, RowHeight);
-                string jobShown = jobText.Truncate(jobW - 4f);
+                string jobShown = TruncateCached(jobText, jobW - 4f, jobTruncCache, ref jobTruncW);
                 Widgets.Label(jobRect, jobShown);
                 if (jobShown != jobText)
                     TooltipHandler.TipRegion(jobRect, jobText);
@@ -1794,7 +1907,33 @@ namespace WorkRoles.UI
         private static readonly Dictionary<(JobEntryKind kind, string defName), (string type, string job, bool missing)>
             entryLabelCache = new Dictionary<(JobEntryKind, string), (string, string, bool)>();
 
-        internal static void ClearEntryLabelCache() => entryLabelCache.Clear();
+        // Truncation caches (GenText.Truncate measures per call otherwise);
+        // width changes flush, language switch clears with the labels.
+        private static readonly Dictionary<string, string> typeTruncCache =
+            new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> jobTruncCache =
+            new Dictionary<string, string>();
+        private static float typeTruncW = -1f;
+        private static float jobTruncW = -1f;
+
+        private static string TruncateCached(
+            string text, float width, Dictionary<string, string> cache, ref float cachedWidth)
+        {
+            if (!Mathf.Approximately(width, cachedWidth))
+            {
+                cache.Clear();
+                cachedWidth = width;
+            }
+            return text.Truncate(width, cache);
+        }
+
+        internal static void ClearEntryLabelCache()
+        {
+            entryLabelCache.Clear();
+            typeTruncCache.Clear();
+            jobTruncCache.Clear();
+            typeTruncW = jobTruncW = -1f;
+        }
 
         private static void GetEntryLabels(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
         {
@@ -1841,8 +1980,11 @@ namespace WorkRoles.UI
 
         // ----- Available Jobs: the work type / giver tree -----
 
-        /// Shared warning tint: uncovered tree rows and the panel's prefix.
+        /// Warning colors for uncovered tree rows and the summary panel.
         internal static readonly Color WarningYellow = new Color(0.95f, 0.85f, 0.3f);
+        private static readonly Color WarningPanelBorder = new Color(0.12f, 0.08f, 0.02f);
+        private static readonly Color WarningPanelBackground = new Color(0.82f, 0.68f, 0.25f);
+        private static readonly Color WarningPanelText = new Color(0.18f, 0.09f, 0.01f);
 
         // Open-window snapshot of jobs no non-blocker role provides: givers,
         // their work types, and the composed warning line (null = all covered).
@@ -1868,19 +2010,21 @@ namespace WorkRoles.UI
                 uncoveredTypes.Add(giver.workType.defName);
             }
             uncoveredWarning = uncoveredGivers.Count == 0 ? null
-                : "WR_WarningPrefix".Translate().ToString().Colorize(WarningYellow)
-                    + " " + "WR_UnusedJobsWarning".Translate(uncoveredGivers.Count);
+                : "WR_WarningPrefix".Translate() + " "
+                    + "WR_UnusedJobsWarning".Translate();
         }
 
         // Open-window snapshot of the job-tree rows; expand/collapse is UI-local
         // state, so the key carries its revision alongside the search text.
-        private List<(WorkTypeDef type, WorkGiverDef giver)> treeNodesCache;
+        // Rows carry their composed display label so the draw loop never
+        // re-derives or concatenates it.
+        private List<(WorkTypeDef type, WorkGiverDef giver, string label)> treeNodesCache;
         private int treeNodesStamp = -1;
         private int treeNodesRev = -1;
         private string treeNodesFilter;
         private int treeRev;
 
-        private List<(WorkTypeDef type, WorkGiverDef giver)> TreeNodes(bool filtering)
+        private List<(WorkTypeDef type, WorkGiverDef giver, string label)> TreeNodes(bool filtering)
         {
             if (treeNodesCache != null && treeNodesStamp == UiVersion.Current
                 && treeNodesRev == treeRev && treeNodesFilter == filter)
@@ -1888,7 +2032,7 @@ namespace WorkRoles.UI
             treeNodesStamp = UiVersion.Current;
             treeNodesRev = treeRev;
             treeNodesFilter = filter;
-            var nodes = treeNodesCache = new List<(WorkTypeDef, WorkGiverDef)>();
+            var nodes = treeNodesCache = new List<(WorkTypeDef, WorkGiverDef, string)>();
             foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading
                 .OrderByDescending(t => t.naturalPriority))
             {
@@ -1902,10 +2046,10 @@ namespace WorkRoles.UI
 
                 if (filtering && !typeMatches && matchingGivers.Count == 0) continue;
 
-                nodes.Add((type, (WorkGiverDef)null));
+                nodes.Add((type, (WorkGiverDef)null, typeDisplayName + " (" + givers.Count + ")"));
                 if (filtering || expanded.Contains(type.defName))
                     foreach (var giver in (filtering && !typeMatches) ? matchingGivers : givers.ToList())
-                        nodes.Add((type, giver));
+                        nodes.Add((type, giver, GetGiverDisplayName(giver)));
             }
             return nodes;
         }
@@ -1946,9 +2090,27 @@ namespace WorkRoles.UI
             float treeTopY = rect.y + 28f + 4f;
             if (uncoveredWarning != null)
             {
-                float warnH = Text.CalcHeight(uncoveredWarning, rect.width - 8f);
-                Widgets.Label(new Rect(rect.x + 4f, treeTopY, rect.width - 8f, warnH), uncoveredWarning);
-                treeTopY += warnH + 4f;
+                // Flush with the tree rows left and top; right and bottom keep
+                // their margins.
+                const float WarningMargin = 8f;
+                const float WarningPadding = 8f;
+                var warningPanel = new Rect(
+                    rect.x,
+                    treeTopY,
+                    rect.width - WarningMargin,
+                    Text.CalcHeight(uncoveredWarning,
+                        rect.width - WarningMargin - WarningPadding * 2f)
+                        + WarningPadding * 2f);
+                Widgets.DrawBoxSolidWithOutline(
+                    warningPanel, WarningPanelBackground, WarningPanelBorder);
+                Color previousColor = GUI.color;
+                TextAnchor previousAnchor = Text.Anchor;
+                GUI.color = WarningPanelText;
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(warningPanel.ContractedBy(WarningPadding), uncoveredWarning);
+                GUI.color = previousColor;
+                Text.Anchor = previousAnchor;
+                treeTopY = warningPanel.yMax + WarningMargin;
             }
             var scrollRect = new Rect(rect.x, treeTopY, rect.width, rect.yMax - treeTopY);
             bool filtering = !filter.NullOrEmpty();
@@ -1981,9 +2143,13 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(scrollRect, ref treeScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, nodes.Count * RowHeight));
 
-            for (int i = 0; i < nodes.Count; i++)
+            // Fixed row height: only rows inside the viewport draw.
+            int firstNode = Mathf.Max(0, (int)(treeScroll.y / RowHeight));
+            int lastNode = Mathf.Min(nodes.Count - 1,
+                (int)((treeScroll.y + scrollRect.height) / RowHeight));
+            for (int i = firstNode; i <= lastNode; i++)
             {
-                var (type, giver) = nodes[i];
+                var (type, giver, nodeLabel) = nodes[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (Mouse.IsOver(row)) Widgets.DrawHighlight(row);
                 Text.Anchor = TextAnchor.MiddleLeft;
@@ -1991,10 +2157,6 @@ namespace WorkRoles.UI
                 if (giver == null)
                 {
                     // Work-type header row
-                    string typeDisplayName = (type.gerundLabel ?? type.labelShort ?? type.defName).CapitalizeFirst();
-                    int giverCount = type.workGiversByPriority.Count;
-                    string countHint = $" ({giverCount})";
-
                     bool isExpanded = filtering || expanded.Contains(type.defName);
                     if (Widgets.ButtonImage(new Rect(row.x + 2f, row.y + 4f, IconButton, IconButton),
                         isExpanded ? TexButton.Collapse : TexButton.Reveal))
@@ -2027,7 +2189,7 @@ namespace WorkRoles.UI
                     // The label toggles like the arrow — a far bigger target.
                     var typeLabelRect = new Rect(row.x + 54f, row.y, row.width - 54f, RowHeight);
                     if (uncoveredTypes.Contains(type.defName)) GUI.color = WarningYellow;
-                    Widgets.Label(typeLabelRect, typeDisplayName + countHint);
+                    Widgets.Label(typeLabelRect, nodeLabel);
                     GUI.color = Color.white;
                     if (Widgets.ButtonInvisible(typeLabelRect))
                     {
@@ -2042,8 +2204,6 @@ namespace WorkRoles.UI
                 else
                 {
                     // Job giver child row
-                    string giverName = GetGiverDisplayName(giver);
-
                     var checkboxRect = new Rect(row.x + 42f, row.y + (row.height - 24f) / 2f, 24f, 24f);
                     var currentState = GetGiverState(role, type, giver);
                     // ~ = covered via the work type; a click promotes to an own
@@ -2056,7 +2216,7 @@ namespace WorkRoles.UI
                             giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
                     if (uncoveredGivers.Contains(giver.defName)) GUI.color = WarningYellow;
-                    Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), giverName);
+                    Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), nodeLabel);
                     GUI.color = Color.white;
                     if (Mouse.IsOver(row))
                     {

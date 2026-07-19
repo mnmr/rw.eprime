@@ -63,6 +63,25 @@ public class RecsHunterFireTests
     }
 
     [Test]
+    public async Task TierZeroPromotionUsesTheProvidedSurvivorSet()
+    {
+        var removed = RecsTestBed.Pawn();
+        removed.HasRangedWeapon = true;
+        removed.ShootingLevel = 16;
+        var survivor = RecsTestBed.Pawn();
+        survivor.HasRangedWeapon = true;
+        survivor.ShootingLevel = 20;
+        var context = new EngineContext(HunterColony(removed, survivor));
+        context.HunterTiers[0] = 2;
+        context.HunterTiers[1] = 3;
+
+        HunterTiering.EnsureTierZero(context, new[] { 1 });
+
+        await Assert.That(context.HunterTiers[0]).IsEqualTo(2);
+        await Assert.That(context.HunterTiers[1]).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task IrrelevantWithoutAResolvedOrNonVetoedHunterRole()
     {
         var context = new EngineContext(RecsTestBed.Colony(

@@ -28,8 +28,7 @@ namespace WorkRoles.Core.Recs
                 {
                     var other = context.RoleOf(otherId);
                     if (other == null || other.Blocker || otherId == id) continue;
-                    if (!CoverageMath.MakesRedundant(other.Coverage, other.Id,
-                            role.Coverage, role.Id)) continue;
+                    if (!context.Redundant(other.Id, role.Id)) continue;
                     if (SurvivesAsPathTarget(context, role, other)) continue;
                     drop.Add(id);
                     break;

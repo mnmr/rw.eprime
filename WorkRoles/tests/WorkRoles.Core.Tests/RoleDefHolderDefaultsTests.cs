@@ -13,6 +13,7 @@ public class RoleDefHolderDefaultsTests
             ["WS_Farmer"] = (2, 1),
             ["WS_Warden"] = (2, 1),
             ["WS_Childminder"] = (1, 0),
+            ["WS_Handler"] = (1, 0),
             ["WS_Builder"] = (1, 0),
             ["WS_Tailor"] = (1, 0),
             ["WS_Smith"] = (1, 0),

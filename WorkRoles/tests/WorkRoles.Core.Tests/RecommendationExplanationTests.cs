@@ -50,6 +50,35 @@ public class RecommendationExplanationTests
         await Assert.That(explanation.ConfiguredMaximum).IsEqualTo(1);
     }
 
+    [Test]
+    public async Task ExplanationUsesMaximumAppliedByHolderLimitPolicy()
+    {
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.MaxHolders = 5;
+        PawnView rejected = RecsTestBed.Pawn();
+        rejected.SkillLevels["Crafting"] = 5;
+        rejected.SignalBuckets["Crafting"] = SignalBucket.Strong;
+        rejected.Existing.Add(new AssignmentView { RoleId = role.Id, Enabled = true });
+        PawnView selected = RecsTestBed.Pawn();
+        selected.SkillLevels["Crafting"] = 12;
+        selected.SignalBuckets["Crafting"] = SignalBucket.Strong;
+
+        List<PawnResult> results = RecsEngine.Run(
+            RecsTestBed.Colony(new List<RoleView> { role }, rejected, selected),
+            new RecRule[]
+            {
+                new SignalCandidatesRule(),
+                new HolderLimitRule(new FixedMaximumPolicy(1)),
+                new OrderingRule(),
+            });
+        RoleRecommendationExplanation explanation = results[0].Explanations[role.Id];
+
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.ConfiguredMaximumReached);
+        await Assert.That(explanation.ConfiguredMaximum).IsEqualTo(1);
+    }
+
 
     [Test]
     public async Task StrongSignalExplainsQualificationAndCurrentCoverageFacts()
@@ -209,5 +238,15 @@ public class RecommendationExplanationTests
         await Assert.That(explanation.Decision)
             .IsEqualTo(RecommendationDecision.CoveredByRecommendedRole);
         await Assert.That(explanation.RelatedRoleId).IsEqualTo(whole.Id);
+    }
+
+    private sealed class FixedMaximumPolicy : ITrainingDemandPolicy
+    {
+        private readonly int maximum;
+
+        internal FixedMaximumPolicy(int maximum) => this.maximum = maximum;
+
+        public int Minimum(int baseMinimum, int inboundAssignments) => baseMinimum;
+        public int Maximum(int baseMaximum, int inboundAssignments) => maximum;
     }
 }

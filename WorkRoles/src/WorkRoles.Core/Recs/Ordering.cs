@@ -84,7 +84,7 @@ namespace WorkRoles.Core.Recs
         public static Dictionary<int, long> SortKeys(EngineContext context, int pawnIndex)
         {
             var colony = context.Colony;
-            var baseKeys = BasePositions(colony.Roles, colony.OrderTemplate);
+            var baseKeys = context.BasePositions();
             var keys = new Dictionary<int, long>(baseKeys);
             var anchoredKeys = new Dictionary<int, Dictionary<int, long>>();
 
@@ -124,8 +124,7 @@ namespace WorkRoles.Core.Recs
                     continue;
                 int? pathId = ApplicablePathId(context, pawnIndex, roleId);
                 if (!pathId.HasValue) continue;
-                var path = colony.Paths.FirstOrDefault(p => p.Id == pathId.Value);
-                if (path == null) continue;
+                if (!context.PathsById.TryGetValue(pathId.Value, out var path)) continue;
                 if (anchoredKeys.TryGetValue(path.Id, out var pathKeys)
                     && pathKeys.TryGetValue(roleId, out long anchoredKey))
                 {
@@ -142,7 +141,7 @@ namespace WorkRoles.Core.Recs
                 && !colony.OrderTemplate.Contains(hunterId))
             {
                 int tier = context.HunterTiers[pawnIndex];
-                if (tier >= 0) keys[hunterId] = HunterPosition(colony, tier);
+                if (tier >= 0) keys[hunterId] = HunterPosition(colony, context.RolesById, tier);
             }
             if (colony.FireBlockerRoleId != -1 && keys.ContainsKey(colony.FireBlockerRoleId))
                 keys[colony.FireBlockerRoleId] = long.MinValue;   // veto must lead the list
@@ -154,15 +153,7 @@ namespace WorkRoles.Core.Recs
             if (context.TrainingPathPlacements[pawnIndex].TryGetValue(
                     roleId, out var placement))
                 return placement.PathId;
-
-            int? onlyPath = null;
-            foreach (var path in context.Colony.Paths)
-            {
-                if (!path.RoleIds.Contains(roleId)) continue;
-                if (onlyPath.HasValue) return null;
-                onlyPath = path.Id;
-            }
-            return onlyPath;
+            return context.SoloPathOf(roleId)?.Id;
         }
 
         private static bool TryUnanchoredKey(EngineContext context, int pawnIndex,
@@ -220,14 +211,15 @@ namespace WorkRoles.Core.Recs
                 .Min();
         }
 
-        private static long HunterPosition(ColonyView colony, int tier)
+        private static long HunterPosition(ColonyView colony,
+            Dictionary<int, RoleView> byId, int tier)
         {
             if (tier >= 3) return long.MaxValue;
-            int lowAnchor = LowHunterAnchor(colony);
+            int lowAnchor = LowHunterAnchor(colony, byId);
             if (tier == 0) return AfterTemplateIndex(lowAnchor);
 
             var workIndices = Enumerable.Range(0, colony.OrderTemplate.Count)
-                .Where(i => IsWorkRole(colony, colony.OrderTemplate[i]))
+                .Where(i => IsWorkRole(byId, colony.OrderTemplate[i]))
                 .ToList();
             if (workIndices.Count == 0) return AfterTemplateIndex(lowAnchor);
             return AfterTemplateIndex(tier == 1 ? workIndices[0] : workIndices[workIndices.Count - 1]);
@@ -236,12 +228,12 @@ namespace WorkRoles.Core.Recs
         /// Tier 0 follows the template's BasicWorker role plus immediately
         /// following Childcare/Warden roles. Without that anchor, it follows
         /// the template's leading auto-assigned roles.
-        private static int LowHunterAnchor(ColonyView colony)
+        private static int LowHunterAnchor(ColonyView colony, Dictionary<int, RoleView> byId)
         {
             int basics = -1;
             for (int i = 0; i < colony.OrderTemplate.Count; i++)
             {
-                var role = RoleAt(colony, i);
+                var role = RoleAt(colony, byId, i);
                 if (role != null && role.WorkTypes.Contains("BasicWorker"))
                 {
                     basics = i;
@@ -253,7 +245,7 @@ namespace WorkRoles.Core.Recs
                 int anchor = basics;
                 while (anchor + 1 < colony.OrderTemplate.Count)
                 {
-                    var next = RoleAt(colony, anchor + 1);
+                    var next = RoleAt(colony, byId, anchor + 1);
                     if (next == null || (!next.WorkTypes.Contains("Childcare")
                                          && !next.WorkTypes.Contains("Warden")))
                         break;
@@ -265,24 +257,25 @@ namespace WorkRoles.Core.Recs
             int lastLeadingAuto = -1;
             while (lastLeadingAuto + 1 < colony.OrderTemplate.Count)
             {
-                var next = RoleAt(colony, lastLeadingAuto + 1);
+                var next = RoleAt(colony, byId, lastLeadingAuto + 1);
                 if (next == null || !next.AutoAssign) break;
                 lastLeadingAuto++;
             }
             return lastLeadingAuto;
         }
 
-        private static bool IsWorkRole(ColonyView colony, int roleId)
+        private static bool IsWorkRole(Dictionary<int, RoleView> byId, int roleId)
         {
-            var role = colony.Roles.FirstOrDefault(r => r.Id == roleId);
-            return role != null && !role.AutoAssign && role.PrimarySkill != null
+            return byId.TryGetValue(roleId, out var role)
+                && !role.AutoAssign && role.PrimarySkill != null
                 && role.PrimarySkill != "Medicine" && role.PrimarySkill != "Social";
         }
 
-        private static RoleView RoleAt(ColonyView colony, int templateIndex)
+        private static RoleView RoleAt(ColonyView colony, Dictionary<int, RoleView> byId,
+            int templateIndex)
         {
             int roleId = colony.OrderTemplate[templateIndex];
-            return colony.Roles.FirstOrDefault(r => r.Id == roleId);
+            return byId.TryGetValue(roleId, out var role) ? role : null;
         }
 
         private static long AfterTemplateIndex(int templateIndex)

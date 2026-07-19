@@ -36,29 +36,30 @@ namespace WorkRoles.UI
             if (pawn.skills == null) return new List<SkillLine>();
             var result = new List<SkillLine>(pawn.skills.skills.Count);
             foreach (var s in pawn.skills.skills)
-            {
-                string skillLabel = s.def.skillLabel.CapitalizeFirst();
-                string valueText;
-                if (s.TotallyDisabled)
-                {
-                    valueText = "-";
-                }
-                else
-                {
-                    float progress = Mathf.Clamp(s.xpSinceLastLevel / s.XpRequiredForLevelUp, 0f, 0.99f);
-                    float fractional = s.Level + progress;
-                    valueText = fractional.ToString("F2");
-                }
-                result.Add(new SkillLine(
-                    def: s.def,
-                    label: skillLabel,
-                    valueText: valueText,
-                    passion: s.passion,
-                    aptitude: s.TotallyDisabled ? 0 : s.Aptitude,
-                    level: s.TotallyDisabled ? 0 : s.Level,
-                    disabled: s.TotallyDisabled));
-            }
+                result.Add(Line(s));
             return result;
+        }
+
+        /// The same immutable display line used by both the bottom stats panel
+        /// and optional skill columns in the colonist table.
+        public static SkillLine Line(SkillRecord skill)
+        {
+            bool disabled = skill.TotallyDisabled;
+            string valueText = "-";
+            if (!disabled)
+            {
+                float progress = Mathf.Clamp(
+                    skill.xpSinceLastLevel / skill.XpRequiredForLevelUp, 0f, 0.99f);
+                valueText = (skill.Level + progress).ToString("F2");
+            }
+            return new SkillLine(
+                def: skill.def,
+                label: skill.def.skillLabel.CapitalizeFirst(),
+                valueText: valueText,
+                passion: skill.passion,
+                aptitude: disabled ? 0 : skill.Aptitude,
+                level: disabled ? 0 : skill.Level,
+                disabled: disabled);
         }
     }
 }

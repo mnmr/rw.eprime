@@ -48,6 +48,29 @@ namespace WorkRoles
         private Dictionary<string, string> scribeSnapshots;
         private string scribeLocations;
         private HashSet<string> coverageCache;
+        private RoleHolderDefaults? autoDefaultsCache;
+        // Cached XP-frequency primary skill (null is a valid value, hence the
+        // flag); derived from coverage, so it invalidates with it.
+        private string primarySkillCache;
+        private bool primarySkillCached;
+
+        internal RoleHolderDefaults? AutoDefaultsCache
+        {
+            get => autoDefaultsCache;
+            set => autoDefaultsCache = value;
+        }
+
+        internal bool TryGetPrimarySkillCache(out string skill)
+        {
+            skill = primarySkillCache;
+            return primarySkillCached;
+        }
+
+        internal void SetPrimarySkillCache(string skill)
+        {
+            primarySkillCache = skill;
+            primarySkillCached = true;
+        }
 
         public bool HasRules => activeHours != AllHours || locationTokens.Count > 0;
 
@@ -57,7 +80,13 @@ namespace WorkRoles
         public HashSet<string> Coverage()
             => coverageCache ?? (coverageCache = CoverageMath.CoverageOf(entries, GameJobCatalog.Instance));
 
-        public void InvalidateCoverage() => coverageCache = null;
+        public void InvalidateCoverage()
+        {
+            coverageCache = null;
+            autoDefaultsCache = null;
+            primarySkillCache = null;
+            primarySkillCached = false;
+        }
 
         /// True when this role's coverage strictly includes other's (equal
         /// coverage does not cover — equals are siblings).

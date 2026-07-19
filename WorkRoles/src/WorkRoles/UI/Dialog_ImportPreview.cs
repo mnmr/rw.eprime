@@ -10,7 +10,7 @@ namespace WorkRoles.UI
     /// with an include toggle and its own Merge/Overwrite mode. Merge lists
     /// selectable rows (with the existing roles each change affects); Overwrite
     /// shows an informational consequence list, since partial overwrite is merge.
-    public class Dialog_ImportPreview : Window
+    public class Dialog_ImportPreview : Dialog_PreviewBase
     {
         private class Row
         {
@@ -18,11 +18,8 @@ namespace WorkRoles.UI
             public bool included = true;
         }
 
-        private const float TitleH = 38f;
         private const float RowH = 26f;
         private const float SectionGap = 10f;
-        private const float ButtonW = 120f;
-        private const float ButtonH = 32f;
 
         private readonly string xml;
         private readonly WorkRoles.Core.RoleFileDocument doc;
@@ -81,10 +78,6 @@ namespace WorkRoles.UI
             {
                 "WR_PathsOverwriteInfo".Translate(doc.trainingPaths.Count).ToString(),
             };
-            absorbInputAroundWindow = true;
-            closeOnClickedOutside = true;
-            doCloseX = true;
-            draggable = true;
         }
 
         private readonly List<string> paletteOverwriteInfo;
@@ -95,12 +88,8 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH), "WR_ImportTitle".Translate());
-            Text.Font = GameFont.Small;
-
-            var listRect = new Rect(inRect.x, inRect.y + TitleH, inRect.width,
-                inRect.yMax - inRect.y - TitleH - ButtonH - 8f);
+            float listTop = DrawPreviewTitle(inRect, "WR_ImportTitle".Translate());
+            var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             float contentH = MeasureContent(rowW);
             Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
@@ -125,16 +114,11 @@ namespace WorkRoles.UI
             }
             Widgets.EndScrollView();
 
-            float btnY = inRect.yMax - ButtonH;
-            var applyRect = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, ButtonH);
-            var cancelRect = new Rect(applyRect.x - 8f - ButtonW, btnY, ButtonW, ButtonH);
-            if (Widgets.ButtonText(cancelRect, "WR_Cancel".Translate()))
-                Close();
             bool canApply = (paletteInclude && (paletteOverwrite || paletteMergeUi.Any(r => r.included)))
                 || (rolesInclude && (rolesOverwrite || roleMergeUi.Any(r => r.included)))
                 || (pathsInclude && (pathsOverwrite || pathMergeUi.Any(r => r.included)))
                 || (orderInclude && doc.recommendationOrder.Count > 0);
-            if (Widgets.ButtonText(applyRect, "WR_Apply".Translate(), active: canApply) && canApply)
+            if (DrawPreviewFooter(inRect, canApply))
             {
                 RoleCommands.ApplyImport(new ImportSelection
                 {
@@ -162,8 +146,11 @@ namespace WorkRoles.UI
                 "WR_OptRecOrder".Translate(), ref orderInclude);
             y += RowH;
             if (orderInclude)
-                DrawInfo(width, ref y, "WR_RecOrderReplaceInfo".Translate(doc.recommendationOrder.Count));
+                DrawInfo(width, ref y,
+                    orderInfoText ??= "WR_RecOrderReplaceInfo".Translate(doc.recommendationOrder.Count));
         }
+
+        private string orderInfoText;
 
         private static List<int> SelectedIndices(List<Row> rows) =>
             rows.Select((row, index) => (row, index)).Where(t => t.row.included).Select(t => t.index).ToList();
@@ -237,8 +224,24 @@ namespace WorkRoles.UI
             y += height + 2f;
         }
 
+        // Memoized per (text, width): DrawInfo runs on the DRAW pass too, so
+        // without this every visible info line re-measures each pass.
+        private static readonly Dictionary<string, float> infoHeightCache =
+            new Dictionary<string, float>();
+        private static float infoHeightCacheW = -1f;
+
         private static float InfoHeight(float width, string text)
-            => Mathf.Max(RowH - 2f, Text.CalcHeight(text, width - 16f));
+        {
+            if (!Mathf.Approximately(infoHeightCacheW, width))
+            {
+                infoHeightCache.Clear();
+                infoHeightCacheW = width;
+            }
+            if (!infoHeightCache.TryGetValue(text, out float height))
+                infoHeightCache[text] = height =
+                    Mathf.Max(RowH - 2f, Text.CalcHeight(text, width - 16f));
+            return height;
+        }
 
         // Cached: InfoHeight runs Text.CalcHeight, per pass while the dialog
         // idles open otherwise. Keys are every input the math reads.
