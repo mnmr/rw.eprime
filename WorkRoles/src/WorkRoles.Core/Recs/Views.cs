@@ -3,14 +3,13 @@ using System.Collections.Generic;
 namespace WorkRoles.Core.Recs
 {
     /// One pawn as the rules see it. Skill dictionaries key by skill defName;
-    /// an absent skill is totally disabled. Aptitudes carry sign only
-    /// (negative = apathy).
+    /// an absent skill is totally disabled. Signal buckets are precomputed
+    /// from the pawn signal snapshot before the recommendation engine runs.
     public class PawnView
     {
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
-        public Dictionary<string, int> PassionScores = new Dictionary<string, int>(); // 0/1/2
-        public Dictionary<string, int> Aptitudes = new Dictionary<string, int>();
-        public HashSet<string> ExpertiseSkills = new HashSet<string>();
+        public Dictionary<string, SignalBucket> SignalBuckets =
+            new Dictionary<string, SignalBucket>();
         public HashSet<string> CapableWorkTypes = new HashSet<string>();
         public bool HasRangedWeapon;
         public int ShootingLevel;

@@ -31,7 +31,8 @@ namespace WorkRoles.Core.Signals
                 definition.Source.PackageId,
                 templateId,
                 definition.Source.EffectDiscriminator,
-                definition.Source.RequiredPackageIds);
+                definition.Source.RequiredPackageIds,
+                definition.Degree);
 
             var effects = new List<SignalEffect>(definition.Effects.Count);
             foreach (var effect in definition.Effects)

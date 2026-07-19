@@ -90,6 +90,88 @@ public class SignalSnapshotTests
         await Assert.That(SignalSnapshot.Empty.ForSkill("Shooting").Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task BuilderExpandsOtherSkillEffectsIntoTargetedSpillovers()
+    {
+        Signal critical = SignalFactory.Instantiate(
+            PassionSignalDefinitions.All.Single(x => x.Source.DefName == "VSE_Critical"),
+            "Crafting");
+
+        SignalSnapshot snapshot = SignalSnapshotBuilder.Build(
+            new[] { critical },
+            new[] { "Shooting", "Crafting", "Cooking" },
+            crossSkillEffectsEnabled: true);
+
+        Signal primary = snapshot.ForSkill("Crafting").Single();
+        Signal shooting = snapshot.ForSkill("Shooting").Single();
+        Signal cooking = snapshot.ForSkill("Cooking").Single();
+        await Assert.That(primary.Relation).IsEqualTo(SignalRelation.Primary);
+        await Assert.That(primary.Effects.Any(x => x.TargetDefName == "OtherSkills")).IsFalse();
+        await Assert.That(shooting.Relation).IsEqualTo(SignalRelation.Spillover);
+        await Assert.That(shooting.OriginSkillDefName).IsEqualTo("Crafting");
+        await Assert.That(shooting.Effects.Single().TargetDefName).IsEqualTo("Shooting");
+        await Assert.That(cooking.Relation).IsEqualTo(SignalRelation.Spillover);
+        await Assert.That(snapshot.All.Count).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task DisabledCrossSkillSettingOnlyTargetsPersistentBadPassions()
+    {
+        Signal critical = SignalFactory.Instantiate(
+            PassionSignalDefinitions.All.Single(x => x.Source.DefName == "VSE_Critical"),
+            "Crafting");
+        Signal apathy = SignalFactory.Instantiate(
+            PassionSignalDefinitions.All.Single(x => x.Source.DefName == "VSE_Apathy"),
+            "Cooking");
+        Signal transientApathy = SignalFactory.Instantiate(
+            PassionSignalDefinitions.All.Single(x => x.Source.DefName == "AS_MoodyPassion_Apathy"),
+            "Shooting");
+
+        SignalSnapshot snapshot = SignalSnapshotBuilder.Build(
+            new[] { critical, apathy, transientApathy },
+            new[] { "Shooting", "Crafting", "Cooking" },
+            crossSkillEffectsEnabled: false);
+
+        await Assert.That(snapshot.ForSkill("Cooking").Count(x =>
+            x.Relation == SignalRelation.Spillover)).IsEqualTo(1);
+        await Assert.That(snapshot.ForSkill("Shooting").Count(x =>
+            x.Relation == SignalRelation.Spillover)).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task DisabledCrossSkillSettingCanTargetExplicitStableNoPassionSkills()
+    {
+        Signal critical = SignalFactory.Instantiate(
+            PassionSignalDefinitions.All.Single(x => x.Source.DefName == "VSE_Critical"),
+            "Crafting");
+
+        SignalSnapshot snapshot = SignalSnapshotBuilder.Build(
+            new[] { critical },
+            new[] { "Crafting", "Mining", "Shooting" },
+            crossSkillEffectsEnabled: false,
+            persistentlyBadSkillDefNames: new[] { "Mining" });
+
+        await Assert.That(snapshot.ForSkill("Mining").Single().Relation)
+            .IsEqualTo(SignalRelation.Spillover);
+        await Assert.That(snapshot.ForSkill("Shooting").Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task BuilderKeepsGlobalSignalsOutOfSkillGroups()
+    {
+        Signal violenceDisabled = SignalFactory.Instantiate(
+            VanillaSignalDefinitions.All.Single(x => x.Source.DefName == "ViolenceDisabled"));
+
+        SignalSnapshot snapshot = SignalSnapshotBuilder.Build(
+            new[] { violenceDisabled },
+            new[] { "Shooting", "Melee" },
+            crossSkillEffectsEnabled: true);
+
+        await Assert.That(snapshot.Global).IsEquivalentTo(new[] { violenceDisabled });
+        await Assert.That(snapshot.ForSkill("Shooting").Count).IsEqualTo(0);
+        await Assert.That(snapshot.ForSkill("Melee").Count).IsEqualTo(0);
+    }
+
     private static Signal Make(
         SignalType type,
         SignalSourceKind kind,

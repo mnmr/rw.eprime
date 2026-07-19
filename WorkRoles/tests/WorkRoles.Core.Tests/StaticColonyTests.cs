@@ -51,38 +51,11 @@ public class StaticColonyTests
             await Assert.That(pawn.HasRangedWeapon).IsEqualTo(spec.HasGun);
             await Assert.That(pawn.ShootingLevel).IsEqualTo(spec.Levels[0]);
 
-            // Every attribute lands, nothing extra appears.
-            foreach (var attribute in spec.Attributes)
-                switch (attribute.Kind)
-                {
-                    case AttributeKind.Expertise:
-                        await Assert.That(pawn.ExpertiseSkills.Contains(attribute.Skill)).IsTrue()
-                            .Because($"{spec.Name}: expertise {attribute.Skill}");
-                        break;
-                    case AttributeKind.BurningPassion:
-                        await Assert.That(pawn.PassionScores[attribute.Skill]).IsEqualTo(2)
-                            .Because($"{spec.Name}: burning passion {attribute.Skill}");
-                        break;
-                    case AttributeKind.Passion:
-                        await Assert.That(pawn.PassionScores[attribute.Skill]).IsEqualTo(1)
-                            .Because($"{spec.Name}: passion {attribute.Skill}");
-                        break;
-                    case AttributeKind.Aptitude:
-                        await Assert.That(pawn.Aptitudes[attribute.Skill] > 0).IsTrue()
-                            .Because($"{spec.Name}: talent {attribute.Skill}");
-                        break;
-                    case AttributeKind.Trait:
-                        await Assert.That(pawn.Aptitudes[attribute.Skill] < 0).IsTrue()
-                            .Because($"{spec.Name}: apathy {attribute.Skill}");
-                        break;
-                }
-
-            await Assert.That(pawn.ExpertiseSkills.Count)
-                .IsEqualTo(spec.Attributes.Count(a => a.Kind == AttributeKind.Expertise));
-            await Assert.That(pawn.PassionScores.Count).IsEqualTo(spec.Attributes.Count(a =>
-                a.Kind == AttributeKind.BurningPassion || a.Kind == AttributeKind.Passion));
-            await Assert.That(pawn.Aptitudes.Count).IsEqualTo(spec.Attributes.Count(a =>
-                a.Kind == AttributeKind.Aptitude || a.Kind == AttributeKind.Trait));
+            foreach (string skill in StaticColony.Skills)
+                await Assert.That(pawn.SignalBuckets[skill])
+                    .IsEqualTo(StaticColony.BucketFor(spec, skill))
+                    .Because($"{spec.Name}: aggregate signal for {skill}");
+            await Assert.That(pawn.SignalBuckets.Count).IsEqualTo(StaticColony.Skills.Length);
 
             foreach (var workType in StaticColony.AllWorkTypes)
                 await Assert.That(pawn.CapableWorkTypes.Contains(workType)).IsTrue()

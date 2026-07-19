@@ -20,7 +20,7 @@ namespace WorkRoles.Core.Recs
         public override void Apply(EngineContext context)
         {
             var role = context.RoleOf(context.Colony.HunterRoleId);
-            var hunters = new List<(int pawn, int level, int passion)>();
+            var hunters = new List<(int pawn, int level, SignalBucket signal)>();
             for (int i = 0; i < context.Colony.Pawns.Count; i++)
             {
                 var pawn = context.Colony.Pawns[i];
@@ -32,14 +32,16 @@ namespace WorkRoles.Core.Recs
                     new Reason { RuleId = Id, TowardRoleId = -1 }, SignalBucket.Neutral);
                 context.HunterTiers[i] = pawn.ShootingLevel < 15 ? 0
                     : pawn.ShootingLevel < 19 ? 1 : 2;
-                pawn.PassionScores.TryGetValue("Shooting", out int passion);
-                hunters.Add((i, pawn.ShootingLevel, passion));
+                SignalBucket signal = pawn.SignalBuckets.TryGetValue("Shooting", out var bucket)
+                    ? bucket
+                    : SignalBucket.Neutral;
+                hunters.Add((i, pawn.ShootingLevel, signal));
             }
             if (hunters.Count > 0 && !context.HunterTiers.Any(t => t == 0))
             {
                 var best = hunters
                     .OrderByDescending(h => h.level)
-                    .ThenByDescending(h => h.passion)
+                    .ThenByDescending(h => h.signal)
                     .ThenBy(h => h.pawn)
                     .First();
                 context.HunterTiers[best.pawn] = 0;

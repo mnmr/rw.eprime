@@ -158,7 +158,28 @@ public class ExpertiseSignalCatalogTests
         await Assert.That(VseSignalApi.PassionDefType).IsEqualTo("VSE.Passions.PassionDef");
         await Assert.That(VseSignalApi.AllExpertiseMember).IsEqualTo("AllExpertise");
         await Assert.That(VseSignalApi.ExpertiseLevelMember).IsEqualTo("Level");
+        await Assert.That(VseSignalApi.CrossSkillEffectsSettingMember)
+            .IsEqualTo("CriticalEffectPassions");
         await Assert.That(VseSignalApi.StatMultiplierMember).IsEqualTo("StatMultiplier");
+    }
+
+    [Test]
+    public async Task AllExpertiseDefinitionsCarryTheSharedExpertiseStarIcon()
+    {
+        foreach (SignalDefinition definition in ExpertiseSignalDefinitions.All)
+            await Assert.That(definition.FallbackUi.IconKey).IsEqualTo("UI/Passion_Expertise");
+    }
+
+    [Test]
+    public async Task DescriptionOnlyOverrideKeepsTheExpertiseStarIcon()
+    {
+        SignalDefinition definition = ExpertiseSignalDefinitions.All[0];
+        Signal signal = SignalFactory.Instantiate(
+            definition,
+            currentScale: 2f,
+            ui: new SignalUiOverride(description: "Runtime full description"));
+        await Assert.That(signal.Ui.IconKey).IsEqualTo("UI/Passion_Expertise");
+        await Assert.That(signal.Ui.Description).IsEqualTo("Runtime full description");
     }
 
     private static void AssertRows(string packageId, IEnumerable<string> expectedRows)

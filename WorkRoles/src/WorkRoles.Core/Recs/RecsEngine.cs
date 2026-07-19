@@ -7,6 +7,8 @@ namespace WorkRoles.Core.Recs
     {
         public List<AssignmentView> Assignments = new List<AssignmentView>();
         public Dictionary<int, Reason> Reasons = new Dictionary<int, Reason>();
+        public Dictionary<int, RoleRecommendationExplanation> Explanations =
+            new Dictionary<int, RoleRecommendationExplanation>();
         public int HunterTier = -1;
         public bool FireGranted;
     }
@@ -14,7 +16,8 @@ namespace WorkRoles.Core.Recs
     public static class RecsEngine
     {
         /// Execution order is part of the contract: candidates before gates,
-        /// colony passes before ordering, protected re-entry last.
+        /// colony passes before ordering, protected re-entry before final
+        /// placement anchoring.
         public static readonly IReadOnlyList<RecRule> Pipeline = new RecRule[]
         {
             new ExclusionsRule(),
@@ -29,6 +32,7 @@ namespace WorkRoles.Core.Recs
             new RedundancySuppressionRule(),
             new OrderingRule(),
             new ProtectedReentryRule(),
+            new AnchorPreservationRule(),
         };
 
         public static List<PawnResult> Run(ColonyView colony) => Run(colony, Pipeline);
@@ -51,6 +55,7 @@ namespace WorkRoles.Core.Recs
                 context.Results[i].HunterTier = context.HunterTiers[i];
                 context.Results[i].FireGranted = context.FireGranted[i];
             }
+            RecommendationExplainer.Populate(context);
             return context.Results;
         }
     }

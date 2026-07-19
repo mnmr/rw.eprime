@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866666"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="art.svg"
+   inkscape:export-filename="art.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="3.296875"
+     inkscape:cx="73.402844"
+     inkscape:cy="42.312796"
+     inkscape:window-width="1068"
+     inkscape:window-height="1112"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1.0583333"
+       spacingy="1.0583333"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect16"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath13">
+      <g
+         id="g16"
+         style="display:none">
+        <ellipse
+           style="fill:#000000;fill-opacity:1;stroke-width:1.19063;stroke-linecap:round;stroke-linejoin:bevel"
+           id="ellipse13"
+           cx="17.4625"
+           cy="6.3499994"
+           rx="3.175"
+           ry="3.1750002"
+           d="m 20.6375,6.3499994 a 3.175,3.1750002 0 0 1 -3.175,3.1750002 3.175,3.1750002 0 0 1 -3.175,-3.1750002 3.175,3.1750002 0 0 1 3.175,-3.1750002 3.175,3.1750002 0 0 1 3.175,3.1750002 z" />
+        <ellipse
+           style="fill:#000000;fill-opacity:1;stroke-width:1.19063;stroke-linecap:round;stroke-linejoin:bevel"
+           id="ellipse14"
+           cx="8.9958324"
+           cy="11.641666"
+           rx="3.175"
+           ry="3.1750002"
+           d="M 12.170832,11.641666 A 3.175,3.1750002 0 0 1 8.9958324,14.816667 3.175,3.1750002 0 0 1 5.8208325,11.641666 3.175,3.1750002 0 0 1 8.9958324,8.4666662 3.175,3.1750002 0 0 1 12.170832,11.641666 Z" />
+        <ellipse
+           style="fill:#000000;fill-opacity:1;stroke-width:1.19063;stroke-linecap:round;stroke-linejoin:bevel"
+           id="ellipse15"
+           cx="8.9958324"
+           cy="22.224998"
+           rx="3.175"
+           ry="3.1750002"
+           d="m 12.170832,22.224998 a 3.175,3.1750002 0 0 1 -3.1749996,3.175001 3.175,3.1750002 0 0 1 -3.1749999,-3.175001 3.175,3.1750002 0 0 1 3.1749999,-3.175 3.175,3.1750002 0 0 1 3.1749996,3.175 z" />
+        <ellipse
+           style="fill:#000000;fill-opacity:1;stroke-width:1.19063;stroke-linecap:round;stroke-linejoin:bevel"
+           id="ellipse16"
+           cx="17.4625"
+           cy="27.516665"
+           rx="3.175"
+           ry="3.1750002"
+           d="m 20.6375,27.516665 a 3.175,3.1750002 0 0 1 -3.175,3.175 3.175,3.1750002 0 0 1 -3.175,-3.175 3.175,3.1750002 0 0 1 3.175,-3.175001 3.175,3.1750002 0 0 1 3.175,3.175001 z" />
+      </g>
+      <path
+         id="lpe_path-effect16"
+         class="powerclip"
+         d="M -3.4125,-5 H 29.870833 V 38.866665 H -3.4125 Z m 24.05,11.3499994 a 3.175,3.1750002 0 0 0 -3.175,-3.1750002 3.175,3.1750002 0 0 0 -3.175,3.1750002 3.175,3.1750002 0 0 0 3.175,3.1750002 3.175,3.1750002 0 0 0 3.175,-3.1750002 z M 12.170832,11.641666 A 3.175,3.1750002 0 0 0 8.9958324,8.4666662 3.175,3.1750002 0 0 0 5.8208325,11.641666 3.175,3.1750002 0 0 0 8.9958324,14.816667 3.175,3.1750002 0 0 0 12.170832,11.641666 Z m 0,10.583332 a 3.175,3.1750002 0 0 0 -3.1749996,-3.175 3.175,3.1750002 0 0 0 -3.1749999,3.175 3.175,3.1750002 0 0 0 3.1749999,3.175001 3.175,3.1750002 0 0 0 3.1749996,-3.175001 z m 8.466668,5.291667 a 3.175,3.1750002 0 0 0 -3.175,-3.175001 3.175,3.1750002 0 0 0 -3.175,3.175001 3.175,3.1750002 0 0 0 3.175,3.175 3.175,3.1750002 0 0 0 3.175,-3.175 z" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.5875;stroke-linecap:round;stroke-linejoin:bevel"
+       d="m 14.2875,0 c 6.35,0 10.583333,4.2333331 10.583333,8.4666662 0,4.2333328 -2.116666,6.3499988 -2.116666,8.4666658 0,2.116667 2.116666,4.233334 2.116666,8.466667 0,4.233333 -4.233333,8.466666 -10.583333,8.466666 -6.3500002,0 -12.7,-6.350001 -12.7,-16.933333 C 1.5875,6.3499997 7.9374998,0 14.2875,0 Z"
+       id="path1"
+       sodipodi:nodetypes="szzzszs"
+       clip-path="url(#clipPath13)"
+       inkscape:path-effect="#path-effect16"
+       inkscape:original-d="m 14.2875,0 c 6.35,0 10.583333,4.2333331 10.583333,8.4666662 0,4.2333328 -2.116666,6.3499988 -2.116666,8.4666658 0,2.116667 2.116666,4.233334 2.116666,8.466667 0,4.233333 -4.233333,8.466666 -10.583333,8.466666 -6.3500002,0 -12.7,-6.350001 -12.7,-16.933333 C 1.5875,6.3499997 7.9374998,0 14.2875,0 Z" />
+    <path
+       id="path4"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.5875;stroke-linecap:round;stroke-linejoin:bevel"
+       d="m 30.691665,11.641666 h -2.116667 l 10e-7,17.991667 h 2.116667 z"
+       sodipodi:nodetypes="ccccc" />
+    <path
+       id="path5"
+       style="fill:#ffffff;fill-opacity:1;stroke-width:1.5875;stroke-linecap:round;stroke-linejoin:bevel"
+       d="M 29.633333 4.2333332 C 29.633333 4.2333332 27.516665 6.35 27.516666 7.4083332 C 27.516667 9.5249998 28.574999 10.583333 28.574999 10.583333 L 30.691666 10.583333 C 30.691666 10.583333 31.749999 9.5249998 31.749999 7.4083332 C 31.749999 6.35 29.633333 4.2333332 29.633333 4.2333332 z " />
+  </g>
+</svg>

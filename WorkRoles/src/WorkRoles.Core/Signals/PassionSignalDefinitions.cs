@@ -10,17 +10,32 @@ namespace WorkRoles.Core.Signals
         private const string Vse = "vanillaexpanded.skills";
         private const string Alpha = "sarg.alphaskills";
 
+        private static readonly HashSet<string> ExcludedTransientIdentities =
+            new HashSet<string>(StringComparer.Ordinal)
+            {
+                "AS_YouthPassion",
+                "AS_SanguinePassion",
+                "AS_SanguinePassion_Active",
+                "AS_ToxicPassion",
+                "AS_ToxicPassion_Active",
+            };
+
         public static readonly IReadOnlyList<SignalDefinition> All = Build();
+
+        public static bool IsExcludedTransientIdentity(string packageId, string defName) =>
+            StringComparer.OrdinalIgnoreCase.Equals(packageId, Alpha)
+            && defName != null
+            && ExcludedTransientIdentities.Contains(defName);
 
         private static IReadOnlyList<SignalDefinition> Build()
         {
             var result = new List<SignalDefinition>
             {
                 Passion("Minor", Core, "RimWorld", SignalType.Active, "interested", 1f,
-                    tier: "Minor", icon: "Passions/PassionMinor",
+                    tier: "Minor", icon: "UI/Icons/PassionMinor",
                     extras: Mood("work:passionate", "Mood from doing passionate work")),
                 Passion("Major", Core, "RimWorld", SignalType.Active, "burning", 1.5f,
-                    tier: "Major", icon: "Passions/PassionMajor",
+                    tier: "Major", icon: "UI/Icons/PassionMajor",
                     extras: Mood("work:passionate", "Mood from doing passionate work")),
 
                 Passion("VSE_Apathy", Vse, "Vanilla Skills Expanded", SignalType.Active,
@@ -31,7 +46,7 @@ namespace WorkRoles.Core.Signals
                 Passion("VSE_Critical", Vse, "Vanilla Skills Expanded", SignalType.Active,
                     "critical", 3f, forget: 0f, other: 0.25f, tier: "Major",
                     icon: "Passions/PassionCritical",
-                    conditions: Conditions("setting:vse-critical-affects-other-skills")),
+                    otherConditions: Conditions("setting:vse-critical-affects-other-skills")),
 
                 // Alpha Skills: persistent identities (Active).
                 Passion("AS_DedicatedPassion", Alpha, "Alpha Skills", SignalType.Active,
@@ -80,9 +95,6 @@ namespace WorkRoles.Core.Signals
                 Passion("AS_NightPassion_Active", Alpha, "Alpha Skills", SignalType.Passive,
                     "night (active)", 2.5f, tier: "Major", icon: "Passions/AS_NightPassion",
                     conditions: Conditions("time:20-5"), transient: true),
-                Passion("AS_YouthPassion", Alpha, "Alpha Skills", SignalType.Passive,
-                    "youth", 3f, tier: "Major", icon: "Passions/AS_YouthPassion",
-                    conditions: Conditions("age:max:15", "hediff:AS_YouthPassion"), transient: true),
                 Passion("AS_VengefulPassion", Alpha, "Alpha Skills", SignalType.Passive,
                     "vengeful", 1f, tier: "Major", icon: "Passions/AS_VengefulPassion_Inactive",
                     conditions: Conditions("colony:no-recent-loss", "hediff:AS_VengefulPassion_Hediff"), transient: true),
@@ -135,23 +147,6 @@ namespace WorkRoles.Core.Signals
                 Passion("AS_IntimatePassion_Active", Alpha, "Alpha Skills", SignalType.Passive,
                     "intimate (active)", 1.75f, tier: "Major", icon: "Passions/AS_IntimatePassion_Active",
                     conditions: Conditions("state:recent-lovin"), transient: true),
-
-                Passion("AS_SanguinePassion", Alpha, "Alpha Skills", SignalType.Passive,
-                    "sanguine", 1f, tier: "Minor", icon: "Passions/AS_SanguinePassion_Inactive",
-                    conditions: Conditions("gene:Hemogenic", "hemogen:max:0.5", "hediff:AS_SanguinePassion"),
-                    dependencies: Dependencies("Ludeon.RimWorld.Biotech"), transient: true),
-                Passion("AS_SanguinePassion_Active", Alpha, "Alpha Skills", SignalType.Passive,
-                    "sanguine (active)", 2f, tier: "Minor", icon: "Passions/AS_SanguinePassion",
-                    conditions: Conditions("gene:Hemogenic", "hemogen:min:0.5"),
-                    dependencies: Dependencies("Ludeon.RimWorld.Biotech"), transient: true),
-                Passion("AS_ToxicPassion", Alpha, "Alpha Skills", SignalType.Passive,
-                    "toxic", 1f, tier: "Minor", icon: "Passions/AS_ToxicPassion_Inactive",
-                    conditions: Conditions("gene:PollutionRush", "terrain:not-polluted", "hediff:AS_ToxicPassion"),
-                    dependencies: Dependencies("Ludeon.RimWorld.Biotech"), transient: true),
-                Passion("AS_ToxicPassion_Active", Alpha, "Alpha Skills", SignalType.Passive,
-                    "toxic (active)", 2f, tier: "Major", icon: "Passions/AS_ToxicPassion",
-                    conditions: Conditions("gene:PollutionRush", "terrain:polluted"),
-                    dependencies: Dependencies("Ludeon.RimWorld.Biotech"), transient: true),
 
                 Passion("AS_PainDrivenPassion", Alpha, "Alpha Skills", SignalType.Passive,
                     "pain-driven", 1f, tier: "Minor", icon: "Passions/AS_PainDrivenPassion_Inactive",
@@ -233,6 +228,7 @@ namespace WorkRoles.Core.Signals
             string tier = null,
             string icon = null,
             IEnumerable<SignalCondition> conditions = null,
+            IEnumerable<SignalCondition> otherConditions = null,
             IEnumerable<string> dependencies = null,
             bool transient = false,
             IEnumerable<SignalEffect> extras = null)
@@ -265,7 +261,7 @@ namespace WorkRoles.Core.Signals
                     other,
                     SignalValueUnit.Factor,
                     "OtherSkills",
-                    conditions));
+                    otherConditions ?? conditions));
             }
             if (isBad)
                 effects.Add(Preference("author:is-bad", "The source mod marks this passion as bad"));

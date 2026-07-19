@@ -19,5 +19,6 @@ namespace WorkRoles.Core.Signals
         public const string PassionsMember = "Passions";
         public const string SettingsMember = "Settings";
         public const string StatMultiplierMember = "StatMultiplier";
+        public const string CrossSkillEffectsSettingMember = "CriticalEffectPassions";
     }
 }

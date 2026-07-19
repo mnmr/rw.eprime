@@ -6,15 +6,15 @@ namespace WorkRoles.Signals
 {
     internal sealed class PawnSignalSnapshotCache
     {
-        private readonly Dictionary<Pawn, SignalSnapshot> byPawn =
-            new Dictionary<Pawn, SignalSnapshot>();
+        private readonly Dictionary<Pawn, PawnSignalSnapshot> byPawn =
+            new Dictionary<Pawn, PawnSignalSnapshot>();
 
-        internal SignalSnapshot Get(Pawn pawn)
+        internal PawnSignalSnapshot Get(Pawn pawn)
         {
-            if (pawn == null) return SignalSnapshot.Empty;
+            if (pawn == null) return PawnSignalSnapshot.Empty;
             if (!byPawn.TryGetValue(pawn, out var snapshot))
             {
-                snapshot = new SignalSnapshot(PawnSignalCollector.Collect(pawn));
+                snapshot = PawnSignalSnapshots.Build(pawn);
                 byPawn[pawn] = snapshot;
             }
             return snapshot;

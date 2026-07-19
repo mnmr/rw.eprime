@@ -8,16 +8,17 @@ namespace WorkRoles.Core.Tests;
 public class RecsContextTests
 {
     [Test]
-    public async Task BestSignalPicksTheStrongestSkillAndReportsItsSource()
+    public async Task BestSignalConsumesThePrecomputedAggregateBucket()
     {
         var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Cooking"] = 6; pawn.PassionScores["Cooking"] = 1;
+        pawn.SkillLevels["Cooking"] = 6;
+        pawn.SignalBuckets["Cooking"] = SignalBucket.Strong;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { RecsTestBed.Role(1, "Cooking") }, pawn));
         var bucket = context.BestSignal(0, context.RoleOf(1), out string skill, out var source);
         await Assert.That(bucket).IsEqualTo(SignalBucket.Strong);
         await Assert.That(skill).IsEqualTo("Cooking");
-        await Assert.That(source).IsEqualTo(SignalSource.MinorPassion);
+        await Assert.That(source).IsEqualTo(SignalSource.Aggregated);
     }
 
     [Test]

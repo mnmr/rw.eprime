@@ -133,4 +133,31 @@ public class SignalModelTests
         await Assert.That(first.Equals(second)).IsTrue();
         await Assert.That(first.GetHashCode()).IsEqualTo(second.GetHashCode());
     }
+
+    [Test]
+    public async Task RuntimeSignalsRetainSourceDegreeAndSkillRelation()
+    {
+        var definition = VanillaSignalDefinitions.All.Single(x =>
+            x.Source.Kind == SignalSourceKind.Trait
+            && x.Source.DefName == "ShootingAccuracy"
+            && x.Degree == -1);
+
+        Signal primary = SignalFactory.Instantiate(definition);
+        var spillover = new Signal(
+            primary.Type,
+            primary.Source,
+            "Cooking",
+            primary.Effects,
+            primary.Ui,
+            originSkillDefName: "Shooting",
+            relation: SignalRelation.Spillover);
+
+        await Assert.That(primary.Source.Degree).IsEqualTo(-1);
+        await Assert.That(primary.Relation).IsEqualTo(SignalRelation.Primary);
+        await Assert.That(primary.OriginSkillDefName == null).IsTrue();
+        await Assert.That(spillover.SkillDefName).IsEqualTo("Cooking");
+        await Assert.That(spillover.OriginSkillDefName).IsEqualTo("Shooting");
+        await Assert.That(spillover.Relation).IsEqualTo(SignalRelation.Spillover);
+        await Assert.That(primary.Equals(spillover)).IsFalse();
+    }
 }

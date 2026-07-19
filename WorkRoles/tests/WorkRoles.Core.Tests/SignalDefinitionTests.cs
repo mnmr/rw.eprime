@@ -199,7 +199,7 @@ public class SignalDefinitionTests
     [Test]
     public async Task DefaultCatalogCombinesEveryAuditedDefinition()
     {
-        await Assert.That(SignalCatalog.Default.All.Count).IsEqualTo(157);
+        await Assert.That(SignalCatalog.Default.All.Count).IsEqualTo(152);
         await Assert.That(SignalCatalog.Default.Find(SignalSourceKind.Passion, "AS_DedicatedPassion").Count)
             .IsEqualTo(1);
         await Assert.That(SignalCatalog.Default.Find(SignalSourceKind.Expertise, "Precision").Count)

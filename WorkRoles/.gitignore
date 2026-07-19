@@ -58,6 +58,7 @@ nunit-*.xml
 
 /specs
 /plans
+/docs/superpowers/
 /temp
 /.worktrees/
 

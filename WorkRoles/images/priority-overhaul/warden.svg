@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="128"
+   height="128"
+   viewBox="0 0 33.866666 33.866666"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="warden.svg"
+   inkscape:export-filename="warden.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#ffffff"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="3.296875"
+     inkscape:cx="35.033175"
+     inkscape:cy="57.175355"
+     inkscape:window-width="1068"
+     inkscape:window-height="1112"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1.0583333"
+       spacingy="1.0583333"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect5"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath5">
+      <path
+         style="display:none;fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2.64602;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         d="m 16.933333,25.399999 c 6.349999,0 7.408332,-13.758333 7.408332,-13.758333 0,0 -5.291666,-1.058333 -7.408332,-3.1749998 -2.116667,2.1166668 -7.4083332,3.1749998 -7.4083332,3.1749998 0,0 1.0583342,13.758334 7.4083332,13.758333 z"
+         id="path5"
+         sodipodi:nodetypes="zcccz" />
+      <path
+         id="lpe_path-effect5"
+         style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2.64602;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+         class="powerclip"
+         d="M -2.8833334,-5 H 36.749998 V 38.866666 H -2.8833334 Z M 16.933333,25.399999 c 6.349999,0 7.408332,-13.758333 7.408332,-13.758333 0,0 -5.291666,-1.058333 -7.408332,-3.1749998 -2.116667,2.1166668 -7.4083332,3.1749998 -7.4083332,3.1749998 0,0 1.0583342,13.758334 7.4083332,13.758333 z" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:5.29201;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       d="m 16.933333,33.866666 c 12.699999,-1e-6 14.816665,-27.5166663 14.816665,-27.5166663 0,0 -10.583332,-2.1166666 -14.816665,-6.3499997 -4.233334,4.2333331 -14.8166664,6.3499997 -14.8166664,6.3499997 0,0 2.1166676,27.5166673 14.8166664,27.5166663 z"
+       id="path1"
+       sodipodi:nodetypes="zcccz"
+       clip-path="url(#clipPath5)"
+       inkscape:path-effect="#path-effect5"
+       inkscape:original-d="m 16.933333,33.866666 c 12.699999,-1e-6 14.816665,-27.5166663 14.816665,-27.5166663 0,0 -10.583332,-2.1166666 -14.816665,-6.3499997 -4.233334,4.2333331 -14.8166664,6.3499997 -14.8166664,6.3499997 0,0 2.1166676,27.5166673 14.8166664,27.5166663 z" />
+  </g>
+</svg>

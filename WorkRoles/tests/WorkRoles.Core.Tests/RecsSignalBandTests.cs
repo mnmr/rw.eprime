@@ -14,8 +14,8 @@ public class RecsSignalBandTests
         var crafter = RecsTestBed.Role(2, "Crafting");
         var doctor = RecsTestBed.Role(3, "Doctor");
         var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Cooking"] = 8; pawn.PassionScores["Cooking"] = 2;
-        pawn.SkillLevels["Crafting"] = 12; pawn.ExpertiseSkills.Add("Crafting");
+        pawn.SkillLevels["Cooking"] = 8; pawn.SignalBuckets["Cooking"] = SignalBucket.Great;
+        pawn.SkillLevels["Crafting"] = 12; pawn.SignalBuckets["Crafting"] = SignalBucket.Exceptional;
         pawn.SkillLevels["Medicine"] = 9; // level alone = Neutral, no candidate
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { cook, crafter, doctor }, pawn));
@@ -23,7 +23,7 @@ public class RecsSignalBandTests
         await Assert.That(context.Candidates[0][1].Strength).IsEqualTo(SignalBucket.Great);
         await Assert.That(context.Candidates[0][1].Reason.SkillDefName).IsEqualTo("Cooking");
         await Assert.That(context.Candidates[0][2].Strength).IsEqualTo(SignalBucket.Exceptional);
-        await Assert.That(context.Candidates[0][2].Reason.Source).IsEqualTo(SignalSource.Expertise);
+        await Assert.That(context.Candidates[0][2].Reason.Source).IsEqualTo(SignalSource.Aggregated);
         await Assert.That(context.Candidates[0].ContainsKey(3)).IsFalse();
     }
 
@@ -35,8 +35,8 @@ public class RecsSignalBandTests
         var hunter = RecsTestBed.Role(3, "Hunting"); hunter.Hunting = true;
         var vetoed = RecsTestBed.Role(4, "Cooking", "CookVetoed");
         var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Cooking"] = 8; pawn.PassionScores["Cooking"] = 2;
-        pawn.SkillLevels["Shooting"] = 8; pawn.PassionScores["Shooting"] = 2;
+        pawn.SkillLevels["Cooking"] = 8; pawn.SignalBuckets["Cooking"] = SignalBucket.Great;
+        pawn.SkillLevels["Shooting"] = 8; pawn.SignalBuckets["Shooting"] = SignalBucket.Great;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { auto, grunt, hunter, vetoed }, pawn));
         context.Vetoed.Add(4);
@@ -52,7 +52,7 @@ public class RecsSignalBandTests
         var grower = RecsTestBed.Role(2, "Cooking", "Grow");
         var farmer = RecsTestBed.Role(3, "Cooking", "Farm");
         var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Cooking"] = 14; pawn.PassionScores["Cooking"] = 2;
+        pawn.SkillLevels["Cooking"] = 14; pawn.SignalBuckets["Cooking"] = SignalBucket.Great;
         var colony = RecsTestBed.Colony(new List<RoleView> { cutter, grower, farmer }, pawn);
         colony.Paths.Add(RecsTestBed.Path(1, (1, 0, 12), (2, 4, 21), (3, 12, 21)));
         var context = new EngineContext(colony);
@@ -69,7 +69,7 @@ public class RecsSignalBandTests
     {
         var cook = RecsTestBed.Role(1, "Cooking");
         var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Cooking"] = 2; pawn.PassionScores["Cooking"] = 2;
+        pawn.SkillLevels["Cooking"] = 2; pawn.SignalBuckets["Cooking"] = SignalBucket.Great;
         var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { cook }, pawn));
         await Assert.That(new BandGatingRule().Relevant(context)).IsFalse();
         new SignalCandidatesRule().Apply(context, 0);

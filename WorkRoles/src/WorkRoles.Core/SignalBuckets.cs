@@ -1,29 +1,15 @@
 namespace WorkRoles.Core
 {
     /// Unified pawn-signal tiers. Rung order is the contract: rules compare
-    /// buckets numerically (interest = Strong+, drafts draw Neutral then Poor,
-    /// Awful is never drafted).
+    /// buckets numerically (interest = Strong+, Awful is disqualifying).
     public enum SignalBucket
     {
-        Awful = 0,       // apathy: counter-productive, never drafted
-        Poor = 1,        // no interest, untouched skill
-        Neutral = 2,     // no interest, some level
-        Strong = 3,      // minor-tier passion or positive aptitude
-        Great = 4,       // major-tier passion
-        Exceptional = 5, // VSE expertise
+        Awful = 0,       // hard veto or at least two net detrimental steps
+        Poor = 1,        // one net detrimental step
+        Neutral = 2,     // no net signal
+        Strong = 3,      // one net beneficial step
+        Great = 4,       // two net beneficial steps
+        Exceptional = 5, // at least three net beneficial steps
     }
 
-    public static class SignalBuckets
-    {
-        /// passionScore: 0/1/2 (VSE customs pre-mapped by tier); aptitude:
-        /// sign only (VSE apathy negative); expertise: VSE specialization.
-        public static SignalBucket Classify(int level, int passionScore, int aptitude, bool expertise)
-        {
-            if (aptitude < 0) return SignalBucket.Awful;
-            if (expertise) return SignalBucket.Exceptional;
-            if (passionScore >= 2) return SignalBucket.Great;
-            if (passionScore == 1 || aptitude > 0) return SignalBucket.Strong;
-            return level > 0 ? SignalBucket.Neutral : SignalBucket.Poor;
-        }
-    }
 }

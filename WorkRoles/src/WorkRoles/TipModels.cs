@@ -15,6 +15,10 @@ namespace WorkRoles
         public Color BadgeColor = Color.white;
         public List<TipSection> Sections = new List<TipSection>();
 
+        // WrTipUI's cached geometry; models are immutable once registered, so
+        // measurement happens once instead of every hover frame.
+        internal object RenderCache;
+
         public TipSection AddSection(string header = null)
         {
             var section = new TipSection { Header = header };
@@ -44,6 +48,7 @@ namespace WorkRoles
                 }
                 foreach (var row in section.Rows)
                 {
+                    if (row is TipRuleRow || row is TipGapRow) continue;
                     if (!first) sb.Append('\n');
                     first = false;
                     switch (row)
@@ -56,6 +61,21 @@ namespace WorkRoles
                             break;
                         case TipActionRow action:
                             sb.Append(action.InputToken).Append(": ").Append(action.Description);
+                            break;
+                        case TipColumnsRow columns:
+                        {
+                            bool firstCell = true;
+                            for (int i = 0; i < (columns.Cells?.Count ?? 0); i++)
+                            {
+                                if (columns.Cells[i].NullOrEmpty()) continue;
+                                if (!firstCell) sb.Append(" — ");
+                                firstCell = false;
+                                sb.Append(columns.Cells[i]);
+                            }
+                            break;
+                        }
+                        case TipSpanRow span:
+                            sb.Append(span.Text);
                             break;
                     }
                 }
@@ -76,15 +96,40 @@ namespace WorkRoles
             return this;
         }
 
-        public TipSection Fact(string label, string value, Color? valueColor = null)
+        public TipSection Fact(string label, string value, Color? valueColor = null, Color? labelColor = null)
         {
-            Rows.Add(new TipFactRow(label, value, valueColor));
+            Rows.Add(new TipFactRow(label, value, valueColor, labelColor));
             return this;
         }
 
         public TipSection Action(string inputToken, string description)
         {
             Rows.Add(new TipActionRow(inputToken, description));
+            return this;
+        }
+
+        public TipSection Columns(
+            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+        {
+            Rows.Add(new TipColumnsRow(cells, color, icon, tight));
+            return this;
+        }
+
+        public TipSection Span(string text, float indent = 0f, bool dim = true, int alignColumn = -1)
+        {
+            Rows.Add(new TipSpanRow(text, indent, dim, alignColumn));
+            return this;
+        }
+
+        public TipSection Rule()
+        {
+            Rows.Add(new TipRuleRow());
+            return this;
+        }
+
+        public TipSection Gap(float height)
+        {
+            Rows.Add(new TipGapRow(height));
             return this;
         }
     }
@@ -113,12 +158,14 @@ namespace WorkRoles
         public readonly string Label;
         public readonly string Value;
         public readonly Color? ValueColor;
+        public readonly Color? LabelColor;
 
-        public TipFactRow(string label, string value, Color? valueColor = null)
+        public TipFactRow(string label, string value, Color? valueColor = null, Color? labelColor = null)
         {
             Label = label;
             Value = value;
             ValueColor = valueColor;
+            LabelColor = labelColor;
         }
     }
 
@@ -132,6 +179,61 @@ namespace WorkRoles
         {
             InputToken = inputToken;
             Description = description;
+        }
+    }
+
+    /// One table line: cell text per column; row color null = white. Icon (16px)
+    /// draws after the first cell's text. Tight rows pull up toward the previous
+    /// row so continuation lines read as one group.
+    public sealed class TipColumnsRow : TipRow
+    {
+        public readonly IReadOnlyList<string> Cells;
+        public readonly Color? Color;
+        public readonly Texture2D Icon;
+        public readonly bool Tight;
+
+        public TipColumnsRow(
+            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+        {
+            Cells = cells;
+            Color = color;
+            Icon = icon;
+            Tight = tight;
+        }
+    }
+
+    /// Wrapped text spanning the full table width, inset by Indent from the
+    /// table's left edge — or aligned to a table column when AlignColumn >= 0;
+    /// dim by default (used for signal descriptions).
+    public sealed class TipSpanRow : TipRow
+    {
+        public readonly string Text;
+        public readonly float Indent;
+        public readonly bool Dim;
+        public readonly int AlignColumn;
+
+        public TipSpanRow(string text, float indent = 0f, bool dim = true, int alignColumn = -1)
+        {
+            Text = text;
+            Indent = indent;
+            Dim = dim;
+            AlignColumn = alignColumn;
+        }
+    }
+
+    /// Horizontal separator line spanning the table width.
+    public sealed class TipRuleRow : TipRow
+    {
+    }
+
+    /// Fixed vertical whitespace; contributes nothing to plain text.
+    public sealed class TipGapRow : TipRow
+    {
+        public readonly float Height;
+
+        public TipGapRow(float height)
+        {
+            Height = height;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace WorkRoles.Core.Recs
                 if (SkippedForCoverer(context, role)) continue;
                 int want = context.Want[role.Id];
                 int holders = context.HoldersOf(role.Id);
-                if (holders >= want) continue;
+                int openSlots = System.Math.Max(0, want - holders);
 
                 var eligible = new List<(int pawn, SignalBucket bucket, string skill, int level, bool inBand)>();
                 for (int i = 0; i < context.Colony.Pawns.Count; i++)
@@ -36,12 +36,27 @@ namespace WorkRoles.Core.Recs
                     eligible.Add((i, bucket, skill, context.SkillLevel(i, skill),
                         context.PassesBands(i, role)));
                 }
-                foreach (var pick in eligible
-                             .OrderByDescending(e => e.inBand)
-                             .ThenByDescending(e => e.bucket)
-                             .ThenByDescending(e => e.level)
-                             .ThenBy(e => context.Candidates[e.pawn].Count)
-                             .ThenBy(e => e.pawn))
+                var ranked = eligible
+                    .OrderByDescending(e => e.inBand)
+                    .ThenByDescending(e => e.bucket)
+                    .ThenByDescending(e => e.level)
+                    .ThenBy(e => context.Candidates[e.pawn].Count)
+                    .ThenBy(e => e.pawn)
+                    .ToList();
+                for (int rank = 0; rank < ranked.Count; rank++)
+                {
+                    var candidate = ranked[rank];
+                    context.DraftRankings[candidate.pawn][role.Id] = new DraftRanking
+                    {
+                        Rank = rank + 1,
+                        EligibleCount = ranked.Count,
+                        OpenSlots = openSlots,
+                        SkillDefName = candidate.skill,
+                        SkillLevel = candidate.level,
+                    };
+                }
+
+                foreach (var pick in ranked)
                 {
                     if (holders >= want) break;
                     context.AddCandidate(pick.pawn, role.Id, new Reason

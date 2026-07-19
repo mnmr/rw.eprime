@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace WorkRoles.Core.Recs
 {
-    public enum SignalSource { None, Expertise, MajorPassion, MinorPassion, Aptitude }
+    public enum SignalSource { None, Aggregated }
 
     /// Why a role is on a pawn's list. RuleId keys the UI's translated text;
     /// the payload fields fill its placeholders.
@@ -24,6 +24,17 @@ namespace WorkRoles.Core.Recs
         public SignalBucket Strength = SignalBucket.Neutral;
     }
 
+    /// This pawn's exact position in the need-driven candidate ordering for
+    /// one role. OpenSlots is the shortage before the draft selected anyone.
+    public struct DraftRanking
+    {
+        public int Rank;
+        public int EligibleCount;
+        public int OpenSlots;
+        public string SkillDefName;
+        public int SkillLevel;
+    }
+
     /// Shared working state of one engine run. Rules read the colony views
     /// and contribute candidates / vetoes / results through this surface only.
     public class EngineContext
@@ -36,6 +47,10 @@ namespace WorkRoles.Core.Recs
         public readonly List<Dictionary<int, Candidate>> Candidates = new List<Dictionary<int, Candidate>>();
         /// Coverage want per role id (CoverageScalingRule fills it).
         public readonly Dictionary<int, int> Want = new Dictionary<int, int>();
+        /// Per pawn, by role id; includes eligible candidates that were not
+        /// selected and candidates considered after coverage was already full.
+        public readonly List<Dictionary<int, DraftRanking>> DraftRankings =
+            new List<Dictionary<int, DraftRanking>>();
         public readonly int[] HunterTiers;   // -1 = not hunting
         public readonly bool[] FireGranted;
         /// One per pawn; OrderingRule and ProtectedReentryRule fill them.
@@ -51,6 +66,7 @@ namespace WorkRoles.Core.Recs
             {
                 HunterTiers[i] = -1;
                 Candidates.Add(new Dictionary<int, Candidate>());
+                DraftRankings.Add(new Dictionary<int, DraftRanking>());
                 Results.Add(new PawnResult());
             }
         }
@@ -78,21 +94,15 @@ namespace WorkRoles.Core.Recs
                 if (!Colony.WorkTypeSkills.TryGetValue(workType, out var skills)) continue;
                 foreach (var s in skills)
                 {
-                    if (!pawn.SkillLevels.TryGetValue(s, out int level)) continue;
-                    pawn.PassionScores.TryGetValue(s, out int passion);
-                    pawn.Aptitudes.TryGetValue(s, out int aptitude);
-                    var bucket = SignalBuckets.Classify(level, passion, aptitude,
-                        pawn.ExpertiseSkills.Contains(s));
+                    if (!pawn.SkillLevels.ContainsKey(s)) continue;
+                    SignalBucket bucket = pawn.SignalBuckets.TryGetValue(s, out var classified)
+                        ? classified
+                        : SignalBucket.Neutral;
                     if (!any || bucket > best)
                     {
                         best = bucket;
                         skill = s;
-                        source = aptitude < 0 ? SignalSource.None
-                            : pawn.ExpertiseSkills.Contains(s) ? SignalSource.Expertise
-                            : passion >= 2 ? SignalSource.MajorPassion
-                            : passion == 1 ? SignalSource.MinorPassion
-                            : aptitude > 0 ? SignalSource.Aptitude
-                            : SignalSource.None;
+                        source = SignalSource.Aggregated;
                     }
                     any = true;
                 }

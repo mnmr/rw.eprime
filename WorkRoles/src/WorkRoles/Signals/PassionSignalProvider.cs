@@ -37,6 +37,8 @@ namespace WorkRoles.Signals
                 VseSignalReflection.PassionFact fact = VseSignalReflection.Passion(skill.passion);
                 if (fact == null) continue;
                 string packageId = SignalUiFactory.PackageId(fact.Def);
+                if (PassionSignalDefinitions.IsExcludedTransientIdentity(packageId, fact.Def.defName))
+                    continue;
                 SignalDefinition known = catalog.Find(SignalSourceKind.Passion, fact.Def.defName)
                     .FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Equals(x.Source.PackageId, packageId));
                 if (known != null)

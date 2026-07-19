@@ -6,6 +6,8 @@ namespace WorkRoles.Core.Signals
 {
     public enum SignalType { Passive, Active }
 
+    public enum SignalRelation { Primary, Spillover }
+
     public enum SignalSourceKind { Passion, Expertise, Gene, Trait, Hediff }
 
     public enum SignalEffectKind
@@ -80,6 +82,7 @@ namespace WorkRoles.Core.Signals
         public string TemplateId { get; }
         public string EffectDiscriminator { get; }
         public IReadOnlyList<string> RequiredPackageIds { get; }
+        public int? Degree { get; }
 
         public SignalSource(
             SignalSourceKind kind,
@@ -87,7 +90,8 @@ namespace WorkRoles.Core.Signals
             string packageId,
             string templateId = null,
             string effectDiscriminator = null,
-            IEnumerable<string> requiredPackageIds = null)
+            IEnumerable<string> requiredPackageIds = null,
+            int? degree = null)
         {
             Kind = kind;
             DefName = SignalCondition.Required(defName, nameof(defName));
@@ -95,6 +99,7 @@ namespace WorkRoles.Core.Signals
             TemplateId = Optional(templateId, nameof(templateId));
             EffectDiscriminator = Optional(effectDiscriminator, nameof(effectDiscriminator));
             RequiredPackageIds = CopyDependencies(requiredPackageIds);
+            Degree = degree;
         }
 
         public bool Equals(SignalSource other) => other != null
@@ -103,12 +108,13 @@ namespace WorkRoles.Core.Signals
             && StringComparer.Ordinal.Equals(PackageId, other.PackageId)
             && StringComparer.Ordinal.Equals(TemplateId, other.TemplateId)
             && StringComparer.Ordinal.Equals(EffectDiscriminator, other.EffectDiscriminator)
+            && Degree == other.Degree
             && SignalHash.SequenceEqual(RequiredPackageIds, other.RequiredPackageIds);
 
         public override bool Equals(object obj) => Equals(obj as SignalSource);
 
         public override int GetHashCode() => SignalHash.WithSequence(
-            SignalHash.Of((int)Kind, DefName, PackageId, TemplateId, EffectDiscriminator),
+            SignalHash.Of((int)Kind, DefName, PackageId, TemplateId, EffectDiscriminator, Degree),
             RequiredPackageIds);
 
         private static IReadOnlyList<string> CopyDependencies(IEnumerable<string> values)
@@ -270,6 +276,8 @@ namespace WorkRoles.Core.Signals
         public SignalType Type { get; }
         public SignalSource Source { get; }
         public string SkillDefName { get; }
+        public string OriginSkillDefName { get; }
+        public SignalRelation Relation { get; }
         public IReadOnlyList<SignalEffect> Effects { get; }
         public SignalUi Ui { get; }
 
@@ -278,16 +286,27 @@ namespace WorkRoles.Core.Signals
             SignalSource source,
             string skillDefName,
             IEnumerable<SignalEffect> effects,
-            SignalUi ui)
+            SignalUi ui,
+            string originSkillDefName = null,
+            SignalRelation relation = SignalRelation.Primary)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (skillDefName != null && string.IsNullOrWhiteSpace(skillDefName))
                 throw new ArgumentException("Skill defName cannot be blank when supplied.", nameof(skillDefName));
+            if (originSkillDefName != null && string.IsNullOrWhiteSpace(originSkillDefName))
+                throw new ArgumentException("Origin skill defName cannot be blank when supplied.", nameof(originSkillDefName));
+            if (relation == SignalRelation.Spillover
+                && (skillDefName == null || originSkillDefName == null))
+                throw new ArgumentException("Spillover signals require target and origin skills.", nameof(relation));
+            if (relation == SignalRelation.Primary && originSkillDefName != null)
+                throw new ArgumentException("Primary signals cannot carry an origin skill.", nameof(originSkillDefName));
             if (ui == null) throw new ArgumentNullException(nameof(ui));
 
             Type = type;
             Source = source;
             SkillDefName = skillDefName;
+            OriginSkillDefName = originSkillDefName;
+            Relation = relation;
             Effects = CopyEffects(effects);
             Ui = ui;
         }
@@ -296,6 +315,8 @@ namespace WorkRoles.Core.Signals
             && Type == other.Type
             && Source.Equals(other.Source)
             && StringComparer.Ordinal.Equals(SkillDefName, other.SkillDefName)
+            && StringComparer.Ordinal.Equals(OriginSkillDefName, other.OriginSkillDefName)
+            && Relation == other.Relation
             && SignalHash.SequenceEqual(Effects, other.Effects)
             && Ui.Equals(other.Ui);
 
@@ -303,7 +324,8 @@ namespace WorkRoles.Core.Signals
 
         public override int GetHashCode()
         {
-            int hash = SignalHash.Of((int)Type, Source, SkillDefName, Ui);
+            int hash = SignalHash.Of((int)Type, Source, SkillDefName,
+                OriginSkillDefName, (int)Relation, Ui);
             return SignalHash.WithSequence(hash, Effects);
         }
 

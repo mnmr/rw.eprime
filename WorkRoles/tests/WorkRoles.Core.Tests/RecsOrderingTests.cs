@@ -130,6 +130,102 @@ public class RecsOrderingTests
     }
 
     [Test]
+    public async Task AnchoredAssignmentsStayBetweenTheirNearestSurvivingNeighbors()
+    {
+        var a = RecsTestBed.Role(1, "A");
+        var pinned = RecsTestBed.Role(2, "Pinned");
+        var b = RecsTestBed.Role(3, "B");
+        var c = RecsTestBed.Role(4, "C");
+        var auto = RecsTestBed.Role(5, "Auto"); auto.AutoAssign = true;
+        var d = RecsTestBed.Role(6, "D");
+        var pawn = RecsTestBed.Pawn();
+        pawn.Existing.Add(new AssignmentView { RoleId = 1 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 2, Pinned = true });
+        pawn.Existing.Add(new AssignmentView { RoleId = 3 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 4 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 5 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 6 });
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { a, pinned, b, c, auto, d }, pawn);
+        colony.OrderTemplate = new List<int> { 4, 5, 1, 3, 6, 2 };
+        var context = new EngineContext(colony);
+        for (int roleId = 1; roleId <= 6; roleId++) Candidate(context, 0, roleId);
+
+        new OrderingRule().Apply(context, 0);
+        new ProtectedReentryRule().Apply(context, 0);
+        new AnchorPreservationRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0]))
+            .IsEqualTo("4,1,2,3,5,6");
+        await Assert.That(context.Results[0].Assignments[2].Pinned).IsTrue();
+    }
+
+    [Test]
+    public async Task AnchoredAssignmentFallsBackToNextNeighborThenOldIndex()
+    {
+        var removedA = RecsTestBed.Role(1, "RemovedA");
+        var pinned = RecsTestBed.Role(2, "Pinned");
+        var next = RecsTestBed.Role(3, "Next");
+        var added = RecsTestBed.Role(4, "Added");
+        var removedB = RecsTestBed.Role(5, "RemovedB");
+        var pawn = RecsTestBed.Pawn();
+        pawn.Existing.Add(new AssignmentView { RoleId = 1 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 2, Pinned = true });
+        pawn.Existing.Add(new AssignmentView { RoleId = 3 });
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { removedA, pinned, next, added, removedB }, pawn);
+        colony.OrderTemplate = new List<int> { 3, 2, 4 };
+        var context = new EngineContext(colony);
+        Candidate(context, 0, 2);
+        Candidate(context, 0, 3);
+        Candidate(context, 0, 4);
+
+        new OrderingRule().Apply(context, 0);
+        new ProtectedReentryRule().Apply(context, 0);
+        new AnchorPreservationRule().Apply(context, 0);
+
+        // The preceding role disappeared, so the pin stays before its next
+        // surviving neighbor even though the recommendation sorted it later.
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("2,3,4");
+
+        pawn.Existing.Clear();
+        pawn.Existing.Add(new AssignmentView { RoleId = 1 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 2, Pinned = true });
+        pawn.Existing.Add(new AssignmentView { RoleId = 5 });
+        var noAnchors = new EngineContext(colony);
+        Candidate(noAnchors, 0, 2);
+        Candidate(noAnchors, 0, 4);
+        new OrderingRule().Apply(noAnchors, 0);
+        new ProtectedReentryRule().Apply(noAnchors, 0);
+        new AnchorPreservationRule().Apply(noAnchors, 0);
+
+        await Assert.That(RecsTestBed.Ids(noAnchors.Results[0])).IsEqualTo("4,2");
+    }
+
+    [Test]
+    public async Task NewlyAddedAutoAssignmentKeepsItsRecommendedPosition()
+    {
+        var a = RecsTestBed.Role(1, "A");
+        var b = RecsTestBed.Role(2, "B");
+        var auto = RecsTestBed.Role(3, "Auto"); auto.AutoAssign = true;
+        var pawn = RecsTestBed.Pawn();
+        pawn.Existing.Add(new AssignmentView { RoleId = 1 });
+        pawn.Existing.Add(new AssignmentView { RoleId = 2 });
+        var colony = RecsTestBed.Colony(new List<RoleView> { a, b, auto }, pawn);
+        colony.OrderTemplate = new List<int> { 3, 2, 1 };
+        var context = new EngineContext(colony);
+        Candidate(context, 0, 1);
+        Candidate(context, 0, 2);
+        Candidate(context, 0, 3);
+
+        new OrderingRule().Apply(context, 0);
+        new ProtectedReentryRule().Apply(context, 0);
+        new AnchorPreservationRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("3,2,1");
+    }
+
+    [Test]
     public async Task DefaultPipelineRunsEndToEnd()
     {
         var basics = RecsTestBed.Role(1, "Cooking", "Fire", "Patient");
@@ -138,7 +234,7 @@ public class RecsOrderingTests
         cook.MinHolders = 1;
         var doctor = RecsTestBed.Role(3, "Doctor");
         var chef = RecsTestBed.Pawn();
-        chef.SkillLevels["Cooking"] = 9; chef.PassionScores["Cooking"] = 2;
+        chef.SkillLevels["Cooking"] = 9; chef.SignalBuckets["Cooking"] = SignalBucket.Great;
         var idler = RecsTestBed.Pawn();
         idler.SkillLevels["Cooking"] = 2; idler.SkillLevels["Medicine"] = 6;
         var colony = RecsTestBed.Colony(new List<RoleView> { basics, cook, doctor }, chef, idler);

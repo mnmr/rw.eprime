@@ -49,8 +49,9 @@ public class RecsCoverageDraftTests
         var neutralHigh = RecsTestBed.Pawn(); neutralHigh.SkillLevels["Cooking"] = 9;
         var neutralLow = RecsTestBed.Pawn(); neutralLow.SkillLevels["Cooking"] = 3;
         var poor = RecsTestBed.Pawn(); poor.SkillLevels["Cooking"] = 0;
+        poor.SignalBuckets["Cooking"] = SignalBucket.Poor;
         var awful = RecsTestBed.Pawn();
-        awful.SkillLevels["Cooking"] = 12; awful.Aptitudes["Cooking"] = -1;
+        awful.SkillLevels["Cooking"] = 12; awful.SignalBuckets["Cooking"] = SignalBucket.Awful;
         var colony = RecsTestBed.Colony(new List<RoleView> { cook },
             neutralHigh, neutralLow, poor, awful);
         var context = new EngineContext(colony);
@@ -70,11 +71,63 @@ public class RecsCoverageDraftTests
         cook.MinHolders = 2;
         var neutral = RecsTestBed.Pawn(); neutral.SkillLevels["Cooking"] = 5;
         var poor = RecsTestBed.Pawn(); poor.SkillLevels["Cooking"] = 0;
+        poor.SignalBuckets["Cooking"] = SignalBucket.Poor;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { cook }, neutral, poor));
         new CoverageScalingRule(new UnitScaling()).Apply(context);
         new BestInColonyDraftRule().Apply(context);
         await Assert.That(context.Candidates[1].ContainsKey(1)).IsTrue();
+    }
+
+    [Test]
+    public async Task DraftRecordsTheCompleteRankingAndNumberOfOpenSlots()
+    {
+        var cook = RecsTestBed.Role(1, "Cooking");
+        cook.MinHolders = 2;
+        var best = RecsTestBed.Pawn(); best.SkillLevels["Cooking"] = 9;
+        var second = RecsTestBed.Pawn(); second.SkillLevels["Cooking"] = 5;
+        var third = RecsTestBed.Pawn(); third.SkillLevels["Cooking"] = 2;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { cook }, best, second, third));
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        DraftRanking firstRank = context.DraftRankings[0][cook.Id];
+        DraftRanking secondRank = context.DraftRankings[1][cook.Id];
+        DraftRanking thirdRank = context.DraftRankings[2][cook.Id];
+        await Assert.That(firstRank.Rank).IsEqualTo(1);
+        await Assert.That(secondRank.Rank).IsEqualTo(2);
+        await Assert.That(thirdRank.Rank).IsEqualTo(3);
+        await Assert.That(thirdRank.EligibleCount).IsEqualTo(3);
+        await Assert.That(thirdRank.OpenSlots).IsEqualTo(2);
+        await Assert.That(thirdRank.SkillDefName).IsEqualTo("Cooking");
+        await Assert.That(thirdRank.SkillLevel).IsEqualTo(2);
+        await Assert.That(context.Candidates[2].ContainsKey(cook.Id)).IsFalse();
+    }
+
+    [Test]
+    public async Task DraftRecordsRemainingCandidatesWhenCoverageWasAlreadyFull()
+    {
+        var cook = RecsTestBed.Role(1, "Cooking");
+        cook.MinHolders = 1;
+        var holder = RecsTestBed.Pawn(); holder.SkillLevels["Cooking"] = 3;
+        var remaining = RecsTestBed.Pawn(); remaining.SkillLevels["Cooking"] = 9;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { cook }, holder, remaining));
+        context.AddCandidate(0, cook.Id, new Reason
+        {
+            RuleId = "signals", SkillDefName = "Cooking", TowardRoleId = -1,
+        }, SignalBucket.Strong);
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        DraftRanking rank = context.DraftRankings[1][cook.Id];
+        await Assert.That(rank.Rank).IsEqualTo(1);
+        await Assert.That(rank.EligibleCount).IsEqualTo(1);
+        await Assert.That(rank.OpenSlots).IsEqualTo(0);
+        await Assert.That(context.Candidates[1].ContainsKey(cook.Id)).IsFalse();
     }
 
     [Test]

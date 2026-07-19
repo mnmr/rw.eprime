@@ -7,6 +7,8 @@ namespace WorkRoles.Core.Signals
     {
         private const string Vse = "vanillaexpanded.skills";
         private const string Alpha = "sarg.alphaskills";
+        // Star glyph both mods draw for expertise; resolved from the loaded mod at runtime.
+        private const string ExpertiseIcon = "UI/Passion_Expertise";
 
         public static readonly IReadOnlyList<SignalDefinition> All = Build();
 
@@ -135,7 +137,7 @@ namespace WorkRoles.Core.Signals
                 skillDefName: skill,
                 derivesSkillFromSource: false,
                 effects: effects,
-                fallbackUi: new SignalUi(label, null, null, null, null, sourceDisplayName));
+                fallbackUi: new SignalUi(label, null, ExpertiseIcon, null, null, sourceDisplayName));
 
         private static SignalEffect S(string statDefName, float value, string condition = null) =>
             new SignalEffect(

@@ -9,15 +9,15 @@ public class SignalCatalogContractTests
     {
         var all = SignalCatalog.Default.All;
 
-        await Assert.That(all.Count).IsEqualTo(157);
-        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(56);
+        await Assert.That(all.Count).IsEqualTo(152);
+        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(51);
         await Assert.That(ExpertiseSignalDefinitions.All.Count).IsEqualTo(66);
         await Assert.That(VanillaSignalDefinitions.All.Count).IsEqualTo(35);
 
         await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Passion
             && x.Source.PackageId == "sarg.alphaskills" && x.Type == SignalType.Active)).IsEqualTo(8);
         await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Passion
-            && x.Source.PackageId == "sarg.alphaskills" && x.Type == SignalType.Passive)).IsEqualTo(43);
+            && x.Source.PackageId == "sarg.alphaskills" && x.Type == SignalType.Passive)).IsEqualTo(38);
         await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Expertise
             && x.Source.PackageId == "vanillaexpanded.skills")).IsEqualTo(47);
         await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Expertise

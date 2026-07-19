@@ -21,7 +21,7 @@
   <WR_TuningSection>Recommendations Tuning</WR_TuningSection>
   <WR_RecOrderHeader>Default Role Recommendation Order</WR_RecOrderHeader>
   <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
-  <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid — auto-assigned roles included.</WR_OptRecOrderTipWhat>
+  <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid (auto-assigned roles included).</WR_OptRecOrderTipWhat>
   <WR_ActRecDrag>reorder the chips</WR_ActRecDrag>
   <WR_ActRecX>unpin the role so it places dynamically again</WR_ActRecX>
   <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
@@ -116,7 +116,7 @@
   <WR_ScopeAll>Everywhere</WR_ScopeAll>
   <WR_ScopeCurrent>Current location</WR_ScopeCurrent>
   <WR_ShipFallback>Gravship</WR_ShipFallback>
-  <WR_ShipTip>The gravship — only while it is not parked at a settlement (a settlement tile wins).</WR_ShipTip>
+  <WR_ShipTip>The gravship, while it is not parked at a settlement (a settlement tile takes precedence).</WR_ShipTip>
   <WR_GroupNone>No grouping</WR_GroupNone>
   <WR_GroupFaction>Faction</WR_GroupFaction>
   <WR_GroupRace>Race</WR_GroupRace>
@@ -155,9 +155,9 @@
   <WR_SetPriorityBlockedTitle>WorkRoles manages priorities</WR_SetPriorityBlockedTitle>
   <WR_SetPriorityBlockedBody>{0} attempted to set work priorities ({1}) on {2} colonist(s).
 
-WorkRoles owns priorities for role-managed colonists, so the change was ignored — the mod's other features are unaffected.
+WorkRoles owns priorities for role-managed colonists, so the change was ignored - the mod's other features are unaffected.
 
-To get a similar effect with roles: on the Roles tab, create or edit a role containing that work and place it where you want it in each colonist's role list — or use a blocker role to forbid the work entirely.
+To get a similar effect with roles: on the Roles tab, create or edit a role containing that work and place it where you want it in each colonist's role list - or use a blocker role to forbid the work entirely.
 
 This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Work-type slot in the notice when a mod tried to disable ALL work -->
@@ -177,6 +177,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ReasonMajorPassion>Burning passion for {0}.</WR_ReasonMajorPassion>
   <WR_ReasonMinorPassion>Passion for {0}.</WR_ReasonMinorPassion>
   <WR_ReasonAptitude>Gene or trait aptitude for {0}.</WR_ReasonAptitude>
+  <WR_ReasonSignal>Recommendation signals favor {0}.</WR_ReasonSignal>
   <WR_ReasonCoverage>Colony coverage: best available for this work.</WR_ReasonCoverage>
   <WR_ReasonRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_ReasonRemoved>
   <!-- Stats panel skill tooltip; {0} = signed aptitude total -->
@@ -185,6 +186,24 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Passion icon tooltip fact labels -->
   <WR_TipLearnRate>Learn rate</WR_TipLearnRate>
   <WR_TipForgetRate>Forget rate</WR_TipForgetRate>
+
+  <!-- Combined signal tooltip for each skill in the bottom Colonists panel -->
+  <WR_SignalColSignal>Signal</WR_SignalColSignal>
+  <WR_SignalColEffects>Effects</WR_SignalColEffects>
+  <WR_SignalCondition>Condition</WR_SignalCondition>
+  <WR_SignalSource>Source</WR_SignalSource>
+  <WR_SignalVerdict>Verdict</WR_SignalVerdict>
+  <WR_SignalFromSkill>(from {0})</WR_SignalFromSkill>
+  <WR_SignalAlreadyReflected>Already reflected in the displayed skill level.</WR_SignalAlreadyReflected>
+  <WR_SignalDisabled>Disabled</WR_SignalDisabled>
+  <WR_SignalDescriptive>Descriptive</WR_SignalDescriptive>
+  <WR_SignalExpertiseScale>base {0}, expertise level {1}, current {2}</WR_SignalExpertiseScale>
+  <WR_VerdictAwful>Awful</WR_VerdictAwful>
+  <WR_VerdictPoor>Poor</WR_VerdictPoor>
+  <WR_VerdictNeutral>Neutral</WR_VerdictNeutral>
+  <WR_VerdictStrong>Strong</WR_VerdictStrong>
+  <WR_VerdictGreat>Great</WR_VerdictGreat>
+  <WR_VerdictExceptional>Exceptional</WR_VerdictExceptional>
 
   <!-- Assignment pinning (chip right-click) -->
   <WR_PinAssignment>Pin</WR_PinAssignment>
@@ -199,6 +218,41 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecommendedRoles>Recommended Roles</WR_RecommendedRoles>
   <WR_AlreadyAssigned>Already assigned</WR_AlreadyAssigned>
   <WR_WillBeRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_WillBeRemoved>
+  <WR_RecTipColonyNeed>Colony needs</WR_RecTipColonyNeed>
+  <WR_RecTipConfiguredMax>Configured maximum</WR_RecTipConfiguredMax>
+  <WR_RecTipSkills>Required skills</WR_RecTipSkills>
+  <WR_RecTipSignalVerdict>Signal verdict</WR_RecTipSignalVerdict>
+  <WR_RecTipRecommendation>Recommendation</WR_RecTipRecommendation>
+  <WR_RecTipNeedOne>At least 1 colonist ({0} recommended)</WR_RecTipNeedOne>
+  <WR_RecTipNeedMany>At least {0} colonists ({1} recommended)</WR_RecTipNeedMany>
+  <WR_RecTipNeedNone>No required minimum ({0} recommended)</WR_RecTipNeedNone>
+  <WR_RecTipMaximum>{0} colonists (not currently enforced)</WR_RecTipMaximum>
+  <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
+  <WR_RecDecisionSignals>Strong-or-better signals qualify this pawn.</WR_RecDecisionSignals>
+  <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
+  <WR_RecDecisionCoverageDraftRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Selected to meet required coverage.</WR_RecDecisionCoverageDraftRanked>
+  <WR_RecDecisionCoverageDraftRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Selected to meet required coverage.</WR_RecDecisionCoverageDraftRankedNoSkill>
+  <WR_RecDecisionHunter>Carries a ranged weapon and is capable of hunting.</WR_RecDecisionHunter>
+  <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
+  <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
+  <WR_RecDecisionProtected>Existing protected assignment retained.</WR_RecDecisionProtected>
+  <WR_RecDecisionNever>This role is configured to receive no recommendations.</WR_RecDecisionNever>
+  <WR_RecDecisionDisabled>This role is disabled.</WR_RecDecisionDisabled>
+  <WR_RecDecisionUnavailable>This role's work is unavailable until its research is finished.</WR_RecDecisionUnavailable>
+  <WR_RecDecisionExcluded>This role is managed by rules and excluded from ordinary recommendations.</WR_RecDecisionExcluded>
+  <WR_RecDecisionIncapable>This pawn is incapable of this role's work.</WR_RecDecisionIncapable>
+  <WR_RecDecisionHunterRequirements>This pawn does not carry a ranged weapon.</WR_RecDecisionHunterRequirements>
+  <WR_RecDecisionAwful>An Awful signal disqualifies this pawn.</WR_RecDecisionAwful>
+  <WR_RecDecisionBand>This pawn's skill level is outside the role's training band.</WR_RecDecisionBand>
+  <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
+  <WR_RecDecisionCoverageFilledRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRanked>
+  <WR_RecDecisionCoverageFilledRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRankedNoSkill>
+  <WR_RecDecisionCoverageAlreadyFullRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was already filled before additional candidates were selected.</WR_RecDecisionCoverageAlreadyFullRanked>
+  <WR_RecDecisionCoverageAlreadyFullRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Required coverage was already filled before additional candidates were selected.</WR_RecDecisionCoverageAlreadyFullRankedNoSkill>
+  <WR_RecDecisionWeakSignal>The signal verdict is below Strong and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionNotSelected>This pawn was not selected by any recommendation rule.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionRecommended>Selected by the recommendation engine.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Make It So</WR_MakeItSo>
 
   <!-- Add-role float menu when all roles are already assigned -->
@@ -248,7 +302,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_NothingToMerge>Everything matches: nothing to merge.</WR_NothingToMerge>
   <WR_PaletteOverwriteInfo>Replaces all custom colors with the file's {0} palette entries.</WR_PaletteOverwriteInfo>
   <WR_OverwriteReplaces>Applies all {0} roles from the file. Matching roles (same pre-made role, else same name) keep their colonist assignments.</WR_OverwriteReplaces>
-  <WR_OverwriteDeletes>Deletes (not in file): {0} — colonists lose these assignments.</WR_OverwriteDeletes>
+  <WR_OverwriteDeletes>Deletes (not in file): {0} (colonists lose these assignments).</WR_OverwriteDeletes>
   <WR_PathsOverwriteInfo>Replaces all existing training paths with the file's {0} paths.</WR_PathsOverwriteInfo>
   <WR_RecOrderReplaceInfo>Replaces your recommendation order with the file's ({0} roles).</WR_RecOrderReplaceInfo>
   <!-- {0}-{4} = added/updated/deleted/palette-change/training-path counts -->
@@ -426,7 +480,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_PaletteBySkills>Skills</WR_PaletteBySkills>
   <WR_PaletteByGroups>Groups</WR_PaletteByGroups>
   <WR_PaletteHidden>Hidden</WR_PaletteHidden>
-  <WR_PaletteModeTip>Arrange the palette by relevant skill or by your role groups in their own order — or hide it entirely. Click to cycle.</WR_PaletteModeTip>
+  <WR_PaletteModeTip>Arrange the palette by relevant skill or role groups, or hide it entirely. Click to cycle.</WR_PaletteModeTip>
 
   <!-- Chip tooltips when a rule suppresses the role -->
   <WR_SuppressedHours>Off: outside active hours</WR_SuppressedHours>

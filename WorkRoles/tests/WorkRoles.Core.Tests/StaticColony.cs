@@ -244,8 +244,8 @@ public static class StaticColony
     };
 
     /// Flattens a spec into the engine's pawn shape — the step-1 projection,
-    /// test-side. Attitude flags map to the engine's aptitude sign: talented
-    /// = +1, apathy = -1 (magnitudes carry no meaning of their own).
+    /// test-side. Pure aptitudes are already reflected in levels and therefore
+    /// remain Neutral; the other attributes model classified signal inputs.
     public static WorkRoles.Core.Recs.PawnView ToPawnView(PawnSpec spec)
     {
         var pawn = new WorkRoles.Core.Recs.PawnView
@@ -253,32 +253,30 @@ public static class StaticColony
             HasRangedWeapon = spec.HasGun,
         };
         for (int i = 0; i < Skills.Length; i++)
-            pawn.SkillLevels[Skills[i]] = spec.Levels[i];
-        pawn.ShootingLevel = spec.Levels[0];
-        foreach (var attribute in spec.Attributes)
         {
-            switch (attribute.Kind)
-            {
-                case AttributeKind.Expertise:
-                    pawn.ExpertiseSkills.Add(attribute.Skill);
-                    break;
-                case AttributeKind.BurningPassion:
-                    pawn.PassionScores[attribute.Skill] = 2;
-                    break;
-                case AttributeKind.Passion:
-                    pawn.PassionScores[attribute.Skill] = 1;
-                    break;
-                case AttributeKind.Aptitude:
-                    pawn.Aptitudes[attribute.Skill] = 1;
-                    break;
-                case AttributeKind.Trait:
-                    pawn.Aptitudes[attribute.Skill] = -1;
-                    break;
-            }
+            pawn.SkillLevels[Skills[i]] = spec.Levels[i];
+            pawn.SignalBuckets[Skills[i]] = BucketFor(spec, Skills[i]);
         }
+        pawn.ShootingLevel = spec.Levels[0];
         foreach (var workType in AllWorkTypes)
             pawn.CapableWorkTypes.Add(workType);
         return pawn;
+    }
+
+    public static SignalBucket BucketFor(PawnSpec spec, string skill)
+    {
+        int score = 0;
+        foreach (PawnAttribute attribute in spec.Attributes.Where(x => x.Skill == skill))
+        {
+            if (attribute.Kind == AttributeKind.Trait) return SignalBucket.Awful;
+            if (attribute.Kind == AttributeKind.Expertise) score += 3;
+            else if (attribute.Kind == AttributeKind.BurningPassion) score += 2;
+            else if (attribute.Kind == AttributeKind.Passion) score += 1;
+        }
+        if (score >= 3) return SignalBucket.Exceptional;
+        if (score == 2) return SignalBucket.Great;
+        if (score == 1) return SignalBucket.Strong;
+        return SignalBucket.Neutral;
     }
 
     /// Best-in-colony: the highest level per skill across the colony.

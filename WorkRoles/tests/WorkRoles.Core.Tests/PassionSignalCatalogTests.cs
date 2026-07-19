@@ -50,17 +50,12 @@ public class PassionSignalCatalogTests
         "AS_PsychicPassion_Nullified",
         "AS_RainyDayPassion",
         "AS_RainyDayPassion_Active",
-        "AS_SanguinePassion",
-        "AS_SanguinePassion_Active",
         "AS_StonedPassion",
         "AS_StonedPassion_Active",
-        "AS_ToxicPassion",
-        "AS_ToxicPassion_Active",
         "AS_TranshumanistPassion",
         "AS_TranshumanistPassion_Active",
         "AS_VengefulPassion",
         "AS_VengefulPassion_Active",
-        "AS_YouthPassion",
     };
 
     [Test]
@@ -80,7 +75,7 @@ public class PassionSignalCatalogTests
     }
 
     [Test]
-    public async Task AlphaMembershipIsExactlyEightActiveAndFortyThreePassive()
+    public async Task AlphaMembershipIsExactlyEightActiveAndThirtyEightPersistentPassive()
     {
         var alpha = PassionSignalDefinitions.All
             .Where(x => x.Source.PackageId == "sarg.alphaskills").ToArray();
@@ -89,7 +84,7 @@ public class PassionSignalCatalogTests
         var passive = alpha.Where(x => x.Type == SignalType.Passive)
             .Select(x => x.Source.DefName).OrderBy(x => x).ToArray();
 
-        await Assert.That(alpha.Length).IsEqualTo(51);
+        await Assert.That(alpha.Length).IsEqualTo(46);
         await Assert.That(active).IsEquivalentTo(ActiveAlpha);
         await Assert.That(passive).IsEquivalentTo(PassiveAlpha);
         await Assert.That(active.Intersect(passive, StringComparer.Ordinal).Any()).IsFalse();
@@ -113,17 +108,27 @@ public class PassionSignalCatalogTests
         await Assert.That(dunce.Effects.Any(x => x.Kind == SignalEffectKind.WorkPreference
             && x.Operation == SignalOperation.Descriptive)).IsTrue();
 
-        var youth = One("AS_YouthPassion");
-        await Assert.That(youth.Type).IsEqualTo(SignalType.Passive);
-        await Assert.That(youth.IsTransient).IsTrue();
-        await Assert.That(youth.Effects.SelectMany(x => x.Conditions)
-            .Any(x => x.Key == "age:max:15")).IsTrue();
+        await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
+            "sarg.alphaskills", "AS_YouthPassion")).IsTrue();
+    }
+
+    [Test]
+    public async Task CriticalSettingOnlyConditionsItsCrossSkillEffect()
+    {
+        SignalDefinition critical = One("VSE_Critical");
+        SignalEffect ownLearning = critical.Effects.Single(x =>
+            x.Kind == SignalEffectKind.LearningRate && x.TargetDefName == "CurrentSkill");
+        SignalEffect spillover = critical.Effects.Single(x => x.TargetDefName == "OtherSkills");
+
+        await Assert.That(ownLearning.Conditions.Count).IsEqualTo(0);
+        await Assert.That(spillover.Conditions.Select(x => x.Key))
+            .IsEquivalentTo(new[] { "setting:vse-critical-affects-other-skills" });
     }
 
     [Test]
     public async Task EveryPassionDerivesItsSkillAndCarriesSourceAttribution()
     {
-        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(56);
+        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(51);
         await Assert.That(PassionSignalDefinitions.All.All(x => x.DerivesSkillFromSource)).IsTrue();
         await Assert.That(PassionSignalDefinitions.All.All(x =>
             !string.IsNullOrWhiteSpace(x.Source.PackageId)
@@ -134,6 +139,39 @@ public class PassionSignalCatalogTests
             .IsEqualTo("Vanilla Skills Expanded");
         await Assert.That(One("AS_DedicatedPassion").FallbackUi.SourceDisplayName)
             .IsEqualTo("Alpha Skills");
+    }
+
+    [Test]
+    public async Task DisappearingTransientIdentitiesAreExplicitlyExcluded()
+    {
+        var excluded = new[]
+        {
+            "AS_YouthPassion",
+            "AS_SanguinePassion",
+            "AS_SanguinePassion_Active",
+            "AS_ToxicPassion",
+            "AS_ToxicPassion_Active",
+        };
+
+        await Assert.That(PassionSignalDefinitions.All.Any(x =>
+            excluded.Contains(x.Source.DefName, StringComparer.Ordinal))).IsFalse();
+        foreach (string defName in excluded)
+            await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
+                "sarg.alphaskills", defName)).IsTrue();
+
+        await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
+            "SARG.ALPHASKILLS", "AS_YouthPassion")).IsTrue();
+        await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
+            "sarg.alphaskills", "AS_NightPassion")).IsFalse();
+        await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
+            "another.mod", "AS_YouthPassion")).IsFalse();
+    }
+
+    [Test]
+    public async Task VanillaPassionsUseTheActualRimWorldIconPaths()
+    {
+        await Assert.That(One("Minor").FallbackUi.IconKey).IsEqualTo("UI/Icons/PassionMinor");
+        await Assert.That(One("Major").FallbackUi.IconKey).IsEqualTo("UI/Icons/PassionMajor");
     }
 
     private static SignalDefinition One(string defName) =>

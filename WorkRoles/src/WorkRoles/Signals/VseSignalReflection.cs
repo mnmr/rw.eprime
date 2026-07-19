@@ -51,6 +51,8 @@ namespace WorkRoles.Signals
         private static FieldInfo defSkill;
         private static FieldInfo settings;
         private static FieldInfo statMultiplier;
+        private static FieldInfo crossSkillEffectsSetting;
+        private static bool warnedCrossSkillSetting;
 
         internal static PassionFact Passion(Passion passion)
         {
@@ -118,6 +120,26 @@ namespace WorkRoles.Signals
             }
         }
 
+        internal static bool CrossSkillEffectsEnabled()
+        {
+            EnsureExpertise();
+            if (settings == null || crossSkillEffectsSetting == null) return false;
+            try
+            {
+                object currentSettings = settings.GetValue(null);
+                return currentSettings == null
+                    || Convert.ToBoolean(crossSkillEffectsSetting.GetValue(currentSettings));
+            }
+            catch (Exception exception)
+            {
+                if (!warnedCrossSkillSetting)
+                    Log.Warning("[WorkRoles] VSE cross-skill passion setting unavailable: "
+                        + exception.Message);
+                warnedCrossSkillSetting = true;
+                return false;
+            }
+        }
+
         private static void EnsurePassions()
         {
             if (passionInitialized) return;
@@ -171,6 +193,8 @@ namespace WorkRoles.Signals
                 settings = AccessTools.Field(skillsMod, VseSignalApi.SettingsMember);
                 statMultiplier = settings == null ? null
                     : AccessTools.Field(settings.FieldType, VseSignalApi.StatMultiplierMember);
+                crossSkillEffectsSetting = settings == null ? null
+                    : AccessTools.Field(settings.FieldType, VseSignalApi.CrossSkillEffectsSettingMember);
 
                 if (expertiseOf == null || allExpertise == null || recordDef == null
                     || recordLevel == null || fullDescription == null || defSkill == null)

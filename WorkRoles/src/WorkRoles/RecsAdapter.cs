@@ -1,9 +1,12 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
+using WorkRoles.Core.Signals;
+using WorkRoles.Signals;
 
 namespace WorkRoles
 {
@@ -18,7 +21,14 @@ namespace WorkRoles
         internal static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
 
         public static ColonyView BuildColonyView(RoleStore store, List<Pawn> pawns)
+            => BuildColonyView(store, pawns, PawnSignalSnapshots.Build);
+
+        internal static ColonyView BuildColonyView(
+            RoleStore store,
+            List<Pawn> pawns,
+            Func<Pawn, PawnSignalSnapshot> snapshotFor)
         {
+            if (snapshotFor == null) throw new ArgumentNullException(nameof(snapshotFor));
             var colony = new ColonyView
             {
                 Roles = store.roles.Select(RoleViewOf).ToList(),
@@ -29,7 +39,7 @@ namespace WorkRoles
             };
             colony.OrderTemplate = OrderTemplate.ResolveTemplate(store.recommendationOrder, colony.Roles);
             foreach (var pawn in pawns)
-                colony.Pawns.Add(PawnViewOf(pawn, store));
+                colony.Pawns.Add(PawnViewOf(pawn, store, snapshotFor(pawn)));
             foreach (var pawn in pawns)
             {
                 if (pawn.skills == null) continue;
@@ -71,7 +81,15 @@ namespace WorkRoles
         };
 
         internal static PawnView PawnViewOf(Pawn pawn, RoleStore store)
+            => PawnViewOf(pawn, store, PawnSignalSnapshots.Build(pawn));
+
+        internal static PawnView PawnViewOf(
+            Pawn pawn,
+            RoleStore store,
+            PawnSignalSnapshot signalSnapshot)
         {
+            if (signalSnapshot == null)
+                throw new ArgumentNullException(nameof(signalSnapshot));
             var view = new PawnView
             {
                 HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
@@ -84,12 +102,9 @@ namespace WorkRoles
                 {
                     if (sr.TotallyDisabled) continue;
                     view.SkillLevels[sr.def.defName] = sr.Level;
-                    view.PassionScores[sr.def.defName] = Passions.Score(sr);
-                    // Negatives too: apathy mutes the skill's signals (Awful).
-                    if (sr.Aptitude != 0) view.Aptitudes[sr.def.defName] = sr.Aptitude;
                 }
-            foreach (var expertise in Expertise.For(pawn))
-                view.ExpertiseSkills.Add(expertise.Skill.defName);
+            foreach (SkillBucketSignal signal in signalSnapshot.SkillBuckets.All)
+                view.SignalBuckets[signal.SkillDefName] = signal.Bucket;
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (!pawn.WorkTypeIsDisabled(workType))
                     view.CapableWorkTypes.Add(workType.defName);

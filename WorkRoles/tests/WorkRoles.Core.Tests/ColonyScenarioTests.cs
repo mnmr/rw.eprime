@@ -170,8 +170,11 @@ public class ColonyScenarioTests
             {
                 pawn.SkillLevels[skill] = rand.Next(0, 15);
                 int roll = rand.Next(100);
-                pawn.PassionScores[skill] = roll < 8 ? 2 : roll < 28 ? 1 : 0;
-                if (rand.Next(100) < 4) pawn.ExpertiseSkills.Add(skill);
+                SignalBucket bucket = roll < 8 ? SignalBucket.Great
+                    : roll < 28 ? SignalBucket.Strong
+                    : SignalBucket.Neutral;
+                if (rand.Next(100) < 4) bucket = SignalBucket.Exceptional;
+                pawn.SignalBuckets[skill] = bucket;
             }
             pawn.CapableWorkTypes.UnionWith(allTypes);
             if (rand.Next(100) < 10) pawn.CapableWorkTypes.Remove("Hunting");

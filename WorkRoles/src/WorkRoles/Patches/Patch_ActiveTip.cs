@@ -57,7 +57,7 @@ namespace WorkRoles.Patches
             if (text == null) return true;
             if (models.TryGetValue(text, out var model))
             {
-                Vector2 modelSize = WrTipUI.Measure(model, SafetyMaxWidth);
+                Vector2 modelSize = WrTipUI.Measure(model, WrTipUI.MaxContentWidth);
                 __result = new Rect(0f, 0f, modelSize.x, modelSize.y);
                 return false;
             }
