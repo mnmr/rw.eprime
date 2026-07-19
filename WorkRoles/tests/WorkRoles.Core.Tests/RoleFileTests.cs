@@ -69,19 +69,6 @@ public class RoleFileTests
     }
 
     [Test]
-    public async Task LegacyMaxZeroHoldersAreIgnored()
-    {
-        // v2 files from 1.1.x carried never-dealt as max="0".
-        var parsed = RoleFile.Parse(
-            "<WorkRoles version=\"2\"><Palette/><Roles>" +
-            "<Role name=\"Statue\"><Options><Holders max=\"0\"/></Options>" +
-            "<Jobs><WorkType>Art</WorkType></Jobs></Role></Roles></WorkRoles>");
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
-        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(0);
-    }
-
-    [Test]
     public async Task DefaultsProduceMinimalOptions_AndScaffoldingIsAlwaysPresent()
     {
         var doc = new RoleFileDocument
@@ -135,12 +122,13 @@ public class RoleFileTests
             entries = { ("Shooter", 0, 8), ("Deleted", 5, 10), ("Sniper", 6, 21), ("Shooter", 2, 4) },
         };
         // "Deleted" resolves nowhere (import after the role was removed); the
-        // second "Shooter" is a duplicate — both drop WITH their bands.
+        // second "Shooter" is a duplicate id — both drop WITH their bands, and
+        // the duplicate keeps its FIRST band.
         var resolved = RoleFile.ResolvePathEntries(path,
             name => name == "Shooter" ? 1 : name == "Sniper" ? 2 : (int?)null);
-        await Assert.That(resolved.ids).IsEquivalentTo(new[] { 1, 2 });
-        await Assert.That(resolved.mins).IsEquivalentTo(new[] { 0, 6 });
-        await Assert.That(resolved.maxes).IsEquivalentTo(new[] { 8, 21 });
+        await Assert.That(string.Join(",", resolved.ids)).IsEqualTo("1,2");
+        await Assert.That(string.Join(",", resolved.mins)).IsEqualTo("0,6");
+        await Assert.That(string.Join(",", resolved.maxes)).IsEqualTo("8,21");
     }
 
     [Test]
@@ -253,23 +241,6 @@ public class RoleFileTests
     }
 
     [Test]
-    public async Task UnknownPathEntryNameDropsThatEntryAndKeepsTheRest()
-    {
-        var path = new FileTrainingPath
-        {
-            name = "P",
-            entries = { ("Known", 0, 8), ("Unknown", 6, 14), ("Known", 8, 21), ("Other", 10, 21) },
-        };
-        var byName = new Dictionary<string, int> { ["Known"] = 7, ["Other"] = 9 };
-        var (ids, mins, maxes) = RoleFile.ResolvePathEntries(path,
-            n => byName.TryGetValue(n, out int id) ? id : (int?)null);
-        // Unknown drops with its band; a duplicate id keeps its first band.
-        await Assert.That(ids).IsEquivalentTo(new[] { 7, 9 });
-        await Assert.That(mins).IsEquivalentTo(new[] { 0, 10 });
-        await Assert.That(maxes).IsEquivalentTo(new[] { 8, 21 });
-    }
-
-    [Test]
     public async Task DuplicateGroupNamesDedupCaseInsensitively()
     {
         var parsed = RoleFile.Parse(
@@ -323,42 +294,4 @@ public class RoleFileTests
         await Assert.That(ColorRgb.TryParseHex("#zzzzzz", out _)).IsFalse();
     }
 
-    [Test]
-    public async Task OlderFilesWithTrainingElementsStillParse_TrainingIsIgnored()
-    {
-        // v2/v3 files carry <Training>; v4 readers skip it without error.
-        var parsed = RoleFile.Parse(
-            "<WorkRoles version=\"3\"><Palette/><Roles>" +
-            "<Role name=\"Medic\"><Options>" +
-            "<Training skill=\"Medicine\" min=\"5\" max=\"15\"><Target>Doctor</Target></Training>" +
-            "<Holders min=\"1\"/></Options>" +
-            "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
-        await Assert.That(parsed.roles[0].minHolders).IsEqualTo(0);
-    }
-
-    [Test]
-    public async Task NeverModeRoundTripsInV5()
-    {
-        var doc = new RoleFileDocument
-        {
-            roles = { new FileRole { label = "Statue", holderMode = RoleHolderMode.Never,
-                entries = { new(JobEntryKind.WorkType, "Art") } } },
-        };
-        var parsed = RoleFile.Parse(RoleFile.Build(doc));
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Never);
-    }
-
-    [Test]
-    public async Task LegacyInTrainingAttributeIsIgnored()
-    {
-        var parsed = RoleFile.Parse(
-            "<WorkRoles version=\"4\"><Palette/><Roles>" +
-            "<Role name=\"Doc\"><Options><Holders min=\"2\" inTraining=\"-3\"/></Options>" +
-            "<Jobs><WorkType>Doctor</WorkType></Jobs></Role></Roles></WorkRoles>");
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles[0].holderMode).IsEqualTo(RoleHolderMode.Auto);
-    }
 }

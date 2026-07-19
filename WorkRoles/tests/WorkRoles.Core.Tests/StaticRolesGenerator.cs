@@ -10,6 +10,7 @@ namespace WorkRoles.Core.Tests;
 public class StaticRolesGenerator
 {
     [Test]
+    [Explicit]
     public async Task Generate()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);

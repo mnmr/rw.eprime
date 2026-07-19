@@ -4,7 +4,8 @@ namespace WorkRoles.Core.Tests;
 
 /// Pins the shipped Palette.xml to the canonical Tailwind v3 values: exactly
 /// the editor's swatch vocabulary (19 families, shades 600-900), each hex
-/// matching. The editor's C# table and this data must change together.
+/// matching. The editor's C# table (RolesTabView) cannot be referenced from
+/// this project; keeping it in sync with these canonical values is manual.
 public class PaletteDefTests
 {
     private static readonly string[] Families =

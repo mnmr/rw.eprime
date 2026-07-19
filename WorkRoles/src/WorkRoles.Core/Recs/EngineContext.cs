@@ -24,6 +24,15 @@ namespace WorkRoles.Core.Recs
         public SignalBucket Strength = SignalBucket.Neutral;
     }
 
+    /// The specific training path that produced a role assignment. This is
+    /// separate from Candidate.Reason because a stronger existing reason may
+    /// win while the selected path must still control placement.
+    public struct TrainingPathPlacement
+    {
+        public int PathId;
+        public int TargetRoleId;
+    }
+
     /// This pawn's exact position in the need-driven candidate ordering for
     /// one role. OpenSlots is the shortage before the draft selected anyone.
     public struct DraftRanking
@@ -50,6 +59,8 @@ namespace WorkRoles.Core.Recs
         public readonly Dictionary<int, int> BaseWant = new Dictionary<int, int>();
         public readonly Dictionary<int, int> InboundTraining = new Dictionary<int, int>();
         public readonly List<HashSet<int>> TrainingToward = new List<HashSet<int>>();
+        public readonly List<Dictionary<int, TrainingPathPlacement>> TrainingPathPlacements =
+            new List<Dictionary<int, TrainingPathPlacement>>();
         public readonly List<HashSet<int>> HolderLimitRejected = new List<HashSet<int>>();
         /// Per pawn, by role id; includes eligible candidates that were not
         /// selected and candidates considered after coverage was already full.
@@ -72,6 +83,7 @@ namespace WorkRoles.Core.Recs
                 Candidates.Add(new Dictionary<int, Candidate>());
                 DraftRankings.Add(new Dictionary<int, DraftRanking>());
                 TrainingToward.Add(new HashSet<int>());
+                TrainingPathPlacements.Add(new Dictionary<int, TrainingPathPlacement>());
                 HolderLimitRejected.Add(new HashSet<int>());
                 Results.Add(new PawnResult());
             }

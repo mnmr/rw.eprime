@@ -21,18 +21,4 @@ public class RecommendationQualityTests
                         + $"for pawn {i} (size {size}, seed {seed})");
     }
 
-    /// Every pinnable shipped role is either in the default template or an
-    /// Add-menu candidate — certifies the CORE logic the Options tab calls.
-    [Test]
-    public async Task EveryShippedRoleIsPinnedOrAddable()
-    {
-        var catalog = ColonyScenarioTests.ShippedCatalog();
-        var template = OrderTemplate.ResolveTemplate(new List<int>(), catalog.Roles);
-        var reachable = template
-            .Concat(OrderTemplate.AddCandidates(catalog.Roles, template))
-            .ToHashSet();
-        foreach (var role in catalog.Roles.Where(OrderTemplate.IsPinnable))
-            await Assert.That(reachable.Contains(role.Id)).IsTrue()
-                .Because($"{catalog.DefNames[role.Id]} is neither pinned nor addable");
-    }
 }

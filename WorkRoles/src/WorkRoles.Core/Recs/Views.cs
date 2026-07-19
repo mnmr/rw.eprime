@@ -51,6 +51,10 @@ namespace WorkRoles.Core.Recs
         public bool HasRules;
         public bool Blocker;
         public bool Hunting;
+        /// Ignores training-path placement and remains at its recommendation
+        /// order slot. When unlisted, Ordering provides a conservative tail
+        /// fallback ahead of trailing unskilled work.
+        public bool PreserveRecommendationOrder;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
         public RoleHolderMode HolderMode;

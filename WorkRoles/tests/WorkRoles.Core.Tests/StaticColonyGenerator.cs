@@ -15,6 +15,7 @@ public class StaticColonyGenerator
     };
 
     [Test]
+    [Explicit]
     public async Task Generate()
     {
         var rand = new Random(20260716);

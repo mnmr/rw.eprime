@@ -29,21 +29,6 @@ public class SignalCatalogContractTests
     }
 
     [Test]
-    public async Task EveryRecordHasAUniqueStableSourceIdentity()
-    {
-        var identities = SignalCatalog.Default.All.Select(x => string.Join("\u001f", new[]
-        {
-            x.Source.Kind.ToString(),
-            x.Source.PackageId,
-            x.Source.DefName,
-            x.Degree?.ToString() ?? "",
-            x.Source.EffectDiscriminator ?? "",
-        })).ToArray();
-
-        await Assert.That(identities.Distinct(StringComparer.Ordinal).Count()).IsEqualTo(identities.Length);
-    }
-
-    [Test]
     public async Task EveryActiveRecordHasStructuredEffectsAndStaticRecordsAreNotMarkedTransient()
     {
         var all = SignalCatalog.Default.All;

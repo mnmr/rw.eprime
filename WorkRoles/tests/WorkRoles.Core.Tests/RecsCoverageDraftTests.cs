@@ -16,14 +16,13 @@ public class RecsCoverageDraftTests
         var needed = RecsTestBed.Role(2, "Cooking");
         needed.MinHolders = 2;
         var interestOnly = RecsTestBed.Role(3, "Cooking");   // 0
-        var never = RecsTestBed.Role(4, "Cooking");
-        never.HolderMode = RoleHolderMode.Never;
         await Assert.That(scaling.Want(auto, 6)).IsEqualTo(1);
         await Assert.That(scaling.Want(auto, 7)).IsEqualTo(2);
         await Assert.That(scaling.Want(needed, 6)).IsEqualTo(2);
         await Assert.That(scaling.Want(needed, 13)).IsEqualTo(6);
         await Assert.That(scaling.Want(interestOnly, 50)).IsEqualTo(0);
-        await Assert.That(scaling.Want(never, 50)).IsEqualTo(0);
+        // Never-mode roles are guarded by ExclusionsRule/AddCandidate, not by
+        // scaling: see RecsExclusionAutoTests.
     }
 
     [Test]
@@ -65,7 +64,7 @@ public class RecsCoverageDraftTests
     }
 
     [Test]
-    public async Task DraftPrefersNeutralOverPoor_NeverDraftsAwful_LevelBreaksTies()
+    public async Task DraftPrefersNeutralOverPoor_NeverDraftsAwful()
     {
         var cook = RecsTestBed.Role(1, "Cooking");
         cook.MinHolders = 2;
@@ -167,15 +166,43 @@ public class RecsCoverageDraftTests
         await Assert.That(context.Candidates[0].ContainsKey(1)).IsTrue();  // Farmer dealt
         await Assert.That(context.Candidates[0].ContainsKey(2)).IsFalse(); // Grower skipped
 
-        // Essential (MinHolders >= 1) covered roles are still dealt.
-        grower.MinHolders = 1;
+        // Essential (MinHolders >= 1) covered roles are still dealt once the
+        // want exceeds what coverage supplies: the coverer's pawn counts as one
+        // holder, the uncovered pawn fills the remaining slot directly.
+        grower.MinHolders = 2;
         var essential = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { farmer, grower }, pawn, RecsTestBed.Pawn()));
         new CoverageScalingRule(new UnitScaling()).Apply(essential);
         new BestInColonyDraftRule().Apply(essential);
-        // The farmer candidate covers grower, so grower's holders are already
-        // satisfied through coverage — but the WANT existed and was honored.
-        await Assert.That(essential.Want.ContainsKey(2)).IsTrue();
+        await Assert.That(essential.Candidates[0].ContainsKey(2)).IsFalse();
+        await Assert.That(essential.Candidates[1].ContainsKey(2)).IsTrue();
+    }
+
+    [Test]
+    public async Task CoveredPathMemberIsStillDealtToItsOwnBandAudience()
+    {
+        // Same coverage shape as above, but the covered role belongs to a
+        // training path: the path-member exception keeps it in the draft, so
+        // its ranking is recorded for the uncovered pawn (coverage still
+        // satisfies the want itself, hence no extra candidate).
+        var farmer = RecsTestBed.Role(1, "Cooking", "Grow", "Cut");
+        var grower = RecsTestBed.Role(2, "Cooking", "Grow");
+        farmer.MinHolders = -1; grower.MinHolders = -1;
+        var covered = RecsTestBed.Pawn(); covered.SkillLevels["Cooking"] = 5;
+        var audience = RecsTestBed.Pawn(); audience.SkillLevels["Cooking"] = 4;
+        var colony = RecsTestBed.Colony(new List<RoleView> { farmer, grower }, covered, audience);
+        colony.Paths.Add(RecsTestBed.Path(1, (2, 0, 21)));
+        var context = new EngineContext(colony);
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+        await Assert.That(context.Candidates[0].ContainsKey(1)).IsTrue();  // coverer dealt first
+        await Assert.That(context.DraftRankings[1].ContainsKey(2)).IsTrue();
+        // Without the path, the covered role is skipped outright: no ranking.
+        colony.Paths.Clear();
+        var skipped = new EngineContext(colony);
+        new CoverageScalingRule(new UnitScaling()).Apply(skipped);
+        new BestInColonyDraftRule().Apply(skipped);
+        await Assert.That(skipped.DraftRankings[1].ContainsKey(2)).IsFalse();
     }
 
     [Test]

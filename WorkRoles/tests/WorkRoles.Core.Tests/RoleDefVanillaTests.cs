@@ -64,10 +64,10 @@ public class RoleDefVanillaTests
     }
 
     [Test]
-    public async Task EveryDefCrossReferenceResolves()
+    public async Task EveryGroupReferenceResolves()
     {
-        // Every identifier a def references must exist: group among the
-        // file's RoleGroupDef labels.
+        // group must name one of the file's RoleGroupDef labels (colorRef has
+        // its own test above).
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir != null && !File.Exists(Path.Combine(dir.FullName, "WorkRoles.slnx")))
             dir = dir.Parent;
@@ -97,6 +97,22 @@ public class RoleDefVanillaTests
             await Assert.That(known).IsTrue()
                 .Because($"{role.DefName}: '{entry.DefName}' is not a vanilla {entry.Kind}");
         }
+    }
+
+    /// The test-side vanilla table and the production baseline are generated
+    /// from the same game data; if either regeneration goes stale the giver ->
+    /// work-type mappings drift apart, so pin them to each other.
+    [Test]
+    public async Task VanillaWorkOrderAndGiverBaselineAgree()
+    {
+        foreach (var pair in GiverType)
+            await Assert.That(VanillaGiverBaseline.GiverWorkType.TryGetValue(pair.Key, out var type)
+                    && type == pair.Value).IsTrue()
+                .Because($"{pair.Key}: VanillaWorkOrder says {pair.Value}, baseline says "
+                    + (VanillaGiverBaseline.GiverWorkType.TryGetValue(pair.Key, out var t) ? t : "<missing>"));
+        foreach (var pair in VanillaGiverBaseline.GiverWorkType)
+            await Assert.That(GiverType.ContainsKey(pair.Key)).IsTrue()
+                .Because($"{pair.Key} is in the baseline but not in VanillaWorkOrder");
     }
 
     [Test]

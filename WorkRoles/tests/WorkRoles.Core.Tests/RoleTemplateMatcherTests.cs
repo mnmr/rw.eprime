@@ -19,6 +19,17 @@ public class RoleTemplateMatcherTests
             user, "Crafting", candidates);
 
         await Assert.That(match.Key).IsEqualTo("skilled");
+
+        // Equal recall: precision (tighter coverage) outranks even a matching
+        // primary skill on the looser candidate.
+        RoleTemplateCandidate precise = RoleTemplateMatcher.Closest(
+            user, "Crafting", new[]
+            {
+                new RoleTemplateCandidate("loose", new[] { "A", "B", "C", "D" }, "Crafting"),
+                new RoleTemplateCandidate("tight", new[] { "A", "B" }, "Cooking"),
+            });
+
+        await Assert.That(precise.Key).IsEqualTo("tight");
     }
 
     [Test]

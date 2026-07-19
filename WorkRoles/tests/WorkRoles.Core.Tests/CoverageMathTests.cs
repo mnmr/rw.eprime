@@ -21,6 +21,18 @@ public class CoverageMathTests
     }
 
     [Test]
+    public async Task OrderedCoverageFollowsEntryOrderExpandsInCatalogOrderAndDedupes()
+    {
+        // Giver first, then its own work type: the giver keeps its earlier
+        // slot, the expansion appends only the remaining givers; unknown
+        // entries contribute nothing.
+        var ordered = CoverageMath.OrderedCoverageOf(
+            new[] { Giver("Butcher"), Type("ModdedType"), Type("Cooking"), Giver("HaulGeneral") },
+            Catalog);
+        await Assert.That(string.Join(",", ordered)).IsEqualTo("Butcher,Cook,Brew,HaulGeneral");
+    }
+
+    [Test]
     public async Task WorkTypeCoversItsGiverSubsetHoweverSpelled()
     {
         var cookType = CoverageMath.CoverageOf(new[] { Type("Cooking") }, Catalog);

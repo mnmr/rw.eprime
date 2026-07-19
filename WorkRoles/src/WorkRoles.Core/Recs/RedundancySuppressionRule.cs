@@ -3,11 +3,10 @@ using System.Linq;
 
 namespace WorkRoles.Core.Recs
 {
-    /// Rule 10: a combo candidate beats its parts — with two escapes. A
+    /// Rule 10: a combo candidate beats its parts, with two escapes. A
     /// covered role that sits ABOVE its coverer in a shared path (higher band
-    /// min) survives, and the lower-band partner stays alongside it. A NEW
-    /// coverer whose job order would reshuffle the pawn's existing priorities
-    /// never folds them: it is dropped instead (order-compatible folds only).
+    /// min) survives, and the lower-band partner stays alongside it. Blocker
+    /// roles neither suppress nor are suppressed.
     public sealed class RedundancySuppressionRule : RecRule
     {
         public override string Id => "redundancy";
@@ -16,16 +15,6 @@ namespace WorkRoles.Core.Recs
         public override void Apply(EngineContext context, int pawnIndex)
         {
             var byRole = context.Candidates[pawnIndex];
-            var existing = context.Colony.Pawns[pawnIndex].Existing;
-
-            foreach (int id in byRole.Keys.ToList())
-            {
-                var coverer = context.RoleOf(id);
-                if (coverer == null || coverer.Blocker) continue;
-                if (existing.Any(a => a.RoleId == id)) continue;
-                if (!OrderCompatible(context, pawnIndex, coverer))
-                    context.RemoveCandidate(pawnIndex, id);
-            }
 
             // Checked against the full list, like the retired engine: a
             // suppressed coverer still suppresses its own parts.
@@ -62,33 +51,6 @@ namespace WorkRoles.Core.Recs
                     return true;
             }
             return false;
-        }
-
-        // A coverer folds held roles only when relative order matches its own job order.
-        private static bool OrderCompatible(EngineContext context, int pawnIndex, RoleView coverer)
-        {
-            if (coverer.OrderedCoverage == null) return true;
-            int last = -1;
-            foreach (var a in context.Colony.Pawns[pawnIndex].Existing)
-            {
-                if (a.Pinned) continue;
-                var held = context.RoleOf(a.RoleId);
-                if (held == null || held.Id == coverer.Id) continue;
-                if (!CoverageMath.MakesRedundant(coverer.Coverage, coverer.Id,
-                        held.Coverage, held.Id)) continue;
-                int first = FirstCoveredIndex(coverer, held);
-                if (first < 0) continue;
-                if (first < last) return false;
-                last = first;
-            }
-            return true;
-        }
-
-        private static int FirstCoveredIndex(RoleView coverer, RoleView held)
-        {
-            for (int i = 0; i < coverer.OrderedCoverage.Count; i++)
-                if (held.Coverage.Contains(coverer.OrderedCoverage[i])) return i;
-            return -1;
         }
     }
 }

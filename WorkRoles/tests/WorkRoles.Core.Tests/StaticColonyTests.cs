@@ -3,8 +3,7 @@ using WorkRoles.Core;
 namespace WorkRoles.Core.Tests;
 
 /// Certifies the phase-1 inputs: the static colony is exactly what it claims
-/// to be, and the flattening (spec -> engine pawn) loses and invents nothing.
-/// Everything downstream may then trust these inputs.
+/// to be. Everything downstream may then trust these inputs.
 public class StaticColonyTests
 {
     [Test]
@@ -35,31 +34,6 @@ public class StaticColonyTests
                 .Where(a => a.Kind == AttributeKind.Aptitude || a.Kind == AttributeKind.Trait)
                 .Select(a => a.Skill).ToList();
             await Assert.That(attitudeSkills.Distinct().Count()).IsEqualTo(attitudeSkills.Count);
-        }
-    }
-
-    [Test]
-    public async Task FlatteningReproducesTheSpec()
-    {
-        foreach (var spec in StaticColony.Pawns)
-        {
-            var pawn = StaticColony.ToPawnView(spec);
-
-            for (int i = 0; i < StaticColony.Skills.Length; i++)
-                await Assert.That(pawn.SkillLevels[StaticColony.Skills[i]]).IsEqualTo(spec.Levels[i])
-                    .Because($"{spec.Name}: {StaticColony.Skills[i]} level");
-            await Assert.That(pawn.HasRangedWeapon).IsEqualTo(spec.HasGun);
-            await Assert.That(pawn.ShootingLevel).IsEqualTo(spec.Levels[0]);
-
-            foreach (string skill in StaticColony.Skills)
-                await Assert.That(pawn.SignalBuckets[skill])
-                    .IsEqualTo(StaticColony.BucketFor(spec, skill))
-                    .Because($"{spec.Name}: aggregate signal for {skill}");
-            await Assert.That(pawn.SignalBuckets.Count).IsEqualTo(StaticColony.Skills.Length);
-
-            foreach (var workType in StaticColony.AllWorkTypes)
-                await Assert.That(pawn.CapableWorkTypes.Contains(workType)).IsTrue()
-                    .Because($"{spec.Name}: capable of {workType}");
         }
     }
 

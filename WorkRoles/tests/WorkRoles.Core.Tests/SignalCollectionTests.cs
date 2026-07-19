@@ -2,7 +2,8 @@ using WorkRoles.Core.Signals;
 
 namespace WorkRoles.Core.Tests;
 
-public class SignalComparerTests
+/// SignalCollection.Collect: provider fault isolation and output hygiene.
+public class SignalCollectionTests
 {
     [Test]
     public async Task CollectionContinuesAfterOneProviderFailsAndSortsOutput()
@@ -18,8 +19,7 @@ public class SignalComparerTests
         var signals = SignalCollection.Collect("pawn", providers,
             (index, error) => errors.Add((index, error)));
 
-        await Assert.That(signals.Select(x => x.Source.DefName)).IsEquivalentTo(new[] { "a", "z" });
-        await Assert.That(signals[0].Source.DefName).IsEqualTo("a");
+        await Assert.That(string.Join(",", signals.Select(x => x.Source.DefName))).IsEqualTo("a,z");
         await Assert.That(errors.Count).IsEqualTo(1);
         await Assert.That(errors[0].index).IsEqualTo(1);
         await Assert.That(errors[0].error.Message).IsEqualTo("broken optional integration");

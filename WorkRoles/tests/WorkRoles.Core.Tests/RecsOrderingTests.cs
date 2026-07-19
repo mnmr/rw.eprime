@@ -77,7 +77,20 @@ public class RecsOrderingTests
         new OrderingRule().Apply(context, 0);
         await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,3,2");
 
-        // Equal buckets: lower base position wins; then path id.
+        // Equal buckets: the block whose member sits earlier in the template
+        // wins on base position, beating the lower path id.
+        var positioned = RecsTestBed.Colony(new List<RoleView> { anchor, artly, smithy }, pawn);
+        positioned.OrderTemplate = new List<int> { 1, 3 };
+        positioned.Paths.Add(pathA);
+        positioned.Paths.Add(pathB);
+        var byPosition = new EngineContext(positioned);
+        Candidate(byPosition, 0, 1);
+        Candidate(byPosition, 0, 2, SignalBucket.Strong);
+        Candidate(byPosition, 0, 3, SignalBucket.Strong);
+        new OrderingRule().Apply(byPosition, 0);
+        await Assert.That(RecsTestBed.Ids(byPosition.Results[0])).IsEqualTo("1,3,2");
+
+        // Equal buckets and equal (unlisted) positions: path id decides.
         var tie = new EngineContext(colony);
         Candidate(tie, 0, 1);
         Candidate(tie, 0, 2, SignalBucket.Strong);
@@ -87,12 +100,40 @@ public class RecsOrderingTests
     }
 
     [Test]
+    public async Task DirectRoleSharedBySeveralPathsKeepsConfiguredPosition()
+    {
+        var firstAnchor = RecsTestBed.Role(1, "Cooking", "First");
+        var shared = RecsTestBed.Role(2, "Crafting", "Shared");
+        var middle = RecsTestBed.Role(3, "Doctor", "Middle");
+        var lastAnchor = RecsTestBed.Role(4, "Hunting", "Last");
+        var roles = new List<RoleView> { firstAnchor, shared, middle, lastAnchor };
+        var colony = RecsTestBed.Colony(roles, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 2, 3, 4 };
+        var firstPath = RecsTestBed.Path(1, (shared.Id, 0, 21));
+        firstPath.AnchorRoleId = firstAnchor.Id;
+        firstPath.AnchorBefore = false;
+        var secondPath = RecsTestBed.Path(2, (shared.Id, 0, 21));
+        secondPath.AnchorRoleId = lastAnchor.Id;
+        secondPath.AnchorBefore = false;
+        colony.Paths.Add(firstPath);
+        colony.Paths.Add(secondPath);
+        var context = new EngineContext(colony);
+        foreach (var role in roles) Candidate(context, 0, role.Id);
+
+        new OrderingRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3,4");
+    }
+
+    [Test]
     public async Task ExplicitHunterTemplatePositionOverridesSkillTier()
     {
         var blocker = RecsTestBed.Role(1, "Cooking", "Firefight"); blocker.Blocker = true;
         var cook = RecsTestBed.Role(2, "Cooking");
         var hunter = RecsTestBed.Role(3, "Hunting"); hunter.Hunting = true;
         var pawn = RecsTestBed.Pawn();
+
+        // Tier 0 would naturally lead the template; the template keeps it last.
         var colony = RecsTestBed.Colony(new List<RoleView> { blocker, cook, hunter }, pawn);
         colony.OrderTemplate = new List<int> { 2, 3 };
         colony.HunterRoleId = 3;
@@ -104,9 +145,19 @@ public class RecsOrderingTests
         context.HunterTiers[0] = 0;
         new OrderingRule().Apply(context, 0);
         await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3");
-        context.HunterTiers[0] = 3;
-        new OrderingRule().Apply(context, 0);
-        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3");
+
+        // Tier 3 would naturally sort last; the template keeps it first.
+        var leading = RecsTestBed.Colony(new List<RoleView> { blocker, cook, hunter }, pawn);
+        leading.OrderTemplate = new List<int> { 3, 2 };
+        leading.HunterRoleId = 3;
+        leading.FireBlockerRoleId = 1;
+        var tier3 = new EngineContext(leading);
+        Candidate(tier3, 0, 1);
+        Candidate(tier3, 0, 2);
+        Candidate(tier3, 0, 3);
+        tier3.HunterTiers[0] = 3;
+        new OrderingRule().Apply(tier3, 0);
+        await Assert.That(RecsTestBed.Ids(tier3.Results[0])).IsEqualTo("1,3,2");
     }
 
     [Test]

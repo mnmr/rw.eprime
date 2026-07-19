@@ -19,6 +19,8 @@ namespace WorkRoles
         /// Genes that make a pawn terrified of fire (Biotech's pyrophobia;
         /// extend here if mods add equivalents).
         internal static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
+        internal static readonly HashSet<string> FixedRecommendationOrderTemplates =
+            new HashSet<string> { "WS_Researcher", "WS_DarkStudier" };
 
         public static ColonyView BuildColonyView(RoleStore store, List<Pawn> pawns)
             => BuildColonyView(store, pawns, PawnSignalSnapshots.Build);
@@ -62,6 +64,8 @@ namespace WorkRoles
                 HasRules = role.HasRules,
                 Blocker = role.blocker,
                 Hunting = ProvidesHunting(role),
+                PreserveRecommendationOrder = FixedRecommendationOrderTemplates
+                    .Contains(role.templateDefName),
                 NaturalPriority = MaxNaturalPriority(role),
                 WorkTypes = WorkTypesOf(role).Select(wt => wt.defName).ToList(),
                 HolderMode = role.holderMode,

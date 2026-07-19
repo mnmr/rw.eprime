@@ -170,6 +170,7 @@ namespace WorkRoles.Core.Recs
 
         private static void AddTarget(EngineContext context, RoleView target, PathMatch match)
         {
+            RecordPlacement(context, match, target.Id, target.Id);
             context.AddCandidate(match.Pawn, target.Id, new Reason
             {
                 RuleId = "draft",
@@ -184,6 +185,7 @@ namespace WorkRoles.Core.Recs
             context.TrainingToward[match.Pawn].Add(target.Id);
             foreach (var pair in match.TrainingRoles)
             {
+                RecordPlacement(context, match, pair.role.Id, target.Id);
                 context.AddCandidate(match.Pawn, pair.role.Id, new Reason
                 {
                     RuleId = Id,
@@ -198,6 +200,17 @@ namespace WorkRoles.Core.Recs
                     ? value : 0;
                 context.Want[pair.role.Id] = demandPolicy.Minimum(baseWant, inbound);
             }
+        }
+
+        private static void RecordPlacement(EngineContext context, PathMatch match,
+            int roleId, int targetRoleId)
+        {
+            context.TrainingPathPlacements[match.Pawn][roleId] =
+                new TrainingPathPlacement
+                {
+                    PathId = match.Path.Id,
+                    TargetRoleId = targetRoleId,
+                };
         }
 
         private sealed class PathMatch

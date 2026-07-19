@@ -24,9 +24,11 @@ public class RoleDefHolderDefaultsTests
         };
         string path = Path.Combine(RepoRoot(), "mod", "1.6", "Defs", "Roles.xml");
 
+        var seen = new HashSet<string>();
         foreach (var def in XElement.Load(path).Elements("WorkRoles.RoleDef"))
         {
             string defName = def.Element("defName")!.Value.Trim();
+            seen.Add(defName);
             var configured = expected.TryGetValue(defName, out var value)
                 ? value : (minimum: 0, waivers: 0);
             var minimumNode = def.Element("minHolders");
@@ -37,6 +39,11 @@ public class RoleDefHolderDefaultsTests
             await Assert.That((minimum, waivers)).IsEqualTo(configured)
                 .Because($"{defName} has the wrong shipped holder defaults");
         }
+
+        // A renamed or deleted def must not leave a stale expectation behind.
+        foreach (string defName in expected.Keys)
+            await Assert.That(seen.Contains(defName)).IsTrue()
+                .Because($"{defName} is expected but not shipped");
     }
 
     private static string RepoRoot()

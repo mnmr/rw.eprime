@@ -34,5 +34,14 @@ public class RoleSkillProfileTests
         });
 
         await Assert.That(profile.Single(s => s.Primary).SkillDefName).IsEqualTo("Medicine");
+
+        // Equal importance AND training evidence: ordinal defName decides.
+        List<RoleSkillView> byName = RoleSkillProfile.Build(new[]
+        {
+            new RoleSkillEvidence("Melee", usedJobs: 2, trainedJobs: 0, requiredContent: 0),
+            new RoleSkillEvidence("Cooking", usedJobs: 2, trainedJobs: 0, requiredContent: 0),
+        });
+
+        await Assert.That(byName.Single(s => s.Primary).SkillDefName).IsEqualTo("Cooking");
     }
 }

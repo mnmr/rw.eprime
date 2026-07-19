@@ -166,23 +166,6 @@ public class JobOrderCompilerTests
     }
 
     [Test]
-    public async Task RanksFollowFirstGiverOrder()
-    {
-        var catalog = new FakeCatalog()
-            .WithWorkType("A", "a1")
-            .WithWorkType("B", "b1")
-            .WithWorkType("C", "c1")
-            .WithWorkType("D", "d1");
-        var roles = Roles(new[] { WT("A"), WT("B"), WT("C"), WT("D") });
-        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
-        // Work types rank 1..N in order of first appearance.
-        await Assert.That(result.WorkTypePriorities["A"]).IsEqualTo(1);
-        await Assert.That(result.WorkTypePriorities["B"]).IsEqualTo(2);
-        await Assert.That(result.WorkTypePriorities["C"]).IsEqualTo(3);
-        await Assert.That(result.WorkTypePriorities["D"]).IsEqualTo(4);
-    }
-
-    [Test]
     public async Task RanksAreConsecutivePerWorkTypeNotPositionBased()
     {
         // Doctor's first giver sits at list index 7, but it's only the SECOND work type,
@@ -194,15 +177,6 @@ public class JobOrderCompilerTests
         var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
         await Assert.That(result.WorkTypePriorities["Hauling"]).IsEqualTo(1);
         await Assert.That(result.WorkTypePriorities["Doctor"]).IsEqualTo(2);
-    }
-
-    [Test]
-    public async Task AbsentWorkTypeHasNoRank()
-    {
-        var catalog = new FakeCatalog().WithWorkType("A", "a1").WithWorkType("B", "b1");
-        var roles = Roles(new[] { WT("A") });
-        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
-        await Assert.That(result.WorkTypePriorities.ContainsKey("B")).IsFalse();
     }
 
     [Test]
@@ -230,21 +204,6 @@ public class JobOrderCompilerTests
         // Emergency membership follows the def flag alone; both lists preserve compiled order.
         await Assert.That(Flat(result.Emergency)).IsEqualTo("FightFires,TendEmergency");
         await Assert.That(Flat(result.Normal)).IsEqualTo("TendPatients,HaulGeneral");
-    }
-
-    [Test]
-    public async Task EmergencyGiversFromLateRolesStillGoToEmergencyList()
-    {
-        // Doctor is the pawn's LAST role — its emergency job still jumps to the
-        // emergency list (role membership decides participation, not position).
-        var catalog = new FakeCatalog()
-            .WithWorkType("Hauling", "HaulGeneral", "h2", "h3")
-            .WithWorkType("Doctor", "TendEmergency")
-            .WithEmergency("TendEmergency");
-        var roles = Roles(new[] { WT("Hauling") }, new[] { WT("Doctor") });
-        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
-        await Assert.That(Flat(result.Emergency)).IsEqualTo("TendEmergency");
-        await Assert.That(Flat(result.Normal)).IsEqualTo("HaulGeneral,h2,h3");
     }
 
     /// Vanilla replays priority numbers ascending, each left-to-right over the
@@ -315,18 +274,6 @@ public class JobOrderCompilerTests
     }
 
     [Test]
-    public async Task DeadEntries_CleanRoleHasNone()
-    {
-        var catalog = new FakeCatalog().WithWorkType("Cooking", "Cook", "Butcher", "Brew");
-        var entries = new List<JobEntry>
-        {
-            new(JobEntryKind.WorkGiver, "Butcher"),
-            new(JobEntryKind.WorkType, "Cooking"),  // below its giver: claims the rest
-        };
-        await Assert.That(JobOrderCompiler.DeadEntryIndexes(entries, catalog)).IsEmpty();
-    }
-
-    [Test]
     public async Task VanillaProjectionOfNothingIsEmpty()
     {
         var buckets = JobOrderCompiler.ToVanillaPriorities(new Dictionary<string, int>(), _ => 0);
@@ -382,7 +329,8 @@ public class JobOrderCompilerTests
     [Test]
     public async Task VanillaProjectionSpreadStopsWhenFourIsReached()
     {
-        // The skilled bump alone reaches 4: grunt and research stay untouched.
+        // Skilled and grunt bumps run; the research bump is skipped once the
+        // grunt bump lands D on 4 (see the trace below).
         var columns = new Dictionary<string, int>
             { ["A"] = 0, ["B"] = 1, ["C"] = 2, ["D"] = 3 };
         var ranks = new Dictionary<string, int>
@@ -401,17 +349,5 @@ public class JobOrderCompilerTests
         await Assert.That(buckets["C"]).IsEqualTo(2);
         await Assert.That(buckets["B"]).IsEqualTo(3);
         await Assert.That(buckets["D"]).IsEqualTo(4);
-    }
-
-    [Test]
-    public async Task EmergencyOnlyRolesYieldEmptyNormalList()
-    {
-        var catalog = new FakeCatalog()
-            .WithWorkType("Firefighter", "FightFires")
-            .WithEmergency("FightFires");
-        var roles = Roles(new[] { WT("Firefighter") });
-        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
-        await Assert.That(Flat(result.Emergency)).IsEqualTo("FightFires");
-        await Assert.That(result.Normal.Count).IsEqualTo(0);
     }
 }

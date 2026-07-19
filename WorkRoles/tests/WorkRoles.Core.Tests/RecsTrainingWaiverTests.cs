@@ -178,4 +178,103 @@ public class RecsTrainingWaiverTests
         await Assert.That(RecsTestBed.Ids(result)).IsEqualTo(researcher.Id.ToString());
         await Assert.That(result.Reasons[researcher.Id].TowardRoleId).IsEqualTo(target.Id);
     }
+
+    [Test]
+    public async Task WaiverRoleSharedByPathsUsesTheSelectedTargetsPathPlacement()
+    {
+        var core = RecsTestBed.Role(1, "Cooking", "Core");
+        core.AutoAssign = true;
+        var selectedTarget = RecsTestBed.Role(2, "Doctor", "SelectedTarget");
+        selectedTarget.HolderMode = RoleHolderMode.Custom;
+        selectedTarget.MinHolders = 1;
+        selectedTarget.TrainingWaivers = 1;
+        var basics = RecsTestBed.Role(3, "Cooking", "Basics");
+        basics.AutoAssign = true;
+        var otherTarget = RecsTestBed.Role(4, "Doctor", "OtherTarget");
+        var shared = RecsTestBed.Role(5, "Doctor", "Shared");
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Medicine"] = 5;
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { core, selectedTarget, basics, otherTarget, shared }, pawn);
+        colony.OrderTemplate = new List<int>
+            { core.Id, selectedTarget.Id, basics.Id, otherTarget.Id, shared.Id };
+        var selectedPath = RecsTestBed.Path(1,
+            (shared.Id, 0, 10), (selectedTarget.Id, 10, 21));
+        selectedPath.AnchorRoleId = core.Id;
+        selectedPath.AnchorBefore = false;
+        var unrelatedPath = RecsTestBed.Path(2,
+            (shared.Id, 0, 10), (otherTarget.Id, 10, 21));
+        unrelatedPath.AnchorRoleId = otherTarget.Id;
+        unrelatedPath.AnchorBefore = false;
+        colony.Paths.Add(selectedPath);
+        colony.Paths.Add(unrelatedPath);
+
+        PawnResult result = RecsEngine.Run(colony)[0];
+
+        await Assert.That(RecsTestBed.Ids(result)).IsEqualTo("1,5,3");
+        await Assert.That(result.Reasons[shared.Id].TowardRoleId)
+            .IsEqualTo(selectedTarget.Id);
+    }
+
+    [Test]
+    public async Task UnanchoredWaiverPathUsesTargetsConfiguredPosition()
+    {
+        var core = RecsTestBed.Role(1, "Cooking", "Core");
+        core.AutoAssign = true;
+        var target = RecsTestBed.Role(2, "Doctor", "Target");
+        target.HolderMode = RoleHolderMode.Custom;
+        target.MinHolders = 1;
+        target.TrainingWaivers = 1;
+        var basics = RecsTestBed.Role(3, "Cooking", "Basics");
+        basics.AutoAssign = true;
+        var trainee = RecsTestBed.Role(4, "Doctor", "Trainee");
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Medicine"] = 5;
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { core, target, basics, trainee }, pawn);
+        colony.OrderTemplate = new List<int>
+            { core.Id, target.Id, basics.Id, trainee.Id };
+        colony.Paths.Add(RecsTestBed.Path(1,
+            (trainee.Id, 0, 10), (target.Id, 10, 21)));
+
+        PawnResult result = RecsEngine.Run(colony)[0];
+
+        await Assert.That(RecsTestBed.Ids(result)).IsEqualTo("1,4,3");
+    }
+
+    [Test]
+    public async Task DirectTargetSelectedThroughAPathUsesThatPathsPlacement()
+    {
+        var core = RecsTestBed.Role(1, "Cooking", "Core");
+        core.AutoAssign = true;
+        var basics = RecsTestBed.Role(2, "Cooking", "Basics");
+        basics.AutoAssign = true;
+        var target = RecsTestBed.Role(3, "Doctor", "Target");
+        target.HolderMode = RoleHolderMode.Custom;
+        target.MinHolders = 1;
+        target.TrainingWaivers = 1;
+        var firstLower = RecsTestBed.Role(4, "Doctor", "FirstLower");
+        var secondLower = RecsTestBed.Role(5, "Doctor", "SecondLower");
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Medicine"] = 15;
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { core, basics, target, firstLower, secondLower }, pawn);
+        colony.OrderTemplate = new List<int>
+            { core.Id, basics.Id, target.Id, firstLower.Id, secondLower.Id };
+        var selectedPath = RecsTestBed.Path(1,
+            (firstLower.Id, 0, 10), (target.Id, 10, 21));
+        selectedPath.AnchorRoleId = core.Id;
+        selectedPath.AnchorBefore = false;
+        var otherPath = RecsTestBed.Path(2,
+            (secondLower.Id, 0, 10), (target.Id, 10, 21));
+        otherPath.AnchorRoleId = basics.Id;
+        otherPath.AnchorBefore = false;
+        colony.Paths.Add(selectedPath);
+        colony.Paths.Add(otherPath);
+
+        PawnResult result = RecsEngine.Run(colony)[0];
+
+        await Assert.That(RecsTestBed.Ids(result)).IsEqualTo("1,3,2");
+        await Assert.That(result.Reasons[target.Id].RuleId).IsEqualTo("draft");
+    }
 }

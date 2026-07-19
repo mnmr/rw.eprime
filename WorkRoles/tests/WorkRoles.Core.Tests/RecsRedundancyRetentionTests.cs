@@ -3,7 +3,7 @@ using WorkRoles.Core.Recs;
 namespace WorkRoles.Core.Tests;
 
 /// Retention (existing unskilled chores stay) and rule 10 (combo beats
-/// parts; same-path specializations survive; order-compatible folds only).
+/// parts; same-path specializations survive).
 public class RecsRedundancyRetentionTests
 {
     [Test]
@@ -69,10 +69,8 @@ public class RecsRedundancyRetentionTests
     }
 
     [Test]
-    public async Task OrderIncompatibleCovererIsDroppedInsteadOfFolding()
+    public async Task ExistingAssignmentOrderDoesNotChangeRedundancySuppression()
     {
-        // Grunt's job order is Haul,Clean; the pawn holds Clean before Haul —
-        // folding would reshuffle, so the NEW Grunt candidate drops.
         var grunt = RecsTestBed.Unskilled(1, "Hauling", "Haul", "Clean");
         grunt.OrderedCoverage = new List<string> { "Haul", "Clean" };
         var cleaner = RecsTestBed.Unskilled(2, "Hauling", "Clean");
@@ -85,11 +83,10 @@ public class RecsRedundancyRetentionTests
         context.AddCandidate(0, 1, new Reason { RuleId = "x", TowardRoleId = -1 }, SignalBucket.Neutral);
         new RetentionRule().Apply(context, 0);
         new RedundancySuppressionRule().Apply(context, 0);
-        await Assert.That(context.Candidates[0].ContainsKey(1)).IsFalse();
-        await Assert.That(context.Candidates[0].ContainsKey(2)).IsTrue();
-        await Assert.That(context.Candidates[0].ContainsKey(3)).IsTrue();
+        await Assert.That(context.Candidates[0].ContainsKey(1)).IsTrue();
+        await Assert.That(context.Candidates[0].ContainsKey(2)).IsFalse();
+        await Assert.That(context.Candidates[0].ContainsKey(3)).IsFalse();
 
-        // Held in the coverer's own order: the fold happens instead.
         var pawn2 = RecsTestBed.Pawn();
         pawn2.Existing.Add(new AssignmentView { RoleId = 3, Enabled = true });
         pawn2.Existing.Add(new AssignmentView { RoleId = 2, Enabled = true });

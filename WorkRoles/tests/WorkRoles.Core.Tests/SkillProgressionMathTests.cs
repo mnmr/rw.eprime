@@ -16,12 +16,20 @@ public class SkillProgressionMathTests
     }
 
     [Test]
-    public async Task EverySupportedCountYieldsValidDefaults()
+    public async Task EverySupportedCountYieldsValidAdjacentFullAxisDefaults()
     {
         for (int count = 1; count <= SkillProgressionMath.MaxInitialRoles; count++)
         {
             var (mins, maxes) = SkillProgressionMath.DefaultBands(count);
             await Assert.That(SkillProgressionMath.Validate(count, mins, maxes)).IsTrue();
+            // Defaults tile the whole axis: start at 0, end at the top, and
+            // each band starts exactly where the previous one ends.
+            await Assert.That(mins[0]).IsEqualTo(0).Because($"count {count}: axis start");
+            await Assert.That(maxes[count - 1])
+                .IsEqualTo(SkillProgressionMath.MaxLevel).Because($"count {count}: axis end");
+            for (int i = 1; i < count; i++)
+                await Assert.That(mins[i]).IsEqualTo(maxes[i - 1])
+                    .Because($"count {count}: band {i} not adjacent");
         }
     }
 

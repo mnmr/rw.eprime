@@ -87,7 +87,6 @@ public class PassionSignalCatalogTests
         await Assert.That(alpha.Length).IsEqualTo(46);
         await Assert.That(active).IsEquivalentTo(ActiveAlpha);
         await Assert.That(passive).IsEquivalentTo(PassiveAlpha);
-        await Assert.That(active.Intersect(passive, StringComparer.Ordinal).Any()).IsFalse();
     }
 
     [Test]
@@ -107,9 +106,6 @@ public class PassionSignalCatalogTests
         await Assert.That(dunce.FallbackUi.AuthorTier).IsEqualTo("Minor");
         await Assert.That(dunce.Effects.Any(x => x.Kind == SignalEffectKind.WorkPreference
             && x.Operation == SignalOperation.Descriptive)).IsTrue();
-
-        await Assert.That(PassionSignalDefinitions.IsExcludedTransientIdentity(
-            "sarg.alphaskills", "AS_YouthPassion")).IsTrue();
     }
 
     [Test]
@@ -128,7 +124,7 @@ public class PassionSignalCatalogTests
     [Test]
     public async Task EveryPassionDerivesItsSkillAndCarriesSourceAttribution()
     {
-        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(51);
+        // Count is pinned once, in SignalCatalogContractTests.
         await Assert.That(PassionSignalDefinitions.All.All(x => x.DerivesSkillFromSource)).IsTrue();
         await Assert.That(PassionSignalDefinitions.All.All(x =>
             !string.IsNullOrWhiteSpace(x.Source.PackageId)

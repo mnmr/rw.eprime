@@ -11,13 +11,13 @@ public class GroupEngineTests
     public async Task SectionsOrderedByTitle_MembersKeepInputOrder()
     {
         var sections = Partition("banana", "apple", "blueberry", "avocado");
-        await Assert.That(sections.Select(s => s.Title)).IsEquivalentTo(new[] { "A", "B" });
-        await Assert.That(sections[0].Members).IsEquivalentTo(new[] { "apple", "avocado" });
-        await Assert.That(sections[1].Members).IsEquivalentTo(new[] { "banana", "blueberry" });
+        await Assert.That(string.Join(",", sections.Select(s => s.Title))).IsEqualTo("A,B");
+        await Assert.That(string.Join(",", sections[0].Members)).IsEqualTo("apple,avocado");
+        await Assert.That(string.Join(",", sections[1].Members)).IsEqualTo("banana,blueberry");
     }
 
     [Test]
-    public async Task KeysAreStable_AndNullKeyIsTolerated()
+    public async Task NullKeyCoalescesToEmptyKey()
     {
         var sections = GroupEngine.Partition(new[] { 1, 2, 3 }, _ => (key: (string)null!, title: "All"));
         await Assert.That(sections).Count().IsEqualTo(1);
@@ -28,10 +28,12 @@ public class GroupEngineTests
     [Test]
     public async Task TitleOrderingIsCaseInsensitive()
     {
-        var sections = GroupEngine.Partition(new[] { "zeta", "Alpha", "beta" },
+        // "apple" before "Banana" holds only case-insensitively; Ordinal
+        // would sort "Banana" (66) ahead of "apple" (97).
+        var sections = GroupEngine.Partition(new[] { "cherry", "apple", "Banana" },
             s => (key: s, title: s));
-        await Assert.That(sections.Select(s => s.Title))
-            .IsEquivalentTo(new[] { "Alpha", "beta", "zeta" });
+        await Assert.That(string.Join(",", sections.Select(s => s.Title)))
+            .IsEqualTo("apple,Banana,cherry");
     }
 
     private static MembershipGroup<string> Members(string key, string title, params string[] members) =>
@@ -44,8 +46,8 @@ public class GroupEngineTests
             new[] { "carl", "anna", "bob" },
             new[] { Members("g2", "Zulu", "bob", "anna"), Members("g1", "Alpha", "carl") },
             "Ungrouped");
-        await Assert.That(sections.Select(s => s.Title)).IsEquivalentTo(new[] { "Zulu", "Alpha" });
-        await Assert.That(sections[0].Members).IsEquivalentTo(new[] { "anna", "bob" });
+        await Assert.That(string.Join(",", sections.Select(s => s.Title))).IsEqualTo("Zulu,Alpha");
+        await Assert.That(string.Join(",", sections[0].Members)).IsEqualTo("anna,bob");
     }
 
     [Test]
@@ -55,11 +57,11 @@ public class GroupEngineTests
             new[] { "anna", "bob", "carl" },
             new[] { Members("g1", "Guards", "anna"), Members("g2", "Cooks", "anna", "bob") },
             "Ungrouped");
-        await Assert.That(sections.Select(s => s.Title))
-            .IsEquivalentTo(new[] { "Guards", "Cooks", "Ungrouped" });
-        await Assert.That(sections[0].Members).IsEquivalentTo(new[] { "anna" });
-        await Assert.That(sections[1].Members).IsEquivalentTo(new[] { "anna", "bob" });
-        await Assert.That(sections[2].Members).IsEquivalentTo(new[] { "carl" });
+        await Assert.That(string.Join(",", sections.Select(s => s.Title)))
+            .IsEqualTo("Guards,Cooks,Ungrouped");
+        await Assert.That(string.Join(",", sections[0].Members)).IsEqualTo("anna");
+        await Assert.That(string.Join(",", sections[1].Members)).IsEqualTo("anna,bob");
+        await Assert.That(string.Join(",", sections[2].Members)).IsEqualTo("carl");
         await Assert.That(sections[2].Key).IsEqualTo("ungrouped");
     }
 

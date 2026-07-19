@@ -23,21 +23,12 @@ public class JobSkillMathTests
         0.001f, 0.001f, 0.001f, 0.001f, 0.001f, 0.001f, 0.001f, 0.001f, 0.001f, 0.001f,
     };
 
-    [Test]
-    public async Task ConstructionReachesFullSuccessAtEight()
-        => await Assert.That(JobSkillMath.LevelReaching(ConstructSuccess, 1f)).IsEqualTo(8);
-
-    [Test]
-    public async Task SurgeryReachesFullSuccessAtFifteen()
-        => await Assert.That(JobSkillMath.LevelReaching(SurgerySuccess, 1f)).IsEqualTo(15);
+    // The full-success/bottom-out levels are pinned by the milestone tests
+    // below, which assert the same (level, value) pairs on the same curves.
 
     [Test]
     public async Task UnreachableTargetIsMinusOne()
         => await Assert.That(JobSkillMath.LevelReaching(FoodPoison, 1f)).IsEqualTo(-1);
-
-    [Test]
-    public async Task FoodPoisonBottomsOutAtNine()
-        => await Assert.That(JobSkillMath.LevelOfMinimum(FoodPoison)).IsEqualTo(9);
 
     [Test]
     public async Task FlatCurveMinimumIsLevelZero()
@@ -55,7 +46,7 @@ public class JobSkillMathTests
     {
         var sorted = JobSkillMath.RisingMilestones(SurgerySuccess, new[] { 0.5f, 0.75f, 1f });
         var unsorted = JobSkillMath.RisingMilestones(SurgerySuccess, new[] { 1f, 0.5f, 0.75f });
-        await Assert.That(unsorted).IsEquivalentTo(sorted);
+        await Assert.That(unsorted.SequenceEqual(sorted)).IsTrue();
     }
 
     private static readonly float[] StandardTargets = { 0.5f, 0.75f, 0.9f, 1f };
@@ -65,15 +56,16 @@ public class JobSkillMathTests
     {
         // Baseline 75% covers the 0.5/0.75 targets; 90% at 4, 100% at 8.
         var milestones = JobSkillMath.RisingMilestones(ConstructSuccess, StandardTargets);
-        await Assert.That(milestones).IsEquivalentTo(new[] { (0, 0.75f), (4, 0.9f), (8, 1f) });
+        await Assert.That(milestones.SequenceEqual(new[] { (0, 0.75f), (4, 0.9f), (8, 1f) }))
+            .IsTrue();
     }
 
     [Test]
     public async Task SurgeryMilestones()
     {
         var milestones = JobSkillMath.RisingMilestones(SurgerySuccess, StandardTargets);
-        await Assert.That(milestones)
-            .IsEquivalentTo(new[] { (0, 0.1f), (4, 0.5f), (7, 0.75f), (10, 0.9f), (15, 1f) });
+        await Assert.That(milestones.SequenceEqual(
+            new[] { (0, 0.1f), (4, 0.5f), (7, 0.75f), (10, 0.9f), (15, 1f) })).IsTrue();
     }
 
     [Test]
@@ -81,7 +73,7 @@ public class JobSkillMathTests
     {
         // Baseline 5%, half at 3 (2%), a tenth at 6 (0.5%), bottom at 9 (0.1%).
         var milestones = JobSkillMath.FallingMilestones(FoodPoison, new[] { 0.5f, 0.1f });
-        await Assert.That(milestones)
-            .IsEquivalentTo(new[] { (0, 0.05f), (3, 0.02f), (6, 0.005f), (9, 0.001f) });
+        await Assert.That(milestones.SequenceEqual(
+            new[] { (0, 0.05f), (3, 0.02f), (6, 0.005f), (9, 0.001f) })).IsTrue();
     }
 }

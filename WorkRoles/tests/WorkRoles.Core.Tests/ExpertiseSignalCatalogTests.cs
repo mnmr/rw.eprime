@@ -85,7 +85,7 @@ public class ExpertiseSignalCatalogTests
         AssertRows("vanillaexpanded.skills", VseRows);
         AssertRows("sarg.alphaskills", AlphaRows);
 
-        await Assert.That(ExpertiseSignalDefinitions.All.Count).IsEqualTo(66);
+        // Count is pinned once, in SignalCatalogContractTests.
         await Assert.That(ExpertiseSignalDefinitions.All.All(x =>
             x.Type == SignalType.Active
             && !x.IsTransient
@@ -128,23 +128,6 @@ public class ExpertiseSignalCatalogTests
             .IsEqualTo(SignalEffectKind.Damage);
         await Assert.That(Effect("AS_Evading", "MeleeDodgeChance").Kind)
             .IsEqualTo(SignalEffectKind.Dodge);
-    }
-
-    [Test]
-    public async Task LevelAndSettingScaleResolveWithoutChangingPerLevelMagnitude()
-    {
-        var definition = One("Foreman");
-        var signal = SignalFactory.Instantiate(
-            definition,
-            runtimeSkillDefName: "Construction",
-            currentScale: 20f,
-            scaleMultiplier: 1.5f);
-        var effect = signal.Effects.Single();
-
-        await Assert.That(effect.Magnitude).IsEqualTo(0.05f);
-        await Assert.That(effect.CurrentScale).IsEqualTo(20f);
-        await Assert.That(effect.ScaleMultiplier).IsEqualTo(1.5f);
-        await Assert.That(Math.Abs(effect.ResolvedMagnitude.Value - 1.5f) < 0.0001f).IsTrue();
     }
 
     [Test]

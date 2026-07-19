@@ -104,6 +104,8 @@ public class ColonyScenarioTests
                 OrderedCoverage = CoverageMath.OrderedCoverageOf(entries, JobCatalog),
                 AutoAssign = def.Element("autoAssign")?.Value.Trim() == "true",
                 Blocker = def.Element("blocker")?.Value.Trim() == "true",
+                PreserveRecommendationOrder = defName == "WS_Researcher"
+                    || defName == "WS_DarkStudier",
                 Unskilled = workTypes.All(wt => !SkillsByWorkType.ContainsKey(wt)),
                 Hunting = workTypes.Contains("Hunting"),
                 // Defs ARE the Auto defaults, so the def value is the resolved count.
@@ -172,6 +174,8 @@ public class ColonyScenarioTests
                 int roll = rand.Next(100);
                 SignalBucket bucket = roll < 8 ? SignalBucket.Great
                     : roll < 28 ? SignalBucket.Strong
+                    : roll < 36 ? SignalBucket.Poor
+                    : roll < 40 ? SignalBucket.Awful
                     : SignalBucket.Neutral;
                 if (rand.Next(100) < 4) bucket = SignalBucket.Exceptional;
                 pawn.SignalBuckets[skill] = bucket;
@@ -249,25 +253,54 @@ public class ColonyScenarioTests
 
     // ----- invariants -----
 
+    /// The engine's hard veto: an Awful bucket on any required skill (or the
+    /// primary skill when nothing is marked required) excludes the pawn.
+    private static bool AwfulAt(ColonyView colony, int pawnIndex, WorkRoles.Core.Recs.RoleView role)
+    {
+        var skills = role.Skills.Where(s => s.Required).Select(s => s.SkillDefName).ToList();
+        if (skills.Count == 0 && role.PrimarySkill != null) skills.Add(role.PrimarySkill);
+        return skills.Any(skill =>
+            colony.Pawns[pawnIndex].SignalBuckets.TryGetValue(skill, out var bucket)
+            && bucket == SignalBucket.Awful);
+    }
+
     [Test]
     [Arguments(1, 11)] [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)]
     [Arguments(10, 55)] [Arguments(50, 66)]
-    public async Task NeededRolesAreCoveredWheneverAnyCapablePawnExists(int size, int seed)
+    public async Task NeededRolesAreCoveredWheneverAnEligiblePawnExists(int size, int seed)
     {
         // minHolders is an ABSOLUTE floor: bands gate interest, never the
-        // need-driven fill. Generated pawns carry no apathy, so every capable
-        // pawn is eligible for a needed role regardless of skill level.
+        // need-driven fill. Eligible = capable and not hard-vetoed by an
+        // Awful bucket (the draft never assigns Awful pawns).
         var (catalog, colony, results) = Execute(size, seed);
         foreach (var role in catalog.Roles)
         {
             if (role.MinHolders < 1 || role.Blocker || role.HasRules || role.Hunting) continue;
-            bool anyCapable = Enumerable.Range(0, colony.Pawns.Count).Any(i =>
-                role.WorkTypes.Any(colony.Pawns[i].CapableWorkTypes.Contains));
-            if (!anyCapable) continue;
+            bool anyEligible = Enumerable.Range(0, colony.Pawns.Count).Any(i =>
+                role.WorkTypes.Any(colony.Pawns[i].CapableWorkTypes.Contains)
+                && !AwfulAt(colony, i, role));
+            if (!anyEligible) continue;
             bool covered = results.Any(r => Holds(r, catalog, role));
             await Assert.That(covered).IsTrue()
                 .Because($"{catalog.DefNames[role.Id]} uncovered (size {size}, seed {seed})");
         }
+    }
+
+    [Test]
+    [Arguments(10, 33)] [Arguments(50, 44)] [Arguments(50, 66)]
+    public async Task DraftNeverGrantsARoleToAnAwfulPawn(int size, int seed)
+    {
+        var (catalog, colony, results) = Execute(size, seed);
+        for (int i = 0; i < results.Count; i++)
+            foreach (var assignment in results[i].Assignments)
+            {
+                if (!results[i].Reasons.TryGetValue(assignment.RoleId, out var reason)
+                    || reason.RuleId != "draft") continue;
+                var role = catalog.Roles.First(r => r.Id == assignment.RoleId);
+                await Assert.That(AwfulAt(colony, i, role)).IsFalse()
+                    .Because($"{catalog.DefNames[role.Id]} drafted to an Awful pawn "
+                        + $"(pawn {i}, size {size}, seed {seed})");
+            }
     }
 
     [Test]
@@ -391,5 +424,51 @@ public class ColonyScenarioTests
             "WS_Core,WS_Doctor,WS_Basics,WS_Childminder,WS_Warden,WS_Handler,"
             + "WS_Cook,WS_Builder,WS_Farmer,WS_Miner,WS_Smith,WS_Tailor,"
             + "WS_Artist,WS_Crafter,WS_Fisher,WS_Grunt,WS_DarkStudier,WS_Researcher");
+    }
+
+    [Test]
+    public async Task ResearcherUsesItsExactRecommendationSlotInsteadOfItsTrainingPath()
+    {
+        var catalog = Shipped();
+        var names = new[] { "WS_Core", "WS_Basics", "WS_Cook", "WS_Grunt", "WS_Researcher" };
+        var roleIds = names.Select(name => catalog.DefNames.Single(pair => pair.Value == name).Key)
+            .ToList();
+        var colony = Build(catalog, new List<PawnView> { new PawnView() });
+        var context = new EngineContext(colony);
+        foreach (int roleId in roleIds)
+            context.AddCandidate(0, roleId,
+                new Reason { RuleId = "test", TowardRoleId = -1 }, SignalBucket.Neutral);
+
+        new OrderingRule().Apply(context, 0);
+
+        string actual = string.Join(",", context.Results[0].Assignments
+            .Select(assignment => catalog.DefNames[assignment.RoleId]));
+        await Assert.That(actual).IsEqualTo(string.Join(",", names));
+    }
+
+    [Test]
+    public async Task UnlistedResearchRolesLeadTheTrailingUnskilledBlock()
+    {
+        var catalog = Shipped();
+        int IdOf(string name) => catalog.DefNames.Single(pair => pair.Value == name).Key;
+        catalog.Paths.Clear();
+        catalog.OrderTemplate = new List<int>
+            { IdOf("WS_Core"), IdOf("WS_Cook"), IdOf("WS_Grunt") };
+        var candidates = new[]
+        {
+            "WS_Core", "WS_Cook", "WS_Grunt", "WS_DarkStudier", "WS_Researcher",
+        };
+        var colony = Build(catalog, new List<PawnView> { new PawnView() });
+        var context = new EngineContext(colony);
+        foreach (string name in candidates)
+            context.AddCandidate(0, IdOf(name),
+                new Reason { RuleId = "test", TowardRoleId = -1 }, SignalBucket.Neutral);
+
+        new OrderingRule().Apply(context, 0);
+
+        string actual = string.Join(",", context.Results[0].Assignments
+            .Select(assignment => catalog.DefNames[assignment.RoleId]));
+        await Assert.That(actual).IsEqualTo(
+            "WS_Core,WS_Cook,WS_DarkStudier,WS_Researcher,WS_Grunt");
     }
 }

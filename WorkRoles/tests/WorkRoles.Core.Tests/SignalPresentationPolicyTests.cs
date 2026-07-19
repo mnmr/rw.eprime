@@ -81,6 +81,8 @@ public class SignalPresentationPolicyTests
         await Assert.That(view.HasTooltip).IsFalse();
         await Assert.That(view.PassionTier).IsEqualTo(SignalPassionTier.None);
         await Assert.That(view.IconCandidates.Count).IsEqualTo(0);
+        await Assert.That(view.ActiveSignals.Count).IsEqualTo(0);
+        await Assert.That(view.PassiveSignals.Count).IsEqualTo(0);
     }
 
     [Test]
@@ -123,22 +125,12 @@ public class SignalPresentationPolicyTests
             new SignalSnapshot(new[] { activeSkill1, passiveSkill, activeSkill2, activeGlobal, passiveGlobal }),
             "Shooting");
 
-        await Assert.That(view.ActiveSignals).IsEquivalentTo(new[] { activeSkill1, activeSkill2, activeGlobal });
-        await Assert.That(view.PassiveSignals).IsEquivalentTo(new[] { passiveSkill, passiveGlobal });
-    }
-
-    [Test]
-    public async Task ActivePassiveOrderPreservesSkillSignalsBeforeGlobal()
-    {
-        var skillActive1 = MakeSignal("A1", "Ludeon.RimWorld", "Shooting", "icon1", type: SignalType.Active);
-        var skillActive2 = MakeSignal("A2", "Ludeon.RimWorld", "Shooting", "icon2", type: SignalType.Active);
-        var globalActive = MakeSignal("AG1", "Ludeon.RimWorld", null, "icon3", type: SignalType.Active);
-
-        var view = SignalPresentationPolicy.ForSkill(
-            new SignalSnapshot(new[] { skillActive1, skillActive2, globalActive }),
-            "Shooting");
-
-        await Assert.That(view.ActiveSignals).IsEquivalentTo(new[] { skillActive1, skillActive2, globalActive });
+        // string.Join pins the order: skill signals precede globals, snapshot
+        // order preserved within each source (IsEquivalentTo ignores order).
+        await Assert.That(string.Join(",", view.ActiveSignals.Select(x => x.Source.DefName)))
+            .IsEqualTo("A1,A2,AG1");
+        await Assert.That(string.Join(",", view.PassiveSignals.Select(x => x.Source.DefName)))
+            .IsEqualTo("P1,PG1");
     }
 
     [Test]
@@ -163,16 +155,8 @@ public class SignalPresentationPolicyTests
             new SignalSnapshot(new[] { spillover, activeGlobal }),
             "Cooking");
 
-        await Assert.That(view.ActiveSignals).IsEquivalentTo(new[] { spillover, activeGlobal });
-        await Assert.That(view.PassiveSignals.Count).IsEqualTo(0);
-    }
-
-    [Test]
-    public async Task EmptyActivePassiveListsWhenNoSignals()
-    {
-        var view = SignalPresentationPolicy.ForSkill(SignalSnapshot.Empty, "Shooting");
-
-        await Assert.That(view.ActiveSignals.Count).IsEqualTo(0);
+        await Assert.That(string.Join(",", view.ActiveSignals.Select(x => x.Source.DefName)))
+            .IsEqualTo("VSE_Critical,AG1");
         await Assert.That(view.PassiveSignals.Count).IsEqualTo(0);
     }
 

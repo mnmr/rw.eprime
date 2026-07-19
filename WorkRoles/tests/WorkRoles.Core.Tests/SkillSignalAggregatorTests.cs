@@ -70,7 +70,13 @@ public class SkillSignalAggregatorTests
                 throw new Exception($"{mapping.Kind}/{mapping.DefName}: expected {mapping.Bucket}, got {bucket}");
         }
 
-        await Assert.That(expected.Length).IsEqualTo(23);
+        // Completeness: every skill-targeted active non-expertise definition
+        // must have a row above, so new primaries cannot ship unmapped.
+        int primaries = SignalCatalog.Default.All.Count(x =>
+            x.Type == SignalType.Active
+            && (x.DerivesSkillFromSource || x.SkillDefName != null)
+            && x.Source.Kind != SignalSourceKind.Expertise);
+        await Assert.That(expected.Length).IsEqualTo(primaries);
     }
 
     [Test]
@@ -80,11 +86,9 @@ public class SkillSignalAggregatorTests
         {
             Signal signal = SignalFactory.Instantiate(definition, currentScale: 0f);
             bool classified = SignalClassificationCatalog.Default.TryClassify(signal, out var bucket);
-            if (!classified || bucket != SignalBucket.Exceptional)
-                throw new Exception(definition.Source.DefName + " was not Exceptional");
+            await Assert.That(classified && bucket == SignalBucket.Exceptional).IsTrue()
+                .Because(definition.Source.DefName + " must classify Exceptional at any level");
         }
-
-        await Assert.That(ExpertiseSignalDefinitions.All.Count).IsEqualTo(66);
     }
 
     [Test]
@@ -105,11 +109,9 @@ public class SkillSignalAggregatorTests
             var spillover = new Signal(primary.Type, primary.Source, "Cooking", primary.Effects,
                 primary.Ui, "Crafting", SignalRelation.Spillover);
             bool classified = SignalClassificationCatalog.Default.TryClassify(spillover, out var bucket);
-            if (!classified || bucket != pair.Value)
-                throw new Exception(pair.Key + " spillover was " + bucket);
+            await Assert.That(classified && bucket == pair.Value).IsTrue()
+                .Because(pair.Key + " spillover was " + bucket);
         }
-
-        await Assert.That(expected.Count).IsEqualTo(3);
     }
 
     [Test]

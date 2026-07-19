@@ -165,13 +165,20 @@ public class SignalDefinitionTests
     [Test]
     public async Task ComparerUsesTheDocumentedOrdinalOrder()
     {
+        // Full tie-break ladder: Type, Kind, PackageId, DefName, Degree,
+        // EffectDiscriminator, SkillDefName, Relation, OriginSkillDefName.
         var ui = new SignalUi("x", null, null, null, null, "RimWorld");
-        Signal Make(SignalType type, SignalSourceKind kind, string package, string def, string discriminator, string skill) =>
+        Signal Make(SignalType type, SignalSourceKind kind, string package, string def,
+            string discriminator, string skill, int? degree = null,
+            string origin = null, SignalRelation relation = SignalRelation.Primary) =>
             new(type,
-                new SignalSource(kind, def, package, effectDiscriminator: discriminator),
+                new SignalSource(kind, def, package,
+                    effectDiscriminator: discriminator, degree: degree),
                 skill,
                 Array.Empty<SignalEffect>(),
-                ui);
+                ui,
+                origin,
+                relation);
 
         var values = new List<Signal>
         {
@@ -181,25 +188,39 @@ public class SignalDefinitionTests
             Make(SignalType.Passive, SignalSourceKind.Passion, "a", "B", null, null),
             Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", "two", "Shooting"),
             Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, null),
+            Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, null, degree: 1),
+            Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, null, degree: 0),
+            Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, "Shooting",
+                origin: "Melee", relation: SignalRelation.Spillover),
+            Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, "Shooting",
+                origin: "Cooking", relation: SignalRelation.Spillover),
+            Make(SignalType.Passive, SignalSourceKind.Passion, "a", "A", null, "Shooting"),
         };
 
         values.Sort(SignalComparer.Instance);
 
         var ordered = string.Join("|", values.Select(x =>
-            $"{x.Type}:{x.Source.Kind}:{x.Source.PackageId}:{x.Source.DefName}:{x.Source.EffectDiscriminator}:{x.SkillDefName}"));
+            $"{x.Source.PackageId}:{x.Source.DefName}:{x.Source.Degree}:{x.Source.EffectDiscriminator}"
+            + $":{x.SkillDefName}:{x.Relation}:{x.OriginSkillDefName}"
+            + $":{x.Type}:{x.Source.Kind}"));
         await Assert.That(ordered).IsEqualTo(
-            "Passive:Passion:a:A::|" +
-            "Passive:Passion:a:A:two:Shooting|" +
-            "Passive:Passion:a:B::|" +
-            "Passive:Passion:z:Z::|" +
-            "Passive:Trait:a:A::|" +
-            "Active:Gene:b:A::");
+            "a:A::::Primary::Passive:Passion|" +
+            "a:A:::Shooting:Primary::Passive:Passion|" +
+            "a:A:::Shooting:Spillover:Cooking:Passive:Passion|" +
+            "a:A:::Shooting:Spillover:Melee:Passive:Passion|" +
+            "a:A::two:Shooting:Primary::Passive:Passion|" +
+            "a:A:0:::Primary::Passive:Passion|" +
+            "a:A:1:::Primary::Passive:Passion|" +
+            "a:B::::Primary::Passive:Passion|" +
+            "z:Z::::Primary::Passive:Passion|" +
+            "a:A::::Primary::Passive:Trait|" +
+            "b:A::::Primary::Active:Gene");
     }
 
     [Test]
     public async Task DefaultCatalogCombinesEveryAuditedDefinition()
     {
-        await Assert.That(SignalCatalog.Default.All.Count).IsEqualTo(152);
+        // Total count is pinned once, in SignalCatalogContractTests.
         await Assert.That(SignalCatalog.Default.Find(SignalSourceKind.Passion, "AS_DedicatedPassion").Count)
             .IsEqualTo(1);
         await Assert.That(SignalCatalog.Default.Find(SignalSourceKind.Expertise, "Precision").Count)
