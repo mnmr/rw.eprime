@@ -42,8 +42,8 @@ namespace WorkRoles.Core.Recs
         /// their members' keys (band-min DESCENDING inside the block;
         /// same-anchor blocks rank by the pawn's strongest bucket in the
         /// block, then the block's smallest base position, then path id);
-        /// then the hunter-tier and fire-safety overrides. A role in several
-        /// anchored paths takes the LAST path's key (paths list order).
+        /// then the unlisted-Hunter and fire-safety overrides. A role in
+        /// several anchored paths takes the LAST path's key (paths list order).
         public static Dictionary<int, long> SortKeys(EngineContext context, int pawnIndex)
         {
             var colony = context.Colony;
@@ -82,16 +82,84 @@ namespace WorkRoles.Core.Recs
             }
 
             int hunterId = colony.HunterRoleId;
-            if (hunterId != -1 && keys.ContainsKey(hunterId))
+            if (hunterId != -1 && keys.ContainsKey(hunterId)
+                && !colony.OrderTemplate.Contains(hunterId))
             {
                 int tier = context.HunterTiers[pawnIndex];
-                if (tier == 0) keys[hunterId] = -Slot / 20;       // food before skilled work
-                else if (tier == 2) keys[hunterId] = long.MaxValue;
+                if (tier >= 0) keys[hunterId] = HunterPosition(colony, tier);
             }
             if (colony.FireBlockerRoleId != -1 && keys.ContainsKey(colony.FireBlockerRoleId))
                 keys[colony.FireBlockerRoleId] = long.MinValue;   // veto must lead the list
             return keys;
         }
+
+        private static long HunterPosition(ColonyView colony, int tier)
+        {
+            if (tier >= 3) return long.MaxValue;
+            int lowAnchor = LowHunterAnchor(colony);
+            if (tier == 0) return AfterTemplateIndex(lowAnchor);
+
+            var workIndices = Enumerable.Range(0, colony.OrderTemplate.Count)
+                .Where(i => IsWorkRole(colony, colony.OrderTemplate[i]))
+                .ToList();
+            if (workIndices.Count == 0) return AfterTemplateIndex(lowAnchor);
+            return AfterTemplateIndex(tier == 1 ? workIndices[0] : workIndices[workIndices.Count - 1]);
+        }
+
+        /// Tier 0 follows the template's BasicWorker role plus immediately
+        /// following Childcare/Warden roles. Without that anchor, it follows
+        /// the template's leading auto-assigned roles.
+        private static int LowHunterAnchor(ColonyView colony)
+        {
+            int basics = -1;
+            for (int i = 0; i < colony.OrderTemplate.Count; i++)
+            {
+                var role = RoleAt(colony, i);
+                if (role != null && role.WorkTypes.Contains("BasicWorker"))
+                {
+                    basics = i;
+                    break;
+                }
+            }
+            if (basics >= 0)
+            {
+                int anchor = basics;
+                while (anchor + 1 < colony.OrderTemplate.Count)
+                {
+                    var next = RoleAt(colony, anchor + 1);
+                    if (next == null || (!next.WorkTypes.Contains("Childcare")
+                                         && !next.WorkTypes.Contains("Warden")))
+                        break;
+                    anchor++;
+                }
+                return anchor;
+            }
+
+            int lastLeadingAuto = -1;
+            while (lastLeadingAuto + 1 < colony.OrderTemplate.Count)
+            {
+                var next = RoleAt(colony, lastLeadingAuto + 1);
+                if (next == null || !next.AutoAssign) break;
+                lastLeadingAuto++;
+            }
+            return lastLeadingAuto;
+        }
+
+        private static bool IsWorkRole(ColonyView colony, int roleId)
+        {
+            var role = colony.Roles.FirstOrDefault(r => r.Id == roleId);
+            return role != null && !role.AutoAssign && role.PrimarySkill != null
+                && role.PrimarySkill != "Medicine" && role.PrimarySkill != "Social";
+        }
+
+        private static RoleView RoleAt(ColonyView colony, int templateIndex)
+        {
+            int roleId = colony.OrderTemplate[templateIndex];
+            return colony.Roles.FirstOrDefault(r => r.Id == roleId);
+        }
+
+        private static long AfterTemplateIndex(int templateIndex)
+            => templateIndex < 0 ? -Slot / 2 : templateIndex * Slot + Slot / 2;
 
         private static SignalBucket BlockStrength(EngineContext context, int pawnIndex, PathView path)
         {

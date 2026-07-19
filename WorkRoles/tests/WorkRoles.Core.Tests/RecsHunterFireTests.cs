@@ -25,23 +25,41 @@ public class RecsHunterFireTests
         var context = new EngineContext(HunterColony(low, mid, high, unarmed));
         new HunterRule().Apply(context);
         await Assert.That(context.HunterTiers[0]).IsEqualTo(0);
-        await Assert.That(context.HunterTiers[1]).IsEqualTo(1);
-        await Assert.That(context.HunterTiers[2]).IsEqualTo(2);
+        await Assert.That(context.HunterTiers[1]).IsEqualTo(2);
+        await Assert.That(context.HunterTiers[2]).IsEqualTo(3);
         await Assert.That(context.HunterTiers[3]).IsEqualTo(-1);
         await Assert.That(context.Candidates[3].ContainsKey(1)).IsFalse();
         await Assert.That(context.Candidates[0][1].Reason.RuleId).IsEqualTo("hunter");
     }
 
     [Test]
-    public async Task AtLeastOneTierZeroWheneverAnyoneHunts()
+    public async Task ShootingTierBoundariesAreInclusive()
+    {
+        int[] levels = { 10, 11, 15, 16, 18, 19 };
+        var pawns = levels.Select(level =>
+        {
+            var pawn = RecsTestBed.Pawn();
+            pawn.HasRangedWeapon = true;
+            pawn.ShootingLevel = level;
+            return pawn;
+        }).ToArray();
+        var context = new EngineContext(HunterColony(pawns));
+
+        new HunterRule().Apply(context);
+
+        await Assert.That(string.Join(",", context.HunterTiers))
+            .IsEqualTo("0,1,1,2,2,3");
+    }
+
+    [Test]
+    public async Task LowestSkillHunterIsPromotedWhenNobodyLandsInTierZero()
     {
         var sniperA = RecsTestBed.Pawn(); sniperA.HasRangedWeapon = true; sniperA.ShootingLevel = 19;
         var sniperB = RecsTestBed.Pawn(); sniperB.HasRangedWeapon = true; sniperB.ShootingLevel = 20;
         var context = new EngineContext(HunterColony(sniperA, sniperB));
         new HunterRule().Apply(context);
-        // The best shooter is pulled down to tier 0 so food gets shot.
-        await Assert.That(context.HunterTiers[1]).IsEqualTo(0);
-        await Assert.That(context.HunterTiers[0]).IsEqualTo(2);
+        await Assert.That(context.HunterTiers[0]).IsEqualTo(0);
+        await Assert.That(context.HunterTiers[1]).IsEqualTo(3);
     }
 
     [Test]

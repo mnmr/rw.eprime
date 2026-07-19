@@ -34,7 +34,7 @@ namespace WorkRoles
             if (!Title.NullOrEmpty())
             {
                 sb.Append(Title);
-                if (!Badge.NullOrEmpty()) sb.Append(" — ").Append(Badge);
+                if (!Badge.NullOrEmpty()) sb.Append(" · ").Append(Badge);
             }
             foreach (var section in Sections)
             {
@@ -68,7 +68,7 @@ namespace WorkRoles
                             for (int i = 0; i < (columns.Cells?.Count ?? 0); i++)
                             {
                                 if (columns.Cells[i].NullOrEmpty()) continue;
-                                if (!firstCell) sb.Append(" — ");
+                                if (!firstCell) sb.Append(" · ");
                                 firstCell = false;
                                 sb.Append(columns.Cells[i]);
                             }

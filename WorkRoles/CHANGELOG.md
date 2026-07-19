@@ -6,7 +6,8 @@
 - Added: Import/export extended to include role groups and recommendation tuning options.
 - Changed: Restore Roles is now Restore Defaults and supports roles, groups, colors and recommendation tuning options.
 - Changed: Recommendation engine has been fully rewritten to use training paths and configurable per-role assignment ranges, so it can provide suggestions that reflect how you want them to be.
-- Fixed: Recommendation signals from Vanilla Skills Expanded and Alpha Skills weren't always working; it's now a pre-computed set of signal rules, backed by unit tests.
+- Changed: Tooltips on colonist skills and role recommendations now show recommendation signals/verdict and assignment reasoning.
+- Fixed: Recommendation signals from Vanilla Skills Expanded and Alpha Skills were incomplete. Coverage should be much improved now.
 - Fixed: Additional performance fixes and internal housekeeping.
 
 ## 1.1.4 — 2026-07-16

@@ -95,7 +95,7 @@ Known Incompatible:
 - If you've tested and found WorkRoles to be incompatible with another mod, let me know so I can add it here.
 
 Specific Mods: (these are mods I've checked for compatibility)
-- Colony Groups: works, and its groups show up in the colonist table's Group dropdown — but avoid its group work-priority presets (they set priorities).
+- Colony Groups: works (and its groups show up in the colonist table's Group dropdown), but avoid its group work-priority presets (they set priorities).
 - Complex Jobs: Moves jobs to new work types - should work fine.
 - Keep Building: Auto-creates work bills - should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
 

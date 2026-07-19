@@ -87,7 +87,7 @@ public class RecsOrderingTests
     }
 
     [Test]
-    public async Task HunterTiersAndFireBlockerOverrideTheTemplate()
+    public async Task ExplicitHunterTemplatePositionOverridesSkillTier()
     {
         var blocker = RecsTestBed.Role(1, "Cooking", "Firefight"); blocker.Blocker = true;
         var cook = RecsTestBed.Role(2, "Cooking");
@@ -103,10 +103,89 @@ public class RecsOrderingTests
         Candidate(context, 0, 3);
         context.HunterTiers[0] = 0;
         new OrderingRule().Apply(context, 0);
-        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,3,2");
-        context.HunterTiers[0] = 2;
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3");
+        context.HunterTiers[0] = 3;
         new OrderingRule().Apply(context, 0);
         await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3");
+    }
+
+    [Test]
+    public async Task UnlistedHunterUsesBasicsAndWorkRoleAnchorsForItsSkillTier()
+    {
+        var core = RecsTestBed.Role(1, "Cooking"); core.AutoAssign = true;
+        var basics = RecsTestBed.Role(2, "BasicWorker"); // auto flag intentionally false
+        var childcare = RecsTestBed.Role(3, "Childcare"); childcare.PrimarySkill = "Social";
+        var warden = RecsTestBed.Role(4, "Warden"); warden.PrimarySkill = "Social";
+        var doctor = RecsTestBed.Role(5, "Doctor");
+        var handler = RecsTestBed.Role(6, "Handling"); handler.PrimarySkill = "Animals";
+        var cook = RecsTestBed.Role(7, "Cooking");
+        var grunt = RecsTestBed.Role(8, "Hauling");
+        var hunter = RecsTestBed.Role(9, "Hunting"); hunter.Hunting = true;
+        var roles = new List<RoleView>
+            { core, basics, childcare, warden, doctor, handler, cook, grunt, hunter };
+        var pawn = RecsTestBed.Pawn();
+        var colony = RecsTestBed.Colony(roles, pawn);
+        colony.OrderTemplate = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8 };
+        colony.HunterRoleId = hunter.Id;
+
+        string AtTier(int tier)
+        {
+            var context = new EngineContext(colony);
+            foreach (var role in roles) Candidate(context, 0, role.Id);
+            context.HunterTiers[0] = tier;
+            new OrderingRule().Apply(context, 0);
+            return RecsTestBed.Ids(context.Results[0]);
+        }
+
+        await Assert.That(AtTier(0)).IsEqualTo("1,2,3,4,9,5,6,7,8");
+        await Assert.That(AtTier(1)).IsEqualTo("1,2,3,4,5,6,9,7,8");
+        await Assert.That(AtTier(2)).IsEqualTo("1,2,3,4,5,6,7,9,8");
+        await Assert.That(AtTier(3)).IsEqualTo("1,2,3,4,5,6,7,8,9");
+    }
+
+    [Test]
+    public async Task UnlistedLowHunterFallsAfterLeadingAutosWhenBasicsIsMissing()
+    {
+        var autoA = RecsTestBed.Role(1, "Cooking"); autoA.AutoAssign = true;
+        var autoB = RecsTestBed.Role(2, "Doctor"); autoB.AutoAssign = true;
+        var ordinary = RecsTestBed.Role(3, "Crafting");
+        var hunter = RecsTestBed.Role(4, "Hunting"); hunter.Hunting = true;
+        var roles = new List<RoleView> { autoA, autoB, ordinary, hunter };
+        var colony = RecsTestBed.Colony(roles, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 2, 3 };
+        colony.HunterRoleId = hunter.Id;
+        var context = new EngineContext(colony);
+        foreach (var role in roles) Candidate(context, 0, role.Id);
+        context.HunterTiers[0] = 0;
+
+        new OrderingRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,4,3");
+    }
+
+    [Test]
+    public async Task HunterUsesLowTierAnchorWhenTheTemplateHasNoWorkRole()
+    {
+        var basics = RecsTestBed.Role(1, "BasicWorker");
+        var childcare = RecsTestBed.Role(2, "Childcare"); childcare.PrimarySkill = "Social";
+        var grunt = RecsTestBed.Role(3, "Hauling");
+        var hunter = RecsTestBed.Role(4, "Hunting"); hunter.Hunting = true;
+        var roles = new List<RoleView> { basics, childcare, grunt, hunter };
+        var colony = RecsTestBed.Colony(roles, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 2, 3 };
+        colony.HunterRoleId = hunter.Id;
+
+        string AtTier(int tier)
+        {
+            var context = new EngineContext(colony);
+            foreach (var role in roles) Candidate(context, 0, role.Id);
+            context.HunterTiers[0] = tier;
+            new OrderingRule().Apply(context, 0);
+            return RecsTestBed.Ids(context.Results[0]);
+        }
+
+        await Assert.That(AtTier(1)).IsEqualTo("1,2,4,3");
+        await Assert.That(AtTier(2)).IsEqualTo("1,2,4,3");
     }
 
     [Test]

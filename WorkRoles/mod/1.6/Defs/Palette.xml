@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Defs>
-  <!-- Named colors for role definitions (Tailwind v3 vocabulary — the complete
-       set of the editor's swatches, shades 600-900, and the export format's
-       built-in names). Roles reference one via <colorRef>; re-hex an entry by
-       patch to retheme every role using it. PaletteDefTests pins this file to
-       the canonical hex values. -->
+  <!-- Named colors for role definitions. Uses Tailwind v3 vocabulary (shades 600-900 so white text is readable).
+       Roles reference one via <colorRef>; re-hex an entry by patch to re-theme every role using it. 
+       PaletteDefTests pins this file to the canonical hex values. -->
 
   <WorkRoles.PaletteDef><defName>slate-900</defName><hex>#0f172a</hex></WorkRoles.PaletteDef>
   <WorkRoles.PaletteDef><defName>slate-800</defName><hex>#1e293b</hex></WorkRoles.PaletteDef>
