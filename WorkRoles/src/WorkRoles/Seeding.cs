@@ -59,7 +59,8 @@ namespace WorkRoles
                     assigned++;
 
                     // Self-check: every work type the pawn had enabled must survive
-                    // migration. A drop here is a catalog/planner bug — scream.
+                    // migration. A drop is a catalog/planner bug (scream), except
+                    // everyone-types, which can drop by design (warn below).
                     foreach (var pair in before)
                     {
                         if (pair.Value == 0) continue;
@@ -72,7 +73,13 @@ namespace WorkRoles
                         if (workType != null && !workType.visible) continue;
                         if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
                         {
-                            Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                            // Everyone-types live only in Basics; a priority that
+                            // differs from the pawn's other Basics types has no
+                            // role to ride and drops legitimately.
+                            if (EveryoneWorkTypes.Contains(pair.Key))
+                                Log.Warning($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                            else
+                                Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
                             failures.Add("WR_SeedDropFailure".Translate(
                                 pawn.LabelShort, workType.labelShort ?? pair.Key, pair.Value));
                         }
