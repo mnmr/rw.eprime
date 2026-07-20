@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.2.1 — 2026-07-2x
+
+- Fixed: Code reorganization to improve re-use and testability.
+- 
+
 ## 1.2.0 — 2026-07-20
 
 - Added: Recommendation Tuning (under Options and per-role). Specify the default recommendation order for roles, customize training paths (role progression definitions) and set assignment counts.

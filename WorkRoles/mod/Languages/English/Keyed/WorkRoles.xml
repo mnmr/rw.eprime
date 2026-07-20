@@ -405,7 +405,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_TuningNeverHelp>Exclude this role from being recommended</WR_TuningNeverHelp>
   <WR_TuningCustomHelp>Set your own limits</WR_TuningCustomHelp>
   <WR_TuningMinHelp>How many colonists should at least get this role</WR_TuningMinHelp>
-  <WR_TuningMaxHelp>A conditional upper limit on assignments</WR_TuningMaxHelp>
+  <WR_TuningMaxHelp>An optional upper limit on assignments</WR_TuningMaxHelp>
   <WR_TuningWaiversHelp>How many of the minimum may be substituted with a training role (e.g. Medic instead of Doctor)</WR_TuningWaiversHelp>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
