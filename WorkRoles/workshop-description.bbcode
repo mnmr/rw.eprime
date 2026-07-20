@@ -22,7 +22,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Import/Export:[/b] Easily share or backup your role setup. Import allows overwrite or merge.
 [*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
 [*][b]Translation Ready:[/b] All text resources are read from resource files.
-[*][b]Designed for Performance:[/b] Everything is pre-computed at assignment, nothing runs per-tick.
+[*][b]Designed for Performance:[/b] Work priorities are cached; auto-roles recompute hourly (every 2500 ticks).
 [/list]
 
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
@@ -40,7 +40,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 
 [h1]How It Works[/h1]
 [list]
-[*]Each colonist's ordered roles compile into one strict job order: earlier roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
+[*]Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
 [*]The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so pawn AI behaves exactly as it would with a hand-tuned priority grid.
 [*]Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
 [*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
@@ -49,16 +49,19 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 
 [h1]Recommendation Logic[/h1]
 [list]
-[*][b]Analysis:[/b] Looks across all colonists in a location to ensure recommendations are balanced across the colony.
-[*][b]Suggestions:[/b] Suggests based on passions, genetics/traits, skill levels and training paths.
-[*][b]Applying:[/b] Cherry-pick individual recommendations or apply across all or selected colonists.
-[*][b]Full Spec:[/b] Check [url=https://github.com/mnmr/rw.workroles/README.md]README[/url] for a more comprehensive description (Workshop pages have character limits).
+[*][b]Colony Needs:[/b] Keeps essential roles covered using customizable minimum assignments.
+[*][b]Suggestions:[/b] Uses passions, genes, traits, skills/expertise and training paths; armed pawns also get skill-tiered Hunting recommendations.
+[*][b]Applying:[/b] Cherry-pick for one colonist or preview and apply colony-wide. Pin assignments that must stay untouched.
+[*][b]Protected:[/b] Auto-roles, pinned roles and blockers are never suggested, moved or removed.
+[*][b]Genetics:[/b] Fire-fearing pawns get Pyrophobe before Core.
+[*][b]Full Spec:[/b] See [url=https://github.com/mnmr/rw.workroles#readme]README[/url] for full details.
 [/list]
 
 [h1]Compatibility[/h1]
 [list]
 [*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-[*]Integrates with Vanilla Skills Expanded, Alpha Skills and Colony Groups when installed (not requirements).
+[*][b]Vanilla Skills Expanded / Alpha Skills:[/b] Expertise and passions are recommendation signals.
+[*][b]Colony Groups:[/b] Pawn groups appear in the colonist table's Group dropdown.
 [*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
 [*]Multiplayer compatible.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].

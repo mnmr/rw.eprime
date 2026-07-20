@@ -33,13 +33,13 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 
 - **Seeded Roles:** an initial role set is seeded into the game, covering all detected work types and jobs.
 - **Combo Roles:** various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
-- **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobia before Basics (which has Firefighting).
+- **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobe before Core (which has Firefighting).
 - **Extra Roles:** training roles that enable role progression and convenience roles to make prioritization easier.
 - **Modded Jobs:** jobs added by mods are unassigned by default. The role editor shows a warning when it detects a job that isn't in any role. AllowTool jobs are automatically assigned (Haul urgently to Basics, Finish off to Herder/Hunter).
 
 ## How it works
 
-Each colonist's ordered roles compile into one strict job order: earlier roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position. The compiled order is fed to the game through the same lists vanilla's job selection already consumes (`Pawn_WorkSettings`), so pawn AI behaves exactly as it would with a hand-tuned priority grid and needs no changes.
+Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position. The compiled order is fed to the game through the same lists vanilla's job selection already consumes (`Pawn_WorkSettings`), so pawn AI behaves exactly as it would with a hand-tuned priority grid and needs no changes.
 
 Everything is computed when assignments or roles change, then cached — no per-tick patches. Auto roles (time or location rules) additionally recompute exactly at hour boundaries and whenever a colonist changes location.
 
@@ -54,19 +54,20 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - **Colony Needs:** ensures that every essential role is assigned to at least one pawn. Roles are configured to be essential by specifying a min assignment requirement.
 - **Intelligent Defaults:** WorkRoles seeds roles with reasonable defaults (but you can override these to set your own requirements).
 - **Training Paths:** design your own role progressions or use the default set to flexibly configure how pawns should progress as their skill improves.
-- **Shiny Happy People:** training paths are suggested based on colonist genes, traits, aptitudes and passions, to make sure pawns primarily do what they like.
+- **Shiny Happy People:** training paths are suggested based on colonist genes, traits, passions and expertise, to make sure pawns primarily do what they like or are good at.
 - **Hunting:** recommended for everyone with a gun as a way to improve shooting skill, but at different priority based on current skill level.
 - **Apply Per Colonist:** click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
 - **Fix My Colony:** apply recommendations across all colonists, with a preview to see what would change.
 - **Role Pinning:** pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
 - **Untouched:** auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
-- **Genetics:** pawns genetically terrified of fire automatically get Pyrophobia (blocker role) placed before Basics.
+- **Genetics:** pawns terrified of fire automatically get Pyrophobe (blocker role) placed before Core (which has Firefighting).
 
 ## Compatibility
 
 - Requires [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077).
 - Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
-- Integrates with Vanilla Skills Expanded, Alpha Skills and Colony Groups when installed (not requirements).
+- Integrates with Vanilla Skills Expanded and Alpha Skills when installed: expertise and passions are recommendation signals.
+- Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
 - Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many, many others.
 - Multiplayer compatible.
 

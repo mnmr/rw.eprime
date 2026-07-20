@@ -55,7 +55,7 @@ Performance:
 Worth Noting:
 - Seeded Roles: An initial role set is seeded into the game, covering all detected work types and jobs. 
 - Combo Roles: Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
-- Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobia before Basics (which has Firefighting).
+- Blocker Roles: Used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobe before Core (which has Firefighting).
 - Extra Roles: Training roles that enable role progression and convenience roles to make prioritization easier.
 - Modded Jobs: Jobs added by mods are unassigned by default. The role editor shows a warning when it detects a job that isn't in any role. AllowTool jobs are automatically assigned (Haul urgently to Basics, Finish off to Herder/Hunter).
 
@@ -77,7 +77,7 @@ Recommendation Logic:
 - Fix My Colony: Apply recommendations across all colonists, with a preview to see what would change.
 - Role Pinning: Pin role assignments that you don't want the recommendation engine to touch. Right-click on already assigned roles to pin them.
 - Untouched: Auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
-- Genetics: Pawns terrified of fire automatically get Pyrophobia (blocker role) placed before Core (which has Firefighting).
+- Genetics: Pawns terrified of fire automatically get Pyrophobe (blocker role) placed before Core (which has Firefighting).
 
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
@@ -86,7 +86,7 @@ Compatibility:
 - Requires Harmony.
 
 Mod integrations (these will be used when installed, but are not requirements):
-- Vanilla Skills Expanded and Alpha Skills (expertise outranks passions for recommendations; icons for passions/apathies)
+- Vanilla Skills Expanded and Alpha Skills (expertise and passions are recommendation signals)
 - Colony Groups (your pawn groups appear as a grouping option for the colonist table)
 
 Known Incompatible:

@@ -1,12 +1,14 @@
 ﻿# Changelog
 
-## 1.2.0 — 2026-07-19
+## 1.2.0 — 2026-07-20
 
-- Added: Recommendation Tuning (under Options). Specify the default recommendation order for roles and customize training paths (role progression definitions).
+- Added: Recommendation Tuning (under Options and per-role). Specify the default recommendation order for roles, customize training paths (role progression definitions) and set assignment counts.
 - Added: Import/export extended to include role groups and recommendation tuning options.
 - Changed: Restore Roles is now Restore Defaults and supports roles, groups, colors and recommendation tuning options.
 - Changed: Recommendation engine has been fully rewritten to use training paths and configurable per-role assignment ranges, so it can provide suggestions that reflect how you want them to be.
 - Changed: Tooltips on colonist skills and role recommendations now show recommendation signals/verdict and assignment reasoning.
+- Changed: Lots of UI polish, with improved tooltips and help messages.
+- Changed: Split Basics role (added new Core role, kept Basics for the rest), so Doctor/Medic/Nurse can slot in before less important tasks.
 - Fixed: Recommendation signals from Vanilla Skills Expanded and Alpha Skills were incomplete. Coverage should be much improved now.
 - Fixed: Additional performance fixes and internal housekeeping.
 
