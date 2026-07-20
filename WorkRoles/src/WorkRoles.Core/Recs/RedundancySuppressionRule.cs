@@ -23,7 +23,8 @@ namespace WorkRoles.Core.Recs
             foreach (int id in ids)
             {
                 var role = context.RoleOf(id);
-                if (role == null || role.Blocker) continue;
+                if (role == null || role.Blocker
+                    || !context.FullyCapable(pawnIndex, role)) continue;
                 foreach (int otherId in ids)
                 {
                     var other = context.RoleOf(otherId);

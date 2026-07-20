@@ -149,12 +149,24 @@ namespace WorkRoles.Core.Recs
             return basePositions;
         }
 
+        /// A partial match is enough for eligibility: a pawn can still use a
+        /// mixed role for the work types they can perform.
         public bool Capable(int pawnIndex, RoleView role)
         {
             var capable = Colony.Pawns[pawnIndex].CapableWorkTypes;
             foreach (var workType in role.WorkTypes)
                 if (capable.Contains(workType)) return true;
             return false;
+        }
+
+        /// Coverage is stricter than eligibility: the pawn must be able to
+        /// perform every work type supplied by the requested role.
+        public bool FullyCapable(int pawnIndex, RoleView role)
+        {
+            var capable = Colony.Pawns[pawnIndex].CapableWorkTypes;
+            foreach (var workType in role.WorkTypes)
+                if (!capable.Contains(workType)) return false;
+            return true;
         }
 
         public int SkillLevel(int pawnIndex, string skill)
@@ -164,7 +176,11 @@ namespace WorkRoles.Core.Recs
         public IReadOnlyList<RoleSkillView> RequiredSkills(RoleView role)
         {
             if (requiredSkillsByRole.TryGetValue(role.Id, out var cached)) return cached;
-            var skills = role.Skills.Where(s => s.Required).ToList();
+            var skills = role.Skills.Where(s => s.Required)
+                .OrderByDescending(s => s.Primary)
+                .ThenByDescending(s => s.Importance)
+                .ThenBy(s => s.SkillDefName, System.StringComparer.Ordinal)
+                .ToList();
             if (skills.Count == 0 && role.PrimarySkill != null)
                 skills.Add(new RoleSkillView
                 {
@@ -183,7 +199,7 @@ namespace WorkRoles.Core.Recs
             var ordered = role.Skills
                 .OrderByDescending(s => s.Primary)
                 .ThenByDescending(s => s.Importance)
-                .ThenBy(s => s.SkillDefName)
+                .ThenBy(s => s.SkillDefName, System.StringComparer.Ordinal)
                 .ToList();
             orderedSkillsByRole[role.Id] = ordered;
             return ordered;
@@ -208,22 +224,20 @@ namespace WorkRoles.Core.Recs
         public SignalBucket BestSignal(int pawnIndex, RoleView role, out string skill, out SignalSource source)
         {
             var pawn = Colony.Pawns[pawnIndex];
+            foreach (var required in RequiredSkills(role))
+            {
+                if (pawn.SkillLevels.TryGetValue(required.SkillDefName, out _)
+                    && (!pawn.SignalBuckets.TryGetValue(required.SkillDefName, out var requiredBucket)
+                        || requiredBucket != SignalBucket.Awful))
+                    continue;
+                skill = required.SkillDefName;
+                source = SignalSource.Aggregated;
+                return SignalBucket.Awful;
+            }
+
             if (role.Skills.Count > 0)
             {
                 var ordered = OrderedSkills(role);
-                foreach (var required in ordered)
-                {
-                    if (!required.Required) continue;
-                    if (!pawn.SkillLevels.ContainsKey(required.SkillDefName)) continue;
-                    SignalBucket requiredBucket = pawn.SignalBuckets.TryGetValue(
-                        required.SkillDefName, out var classified)
-                        ? classified : SignalBucket.Neutral;
-                    if (requiredBucket != SignalBucket.Awful) continue;
-                    skill = required.SkillDefName;
-                    source = SignalSource.Aggregated;
-                    return SignalBucket.Awful;
-                }
-
                 foreach (var primary in ordered)
                 {
                     if (!pawn.SkillLevels.ContainsKey(primary.SkillDefName)) continue;
@@ -246,7 +260,9 @@ namespace WorkRoles.Core.Recs
                     SignalBucket bucket = pawn.SignalBuckets.TryGetValue(s, out var classified)
                         ? classified
                         : SignalBucket.Neutral;
-                    if (!any || bucket > best)
+                    if (!any || bucket > best
+                        || bucket == best
+                        && System.StringComparer.Ordinal.Compare(s, skill) < 0)
                     {
                         best = bucket;
                         skill = s;
@@ -273,6 +289,7 @@ namespace WorkRoles.Core.Recs
         /// The pawn's candidates contain the role or a non-blocker covering it.
         public bool CoversRole(int pawnIndex, RoleView role)
         {
+            if (!FullyCapable(pawnIndex, role)) return false;
             var byRole = Candidates[pawnIndex];
             if (byRole.ContainsKey(role.Id)) return true;
             foreach (var id in byRole.Keys)

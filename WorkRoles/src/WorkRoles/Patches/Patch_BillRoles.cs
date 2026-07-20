@@ -24,9 +24,106 @@ namespace WorkRoles.Patches
     {
         public static void Postfix(Bill __instance, Bill __result)
         {
+            BillRoleTransfer.PropagateClone(__instance, __result, RoleStore.Current);
+        }
+    }
+
+    /// Multiplayer 1.6 exposes BillStack.AddBill's bill parameter through the
+    /// normal IExposable pipeline. Scribe only the detached transient marker;
+    /// attached bills have already consumed it, so ordinary saves omit the field.
+    [HarmonyPatch(typeof(Bill), nameof(Bill.ExposeData))]
+    public static class Patch_Bill_ExposeData
+    {
+        public static void Postfix(Bill __instance)
+        {
             var store = RoleStore.Current;
-            if (store != null && __result != null && store.billRoles.TryGetValue(__instance, out int roleId))
-                store.billRoles[__result] = roleId;
+            int roleId = BillRoleTransfer.RoleIdForScribe(__instance, store);
+            Scribe_Values.Look(ref roleId, "workRoles_billRoleId", -1);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                BillRoleTransfer.RestoreFromScribe(__instance, store, roleId);
+        }
+    }
+
+    /// AddBill is synchronized by Multiplayer 1.6 with parameter 0 exposed.
+    /// After vanilla/other patches attach this exact bill, consume the one-shot
+    /// marker and promote its role through the centralized store setter.
+    [HarmonyPatch(typeof(BillStack), nameof(BillStack.AddBill), typeof(Bill))]
+    public static class Patch_BillStack_AddBill
+    {
+        public static void Postfix(BillStack __instance, Bill bill)
+        {
+            var store = RoleStore.Current;
+            if (store == null || bill == null
+                || !RoleStore.BillStackContainsReference(__instance, bill)) return;
+            if (!BillRoleTransfer.TryConsume(bill, store, out int roleId)) return;
+            store.SetBillRole(bill, roleId);
+        }
+    }
+
+    /// Audited RimWorld 1.6 lifecycle: Delete(Bill) sets Bill.deleted, removes
+    /// the exact reference, then notifies the giver. Postfix avoids dropping a
+    /// mapping when another patch suppressed or reversed the deletion.
+    [HarmonyPatch(typeof(BillStack), nameof(BillStack.Delete), typeof(Bill))]
+    public static class Patch_BillStack_Delete
+    {
+        public static void Postfix(BillStack __instance, Bill bill)
+        {
+            if (bill == null) return;
+            if (bill.deleted || !RoleStore.BillStackContainsReference(__instance, bill))
+                RoleStore.Current?.RemoveBillRole(bill);
+        }
+    }
+
+    /// Audited RimWorld 1.6 lifecycle: Clear() directly clears the private list;
+    /// it does not call Delete or mark bills deleted. Capture only mapped refs,
+    /// then remove those actually absent after the original and other patches.
+    [HarmonyPatch(typeof(BillStack), nameof(BillStack.Clear))]
+    public static class Patch_BillStack_Clear
+    {
+        public static void Prefix(BillStack __instance, out List<Bill> __state)
+        {
+            __state = RoleStore.Current?.CaptureBillRolesForStack(__instance);
+        }
+
+        public static void Postfix(BillStack __instance, List<Bill> __state)
+        {
+            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state);
+        }
+    }
+
+    /// Audited RimWorld 1.6 lifecycle: RemoveIncompletableBills() removes list
+    /// entries and notifies the giver directly, bypassing Delete and Clear. The
+    /// state list is allocated only when a mapped bill is currently removable.
+    [HarmonyPatch(typeof(BillStack), nameof(BillStack.RemoveIncompletableBills))]
+    public static class Patch_BillStack_RemoveIncompletableBills
+    {
+        public static void Prefix(BillStack __instance, out List<Bill> __state)
+        {
+            __state = RoleStore.Current?.CaptureBillRolesForStack(
+                __instance, onlyIncompletable: true);
+        }
+
+        public static void Postfix(BillStack __instance, List<Bill> __state)
+        {
+            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state);
+        }
+    }
+
+    /// Bill.DeletedOrDereferenced becomes true when its Thing giver is destroyed,
+    /// but reading that property is not a lifecycle event and is null-unsafe in
+    /// 1.6. Preserve the stack before destruction and clean it only after success.
+    [HarmonyPatch(typeof(Thing), nameof(Thing.Destroy), typeof(DestroyMode))]
+    public static class Patch_Thing_DestroyBillRoles
+    {
+        public static void Prefix(Thing __instance, out BillStack __state)
+        {
+            __state = (__instance as IBillGiver)?.BillStack;
+        }
+
+        public static void Postfix(Thing __instance, BillStack __state)
+        {
+            if (__instance != null && __instance.Destroyed)
+                RoleStore.Current?.RemoveBillRolesForStack(__state);
         }
     }
 

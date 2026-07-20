@@ -115,6 +115,7 @@ namespace WorkRoles.Core.Signals
                 effect.Magnitude,
                 effect.Unit,
                 skillDefName,
+                conditions: effect.Conditions,
                 scaleKind: effect.ScaleKind,
                 currentScale: effect.CurrentScale,
                 scaleMultiplier: effect.ScaleMultiplier,

@@ -33,6 +33,51 @@ public class RecsContextTests
     }
 
     [Test]
+    public async Task BestSignalFallbackUsesOrdinalSkillTieBreakAcrossInputOrders()
+    {
+        var priorCulture = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture =
+                System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+            string[] forward = { "äSkill", "zSkill" };
+            string[] reverse = { "zSkill", "äSkill" };
+
+            string first = FallbackSkill(forward);
+            string second = FallbackSkill(reverse);
+
+            await Assert.That(first).IsEqualTo("zSkill");
+            await Assert.That(second).IsEqualTo("zSkill");
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = priorCulture;
+        }
+    }
+
+    private static string FallbackSkill(IReadOnlyList<string> sourceOrder)
+    {
+        var role = RecsTestBed.Unskilled(1, "Hauling");
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["äSkill"] = 8;
+        pawn.SkillLevels["zSkill"] = 8;
+        pawn.SignalBuckets["äSkill"] = SignalBucket.Strong;
+        pawn.SignalBuckets["zSkill"] = SignalBucket.Strong;
+        var colony = RecsTestBed.Colony(new List<RoleView> { role }, pawn);
+        colony.WorkTypeSkills = new Dictionary<string, IReadOnlyList<string>>
+        {
+            ["Hauling"] = sourceOrder,
+        };
+        var context = new EngineContext(colony);
+
+        SignalBucket bucket = context.BestSignal(0, role, out string skill, out _);
+
+        if (bucket != SignalBucket.Strong)
+            throw new InvalidOperationException($"Expected Strong fallback, got {bucket}.");
+        return skill;
+    }
+
+    [Test]
     public async Task AddCandidateKeepsTheStrongestEntry_AndVetoBlocksUnlessForced()
     {
         var context = new EngineContext(RecsTestBed.Colony(

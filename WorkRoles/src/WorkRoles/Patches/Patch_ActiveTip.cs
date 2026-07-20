@@ -1,42 +1,66 @@
-using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 using WorkRoles.UI;
 
 namespace WorkRoles.Patches
 {
-    /// Registered TipModels size to their structured content and take over
+    /// Activated TipModels size to their structured content and take over
     /// drawing (see Patch_ActiveTip_DrawInner); every other tooltip keeps the
     /// vanilla path.
     [HarmonyPatch(typeof(ActiveTip), "TipRect", MethodType.Getter)]
     public static class Patch_ActiveTip_TipRect
     {
-        // Keyed by tip text: composed tips are long and unique, so a
-        // byte-identical collision with a foreign tooltip is theoretical.
-        // Cleared on language switch with the tip caches that re-register on rebuild.
-        private static readonly Dictionary<string, TipModel> models = new Dictionary<string, TipModel>();
+        private static readonly OwnerGenerationRegistry<object, string, string, TipModel> models =
+            new OwnerGenerationRegistry<object, string, string, TipModel>();
+        private static bool generationActive;
+        private static int registryEpoch;
 
         internal static bool HasModels => models.Count > 0;
+        internal static int CurrentRegistryEpoch => registryEpoch;
 
         internal static void Clear()
         {
             models.Clear();
+            generationActive = false;
+            registryEpoch++;
         }
 
-        /// The returned plain text is the TipSignal text: it draws structured
-        /// while registered and degrades to readable plain text otherwise.
-        internal static string Register(TipModel model)
+        internal static void BeginGeneration(object owner)
         {
-            string text = model.ToPlainText();
-            models[text] = model;
-            return text;
+            models.Begin(owner);
+            generationActive = true;
+        }
+
+        internal static void EndGeneration(object owner)
+        {
+            if (!generationActive) return;
+            models.End(owner);
+            generationActive = false;
+        }
+
+        internal static void ReleaseOwner(object owner)
+        {
+            models.Release(owner);
+        }
+
+        internal static void Activate(StructuredTip tip)
+        {
+            if (!generationActive || tip == null
+                || tip.RegistryEpoch != registryEpoch) return;
+            models.Touch(tip.StableKey, tip.PlainText, tip.Model);
+        }
+
+        internal static void FlushRetired()
+        {
+            models.FlushRetired();
         }
 
         internal static bool TryGetModel(string text, out TipModel model)
         {
             model = null;
-            return text != null && models.TryGetValue(text, out model);
+            return text != null && models.TryGet(text, out model);
         }
 
         [HarmonyPrefix]
@@ -45,7 +69,7 @@ namespace WorkRoles.Patches
             if (!HasModels) return true;
             string text = ___signal.text?.TrimEnd();
             if (text == null) return true;
-            if (models.TryGetValue(text, out var model))
+            if (models.TryGet(text, out var model))
             {
                 Vector2 modelSize = WrTipUI.Measure(model, WrTipUI.MaxContentWidth);
                 __result = new Rect(0f, 0f, modelSize.x, modelSize.y);
@@ -55,7 +79,7 @@ namespace WorkRoles.Patches
         }
     }
 
-    /// Registered models draw themselves (atlas background + WrTipUI); every
+    /// Activated models draw themselves (atlas background + WrTipUI); every
     /// other tooltip keeps the vanilla single-label path.
     [HarmonyPatch(typeof(ActiveTip), "DrawInner")]
     public static class Patch_ActiveTip_DrawInner
@@ -79,6 +103,18 @@ namespace WorkRoles.Patches
             Widgets.DrawAtlas(bgRect, atlas);
             WrTipUI.Draw(bgRect, model);
             return false;
+        }
+    }
+
+    /// Retired models remain available through vanilla's ActiveTip draw, then
+    /// disappear only after the tooltip GUI has finished with the old signal.
+    [HarmonyPatch(typeof(TooltipHandler), "DoTooltipGUI")]
+    public static class Patch_TooltipHandler_DoTooltipGUI
+    {
+        [HarmonyPostfix]
+        public static void Postfix()
+        {
+            Patch_ActiveTip_TipRect.FlushRetired();
         }
     }
 }

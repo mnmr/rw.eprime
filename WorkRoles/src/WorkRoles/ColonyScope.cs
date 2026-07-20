@@ -18,6 +18,13 @@ namespace WorkRoles
         private static int locationsStamp = -1;
         private static int locationsMapCount = -1;
 
+        internal static void InvalidateLanguageCaches()
+        {
+            locationsCache = null;
+            locationsStamp = -1;
+            locationsMapCount = -1;
+        }
+
         internal static List<LocationInfo> Locations()
         {
             var maps = Find.Maps;

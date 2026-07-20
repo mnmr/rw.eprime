@@ -2,6 +2,8 @@ using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
+using WorkRoles.Dev;
 
 namespace WorkRoles.UI
 {
@@ -13,15 +15,19 @@ namespace WorkRoles.UI
         private readonly ColonistsTabView colonistsTab = new ColonistsTabView(ColonistsViewProfile.Colonists());
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
+        private readonly object structuredTipOwner = new object();
+        private int observedLanguageRevision;
 
         private const float TabHeight = 32f;
 
         public MainTabWindow_WorkRoles()
         {
+            observedLanguageRevision = LanguageChangeCoordinator.Revision;
             resizeable = false;
             draggable = false;   // main tab windows are not draggable
             // The Roles tab's holder list mirrors whatever the colonist table lists.
             rolesTab.listedPawns = () => colonistsTab.ListedPawns();
+            rolesTab.pawnListRevision = () => colonistsTab.PawnListRevision;
             rolesTab.roleTip = role => colonistsTab.RoleTipText(role, RoleTipContext.TreeRow);
         }
 
@@ -45,6 +51,8 @@ namespace WorkRoles.UI
         /// minimums and the screen; bottom-left anchor holds.
         protected override void SetInitialSizeAndPosition()
         {
+            resizing = false;
+            pendingWindowRect.Clear();
             base.SetInitialSizeAndPosition();
             var settings = WorkRolesMod.Settings;
             if (settings == null || (settings.windowWidth <= 0f && settings.windowHeight <= 0f))
@@ -58,10 +66,16 @@ namespace WorkRoles.UI
             windowRect.y = Verse.UI.screenHeight - 35f - windowRect.height;
         }
 
+        private Rect AutoSizeRect()
+        {
+            var size = TargetSize();
+            return new Rect(0f, Verse.UI.screenHeight - 35f - size.y, size.x, size.y);
+        }
+
         private bool resizing;
         private float resizeBottom;    // screen-space bottom edge, pinned while dragging
         private Vector2 resizeGrab;    // grab point: (distance from right edge, distance from top)
-        private Rect pendingResize;
+        private readonly PendingUpdate<Rect> pendingWindowRect = new PendingUpdate<Rect>();
 
         /// Resize grip in its own immediate window (the contents group clips
         /// the corner; plain ExtraOnGUI paints under GUI windows). Grows width
@@ -99,7 +113,7 @@ namespace WorkRoles.UI
                     settings.windowWidth = settings.windowHeight = 0f;
                     settings.Write();
                     resizing = false;
-                    SetInitialSizeAndPosition();
+                    pendingWindowRect.QueueUser(AutoSizeRect());
                 }
                 else
                 {
@@ -107,7 +121,7 @@ namespace WorkRoles.UI
                     resizing = true;
                     resizeBottom = windowRect.yMax;
                     resizeGrab = new Vector2(windowRect.xMax - screenMouse.x, screenMouse.y - windowRect.y);
-                    pendingResize = windowRect;
+                    pendingWindowRect.QueueUser(windowRect);
                 }
                 e.Use();
             }
@@ -123,11 +137,12 @@ namespace WorkRoles.UI
                 float width = Mathf.Clamp(mouseUI.x + resizeGrab.x, min.x, Verse.UI.screenWidth);
                 float top = mouseUI.y - resizeGrab.y;
                 float height = Mathf.Clamp(resizeBottom - top, min.y, Verse.UI.screenHeight - 35f);
-                pendingResize = new Rect(0f, resizeBottom - height, width, height);
+                var nextWindowRect = new Rect(0f, resizeBottom - height, width, height);
+                pendingWindowRect.QueueUser(nextWindowRect);
 
                 // Warp only when a clamp stops the window: the cursor rides the
                 // handle instead of drifting over other UI. Windows-only.
-                var grabUI = new Vector2(pendingResize.width - resizeGrab.x, pendingResize.y + resizeGrab.y);
+                var grabUI = new Vector2(nextWindowRect.width - resizeGrab.x, nextWindowRect.y + resizeGrab.y);
                 if ((mouseUI - grabUI).sqrMagnitude > 4f && Win32Cursor.TryGetPos(out var desktopPx))
                 {
                     var desktopOrigin = desktopPx - gamePx;
@@ -139,25 +154,39 @@ namespace WorkRoles.UI
                 resizing = false;
                 if (settings != null)
                 {
-                    settings.windowWidth = pendingResize.width;
-                    settings.windowHeight = pendingResize.height;
+                    var persistedRect = pendingWindowRect.TryGetUser(out var pendingUserRect)
+                        ? pendingUserRect : windowRect;
+                    settings.windowWidth = persistedRect.width;
+                    settings.windowHeight = persistedRect.height;
                     settings.Write();
                 }
                 if (e.type == EventType.MouseUp) e.Use();
             }
         }
 
-        /// Drag rect applies between frames: mid-event windowRect changes
-        /// desync Layout from later passes.
+        /// Pending size changes apply between frames: mid-event windowRect
+        /// changes desync Layout from later passes.
         public override void WindowUpdate()
         {
             base.WindowUpdate();
-            if (resizing)
-                windowRect = pendingResize;
+            if (pendingWindowRect.TryConsume(out var nextWindowRect))
+                windowRect = nextWindowRect;
+        }
+
+        private void ObserveLanguageRevision()
+        {
+            int current = LanguageChangeCoordinator.Revision;
+            if (observedLanguageRevision == current) return;
+            observedLanguageRevision = current;
+            tabs = null;
+            colonistsTab.InvalidateLanguageCaches();
+            rolesTab.InvalidateLanguageCaches();
+            optionsTab.InvalidateLanguageCaches();
         }
 
         public override void PreOpen()
         {
+            ObserveLanguageRevision();
             base.PreOpen();
             RoleDrag.Cancel();
             colonistsTab.Reset();
@@ -169,18 +198,37 @@ namespace WorkRoles.UI
         public override void PostClose()
         {
             base.PostClose();
+            resizing = false;
+            pendingWindowRect.Clear();
             rolesTab.CommitEdits();
             KeyOverride.Restore();
-            // Registered tips and pawn snapshots regrow on reopen (Reset forces
-            // every stamp stale); dropping them here caps session growth and
-            // releases pawns from unloaded saves.
+            // Producer snapshots regrow on reopen (Reset forces every stamp
+            // stale); dropping them here releases pawns from unloaded saves.
+            RoleClipboard.Clear();
             colonistsTab.ReleaseSnapshots();
-            Patches.Patch_ActiveTip_TipRect.Clear();
+            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
         }
 
         private List<TabRecord> tabs;
 
         public override void DoWindowContents(Rect inRect)
+        {
+            ObserveLanguageRevision();
+            bool repaint = Event.current.type == EventType.Repaint;
+            if (repaint)
+                Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
+            try
+            {
+                DrawContents(inRect);
+            }
+            finally
+            {
+                if (repaint)
+                    Patches.Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner);
+            }
+        }
+
+        private void DrawContents(Rect inRect)
         {
             // Keyboard navigation runs before any widget sees the event, and
             // only while no text field owns the keyboard (typing in the search
@@ -189,24 +237,29 @@ namespace WorkRoles.UI
                 && GUIUtility.keyboardControl == 0 && colonistsTab.HandleKey(Event.current))
                 Event.current.Use();
 
-            // Grow-only mid-session resize: if content grew, expand windowRect; never shrink.
-            var target = TargetSize();
-
-            bool grew = false;
-            if (target.x > windowRect.width + 1f)
+            // Grow-only mid-session resize; manual geometry wins while dragging
+            // and if both kinds of update are waiting for WindowUpdate.
+            if (!resizing)
             {
-                windowRect.width = target.x;
-                grew = true;
-            }
-            if (target.y > windowRect.height + 1f)
-            {
-                windowRect.height = target.y;
-                grew = true;
-            }
-            if (grew)
-            {
-                windowRect.x = 0f;
-                windowRect.y = Verse.UI.screenHeight - 35f - windowRect.height;
+                var target = TargetSize();
+                var nextWindowRect = windowRect;
+                bool grew = false;
+                if (target.x > nextWindowRect.width + 1f)
+                {
+                    nextWindowRect.width = target.x;
+                    grew = true;
+                }
+                if (target.y > nextWindowRect.height + 1f)
+                {
+                    nextWindowRect.height = target.y;
+                    grew = true;
+                }
+                if (grew)
+                {
+                    nextWindowRect.x = 0f;
+                    nextWindowRect.y = Verse.UI.screenHeight - 35f - nextWindowRect.height;
+                    pendingWindowRect.QueueAutomatic(nextWindowRect);
+                }
             }
 
             // Built once (Func<bool> selection getters): a fresh list with three

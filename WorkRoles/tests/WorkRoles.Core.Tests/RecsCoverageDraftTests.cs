@@ -170,8 +170,10 @@ public class RecsCoverageDraftTests
         // want exceeds what coverage supplies: the coverer's pawn counts as one
         // holder, the uncovered pawn fills the remaining slot directly.
         grower.MinHolders = 2;
+        var uncovered = RecsTestBed.Pawn();
+        uncovered.SkillLevels["Cooking"] = 4;
         var essential = new EngineContext(RecsTestBed.Colony(
-            new List<RoleView> { farmer, grower }, pawn, RecsTestBed.Pawn()));
+            new List<RoleView> { farmer, grower }, pawn, uncovered));
         new CoverageScalingRule(new UnitScaling()).Apply(essential);
         new BestInColonyDraftRule().Apply(essential);
         await Assert.That(essential.Candidates[0].ContainsKey(2)).IsFalse();
@@ -203,6 +205,187 @@ public class RecsCoverageDraftTests
         new CoverageScalingRule(new UnitScaling()).Apply(skipped);
         new BestInColonyDraftRule().Apply(skipped);
         await Assert.That(skipped.DraftRankings[1].ContainsKey(2)).IsFalse();
+    }
+
+    [Test]
+    public async Task PartiallyCapableMixedCovererDoesNotSuppressRequiredSubroleDraft()
+    {
+        var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        var crafter = RecsTestBed.Role(2, "Crafting", "Craft");
+        crafter.MinHolders = 1;
+        var partial = RecsTestBed.Pawn();
+        partial.CapableWorkTypes.Clear();
+        partial.CapableWorkTypes.Add("Cooking");
+        partial.SkillLevels["Cooking"] = 10;
+        var available = RecsTestBed.Pawn();
+        available.CapableWorkTypes.Clear();
+        available.CapableWorkTypes.Add("Crafting");
+        available.SkillLevels["Crafting"] = 8;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixed, crafter }, partial, available));
+        context.AddCandidate(0, mixed.Id,
+            new Reason { RuleId = "signals", TowardRoleId = -1 }, SignalBucket.Strong);
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(context.Candidates[0].ContainsKey(mixed.Id)).IsTrue();
+        await Assert.That(context.Candidates[1].ContainsKey(crafter.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task PartiallyCapableMixedCovererDoesNotSuppressAutoSubroleDraft()
+    {
+        var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        var crafter = RecsTestBed.Role(2, "Crafting", "Craft");
+        crafter.MinHolders = -1;
+        var partial = RecsTestBed.Pawn();
+        partial.CapableWorkTypes.Clear();
+        partial.CapableWorkTypes.Add("Cooking");
+        partial.SkillLevels["Cooking"] = 10;
+        var available = RecsTestBed.Pawn();
+        available.CapableWorkTypes.Clear();
+        available.CapableWorkTypes.Add("Crafting");
+        available.SkillLevels["Crafting"] = 8;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixed, crafter }, partial, available));
+        context.AddCandidate(0, mixed.Id,
+            new Reason { RuleId = "signals", TowardRoleId = -1 }, SignalBucket.Strong);
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(context.Want[crafter.Id]).IsEqualTo(1);
+        await Assert.That(context.HoldersOf(crafter.Id)).IsEqualTo(1);
+        await Assert.That(context.Candidates[1].ContainsKey(crafter.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task PartialDirectMixedRoleAssignmentDoesNotSatisfyItsFloor()
+    {
+        var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        mixed.MinHolders = 1;
+        var partial = RecsTestBed.Pawn();
+        partial.CapableWorkTypes.Clear();
+        partial.CapableWorkTypes.Add("Cooking");
+        partial.SkillLevels["Cooking"] = 12;
+        partial.Existing.Add(new AssignmentView { RoleId = mixed.Id, Pinned = true });
+        var full = RecsTestBed.Pawn();
+        full.SkillLevels["Cooking"] = 10;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixed }, partial, full));
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(context.CoversRole(0, mixed)).IsFalse();
+        await Assert.That(context.Candidates[0].ContainsKey(mixed.Id)).IsFalse();
+        await Assert.That(context.Candidates[1].ContainsKey(mixed.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task PartialPawnsAreNotDraftedIntoAnUnmetMixedRoleFloor()
+    {
+        var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        mixed.MinHolders = 1;
+        var first = RecsTestBed.Pawn();
+        first.CapableWorkTypes.Clear();
+        first.CapableWorkTypes.Add("Cooking");
+        first.SkillLevels["Cooking"] = 12;
+        var second = RecsTestBed.Pawn();
+        second.CapableWorkTypes.Clear();
+        second.CapableWorkTypes.Add("Cooking");
+        second.SkillLevels["Cooking"] = 10;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixed }, first, second));
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(context.Candidates[0].ContainsKey(mixed.Id)).IsFalse();
+        await Assert.That(context.Candidates[1].ContainsKey(mixed.Id)).IsFalse();
+        await Assert.That(context.HoldersOf(mixed.Id)).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task MissingRequiredSkillIsAwfulAndCannotBeDrafted()
+    {
+        var mixedSkill = RecsTestBed.Role(1, "Crafting");
+        mixedSkill.MinHolders = 1;
+        mixedSkill.Skills.Add(new RoleSkillView
+        {
+            SkillDefName = "Crafting", Primary = true, Importance = 3,
+        });
+        mixedSkill.Skills.Add(new RoleSkillView
+        {
+            SkillDefName = "Intellectual", Importance = 1,
+        });
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Strong;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixedSkill }, pawn));
+
+        SignalBucket bucket = context.BestSignal(
+            0, mixedSkill, out string skill, out SignalSource source);
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(bucket).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(skill).IsEqualTo("Intellectual");
+        await Assert.That(source).IsEqualTo(SignalSource.Aggregated);
+        await Assert.That(context.Candidates[0].ContainsKey(mixedSkill.Id)).IsFalse();
+    }
+
+    [Test]
+    public async Task MissingRequiredSkillTieBreakIsOrdinalUnderNonDefaultCulture()
+    {
+        var priorCulture = System.Globalization.CultureInfo.CurrentCulture;
+        try
+        {
+            System.Globalization.CultureInfo.CurrentCulture =
+                System.Globalization.CultureInfo.GetCultureInfo("de-DE");
+            var role = RecsTestBed.Role(1, "Crafting");
+            role.Skills.Add(new RoleSkillView { SkillDefName = "äSkill" });
+            role.Skills.Add(new RoleSkillView { SkillDefName = "zSkill" });
+            var context = new EngineContext(RecsTestBed.Colony(
+                new List<RoleView> { role }, RecsTestBed.Pawn()));
+
+            SignalBucket bucket = context.BestSignal(
+                0, role, out string skill, out SignalSource source);
+
+            await Assert.That(bucket).IsEqualTo(SignalBucket.Awful);
+            await Assert.That(skill).IsEqualTo("zSkill");
+            await Assert.That(source).IsEqualTo(SignalSource.Aggregated);
+        }
+        finally
+        {
+            System.Globalization.CultureInfo.CurrentCulture = priorCulture;
+        }
+    }
+
+    [Test]
+    public async Task FullyCapableDirectMixedRoleAssignmentStillSatisfiesItsFloor()
+    {
+        var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        mixed.MinHolders = 1;
+        var holder = RecsTestBed.Pawn();
+        holder.Existing.Add(new AssignmentView { RoleId = mixed.Id, Pinned = true });
+        var available = RecsTestBed.Pawn();
+        available.SkillLevels["Cooking"] = 10;
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { mixed }, holder, available));
+
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+
+        await Assert.That(context.CoversRole(0, mixed)).IsTrue();
+        await Assert.That(context.Candidates[1].ContainsKey(mixed.Id)).IsFalse();
     }
 
     [Test]

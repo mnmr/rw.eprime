@@ -205,7 +205,7 @@ namespace WorkRoles.Core.Recs
                 && !context.PassesBands(pawnIndex, role))
                 return RecommendationDecision.OutsideTrainingBand;
 
-            relatedRoleId = CoveringRole(context, result, role);
+            relatedRoleId = CoveringRole(context, pawnIndex, result, role);
             if (relatedRoleId != -1)
                 return RecommendationDecision.CoveredByRecommendedRole;
 
@@ -218,9 +218,11 @@ namespace WorkRoles.Core.Recs
 
         private static int CoveringRole(
             EngineContext context,
+            int pawnIndex,
             PawnResult result,
             RoleView role)
         {
+            if (!context.FullyCapable(pawnIndex, role)) return -1;
             foreach (AssignmentView assignment in result.Assignments)
             {
                 RoleView other = context.RoleOf(assignment.RoleId);

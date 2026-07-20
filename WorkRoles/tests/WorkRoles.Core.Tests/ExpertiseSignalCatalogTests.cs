@@ -141,6 +141,10 @@ public class ExpertiseSignalCatalogTests
         await Assert.That(VseSignalApi.PassionDefType).IsEqualTo("VSE.Passions.PassionDef");
         await Assert.That(VseSignalApi.AllExpertiseMember).IsEqualTo("AllExpertise");
         await Assert.That(VseSignalApi.ExpertiseLevelMember).IsEqualTo("Level");
+        await Assert.That(VseSignalApi.ExpertiseXpSinceLastLevelMember)
+            .IsEqualTo("XpSinceLastLevel");
+        await Assert.That(VseSignalApi.ExpertiseXpRequiredForLevelUpMember)
+            .IsEqualTo("XpRequiredForLevelUp");
         await Assert.That(VseSignalApi.CrossSkillEffectsSettingMember)
             .IsEqualTo("CriticalEffectPassions");
         await Assert.That(VseSignalApi.StatMultiplierMember).IsEqualTo("StatMultiplier");

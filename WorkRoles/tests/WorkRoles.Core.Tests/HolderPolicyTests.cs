@@ -109,7 +109,8 @@ public class HolderPolicyTests
         var holders = XElement.Parse(xml)
             .Element("Roles")!.Element("Role")!
             .Element("Options")!.Element("Holders")!;
-        await Assert.That(XElement.Parse(xml).Attribute("version")!.Value).IsEqualTo("6");
+        await Assert.That(XElement.Parse(xml).Attribute("version")!.Value)
+            .IsEqualTo(RoleFile.FormatVersion);
         await Assert.That(holders.Attribute("train")!.Value).IsEqualTo("2");
         await Assert.That(RoleFile.Parse(xml).roles[0].trainingWaivers).IsEqualTo(2);
     }
@@ -136,7 +137,8 @@ public class HolderPolicyTests
         var holders = XElement.Parse(xml)
             .Element("Roles")!.Element("Role")!
             .Element("Options")!.Element("Holders")!;
-        await Assert.That(XElement.Parse(xml).Attribute("version")!.Value).IsEqualTo("6");
+        await Assert.That(XElement.Parse(xml).Attribute("version")!.Value)
+            .IsEqualTo(RoleFile.FormatVersion);
         await Assert.That(holders.Attribute("mode")!.Value).IsEqualTo("custom");
         await Assert.That(holders.Attribute("min")!.Value).IsEqualTo("2");
         await Assert.That(holders.Attribute("max")!.Value).IsEqualTo("5");

@@ -115,6 +115,86 @@ public class SignalSnapshotTests
     }
 
     [Test]
+    public async Task BuilderRetargetingPreservesEffectSemanticsAndConditionOrder()
+    {
+        var conditions = new List<SignalCondition>
+        {
+            new("setting:enabled", "Setting is enabled"),
+            new("state:ready", "Pawn is ready"),
+        };
+        var effect = new SignalEffect(
+            SignalEffectKind.LearningRate,
+            SignalOperation.Multiply,
+            1.75f,
+            SignalValueUnit.Factor,
+            "OtherSkills",
+            conditions,
+            SignalScaleKind.ExpertiseLevel,
+            currentScale: 4f,
+            scaleMultiplier: 0.25f,
+            alreadyReflected: true);
+        Signal source = MakeActiveSignal("Crafting", effect);
+
+        SignalEffect targeted = SignalSnapshotBuilder.Build(
+                new[] { source },
+                new[] { "Crafting", "Cooking" },
+                crossSkillEffectsEnabled: true)
+            .ForSkill("Cooking")
+            .Single()
+            .Effects
+            .Single();
+
+        await Assert.That(targeted.Kind).IsEqualTo(effect.Kind);
+        await Assert.That(targeted.Operation).IsEqualTo(effect.Operation);
+        await Assert.That(targeted.Magnitude).IsEqualTo(effect.Magnitude);
+        await Assert.That(targeted.Unit).IsEqualTo(effect.Unit);
+        await Assert.That(targeted.TargetDefName).IsEqualTo("Cooking");
+        await Assert.That(targeted.ScaleKind).IsEqualTo(effect.ScaleKind);
+        await Assert.That(targeted.CurrentScale).IsEqualTo(effect.CurrentScale);
+        await Assert.That(targeted.ScaleMultiplier).IsEqualTo(effect.ScaleMultiplier);
+        await Assert.That(targeted.ResolvedMagnitude).IsEqualTo(effect.ResolvedMagnitude);
+        await Assert.That(targeted.AlreadyReflected).IsEqualTo(effect.AlreadyReflected);
+        await Assert.That(string.Join(";", targeted.Conditions
+                .Select(x => x.Key + "|" + x.Description)))
+            .IsEqualTo("setting:enabled|Setting is enabled;state:ready|Pawn is ready");
+    }
+
+    [Test]
+    public async Task BuilderRetargetingOwnsReadOnlyDefensiveConditionCopy()
+    {
+        var sourceConditions = new List<SignalCondition>
+        {
+            new("setting:enabled", "Setting is enabled"),
+        };
+        var effect = new SignalEffect(
+            SignalEffectKind.LearningRate,
+            SignalOperation.Multiply,
+            1.5f,
+            SignalValueUnit.Factor,
+            "OtherSkills",
+            sourceConditions);
+        Signal source = MakeActiveSignal("Crafting", effect);
+
+        SignalEffect targeted = SignalSnapshotBuilder.Build(
+                new[] { source },
+                new[] { "Crafting", "Cooking" },
+                crossSkillEffectsEnabled: true)
+            .ForSkill("Cooking")
+            .Single()
+            .Effects
+            .Single();
+        sourceConditions.Clear();
+
+        await Assert.That(ReferenceEquals(targeted.Conditions, effect.Conditions)).IsFalse();
+        await Assert.That(string.Join(";", targeted.Conditions.Select(x => x.Key)))
+            .IsEqualTo("setting:enabled");
+        await Assert.That(targeted.Conditions is IList<SignalCondition> list && list.IsReadOnly)
+            .IsTrue();
+        await Assert.That(() => ((IList<SignalCondition>)targeted.Conditions).Clear())
+            .Throws<NotSupportedException>();
+    }
+
+    [Test]
     public async Task DisabledCrossSkillSettingOnlyTargetsPersistentBadPassions()
     {
         Signal critical = SignalFactory.Instantiate(
@@ -186,4 +266,12 @@ public class SignalSnapshotTests
             skillDefName,
             Array.Empty<SignalEffect>(),
             new SignalUi(defName, null, null, null, null, packageId));
+
+    private static Signal MakeActiveSignal(string skillDefName, SignalEffect effect) =>
+        new(
+            SignalType.Active,
+            new SignalSource(SignalSourceKind.Passion, "Conditional", "example.mod"),
+            skillDefName,
+            new[] { effect },
+            new SignalUi("Conditional", null, null, null, null, "Example Mod"));
 }

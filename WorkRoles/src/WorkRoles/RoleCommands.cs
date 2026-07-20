@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 
@@ -21,7 +22,9 @@ namespace WorkRoles
         [SyncMethod]
         public static void CreateRole(string label)
         {
-            if (Store == null) return;
+            label = label?.Trim();
+            if (Store == null || !CatalogNameRules.IsAvailable(
+                    label, Store.roles, role => role.label)) return;
             Store.roles.Add(new Role { id = Store.NextId(), label = label });
             Store.InvalidateRoleIndex();
             UiVersion.Bump();
@@ -32,11 +35,14 @@ namespace WorkRoles
         internal static Role CreateRoleFromDef(RoleDef def)
         {
             if (Store == null || def == null) return null;
+            string label = CatalogNameRules.Unique(
+                def.label, Store.roles, existing => existing.label);
+            if (label == null) return null;
             var (hasColor, color) = def.ResolvedColor();
             var role = new Role
             {
                 id = Store.NextId(),
-                label = def.label,
+                label = label,
                 templateDefName = def.defName,
                 templateVersion = WorkRolesMod.Version,
                 templateHash = def.StableHash(),
@@ -62,6 +68,8 @@ namespace WorkRoles
             }
             Store.roles.Add(role);
             Store.InvalidateRoleIndex();
+            if (role.templateDefName == "WS_Basics")
+                CompiledJobOrders.InvalidateRole(role.id);
             return role;
         }
 
@@ -292,16 +300,21 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            CompiledJobOrders.InvalidateRole(roleId);
-            foreach (var kv in Store.pawnSets)
-                if (kv.Value.assignments.Count > 0 && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
-                    SyncFallbackBeforeUnmanage(kv.Key);
+            using var uiBatch = new UiInvalidationBatch(UiVersion.Bump);
+            var losingLastAssignment = Store.pawnSets
+                .Where(kv => kv.Value.assignments.Count > 0
+                    && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
+                .Select(kv => kv.Key)
+                .ToList();
+            foreach (var pawn in losingLastAssignment)
+                Store.UnmanagePawn(pawn, uiBatch.Request);
+            CompiledJobOrders.InvalidateRole(roleId, uiBatch.Request);
             foreach (var set in Store.pawnSets.Values)
                 set.assignments.RemoveAll(a => a.roleId == roleId);
             // A pawn's last role going away must unmanage it fully — a lingering
             // empty set would shadow its vanilla priorities (see RoleStore save sync).
             Store.pawnSets.RemoveAll(kv => kv.Value.assignments.Count == 0);
-            Store.billRoles.RemoveAll(kv => kv.Value == roleId);
+            Store.RemoveBillRolesForRole(roleId);
             // Training paths: drop the deleted role's (id, min, max) entry;
             // emptied paths survive — they are named containers, not ephemeral.
             foreach (var path in Store.trainingPaths)
@@ -338,9 +351,12 @@ namespace WorkRoles
         private static RoleGroup ResolveOrCreateGroup(string groupName)
         {
             groupName = groupName?.Trim();
-            if (groupName.NullOrEmpty()) return Store.EnsureDefaultGroup();
+            if (groupName.NullOrEmpty() || GroupNameRules.IsDefault(groupName))
+                return Store.EnsureDefaultGroup();
             var group = Store.GroupByName(groupName);
             if (group != null) return group;
+            if (!GroupNameRules.IsAvailable(
+                    groupName, Store.groups, existing => existing.label)) return null;
             group = new RoleGroup { id = Store.NextGroupId(), label = groupName };
             Store.groups.Add(group);
             return group;
@@ -406,8 +422,11 @@ namespace WorkRoles
         public static void RenameGroup(int groupId, string name)
         {
             var group = Store?.GroupById(groupId);
-            if (group == null || groupId == RoleGroup.DefaultId || name.NullOrEmpty()) return;
-            group.label = name.Trim();
+            name = name?.Trim();
+            if (group == null || groupId == RoleGroup.DefaultId
+                || !GroupNameRules.IsAvailable(
+                    name, Store.groups, existing => existing.label, group)) return;
+            group.label = name;
             UiVersion.Bump();
         }
 
@@ -468,7 +487,9 @@ namespace WorkRoles
         public static void RenameRole(int roleId, string label)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            label = label?.Trim();
+            if (role == null || !CatalogNameRules.IsAvailable(
+                    label, Store.roles, existing => existing.label, role)) return;
             role.label = label;
             UiVersion.Bump();
         }
@@ -516,30 +537,67 @@ namespace WorkRoles
         public static void DuplicateRole(int roleId, string label = null)
         {
             var source = FindRole(roleId);
-            if (source == null) return;
-            var copy = new Role
-            {
-                id = Store.NextId(),
-                // templateDefName deliberately NOT copied: the copy is player-owned
-                // (keeps RoleByTemplate unambiguous and autoAssign un-duplicated).
-                label = label ?? source.label,
-                enabled = source.enabled,
-                hasCustomColor = source.hasCustomColor,
-                color = source.color,
-                iconPath = source.iconPath,
-                holderMode = source.holderMode,
-                holderRangeSet = source.holderRangeSet,
-                minHolders = source.minHolders,
-                maxHolders = source.maxHolders,
-                trainingWaivers = source.trainingWaivers,
-                activeHours = source.activeHours,
-                locationTokens = new List<string>(source.locationTokens),
-                groupId = source.groupId,
-                entries = new List<JobEntry>(source.entries)
-            };
+            label = (label ?? source?.label)?.Trim();
+            if (source == null || !CatalogNameRules.IsAvailable(
+                    label, Store.roles, existing => existing.label)) return;
+            var copy = PlayerDuplicate(source, Store.NextId(), label);
             Store.roles.Add(copy);
             Store.InvalidateRoleIndex();
             UiVersion.Bump();
+        }
+
+        /// Player duplicates retain role behavior and presentation but deliberately
+        /// lose template ownership and auto-assignment. Derived and Scribe caches
+        /// remain fresh because materialization creates a new Role instance.
+        private static Role PlayerDuplicate(Role source, int id, string label)
+        {
+            RoleCopyValues<Color> values = new RoleCopyValues<Color>
+            {
+                Enabled = source.enabled,
+                HasCustomColor = source.hasCustomColor,
+                Color = source.color,
+                IconPath = source.iconPath,
+                TemplateDefName = source.templateDefName,
+                TemplateVersion = source.templateVersion,
+                TemplateHash = source.templateHash,
+                AutoAssign = source.autoAssign,
+                Blocker = source.blocker,
+                HolderMode = source.holderMode,
+                HolderRangeSet = source.holderRangeSet,
+                MinHolders = source.minHolders,
+                MaxHolders = source.maxHolders,
+                TrainingWaivers = source.trainingWaivers,
+                GroupId = source.groupId,
+                ActiveHours = source.activeHours,
+                LocationTokens = source.locationTokens,
+                Entries = source.entries,
+                WorkTypeSnapshots = source.workTypeSnapshots,
+            }.ForPlayerDuplicate();
+
+            return new Role
+            {
+                id = id,
+                label = label,
+                enabled = values.Enabled,
+                hasCustomColor = values.HasCustomColor,
+                color = values.Color,
+                iconPath = values.IconPath,
+                templateDefName = values.TemplateDefName,
+                templateVersion = values.TemplateVersion,
+                templateHash = values.TemplateHash,
+                autoAssign = values.AutoAssign,
+                blocker = values.Blocker,
+                holderMode = values.HolderMode,
+                holderRangeSet = values.HolderRangeSet,
+                minHolders = values.MinHolders,
+                maxHolders = values.MaxHolders,
+                trainingWaivers = values.TrainingWaivers,
+                groupId = values.GroupId,
+                activeHours = values.ActiveHours,
+                locationTokens = values.LocationTokens,
+                entries = values.Entries,
+                workTypeSnapshots = values.WorkTypeSnapshots,
+            };
         }
 
         /// Reorders the role catalog (palette / list order). UI-only ordering:
@@ -593,8 +651,7 @@ namespace WorkRoles
         public static void SetBillRole(Bill bill, int roleId)
         {
             if (Store == null || bill == null) return;
-            if (roleId < 0 || FindRole(roleId) == null) Store.billRoles.Remove(bill);
-            else Store.billRoles[bill] = roleId;
+            Store.SetBillRole(bill, roleId);
         }
 
         /// Turns an auto role back into a manual one (a role is auto iff any rule is set).
@@ -688,6 +745,8 @@ namespace WorkRoles
         internal static Role CreateRoleDirect(string label, bool autoAssign = false)
         {
             if (Store == null) return null;
+            label = CatalogNameRules.Unique(label, Store.roles, existing => existing.label);
+            if (label == null) return null;
             var role = new Role { id = Store.NextId(), label = label, autoAssign = autoAssign };
             Store.roles.Add(role);
             Store.InvalidateRoleIndex();
@@ -701,15 +760,6 @@ namespace WorkRoles
             if (index < 0 || index > role.entries.Count) index = role.entries.Count;
             role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);
-        }
-
-        /// Unmanaging returns authority to the pawn's vanilla priorities map — force
-        /// a rebuild+mirror first (a cached entry skips the mirror) so it holds the
-        /// roles' last projection, whatever other mods wrote to the dormant map.
-        private static void SyncFallbackBeforeUnmanage(Pawn pawn)
-        {
-            CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.EnsureFresh(pawn);
         }
 
         /// Engine-initiated path (seeding, joiner auto-assign): runs inside the synced
@@ -730,8 +780,11 @@ namespace WorkRoles
             // TryGetValue, not SetFor: a removal against an unmanaged pawn must not
             // create (and scribe) an empty set for it.
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
-            if (set.assignments.TrueForAll(a => a.roleId == roleId))
-                SyncFallbackBeforeUnmanage(pawn);
+            if (set.assignments.Count > 0 && set.assignments.TrueForAll(a => a.roleId == roleId))
+            {
+                Store.UnmanagePawn(pawn);
+                return;
+            }
             set.assignments.RemoveAll(a => a.roleId == roleId);
             if (set.assignments.Count == 0) Store.pawnSets.Remove(pawn);
             CompiledJobOrders.Invalidate(pawn);
@@ -788,18 +841,23 @@ namespace WorkRoles
         public static void PasteRoleSet(Pawn pawn, List<RoleAssignment> source)
         {
             if (Store == null || pawn == null || source == null) return;
-            var seen = new HashSet<int>();
-            var assignments = source
-                .Where(a => seen.Add(a.roleId))
-                .Select(a => new RoleAssignment { roleId = a.roleId, enabled = a.enabled, pinned = a.pinned })
-                .ToList();
+            var assignments = ClipboardRules.FilterValidDistinct(
+                source,
+                assignment => assignment?.roleId,
+                Store.roles.Select(role => role.id),
+                assignment => new RoleAssignment
+                {
+                    roleId = assignment.roleId,
+                    enabled = assignment.enabled,
+                    pinned = assignment.pinned
+                });
             // Pasting an empty set unmanages the pawn — never store an empty set.
             if (assignments.Count == 0)
             {
-                if (Store.pawnSets.ContainsKey(pawn)) SyncFallbackBeforeUnmanage(pawn);
-                Store.pawnSets.Remove(pawn);
+                Store.UnmanagePawn(pawn);
+                return;
             }
-            else Store.SetFor(pawn).assignments = assignments;
+            Store.SetFor(pawn).assignments = assignments;
             CompiledJobOrders.Invalidate(pawn);
         }
     }

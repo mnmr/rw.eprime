@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace WorkRoles.Core
 {
@@ -20,6 +19,9 @@ namespace WorkRoles.Core
 
     public static class JobOrderCompiler
     {
+        private static readonly Func<Func<string, bool>, string, bool> DelegateCapability =
+            (capability, giverDefName) => capability(giverDefName);
+
         public static CompiledOrder Compile(
             IEnumerable<IReadOnlyList<JobEntry>> orderedEnabledRoleEntries,
             IJobCatalog catalog,
@@ -36,7 +38,16 @@ namespace WorkRoles.Core
         public static CompiledOrder Compile(
             IEnumerable<(IReadOnlyList<JobEntry> entries, bool blocker)> orderedEnabledRoles,
             IJobCatalog catalog,
-            Func<string, bool> pawnCanDo)
+            Func<string, bool> pawnCanDo) =>
+            Compile(orderedEnabledRoles, catalog, pawnCanDo, DelegateCapability);
+
+        /// Context overload lets hot callers reuse one non-capturing capability
+        /// delegate while supplying the current pawn (or other context) directly.
+        public static CompiledOrder Compile<TContext>(
+            IEnumerable<(IReadOnlyList<JobEntry> entries, bool blocker)> orderedEnabledRoles,
+            IJobCatalog catalog,
+            TContext context,
+            Func<TContext, string, bool> pawnCanDo)
         {
             var result = new CompiledOrder();
             var seen = new HashSet<string>();
@@ -45,7 +56,7 @@ namespace WorkRoles.Core
             {
                 if (seen.Contains(giverDefName)) return;
                 if (catalog.WorkTypeOf(giverDefName) == null) return;
-                if (!pawnCanDo(giverDefName)) return;
+                if (!pawnCanDo(context, giverDefName)) return;
                 seen.Add(giverDefName);
                 if (!block) result.AllInOrder.Add(giverDefName);
             }
@@ -151,49 +162,111 @@ namespace WorkRoles.Core
             Func<string, int> columnOf,
             VanillaProjectionCategories categories = null)
         {
-            var buckets = Project(workTypeRanks, columnOf, null, out bool lumped);
+            var rankedWorkTypes = RankedWorkTypes(workTypeRanks);
+            var buckets = Project(rankedWorkTypes, columnOf, null, out bool lumped);
 
             HashSet<string> pinned = null;
             if (lumped && categories != null)
             {
-                pinned = new HashSet<string>(workTypeRanks.Keys.Where(categories.Basics.Contains));
+                pinned = new HashSet<string>();
+                foreach (var pair in workTypeRanks)
+                    if (categories.Basics.Contains(pair.Key))
+                        pinned.Add(pair.Key);
                 if (pinned.Count == 0)
                     pinned = null;
-                else if (pinned.Any(t => buckets[t] != 1))
-                    buckets = Project(workTypeRanks, columnOf, pinned, out _);
+                else
+                {
+                    bool reproject = false;
+                    foreach (string workType in pinned)
+                        if (buckets[workType] != 1)
+                        {
+                            reproject = true;
+                            break;
+                        }
+                    if (reproject)
+                        buckets = Project(rankedWorkTypes, columnOf, pinned, out _);
+                }
             }
 
-            int Max() => buckets.Count == 0 ? 0 : buckets.Values.Max();
-            void BumpFromFirst(HashSet<string> category)
+            if (categories != null && buckets.Count > 0 && MaxBucket(buckets) < 4)
             {
-                int firstRank = int.MaxValue;
-                foreach (var pair in workTypeRanks)
-                    if (category.Contains(pair.Key) && pair.Value < firstRank)
-                        firstRank = pair.Value;
-                if (firstRank == int.MaxValue) return;
-                foreach (var pair in workTypeRanks)
-                    if (pair.Value >= firstRank && (pinned == null || !pinned.Contains(pair.Key)))
-                        buckets[pair.Key] = Math.Min(4, buckets[pair.Key] + 1);
-            }
-
-            if (categories != null && buckets.Count > 0 && Max() < 4)
-            {
-                BumpFromFirst(categories.Skilled);
-                if (Max() < 4) BumpFromFirst(categories.Grunt);
-                if (Max() < 4)
-                    foreach (var workType in buckets.Keys.ToList())
+                BumpFromFirst(workTypeRanks, buckets, categories.Skilled, pinned);
+                if (MaxBucket(buckets) < 4)
+                    BumpFromFirst(workTypeRanks, buckets, categories.Grunt, pinned);
+                if (MaxBucket(buckets) < 4)
+                    for (int i = 0; i < rankedWorkTypes.Count; i++)
+                    {
+                        string workType = rankedWorkTypes[i].Key;
                         if (categories.Research.Contains(workType)
                             && (pinned == null || !pinned.Contains(workType)))
                             buckets[workType] = Math.Min(4, buckets[workType] + 1);
+                    }
             }
             return buckets;
+        }
+
+        private static List<KeyValuePair<string, int>> RankedWorkTypes(
+            IReadOnlyDictionary<string, int> workTypeRanks)
+        {
+            var ranked = new List<KeyValuePair<string, int>>(workTypeRanks.Count);
+            foreach (var pair in workTypeRanks) ranked.Add(pair);
+            // Stable insertion sort: ranks are normally already consecutive and
+            // work-type counts are small; equal-rank callers keep input order.
+            for (int i = 1; i < ranked.Count; i++)
+            {
+                var current = ranked[i];
+                int at = i;
+                while (at > 0 && ranked[at - 1].Value > current.Value)
+                {
+                    ranked[at] = ranked[at - 1];
+                    at--;
+                }
+                ranked[at] = current;
+            }
+            return ranked;
+        }
+
+        private static int MaxBucket(Dictionary<string, int> buckets)
+        {
+            int max = 0;
+            foreach (int bucket in buckets.Values)
+                if (bucket > max) max = bucket;
+            return max;
+        }
+
+        private static void BumpFromFirst(
+            IReadOnlyDictionary<string, int> workTypeRanks,
+            Dictionary<string, int> buckets,
+            HashSet<string> category,
+            HashSet<string> pinned)
+        {
+            int firstRank = int.MaxValue;
+            foreach (var pair in workTypeRanks)
+                if (category.Contains(pair.Key) && pair.Value < firstRank)
+                    firstRank = pair.Value;
+            if (firstRank == int.MaxValue) return;
+            foreach (var pair in workTypeRanks)
+                if (pair.Value >= firstRank
+                    && (pinned == null || !pinned.Contains(pair.Key)))
+                    buckets[pair.Key] = Math.Min(4, buckets[pair.Key] + 1);
+        }
+
+        /// Hot production overload: metadata owns the reusable column delegate
+        /// and category policy, so compiling a pawn allocates neither.
+        public static Dictionary<string, int> ToVanillaPriorities(
+            IReadOnlyDictionary<string, int> workTypeRanks,
+            VanillaProjectionMetadata metadata)
+        {
+            if (metadata == null) throw new ArgumentNullException(nameof(metadata));
+            return ToVanillaPriorities(workTypeRanks,
+                metadata.ColumnResolver, metadata.ProjectionCategories);
         }
 
         /// One greedy pass. Pinned types take 1 and act as the walk's already-
         /// consumed head: the remaining types continue from the pinned block's
         /// rightmost column, so nothing sorts ahead of it inside number 1.
         private static Dictionary<string, int> Project(
-            IReadOnlyDictionary<string, int> workTypeRanks,
+            IReadOnlyList<KeyValuePair<string, int>> rankedWorkTypes,
             Func<string, int> columnOf,
             HashSet<string> pinnedToOne,
             out bool lumped)
@@ -203,13 +276,16 @@ namespace WorkRoles.Core
             int previousColumn = int.MinValue;
             lumped = false;
             if (pinnedToOne != null)
-                foreach (var workType in pinnedToOne)
+                for (int i = 0; i < rankedWorkTypes.Count; i++)
                 {
+                    string workType = rankedWorkTypes[i].Key;
+                    if (!pinnedToOne.Contains(workType)) continue;
                     buckets[workType] = 1;
                     previousColumn = Math.Max(previousColumn, columnOf(workType));
                 }
-            foreach (var pair in workTypeRanks.OrderBy(kv => kv.Value))
+            for (int i = 0; i < rankedWorkTypes.Count; i++)
             {
+                var pair = rankedWorkTypes[i];
                 if (pinnedToOne != null && pinnedToOne.Contains(pair.Key)) continue;
                 int column = columnOf(pair.Key);
                 if (column < previousColumn)

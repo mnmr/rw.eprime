@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
@@ -38,7 +39,7 @@ namespace WorkRoles
         /// export/import to merge palettes by name.
         public List<string> customSwatchNames = new List<string>();
         /// Per-bill role restrictions (see BillRoles). Mutate via RoleCommands.
-        public Dictionary<Bill, int> billRoles = new Dictionary<Bill, int>();
+        public Dictionary<Bill, int> billRoles = NewBillRoleDictionary();
         /// Role-list groups in display order. Mutate via RoleCommands.
         public List<RoleGroup> groups = new List<RoleGroup>();
         /// Named training paths (Options tab). Mutate via RoleCommands.
@@ -53,6 +54,25 @@ namespace WorkRoles
         private List<int> billValuesWorkingList;
 
         private static RoleStore cached;
+
+        private static Dictionary<Bill, int> NewBillRoleDictionary() =>
+            new Dictionary<Bill, int>(ReferenceIdentityComparer<Bill>.Instance);
+
+        private void EnsureBillRoleIdentityComparer()
+        {
+            if (billRoles == null)
+            {
+                billRoles = NewBillRoleDictionary();
+                return;
+            }
+            if (ReferenceEquals(billRoles.Comparer,
+                    ReferenceIdentityComparer<Bill>.Instance)) return;
+
+            var loaded = billRoles;
+            billRoles = NewBillRoleDictionary();
+            foreach (var mapping in loaded)
+                billRoles[mapping.Key] = mapping.Value;
+        }
 
         public RoleStore(World world) : base(world)
         {
@@ -98,7 +118,7 @@ namespace WorkRoles
             var group = GroupById(RoleGroup.DefaultId);
             if (group == null)
             {
-                group = new RoleGroup { id = RoleGroup.DefaultId, label = "Default" };
+                group = new RoleGroup { id = RoleGroup.DefaultId, label = GroupNameRules.DefaultName };
                 groups.Insert(0, group);
             }
             return group;
@@ -146,8 +166,192 @@ namespace WorkRoles
             return set;
         }
 
+        /// Returns vanilla authority to a managed pawn in one ordered transition:
+        /// preserve the current projection, remove mod state, dirty vanilla's
+        /// cached giver lists, then request UI invalidation. Callers performing a
+        /// bulk command may supply a coalescing request action.
+        internal bool UnmanagePawn(Pawn pawn, Action invalidateUi = null)
+        {
+            if (pawn == null || !pawnSets.TryGetValue(pawn, out var set)) return false;
+            var requestUiInvalidation = invalidateUi ?? UiVersion.Bump;
+            if (set.assignments.Count == 0)
+            {
+                pawnSets.Remove(pawn);
+                CompiledJobOrders.RemoveCached(pawn);
+                requestUiInvalidation();
+                return true;
+            }
+
+            // A missing work-settings component means there is no vanilla priority
+            // map or work-giver cache to restore. Removal remains necessary to avoid
+            // stale managed state. When it exists, capture the authority up front so
+            // both fallback mirroring and notification are always attempted.
+            var workSettings = pawn.workSettings;
+            PawnManagementLifecycle.Unmanage(
+                hasVanillaWorkSettings: workSettings != null,
+                mirrorFallback: () => CompiledJobOrders.MirrorFreshVanillaFallback(pawn),
+                removeManagedState: () =>
+                {
+                    pawnSets.Remove(pawn);
+                    CompiledJobOrders.RemoveCached(pawn);
+                },
+                notifyVanilla: () => workSettings.Notify_UseWorkPrioritiesChanged(),
+                invalidateUi: requestUiInvalidation);
+            return true;
+        }
+
         public IEnumerable<Pawn> PawnsWithRole(int roleId) =>
             pawnSets.Where(kv => kv.Value.assignments.Any(a => a.roleId == roleId)).Select(kv => kv.Key);
+
+        internal bool RemoveBillRole(Bill bill)
+        {
+            return bill != null && billRoles != null && billRoles.Remove(bill);
+        }
+
+        internal bool SetBillRole(Bill bill, int roleId)
+        {
+            if (bill == null) return false;
+            if (roleId < 0 || RoleById(roleId) == null)
+                return RemoveBillRole(bill);
+            EnsureBillRoleIdentityComparer();
+            billRoles[bill] = roleId;
+            return true;
+        }
+
+        internal int RemoveBillRolesForRole(int roleId)
+        {
+            if (billRoles == null || billRoles.Count == 0) return 0;
+            List<Bill> candidates = null;
+            foreach (var mapping in billRoles)
+                if (mapping.Value == roleId)
+                {
+                    candidates ??= new List<Bill>();
+                    candidates.Add(mapping.Key);
+                }
+            if (candidates == null) return 0;
+
+            int removed = 0;
+            foreach (Bill bill in candidates)
+                if (RemoveBillRole(bill)) removed++;
+            return removed;
+        }
+
+        /// Captures only mapped bills belonging to a stack. The list remains null
+        /// when no cleanup can occur, so the common RemoveIncompletableBills path
+        /// adds no allocation for unrestricted or still-completable bills.
+        internal List<Bill> CaptureBillRolesForStack(BillStack stack,
+            bool onlyIncompletable = false)
+        {
+            if (stack == null || billRoles == null || billRoles.Count == 0) return null;
+            List<Bill> candidates = null;
+            foreach (Bill bill in billRoles.Keys)
+            {
+                if (bill == null || !ReferenceEquals(bill.billStack, stack)) continue;
+                if (onlyIncompletable && !bill.deleted && bill.CompletableEver) continue;
+                candidates ??= new List<Bill>();
+                candidates.Add(bill);
+            }
+            return candidates;
+        }
+
+        internal int RemoveCapturedBillRolesMissingFromStack(BillStack stack,
+            List<Bill> candidates)
+        {
+            if (candidates == null || candidates.Count == 0) return 0;
+            int removed = 0;
+            foreach (Bill bill in candidates)
+                if (!BillStackContainsReference(stack, bill) && RemoveBillRole(bill))
+                    removed++;
+            return removed;
+        }
+
+        internal int RemoveBillRolesForStack(BillStack stack)
+        {
+            List<Bill> candidates = CaptureBillRolesForStack(stack);
+            if (candidates == null) return 0;
+            int removed = 0;
+            foreach (Bill bill in candidates)
+                if (RemoveBillRole(bill)) removed++;
+            return removed;
+        }
+
+        internal int SweepBillRoles(IEnumerable<Bill> liveBills)
+        {
+            if (billRoles == null || billRoles.Count == 0) return 0;
+            IReadOnlyList<Bill> stale = IdentityKeySweepPlanner.StaleKeys(
+                billRoles.Keys, liveBills ?? Array.Empty<Bill>());
+            int removed = 0;
+            foreach (Bill bill in stale)
+                if (RemoveBillRole(bill)) removed++;
+            return removed;
+        }
+
+        internal static bool BillStackContainsReference(BillStack stack, Bill bill)
+        {
+            List<Bill> bills = stack?.Bills;
+            if (bills == null || bill == null) return false;
+            for (int i = 0; i < bills.Count; i++)
+                if (ReferenceEquals(bills[i], bill)) return true;
+            return false;
+        }
+
+        private void SweepBillRolesBeforeSave()
+        {
+            if (billRoles == null || billRoles.Count == 0) return;
+            var live = new HashSet<Bill>(ReferenceIdentityComparer<Bill>.Instance);
+
+            // Shipped 1.6 IBillGiver implementations are Pawn, Corpse, and
+            // Building_WorkTable. Map inventory covers all spawned owners.
+            List<Map> maps = Find.Maps;
+            if (maps != null)
+                for (int mapIndex = 0; mapIndex < maps.Count; mapIndex++)
+                {
+                    Map map = maps[mapIndex];
+                    if (map?.listerThings == null) continue;
+                    List<Thing> things = map.listerThings.AllThings;
+                    if (things == null) continue;
+                    for (int thingIndex = 0; thingIndex < things.Count; thingIndex++)
+                        if (things[thingIndex] is IBillGiver giver)
+                            AddLiveBills(giver, live);
+                }
+
+            // Pawns can own surgery bills while in world storage, caravans,
+            // travelling transporters, temporary holders, or the current gravship.
+            List<Pawn> pawns = Find.World == null ? null : PawnsFinder.All_AliveOrDead;
+            if (pawns != null)
+                for (int i = 0; i < pawns.Count; i++)
+                    AddLiveBills(pawns[i], live);
+
+            // A carried corpse or mod-defined non-map owner may not appear in the
+            // inventories above. Preserve a mapped bill only when its own live,
+            // non-destroyed owner stack still contains that exact reference.
+            foreach (Bill bill in billRoles.Keys)
+                if (IsAttachedToLiveOwner(bill)) live.Add(bill);
+
+            SweepBillRoles(live);
+        }
+
+        private static void AddLiveBills(IBillGiver giver, HashSet<Bill> live)
+        {
+            if (giver == null || live == null) return;
+            if (giver is Thing owner && owner.Destroyed) return;
+            List<Bill> bills = giver.BillStack?.Bills;
+            if (bills == null) return;
+            for (int i = 0; i < bills.Count; i++)
+            {
+                Bill bill = bills[i];
+                if (bill != null && !bill.deleted) live.Add(bill);
+            }
+        }
+
+        private static bool IsAttachedToLiveOwner(Bill bill)
+        {
+            if (bill == null || bill.deleted) return false;
+            BillStack stack = bill.billStack;
+            IBillGiver giver = stack?.billGiver;
+            if (giver == null || giver is Thing owner && owner.Destroyed) return false;
+            return BillStackContainsReference(stack, bill);
+        }
 
         public override void ExposeData()
         {
@@ -161,6 +365,7 @@ namespace WorkRoles
                 foreach (var kv in pawnSets)
                     if (kv.Key != null && !kv.Key.Destroyed && kv.Value.assignments.Count > 0)
                         CompiledJobOrders.EnsureFresh(kv.Key);
+                SweepBillRolesBeforeSave();
             }
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
@@ -180,6 +385,11 @@ namespace WorkRoles
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
+            // Scribe replaces dictionaries with its default comparer in LoadingVars
+            // and fills reference-keyed maps only in ResolvingCrossRefs. Replace the
+            // still-empty shell now; the working lists remain owned by Scribe.
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                billRoles = NewBillRoleDictionary();
             Scribe_Values.Look(ref nextPathId, "nextPathId", 1);
             Scribe_Collections.Look(ref trainingPaths, "trainingPaths", LookMode.Deep);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -192,8 +402,11 @@ namespace WorkRoles
                 SyncSwatchNames();
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
-                billRoles ??= new Dictionary<Bill, int>();
-                billRoles.RemoveAll(kv => kv.Key == null || kv.Key.DeletedOrDereferenced);
+                EnsureBillRoleIdentityComparer();
+                // Bill.DeletedOrDereferenced dereferences billStack without a null
+                // guard in 1.6. Remove only definitely dead bill references here;
+                // role-id sanitation waits until legacy allRole has migrated.
+                billRoles.RemoveAll(kv => kv.Key == null || kv.Key.deleted);
                 trainingPaths ??= new List<TrainingPath>();
                 // Empty paths survive (named containers); only non-empty corrupt geometry drops.
                 trainingPaths.RemoveAll(p =>
@@ -219,6 +432,9 @@ namespace WorkRoles
                             set.assignments.Add(new RoleAssignment { roleId = allRole.id });
                     allRole = null;
                 }
+                // A bill could legitimately reference the hidden legacy All role.
+                // Only ids still unresolved after migration are corrupt.
+                billRoles.RemoveAll(kv => RoleById(kv.Value) == null);
                 // Corrupt-save hygiene (after the allRole migration, so its id
                 // resolves): assignments referencing deleted roles are inert but
                 // count as managed; drop them and any set they empty.

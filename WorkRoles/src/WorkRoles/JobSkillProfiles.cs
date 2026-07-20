@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -45,6 +47,7 @@ namespace WorkRoles
             public List<(string label, string value)> CurveRows;
             public string SourceLine;  // "Work giver: defName (mod)" footer
             public string TipCache;
+            internal StructuredTip StructuredTipCache;
         }
 
         public sealed class WorkTypeProfile
@@ -57,6 +60,57 @@ namespace WorkRoles
             public List<SkillRange> Requirements = new List<SkillRange>();
             public string SourceLine; // "Work type: defName (mod)" footer
             public string TipCache;
+            internal StructuredTip StructuredTipCache;
+        }
+
+        private sealed class ReferenceIdentity<T> where T : class
+        {
+            private readonly Dictionary<T, int> identities =
+                new Dictionary<T, int>(ReferenceComparer<T>.Instance);
+            private int next = 1;
+
+            internal int Of(T value)
+            {
+                if (!identities.TryGetValue(value, out int identity))
+                {
+                    identity = next++;
+                    identities.Add(value, identity);
+                }
+                return identity;
+            }
+        }
+
+        private sealed class ReferenceComparer<T> : IEqualityComparer<T> where T : class
+        {
+            internal static readonly ReferenceComparer<T> Instance = new ReferenceComparer<T>();
+            public bool Equals(T x, T y) => ReferenceEquals(x, y);
+            public int GetHashCode(T value) => RuntimeHelpers.GetHashCode(value);
+        }
+
+        private sealed class CurveFacts
+        {
+            internal string StatDefName;
+            internal List<(int level, float value)> Milestones;
+        }
+
+        /// The Core index is language-independent. These maps are the sole
+        /// retained game-definition owner used to materialize localized labels;
+        /// definition reload invalidation drops the whole snapshot atomically.
+        private sealed class DefinitionSnapshot
+        {
+            internal JobProfileIndex Index;
+            internal readonly Dictionary<string, WorkGiverDef> Givers =
+                new Dictionary<string, WorkGiverDef>(StringComparer.Ordinal);
+            internal readonly Dictionary<string, WorkTypeDef> WorkTypes =
+                new Dictionary<string, WorkTypeDef>(StringComparer.Ordinal);
+            internal readonly Dictionary<int, SkillDef> SkillsByIdentity =
+                new Dictionary<int, SkillDef>();
+            internal readonly Dictionary<string, SkillDef> SkillsByName =
+                new Dictionary<string, SkillDef>(StringComparer.Ordinal);
+            internal readonly Dictionary<string, StatDef> StatsByName =
+                new Dictionary<string, StatDef>(StringComparer.Ordinal);
+            internal readonly Dictionary<string, CurveFacts> CurvesByGiver =
+                new Dictionary<string, CurveFacts>(StringComparer.Ordinal);
         }
 
         /// Which stat curve tells a giver's success/failure story. The stats are
@@ -227,15 +281,52 @@ namespace WorkRoles
         /// Curves where lower is better bottom out instead of reaching 1.0.
         private static readonly HashSet<string> LowerIsBetter = new HashSet<string> { "FoodPoisonChance" };
 
+        private static DefinitionSnapshot definitionFacts;
         private static Dictionary<string, GiverProfile> byGiver;
         private static Dictionary<string, WorkTypeProfile> byType;
+        private static int profileGeneration;
+        private static int queuedLocalizedFacadeGeneration = -1;
 
         /// Language switch: every cached label and composed tip is translated
-        /// text — drop the lot and rebuild lazily (see Patch_Language).
-        internal static void ClearCaches()
+        /// text. The invariant Core index and its live Def identity map survive.
+        internal static void InvalidateLanguageCaches()
         {
+            unchecked { profileGeneration++; }
+            queuedLocalizedFacadeGeneration = -1;
             byGiver = null;
             byType = null;
+        }
+
+        /// Definition replacement: release both the invariant facts and every
+        /// localized profile/TipCache before any live DefDatabase is mutated.
+        internal static void InvalidateDefinitions()
+        {
+            definitionFacts = null;
+            InvalidateLanguageCaches();
+        }
+
+        internal static void WarmDefinitionFacts()
+        {
+            DefinitionFacts();
+        }
+
+        private static void WarmLocalizedFacade() => EnsureBuilt();
+
+        /// Late language injection runs inside LongEventHandler's completion
+        /// list. Append a main-thread facade-only warm and make any callback
+        /// queued before a later language/definition invalidation a no-op.
+        internal static void QueueLocalizedFacadeWarm()
+        {
+            int token = profileGeneration;
+            if (queuedLocalizedFacadeGeneration == token) return;
+            queuedLocalizedFacadeGeneration = token;
+            LongEventHandler.ExecuteWhenFinished(() =>
+            {
+                if (token != profileGeneration
+                    || queuedLocalizedFacadeGeneration != token) return;
+                queuedLocalizedFacadeGeneration = -1;
+                WarmLocalizedFacade();
+            });
         }
 
         /// Defensive label: a modded SkillDef may omit skillLabel.
@@ -257,44 +348,242 @@ namespace WorkRoles
         private static void EnsureBuilt()
         {
             if (byGiver != null) return;
-            byGiver = new Dictionary<string, GiverProfile>();
-            byType = new Dictionary<string, WorkTypeProfile>();
+            DefinitionSnapshot snapshot = DefinitionFacts();
+            var givers = new Dictionary<string, GiverProfile>(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, JobProfileGiverFacts> pair in snapshot.Index.Givers)
+                if (snapshot.Givers.TryGetValue(pair.Key, out WorkGiverDef giver))
+                    givers[pair.Key] = BuildGiver(snapshot, giver, pair.Value);
 
-            foreach (var giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
+            var workTypes = new Dictionary<string, WorkTypeProfile>(StringComparer.Ordinal);
+            foreach (KeyValuePair<string, JobProfileWorkTypeFacts> pair in snapshot.Index.WorkTypes)
+                if (snapshot.WorkTypes.TryGetValue(pair.Key, out WorkTypeDef workType))
+                    workTypes[pair.Key] = BuildWorkType(snapshot, workType, pair.Value);
+
+            byGiver = givers;
+            byType = workTypes;
+        }
+
+        private static DefinitionSnapshot DefinitionFacts()
+        {
+            if (definitionFacts == null)
+                definitionFacts = BuildDefinitionFacts();
+            return definitionFacts;
+        }
+
+        private static DefinitionSnapshot BuildDefinitionFacts()
+        {
+            var snapshot = new DefinitionSnapshot();
+            var builder = new JobProfileIndexBuilder();
+            var workTypeIdentities = new ReferenceIdentity<WorkTypeDef>();
+            var skillIdentities = new ReferenceIdentity<SkillDef>();
+            var recipeUserIdentities = new ReferenceIdentity<ThingDef>();
+            var recipeIdentities = new ReferenceIdentity<RecipeDef>();
+            var fixedRecipeUsers = new List<ThingDef>();
+            var fixedRecipeUsersSeen = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
+
+            foreach (SkillDef skill in DefDatabase<SkillDef>.AllDefsListForReading)
             {
-                if (giver.workType == null) continue;
-                byGiver[giver.defName] = BuildGiver(giver);
+                if (skill == null) continue;
+                int identity = skillIdentities.Of(skill);
+                snapshot.SkillsByIdentity[identity] = skill;
+                snapshot.SkillsByName[skill.defName] = skill;
             }
 
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
-                var members = workType.workGiversByPriority
-                    .Select(g => byGiver.TryGetValue(g.defName, out var p) ? p : null)
-                    .Where(p => p != null)
-                    .ToList();
-                var profile = new WorkTypeProfile
-                {
-                    Title = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst(),
-                    TrainedSkills = SkillLabels(workType.relevantSkills),
-                    TotalGivers = members.Count,
-                    XpGivers = members.Count(p => p.GivesXp),
-                    // The vanilla Work-tab text players already know leads the tip.
-                    Description = StripSelfAttribution(workType.description, workType.modContentPack),
-                    SourceLine = SourceLineFor(workType, "WR_SkillTipTypeSource"),
-                };
-                // Per skill, the highest requirement any member content carries.
-                // Only Top renders in the type tip; summing Gated here would
-                // double-count recipes shared between bill givers.
-                foreach (var group in members.SelectMany(p => p.Requirements)
-                             .GroupBy(r => r.SkillDefName))
-                    profile.Requirements.Add(new SkillRange
+                if (workType == null) continue;
+                int identity = workTypeIdentities.Of(workType);
+                snapshot.WorkTypes[workType.defName] = workType;
+                var members = new List<string>();
+                List<WorkGiverDef> priorityGivers = workType.workGiversByPriority;
+                if (!priorityGivers.NullOrEmpty())
+                    for (int i = 0; i < priorityGivers.Count; i++)
                     {
-                        SkillLabel = group.First().SkillLabel,
-                        SkillDefName = group.Key,
-                        Top = group.Max(r => r.Top),
-                    });
-                byType[workType.defName] = profile;
+                        WorkGiverDef giver = priorityGivers[i];
+                        if (giver != null) members.Add(giver.defName);
+                    }
+                builder.AddWorkType(identity, workType.defName,
+                    SkillSources(workType.relevantSkills, skillIdentities, snapshot), members);
             }
+
+            foreach (WorkGiverDef giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
+            {
+                if (giver?.workType == null) continue;
+                snapshot.Givers[giver.defName] = giver;
+                var fixedUsers = new List<int>();
+                if (!giver.fixedBillGiverDefs.NullOrEmpty())
+                    for (int i = 0; i < giver.fixedBillGiverDefs.Count; i++)
+                    {
+                        ThingDef user = giver.fixedBillGiverDefs[i];
+                        if (user == null) continue;
+                        fixedUsers.Add(recipeUserIdentities.Of(user));
+                        if (fixedRecipeUsersSeen.Add(user)) fixedRecipeUsers.Add(user);
+                    }
+                bool curated = XpByGiver.TryGetValue(giver.defName, out string[] xpSkills);
+                builder.AddGiver(
+                    giver.defName,
+                    workTypeIdentities.Of(giver.workType),
+                    SkillSources(giver.workType.relevantSkills, skillIdentities, snapshot),
+                    fixedUsers,
+                    giver.billGiversAllHumanlikes || giver.billGiversAllHumanlikesCorpses,
+                    giver.billGiversAllAnimals || giver.billGiversAllAnimalsCorpses,
+                    giver.billGiversAllMechanoids || giver.billGiversAllMechanoidsCorpses,
+                    curated,
+                    xpSkills);
+            }
+
+            var observedRecipeUsers = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
+            foreach (ThingDef thing in DefDatabase<ThingDef>.AllDefsListForReading)
+            {
+                if (thing == null) continue;
+                if (observedRecipeUsers.Add(thing))
+                {
+                    JobProfileRecipeUserKind kind = JobProfileRecipeUserKind.None;
+                    if (thing.race?.Humanlike == true) kind |= JobProfileRecipeUserKind.Humanlike;
+                    if (thing.race?.Animal == true) kind |= JobProfileRecipeUserKind.Animal;
+                    if (thing.race?.IsMechanoid == true) kind |= JobProfileRecipeUserKind.Mechanoid;
+                    var directRecipes = new List<int>();
+                    if (!thing.recipes.NullOrEmpty())
+                        for (int i = 0; i < thing.recipes.Count; i++)
+                        {
+                            RecipeDef recipe = thing.recipes[i];
+                            if (recipe == null) continue;
+                            directRecipes.Add(recipeIdentities.Of(recipe));
+                            builder.AddRecipe(RecipeSource(recipe, recipeIdentities,
+                                workTypeIdentities, skillIdentities, snapshot));
+                        }
+                    builder.AddRecipeUser(recipeUserIdentities.Of(thing), kind, directRecipes);
+                }
+
+                if (thing.constructionSkillPrerequisite > 0)
+                    builder.AddConstructionRequirement(thing.constructionSkillPrerequisite);
+                if (thing.plant != null && thing.plant.sowMinSkill > 0 && thing.plant.Sowable)
+                    builder.AddSowingRequirement(thing.plant.sowMinSkill);
+            }
+
+            // A fixed bill giver may be a runtime/non-database ThingDef. The
+            // old AllRecipes path still read its direct recipes; register it
+            // without race classification so the reverse index does the same.
+            for (int i = 0; i < fixedRecipeUsers.Count; i++)
+            {
+                ThingDef thing = fixedRecipeUsers[i];
+                if (observedRecipeUsers.Contains(thing)) continue;
+                var directRecipes = new List<int>();
+                if (!thing.recipes.NullOrEmpty())
+                    for (int j = 0; j < thing.recipes.Count; j++)
+                    {
+                        RecipeDef recipe = thing.recipes[j];
+                        if (recipe == null) continue;
+                        directRecipes.Add(recipeIdentities.Of(recipe));
+                        builder.AddRecipe(RecipeSource(recipe, recipeIdentities,
+                            workTypeIdentities, skillIdentities, snapshot));
+                    }
+                builder.AddRecipeUser(recipeUserIdentities.Of(thing),
+                    JobProfileRecipeUserKind.None, directRecipes);
+            }
+
+            foreach (TerrainDef terrain in DefDatabase<TerrainDef>.AllDefsListForReading)
+                if (terrain != null && terrain.constructionSkillPrerequisite > 0)
+                    builder.AddConstructionRequirement(terrain.constructionSkillPrerequisite);
+
+            foreach (RecipeDef recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
+            {
+                if (recipe == null) continue;
+                var users = new List<int>();
+                if (!recipe.recipeUsers.NullOrEmpty())
+                    for (int i = 0; i < recipe.recipeUsers.Count; i++)
+                    {
+                        ThingDef user = recipe.recipeUsers[i];
+                        if (user != null) users.Add(recipeUserIdentities.Of(user));
+                    }
+                builder.AddDatabaseRecipe(RecipeSource(recipe, recipeIdentities,
+                    workTypeIdentities, skillIdentities, snapshot), users);
+            }
+
+            JobProfileSkillSource construction = SkillSource(
+                SkillDefOf.Construction, skillIdentities, snapshot);
+            JobProfileSkillSource plants = SkillSource(
+                SkillDefOf.Plants, skillIdentities, snapshot);
+            builder.SetConstructionSkill(construction.Identity, construction.DefName);
+            builder.SetSowingSkill(plants.Identity, plants.DefName);
+
+            foreach (StatDef stat in DefDatabase<StatDef>.AllDefsListForReading)
+                if (stat != null)
+                    snapshot.StatsByName[stat.defName] = stat;
+
+            foreach (KeyValuePair<string, string> pair in CurveStatByGiver)
+            {
+                if (!snapshot.StatsByName.TryGetValue(pair.Value, out StatDef stat)) continue;
+                SkillNeed_Direct need = stat.skillNeedFactors?.OfType<SkillNeed_Direct>()
+                    .FirstOrDefault(n => n.skill != null && !n.valuesPerLevel.NullOrEmpty());
+                if (need == null) continue;
+                List<(int level, float value)> milestones = LowerIsBetter.Contains(pair.Value)
+                    ? JobSkillMath.FallingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.1f })
+                    : JobSkillMath.RisingMilestones(need.valuesPerLevel,
+                        new[] { 0.5f, 0.75f, 0.9f, 1f });
+                if (milestones.Count > 1)
+                    snapshot.CurvesByGiver[pair.Key] = new CurveFacts
+                    {
+                        StatDefName = pair.Value,
+                        Milestones = milestones,
+                    };
+            }
+
+            snapshot.Index = builder.Build();
+            return snapshot;
+        }
+
+        private static JobProfileRecipeSource RecipeSource(
+            RecipeDef recipe,
+            ReferenceIdentity<RecipeDef> recipeIdentities,
+            ReferenceIdentity<WorkTypeDef> workTypeIdentities,
+            ReferenceIdentity<SkillDef> skillIdentities,
+            DefinitionSnapshot snapshot)
+        {
+            JobProfileSkillSource? workSkill = recipe.workSkill == null
+                ? (JobProfileSkillSource?)null
+                : SkillSource(recipe.workSkill, skillIdentities, snapshot);
+            var requirements = new List<JobProfileSkillRequirementSource>();
+            if (!recipe.skillRequirements.NullOrEmpty())
+                for (int i = 0; i < recipe.skillRequirements.Count; i++)
+                {
+                    SkillRequirement requirement = recipe.skillRequirements[i];
+                    if (requirement?.skill == null) continue;
+                    JobProfileSkillSource skill = SkillSource(
+                        requirement.skill, skillIdentities, snapshot);
+                    requirements.Add(new JobProfileSkillRequirementSource(
+                        skill.Identity, skill.DefName, requirement.minLevel));
+                }
+            return new JobProfileRecipeSource(
+                recipeIdentities.Of(recipe),
+                recipe.requiredGiverWorkType == null
+                    ? (int?)null : workTypeIdentities.Of(recipe.requiredGiverWorkType),
+                workSkill,
+                recipe.workSkillLearnFactor,
+                requirements);
+        }
+
+        private static List<JobProfileSkillSource> SkillSources(
+            List<SkillDef> skills,
+            ReferenceIdentity<SkillDef> identities,
+            DefinitionSnapshot snapshot)
+        {
+            var result = new List<JobProfileSkillSource>();
+            if (!skills.NullOrEmpty())
+                for (int i = 0; i < skills.Count; i++)
+                    if (skills[i] != null)
+                        result.Add(SkillSource(skills[i], identities, snapshot));
+            return result;
+        }
+
+        private static JobProfileSkillSource SkillSource(
+            SkillDef skill,
+            ReferenceIdentity<SkillDef> identities,
+            DefinitionSnapshot snapshot)
+        {
+            int identity = identities.Of(skill);
+            snapshot.SkillsByIdentity[identity] = skill;
+            return new JobProfileSkillSource(identity, skill.defName);
         }
 
         /// Mods often end descriptions with an "added by X" line; the source
@@ -307,90 +596,60 @@ namespace WorkRoles
                 line.IndexOf(mod.Name, System.StringComparison.OrdinalIgnoreCase) < 0)).TrimEnd();
         }
 
-        private static GiverProfile BuildGiver(WorkGiverDef giver)
+        private static GiverProfile BuildGiver(
+            DefinitionSnapshot snapshot, WorkGiverDef giver, JobProfileGiverFacts facts)
         {
             var profile = new GiverProfile
             {
                 Title = (giver.label ?? giver.defName).CapitalizeFirst(),
-                UsedSkills = SkillLabels(giver.workType.relevantSkills),
+                UsedSkills = SkillLabels(snapshot, facts.UsedSkillIdentities, facts.UsesRecipes),
+                UsedSkillDefNames = new List<string>(facts.UsedSkillDefNames),
+                TrainedSkillDefNames = new List<string>(facts.TrainedSkillDefNames),
+                RelevantSkillDefNames = new List<string>(facts.RelevantSkillDefNames),
+                GivesXp = facts.GivesXp,
             };
-            profile.UsedSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
-                ? new List<string>()
-                : giver.workType.relevantSkills.Select(s => s.defName).ToList();
-            profile.RelevantSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
-                ? new List<string>()
-                : giver.workType.relevantSkills.Select(s => s.defName).ToList();
-            var recipes = BillRecipesOf(giver);
-
-            if (recipes != null && recipes.Count > 0)
+            if (facts.HasCuratedXp && !facts.UsesRecipes)
             {
-                // Bill work: XP and requirements come from the recipes themselves
-                // (a recipe's workSkill can differ from the work type — the drug
-                // lab teaches Cooking/Intellectual under a Crafting type).
-                profile.UsedSkills = recipes
-                    .Where(r => r.workSkill != null)
-                    .Select(r => SkillLabel(r.workSkill))
-                    .Distinct().ToList();
-                profile.UsedSkillDefNames = recipes
-                    .Where(r => r.workSkill != null)
-                    .Select(r => r.workSkill.defName)
-                    .Distinct().ToList();
-                profile.TrainedSkills = recipes
-                    .Where(r => r.workSkill != null && r.workSkillLearnFactor > 0f)
-                    .Select(r => SkillLabel(r.workSkill))
-                    .Distinct().ToList();
-                profile.TrainedSkillDefNames = recipes
-                    .Where(r => r.workSkill != null && r.workSkillLearnFactor > 0f)
-                    .Select(r => r.workSkill.defName)
-                    .Distinct().ToList();
-                profile.GivesXp = profile.TrainedSkills.Count > 0;
-                foreach (var group in recipes
-                    .Where(r => !r.skillRequirements.NullOrEmpty())
-                    .SelectMany(r => r.skillRequirements)
-                    .Where(req => req.skill != null)
-                    .GroupBy(req => req.skill))
-                    profile.Requirements.Add(new SkillRange
-                    {
-                        SkillLabel = SkillLabel(group.Key),
-                        SkillDefName = group.Key.defName,
-                        Floor = group.Min(req => req.minLevel),
-                        Top = group.Max(req => req.minLevel),
-                        Gated = group.Count(),
-                        Total = recipes.Count,
-                    });
+                var unknown = new List<string>();
+                for (int i = 0; i < facts.TrainedSkillDefNames.Count; i++)
+                {
+                    string name = facts.TrainedSkillDefNames[i];
+                    if (snapshot.SkillsByName.TryGetValue(name, out SkillDef skill))
+                        profile.TrainedSkills.Add(SkillLabel(skill));
+                    else
+                        unknown.Add(name);
+                }
+                if (unknown.Count > 0)
+                    Log.Warning($"[WorkRoles] XP table for {giver.defName} names unknown skill(s): "
+                        + unknown.ToCommaList());
             }
             else
-            {
-                // Curated code-verified XP facts; the work-type heuristic only
-                // covers modded givers the table cannot know.
-                if (XpByGiver.TryGetValue(giver.defName, out var xpSkills))
-                {
-                    profile.TrainedSkillDefNames = xpSkills.ToList();
-                    profile.TrainedSkills = xpSkills
-                        .Select(d => DefDatabase<SkillDef>.GetNamedSilentFail(d))
-                        .Where(s => s != null).Select(SkillLabel).ToList();
-                    // Curation drift (game update, renamed skill) must be loud,
-                    // not a silently shorter facts list.
-                    if (profile.TrainedSkills.Count < xpSkills.Length)
-                        Log.Warning($"[WorkRoles] XP table for {giver.defName} names unknown skill(s): "
-                            + xpSkills.Where(d => DefDatabase<SkillDef>.GetNamedSilentFail(d) == null).ToCommaList());
-                }
-                else
-                {
-                    profile.TrainedSkills = SkillLabels(giver.workType.relevantSkills);
-                    profile.TrainedSkillDefNames = giver.workType.relevantSkills.NullOrEmpty()
-                        ? new List<string>()
-                        : giver.workType.relevantSkills.Select(s => s.defName).ToList();
-                }
-                profile.GivesXp = profile.TrainedSkillDefNames.Count > 0;
-                if (giver.defName == "ConstructFinishFrames")
-                    profile.Requirements.Add(ConstructionRange());
-                else if (giver.defName == "GrowerSow")
-                    profile.Requirements.Add(SowingRange());
-            }
+                profile.TrainedSkills = SkillLabels(
+                    snapshot, facts.TrainedSkillIdentities, facts.UsesRecipes);
 
-            FillCurveFacts(profile, giver.defName);
+            for (int i = 0; i < facts.Requirements.Count; i++)
+                profile.Requirements.Add(SkillRangeOf(snapshot, facts.Requirements[i]));
+
+            FillCurveFacts(snapshot, profile, giver.defName);
             profile.SourceLine = SourceLineFor(giver, "WR_SkillTipGiverSource");
+            return profile;
+        }
+
+        private static WorkTypeProfile BuildWorkType(
+            DefinitionSnapshot snapshot, WorkTypeDef workType, JobProfileWorkTypeFacts facts)
+        {
+            var profile = new WorkTypeProfile
+            {
+                Title = (workType.gerundLabel ?? workType.labelShort ?? workType.defName)
+                    .CapitalizeFirst(),
+                TrainedSkills = SkillLabels(snapshot, facts.RelevantSkillIdentities, false),
+                TotalGivers = facts.TotalGivers,
+                XpGivers = facts.XpGivers,
+                Description = StripSelfAttribution(workType.description, workType.modContentPack),
+                SourceLine = SourceLineFor(workType, "WR_SkillTipTypeSource"),
+            };
+            for (int i = 0; i < facts.Requirements.Count; i++)
+                profile.Requirements.Add(SkillRangeOf(snapshot, facts.Requirements[i]));
             return profile;
         }
 
@@ -406,107 +665,78 @@ namespace WorkRoles
             return key.Translate(def.defName, mod);
         }
 
-        /// The recipes a bill giver can work: its fixed benches' recipes, or —
-        /// for surgery-style givers whose bill giver is the pawn itself — the
-        /// recipes of every matching race. Null when the giver isn't bill work.
-        private static List<RecipeDef> BillRecipesOf(WorkGiverDef giver)
+        private static List<string> SkillLabels(
+            DefinitionSnapshot snapshot, IReadOnlyList<int> identities, bool distinct)
         {
-            var benches = new List<ThingDef>();
-            if (giver.fixedBillGiverDefs != null)
-                benches.AddRange(giver.fixedBillGiverDefs.Where(b => b != null));
-            // Corpse variants count as the same race source: corpse bills run the
-            // race's recipes (WorkGiver_DoBill checks the corpse's inner pawn).
-            if (giver.billGiversAllHumanlikes || giver.billGiversAllHumanlikesCorpses)
-                benches.AddRange(DefDatabase<ThingDef>.AllDefsListForReading
-                    .Where(d => d.race?.Humanlike == true));
-            if (giver.billGiversAllAnimals || giver.billGiversAllAnimalsCorpses)
-                benches.AddRange(DefDatabase<ThingDef>.AllDefsListForReading
-                    .Where(d => d.race?.Animal == true));
-            if (giver.billGiversAllMechanoids || giver.billGiversAllMechanoidsCorpses)
-                benches.AddRange(DefDatabase<ThingDef>.AllDefsListForReading
-                    .Where(d => d.race?.IsMechanoid == true));
-            if (benches.Count == 0) return null;
-            // The game runs a bill only when requiredGiverWorkType matches the
-            // giver (WorkGiver_DoBill): bench-sharing givers train nothing else.
-            return benches.SelectMany(b => b.AllRecipes)
-                .Where(r => r.requiredGiverWorkType == null
-                    || r.requiredGiverWorkType == giver.workType)
-                .Distinct().ToList();
+            var result = new List<string>();
+            HashSet<string> seen = distinct ? new HashSet<string>() : null;
+            for (int i = 0; i < identities.Count; i++)
+                if (snapshot.SkillsByIdentity.TryGetValue(identities[i], out SkillDef skill))
+                {
+                    string label = SkillLabel(skill);
+                    if (seen == null || seen.Add(label)) result.Add(label);
+                }
+            return result;
         }
 
-        private static List<string> SkillLabels(List<SkillDef> skills)
-            => skills.NullOrEmpty()
-                ? new List<string>()
-                : skills.Select(SkillLabel).ToList();
-
-        private static SkillRange ConstructionRange()
+        private static SkillRange SkillRangeOf(
+            DefinitionSnapshot snapshot, JobProfileRequirementFacts facts)
         {
-            var levels = DefDatabase<ThingDef>.AllDefsListForReading
-                .Where(d => d.constructionSkillPrerequisite > 0)
-                .Select(d => d.constructionSkillPrerequisite)
-                .Concat(DefDatabase<TerrainDef>.AllDefsListForReading
-                    .Where(d => d.constructionSkillPrerequisite > 0)
-                    .Select(d => d.constructionSkillPrerequisite))
-                .ToList();
-            return RangeOf(levels, SkillDefOf.Construction);
-        }
-
-        private static SkillRange SowingRange()
-        {
-            var levels = DefDatabase<ThingDef>.AllDefsListForReading
-                .Where(d => d.plant != null && d.plant.sowMinSkill > 0 && d.plant.Sowable)
-                .Select(d => d.plant.sowMinSkill)
-                .ToList();
-            return RangeOf(levels, SkillDefOf.Plants);
-        }
-
-        private static SkillRange RangeOf(List<int> levels, SkillDef skill)
-            => new SkillRange
+            snapshot.SkillsByIdentity.TryGetValue(facts.SkillIdentity, out SkillDef skill);
+            return new SkillRange
             {
-                SkillLabel = SkillLabel(skill),
-                SkillDefName = skill.defName,
-                Floor = levels.Count > 0 ? levels.Min() : 0,
-                Top = levels.Count > 0 ? levels.Max() : 0,
-                Gated = levels.Count,
+                SkillLabel = skill == null ? facts.SkillDefName : SkillLabel(skill),
+                SkillDefName = facts.SkillDefName,
+                Floor = facts.Floor,
+                Top = facts.Top,
+                Gated = facts.Gated,
+                Total = facts.Total,
             };
+        }
 
-        private static void FillCurveFacts(GiverProfile profile, string giverDefName)
+        private static void FillCurveFacts(
+            DefinitionSnapshot snapshot, GiverProfile profile, string giverDefName)
         {
-            if (!CurveStatByGiver.TryGetValue(giverDefName, out var statName)) return;
-            var stat = DefDatabase<StatDef>.GetNamedSilentFail(statName);
-            var need = stat?.skillNeedFactors?.OfType<SkillNeed_Direct>()
-                .FirstOrDefault(n => n.skill != null && !n.valuesPerLevel.NullOrEmpty());
-            if (need == null) return;
-
-            var milestones = LowerIsBetter.Contains(statName)
-                ? JobSkillMath.FallingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.1f })
-                : JobSkillMath.RisingMilestones(need.valuesPerLevel, new[] { 0.5f, 0.75f, 0.9f, 1f });
-            if (milestones.Count <= 1) return;
-
+            if (!snapshot.CurvesByGiver.TryGetValue(giverDefName, out CurveFacts facts)
+                || !snapshot.StatsByName.TryGetValue(facts.StatDefName, out StatDef stat)) return;
             profile.CurveHeader = stat.LabelCap;
             profile.CurveRows = new List<(string, string)>();
-            foreach (var (level, value) in milestones)
+            foreach ((int level, float value) in facts.Milestones)
                 profile.CurveRows.Add((
                     "WR_TipLevelN".Translate(level).ToString(), value.ToStringPercent()));
         }
 
         // ----- Tooltip composition (cached; defs are session-fixed, a language
-        // switch clears via ClearCaches) -----
+        // switch clears via InvalidateLanguageCaches) -----
 
         public static string GiverTip(string defName)
         {
             var profile = ForGiver(defName);
             if (profile == null) return null;
-            return profile.TipCache ?? (profile.TipCache =
-                Patches.Patch_ActiveTip_TipRect.Register(BuildGiverModel(profile)));
+            if (profile.TipCache == null)
+            {
+                profile.StructuredTipCache = new StructuredTip(
+                    $"job-giver:{defName}", BuildGiverModel(profile));
+                profile.TipCache = profile.StructuredTipCache.PlainText;
+            }
+            if (profile.TipCache != profile.StructuredTipCache?.PlainText)
+                return profile.TipCache;
+            return profile.StructuredTipCache.Activate();
         }
 
         public static string WorkTypeTip(string defName)
         {
             var profile = ForWorkType(defName);
             if (profile == null) return null;
-            return profile.TipCache ?? (profile.TipCache =
-                Patches.Patch_ActiveTip_TipRect.Register(BuildTypeModel(profile)));
+            if (profile.TipCache == null)
+            {
+                profile.StructuredTipCache = new StructuredTip(
+                    $"work-type:{defName}", BuildTypeModel(profile));
+                profile.TipCache = profile.StructuredTipCache.PlainText;
+            }
+            if (profile.TipCache != profile.StructuredTipCache?.PlainText)
+                return profile.TipCache;
+            return profile.StructuredTipCache.Activate();
         }
 
         private static TipModel BuildGiverModel(GiverProfile profile)

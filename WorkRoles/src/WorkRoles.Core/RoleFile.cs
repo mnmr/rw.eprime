@@ -37,9 +37,11 @@ namespace WorkRoles.Core
     /// tokens with NAMES instead of save-local ids ("settlement:Boarwood").
     public class FileRole
     {
+        public string fileId;
         public string label;
         public string templateDef;
         public string group;   // role-list group name; null = the Default group
+        public string groupId;
         public string colorRef;
         public bool autoAssign;
         public bool blocker;
@@ -56,16 +58,71 @@ namespace WorkRoles.Core
         public const int AllHours = 0xFFFFFF;
     }
 
-    /// One training path as the file carries it: role NAMES with skill bands
-    /// (resolved to ids on import), plus the optional assignment anchor.
+    public class FileGroup
+    {
+        public string fileId;
+        public string name;
+
+        public static implicit operator FileGroup(string name) => new FileGroup { name = name };
+        public override string ToString() => name ?? "";
+    }
+
+    public class FileRoleReference
+    {
+        public string fileId;
+        public string label;
+
+        public FileRoleReference() { }
+        public FileRoleReference(string fileId, string label)
+        {
+            this.fileId = fileId;
+            this.label = label;
+        }
+
+        public static implicit operator FileRoleReference(string label) =>
+            new FileRoleReference(null, label);
+        public override string ToString() => label ?? "";
+    }
+
+    public class FileTrainingPathEntry
+    {
+        public FileRoleReference role;
+        public int min;
+        public int max;
+
+        public FileTrainingPathEntry(string label, int min, int max)
+            : this(null, label, min, max) { }
+
+        public FileTrainingPathEntry(string fileId, string label, int min, int max)
+        {
+            role = new FileRoleReference(fileId, label);
+            this.min = min;
+            this.max = max;
+        }
+
+        public static implicit operator FileTrainingPathEntry(
+            (string role, int min, int max) entry) =>
+            new FileTrainingPathEntry(entry.role, entry.min, entry.max);
+    }
+
+    /// One training path as the file carries it: document-local role ids plus
+    /// display labels for legacy fallback, with skill bands and an anchor.
     public class FileTrainingPath
     {
         public string name;
         public string colorRef;   // color NAME, like a role's; null = no override
         public string anchorRole; // null = no anchor
+        public string anchorRoleId;
+        public FileRoleReference anchorWithId;
         public bool anchorBefore = true;
+        // Compatibility surface shipped by formats 1-6. Keep this exact field
+        // type: external callers compile direct field references against it.
         public List<(string role, int min, int max)> entries =
-            new List<(string, int, int)>();
+            new List<(string role, int min, int max)>();
+        // Format-7 metadata is valid only while it remains index-for-index
+        // aligned with entries. Public legacy fields stay authoritative.
+        public List<FileTrainingPathEntry> entriesWithIds =
+            new List<FileTrainingPathEntry>();
     }
 
     public class RoleFileDocument
@@ -73,11 +130,14 @@ namespace WorkRoles.Core
         public List<(string name, ColorRgb color)> palette = new List<(string, ColorRgb)>();
         /// User group names in display order (the Default group is never listed).
         public List<string> groups = new List<string>();
+        public List<FileGroup> groupsWithIds = new List<FileGroup>();
         public List<FileRole> roles = new List<FileRole>();
         public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
         /// The stored recommendation-order template as role names; empty = the
         /// derived default (never exported).
         public List<string> recommendationOrder = new List<string>();
+        public List<FileRoleReference> recommendationOrderWithIds =
+            new List<FileRoleReference>();
         public string error; // set when nothing usable could be parsed
     }
 
@@ -91,10 +151,11 @@ namespace WorkRoles.Core
         /// <RecommendationOrder>; v4 retired <Training> (paths own training)
         /// and gave <Holders> an inTraining attribute; v5 replaces the old
         /// holder floor/allowance with an explicit Auto/Never/Custom range;
-        /// v6 adds the Custom training-waiver count.
+        /// v6 adds the Custom training-waiver count; v7 adds document-local
+        /// role/group ids and id-backed references while retaining labels.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "6";
+        public const string FormatVersion = "7";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -108,50 +169,60 @@ namespace WorkRoles.Core
   - The order of <Jobs> IS the priority order. <WorkType> covers every job of
     that work type, including jobs mods add later; <WorkGiver> is one job.
   - <Groups> lists role-list groups in display order; a Role joins one via its
-    group attribute (unlisted names still work; no attribute = Default).
+    groupId reference (the group label remains for display and legacy fallback;
+    no reference = Default). fileId values are local to this document only.
   - <Holders mode=""custom"" min=""2"" max=""4"" train=""1""/> sets an inclusive
     holder range and permits one minimum holder to use matching training-path
     roles instead. mode may be auto, never, or custom. Auto is the default when
     the element is absent. A max of 256 is displayed in-game as Uncapped.
-  - A <TrainingPaths> <Path> lists <Role min=""0"" max=""8"">name</Role> skill bands
+  - A <TrainingPaths> <Path> lists <Role roleId=""..."" min=""0"" max=""8"">name</Role> skill bands
     on the 0..21 axis (21 = open top, spans at least 4 levels). Assignment order
     uses band minimum descending, then the pawn's weakest role skill; entry order
     is the final tie-breaker. An optional color=""name"" attribute colors the
     path's chip (same color names as roles). <Anchor>name</Anchor> is where
     members slot into a colonist's list — before that role unless before=""false"".
-  - <RecommendationOrder> lists <Role> names: importing it replaces the stored
-    recommendation order (unlisted roles keep placing dynamically).
+  - <RecommendationOrder> lists roleId references with labels: importing it
+    replaces the stored recommendation order (unlisted roles place dynamically).
 ";
         private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
 
         public static string Build(RoleFileDocument doc)
         {
+            doc ??= new RoleFileDocument();
             var root = new XElement("WorkRoles", new XAttribute("version", FormatVersion));
             root.Add(new XComment(FormatNotes));
 
             var palette = new XElement("Palette");
-            if (doc.palette.Count > 0)
+            if (doc.palette?.Count > 0)
                 foreach (var (name, color) in doc.palette)
                     palette.Add(new XElement("Color", new XAttribute("name", name), color.Hex()));
             else
                 palette.Add(new XComment(PaletteSample)); // syntax sample, not imported
             root.Add(palette);
 
-            if (doc.groups.Count > 0)
+            IReadOnlyList<FileGroup> effectiveGroups = GroupsWithStableIds(doc);
+            if (effectiveGroups.Count > 0)
             {
                 // Element form so future per-group options land as attributes.
                 var groups = new XElement("Groups");
-                foreach (var name in doc.groups)
-                    groups.Add(new XElement("Group", new XAttribute("name", name)));
+                foreach (var group in effectiveGroups)
+                {
+                    var element = new XElement("Group", new XAttribute("name", group.name ?? ""));
+                    if (!string.IsNullOrEmpty(group.fileId))
+                        element.Add(new XAttribute("fileId", group.fileId));
+                    groups.Add(element);
+                }
                 root.Add(groups);
             }
 
             var roles = new XElement("Roles");
-            foreach (var role in doc.roles)
-                roles.Add(Encode(role));
+            if (doc.roles != null)
+                foreach (var role in doc.roles)
+                    if (role != null)
+                        roles.Add(Encode(role));
             root.Add(roles);
 
-            if (doc.trainingPaths.Count > 0)
+            if (doc.trainingPaths?.Count > 0)
             {
                 var paths = new XElement("TrainingPaths");
                 foreach (var path in doc.trainingPaths)
@@ -162,22 +233,38 @@ namespace WorkRoles.Core
                     if (!string.IsNullOrEmpty(path.anchorRole))
                     {
                         var anchor = new XElement("Anchor", path.anchorRole);
+                        FileRoleReference anchorReference = AnchorWithStableId(path);
+                        if (!string.IsNullOrEmpty(anchorReference?.fileId))
+                            anchor.Add(new XAttribute("roleId", anchorReference.fileId));
                         if (!path.anchorBefore) anchor.Add(new XAttribute("before", "false"));
                         el.Add(anchor);
                     }
-                    foreach (var (role, min, max) in path.entries)
-                        el.Add(new XElement("Role",
-                            new XAttribute("min", min), new XAttribute("max", max), role));
+                    foreach (var entry in EntriesWithStableIds(path))
+                    {
+                        var role = new XElement("Role",
+                            new XAttribute("min", entry.min), new XAttribute("max", entry.max),
+                            entry.role?.label ?? "");
+                        if (!string.IsNullOrEmpty(entry.role?.fileId))
+                            role.Add(new XAttribute("roleId", entry.role.fileId));
+                        el.Add(role);
+                    }
                     paths.Add(el);
                 }
                 root.Add(paths);
             }
 
-            if (doc.recommendationOrder.Count > 0)
+            IReadOnlyList<FileRoleReference> effectiveOrder =
+                RecommendationOrderWithStableIds(doc);
+            if (effectiveOrder.Count > 0)
             {
                 var order = new XElement("RecommendationOrder");
-                foreach (var label in doc.recommendationOrder)
-                    order.Add(new XElement("Role", label));
+                foreach (var reference in effectiveOrder)
+                {
+                    var role = new XElement("Role", reference?.label ?? "");
+                    if (!string.IsNullOrEmpty(reference?.fileId))
+                        role.Add(new XAttribute("roleId", reference.fileId));
+                    order.Add(role);
+                }
                 root.Add(order);
             }
             return root.ToString();
@@ -186,10 +273,14 @@ namespace WorkRoles.Core
         private static XElement Encode(FileRole role)
         {
             var element = new XElement("Role", new XAttribute("name", role.label ?? ""));
+            if (!string.IsNullOrEmpty(role.fileId))
+                element.Add(new XAttribute("fileId", role.fileId));
             if (!string.IsNullOrEmpty(role.templateDef))
                 element.Add(new XAttribute("id", role.templateDef));
             if (!string.IsNullOrEmpty(role.group))
                 element.Add(new XAttribute("group", role.group));
+            if (!string.IsNullOrEmpty(role.groupId))
+                element.Add(new XAttribute("groupId", role.groupId));
 
             var options = new XElement("Options");
             if (!string.IsNullOrEmpty(role.colorRef))
@@ -263,6 +354,7 @@ namespace WorkRoles.Core
                 doc.error = e.Message;
                 return doc;
             }
+            bool parsedVersion = int.TryParse(root.Attribute("version")?.Value, out int version);
             foreach (var colorEl in root.Element("Palette")?.Elements("Color")
                      ?? Enumerable.Empty<XElement>())
             {
@@ -275,12 +367,18 @@ namespace WorkRoles.Core
                      ?? Enumerable.Empty<XElement>())
             {
                 string name = groupEl.Attribute("name")?.Value?.Trim();
+                string fileId = groupEl.Attribute("fileId")?.Value?.Trim();
                 if (!string.IsNullOrEmpty(name)
-                    && !doc.groups.Contains(name, StringComparer.OrdinalIgnoreCase))
+                    && (!string.IsNullOrEmpty(fileId)
+                        || !doc.groups.Any(group => string.Equals(
+                            group, name, StringComparison.OrdinalIgnoreCase))))
+                {
                     doc.groups.Add(name);
+                    doc.groupsWithIds.Add(new FileGroup
+                        { fileId = EmptyToNull(fileId), name = name });
+                }
             }
-            bool v5Holders = int.TryParse(root.Attribute("version")?.Value, out int version)
-                && version >= 5;
+            bool v5Holders = parsedVersion && version >= 5;
             bool v6Training = version >= 6;
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
@@ -298,9 +396,17 @@ namespace WorkRoles.Core
                      ?? Enumerable.Empty<XElement>())
             {
                 string label = roleEl.Value?.Trim();
-                if (!string.IsNullOrEmpty(label)) doc.recommendationOrder.Add(label);
+                if (!string.IsNullOrEmpty(label))
+                {
+                    doc.recommendationOrder.Add(label);
+                    doc.recommendationOrderWithIds.Add(new FileRoleReference(
+                        EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label));
+                }
             }
-            if (doc.roles.Count == 0 && doc.palette.Count == 0 && doc.error == null)
+            if (doc.roles.Count == 0
+                && doc.trainingPaths.Count == 0
+                && doc.recommendationOrder.Count == 0
+                && doc.groups.Count == 0)
                 doc.error = "empty document";
             return doc;
         }
@@ -316,6 +422,8 @@ namespace WorkRoles.Core
             if (!string.IsNullOrEmpty(anchor?.Value?.Trim()))
             {
                 path.anchorRole = anchor.Value.Trim();
+                path.anchorRoleId = EmptyToNull(anchor.Attribute("roleId")?.Value?.Trim());
+                path.anchorWithId = new FileRoleReference(path.anchorRoleId, path.anchorRole);
                 path.anchorBefore = anchor.Attribute("before")?.Value?.Trim() != "false";
             }
             foreach (var roleEl in el.Elements("Role"))
@@ -328,6 +436,8 @@ namespace WorkRoles.Core
                     || min < 0 || max > SkillProgressionMath.MaxLevel
                     || max - min < SkillProgressionMath.MinSpan) continue;
                 path.entries.Add((label, min, max));
+                path.entriesWithIds.Add(new FileTrainingPathEntry(
+                    EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label, min, max));
             }
             return path;
         }
@@ -340,26 +450,177 @@ namespace WorkRoles.Core
             var ids = new List<int>();
             var mins = new List<int>();
             var maxes = new List<int>();
-            foreach (var (role, min, max) in path.entries)
+            foreach (var entry in path.entries)
             {
-                int? id = idOf(role);
+                int? id = idOf(entry.role);
                 if (id == null || ids.Contains(id.Value)) continue;
                 ids.Add(id.Value);
-                mins.Add(min);
-                maxes.Add(max);
+                mins.Add(entry.min);
+                maxes.Add(entry.max);
             }
             return (ids, mins, maxes);
         }
 
+        public static (List<int> ids, List<int> mins, List<int> maxes) ResolvePathEntries(
+            FileTrainingPath path, RoleFileDocument document, Func<FileRole, int?> idOf)
+        {
+            var ids = new List<int>();
+            var mins = new List<int>();
+            var maxes = new List<int>();
+            foreach (var entry in EntriesWithStableIds(path))
+            {
+                var role = ResolveRole(document, entry.role.fileId, entry.role.label);
+                int? id = role == null ? null : idOf(role);
+                if (id == null || ids.Contains(id.Value)) continue;
+                ids.Add(id.Value);
+                mins.Add(entry.min);
+                maxes.Add(entry.max);
+            }
+            return (ids, mins, maxes);
+        }
+
+        public static FileRole ResolveRole(RoleFileDocument document, string fileId, string label)
+        {
+            FileRole byId = UniqueById(document?.roles, fileId, role => role.fileId);
+            if (byId != null) return byId;
+            return document?.roles?.FirstOrDefault(role => role != null
+                && string.Equals(role.label, label, StringComparison.OrdinalIgnoreCase));
+        }
+
+        public static FileGroup ResolveGroup(RoleFileDocument document, string fileId, string name)
+        {
+            IReadOnlyList<FileGroup> groups = GroupsWithStableIds(document);
+            FileGroup byId = UniqueById(groups, fileId, group => group.fileId);
+            if (byId != null) return byId;
+            return groups.FirstOrDefault(group => group != null
+                && string.Equals(group.name, name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// Rich format-7 metadata is advisory. It is used only while every item
+        /// remains aligned with the legacy public collection callers may mutate.
+        public static IReadOnlyList<FileGroup> GroupsWithStableIds(RoleFileDocument document)
+        {
+            List<string> legacy = document?.groups;
+            if (legacy == null || legacy.Count == 0) return Array.Empty<FileGroup>();
+            List<FileGroup> rich = document.groupsWithIds;
+            if (rich != null && rich.Count == legacy.Count)
+            {
+                bool aligned = true;
+                for (int i = 0; i < legacy.Count; i++)
+                    if (rich[i] == null || !string.Equals(
+                            rich[i].name, legacy[i], StringComparison.Ordinal))
+                    {
+                        aligned = false;
+                        break;
+                    }
+                if (aligned) return rich;
+            }
+
+            var fallback = new List<FileGroup>(legacy.Count);
+            for (int i = 0; i < legacy.Count; i++)
+                fallback.Add(new FileGroup { name = legacy[i] });
+            return fallback;
+        }
+
+        public static IReadOnlyList<FileRoleReference> RecommendationOrderWithStableIds(
+            RoleFileDocument document)
+        {
+            List<string> legacy = document?.recommendationOrder;
+            if (legacy == null || legacy.Count == 0)
+                return Array.Empty<FileRoleReference>();
+            List<FileRoleReference> rich = document.recommendationOrderWithIds;
+            if (rich != null && rich.Count == legacy.Count)
+            {
+                bool aligned = true;
+                for (int i = 0; i < legacy.Count; i++)
+                    if (rich[i] == null || !string.Equals(
+                            rich[i].label, legacy[i], StringComparison.Ordinal))
+                    {
+                        aligned = false;
+                        break;
+                    }
+                if (aligned) return rich;
+            }
+
+            var fallback = new List<FileRoleReference>(legacy.Count);
+            for (int i = 0; i < legacy.Count; i++)
+                fallback.Add(new FileRoleReference(null, legacy[i]));
+            return fallback;
+        }
+
+        public static IReadOnlyList<FileTrainingPathEntry> EntriesWithStableIds(
+            FileTrainingPath path)
+        {
+            List<(string role, int min, int max)> legacy = path?.entries;
+            if (legacy == null || legacy.Count == 0)
+                return Array.Empty<FileTrainingPathEntry>();
+            List<FileTrainingPathEntry> rich = path.entriesWithIds;
+            if (rich != null && rich.Count == legacy.Count)
+            {
+                bool aligned = true;
+                for (int i = 0; i < legacy.Count; i++)
+                {
+                    FileTrainingPathEntry candidate = rich[i];
+                    if (candidate?.role == null
+                        || !string.Equals(candidate.role.label,
+                            legacy[i].role, StringComparison.Ordinal)
+                        || candidate.min != legacy[i].min
+                        || candidate.max != legacy[i].max)
+                    {
+                        aligned = false;
+                        break;
+                    }
+                }
+                if (aligned) return rich;
+            }
+
+            var fallback = new List<FileTrainingPathEntry>(legacy.Count);
+            for (int i = 0; i < legacy.Count; i++)
+                fallback.Add(new FileTrainingPathEntry(
+                    legacy[i].role, legacy[i].min, legacy[i].max));
+            return fallback;
+        }
+
+        public static FileRoleReference AnchorWithStableId(FileTrainingPath path)
+        {
+            if (path == null || string.IsNullOrEmpty(path.anchorRole)) return null;
+            FileRoleReference rich = path.anchorWithId;
+            if (rich != null
+                && string.Equals(rich.label, path.anchorRole, StringComparison.Ordinal)
+                && string.Equals(rich.fileId, path.anchorRoleId, StringComparison.Ordinal))
+                return rich;
+            return new FileRoleReference(null, path.anchorRole);
+        }
+
+        private static T UniqueById<T>(IEnumerable<T> items, string fileId, Func<T, string> idOf)
+            where T : class
+        {
+            if (items == null || string.IsNullOrEmpty(fileId)) return null;
+            T match = null;
+            foreach (T item in items)
+            {
+                if (item == null) continue;
+                if (!string.Equals(idOf(item), fileId, StringComparison.Ordinal)) continue;
+                if (match != null) return null;
+                match = item;
+            }
+            return match;
+        }
+
+        private static string EmptyToNull(string value) =>
+            string.IsNullOrEmpty(value) ? null : value;
+
         private static FileRole ParseRole(XElement el, bool v5Holders, bool v6Training)
         {
-            string label = el.Attribute("name")?.Value;
+            string label = el.Attribute("name")?.Value?.Trim();
             if (string.IsNullOrEmpty(label)) return null;
             var role = new FileRole
             {
+                fileId = EmptyToNull(el.Attribute("fileId")?.Value?.Trim()),
                 label = label,
                 templateDef = el.Attribute("id")?.Value,
                 group = el.Attribute("group")?.Value?.Trim(),
+                groupId = EmptyToNull(el.Attribute("groupId")?.Value?.Trim()),
             };
             if (string.IsNullOrEmpty(role.group)) role.group = null;
             var options = el.Element("Options");

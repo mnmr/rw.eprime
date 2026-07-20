@@ -240,6 +240,31 @@ public class RecommendationExplanationTests
         await Assert.That(explanation.RelatedRoleId).IsEqualTo(whole.Id);
     }
 
+    [Test]
+    public async Task PartialMixedCandidateAndExplanationAgreeItIsNotCovered()
+    {
+        RoleView broader = RecsTestBed.Role(1, "Cooking", "Cook", "Craft", "Haul");
+        RoleView mixed = RecsTestBed.Role(2, "Cooking", "Cook", "Craft");
+        mixed.WorkTypes.Add("Crafting");
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.CapableWorkTypes.Clear();
+        pawn.CapableWorkTypes.Add("Cooking");
+        pawn.SkillLevels["Cooking"] = 8;
+        pawn.SignalBuckets["Cooking"] = SignalBucket.Strong;
+        pawn.Existing.Add(new AssignmentView { RoleId = mixed.Id, Enabled = true });
+
+        PawnResult result = RecsEngine.Run(
+            RecsTestBed.Colony(new List<RoleView> { broader, mixed }, pawn))[0];
+        RoleRecommendationExplanation explanation = result.Explanations[mixed.Id];
+
+        await Assert.That(result.Assignments.Any(a => a.RoleId == broader.Id)).IsTrue();
+        await Assert.That(result.Assignments.Any(a => a.RoleId == mixed.Id)).IsTrue();
+        await Assert.That(explanation.Recommended).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.SignalQualified);
+        await Assert.That(explanation.RelatedRoleId).IsEqualTo(-1);
+    }
+
     private sealed class FixedMaximumPolicy : ITrainingDemandPolicy
     {
         private readonly int maximum;

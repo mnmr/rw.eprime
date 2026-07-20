@@ -19,11 +19,14 @@ namespace WorkRoles.UI
         /// Label rising at an angle out of a column header, its lower-left
         /// corner anchored to the column's bottom-right, underlined. Adapted
         /// from CaptainArbitrary's CompactWorkTab (MIT).
-        public static void InclinedLabel(Rect columnRect, string label, float degrees)
+        public static void InclinedLabel(
+            Rect columnRect,
+            string label,
+            Vector2 labelSize,
+            float degrees)
         {
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
-            Vector2 labelSize = Text.CalcSize(label);
             var rotated = new Rect(0f, 0f, columnRect.height, labelSize.y) { center = columnRect.center };
 
             // Offset so the label's bottom-left corner lands on the column's
@@ -65,6 +68,17 @@ namespace WorkRoles.UI
             GUI.color = oldColor;
             GUI.matrix = originalMatrix;
             Text.Font = oldFont;
+        }
+
+        // Compatibility path for callers outside WorkRoles. The priority grid
+        // uses the premeasured overload above and never measures during draw.
+        public static void InclinedLabel(Rect columnRect, string label, float degrees)
+        {
+            var oldFont = Text.Font;
+            Text.Font = GameFont.Small;
+            Vector2 labelSize = Text.CalcSize(label);
+            Text.Font = oldFont;
+            InclinedLabel(columnRect, label, labelSize, degrees);
         }
 
         /// Pixel-snapped 1px lines, tinted by the ambient GUI.color: an

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
@@ -5,6 +6,31 @@ using Verse;
 
 namespace WorkRoles
 {
+    /// A producer-owned structured tooltip. PlainText is computed exactly once
+    /// and remains the vanilla TipSignal fallback; activation only associates
+    /// the model with the current WorkRoles window generation.
+    internal sealed class StructuredTip
+    {
+        internal StructuredTip(string stableKey, TipModel model)
+        {
+            StableKey = stableKey ?? throw new ArgumentNullException(nameof(stableKey));
+            Model = model ?? throw new ArgumentNullException(nameof(model));
+            PlainText = model.ToPlainText();
+            RegistryEpoch = Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch;
+        }
+
+        internal string StableKey { get; }
+        internal TipModel Model { get; }
+        internal string PlainText { get; }
+        internal int RegistryEpoch { get; }
+
+        internal string Activate()
+        {
+            Patches.Patch_ActiveTip_TipRect.Activate(this);
+            return PlainText;
+        }
+    }
+
     /// Structured tooltip content: a title/badge line plus sections of rows.
     /// ToPlainText() is both the TipSignal text (failure-safe fallback) and the
     /// draw-registry key (see Patch_ActiveTip); WrTipUI renders the model.
@@ -18,7 +44,7 @@ namespace WorkRoles
         public float Padding = 8f;
         public List<TipSection> Sections = new List<TipSection>();
 
-        // WrTipUI's cached geometry; models are immutable once registered, so
+        // WrTipUI's cached geometry; models are immutable after construction, so
         // measurement happens once instead of every hover frame.
         internal object RenderCache;
 

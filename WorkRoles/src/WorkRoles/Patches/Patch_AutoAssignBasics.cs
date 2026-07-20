@@ -15,8 +15,7 @@ namespace WorkRoles.Patches
             if (store == null) return;
             if (__instance.Faction != Faction.OfPlayer)
             {
-                if (store.pawnSets.Remove(__instance))
-                    CompiledJobOrders.Invalidate(__instance);
+                store.UnmanagePawn(__instance);
                 return;
             }
             if (Current.ProgramState != ProgramState.Playing) return;

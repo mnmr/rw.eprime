@@ -423,7 +423,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_TipXpLabel>Gives XP</WR_TipXpLabel>
   <!-- {0} = XP-giving jobs, {1} = total jobs -->
   <WR_TipXpValue>{0} of {1} jobs</WR_TipXpValue>
-  <!-- {0} = skill label, {1} = highest gated level -->
   <!-- Identity footer: {0} = defName, {1} = source mod name -->
   <WR_SkillTipGiverSource>Work giver: {0} ({1})</WR_SkillTipGiverSource>
   <WR_SkillTipTypeSource>Work type: {0} ({1})</WR_SkillTipTypeSource>

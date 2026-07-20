@@ -390,7 +390,7 @@ namespace WorkRoles
                                 Fnv1a(workType.defName) % 360u / 360f, 0.5f, 0.55f));
                         role.hasCustomColor = true;
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
-                        result.Add(label);
+                        result.Add(role.label);
                     }
                 }
                 // Invisible uncovered types stay uncovered (only marked known);

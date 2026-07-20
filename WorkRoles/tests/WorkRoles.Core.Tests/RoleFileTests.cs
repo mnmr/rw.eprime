@@ -6,6 +6,100 @@ namespace WorkRoles.Core.Tests;
 /// these tests pin serialization, parsing, leniency and the hex/hours codecs.
 public class RoleFileTests
 {
+    [Test]
+    public async Task WhitespaceOnlyRoleNamesAreRejectedAfterNormalization()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><Roles>" +
+            "<Role fileId=\"role-a\" id=\"template-a\" name=\"   \"><Jobs/></Role>" +
+            "</Roles></WorkRoles>");
+
+        await Assert.That(parsed.roles.Count).IsEqualTo(0);
+        await Assert.That(parsed.error == null).IsFalse();
+    }
+
+    [Test]
+    public async Task LegacyPublicCollectionFieldTypesRemainExact()
+    {
+        Type document = typeof(RoleFileDocument);
+        Type path = typeof(FileTrainingPath);
+
+        await Assert.That(document.GetField(nameof(RoleFileDocument.groups))!.FieldType)
+            .IsEqualTo(typeof(List<string>));
+        await Assert.That(document.GetField(nameof(RoleFileDocument.recommendationOrder))!.FieldType)
+            .IsEqualTo(typeof(List<string>));
+        await Assert.That(path.GetField(nameof(FileTrainingPath.entries))!.FieldType)
+            .IsEqualTo(typeof(List<(string role, int min, int max)>));
+    }
+
+    [Test]
+    public async Task StaleRichMetadataFallsBackToMutatedLegacyCollections()
+    {
+        var doc = new RoleFileDocument
+        {
+            groups = { "Renamed team" },
+            groupsWithIds = { new FileGroup { fileId = "group-old", name = "Old team" } },
+            roles = { new FileRole { fileId = "role-new", label = "Renamed role" } },
+            trainingPaths =
+            {
+                new FileTrainingPath
+                {
+                    name = "Path",
+                    anchorRole = "Renamed role",
+                    anchorRoleId = "role-old",
+                    anchorWithId = new FileRoleReference("role-old", "Old role"),
+                    entries = { ("Renamed role", 0, 21) },
+                    entriesWithIds =
+                    {
+                        new FileTrainingPathEntry("role-old", "Old role", 0, 21),
+                    },
+                },
+            },
+            recommendationOrder = { "Renamed role" },
+            recommendationOrderWithIds =
+            {
+                new FileRoleReference("role-old", "Old role"),
+            },
+        };
+
+        var root = System.Xml.Linq.XElement.Parse(RoleFile.Build(doc));
+        var group = root.Element("Groups")!.Element("Group")!;
+        var path = root.Element("TrainingPaths")!.Element("Path")!;
+        var anchor = path.Element("Anchor")!;
+        var pathRole = path.Element("Role")!;
+        var orderRole = root.Element("RecommendationOrder")!.Element("Role")!;
+
+        await Assert.That(group.Attribute("fileId") == null).IsTrue();
+        await Assert.That(group.Attribute("name")!.Value).IsEqualTo("Renamed team");
+        await Assert.That(anchor.Attribute("roleId") == null).IsTrue();
+        await Assert.That(anchor.Value).IsEqualTo("Renamed role");
+        await Assert.That(pathRole.Attribute("roleId") == null).IsTrue();
+        await Assert.That(pathRole.Value).IsEqualTo("Renamed role");
+        await Assert.That(orderRole.Attribute("roleId") == null).IsTrue();
+        await Assert.That(orderRole.Value).IsEqualTo("Renamed role");
+    }
+
+    [Test]
+    public async Task ParserPopulatesAlignedLegacyAndRichCollections()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><Groups><Group fileId=\"group-a\" name=\"Team\"/></Groups>" +
+            "<Roles><Role fileId=\"role-a\" name=\"Worker\"><Jobs/></Role></Roles>" +
+            "<TrainingPaths><Path name=\"P\"><Anchor roleId=\"role-a\">Worker</Anchor>" +
+            "<Role roleId=\"role-a\" min=\"0\" max=\"21\">Worker</Role></Path></TrainingPaths>" +
+            "<RecommendationOrder><Role roleId=\"role-a\">Worker</Role></RecommendationOrder>" +
+            "</WorkRoles>");
+
+        await Assert.That(parsed.groups).IsEquivalentTo(new[] { "Team" });
+        await Assert.That(parsed.groupsWithIds[0].fileId).IsEqualTo("group-a");
+        await Assert.That(parsed.trainingPaths[0].entries[0].role).IsEqualTo("Worker");
+        await Assert.That(parsed.trainingPaths[0].entriesWithIds[0].role.fileId)
+            .IsEqualTo("role-a");
+        await Assert.That(parsed.trainingPaths[0].anchorWithId.fileId).IsEqualTo("role-a");
+        await Assert.That(parsed.recommendationOrder).IsEquivalentTo(new[] { "Worker" });
+        await Assert.That(parsed.recommendationOrderWithIds[0].fileId).IsEqualTo("role-a");
+    }
+
     private static FileRole Full() => new()
     {
         label = "Night Guard",
@@ -107,7 +201,8 @@ public class RoleFileTests
         var parsed = RoleFile.Parse(RoleFile.Build(doc));
         await Assert.That(parsed.error == null).IsTrue();
         // Order preserved, names escaped; unlisted names survive on the role.
-        await Assert.That(parsed.groups).IsEquivalentTo(new[] { "Zulu & \"Friends\"", "Älpha" });
+        await Assert.That(parsed.groups)
+            .IsEquivalentTo(new[] { "Zulu & \"Friends\"", "Älpha" });
         await Assert.That(parsed.roles[0].group).IsEqualTo("Älpha");
         await Assert.That(parsed.roles[1].group == null).IsTrue(); // Default stays implicit
         await Assert.That(parsed.roles[2].group).IsEqualTo("Unlisted");
@@ -164,7 +259,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("6");
+            .IsEqualTo("7");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -248,7 +343,8 @@ public class RoleFileTests
             "<Groups><Group name=\"Kitchen\"/><Group name=\"kitchen\"/><Group name=\"Farm\"/></Groups>" +
             "<Roles><Role name=\"A\"><Jobs><WorkType>Mining</WorkType></Jobs></Role></Roles></WorkRoles>");
         await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.groups).IsEquivalentTo(new[] { "Kitchen", "Farm" });
+        await Assert.That(parsed.groups)
+            .IsEquivalentTo(new[] { "Kitchen", "Farm" });
     }
 
     [Test]
@@ -285,6 +381,76 @@ public class RoleFileTests
     }
 
     [Test]
+    public async Task VersionSevenPathOnlyDocumentRetainsValidatedPath()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><TrainingPaths><Path name=\"Apprentices\">" +
+            "<Anchor roleId=\"role-master\" before=\"false\">Master</Anchor>" +
+            "<Role roleId=\"role-novice\" min=\"0\" max=\"8\">Novice</Role>" +
+            "<Role roleId=\"role-master\" min=\"8\" max=\"21\">Master</Role>" +
+            "</Path></TrainingPaths></WorkRoles>");
+
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles.Count).IsEqualTo(0);
+        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(1);
+        await Assert.That(parsed.trainingPaths[0].name).IsEqualTo("Apprentices");
+        await Assert.That(parsed.trainingPaths[0].anchorRoleId).IsEqualTo("role-master");
+        await Assert.That(parsed.trainingPaths[0].anchorBefore).IsFalse();
+        await Assert.That(string.Join("|", parsed.trainingPaths[0].entriesWithIds.Select(entry =>
+                $"{entry.role.fileId}:{entry.role.label}:{entry.min}-{entry.max}")))
+            .IsEqualTo("role-novice:Novice:0-8|role-master:Master:8-21");
+    }
+
+    [Test]
+    public async Task VersionSixOrderOnlyDocumentRetainsLabelReference()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"6\"><RecommendationOrder>" +
+            "<Role>Cook</Role></RecommendationOrder></WorkRoles>");
+
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles.Count).IsEqualTo(0);
+        await Assert.That(parsed.recommendationOrder.Count).IsEqualTo(1);
+        await Assert.That(parsed.recommendationOrder[0]).IsEqualTo("Cook");
+        await Assert.That(parsed.recommendationOrderWithIds[0].fileId == null).IsTrue();
+    }
+
+    [Test]
+    public async Task VersionSevenGroupOnlyDocumentRetainsStableId()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><Groups>" +
+            "<Group fileId=\"group-kitchen\" name=\"Kitchen\"/>" +
+            "</Groups></WorkRoles>");
+
+        await Assert.That(parsed.error == null).IsTrue();
+        await Assert.That(parsed.roles.Count).IsEqualTo(0);
+        await Assert.That(parsed.groups.Count).IsEqualTo(1);
+        await Assert.That(parsed.groups[0]).IsEqualTo("Kitchen");
+        await Assert.That(parsed.groupsWithIds[0].fileId).IsEqualTo("group-kitchen");
+    }
+
+    [Test]
+    public async Task PaletteWithOnlySkippedPrimaryContentIsStillEmpty()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\">" +
+            "<Palette><Color name=\"accent\">#123456</Color></Palette>" +
+            "<Groups><Group fileId=\"ignored\" name=\" \"/></Groups>" +
+            "<Roles><Role><Jobs><WorkType>Mining</WorkType></Jobs></Role></Roles>" +
+            "<TrainingPaths><Path><Role min=\"0\" max=\"21\">Missing</Role></Path></TrainingPaths>" +
+            "<RecommendationOrder><Role roleId=\"missing\"> </Role></RecommendationOrder>" +
+            "</WorkRoles>");
+
+        await Assert.That(parsed.error).IsEqualTo("empty document");
+        await Assert.That(parsed.palette.Count).IsEqualTo(1);
+        await Assert.That(parsed.groups.Count).IsEqualTo(0);
+        await Assert.That(parsed.roles.Count).IsEqualTo(0);
+        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(0);
+        await Assert.That(parsed.recommendationOrder.Count).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task HexCodecRoundTripsAndRejectsGarbage()
     {
         await Assert.That(ColorRgb.TryParseHex("#99551b", out var c)).IsTrue();
@@ -292,6 +458,211 @@ public class RoleFileTests
         await Assert.That(ColorRgb.TryParseHex("99551b", out _)).IsFalse();
         await Assert.That(ColorRgb.TryParseHex("#99551", out _)).IsFalse();
         await Assert.That(ColorRgb.TryParseHex("#zzzzzz", out _)).IsFalse();
+    }
+
+    [Test]
+    public async Task StableIdsDisambiguateDuplicateLabelsAcrossReferences()
+    {
+        var first = new FileRole { fileId = "role-a", label = "Worker", groupId = "group-a", group = "Team" };
+        var second = new FileRole { fileId = "role-b", label = "Worker", groupId = "group-b", group = "Team" };
+        var doc = new RoleFileDocument
+        {
+            groups =
+            {
+                "Team", "Team",
+            },
+            groupsWithIds =
+            {
+                new FileGroup { fileId = "group-a", name = "Team" },
+                new FileGroup { fileId = "group-b", name = "Team" },
+            },
+            roles = { first, second },
+            trainingPaths =
+            {
+                new FileTrainingPath
+                {
+                    name = "Workers",
+                    anchorRole = "Worker",
+                    anchorRoleId = "role-b",
+                    anchorWithId = new FileRoleReference("role-b", "Worker"),
+                    entries =
+                    {
+                        ("Worker", 0, 8), ("Worker", 8, 21),
+                    },
+                    entriesWithIds =
+                    {
+                        new FileTrainingPathEntry("role-a", "Worker", 0, 8),
+                        new FileTrainingPathEntry("role-b", "Worker", 8, 21),
+                    },
+                },
+            },
+            recommendationOrder =
+            {
+                "Worker", "Worker",
+            },
+            recommendationOrderWithIds =
+            {
+                new FileRoleReference("role-b", "Worker"),
+                new FileRoleReference("role-a", "Worker"),
+            },
+        };
+
+        RoleFileDocument parsed = RoleFile.Parse(RoleFile.Build(doc));
+        FileTrainingPath path = parsed.trainingPaths[0];
+        var resolved = RoleFile.ResolvePathEntries(path, parsed,
+            role => role.fileId == "role-a" ? 101 : role.fileId == "role-b" ? 102 : null);
+        int[] resolvedOrder = parsed.recommendationOrderWithIds.Select(reference =>
+        {
+            FileRole role = RoleFile.ResolveRole(parsed, reference.fileId, reference.label);
+            return role.fileId == "role-a" ? 101 : 102;
+        }).ToArray();
+
+        await Assert.That(RoleFile.FormatVersion).IsEqualTo("7");
+        await Assert.That(parsed.groupsWithIds.Select(group => group.fileId))
+            .IsEquivalentTo(new[] { "group-a", "group-b" });
+        await Assert.That(RoleFile.ResolveGroup(parsed, second.groupId, second.group)?.fileId)
+            .IsEqualTo("group-b");
+        await Assert.That(RoleFile.ResolveRole(parsed, path.anchorRoleId, path.anchorRole)?.fileId)
+            .IsEqualTo("role-b");
+        await Assert.That(string.Join(",", resolved.ids)).IsEqualTo("101,102");
+        await Assert.That(string.Join(",", resolvedOrder)).IsEqualTo("102,101");
+        await Assert.That(parsed.recommendationOrderWithIds[0].fileId).IsEqualTo("role-b");
+        await Assert.That(parsed.recommendationOrderWithIds[1].fileId).IsEqualTo("role-a");
+    }
+
+    [Test]
+    public async Task MalformedAndMissingIdsFallBackToLabels()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><Palette/><Groups>" +
+            "<Group fileId=\"dup-group\" name=\"First\"/><Group fileId=\"dup-group\" name=\"Second\"/>" +
+            "</Groups><Roles>" +
+            "<Role fileId=\"dup-role\" name=\"Alpha\"><Jobs/></Role>" +
+            "<Role fileId=\"dup-role\" name=\"Beta\" groupId=\"missing-group\" group=\"Second\"><Jobs/></Role>" +
+            "</Roles><TrainingPaths><Path name=\"P\">" +
+            "<Anchor roleId=\"missing-role\">Beta</Anchor>" +
+            "<Role roleId=\"missing-role\" min=\"0\" max=\"8\">Beta</Role>" +
+            "<Role min=\"8\" max=\"21\">Alpha</Role>" +
+            "</Path></TrainingPaths></WorkRoles>");
+
+        FileRole beta = RoleFile.ResolveRole(parsed, "dup-role", "Beta");
+        FileGroup second = RoleFile.ResolveGroup(parsed, beta.groupId, beta.group);
+        var resolved = RoleFile.ResolvePathEntries(parsed.trainingPaths[0], parsed,
+            role => role.label == "Alpha" ? 1 : role.label == "Beta" ? 2 : null);
+
+        await Assert.That(beta.label).IsEqualTo("Beta");
+        await Assert.That(second.name).IsEqualTo("Second");
+        await Assert.That(RoleFile.ResolveRole(parsed, "missing-role", "Beta")?.label)
+            .IsEqualTo("Beta");
+        await Assert.That(string.Join(",", resolved.ids)).IsEqualTo("2,1");
+    }
+
+    [Test]
+    public async Task UniqueIdsRemainAuthoritativeWhenDisplayLabelsAreStale()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"7\"><Groups>" +
+            "<Group fileId=\"group-a\" name=\"First\"/><Group fileId=\"group-b\" name=\"Second\"/>" +
+            "</Groups><Roles>" +
+            "<Role fileId=\"role-a\" name=\"Alpha\"><Jobs/></Role>" +
+            "<Role fileId=\"role-b\" name=\"Beta\"><Jobs/></Role>" +
+            "</Roles></WorkRoles>");
+
+        await Assert.That(RoleFile.ResolveRole(parsed, "role-a", "Beta")?.fileId)
+            .IsEqualTo("role-a");
+        await Assert.That(RoleFile.ResolveGroup(parsed, "group-a", "Second")?.fileId)
+            .IsEqualTo("group-a");
+    }
+
+    [Test]
+    public async Task VersionSixLabelOnlyReferencesRemainCompatible()
+    {
+        RoleFileDocument parsed = RoleFile.Parse(
+            "<WorkRoles version=\"6\"><Palette/><Groups><Group name=\"Crew\"/></Groups>" +
+            "<Roles><Role name=\"Cook\" group=\"Crew\"><Jobs><WorkType>Cooking</WorkType></Jobs></Role></Roles>" +
+            "<TrainingPaths><Path name=\"P\"><Anchor>Cook</Anchor><Role min=\"0\" max=\"21\">Cook</Role></Path></TrainingPaths>" +
+            "<RecommendationOrder><Role>Cook</Role></RecommendationOrder></WorkRoles>");
+
+        var runtimeIds = new Dictionary<FileRole, int> { [parsed.roles[0]] = 73 };
+        var resolved = RoleFile.ResolvePathEntries(parsed.trainingPaths[0], parsed,
+            role => runtimeIds.TryGetValue(role, out int id) ? id : null);
+        var orderRole = RoleFile.ResolveRole(parsed,
+            parsed.recommendationOrderWithIds[0].fileId, parsed.recommendationOrder[0]);
+
+        await Assert.That(parsed.roles[0].fileId == null).IsTrue();
+        await Assert.That(parsed.groupsWithIds[0].fileId == null).IsTrue();
+        await Assert.That(RoleFile.ResolveRole(parsed, null, "Cook")?.label).IsEqualTo("Cook");
+        await Assert.That(RoleFile.ResolveGroup(parsed, null, "Crew")?.name).IsEqualTo("Crew");
+        await Assert.That(parsed.trainingPaths[0].entriesWithIds[0].role.fileId == null).IsTrue();
+        await Assert.That(parsed.recommendationOrder[0]).IsEqualTo("Cook");
+        await Assert.That(resolved.ids).IsEquivalentTo(new[] { 73 });
+        await Assert.That(orderRole).IsSameReferenceAs(parsed.roles[0]);
+    }
+
+    [Test]
+    public async Task PublicResolversTolerateNullCollectionsAndElements()
+    {
+        var role = new FileRole { fileId = "role-a", label = "Cook" };
+        var group = new FileGroup { fileId = "group-a", name = "Crew" };
+        var document = new RoleFileDocument
+        {
+            roles = new List<FileRole> { null, role },
+            groups = new List<string> { "Crew" },
+            groupsWithIds = new List<FileGroup> { group },
+        };
+
+        await Assert.That(RoleFile.ResolveRole(document, "role-a", "Cook"))
+            .IsSameReferenceAs(role);
+        await Assert.That(RoleFile.ResolveRole(document, "missing", "cook"))
+            .IsSameReferenceAs(role);
+        await Assert.That(RoleFile.ResolveGroup(document, "group-a", "Crew"))
+            .IsSameReferenceAs(group);
+        await Assert.That(RoleFile.ResolveGroup(document, "missing", "crew"))
+            .IsSameReferenceAs(group);
+
+        document.roles = null;
+        document.groups = null;
+        await Assert.That(RoleFile.ResolveRole(document, "role-a", "Cook") == null).IsTrue();
+        await Assert.That(RoleFile.ResolveGroup(document, "group-a", "Crew") == null).IsTrue();
+    }
+
+    [Test]
+    public async Task CatalogNamesRejectCaseInsensitiveCollisionsButAllowSelfRename()
+    {
+        var first = new NamedItem("Kitchen");
+        var second = new NamedItem("Farm");
+        var items = new[] { first, second };
+
+        await Assert.That(CatalogNameRules.IsAvailable("  KITCHEN  ", items, item => item.Name))
+            .IsFalse();
+        await Assert.That(CatalogNameRules.IsAvailable("kitchen", items, item => item.Name, first))
+            .IsTrue();
+        await Assert.That(CatalogNameRules.IsAvailable("FARM", items, item => item.Name, first))
+            .IsFalse();
+        await Assert.That(CatalogNameRules.IsAvailable("   ", items, item => item.Name, first))
+            .IsFalse();
+    }
+
+    [Test]
+    public async Task EngineOwnedNamesGetDeterministicCaseInsensitiveSuffixes()
+    {
+        var items = new[]
+        {
+            new NamedItem("Worker"),
+            new NamedItem("worker (2)"),
+            new NamedItem("WORKER (3)"),
+        };
+
+        await Assert.That(CatalogNameRules.Unique("  Worker  ", items, item => item.Name))
+            .IsEqualTo("Worker (4)");
+        await Assert.That(CatalogNameRules.Unique("New Role", items, item => item.Name))
+            .IsEqualTo("New Role");
+    }
+
+    private sealed class NamedItem
+    {
+        internal NamedItem(string name) => Name = name;
+        internal string Name { get; }
     }
 
 }

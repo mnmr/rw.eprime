@@ -20,8 +20,11 @@ namespace WorkRoles.UI
         // What varies between table instances (pawn source, settings storage,
         // optional panels) lives in the profile.
         private readonly ColonistsViewProfile profile;
-        private readonly PawnSignalSnapshotCache pawnSignalSnapshots =
-            new PawnSignalSnapshotCache();
+        private long signalRevision = -1;
+        private readonly ObservationEpochGate<ScopeCacheStamp> listedSignalObservations =
+            new ObservationEpochGate<ScopeCacheStamp>();
+        private readonly ObservationEpochGate<int> mapSignalObservations =
+            new ObservationEpochGate<int>();
 
         public ColonistsTabView(ColonistsViewProfile profile) => this.profile = profile;
 
@@ -38,6 +41,15 @@ namespace WorkRoles.UI
 
         // Pawn scope (session-local; defaults to the current location).
         private ScopeOption scope;
+        private readonly PawnListRevisionTracker pawnListRevisions =
+            new PawnListRevisionTracker();
+
+        /// One view-owned revision for every cache whose contents depend on the
+        /// active pawn scope. Reading it observes map transitions first.
+        internal int PawnListRevision => PawnListStamp.PawnListRevision;
+        private ScopeCacheStamp PawnListStamp
+            => pawnListRevisions.Stamp(
+                UiVersion.Current, Find.CurrentMap?.uniqueID ?? -1);
 
         // View-local table filters (never synced, never persisted).
         private const string SearchControlName = "WR_ColonistSearch";
@@ -88,7 +100,7 @@ namespace WorkRoles.UI
         // Colony all read this one plan, so they always agree. Computed lazily,
         // invalidated on any role/assignment change.
         private List<PawnFixPlan> planCache;
-        private int planStamp = -1;
+        private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
 
         public void Reset()
@@ -99,14 +111,57 @@ namespace WorkRoles.UI
             colonistFilter = "";
             roleFilterId = -1;
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
-            pawnSignalSnapshots.Clear();
+            PawnSignalSnapshotCache.Clear();
+            signalRevision = PawnSignalSnapshotCache.Revision;
+            listedSignalObservations.Clear();
+            mapSignalObservations.Clear();
             skillPresentations.Clear();
             skillPresentationStamp = -1;
             InvalidateRecommendationCache();
+            InvalidatePawnSnapshot();
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
-            pawnsStamp = sizeStamp = paletteStamp = rulesPassStamp = statsStamp
-                = chipLayoutStamp = sectionsStamp = roleTipStamp = -1;
+            sizeStamp = chipLayoutStamp = sectionsStamp = roleTipStamp
+                = rulesPassStamp = ScopeCacheStamp.Invalid;
+            paletteStamp = statsStamp = -1;
+        }
+
+        /// Language-only invalidation. User selection, filters, scroll positions,
+        /// scope and disclosure state remain untouched.
+        internal void InvalidateLanguageCaches()
+        {
+            colonistHeaderCache = null;
+            sizeStamp = ScopeCacheStamp.Invalid;
+
+            paletteStamp = -1;
+            paletteChips.Clear();
+            paletteLabels.Clear();
+
+            statsStamp = -1;
+            statsPawn = null;
+            statsLines = null;
+            statsLabelWidths = null;
+            statsSignalViews = null;
+            statsSignalIcons = null;
+            statsSignalTips = null;
+            statsSkillColWidth = SkillColWidth;
+            skillPresentations.Clear();
+            skillPresentationStamp = -1;
+
+            roleTipCache.Clear();
+            roleTipStamp = ScopeCacheStamp.Invalid;
+            previewChips = null;
+            previewLine = null;
+            previewPlan = null;
+            previewSource = null;
+            previewPawn = null;
+            previewStamp = ScopeCacheStamp.Invalid;
+
+            sectionsCache = null;
+            sectionTitles.Clear();
+            sectionsStamp = ScopeCacheStamp.Invalid;
+            pawnsScopeOptions = null;
+            InvalidatePawnSnapshot();
         }
 
         /// Reset-time only: every plan input (roles, assignments, pins, training,
@@ -115,18 +170,110 @@ namespace WorkRoles.UI
         /// in MP and never fire on other clients.
         public void InvalidateRecommendationCache() => planCache = null;
 
-        /// The pawn's signals and derived skill buckets captured together on
-        /// first request for this window open.
+        /// The pawn's signals and derived skill buckets are captured together
+        /// on first request for the current polling epoch. A later epoch rechecks
+        /// unhooked mutable inputs; explicit mutation hooks invalidate at once.
         internal PawnSignalSnapshot SignalSnapshotFor(Pawn pawn)
-            => pawnSignalSnapshots.Get(pawn);
+            => ObserveSignalChanges(pawn);
+
+        private PawnSignalSnapshot ObserveSignalChanges(Pawn pawn)
+        {
+            PawnSignalSnapshot snapshot = PawnSignalSnapshotCache.Get(pawn);
+            ObserveSignalRevision();
+            return snapshot;
+        }
+
+        private void ObserveSignalChanges(IEnumerable<Pawn> pawns)
+        {
+            ScopeCacheStamp cohort = PawnListStamp;
+            long observationEpoch = PawnSignalSnapshotCache.ObservationEpoch;
+            if (listedSignalObservations.Enter(observationEpoch, cohort) && pawns != null)
+                foreach (Pawn pawn in pawns)
+                    PawnSignalSnapshotCache.Get(pawn);
+            ObserveSignalRevision();
+        }
+
+        private void ObserveSignalChanges(Map map)
+        {
+            int mapId = map?.uniqueID ?? -1;
+            long observationEpoch = PawnSignalSnapshotCache.ObservationEpoch;
+            if (mapSignalObservations.Enter(observationEpoch, mapId) && map != null)
+            {
+                foreach (Pawn pawn in map.mapPawns.FreeColonistsSpawned)
+                    if (!pawn.DevelopmentalStage.Baby())
+                        PawnSignalSnapshotCache.Get(pawn);
+                foreach (Pawn pawn in map.mapPawns.SlavesOfColonySpawned)
+                    if (!pawn.DevelopmentalStage.Baby())
+                        PawnSignalSnapshotCache.Get(pawn);
+            }
+            ObserveSignalRevision();
+        }
+
+        /// A signal snapshot never stands alone: plans, stats, presentation
+        /// models, tips and previews all embed classifications derived from it.
+        /// Drop them as one generation before any caller accepts cached data.
+        private void ObserveSignalRevision()
+        {
+            long current = PawnSignalSnapshotCache.Revision;
+            if (signalRevision == current) return;
+            signalRevision = current;
+            planCache = null;
+            statsStamp = -1;
+            statsPawn = null;
+            sizeStamp = ScopeCacheStamp.Invalid;
+            skillPresentations.Clear();
+            skillPresentationStamp = -1;
+            roleTipCache.Clear();
+            roleTipStamp = ScopeCacheStamp.Invalid;
+            previewChips = null;
+            previewLine = null;
+            previewPlan = null;
+            previewSource = null;
+            previewPawn = null;
+            previewStamp = ScopeCacheStamp.Invalid;
+        }
 
         /// Window close: drop pawn-keyed snapshots so a save unloaded while the
         /// window is closed cannot stay pinned through them.
         internal void ReleaseSnapshots()
         {
-            pawnSignalSnapshots.Clear();
+            PawnSignalSnapshotCache.Clear();
+            signalRevision = PawnSignalSnapshotCache.Revision;
+            listedSignalObservations.Clear();
+            mapSignalObservations.Clear();
+
+            selectedPawn = null;
+            planCache = null;
+            planStamp = ScopeCacheStamp.Invalid;
+            planMapId = -1;
+
+            statsStamp = -1;
+            statsPawn = null;
+            statsLines = null;
+            statsLabelWidths = null;
+            statsSignalViews = null;
+            statsSignalIcons = null;
+            statsSignalTips = null;
+            statsSkillColWidth = SkillColWidth;
             skillPresentations.Clear();
             skillPresentationStamp = -1;
+
+            roleTipCache.Clear();
+            roleTipStamp = ScopeCacheStamp.Invalid;
+            previewChips = null;
+            previewLine = null;
+            previewPlan = null;
+            previewSource = null;
+            previewPawn = null;
+            previewStamp = ScopeCacheStamp.Invalid;
+
+            sectionsCache = null;
+            sectionsStamp = ScopeCacheStamp.Invalid;
+            InvalidatePawnSnapshot();
+            chipLayouts.Clear();
+            chipLayoutStamp = ScopeCacheStamp.Invalid;
+            rulesPassCache.Clear();
+            rulesPassStamp = ScopeCacheStamp.Invalid;
         }
 
         /// The colony plan is per location: anchored to the selected pawn's map
@@ -134,10 +281,12 @@ namespace WorkRoles.UI
         private List<PawnFixPlan> GetPlan()
         {
             var map = selectedPawn?.MapHeld ?? Find.CurrentMap;
+            ObserveSignalChanges(map);
             int mapId = map?.uniqueID ?? -1;
-            if (planCache == null || planStamp != UiVersion.Current || planMapId != mapId)
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (planCache == null || planStamp != stamp || planMapId != mapId)
             {
-                planStamp = UiVersion.Current;
+                planStamp = stamp;
                 planMapId = mapId;
                 planCache = BuildColonyFixPlan(map);
             }
@@ -150,24 +299,37 @@ namespace WorkRoles.UI
         // PreviewEntry builds hash sets and chip lists otherwise per pass. The
         // plan-list reference is part of the key: GetPlan swaps in a new list
         // whenever the plan cache is invalidated.
-        private int previewStamp = -1;
+        private ScopeCacheStamp previewStamp = ScopeCacheStamp.Invalid;
         private Pawn previewPawn;
         private List<PawnFixPlan> previewSource;
         private PawnFixPlan previewPlan;
         private List<(Role role, Dialog_ChangesPreview.ChipState state, string tip)> previewChips;
+        private Dialog_ChangesPreview.Line previewLine;
         private static readonly List<(Role, Dialog_ChangesPreview.ChipState, string)> NoChips
             = new List<(Role, Dialog_ChangesPreview.ChipState, string)>();
 
         private void EnsurePreview(RoleStore store, Pawn pawn)
         {
+            ObserveSignalChanges(pawn);
             var source = GetPlan();
-            if (previewChips != null && previewStamp == UiVersion.Current
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (previewChips != null && previewStamp == stamp
                 && previewPawn == pawn && previewSource == source) return;
-            previewStamp = UiVersion.Current;
+            previewStamp = stamp;
             previewPawn = pawn;
             previewSource = source;
             previewPlan = source.FirstOrDefault(p => p.pawn == pawn);
-            previewChips = previewPlan == null ? NoChips : PreviewEntry(store, previewPlan).lines[0].chips;
+            if (previewPlan == null)
+            {
+                previewChips = NoChips;
+                previewLine = null;
+            }
+            else
+            {
+                Dialog_ChangesPreview.Line line = PreviewEntry(store, previewPlan).lines[0];
+                previewChips = line.chips;
+                previewLine = line;
+            }
         }
 
         // ----- Window sizing helpers -----
@@ -181,7 +343,7 @@ namespace WorkRoles.UI
         private float[] statsLabelWidths;
         private SkillSignalView[] statsSignalViews;
         private List<Texture2D>[] statsSignalIcons;
-        private string[] statsSignalTips;
+        private StructuredTip[] statsSignalTips;
         private float statsSkillColWidth = SkillColWidth;
 
         private sealed class SkillPresentation
@@ -190,7 +352,7 @@ namespace WorkRoles.UI
             internal float LabelWidth;
             internal SkillSignalView SignalView;
             internal List<Texture2D> SignalIcons;
-            internal string Tooltip;
+            internal StructuredTip Tooltip;
         }
 
         // Shared open-window presentation snapshot for the bottom stats panel
@@ -202,6 +364,7 @@ namespace WorkRoles.UI
 
         private SkillPresentation PresentationFor(Pawn pawn, SkillLine line)
         {
+            PawnSignalSnapshot pawnSnapshot = ObserveSignalChanges(pawn);
             if (skillPresentationStamp != UiVersion.Current)
             {
                 skillPresentations.Clear();
@@ -212,7 +375,6 @@ namespace WorkRoles.UI
             if (skillPresentations.TryGetValue(key, out SkillPresentation cached))
                 return cached;
 
-            PawnSignalSnapshot pawnSnapshot = SignalSnapshotFor(pawn);
             SkillSignalView view = SignalPresentationPolicy.ForSkill(
                 pawnSnapshot.Signals, line.Def?.defName);
             List<Texture2D> icons = SkillSignalPresentation.ResolveIcons(view);
@@ -226,8 +388,9 @@ namespace WorkRoles.UI
                 LabelWidth = labelWidth,
                 SignalView = view,
                 SignalIcons = icons,
-                Tooltip = SkillSignalPresentation.RegisterTooltip(
+                Tooltip = SkillSignalPresentation.CreateTooltip(
                     pawn,
+                    line.Def?.defName,
                     line.Label,
                     line.ValueText,
                     SkillTextColor(line, view.PassionTier),
@@ -240,6 +403,7 @@ namespace WorkRoles.UI
 
         private void EnsureStats(Pawn pawn)
         {
+            ObserveSignalChanges(pawn);
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return;
             statsStamp = UiVersion.Current;
             statsPawn = pawn;
@@ -247,7 +411,7 @@ namespace WorkRoles.UI
             statsLabelWidths = new float[statsLines.Count];
             statsSignalViews = new SkillSignalView[statsLines.Count];
             statsSignalIcons = new List<Texture2D>[statsLines.Count];
-            statsSignalTips = new string[statsLines.Count];
+            statsSignalTips = new StructuredTip[statsLines.Count];
             statsSkillColWidth = SkillColWidth;
             using (new TextBlock(GameFont.Small))
             {
@@ -301,7 +465,7 @@ namespace WorkRoles.UI
         // Open-window snapshot of the desired window size: both walk every
         // pawn's chips through text measurement, so they recompute only when
         // the stamp, map, chip display or skill columns change.
-        private int sizeStamp = -1;
+        private ScopeCacheStamp sizeStamp = ScopeCacheStamp.Invalid;
         private int sizeMapId = -1;
         private int sizeKey = -1;
         private float desiredWidthCache;
@@ -310,6 +474,7 @@ namespace WorkRoles.UI
         private void EnsureSizes()
         {
             EnsureSkillColumnsLoaded();
+            if (selectedPawn != null) ObserveSignalChanges(selectedPawn);
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
             // Column IDENTITY, not count: swapping a column at the cap keeps the
             // count identical and must still invalidate.
@@ -317,12 +482,13 @@ namespace WorkRoles.UI
                 + (selectedPawn?.thingIDNumber ?? -1);
             foreach (var column in skillColumns)
                 key = key * 31 + (column?.shortHash ?? 0);
-            if (sizeStamp == UiVersion.Current && sizeMapId == mapId && sizeKey == key) return;
-            sizeStamp = UiVersion.Current;
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (sizeStamp == stamp && sizeMapId == mapId && sizeKey == key) return;
             sizeMapId = mapId;
             sizeKey = key;
             desiredWidthCache = ComputeDesiredWidth();
             desiredHeightCache = ComputeDesiredHeight();
+            sizeStamp = PawnListStamp;
         }
 
         public float DesiredWidth()
@@ -975,7 +1141,10 @@ namespace WorkRoles.UI
             return label;
         }
 
-        internal static void ClearSkillHeaderLabelCache() => skillHeaderLabels.Clear();
+        internal static void InvalidateSharedLanguageCaches()
+        {
+            skillHeaderLabels.Clear();
+        }
 
         /// Header label (localized) or cell content, whichever is wider.
         internal float SkillColumnWidth(SkillDef skill)
@@ -1077,11 +1246,11 @@ namespace WorkRoles.UI
             return result;
         }
 
-        // Open-window snapshot of the unified role tips: models are built and
-        // registered once per (role, context[, pawn]) per stamp, never per pass.
-        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn), string> roleTipCache
-            = new Dictionary<(int, RoleTipContext, Pawn), string>();
-        private int roleTipStamp = -1;
+        // Open-window snapshot of the unified role tips: handles are built once
+        // per (role, context[, pawn]) per stamp, then activated at visible use sites.
+        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn), StructuredTip> roleTipCache
+            = new Dictionary<(int, RoleTipContext, Pawn), StructuredTip>();
+        private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
 
         /// The one role tooltip: palette chips, tree rows and assignment chips
         /// share the content; context varies the actions and pawn facts.
@@ -1089,16 +1258,20 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return role.label;
-            if (roleTipStamp != UiVersion.Current)
-            {
+            ObserveSignalChanges(ListedPawns());
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (roleTipStamp != stamp)
                 roleTipCache.Clear();
-                roleTipStamp = UiVersion.Current;
-            }
             var key = (role.id, context, pawn);
-            if (!roleTipCache.TryGetValue(key, out var text))
-                roleTipCache[key] = text =
-                    Patches.Patch_ActiveTip_TipRect.Register(BuildRoleTip(store, role, context, pawn));
-            return text;
+            if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
+            {
+                int pawnId = pawn?.thingIDNumber ?? -1;
+                roleTipCache[key] = tip = new StructuredTip(
+                    $"role:{role.id}:{context}:{pawnId}",
+                    BuildRoleTip(store, role, context, pawn));
+            }
+            roleTipStamp = PawnListStamp;
+            return tip.Activate();
         }
 
         private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn pawn)
@@ -1486,7 +1659,7 @@ namespace WorkRoles.UI
         // string would itself allocate per pass); sim-side changes arrive via
         // the UiVersion stamp.
         private List<GroupSection<Pawn>> sectionsCache;
-        private int sectionsStamp = -1;
+        private ScopeCacheStamp sectionsStamp = ScopeCacheStamp.Invalid;
         private int sectionsMapId = -1;
         private string sectionsFilter;
         private int sectionsRoleFilter;
@@ -1498,12 +1671,13 @@ namespace WorkRoles.UI
         {
             var pawns = ListedPawns();
             var order = profile.GetColonistOrder();
-            if (sectionsCache == null || sectionsStamp != UiVersion.Current
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (sectionsCache == null || sectionsStamp != stamp
                 || sectionsMapId != pawnsMapId || sectionsFilter != colonistFilter
                 || sectionsRoleFilter != roleFilterId || sectionsGroupBy != profile.GetGroupBy()
                 || sectionsSort != profile.GetSortColumn() || sectionsOrder != order)
             {
-                sectionsStamp = UiVersion.Current;
+                sectionsStamp = stamp;
                 sectionsMapId = pawnsMapId;
                 sectionsFilter = colonistFilter;
                 sectionsRoleFilter = roleFilterId;
@@ -1566,7 +1740,7 @@ namespace WorkRoles.UI
             if (ev.control && ev.keyCode == KeyCode.C && selectedPawn != null)
             {
                 store.pawnSets.TryGetValue(selectedPawn, out var toCopy);
-                RoleClipboard.CopyFrom(toCopy);
+                RoleClipboard.CopyFrom(store, toCopy);
                 WrToast.Show("WR_CopiedRoles".Translate(selectedPawn.LabelShortCap),
                     MessageTypeDefOf.NeutralEvent);
                 return true;
@@ -1702,31 +1876,44 @@ namespace WorkRoles.UI
 
         // Open-window snapshot (see UiVersion): pawn list, scope options and the
         // spans-locations flag rebuild only when the stamp or current map moves.
-        private int pawnsStamp = -1;
+        private ScopeCacheStamp pawnsStamp = ScopeCacheStamp.Invalid;
         private int pawnsMapId = -1;
         private List<Pawn> pawnsCache;
         private List<ScopeOption> pawnsScopeOptions;
         private bool pawnsSpans;
+        private static readonly List<Pawn> NoPawns = new List<Pawn>();
 
-        internal void InvalidatePawnSnapshot() => pawnsStamp = -1;
+        internal void InvalidatePawnSnapshot()
+        {
+            pawnListRevisions.Invalidate();
+            pawnsCache = null;
+            pawnsStamp = ScopeCacheStamp.Invalid;
+        }
 
         /// <summary>The colonist list under the active scope (no baby pawns).</summary>
         internal List<Pawn> ListedPawns()
         {
-            if (Find.CurrentMap == null) return new List<Pawn>();
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (Find.CurrentMap == null) return NoPawns;
             int mapId = Find.CurrentMap.uniqueID;
-            if (pawnsCache == null || pawnsStamp != UiVersion.Current || pawnsMapId != mapId)
+            if (pawnsCache == null || pawnsStamp != stamp)
             {
-                pawnsStamp = UiVersion.Current;
                 pawnsMapId = mapId;
                 pawnsScopeOptions = ScopeEngine.BuildOptions(ColonyScope.Locations());
-                scope = ScopeEngine.Revalidate(scope, pawnsScopeOptions);
+                ScopeOption revalidated = ScopeEngine.Revalidate(scope, pawnsScopeOptions);
+                if (scope != null && !SameScope(scope, revalidated))
+                    pawnListRevisions.Invalidate();
+                scope = revalidated;
+                pawnsStamp = PawnListStamp;
                 pawnsCache = profile.PawnsIn(scope);
                 pawnsSpans = ScopeEngine.SpansMultipleLocations(
                     pawnsCache.Select(ColonyScope.LocationIdOf));
             }
             return pawnsCache;
         }
+
+        private static bool SameScope(ScopeOption left, ScopeOption right)
+            => left.Kind == right.Kind && left.LocationId == right.LocationId;
 
         /// True when the listed pawns come from more than one map/caravan —
         /// colony planning wants a single location (Fix My Colony disables).
@@ -1775,7 +1962,7 @@ namespace WorkRoles.UI
             if (Widgets.ButtonImage(copyRect, TexButton.Copy))
             {
                 store.pawnSets.TryGetValue(pawn, out var toCopy);
-                RoleClipboard.CopyFrom(toCopy);
+                RoleClipboard.CopyFrom(store, toCopy);
                 WrToast.Show("WR_CopiedRoles".Translate(pawn.LabelShortCap), MessageTypeDefOf.NeutralEvent);
             }
             Color pasteColor = RoleClipboard.HasContent ? Color.white : new Color(1f, 1f, 1f, 0.3f);
@@ -1791,7 +1978,7 @@ namespace WorkRoles.UI
         // Floored like EstimatedStripWidth so draw and measure share one key.
         private readonly Dictionary<Pawn, (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)>
             chipLayouts = new Dictionary<Pawn, (List<(RoleAssignment, Rect, int)>, float)>();
-        private int chipLayoutStamp = -1;
+        private ScopeCacheStamp chipLayoutStamp = ScopeCacheStamp.Invalid;
         private float chipLayoutWidth = -1f;
         private int chipLayoutDisplay = -1;
 
@@ -1799,11 +1986,12 @@ namespace WorkRoles.UI
             ChipLayoutFor(Pawn pawn, RoleStore store, float stripWidth)
         {
             stripWidth = Mathf.Max(300f, stripWidth);
-            if (chipLayoutStamp != UiVersion.Current || chipLayoutWidth != stripWidth
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (chipLayoutStamp != stamp || chipLayoutWidth != stripWidth
                 || chipLayoutDisplay != (int)TableChips)
             {
                 chipLayouts.Clear();
-                chipLayoutStamp = UiVersion.Current;
+                chipLayoutStamp = stamp;
                 chipLayoutWidth = stripWidth;
                 chipLayoutDisplay = (int)TableChips;
             }
@@ -1862,23 +2050,24 @@ namespace WorkRoles.UI
             }
 
             if (presentation.Tooltip != null && Mouse.IsOver(cell))
-                TooltipHandler.TipRegion(cell, presentation.Tooltip);
+                TooltipHandler.TipRegion(cell, presentation.Tooltip.Activate());
         }
 
         // Open-window snapshot of rule outcomes: Pass hits the map (gravship
         // lookup) per chip otherwise. Hour flips and map moves bump the stamp.
-        // Keyed by role+pawn (not per view), so deliberately shared statics.
-        private static readonly Dictionary<(int roleId, Pawn pawn), bool> rulesPassCache
+        // Keyed by role+pawn within this scope-owning view.
+        private readonly Dictionary<(int roleId, Pawn pawn), bool> rulesPassCache
             = new Dictionary<(int, Pawn), bool>();
-        private static int rulesPassStamp = -1;
+        private ScopeCacheStamp rulesPassStamp = ScopeCacheStamp.Invalid;
 
-        private static bool RulesPass(Role role, Pawn pawn)
+        private bool RulesPass(Role role, Pawn pawn)
         {
             if (!role.HasRules) return true;
-            if (rulesPassStamp != UiVersion.Current)
+            ScopeCacheStamp stamp = PawnListStamp;
+            if (rulesPassStamp != stamp)
             {
                 rulesPassCache.Clear();
-                rulesPassStamp = UiVersion.Current;
+                rulesPassStamp = stamp;
             }
             var key = (role.id, pawn);
             if (!rulesPassCache.TryGetValue(key, out bool pass))
@@ -2148,9 +2337,9 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 var cellRect = new Rect(cellX, cellY, skillColWidth, CellH);
-                string signalTip = statsSignalTips[i];
+                StructuredTip signalTip = statsSignalTips[i];
                 if (signalTip != null && Mouse.IsOver(cellRect))
-                    TooltipHandler.TipRegion(cellRect, signalTip);
+                    TooltipHandler.TipRegion(cellRect, signalTip.Activate());
             }
 
             // Recommended Roles section: mirrors the Make It So outcome — kept roles
@@ -2169,8 +2358,9 @@ namespace WorkRoles.UI
                 float chipY = rect.y + 28f;
                 float chipX = recX;
                 var chips = previewChips;
-                foreach (var (role, state, tip) in chips)
+                for (int previewIndex = 0; previewIndex < chips.Count; previewIndex++)
                 {
+                    var (role, state, tip) = chips[previewIndex];
                     bool isAssigned = state != Dialog_ChangesPreview.ChipState.Added;
                     // Assigned chips show the remove icon — reserve that extra width.
                     float chipW = RoleChipUI.WidthFor(role, showRemove: isAssigned);
@@ -2195,10 +2385,13 @@ namespace WorkRoles.UI
                             RoleChipUI.DrawRemovedOutline(chipRect);
                         }
                         if (Mouse.IsOver(chipRect))
-                            TooltipHandler.TipRegion(chipRect, tip
+                        {
+                            StructuredTip structuredTip = previewLine?.StructuredTipAt(previewIndex);
+                            TooltipHandler.TipRegion(chipRect, structuredTip?.Activate() ?? tip
                                 ?? (state == Dialog_ChangesPreview.ChipState.Removed
                                     ? "WR_WillBeRemoved".Translate()
                                     : "WR_AlreadyAssigned".Translate()));
+                        }
                     }
                     else
                     {
@@ -2217,7 +2410,11 @@ namespace WorkRoles.UI
                         RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
                             dragSource: null, onClick: onClick);
                         if (tip != null && Mouse.IsOver(chipRect))
-                            TooltipHandler.TipRegion(chipRect, tip);
+                        {
+                            StructuredTip structuredTip = previewLine?.StructuredTipAt(previewIndex);
+                            TooltipHandler.TipRegion(chipRect,
+                                structuredTip?.Activate() ?? tip);
+                        }
                     }
                     chipX += chipW + ChipGap;
                 }
@@ -2282,8 +2479,8 @@ namespace WorkRoles.UI
                     ? Dialog_ChangesPreview.ChipState.Kept
                     : Dialog_ChangesPreview.ChipState.Added;
                 plan.explanations.TryGetValue(role.id, out var explanation);
-                line.chips.Add((role, state, RecommendationPresentation.RegisterTooltip(
-                    store, role, state, explanation, skillBuckets)));
+                line.AddChip(role, state, RecommendationPresentation.CreateTooltip(
+                    store, plan.pawn, role, state, explanation, skillBuckets));
             }
             for (int i = 0; i < existing.Count; i++)
             {
@@ -2292,9 +2489,9 @@ namespace WorkRoles.UI
                 if (role == null) continue;
                 var state = Dialog_ChangesPreview.ChipState.Removed;
                 plan.explanations.TryGetValue(role.id, out var explanation);
-                line.chips.Insert(Mathf.Min(i, line.chips.Count),
-                    (role, state, RecommendationPresentation.RegisterTooltip(
-                        store, role, state, explanation, skillBuckets)));
+                line.InsertChip(Mathf.Min(i, line.chips.Count), role, state,
+                    RecommendationPresentation.CreateTooltip(
+                        store, plan.pawn, role, state, explanation, skillBuckets));
             }
 
             var entry = new Dialog_ChangesPreview.PawnPreview { pawn = plan.pawn };
@@ -2344,7 +2541,7 @@ namespace WorkRoles.UI
         /// the Recommended Roles panel IS its preview.)
         public void ShowFixPreview()
             => Find.WindowStack.Add(new Dialog_ChangesPreview(
-                "WR_FixMyColony".Translate(), BuildFixEntries(null),
+                () => "WR_FixMyColony".Translate(), BuildFixEntries(null),
                 included => ApplyFix(null, included), () => RebuildFixEntries(null)));
 
         // ----- Recommendation logic -----
@@ -2391,7 +2588,7 @@ namespace WorkRoles.UI
             if (store == null) return plans;
             var pawns = MapColonists(map);
             var results = RecsEngine.Run(RecsAdapter.BuildColonyView(
-                store, pawns, pawnSignalSnapshots.Get));
+                store, pawns, SignalSnapshotFor));
 
             for (int i = 0; i < pawns.Count; i++)
             {

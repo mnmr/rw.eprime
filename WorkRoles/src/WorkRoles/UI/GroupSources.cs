@@ -21,6 +21,11 @@ namespace WorkRoles.UI
 
         internal static List<GroupSourceDef> All() => all ??= Build();
 
+        internal static void InvalidateLanguageCaches()
+        {
+            all = null;
+        }
+
         private static GroupSourceDef Classified(string key, string label,
             System.Func<Pawn, (string key, string title)> classify) =>
             new GroupSourceDef

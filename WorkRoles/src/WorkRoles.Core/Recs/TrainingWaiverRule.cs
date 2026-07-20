@@ -44,7 +44,7 @@ namespace WorkRoles.Core.Recs
             {
                 if (context.CoversRole(pawn, target)
                     || context.TrainingToward[pawn].Count > 0
-                    || !context.Capable(pawn, target)
+                    || !context.FullyCapable(pawn, target)
                     || target.Hunting && !context.Colony.Pawns[pawn].HasRangedWeapon)
                     continue;
                 SignalBucket bucket = context.BestSignal(pawn, target,

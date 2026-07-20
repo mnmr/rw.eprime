@@ -91,7 +91,15 @@ These are mods I've checked for compatibility:
 dotnet build WorkRoles.slnx
 ```
 
-Three projects: `WorkRoles.Core` (pure logic, netstandard2.0, unit-tested), `WorkRoles` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package — no game files needed), and `WorkRoles.Core.Tests` (.NET 10, TUnit). The build deploys the `mod/` folder to your RimWorld `Mods` directory automatically; override the location with `-p:RimWorldMods=<path>`.
+Three projects: `WorkRoles.Core` (pure logic, netstandard2.0, unit-tested), `WorkRoles` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package — no game files needed), and `WorkRoles.Core.Tests` (.NET 10, TUnit).
+
+Building does not deploy the mod by default. To explicitly deploy the `mod/` folder to your RimWorld `Mods` directory, run:
+
+```
+dotnet build WorkRoles.slnx -p:DeployToRimWorld=true
+```
+
+Override the destination root with `-p:DeployToRimWorld=true -p:RimWorldMods=<path>`.
 
 Run the tests with:
 

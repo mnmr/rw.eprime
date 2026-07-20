@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using RimWorld;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
@@ -27,6 +27,30 @@ namespace WorkRoles.UI
         {
             public List<(Role role, ChipState state, string tip)> chips =
                 new List<(Role role, ChipState state, string tip)>();
+            private readonly ParallelIndexGuard<Role, ChipState, string, StructuredTip>
+                structuredTips = new ParallelIndexGuard<Role, ChipState, string, StructuredTip>();
+
+            internal void AddChip(Role role, ChipState state, StructuredTip tip)
+            {
+                string text = tip?.PlainText;
+                chips.Add((role, state, text));
+                structuredTips.Add(role, state, text, tip);
+            }
+
+            internal void InsertChip(int index, Role role, ChipState state, StructuredTip tip)
+            {
+                string text = tip?.PlainText;
+                chips.Insert(index, (role, state, text));
+                structuredTips.Insert(index, role, state, text, tip);
+            }
+
+            internal StructuredTip StructuredTipAt(int index)
+            {
+                if (index < 0 || index >= chips.Count) return null;
+                var chip = chips[index];
+                return structuredTips.TryGet(index, chip.role, chip.state, chip.tip,
+                    out StructuredTip tip) ? tip : null;
+            }
         }
 
         public class PawnPreview
@@ -36,15 +60,57 @@ namespace WorkRoles.UI
             public bool included = true;
         }
 
+        private readonly struct ChipLayout
+        {
+            public ChipLayout(Role role, ChipState state, string tip,
+                Line sourceLine, int sourceIndex, Rect rect)
+            {
+                Role = role;
+                State = state;
+                Tip = tip;
+                SourceLine = sourceLine;
+                SourceIndex = sourceIndex;
+                Rect = rect;
+            }
+
+            public Role Role { get; }
+            public ChipState State { get; }
+            public string Tip { get; }
+            public Line SourceLine { get; }
+            public int SourceIndex { get; }
+            public Rect Rect { get; }
+        }
+
+        private readonly struct EntryLayout
+        {
+            public EntryLayout(ChipLayout[] chips, float overlayHeight)
+            {
+                Chips = chips;
+                OverlayHeight = overlayHeight;
+            }
+
+            public ChipLayout[] Chips { get; }
+            public float OverlayHeight { get; }
+        }
+
         private const float PawnRowH = 24f;
         private const float LineGap = 4f;
         private const float GroupGap = 8f;
         private const float ChipGap = 4f;
 
-        private readonly string title;
+        private string title;
+        private readonly Func<string> titleFactory;
         private readonly List<PawnPreview> entries;
         private readonly Action<HashSet<Pawn>> onApply;
         private readonly Func<List<PawnPreview>> rebuild;
+        private readonly object structuredTipOwner = new object();
+        private EntryLayout[] rowDescriptors = Array.Empty<EntryLayout>();
+        private VariableViewportLayout rowLayout;
+        private float rowLayoutWidth = -1f;
+        private int rowLayoutStamp = -1;
+        private int includedCount;
+        private int observedLanguageRevision;
+        private string noChangesText;
         private Vector2 scroll;
 
         public override Vector2 InitialSize => new Vector2(560f, 620f);
@@ -53,9 +119,58 @@ namespace WorkRoles.UI
             Action<HashSet<Pawn>> onApply, Func<List<PawnPreview>> rebuild)
         {
             this.title = title;
-            this.entries = entries;
+            this.entries = entries ?? new List<PawnPreview>();
             this.onApply = onApply;
             this.rebuild = rebuild;
+            observedLanguageRevision = LanguageChangeCoordinator.Revision;
+            for (int i = 0; i < this.entries.Count; i++)
+                if (this.entries[i].included)
+                    includedCount++;
+        }
+
+        internal Dialog_ChangesPreview(Func<string> titleFactory,
+            List<PawnPreview> entries, Action<HashSet<Pawn>> onApply,
+            Func<List<PawnPreview>> rebuild)
+            : this(titleFactory?.Invoke(), entries, onApply, rebuild)
+        {
+            this.titleFactory = titleFactory;
+        }
+
+        private void RefreshLanguageIfNeeded()
+        {
+            int current = LanguageChangeCoordinator.Revision;
+            if (observedLanguageRevision == current) return;
+            observedLanguageRevision = current;
+
+            // Old active handles must disappear before replacement models can
+            // activate during this draw's new generation.
+            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+            if (titleFactory != null) title = titleFactory();
+            Dictionary<Pawn, bool> selections = IdentitySelectionPreserver.Capture(
+                entries,
+                entry => entry.pawn,
+                entry => entry.included,
+                ReferenceIdentityComparer<Pawn>.Instance);
+            List<PawnPreview> refreshed = rebuild?.Invoke();
+            if (refreshed != null)
+            {
+                includedCount = IdentitySelectionPreserver.Restore(
+                    selections, refreshed,
+                    entry => entry.pawn,
+                    entry => entry.included,
+                    (entry, included) => entry.included = included);
+                if (!ReferenceEquals(entries, refreshed))
+                {
+                    entries.Clear();
+                    entries.AddRange(refreshed);
+                }
+            }
+
+            rowDescriptors = Array.Empty<EntryLayout>();
+            rowLayout = null;
+            rowLayoutWidth = -1f;
+            rowLayoutStamp = -1;
+            noChangesText = null;
         }
 
         private static bool SamePlan(List<PawnPreview> a, List<PawnPreview> b)
@@ -77,106 +192,179 @@ namespace WorkRoles.UI
             return true;
         }
 
-        private static void DrawStateChip(Rect rect, Role role, ChipState state, string tip, bool draw)
+        private static void DrawStateChip(Rect rect, Role role, ChipState state,
+            string tip, Line sourceLine, int sourceIndex)
         {
-            if (!draw) return;
             var style = state == ChipState.Kept ? ChipStyle.Subtle : ChipStyle.Normal;
             RoleChipUI.Draw(rect, role, style, showRemove: false, dragSource: null, onClick: null,
                 interactive: false);
             if (state == ChipState.Removed)
                 RoleChipUI.DrawRemovedOutline(rect);
             if (tip != null && Mouse.IsOver(rect))
-                TooltipHandler.TipRegion(rect, tip);
+            {
+                StructuredTip structuredTip = sourceLine?.StructuredTipAt(sourceIndex);
+                TooltipHandler.TipRegion(rect, structuredTip?.Activate() ?? tip);
+            }
         }
 
-        /// Draws (or, with draw=false, measures) one line of wrapped chips.
-        /// Returns the height consumed.
-        private static float DrawLine(Line line, float x0, float y, float width, bool draw)
+        /// Builds all row/chip geometry once per width/UI revision. UiVersion
+        /// covers role label/rule-marker changes that affect RoleChipUI.WidthFor.
+        private void EnsureRowLayout(float width)
         {
-            float xMax = x0 + width;
-            float x = x0;
-            float curY = y;
+            int stamp = UiVersion.Current;
+            if (rowLayout != null && rowLayoutWidth == width
+                && rowLayoutStamp == stamp)
+                return;
 
-            void Wrap(float needed)
+            var descriptors = new EntryLayout[entries.Count];
+            var heights = new float[entries.Count];
+            for (int i = 0; i < entries.Count; i++)
             {
-                if (x + needed > xMax && x > x0)
+                PawnPreview entry = entries[i];
+                int chipCount = 0;
+                for (int lineIndex = 0; lineIndex < entry.lines.Count; lineIndex++)
+                    chipCount += entry.lines[lineIndex].chips.Count;
+                var chips = new ChipLayout[chipCount];
+                int nextChip = 0;
+
+                float localY = PawnRowH;
+                float xMax = width;
+                for (int lineIndex = 0; lineIndex < entry.lines.Count; lineIndex++)
                 {
-                    x = x0;
-                    curY += RoleChipUI.Height + LineGap;
+                    Line line = entry.lines[lineIndex];
+                    float x = 26f;
+                    float curY = localY;
+                    for (int chipIndex = 0; chipIndex < line.chips.Count; chipIndex++)
+                    {
+                        var chip = line.chips[chipIndex];
+                        float chipWidth = RoleChipUI.WidthFor(chip.role, showRemove: false);
+                        // Preserve the old trailing-gap wrap math exactly: x is
+                        // advanced by ChipGap after every chip, including the last.
+                        if (x + chipWidth > xMax && x > 26f)
+                        {
+                            x = 26f;
+                            curY += RoleChipUI.Height + LineGap;
+                        }
+                        chips[nextChip++] = new ChipLayout(chip.role, chip.state, chip.tip,
+                            line, chipIndex,
+                            new Rect(x, curY, chipWidth, RoleChipUI.Height));
+                        x += chipWidth + ChipGap;
+                    }
+                    localY = curY + RoleChipUI.Height + LineGap;
                 }
+
+                descriptors[i] = new EntryLayout(chips, localY);
+                heights[i] = localY + GroupGap;
             }
 
-            foreach (var (role, state, tip) in line.chips)
-            {
-                float w = RoleChipUI.WidthFor(role, showRemove: false);
-                Wrap(w);
-                DrawStateChip(new Rect(x, curY, w, RoleChipUI.Height), role, state, tip, draw);
-                x += w + ChipGap;
-            }
-
-            return curY + RoleChipUI.Height - y;
-        }
-
-        private static float DrawEntries(List<PawnPreview> entries, float width, bool draw)
-        {
-            float y = 0f;
-            foreach (var entry in entries)
-            {
-                float top = y;
-                if (draw)
-                {
-                    Widgets.Checkbox(new Vector2(0f, y), ref entry.included, 20f);
-                    Widgets.Label(new Rect(26f, y, width - 26f, PawnRowH), entry.pawn.LabelShortCap);
-                }
-                y += PawnRowH;
-                foreach (var line in entry.lines)
-                    y += DrawLine(line, 26f, y, width - 26f, draw) + LineGap;
-                if (draw && !entry.included)
-                    Widgets.DrawBoxSolid(new Rect(24f, top, width - 24f, y - top),
-                        new Color(0f, 0f, 0f, 0.55f));
-                y += GroupGap;
-            }
-            return y;
+            rowDescriptors = descriptors;
+            rowLayout = new VariableViewportLayout(heights);
+            rowLayoutWidth = width;
+            rowLayoutStamp = stamp;
+            noChangesText = "WR_PreviewNoChanges".Translate();
         }
 
         public override void DoWindowContents(Rect inRect)
         {
-            float listTop = DrawPreviewTitle(inRect, title);
-            if (entries.Count > 0)
+            RefreshLanguageIfNeeded();
+            bool repaint = Event.current.type == EventType.Repaint;
+            if (repaint)
+                Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
+            try
             {
-                // Select-all toggle above the list.
-                bool all = entries.All(e => e.included);
-                bool toggled = DrawPreviewSelectAll(inRect, listTop, all);
-                if (toggled != all)
-                    foreach (var entry in entries) entry.included = toggled;
-                listTop += PreviewSelectRowHeight;
-            }
+                float listTop = DrawCachedPreviewTitle(inRect, title);
+                if (entries.Count > 0)
+                {
+                    // Select-all toggle above the list.
+                    bool all = includedCount == entries.Count;
+                    bool toggled = DrawCachedPreviewSelectAll(inRect, listTop, all);
+                    if (toggled != all)
+                    {
+                        for (int i = 0; i < entries.Count; i++)
+                            entries[i].included = toggled;
+                        includedCount = toggled ? entries.Count : 0;
+                    }
+                    listTop += PreviewSelectRowHeight;
+                }
 
-            var listRect = PreviewBodyRect(inRect, listTop);
-            float rowW = listRect.width - 16f;
-            float contentH = entries.Count == 0 ? PawnRowH : DrawEntries(entries, rowW, draw: false);
+                var listRect = PreviewBodyRect(inRect, listTop);
+                float rowW = listRect.width - 16f;
+                EnsureRowLayout(rowW);
+                float contentH = entries.Count == 0 ? PawnRowH : rowLayout.ContentExtent;
 
-            Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
-            if (entries.Count == 0)
-            {
-                GUI.color = new Color(0.6f, 0.6f, 0.6f);
-                Widgets.Label(new Rect(0f, 0f, rowW, PawnRowH), "WR_PreviewNoChanges".Translate());
-                GUI.color = Color.white;
-            }
-            else
-            {
-                DrawEntries(entries, rowW, draw: true);
-            }
-            Widgets.EndScrollView();
-
-            bool canApply = entries.Any(e => e.included);
-            if (DrawPreviewFooter(inRect, canApply))
-            {
-                if (SamePlan(entries, rebuild()))
-                    onApply?.Invoke(entries.Where(e => e.included).Select(e => e.pawn).ToHashSet());
+                Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
+                var visibleRows = rowLayout.Calculate(scroll.y, listRect.height);
+                if (entries.Count == 0)
+                {
+                    if (Event.current.type == EventType.Repaint)
+                    {
+                        GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                        Widgets.Label(new Rect(0f, 0f, rowW, PawnRowH), noChangesText);
+                        GUI.color = Color.white;
+                    }
+                }
                 else
-                    WrToast.Show("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput);
-                Close();
+                {
+                    DrawVisibleEntries(visibleRows, rowW);
+                }
+                Widgets.EndScrollView();
+
+                bool canApply = includedCount > 0;
+                if (DrawPreviewFooter(inRect, canApply))
+                {
+                    if (SamePlan(entries, rebuild()))
+                    {
+                        var selected = new HashSet<Pawn>();
+                        for (int i = 0; i < entries.Count; i++)
+                            if (entries[i].included)
+                                selected.Add(entries[i].pawn);
+                        onApply?.Invoke(selected);
+                    }
+                    else
+                        WrToast.Show("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput);
+                    Close();
+                }
+            }
+            finally
+            {
+                if (repaint)
+                    Patches.Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner);
+            }
+        }
+
+        public override void PostClose()
+        {
+            base.PostClose();
+            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+        }
+
+        private void DrawVisibleEntries(VariableViewportRange visibleRows, float width)
+        {
+            for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
+            {
+                PawnPreview entry = entries[i];
+                EntryLayout descriptor = rowDescriptors[i];
+                float top = rowLayout.OffsetOf(i);
+
+                bool before = entry.included;
+                Widgets.Checkbox(new Vector2(0f, top), ref entry.included, 20f);
+                if (before != entry.included)
+                    includedCount += entry.included ? 1 : -1;
+
+                if (Event.current.type != EventType.Repaint) continue;
+                Widgets.Label(new Rect(26f, top, width - 26f, PawnRowH),
+                    entry.pawn.LabelShortCap);
+                for (int chipIndex = 0; chipIndex < descriptor.Chips.Length; chipIndex++)
+                {
+                    ChipLayout chip = descriptor.Chips[chipIndex];
+                    Rect rect = chip.Rect;
+                    rect.y += top;
+                    DrawStateChip(rect, chip.Role, chip.State, chip.Tip,
+                        chip.SourceLine, chip.SourceIndex);
+                }
+                if (!entry.included)
+                    Widgets.DrawBoxSolid(new Rect(24f, top, width - 24f,
+                        descriptor.OverlayHeight), new Color(0f, 0f, 0f, 0.55f));
             }
         }
     }

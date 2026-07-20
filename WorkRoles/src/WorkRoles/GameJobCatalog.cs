@@ -15,6 +15,12 @@ namespace WorkRoles
         private Dictionary<string, WorkGiverDef> givers;
         private Dictionary<string, List<string>> giversByType;
 
+        internal void InvalidateSessionCache()
+        {
+            givers = null;
+            giversByType = null;
+        }
+
         private void EnsureBuilt()
         {
             if (givers != null) return;

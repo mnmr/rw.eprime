@@ -58,9 +58,7 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             if (store == null || bill == null || !store.billRoles.TryGetValue(bill, out int roleId)) return null;
-            var role = store.RoleById(roleId);
-            if (role == null) store.billRoles.Remove(bill); // role deleted: restriction lapses
-            return role;
+            return store.RoleById(roleId);
         }
 
         /// Whether the pawn satisfies the bill's role restriction: the role must be

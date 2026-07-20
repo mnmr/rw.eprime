@@ -10,20 +10,31 @@ namespace WorkRoles
 {
     public static class CompiledJobOrders
     {
+        private const string BasicsTemplate = "WS_Basics";
+
         private sealed class Entry
         {
             public List<WorkGiver> Normal;
             public List<WorkGiver> Emergency;
-            public Dictionary<WorkTypeDef, int> Priorities;
-            /// Rank order projected onto vanilla's 1-4 scale (order-faithful).
-            public Dictionary<WorkTypeDef, int> VanillaBuckets;
-            /// Flat def-index mirrors of the two maps: the GetPriority prefix
+            /// Flat def-index priorities: the GetPriority prefix
             /// runs thousands of times per second — array reads, no hashing.
             public int[] PriorityByIndex;
             public int[] VanillaByIndex;
         }
 
+        private sealed class ProjectionDefinitionCache
+        {
+            public WorkTypeDef[] AllWorkTypes;
+            public VanillaProjectionDefinitionMetadata Metadata;
+        }
+
         private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
+        private static readonly Func<Pawn, string, bool> PawnCanDoJob = CanPawnDoJob;
+        private static ProjectionDefinitionCache projectionDefinitions;
+        private static VanillaProjectionMetadata projectionMetadata;
+        private static int basicsRevision;
+        private static int projectionMetadataBasicsRevision = -1;
+        private static int projectionBasicsRoleId = -1;
 
         public static void Invalidate(Pawn pawn)
         {
@@ -34,34 +45,139 @@ namespace WorkRoles
                 UiVersion.Bump();
         }
 
-        public static void InvalidateRole(int roleId)
+        internal static void InvalidateBatch(IEnumerable<Pawn> pawns)
         {
-            UiVersion.Bump();
+            if (pawns == null) return;
+
+            var unique = new HashSet<Pawn>(ReferenceIdentityComparer<Pawn>.Instance);
+            bool invalidateUi = false;
+            foreach (var pawn in pawns)
+            {
+                if (pawn == null || !unique.Add(pawn)) continue;
+                bool removed = cache.Remove(pawn);
+                if (removed || pawn.IsColonist || pawn.IsSlaveOfColony)
+                    invalidateUi = true;
+            }
+
+            if (invalidateUi)
+                UiVersion.Bump();
+        }
+
+        public static void InvalidateRole(int roleId) => InvalidateRole(roleId, UiVersion.Bump);
+
+        internal static void InvalidateRole(int roleId, Action invalidateUi)
+        {
             var store = RoleStore.Current;
+            var role = store?.RoleById(roleId);
+            if (IsBasicsRole(roleId, role))
+            {
+                InvalidateBasics(role, invalidateUi);
+                return;
+            }
+
+            invalidateUi();
             if (store == null) { cache.Clear(); return; }
-            store.RoleById(roleId)?.InvalidateCoverage();
+            role?.InvalidateCoverage();
             foreach (var pawn in store.PawnsWithRole(roleId).ToList())
                 cache.Remove(pawn);
         }
 
+        private static bool IsBasicsRole(int roleId, Role role) =>
+            role?.templateDefName == BasicsTemplate || roleId == projectionBasicsRoleId;
+
+        private static void InvalidateBasics(Role role, Action invalidateUi)
+        {
+            role?.InvalidateCoverage();
+            InvalidateProjectionMetadata();
+            cache.Clear();
+            invalidateUi();
+        }
+
+        private static void InvalidateProjectionMetadata()
+        {
+            unchecked { basicsRevision++; }
+            projectionMetadata = null;
+            projectionMetadataBasicsRevision = -1;
+            projectionBasicsRoleId = -1;
+        }
+
+        internal static void InvalidateDefinitions()
+        {
+            projectionDefinitions = null;
+            InvalidateAll();
+        }
+
         public static void InvalidateAll()
         {
+            InvalidateProjectionMetadata();
             UiVersion.Bump();
             cache.Clear();
             var store = RoleStore.Current;
-            if (store != null)
+            if (store?.roles != null)
                 foreach (var role in store.roles)
-                    role.InvalidateCoverage();
+                    role?.InvalidateCoverage();
         }
 
         /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
         public static void InvalidateAllTimeRuled()
         {
             var store = RoleStore.Current;
-            if (store == null) return;
-            foreach (var role in store.roles)
+            if (store?.roles == null) return;
+
+            List<TimedRoleInvalidationSource> roleSources = null;
+            Dictionary<int, Role> rolesById = null;
+            for (int i = 0; i < store.roles.Count; i++)
+            {
+                var role = store.roles[i];
+                if (role == null) continue;
                 if (role.activeHours != Role.AllHours)
-                    InvalidateRole(role.id);
+                {
+                    if (roleSources == null)
+                    {
+                        roleSources = new List<TimedRoleInvalidationSource>();
+                        rolesById = new Dictionary<int, Role>();
+                    }
+                    roleSources.Add(new TimedRoleInvalidationSource(role.id,
+                        hasTimeRule: true, role.enabled, role.blocker, role.autoAssign));
+                }
+                // RoleById is last-wins for corrupt duplicate ids. Once a timed
+                // id has appeared, every possible later winner must be retained.
+                if (rolesById != null)
+                    rolesById[role.id] = role;
+            }
+            if (roleSources == null) return;
+
+            var pawnSets = store.pawnSets;
+            IEnumerable<TimedRoleHolderAssignment<Pawn>> AssignmentSources()
+            {
+                if (pawnSets == null) yield break;
+                foreach (var pair in pawnSets)
+                {
+                    var pawn = pair.Key;
+                    var set = pair.Value;
+                    if (pawn == null || set?.assignments == null) continue;
+
+                    foreach (var assignment in set.assignments)
+                    {
+                        if (assignment == null) continue;
+                        yield return new TimedRoleHolderAssignment<Pawn>(pawn,
+                            pawn.thingIDNumber, assignment.roleId,
+                            assignment.enabled, assignment.pinned);
+                    }
+                }
+            }
+
+            var plan = TimedRoleInvalidationPlanner.Plan(
+                roleSources, AssignmentSources());
+            for (int i = 0; i < plan.RoleIds.Count; i++)
+                if (rolesById.TryGetValue(plan.RoleIds[i], out var role))
+                    role.InvalidateCoverage();
+            for (int i = 0; i < plan.Pawns.Count; i++)
+            {
+                var pawn = plan.Pawns[i];
+                cache.Remove(pawn);
+            }
+            UiVersion.Bump();
         }
 
         /// Returned lists are owned by the cache — callers must never mutate them.
@@ -70,8 +186,10 @@ namespace WorkRoles
 
         public static int PriorityFor(Pawn pawn, WorkTypeDef workType)
         {
+            if (workType == null) return 0;
             var byIndex = For(pawn).PriorityByIndex;
-            return workType.index < byIndex.Length ? byIndex[workType.index] : 0;
+            int index = workType.index;
+            return (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
         }
 
         /// The rank projected onto vanilla's 0-4 scale, such that vanilla's
@@ -79,8 +197,10 @@ namespace WorkRoles
         /// numbers suffice (same values as the dormant fallback map).
         public static int VanillaPriorityFor(Pawn pawn, WorkTypeDef workType)
         {
+            if (workType == null) return 0;
             var byIndex = For(pawn).VanillaByIndex;
-            return workType.index < byIndex.Length ? byIndex[workType.index] : 0;
+            int index = workType.index;
+            return (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
         }
 
         private static Entry For(Pawn pawn)
@@ -96,6 +216,17 @@ namespace WorkRoles
 
         /// Ensures the pawn's compiled order (and its vanilla fallback map) is current.
         public static void EnsureFresh(Pawn pawn) => For(pawn);
+
+        /// Rebuilds even when an entry is cached, guaranteeing the fallback map
+        /// reflects the role set that is about to relinquish authority.
+        internal static void MirrorFreshVanillaFallback(Pawn pawn)
+        {
+            cache.Remove(pawn);
+            EnsureFresh(pawn);
+        }
+
+        /// Cache-only eviction for lifecycle code that owns its own UI bump.
+        internal static void RemoveCached(Pawn pawn) => cache.Remove(pawn);
 
         private static readonly AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>> VanillaPriorities =
             AccessTools.FieldRefAccess<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>("priorities");
@@ -113,32 +244,92 @@ namespace WorkRoles
             if (workSettings == null) return;
             var map = VanillaPriorities(workSettings);
             if (map == null) return;
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-                map[workType] = entry.VanillaBuckets.TryGetValue(workType, out var bucket) ? bucket : 0;
+            foreach (var workType in ProjectionDefinitions().AllWorkTypes)
+            {
+                int index = workType.index;
+                map[workType] = (uint)index < (uint)entry.VanillaByIndex.Length
+                    ? entry.VanillaByIndex[index] : 0;
+            }
         }
 
-        private static VanillaProjectionCategories BuildProjectionCategories(RoleStore store)
+        private static ProjectionDefinitionCache ProjectionDefinitions()
         {
-            var categories = new VanillaProjectionCategories();
-            var basics = store?.roles.FirstOrDefault(r => r.templateDefName == "WS_Basics");
-            if (basics != null)
-                foreach (var entry in basics.entries)
-                {
-                    var type = entry.Kind == JobEntryKind.WorkType
-                        ? entry.DefName
-                        : GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
-                    if (type != null) categories.Basics.Add(type);
-                }
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            if (projectionDefinitions != null) return projectionDefinitions;
+
+            var allDefs = DefDatabase<WorkTypeDef>.AllDefsListForReading;
+            var allWorkTypes = new List<WorkTypeDef>(allDefs.Count);
+            var sources = new List<VanillaProjectionWorkTypeSource>(allDefs.Count);
+            foreach (var workType in allDefs)
             {
+                if (workType == null || workType.defName.NullOrEmpty()) continue;
+                allWorkTypes.Add(workType);
                 bool skilled = !workType.relevantSkills.NullOrEmpty();
-                if (skilled) categories.Skilled.Add(workType.defName);
-                if (skilled && workType.relevantSkills.Contains(SkillDefOf.Intellectual))
-                    categories.Research.Add(workType.defName);
-                if (!skilled && !categories.Basics.Contains(workType.defName))
-                    categories.Grunt.Add(workType.defName);
+                bool research = skilled
+                    && workType.relevantSkills.Contains(SkillDefOf.Intellectual);
+                sources.Add(new VanillaProjectionWorkTypeSource(
+                    workType.defName, skilled, research));
             }
-            return categories;
+
+            var priorityOrder = new List<string>();
+            foreach (var workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
+                if (workType != null && !workType.defName.NullOrEmpty())
+                    priorityOrder.Add(workType.defName);
+
+            projectionDefinitions = new ProjectionDefinitionCache
+            {
+                AllWorkTypes = allWorkTypes.ToArray(),
+                Metadata = new VanillaProjectionDefinitionMetadata(sources, priorityOrder),
+            };
+            return projectionDefinitions;
+        }
+
+        private static List<string> BasicsWorkTypes(Role basics)
+        {
+            var result = new List<string>();
+            if (basics?.entries == null) return result;
+            foreach (var entry in basics.entries)
+            {
+                string type = entry.Kind == JobEntryKind.WorkType
+                    ? entry.DefName
+                    : GameJobCatalog.Instance.WorkTypeOf(entry.DefName);
+                if (type != null) result.Add(type);
+            }
+            return result;
+        }
+
+        private static VanillaProjectionMetadata ProjectionMetadata()
+        {
+            if (projectionMetadata != null
+                && projectionMetadataBasicsRevision == basicsRevision)
+                return projectionMetadata;
+
+            Role basics = null;
+            var roles = RoleStore.Current?.roles;
+            if (roles != null)
+                for (int i = 0; i < roles.Count; i++)
+                {
+                    var candidate = roles[i];
+                    if (candidate?.templateDefName != BasicsTemplate) continue;
+                    basics = candidate;
+                    break;
+                }
+
+            var definitions = ProjectionDefinitions();
+            projectionMetadata = definitions.Metadata.WithBasics(
+                BasicsWorkTypes(basics));
+            projectionMetadataBasicsRevision = basicsRevision;
+            projectionBasicsRoleId = basics?.id ?? -1;
+            return projectionMetadata;
+        }
+
+        internal static void WarmProjectionMetadata() => ProjectionMetadata();
+
+        private static bool CanPawnDoJob(Pawn pawn, string giverDefName)
+        {
+            var def = GameJobCatalog.Instance.GiverDef(giverDefName);
+            return def != null
+                && !pawn.WorkTypeIsDisabled(def.workType)
+                && !pawn.WorkTagIsDisabled(def.workTags);
         }
 
         private static Entry Build(Pawn pawn)
@@ -157,40 +348,35 @@ namespace WorkRoles
                 }
             }
 
-            Func<string, bool> pawnCanDo = giverDefName =>
-            {
-                var def = GameJobCatalog.Instance.GiverDef(giverDefName);
-                return def != null
-                    && !pawn.WorkTypeIsDisabled(def.workType)
-                    && !pawn.WorkTagIsDisabled(def.workTags);
-            };
-
-            var compiled = JobOrderCompiler.Compile(roleEntries, GameJobCatalog.Instance, pawnCanDo);
-
-            // Work-tab column order — how vanilla replays equal priority numbers.
-            var columns = new Dictionary<string, int>();
-            foreach (var workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
-                columns[workType.defName] = columns.Count;
+            var compiled = JobOrderCompiler.Compile(
+                roleEntries, GameJobCatalog.Instance, pawn, PawnCanDoJob);
             var buckets = JobOrderCompiler.ToVanillaPriorities(compiled.WorkTypePriorities,
-                name => columns.TryGetValue(name, out var column) ? column : int.MaxValue,
-                BuildProjectionCategories(store));
+                ProjectionMetadata());
+            int defCount = DefDatabase<WorkTypeDef>.DefCount;
 
             var entry = new Entry
             {
-                Normal = compiled.Normal.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
-                Emergency = compiled.Emergency.Select(n => GameJobCatalog.Instance.GiverDef(n).Worker).ToList(),
-                Priorities = compiled.WorkTypePriorities.ToDictionary(
-                    kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
-                    kv => kv.Value),
-                VanillaBuckets = buckets.ToDictionary(
-                    kv => DefDatabase<WorkTypeDef>.GetNamed(kv.Key),
-                    kv => kv.Value)
+                Normal = new List<WorkGiver>(compiled.Normal.Count),
+                Emergency = new List<WorkGiver>(compiled.Emergency.Count),
+                PriorityByIndex = new int[defCount],
+                VanillaByIndex = new int[defCount],
             };
-            int defCount = DefDatabase<WorkTypeDef>.DefCount;
-            entry.PriorityByIndex = new int[defCount];
-            entry.VanillaByIndex = new int[defCount];
-            foreach (var kv in entry.Priorities) entry.PriorityByIndex[kv.Key.index] = kv.Value;
-            foreach (var kv in entry.VanillaBuckets) entry.VanillaByIndex[kv.Key.index] = kv.Value;
+            foreach (string giver in compiled.Normal)
+                entry.Normal.Add(GameJobCatalog.Instance.GiverDef(giver).Worker);
+            foreach (string giver in compiled.Emergency)
+                entry.Emergency.Add(GameJobCatalog.Instance.GiverDef(giver).Worker);
+            foreach (var pair in compiled.WorkTypePriorities)
+            {
+                int index = DefDatabase<WorkTypeDef>.GetNamed(pair.Key).index;
+                if ((uint)index < (uint)defCount)
+                    entry.PriorityByIndex[index] = pair.Value;
+            }
+            foreach (var pair in buckets)
+            {
+                int index = DefDatabase<WorkTypeDef>.GetNamed(pair.Key).index;
+                if ((uint)index < (uint)defCount)
+                    entry.VanillaByIndex[index] = pair.Value;
+            }
             return entry;
         }
     }

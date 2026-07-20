@@ -203,13 +203,13 @@ namespace WorkRoles.UI
         }
 
         // Open-window snapshot of this tab's structured tips: static content,
-        // rebuilt (and re-registered) only when the stamp moves.
+        // rebuilt only when the stamp moves and activated at its UI use sites.
         private int optTipsStamp = -1;
-        private string numericTipCache;
-        private string rangeTipCache;
-        private string recOrderTipCache;
-        private string trainingTipCache;
-        private string anchorTipCache;
+        private StructuredTip numericTipCache;
+        private StructuredTip rangeTipCache;
+        private StructuredTip recOrderTipCache;
+        private StructuredTip trainingTipCache;
+        private StructuredTip anchorTipCache;
 
         private void EnsureOptionTips()
         {
@@ -222,14 +222,14 @@ namespace WorkRoles.UI
                 .Fact("WR_TipOff".Translate(), "WR_OptNumericTipOff".Translate())
                 .Fact("WR_TipOn".Translate(), "WR_OptNumericTipOn".Translate());
             numeric.AddSection().Text("WR_OptNumericTipWhy".Translate(), dim: true);
-            numericTipCache = Patches.Patch_ActiveTip_TipRect.Register(numeric);
+            numericTipCache = new StructuredTip("options:numeric", numeric);
 
             var range = new TipModel { Title = "WR_OptVanillaRange".Translate() };
             range.AddSection().Text("WR_OptVanillaRangeTipWhat".Translate());
             range.AddSection()
                 .Fact("WR_TipOff".Translate(), "WR_OptVanillaRangeTipOff".Translate())
                 .Fact("WR_TipOn".Translate(), "WR_OptVanillaRangeTipOn".Translate());
-            rangeTipCache = Patches.Patch_ActiveTip_TipRect.Register(range);
+            rangeTipCache = new StructuredTip("options:vanilla-range", range);
 
             var recOrder = new TipModel { Title = "WR_RecOrderHeader".Translate() };
             recOrder.AddSection().Text("WR_OptRecOrderTipWhat".Translate());
@@ -237,19 +237,19 @@ namespace WorkRoles.UI
                 .Action("WR_ActDrag".Translate(), "WR_ActRecDrag".Translate())
                 .Action("WR_ActX".Translate(), "WR_ActRecX".Translate());
             recOrder.AddSection().Text("WR_OptRecOrderTipAuto".Translate(), dim: true);
-            recOrderTipCache = Patches.Patch_ActiveTip_TipRect.Register(recOrder);
+            recOrderTipCache = new StructuredTip("options:recommendation-order", recOrder);
 
             var training = new TipModel { Title = "WR_TrainingSection".Translate() };
             training.AddSection().Text("WR_TrainingTipWhat".Translate());
             training.AddSection()
                 .Text("WR_TrainingTipBands".Translate(), dim: true)
                 .Text("WR_TrainingTipOrder".Translate(), dim: true);
-            trainingTipCache = Patches.Patch_ActiveTip_TipRect.Register(training);
+            trainingTipCache = new StructuredTip("options:training", training);
 
             var anchor = new TipModel { Title = "WR_CustomizeAssignment".Translate() };
             anchor.AddSection().Text("WR_AnchorTipWhat".Translate());
             anchor.AddSection().Text("WR_AnchorTipWhy".Translate(), dim: true);
-            anchorTipCache = Patches.Patch_ActiveTip_TipRect.Register(anchor);
+            anchorTipCache = new StructuredTip("options:anchor", anchor);
         }
 
         public void Reset()
@@ -262,6 +262,28 @@ namespace WorkRoles.UI
             pendingSelectPathName = null;
             anchorRevealed.Clear();
             ClearBandDrag();
+        }
+
+        /// Language-only invalidation. The active path, scroll position and
+        /// disclosure state remain unchanged.
+        internal void InvalidateLanguageCaches()
+        {
+            orderStamp = -1;
+            orderCache = null;
+            orderById = null;
+            orderRoles = null;
+            orderLayout.Clear();
+
+            pathStamp = -1;
+            pathChips.Clear();
+            pathView = null;
+
+            optTipsStamp = -1;
+            numericTipCache = null;
+            rangeTipCache = null;
+            recOrderTipCache = null;
+            trainingTipCache = null;
+            anchorTipCache = null;
         }
 
         private void ClearBandDrag()
@@ -280,7 +302,7 @@ namespace WorkRoles.UI
             orderStamp = UiVersion.Current;
             orderWidth = chipWidth;
             // One projection serves both the resolver and the orderById lookup.
-            var views = store.roles.Select(RecsAdapter.RoleViewOf).ToList();
+            var views = RecsAdapter.RoleViewsOf(store.roles);
             orderCache = OrderTemplate.ResolveTemplate(store.recommendationOrder, views);
             orderById = views.ToDictionary(r => r.Id);
             orderRoles = orderCache.Select(store.RoleById).Where(r => r != null).ToList();
@@ -378,14 +400,14 @@ namespace WorkRoles.UI
             WrText.HeaderLabel(compatHeader, "WR_CompatSection".Translate());
 
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
-            TooltipHandler.TipRegion(numericRect, numericTipCache);
+            TooltipHandler.TipRegion(numericRect, numericTipCache.Activate());
             bool numericNew = numeric;
             Widgets.CheckboxLabeled(numericRect, "WR_OptNumeric".Translate(), ref numericNew);
             if (numericNew != numeric)
                 RoleCommands.SetUseWorkPriorities(numericNew);
 
             bool vanillaRange = store.reportVanillaPriorities;
-            TooltipHandler.TipRegion(rangeRect, rangeTipCache);
+            TooltipHandler.TipRegion(rangeRect, rangeTipCache.Activate());
             bool vanillaNew = vanillaRange;
             Widgets.CheckboxLabeled(rangeRect, "WR_OptVanillaRange".Translate(), ref vanillaNew);
             if (vanillaNew != vanillaRange)
@@ -418,7 +440,7 @@ namespace WorkRoles.UI
         }
 
         /// Editor-style mini-header: small dim label over a faint rule.
-        private static float MiniHeader(float x, float y, float width, string label, string tip)
+        private static float MiniHeader(float x, float y, float width, string label, StructuredTip tip)
         {
             Text.Font = GameFont.Small;
             var labelRect = new Rect(x, y, width, 22f);
@@ -427,7 +449,7 @@ namespace WorkRoles.UI
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
             WrText.LineHorizontal(x, y + 24f, width);
             GUI.color = Color.white;
-            if (tip != null) TooltipHandler.TipRegion(labelRect, tip);
+            if (tip != null) TooltipHandler.TipRegion(labelRect, tip.Activate());
             return y + 30f;
         }
 
@@ -699,7 +721,7 @@ namespace WorkRoles.UI
                 : 110f;
             float x = rect.xMax - (captionW + 4f + 70f + 8f + tailW);
             TooltipHandler.TipRegion(new Rect(x, rect.y, rect.xMax - x, rect.height),
-                anchorTipCache);
+                anchorTipCache.Activate());
 
             // MiddleLeft over the row height: the caption shares the text
             // baseline with the Before/After button and the chip.

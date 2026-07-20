@@ -10,8 +10,9 @@ namespace WorkRoles.UI
 {
     internal static class RecommendationPresentation
     {
-        internal static string RegisterTooltip(
+        internal static StructuredTip CreateTooltip(
             RoleStore store,
+            Pawn pawn,
             Role role,
             Dialog_ChangesPreview.ChipState state,
             RoleRecommendationExplanation explanation,
@@ -24,7 +25,8 @@ namespace WorkRoles.UI
                     state == Dialog_ChangesPreview.ChipState.Removed
                         ? "WR_ReasonRemoved".Translate()
                         : "WR_AlreadyAssigned".Translate());
-                return Patches.Patch_ActiveTip_TipRect.Register(model);
+                return new StructuredTip(
+                    $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
             }
 
             TipSection facts = model.AddSection();
@@ -53,7 +55,8 @@ namespace WorkRoles.UI
 
             facts.Fact("WR_RecTipRecommendation".Translate(),
                 RecommendationDecisionText(store, explanation));
-            return Patches.Patch_ActiveTip_TipRect.Register(model);
+            return new StructuredTip(
+                $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
         }
 
         private static string SignalVerdict(

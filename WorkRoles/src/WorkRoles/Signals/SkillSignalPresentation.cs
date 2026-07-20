@@ -49,8 +49,9 @@ namespace WorkRoles.Signals
             return texture;
         }
 
-        internal static string RegisterTooltip(
+        internal static StructuredTip CreateTooltip(
             Pawn pawn,
+            string skillDefName,
             string skillLabel,
             string valueText,
             Color valueColor,
@@ -87,7 +88,8 @@ namespace WorkRoles.Signals
             foreach (PawnSignal signal in view.PassiveSignals)
                 AddSignalRows(table, signal, PassiveGrey, pawn);
 
-            return Patches.Patch_ActiveTip_TipRect.Register(model);
+            return new StructuredTip(
+                $"skill-signal:{pawn.thingIDNumber}:{skillDefName}", model);
         }
 
         private static void AddSignalRows(TipSection table, PawnSignal signal, Color? rowColor, Pawn pawn)

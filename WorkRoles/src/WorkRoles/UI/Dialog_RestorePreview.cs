@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
@@ -26,6 +27,7 @@ namespace WorkRoles.UI
 
         private readonly List<Row> rows;
         private readonly bool anyUndo;
+        private int includedCount;
         private Vector2 scroll;
 
         public override Vector2 InitialSize => new Vector2(420f, 480f);
@@ -34,53 +36,63 @@ namespace WorkRoles.UI
         {
             rows = items.Select(i => new Row { item = i }).ToList();
             anyUndo = rows.Any(r => r.item.UndoesUserChange);
+            includedCount = rows.Count;
         }
 
+        private string titleText;
         private string warnText;
         private float warnH;
         private float warnMeasuredW = -1f;
 
         public override void DoWindowContents(Rect inRect)
         {
-            float listTop = DrawPreviewTitle(inRect, "WR_RestoreDefaultsTitle".Translate());
-            bool all = rows.All(r => r.included);
-            bool toggled = DrawPreviewSelectAll(inRect, listTop, all);
+            if (ObservePreviewLanguageRevision())
+            {
+                titleText = "WR_RestoreDefaultsTitle".Translate();
+                warnText = "WR_RestoreOverwriteWarning".Translate();
+                warnMeasuredW = -1f;
+            }
+            float listTop = DrawCachedPreviewTitle(inRect, titleText);
+            bool all = includedCount == rows.Count;
+            bool toggled = DrawCachedPreviewSelectAll(inRect, listTop, all);
             if (toggled != all)
-                foreach (var row in rows) row.included = toggled;
+            {
+                for (int i = 0; i < rows.Count; i++)
+                    rows[i].included = toggled;
+                includedCount = toggled ? rows.Count : 0;
+            }
             listTop += PreviewSelectRowHeight;
 
             if (anyUndo)
             {
                 // Height cached by width: CalcHeight is a full layout pass.
-                if (!Mathf.Approximately(warnMeasuredW, inRect.width))
+                if (warnMeasuredW != inRect.width)
                 {
-                    warnText = "WR_RestoreOverwriteWarning".Translate();
                     warnH = Text.CalcHeight(warnText, inRect.width);
                     warnMeasuredW = inRect.width;
                 }
-                GUI.color = WarnColor;
-                Widgets.Label(new Rect(inRect.x, listTop, inRect.width, warnH), warnText);
-                GUI.color = Color.white;
+                if (Event.current.type == EventType.Repaint)
+                {
+                    GUI.color = WarnColor;
+                    Widgets.Label(new Rect(inRect.x, listTop, inRect.width, warnH), warnText);
+                    GUI.color = Color.white;
+                }
                 listTop += warnH + 4f;
             }
 
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, rows.Count * RowH));
-            float y = 0f;
-            foreach (var row in rows)
-            {
-                var rowRect = new Rect(0f, y, rowW, RowH - 2f);
-                if (row.item.UndoesUserChange) GUI.color = WarnColor;
-                Widgets.CheckboxLabeled(rowRect, row.item.label, ref row.included);
-                GUI.color = Color.white;
-                if (!row.item.explanation.NullOrEmpty())
-                    TooltipHandler.TipRegion(rowRect, row.item.explanation);
-                y += RowH;
-            }
+            var visibleRows = UniformViewportRange.Calculate(
+                itemCount: rows.Count,
+                itemExtent: RowH,
+                contentStart: 0f,
+                viewportStart: scroll.y,
+                viewportExtent: listRect.height);
+            DrawVisibleRows(visibleRows, rowW);
             Widgets.EndScrollView();
 
-            bool canApply = rows.Any(r => r.included);
+            bool canApply = includedCount > 0;
             if (DrawPreviewFooter(inRect, canApply))
             {
                 var selected = rows.Where(r => r.included).Select(r => r.item).ToList();
@@ -96,6 +108,24 @@ namespace WorkRoles.UI
                     recommendationOrder = selected.Any(i => i.recommendationOrder),
                 });
                 Close();
+            }
+        }
+
+        private void DrawVisibleRows(UniformViewportRange visibleRows, float rowW)
+        {
+            for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
+            {
+                Row row = rows[i];
+                var rowRect = new Rect(0f, i * RowH, rowW, RowH - 2f);
+                if (row.item.UndoesUserChange) GUI.color = WarnColor;
+                bool before = row.included;
+                Widgets.CheckboxLabeled(rowRect, row.item.label, ref row.included);
+                if (before != row.included)
+                    includedCount += row.included ? 1 : -1;
+                GUI.color = Color.white;
+                if (Event.current.type == EventType.Repaint
+                    && !row.item.explanation.NullOrEmpty())
+                    TooltipHandler.TipRegion(rowRect, row.item.explanation);
             }
         }
     }

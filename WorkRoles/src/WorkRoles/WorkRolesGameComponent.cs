@@ -50,6 +50,9 @@ namespace WorkRoles
                 foreach (var role in store.roles)
                     if (RoleCommands.ScrubDeadEntriesDirect(role))
                         CompiledJobOrders.InvalidateRole(role.id);
+
+            CompiledJobOrders.WarmProjectionMetadata();
+            JobSkillProfiles.WarmDefinitionFacts();
         }
 
         public override void GameComponentTick()
@@ -57,15 +60,7 @@ namespace WorkRoles
             int now = Find.TickManager.TicksGame;
             if (now < nextHourCheckTick) return;
             nextHourCheckTick = now + 2500 - (int)GenMath.PositiveMod(GenTicks.TicksAbs, 2500);
-
-            var store = RoleStore.Current;
-            if (store == null) return;
-            foreach (var role in store.roles)
-                if (role.activeHours != Role.AllHours)
-                {
-                    CompiledJobOrders.InvalidateAllTimeRuled();
-                    return;
-                }
+            CompiledJobOrders.InvalidateAllTimeRuled();
         }
     }
 }

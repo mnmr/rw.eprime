@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using WorkRoles.Core.Recs;
 
 namespace WorkRoles
@@ -13,26 +12,35 @@ namespace WorkRoles
             => role == null ? new List<RoleSkillView>() : ForCoverage(role.Coverage());
 
         internal static List<RoleSkillView> ForCoverage(IEnumerable<string> giverNames)
+            => RoleSkillProfile.Build(EvidenceForCoverage(
+                giverNames, new RoleSkillEvidenceAccumulator()));
+
+        internal static IReadOnlyList<RoleSkillEvidence> EvidenceForCoverage(
+            IEnumerable<string> giverNames,
+            RoleSkillEvidenceAccumulator scratch)
         {
-            var evidence = new List<RoleSkillEvidence>();
-            foreach (string giverName in giverNames.Distinct())
+            if (scratch == null)
+                throw new System.ArgumentNullException(nameof(scratch));
+            scratch.BeginRole();
+            if (giverNames == null) return scratch.CompleteRole();
+
+            foreach (string giverName in giverNames)
             {
+                if (!scratch.BeginSource(giverName)) continue;
                 var profile = JobSkillProfiles.ForGiver(giverName);
                 if (profile == null) continue;
-                var used = new HashSet<string>(profile.UsedSkillDefNames);
-                var trained = new HashSet<string>(profile.TrainedSkillDefNames);
-                var requirements = profile.Requirements
-                    .Where(r => !string.IsNullOrEmpty(r.SkillDefName))
-                    .GroupBy(r => r.SkillDefName)
-                    .ToDictionary(group => group.Key,
-                        group => group.Sum(r => System.Math.Max(1, r.Gated)));
-                foreach (string skill in used.Union(trained).Union(requirements.Keys))
-                    evidence.Add(new RoleSkillEvidence(skill,
-                        used.Contains(skill) ? 1 : 0,
-                        trained.Contains(skill) ? 1 : 0,
-                        requirements.TryGetValue(skill, out int required) ? required : 0));
+                for (int i = 0; i < profile.UsedSkillDefNames.Count; i++)
+                    scratch.AddUsedSkill(profile.UsedSkillDefNames[i]);
+                for (int i = 0; i < profile.TrainedSkillDefNames.Count; i++)
+                    scratch.AddTrainedSkill(profile.TrainedSkillDefNames[i]);
+                for (int i = 0; i < profile.Requirements.Count; i++)
+                {
+                    var requirement = profile.Requirements[i];
+                    scratch.AddRequiredContent(
+                        requirement.SkillDefName, requirement.Gated);
+                }
             }
-            return RoleSkillProfile.Build(evidence);
+            return scratch.CompleteRole();
         }
     }
 }

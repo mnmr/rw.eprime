@@ -146,6 +146,23 @@ public class JobOrderCompilerTests
     }
 
     [Test]
+    public async Task ContextCapabilityOverloadUsesTheSuppliedContext()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Doctor", "TendPatients", "FeedPatients");
+        var result = JobOrderCompiler.Compile(
+            new List<(IReadOnlyList<JobEntry> entries, bool blocker)>
+            {
+                (new List<JobEntry> { WT("Doctor") }, false),
+            },
+            catalog,
+            "TendPatients",
+            (blocked, giver) => giver != blocked);
+
+        await Assert.That(Flat(result.AllInOrder)).IsEqualTo("FeedPatients");
+    }
+
+    [Test]
     public async Task MissingDefsAreInert()
     {
         var catalog = new FakeCatalog().WithWorkType("Hauling", "HaulGeneral");
@@ -349,5 +366,38 @@ public class JobOrderCompilerTests
         await Assert.That(buckets["C"]).IsEqualTo(2);
         await Assert.That(buckets["B"]).IsEqualTo(3);
         await Assert.That(buckets["D"]).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task MetadataProjectionOverloadMatchesLegacyDelegateAndCategories()
+    {
+        var sources = new[]
+        {
+            new VanillaProjectionWorkTypeSource("A", skilled: false, research: false),
+            new VanillaProjectionWorkTypeSource("B", skilled: false, research: false),
+            new VanillaProjectionWorkTypeSource("C", skilled: true, research: false),
+            new VanillaProjectionWorkTypeSource("D", skilled: false, research: false),
+            new VanillaProjectionWorkTypeSource("E", skilled: true, research: true),
+        };
+        var metadata = new VanillaProjectionDefinitionMetadata(sources)
+            .WithBasics(new[] { "A", "B" });
+        var ranks = new Dictionary<string, int>
+            { ["A"] = 1, ["B"] = 2, ["C"] = 3, ["D"] = 4, ["E"] = 5 };
+        var categories = new VanillaProjectionCategories
+        {
+            Basics = ["A", "B"],
+            Skilled = ["C", "E"],
+            Grunt = ["D"],
+            Research = ["E"],
+        };
+
+        var legacy = JobOrderCompiler.ToVanillaPriorities(
+            ranks, metadata.ColumnOf, categories);
+        var cached = JobOrderCompiler.ToVanillaPriorities(ranks, metadata);
+
+        await Assert.That(cached).IsEquivalentTo(legacy);
+        await Assert.That(string.Join(",", cached.OrderBy(pair => pair.Key)
+            .Select(pair => $"{pair.Key}:{pair.Value}")))
+            .IsEqualTo("A:1,B:1,C:2,D:3,E:4");
     }
 }

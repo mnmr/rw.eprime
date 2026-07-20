@@ -3,6 +3,7 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.Profile;
+using WorkRoles.Signals;
 
 namespace WorkRoles.Patches
 {
@@ -74,7 +75,11 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Notify_DisabledWorkTypesChanged))]
     public static class Patch_Pawn_NotifyDisabledWorkTypesChanged
     {
-        public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
+        public static void Postfix(Pawn __instance)
+        {
+            CompiledJobOrders.Invalidate(__instance);
+            PawnSignalSnapshotCache.Invalidate(__instance);
+        }
     }
 
     /// Location rules depend on which map (if any) holds the pawn — recompile on
@@ -99,6 +104,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance)
         {
             CompiledJobOrders.Invalidate(__instance);
+            PawnSignalSnapshotCache.Invalidate(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
         }
     }
@@ -111,7 +117,9 @@ namespace WorkRoles.Patches
     {
         public static void Postfix()
         {
-            CompiledJobOrders.InvalidateAll();
+            DefinitionReloadCoordinator.CancelPendingWarm();
+            DefinitionReloadCoordinator.ReleaseForTeardown();
+            UI.RoleClipboard.Clear();
             RoleStore.ClearCached();
             Patch_ActiveTip_TipRect.Clear();
         }

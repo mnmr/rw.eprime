@@ -14,6 +14,8 @@ namespace WorkRoles.Core.Signals
         public const string AllExpertiseMember = "AllExpertise";
         public const string ExpertiseDefMember = "def";
         public const string ExpertiseLevelMember = "Level";
+        public const string ExpertiseXpSinceLastLevelMember = "XpSinceLastLevel";
+        public const string ExpertiseXpRequiredForLevelUpMember = "XpRequiredForLevelUp";
         public const string ExpertiseDescriptionMethod = "FullDescription";
         public const string ExpertiseSkillMember = "skill";
         public const string PassionsMember = "Passions";

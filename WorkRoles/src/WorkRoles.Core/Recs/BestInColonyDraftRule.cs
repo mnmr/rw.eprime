@@ -30,7 +30,7 @@ namespace WorkRoles.Core.Recs
                 for (int i = 0; i < context.Colony.Pawns.Count; i++)
                 {
                     if (context.CoversRole(i, role)) continue;
-                    if (!context.Capable(i, role)) continue;
+                    if (!context.FullyCapable(i, role)) continue;
                     if (role.Hunting && !context.Colony.Pawns[i].HasRangedWeapon) continue;
                     var bucket = context.BestSignal(i, role, out string skill, out _);
                     if (bucket == SignalBucket.Awful) continue;
@@ -76,9 +76,7 @@ namespace WorkRoles.Core.Recs
         {
             if (role.MinHolders >= 1) return false;
             if (context.Colony.Paths.Any(p => p.RoleIds.Contains(role.Id))) return false;
-            return context.Colony.Roles.Any(other => other.Id != role.Id
-                && !context.Vetoed.Contains(other.Id)
-                && context.Redundant(other.Id, role.Id));
+            return context.AllocatedHoldersOf(role.Id) >= context.Want[role.Id];
         }
     }
 }

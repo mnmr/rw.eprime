@@ -24,18 +24,18 @@ namespace WorkRoles.Patches
             if (!__state.Valid || !newTile.Valid || __state == newTile) return;
 
             var store = RoleStore.Current;
-            if (store == null) return;
+            if (store?.roles == null) return;
             bool anyTimeRuled = false;
             foreach (var role in store.roles)
-                if (role.activeHours != Role.AllHours) { anyTimeRuled = true; break; }
+                if (role != null && role.activeHours != Role.AllHours)
+                { anyTimeRuled = true; break; }
             if (!anyTimeRuled) return;
 
             var grid = Find.WorldGrid;
             if (GenDate.TimeZoneAt(grid.LongLatOf(__state).x)
                 == GenDate.TimeZoneAt(grid.LongLatOf(newTile).x)) return;
 
-            foreach (var pawn in caravan.PawnsListForReading)
-                CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.InvalidateBatch(caravan.PawnsListForReading);
         }
     }
 }

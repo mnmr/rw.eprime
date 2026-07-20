@@ -11,6 +11,8 @@ namespace WorkRoles.UI
         private readonly string title;
         private readonly string sourceLabel;      // copy mode: the original role's name
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
+        private readonly Role exceptRole;
+        private readonly RoleGroup exceptGroup;
         private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
         private bool focusedField;
@@ -21,8 +23,25 @@ namespace WorkRoles.UI
         public Dialog_RenameRole(Role role)
         {
             onConfirm = n => RoleCommands.RenameRole(role.id, n);
+            exceptRole = role;
+            requireUniqueName = true;
             title = "WR_RenameRoleTitle".Translate();
             name = role.label;
+            doCloseX = true;
+            absorbInputAroundWindow = true;
+            closeOnAccept = true;
+        }
+
+        /// Group-rename constructor: prefilled with the current name and validates
+        /// against groups while excluding the group being renamed.
+        public Dialog_RenameRole(RoleGroup group)
+        {
+            onConfirm = n => RoleCommands.RenameGroup(group.id, n);
+            exceptGroup = group;
+            requireUniqueName = true;
+            showCancel = true;
+            title = "WR_RenameGroupTitle".Translate();
+            name = group.label;
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
@@ -62,8 +81,12 @@ namespace WorkRoles.UI
             get
             {
                 var store = RoleStore.Current;
-                return store != null && store.roles.Any(r =>
-                    string.Equals(r.label, name.Trim(), StringComparison.OrdinalIgnoreCase));
+                if (store == null) return false;
+                if (exceptGroup != null)
+                    return !WorkRoles.Core.GroupNameRules.IsAvailable(
+                        name, store.groups, group => group.label, exceptGroup);
+                return !WorkRoles.Core.CatalogNameRules.IsAvailable(
+                    name, store.roles, role => role.label, exceptRole);
             }
         }
 

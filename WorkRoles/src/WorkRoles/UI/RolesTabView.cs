@@ -14,6 +14,7 @@ namespace WorkRoles.UI
         // Pawn source for the holders row, injected by MainTabWindow (the
         // colonist table owns the scope and its pawn snapshot).
         internal System.Func<List<Pawn>> listedPawns;
+        internal System.Func<int> pawnListRevision;
 
         // Unified role tip (TreeRow context), injected by MainTabWindow: the
         // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
@@ -106,11 +107,11 @@ namespace WorkRoles.UI
                 RoleCommands.ScrubDeadEntries(role.id);
         }
 
-        // Open-window snapshot of the editor's structured tips: static
-        // content, rebuilt (and re-registered) only when the stamp moves.
+        // Open-window snapshot of the editor's structured tips: static content,
+        // rebuilt only when the stamp moves and activated at its UI use sites.
         private int editorTipsStamp = -1;
-        private string blockerTipCache;
-        private string holdersTipCache;
+        private StructuredTip blockerTipCache;
+        private StructuredTip holdersTipCache;
 
         private void EnsureEditorTips()
         {
@@ -121,7 +122,7 @@ namespace WorkRoles.UI
             var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
             blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
             blocker.AddSection().Text("WR_BlockerRoleTipWhy".Translate(), dim: true);
-            blockerTipCache = Patches.Patch_ActiveTip_TipRect.Register(blocker);
+            blockerTipCache = new StructuredTip("roles:blocker", blocker);
 
             var holders = new TipModel();
             holders.AddSection().Text("WR_HoldersTipWhat".Translate());
@@ -130,7 +131,7 @@ namespace WorkRoles.UI
                 .Fact("WR_HoldersCustom".Translate(), "WR_HoldersTipCustom".Translate())
                 .Fact("WR_HoldersWaivers".Translate(), "WR_HoldersTipWaivers".Translate())
                 .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
-            holdersTipCache = Patches.Patch_ActiveTip_TipRect.Register(holders);
+            holdersTipCache = new StructuredTip("roles:holders", holders);
         }
 
         public void Reset()
@@ -147,8 +148,39 @@ namespace WorkRoles.UI
             giverDisplayCache = null; // force rebuild on next use
             // Opening re-snapshots everything on this tab.
             InvalidateSectionsSnapshot();
-            deadEntriesStamp = holdersStamp = skillsUsedStamp = -1;
+            deadEntriesStamp = skillsUsedStamp = -1;
+            holdersStamp = ScopeCacheStamp.Invalid;
             displayStamp = treeNodesStamp = editorTipsStamp = uncoveredStamp = -1;
+        }
+
+        /// Shared snapshots that embed translated def or built-in group labels.
+        internal static void InvalidateSharedLanguageCaches()
+        {
+            giverDisplayCache = null;
+            InvalidateSectionsSnapshot();
+            skillsUsedCache = null;
+            skillsUsedStamp = -1;
+            skillsUsedRoleId = -1;
+            ClearEntryLabelCache();
+            uncoveredGivers = null;
+            uncoveredTypes = null;
+            uncoveredWarning = null;
+            uncoveredStamp = -1;
+        }
+
+        /// Language-only invalidation. Selection, filters, scroll positions and
+        /// every disclosure set remain intact.
+        internal void InvalidateLanguageCaches()
+        {
+            editorTipsStamp = -1;
+            blockerTipCache = null;
+            holdersTipCache = null;
+            tuningLabelCol = tuningBtnW = -1f;
+
+            displayCache = null;
+            displayStamp = -1;
+            treeNodesCache = null;
+            treeNodesStamp = -1;
         }
 
         public void Draw(Rect rect)
@@ -726,11 +758,7 @@ namespace WorkRoles.UI
             {
                 TooltipHandler.TipRegion(pencilRect, "WR_RenameGroup".Translate());
                 if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
-                {
-                    int groupId = section.group.id;
-                    Find.WindowStack.Add(new Dialog_RenameRole("WR_RenameGroupTitle".Translate(),
-                        name => RoleCommands.RenameGroup(groupId, name), section.title));
-                }
+                    Find.WindowStack.Add(new Dialog_RenameRole(section.group));
             }
 
             var e = Event.current;
@@ -1189,7 +1217,7 @@ namespace WorkRoles.UI
 
             // Blocker: the role's jobs become vetoes.
             var blockRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(blockRect, blockerTipCache);
+            TooltipHandler.TipRegion(blockRect, blockerTipCache.Activate());
             bool blocker = role.blocker;
             Widgets.CheckboxLabeled(blockRect, "WR_BlockerRole".Translate(), ref blocker);
             if (blocker != role.blocker)
@@ -1399,7 +1427,7 @@ namespace WorkRoles.UI
                     ? "WR_HoldersNever".Translate().ToString()
                     : "WR_HoldersCustom".Translate().ToString();
             var btnRect = new Rect(x, y, tuningLabelCol + tuningBtnW, TuningRowH - 2f);
-            TooltipHandler.TipRegion(btnRect, holdersTipCache);
+            TooltipHandler.TipRegion(btnRect, holdersTipCache.Activate());
             if (Widgets.ButtonText(btnRect, shown))
             {
                 var next = RoleHolderPolicy.Next(role.holderMode);
@@ -1678,18 +1706,21 @@ namespace WorkRoles.UI
         // ----- Assigned pawn names row -----
 
         // Open-window snapshot of the selected role's holders.
-        private static List<(Pawn pawn, int position)> holdersCache;
-        private static int holdersStamp = -1;
-        private static int holdersRoleId = -1;
+        private List<(Pawn pawn, int position)> holdersCache;
+        private ScopeCacheStamp holdersStamp = ScopeCacheStamp.Invalid;
+        private int holdersRoleId = -1;
 
         private void DrawAssignedPawnNames(Rect rect, Role role, RoleStore store)
         {
-            if (holdersCache == null || holdersStamp != UiVersion.Current || holdersRoleId != role.id)
+            List<Pawn> pawns = listedPawns();
+            var stamp = new ScopeCacheStamp(
+                UiVersion.Current, pawnListRevision?.Invoke() ?? 0);
+            if (holdersCache == null || holdersStamp != stamp || holdersRoleId != role.id)
             {
-                holdersStamp = UiVersion.Current;
+                holdersStamp = stamp;
                 holdersRoleId = role.id;
                 holdersCache = new List<(Pawn, int)>();
-                foreach (var pawn in listedPawns())
+                foreach (var pawn in pawns)
                 {
                     if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
                     int idx = set.assignments.FindIndex(a => a.roleId == role.id);
@@ -2054,6 +2085,12 @@ namespace WorkRoles.UI
             return nodes;
         }
 
+        private void ToggleWorkTypeExpanded(string defName)
+        {
+            if (!expanded.Add(defName)) expanded.Remove(defName);
+            treeRev++;
+        }
+
         private void DrawJobTree(Rect rect, Role role)
         {
             const float SearchW = 110f;
@@ -2160,10 +2197,7 @@ namespace WorkRoles.UI
                     bool isExpanded = filtering || expanded.Contains(type.defName);
                     if (Widgets.ButtonImage(new Rect(row.x + 2f, row.y + 4f, IconButton, IconButton),
                         isExpanded ? TexButton.Collapse : TexButton.Reveal))
-                    {
-                        if (!expanded.Add(type.defName)) expanded.Remove(type.defName);
-                        treeRev++;
-                    }
+                        ToggleWorkTypeExpanded(type.defName);
 
                     var checkboxRect = new Rect(row.x + 26f, row.y + (row.height - 24f) / 2f, 24f, 24f);
                     var currentState = GetWorkTypeState(role, type);
@@ -2192,9 +2226,7 @@ namespace WorkRoles.UI
                     Widgets.Label(typeLabelRect, nodeLabel);
                     GUI.color = Color.white;
                     if (Widgets.ButtonInvisible(typeLabelRect))
-                    {
-                        if (!expanded.Add(type.defName)) expanded.Remove(type.defName);
-                    }
+                        ToggleWorkTypeExpanded(type.defName);
                     if (Mouse.IsOver(row))
                     {
                         string skillTip = JobSkillProfiles.WorkTypeTip(type.defName);
