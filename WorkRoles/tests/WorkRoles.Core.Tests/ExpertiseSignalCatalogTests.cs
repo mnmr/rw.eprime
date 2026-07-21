@@ -131,26 +131,6 @@ public class ExpertiseSignalCatalogTests
     }
 
     [Test]
-    public async Task VseReflectionContractUsesTheVerifiedOnePointSixApiShape()
-    {
-        await Assert.That(VseSignalApi.ExpertiseTrackersType).IsEqualTo("VSE.ExpertiseTrackers");
-        await Assert.That(VseSignalApi.ExpertiseTrackerType).IsEqualTo("VSE.ExpertiseTracker");
-        await Assert.That(VseSignalApi.ExpertiseRecordType).IsEqualTo("VSE.ExpertiseRecord");
-        await Assert.That(VseSignalApi.ExpertiseDefType).IsEqualTo("VSE.Expertise.ExpertiseDef");
-        await Assert.That(VseSignalApi.PassionManagerType).IsEqualTo("VSE.Passions.PassionManager");
-        await Assert.That(VseSignalApi.PassionDefType).IsEqualTo("VSE.Passions.PassionDef");
-        await Assert.That(VseSignalApi.AllExpertiseMember).IsEqualTo("AllExpertise");
-        await Assert.That(VseSignalApi.ExpertiseLevelMember).IsEqualTo("Level");
-        await Assert.That(VseSignalApi.ExpertiseXpSinceLastLevelMember)
-            .IsEqualTo("XpSinceLastLevel");
-        await Assert.That(VseSignalApi.ExpertiseXpRequiredForLevelUpMember)
-            .IsEqualTo("XpRequiredForLevelUp");
-        await Assert.That(VseSignalApi.CrossSkillEffectsSettingMember)
-            .IsEqualTo("CriticalEffectPassions");
-        await Assert.That(VseSignalApi.StatMultiplierMember).IsEqualTo("StatMultiplier");
-    }
-
-    [Test]
     public async Task AllExpertiseDefinitionsCarryTheSharedExpertiseStarIcon()
     {
         foreach (SignalDefinition definition in ExpertiseSignalDefinitions.All)

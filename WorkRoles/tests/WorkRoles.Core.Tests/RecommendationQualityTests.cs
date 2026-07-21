@@ -14,11 +14,14 @@ public class RecommendationQualityTests
     public async Task EveryAssignmentCarriesAReason(int size, int seed)
     {
         var (catalog, _, results) = ColonyScenarioTests.Execute(size, seed);
+        int assignmentCount = results.Sum(result => result.Assignments.Count);
+        await Assert.That(assignmentCount).IsGreaterThan(0)
+            .Because($"seeded scenario produced no assignments (size {size}, seed {seed})");
+
         for (int i = 0; i < results.Count; i++)
             foreach (var assignment in results[i].Assignments)
                 await Assert.That(results[i].Reasons.ContainsKey(assignment.RoleId)).IsTrue()
                     .Because($"{catalog.DefNames[assignment.RoleId]} has no reason "
                         + $"for pawn {i} (size {size}, seed {seed})");
     }
-
 }

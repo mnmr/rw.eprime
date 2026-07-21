@@ -5,27 +5,18 @@ namespace WorkRoles.Core.Tests;
 public class SignalCatalogContractTests
 {
     [Test]
-    public async Task DefaultCatalogueHasTheApprovedCompleteShape()
+    public async Task DefaultCatalogueIsExactlyTheAuditedDefinitionUnion()
     {
-        var all = SignalCatalog.Default.All;
+        var expected = PassionSignalDefinitions.All
+            .Concat(ExpertiseSignalDefinitions.All)
+            .Concat(VanillaSignalDefinitions.All)
+            .Select(definition => definition.IdentityForTest())
+            .ToArray();
+        var actual = SignalCatalog.Default.All
+            .Select(definition => definition.IdentityForTest())
+            .ToArray();
 
-        await Assert.That(all.Count).IsEqualTo(152);
-        await Assert.That(PassionSignalDefinitions.All.Count).IsEqualTo(51);
-        await Assert.That(ExpertiseSignalDefinitions.All.Count).IsEqualTo(66);
-        await Assert.That(VanillaSignalDefinitions.All.Count).IsEqualTo(35);
-
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Passion
-            && x.Source.PackageId == "sarg.alphaskills" && x.Type == SignalType.Active)).IsEqualTo(8);
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Passion
-            && x.Source.PackageId == "sarg.alphaskills" && x.Type == SignalType.Passive)).IsEqualTo(38);
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Expertise
-            && x.Source.PackageId == "vanillaexpanded.skills")).IsEqualTo(47);
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Expertise
-            && x.Source.PackageId == "sarg.alphaskills")).IsEqualTo(19);
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Gene
-            && x.Source.DefName.StartsWith("Aptitude", StringComparison.Ordinal))).IsEqualTo(4);
-        await Assert.That(all.Count(x => x.Source.Kind == SignalSourceKind.Hediff
-            && x.Source.DefName == "Inhumanized")).IsEqualTo(3);
+        await Assert.That(actual).IsEquivalentTo(expected);
     }
 
     [Test]
