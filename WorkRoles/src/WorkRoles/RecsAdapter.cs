@@ -10,6 +10,33 @@ using WorkRoles.Signals;
 
 namespace WorkRoles
 {
+    /// One explicit-generation projection of every mutable pawn fact consumed
+    /// by recommendation and capability calculations. WorkRoles state (role
+    /// assignments, roles and paths) is deliberately overlaid later so edits
+    /// made inside the window can rebuild from this external snapshot.
+    internal sealed class PawnExternalSnapshot
+    {
+        internal static readonly PawnExternalSnapshot Empty = new PawnExternalSnapshot(
+            PawnSignalSnapshot.Empty, new PawnView(), WorkTags.None);
+
+        internal PawnExternalSnapshot(PawnSignalSnapshot signals,
+            PawnView recommendationFacts, WorkTags disabledWorkTags)
+        {
+            Signals = signals ?? PawnSignalSnapshot.Empty;
+            RecommendationFacts = recommendationFacts ?? new PawnView();
+            DisabledWorkTags = disabledWorkTags;
+        }
+
+        internal PawnSignalSnapshot Signals { get; }
+        internal PawnView RecommendationFacts { get; }
+        internal WorkTags DisabledWorkTags { get; }
+        internal bool HasRangedWeapon => RecommendationFacts.HasRangedWeapon;
+        internal bool CanDo(WorkGiverDef giver) => giver != null
+            && (giver.workType == null || RecommendationFacts.CapableWorkTypes
+                .Contains(giver.workType.defName))
+            && (DisabledWorkTags & giver.workTags) == WorkTags.None;
+    }
+
     /// Projects game state into the Core recommendation engine's views and
     /// resolves the content-based special roles (Hunter, fire blocker). Pure
     /// projection: no UI state, no commands. Callers own caching (the colony
@@ -23,12 +50,13 @@ namespace WorkRoles
             new HashSet<string> { "WS_Researcher", "WS_DarkStudier" };
 
         public static ColonyView BuildColonyView(RoleStore store, List<Pawn> pawns)
-            => BuildColonyView(store, pawns, PawnSignalSnapshots.Build);
+            => BuildColonyView(store, pawns, pawn => CapturePawnSnapshot(
+                pawn, PawnSignalSnapshots.Build(pawn)));
 
         internal static ColonyView BuildColonyView(
             RoleStore store,
             List<Pawn> pawns,
-            Func<Pawn, PawnSignalSnapshot> snapshotFor)
+            Func<Pawn, PawnExternalSnapshot> snapshotFor)
         {
             if (snapshotFor == null) throw new ArgumentNullException(nameof(snapshotFor));
             var roleBatch = BuildRoleProjectionBatch(store.roles);
@@ -43,13 +71,13 @@ namespace WorkRoles
             };
             colony.OrderTemplate = OrderTemplate.ResolveTemplate(store.recommendationOrder, colony.Roles);
             foreach (var pawn in pawns)
-                colony.Pawns.Add(PawnViewOf(pawn, store, snapshotFor(pawn)));
-            foreach (var pawn in pawns)
             {
-                if (pawn.skills == null) continue;
-                foreach (var sr in pawn.skills.skills)
-                    if (!colony.SkillMaxLevels.TryGetValue(sr.def.defName, out int max) || sr.Level > max)
-                        colony.SkillMaxLevels[sr.def.defName] = sr.Level;
+                PawnView view = PawnViewOf(pawn, store, snapshotFor(pawn));
+                colony.Pawns.Add(view);
+                foreach (KeyValuePair<string, int> skill in view.SkillLevels)
+                    if (!colony.SkillMaxLevels.TryGetValue(skill.Key, out int max)
+                        || skill.Value > max)
+                        colony.SkillMaxLevels[skill.Key] = skill.Value;
             }
             return colony;
         }
@@ -154,38 +182,63 @@ namespace WorkRoles
         };
 
         internal static PawnView PawnViewOf(Pawn pawn, RoleStore store)
-            => PawnViewOf(pawn, store, PawnSignalSnapshots.Build(pawn));
+            => PawnViewOf(pawn, store, CapturePawnSnapshot(
+                pawn, PawnSignalSnapshots.Build(pawn)));
 
         internal static PawnView PawnViewOf(
             Pawn pawn,
             RoleStore store,
-            PawnSignalSnapshot signalSnapshot)
+            PawnExternalSnapshot snapshot)
         {
-            if (signalSnapshot == null)
-                throw new ArgumentNullException(nameof(signalSnapshot));
+            if (snapshot == null)
+                throw new ArgumentNullException(nameof(snapshot));
+            PawnView facts = snapshot.RecommendationFacts;
             var view = new PawnView
             {
-                BiologicalAgeTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue,
-                HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
-                ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
-                FireFear = pawn.genes != null
-                    && pawn.genes.GenesListForReading.Any(g => FireFearGenes.Contains(g.def.defName)),
+                BiologicalAgeTicks = facts.BiologicalAgeTicks,
+                HasRangedWeapon = facts.HasRangedWeapon,
+                ShootingLevel = facts.ShootingLevel,
+                FireFear = facts.FireFear,
+                SkillLevels = new Dictionary<string, int>(facts.SkillLevels),
+                CapableWorkTypes = new HashSet<string>(facts.CapableWorkTypes),
             };
-            if (pawn.skills != null)
-                foreach (var sr in pawn.skills.skills)
-                {
-                    if (sr.TotallyDisabled) continue;
-                    view.SkillLevels[sr.def.defName] = sr.Level;
-                }
-            PawnSignalViewProjection.Apply(signalSnapshot, view);
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-                if (!pawn.WorkTypeIsDisabled(workType))
-                    view.CapableWorkTypes.Add(workType.defName);
+            PawnSignalViewProjection.Apply(snapshot.Signals, view);
             if (store.pawnSets.TryGetValue(pawn, out var set))
                 foreach (var a in set.assignments)
                     view.Existing.Add(new AssignmentView
                     { RoleId = a.roleId, Enabled = a.enabled, Pinned = a.pinned });
             return view;
+        }
+
+        /// The only live-pawn recommendation/capability read. The window calls
+        /// this eagerly for its complete pawn cohort when opening or handling an
+        /// explicit UiVersion refresh; later calculations consume the result.
+        internal static PawnExternalSnapshot CapturePawnSnapshot(
+            Pawn pawn, PawnSignalSnapshot signalSnapshot)
+        {
+            if (pawn == null) return PawnExternalSnapshot.Empty;
+            signalSnapshot = signalSnapshot ?? PawnSignalSnapshot.Empty;
+            var facts = new PawnView
+            {
+                BiologicalAgeTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue,
+                HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
+                ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
+                FireFear = pawn.genes != null
+                    && pawn.genes.GenesListForReading.Any(g =>
+                        FireFearGenes.Contains(g.def.defName)),
+            };
+            if (pawn.skills != null)
+                foreach (SkillRecord skill in pawn.skills.skills)
+                {
+                    if (skill.TotallyDisabled) continue;
+                    facts.SkillLevels[skill.def.defName] = skill.Level;
+                }
+            foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                if (!pawn.WorkTypeIsDisabled(workType))
+                    facts.CapableWorkTypes.Add(workType.defName);
+
+            return new PawnExternalSnapshot(
+                signalSnapshot, facts, pawn.CombinedDisabledWorkTags);
         }
 
         /// The recommendation order template resolved over the live catalog.

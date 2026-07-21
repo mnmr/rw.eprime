@@ -203,7 +203,7 @@ namespace WorkRoles.UI
                     return ChipClick.Remove;
                 }
                 // Register press; click fires in ResolveMouseUp if no drag threshold reached.
-                RoleDrag.OnPress(rect, role.id, dragSource, onClick);
+                RoleDrag.OnPress(role.id, dragSource, onClick);
                 e.Use();
             }
             return ChipClick.None;

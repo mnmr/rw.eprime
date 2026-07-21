@@ -372,7 +372,7 @@ namespace WorkRoles.UI
                 {
                     int capturedId = role.id;
                     if (virtualRow) SelectRole(capturedId);
-                    else RoleDrag.OnPress(row, capturedId, null, () => SelectRole(capturedId));
+                    else RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
                     e.Use();
                 }
 
@@ -457,7 +457,7 @@ namespace WorkRoles.UI
             {
                 string key = section.key;
                 if (section.draggable)
-                    RoleDrag.OnPressGroup(row, section.group.id,
+                    RoleDrag.OnPressGroup(section.group.id,
                         () => RolesListState.ToggleSectionCollapsed(key));
                 else
                     RolesListState.ToggleSectionCollapsed(key);

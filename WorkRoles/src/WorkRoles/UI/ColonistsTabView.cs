@@ -28,9 +28,9 @@ namespace WorkRoles.UI
         public ColonistsTabView(ColonistsViewProfile profile)
         {
             this.profile = profile;
-            rosterState = new ColonistsRosterState(profile);
             recommendationState = new ColonistRecommendationState();
-            statsState = new ColonistStatsState(InvalidateSignalDependentCaches);
+            statsState = new ColonistStatsState();
+            rosterState = new ColonistsRosterState(profile, statsState.SkillSortValue);
             roleCapabilityState = new ColonistRoleCapabilityState();
         }
 
@@ -93,10 +93,10 @@ namespace WorkRoles.UI
             selectedPawn = null;
             rosterState.Reset();
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
-            statsState.Reset();
             roleCapabilityState.Invalidate();
             recommendationState.Reset();
             InvalidatePawnSnapshot();
+            statsState.Reset(rosterState.SnapshotPawns());
             // Opening re-snapshots everything (stats would otherwise stay stale
             // across a reopen when nothing bumped the version in between).
             sizeStamp = chipLayoutStamp = roleTipStamp = rulesPassStamp
@@ -133,33 +133,35 @@ namespace WorkRoles.UI
         /// in MP and never fire on other clients.
         public void InvalidateRecommendationCache() => recommendationState.InvalidatePlan();
 
-        /// The pawn's signals and derived skill buckets are captured together
-        /// on first request for the current polling epoch. A later epoch rechecks
-        /// unhooked mutable inputs; explicit mutation hooks invalidate at once.
+        /// The pawn's signals and derived skill buckets belong to the current
+        /// explicit external snapshot generation.
         internal PawnSignalSnapshot SignalSnapshotFor(Pawn pawn)
-            => statsState.Observe(pawn);
+            => statsState.SignalSnapshot(pawn);
 
-        private PawnSignalSnapshot ObserveSignalChanges(Pawn pawn)
-            => statsState.Observe(pawn);
+        internal PawnExternalSnapshot ExternalSnapshotFor(Pawn pawn)
+            => statsState.ExternalSnapshot(pawn);
 
-        private void ObserveSignalChanges(IEnumerable<Pawn> pawns)
-            => statsState.Observe(pawns, PawnListStamp);
-
-        private void ObserveSignalChanges(Map map)
-            => statsState.Observe(map);
-
-        /// A signal snapshot never stands alone: plans, stats, presentation
-        /// models, tips and previews all embed classifications derived from it.
-        /// Drop them as one generation before any caller accepts cached data.
-        private void InvalidateSignalDependentCaches()
+        /// Checks only the event-driven UI revision. A matching generation does
+        /// no pawn work; a changed revision recaptures every possible scope once.
+        internal void RefreshExternalSnapshotIfNeeded()
         {
+            if (!statsState.NeedsExternalSnapshotRefresh) return;
+            if (!statsState.RefreshExternalSnapshot(rosterState.SnapshotPawns())) return;
+
+            // A command can bump UiVersion during an input pass, allowing one
+            // of these consumers to rebuild before the next Layout installs
+            // the new external generation. Clear them after installation so
+            // no pre-refresh result can carry the new revision stamp.
             recommendationState.InvalidatePlan();
-            sizeStamp = ScopeCacheStamp.Invalid;
             roleCapabilityState.Invalidate();
+            rosterState.InvalidateSnapshotConsumers();
+            sizeStamp = ScopeCacheStamp.Invalid;
             chipLayouts.Clear();
             chipLayoutStamp = ScopeCacheStamp.Invalid;
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
+            rulesPassCache.Clear();
+            rulesPassStamp = ScopeCacheStamp.Invalid;
         }
 
         /// Window close: drop pawn-keyed snapshots so a save unloaded while the
@@ -208,7 +210,6 @@ namespace WorkRoles.UI
         private void EnsureSizes()
         {
             IReadOnlyList<SkillDef> columns = rosterState.SkillColumns;
-            if (selectedPawn != null) ObserveSignalChanges(selectedPawn);
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
             // Column IDENTITY, not count: swapping a column at the cap keeps the
             // count identical and must still invalidate.
@@ -253,7 +254,7 @@ namespace WorkRoles.UI
                     if (role == null) continue;
                     RoleCapabilityPresentation capability =
                         roleCapabilityState.PresentationFor(
-                            pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                            pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
                     w += TableChipWidth(store, role, a.pinned, capability) + ChipGap;
                 }
                 if (w > widestStrip) widestStrip = w;
@@ -319,7 +320,7 @@ namespace WorkRoles.UI
                 if (role == null) continue;
                 RoleCapabilityPresentation capability =
                     roleCapabilityState.PresentationFor(
-                        pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                        pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
                 float w = TableChipWidth(store, role, a.pinned, capability);
                 if (x + w > stripWidth && x > 0f)
                 {
@@ -342,10 +343,6 @@ namespace WorkRoles.UI
             RoleDrag.Update();
 
             var pawns = ListedPawns();
-            // One bounded cohort observation on Unity's layout pass. Repaint
-            // and input passes consume the resulting immutable snapshots.
-            if (Event.current.type == EventType.Layout)
-                ObserveSignalChanges(pawns);
             if (selectedPawn == null || !pawns.Contains(selectedPawn))
                 selectedPawn = pawns.Count > 0 ? pawns[0] : null;
 
@@ -878,7 +875,6 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return role.label;
-            ObserveSignalChanges(ListedPawns());
             ScopeCacheStamp stamp = PawnListStamp;
             if (roleTipStamp != stamp)
                 roleTipCache.Clear();
@@ -951,7 +947,7 @@ namespace WorkRoles.UI
                 // embedded capability sentence can never outlive its inputs.
                 RoleCapabilityPresentation capability =
                     roleCapabilityState.PresentationFor(
-                        pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                        pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
                 if (capability.Tooltip != null)
                     (state = model.AddSection()).Text(TipText.Warning(capability.Tooltip));
                 if (role.enabled && assignment?.enabled == true && !RulesPass(role, pawn))
@@ -1030,13 +1026,12 @@ namespace WorkRoles.UI
             var ranked = new List<(string label, SignalBucket bucket, int level)>();
             foreach (var pawn in ListedPawns())
             {
-                if (pawn.skills == null) continue;
                 var candidates = new List<SkillBucketCandidate>(skills.Count);
                 foreach (var skill in skills)
                 {
-                    var sr = pawn.skills.GetSkill(skill);
-                    if (sr == null || sr.TotallyDisabled) continue;
-                    candidates.Add(new SkillBucketCandidate(skill.defName, sr.Level));
+                    SkillLine line = statsState.SkillLineSnapshot(pawn, skill);
+                    if (line.Disabled) continue;
+                    candidates.Add(new SkillBucketCandidate(skill.defName, line.Level));
                 }
                 SkillBucketChoice best = SkillBucketRanking.Best(
                     SignalSnapshotFor(pawn).SkillBuckets, candidates);
@@ -1516,8 +1511,8 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            var sr = pawn.skills?.GetSkill(skill);
-            if (sr == null || sr.TotallyDisabled)
+            SkillLine line = statsState.SkillLineSnapshot(pawn, skill);
+            if (line.Disabled)
             {
                 GUI.color = WrStyle.DisabledText;
                 Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f, cell.height), "-");
@@ -1527,7 +1522,7 @@ namespace WorkRoles.UI
             }
 
             ColonistSkillPresentation presentation = statsState.PresentationFor(
-                pawn, SkillsTip.Line(sr));
+                pawn, line);
             Color textColor = ColonistStatsState.SkillTextColor(
                 presentation.Line, presentation.SignalView.PassionTier);
             GUI.color = textColor;
@@ -1855,8 +1850,7 @@ namespace WorkRoles.UI
             {
                 float recW = rect.xMax - recX;
                 ColonistRecommendationPreview preview = recommendationState.Preview(
-                    store, selectedPawn, PawnListStamp,
-                    ObserveSignalChanges, SignalSnapshotFor);
+                    store, selectedPawn, PawnListStamp, ExternalSnapshotFor);
                 PawnFixPlan pawnPlan = preview.Plan;
 
                 WrText.HeaderLabel(new Rect(recX, rect.y, recW, 28f), "WR_RecommendedRoles".Translate());
@@ -1945,7 +1939,7 @@ namespace WorkRoles.UI
             if (store == null) return;
             AssignAtRecommendedPosition(pawn, roleId, store,
                 recommendationState.RecommendedRoles(store, pawn, selectedPawn,
-                    PawnListStamp, ObserveSignalChanges, SignalSnapshotFor));
+                    PawnListStamp, ExternalSnapshotFor));
         }
 
         private static void AssignAtRecommendedPosition(Pawn pawn, int roleId, RoleStore store, List<Role> recommendations)
@@ -1975,7 +1969,7 @@ namespace WorkRoles.UI
             return store == null
                 ? new List<Dialog_ChangesPreview.PawnPreview>()
                 : recommendationState.FixEntries(store, only, selectedPawn,
-                    PawnListStamp, ObserveSignalChanges, SignalSnapshotFor);
+                    PawnListStamp, ExternalSnapshotFor);
         }
 
         /// Rebuild for the preview's stale check: recompute the plan from scratch.
@@ -1992,7 +1986,7 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return;
             foreach (PawnFixPlan plan in recommendationState.Plans(selectedPawn,
-                PawnListStamp, ObserveSignalChanges, SignalSnapshotFor))
+                PawnListStamp, ExternalSnapshotFor))
             {
                 if (only != null && plan.Pawn != only) continue;
                 if (included != null && !included.Contains(plan.Pawn)) continue;

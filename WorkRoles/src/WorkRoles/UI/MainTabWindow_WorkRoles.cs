@@ -214,6 +214,11 @@ namespace WorkRoles.UI
         public override void DoWindowContents(Rect inRect)
         {
             ObserveLanguageRevision();
+            // UiVersion is advanced by WorkRoles mutations and authoritative
+            // time-rule events. Refresh once at the next frame boundary; this
+            // is an event stamp check, never a scan for external-world changes.
+            if (Event.current.type == EventType.Layout)
+                colonistsTab.RefreshExternalSnapshotIfNeeded();
             bool repaint = Event.current.type == EventType.Repaint;
             if (repaint)
                 Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);

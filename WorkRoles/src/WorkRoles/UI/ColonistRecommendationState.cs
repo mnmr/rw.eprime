@@ -57,32 +57,30 @@ namespace WorkRoles.UI
         }
 
         internal IReadOnlyList<PawnFixPlan> Plans(Pawn anchor, ScopeCacheStamp stamp,
-            Action<Map> observeMap, Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             Map map = anchor?.MapHeld ?? Find.CurrentMap;
-            observeMap(map);
             int mapId = map?.uniqueID ?? -1;
             if (plans == null || planStamp != stamp || planMapId != mapId)
             {
                 planStamp = stamp;
                 planMapId = mapId;
-                plans = BuildColonyFixPlan(map, signalSnapshot);
+                plans = BuildColonyFixPlan(map, externalSnapshot);
             }
             return plans;
         }
 
         internal PawnFixPlan PlanFor(Pawn pawn, Pawn anchor, ScopeCacheStamp stamp,
-            Action<Map> observeMap, Func<Pawn, PawnSignalSnapshot> signalSnapshot)
-            => Plans(anchor, stamp, observeMap, signalSnapshot)
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
+            => Plans(anchor, stamp, externalSnapshot)
                 .FirstOrDefault(plan => plan.Pawn == pawn);
 
         internal ColonistRecommendationPreview Preview(RoleStore store, Pawn pawn,
-            ScopeCacheStamp stamp, Action<Map> observeMap,
-            Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            ScopeCacheStamp stamp, Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            signalSnapshot(pawn);
+            externalSnapshot(pawn);
             IReadOnlyList<PawnFixPlan> source = Plans(
-                pawn, stamp, observeMap, signalSnapshot);
+                pawn, stamp, externalSnapshot);
             if (preview != null && previewStamp == stamp
                 && previewPawn == pawn && previewSource == source)
                 return preview;
@@ -96,31 +94,30 @@ namespace WorkRoles.UI
             else
             {
                 Dialog_ChangesPreview.Line line = BuildPreviewEntry(
-                    store, plan, signalSnapshot).lines[0];
+                    store, plan, externalSnapshot).lines[0];
                 preview = new ColonistRecommendationPreview(plan, line.chips, line);
             }
             return preview;
         }
 
         internal List<Dialog_ChangesPreview.PawnPreview> FixEntries(RoleStore store,
-            Pawn only, Pawn anchor, ScopeCacheStamp stamp, Action<Map> observeMap,
-            Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            Pawn only, Pawn anchor, ScopeCacheStamp stamp,
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             var entries = new List<Dialog_ChangesPreview.PawnPreview>();
-            foreach (PawnFixPlan plan in Plans(anchor, stamp, observeMap, signalSnapshot))
+            foreach (PawnFixPlan plan in Plans(anchor, stamp, externalSnapshot))
             {
                 if (only != null && plan.Pawn != only) continue;
                 if (!plan.HasChanges) continue;
-                entries.Add(BuildPreviewEntry(store, plan, signalSnapshot));
+                entries.Add(BuildPreviewEntry(store, plan, externalSnapshot));
             }
             return entries;
         }
 
         internal List<Role> RecommendedRoles(RoleStore store, Pawn pawn, Pawn anchor,
-            ScopeCacheStamp stamp, Action<Map> observeMap,
-            Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            ScopeCacheStamp stamp, Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            PawnFixPlan plan = PlanFor(pawn, anchor, stamp, observeMap, signalSnapshot);
+            PawnFixPlan plan = PlanFor(pawn, anchor, stamp, externalSnapshot);
             if (plan == null) return new List<Role>();
             var result = new List<Role>();
             foreach (RoleAssignment assignment in plan.Target)
@@ -133,13 +130,14 @@ namespace WorkRoles.UI
 
         private static Dialog_ChangesPreview.PawnPreview BuildPreviewEntry(
             RoleStore store, PawnFixPlan plan,
-            Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             store.pawnSets.TryGetValue(plan.Pawn, out PawnRoleSet set);
             List<RoleAssignment> existing = set?.assignments ?? new List<RoleAssignment>();
             var existingIds = new HashSet<int>(existing.Select(a => a.roleId));
             var targetIds = new HashSet<int>(plan.Target.Select(a => a.roleId));
-            SkillBucketSnapshot skillBuckets = signalSnapshot(plan.Pawn).SkillBuckets;
+            SkillBucketSnapshot skillBuckets = externalSnapshot(plan.Pawn)
+                .Signals.SkillBuckets;
 
             var line = new Dialog_ChangesPreview.Line();
             foreach (RoleAssignment assignment in plan.Target)
@@ -172,14 +170,14 @@ namespace WorkRoles.UI
         }
 
         private static List<PawnFixPlan> BuildColonyFixPlan(Map map,
-            Func<Pawn, PawnSignalSnapshot> signalSnapshot)
+            Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             var result = new List<PawnFixPlan>();
             RoleStore store = RoleStore.Current;
             if (store == null) return result;
             List<Pawn> pawns = MapColonists(map);
             var recommendations = RecsEngine.Run(
-                RecsAdapter.BuildColonyView(store, pawns, signalSnapshot));
+                RecsAdapter.BuildColonyView(store, pawns, externalSnapshot));
 
             for (int i = 0; i < pawns.Count; i++)
             {

@@ -45,7 +45,7 @@ namespace WorkRoles.UI
             Pawn pawn,
             Role role,
             ScopeCacheStamp currentStamp,
-            PawnSignalSnapshot signalSnapshot)
+            PawnExternalSnapshot externalSnapshot)
         {
             if (stamp != currentStamp)
             {
@@ -58,7 +58,7 @@ namespace WorkRoles.UI
 
             var key = (pawn, role.id);
             if (!presentations.TryGetValue(key, out RoleCapabilityPresentation presentation))
-                presentations[key] = presentation = Build(pawn, role, signalSnapshot);
+                presentations[key] = presentation = Build(pawn, role, externalSnapshot);
             return presentation;
         }
 
@@ -71,10 +71,11 @@ namespace WorkRoles.UI
         private static RoleCapabilityPresentation Build(
             Pawn pawn,
             Role role,
-            PawnSignalSnapshot signalSnapshot)
+            PawnExternalSnapshot externalSnapshot)
         {
-            signalSnapshot = signalSnapshot ?? PawnSignalSnapshot.Empty;
-            bool hasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true;
+            externalSnapshot = externalSnapshot ?? PawnExternalSnapshot.Empty;
+            PawnSignalSnapshot signalSnapshot = externalSnapshot.Signals;
+            bool hasRangedWeapon = externalSnapshot.HasRangedWeapon;
             int totalJobs = 0;
             var blocked = new List<(string label, string reason)>();
             SortedSet<string> awfulWorkTypes = null;
@@ -114,8 +115,7 @@ namespace WorkRoles.UI
                             (awfulSkills ??= new SortedSet<string>(
                                 System.StringComparer.Ordinal)).Add(skill.LabelCap);
 
-                bool incapable = pawn.WorkTypeIsDisabled(def.workType)
-                    || pawn.WorkTagIsDisabled(def.workTags);
+                bool incapable = !externalSnapshot.CanDo(def);
                 bool lacksHuntingWeapon = def.workType == WorkTypeDefOf.Hunting
                     && !hasRangedWeapon;
                 if (!incapable && !lacksHuntingWeapon) continue;

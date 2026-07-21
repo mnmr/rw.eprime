@@ -37,8 +37,6 @@ namespace WorkRoles.Signals
         {
             internal object Value;
             internal Def Def;
-            internal string PackageId;
-            internal string DefName;
             internal string IconPath;
             internal string AuthorTier;
         }
@@ -65,24 +63,21 @@ namespace WorkRoles.Signals
         private static Func<object, IList> allExpertiseRead;
         private static Func<object, Def> recordDefRead;
         private static Func<object, int> recordLevelRead;
-        private static Func<object, float> recordXpSinceLastLevelRead;
-        private static Func<object, float> recordXpRequiredForLevelUpRead;
         private static Func<object, SkillDef> expertiseSkillRead;
         private static Func<object> settingsRead;
         private static Func<object, float> statMultiplierRead;
         private static Func<object, bool> crossSkillEffectsRead;
         private static MethodInfo fullDescription;
 
-        private static long lastGlobalObservationEpoch = long.MinValue;
+        private static bool globalSnapshotCaptured;
         private static float observedStatMultiplier = 1f;
         private static bool observedCrossSkillEffects;
 
-        /// Samples globally shared VSE settings and mutable passion definitions
-        /// once per bounded observation epoch. Every pawn signature in that
-        /// epoch consumes the same values; known mutations invalidate directly.
-        internal static void ObserveGlobalInputs(long epoch)
+        /// Captures globally shared VSE settings and mutable passion definitions
+        /// once for the current explicit window snapshot generation.
+        internal static void CaptureGlobalInputs()
         {
-            if (lastGlobalObservationEpoch == epoch) return;
+            if (globalSnapshotCaptured) return;
 
             EnsurePassions();
             EnsureExpertise();
@@ -134,12 +129,12 @@ namespace WorkRoles.Signals
                 }
             }
 
-            lastGlobalObservationEpoch = epoch;
+            globalSnapshotCaptured = true;
         }
 
-        internal static void ResetGlobalObservation()
+        internal static void ResetGlobalSnapshot()
         {
-            lastGlobalObservationEpoch = long.MinValue;
+            globalSnapshotCaptured = false;
         }
 
         /// Definition replacement must release both reflected objects/Defs and
@@ -159,8 +154,6 @@ namespace WorkRoles.Signals
             allExpertiseRead = null;
             recordDefRead = null;
             recordLevelRead = null;
-            recordXpSinceLastLevelRead = null;
-            recordXpRequiredForLevelUpRead = null;
             expertiseSkillRead = null;
             settingsRead = null;
             statMultiplierRead = null;
@@ -169,15 +162,16 @@ namespace WorkRoles.Signals
 
             observedStatMultiplier = 1f;
             observedCrossSkillEffects = false;
-            lastGlobalObservationEpoch = long.MinValue;
+            globalSnapshotCaptured = false;
         }
 
         internal static PassionFact Passion(Passion passion)
         {
-            ObserveGlobalInputs(PawnSignalSnapshotCache.ObservationEpoch);
             int index = (int)passion;
+            if (index <= 2) return null;
+            CaptureGlobalInputs();
             PassionMetadata[] passionMetadata = passionDefinitions.Value;
-            if (index <= 2 || passionDefinitions.Disabled || passionMetadata == null
+            if (passionDefinitions.Disabled || passionMetadata == null
                 || index >= passionMetadata.Length)
                 return null;
 
@@ -196,35 +190,9 @@ namespace WorkRoles.Signals
             };
         }
 
-        /// Hot signature path: immutable definition metadata is precomputed and
-        /// mutable mechanics come from the epoch-shared typed sample.
-        internal static void AppendPassionSignature(Passion passion,
-            ref MutableSignalSignatureBuilder builder)
-        {
-            ObserveGlobalInputs(PawnSignalSnapshotCache.ObservationEpoch);
-            int index = (int)passion;
-            PassionMetadata[] passionMetadata = passionDefinitions.Value;
-            if (index <= 2 || passionDefinitions.Disabled || passionMetadata == null
-                || index >= passionMetadata.Length)
-                return;
-
-            PassionMetadata metadata = passionMetadata[index];
-            if (metadata == null) return;
-            PassionMutableState state = passionMutableState[index];
-            builder.AddModdedPassion(
-                metadata.PackageId,
-                metadata.DefName,
-                state.IsBad,
-                state.LearnRate,
-                state.ForgetRate,
-                state.OtherLearnRate,
-                metadata.IconPath,
-                metadata.AuthorTier);
-        }
-
         internal static IReadOnlyList<ExpertiseFact> Expertises(Pawn pawn)
         {
-            ObserveGlobalInputs(PawnSignalSnapshotCache.ObservationEpoch);
+            CaptureGlobalInputs();
             if (expertiseDisabled || expertiseTrackerRead == null || pawn?.skills == null)
                 return Array.Empty<ExpertiseFact>();
             try
@@ -260,45 +228,9 @@ namespace WorkRoles.Signals
             }
         }
 
-        /// Hot signature path: raw records are read through typed delegates and
-        /// the global settings sample is shared by every pawn in the epoch.
-        internal static void AppendExpertiseSignature(Pawn pawn,
-            ref MutableSignalSignatureBuilder builder)
-        {
-            ObserveGlobalInputs(PawnSignalSnapshotCache.ObservationEpoch);
-            builder.AddProviderCondition("vse:cross-skill", observedCrossSkillEffects);
-            if (expertiseDisabled || expertiseTrackerRead == null || pawn?.skills == null) return;
-            try
-            {
-                object tracker = expertiseTrackerRead(pawn);
-                IList records = tracker == null ? null : allExpertiseRead(tracker);
-                if (records == null) return;
-                for (int i = 0; i < records.Count; i++)
-                {
-                    object record = records[i];
-                    if (record == null) continue;
-                    Def def = recordDefRead(record);
-                    SkillDef skill = def == null ? null : expertiseSkillRead(def);
-                    if (def == null || skill == null) continue;
-                    builder.AddExpertise(
-                        SignalUiFactory.PackageId(def),
-                        def.defName,
-                        skill.defName,
-                        recordLevelRead(record),
-                        recordXpSinceLastLevelRead(record),
-                        recordXpRequiredForLevelUpRead(record),
-                        observedStatMultiplier);
-                }
-            }
-            catch (Exception exception)
-            {
-                DisableExpertise(exception);
-            }
-        }
-
         internal static bool CrossSkillEffectsEnabled()
         {
-            ObserveGlobalInputs(PawnSignalSnapshotCache.ObservationEpoch);
+            CaptureGlobalInputs();
             return observedCrossSkillEffects;
         }
 
@@ -357,8 +289,6 @@ namespace WorkRoles.Signals
                     {
                         Value = value,
                         Def = def,
-                        PackageId = SignalUiFactory.PackageId(def),
-                        DefName = def.defName,
                         IconPath = iconPathRead(value),
                         AuthorTier = authorTier,
                     };
@@ -398,10 +328,6 @@ namespace WorkRoles.Signals
                     VseSignalApi.ExpertiseDefMember, expertiseDefType, false);
                 PropertyInfo recordLevel = RequiredProperty(recordType,
                     VseSignalApi.ExpertiseLevelMember, typeof(int));
-                FieldInfo recordXpSinceLastLevel = RequiredField(recordType,
-                    VseSignalApi.ExpertiseXpSinceLastLevelMember, typeof(float), false);
-                FieldInfo recordXpRequiredForLevelUp = RequiredField(recordType,
-                    VseSignalApi.ExpertiseXpRequiredForLevelUpMember, typeof(float), false);
                 fullDescription = AccessTools.Method(recordType,
                     VseSignalApi.ExpertiseDescriptionMethod, Type.EmptyTypes);
                 FieldInfo defSkill = RequiredField(expertiseDefType,
@@ -430,10 +356,6 @@ namespace WorkRoles.Signals
                 allExpertiseRead = CompileInstanceProperty<IList>(allExpertise, trackerType);
                 recordDefRead = CompileInstanceField<Def>(recordDef, recordType);
                 recordLevelRead = CompileInstanceProperty<int>(recordLevel, recordType);
-                recordXpSinceLastLevelRead = CompileInstanceField<float>(
-                    recordXpSinceLastLevel, recordType);
-                recordXpRequiredForLevelUpRead = CompileInstanceField<float>(
-                    recordXpRequiredForLevelUp, recordType);
                 expertiseSkillRead = CompileInstanceField<SkillDef>(defSkill, expertiseDefType);
                 settingsRead = CompileStaticReferenceField(settings);
                 statMultiplierRead = CompileInstanceField<float>(
@@ -539,8 +461,6 @@ namespace WorkRoles.Signals
             allExpertiseRead = null;
             recordDefRead = null;
             recordLevelRead = null;
-            recordXpSinceLastLevelRead = null;
-            recordXpRequiredForLevelUpRead = null;
             expertiseSkillRead = null;
             settingsRead = null;
             statMultiplierRead = null;

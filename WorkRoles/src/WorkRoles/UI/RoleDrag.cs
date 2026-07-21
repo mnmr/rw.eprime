@@ -26,7 +26,6 @@ namespace WorkRoles.UI
         private static int pendingGroupId = -1;
         private static Pawn pendingSource;
         private static Action pendingClickAction;
-        private static Rect pendingSourceRect;
 
         // Drop target registered by whichever row the mouse is over this frame.
         public static Pawn HoverPawn;
@@ -39,8 +38,8 @@ namespace WorkRoles.UI
         // Visual feedback: true when dragging over a pawn that already has the role.
         public static bool HoverBlocked;
 
-        /// Register a press. A release inside sourceRect before moving 6px fires clickAction.
-        public static void OnPress(Rect sourceRect, int roleId, Pawn source, Action clickAction)
+        /// Register a press. If the mouse is released before moving 6px the clickAction fires.
+        public static void OnPress(int roleId, Pawn source, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;   // raw screen pixels, GUI-independent
@@ -48,12 +47,11 @@ namespace WorkRoles.UI
             pendingGroupId = -1;
             pendingSource = source;
             pendingClickAction = clickAction;
-            pendingSourceRect = ToScreenRect(sourceRect);
         }
 
-        /// Press on a role-list group header: short release inside sourceRect = clickAction
+        /// Press on a role-list group header: short release = clickAction
         /// (collapse toggle), threshold crossed = group reorder drag.
-        public static void OnPressGroup(Rect sourceRect, int groupId, Action clickAction)
+        public static void OnPressGroup(int groupId, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;
@@ -61,18 +59,6 @@ namespace WorkRoles.UI
             pendingGroupId = groupId;
             pendingSource = null;
             pendingClickAction = clickAction;
-            pendingSourceRect = ToScreenRect(sourceRect);
-        }
-
-        private static Rect ToScreenRect(Rect sourceRect)
-        {
-            Vector2 first = GUIUtility.GUIToScreenPoint(sourceRect.min);
-            Vector2 second = GUIUtility.GUIToScreenPoint(sourceRect.max);
-            return Rect.MinMaxRect(
-                Mathf.Min(first.x, second.x),
-                Mathf.Min(first.y, second.y),
-                Mathf.Max(first.x, second.x),
-                Mathf.Max(first.y, second.y));
         }
 
         /// Call once per frame BEFORE drawing tab content.
@@ -100,8 +86,10 @@ namespace WorkRoles.UI
 
             if (pending && !Active)
             {
-                if (pendingSourceRect.Contains(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)))
-                    pendingClickAction?.Invoke();
+                // Short press = click. The raw 6px threshold already bounds the
+                // release to the pressed control; GUI-space checks are unreliable
+                // here because clip stacks differ between press and resolve.
+                pendingClickAction?.Invoke();
                 Cancel();
                 return;
             }
@@ -182,7 +170,6 @@ namespace WorkRoles.UI
             HoverBlocked = false;
             HoverDropAction = null;
             pendingClickAction = null;
-            pendingSourceRect = default(Rect);
         }
     }
 }

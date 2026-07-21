@@ -17,6 +17,7 @@ namespace WorkRoles.UI
         private static readonly IReadOnlyList<Pawn> NoPawns = Array.Empty<Pawn>();
 
         private readonly ColonistsViewProfile profile;
+        private readonly Func<Pawn, SkillDef, float> skillSortValue;
         private readonly PawnListRevisionTracker pawnListRevisions =
             new PawnListRevisionTracker();
 
@@ -41,8 +42,13 @@ namespace WorkRoles.UI
         private readonly List<SkillDef> skillColumns = new List<SkillDef>();
         private bool skillColumnsLoaded;
 
-        internal ColonistsRosterState(ColonistsViewProfile profile)
-            => this.profile = profile;
+        internal ColonistsRosterState(ColonistsViewProfile profile,
+            Func<Pawn, SkillDef, float> skillSortValue)
+        {
+            this.profile = profile;
+            this.skillSortValue = skillSortValue
+                ?? throw new ArgumentNullException(nameof(skillSortValue));
+        }
 
         internal string Search { get; set; } = "";
         internal int RoleFilterId { get; set; } = -1;
@@ -129,6 +135,11 @@ namespace WorkRoles.UI
             InvalidateSections();
         }
 
+        /// Skill ordering consumes the window's external pawn generation. A
+        /// post-UiVersion Layout refresh must discard any sections that were
+        /// built during the input event before that generation was recaptured.
+        internal void InvalidateSnapshotConsumers() => InvalidateSections();
+
         internal IReadOnlyList<Pawn> ListedPawns()
         {
             ScopeCacheStamp stamp = PawnListStamp;
@@ -147,6 +158,15 @@ namespace WorkRoles.UI
                     pawns.Select(ColonyScope.LocationIdOf));
             }
             return pawns;
+        }
+
+        /// Every pawn reachable through any scope in this table. Explicit
+        /// external snapshot generations capture this cohort eagerly so later
+        /// scope changes never read a different moment of live game state.
+        internal IReadOnlyList<Pawn> SnapshotPawns()
+        {
+            if (Find.CurrentMap == null) return NoPawns;
+            return profile.PawnsIn(new ScopeOption { Kind = ScopeKind.All });
         }
 
         internal void SelectScope(ScopeOption value)
@@ -273,16 +293,8 @@ namespace WorkRoles.UI
             SkillDef sortSkill = SortSkill;
             if (sortSkill != null)
                 ordered = ordered.OrderByDescending(
-                    pawn => SkillSortValue(pawn, sortSkill)).ToList();
+                    pawn => skillSortValue(pawn, sortSkill)).ToList();
             return ordered;
-        }
-
-        internal static float SkillSortValue(Pawn pawn, SkillDef skill)
-        {
-            SkillRecord record = pawn.skills?.GetSkill(skill);
-            if (record == null || record.TotallyDisabled) return -1f;
-            return record.Level + Mathf.Clamp(
-                record.xpSinceLastLevel / record.XpRequiredForLevelUp, 0f, 0.99f);
         }
 
         internal void SetSort(string column)

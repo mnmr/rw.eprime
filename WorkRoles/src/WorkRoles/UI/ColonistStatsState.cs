@@ -10,9 +10,9 @@ using WorkRoles.Signals;
 
 namespace WorkRoles.UI
 {
-    /// Owns mutable signal observation and all skill/stats presentation derived
-    /// from those snapshots. A revision callback invalidates the few external
-    /// projections that also embed signal classifications.
+    /// Owns the explicit external pawn snapshot generation and all skill/stats
+    /// presentation derived from it. Live game state is read only when a UI
+    /// revision requests a complete generation refresh.
     internal sealed class ColonistStatsState
     {
         private const float MinimumSkillColumnWidth = 200f;
@@ -25,12 +25,13 @@ namespace WorkRoles.UI
         private static readonly Color Low = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color Major = new Color(1f, 0.65f, 0.2f);
 
-        private readonly Action invalidateExternal;
-        private readonly ObservationEpochGate<ScopeCacheStamp> listedObservations =
-            new ObservationEpochGate<ScopeCacheStamp>();
-        private readonly ObservationEpochGate<int> mapObservations =
-            new ObservationEpochGate<int>();
-        private long signalRevision = -1;
+        private int externalSnapshotStamp = -1;
+        private readonly Dictionary<Pawn, PawnExternalSnapshot> externalSnapshots =
+            new Dictionary<Pawn, PawnExternalSnapshot>();
+        private readonly Dictionary<Pawn, List<SkillLine>> pawnSkillLines =
+            new Dictionary<Pawn, List<SkillLine>>();
+        private readonly Dictionary<(Pawn pawn, SkillDef skill), SkillLine> skillLines =
+            new Dictionary<(Pawn, SkillDef), SkillLine>();
 
         private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
             presentations =
@@ -41,16 +42,13 @@ namespace WorkRoles.UI
         private Pawn statsPawn;
         private ColonistStatsSnapshot stats;
 
-        internal ColonistStatsState(Action invalidateExternal)
-            => this.invalidateExternal = invalidateExternal;
+        internal bool NeedsExternalSnapshotRefresh =>
+            externalSnapshotStamp != UiVersion.Current;
 
-        internal void Reset()
+        internal void Reset(IEnumerable<Pawn> pawns)
         {
-            PawnSignalSnapshotCache.Clear();
-            signalRevision = PawnSignalSnapshotCache.Revision;
-            listedObservations.Clear();
-            mapObservations.Clear();
-            InvalidatePresentations();
+            externalSnapshotStamp = -1;
+            RefreshExternalSnapshot(pawns);
         }
 
         internal void InvalidateLanguageCaches()
@@ -58,48 +56,65 @@ namespace WorkRoles.UI
             InvalidatePresentations();
         }
 
-        internal void ReleaseSnapshots() => Reset();
-
-        internal PawnSignalSnapshot Observe(Pawn pawn)
+        internal void ReleaseSnapshots()
         {
-            PawnSignalSnapshot snapshot = PawnSignalSnapshotCache.Get(pawn);
-            ObserveRevision();
-            return snapshot;
-        }
-
-        internal void Observe(IEnumerable<Pawn> pawns, ScopeCacheStamp cohort)
-        {
-            long epoch = PawnSignalSnapshotCache.ObservationEpoch;
-            if (listedObservations.Enter(epoch, cohort) && pawns != null)
-                foreach (Pawn pawn in pawns)
-                    PawnSignalSnapshotCache.Get(pawn);
-            ObserveRevision();
-        }
-
-        internal void Observe(Map map)
-        {
-            int mapId = map?.uniqueID ?? -1;
-            long epoch = PawnSignalSnapshotCache.ObservationEpoch;
-            if (mapObservations.Enter(epoch, mapId) && map != null)
-            {
-                foreach (Pawn pawn in map.mapPawns.FreeColonistsSpawned)
-                    if (!pawn.DevelopmentalStage.Baby())
-                        PawnSignalSnapshotCache.Get(pawn);
-                foreach (Pawn pawn in map.mapPawns.SlavesOfColonySpawned)
-                    if (!pawn.DevelopmentalStage.Baby())
-                        PawnSignalSnapshotCache.Get(pawn);
-            }
-            ObserveRevision();
-        }
-
-        private void ObserveRevision()
-        {
-            long current = PawnSignalSnapshotCache.Revision;
-            if (signalRevision == current) return;
-            signalRevision = current;
+            externalSnapshotStamp = -1;
+            PawnSignalSnapshotCache.Clear();
+            externalSnapshots.Clear();
+            pawnSkillLines.Clear();
+            skillLines.Clear();
             InvalidatePresentations();
-            invalidateExternal();
         }
+
+        /// Rebuilds one complete generation only after an explicit UiVersion
+        /// event. The caller invokes this at the window's Layout boundary.
+        internal bool RefreshExternalSnapshot(IEnumerable<Pawn> pawns)
+        {
+            int current = UiVersion.Current;
+            if (!NeedsExternalSnapshotRefresh) return false;
+
+            PawnSignalSnapshotCache.Clear();
+            externalSnapshots.Clear();
+            pawnSkillLines.Clear();
+            skillLines.Clear();
+            if (pawns != null)
+                foreach (Pawn pawn in pawns)
+                {
+                    if (pawn == null || externalSnapshots.ContainsKey(pawn)) continue;
+                    PawnSignalSnapshot signals = PawnSignalSnapshotCache.Get(pawn);
+                    List<SkillLine> lines = SkillsTip.Lines(pawn);
+                    pawnSkillLines.Add(pawn, lines);
+                    for (int i = 0; i < lines.Count; i++)
+                        skillLines[(pawn, lines[i].Def)] = lines[i];
+                    externalSnapshots.Add(pawn,
+                        RecsAdapter.CapturePawnSnapshot(pawn, signals));
+                }
+            externalSnapshotStamp = current;
+            InvalidatePresentations();
+            return true;
+        }
+
+        internal PawnExternalSnapshot ExternalSnapshot(Pawn pawn) =>
+            pawn != null && externalSnapshots.TryGetValue(
+                pawn, out PawnExternalSnapshot snapshot)
+                ? snapshot
+                : PawnExternalSnapshot.Empty;
+
+        internal PawnSignalSnapshot SignalSnapshot(Pawn pawn) =>
+            ExternalSnapshot(pawn).Signals;
+
+        internal SkillLine SkillLineSnapshot(Pawn pawn, SkillDef skill)
+        {
+            if (pawn != null && skill != null
+                && skillLines.TryGetValue((pawn, skill), out SkillLine line))
+                return line;
+            return new SkillLine(skill,
+                skill?.skillLabel.CapitalizeFirst() ?? "",
+                "-", Passion.None, 0, 0, -1f, disabled: true);
+        }
+
+        internal float SkillSortValue(Pawn pawn, SkillDef skill) =>
+            SkillLineSnapshot(pawn, skill).SortValue;
 
         private void InvalidatePresentations()
         {
@@ -112,7 +127,7 @@ namespace WorkRoles.UI
 
         internal ColonistSkillPresentation PresentationFor(Pawn pawn, SkillLine line)
         {
-            PawnSignalSnapshot pawnSnapshot = Observe(pawn);
+            PawnSignalSnapshot pawnSnapshot = SignalSnapshot(pawn);
             if (presentationStamp != UiVersion.Current)
             {
                 presentations.Clear();
@@ -149,12 +164,13 @@ namespace WorkRoles.UI
 
         internal ColonistStatsSnapshot Snapshot(Pawn pawn)
         {
-            Observe(pawn);
+            SignalSnapshot(pawn);
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return stats;
             statsStamp = UiVersion.Current;
             statsPawn = pawn;
 
-            List<SkillLine> lines = SkillsTip.Lines(pawn);
+            if (!pawnSkillLines.TryGetValue(pawn, out List<SkillLine> lines))
+                lines = new List<SkillLine>();
             var items = new List<ColonistSkillPresentation>(lines.Count);
             float columnWidth = MinimumSkillColumnWidth;
             using (new TextBlock(GameFont.Small))

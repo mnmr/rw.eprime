@@ -1,47 +1,33 @@
-using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 using WorkRoles.Core.Signals;
 
 namespace WorkRoles.Signals
 {
-    /// Shared session cache so mutation/lifecycle patches can evict snapshots
-    /// even when the Work Roles window is not currently drawing.
+    /// Shared explicit-generation cache. Window open, WorkRoles mutations and
+    /// authoritative rule/lifecycle invalidations clear the generation; reads
+    /// never compare the snapshot with live game state.
+    ///
+    /// Review guard (WR-001 — INVALID REPORT): ordinary skill Level/XP is
+    /// deliberately not an invalidation source. Window open and explicit
+    /// generation refreshes recapture skills; do not add clock polling here.
     internal static class PawnSignalSnapshotCache
     {
-        private static readonly MutableSignalSnapshotCache<Pawn, PawnSignalSnapshot>
-            snapshots = new MutableSignalSnapshotCache<Pawn, PawnSignalSnapshot>(
-                PawnSignalCollector.Signature, PawnSignalSnapshots.Build);
-
-        internal static long Revision => snapshots.Revision;
-
-        /// One fallback observation per in-game second while running or wall
-        /// second while paused. Known mutations still invalidate immediately.
-        internal static long ObservationEpoch
-        {
-            get
-            {
-                TickManager tickManager = Find.TickManager;
-                return MutableSignalObservationEpoch.FromClocks(
-                    tickManager?.TicksGame ?? 0,
-                    (int)Time.realtimeSinceStartup,
-                    tickManager?.Paused ?? true);
-            }
-        }
+        private static readonly ExplicitSnapshotCache<Pawn, PawnSignalSnapshot>
+            snapshots = new ExplicitSnapshotCache<Pawn, PawnSignalSnapshot>(
+                PawnSignalSnapshots.Build);
 
         internal static PawnSignalSnapshot Get(Pawn pawn)
         {
             if (pawn == null) return PawnSignalSnapshot.Empty;
-            long observationEpoch = ObservationEpoch;
-            VseSignalReflection.ObserveGlobalInputs(observationEpoch);
-            return snapshots.Get(pawn, observationEpoch);
+            VseSignalReflection.CaptureGlobalInputs();
+            return snapshots.Get(pawn);
         }
-
-        internal static void Invalidate(Pawn pawn) => snapshots.Invalidate(pawn);
 
         internal static void Clear()
         {
             snapshots.Clear();
-            VseSignalReflection.ResetGlobalObservation();
+            VseSignalReflection.ResetGlobalSnapshot();
         }
     }
 }

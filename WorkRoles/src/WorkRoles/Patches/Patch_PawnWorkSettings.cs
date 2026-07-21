@@ -3,7 +3,6 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.Profile;
-using WorkRoles.Signals;
 
 namespace WorkRoles.Patches
 {
@@ -78,7 +77,6 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance)
         {
             CompiledJobOrders.Invalidate(__instance);
-            PawnSignalSnapshotCache.Invalidate(__instance);
         }
     }
 
@@ -97,14 +95,14 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
     }
 
-    /// Evict destroyed pawns so the static cache and store don't pin them (review issue).
+    /// Evict destroyed pawns from runtime orders and the persistent role store.
+    /// The window-owned external generation is released or rebuilt as a whole.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Destroy))]
     public static class Patch_Pawn_Destroy
     {
         public static void Postfix(Pawn __instance)
         {
             CompiledJobOrders.Invalidate(__instance);
-            PawnSignalSnapshotCache.Invalidate(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
         }
     }

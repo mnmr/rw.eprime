@@ -13,9 +13,18 @@ namespace WorkRoles.UI
         public readonly Passion Passion;
         public readonly int Aptitude;
         public readonly int Level;         // raw level; 0 when disabled
+        public readonly float SortValue;   // level plus fractional XP; -1 when disabled
         public readonly bool Disabled;
 
-        public SkillLine(SkillDef def, string label, string valueText, Passion passion, int aptitude, int level, bool disabled)
+        public SkillLine(SkillDef def, string label, string valueText, Passion passion,
+            int aptitude, int level, bool disabled)
+            : this(def, label, valueText, passion, aptitude, level,
+                disabled ? -1f : level, disabled)
+        {
+        }
+
+        public SkillLine(SkillDef def, string label, string valueText, Passion passion,
+            int aptitude, int level, float sortValue, bool disabled)
         {
             Def = def;
             Label = label;
@@ -23,6 +32,7 @@ namespace WorkRoles.UI
             Passion = passion;
             Aptitude = aptitude;
             Level = level;
+            SortValue = sortValue;
             Disabled = disabled;
         }
     }
@@ -46,11 +56,13 @@ namespace WorkRoles.UI
         {
             bool disabled = skill.TotallyDisabled;
             string valueText = "-";
+            float sortValue = -1f;
             if (!disabled)
             {
                 float progress = Mathf.Clamp(
                     skill.xpSinceLastLevel / skill.XpRequiredForLevelUp, 0f, 0.99f);
-                valueText = (skill.Level + progress).ToString("F2");
+                sortValue = skill.Level + progress;
+                valueText = sortValue.ToString("F2");
             }
             return new SkillLine(
                 def: skill.def,
@@ -59,6 +71,7 @@ namespace WorkRoles.UI
                 passion: skill.passion,
                 aptitude: disabled ? 0 : skill.Aptitude,
                 level: disabled ? 0 : skill.Level,
+                sortValue: sortValue,
                 disabled: disabled);
         }
     }
