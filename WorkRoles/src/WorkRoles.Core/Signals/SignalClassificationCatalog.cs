@@ -11,6 +11,7 @@ namespace WorkRoles.Core.Signals
         private const string Anomaly = "Ludeon.RimWorld.Anomaly";
         private const string Vse = "vanillaexpanded.skills";
         private const string Alpha = "sarg.alphaskills";
+        private const string MoreThanCapable = "void.MoreThanCapable";
 
         private readonly Dictionary<PolicyKey, SignalBucket> policies;
 
@@ -86,6 +87,9 @@ namespace WorkRoles.Core.Signals
             Add(values, SignalRelation.Primary, SignalSourceKind.Trait, Core, "ShootingAccuracy", SignalBucket.Neutral, -1);
             Add(values, SignalRelation.Primary, SignalSourceKind.Trait, Anomaly, "Occultist", SignalBucket.Strong, 0);
             Add(values, SignalRelation.Primary, SignalSourceKind.Trait, Core, "TorturedArtist", SignalBucket.Neutral, 0);
+
+            Add(values, SignalRelation.Primary, SignalSourceKind.WorkAversion,
+                MoreThanCapable, "HatedWork", SignalBucket.Awful);
 
             return new SignalClassificationCatalog(values);
         }

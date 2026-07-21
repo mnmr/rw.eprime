@@ -177,8 +177,7 @@ namespace WorkRoles
                     if (sr.TotallyDisabled) continue;
                     view.SkillLevels[sr.def.defName] = sr.Level;
                 }
-            foreach (SkillBucketSignal signal in signalSnapshot.SkillBuckets.All)
-                view.SignalBuckets[signal.SkillDefName] = signal.Bucket;
+            PawnSignalViewProjection.Apply(signalSnapshot, view);
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (!pawn.WorkTypeIsDisabled(workType))
                     view.CapableWorkTypes.Add(workType.defName);

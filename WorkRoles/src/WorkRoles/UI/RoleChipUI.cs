@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
@@ -34,12 +35,14 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
         }
 
-        /// Prefix markers: blocker, time rule, location rule, and — on plain
-        /// manual roles only — the assignment pin. Blockers and rule-carrying
-        /// roles are already plan-protected, so a pin there would be redundant
-        /// (RecsOrderingTests.ProtectedAssignmentsReenterAtTheirOriginalIndexWithToggles).
-        private static int MarkerCount(Role role, bool pinned) =>
-            (role.blocker ? 1 : 0)
+        /// Prefix markers: cached pawn capability, blocker, time rule, location
+        /// rule, and — on plain manual roles only — the assignment pin. Blockers
+        /// and rule-carrying roles are already plan-protected, so a pin there
+        /// would be redundant.
+        private static int MarkerCount(Role role, bool pinned,
+            RoleAssignmentWarningSeverity warningSeverity) =>
+            (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
+            + (role.blocker ? 1 : 0)
             + (role.activeHours != Role.AllHours ? 1 : 0)
             + (role.locationTokens.Count > 0 ? 1 : 0)
             + (PinShown(role, pinned) ? 1 : 0);
@@ -72,10 +75,11 @@ namespace WorkRoles.UI
             display == ChipDisplay.Compact ? 2f : PadX;
 
         public static float WidthFor(Role role, bool showRemove,
-            ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false)
+            ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
         {
             Text.Font = GameFont.Small;
-            int markers = MarkerCount(role, pinned);
+            int markers = MarkerCount(role, pinned, warningSeverity);
             // Minimal chips with markers carry no blank label square; Compact
             // chips share one width (the widest initials) so columns line up.
             float labelW = display == ChipDisplay.Minimal
@@ -111,7 +115,8 @@ namespace WorkRoles.UI
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
         /// interactive: false renders a display-only chip (no clicks, no drag).
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
-            bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false)
+            bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
         {
             Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
 
@@ -145,15 +150,16 @@ namespace WorkRoles.UI
                     : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,
                 ShowRemove = showRemove,
                 LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
-                    + MarkerCount(role, pinned) * (RemoveSize + 2f),
+                    + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
                 LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
                 StrikeThrough = style == ChipStyle.Disabled,
             };
             ChipUI.Draw(rect, in spec);
 
             // Prefix markers mirror the remove icon's slot, left of the label:
-            // blocker veto, time rule, location rule, pin (plain roles only).
+            // capability, blocker veto, time rule, location rule, pin.
             // Drawn on top of the box; the label inset already reserves the slots.
+            // No tips here: a chip has exactly one tooltip, owned by the caller.
             {
                 float markerX = rect.x + 3f;
                 void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
@@ -165,17 +171,19 @@ namespace WorkRoles.UI
                     GUI.color = Color.white;
                     markerX += RemoveSize + 2f;
                 }
+                if (warningSeverity != RoleAssignmentWarningSeverity.None)
+                    Marker(warningSeverity == RoleAssignmentWarningSeverity.Caution
+                            ? WorkRolesTex.RoleCapabilityPartial
+                            : WorkRolesTex.RoleCapabilityAll,
+                        tinted: false);
                 if (role.blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
                 if (role.activeHours != Role.AllHours) Marker(WorkRolesTex.TimeMarker, tinted: true);
                 if (role.locationTokens.Count > 0) Marker(WorkRolesTex.LocationMarker, tinted: true);
                 // The pin texture has less padding than the others; drawn
                 // smaller so it doesn't dominate the strip.
-                if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker, tinted: true, size: 13f);
+                if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
+                    tinted: true, size: 13f);
             }
-
-            // Abbreviated chips: the tooltip carries the identity.
-            if (display != ChipDisplay.Normal && Mouse.IsOver(rect))
-                TooltipHandler.TipRegion(rect, role.label);
 
             if (!interactive) return ChipClick.None;
 

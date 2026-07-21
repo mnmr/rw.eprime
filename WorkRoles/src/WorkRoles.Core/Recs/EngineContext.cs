@@ -240,6 +240,19 @@ namespace WorkRoles.Core.Recs
         public SignalBucket BestSignal(int pawnIndex, RoleView role, out string skill, out SignalSource source)
         {
             var pawn = Colony.Pawns[pawnIndex];
+            if (pawn.WorkTypeSignalBuckets != null)
+            {
+                foreach (string workType in role.WorkTypes)
+                {
+                    if (!pawn.WorkTypeSignalBuckets.TryGetValue(
+                        workType, out SignalBucket workTypeBucket)
+                        || workTypeBucket != SignalBucket.Awful)
+                        continue;
+                    skill = null;
+                    source = SignalSource.Aggregated;
+                    return SignalBucket.Awful;
+                }
+            }
             foreach (var required in RequiredSkills(role))
             {
                 if (pawn.SkillLevels.TryGetValue(required.SkillDefName, out _)

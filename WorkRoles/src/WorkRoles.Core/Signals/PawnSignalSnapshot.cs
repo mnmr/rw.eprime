@@ -9,18 +9,23 @@ namespace WorkRoles.Core.Signals
     public sealed class PawnSignalSnapshot
     {
         public static readonly PawnSignalSnapshot Empty = new PawnSignalSnapshot(
-            SignalSnapshot.Empty, SkillBucketSnapshot.Empty);
+            SignalSnapshot.Empty, SkillBucketSnapshot.Empty,
+            WorkTypeBucketSnapshot.Empty);
 
         public SignalSnapshot Signals { get; }
         public SkillBucketSnapshot SkillBuckets { get; }
+        public WorkTypeBucketSnapshot WorkTypeBuckets { get; }
 
         private PawnSignalSnapshot(
             SignalSnapshot signals,
-            SkillBucketSnapshot skillBuckets)
+            SkillBucketSnapshot skillBuckets,
+            WorkTypeBucketSnapshot workTypeBuckets)
         {
             Signals = signals ?? throw new ArgumentNullException(nameof(signals));
             SkillBuckets = skillBuckets
                 ?? throw new ArgumentNullException(nameof(skillBuckets));
+            WorkTypeBuckets = workTypeBuckets
+                ?? throw new ArgumentNullException(nameof(workTypeBuckets));
         }
 
         public static PawnSignalSnapshot Create(
@@ -34,7 +39,8 @@ namespace WorkRoles.Core.Signals
 
             return new PawnSignalSnapshot(signals,
                 SkillSignalAggregator.Aggregate(
-                    enabledSkillDefNames, signals, catalog));
+                    enabledSkillDefNames, signals, catalog),
+                WorkTypeSignalAggregator.Aggregate(signals, catalog));
         }
     }
 }

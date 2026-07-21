@@ -93,6 +93,15 @@
   <WR_TipBestFitsLabel>Best fits</WR_TipBestFitsLabel>
   <WR_TipWholeType>{0} (all jobs)</WR_TipWholeType>
   <WR_TipMore>+{0} more</WR_TipMore>
+  <!-- Capability sentence snippets, chained as "{never-do}[: reason(s)]"; {1} is a job list, "{0} of {1} jobs" or "any jobs". -->
+  <WR_RoleCapNeverDo>{0} will never do {1}</WR_RoleCapNeverDo>
+  <WR_RoleCapAllJobs>any of the jobs in this role</WR_RoleCapAllJobs>
+  <WR_RoleCapSomeJobs>{0} of the {1} jobs in this role</WR_RoleCapSomeJobs>
+  <WR_RoleJobIncapable>incapable of this work</WR_RoleJobIncapable>
+  <WR_RoleJobNoRangedWeapon>no ranged weapon</WR_RoleJobNoRangedWeapon>
+  <WR_MtcHatedWorkSignalLabel>Hates {0}</WR_MtcHatedWorkSignalLabel>
+  <WR_MtcHatedWorkSignalDescription>More Than Capable permits this work, but it causes severe and escalating penalties.</WR_MtcHatedWorkSignalDescription>
+  <WR_RoleAwfulSignal>{0} has an Awful signal for this role: {1}.</WR_RoleAwfulSignal>
   <!-- Action tokens (shared) and per-context descriptions -->
   <WR_ActClick>Click</WR_ActClick>
   <WR_ActShiftClick>Shift-click</WR_ActShiftClick>

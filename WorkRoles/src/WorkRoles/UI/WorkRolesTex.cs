@@ -17,6 +17,8 @@ namespace WorkRoles.UI
         public static readonly Texture2D TimeMarker;
         public static readonly Texture2D LocationMarker;
         public static readonly Texture2D PinMarker;
+        public static readonly Texture2D RoleCapabilityPartial;
+        public static readonly Texture2D RoleCapabilityAll;
         public static readonly Texture2D DisplayOptions;
         public static readonly Texture2D Logo;
         // Runtime-built white disc (no art asset needed), tinted via GUI.color
@@ -32,6 +34,10 @@ namespace WorkRoles.UI
             TimeMarker = ContentFinder<Texture2D>.Get("WorkRoles/Clock");
             LocationMarker = ContentFinder<Texture2D>.Get("WorkRoles/LocationPin");
             PinMarker = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
+            RoleCapabilityPartial = ContentFinder<Texture2D>.Get(
+                "UI/Icons/ColonistBar/MentalStateNonAggro");
+            RoleCapabilityAll = ContentFinder<Texture2D>.Get(
+                "UI/Icons/ColonistBar/MentalStateAggro");
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
             Circle = MakeCircle(32);

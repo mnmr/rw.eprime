@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
   <name>WorkRoles - Easy Priority Management</name>
+  <shortName>WorkRoles</shortName>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
   <modVersion>1.2.1</modVersion>
@@ -87,6 +88,7 @@ Compatibility:
 
 Mod integrations (these will be used when installed, but are not requirements):
 - Vanilla Skills Expanded and Alpha Skills (expertise and passions are recommendation signals)
+- More Than Capable (hated work becomes an Awful recommendation signal and is flagged on assigned roles)
 - Colony Groups (your pawn groups appear as a grouping option for the colonist table)
 
 Known Incompatible:

@@ -1,5 +1,6 @@
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
+using WorkRoles.Core.Signals;
 
 namespace WorkRoles.Core.Tests;
 
@@ -29,6 +30,71 @@ public class RecsSignalBandTests
         SignalBucket secondaryOnly = context.BestSignal(0, role, out string primarySkill, out _);
         await Assert.That(secondaryOnly).IsEqualTo(SignalBucket.Neutral);
         await Assert.That(primarySkill).IsEqualTo("Crafting");
+    }
+
+    [Test]
+    public async Task AwfulWorkTypeVetoesOnlyRolesContainingThatExactWorkType()
+    {
+        var cooking = RecsTestBed.Role(1, "Cooking");
+        var butchering = RecsTestBed.Role(2, "Butchering");
+        butchering.Skills.Add(new RoleSkillView
+        {
+            SkillDefName = "Cooking",
+            Primary = true,
+        });
+        var hauling = RecsTestBed.Unskilled(3, "Hauling");
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Cooking"] = 10;
+        pawn.SignalBuckets["Cooking"] = SignalBucket.Great;
+        pawn.WorkTypeSignalBuckets = new Dictionary<string, SignalBucket>
+        {
+            ["Cooking"] = SignalBucket.Awful,
+            ["Hauling"] = SignalBucket.Awful,
+        };
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { cooking, butchering, hauling }, pawn));
+
+        await Assert.That(context.BestSignal(0, cooking, out string cookingTarget, out _))
+            .IsEqualTo(SignalBucket.Awful);
+        await Assert.That(cookingTarget == null).IsTrue();
+        await Assert.That(context.BestSignal(0, butchering, out _, out _))
+            .IsEqualTo(SignalBucket.Great);
+        await Assert.That(context.BestSignal(0, hauling, out string haulingTarget, out _))
+            .IsEqualTo(SignalBucket.Awful);
+        await Assert.That(haulingTarget == null).IsTrue();
+    }
+
+    [Test]
+    public async Task WorkAversionSignalFlowsFromPawnSnapshotIntoExistingRoleVerdict()
+    {
+        var hatedCooking = new Signal(
+            SignalType.Active,
+            new WorkRoles.Core.Signals.SignalSource(SignalSourceKind.WorkAversion,
+                "HatedWork", "void.MoreThanCapable"),
+            skillDefName: null,
+            effects: Array.Empty<SignalEffect>(),
+            new SignalUi("hated cooking", null, null, null, null,
+                "More Than Capable"),
+            workTypeDefName: "Cooking");
+        PawnSignalSnapshot snapshot = PawnSignalSnapshot.Create(
+            new[] { "Cooking" }, new SignalSnapshot(new[] { hatedCooking }));
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Cooking"] = 10;
+        PawnSignalViewProjection.Apply(snapshot, pawn);
+        RoleView role = RecsTestBed.Role(1, "Cooking");
+        role.MinHolders = 1;
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, pawn);
+        var context = new EngineContext(colony);
+
+        await Assert.That(context.BestSignal(0, role, out _, out _))
+            .IsEqualTo(SignalBucket.Awful);
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+        await Assert.That(context.Candidates[0].ContainsKey(role.Id)).IsFalse();
+
+        PawnResult result = RecsEngine.Run(colony).Single();
+        await Assert.That(result.Assignments.Any(x => x.RoleId == role.Id)).IsFalse();
     }
 
     [Test]
@@ -65,7 +131,8 @@ public class RecsSignalBandTests
         await Assert.That(context.Candidates[0][1].Strength).IsEqualTo(SignalBucket.Great);
         await Assert.That(context.Candidates[0][1].Reason.SkillDefName).IsEqualTo("Cooking");
         await Assert.That(context.Candidates[0][2].Strength).IsEqualTo(SignalBucket.Exceptional);
-        await Assert.That(context.Candidates[0][2].Reason.Source).IsEqualTo(SignalSource.Aggregated);
+        await Assert.That(context.Candidates[0][2].Reason.Source)
+            .IsEqualTo(WorkRoles.Core.Recs.SignalSource.Aggregated);
         await Assert.That(context.Candidates[0].ContainsKey(3)).IsFalse();
     }
 

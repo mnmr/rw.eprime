@@ -31,6 +31,7 @@ public class MutableSignalSnapshotCacheTests
         await Assert.That(Signature(hediffSeverity: 0.75f)).IsNotEqualTo(baseline);
         await Assert.That(Signature(hediffStage: 2)).IsNotEqualTo(baseline);
         await Assert.That(Signature(providerCondition: false)).IsNotEqualTo(baseline);
+        await Assert.That(Signature(disabledWorkTags: 8)).IsNotEqualTo(baseline);
     }
 
     [Test]
@@ -162,7 +163,8 @@ public class MutableSignalSnapshotCacheTests
         bool geneActive = true,
         float hediffSeverity = 0.5f,
         int hediffStage = 1,
-        bool providerCondition = true)
+        bool providerCondition = true,
+        int disabledWorkTags = 4)
     {
         MutableSignalSignatureBuilder builder = MutableSignalSignatureBuilder.Start();
         builder.AddSkill("Shooting", skillEnabled, passion);
@@ -176,6 +178,7 @@ public class MutableSignalSnapshotCacheTests
         builder.AddHediff("example.health", "NeuralBoost", hediffSeverity,
             hediffStage, "Brain");
         builder.AddProviderCondition("vse:cross-skill", providerCondition);
+        builder.AddWorkAversionState(disabledWorkTags);
         return builder.Build();
     }
 

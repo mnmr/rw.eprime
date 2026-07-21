@@ -23,6 +23,7 @@ namespace WorkRoles.UI
         private readonly ColonistsRosterState rosterState;
         private readonly ColonistRecommendationState recommendationState;
         private readonly ColonistStatsState statsState;
+        private readonly ColonistRoleCapabilityState roleCapabilityState;
 
         public ColonistsTabView(ColonistsViewProfile profile)
         {
@@ -30,6 +31,7 @@ namespace WorkRoles.UI
             rosterState = new ColonistsRosterState(profile);
             recommendationState = new ColonistRecommendationState();
             statsState = new ColonistStatsState(InvalidateSignalDependentCaches);
+            roleCapabilityState = new ColonistRoleCapabilityState();
         }
 
         private Vector2 paletteScroll;
@@ -92,6 +94,7 @@ namespace WorkRoles.UI
             rosterState.Reset();
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
             statsState.Reset();
+            roleCapabilityState.Invalidate();
             recommendationState.Reset();
             InvalidatePawnSnapshot();
             // Opening re-snapshots everything (stats would otherwise stay stale
@@ -113,6 +116,9 @@ namespace WorkRoles.UI
             paletteLabels.Clear();
 
             statsState.InvalidateLanguageCaches();
+            roleCapabilityState.Invalidate();
+            chipLayouts.Clear();
+            chipLayoutStamp = ScopeCacheStamp.Invalid;
 
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
@@ -149,6 +155,9 @@ namespace WorkRoles.UI
         {
             recommendationState.InvalidatePlan();
             sizeStamp = ScopeCacheStamp.Invalid;
+            roleCapabilityState.Invalidate();
+            chipLayouts.Clear();
+            chipLayoutStamp = ScopeCacheStamp.Invalid;
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
         }
@@ -158,6 +167,7 @@ namespace WorkRoles.UI
         internal void ReleaseSnapshots()
         {
             statsState.ReleaseSnapshots();
+            roleCapabilityState.Invalidate();
 
             selectedPawn = null;
             recommendationState.ReleaseSnapshots();
@@ -241,7 +251,10 @@ namespace WorkRoles.UI
                 {
                     var role = store.RoleById(a.roleId);
                     if (role == null) continue;
-                    w += TableChipWidth(store, role, a.pinned) + ChipGap;
+                    RoleCapabilityPresentation capability =
+                        roleCapabilityState.PresentationFor(
+                            pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                    w += TableChipWidth(store, role, a.pinned, capability) + ChipGap;
                 }
                 if (w > widestStrip) widestStrip = w;
             }
@@ -277,7 +290,7 @@ namespace WorkRoles.UI
                 store.pawnSets.TryGetValue(pawn, out var set);
                 var assignments = set?.assignments ?? new List<RoleAssignment>();
                 float stripW = TableStripWidth(desiredWidthCache);
-                float stripH = LayoutChips(stripW, assignments, store, result: null);
+                float stripH = LayoutChips(stripW, assignments, store, pawn, result: null);
                 tableContent += Mathf.Max(RowHeight, stripH + 8f);
             }
             return chrome + paletteSection + tableContent + statsPanel;
@@ -285,16 +298,18 @@ namespace WorkRoles.UI
 
         /// The one width formula for a table chip — measurement and layout must
         /// never disagree.
-        private float TableChipWidth(RoleStore store, Role role, bool pinned) =>
-            RoleChipUI.WidthFor(role, showRemove: true, TableChips, AbbrevIfCompact(store, role), pinned);
+        private float TableChipWidth(RoleStore store, Role role, bool pinned,
+            RoleCapabilityPresentation capability) =>
+            RoleChipUI.WidthFor(role, showRemove: true, TableChips,
+                AbbrevIfCompact(store, role), pinned, capability.WarningSeverity);
 
         /// The roles-column width used by both desired-height measurement and
         /// live table layout.
         private float TableStripWidth(float tableWidth) => Mathf.Max(300f,
             tableWidth - 16f - 264f - SkillColumnsWidth() - 28f);
 
-        private float LayoutChips(float stripWidth, List<RoleAssignment> assignments, RoleStore store,
-            List<(RoleAssignment assignment, Rect rect, int line)> result)
+        private float LayoutChips(float stripWidth, List<RoleAssignment> assignments,
+            RoleStore store, Pawn pawn, List<RoleChipLayout> result)
         {
             float x = 0f, y = 0f;
             int line = 0;
@@ -302,14 +317,18 @@ namespace WorkRoles.UI
             {
                 var role = store.RoleById(a.roleId);
                 if (role == null) continue;
-                float w = TableChipWidth(store, role, a.pinned);
+                RoleCapabilityPresentation capability =
+                    roleCapabilityState.PresentationFor(
+                        pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                float w = TableChipWidth(store, role, a.pinned, capability);
                 if (x + w > stripWidth && x > 0f)
                 {
                     line++;
                     x = 0f;
                     y += RoleChipUI.Height + ChipGap;
                 }
-                result?.Add((a, new Rect(x, y, w, RoleChipUI.Height), line));
+                result?.Add(new RoleChipLayout(a,
+                    new Rect(x, y, w, RoleChipUI.Height), line, capability));
                 x += w + ChipGap;
             }
             float totalH = y + RoleChipUI.Height;
@@ -323,6 +342,10 @@ namespace WorkRoles.UI
             RoleDrag.Update();
 
             var pawns = ListedPawns();
+            // One bounded cohort observation on Unity's layout pass. Repaint
+            // and input passes consume the resulting immutable snapshots.
+            if (Event.current.type == EventType.Layout)
+                ObserveSignalChanges(pawns);
             if (selectedPawn == null || !pawns.Contains(selectedPawn))
                 selectedPawn = pawns.Count > 0 ? pawns[0] : null;
 
@@ -924,11 +947,18 @@ namespace WorkRoles.UI
                 store.pawnSets.TryGetValue(pawn, out var set);
                 var assignment = set?.assignments.FirstOrDefault(a => a.roleId == role.id);
                 TipSection state = null;
+                // Same stamp and shared invalidation as the tip cache, so the
+                // embedded capability sentence can never outlive its inputs.
+                RoleCapabilityPresentation capability =
+                    roleCapabilityState.PresentationFor(
+                        pawn, role, PawnListStamp, SignalSnapshotFor(pawn));
+                if (capability.Tooltip != null)
+                    (state = model.AddSection()).Text(TipText.Warning(capability.Tooltip));
                 if (role.enabled && assignment?.enabled == true && !RulesPass(role, pawn))
                 {
                     string reason = SuppressionReason(role, pawn);
                     if (!reason.NullOrEmpty())
-                        (state = model.AddSection()).Text(TipText.Warning(reason));
+                        (state ?? (state = model.AddSection())).Text(TipText.Warning(reason));
                 }
                 if (assignment?.pinned == true)
                     (state ?? model.AddSection()).Text("WR_PinnedTip".Translate(), dim: true);
@@ -1423,16 +1453,33 @@ namespace WorkRoles.UI
 
         /// Chip-strip height for a pawn against the estimated chip-column width —
         /// the table row height comes from this.
+        private readonly struct RoleChipLayout
+        {
+            internal RoleChipLayout(RoleAssignment assignment, Rect rect, int line,
+                RoleCapabilityPresentation capability)
+            {
+                Assignment = assignment;
+                Rect = rect;
+                Line = line;
+                Capability = capability;
+            }
+
+            internal RoleAssignment Assignment { get; }
+            internal Rect Rect { get; }
+            internal int Line { get; }
+            internal RoleCapabilityPresentation Capability { get; }
+        }
+
         // Open-window snapshot of per-pawn chip layouts at the table's strip
         // width: the table body (heights + chip rects) becomes dictionary reads.
         // Floored like EstimatedStripWidth so draw and measure share one key.
-        private readonly Dictionary<Pawn, (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)>
-            chipLayouts = new Dictionary<Pawn, (List<(RoleAssignment, Rect, int)>, float)>();
+        private readonly Dictionary<Pawn, (List<RoleChipLayout> layout, float height)>
+            chipLayouts = new Dictionary<Pawn, (List<RoleChipLayout>, float)>();
         private ScopeCacheStamp chipLayoutStamp = ScopeCacheStamp.Invalid;
         private float chipLayoutWidth = -1f;
         private int chipLayoutDisplay = -1;
 
-        private (List<(RoleAssignment assignment, Rect rect, int line)> layout, float height)
+        private (List<RoleChipLayout> layout, float height)
             ChipLayoutFor(Pawn pawn, RoleStore store, float stripWidth)
         {
             stripWidth = Mathf.Max(300f, stripWidth);
@@ -1447,10 +1494,10 @@ namespace WorkRoles.UI
             }
             if (chipLayouts.TryGetValue(pawn, out var cached)) return cached;
             store.pawnSets.TryGetValue(pawn, out var set);
-            var layout = new List<(RoleAssignment, Rect, int)>();
+            var layout = new List<RoleChipLayout>();
             float height = set == null || set.assignments.Count == 0
                 ? RoleChipUI.Height
-                : LayoutChips(chipLayoutWidth, set.assignments, store, layout);
+                : LayoutChips(chipLayoutWidth, set.assignments, store, pawn, layout);
             var entry = (layout, height);
             chipLayouts[pawn] = entry;
             return entry;
@@ -1534,7 +1581,10 @@ namespace WorkRoles.UI
 
             for (int chipIndex = 0; chipIndex < layout.Count; chipIndex++)
             {
-                var (assignment, localRect, _) = layout[chipIndex];
+                RoleChipLayout chip = layout[chipIndex];
+                RoleAssignment assignment = chip.Assignment;
+                Rect localRect = chip.Rect;
+                RoleCapabilityPresentation capability = chip.Capability;
                 var role = store.RoleById(assignment.roleId);
                 if (role == null) continue;
                 var chipRect = new Rect(stripRect.x + localRect.x, yOffset + localRect.y, localRect.width, localRect.height);
@@ -1574,11 +1624,16 @@ namespace WorkRoles.UI
                             RoleCommands.ToggleRoleForPawn(capturedPawn, capturedRole.id);
                     };
                 }
+                // The chip's one tooltip: marker meanings are folded into it.
+                if (Mouse.IsOver(chipRect))
+                    TooltipHandler.TipRegion(chipRect,
+                        RoleTipText(role, RoleTipContext.AssignmentChip, pawn));
                 var click = RoleChipUI.Draw(chipRect, role, style,
                     showRemove: true, dragSource: pawn,
                     onClick: onClick,
                     display: TableChips, abbrev: AbbrevIfCompact(store, role),
-                    pinned: assignment.pinned);
+                    pinned: assignment.pinned,
+                    warningSeverity: capability.WarningSeverity);
                 if (click == ChipClick.Remove) RoleCommands.RemoveRoleFromPawn(pawn, role.id);
                 if (click == ChipClick.Context)
                 {
@@ -1591,9 +1646,6 @@ namespace WorkRoles.UI
                             () => RoleCommands.ToggleAssignmentPin(menuPawn, menuRoleId))
                     }));
                 }
-                if (Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect,
-                        RoleTipText(role, RoleTipContext.AssignmentChip, pawn));
             }
 
             if (RoleDrag.Active && Mouse.IsOver(stripRect))
@@ -1612,7 +1664,7 @@ namespace WorkRoles.UI
                     var mouse = Event.current.mousePosition;
                     int insertIndex = RoleDrag.ChipInsertIndex(
                         new Vector2(mouse.x - stripRect.x, mouse.y - yOffset),
-                        layout, t => t.rect);
+                        layout, t => t.Rect);
 
                     RoleDrag.HoverPawn = pawn;
                     RoleDrag.HoverInsertIndex = insertIndex;
@@ -1627,7 +1679,7 @@ namespace WorkRoles.UI
                     else
                     {
                         int prevIdx = insertIndex - 1;
-                        var (_, prevR, _) = layout[prevIdx];
+                        Rect prevR = layout[prevIdx].Rect;
                         markerX = stripRect.x + prevR.xMax - ChipGap / 2f;
                         markerY = yOffset + prevR.y + 3f;
                         markerH = prevR.height - 6f;

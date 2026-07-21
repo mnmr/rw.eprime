@@ -252,6 +252,28 @@ public class SignalSnapshotTests
         await Assert.That(snapshot.ForSkill("Melee").Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task WorkTypeSignalsAreIndexedSeparatelyFromSkillsAndGlobals()
+    {
+        var hatedCooking = new Signal(
+            SignalType.Active,
+            new SignalSource(SignalSourceKind.WorkAversion,
+                "HatedWork", "void.MoreThanCapable"),
+            skillDefName: null,
+            effects: Array.Empty<SignalEffect>(),
+            new SignalUi("hated cooking", null, null, null, null,
+                "More Than Capable"),
+            workTypeDefName: "Cooking");
+
+        var snapshot = new SignalSnapshot(new[] { hatedCooking });
+
+        await Assert.That(snapshot.ForWorkType("Cooking").Single())
+            .IsEqualTo(hatedCooking);
+        await Assert.That(snapshot.ForWorkType("Crafting").Count).IsEqualTo(0);
+        await Assert.That(snapshot.ForSkill("Cooking").Count).IsEqualTo(0);
+        await Assert.That(snapshot.Global.Count).IsEqualTo(0);
+    }
+
     private static Signal Make(
         SignalType type,
         SignalSourceKind kind,

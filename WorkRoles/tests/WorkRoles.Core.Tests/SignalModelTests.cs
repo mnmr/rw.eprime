@@ -160,4 +160,39 @@ public class SignalModelTests
         await Assert.That(spillover.Relation).IsEqualTo(SignalRelation.Spillover);
         await Assert.That(primary.Equals(spillover)).IsFalse();
     }
+
+    [Test]
+    public async Task WorkTypeTargetIsExactAndMutuallyExclusiveWithSkillTarget()
+    {
+        var source = new SignalSource(
+            SignalSourceKind.WorkAversion,
+            "HatedWork",
+            "void.MoreThanCapable");
+        var ui = new SignalUi(
+            "hated cooking",
+            "The pawn hates this work.",
+            null,
+            null,
+            null,
+            "More Than Capable");
+
+        var signal = new Signal(
+            SignalType.Active,
+            source,
+            skillDefName: null,
+            effects: Array.Empty<SignalEffect>(),
+            ui,
+            workTypeDefName: "Cooking");
+
+        await Assert.That(signal.WorkTypeDefName).IsEqualTo("Cooking");
+        await Assert.That(signal.SkillDefName == null).IsTrue();
+        await Assert.That(() => new Signal(
+                SignalType.Active,
+                source,
+                "Cooking",
+                Array.Empty<SignalEffect>(),
+                ui,
+                workTypeDefName: "Cooking"))
+            .Throws<ArgumentException>();
+    }
 }

@@ -10,6 +10,7 @@ namespace WorkRoles.Core.Recs
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public Dictionary<string, SignalBucket> SignalBuckets =
             new Dictionary<string, SignalBucket>();
+        public Dictionary<string, SignalBucket> WorkTypeSignalBuckets;
         public HashSet<string> CapableWorkTypes = new HashSet<string>();
         public long BiologicalAgeTicks = long.MaxValue;
         public bool HasRangedWeapon;

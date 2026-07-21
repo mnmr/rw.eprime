@@ -20,6 +20,8 @@ public class MutableSignalCacheArchitectureTests
             "hediff.Severity",
             "hediff.CurStageIndex",
             "AddProviderCondition",
+            "pawn:ranged-weapon",
+            "IsRangedWeapon",
         };
         foreach (string value in required)
             await Assert.That(signature).Contains(value)
@@ -127,6 +129,8 @@ public class MutableSignalCacheArchitectureTests
             "recommendationState.InvalidatePlan()",
             "roleTipCache.Clear()",
             "sizeStamp = ScopeCacheStamp.Invalid",
+            "roleCapabilityState.Invalidate()",
+            "chipLayouts.Clear()",
         };
         foreach (string value in dependents)
             await Assert.That(invalidation).Contains(value);

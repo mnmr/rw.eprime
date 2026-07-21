@@ -17,6 +17,7 @@ namespace WorkRoles.Signals
             new GeneSignalProvider(),
             new TraitSignalProvider(),
             new HediffSignalProvider(),
+            new MoreThanCapableSignalProvider(),
         };
 
         private static readonly IReadOnlyList<Func<Pawn, IEnumerable<PawnSignal>>> Steps = BuildSteps();
@@ -25,13 +26,19 @@ namespace WorkRoles.Signals
         public static IReadOnlyList<PawnSignal> Collect(Pawn pawn) =>
             SignalCollection.Collect(pawn, Steps, ProviderFailed);
 
-        /// Every mutable value read by PawnSignalSnapshots.Build or one of the
-        /// providers. Collection order is stable game state; hashing it avoids
-        /// retaining duplicate lists just to compare snapshots.
+        /// Every mutable value read by PawnSignalSnapshots.Build, one of the
+        /// providers, or a UI projection sharing this invalidation revision.
+        /// Collection order is stable game state; hashing it avoids retaining
+        /// duplicate lists just to compare snapshots.
         internal static MutableSignalSignature Signature(Pawn pawn)
         {
             MutableSignalSignatureBuilder builder = MutableSignalSignatureBuilder.Start();
             builder.AddProviderCondition("pawn:has-skills", pawn?.skills != null);
+            builder.AddProviderCondition("pawn:ranged-weapon",
+                pawn?.equipment?.Primary?.def?.IsRangedWeapon == true);
+            if (MoreThanCapableSignalProvider.Available)
+                builder.AddWorkAversionState(
+                    pawn == null ? 0 : (int)pawn.CombinedDisabledWorkTags);
 
             if (pawn?.skills?.skills != null)
                 foreach (SkillRecord skill in pawn.skills.skills)

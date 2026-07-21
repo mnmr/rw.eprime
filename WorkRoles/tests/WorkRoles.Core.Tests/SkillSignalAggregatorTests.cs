@@ -208,6 +208,38 @@ public class SkillSignalAggregatorTests
     }
 
     [Test]
+    public async Task PawnSnapshotClassifiesWorkAversionAsAnExactAwfulWorkType()
+    {
+        var hatedCooking = new Signal(
+            SignalType.Active,
+            new SignalSource(SignalSourceKind.WorkAversion,
+                "HatedWork", "void.MoreThanCapable"),
+            skillDefName: null,
+            effects: new[]
+            {
+                new SignalEffect(
+                    SignalEffectKind.WorkPreference,
+                    SignalOperation.Descriptive,
+                    null,
+                    SignalValueUnit.None,
+                    "Cooking"),
+            },
+            new SignalUi("hated cooking", null, null, null, null,
+                "More Than Capable"),
+            workTypeDefName: "Cooking");
+
+        PawnSignalSnapshot snapshot = PawnSignalSnapshot.Create(
+            new[] { "Cooking" }, new SignalSnapshot(new[] { hatedCooking }));
+
+        WorkTypeBucketSignal cooking = snapshot.WorkTypeBuckets.ForWorkType("Cooking");
+        await Assert.That(cooking.Bucket).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(cooking.Contributions.Single().IsHardVeto).IsTrue();
+        await Assert.That(snapshot.WorkTypeBuckets.ForWorkType("Crafting") == null).IsTrue();
+        await Assert.That(snapshot.SkillBuckets.ForSkill("Cooking").Bucket)
+            .IsEqualTo(SignalBucket.Neutral);
+    }
+
+    [Test]
     public async Task BestFitRanksAggregatedBucketBeforeSkillLevelAndThenUsesLevel()
     {
         Signal cookingMinor = Known(

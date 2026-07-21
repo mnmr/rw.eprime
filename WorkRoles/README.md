@@ -67,6 +67,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - Requires [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077).
 - Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 - Integrates with Vanilla Skills Expanded and Alpha Skills when installed: expertise and passions are recommendation signals.
+- Integrates with More Than Capable when installed: hated work becomes an Awful recommendation signal and is flagged on assigned roles.
 - Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
 - Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many, many others.
 - Multiplayer compatible.

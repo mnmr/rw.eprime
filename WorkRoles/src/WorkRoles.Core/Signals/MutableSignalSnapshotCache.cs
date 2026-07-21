@@ -153,6 +153,12 @@ namespace WorkRoles.Core.Signals
             AddBoolean(value);
         }
 
+        public void AddWorkAversionState(int disabledWorkTags)
+        {
+            AddToken(8);
+            AddInteger(disabledWorkTags);
+        }
+
         public MutableSignalSignature Build() =>
             new MutableSignalSignature(first, second, fields);
 

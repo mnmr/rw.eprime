@@ -29,6 +29,8 @@ namespace WorkRoles.Core.Signals
             if (compare != 0) return compare;
             compare = StringComparer.Ordinal.Compare(x.SkillDefName, y.SkillDefName);
             if (compare != 0) return compare;
+            compare = StringComparer.Ordinal.Compare(x.WorkTypeDefName, y.WorkTypeDefName);
+            if (compare != 0) return compare;
             compare = x.Relation.CompareTo(y.Relation);
             if (compare != 0) return compare;
             return StringComparer.Ordinal.Compare(x.OriginSkillDefName, y.OriginSkillDefName);
