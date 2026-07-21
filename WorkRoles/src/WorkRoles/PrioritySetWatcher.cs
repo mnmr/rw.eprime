@@ -2,47 +2,38 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
 using RimWorld;
+using RimWorld.Planet;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
     /// Third-party SetPriority calls on managed pawns are no-ops (WorkRoles
     /// owns their priorities; our own mirror writes the DefMap directly and
-    /// never lands here). This watcher identifies the calling mod from the
-    /// stack, aggregates the burst (mods typically sweep many pawns at once)
-    /// and shows one explanatory dialog per mod per savegame. The shown-state
-    /// lives in per-player ModSettings keyed by world — NOT world state, since
-    /// these calls can be client-local and a scribed write would desync MP.
+    /// never lands here). Caller attribution is sampled sparsely: once on the
+    /// first conflicting write, then at most once per 500 active game ticks.
+    /// The shown-state lives in per-player ModSettings keyed by world — NOT
+    /// world state, since calls can be client-local and a scribed write would
+    /// desync multiplayer.
     internal static class PrioritySetWatcher
     {
         private sealed class PendingWarning
         {
+            public string key;
             public string modName;
-            public HashSet<Pawn> pawns = new HashSet<Pawn>();
-            public HashSet<string> workTypes = new HashSet<string>();
+            public string sampledWorkType;
         }
 
+        // Assembly ownership is process-stable and safe to retain across saves.
         private static readonly Dictionary<Assembly, ModContentPack> modByAssembly =
             new Dictionary<Assembly, ModContentPack>();
         private static readonly HashSet<Assembly> ignoredAssemblies = new HashSet<Assembly>();
-        private static readonly Dictionary<string, PendingWarning> pending =
-            new Dictionary<string, PendingWarning>();
 
-        /// Tick whose stack walk resolved to an already-warned (or unknown)
-        /// caller. Identifying the caller costs a stack capture; a mod sweeping
-        /// every pawn each tick would otherwise pay it per pawn forever after
-        /// its one-time dialog. Settling the tick bounds that to one walk/tick;
-        /// a different, unwarned mod writing in the same tick is caught on the
-        /// next one.
-        private static int settledTick = -1;
-        private static int settledWorldKey = int.MinValue;
+        private static readonly PriorityWriterProbe probe = new PriorityWriterProbe();
+        private static World sessionWorld;
+        private static PendingWarning pending;
 
-        // Priority writers normally sweep many pawns in one tick. Resolve the
-        // caller once for that tick, then keep aggregating the individual pawns
-        // and work types without another stack capture.
-        private static int callerTick = -1;
-        private static int callerWorldKey = int.MinValue;
-        private static ModContentPack callerMod;
+        internal static bool HasPendingWarning => pending != null;
 
         internal static void OnBlockedSetPriority(Pawn pawn, WorkTypeDef workType, int priority)
         {
@@ -52,70 +43,95 @@ namespace WorkRoles
             // under "none" and collide with (or suppress) a real world's warning.
             var world = Find.World;
             if (world == null) return;
+            EnsureSession(world);
+            // The Harmony prefix still blocks the call; only diagnostics stop.
+            if (probe.Stopped) return;
+
             // A write roles already satisfy is a non-issue: the mod wanted the
             // work on (or off) and it already is — e.g. AllowTool re-enabling
-            // Finish Off when Odd Jobs carries it. Warn only when the mod's
-            // intent actually differs from what roles produce.
+            // Finish Off when Odd Jobs carries it. Count only conflicting intent.
             if (workType != null
                 && (priority > 0) == (CompiledJobOrders.PriorityFor(pawn, workType) > 0))
                 return;
-            int tick = Find.TickManager.TicksGame;
-            int worldKey = world.info.persistentRandomValue;
-            if (worldKey != settledWorldKey)
-            {
-                settledWorldKey = worldKey;
-                settledTick = -1;
-            }
-            if (tick == settledTick) return;
-            var mod = CallingMod(worldKey, tick);
-            if (mod == null) { settledTick = tick; return; }
-            string key = worldKey + "|" + mod.PackageId;
-            if (settings.warnedPriorityMods.Contains(key)) { settledTick = tick; return; }
 
-            if (!pending.TryGetValue(key, out var warning))
+            int tick = Find.TickManager.TicksGame;
+            if (!probe.ObserveBlockedWrite(tick)) return;
+
+            var mod = ResolveCallingMod();
+            if (mod == null)
             {
-                pending[key] = warning = new PendingWarning { modName = mod.Name };
-                string capturedKey = key;
-                // Deferred so a burst (one call per pawn) aggregates into one
-                // dialog, and so load-time calls surface after loading ends.
-                LongEventHandler.ExecuteWhenFinished(() => Show(capturedKey));
+                probe.RecordInspection(tick, PriorityWriterSampleKind.Unknown);
+                return;
             }
-            warning.pawns.Add(pawn);
-            if (workType != null)
-                warning.workTypes.Add(workType.labelShort ?? workType.defName);
+
+            string key = world.info.persistentRandomValue + "|" + mod.PackageId;
+            if (settings.warnedPriorityMods.Contains(key))
+            {
+                probe.RecordInspection(tick, PriorityWriterSampleKind.KnownSource);
+                return;
+            }
+
+            probe.RecordInspection(tick, PriorityWriterSampleKind.NewSource);
+            pending = new PendingWarning
+            {
+                key = key,
+                modName = mod.Name,
+                sampledWorkType = workType?.labelShort ?? workType?.defName,
+            };
         }
 
-        private static void Show(string key)
+        /// Runs from the existing game-component tick only while a new-source
+        /// report is pending. The probe itself enforces the following-tick delay.
+        internal static void ShowPendingWarning(int tick)
         {
-            if (!pending.TryGetValue(key, out var warning)) return;
-            pending.Remove(key);
+            var warning = pending;
+            if (warning == null) return;
+            var world = Find.World;
+            if (world == null || !ReferenceEquals(world, sessionWorld))
+            {
+                ResetSession(world);
+                return;
+            }
+
             var settings = WorkRolesMod.Settings;
-            if (settings == null || settings.warnedPriorityMods.Contains(key)) return;
-            settings.warnedPriorityMods.Add(key);
+            if (settings == null) return;
+            // Persisted keys are authoritative. A known mod can never show,
+            // refresh or reschedule a dialog, even if state changed after sampling.
+            if (settings.warnedPriorityMods.Contains(warning.key))
+            {
+                pending = null;
+                probe.CancelPendingReport();
+                return;
+            }
+            if (!probe.TryConsumeReport(tick, out long blockedWrites)) return;
+
+            pending = null;
+            settings.warnedPriorityMods.Add(warning.key);
             settings.Write();
-            // No work types = a blocked DisableAll sweep.
-            string types = warning.workTypes.Count > 0
-                ? warning.workTypes.ToCommaList()
-                : "WR_AllWork".Translate().ToString();
+            string sampledWorkType = warning.sampledWorkType
+                ?? "WR_AllWork".Translate().ToString();
             Find.WindowStack.Add(new Dialog_MessageBox(
                 "WR_SetPriorityBlockedBody".Translate(warning.modName,
-                    types, warning.pawns.Count),
+                    sampledWorkType, blockedWrites),
                 title: "WR_SetPriorityBlockedTitle".Translate()));
+        }
+
+        private static void EnsureSession(World world)
+        {
+            if (ReferenceEquals(world, sessionWorld)) return;
+            ResetSession(world);
+        }
+
+        private static void ResetSession(World world)
+        {
+            sessionWorld = world;
+            pending = null;
+            probe.Reset();
         }
 
         /// The first stack frame owned by a mod assembly (ours, vanilla,
         /// Harmony, Multiplayer and system frames are skipped; unknown
         /// assemblies stay silent).
-        private static ModContentPack CallingMod(int worldKey, int tick)
-        {
-            if (worldKey == callerWorldKey && tick == callerTick)
-                return callerMod;
-            callerWorldKey = worldKey;
-            callerTick = tick;
-            callerMod = ResolveCallingMod();
-            return callerMod;
-        }
-
         private static ModContentPack ResolveCallingMod()
         {
             var trace = new StackTrace(2, false);

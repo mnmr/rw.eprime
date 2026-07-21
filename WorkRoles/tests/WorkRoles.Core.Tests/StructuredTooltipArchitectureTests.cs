@@ -64,17 +64,10 @@ public class StructuredTooltipArchitectureTests
         foreach (string required in new[]
                  {
                      "selectedPawn = null;",
-                     "planCache = null;", "planStamp = ScopeCacheStamp.Invalid;", "planMapId = -1;",
-                     "statsStamp = -1;", "statsPawn = null;", "statsLines = null;",
-                     "statsLabelWidths = null;",
-                     "statsSignalViews = null;", "statsSignalIcons = null;", "statsSignalTips = null;",
-                     "skillPresentations.Clear();", "skillPresentationStamp = -1;",
+                     "recommendationState.ReleaseSnapshots();",
+                     "statsState.ReleaseSnapshots();",
                      "roleTipCache.Clear();", "roleTipStamp = ScopeCacheStamp.Invalid;",
-                     "previewChips = null;", "previewLine = null;", "previewPlan = null;",
-                     "previewSource = null;", "previewPawn = null;",
-                     "previewStamp = ScopeCacheStamp.Invalid;",
-                     "sectionsCache = null;", "sectionsStamp = ScopeCacheStamp.Invalid;",
-                     "InvalidatePawnSnapshot();",
+                     "rosterState.ReleaseSnapshots();",
                      "chipLayouts.Clear();", "chipLayoutStamp = ScopeCacheStamp.Invalid;",
                      "rulesPassCache.Clear();", "rulesPassStamp = ScopeCacheStamp.Invalid;",
                  })
@@ -86,6 +79,19 @@ public class StructuredTooltipArchitectureTests
                      "scope =", "skillColumns.Clear",
                  })
             await Assert.That(release).DoesNotContain(reusableUiState);
+
+        string rosterRelease = Method(Source("UI", "ColonistsRosterState.cs"),
+            "internal void ReleaseSnapshots()");
+        await Assert.That(rosterRelease).Contains("pawns = null;");
+        await Assert.That(rosterRelease).Contains("pawnsStamp = ScopeCacheStamp.Invalid;");
+        await Assert.That(rosterRelease).Contains("InvalidateSections();");
+        string recommendationRelease = Method(
+            Source("UI", "ColonistRecommendationState.cs"),
+            "internal void ReleaseSnapshots()");
+        await Assert.That(recommendationRelease).Contains("Reset();");
+        string statsRelease = Method(Source("UI", "ColonistStatsState.cs"),
+            "internal void ReleaseSnapshots()");
+        await Assert.That(statsRelease).Contains("Reset();");
     }
 
     [Test]
@@ -160,8 +166,10 @@ public class StructuredTooltipArchitectureTests
         string signals = Source("Signals", "SkillSignalPresentation.cs");
         string recommendations = Source("UI", "RecommendationPresentation.cs");
         string roles = Source("UI", "RolesTabView.cs");
-        string options = Source("UI", "OptionsTabView.cs");
-        string producers = jobs + colonists + signals + recommendations + roles + options;
+        string roleEditor = Source("UI", "RoleEditorState.cs");
+        string options = Source("UI", "OptionsTabState.cs");
+        string producers = jobs + colonists + signals + recommendations
+            + roleEditor + options;
 
         await Assert.That(producers)
             .DoesNotContain("Patch_ActiveTip_TipRect.Register(");
@@ -173,8 +181,8 @@ public class StructuredTooltipArchitectureTests
             .Contains("$\"skill-signal:{pawn.thingIDNumber}:{skillDefName}\"");
         await Assert.That(recommendations)
             .Contains("$\"recommendation:{pawn.thingIDNumber}:{role.id}\"");
-        await Assert.That(roles).Contains("new StructuredTip(\"roles:blocker\"");
-        await Assert.That(roles).Contains("new StructuredTip(\"roles:holders\"");
+        await Assert.That(roleEditor).Contains("new StructuredTip(\"roles:blocker\"");
+        await Assert.That(roleEditor).Contains("new StructuredTip(\"roles:holders\"");
         foreach (string key in new[]
                  {
                      "numeric", "vanilla-range", "recommendation-order", "training", "anchor",
@@ -212,27 +220,25 @@ public class StructuredTooltipArchitectureTests
         await Assert.That(colonists).Contains("presentation.Tooltip.Activate()");
         await Assert.That(colonists).Contains("signalTip.Activate()");
         await Assert.That(colonists)
-            .Contains("private Dialog_ChangesPreview.Line previewLine;");
-        await Assert.That(colonists)
-            .Contains("previewLine?.StructuredTipAt(previewIndex)");
+            .Contains("preview.Line?.StructuredTipAt(previewIndex)");
         await Assert.That(colonists)
             .DoesNotContain("previewStructuredTips[previewIndex]");
         string statsPanel = Method(colonists, "private void DrawStatsPanel(");
         int previewLoop = statsPanel.IndexOf("for (int previewIndex", StringComparison.Ordinal);
         string previewLoopSource = statsPanel.Substring(previewLoop);
         await Assert.That(previewLoopSource.IndexOf(
-                "previewLine?.StructuredTipAt(previewIndex)", StringComparison.Ordinal))
+                "preview.Line?.StructuredTipAt(previewIndex)", StringComparison.Ordinal))
             .IsGreaterThan(previewLoopSource.IndexOf(
                 "Mouse.IsOver(chipRect)", StringComparison.Ordinal));
         await Assert.That(signals).Contains("internal static StructuredTip CreateTooltip(");
         await Assert.That(recommendations).Contains("internal static StructuredTip CreateTooltip(");
 
-        await Assert.That(roles).Contains("blockerTipCache.Activate()");
-        await Assert.That(roles).Contains("holdersTipCache.Activate()");
-        await Assert.That(options).Contains("numericTipCache.Activate()");
-        await Assert.That(options).Contains("rangeTipCache.Activate()");
+        await Assert.That(roles).Contains("editorState.BlockerTip.Activate()");
+        await Assert.That(roles).Contains("editorState.HoldersTip.Activate()");
+        await Assert.That(options).Contains("state.NumericTip.Activate()");
+        await Assert.That(options).Contains("state.RangeTip.Activate()");
         await Assert.That(options).Contains("tip.Activate()");
-        await Assert.That(options).Contains("anchorTipCache.Activate()");
+        await Assert.That(options).Contains("state.AnchorTip.Activate()");
 
         await Assert.That(preview)
             .Contains("public List<(Role role, ChipState state, string tip)> chips");

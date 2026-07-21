@@ -25,6 +25,7 @@ namespace WorkRoles
             GameJobCatalog.Instance.InvalidateSessionCache();
             UiVersion.Bump();
             UI.GroupSources.InvalidateLanguageCaches();
+            UI.WorkJobLabels.InvalidateLanguageCaches();
             UI.ColonistsTabView.InvalidateSharedLanguageCaches();
             UI.RolesTabView.InvalidateSharedLanguageCaches();
             JobSkillProfiles.InvalidateLanguageCaches();

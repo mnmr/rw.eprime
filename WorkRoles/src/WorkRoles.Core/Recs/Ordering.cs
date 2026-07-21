@@ -85,7 +85,7 @@ namespace WorkRoles.Core.Recs
         {
             var colony = context.Colony;
             var baseKeys = context.BasePositions();
-            var keys = new Dictionary<int, long>(baseKeys);
+            var keys = context.CopyBasePositions();
             var anchoredKeys = new Dictionary<int, Dictionary<int, long>>();
 
             foreach (var group in colony.Paths

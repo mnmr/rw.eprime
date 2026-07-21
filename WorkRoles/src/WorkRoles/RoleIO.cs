@@ -361,12 +361,15 @@ namespace WorkRoles
             bool pathsInclude, bool pathsOverwrite, List<int> pathRows,
             bool orderInclude)
         {
+            if (!rolesInclude)
+            {
+                pathsInclude = false;
+                orderInclude = false;
+            }
+
             int paletteChanges = 0, updated = 0, added = 0, deleted = 0, pathsAdded = 0;
+            Dictionary<FileRole, Role> runtimeRoles = null;
             store.SyncSwatchNames();
-            var plannedRoles = RoleRows(store, doc, rolesOverwrite);
-            var runtimeRoles = plannedRoles
-                .Where(row => row.existing != null)
-                .ToDictionary(row => row.role, row => row.existing);
 
             if (paletteInclude && paletteOverwrite)
             {
@@ -419,6 +422,11 @@ namespace WorkRoles
 
             if (rolesInclude)
             {
+                var plannedRoles = RoleRows(store, doc, rolesOverwrite);
+                runtimeRoles = plannedRoles
+                    .Where(row => row.existing != null)
+                    .ToDictionary(row => row.role, row => row.existing);
+
                 // Groups travel with the roles section: merge appends missing
                 // groups at the end; overwrite adopts the file's order (Default
                 // stays pinned, groups the file doesn't know keep their spot).

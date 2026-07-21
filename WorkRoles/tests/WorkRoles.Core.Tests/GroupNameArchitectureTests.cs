@@ -43,27 +43,24 @@ public class GroupNameArchitectureTests
         string store = Section(Source("RoleStore.cs"),
             "public RoleGroup EnsureDefaultGroup", "public void SyncSwatchNames");
         string dialog = Section(Source("UI", "Dialog_RenameRole.cs"),
-            "private bool NameTaken", "private bool NameValid");
+            "private bool IsNameTaken", "private void EnsureValidation");
 
         await Assert.That(store).Contains("label = GroupNameRules.DefaultName");
         await Assert.That(dialog).Contains("GroupNameRules.IsAvailable(");
     }
 
     [Test]
-    public async Task RolesExcludedImportStillMapsFileReferencesOntoExistingRoles()
+    public async Task DependentImportCanReuseExistingRolesWithoutUpdatingMatchedRows()
     {
         string source = Source("RoleIO.cs");
         string matching = Section(source, "public static Role MatchRole", "public static List<PaletteRow> PaletteMergeRows");
         string apply = Section(source, "public static string Apply", "private static Role RuntimeRole");
         string paths = Section(apply, "if (pathsInclude)", "if (orderInclude");
         string order = Section(apply, "if (orderInclude", "return \"WR_ImportSummary\"");
-        int map = apply.IndexOf("var runtimeRoles =", StringComparison.Ordinal);
-        int rolesGate = apply.IndexOf("if (rolesInclude)", StringComparison.Ordinal);
 
         await Assert.That(matching).Contains("imported.templateDef");
         await Assert.That(matching).Contains("imported.label");
         await Assert.That(matching).DoesNotContain("imported.fileId");
-        await Assert.That(map >= 0 && rolesGate > map).IsTrue();
         await Assert.That(paths).Contains("RoleFile.ResolvePathEntries(filePath, doc,");
         await Assert.That(paths).Contains("runtimeRoles.TryGetValue(fileRole, out var runtime)");
         await Assert.That(paths).Contains("RuntimeRole(doc, runtimeRoles,");

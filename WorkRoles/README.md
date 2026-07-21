@@ -93,13 +93,13 @@ dotnet build WorkRoles.slnx
 
 Three projects: `WorkRoles.Core` (pure logic, netstandard2.0, unit-tested), `WorkRoles` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package — no game files needed), and `WorkRoles.Core.Tests` (.NET 10, TUnit).
 
-Building does not deploy the mod by default. To explicitly deploy the `mod/` folder to your RimWorld `Mods` directory, run:
+Building never deploys the mod. After building, mirror the current `mod/` folder to your local RimWorld installation with:
 
 ```
-dotnet build WorkRoles.slnx -p:DeployToRimWorld=true
+pwsh scripts/deploy.ps1
 ```
 
-Override the destination root with `-p:DeployToRimWorld=true -p:RimWorldMods=<path>`.
+Override the Mods directory with `pwsh scripts/deploy.ps1 -RimWorldMods <path>`. The script removes stale deployed files and PDBs while preserving Steam's `PublishedFileId.txt`.
 
 Run the tests with:
 

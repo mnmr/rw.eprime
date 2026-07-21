@@ -125,7 +125,7 @@ namespace WorkRoles.UI
         protected static void DrawCaption(Rect rect, string text)
         {
             Text.Font = GameFont.Tiny;
-            GUI.color = new Color(0.60f, 0.62f, 0.64f);
+            GUI.color = WrStyle.CaptionText;
             Text.Anchor = TextAnchor.LowerLeft;
             Widgets.Label(rect, text);
             Text.Anchor = TextAnchor.UpperLeft;

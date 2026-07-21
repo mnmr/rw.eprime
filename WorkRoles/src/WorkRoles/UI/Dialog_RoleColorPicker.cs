@@ -50,7 +50,7 @@ namespace WorkRoles.UI
         {
             this.onSave = onSave;
             // Our grid is shade-major: 4 shade rows of 19 families each.
-            var swatches = RolesTabView.Swatches;
+            var swatches = SwatchPalette.Swatches;
             const int ShadeCount = 4;
             int familyCount = swatches.Length / ShadeCount;
             pickable = new List<Color>(swatches.Length);

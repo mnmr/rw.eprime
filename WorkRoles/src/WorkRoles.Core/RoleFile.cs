@@ -403,11 +403,8 @@ namespace WorkRoles.Core
                         EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label));
                 }
             }
-            if (doc.roles.Count == 0
-                && doc.trainingPaths.Count == 0
-                && doc.recommendationOrder.Count == 0
-                && doc.groups.Count == 0)
-                doc.error = "empty document";
+            if (doc.roles.Count == 0)
+                doc.error = "document contains no valid roles";
             return doc;
         }
 

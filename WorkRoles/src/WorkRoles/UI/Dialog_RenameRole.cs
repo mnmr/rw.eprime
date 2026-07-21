@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using UnityEngine;
 using Verse;
 
@@ -15,6 +14,11 @@ namespace WorkRoles.UI
         private readonly RoleGroup exceptGroup;
         private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
+        private string validatedName;
+        private string trimmedName = "";
+        private int validationRevision = int.MinValue;
+        private bool nameTaken;
+        private bool nameValid;
         private bool focusedField;
 
         public override Vector2 InitialSize => new Vector2(360f, sourceLabel == null ? 160f : 186f);
@@ -76,26 +80,43 @@ namespace WorkRoles.UI
             closeOnAccept = true;
         }
 
-        private bool NameTaken
+        private bool IsNameTaken(string candidate)
         {
-            get
-            {
-                var store = RoleStore.Current;
-                if (store == null) return false;
-                if (exceptGroup != null)
-                    return !WorkRoles.Core.GroupNameRules.IsAvailable(
-                        name, store.groups, group => group.label, exceptGroup);
-                return !WorkRoles.Core.CatalogNameRules.IsAvailable(
-                    name, store.roles, role => role.label, exceptRole);
-            }
+            var store = RoleStore.Current;
+            if (store == null) return false;
+            if (exceptGroup != null)
+                return !WorkRoles.Core.GroupNameRules.IsAvailable(
+                    candidate, store.groups, group => group.label, exceptGroup);
+            return !WorkRoles.Core.CatalogNameRules.IsAvailable(
+                candidate, store.roles, role => role.label, exceptRole);
         }
 
-        private bool NameValid => !name.Trim().NullOrEmpty() && !(requireUniqueName && NameTaken);
+        private void EnsureValidation(bool force = false)
+        {
+            int revision = UiVersion.Current;
+            if (!force && validationRevision == revision
+                && string.Equals(validatedName, name, StringComparison.Ordinal)) return;
+
+            validatedName = name;
+            validationRevision = revision;
+            trimmedName = (name ?? "").Trim();
+            bool hasName = !trimmedName.NullOrEmpty();
+            nameTaken = hasName && requireUniqueName && IsNameTaken(trimmedName);
+            nameValid = hasName && !nameTaken;
+        }
+
+        private bool TryApply()
+        {
+            // Commands may have changed the catalog since the last GUI pass.
+            EnsureValidation(force: true);
+            if (!nameValid) return false;
+            onConfirm(trimmedName);
+            return true;
+        }
 
         public override void OnAcceptKeyPressed()
         {
-            if (!NameValid) return; // keep the dialog open on Enter with an unusable name
-            Apply();
+            if (!TryApply()) return; // keep the dialog open on Enter with an unusable name
             base.OnAcceptKeyPressed();
         }
 
@@ -111,7 +132,7 @@ namespace WorkRoles.UI
             }
             if (sourceLabel != null)
             {
-                GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                GUI.color = WrStyle.DimText;
                 Widgets.Label(new Rect(0f, y, inRect.width, 22f), "WR_CopySource".Translate(sourceLabel));
                 GUI.color = Color.white;
                 y += 26f;
@@ -122,6 +143,7 @@ namespace WorkRoles.UI
             // above the longest seeded label.
             const int MaxNameLength = 30;
             if (name.Length > MaxNameLength) name = name.Substring(0, MaxNameLength);
+            EnsureValidation();
             y += 32f;
             if (!focusedField)
             {
@@ -129,7 +151,7 @@ namespace WorkRoles.UI
                 focusedField = true;
             }
 
-            if (requireUniqueName && !name.Trim().NullOrEmpty() && NameTaken)
+            if (nameTaken)
             {
                 GUI.color = new Color(0.9f, 0.4f, 0.4f);
                 Text.Font = GameFont.Tiny;
@@ -144,17 +166,10 @@ namespace WorkRoles.UI
             if (showCancel
                 && Widgets.ButtonText(new Rect(0f, inRect.height - 35f, 120f, 30f), "WR_Cancel".Translate()))
                 Close();
-            if (Widgets.ButtonText(okRect, "WR_OK".Translate(), active: NameValid) && NameValid)
+            if (Widgets.ButtonText(okRect, "WR_OK".Translate(), active: nameValid) && TryApply())
             {
-                Apply();
                 Close();
             }
-        }
-
-        private void Apply()
-        {
-            if (NameValid)
-                onConfirm(name.Trim());
         }
     }
 }

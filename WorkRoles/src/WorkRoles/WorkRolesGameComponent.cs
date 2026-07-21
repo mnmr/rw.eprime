@@ -58,6 +58,8 @@ namespace WorkRoles
         public override void GameComponentTick()
         {
             int now = Find.TickManager.TicksGame;
+            if (PrioritySetWatcher.HasPendingWarning)
+                PrioritySetWatcher.ShowPendingWarning(now);
             if (now < nextHourCheckTick) return;
             nextHourCheckTick = now + 2500 - (int)GenMath.PositiveMod(GenTicks.TicksAbs, 2500);
             CompiledJobOrders.InvalidateAllTimeRuled();

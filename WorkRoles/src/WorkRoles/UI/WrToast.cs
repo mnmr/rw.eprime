@@ -22,8 +22,6 @@ namespace WorkRoles.UI
         private const float MaxTextWidth = 420f;
 
         // The mod's panel idiom (role editor top box, Options panels).
-        private static readonly Color PanelBg = new Color(0.08f, 0.08f, 0.08f, 0.9f);
-        private static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
 
         private static readonly List<Toast> toasts = new List<Toast>();
 
@@ -49,7 +47,8 @@ namespace WorkRoles.UI
                 float textW = Mathf.Min(Text.CalcSize(toast.text).x, Mathf.Min(MaxTextWidth, inRect.width - 56f));
                 float textH = Text.CalcHeight(toast.text, textW + 1f);
                 var panel = new Rect(inRect.x + (inRect.width - textW - 24f) / 2f, y, textW + 24f, textH + 12f);
-                Widgets.DrawBoxSolidWithOutline(panel, PanelBg, PanelOutline);
+                Widgets.DrawBoxSolidWithOutline(
+                    panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
                 var oldAnchor = Text.Anchor;
                 Text.Anchor = TextAnchor.MiddleCenter;
                 Widgets.Label(new Rect(panel.x + 12f, panel.y + 6f, textW, textH), toast.text);

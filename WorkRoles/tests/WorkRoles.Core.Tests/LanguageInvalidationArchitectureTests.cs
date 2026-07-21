@@ -44,6 +44,7 @@ public class LanguageInvalidationArchitectureTests
             "if (!deferredRevision.Complete()) return;",
             "UiVersion.Bump();",
             "UI.GroupSources.InvalidateLanguageCaches();",
+            "UI.WorkJobLabels.InvalidateLanguageCaches();",
             "UI.ColonistsTabView.InvalidateSharedLanguageCaches();",
             "UI.RolesTabView.InvalidateSharedLanguageCaches();",
             "JobSkillProfiles.InvalidateLanguageCaches();",
@@ -81,14 +82,10 @@ public class LanguageInvalidationArchitectureTests
                 required: new[] { "skillHeaderLabels.Clear();" }),
             (file: new[] { "UI", "RolesTabView.cs" },
                 signature: "internal static void InvalidateSharedLanguageCaches()",
-                required: new[]
-                {
-                    "giverDisplayCache = null;", "InvalidateSectionsSnapshot();",
-                    "skillsUsedCache = null;", "skillsUsedStamp = -1;",
-                    "ClearEntryLabelCache();", "uncoveredGivers = null;",
-                    "uncoveredTypes = null;", "uncoveredWarning = null;",
-                    "uncoveredStamp = -1;",
-                }),
+                required: new[] { "RolesListState.InvalidateSectionsSnapshot();" }),
+            (file: new[] { "UI", "WorkJobLabels.cs" },
+                signature: "internal static void InvalidateLanguageCaches()",
+                required: new[] { "giverDisplayCache = null" }),
             (file: new[] { "JobSkillProfiles.cs" },
                 signature: "internal static void InvalidateLanguageCaches()",
                 required: new[] { "byGiver = null;", "byType = null;" }),
@@ -151,40 +148,75 @@ public class LanguageInvalidationArchitectureTests
                 {
                     "colonistHeaderCache = null;", "sizeStamp = ScopeCacheStamp.Invalid;",
                     "paletteStamp = -1;", "paletteLabels.Clear();",
-                    "statsStamp = -1;", "skillPresentations.Clear();",
-                    "roleTipCache.Clear();", "previewChips = null;",
-                    "sectionsCache = null;", "sectionTitles.Clear();",
-                    "pawnsScopeOptions = null;", "InvalidatePawnSnapshot();",
+                    "statsState.InvalidateLanguageCaches();",
+                    "roleTipCache.Clear();",
+                    "recommendationState.InvalidateLanguageCaches();",
+                    "rosterState.InvalidateLanguageCaches();",
                 },
                 forbidden: new[]
                 {
                     "Reset();", "selectedPawn =", "colonistFilter =", "roleFilterId =",
                     "tableScroll =", "paletteScroll =", "scope =",
                 }),
+            (file: "ColonistsRosterState.cs",
+                required: new[]
+                {
+                    "scopeOptions = null;", "InvalidatePawnSnapshot();",
+                    "InvalidateSections();",
+                },
+                forbidden: new[]
+                {
+                    "Reset();", "Search =", "RoleFilterId =", "scope =",
+                    "skillColumns.Clear();",
+                }),
+            (file: "ColonistRecommendationState.cs",
+                required: new[] { "ClearPreview();" },
+                forbidden: new[] { "Reset();", "plans = null;" }),
+            (file: "ColonistStatsState.cs",
+                required: new[] { "InvalidatePresentations();" },
+                forbidden: new[] { "Reset();", "PawnSignalSnapshotCache.Clear();" }),
             (file: "RolesTabView.cs",
                 required: new[]
                 {
-                    "editorTipsStamp = -1;", "blockerTipCache = null;",
-                    "holdersTipCache = null;", "tuningLabelCol = tuningBtnW = -1f;",
-                    "displayCache = null;", "displayStamp = -1;",
-                    "treeNodesCache = null;", "treeNodesStamp = -1;",
+                    "listState.InvalidateLanguageCaches();",
+                    "editorState.InvalidateLanguageCaches();",
                 },
                 forbidden: new[]
                 {
-                    "Reset();", "selectedRoleId =", "filter =", "roleSearch =",
+                    "Reset();", "selectedRoleId =", "Filter =", "RoleSearch =",
                     "listScroll =", "entriesScroll =", "treeScroll =",
-                    "expanded.Clear();", "rulesRevealed.Clear();", "tuningExpanded.Clear();",
+                    "rulesRevealed.Clear();", "tuningExpanded.Clear();",
                 }),
-            (file: "OptionsTabView.cs",
+            (file: "RoleEditorState.cs",
+                required: new[]
+                {
+                    "tipsStamp = -1;", "blockerTip = null;", "holdersTip = null;",
+                    "skillsUsed = null;", "ClearEntryLabels();",
+                    "uncoveredGivers = null;", "treeNodes = null;",
+                },
+                forbidden: new[]
+                {
+                    "Reset();", "Filter =", "expandedWorkTypes.Clear();",
+                }),
+            (file: "RolesListState.cs",
+                required: new[]
+                {
+                    "displayRows = null;", "snapshot = null;", "displayStamp = -1;",
+                },
+                forbidden: new[]
+                {
+                    "Reset();", "RoleSearch =", "JobFilterDefName =",
+                }),
+            (file: "OptionsTabState.cs",
                 required: new[]
                 {
                     "orderStamp = -1;", "orderLayout.Clear();", "pathStamp = -1;",
-                    "pathChips.Clear();", "optTipsStamp = -1;",
-                    "numericTipCache = null;", "anchorTipCache = null;",
+                    "pathChips.Clear();", "tipsStamp = -1;",
+                    "NumericTip = null;", "AnchorTip = null;",
                 },
                 forbidden: new[]
                 {
-                    "Reset();", "selectedPathId =", "tabScroll =",
+                    "Reset();", "SelectedPathId =", "tabScroll =",
                     "anchorRevealed.Clear();", "ClearBandDrag();",
                 }),
         };
@@ -215,26 +247,32 @@ public class LanguageInvalidationArchitectureTests
 
         await Assert.That(producerFiles).IsEquivalentTo(new[]
         {
-            "ColonistsTabView.cs", "JobSkillProfiles.cs", "OptionsTabView.cs",
-            "RecommendationPresentation.cs", "RolesTabView.cs", "SkillSignalPresentation.cs",
+            "ColonistsTabView.cs", "JobSkillProfiles.cs", "OptionsTabState.cs",
+            "RecommendationPresentation.cs", "RoleEditorState.cs", "SkillSignalPresentation.cs",
         });
 
         string colonists = Method(Source("UI", "ColonistsTabView.cs"),
             "internal void InvalidateLanguageCaches()");
-        await Assert.That(colonists).Contains("skillPresentations.Clear();");
+        await Assert.That(colonists).Contains("statsState.InvalidateLanguageCaches();");
         await Assert.That(colonists).Contains("roleTipCache.Clear();");
-        await Assert.That(colonists).Contains("previewChips = null;");
-        await Assert.That(colonists).Contains("previewLine = null;");
+        await Assert.That(colonists)
+            .Contains("recommendationState.InvalidateLanguageCaches();");
+        string recommendationState = Source("UI", "ColonistRecommendationState.cs");
+        await Assert.That(Method(recommendationState, "private void ClearPreview()"))
+            .Contains("preview = null;");
+        string statsState = Source("UI", "ColonistStatsState.cs");
+        await Assert.That(Method(statsState, "private void InvalidatePresentations()"))
+            .Contains("presentations.Clear();");
 
-        string roles = Method(Source("UI", "RolesTabView.cs"),
+        string roles = Method(Source("UI", "RoleEditorState.cs"),
             "internal void InvalidateLanguageCaches()");
-        await Assert.That(roles).Contains("blockerTipCache = null;");
-        await Assert.That(roles).Contains("holdersTipCache = null;");
+        await Assert.That(roles).Contains("blockerTip = null;");
+        await Assert.That(roles).Contains("holdersTip = null;");
 
-        string options = Method(Source("UI", "OptionsTabView.cs"),
+        string options = Method(Source("UI", "OptionsTabState.cs"),
             "internal void InvalidateLanguageCaches()");
-        await Assert.That(options).Contains("numericTipCache = null;");
-        await Assert.That(options).Contains("anchorTipCache = null;");
+        await Assert.That(options).Contains("NumericTip = null;");
+        await Assert.That(options).Contains("AnchorTip = null;");
 
         string complete = Method(Source("LanguageChangeCoordinator.cs"),
             "internal static void Complete()");

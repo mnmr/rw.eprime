@@ -6,29 +6,33 @@ public class ScopeCacheArchitectureTests
     public async Task ColonistCacheConsumersUseTheObservedPawnListStamp()
     {
         string source = Source("UI", "ColonistsTabView.cs");
+        string roster = Source("UI", "ColonistsRosterState.cs");
 
-        await Assert.That(source)
+        await Assert.That(roster)
             .Contains("private readonly PawnListRevisionTracker pawnListRevisions");
-        await Assert.That(Method(source, "private ScopeCacheStamp PawnListStamp"))
+        await Assert.That(Method(roster, "internal ScopeCacheStamp PawnListStamp"))
             .Contains("pawnListRevisions.Stamp(");
 
         string[] consumers =
         {
-            "private List<PawnFixPlan> GetPlan()",
-            "private void EnsurePreview(",
             "private void EnsureSizes()",
             "internal string RoleTipText(",
-            "private List<GroupSection<Pawn>> Sections(",
-            "internal List<Pawn> ListedPawns()",
             "ChipLayoutFor(Pawn pawn",
             "private bool RulesPass(",
+            "private List<Dialog_ChangesPreview.PawnPreview> BuildFixEntries(",
+            "private void ApplyFix(",
         };
         foreach (string consumer in consumers)
             await Assert.That(Method(source, consumer)).Contains("PawnListStamp")
                 .Because($"{consumer} must observe the map before storing its cache stamp");
 
-        await Assert.That(Method(source, "internal List<Pawn> ListedPawns()"))
-            .DoesNotContain("pawnsCache != null && pawnsMapId != mapId");
+        foreach (string consumer in new[]
+                 {
+                     "internal IReadOnlyList<GroupSection<Pawn>> Sections(",
+                     "internal IReadOnlyList<Pawn> ListedPawns()",
+                 })
+            await Assert.That(Method(roster, consumer)).Contains("PawnListStamp")
+                .Because($"{consumer} must observe the map before storing its cache stamp");
     }
 
     [Test]
@@ -73,43 +77,42 @@ public class ScopeCacheArchitectureTests
     [Test]
     public async Task RoleTreeExpansionRoutesInvalidateCachedNodes()
     {
-        string source = Source("UI", "RolesTabView.cs");
-        string draw = Method(source, "private void DrawJobTree(");
+        string view = Source("UI", "RolesTabView.cs");
+        string state = Source("UI", "RoleEditorState.cs");
+        string draw = Method(view, "private void DrawJobTree(");
         string labelClick = Between(draw,
             "if (Widgets.ButtonInvisible(typeLabelRect))", "if (Mouse.IsOver(row))");
         string arrowClick = Between(draw,
             "if (Widgets.ButtonImage(new Rect(row.x + 2f", "var checkboxRect");
 
-        await Assert.That(labelClick).Contains("ToggleWorkTypeExpanded(type.defName);")
+        await Assert.That(labelClick)
+            .Contains("editorState.ToggleWorkTypeExpanded(type.defName);")
             .Because("the label path previously changed expansion without invalidating cached rows");
-        await Assert.That(arrowClick).Contains("ToggleWorkTypeExpanded(type.defName);");
+        await Assert.That(arrowClick)
+            .Contains("editorState.ToggleWorkTypeExpanded(type.defName);");
         foreach (string route in new[] { labelClick, arrowClick })
         {
-            await Assert.That(route).DoesNotContain("expanded.");
-            await Assert.That(route).DoesNotContain("treeRev");
+            await Assert.That(route).DoesNotContain("expandedWorkTypes.");
+            await Assert.That(route).DoesNotContain("treeRevision");
         }
 
-        string toggle = Method(source, "private void ToggleWorkTypeExpanded(");
+        string toggle = Method(state, "internal void ToggleWorkTypeExpanded(");
         await Assert.That(toggle)
-            .Contains("if (!expanded.Add(defName)) expanded.Remove(defName);");
-        await Assert.That(Occurrences(toggle, "expanded.Add(")).IsEqualTo(1);
-        await Assert.That(Occurrences(toggle, "expanded.Remove(")).IsEqualTo(1);
-        await Assert.That(Occurrences(toggle, "treeRev++")).IsEqualTo(1);
+            .Contains("if (!expandedWorkTypes.Add(defName)) expandedWorkTypes.Remove(defName);");
+        await Assert.That(Occurrences(toggle, "expandedWorkTypes.Add(")).IsEqualTo(1);
+        await Assert.That(Occurrences(toggle, "expandedWorkTypes.Remove(")).IsEqualTo(1);
+        await Assert.That(Occurrences(toggle, "treeRevision++")).IsEqualTo(1);
 
-        await Assert.That(Occurrences(draw, "ToggleWorkTypeExpanded(type.defName);")).IsEqualTo(2);
-        await Assert.That(Occurrences(draw, "expanded.Add(")).IsEqualTo(1);
-        await Assert.That(Occurrences(draw, "expanded.Remove(")).IsEqualTo(0);
-        await Assert.That(Occurrences(draw, "treeRev++")).IsEqualTo(1);
-        await Assert.That(Between(draw,
-                "if (treeTarget?.giver != null && expanded.Add(treeTarget.Value.type.defName))",
-                "var nodes = TreeNodes(filtering);"))
-            .Contains("treeRev++;")
-            .Because("selection expansion must invalidate only when Add changes state");
+        await Assert.That(Occurrences(draw,
+            "editorState.ToggleWorkTypeExpanded(type.defName);")).IsEqualTo(2);
+        await Assert.That(draw).Contains(
+            "editorState.EnsureWorkTypeExpanded(treeTarget.Value.type.defName);")
+            .Because("selection expansion must route through the cache owner");
 
-        int nodes = draw.IndexOf("var nodes = TreeNodes(filtering);", StringComparison.Ordinal);
+        int nodes = draw.IndexOf("editorState.TreeNodes(filtering);", StringComparison.Ordinal);
         int rows = draw.IndexOf("for (int i = firstNode; i <= lastNode; i++)", StringComparison.Ordinal);
         await Assert.That(nodes >= 0 && nodes < rows).IsTrue();
-        await Assert.That(draw.Substring(rows)).DoesNotContain("TreeNodes(");
+        await Assert.That(draw.Substring(rows)).DoesNotContain("editorState.TreeNodes(");
     }
 
     private static int Occurrences(string source, string value)

@@ -7,7 +7,8 @@ using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
-    /// Import preview with independent Palette, Roles, Paths and Order sections.
+    /// Import preview with selective Palette, Roles, Paths and Order sections;
+    /// groups, paths and order remain dependent on importing roles.
     /// The body is flattened into a copy-owned variable-height row snapshot so
     /// idle IMGUI events only visit rows intersecting the scroll viewport.
     public class Dialog_ImportPreview : Dialog_PreviewBase
@@ -116,8 +117,8 @@ namespace WorkRoles.UI
             roleRows = RoleIO.RoleRows(store, doc);
             paletteInclude = paletteRows.Count > 0 || doc.palette.Count > 0;
             rolesInclude = roleRows.Count > 0;
-            pathsInclude = doc.trainingPaths.Count > 0;
-            orderInclude = doc.recommendationOrder.Count > 0;
+            pathsInclude = rolesInclude && doc.trainingPaths.Count > 0;
+            orderInclude = rolesInclude && doc.recommendationOrder.Count > 0;
 
             paletteMergeUi = NewRows(paletteRows.Count);
             roleMergeUi = NewRows(roleRows.Count);
@@ -141,6 +142,7 @@ namespace WorkRoles.UI
         {
             ObservePreviewLanguageRevision();
             EnsureUiText();
+            EnforceRoleDependencies();
             float listTop = DrawCachedPreviewTitle(inRect, titleText);
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
@@ -355,9 +357,12 @@ namespace WorkRoles.UI
                         }
                         break;
                     case RenderKind.OrderHeader:
+                        bool previousEnabled = GUI.enabled;
+                        GUI.enabled = previousEnabled && rolesInclude;
                         bool before = orderInclude;
                         Widgets.CheckboxLabeled(new Rect(0f, y, width * 0.4f, RowH - 2f),
                             orderTitle, ref orderInclude);
+                        GUI.enabled = previousEnabled;
                         if (before != orderInclude) rowLayoutDirty = true;
                         break;
                 }
@@ -375,12 +380,24 @@ namespace WorkRoles.UI
                 case Section.Roles:
                     DrawSectionHeader(width, y, rolesTitle,
                         ref rolesInclude, ref rolesOverwrite);
+                    EnforceRoleDependencies();
                     break;
                 case Section.Paths:
+                    bool previousEnabled = GUI.enabled;
+                    GUI.enabled = previousEnabled && rolesInclude;
                     DrawSectionHeader(width, y, pathsTitle,
                         ref pathsInclude, ref pathsOverwrite);
+                    GUI.enabled = previousEnabled;
                     break;
             }
+        }
+
+        private void EnforceRoleDependencies()
+        {
+            if (rolesInclude || (!pathsInclude && !orderInclude)) return;
+            pathsInclude = false;
+            orderInclude = false;
+            rowLayoutDirty = true;
         }
 
         private void DrawSectionHeader(

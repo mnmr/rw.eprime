@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="WorkRolesDeployDestination">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <LangVersion>10</LangVersion>
@@ -13,7 +13,6 @@
     <DebugType>portable</DebugType>
     <!-- No pdbs in the shipped mod folder -->
     <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
-    <RimWorldMods Condition="'$(RimWorldMods)' == ''">C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods</RimWorldMods>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
@@ -22,27 +21,4 @@
     <PackageReference Include="RimWorld.MultiplayerAPI" Version="0.6.0" />
     <ProjectReference Include="..\WorkRoles.Core\WorkRoles.Core.csproj" />
   </ItemGroup>
-  <Target Name="DeployToRimWorld" AfterTargets="Build"
-          Condition="$([System.String]::Equals('$(DeployToRimWorld)', 'true', System.StringComparison.Ordinal))">
-    <PropertyGroup>
-      <WorkRolesDeployDestination>$(RimWorldMods)\WorkRoles</WorkRolesDeployDestination>
-    </PropertyGroup>
-    <Error Condition="'$(RimWorldMods)' == ''"
-           Text="RimWorldMods must be non-empty when DeployToRimWorld is enabled." />
-    <Error Condition="'$(WorkRolesDeployDestination)' == ''"
-           Text="The WorkRoles deployment destination must be non-empty." />
-    <ItemGroup>
-      <ModFiles Include="$(MSBuildThisFileDirectory)..\..\mod\**\*.*"
-                Exclude="$(MSBuildThisFileDirectory)..\..\mod\**\*.pdb;$(MSBuildThisFileDirectory)..\..\mod\About\PublishedFileId.txt" />
-      <!-- Deployed files the repo no longer ships get deleted — a stale def
-           referencing removed types loads and errors (and broke Numbers once).
-           PublishedFileId.txt is Steam-written and must always survive. -->
-      <DeployedFiles Include="$(WorkRolesDeployDestination)\**\*.*"
-                     Exclude="$(WorkRolesDeployDestination)\About\PublishedFileId.txt" />
-      <StaleDeployedFiles Include="@(DeployedFiles)"
-                          Exclude="@(ModFiles->'$(WorkRolesDeployDestination)\%(RecursiveDir)%(Filename)%(Extension)')" />
-    </ItemGroup>
-    <Delete Files="@(StaleDeployedFiles)" />
-    <Copy SourceFiles="@(ModFiles)" DestinationFiles="@(ModFiles->'$(WorkRolesDeployDestination)\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
-  </Target>
 </Project>

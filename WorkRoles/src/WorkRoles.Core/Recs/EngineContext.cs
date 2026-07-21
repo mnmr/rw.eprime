@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 
 namespace WorkRoles.Core.Recs
@@ -86,6 +87,7 @@ namespace WorkRoles.Core.Recs
         private readonly Dictionary<int, List<RoleSkillView>> orderedSkillsByRole =
             new Dictionary<int, List<RoleSkillView>>();
         private Dictionary<int, long> basePositions;
+        private IReadOnlyDictionary<int, long> basePositionsView;
 
         public EngineContext(ColonyView colony)
         {
@@ -140,13 +142,27 @@ namespace WorkRoles.Core.Recs
         public PathView SoloPathOf(int roleId)
             => soloPathByRole.TryGetValue(roleId, out var path) ? path : null;
 
-        /// The pawn-independent ordering skeleton, computed once per run.
-        /// Callers must not mutate the returned dictionary.
-        public Dictionary<int, long> BasePositions()
+        /// The pawn-independent ordering skeleton, computed once per run and
+        /// exposed through one immutable view shared by all rules.
+        public IReadOnlyDictionary<int, long> BasePositions()
         {
-            if (basePositions == null)
-                basePositions = Ordering.BasePositions(Colony.Roles, Colony.OrderTemplate);
-            return basePositions;
+            EnsureBasePositions();
+            return basePositionsView;
+        }
+
+        /// Copies directly from the cached dictionary so per-pawn ordering
+        /// does not pay for interface enumeration of the read-only view.
+        internal Dictionary<int, long> CopyBasePositions()
+        {
+            EnsureBasePositions();
+            return new Dictionary<int, long>(basePositions);
+        }
+
+        private void EnsureBasePositions()
+        {
+            if (basePositions != null) return;
+            basePositions = Ordering.BasePositions(Colony.Roles, Colony.OrderTemplate);
+            basePositionsView = new ReadOnlyDictionary<int, long>(basePositions);
         }
 
         /// A partial match is enough for eligibility: a pawn can still use a

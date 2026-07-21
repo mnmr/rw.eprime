@@ -13,28 +13,10 @@ namespace WorkRoles.UI
     /// because they are per-savegame state, synced in MP.
     public class OptionsTabView
     {
-        // One gap for every wrapped chip flow (rec order, paths), buttons included.
-        private const float FlowGap = 8f;
         // Hunting chips: pinning them disables the dynamic duty-slot placement.
         private static readonly Color LockedColor = new Color(0.95f, 0.8f, 0.2f, 0.9f);
-        // Dark panel + caption styling mirrors the role editor's top box and
-        // the Roles tab's filter captions.
-        private static readonly Color PanelBg = new Color(0.08f, 0.08f, 0.08f, 0.9f);
-        private static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
-        private static readonly Color CaptionColor = new Color(0.60f, 0.62f, 0.64f);
-        private static readonly Color DimLabel = new Color(0.6f, 0.6f, 0.6f);
+        private readonly OptionsTabState state = new OptionsTabState();
         private Vector2 tabScroll;
-
-        // Open-window snapshot (UiVersion): resolving the template projects the
-        // whole catalog through RoleViewOf — that ran twice per pass before.
-        private int orderStamp = -1;
-        private float orderWidth = -1f;
-        private List<int> orderCache;
-        private Dictionary<int, RoleView> orderById;
-        private List<Role> orderRoles;
-        private readonly List<Rect> orderLayout = new List<Rect>();
-        private Rect orderAddRect; // Add Role button, last element of the chip flow
-        private float orderLayoutHeight;
 
         // Drag drop, rebuilt only when the reorder target changes (see p2 in
         // DrawRecommendationOrder): RoleDrag clears its slot every frame.
@@ -42,23 +24,6 @@ namespace WorkRoles.UI
         private int dropFrom = -1;
         private int dropTo = -1;
         private System.Action dropAction;
-
-        // Training Paths section (open-window snapshot, one per
-        // UiVersion x width x selection; geometry is arithmetic over cached ints).
-        private int selectedPathId = -1;
-        // Synced creation defers in MP: watch for the entered name instead.
-        private string pendingSelectPathName;
-        private int pathStamp = -1;
-        private float pathWidth = -1f;
-        private int pathSnapSelected = -1;
-        private readonly List<PathChip> pathChips = new List<PathChip>();
-        private Rect pathAddRect; // Add New button, last element of the chip flow
-        private float pathChipsHeight;
-        private PathView pathView; // selected path's editor data; null when none
-
-        // Paths whose "Customize assignment order" row is open without an
-        // anchor set yet (mirrors RolesTabView.rulesRevealed).
-        private readonly HashSet<int> anchorRevealed = new HashSet<int>();
 
         // Band drag in flight: committed as ONE synced command on release.
         private int dragPathId = -1;
@@ -71,30 +36,6 @@ namespace WorkRoles.UI
         private int slideGrabOffset; // level distance from band min to grab point
 
         private enum BandDragKind { None, MinEdge, MaxEdge, Slide }
-
-        private sealed class PathChip
-        {
-            public int id;
-            public string name;
-            public Rect rect;  // chips-flow local
-            public Color color;
-        }
-
-        private sealed class PathView
-        {
-            public int pathId;
-            public string name;
-            public List<int> roleIds = new List<int>();   // band entries, stored order
-            public List<int> mins = new List<int>();
-            public List<int> maxes = new List<int>();
-            public List<int> rows = new List<int>();      // PackRows result
-            public List<Role> roles = new List<Role>();
-            public int rowCount;          // >= 1 for layout
-            public int displayRows;       // rowCount + one empty affordance line
-            public int anchorRoleId;      // -1 = none
-            public bool anchorBefore;
-            public Color color;           // PathColor at snapshot time
-        }
 
         // Row pitch leaves 5px between chips: a 1px separator with 2px
         // clearance to the chips on both sides.
@@ -113,154 +54,10 @@ namespace WorkRoles.UI
         private const float PanelCaptionH = 18f;
         private const float PanelCaptionGap = 2f;
 
-        private void EnsurePathSnapshot(RoleStore store, float width)
-        {
-            if (pathStamp == UiVersion.Current && pathWidth == width
-                && pathSnapSelected == selectedPathId) return;
-            pathStamp = UiVersion.Current;
-            pathWidth = width;
-            pathSnapSelected = selectedPathId;
-
-            pathChips.Clear();
-            Text.Font = GameFont.Small;
-            float x = 0f, y = 0f;
-            foreach (var path in store.trainingPaths)
-            {
-                float w = PathChipUI.WidthFor(path.name);
-                if (x + w > width && x > 0f)
-                {
-                    x = 0f;
-                    y += RoleChipUI.Height + FlowGap;
-                }
-                pathChips.Add(new PathChip
-                {
-                    id = path.id,
-                    name = path.name,
-                    rect = new Rect(x, y, w, RoleChipUI.Height),
-                    color = PathColor(store, path),
-                });
-                x += w + FlowGap;
-            }
-            // Add New wraps like a chip, always the flow's last element.
-            float addW = WrText.FitWidth("WR_AddNew".Translate()) + 16f;
-            if (x + addW > width && x > 0f)
-            {
-                x = 0f;
-                y += RoleChipUI.Height + FlowGap;
-            }
-            pathAddRect = new Rect(x, y, addW, RoleChipUI.Height);
-            pathChipsHeight = pathAddRect.yMax;
-
-            pathView = null;
-            var selected = store.PathById(selectedPathId);
-            if (selected == null) return;
-            var view = new PathView
-            {
-                pathId = selected.id,
-                name = selected.name,
-                anchorRoleId = selected.anchorRoleId,
-                anchorBefore = selected.anchorBefore,
-                color = PathColor(store, selected),
-            };
-            // Stored order kept: the player controls packing by reordering.
-            for (int i = 0; i < selected.roleIds.Count; i++)
-            {
-                var role = store.RoleById(selected.roleIds[i]);
-                if (role == null) continue;
-                view.roleIds.Add(selected.roleIds[i]);
-                view.mins.Add(selected.bandMins[i]);
-                view.maxes.Add(selected.bandMaxes[i]);
-                view.roles.Add(role);
-            }
-            view.rows = SkillProgressionMath.PackRows(
-                view.mins.Select((m, i) => (m, view.maxes[i])).ToList());
-            view.rowCount = view.rows.Count == 0 ? 1 : view.rows.Max() + 1;
-            // Any non-empty path shows an empty line: slide-to-re-row affordance.
-            view.displayRows = view.rowCount + (view.roleIds.Count > 0 ? 1 : 0);
-            pathView = view;
-        }
-
-        /// Override wins. Else empty path: neutral; else the highest role's
-        /// color — greatest bandMax, ties greatest bandMin, ties last in order.
-        private static Color PathColor(RoleStore store, TrainingPath path)
-        {
-            if (path.hasCustomColor) return path.color;
-            Role best = null;
-            int bestMax = int.MinValue, bestMin = int.MinValue;
-            for (int i = 0; i < path.roleIds.Count; i++)
-            {
-                var role = store.RoleById(path.roleIds[i]);
-                if (role == null) continue;
-                int max = path.bandMaxes[i], min = path.bandMins[i];
-                if (max > bestMax || (max == bestMax && min >= bestMin))
-                {
-                    best = role;
-                    bestMax = max;
-                    bestMin = min;
-                }
-            }
-            return best != null && best.hasCustomColor ? best.color : RoleChipUI.DefaultChipColor;
-        }
-
-        // Open-window snapshot of this tab's structured tips: static content,
-        // rebuilt only when the stamp moves and activated at its UI use sites.
-        private int optTipsStamp = -1;
-        private StructuredTip numericTipCache;
-        private StructuredTip rangeTipCache;
-        private StructuredTip recOrderTipCache;
-        private StructuredTip trainingTipCache;
-        private StructuredTip anchorTipCache;
-
-        private void EnsureOptionTips()
-        {
-            if (optTipsStamp == UiVersion.Current) return;
-            optTipsStamp = UiVersion.Current;
-
-            var numeric = new TipModel { Title = "WR_OptNumeric".Translate() };
-            numeric.AddSection().Text("WR_OptNumericTipWhat".Translate());
-            numeric.AddSection()
-                .Fact("WR_TipOff".Translate(), "WR_OptNumericTipOff".Translate())
-                .Fact("WR_TipOn".Translate(), "WR_OptNumericTipOn".Translate());
-            numeric.AddSection().Text("WR_OptNumericTipWhy".Translate(), dim: true);
-            numericTipCache = new StructuredTip("options:numeric", numeric);
-
-            var range = new TipModel { Title = "WR_OptVanillaRange".Translate() };
-            range.AddSection().Text("WR_OptVanillaRangeTipWhat".Translate());
-            range.AddSection()
-                .Fact("WR_TipOff".Translate(), "WR_OptVanillaRangeTipOff".Translate())
-                .Fact("WR_TipOn".Translate(), "WR_OptVanillaRangeTipOn".Translate());
-            rangeTipCache = new StructuredTip("options:vanilla-range", range);
-
-            var recOrder = new TipModel { Title = "WR_RecOrderHeader".Translate() };
-            recOrder.AddSection().Text("WR_OptRecOrderTipWhat".Translate());
-            recOrder.AddSection()
-                .Action("WR_ActDrag".Translate(), "WR_ActRecDrag".Translate())
-                .Action("WR_ActX".Translate(), "WR_ActRecX".Translate());
-            recOrder.AddSection().Text("WR_OptRecOrderTipAuto".Translate(), dim: true);
-            recOrderTipCache = new StructuredTip("options:recommendation-order", recOrder);
-
-            var training = new TipModel { Title = "WR_TrainingSection".Translate() };
-            training.AddSection().Text("WR_TrainingTipWhat".Translate());
-            training.AddSection()
-                .Text("WR_TrainingTipBands".Translate(), dim: true)
-                .Text("WR_TrainingTipOrder".Translate(), dim: true);
-            trainingTipCache = new StructuredTip("options:training", training);
-
-            var anchor = new TipModel { Title = "WR_CustomizeAssignment".Translate() };
-            anchor.AddSection().Text("WR_AnchorTipWhat".Translate());
-            anchor.AddSection().Text("WR_AnchorTipWhy".Translate(), dim: true);
-            anchorTipCache = new StructuredTip("options:anchor", anchor);
-        }
-
         public void Reset()
         {
             tabScroll = Vector2.zero;
-            orderStamp = -1;
-            pathStamp = -1;
-            optTipsStamp = -1;
-            selectedPathId = -1;
-            pendingSelectPathName = null;
-            anchorRevealed.Clear();
+            state.Reset();
             ClearBandDrag();
         }
 
@@ -268,22 +65,7 @@ namespace WorkRoles.UI
         /// disclosure state remain unchanged.
         internal void InvalidateLanguageCaches()
         {
-            orderStamp = -1;
-            orderCache = null;
-            orderById = null;
-            orderRoles = null;
-            orderLayout.Clear();
-
-            pathStamp = -1;
-            pathChips.Clear();
-            pathView = null;
-
-            optTipsStamp = -1;
-            numericTipCache = null;
-            rangeTipCache = null;
-            recOrderTipCache = null;
-            trainingTipCache = null;
-            anchorTipCache = null;
+            state.InvalidateLanguageCaches();
         }
 
         private void ClearBandDrag()
@@ -296,36 +78,13 @@ namespace WorkRoles.UI
             dragStartRow = 0;
         }
 
-        private void EnsureSnapshot(RoleStore store, float chipWidth)
-        {
-            if (orderStamp == UiVersion.Current && orderWidth == chipWidth) return;
-            orderStamp = UiVersion.Current;
-            orderWidth = chipWidth;
-            // One projection serves both the resolver and the orderById lookup.
-            var views = RecsAdapter.RoleViewsOf(store.roles);
-            orderCache = OrderTemplate.ResolveTemplate(store.recommendationOrder, views);
-            orderById = views.ToDictionary(r => r.Id);
-            orderRoles = orderCache.Select(store.RoleById).Where(r => r != null).ToList();
-            orderLayout.Clear();
-            orderLayoutHeight = LayoutChips(chipWidth, orderRoles, orderLayout, out orderAddRect);
-        }
-
         public void Draw(Rect rect)
         {
             var store = RoleStore.Current;
             if (store == null) return;
             RoleDrag.Update();
 
-            if (pendingSelectPathName != null)
-            {
-                for (int i = store.trainingPaths.Count - 1; i >= 0; i--)
-                    if (store.trainingPaths[i].name == pendingSelectPathName)
-                    {
-                        SelectPath(store.trainingPaths[i].id);
-                        pendingSelectPathName = null;
-                        break;
-                    }
-            }
+            state.ResolvePendingPathSelection(store);
 
             // One column inside one scroll view. The 16px bar reserve is
             // unconditional so wrap widths never depend on the height they produce.
@@ -333,9 +92,10 @@ namespace WorkRoles.UI
             const float flowX = 16f;
             float flowW = Mathf.Min(viewW - 32f, 640f);
 
-            EnsureSnapshot(store, flowW - RecPanelPad * 2f);
-            EnsurePathSnapshot(store, flowW - ChipsPanelPad * 2f);
-            EnsureOptionTips();
+            state.EnsureOrder(store, flowW - RecPanelPad * 2f);
+            state.EnsurePaths(store, flowW - ChipsPanelPad * 2f);
+            state.EnsureTips();
+            OptionsPathView pathView = state.Path;
 
             // The whole y-flow is laid out up front: the scroll view needs
             // contentH before anything draws.
@@ -359,7 +119,8 @@ namespace WorkRoles.UI
             y += 32f;
             float recHeaderY = y;
             y += 30f;
-            var recPanel = new Rect(flowX, y, flowW, orderLayoutHeight + RecPanelPad * 2f);
+            var recPanel = new Rect(flowX, y, flowW,
+                state.OrderLayoutHeight + RecPanelPad * 2f);
             Text.Font = GameFont.Small;
             string recOrderHelp = "WR_RecOrderHelp".Translate();
             float recOrderHelpHeight = Text.CalcHeight(recOrderHelp, flowW);
@@ -373,17 +134,17 @@ namespace WorkRoles.UI
             y = trainingHelpRect.yMax + 8f;
             var captionRect = new Rect(flowX, y, flowW, PanelCaptionH);
             y += PanelCaptionH + PanelCaptionGap;
-            var chipsPanel = new Rect(flowX, y, flowW, pathChipsHeight + ChipsPanelPad * 2f);
+            var chipsPanel = new Rect(flowX, y, flowW,
+                state.PathChipsHeight + ChipsPanelPad * 2f);
             y = chipsPanel.yMax + 12f;
 
             // A drag whose path or entry vanished must not block future presses.
-            if (dragPathId != -1 && (pathView == null || dragPathId != pathView.pathId
-                    || !pathView.roleIds.Contains(dragRoleId)))
+            if (dragPathId != -1 && (pathView == null || dragPathId != pathView.PathId
+                    || !pathView.RoleIds.Contains(dragRoleId)))
                 ClearBandDrag();
 
             float editorY = y;
-            bool anchorShown = pathView != null && (pathView.anchorRoleId != -1
-                || anchorRevealed.Contains(pathView.pathId));
+            bool anchorShown = state.IsAnchorShown(pathView);
             Rect whenPanel = default;
             Rect whenCaptionRect = default;
             if (pathView != null)
@@ -391,7 +152,7 @@ namespace WorkRoles.UI
                 float whenPanelTop = editorY + 30f + 32f + (anchorShown ? 34f : 0f);
                 whenCaptionRect = new Rect(flowX, whenPanelTop, flowW, PanelCaptionH);
                 whenPanel = new Rect(flowX, whenPanelTop + PanelCaptionH + PanelCaptionGap,
-                    flowW, WhenPanelPad * 2f + RowsStartY + pathView.displayRows * BandRowH);
+                    flowW, WhenPanelPad * 2f + RowsStartY + pathView.DisplayRows * BandRowH);
                 y = whenPanel.yMax;
             }
 
@@ -400,14 +161,14 @@ namespace WorkRoles.UI
             WrText.HeaderLabel(compatHeader, "WR_CompatSection".Translate());
 
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
-            TooltipHandler.TipRegion(numericRect, numericTipCache.Activate());
+            TooltipHandler.TipRegion(numericRect, state.NumericTip.Activate());
             bool numericNew = numeric;
             Widgets.CheckboxLabeled(numericRect, "WR_OptNumeric".Translate(), ref numericNew);
             if (numericNew != numeric)
                 RoleCommands.SetUseWorkPriorities(numericNew);
 
             bool vanillaRange = store.reportVanillaPriorities;
-            TooltipHandler.TipRegion(rangeRect, rangeTipCache.Activate());
+            TooltipHandler.TipRegion(rangeRect, state.RangeTip.Activate());
             bool vanillaNew = vanillaRange;
             Widgets.CheckboxLabeled(rangeRect, "WR_OptVanillaRange".Translate(), ref vanillaNew);
             if (vanillaNew != vanillaRange)
@@ -415,23 +176,25 @@ namespace WorkRoles.UI
 
             WrText.HeaderLabel(tuningHeader, "WR_TuningSection".Translate());
             MiniHeader(flowX, recHeaderY, flowW, "WR_RecOrderHeader".Translate(),
-                recOrderTipCache);
+                state.RecommendationOrderTip);
             DrawRecommendationOrder(recPanel, store);
             DrawHelpParagraph(recOrderHelpRect, recOrderHelp);
 
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
-                trainingTipCache);
+                state.TrainingTip);
             DrawHelpParagraph(trainingHelpRect, trainingHelp);
             Text.Font = GameFont.Tiny;
-            GUI.color = CaptionColor;
+            GUI.color = WrStyle.CaptionText;
             Widgets.Label(captionRect, "WR_PathsPanelCaption".Translate());
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            Widgets.DrawBoxSolidWithOutline(chipsPanel, PanelBg, PanelOutline);
+            Widgets.DrawBoxSolidWithOutline(
+                chipsPanel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             DrawPathChips(chipsPanel.x + ChipsPanelPad, chipsPanel.y + ChipsPanelPad, store);
 
             if (pathView != null)
-                DrawPathEditor(flowX, flowW, editorY, anchorShown, whenPanel, whenCaptionRect, store);
+                DrawPathEditor(flowX, flowW, editorY, anchorShown, whenPanel,
+                    whenCaptionRect, store, pathView);
 
             Widgets.EndScrollView();
 
@@ -456,7 +219,7 @@ namespace WorkRoles.UI
         private static void DrawHelpParagraph(Rect rect, string text)
         {
             Text.Font = GameFont.Small;
-            GUI.color = CaptionColor;
+            GUI.color = WrStyle.CaptionText;
             Widgets.Label(rect, text);
             GUI.color = Color.white;
         }
@@ -469,23 +232,28 @@ namespace WorkRoles.UI
         /// Role to pin unlisted roles at their suggested spot.
         private void DrawRecommendationOrder(Rect panel, RoleStore store)
         {
-            Widgets.DrawBoxSolidWithOutline(panel, PanelBg, PanelOutline);
+            Widgets.DrawBoxSolidWithOutline(
+                panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             var origin = new Vector2(panel.x + RecPanelPad, panel.y + RecPanelPad);
+            var order = state.Order;
+            var roles = state.OrderRoles;
+            var layout = state.OrderLayout;
+            var byId = state.OrderById;
 
             Text.Font = GameFont.Small;
-            for (int i = 0; i < orderRoles.Count; i++)
+            for (int i = 0; i < roles.Count; i++)
             {
-                var role = orderRoles[i];
-                var chipRect = Offset(orderLayout[i], origin);
+                var role = roles[i];
+                var chipRect = Offset(layout[i], origin);
                 var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Normal,
                     showRemove: true, dragSource: null, onClick: null);
                 if (click == ChipClick.Remove)
                 {
-                    var edited = orderCache.ToList();
+                    var edited = order.ToList();
                     edited.Remove(role.id);
                     RoleCommands.SetRecommendationOrder(edited);
                 }
-                if (orderById.TryGetValue(role.id, out var rec) && rec.Hunting)
+                if (byId.TryGetValue(role.id, out var rec) && rec.Hunting)
                 {
                     GUI.color = LockedColor;
                     Widgets.DrawBox(chipRect);
@@ -495,44 +263,44 @@ namespace WorkRoles.UI
                 }
             }
 
-            if (Widgets.ButtonText(Offset(orderAddRect, origin), "WR_AddRole".Translate()))
-                OpenAddMenu(store, orderCache, orderById);
+            if (Widgets.ButtonText(Offset(state.OrderAddRect, origin), "WR_AddRole".Translate()))
+                OpenAddMenu(store, order, byId);
 
-            if (RoleDrag.Active && orderCache.Contains(RoleDrag.RoleId) && Mouse.IsOver(panel))
+            if (RoleDrag.Active && order.Contains(RoleDrag.RoleId) && Mouse.IsOver(panel))
             {
                 // Layout rects are chips-local: shift the mouse, not the list.
                 int insertIndex = RoleDrag.ChipInsertIndex(
-                    Event.current.mousePosition - origin, orderLayout, r => r);
+                    Event.current.mousePosition - origin, layout, rect => rect);
 
                 float markerX, markerY;
-                if (insertIndex == 0 || orderLayout.Count == 0)
+                if (insertIndex == 0 || layout.Count == 0)
                 {
-                    markerX = -FlowGap / 2f;
+                    markerX = -OptionsTabState.FlowGap / 2f;
                     markerY = 0f;
                 }
                 else
                 {
-                    var prev = orderLayout[insertIndex - 1];
-                    markerX = prev.xMax + FlowGap / 2f;
+                    var prev = layout[insertIndex - 1];
+                    markerX = prev.xMax + OptionsTabState.FlowGap / 2f;
                     markerY = prev.y;
                 }
                 Widgets.DrawBoxSolid(new Rect(origin.x + markerX - 1f, origin.y + markerY + 3f,
                     2f, RoleChipUI.Height - 6f), new Color(1f, 1f, 1f, 0.9f));
 
                 int draggedId = RoleDrag.RoleId;
-                int from = orderCache.IndexOf(draggedId);
+                int from = state.OrderIndexOf(draggedId);
                 int to = insertIndex > from ? insertIndex - 1 : insertIndex;
                 if (to != from)
                 {
                     // RoleDrag clears its slot every frame, so reassignment is
                     // per pass — but the list copy and closure are rebuilt only
                     // when the reorder target (or the order itself) changes.
-                    if (dropStamp != orderStamp || dropFrom != from || dropTo != to)
+                    if (dropStamp != state.OrderStamp || dropFrom != from || dropTo != to)
                     {
-                        dropStamp = orderStamp;
+                        dropStamp = state.OrderStamp;
                         dropFrom = from;
                         dropTo = to;
-                        var edited = orderCache.ToList();
+                        var edited = order.ToList();
                         RoleDrag.HoverDropAction = () =>
                         {
                             edited.RemoveAt(from);
@@ -550,12 +318,13 @@ namespace WorkRoles.UI
         /// Pin an unlisted role: it enters at its suggested (dynamic) spot,
         /// not at the end. Candidate selection is Core logic (AddCandidates);
         /// this only maps ids to labels.
-        private static void OpenAddMenu(RoleStore store, List<int> order,
-            Dictionary<int, RoleView> byId)
+        private static void OpenAddMenu(RoleStore store, IReadOnlyList<int> order,
+            IReadOnlyDictionary<int, RoleView> byId)
         {
             var options = new List<FloatMenuOption>();
             foreach (int id in OrderTemplate.AddCandidates(byId.Values.ToList(), order)
-                         .OrderBy(candidate => store.RoleById(candidate)?.label))
+                         .OrderBy(candidate => store.RoleById(candidate)?.label,
+                             System.StringComparer.OrdinalIgnoreCase))
             {
                 var role = store.RoleById(id);
                 if (role == null) continue;
@@ -577,7 +346,7 @@ namespace WorkRoles.UI
         /// The selected path's editor: mini-header, name row + assignment
         /// order opt-in, optional Assign row, then the WHEN panel.
         private void DrawPathEditor(float x, float width, float y, bool anchorShown,
-            Rect whenPanel, Rect whenCaptionRect, RoleStore store)
+            Rect whenPanel, Rect whenCaptionRect, RoleStore store, OptionsPathView view)
         {
             y = MiniHeader(x, y, width, "WR_PathEditorHeader".Translate(), null);
 
@@ -585,7 +354,7 @@ namespace WorkRoles.UI
             // from state (anchor set) OR revealed-by-hand; unchecking clears.
             // Shares the name row, right-aligned (CheckboxLabeled pins its box
             // to the rect's right edge).
-            bool anchorSet = pathView.anchorRoleId != -1;
+            bool anchorSet = view.AnchorRoleId != -1;
             string custLabel = "WR_CustomizeAssignment".Translate();
             float custW = WrText.FitWidth(custLabel) + 30f;
             var custRect = new Rect(x + width - custW, y + 1f, custW, 24f);
@@ -594,46 +363,47 @@ namespace WorkRoles.UI
             if (custWanted != anchorShown)
             {
                 if (custWanted)
-                    anchorRevealed.Add(pathView.pathId);
+                    state.SetAnchorRevealed(view.PathId, revealed: true);
                 else
                 {
                     if (anchorSet)
-                        RoleCommands.SetTrainingPathAnchor(pathView.pathId, -1, pathView.anchorBefore);
-                    anchorRevealed.Remove(pathView.pathId);
+                        RoleCommands.SetTrainingPathAnchor(view.PathId, -1, view.AnchorBefore);
+                    state.SetAnchorRevealed(view.PathId, revealed: false);
                 }
             }
 
-            DrawPathNameRow(new Rect(x, y, width - custW - 12f, 26f));
+            DrawPathNameRow(new Rect(x, y, width - custW - 12f, 26f), view);
             y += 32f;
 
             if (anchorShown)
-                DrawPathAnchorRow(new Rect(x, y, width, 28f), store, pathView);
+                DrawPathAnchorRow(new Rect(x, y, width, 28f), store, view);
 
             // Caption above the WHEN panel (single line, truncated; full text as tooltip).
             Text.Font = GameFont.Tiny;
-            GUI.color = CaptionColor;
+            GUI.color = WrStyle.CaptionText;
             string whenCaption = "WR_WhenPanelCaption".Translate();
             Widgets.Label(whenCaptionRect, whenCaption.Truncate(whenCaptionRect.width));
             TooltipHandler.TipRegion(whenCaptionRect, whenCaption);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
-            DrawWhenPanel(whenPanel, store);
+            DrawWhenPanel(whenPanel, store, view);
         }
 
         /// The WHEN editor panel: the 0..21 axis on top (readout headroom above
         /// it), the packed band rows, then Add Role on the trailing empty row.
         /// Natural height — the tab's scroll view absorbs any overflow.
-        private void DrawWhenPanel(Rect panel, RoleStore store)
+        private void DrawWhenPanel(Rect panel, RoleStore store, OptionsPathView view)
         {
             float bandW = panel.width - WhenPanelPad * 2f;
             // Below this, a min-span chip can't hold its grips + X.
             if (bandW < 150f) return;
 
-            Widgets.DrawBoxSolidWithOutline(panel, PanelBg, PanelOutline);
+            Widgets.DrawBoxSolidWithOutline(
+                panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             var inner = panel.ContractedBy(WhenPanelPad);
             DrawAxis(new Rect(inner.x, inner.y + RowsTopPad, bandW, AxisH));
-            DrawBandRows(store, pathView, inner.x, inner.y, bandW);
+            DrawBandRows(store, view, inner.x, inner.y, bandW);
         }
 
         /// One chip per stored path: name + delete X; click selects. The
@@ -641,87 +411,86 @@ namespace WorkRoles.UI
         private void DrawPathChips(float baseX, float baseY, RoleStore store)
         {
             var e = Event.current;
+            var pathChips = state.PathChips;
             for (int i = 0; i < pathChips.Count; i++)
             {
                 var chip = pathChips[i];
-                var r = new Rect(baseX + chip.rect.x, baseY + chip.rect.y,
-                    chip.rect.width, chip.rect.height);
-                PathChipUI.Draw(r, chip.name, chip.color, chip.id == selectedPathId);
+                var r = new Rect(baseX + chip.Rect.x, baseY + chip.Rect.y,
+                    chip.Rect.width, chip.Rect.height);
+                PathChipUI.Draw(r, chip.Name, chip.Color, chip.Id == state.SelectedPathId);
 
                 if (e.type != EventType.MouseDown || e.button != 0
                     || !r.Contains(e.mousePosition)) continue;
                 if (ChipUI.RemoveRect(r).Contains(e.mousePosition))
                 {
-                    int id = chip.id;
+                    int id = chip.Id;
                     Find.WindowStack.Add(new Dialog_SmallConfirm(
-                        "WR_DeletePathConfirm".Translate(chip.name),
+                        "WR_DeletePathConfirm".Translate(chip.Name),
                         () => RoleCommands.DeleteTrainingPath(id)));
                 }
                 else
-                    SelectPath(chip.id);
+                    state.SelectPath(chip.Id);
                 e.Use();
             }
 
-            if (Widgets.ButtonText(Offset(pathAddRect, new Vector2(baseX, baseY)),
+            if (Widgets.ButtonText(Offset(state.PathAddRect, new Vector2(baseX, baseY)),
                     "WR_AddNew".Translate()))
                 Find.WindowStack.Add(new Dialog_RenameRole("WR_NewPathTitle".Translate(), name =>
                 {
                     RoleCommands.CreateTrainingPath(name);
-                    pendingSelectPathName = name;
+                    state.SelectPathWhenCreated(name);
                 }));
         }
 
-        private void SelectPath(int id) => selectedPathId = id;
-
         /// Name row: grey caption, path-color dot, plain name, rename pencil
         /// (dialog commits ONE RenameTrainingPath).
-        private void DrawPathNameRow(Rect rect)
+        private static void DrawPathNameRow(Rect rect, OptionsPathView view)
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             string caption = "WR_PathNameLabel".Translate();
             float captionW = WrText.FitWidth(caption);
-            GUI.color = DimLabel;
+            GUI.color = WrStyle.DimText;
             Widgets.Label(new Rect(rect.x, rect.y, captionW, rect.height), caption);
             GUI.color = Color.white;
             float x = rect.x + captionW + 6f;
 
             var dotRect = new Rect(x, rect.y + (rect.height - 16f) / 2f, 16f, 16f);
-            GUI.color = pathView.color;
+            GUI.color = view.Color;
             GUI.DrawTexture(dotRect, WorkRolesTex.Circle);
             GUI.color = Color.white;
             TooltipHandler.TipRegion(dotRect, "WR_PathColorTip".Translate());
             if (Widgets.ButtonInvisible(dotRect))
-                Find.WindowStack.Add(new Dialog_PathColor(pathView.pathId));
+                Find.WindowStack.Add(new Dialog_PathColor(view.PathId));
             x += 16f + 6f;
 
-            float nameW = Mathf.Min(WrText.FitWidth(pathView.name), rect.xMax - x - 36f);
-            Widgets.Label(new Rect(x, rect.y, nameW, rect.height), pathView.name.Truncate(nameW));
+            float nameW = Mathf.Min(WrText.FitWidth(view.Name), rect.xMax - x - 36f);
+            Widgets.Label(new Rect(x, rect.y, nameW, rect.height), view.Name.Truncate(nameW));
             Text.Anchor = TextAnchor.UpperLeft;
             x += nameW + 6f;
 
-            int pathId = pathView.pathId;
+            int pathId = view.PathId;
             if (Widgets.ButtonImage(new Rect(x, rect.y + (rect.height - 24f) / 2f, 24f, 24f),
                     TexButton.Rename))
                 Find.WindowStack.Add(new Dialog_RenameRole("WR_RenamePathTitle".Translate(),
-                    name => RoleCommands.RenameTrainingPath(pathId, name), pathView.name));
+                    name => RoleCommands.RenameTrainingPath(pathId, name), view.Name));
         }
 
         /// Grey caption + Before/After toggle + the anchor as a role chip (or
         /// a Pick-role button while unset). The group right-aligns under the
         /// Customize toggle. Reads snapshot only.
-        private void DrawPathAnchorRow(Rect rect, RoleStore store, PathView view)
+        private void DrawPathAnchorRow(Rect rect, RoleStore store, OptionsPathView view)
         {
             Text.Font = GameFont.Small;
             string caption = "WR_AnchorLabel".Translate();
             float captionW = WrText.FitWidth(caption);
-            Role anchorRole = view.anchorRoleId != -1 ? store.RoleById(view.anchorRoleId) : null;
+            Role anchorRole = view.AnchorRoleId != -1 ? store.RoleById(view.AnchorRoleId) : null;
             float tailW = anchorRole != null
                 ? RoleChipUI.WidthFor(anchorRole, showRemove: false)
                 : 110f;
             float x = rect.xMax - (captionW + 4f + 70f + 8f + tailW);
             TooltipHandler.TipRegion(new Rect(x, rect.y, rect.xMax - x, rect.height),
-                anchorTipCache.Activate());
+                state.AnchorTip.Activate());
 
             // MiddleLeft over the row height: the caption shares the text
             // baseline with the Before/After button and the chip.
@@ -732,11 +501,11 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.UpperLeft;
             x += captionW + 4f;
 
-            string toggleLabel = view.anchorBefore
+            string toggleLabel = view.AnchorBefore
                 ? "WR_AnchorBefore".Translate()
                 : "WR_AnchorAfter".Translate();
             if (Widgets.ButtonText(new Rect(x, rect.y, 70f, rect.height), toggleLabel))
-                RoleCommands.SetTrainingPathAnchor(view.pathId, view.anchorRoleId, !view.anchorBefore);
+                RoleCommands.SetTrainingPathAnchor(view.PathId, view.AnchorRoleId, !view.AnchorBefore);
             x += 78f;
 
             if (anchorRole != null)
@@ -755,7 +524,7 @@ namespace WorkRoles.UI
 
         /// Clearing runs through the Customize checkbox, so the menu only
         /// lists candidates: normal roles (not blocker/rules), alphabetical.
-        private static void OpenAnchorMenu(RoleStore store, PathView view)
+        private static void OpenAnchorMenu(RoleStore store, OptionsPathView view)
         {
             var options = new List<FloatMenuOption>();
             foreach (var role in store.roles
@@ -764,7 +533,7 @@ namespace WorkRoles.UI
             {
                 int capturedId = role.id;
                 options.Add(new FloatMenuOption(role.label, () =>
-                    RoleCommands.SetTrainingPathAnchor(view.pathId, capturedId, view.anchorBefore)));
+                    RoleCommands.SetTrainingPathAnchor(view.PathId, capturedId, view.AnchorBefore)));
             }
             if (options.Count > 0)
                 Find.WindowStack.Add(new FloatMenu(options));
@@ -777,7 +546,7 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.LowerCenter;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             float scale = rect.width / SkillProgressionMath.MaxLevel;
             for (int lvl = 1; lvl < SkillProgressionMath.MaxLevel; lvl++)
                 Widgets.Label(new Rect(rect.x + lvl * scale - 9f, rect.y, 18f, rect.height - 6f),
@@ -813,20 +582,20 @@ namespace WorkRoles.UI
         /// Tier 1 plain, tier 2 greyed (mods can rewire XP in driver code, so
         /// players may know better). The first role gets the full axis; later
         /// picks enter min-width at the top, drag to place.
-        private static void OpenAddRoleMenu(RoleStore store, PathView view)
+        private static void OpenAddRoleMenu(RoleStore store, OptionsPathView view)
         {
             var options = new List<FloatMenuOption>();
             foreach (var (role, tier) in store.roles
-                         .Where(r => IsNormal(r) && !view.roleIds.Contains(r.id))
+                         .Where(r => IsNormal(r) && !view.RoleIds.Contains(r.id))
                          .Select(r => (role: r, tier: HasXpJobs(r) ? 1 : 2))
                          .OrderBy(t => t.tier)
                          .ThenBy(t => t.role.label, System.StringComparer.OrdinalIgnoreCase))
             {
                 int captured = role.id;
-                bool first = view.roleIds.Count == 0;
-                var ids = view.roleIds.ToList();
-                var mins = view.mins.ToList();
-                var maxes = view.maxes.ToList();
+                bool first = view.RoleIds.Count == 0;
+                var ids = view.RoleIds.ToList();
+                var mins = view.Mins.ToList();
+                var maxes = view.Maxes.ToList();
                 string label = tier == 2
                     ? role.label.Colorize(new Color(0.62f, 0.62f, 0.62f))
                     : role.label;
@@ -836,7 +605,7 @@ namespace WorkRoles.UI
                     mins.Add(first ? 0
                         : SkillProgressionMath.MaxLevel - SkillProgressionMath.MinSpan);
                     maxes.Add(SkillProgressionMath.MaxLevel);
-                    RoleCommands.SetTrainingPathBands(view.pathId, ids, mins, maxes);
+                    RoleCommands.SetTrainingPathBands(view.PathId, ids, mins, maxes);
                 });
                 if (tier == 2) option.tooltip = "WR_NoXpRoleTip".Translate();
                 options.Add(option);
@@ -849,7 +618,8 @@ namespace WorkRoles.UI
         /// Add Role button (and stays the slide-to-re-row affordance). baseY is
         /// the panel's inner top; chips are display-only, all interaction is
         /// the explicit block below (X, handles, body slide).
-        private void DrawBandRows(RoleStore store, PathView view, float bandX, float baseY, float bandW)
+        private void DrawBandRows(RoleStore store, OptionsPathView view,
+            float bandX, float baseY, float bandW)
         {
             var e = Event.current;
             float scale = bandW / SkillProgressionMath.MaxLevel;
@@ -857,7 +627,7 @@ namespace WorkRoles.UI
 
             // Section sweep already cleared vanished drags; a live entry here
             // is this path's own drag.
-            int dragEntry = dragPathId == view.pathId ? view.roleIds.IndexOf(dragRoleId) : -1;
+            int dragEntry = dragPathId == view.PathId ? view.IndexOfRole(dragRoleId) : -1;
             if (dragEntry >= 0)
             {
                 if (Input.GetMouseButton(0))
@@ -870,32 +640,32 @@ namespace WorkRoles.UI
                 }
             }
             int linkedEntry = dragEntry >= 0 && dragLinkedRoleId != -1
-                ? view.roleIds.IndexOf(dragLinkedRoleId) : -1;
+                ? view.IndexOfRole(dragLinkedRoleId) : -1;
 
             // Displayed (pending-aware) band values; the linked neighbour's
             // touching edge follows the shared pending level.
             int ShownMin(int k) => k == dragEntry ? pendingMin
-                : k == linkedEntry && dragKind == BandDragKind.MaxEdge ? pendingMax : view.mins[k];
+                : k == linkedEntry && dragKind == BandDragKind.MaxEdge ? pendingMax : view.Mins[k];
             int ShownMax(int k) => k == dragEntry ? pendingMax
-                : k == linkedEntry && dragKind == BandDragKind.MinEdge ? pendingMin : view.maxes[k];
+                : k == linkedEntry && dragKind == BandDragKind.MinEdge ? pendingMin : view.Maxes[k];
             int ShownRow(int k) => k == dragEntry && dragKind == BandDragKind.Slide
-                ? pendingRow : view.rows[k];
+                ? pendingRow : view.Rows[k];
 
             // Dim divider below every display row, 2px clear of the chips on
             // both sides (BandRowH leaves 5px between chips).
             GUI.color = new Color(1f, 1f, 1f, 0.12f);
-            for (int r = 1; r < view.displayRows; r++)
+            for (int r = 1; r < view.DisplayRows; r++)
                 WrText.LineHorizontal(bandX, rowsY + r * BandRowH - 3f, bandW);
             GUI.color = Color.white;
 
             // Add Role lives on the empty affordance row, left-aligned; a chip
             // slid onto that row draws over it (chips render later).
             if (Widgets.ButtonText(new Rect(bandX,
-                    rowsY + (view.displayRows - 1) * BandRowH,
+                    rowsY + (view.DisplayRows - 1) * BandRowH,
                     110f, RoleChipUI.Height), "WR_AddRole".Translate()))
                 OpenAddRoleMenu(store, view);
 
-            for (int i = 0; i < view.roleIds.Count; i++)
+            for (int i = 0; i < view.RoleIds.Count; i++)
             {
                 int min = ShownMin(i), max = ShownMax(i);
                 int row = ShownRow(i);
@@ -907,7 +677,7 @@ namespace WorkRoles.UI
                 // backs each grip's outer edge.
                 var chipRect = new Rect(bx + 2f - ChipUI.BandOuterPad, rowY,
                     bandPx - 4f + ChipUI.BandOuterPad * 2f, RoleChipUI.Height);
-                RoleChipUI.DrawBandChip(chipRect, view.roles[i]);
+                RoleChipUI.DrawBandChip(chipRect, view.Roles[i]);
 
                 if (i == dragEntry)
                 {
@@ -943,10 +713,10 @@ namespace WorkRoles.UI
                 {
                     dragKind = BandDragKind.Slide;
                     slideGrabOffset = Mathf.RoundToInt((e.mousePosition.x - bandX) / scale) - min;
-                    pendingRow = dragStartRow = view.rows[i];
+                    pendingRow = dragStartRow = view.Rows[i];
                 }
-                dragPathId = view.pathId;
-                dragRoleId = view.roleIds[i];
+                dragPathId = view.PathId;
+                dragRoleId = view.RoleIds[i];
                 pendingMin = min;
                 pendingMax = max;
                 e.Use();
@@ -955,39 +725,39 @@ namespace WorkRoles.UI
 
         /// Per-frame pending update: clamp arithmetic only. A linked edge moves
         /// both bands via the shared clamp; a vanished neighbour drops the link.
-        private void UpdateBandDrag(PathView view, int dragEntry, Event e, float bandX,
+        private void UpdateBandDrag(OptionsPathView view, int dragEntry, Event e, float bandX,
             float rowsY, float scale)
         {
             int level = Mathf.RoundToInt((e.mousePosition.x - bandX) / scale);
-            int min = view.mins[dragEntry], max = view.maxes[dragEntry];
+            int min = view.Mins[dragEntry], max = view.Maxes[dragEntry];
             if (dragKind == BandDragKind.Slide)
             {
                 pendingMin = SkillProgressionMath.ClampSlide(min, max, level - slideGrabOffset);
                 pendingMax = pendingMin + (max - min);
                 pendingRow = Mathf.Clamp(
                     Mathf.FloorToInt((e.mousePosition.y - rowsY) / BandRowH),
-                    0, view.displayRows - 1);
+                    0, view.DisplayRows - 1);
                 return;
             }
-            int linked = dragLinkedRoleId == -1 ? -1 : view.roleIds.IndexOf(dragLinkedRoleId);
+            int linked = dragLinkedRoleId == -1 ? -1 : view.IndexOfRole(dragLinkedRoleId);
             if (linked < 0) dragLinkedRoleId = -1;
             if (dragKind == BandDragKind.MinEdge)
                 pendingMin = linked >= 0
-                    ? SkillProgressionMath.ClampSharedEdge(view.mins[linked], max, level)
+                    ? SkillProgressionMath.ClampSharedEdge(view.Mins[linked], max, level)
                     : SkillProgressionMath.ClampEdge(min, max, true, level);
             else
                 pendingMax = linked >= 0
-                    ? SkillProgressionMath.ClampSharedEdge(min, view.maxes[linked], level)
+                    ? SkillProgressionMath.ClampSharedEdge(min, view.Maxes[linked], level)
                     : SkillProgressionMath.ClampEdge(min, max, false, level);
         }
 
         /// ONE synced command commits the slid/resized band, the linked
         /// neighbour's shared edge and a vertical reorder together.
-        private void CommitBandDrag(PathView view, int dragEntry)
+        private void CommitBandDrag(OptionsPathView view, int dragEntry)
         {
-            var ids = view.roleIds.ToList();
-            var mins = view.mins.ToList();
-            var maxes = view.maxes.ToList();
+            var ids = view.RoleIds.ToList();
+            var mins = view.Mins.ToList();
+            var maxes = view.Maxes.ToList();
             bool changed = pendingMin != mins[dragEntry] || pendingMax != maxes[dragEntry];
             mins[dragEntry] = pendingMin;
             maxes[dragEntry] = pendingMax;
@@ -1013,10 +783,10 @@ namespace WorkRoles.UI
                 maxes.RemoveAt(dragEntry);
                 // Drop before the first remaining entry packed on the target row.
                 int insert = ids.Count;
-                for (int j = 0, k = 0; j < view.roleIds.Count; j++)
+                for (int j = 0, k = 0; j < view.RoleIds.Count; j++)
                 {
                     if (j == dragEntry) continue;
-                    if (view.rows[j] == pendingRow) { insert = k; break; }
+                    if (view.Rows[j] == pendingRow) { insert = k; break; }
                     k++;
                 }
                 ids.Insert(insert, dragRoleId);
@@ -1024,55 +794,34 @@ namespace WorkRoles.UI
                 maxes.Insert(insert, pendingMax);
             }
             if (changed)
-                RoleCommands.SetTrainingPathBands(view.pathId, ids, mins, maxes);
+                RoleCommands.SetTrainingPathBands(view.PathId, ids, mins, maxes);
         }
 
         /// A same-row neighbour whose band touches the pressed edge; tracked
         /// by id so the link survives (or is dropped on) snapshot changes.
-        private static int FindLinked(PathView view, int i, BandDragKind kind)
+        private static int FindLinked(OptionsPathView view, int i, BandDragKind kind)
         {
-            for (int j = 0; j < view.roleIds.Count; j++)
+            for (int j = 0; j < view.RoleIds.Count; j++)
             {
-                if (j == i || view.rows[j] != view.rows[i]) continue;
-                if (kind == BandDragKind.MaxEdge && view.mins[j] == view.maxes[i]) return view.roleIds[j];
-                if (kind == BandDragKind.MinEdge && view.maxes[j] == view.mins[i]) return view.roleIds[j];
+                if (j == i || view.Rows[j] != view.Rows[i]) continue;
+                if (kind == BandDragKind.MaxEdge && view.Mins[j] == view.Maxes[i])
+                    return view.RoleIds[j];
+                if (kind == BandDragKind.MinEdge && view.Maxes[j] == view.Mins[i])
+                    return view.RoleIds[j];
             }
             return -1;
         }
 
         /// The chip X drops one entry; the path itself survives empty.
-        private static void RemoveEntry(PathView view, int index)
+        private static void RemoveEntry(OptionsPathView view, int index)
         {
-            var ids = view.roleIds.ToList();
-            var mins = view.mins.ToList();
-            var maxes = view.maxes.ToList();
+            var ids = view.RoleIds.ToList();
+            var mins = view.Mins.ToList();
+            var maxes = view.Maxes.ToList();
             ids.RemoveAt(index);
             mins.RemoveAt(index);
             maxes.RemoveAt(index);
-            RoleCommands.SetTrainingPathBands(view.pathId, ids, mins, maxes);
-        }
-
-        /// Wrapped chip flow with the Add Role button as its last element.
-        private static float LayoutChips(float width, List<Role> roles, List<Rect> result,
-            out Rect addRect)
-        {
-            float x = 0f, y = 0f;
-            Rect Place(float w)
-            {
-                if (x + w > width && x > 0f)
-                {
-                    x = 0f;
-                    y += RoleChipUI.Height + FlowGap;
-                }
-                var r = new Rect(x, y, w, RoleChipUI.Height);
-                x += w + FlowGap;
-                return r;
-            }
-            foreach (var role in roles)
-                result.Add(Place(RoleChipUI.WidthFor(role, showRemove: true)));
-            Text.Font = GameFont.Small;
-            addRect = Place(WrText.FitWidth("WR_AddRole".Translate()) + 16f);
-            return y + RoleChipUI.Height;
+            RoleCommands.SetTrainingPathBands(view.PathId, ids, mins, maxes);
         }
 
     }

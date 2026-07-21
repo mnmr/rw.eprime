@@ -151,9 +151,11 @@
   <WR_FixMyColonyTip>Replace every colonist's roles with their recommended roles.</WR_FixMyColonyTip>
   <WR_FixNeedsSingleLocation>Recommendations are computed per location. Narrow the scope filter to a single settlement or ship to use Fix My Colony.</WR_FixNeedsSingleLocation>
 
-  <!-- Swallowed SetPriority warning; {0} = mod name, {1} = work types, {2} = colonist count -->
+  <!-- Swallowed SetPriority warning; {0} = sampled mod, {1} = sampled work type, {2} = blocked writes since the previous notice/session start -->
   <WR_SetPriorityBlockedTitle>WorkRoles manages priorities</WR_SetPriorityBlockedTitle>
-  <WR_SetPriorityBlockedBody>{0} attempted to set work priorities ({1}) on {2} colonist(s).
+  <WR_SetPriorityBlockedBody>{0} attempted to set work priorities ({1}).
+
+WorkRoles blocked {2} priority writes since the previous notice or the start of this game session.
 
 WorkRoles owns priorities for role-managed colonists, so the change was ignored - the mod's other features are unaffected.
 

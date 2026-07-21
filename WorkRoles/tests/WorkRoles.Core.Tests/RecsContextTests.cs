@@ -178,4 +178,20 @@ public class RecsContextTests
         positions = Ordering.BasePositions(new List<RoleView> { a, b, unlisted }, new List<int> { 1, 2 });
         await Assert.That(positions[3] < 0L).IsTrue();
     }
+
+    [Test]
+    public async Task BasePositions_PublishesOneImmutableViewPerRun()
+    {
+        var role = RecsTestBed.Role(1, "Cooking");
+        var context = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { role }, RecsTestBed.Pawn()));
+
+        IReadOnlyDictionary<int, long> first = context.BasePositions();
+        IReadOnlyDictionary<int, long> second = context.BasePositions();
+
+        await Assert.That(ReferenceEquals(first, second)).IsTrue();
+        await Assert.That(() => ((IDictionary<int, long>)first).Add(99, 99L))
+            .Throws<NotSupportedException>();
+        await Assert.That(second.ContainsKey(99)).IsFalse();
+    }
 }

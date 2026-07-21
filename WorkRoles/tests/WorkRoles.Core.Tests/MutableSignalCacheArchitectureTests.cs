@@ -118,15 +118,14 @@ public class MutableSignalCacheArchitectureTests
     public async Task ColonistsViewInvalidatesEverySignalDependentCacheTogether()
     {
         string source = Source("UI", "ColonistsTabView.cs");
-        string invalidation = Method(source, "private void ObserveSignalRevision()");
+        string stats = Source("UI", "ColonistStatsState.cs");
+        string invalidation = Method(source,
+            "private void InvalidateSignalDependentCaches()");
 
         string[] dependents =
         {
-            "planCache = null",
-            "statsStamp = -1",
-            "skillPresentations.Clear()",
+            "recommendationState.InvalidatePlan()",
             "roleTipCache.Clear()",
-            "previewChips = null",
             "sizeStamp = ScopeCacheStamp.Invalid",
         };
         foreach (string value in dependents)
@@ -134,10 +133,6 @@ public class MutableSignalCacheArchitectureTests
 
         string[] consumers =
         {
-            "private List<PawnFixPlan> GetPlan()",
-            "private void EnsurePreview(",
-            "private SkillPresentation PresentationFor(",
-            "private void EnsureStats(",
             "private void EnsureSizes()",
             "internal string RoleTipText(",
         };
@@ -145,32 +140,43 @@ public class MutableSignalCacheArchitectureTests
             await Assert.That(Method(source, consumer)).Contains("ObserveSignal")
                 .Because($"{consumer} must observe signal revision before reusing cached data");
 
-        await Assert.That(Method(source, "private List<PawnFixPlan> BuildColonyFixPlan("))
-            .Contains("SignalSnapshotFor")
+        await Assert.That(Method(stats,
+                "internal ColonistSkillPresentation PresentationFor("))
+            .Contains("Observe(pawn)");
+        await Assert.That(Method(stats, "internal ColonistStatsSnapshot Snapshot(Pawn pawn)"))
+            .Contains("Observe(pawn)");
+        string observeRevision = Method(stats, "private void ObserveRevision()");
+        await Assert.That(observeRevision).Contains("InvalidatePresentations();");
+        await Assert.That(observeRevision).Contains("invalidateExternal();");
+
+        string recommendations = Source("UI", "ColonistRecommendationState.cs");
+        await Assert.That(Method(recommendations,
+                "private static List<PawnFixPlan> BuildColonyFixPlan("))
+            .Contains("signalSnapshot")
             .Because("a snapshot rebuilt during plan construction must publish its revision");
     }
 
     [Test]
     public async Task FullCohortObservationIsCoalescedWithoutSinglePawnPoisoning()
     {
-        string source = Source("UI", "ColonistsTabView.cs");
+        string source = Source("UI", "ColonistStatsState.cs");
         string listed = Method(source,
-            "private void ObserveSignalChanges(IEnumerable<Pawn> pawns)");
-        string map = Method(source, "private void ObserveSignalChanges(Map map)");
+            "internal void Observe(IEnumerable<Pawn> pawns,");
+        string map = Method(source, "internal void Observe(Map map)");
         string single = Method(source,
-            "private PawnSignalSnapshot ObserveSignalChanges(Pawn pawn)");
+            "internal PawnSignalSnapshot Observe(Pawn pawn)");
 
         await Assert.That(source).Contains("ObservationEpochGate<ScopeCacheStamp>");
         await Assert.That(source).Contains("ObservationEpochGate<int>");
         await Assert.That(listed).Contains(
-            "long observationEpoch = PawnSignalSnapshotCache.ObservationEpoch;");
+            "long epoch = PawnSignalSnapshotCache.ObservationEpoch;");
         await Assert.That(map).Contains(
-            "long observationEpoch = PawnSignalSnapshotCache.ObservationEpoch;");
-        await Assert.That(listed).Contains("listedSignalObservations.Enter(");
-        await Assert.That(map).Contains("mapSignalObservations.Enter(");
+            "long epoch = PawnSignalSnapshotCache.ObservationEpoch;");
+        await Assert.That(listed).Contains("listedObservations.Enter(");
+        await Assert.That(map).Contains("mapObservations.Enter(");
         await Assert.That(listed).DoesNotContain("Time.frameCount");
         await Assert.That(map).DoesNotContain("Time.frameCount");
-        await Assert.That(single).DoesNotContain("SignalObservations.Enter(");
+        await Assert.That(single).DoesNotContain("Observations.Enter(");
     }
 
     [Test]

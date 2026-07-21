@@ -298,7 +298,7 @@ namespace WorkRoles.UI
                 {
                     if (Event.current.type == EventType.Repaint)
                     {
-                        GUI.color = new Color(0.6f, 0.6f, 0.6f);
+                        GUI.color = WrStyle.DimText;
                         Widgets.Label(new Rect(0f, 0f, rowW, PawnRowH), noChangesText);
                         GUI.color = Color.white;
                     }

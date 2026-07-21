@@ -13,19 +13,19 @@ namespace WorkRoles.UI
     {
         // Pawn source for the holders row, injected by MainTabWindow (the
         // colonist table owns the scope and its pawn snapshot).
-        internal System.Func<List<Pawn>> listedPawns;
+        internal System.Func<IReadOnlyList<Pawn>> listedPawns;
         internal System.Func<int> pawnListRevision;
 
         // Unified role tip (TreeRow context), injected by MainTabWindow: the
         // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
         internal System.Func<Role, string> roleTip;
 
+        private readonly RolesListState listState = new RolesListState();
+        private readonly RoleEditorState editorState = new RoleEditorState();
         private Vector2 listScroll;
         private Vector2 entriesScroll;
         private Vector2 treeScroll;
         private int selectedRoleId = -1;
-        private string filter = "";
-        private readonly HashSet<string> expanded = new HashSet<string>();
         private int entriesReorderableGroupId = -1;
 
         private const float ListWidth = 260f;
@@ -60,15 +60,6 @@ namespace WorkRoles.UI
         // Recommendations Tuning disclosure per role: collapsed by default,
         // session-local UI state like rulesRevealed.
         private readonly HashSet<int> tuningExpanded = new HashSet<int>();
-
-        // Disambiguated display names per WorkGiverDef. Built once (defs don't
-        // change mid-game), invalidated by Reset().
-        private static Dictionary<WorkGiverDef, string> giverDisplayCache;
-
-        // Built-in swatch table lives game-side (SwatchPalette): import/export
-        // and seeding consume it too.
-        internal static Color[] Swatches => SwatchPalette.Swatches;
-        private static string[] SwatchNames => SwatchPalette.Names;
 
         /// Content-driven height for window sizing: the role list on the left and
         /// the editor's collapsed job tree on the right are the tall pieces.
@@ -107,80 +98,32 @@ namespace WorkRoles.UI
                 RoleCommands.ScrubDeadEntries(role.id);
         }
 
-        // Open-window snapshot of the editor's structured tips: static content,
-        // rebuilt only when the stamp moves and activated at its UI use sites.
-        private int editorTipsStamp = -1;
-        private StructuredTip blockerTipCache;
-        private StructuredTip holdersTipCache;
-
-        private void EnsureEditorTips()
-        {
-            if (editorTipsStamp == UiVersion.Current) return;
-            editorTipsStamp = UiVersion.Current;
-            tuningLabelCol = tuningBtnW = -1f;
-
-            var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
-            blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
-            blocker.AddSection().Text("WR_BlockerRoleTipWhy".Translate(), dim: true);
-            blockerTipCache = new StructuredTip("roles:blocker", blocker);
-
-            var holders = new TipModel();
-            holders.AddSection().Text("WR_HoldersTipWhat".Translate());
-            holders.AddSection()
-                .Fact("WR_HoldersAuto".Translate(), "WR_HoldersTipAuto".Translate())
-                .Fact("WR_HoldersCustom".Translate(), "WR_HoldersTipCustom".Translate())
-                .Fact("WR_HoldersWaivers".Translate(), "WR_HoldersTipWaivers".Translate())
-                .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
-            holdersTipCache = new StructuredTip("roles:holders", holders);
-        }
-
         public void Reset()
         {
             listScroll = entriesScroll = treeScroll = Vector2.zero;
-            filter = "";
-            roleSearch = "";
-            jobFilterDefName = null;
+            listState.Reset();
+            editorState.Reset();
             selectedRoleId = -1;
             paintingHours = false;
             paintRoleId = -1;
             rulesRevealed.Clear();
             tuningExpanded.Clear();
-            giverDisplayCache = null; // force rebuild on next use
             // Opening re-snapshots everything on this tab.
-            InvalidateSectionsSnapshot();
-            deadEntriesStamp = skillsUsedStamp = -1;
-            holdersStamp = ScopeCacheStamp.Invalid;
-            displayStamp = treeNodesStamp = editorTipsStamp = uncoveredStamp = -1;
+            RolesListState.InvalidateSectionsSnapshot();
         }
 
         /// Shared snapshots that embed translated def or built-in group labels.
         internal static void InvalidateSharedLanguageCaches()
         {
-            giverDisplayCache = null;
-            InvalidateSectionsSnapshot();
-            skillsUsedCache = null;
-            skillsUsedStamp = -1;
-            skillsUsedRoleId = -1;
-            ClearEntryLabelCache();
-            uncoveredGivers = null;
-            uncoveredTypes = null;
-            uncoveredWarning = null;
-            uncoveredStamp = -1;
+            RolesListState.InvalidateSectionsSnapshot();
         }
 
         /// Language-only invalidation. Selection, filters, scroll positions and
         /// every disclosure set remain intact.
         internal void InvalidateLanguageCaches()
         {
-            editorTipsStamp = -1;
-            blockerTipCache = null;
-            holdersTipCache = null;
-            tuningLabelCol = tuningBtnW = -1f;
-
-            displayCache = null;
-            displayStamp = -1;
-            treeNodesCache = null;
-            treeNodesStamp = -1;
+            listState.InvalidateLanguageCaches();
+            editorState.InvalidateLanguageCaches();
         }
 
         public void Draw(Rect rect)
@@ -210,222 +153,6 @@ namespace WorkRoles.UI
 
         // ----- Left: role list + management buttons -----
 
-        /// The role list is a two-level tree: a role strictly covered by another
-        /// eligible role displays under EVERY covering root, across groups
-        /// (Rescuer under both Basics and Doctor, wherever they live). A row
-        /// whose role belongs to another group is VIRTUAL: rendered dashed,
-        /// never draggable, and it simply stops being generated when the
-        /// coverage breaks — the role's real row lives in its own group (nested
-        /// there, or as a root when nothing in its group covers it). Roots keep
-        /// catalog order; each root's children sort by where their entry block
-        /// starts inside the root's entry list (ties keep catalog order).
-        internal static (List<Role> roots, List<(Role role, Role parent, bool virtualRow)> rows)
-            BuildRoleTree(List<Role> members, List<Role> allRoles)
-        {
-            // Blockers never nest and never parent: their entry overlap is not a
-            // provides-relationship. Auto (rule-carrying) roles stay in their
-            // overlay — they neither parent nor nest here.
-            bool Eligible(Role r) => !r.blocker && !r.HasRules;
-
-            var memberSet = new HashSet<Role>(members);
-            var nested = new HashSet<Role>();
-            foreach (var role in members)
-                if (Eligible(role) && members.Any(o => Eligible(o) && o.Covers(role)))
-                    nested.Add(role);
-
-            var roots = members.Where(r => !nested.Contains(r)).ToList();
-            var rows = new List<(Role role, Role parent, bool virtualRow)>(members.Count);
-            foreach (var root in roots)
-            {
-                rows.Add((root, null, false));
-                if (!Eligible(root)) continue;
-                // Children with entries literally present in the root's list sort
-                // by that position; coverage-only children (root expresses their
-                // jobs via a work type) have no position and keep catalog order.
-                foreach (var child in allRoles
-                    .Where(r => Eligible(r) && root.Covers(r))
-                    .OrderBy(r => RoleCommands.BlockStart(root.entries, r)))
-                    rows.Add((child, root, !memberSet.Contains(child)));
-            }
-            return (roots, rows);
-        }
-
-        /// Group-aware whole-catalog tree (palette clustering): every display
-        /// section's tree concatenated.
-        internal static (List<Role> roots, List<(Role role, Role parent, bool virtualRow)> rows)
-            BuildRoleTree(RoleStore store)
-        {
-            var roots = new List<Role>();
-            var rows = new List<(Role role, Role parent, bool virtualRow)>();
-            foreach (var section in BuildSections(store, nested: true))
-            {
-                roots.AddRange(section.roots);
-                rows.AddRange(section.rows);
-            }
-            return (roots, rows);
-        }
-
-        /// One display section of the role list: a user group, or the derived
-        /// Auto-Roles overlay (rule-carrying roles) — a member's stored group is
-        /// remembered while it displays in the overlay.
-        internal sealed class RoleSection
-        {
-            public string key;      // collapse-state key: "g<id>", "auto"
-            public string title;
-            /// Group name for commands: "" = Default (a language-independent
-            /// sentinel — synced args must never carry translated names).
-            public string commandName = "";
-            public RoleGroup group; // null for overlays and the virtual Default
-            public bool renamable;  // user groups except Default
-            public bool draggable;  // reorderable user groups (not Default)
-            public bool dropTarget; // accepts role drops
-            public List<Role> members = new List<Role>();
-            public List<Role> roots;
-            public List<(Role role, Role parent, bool virtualRow)> rows;
-            /// "Title (N)", composed once per snapshot — headers draw per pass.
-            public string displayTitle;
-        }
-
-        // Open-window snapshot (see UiVersion) of the coverage-nested section
-        // tree; one slot per nesting flag (list and palette disagree on it).
-        private static readonly List<RoleSection>[] sectionsCache = new List<RoleSection>[2];
-        private static readonly int[] sectionsCacheStamp = { -1, -1 };
-
-        internal static void InvalidateSectionsSnapshot()
-            => sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
-
-        internal static List<RoleSection> BuildSections(RoleStore store, bool nested)
-        {
-            int slot = nested ? 1 : 0;
-            if (sectionsCache[slot] == null || sectionsCacheStamp[slot] != UiVersion.Current)
-            {
-                sectionsCacheStamp[slot] = UiVersion.Current;
-                sectionsCache[slot] = BuildSectionsUncached(store, nested);
-            }
-            return sectionsCache[slot];
-        }
-
-        /// Sections in display order: Default (when it has a face), user groups
-        /// (their order), Auto-Roles (hidden when empty).
-        private static List<RoleSection> BuildSectionsUncached(RoleStore store, bool nested)
-        {
-            var sections = new List<RoleSection>();
-            var byGroupId = new Dictionary<int, RoleSection>();
-            RoleSection defaultSection = null;
-
-            RoleSection Default()
-            {
-                return defaultSection ??= new RoleSection
-                {
-                    key = "g0",
-                    title = "WR_GroupDefault".Translate(),
-                    group = store.GroupById(RoleGroup.DefaultId),
-                    dropTarget = true,
-                };
-            }
-
-            RoleSection SectionOf(int groupId)
-            {
-                if (byGroupId.TryGetValue(groupId, out var section)) return section;
-                var group = store.GroupById(groupId);
-                // Stale or Default group ids all land in the Default section.
-                section = group == null || group.id == RoleGroup.DefaultId
-                    ? Default()
-                    : new RoleSection
-                    {
-                        key = "g" + group.id,
-                        title = group.label,
-                        commandName = group.label,
-                        group = group,
-                        renamable = true,
-                        draggable = true,
-                        dropTarget = true,
-                    };
-                byGroupId[groupId] = section;
-                return section;
-            }
-
-            var auto = new RoleSection { key = "auto", title = "WR_GroupAutoRules".Translate() };
-
-            foreach (var role in store.roles)
-            {
-                if (role.HasRules) auto.members.Add(role);
-                else SectionOf(role.groupId).members.Add(role);
-            }
-
-            // Overlay-displayed roles don't count as group members: a group
-            // whose roles all sit in Auto-Roles renders nothing (the group
-            // object survives in the store as the rules-cleared fallback).
-            if (defaultSection != null && defaultSection.members.Count > 0)
-                sections.Add(defaultSection);
-            foreach (var group in store.groups)
-            {
-                if (group.id == RoleGroup.DefaultId) continue;
-                if (byGroupId.TryGetValue(group.id, out var section)
-                    && section.members.Count > 0 && !sections.Contains(section))
-                    sections.Add(section);
-            }
-            if (auto.members.Count > 0) sections.Add(auto);
-
-            foreach (var section in sections)
-            {
-                if (nested && section != auto)
-                    (section.roots, section.rows) = BuildRoleTree(section.members, store.roles);
-                else
-                {
-                    section.roots = section.members;
-                    section.rows = section.members.Select(r => (r, (Role)null, false)).ToList();
-                }
-                section.displayTitle = section.title + " (" + section.members.Count + ")";
-            }
-            return sections;
-        }
-
-        private static bool IsSectionCollapsed(string key) =>
-            WorkRolesMod.Settings?.collapsedRoleGroups.Contains(key) == true;
-
-        // Collapse toggles are UI-local (no UiVersion traffic): the display-row
-        // snapshot keys on this revision instead.
-        private static int collapseRev;
-
-        private static void ToggleSectionCollapsed(string key)
-        {
-            var settings = WorkRolesMod.Settings;
-            if (settings == null) return;
-            if (!settings.collapsedRoleGroups.Remove(key))
-                settings.collapsedRoleGroups.Add(key);
-            settings.Write();
-            collapseRev++;
-        }
-
-        // Role list filters (view-local): label search + a single job whose
-        // holders should be listed.
-        private string roleSearch = "";
-        private string jobFilterDefName;
-
-        private bool ListFiltersActive => !roleSearch.NullOrEmpty() || jobFilterDefName != null;
-
-        /// A role matches the job filter when its entries carry the job itself or
-        /// the job's whole work type.
-        private bool MatchesListFilters(Role role)
-        {
-            if (!roleSearch.NullOrEmpty()
-                && (role.label == null
-                    || role.label.IndexOf(roleSearch, System.StringComparison.OrdinalIgnoreCase) < 0))
-                return false;
-            if (jobFilterDefName != null)
-            {
-                var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterDefName);
-                string parentType = giver?.workType?.defName;
-                bool has = role.entries.Any(e =>
-                    e.Kind == JobEntryKind.WorkGiver
-                        ? e.DefName == jobFilterDefName
-                        : parentType != null && e.DefName == parentType);
-                if (!has) return false;
-            }
-            return true;
-        }
-
         /// Two captioned rows: Search + Display Mode (left/right) on top, the
         /// Job Filter below with room for long job names, plus the clear X.
         internal const float ListFilterRowsH = 90f;
@@ -433,7 +160,7 @@ namespace WorkRoles.UI
         private static void FilterCaption(Rect rect, string key)
         {
             Text.Font = GameFont.Tiny;
-            GUI.color = new Color(0.60f, 0.62f, 0.64f);
+            GUI.color = WrStyle.CaptionText;
             Widgets.Label(rect, key.Translate());
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
@@ -449,12 +176,13 @@ namespace WorkRoles.UI
             float y1 = rect.y + LabelH;
             float searchW = rect.width - ToggleW - 8f - 22f;
             FilterCaption(new Rect(rect.x, rect.y, searchW, LabelH), "WR_Search");
-            roleSearch = Widgets.TextField(new Rect(rect.x, y1, searchW, InputH), roleSearch);
-            if (!roleSearch.NullOrEmpty()
+            listState.RoleSearch = Widgets.TextField(
+                new Rect(rect.x, y1, searchW, InputH), listState.RoleSearch);
+            if (!listState.RoleSearch.NullOrEmpty()
                 && Widgets.ButtonImage(new Rect(rect.x + searchW + 4f, y1 + (InputH - 18f) / 2f, 18f, 18f),
                     TexButton.CloseXSmall))
             {
-                roleSearch = "";
+                listState.RoleSearch = "";
                 GUIUtility.keyboardControl = 0; // release the field's edit buffer
             }
 
@@ -475,10 +203,10 @@ namespace WorkRoles.UI
             float y2 = y2Label + LabelH;
             FilterCaption(new Rect(rect.x, y2Label, JobBtnW, LabelH), "WR_JobFilterLabel");
             var jobRect = new Rect(rect.x, y2, JobBtnW, InputH);
-            var giverDef = jobFilterDefName == null ? null
-                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterDefName);
+            var giverDef = listState.JobFilterDefName == null ? null
+                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(listState.JobFilterDefName);
             string jobLabel = giverDef != null
-                ? GetGiverDisplayName(giverDef)
+                ? WorkJobLabels.GiverDisplayName(giverDef)
                 : "WR_FilterAnyJob".Translate().ToString();
             // Long job names truncate to the button (the ButtonText inset eats
             // ~10px a side); the tooltip carries the full name.
@@ -489,23 +217,26 @@ namespace WorkRoles.UI
             {
                 var options = new List<FloatMenuOption>
                 {
-                    new FloatMenuOption("WR_FilterAnyJob".Translate(), () => jobFilterDefName = null),
+                    new FloatMenuOption("WR_FilterAnyJob".Translate(),
+                        () => listState.JobFilterDefName = null),
                 };
                 foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading
                     .Where(d => d.workType != null)
-                    .OrderBy(GetGiverDisplayName, System.StringComparer.OrdinalIgnoreCase))
+                    .OrderBy(WorkJobLabels.GiverDisplayName,
+                        System.StringComparer.OrdinalIgnoreCase))
                 {
                     var captured = def.defName;
-                    options.Add(new FloatMenuOption(GetGiverDisplayName(def), () => jobFilterDefName = captured));
+                    options.Add(new FloatMenuOption(WorkJobLabels.GiverDisplayName(def),
+                        () => listState.JobFilterDefName = captured));
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
 
-            if (jobFilterDefName != null)
+            if (listState.JobFilterDefName != null)
             {
                 var clearRect = new Rect(jobRect.xMax + 6f, y2 + (InputH - 18f) / 2f, 18f, 18f);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
-                    jobFilterDefName = null;
+                    listState.JobFilterDefName = null;
             }
         }
 
@@ -515,16 +246,6 @@ namespace WorkRoles.UI
         /// section expanded and its row scrolled into view.
         private string pendingSelectLabel;
         private bool scrollToSelected;
-
-        // Open-window snapshot of the flattened display rows (sections plus
-        // expanded members, or the filtered flat list). Keyed on plain fields —
-        // a composed key string would itself allocate per pass.
-        private List<(RoleSection section, Role role, Role parent, bool virtualRow)> displayCache;
-        private int displayStamp = -1;
-        private int displayCollapseRev = -1;
-        private bool displayNested;
-        private string displaySearch;
-        private string displayJobFilter;
 
         private void DrawRoleList(Rect rect, RoleStore store)
         {
@@ -544,53 +265,22 @@ namespace WorkRoles.UI
             var scrollRect = new Rect(rect.x, rect.y + ListFilterRowsH, rect.width,
                 rect.height - buttonsHeight - 6f - ListFilterRowsH);
 
-            bool filtered = ListFiltersActive;
-            bool nested = (WorkRolesMod.Settings?.nestedRoleTree ?? true) && !filtered;
-            // Display rows: group headers plus their (expanded) member rows; a
-            // filtered list is flat and headerless. role == null marks a header.
-            var sections = filtered ? null : BuildSections(store, nested);
-
-            // A freshly created/copied role must land visibly: expand its
-            // section if collapsed before the rows are built.
-            if (scrollToSelected && sections != null)
-                foreach (var section in sections)
-                    if (IsSectionCollapsed(section.key)
-                        && section.rows.Any(t => t.role.id == selectedRoleId))
-                        ToggleSectionCollapsed(section.key);
-
-            if (displayCache == null || displayStamp != UiVersion.Current
-                || displayCollapseRev != collapseRev || displayNested != nested
-                || displaySearch != roleSearch || displayJobFilter != jobFilterDefName)
-            {
-                displayStamp = UiVersion.Current;
-                displayCollapseRev = collapseRev;
-                displayNested = nested;
-                displaySearch = roleSearch;
-                displayJobFilter = jobFilterDefName;
-                displayCache = new List<(RoleSection, Role, Role, bool)>();
-                if (filtered)
-                {
-                    foreach (var match in store.roles.Where(MatchesListFilters))
-                        displayCache.Add((null, match, null, false));
-                }
-                else
-                {
-                    foreach (var section in sections)
-                    {
-                        displayCache.Add((section, null, null, false));
-                        if (!IsSectionCollapsed(section.key))
-                            foreach (var (member, memberParent, virtualRow) in section.rows)
-                                displayCache.Add((section, member, memberParent, virtualRow));
-                    }
-                }
-            }
-            var display = displayCache;
+            RoleListSnapshot snapshot = listState.Snapshot(
+                store, selectedRoleId, revealSelected: scrollToSelected);
+            bool filtered = snapshot.Filtered;
+            var display = snapshot.Rows;
             float contentHeight = display.Count * RowHeight;
 
             if (scrollToSelected)
             {
                 scrollToSelected = false;
-                int row = display.FindIndex(t => t.role != null && t.role.id == selectedRoleId);
+                int row = -1;
+                for (int i = 0; i < display.Count; i++)
+                    if (display[i].role?.id == selectedRoleId)
+                    {
+                        row = i;
+                        break;
+                    }
                 if (row >= 0)
                 {
                     float y = row * RowHeight;
@@ -630,7 +320,7 @@ namespace WorkRoles.UI
 
                 var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor);
-                GUI.color = new Color(0.08f, 0.08f, 0.08f, 0.9f);
+                GUI.color = WrStyle.PanelBackground;
                 Widgets.DrawBox(swatch.ExpandedBy(1f));
                 GUI.color = Color.white;
                 if (virtualRow && Mouse.IsOver(row))
@@ -682,7 +372,7 @@ namespace WorkRoles.UI
                 {
                     int capturedId = role.id;
                     if (virtualRow) SelectRole(capturedId);
-                    else RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
+                    else RoleDrag.OnPress(row, capturedId, null, () => SelectRole(capturedId));
                     e.Use();
                 }
 
@@ -743,7 +433,7 @@ namespace WorkRoles.UI
             int i, Role dragged, bool groupDrag)
         {
             Widgets.DrawBoxSolid(row, new Color(1f, 1f, 1f, 0.06f));
-            bool collapsed = IsSectionCollapsed(section.key);
+            bool collapsed = RolesListState.IsSectionCollapsed(section.key);
             var arrowRect = new Rect(row.x + 4f, row.y + (row.height - 18f) / 2f, 18f, 18f);
             GUI.DrawTexture(arrowRect, collapsed ? TexButton.Reveal : TexButton.Collapse);
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -767,9 +457,10 @@ namespace WorkRoles.UI
             {
                 string key = section.key;
                 if (section.draggable)
-                    RoleDrag.OnPressGroup(section.group.id, () => ToggleSectionCollapsed(key));
+                    RoleDrag.OnPressGroup(row, section.group.id,
+                        () => RolesListState.ToggleSectionCollapsed(key));
                 else
-                    ToggleSectionCollapsed(key);
+                    RolesListState.ToggleSectionCollapsed(key);
                 e.Use();
             }
 
@@ -816,7 +507,8 @@ namespace WorkRoles.UI
         /// its children) = after its block. Landing in another group moves the
         /// role (and its tree-children) there; overlay sections block.
         private static void RegisterRoleDrop(
-            List<(RoleSection section, Role role, Role parent, bool virtualRow)> display, int i, Rect row, Role dragged)
+            IReadOnlyList<(RoleSection section, Role role, Role parent, bool virtualRow)> display,
+            int i, Rect row, Role dragged)
         {
             var (section, role, parent, _) = display[i];
             // A nested child's within-own-group drop is a no-op — its display
@@ -933,7 +625,6 @@ namespace WorkRoles.UI
 
         private void DrawEditor(Rect rect, RoleStore store, Role role)
         {
-            EnsureEditorTips();
             const float SwatchSize = 18f;
             const float SwatchGap = 2f;
             const int SwatchCols = 19;
@@ -974,14 +665,15 @@ namespace WorkRoles.UI
                 + TopBoxPadding * 2f;
 
             var topBox = new Rect(rect.x, rect.y, rect.width, TopBoxHeight);
-            Widgets.DrawBoxSolidWithOutline(topBox, new Color(0.08f, 0.08f, 0.08f, 0.9f), new Color(1f, 1f, 1f, 0.15f));
+            Widgets.DrawBoxSolidWithOutline(
+                topBox, WrStyle.PanelBackground, WrStyle.PanelOutline);
 
             float swatchGridW = SwatchCols * (SwatchSize + SwatchGap) - SwatchGap;
 
             // RIGHT half: swatch grid, right-aligned inside box
             float swatchStartX = topBox.xMax - TopBoxPadding - swatchGridW;
             float swatchStartY = topBox.y + TopBoxPadding;
-            for (int i = 0; i < Swatches.Length; i++)
+            for (int i = 0; i < SwatchPalette.Swatches.Length; i++)
             {
                 int col = i % SwatchCols;
                 int row = i / SwatchCols;
@@ -989,12 +681,13 @@ namespace WorkRoles.UI
                     swatchStartX + col * (SwatchSize + SwatchGap),
                     swatchStartY + row * (SwatchSize + SwatchGap),
                     SwatchSize, SwatchSize);
-                Widgets.DrawBoxSolid(swatchRect, Swatches[i]);
-                if (role.hasCustomColor && role.color.IndistinguishableFrom(Swatches[i]))
+                Widgets.DrawBoxSolid(swatchRect, SwatchPalette.Swatches[i]);
+                if (role.hasCustomColor
+                    && role.color.IndistinguishableFrom(SwatchPalette.Swatches[i]))
                     Widgets.DrawBox(swatchRect.ExpandedBy(2f));
-                TooltipHandler.TipRegion(swatchRect, SwatchNames[i]);
+                TooltipHandler.TipRegion(swatchRect, SwatchPalette.Names[i]);
                 if (Widgets.ButtonInvisible(swatchRect))
-                    RoleCommands.SetRoleColor(role.id, Swatches[i]);
+                    RoleCommands.SetRoleColor(role.id, SwatchPalette.Swatches[i]);
             }
 
             // Custom rows: player-defined slots. Empty slot = pick a color (applies
@@ -1101,7 +794,7 @@ namespace WorkRoles.UI
 
             // Row 2: small grey "Assigned to" label with the colonist names
             // inline after it (ordered by position in their assignment list).
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             string assignedLabel = "WR_AssignedTo".Translate();
             float assignedLabelW = WrText.FitWidth(assignedLabel);
             Widgets.Label(new Rect(leftX, row2Y, assignedLabelW, AssignedRowH), assignedLabel);
@@ -1217,7 +910,7 @@ namespace WorkRoles.UI
 
             // Blocker: the role's jobs become vetoes.
             var blockRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(blockRect, blockerTipCache.Activate());
+            TooltipHandler.TipRegion(blockRect, editorState.BlockerTip.Activate());
             bool blocker = role.blocker;
             Widgets.CheckboxLabeled(blockRect, "WR_BlockerRole".Translate(), ref blocker);
             if (blocker != role.blocker)
@@ -1267,27 +960,7 @@ namespace WorkRoles.UI
 
         private const float TuningHeaderRowH = 24f;
         private const float TuningRowH = 24f;
-        private static readonly Color EditorDimText = new Color(0.6f, 0.6f, 0.6f);
         private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
-
-        // Column metrics shared by measure and draw; rebuilt with the editor
-        // tips (language switches move the stamp).
-        private float tuningLabelCol = -1f;
-        private float tuningBtnW = -1f;
-
-        private void EnsureTuningMetrics()
-        {
-            if (tuningLabelCol >= 0f) return;
-            Text.Font = GameFont.Small;
-            tuningLabelCol = Mathf.Max(
-                Mathf.Max(WrText.FitWidth("WR_HoldersAuto".Translate()),
-                    Mathf.Max(WrText.FitWidth("WR_HoldersNever".Translate()),
-                        WrText.FitWidth("WR_HoldersCustom".Translate()))),
-                Mathf.Max(WrText.FitWidth("WR_HoldersMin".Translate()),
-                    Mathf.Max(WrText.FitWidth("WR_HoldersMax".Translate()),
-                        WrText.FitWidth("WR_HoldersWaivers".Translate())))) + 10f;
-            tuningBtnW = WrText.FitWidth("WR_HoldersUncapped".Translate()) + 16f;
-        }
 
         /// Mode plus resolved min/max/waivers, e.g. "Auto: 2/*/1" (* = uncapped).
         private string HolderSummary(Role role)
@@ -1314,8 +987,8 @@ namespace WorkRoles.UI
             float h = 4f + TuningHeaderRowH;
             if (!tuningExpanded.Contains(role.id)) return h;
             Text.Font = GameFont.Small;
-            EnsureTuningMetrics();
-            float descW = width - (tuningLabelCol + tuningBtnW + 8f);
+            float descW = width
+                - (editorState.TuningLabelWidth + editorState.TuningButtonWidth + 8f);
             h += 4f + Text.CalcHeight("WR_TuningHelp".Translate(), width) + 2f;
             h += Mathf.Max(TuningRowH, Text.CalcHeight(ModeHelpKey(role).Translate(), descW));
             if (role.holderMode == RoleHolderMode.Custom)
@@ -1339,7 +1012,6 @@ namespace WorkRoles.UI
         {
             if (!TuningShown(role)) return;
             y += 4f;
-            EnsureTuningMetrics();
             bool expanded = tuningExpanded.Contains(role.id);
 
             var headerRect = new Rect(x, y, width, TuningHeaderRowH);
@@ -1353,7 +1025,7 @@ namespace WorkRoles.UI
             if (!expanded)
             {
                 Text.Anchor = TextAnchor.MiddleRight;
-                GUI.color = ColonistsTabView.ColorPassMinor;
+                GUI.color = WrStyle.MinorAccent;
                 Widgets.Label(new Rect(x, y, width - 6f, TuningHeaderRowH), HolderSummary(role));
                 GUI.color = Color.white;
             }
@@ -1369,7 +1041,7 @@ namespace WorkRoles.UI
 
             string intro = "WR_TuningHelp".Translate();
             float introH = Text.CalcHeight(intro, width);
-            GUI.color = EditorDimText;
+            GUI.color = WrStyle.DimText;
             Widgets.Label(new Rect(x, y, width, introH), intro);
             GUI.color = Color.white;
             y += introH + 2f;
@@ -1395,17 +1067,19 @@ namespace WorkRoles.UI
             string labelKey, string helpKey)
         {
             Text.Font = GameFont.Small;
-            float descX = tuningLabelCol + tuningBtnW + 8f;
+            float labelWidth = editorState.TuningLabelWidth;
+            float buttonWidth = editorState.TuningButtonWidth;
+            float descX = labelWidth + buttonWidth + 8f;
             string help = helpKey.Translate();
             float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = EditorLabelText;
-            Widgets.Label(new Rect(x, y, tuningLabelCol, TuningRowH), labelKey.Translate());
-            GUI.color = EditorDimText;
+            Widgets.Label(new Rect(x, y, labelWidth, TuningRowH), labelKey.Translate());
+            GUI.color = WrStyle.DimText;
             Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
-            var btnRect = new Rect(x + tuningLabelCol, y, tuningBtnW, TuningRowH - 2f);
+            var btnRect = new Rect(x + labelWidth, y, buttonWidth, TuningRowH - 2f);
             y += h;
             return btnRect;
         }
@@ -1415,7 +1089,9 @@ namespace WorkRoles.UI
         private void DrawModeRow(float x, ref float y, float width, Role role)
         {
             Text.Font = GameFont.Small;
-            float descX = tuningLabelCol + tuningBtnW + 8f;
+            float labelWidth = editorState.TuningLabelWidth;
+            float buttonWidth = editorState.TuningButtonWidth;
+            float descX = labelWidth + buttonWidth + 8f;
             string help = ModeHelpKey(role).Translate();
             float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
 
@@ -1426,8 +1102,8 @@ namespace WorkRoles.UI
                 : role.holderMode == RoleHolderMode.Never
                     ? "WR_HoldersNever".Translate().ToString()
                     : "WR_HoldersCustom".Translate().ToString();
-            var btnRect = new Rect(x, y, tuningLabelCol + tuningBtnW, TuningRowH - 2f);
-            TooltipHandler.TipRegion(btnRect, holdersTipCache.Activate());
+            var btnRect = new Rect(x, y, labelWidth + buttonWidth, TuningRowH - 2f);
+            TooltipHandler.TipRegion(btnRect, editorState.HoldersTip.Activate());
             if (Widgets.ButtonText(btnRect, shown))
             {
                 var next = RoleHolderPolicy.Next(role.holderMode);
@@ -1436,7 +1112,7 @@ namespace WorkRoles.UI
             }
 
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = EditorDimText;
+            GUI.color = WrStyle.DimText;
             Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
@@ -1482,41 +1158,15 @@ namespace WorkRoles.UI
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        // Open-window snapshot of the selected role's used skills, most
-        // frequent first (index 0 = primary).
-        private static List<(string label, bool primary)> skillsUsedCache;
-        private static int skillsUsedStamp = -1;
-        private static int skillsUsedRoleId = -1;
-
-        private static List<(string label, bool primary)> SkillsUsedOf(Role role)
-        {
-            if (skillsUsedCache == null || skillsUsedStamp != UiVersion.Current
-                || skillsUsedRoleId != role.id)
-            {
-                skillsUsedStamp = UiVersion.Current;
-                skillsUsedRoleId = role.id;
-                string LabelOf(string defName)
-                {
-                    var skill = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
-                    return skill == null ? defName
-                        : (skill.skillLabel ?? skill.label ?? skill.defName).CapitalizeFirst();
-                }
-                skillsUsedCache = RoleSkillProfiles.ForRole(role)
-                    .Select(skill => (LabelOf(skill.SkillDefName), skill.Primary))
-                    .ToList();
-            }
-            return skillsUsedCache;
-        }
-
         /// "Skills used:" with the primary (most frequent) skill white and the
         /// rest slightly dimmed; labels that don't fit are dropped silently.
-        private static void DrawSkillsUsedRow(Rect rect, Role role)
+        private void DrawSkillsUsedRow(Rect rect, Role role)
         {
-            var skills = SkillsUsedOf(role);
+            IReadOnlyList<RoleSkillPresentation> skills = editorState.SkillsUsed(role);
             if (skills.Count == 0) return;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             string caption = "WR_SkillsUsedLabel".Translate();
             float captionW = WrText.FitWidth(caption);
             Widgets.Label(new Rect(rect.x, rect.y, captionW, rect.height), caption);
@@ -1525,7 +1175,9 @@ namespace WorkRoles.UI
             float sepW = WrText.FitWidth(Sep);
             for (int i = 0; i < skills.Count; i++)
             {
-                var (label, primary) = skills[i];
+                RoleSkillPresentation skill = skills[i];
+                string label = skill.Label;
+                bool primary = skill.Primary;
                 float w = WrText.FitWidth(label);
                 if (x + w > rect.xMax) break;
                 GUI.color = primary ? Color.white : new Color(0.72f, 0.72f, 0.72f);
@@ -1569,7 +1221,7 @@ namespace WorkRoles.UI
             // Hour headers: one per cell, Tiny and bottom-anchored (vanilla schedule style).
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.LowerCenter;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             for (int h = 0; h < 24; h++)
                 Widgets.Label(new Rect(x0 + h * (HourCellW + HourCellGap), labelsY, HourCellW, HourLabelH), h.ToString());
             GUI.color = Color.white;
@@ -1705,32 +1357,11 @@ namespace WorkRoles.UI
 
         // ----- Assigned pawn names row -----
 
-        // Open-window snapshot of the selected role's holders.
-        private List<(Pawn pawn, int position)> holdersCache;
-        private ScopeCacheStamp holdersStamp = ScopeCacheStamp.Invalid;
-        private int holdersRoleId = -1;
-
         private void DrawAssignedPawnNames(Rect rect, Role role, RoleStore store)
         {
-            List<Pawn> pawns = listedPawns();
-            var stamp = new ScopeCacheStamp(
-                UiVersion.Current, pawnListRevision?.Invoke() ?? 0);
-            if (holdersCache == null || holdersStamp != stamp || holdersRoleId != role.id)
-            {
-                holdersStamp = stamp;
-                holdersRoleId = role.id;
-                holdersCache = new List<(Pawn, int)>();
-                foreach (var pawn in pawns)
-                {
-                    if (!store.pawnSets.TryGetValue(pawn, out var set)) continue;
-                    int idx = set.assignments.FindIndex(a => a.roleId == role.id);
-                    if (idx < 0) continue;
-                    holdersCache.Add((pawn, idx + 1)); // 1-based position = priority
-                }
-                // Sort ascending by position so highest-priority pawns appear first
-                holdersCache.Sort((a, b) => a.position.CompareTo(b.position));
-            }
-            var pawnPositions = holdersCache;
+            IReadOnlyList<Pawn> pawns = listedPawns();
+            IReadOnlyList<RoleHolderPresentation> pawnPositions = editorState.Holders(
+                role, store, pawns, pawnListRevision?.Invoke() ?? 0);
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1755,7 +1386,7 @@ namespace WorkRoles.UI
 
             for (int i = 0; i < pawnPositions.Count; i++)
             {
-                var (pawn, _) = pawnPositions[i];
+                Pawn pawn = pawnPositions[i].Pawn;
                 string name = pawn.LabelShortCap;
                 float nameW = WrText.FitWidth(name);
                 bool hasNext = i < pawnPositions.Count - 1;
@@ -1812,7 +1443,7 @@ namespace WorkRoles.UI
             float typeW = (rect.width - 8f - removeW - 8f) * 0.45f;
             float jobW  = (rect.width - 8f - removeW - 8f) * 0.55f;
 
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(rect.x + 8f + 4f, headerY, typeW, 24f), "WR_TypeColumn".Translate());
             Widgets.Label(new Rect(rect.x + 8f + 4f + typeW, headerY, jobW, 24f), "WR_JobColumn".Translate());
@@ -1837,7 +1468,7 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(scrollRect, ref entriesScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
 
-            var deadEntries = DeadEntryIndexes(role);
+            IReadOnlyCollection<int> deadEntries = editorState.DeadEntryIndexes(role);
             // Rows outside the viewport still register with ReorderableWidget
             // (drag bookkeeping needs every row rect) but skip all text work.
             float cullTop = entriesScroll.y - RowHeight;
@@ -1852,9 +1483,11 @@ namespace WorkRoles.UI
 
                 if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
 
-                string typeLabel, jobLabel;
-                bool missing = false;
-                GetEntryLabels(entry, out typeLabel, out jobLabel, out missing);
+                RoleEntryPresentation presentation = editorState.EntryPresentation(
+                    entry, typeW - 4f, jobW - 4f);
+                string typeLabel = presentation.TypeLabel;
+                string jobLabel = presentation.JobLabel;
+                bool missing = presentation.Missing;
                 bool dead = !missing && deadEntries.Contains(i);
 
                 Text.Anchor = TextAnchor.MiddleLeft;
@@ -1867,15 +1500,14 @@ namespace WorkRoles.UI
                 Text.WordWrap = false;
 
                 var typeRect = new Rect(row.x + 4f, row.y, typeW, RowHeight);
-                string typeShown = TruncateCached(typeLabel, typeW - 4f, typeTruncCache, ref typeTruncW);
+                string typeShown = presentation.TypeShown;
                 Widgets.Label(typeRect, typeShown);
                 if (typeShown != typeLabel)
                     TooltipHandler.TipRegion(typeRect, typeLabel);
 
-                string jobText = entry.Kind == JobEntryKind.WorkType
-                    ? "WR_AllJobs".Translate().ToString() : jobLabel;
+                string jobText = jobLabel;
                 var jobRect = new Rect(row.x + 4f + typeW, row.y, jobW, RowHeight);
-                string jobShown = TruncateCached(jobText, jobW - 4f, jobTruncCache, ref jobTruncW);
+                string jobShown = presentation.JobShown;
                 Widgets.Label(jobRect, jobShown);
                 if (jobShown != jobText)
                     TooltipHandler.TipRegion(jobRect, jobText);
@@ -1914,101 +1546,6 @@ namespace WorkRoles.UI
             Widgets.EndScrollView();
         }
 
-        // Open-window snapshot: entry edits arrive as synced commands, which bump
-        // the stamp on execution (locally and on other MP clients alike).
-        private static HashSet<int> deadEntriesCache;
-        private static int deadEntriesStamp = -1;
-        private static int deadEntriesRoleId = -1;
-
-        private static HashSet<int> DeadEntryIndexes(Role role)
-        {
-            if (deadEntriesCache == null || deadEntriesStamp != UiVersion.Current
-                || deadEntriesRoleId != role.id)
-            {
-                deadEntriesStamp = UiVersion.Current;
-                deadEntriesRoleId = role.id;
-                deadEntriesCache = JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance);
-            }
-            return deadEntriesCache;
-        }
-
-        // Def labels only change on a language switch (see Patch_Language):
-        // cache per (kind, defName) so the entry rows stop doing def lookups +
-        // CapitalizeFirst allocs per pass.
-        private static readonly Dictionary<(JobEntryKind kind, string defName), (string type, string job, bool missing)>
-            entryLabelCache = new Dictionary<(JobEntryKind, string), (string, string, bool)>();
-
-        // Truncation caches (GenText.Truncate measures per call otherwise);
-        // width changes flush, language switch clears with the labels.
-        private static readonly Dictionary<string, string> typeTruncCache =
-            new Dictionary<string, string>();
-        private static readonly Dictionary<string, string> jobTruncCache =
-            new Dictionary<string, string>();
-        private static float typeTruncW = -1f;
-        private static float jobTruncW = -1f;
-
-        private static string TruncateCached(
-            string text, float width, Dictionary<string, string> cache, ref float cachedWidth)
-        {
-            if (!Mathf.Approximately(width, cachedWidth))
-            {
-                cache.Clear();
-                cachedWidth = width;
-            }
-            return text.Truncate(width, cache);
-        }
-
-        internal static void ClearEntryLabelCache()
-        {
-            entryLabelCache.Clear();
-            typeTruncCache.Clear();
-            jobTruncCache.Clear();
-            typeTruncW = jobTruncW = -1f;
-        }
-
-        private static void GetEntryLabels(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
-        {
-            var key = (entry.Kind, entry.DefName);
-            if (!entryLabelCache.TryGetValue(key, out var labels))
-            {
-                GetEntryLabelsUncached(entry, out var type, out var job, out var gone);
-                entryLabelCache[key] = labels = (type, job, gone);
-            }
-            typeLabel = labels.type;
-            jobLabel = labels.job;
-            missing = labels.missing;
-        }
-
-        private static void GetEntryLabelsUncached(JobEntry entry, out string typeLabel, out string jobLabel, out bool missing)
-        {
-            missing = false;
-            if (entry.Kind == JobEntryKind.WorkType)
-            {
-                var def = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                if (def != null)
-                {
-                    typeLabel = (def.gerundLabel ?? def.labelShort ?? def.defName).CapitalizeFirst();
-                    jobLabel = "WR_AllJobs".Translate();
-                    return;
-                }
-            }
-            else
-            {
-                var def = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
-                if (def != null)
-                {
-                    typeLabel = def.workType != null
-                        ? (def.workType.gerundLabel ?? def.workType.labelShort ?? def.workType.defName).CapitalizeFirst()
-                        : "?";
-                    jobLabel = GetGiverDisplayName(def);
-                    return;
-                }
-            }
-            missing = true;
-            typeLabel = entry.DefName;
-            jobLabel = "";
-        }
-
         // ----- Available Jobs: the work type / giver tree -----
 
         /// Warning colors for uncovered tree rows and the summary panel.
@@ -2016,80 +1553,6 @@ namespace WorkRoles.UI
         private static readonly Color WarningPanelBorder = new Color(0.12f, 0.08f, 0.02f);
         private static readonly Color WarningPanelBackground = new Color(0.82f, 0.68f, 0.25f);
         private static readonly Color WarningPanelText = new Color(0.18f, 0.09f, 0.01f);
-
-        // Open-window snapshot of jobs no non-blocker role provides: givers,
-        // their work types, and the composed warning line (null = all covered).
-        private static HashSet<string> uncoveredGivers;
-        private static HashSet<string> uncoveredTypes;
-        private static string uncoveredWarning;
-        private static int uncoveredStamp = -1;
-
-        private static void EnsureUncoveredSnapshot(RoleStore store)
-        {
-            if (uncoveredGivers != null && uncoveredStamp == UiVersion.Current) return;
-            uncoveredStamp = UiVersion.Current;
-            var covered = new HashSet<string>();
-            foreach (var role in store.roles)
-                if (!role.blocker)
-                    covered.UnionWith(role.Coverage());
-            uncoveredGivers = new HashSet<string>();
-            uncoveredTypes = new HashSet<string>();
-            foreach (var giver in DefDatabase<WorkGiverDef>.AllDefsListForReading)
-            {
-                if (giver.workType == null || covered.Contains(giver.defName)) continue;
-                uncoveredGivers.Add(giver.defName);
-                uncoveredTypes.Add(giver.workType.defName);
-            }
-            uncoveredWarning = uncoveredGivers.Count == 0 ? null
-                : "WR_WarningPrefix".Translate() + " "
-                    + "WR_UnusedJobsWarning".Translate();
-        }
-
-        // Open-window snapshot of the job-tree rows; expand/collapse is UI-local
-        // state, so the key carries its revision alongside the search text.
-        // Rows carry their composed display label so the draw loop never
-        // re-derives or concatenates it.
-        private List<(WorkTypeDef type, WorkGiverDef giver, string label)> treeNodesCache;
-        private int treeNodesStamp = -1;
-        private int treeNodesRev = -1;
-        private string treeNodesFilter;
-        private int treeRev;
-
-        private List<(WorkTypeDef type, WorkGiverDef giver, string label)> TreeNodes(bool filtering)
-        {
-            if (treeNodesCache != null && treeNodesStamp == UiVersion.Current
-                && treeNodesRev == treeRev && treeNodesFilter == filter)
-                return treeNodesCache;
-            treeNodesStamp = UiVersion.Current;
-            treeNodesRev = treeRev;
-            treeNodesFilter = filter;
-            var nodes = treeNodesCache = new List<(WorkTypeDef, WorkGiverDef, string)>();
-            foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading
-                .OrderByDescending(t => t.naturalPriority))
-            {
-                var givers = type.workGiversByPriority;
-                string typeDisplayName = (type.gerundLabel ?? type.labelShort ?? type.defName).CapitalizeFirst();
-                bool typeMatches = !filtering || Matches(typeDisplayName);
-
-                var matchingGivers = filtering
-                    ? givers.Where(g => Matches(GetGiverDisplayName(g))).ToList()
-                    : givers.ToList();
-
-                if (filtering && !typeMatches && matchingGivers.Count == 0) continue;
-
-                nodes.Add((type, (WorkGiverDef)null, typeDisplayName + " (" + givers.Count + ")"));
-                if (filtering || expanded.Contains(type.defName))
-                    foreach (var giver in (filtering && !typeMatches) ? matchingGivers : givers.ToList())
-                        nodes.Add((type, giver, GetGiverDisplayName(giver)));
-            }
-            return nodes;
-        }
-
-        private void ToggleWorkTypeExpanded(string defName)
-        {
-            if (!expanded.Add(defName)) expanded.Remove(defName);
-            treeRev++;
-        }
 
         private void DrawJobTree(Rect rect, Role role)
         {
@@ -2105,7 +1568,7 @@ namespace WorkRoles.UI
 
             // "Search" label immediately left of field; group shifted 4f left from right edge
             const float SearchRightPad = 4f;
-            GUI.color = new Color(0.6f, 0.6f, 0.6f);
+            GUI.color = WrStyle.DimText;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleRight;
             Widgets.Label(new Rect(rect.xMax - SearchLabelW - SearchW - 4f - SearchRightPad, rect.y + (28f - SearchH) / 2f, SearchLabelW, SearchH), "WR_Search".Translate());
@@ -2113,19 +1576,20 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.UpperLeft;
 
             float fieldY = rect.y + (28f - SearchH) / 2f;
-            filter = Widgets.TextField(
-                new Rect(rect.xMax - SearchW - SearchRightPad, fieldY, SearchW - 22f, SearchH), filter);
-            if (!filter.NullOrEmpty()
+            editorState.Filter = Widgets.TextField(
+                new Rect(rect.xMax - SearchW - SearchRightPad, fieldY, SearchW - 22f, SearchH),
+                editorState.Filter);
+            if (!editorState.Filter.NullOrEmpty()
                 && Widgets.ButtonImage(new Rect(rect.xMax - SearchRightPad - 18f, fieldY + (SearchH - 18f) / 2f, 18f, 18f),
                     TexButton.CloseXSmall))
             {
-                filter = "";
+                editorState.Filter = "";
                 GUIUtility.keyboardControl = 0; // release the field's edit buffer
             }
 
-            EnsureUncoveredSnapshot(RoleStore.Current);
+            RoleCoveragePresentation coverage = editorState.Coverage(RoleStore.Current);
             float treeTopY = rect.y + 28f + 4f;
-            if (uncoveredWarning != null)
+            if (coverage.Warning != null)
             {
                 // Flush with the tree rows left and top; right and bottom keep
                 // their margins.
@@ -2135,7 +1599,7 @@ namespace WorkRoles.UI
                     rect.x,
                     treeTopY,
                     rect.width - WarningMargin,
-                    Text.CalcHeight(uncoveredWarning,
+                    Text.CalcHeight(coverage.Warning,
                         rect.width - WarningMargin - WarningPadding * 2f)
                         + WarningPadding * 2f);
                 Widgets.DrawBoxSolidWithOutline(
@@ -2144,33 +1608,39 @@ namespace WorkRoles.UI
                 TextAnchor previousAnchor = Text.Anchor;
                 GUI.color = WarningPanelText;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(warningPanel.ContractedBy(WarningPadding), uncoveredWarning);
+                Widgets.Label(warningPanel.ContractedBy(WarningPadding), coverage.Warning);
                 GUI.color = previousColor;
                 Text.Anchor = previousAnchor;
                 treeTopY = warningPanel.yMax + WarningMargin;
             }
             var scrollRect = new Rect(rect.x, treeTopY, rect.width, rect.yMax - treeTopY);
-            bool filtering = !filter.NullOrEmpty();
+            bool filtering = !editorState.Filter.NullOrEmpty();
 
             // Selection changed: surface the role's first entry (expand its work
             // type when the entry is a job, so the row exists to scroll to).
             (WorkTypeDef type, WorkGiverDef giver)? treeTarget = null;
             if (scrollJobTreeToSelection)
             {
-                treeTarget = FirstEntryTreeTarget(role);
-                if (treeTarget?.giver != null && expanded.Add(treeTarget.Value.type.defName))
-                    treeRev++;
+                treeTarget = RoleEditorState.FirstEntryTreeTarget(role);
+                if (treeTarget?.giver != null)
+                    editorState.EnsureWorkTypeExpanded(treeTarget.Value.type.defName);
             }
 
-            var nodes = TreeNodes(filtering);
+            IReadOnlyList<RoleJobTreeNode> nodes = editorState.TreeNodes(filtering);
 
             if (scrollJobTreeToSelection)
             {
                 scrollJobTreeToSelection = false;
                 if (treeTarget != null)
                 {
-                    int target = nodes.FindIndex(n =>
-                        n.type == treeTarget.Value.type && n.giver == treeTarget.Value.giver);
+                    int target = -1;
+                    for (int i = 0; i < nodes.Count; i++)
+                        if (nodes[i].Type == treeTarget.Value.type
+                            && nodes[i].Giver == treeTarget.Value.giver)
+                        {
+                            target = i;
+                            break;
+                        }
                     if (target >= 0)
                         treeScroll.y = Mathf.Max(0f,
                             target * RowHeight - (scrollRect.height - RowHeight) / 2f);
@@ -2186,7 +1656,10 @@ namespace WorkRoles.UI
                 (int)((treeScroll.y + scrollRect.height) / RowHeight));
             for (int i = firstNode; i <= lastNode; i++)
             {
-                var (type, giver, nodeLabel) = nodes[i];
+                RoleJobTreeNode node = nodes[i];
+                WorkTypeDef type = node.Type;
+                WorkGiverDef giver = node.Giver;
+                string nodeLabel = node.Label;
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (Mouse.IsOver(row)) Widgets.DrawHighlight(row);
                 Text.Anchor = TextAnchor.MiddleLeft;
@@ -2194,13 +1667,13 @@ namespace WorkRoles.UI
                 if (giver == null)
                 {
                     // Work-type header row
-                    bool isExpanded = filtering || expanded.Contains(type.defName);
+                    bool isExpanded = filtering || editorState.IsWorkTypeExpanded(type.defName);
                     if (Widgets.ButtonImage(new Rect(row.x + 2f, row.y + 4f, IconButton, IconButton),
                         isExpanded ? TexButton.Collapse : TexButton.Reveal))
-                        ToggleWorkTypeExpanded(type.defName);
+                        editorState.ToggleWorkTypeExpanded(type.defName);
 
                     var checkboxRect = new Rect(row.x + 26f, row.y + (row.height - 24f) / 2f, 24f, 24f);
-                    var currentState = GetWorkTypeState(role, type);
+                    var currentState = editorState.WorkTypeState(role, type);
                     // Right-click: add every job as its own reorderable entry.
                     var te = Event.current;
                     if (te.type == EventType.MouseDown && te.button == 1 && row.Contains(te.mousePosition))
@@ -2222,11 +1695,11 @@ namespace WorkRoles.UI
 
                     // The label toggles like the arrow — a far bigger target.
                     var typeLabelRect = new Rect(row.x + 54f, row.y, row.width - 54f, RowHeight);
-                    if (uncoveredTypes.Contains(type.defName)) GUI.color = WarningYellow;
+                    if (coverage.WorkTypes.Contains(type.defName)) GUI.color = WarningYellow;
                     Widgets.Label(typeLabelRect, nodeLabel);
                     GUI.color = Color.white;
                     if (Widgets.ButtonInvisible(typeLabelRect))
-                        ToggleWorkTypeExpanded(type.defName);
+                        editorState.ToggleWorkTypeExpanded(type.defName);
                     if (Mouse.IsOver(row))
                     {
                         string skillTip = JobSkillProfiles.WorkTypeTip(type.defName);
@@ -2237,7 +1710,7 @@ namespace WorkRoles.UI
                 {
                     // Job giver child row
                     var checkboxRect = new Rect(row.x + 42f, row.y + (row.height - 24f) / 2f, 24f, 24f);
-                    var currentState = GetGiverState(role, type, giver);
+                    var currentState = editorState.GiverState(role, type, giver);
                     // ~ = covered via the work type; a click promotes to an own
                     // (reorderable) entry.
                     if (currentState == MultiCheckboxState.Partial)
@@ -2247,7 +1720,7 @@ namespace WorkRoles.UI
                         ApplyGiverState(role, type, giver,
                             giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
 
-                    if (uncoveredGivers.Contains(giver.defName)) GUI.color = WarningYellow;
+                    if (coverage.Givers.Contains(giver.defName)) GUI.color = WarningYellow;
                     Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), nodeLabel);
                     GUI.color = Color.white;
                     if (Mouse.IsOver(row))
@@ -2259,77 +1732,6 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
             }
             Widgets.EndScrollView();
-        }
-
-        private bool Matches(string label) =>
-            label != null && label.IndexOf(filter, System.StringComparison.OrdinalIgnoreCase) >= 0;
-
-        /// The tree row for the role's first resolvable entry: the work-type
-        /// header for a WorkType entry, the giver row for a WorkGiver entry.
-        private static (WorkTypeDef type, WorkGiverDef giver)? FirstEntryTreeTarget(Role role)
-        {
-            foreach (var entry in role.entries)
-            {
-                if (entry.Kind == JobEntryKind.WorkType)
-                {
-                    var type = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                    if (type != null) return (type, null);
-                }
-                else
-                {
-                    var giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName);
-                    if (giver?.workType != null) return (giver.workType, giver);
-                }
-            }
-            return null;
-        }
-
-        // ----- Disambiguated display names for WorkGiverDefs -----
-
-        private static Dictionary<WorkGiverDef, string> BuildGiverDisplayCache()
-        {
-            var result = new Dictionary<WorkGiverDef, string>();
-            foreach (var type in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-            {
-                var givers = type.workGiversByPriority;
-                var byLabel = new Dictionary<string, List<WorkGiverDef>>(System.StringComparer.OrdinalIgnoreCase);
-                foreach (var g in givers)
-                {
-                    string baseName = (g.label ?? g.defName).CapitalizeFirst();
-                    if (!byLabel.TryGetValue(baseName, out var list))
-                        byLabel[baseName] = list = new List<WorkGiverDef>();
-                    list.Add(g);
-                }
-                foreach (var g in givers)
-                {
-                    string baseName = (g.label ?? g.defName).CapitalizeFirst();
-                    byLabel.TryGetValue(baseName, out var siblings);
-                    if (siblings != null && siblings.Count > 1)
-                    {
-                        // Collision: append " (emergency)" to the one with emergency == true.
-                        // If both or neither are emergency, no suffix (just use base name).
-                        int emergencyCount = siblings.Count(s => s.emergency);
-                        if (emergencyCount == 1 && g.emergency)
-                            result[g] = baseName + "WR_EmergencySuffix".Translate();
-                        else
-                            result[g] = baseName;
-                    }
-                    else
-                    {
-                        result[g] = baseName;
-                    }
-                }
-            }
-            return result;
-        }
-
-        internal static string GetGiverDisplayName(WorkGiverDef g)
-        {
-            if (giverDisplayCache == null)
-                giverDisplayCache = BuildGiverDisplayCache();
-            if (giverDisplayCache.TryGetValue(g, out var name))
-                return name;
-            return (g.label ?? g.defName).CapitalizeFirst();
         }
 
         // ----- Tri-state helpers -----
@@ -2345,49 +1747,6 @@ namespace WorkRoles.UI
             if (!Widgets.ButtonImage(rect, tex)) return false;
             (adds ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
             return true;
-        }
-
-        /// On = the WorkType entry itself is in the list (it also covers future
-        /// modded jobs — not the same as all givers individually); Partial = no
-        /// type entry, but some of its jobs have their own entries.
-        // Open-window snapshot of the selected role's entry defNames: checkbox
-        // states scanned role.entries with nested LINQ per visible row otherwise.
-        // Entry edits are synced commands, so the stamp catches every change.
-        private static int entrySetsStamp = -1;
-        private static int entrySetsRoleId = -1;
-        private static readonly HashSet<string> entryTypeSet = new HashSet<string>();
-        private static readonly HashSet<string> entryGiverSet = new HashSet<string>();
-
-        private static void EnsureEntrySets(Role role)
-        {
-            if (entrySetsStamp == UiVersion.Current && entrySetsRoleId == role.id) return;
-            entrySetsStamp = UiVersion.Current;
-            entrySetsRoleId = role.id;
-            entryTypeSet.Clear();
-            entryGiverSet.Clear();
-            foreach (var entry in role.entries)
-                (entry.Kind == JobEntryKind.WorkType ? entryTypeSet : entryGiverSet).Add(entry.DefName);
-        }
-
-        private static MultiCheckboxState GetWorkTypeState(Role role, WorkTypeDef type)
-        {
-            EnsureEntrySets(role);
-            if (entryTypeSet.Contains(type.defName)) return MultiCheckboxState.On;
-            var givers = type.workGiversByPriority;
-            for (int i = 0; i < givers.Count; i++)
-                if (entryGiverSet.Contains(givers[i].defName))
-                    return MultiCheckboxState.Partial;
-            return MultiCheckboxState.Off;
-        }
-
-        /// On = own entry (reorderable); Partial = covered via the work type.
-        private static MultiCheckboxState GetGiverState(Role role, WorkTypeDef type, WorkGiverDef giver)
-        {
-            EnsureEntrySets(role);
-            if (entryGiverSet.Contains(giver.defName)) return MultiCheckboxState.On;
-            return entryTypeSet.Contains(type.defName)
-                ? MultiCheckboxState.Partial
-                : MultiCheckboxState.Off;
         }
 
         /// Adds/removes only the WorkType entry itself — giver entries (and the

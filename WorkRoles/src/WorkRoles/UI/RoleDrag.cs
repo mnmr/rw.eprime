@@ -26,6 +26,7 @@ namespace WorkRoles.UI
         private static int pendingGroupId = -1;
         private static Pawn pendingSource;
         private static Action pendingClickAction;
+        private static Rect pendingSourceRect;
 
         // Drop target registered by whichever row the mouse is over this frame.
         public static Pawn HoverPawn;
@@ -38,8 +39,8 @@ namespace WorkRoles.UI
         // Visual feedback: true when dragging over a pawn that already has the role.
         public static bool HoverBlocked;
 
-        /// Register a press. If the mouse is released before moving 6px the clickAction fires.
-        public static void OnPress(int roleId, Pawn source, Action clickAction)
+        /// Register a press. A release inside sourceRect before moving 6px fires clickAction.
+        public static void OnPress(Rect sourceRect, int roleId, Pawn source, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;   // raw screen pixels, GUI-independent
@@ -47,11 +48,12 @@ namespace WorkRoles.UI
             pendingGroupId = -1;
             pendingSource = source;
             pendingClickAction = clickAction;
+            pendingSourceRect = ToScreenRect(sourceRect);
         }
 
-        /// Press on a role-list group header: short release = clickAction
+        /// Press on a role-list group header: short release inside sourceRect = clickAction
         /// (collapse toggle), threshold crossed = group reorder drag.
-        public static void OnPressGroup(int groupId, Action clickAction)
+        public static void OnPressGroup(Rect sourceRect, int groupId, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;
@@ -59,6 +61,18 @@ namespace WorkRoles.UI
             pendingGroupId = groupId;
             pendingSource = null;
             pendingClickAction = clickAction;
+            pendingSourceRect = ToScreenRect(sourceRect);
+        }
+
+        private static Rect ToScreenRect(Rect sourceRect)
+        {
+            Vector2 first = GUIUtility.GUIToScreenPoint(sourceRect.min);
+            Vector2 second = GUIUtility.GUIToScreenPoint(sourceRect.max);
+            return Rect.MinMaxRect(
+                Mathf.Min(first.x, second.x),
+                Mathf.Min(first.y, second.y),
+                Mathf.Max(first.x, second.x),
+                Mathf.Max(first.y, second.y));
         }
 
         /// Call once per frame BEFORE drawing tab content.
@@ -86,8 +100,8 @@ namespace WorkRoles.UI
 
             if (pending && !Active)
             {
-                // Short press = click: invoke the registered callback.
-                pendingClickAction?.Invoke();
+                if (pendingSourceRect.Contains(GUIUtility.GUIToScreenPoint(Event.current.mousePosition)))
+                    pendingClickAction?.Invoke();
                 Cancel();
                 return;
             }
@@ -138,7 +152,8 @@ namespace WorkRoles.UI
         /// space as the rects): fully below a line lands after its last chip;
         /// within a line, a chip's right half advances the slot. Shared by every
         /// chip-strip drop target.
-        public static int ChipInsertIndex<T>(Vector2 mouse, List<T> chips, Func<T, Rect> rectOf)
+        public static int ChipInsertIndex<T>(Vector2 mouse, IReadOnlyList<T> chips,
+            Func<T, Rect> rectOf)
         {
             int insertIndex = 0;
             for (int i = 0; i < chips.Count; i++)
@@ -167,6 +182,7 @@ namespace WorkRoles.UI
             HoverBlocked = false;
             HoverDropAction = null;
             pendingClickAction = null;
+            pendingSourceRect = default(Rect);
         }
     }
 }

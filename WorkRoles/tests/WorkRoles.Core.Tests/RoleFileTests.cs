@@ -377,57 +377,20 @@ public class RoleFileTests
     public async Task GarbageAndEmptyDocumentsReportErrors()
     {
         await Assert.That(RoleFile.Parse("not xml at all").error != null).IsTrue();
-        await Assert.That(RoleFile.Parse("<WorkRoles version=\"1\"/>").error).IsEqualTo("empty document");
+        await Assert.That(RoleFile.Parse("<WorkRoles version=\"1\"/>").error)
+            .IsEqualTo("document contains no valid roles");
     }
 
     [Test]
-    public async Task VersionSevenPathOnlyDocumentRetainsValidatedPath()
+    [Arguments("<WorkRoles version=\"7\"><Palette><Color name=\"accent\">#123456</Color></Palette></WorkRoles>")]
+    [Arguments("<WorkRoles version=\"7\"><TrainingPaths><Path name=\"Apprentices\"><Role roleId=\"role-novice\" min=\"0\" max=\"8\">Novice</Role></Path></TrainingPaths></WorkRoles>")]
+    [Arguments("<WorkRoles version=\"7\"><RecommendationOrder><Role roleId=\"role-cook\">Cook</Role></RecommendationOrder></WorkRoles>")]
+    [Arguments("<WorkRoles version=\"7\"><Groups><Group fileId=\"group-kitchen\" name=\"Kitchen\"/></Groups></WorkRoles>")]
+    public async Task DocumentsWithoutValidRolesAreRejected(string xml)
     {
-        RoleFileDocument parsed = RoleFile.Parse(
-            "<WorkRoles version=\"7\"><TrainingPaths><Path name=\"Apprentices\">" +
-            "<Anchor roleId=\"role-master\" before=\"false\">Master</Anchor>" +
-            "<Role roleId=\"role-novice\" min=\"0\" max=\"8\">Novice</Role>" +
-            "<Role roleId=\"role-master\" min=\"8\" max=\"21\">Master</Role>" +
-            "</Path></TrainingPaths></WorkRoles>");
+        RoleFileDocument parsed = RoleFile.Parse(xml);
 
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles.Count).IsEqualTo(0);
-        await Assert.That(parsed.trainingPaths.Count).IsEqualTo(1);
-        await Assert.That(parsed.trainingPaths[0].name).IsEqualTo("Apprentices");
-        await Assert.That(parsed.trainingPaths[0].anchorRoleId).IsEqualTo("role-master");
-        await Assert.That(parsed.trainingPaths[0].anchorBefore).IsFalse();
-        await Assert.That(string.Join("|", parsed.trainingPaths[0].entriesWithIds.Select(entry =>
-                $"{entry.role.fileId}:{entry.role.label}:{entry.min}-{entry.max}")))
-            .IsEqualTo("role-novice:Novice:0-8|role-master:Master:8-21");
-    }
-
-    [Test]
-    public async Task VersionSixOrderOnlyDocumentRetainsLabelReference()
-    {
-        RoleFileDocument parsed = RoleFile.Parse(
-            "<WorkRoles version=\"6\"><RecommendationOrder>" +
-            "<Role>Cook</Role></RecommendationOrder></WorkRoles>");
-
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles.Count).IsEqualTo(0);
-        await Assert.That(parsed.recommendationOrder.Count).IsEqualTo(1);
-        await Assert.That(parsed.recommendationOrder[0]).IsEqualTo("Cook");
-        await Assert.That(parsed.recommendationOrderWithIds[0].fileId == null).IsTrue();
-    }
-
-    [Test]
-    public async Task VersionSevenGroupOnlyDocumentRetainsStableId()
-    {
-        RoleFileDocument parsed = RoleFile.Parse(
-            "<WorkRoles version=\"7\"><Groups>" +
-            "<Group fileId=\"group-kitchen\" name=\"Kitchen\"/>" +
-            "</Groups></WorkRoles>");
-
-        await Assert.That(parsed.error == null).IsTrue();
-        await Assert.That(parsed.roles.Count).IsEqualTo(0);
-        await Assert.That(parsed.groups.Count).IsEqualTo(1);
-        await Assert.That(parsed.groups[0]).IsEqualTo("Kitchen");
-        await Assert.That(parsed.groupsWithIds[0].fileId).IsEqualTo("group-kitchen");
+        await Assert.That(parsed.error).IsEqualTo("document contains no valid roles");
     }
 
     [Test]
@@ -442,7 +405,7 @@ public class RoleFileTests
             "<RecommendationOrder><Role roleId=\"missing\"> </Role></RecommendationOrder>" +
             "</WorkRoles>");
 
-        await Assert.That(parsed.error).IsEqualTo("empty document");
+        await Assert.That(parsed.error).IsEqualTo("document contains no valid roles");
         await Assert.That(parsed.palette.Count).IsEqualTo(1);
         await Assert.That(parsed.groups.Count).IsEqualTo(0);
         await Assert.That(parsed.roles.Count).IsEqualTo(0);

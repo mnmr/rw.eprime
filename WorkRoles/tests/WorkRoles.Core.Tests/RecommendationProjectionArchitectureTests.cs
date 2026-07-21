@@ -12,8 +12,8 @@ public class RecommendationProjectionArchitectureTests
         string single = Method(adapter, "internal static RoleView RoleViewOf(Role role)");
         string materialize = Method(adapter,
             "private static RoleView RoleViewOf(Role role, RecommendationRoleProjection projection)");
-        string options = Method(Source("UI", "OptionsTabView.cs"),
-            "private void EnsureSnapshot(RoleStore store, float chipWidth)");
+        string options = Method(Source("UI", "OptionsTabState.cs"),
+            "internal void EnsureOrder(RoleStore store, float width)");
 
         await Assert.That(colony).Contains("BuildRoleProjectionBatch(store.roles)");
         await Assert.That(colony).DoesNotContain("Select(RoleViewOf)");
