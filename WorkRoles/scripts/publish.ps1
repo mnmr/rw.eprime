@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $content -PathType Container)) {
 $repoAbout = Get-Content -LiteralPath (Join-Path $repo "mod\About\About.xml") -Raw
 $deployedAbout = Get-Content -LiteralPath (Join-Path $content "About\About.xml") -Raw
 if ($repoAbout -ne $deployedAbout) {
-    throw "Deployed About.xml differs from repo; run scripts/deploy.ps1 first"
+    throw "About.xml in the game's Mods folder ($content) is older than the repo's; the upload sends the deployed folder, so run dotnet build + scripts/deploy.ps1 first"
 }
 
 $idFile = Join-Path $content "About\PublishedFileId.txt"
