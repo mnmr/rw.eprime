@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory = $true)][string]$ChangeNote,
+    [string]$ChangeNote = "",
     [string]$RimWorldMods = "C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods",
     [string]$SteamCmd = "",
     [string]$Username = ""
@@ -50,19 +50,27 @@ if ($descriptionBytes -gt 8000) {
     throw "workshop-description.bbcode is $descriptionBytes bytes; Steam caps descriptions at ~8000"
 }
 
-# Omitted keys (title, previewfile) are left untouched by Steam,
-# which is the whole point: the workshop title is managed on the web page only.
-$vdfEscapedContent = (Resolve-Path -LiteralPath $content).Path -replace '\\', '\\'
-$vdfEscapedNote = $ChangeNote -replace '\\', '\\' -replace '"', '\"'
-$vdfEscapedDescription = $description -replace '\\', '\\' -replace '"', '\"'
+# steamcmd's VDF parser has escape sequences off: values are written raw,
+# newlines are fine inside quoted values, but a double quote is unrepresentable.
+if ($ChangeNote.Contains('"')) {
+    throw "ChangeNote contains a double quote; steamcmd VDF cannot represent it"
+}
+if ($description.Contains('"')) {
+    throw "workshop-description.bbcode contains a double quote; steamcmd VDF cannot represent it"
+}
+
+# Omitted keys (title, previewfile, and changenote when none is given) are left
+# untouched by Steam: the title is managed on the web page only, and a note-less
+# upload posts a blank changelog entry instead of publishing throwaway text.
+$contentPath = (Resolve-Path -LiteralPath $content).Path
+$noteLine = if ($ChangeNote) { "`n    `"changenote`"       `"$ChangeNote`"" } else { "" }
 $vdf = @"
 "workshopitem"
 {
     "appid"            "294100"
     "publishedfileid"  "$publishedFileId"
-    "contentfolder"    "$vdfEscapedContent"
-    "changenote"       "$vdfEscapedNote"
-    "description"      "$vdfEscapedDescription"
+    "contentfolder"    "$contentPath"
+    "description"      "$description"$noteLine
 }
 "@
 

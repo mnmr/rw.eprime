@@ -1,6 +1,6 @@
 ﻿# Changelog
 
-## 1.2.1 — 2026-07-21
+## 1.2.2 — 2026-07-22
 
 - Added: More Than Capable integration. Hated work is treated as an Awful recommendation signal and assigned roles containing hated work now show a red warning marker.
 - Changed: Added a red/yellow lightning icon decoration on role assignments containing jobs that a colonist will never do. Red when colonist will do none of the jobs, yellow otherwise.
