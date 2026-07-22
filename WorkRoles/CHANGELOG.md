@@ -4,7 +4,8 @@
 
 - Added: More Than Capable integration. Hated work is treated as an Awful recommendation signal and assigned roles containing hated work now show a red warning marker.
 - Changed: Added a red/yellow lightning icon decoration on role assignments containing jobs that a colonist will never do. Red when colonist will do none of the jobs, yellow otherwise.
-- Fixed: Reorganized code to make project more maintainable and testable.
+- Fixed: Reorganized code to make project more maintainable and testable. There's now more than 500 unit tests for this mod!
+- Fixed: All rendering is now snapshot data driven, so that nothing is recomputed per render pass. Max performance with window open or not.
 
 ## 1.2.0 — 2026-07-20
 
