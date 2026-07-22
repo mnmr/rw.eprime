@@ -66,14 +66,13 @@ namespace WorkRoles
         /// (a time-ruled role makes this a shift bill).
         public static bool Allowed(Bill bill, Pawn pawn)
         {
-            var role = RestrictionFor(bill);
-            if (role == null) return true;
             var store = RoleStore.Current;
-            if (pawn == null || !store.pawnSets.TryGetValue(pawn, out var set)) return false;
-            foreach (var assignment in set.assignments)
-                if (assignment.roleId == role.id)
-                    return assignment.enabled && role.enabled && RoleRules.Pass(role, pawn);
-            return false;
+            if (store == null || bill == null
+                || !store.billRoles.TryGetValue(bill, out int roleId)
+                || store.RoleById(roleId) == null)
+                return true;
+            return store.IsManaged(pawn)
+                && CompiledJobOrders.IsRoleActive(pawn, roleId);
         }
     }
 }

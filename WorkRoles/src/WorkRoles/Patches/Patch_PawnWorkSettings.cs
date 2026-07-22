@@ -88,9 +88,10 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
     }
 
-    /// ...and on every map exit (caravan departure, kidnapping, pod launch, ...).
-    [HarmonyPatch(typeof(Pawn), nameof(Pawn.ExitMap))]
-    public static class Patch_Pawn_ExitMap
+    /// ...and on every despawn. Pawn.ExitMap normally funnels through this,
+    /// while gravship takeoff calls DeSpawn directly.
+    [HarmonyPatch(typeof(Pawn), nameof(Pawn.DeSpawn))]
+    public static class Patch_Pawn_DeSpawn
     {
         public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
     }
@@ -115,9 +116,17 @@ namespace WorkRoles.Patches
     {
         public static void Postfix()
         {
+            PrioritySetWatcher.ReleaseForTeardown();
+            WorkRolesGameComponent.ReleaseForTeardown();
+            BillRoleTransfer.ReleaseForTeardown();
+            UI.RoleDrag.Cancel();
+            UI.KeyOverride.Restore();
+            UI.WindowDataLifecycle.ReleaseShared();
+            Patch_DialogBillConfig_DoWindowContents.ReleaseForTeardown();
             DefinitionReloadCoordinator.CancelPendingWarm();
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
+            CompiledJobOrders.ReleaseForTeardown();
             RoleStore.ClearCached();
             Patch_ActiveTip_TipRect.Clear();
         }

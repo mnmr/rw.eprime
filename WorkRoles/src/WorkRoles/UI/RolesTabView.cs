@@ -105,12 +105,20 @@ namespace WorkRoles.UI
             editorState.Reset();
             selectedRoleId = -1;
             paintingHours = false;
+            hourPaintValue = false;
+            pendingHoursMask = 0;
             paintRoleId = -1;
+            entriesReorderableGroupId = -1;
+            pendingSelectLabel = null;
+            scrollToSelected = false;
+            scrollJobTreeToSelection = false;
             rulesRevealed.Clear();
             tuningExpanded.Clear();
             // Opening re-snapshots everything on this tab.
-            RolesListState.InvalidateSectionsSnapshot();
+            RolesListState.ReleaseSectionsSnapshot();
         }
+
+        internal void ReleaseWindowData() => Reset();
 
         /// Shared snapshots that embed translated def or built-in group labels.
         internal static void InvalidateSharedLanguageCaches()
@@ -367,12 +375,18 @@ namespace WorkRoles.UI
                 // Press registers a potential drag + click callback; a release inside
                 // the 6px threshold selects (resolved centrally in ResolveMouseUp).
                 // Virtual rows never drag — they select on press.
+                int dragControlId = virtualRow
+                    ? 0
+                    : GUIUtility.GetControlID(FocusType.Passive, row);
+                if (!virtualRow)
+                    RoleDrag.ObserveSource(dragControlId, row);
                 var e = Event.current;
                 if (e.type == EventType.MouseDown && e.button == 0 && row.Contains(e.mousePosition))
                 {
                     int capturedId = role.id;
                     if (virtualRow) SelectRole(capturedId);
-                    else RoleDrag.OnPress(capturedId, null, () => SelectRole(capturedId));
+                    else RoleDrag.OnPress(dragControlId, capturedId, null,
+                        () => SelectRole(capturedId));
                     e.Use();
                 }
 
@@ -452,12 +466,17 @@ namespace WorkRoles.UI
             }
 
             var e = Event.current;
+            int dragControlId = section.draggable
+                ? GUIUtility.GetControlID(FocusType.Passive, row)
+                : 0;
+            if (section.draggable)
+                RoleDrag.ObserveSource(dragControlId, row);
             if (e.type == EventType.MouseDown && e.button == 0 && row.Contains(e.mousePosition)
                 && !(section.renamable && pencilRect.Contains(e.mousePosition)))
             {
                 string key = section.key;
                 if (section.draggable)
-                    RoleDrag.OnPressGroup(section.group.id,
+                    RoleDrag.OnPressGroup(dragControlId, section.group.id,
                         () => RolesListState.ToggleSectionCollapsed(key));
                 else
                     RolesListState.ToggleSectionCollapsed(key);
@@ -986,23 +1005,9 @@ namespace WorkRoles.UI
             if (!TuningShown(role)) return 0f;
             float h = 4f + TuningHeaderRowH;
             if (!tuningExpanded.Contains(role.id)) return h;
-            Text.Font = GameFont.Small;
-            float descW = width
-                - (editorState.TuningLabelWidth + editorState.TuningButtonWidth + 8f);
-            h += 4f + Text.CalcHeight("WR_TuningHelp".Translate(), width) + 2f;
-            h += Mathf.Max(TuningRowH, Text.CalcHeight(ModeHelpKey(role).Translate(), descW));
-            if (role.holderMode == RoleHolderMode.Custom)
-                h += 4f
-                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningMinHelp".Translate(), descW))
-                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningMaxHelp".Translate(), descW))
-                    + Mathf.Max(TuningRowH, Text.CalcHeight("WR_TuningWaiversHelp".Translate(), descW));
-            return h;
+            return h + editorState.TuningLayout(
+                width, role.holderMode, TuningRowH).ExpandedHeight;
         }
-
-        private static string ModeHelpKey(Role role)
-            => role.holderMode == RoleHolderMode.Auto ? "WR_TuningAutoHelp"
-                : role.holderMode == RoleHolderMode.Never ? "WR_TuningNeverHelp"
-                : "WR_TuningCustomHelp";
 
         /// "Recommendations Tuning": group header (colonist-tab style, arrow on
         /// the left, summary right-aligned while collapsed), then intro, the
@@ -1039,61 +1044,66 @@ namespace WorkRoles.UI
             if (!expanded) return;
             y += 4f;
 
-            string intro = "WR_TuningHelp".Translate();
-            float introH = Text.CalcHeight(intro, width);
+            RoleHolderMode layoutMode = role.holderMode;
+            RoleTuningLayout layout = editorState.TuningLayout(
+                width, layoutMode, TuningRowH);
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x, y, width, introH), intro);
+            Widgets.Label(new Rect(x, y, width, layout.IntroHeight), layout.Intro);
             GUI.color = Color.white;
-            y += introH + 2f;
+            y += layout.IntroHeight + 2f;
 
-            DrawModeRow(x, ref y, width, role);
+            DrawModeRow(x, ref y, width, role, layout);
 
-            if (role.holderMode != RoleHolderMode.Custom) return;
+            // A synced command may execute immediately in single-player. The
+            // top-box height belongs to the mode captured at pass start, so a
+            // mode change is laid out cleanly on the next pass.
+            if (role.holderMode != layoutMode) return;
+            if (layoutMode != RoleHolderMode.Custom) return;
             y += 4f;
             // Small colonies still get a workable range to plan ahead with.
             int colonists = System.Math.Min(RoleHolderRange.Uncapped,
                 System.Math.Max(8, listedPawns?.Invoke().Count ?? 0));
-            var btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMin", "WR_TuningMinHelp");
+            var btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMin",
+                layout.MinHelp, layout.MinHeight);
             DrawHolderRangeButton(btn, role.minHolders, colonists, role.id, maximum: false);
-            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMax", "WR_TuningMaxHelp");
+            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMax",
+                layout.MaxHelp, layout.MaxHeight);
             DrawHolderRangeButton(btn, role.maxHolders, colonists, role.id, maximum: true);
-            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersWaivers", "WR_TuningWaiversHelp");
+            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersWaivers",
+                layout.WaiversHelp, layout.WaiversHeight);
             DrawWaiverButton(btn, role);
         }
 
         /// Label + help columns of a Custom picker row; the caller fills the
         /// returned button rect between them.
         private Rect DrawCustomRowFrame(float x, ref float y, float width,
-            string labelKey, string helpKey)
+            string labelKey, string help, float height)
         {
             Text.Font = GameFont.Small;
             float labelWidth = editorState.TuningLabelWidth;
             float buttonWidth = editorState.TuningButtonWidth;
             float descX = labelWidth + buttonWidth + 8f;
-            string help = helpKey.Translate();
-            float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = EditorLabelText;
             Widgets.Label(new Rect(x, y, labelWidth, TuningRowH), labelKey.Translate());
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
+            Widgets.Label(new Rect(x + descX, y, width - descX, height), help);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
             var btnRect = new Rect(x + labelWidth, y, buttonWidth, TuningRowH - 2f);
-            y += h;
+            y += height;
             return btnRect;
         }
 
         /// Auto/Never/Custom toggle spanning the label+button columns, with the
         /// current mode's help text beside it (aligned with the picker rows).
-        private void DrawModeRow(float x, ref float y, float width, Role role)
+        private void DrawModeRow(float x, ref float y, float width, Role role,
+            RoleTuningLayout layout)
         {
             Text.Font = GameFont.Small;
             float labelWidth = editorState.TuningLabelWidth;
             float buttonWidth = editorState.TuningButtonWidth;
             float descX = labelWidth + buttonWidth + 8f;
-            string help = ModeHelpKey(role).Translate();
-            float h = Mathf.Max(TuningRowH, Text.CalcHeight(help, width - descX));
 
             // Auto surfaces all three resolved values; Custom keeps the bare
             // mode word (the picker rows below carry the numbers).
@@ -1113,10 +1123,11 @@ namespace WorkRoles.UI
 
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x + descX, y, width - descX, h), help);
+            Widgets.Label(new Rect(x + descX, y, width - descX,
+                layout.ModeHeight), layout.ModeHelp);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
-            y += h;
+            y += layout.ModeHeight;
         }
 
         private static void DrawWaiverButton(Rect btnRect, Role role)
@@ -1270,14 +1281,15 @@ namespace WorkRoles.UI
             // Location multi-select right of the grid: Anywhere, or any set of
             // named settlements / ships / Caravans — active where any matches.
             // The location icon ties the picker to the chips' location marker.
-            const float LocBtnW = 110f;
             float btnX = gridRect.xMax + 16f;
             GUI.color = RoleChipUI.RuleMarkerColor;
             GUI.DrawTexture(new Rect(btnX, cellsY + (HourCellH - 16f) / 2f, 16f, 16f), WorkRolesTex.LocationMarker);
             GUI.color = Color.white;
             btnX += 22f;
-            if (Widgets.ButtonText(new Rect(btnX, cellsY + (HourCellH - 24f) / 2f, LocBtnW, 24f),
-                    LocationSummary(role)))
+            // Auto-fit prefixed labels (Ship:/Settlement:) up to the panel edge.
+            string summary = LocationSummary(role);
+            float locBtnW = Mathf.Clamp(WrText.FitWidth(summary) + 20f, 110f, Mathf.Max(110f, rect.xMax - btnX));
+            if (Widgets.ButtonText(new Rect(btnX, cellsY + (HourCellH - 24f) / 2f, locBtnW, 24f), summary))
             {
                 int roleId = role.id;
                 var tokens = role.locationTokens;
@@ -1294,7 +1306,7 @@ namespace WorkRoles.UI
                     .ThenBy(l => l.Label, System.StringComparer.OrdinalIgnoreCase))
                 {
                     string token = (loc.IsShip ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Id;
-                    var item = new FloatMenuOption(Check(tokens.Contains(token), loc.Label),
+                    var item = new FloatMenuOption(Check(tokens.Contains(token), LocationItemLabel(loc)),
                         () => RoleCommands.ToggleRoleLocation(roleId, token));
                     if (loc.IsShip) item.tooltip = "WR_ShipTip".Translate();
                     options.Add(item);
@@ -1352,8 +1364,12 @@ namespace WorkRoles.UI
             if (token == LocationRules.Caravans) return "WR_LocationCaravans".Translate();
             string id = token.Substring(token.IndexOf(':') + 1);
             var loc = ColonyScope.Locations().FirstOrDefault(l => l.Id == id);
-            return loc?.Label ?? "WR_LocationGone".Translate().ToString();
+            return loc != null ? LocationItemLabel(loc) : "WR_LocationGone".Translate().ToString();
         }
+
+        private static string LocationItemLabel(WorkRoles.Core.LocationInfo loc) =>
+            (loc.IsShip ? "WR_LocationShipItem" : "WR_LocationSettlementItem")
+                .Translate(loc.Label).ToString();
 
         // ----- Assigned pawn names row -----
 

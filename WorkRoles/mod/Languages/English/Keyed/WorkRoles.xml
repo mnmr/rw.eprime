@@ -459,6 +459,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_LocationAny>Anywhere</WR_LocationAny>
   <WR_LocationSettlements>Settlements</WR_LocationSettlements>
   <WR_LocationCaravans>Caravans</WR_LocationCaravans>
+  <!-- {0} = location name -->
+  <WR_LocationShipItem>Ship: {0}</WR_LocationShipItem>
+  <WR_LocationSettlementItem>Settlement: {0}</WR_LocationSettlementItem>
   <!-- {0} = number of selected locations -->
   <WR_LocationCount>{0} locations</WR_LocationCount>
   <WR_LocationGone>(gone)</WR_LocationGone>

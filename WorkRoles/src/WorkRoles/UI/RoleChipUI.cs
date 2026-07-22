@@ -114,78 +114,89 @@ namespace WorkRoles.UI
         /// Draws a chip. Clicks are resolved centrally via RoleDrag.ResolveMouseUp.
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
         /// interactive: false renders a display-only chip (no clicks, no drag).
+        /// paint: false retains control registration/interaction but skips visuals.
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
-            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
+            bool paint = true)
         {
-            Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
-
-            switch (style)
+            if (paint)
             {
-                case ChipStyle.Disabled:
-                case ChipStyle.AutoOff:
-                    bg = new Color(bg.r * 0.4f, bg.g * 0.4f, bg.b * 0.4f);
-                    break;
-                case ChipStyle.Subtle:
-                    bg = new Color(bg.r * 0.6f, bg.g * 0.6f, bg.b * 0.6f, 0.4f);
-                    break;
-                // Normal: bg unchanged
-            }
+                Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
 
-            Color labelColor =
-                style == ChipStyle.Disabled || style == ChipStyle.AutoOff
-                    ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f)
-                : style == ChipStyle.Subtle
-                    ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f)
-                : LabelColor;
-
-            // Compact initials get a uniform 4px inset (the exact-measure slack
-            // covers it) so text stays left-aligned across rows.
-            var spec = new ChipSpec
-            {
-                Bg = bg,
-                Outline = OutlineColor,
-                LabelColor = labelColor,
-                Label = display == ChipDisplay.Minimal ? null
-                    : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,
-                ShowRemove = showRemove,
-                LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
-                    + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
-                LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
-                StrikeThrough = style == ChipStyle.Disabled,
-            };
-            ChipUI.Draw(rect, in spec);
-
-            // Prefix markers mirror the remove icon's slot, left of the label:
-            // capability, blocker veto, time rule, location rule, pin.
-            // Drawn on top of the box; the label inset already reserves the slots.
-            // No tips here: a chip has exactly one tooltip, owned by the caller.
-            {
-                float markerX = rect.x + 3f;
-                void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
+                switch (style)
                 {
-                    var markerRect = new Rect(markerX + (RemoveSize - size) / 2f,
-                        rect.y + (rect.height - size) / 2f, size, size);
-                    GUI.color = tinted ? RuleMarkerColor : Color.white;
-                    GUI.DrawTexture(markerRect, tex);
-                    GUI.color = Color.white;
-                    markerX += RemoveSize + 2f;
+                    case ChipStyle.Disabled:
+                    case ChipStyle.AutoOff:
+                        bg = new Color(bg.r * 0.4f, bg.g * 0.4f, bg.b * 0.4f);
+                        break;
+                    case ChipStyle.Subtle:
+                        bg = new Color(bg.r * 0.6f, bg.g * 0.6f, bg.b * 0.6f, 0.4f);
+                        break;
+                    // Normal: bg unchanged
                 }
-                if (warningSeverity != RoleAssignmentWarningSeverity.None)
-                    Marker(warningSeverity == RoleAssignmentWarningSeverity.Caution
-                            ? WorkRolesTex.RoleCapabilityPartial
-                            : WorkRolesTex.RoleCapabilityAll,
-                        tinted: false);
-                if (role.blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
-                if (role.activeHours != Role.AllHours) Marker(WorkRolesTex.TimeMarker, tinted: true);
-                if (role.locationTokens.Count > 0) Marker(WorkRolesTex.LocationMarker, tinted: true);
-                // The pin texture has less padding than the others; drawn
-                // smaller so it doesn't dominate the strip.
-                if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
-                    tinted: true, size: 13f);
+
+                Color labelColor =
+                    style == ChipStyle.Disabled || style == ChipStyle.AutoOff
+                        ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f)
+                    : style == ChipStyle.Subtle
+                        ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f)
+                    : LabelColor;
+
+                // Compact initials get a uniform 4px inset (the exact-measure slack
+                // covers it) so text stays left-aligned across rows.
+                var spec = new ChipSpec
+                {
+                    Bg = bg,
+                    Outline = OutlineColor,
+                    LabelColor = labelColor,
+                    Label = display == ChipDisplay.Minimal ? null
+                        : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,
+                    ShowRemove = showRemove,
+                    LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
+                        + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
+                    LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
+                    StrikeThrough = style == ChipStyle.Disabled,
+                };
+                ChipUI.Draw(rect, in spec);
+
+                // Prefix markers mirror the remove icon's slot, left of the label:
+                // capability, blocker veto, time rule, location rule, pin.
+                // Drawn on top of the box; the label inset already reserves the slots.
+                // No tips here: a chip has exactly one tooltip, owned by the caller.
+                {
+                    float markerX = rect.x + 3f;
+                    void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
+                    {
+                        var markerRect = new Rect(markerX + (RemoveSize - size) / 2f,
+                            rect.y + (rect.height - size) / 2f, size, size);
+                        GUI.color = tinted ? RuleMarkerColor : Color.white;
+                        GUI.DrawTexture(markerRect, tex);
+                        GUI.color = Color.white;
+                        markerX += RemoveSize + 2f;
+                    }
+                    if (warningSeverity != RoleAssignmentWarningSeverity.None)
+                        Marker(warningSeverity == RoleAssignmentWarningSeverity.Caution
+                                ? WorkRolesTex.RoleCapabilityPartial
+                                : WorkRolesTex.RoleCapabilityAll,
+                            tinted: false);
+                    if (role.blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
+                    if (role.activeHours != Role.AllHours) Marker(WorkRolesTex.TimeMarker, tinted: true);
+                    if (role.locationTokens.Count > 0) Marker(WorkRolesTex.LocationMarker, tinted: true);
+                    // The pin texture has less padding than the others; drawn
+                    // smaller so it doesn't dominate the strip.
+                    if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
+                        tinted: true, size: 13f);
+                }
             }
 
             if (!interactive) return ChipClick.None;
+
+            // GetControlID is RimWorld's own identity mechanism for custom
+            // draggable buttons. ObserveSource runs here, inside this chip's
+            // current scroll/group clip, so Mouse.IsOver compares like units.
+            int dragControlId = GUIUtility.GetControlID(FocusType.Passive, rect);
+            RoleDrag.ObserveSource(dragControlId, rect);
 
             Rect removeRect = ChipUI.RemoveRect(rect);
 
@@ -203,7 +214,7 @@ namespace WorkRoles.UI
                     return ChipClick.Remove;
                 }
                 // Register press; click fires in ResolveMouseUp if no drag threshold reached.
-                RoleDrag.OnPress(role.id, dragSource, onClick);
+                RoleDrag.OnPress(dragControlId, role.id, dragSource, onClick);
                 e.Use();
             }
             return ChipClick.None;

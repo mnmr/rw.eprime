@@ -11,10 +11,10 @@ namespace WorkRoles.UI
         // GUIClip is Unity-internal; Unclip converts group-local to screen
         // coordinates — matrix rotation inside a GUI window needs it (vanilla's
         // UI.RotateAroundPivot only compensates for UI scale, not group offsets).
-        private static readonly Func<Vector2, Vector2> Unclip =
-            AccessTools.MethodDelegate<Func<Vector2, Vector2>>(
-                AccessTools.Method(typeof(GUI).Assembly.GetType("UnityEngine.GUIClip"),
-                    "Unclip", new[] { typeof(Vector2) }));
+        // Resolve lazily so a Unity-internal rename disables only inclined
+        // headers instead of making every WrText method unusable.
+        private static Func<Vector2, Vector2> unclip;
+        private static bool unclipResolved;
 
         /// Label rising at an angle out of a column header, its lower-left
         /// corner anchored to the column's bottom-right, underlined. Adapted
@@ -39,9 +39,14 @@ namespace WorkRoles.UI
                 Mathf.Sin(theta) * cRelative.x + Mathf.Cos(theta) * cRelative.y + center.y);
             rotated.x += columnRect.xMax - cPrime.x;
 
+            if (!TryUnclip(rotated.center, out Vector2 pivot))
+            {
+                Text.Font = oldFont;
+                return;
+            }
+
             Matrix4x4 originalMatrix = GUI.matrix;
             GUI.matrix = Matrix4x4.identity;
-            Vector2 pivot = Unclip(rotated.center);
             Matrix4x4 transform = originalMatrix;
             transform *= Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
             transform *= Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 0f, -degrees), Vector3.one);
@@ -68,6 +73,45 @@ namespace WorkRoles.UI
             GUI.color = oldColor;
             GUI.matrix = originalMatrix;
             Text.Font = oldFont;
+        }
+
+        private static bool TryUnclip(Vector2 point, out Vector2 result)
+        {
+            result = default;
+            if (!unclipResolved)
+            {
+                unclipResolved = true;
+                try
+                {
+                    Type guiClip = typeof(GUI).Assembly.GetType("UnityEngine.GUIClip");
+                    var method = AccessTools.Method(
+                        guiClip, "Unclip", new[] { typeof(Vector2) });
+                    if (method == null || !method.IsStatic
+                        || method.ReturnType != typeof(Vector2))
+                        throw new MissingMethodException(
+                            "UnityEngine.GUIClip", "Unclip(Vector2) -> Vector2");
+                    unclip = AccessTools.MethodDelegate<Func<Vector2, Vector2>>(method);
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning("[WorkRoles] Inclined priority-grid headers disabled: "
+                        + exception.Message);
+                }
+            }
+
+            if (unclip == null) return false;
+            try
+            {
+                result = unclip(point);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                unclip = null;
+                Log.Warning("[WorkRoles] Inclined priority-grid headers disabled "
+                    + "after GUIClip.Unclip failed: " + exception.Message);
+                return false;
+            }
         }
 
         // Compatibility path for callers outside WorkRoles. The priority grid
@@ -101,6 +145,12 @@ namespace WorkRoles.UI
         private static readonly System.Collections.Generic.Dictionary<(GameFont, string), float> fitWidths
             = new System.Collections.Generic.Dictionary<(GameFont, string), float>();
         private static int fitWidthsStamp = -1;
+
+        internal static void ClearFitWidthCache()
+        {
+            fitWidths.Clear();
+            fitWidthsStamp = -1;
+        }
 
         public static float FitWidth(string text)
         {

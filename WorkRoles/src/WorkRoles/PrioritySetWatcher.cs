@@ -30,7 +30,9 @@ namespace WorkRoles
         private static readonly HashSet<Assembly> ignoredAssemblies = new HashSet<Assembly>();
 
         private static readonly PriorityWriterProbe probe = new PriorityWriterProbe();
-        private static World sessionWorld;
+        // Scalar session identity only: retaining World here would keep the
+        // unloaded world graph alive after returning to the main menu.
+        private static int? sessionWorldId;
         private static PendingWarning pending;
 
         internal static bool HasPendingWarning => pending != null;
@@ -43,7 +45,8 @@ namespace WorkRoles
             // under "none" and collide with (or suppress) a real world's warning.
             var world = Find.World;
             if (world == null) return;
-            EnsureSession(world);
+            int worldId = world.info.persistentRandomValue;
+            EnsureSession(worldId);
             // The Harmony prefix still blocks the call; only diagnostics stop.
             if (probe.Stopped) return;
 
@@ -64,7 +67,7 @@ namespace WorkRoles
                 return;
             }
 
-            string key = world.info.persistentRandomValue + "|" + mod.PackageId;
+            string key = worldId + "|" + mod.PackageId;
             if (settings.warnedPriorityMods.Contains(key))
             {
                 probe.RecordInspection(tick, PriorityWriterSampleKind.KnownSource);
@@ -87,9 +90,15 @@ namespace WorkRoles
             var warning = pending;
             if (warning == null) return;
             var world = Find.World;
-            if (world == null || !ReferenceEquals(world, sessionWorld))
+            if (world == null)
             {
-                ResetSession(world);
+                ReleaseForTeardown();
+                return;
+            }
+            int worldId = world.info.persistentRandomValue;
+            if (sessionWorldId != worldId)
+            {
+                ResetSession(worldId);
                 return;
             }
 
@@ -116,18 +125,20 @@ namespace WorkRoles
                 title: "WR_SetPriorityBlockedTitle".Translate()));
         }
 
-        private static void EnsureSession(World world)
+        private static void EnsureSession(int worldId)
         {
-            if (ReferenceEquals(world, sessionWorld)) return;
-            ResetSession(world);
+            if (sessionWorldId == worldId) return;
+            ResetSession(worldId);
         }
 
-        private static void ResetSession(World world)
+        private static void ResetSession(int? worldId)
         {
-            sessionWorld = world;
+            sessionWorldId = worldId;
             pending = null;
             probe.Reset();
         }
+
+        internal static void ReleaseForTeardown() => ResetSession(null);
 
         /// The first stack frame owned by a mod assembly (ours, vanilla,
         /// Harmony, Multiplayer and system frames are skipped; unknown

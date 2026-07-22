@@ -16,6 +16,9 @@ namespace WorkRoles
         {
             public List<WorkGiver> Normal;
             public List<WorkGiver> Emergency;
+            /// Role ids whose assignment, global toggle and runtime rules all
+            /// passed when this pawn snapshot was compiled.
+            public int[] ActiveRoleIds;
             /// Flat def-index priorities: the GetPriority prefix
             /// runs thousands of times per second — array reads, no hashing.
             public int[] PriorityByIndex;
@@ -61,6 +64,36 @@ namespace WorkRoles
 
             if (invalidateUi)
                 UiVersion.Bump();
+        }
+
+        /// A map changed settlement/gravship classification without its pawns
+        /// moving. Only pawns holding location-ruled roles need recompilation,
+        /// but the open window snapshot also needs to see the new map category.
+        internal static void InvalidateLocationRules(Map map)
+        {
+            if (map == null) return;
+
+            var store = RoleStore.Current;
+            if (store?.pawnSets != null)
+                foreach (var pair in store.pawnSets)
+                {
+                    var pawn = pair.Key;
+                    var assignments = pair.Value?.assignments;
+                    if (pawn?.MapHeld != map || assignments == null) continue;
+
+                    for (int i = 0; i < assignments.Count; i++)
+                    {
+                        var assignment = assignments[i];
+                        var role = assignment == null
+                            ? null : store.RoleById(assignment.roleId);
+                        if (role?.locationTokens == null
+                            || role.locationTokens.Count == 0) continue;
+                        cache.Remove(pawn);
+                        break;
+                    }
+                }
+
+            UiVersion.Bump();
         }
 
         public static void InvalidateRole(int roleId) => InvalidateRole(roleId, UiVersion.Bump);
@@ -116,6 +149,14 @@ namespace WorkRoles
             if (store?.roles != null)
                 foreach (var role in store.roles)
                     role?.InvalidateCoverage();
+        }
+
+        /// World teardown must release pawn-keyed compiled snapshots. Definition
+        /// metadata is process-wide and contains no world or pawn references.
+        internal static void ReleaseForTeardown()
+        {
+            cache.Clear();
+            InvalidateProjectionMetadata();
         }
 
         /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
@@ -203,6 +244,15 @@ namespace WorkRoles
             return (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
         }
 
+        internal static bool IsRoleActive(Pawn pawn, int roleId)
+        {
+            var activeRoleIds = For(pawn).ActiveRoleIds;
+            for (int i = 0; i < activeRoleIds.Length; i++)
+                if (activeRoleIds[i] == roleId)
+                    return true;
+            return false;
+        }
+
         private static Entry For(Pawn pawn)
         {
             if (!cache.TryGetValue(pawn, out var entry))
@@ -228,8 +278,9 @@ namespace WorkRoles
         /// Cache-only eviction for lifecycle code that owns its own UI bump.
         internal static void RemoveCached(Pawn pawn) => cache.Remove(pawn);
 
-        private static readonly AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>> VanillaPriorities =
-            AccessTools.FieldRefAccess<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>("priorities");
+        private static AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>
+            vanillaPriorities;
+        private static bool vanillaPrioritiesResolved;
 
         /// Mirrors the compiled order into the dormant vanilla priorities map as 0-4
         /// values, so removing the mod leaves the vanilla Work tab in a sane state.
@@ -242,13 +293,56 @@ namespace WorkRoles
             if (RoleStore.Current?.IsManaged(pawn) != true) return;
             var workSettings = pawn.workSettings;
             if (workSettings == null) return;
-            var map = VanillaPriorities(workSettings);
+            if (!TryGetVanillaPriorities(workSettings, out var map)) return;
             if (map == null) return;
             foreach (var workType in ProjectionDefinitions().AllWorkTypes)
             {
                 int index = workType.index;
                 map[workType] = (uint)index < (uint)entry.VanillaByIndex.Length
                     ? entry.VanillaByIndex[index] : 0;
+            }
+        }
+
+        private static bool TryGetVanillaPriorities(
+            Pawn_WorkSettings workSettings,
+            out DefMap<WorkTypeDef, int> priorities)
+        {
+            priorities = null;
+            if (!vanillaPrioritiesResolved)
+            {
+                vanillaPrioritiesResolved = true;
+                try
+                {
+                    var field = AccessTools.Field(
+                        typeof(Pawn_WorkSettings), "priorities");
+                    if (field == null || field.IsStatic
+                        || field.FieldType != typeof(DefMap<WorkTypeDef, int>))
+                        throw new MissingFieldException(
+                            typeof(Pawn_WorkSettings).FullName,
+                            "priorities: DefMap<WorkTypeDef, int>");
+                    vanillaPriorities = AccessTools.FieldRefAccess<
+                        Pawn_WorkSettings, DefMap<WorkTypeDef, int>>("priorities");
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning("[WorkRoles] Vanilla priority mirroring disabled; "
+                        + "role scheduling remains active: " + exception.Message);
+                }
+            }
+
+            if (vanillaPriorities == null) return false;
+            try
+            {
+                priorities = vanillaPriorities(workSettings);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                vanillaPriorities = null;
+                Log.Warning("[WorkRoles] Vanilla priority mirroring disabled after "
+                    + "the private priorities field became inaccessible; role "
+                    + "scheduling remains active: " + exception.Message);
+                return false;
             }
         }
 
@@ -336,6 +430,7 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
+            List<int> activeRoleIds = null;
             if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
             {
                 foreach (var assignment in set.assignments)
@@ -343,8 +438,12 @@ namespace WorkRoles
                     if (!assignment.enabled) continue;
                     var role = store.RoleById(assignment.roleId);
                     if (role != null && role.enabled && RoleRules.Pass(role, pawn))
+                    {
+                        if (activeRoleIds == null) activeRoleIds = new List<int>();
+                        activeRoleIds.Add(role.id);
                         roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
                             role.entries, role.workTypeSnapshots, GameJobCatalog.Instance), role.blocker));
+                    }
                 }
             }
 
@@ -358,6 +457,7 @@ namespace WorkRoles
             {
                 Normal = new List<WorkGiver>(compiled.Normal.Count),
                 Emergency = new List<WorkGiver>(compiled.Emergency.Count),
+                ActiveRoleIds = activeRoleIds?.ToArray() ?? Array.Empty<int>(),
                 PriorityByIndex = new int[defCount],
                 VanillaByIndex = new int[defCount],
             };

@@ -22,8 +22,16 @@ namespace WorkRoles.Core
             }
         }
 
-        private readonly ConditionalWeakTable<TKey, Entry> entries =
+        private ConditionalWeakTable<TKey, Entry> entries =
             new ConditionalWeakTable<TKey, Entry>();
+
+        /// Explicit owner-lifecycle release. Weak keys prevent object retention,
+        /// but a teardown boundary should also discard every logically pending
+        /// transfer instead of waiting for the keys to be collected.
+        public void Clear()
+        {
+            entries = new ConditionalWeakTable<TKey, Entry>();
+        }
 
         public void Set(TKey key, TOwner owner, TValue value)
         {

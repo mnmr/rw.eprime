@@ -26,6 +26,8 @@ namespace WorkRoles.UI
             all = null;
         }
 
+        internal static void ReleaseWindowData() => all = null;
+
         private static GroupSourceDef Classified(string key, string label,
             System.Func<Pawn, (string key, string title)> classify) =>
             new GroupSourceDef

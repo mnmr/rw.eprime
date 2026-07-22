@@ -25,6 +25,10 @@ namespace WorkRoles
 
         public static void RunOutsideOnGUI(System.Action action) => deferredUi.Enqueue(action);
 
+        /// Returning to the menu must not carry a deferred command into the
+        /// next game, even when the queued closure contains only scalar IDs.
+        internal static void ReleaseForTeardown() => deferredUi.Clear();
+
         public override void GameComponentUpdate()
         {
             while (deferredUi.Count > 0)

@@ -9,17 +9,42 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.SetFaction))]
     public static class Patch_Pawn_SetFaction
     {
-        public static void Postfix(Pawn __instance)
+        private readonly struct TransitionState
+        {
+            internal TransitionState(bool wasColonyMember, int uiRevision)
+            {
+                WasColonyMember = wasColonyMember;
+                UiRevision = uiRevision;
+            }
+
+            internal bool WasColonyMember { get; }
+            internal int UiRevision { get; }
+        }
+
+        private static bool IsColonyMember(Pawn pawn) =>
+            pawn?.IsColonist == true || pawn?.IsSlaveOfColony == true;
+
+        private static void Prefix(Pawn __instance, out TransitionState __state) =>
+            __state = new TransitionState(
+                IsColonyMember(__instance), UiVersion.Current);
+
+        private static void Postfix(Pawn __instance, TransitionState __state)
         {
             var store = RoleStore.Current;
-            if (store == null) return;
-            if (__instance.Faction != Faction.OfPlayer)
+            if (store != null)
             {
-                store.UnmanagePawn(__instance);
-                return;
+                if (__instance.Faction != Faction.OfPlayer)
+                    store.UnmanagePawn(__instance);
+                else if (Current.ProgramState == ProgramState.Playing)
+                    Seeding.TryAutoAssignBasics(__instance);
             }
-            if (Current.ProgramState != ProgramState.Playing) return;
-            Seeding.TryAutoAssignBasics(__instance);
+
+            // Role removal/auto-assignment normally invalidates the UI itself.
+            // A roleless joiner or leaver changes roster membership without
+            // touching role state, so provide exactly one fallback bump.
+            if (__state.WasColonyMember != IsColonyMember(__instance)
+                && UiVersion.Current == __state.UiRevision)
+                UiVersion.Bump();
         }
     }
 

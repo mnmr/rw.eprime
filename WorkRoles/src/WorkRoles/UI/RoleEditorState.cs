@@ -18,6 +18,10 @@ namespace WorkRoles.UI
         private StructuredTip holdersTip;
         private float tuningLabelWidth = -1f;
         private float tuningButtonWidth = -1f;
+        private float tuningLayoutWidth = -1f;
+        private float tuningLayoutRowHeight = -1f;
+        private RoleHolderMode tuningLayoutMode;
+        private RoleTuningLayout tuningLayout;
 
         private List<RoleSkillPresentation> skillsUsed;
         private int skillsStamp = -1;
@@ -86,6 +90,8 @@ namespace WorkRoles.UI
             Filter = "";
             expandedWorkTypes.Clear();
             treeRevision++;
+            treeNodesFilter = null;
+            treeNodesRevision = -1;
             holders = null;
             holdersStamp = ScopeCacheStamp.Invalid;
             holdersRoleId = -1;
@@ -105,6 +111,8 @@ namespace WorkRoles.UI
             blockerTip = null;
             holdersTip = null;
             tuningLabelWidth = tuningButtonWidth = -1f;
+            tuningLayoutWidth = tuningLayoutRowHeight = -1f;
+            tuningLayout = null;
             skillsUsed = null;
             skillsStamp = -1;
             skillsRoleId = -1;
@@ -153,6 +161,65 @@ namespace WorkRoles.UI
                         WrText.FitWidth("WR_HoldersWaivers".Translate())))) + 10f;
             tuningButtonWidth = WrText.FitWidth("WR_HoldersUncapped".Translate()) + 16f;
         }
+
+        internal RoleTuningLayout TuningLayout(
+            float width,
+            RoleHolderMode mode,
+            float rowHeight)
+        {
+            EnsureTuningMetrics();
+            if (tuningLayout != null
+                && tuningLayoutWidth == width
+                && tuningLayoutRowHeight == rowHeight
+                && tuningLayoutMode == mode)
+                return tuningLayout;
+
+            tuningLayoutWidth = width;
+            tuningLayoutRowHeight = rowHeight;
+            tuningLayoutMode = mode;
+
+            Text.Font = GameFont.Small;
+            float descriptionWidth = width
+                - (tuningLabelWidth + tuningButtonWidth + 8f);
+            string intro = "WR_TuningHelp".Translate();
+            string modeHelp = TuningModeHelpKey(mode).Translate();
+            float introHeight = Text.CalcHeight(intro, width);
+            float modeHeight = Mathf.Max(rowHeight,
+                Text.CalcHeight(modeHelp, descriptionWidth));
+
+            string minHelp = null;
+            string maxHelp = null;
+            string waiversHelp = null;
+            float minHeight = 0f;
+            float maxHeight = 0f;
+            float waiversHeight = 0f;
+            if (mode == RoleHolderMode.Custom)
+            {
+                minHelp = "WR_TuningMinHelp".Translate();
+                maxHelp = "WR_TuningMaxHelp".Translate();
+                waiversHelp = "WR_TuningWaiversHelp".Translate();
+                minHeight = Mathf.Max(rowHeight,
+                    Text.CalcHeight(minHelp, descriptionWidth));
+                maxHeight = Mathf.Max(rowHeight,
+                    Text.CalcHeight(maxHelp, descriptionWidth));
+                waiversHeight = Mathf.Max(rowHeight,
+                    Text.CalcHeight(waiversHelp, descriptionWidth));
+            }
+
+            tuningLayout = new RoleTuningLayout(
+                intro, introHeight,
+                modeHelp, modeHeight,
+                minHelp, minHeight,
+                maxHelp, maxHeight,
+                waiversHelp, waiversHeight,
+                mode == RoleHolderMode.Custom);
+            return tuningLayout;
+        }
+
+        private static string TuningModeHelpKey(RoleHolderMode mode)
+            => mode == RoleHolderMode.Auto ? "WR_TuningAutoHelp"
+                : mode == RoleHolderMode.Never ? "WR_TuningNeverHelp"
+                : "WR_TuningCustomHelp";
 
         internal IReadOnlyList<RoleSkillPresentation> SkillsUsed(Role role)
         {
@@ -404,6 +471,48 @@ namespace WorkRoles.UI
                     .Add(entry.DefName);
         }
 
+    }
+
+    internal sealed class RoleTuningLayout
+    {
+        internal RoleTuningLayout(
+            string intro,
+            float introHeight,
+            string modeHelp,
+            float modeHeight,
+            string minHelp,
+            float minHeight,
+            string maxHelp,
+            float maxHeight,
+            string waiversHelp,
+            float waiversHeight,
+            bool custom)
+        {
+            Intro = intro;
+            IntroHeight = introHeight;
+            ModeHelp = modeHelp;
+            ModeHeight = modeHeight;
+            MinHelp = minHelp;
+            MinHeight = minHeight;
+            MaxHelp = maxHelp;
+            MaxHeight = maxHeight;
+            WaiversHelp = waiversHelp;
+            WaiversHeight = waiversHeight;
+            ExpandedHeight = 4f + introHeight + 2f + modeHeight
+                + (custom ? 4f + minHeight + maxHeight + waiversHeight : 0f);
+        }
+
+        internal string Intro { get; }
+        internal float IntroHeight { get; }
+        internal string ModeHelp { get; }
+        internal float ModeHeight { get; }
+        internal string MinHelp { get; }
+        internal float MinHeight { get; }
+        internal string MaxHelp { get; }
+        internal float MaxHeight { get; }
+        internal string WaiversHelp { get; }
+        internal float WaiversHeight { get; }
+        internal float ExpandedHeight { get; }
     }
 
     internal readonly struct RoleSkillPresentation

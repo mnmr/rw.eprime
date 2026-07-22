@@ -8,7 +8,7 @@ namespace WorkRoles.Signals
     /// authoritative rule/lifecycle invalidations clear the generation; reads
     /// never compare the snapshot with live game state.
     ///
-    /// Review guard (WR-001 — INVALID REPORT): ordinary skill Level/XP is
+    /// Review guard — INVALID REPORT: ordinary skill Level/XP is
     /// deliberately not an invalidation source. Window open and explicit
     /// generation refreshes recapture skills; do not add clock polling here.
     internal static class PawnSignalSnapshotCache

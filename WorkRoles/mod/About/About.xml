@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ModMetaData>
-  <name>WorkRoles - Easy Priority Management</name>
-  <shortName>WorkRoles</shortName>
+  <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
   <modVersion>1.2.1</modVersion>

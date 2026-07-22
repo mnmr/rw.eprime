@@ -198,6 +198,7 @@ namespace WorkRoles.UI
         public override void PostClose()
         {
             base.PostClose();
+            RoleDrag.Cancel();
             resizing = false;
             pendingWindowRect.Clear();
             rolesTab.CommitEdits();
@@ -206,6 +207,10 @@ namespace WorkRoles.UI
             // stale); dropping them here releases pawns from unloaded saves.
             RoleClipboard.Clear();
             colonistsTab.ReleaseSnapshots();
+            rolesTab.ReleaseWindowData();
+            optionsTab.ReleaseWindowData();
+            WindowDataLifecycle.ReleaseShared();
+            tabs = null;
             Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
         }
 

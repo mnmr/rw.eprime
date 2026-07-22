@@ -45,6 +45,29 @@ namespace WorkRoles.UI
         private const float TableHeaderH = 30f;
         private const float GroupHeaderH = 30f;
 
+        // Flattened group-header/pawn geometry. VariableViewportLayout owns the
+        // prefix offsets, so normal IMGUI passes binary-search the visible rows
+        // instead of rescanning the complete colony to recover y positions.
+        private readonly struct TableLayoutRow
+        {
+            internal TableLayoutRow(GroupSection<Pawn> section, Pawn pawn)
+            {
+                Section = section;
+                Pawn = pawn;
+            }
+
+            internal GroupSection<Pawn> Section { get; }
+            internal Pawn Pawn { get; }
+        }
+
+        private IReadOnlyList<GroupSection<Pawn>> tableLayoutSections;
+        private readonly List<TableLayoutRow> tableLayoutRows = new List<TableLayoutRow>();
+        private VariableViewportLayout tableRowLayout;
+        private ScopeCacheStamp tableLayoutStamp = ScopeCacheStamp.Invalid;
+        private float tableLayoutStripWidth = -1f;
+        private int tableLayoutDisplay = -1;
+        private int tableListedCount;
+
         /// One view-owned revision for every cache whose contents depend on the
         /// active pawn scope. Reading it observes map transitions first.
         internal int PawnListRevision => rosterState.PawnListRevision;
@@ -102,6 +125,7 @@ namespace WorkRoles.UI
             sizeStamp = chipLayoutStamp = roleTipStamp = rulesPassStamp
                 = ScopeCacheStamp.Invalid;
             paletteStamp = -1;
+            InvalidateTableLayout();
         }
 
         /// Language-only invalidation. User selection, filters, scroll positions,
@@ -125,6 +149,7 @@ namespace WorkRoles.UI
             recommendationState.InvalidateLanguageCaches();
 
             rosterState.InvalidateLanguageCaches();
+            InvalidateTableLayout();
         }
 
         /// Reset-time only: every plan input (roles, assignments, pins, training,
@@ -146,6 +171,11 @@ namespace WorkRoles.UI
         internal void RefreshExternalSnapshotIfNeeded()
         {
             if (!statsState.NeedsExternalSnapshotRefresh) return;
+
+            // An authorized WorkRoles/time-rule event starts a complete new UI
+            // generation. External integrations are not polled, but anything
+            // they expose is re-read as part of that explicit generation.
+            ColonyGroupsDataSource.InvalidateSnapshot();
             if (!statsState.RefreshExternalSnapshot(rosterState.SnapshotPawns())) return;
 
             // A command can bump UiVersion during an input pass, allowing one
@@ -162,6 +192,7 @@ namespace WorkRoles.UI
             roleTipStamp = ScopeCacheStamp.Invalid;
             rulesPassCache.Clear();
             rulesPassStamp = ScopeCacheStamp.Invalid;
+            InvalidateTableLayout();
         }
 
         /// Window close: drop pawn-keyed snapshots so a save unloaded while the
@@ -181,6 +212,30 @@ namespace WorkRoles.UI
             chipLayoutStamp = ScopeCacheStamp.Invalid;
             rulesPassCache.Clear();
             rulesPassStamp = ScopeCacheStamp.Invalid;
+            InvalidateTableLayout();
+
+            ColonyGroupsDataSource.InvalidateSnapshot();
+            paletteChips.Clear();
+            paletteLabels.Clear();
+            paletteStamp = -1;
+            colonistHeaderCache = null;
+            sizeStamp = ScopeCacheStamp.Invalid;
+
+            // Role labels are save-owned even though this cache is shared by
+            // the table instances.
+            abbrevCache = null;
+            abbrevStamp = -1;
+        }
+
+        private void InvalidateTableLayout()
+        {
+            tableLayoutSections = null;
+            tableLayoutRows.Clear();
+            tableRowLayout = null;
+            tableLayoutStamp = ScopeCacheStamp.Invalid;
+            tableLayoutStripWidth = -1f;
+            tableLayoutDisplay = -1;
+            tableListedCount = 0;
         }
 
         // ----- Window sizing helpers -----
@@ -200,7 +255,7 @@ namespace WorkRoles.UI
 
         // Open-window snapshot of the desired window size: both walk every
         // pawn's chips through text measurement, so they recompute only when
-        // the stamp, map, chip display or skill columns change.
+        // the stamp, map, chip display, palette mode or skill columns change.
         private ScopeCacheStamp sizeStamp = ScopeCacheStamp.Invalid;
         private int sizeMapId = -1;
         private int sizeKey = -1;
@@ -213,7 +268,8 @@ namespace WorkRoles.UI
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
             // Column IDENTITY, not count: swapping a column at the cap keeps the
             // count identical and must still invalidate.
-            int key = ((int)TableChips * 31 + columns.Count) * 31
+            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode ?? PaletteMode.Skills;
+            int key = (((int)TableChips * 31 + (int)paletteMode) * 31 + columns.Count) * 31
                 + (selectedPawn?.thingIDNumber ?? -1);
             foreach (var column in columns)
                 key = key * 31 + (column?.shortHash ?? 0);
@@ -591,21 +647,26 @@ namespace WorkRoles.UI
 
             var scrollRect = new Rect(rect.x, rect.y, rect.width - PaletteModeW, rect.height);
             Widgets.BeginScrollView(scrollRect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
+            float visibleTop = paletteScroll.y;
+            float visibleBottom = visibleTop + scrollRect.height;
+            bool repaint = Event.current.type == EventType.Repaint;
 
             Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
             foreach (var (label, labelRect) in labels)
-                Widgets.Label(labelRect, label);
+                if (repaint && labelRect.yMax >= visibleTop && labelRect.y <= visibleBottom)
+                    Widgets.Label(labelRect, label);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
             foreach (var (role, chipRect) in chips)
             {
+                bool visible = chipRect.yMax >= visibleTop && chipRect.y <= visibleBottom;
                 // The click closure allocates: create it only on the one pass
                 // that can consume it (left mouse-down inside this chip).
                 System.Action onClick = null;
                 var pressEvent = Event.current;
-                if (pressEvent.type == EventType.MouseDown && pressEvent.button == 0
+                if (visible && pressEvent.type == EventType.MouseDown && pressEvent.button == 0
                     && chipRect.Contains(pressEvent.mousePosition))
                 {
                     int capturedId = role.id;
@@ -634,8 +695,9 @@ namespace WorkRoles.UI
                     };
                 }
                 var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
-                    showRemove: false, dragSource: null, onClick: onClick);
-                if (Mouse.IsOver(chipRect))
+                    showRemove: false, dragSource: null, onClick: onClick,
+                    paint: repaint && visible);
+                if (visible && Mouse.IsOver(chipRect))
                     TooltipHandler.TipRegion(chipRect, RoleTipText(role, RoleTipContext.Palette));
             }
             Widgets.EndScrollView();
@@ -1060,9 +1122,18 @@ namespace WorkRoles.UI
         private void DrawPawnTable(Rect rect, RoleStore store)
         {
             IReadOnlyList<GroupSection<Pawn>> sections = rosterState.Sections(store);
-            int listedCount = 0;
-            foreach (var section in sections) listedCount += section.Members.Count;
-            if (listedCount == 0 && rosterState.FiltersActive)
+
+            // Chip strips wrap against the roles column; everything else is
+            // fixed-width, so the row-height estimate is exact.
+            EstimatedStripWidth = TableStripWidth(rect.width);
+
+            bool grouped = rosterState.Grouped;
+            var outRect = new Rect(rect.x, rect.y + TableHeaderH, rect.width, rect.height - TableHeaderH);
+            lastTableViewH = outRect.height;
+            float viewW = outRect.width - 16f;
+            EnsureTableLayout(sections, grouped, EstimatedStripWidth);
+
+            if (tableListedCount == 0 && rosterState.FiltersActive)
             {
                 Text.Anchor = TextAnchor.MiddleCenter;
                 GUI.color = WrStyle.DimText;
@@ -1072,46 +1143,65 @@ namespace WorkRoles.UI
                 return;
             }
 
-            // Chip strips wrap against the roles column; everything else is
-            // fixed-width, so the row-height estimate is exact.
-            EstimatedStripWidth = TableStripWidth(rect.width);
-
             DrawTableHeader(new Rect(rect.x, rect.y, rect.width - 16f, TableHeaderH), store);
 
-            bool grouped = rosterState.Grouped;
-            var outRect = new Rect(rect.x, rect.y + TableHeaderH, rect.width, rect.height - TableHeaderH);
-            lastTableViewH = outRect.height;
-            float viewW = outRect.width - 16f;
-
-            float totalH = 0f;
-            foreach (var section in sections)
+            float totalH = tableRowLayout?.ContentExtent ?? 0f;
+            Widgets.BeginScrollView(outRect, ref tableScroll,
+                new Rect(0f, 0f, viewW, totalH));
+            VariableViewportRange visible = tableRowLayout.Calculate(
+                tableScroll.y, outRect.height);
+            for (int i = visible.Start; i < visible.EndExclusive; i++)
             {
-                if (grouped) totalH += GroupHeaderH;
-                if (!grouped || !rosterState.IsCollapsed(section.Key))
-                    foreach (var pawn in section.Members)
-                        totalH += RowHeightOf(pawn);
-            }
-
-            Widgets.BeginScrollView(outRect, ref tableScroll, new Rect(0f, 0f, viewW, totalH));
-            float y = 0f;
-            foreach (var section in sections)
-            {
-                if (grouped)
-                {
-                    if (y + GroupHeaderH >= tableScroll.y && y <= tableScroll.y + outRect.height)
-                        DrawGroupHeader(new Rect(0f, y, viewW, GroupHeaderH), section);
-                    y += GroupHeaderH;
-                    if (rosterState.IsCollapsed(section.Key)) continue;
-                }
-                foreach (var pawn in section.Members)
-                {
-                    float rowH = RowHeightOf(pawn);
-                    if (y + rowH >= tableScroll.y && y <= tableScroll.y + outRect.height)
-                        DrawRow(new Rect(0f, y, viewW, rowH), pawn, store);
-                    y += rowH;
-                }
+                TableLayoutRow row = tableLayoutRows[i];
+                float y = tableRowLayout.OffsetOf(i);
+                float height = tableRowLayout.ExtentOf(i);
+                var rowRect = new Rect(0f, y, viewW, height);
+                if (row.Pawn == null) DrawGroupHeader(rowRect, row.Section);
+                else DrawRow(rowRect, row.Pawn, store);
             }
             Widgets.EndScrollView();
+        }
+
+        private void EnsureTableLayout(
+            IReadOnlyList<GroupSection<Pawn>> sections,
+            bool grouped,
+            float stripWidth)
+        {
+            ScopeCacheStamp stamp = PawnListStamp;
+            int display = (int)TableChips;
+            if (tableRowLayout != null
+                && ReferenceEquals(tableLayoutSections, sections)
+                && tableLayoutStamp == stamp
+                && tableLayoutStripWidth == stripWidth
+                && tableLayoutDisplay == display)
+                return;
+
+            tableLayoutSections = sections;
+            tableLayoutStamp = stamp;
+            tableLayoutStripWidth = stripWidth;
+            tableLayoutDisplay = display;
+            tableListedCount = 0;
+            tableLayoutRows.Clear();
+
+            var heights = new List<float>();
+            for (int sectionIndex = 0; sectionIndex < sections.Count; sectionIndex++)
+            {
+                GroupSection<Pawn> section = sections[sectionIndex];
+                tableListedCount += section.Members.Count;
+                if (grouped)
+                {
+                    tableLayoutRows.Add(new TableLayoutRow(section, null));
+                    heights.Add(GroupHeaderH);
+                    if (rosterState.IsCollapsed(section.Key)) continue;
+                }
+                for (int pawnIndex = 0; pawnIndex < section.Members.Count; pawnIndex++)
+                {
+                    Pawn pawn = section.Members[pawnIndex];
+                    tableLayoutRows.Add(new TableLayoutRow(null, pawn));
+                    heights.Add(RowHeightOf(pawn));
+                }
+            }
+            tableRowLayout = new VariableViewportLayout(heights);
         }
 
         /// Fixed header: Colonist (suffix names the default order; clicking
@@ -1207,7 +1297,13 @@ namespace WorkRoles.UI
                 rosterState.SectionTitle(section.Key));
             Text.Anchor = TextAnchor.UpperLeft;
             Widgets.DrawHighlightIfMouseover(rect);
-            if (Widgets.ButtonInvisible(rect)) rosterState.ToggleCollapsed(section.Key);
+            if (Widgets.ButtonInvisible(rect))
+            {
+                rosterState.ToggleCollapsed(section.Key);
+                // This handler runs while the current visible-row snapshot is
+                // being iterated. Mark it stale; the next IMGUI pass rebuilds.
+                tableLayoutStamp = ScopeCacheStamp.Invalid;
+            }
         }
 
         private void DrawRow(Rect rect, Pawn pawn, RoleStore store)

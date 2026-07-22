@@ -23,8 +23,8 @@ namespace WorkRoles.Core
         public static bool Matches(IReadOnlyList<string> tokens, PawnPlace place)
         {
             if (tokens == null || tokens.Count == 0) return true;
-            foreach (var token in tokens)
-                if (MatchesOne(token, place))
+            for (int i = 0; i < tokens.Count; i++)
+                if (MatchesOne(tokens[i], place))
                     return true;
             return false;
         }
@@ -38,10 +38,16 @@ namespace WorkRoles.Core
                 case Caravans: return !place.IsSettlement && !place.IsShip;
             }
             if (token.StartsWith(SettlementPrefix, System.StringComparison.Ordinal))
-                return place.IsSettlement && place.LocationId == token.Substring(SettlementPrefix.Length);
+                return place.IsSettlement && MatchesId(token, SettlementPrefix.Length, place.LocationId);
             if (token.StartsWith(ShipPrefix, System.StringComparison.Ordinal))
-                return place.IsShip && place.LocationId == token.Substring(ShipPrefix.Length);
+                return place.IsShip && MatchesId(token, ShipPrefix.Length, place.LocationId);
             return false;
         }
+
+        private static bool MatchesId(string token, int prefixLength, string locationId) =>
+            locationId != null
+            && token.Length == prefixLength + locationId.Length
+            && string.CompareOrdinal(token, prefixLength,
+                locationId, 0, locationId.Length) == 0;
     }
 }

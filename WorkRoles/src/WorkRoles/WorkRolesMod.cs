@@ -1,6 +1,5 @@
 using System.Linq;
 using HarmonyLib;
-using RimWorld;
 using Verse;
 
 namespace WorkRoles
@@ -20,6 +19,11 @@ namespace WorkRoles
             Version = content.ModMetaData?.ModVersion;
             Settings = GetSettings<WorkRolesSettings>();
             StartupTiming.Record("settings", sw.ElapsedMilliseconds);
+
+            // Resolve the bill-dialog private members before Harmony processes
+            // its UI patch classes. A changed RimWorld layout disables only
+            // that optional UI integration instead of aborting mod startup.
+            Patches.BillDialogCompatibility.Initialize();
 
             // Patching, unrolled per class and timed: patching a method
             // recompiles every other mod's patches on it too, so one popular
@@ -41,12 +45,6 @@ namespace WorkRoles
             StartupTiming.Record(
                 "harmony patching" + (slow.Length > 0 ? slow.Append("]").ToString() : ""),
                 sw.ElapsedMilliseconds - patchStart);
-
-            // Grow the bill dialog's worker-selection section to fit the role
-            // restriction button (the value doubles as the section's sentinel —
-            // see Patch_ListingStandard_BeginSection).
-            AccessTools.StaticFieldRefAccess<int>(typeof(Dialog_BillConfig), "WorkerSelectionSubdialogHeight")
-                = Patches.Patch_ListingStandard_BeginSection.WorkerSectionHeight;
         }
     }
 

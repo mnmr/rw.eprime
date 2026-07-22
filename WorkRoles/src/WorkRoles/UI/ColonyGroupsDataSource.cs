@@ -35,6 +35,10 @@ namespace WorkRoles.UI
         /// Drops the snapshot; the next Groups() call re-reads Colony Groups.
         internal static void InvalidateSnapshot() => snapshot = null;
 
+        /// Close/teardown ownership release. Reflection metadata is process-owned;
+        /// only the membership snapshot contains save-owned pawns.
+        internal static void ReleaseSnapshot() => snapshot = null;
+
         /// The player's named groups, in Colony Groups' own order.
         internal static List<MembershipGroup<Pawn>> Groups()
         {

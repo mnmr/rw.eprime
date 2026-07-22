@@ -121,9 +121,22 @@ namespace WorkRoles.UI
 
         internal void ReleaseSnapshots()
         {
+            Search = "";
+            RoleFilterId = -1;
+            scope = null;
             pawns = null;
             pawnsStamp = ScopeCacheStamp.Invalid;
+            pawnsMapId = -1;
+            scopeOptions = null;
+            spansMultipleLocations = false;
             InvalidateSections();
+            sectionsMapId = -1;
+            sectionsSearch = null;
+            sectionsRoleFilter = -1;
+            sectionsGroupBy = null;
+            sectionsSort = null;
+            skillColumns.Clear();
+            skillColumnsLoaded = false;
             pawnListRevisions.Invalidate();
         }
 

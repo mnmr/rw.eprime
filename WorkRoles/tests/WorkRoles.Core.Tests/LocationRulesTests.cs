@@ -54,6 +54,29 @@ public class LocationRulesTests
     }
 
     [Test]
+    public async Task SpecificTokenMatchingDoesNotAllocate()
+    {
+        var settlementToken = new[] { "settlement:4" };
+        var shipToken = new[] { "ship:9" };
+
+        // Warm the JIT and any framework-owned static state before measuring.
+        LocationRules.Matches(settlementToken, AtSettlement);
+        LocationRules.Matches(shipToken, AtShip);
+
+        bool matched = true;
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 10_000; i++)
+        {
+            matched &= LocationRules.Matches(settlementToken, AtSettlement);
+            matched &= LocationRules.Matches(shipToken, AtShip);
+        }
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+
+        await Assert.That(matched).IsTrue();
+        await Assert.That(allocated).IsEqualTo(0L);
+    }
+
+    [Test]
     public async Task AnyTokenMatchingPasses()
     {
         var tokens = new[] { "settlement:5", LocationRules.Caravans };

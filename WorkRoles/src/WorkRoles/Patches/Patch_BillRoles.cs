@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using HarmonyLib;
 using RimWorld;
@@ -6,6 +7,47 @@ using Verse;
 
 namespace WorkRoles.Patches
 {
+    /// Guards the private bill-dialog surface used to add role choices and
+    /// repaint the selected label. Runtime bill enforcement is independent.
+    internal static class BillDialogCompatibility
+    {
+        private static bool initialized;
+
+        internal static bool WorkerUiAvailable { get; private set; }
+
+        internal static void Initialize()
+        {
+            if (initialized) return;
+            initialized = true;
+
+            try
+            {
+                var height = AccessTools.Field(
+                    typeof(Dialog_BillConfig), "WorkerSelectionSubdialogHeight");
+                var options = AccessTools.Method(
+                    typeof(Dialog_BillConfig), "GeneratePawnRestrictionOptions");
+                if (height == null || !height.IsStatic
+                    || height.FieldType != typeof(int)
+                    || options == null || options.IsStatic
+                    || options.GetParameters().Length != 0
+                    || !typeof(IEnumerable<Widgets.DropdownMenuElement<Pawn>>)
+                        .IsAssignableFrom(options.ReturnType))
+                    throw new MissingMemberException(
+                        "Dialog_BillConfig worker-selection internals have an unexpected shape");
+
+                height.SetValue(null,
+                    Patch_ListingStandard_BeginSection.WorkerSectionHeight);
+                WorkerUiAvailable = true;
+            }
+            catch (Exception exception)
+            {
+                WorkerUiAvailable = false;
+                Log.Warning("[WorkRoles] Bill role selection UI disabled; "
+                    + "runtime bill restrictions remain active: " + exception.Message);
+            }
+        }
+    }
+
     /// Enforces per-bill role restrictions at vanilla's single bill-worker gate
     /// (WorkGiver_DoBill consults PawnAllowedToStartAnew for every bill).
     [HarmonyPatch(typeof(Bill), nameof(Bill.PawnAllowedToStartAnew))]
@@ -133,6 +175,9 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Dialog_BillConfig), "GeneratePawnRestrictionOptions")]
     public static class Patch_DialogBillConfig_GeneratePawnRestrictionOptions
     {
+        public static bool Prepare() =>
+            BillDialogCompatibility.WorkerUiAvailable;
+
         public static void Postfix(ref IEnumerable<Widgets.DropdownMenuElement<Pawn>> __result,
             Bill_Production ___bill)
             => __result = WithRoleOptions(__result, ___bill);
@@ -193,9 +238,22 @@ namespace WorkRoles.Patches
         /// The bill whose dialog is currently drawing (null outside DoWindowContents).
         internal static Bill_Production CurrentBill;
 
+        public static bool Prepare() =>
+            BillDialogCompatibility.WorkerUiAvailable;
+
         public static void Prefix(Bill_Production ___bill) => CurrentBill = ___bill;
 
-        public static void Finalizer() => CurrentBill = null;
+        public static void Finalizer()
+        {
+            CurrentBill = null;
+            Patch_ListingStandard_BeginSection.WorkerSection = null;
+        }
+
+        internal static void ReleaseForTeardown()
+        {
+            CurrentBill = null;
+            Patch_ListingStandard_BeginSection.WorkerSection = null;
+        }
     }
 
     /// The worker section grew by the sentinel delta; without matching window
@@ -204,6 +262,9 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Dialog_BillConfig), nameof(Dialog_BillConfig.InitialSize), MethodType.Getter)]
     public static class Patch_DialogBillConfig_InitialSize
     {
+        public static bool Prepare() =>
+            BillDialogCompatibility.WorkerUiAvailable;
+
         public static void Postfix(ref Vector2 __result)
             => __result.y += Patch_ListingStandard_BeginSection.WorkerSectionHeight - 96f;
     }
@@ -217,6 +278,9 @@ namespace WorkRoles.Patches
 
         internal static Listing_Standard WorkerSection;
 
+        public static bool Prepare() =>
+            BillDialogCompatibility.WorkerUiAvailable;
+
         public static void Postfix(float height, Listing_Standard __result)
         {
             if (Patch_DialogBillConfig_DoWindowContents.CurrentBill != null
@@ -228,6 +292,9 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Listing_Standard), nameof(Listing_Standard.EndSection))]
     public static class Patch_ListingStandard_EndSection
     {
+        public static bool Prepare() =>
+            BillDialogCompatibility.WorkerUiAvailable;
+
         public static void Prefix(Listing_Standard listing)
         {
             if (listing == null || listing != Patch_ListingStandard_BeginSection.WorkerSection) return;

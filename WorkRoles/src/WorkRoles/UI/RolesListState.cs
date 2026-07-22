@@ -34,6 +34,10 @@ namespace WorkRoles.UI
             displayRows = null;
             snapshot = null;
             displayStamp = -1;
+            displayCollapseRevision = -1;
+            displayNested = false;
+            displaySearch = null;
+            displayJobFilter = null;
         }
 
         internal void InvalidateLanguageCaches()
@@ -117,6 +121,14 @@ namespace WorkRoles.UI
 
         internal static void InvalidateSectionsSnapshot()
             => sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
+
+        /// Invalidation alone leaves the old world's roles reachable until the
+        /// next build. Close/teardown uses this stronger ownership release.
+        internal static void ReleaseSectionsSnapshot()
+        {
+            sectionsCache[0] = sectionsCache[1] = null;
+            InvalidateSectionsSnapshot();
+        }
 
         internal static IReadOnlyList<RoleSection> BuildSections(RoleStore store, bool nested)
         {

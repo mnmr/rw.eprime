@@ -58,8 +58,12 @@ namespace WorkRoles.UI
         {
             tabScroll = Vector2.zero;
             state.Reset();
+            dropStamp = dropFrom = dropTo = -1;
+            dropAction = null;
             ClearBandDrag();
         }
+
+        internal void ReleaseWindowData() => Reset();
 
         /// Language-only invalidation. The active path, scroll position and
         /// disclosure state remain unchanged.
@@ -95,6 +99,7 @@ namespace WorkRoles.UI
             state.EnsureOrder(store, flowW - RecPanelPad * 2f);
             state.EnsurePaths(store, flowW - ChipsPanelPad * 2f);
             state.EnsureTips();
+            state.EnsureHelpLayout(flowW);
             OptionsPathView pathView = state.Path;
 
             // The whole y-flow is laid out up front: the scroll view needs
@@ -121,16 +126,13 @@ namespace WorkRoles.UI
             y += 30f;
             var recPanel = new Rect(flowX, y, flowW,
                 state.OrderLayoutHeight + RecPanelPad * 2f);
-            Text.Font = GameFont.Small;
-            string recOrderHelp = "WR_RecOrderHelp".Translate();
-            float recOrderHelpHeight = Text.CalcHeight(recOrderHelp, flowW);
-            var recOrderHelpRect = new Rect(flowX, recPanel.yMax + 8f, flowW, recOrderHelpHeight);
+            var recOrderHelpRect = new Rect(flowX, recPanel.yMax + 8f, flowW,
+                state.RecommendationOrderHelpHeight);
             y = recOrderHelpRect.yMax + 12f;
             float pathsHeaderY = y;
             y += 30f;
-            string trainingHelp = "WR_TrainingHelp".Translate();
-            float trainingHelpHeight = Text.CalcHeight(trainingHelp, flowW);
-            var trainingHelpRect = new Rect(flowX, y, flowW, trainingHelpHeight);
+            var trainingHelpRect = new Rect(flowX, y, flowW,
+                state.TrainingHelpHeight);
             y = trainingHelpRect.yMax + 8f;
             var captionRect = new Rect(flowX, y, flowW, PanelCaptionH);
             y += PanelCaptionH + PanelCaptionGap;
@@ -178,11 +180,11 @@ namespace WorkRoles.UI
             MiniHeader(flowX, recHeaderY, flowW, "WR_RecOrderHeader".Translate(),
                 state.RecommendationOrderTip);
             DrawRecommendationOrder(recPanel, store);
-            DrawHelpParagraph(recOrderHelpRect, recOrderHelp);
+            DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
 
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
                 state.TrainingTip);
-            DrawHelpParagraph(trainingHelpRect, trainingHelp);
+            DrawHelpParagraph(trainingHelpRect, state.TrainingHelp);
             Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
             Widgets.Label(captionRect, "WR_PathsPanelCaption".Translate());

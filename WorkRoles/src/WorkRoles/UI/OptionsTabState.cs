@@ -30,6 +30,8 @@ namespace WorkRoles.UI
 
         private int tipsStamp = -1;
 
+        private float helpWidth = -1f;
+
         internal int OrderStamp => orderStamp;
         internal IReadOnlyList<int> Order => order;
         internal IReadOnlyDictionary<int, RoleView> OrderById => orderById;
@@ -49,6 +51,10 @@ namespace WorkRoles.UI
         internal StructuredTip RecommendationOrderTip { get; private set; }
         internal StructuredTip TrainingTip { get; private set; }
         internal StructuredTip AnchorTip { get; private set; }
+        internal string RecommendationOrderHelp { get; private set; }
+        internal float RecommendationOrderHelpHeight { get; private set; }
+        internal string TrainingHelp { get; private set; }
+        internal float TrainingHelpHeight { get; private set; }
 
         internal void Reset()
         {
@@ -76,6 +82,24 @@ namespace WorkRoles.UI
             RecommendationOrderTip = null;
             TrainingTip = null;
             AnchorTip = null;
+
+            helpWidth = -1f;
+            RecommendationOrderHelp = null;
+            RecommendationOrderHelpHeight = 0f;
+            TrainingHelp = null;
+            TrainingHelpHeight = 0f;
+        }
+
+        internal void EnsureHelpLayout(float width)
+        {
+            if (helpWidth == width) return;
+            helpWidth = width;
+            Text.Font = GameFont.Small;
+            RecommendationOrderHelp = "WR_RecOrderHelp".Translate();
+            RecommendationOrderHelpHeight = Text.CalcHeight(
+                RecommendationOrderHelp, width);
+            TrainingHelp = "WR_TrainingHelp".Translate();
+            TrainingHelpHeight = Text.CalcHeight(TrainingHelp, width);
         }
 
         internal void EnsureOrder(RoleStore store, float width)

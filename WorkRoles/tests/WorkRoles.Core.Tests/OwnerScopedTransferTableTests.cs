@@ -38,6 +38,22 @@ public class OwnerScopedTransferTableTests
         await Assert.That(transfers.TryGet(key, oldOwner, out _)).IsFalse();
     }
 
+    [Test]
+    public async Task ClearDiscardsEveryPendingTransfer()
+    {
+        var owner = new Owner();
+        var first = new ValueEqualKey(1);
+        var second = new ValueEqualKey(2);
+        var transfers = new OwnerScopedTransferTable<ValueEqualKey, Owner, int>();
+        transfers.Set(first, owner, 19);
+        transfers.Set(second, owner, 73);
+
+        transfers.Clear();
+
+        await Assert.That(transfers.TryGet(first, owner, out _)).IsFalse();
+        await Assert.That(transfers.TryGet(second, owner, out _)).IsFalse();
+    }
+
     private sealed class Owner { }
 
     private sealed class ValueEqualKey

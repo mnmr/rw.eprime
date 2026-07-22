@@ -16,6 +16,10 @@ namespace WorkRoles.UI
         {
             public string text;
             public float expiry;
+            public float layoutMaxWidth = -1f;
+            public int layoutLanguageRevision = -1;
+            public float textWidth;
+            public float textHeight;
         }
 
         private const float DurationSeconds = 4f;
@@ -24,6 +28,8 @@ namespace WorkRoles.UI
         // The mod's panel idiom (role editor top box, Options panels).
 
         private static readonly List<Toast> toasts = new List<Toast>();
+
+        internal static void Clear() => toasts.Clear();
 
         public static void Show(string text, MessageTypeDef fallbackType)
         {
@@ -39,19 +45,36 @@ namespace WorkRoles.UI
         public static void Draw(Rect inRect)
         {
             if (toasts.Count == 0) return;
+            // Toasts own no controls. Fixed-rect drawing and expiry cleanup are
+            // needed only on Repaint, not Layout or input event passes.
+            if (Event.current.type != EventType.Repaint) return;
             toasts.RemoveAll(t => Time.realtimeSinceStartup >= t.expiry);
+            if (toasts.Count == 0) return;
             Text.Font = GameFont.Small;
             float y = inRect.y + 4f;
+            float maxWidth = Mathf.Min(MaxTextWidth, inRect.width - 56f);
+            int languageRevision = LanguageChangeCoordinator.Revision;
             foreach (var toast in toasts)
             {
-                float textW = Mathf.Min(Text.CalcSize(toast.text).x, Mathf.Min(MaxTextWidth, inRect.width - 56f));
-                float textH = Text.CalcHeight(toast.text, textW + 1f);
-                var panel = new Rect(inRect.x + (inRect.width - textW - 24f) / 2f, y, textW + 24f, textH + 12f);
+                if (toast.layoutMaxWidth != maxWidth
+                    || toast.layoutLanguageRevision != languageRevision)
+                {
+                    toast.layoutMaxWidth = maxWidth;
+                    toast.layoutLanguageRevision = languageRevision;
+                    toast.textWidth = Mathf.Min(Text.CalcSize(toast.text).x, maxWidth);
+                    toast.textHeight = Text.CalcHeight(toast.text, toast.textWidth + 1f);
+                }
+                var panel = new Rect(
+                    inRect.x + (inRect.width - toast.textWidth - 24f) / 2f,
+                    y,
+                    toast.textWidth + 24f,
+                    toast.textHeight + 12f);
                 Widgets.DrawBoxSolidWithOutline(
                     panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
                 var oldAnchor = Text.Anchor;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(new Rect(panel.x + 12f, panel.y + 6f, textW, textH), toast.text);
+                Widgets.Label(new Rect(panel.x + 12f, panel.y + 6f,
+                    toast.textWidth, toast.textHeight), toast.text);
                 Text.Anchor = oldAnchor;
                 y += panel.height + 4f;
             }

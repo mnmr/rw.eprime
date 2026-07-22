@@ -33,5 +33,7 @@ namespace WorkRoles
 
         internal static bool TryConsume(Bill bill, RoleStore store, out int roleId) =>
             staged.TryConsume(bill, store, out roleId);
+
+        internal static void ReleaseForTeardown() => staged.Clear();
     }
 }
