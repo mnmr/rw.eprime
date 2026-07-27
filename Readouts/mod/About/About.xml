@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>EPrime's Readouts</name>
+  <author>Morten Mertner</author>
+  <packageId>mnmr.eprimereadouts</packageId>
+  <modVersion>0.1.0</modVersion>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <description>
+Replaces the vanilla resource readout with customizable groups. Design your own groups of resources, arrange them in up to three tiers, and cycle how much detail each group shows. Quick search, low/critical thresholds, Multiplayer compatible, safe to add or remove from saves.
+  </description>
+</ModMetaData>

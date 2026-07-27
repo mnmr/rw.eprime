@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Results</EPR.Results>
+  <EPR.NoMatches>No matches</EPR.NoMatches>
+  <EPR.CycleTip>Cycle visible tiers</EPR.CycleTip>
+  <EPR.UseVanilla>Use vanilla readout</EPR.UseVanilla>
+  <EPR.OffsetX>Horizontal offset</EPR.OffsetX>
+  <EPR.OffsetY>Vertical offset</EPR.OffsetY>
+  <EPR.PanelWidth>Panel width</EPR.PanelWidth>
+  <EPR.BottomMargin>Bottom margin</EPR.BottomMargin>
+  <EPR.Groups>Groups</EPR.Groups>
+  <EPR.Resources>Resources</EPR.Resources>
+  <EPR.Editor>Editor</EPR.Editor>
+  <EPR.Add>Add</EPR.Add>
+  <EPR.Rename>Rename</EPR.Rename>
+  <EPR.DeleteConfirm>Delete group "{0}"?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Select or create a group to edit it.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Thresholds</EPR.Thresholds>
+  <EPR.Low>Low</EPR.Low>
+  <EPR.Critical>Critical</EPR.Critical>
+  <EPR.Set>Set</EPR.Set>
+  <EPR.Clear>Clear</EPR.Clear>
+  <EPR.ShowWhenZero>Show when zero</EPR.ShowWhenZero>
+  <EPR.PoolTip>Add as a pooled entry: one slot showing the combined count of everything in this category</EPR.PoolTip>
+  <EPR.EnableTip>Show this group in the readout</EPR.EnableTip>
+  <EPR.RestoreDefaults>Restore defaults</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>Replace ALL groups and thresholds with the default set? This affects every player in multiplayer.</EPR.RestoreConfirm>
+  <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.</EPR.HelpGroups>
+  <EPR.HelpResources>These are in-game items you can display counters for. Use the copy icon to add resource sets (a single entry displaying the sum of all items in the set). Click to add to the selected group; shift-click to remove.</EPR.HelpResources>
+  <EPR.HelpEditor>Here you can edit what resources (or resource sets) a group displays. A group can have up to three display tiers. The small triangles indicate how many tiers are currently visible (click to cycle).</EPR.HelpEditor>
+  <EPR.Options>Options</EPR.Options>
+</LanguageData>

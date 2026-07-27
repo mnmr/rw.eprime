@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" font-family="Arial, Helvetica, sans-serif">
+  <rect width="640" height="360" fill="#111317"/>
+
+  <!-- Left 30%: five group bands mirroring the seeded groups (Food, Raw,
+       Medicine, Materials, Wealth) with the actual in-game item icons
+       (assets/workshop/icons/, sourced from the RimWorld wiki's originals).
+       Variable lengths 3 / 5 / 2 / 4 / 2; stripes use the mod palette. -->
+
+  <!-- Band 1: Food (blue) — simple, fine, lavish meals; 1 lit + 2 dim markers -->
+  <g transform="translate(12,50)">
+    <rect width="108" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <rect width="3.5" height="44" fill="#5CA8DB"/>
+    <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
+    <path d="M13 15 L17 18 L13 21 Z" fill="#e8e6e0" fill-opacity="0.35"/>
+    <path d="M18 15 L22 18 L18 21 Z" fill="#e8e6e0" fill-opacity="0.35"/>
+    <image href="icons/meal_simple.png" x="26" y="7" width="22" height="22"/>
+    <image href="icons/meal_fine.png" x="54" y="7" width="22" height="22"/>
+    <image href="icons/meal_lavish.png" x="82" y="7" width="22" height="22"/>
+    <text x="37" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">12</text>
+    <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">8</text>
+    <text x="93" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">3</text>
+  </g>
+
+  <!-- Band 2: Raw (green) — meat, rice, potatoes, corn, milk; 2 lit markers -->
+  <g transform="translate(12,104)">
+    <rect width="164" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <rect width="3.5" height="44" fill="#8CC773"/>
+    <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
+    <path d="M13 15 L17 18 L13 21 Z" fill="#e8e6e0"/>
+    <image href="icons/meat.png" x="26" y="7" width="22" height="22"/>
+    <image href="icons/rice.png" x="54" y="7" width="22" height="22"/>
+    <image href="icons/potatoes.png" x="82" y="7" width="22" height="22"/>
+    <image href="icons/corn.png" x="110" y="7" width="22" height="22"/>
+    <image href="icons/milk.png" x="138" y="7" width="22" height="22"/>
+    <text x="37" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">75</text>
+    <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">312</text>
+    <text x="93" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">190</text>
+    <text x="121" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">86</text>
+    <text x="149" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">14</text>
+  </g>
+
+  <!-- Band 3: Medicine (amber) — herbal, industrial; single lit marker -->
+  <g transform="translate(12,158)">
+    <rect width="80" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <rect width="3.5" height="44" fill="#E0B759"/>
+    <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
+    <image href="icons/med_herbal.png" x="26" y="7" width="22" height="22"/>
+    <image href="icons/med_industrial.png" x="54" y="7" width="22" height="22"/>
+    <text x="37" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">26</text>
+    <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">9</text>
+  </g>
+
+  <!-- Band 4: Materials (plum) — steel, wood, components, plasteel; 2 lit + 1 dim -->
+  <g transform="translate(12,212)">
+    <rect width="136" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <rect width="3.5" height="44" fill="#CC80B3"/>
+    <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
+    <path d="M13 15 L17 18 L13 21 Z" fill="#e8e6e0"/>
+    <path d="M18 15 L22 18 L18 21 Z" fill="#e8e6e0" fill-opacity="0.35"/>
+    <image href="icons/steel.png" x="26" y="7" width="22" height="22"/>
+    <image href="icons/wood.png" x="54" y="7" width="22" height="22"/>
+    <image href="icons/component.png" x="82" y="7" width="22" height="22"/>
+    <image href="icons/plasteel.png" x="110" y="7" width="22" height="22"/>
+    <text x="37" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">427</text>
+    <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">305</text>
+    <text x="93" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">22</text>
+    <text x="121" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">64</text>
+  </g>
+
+  <!-- Band 5: Wealth (teal) — silver, gold; single lit marker -->
+  <g transform="translate(12,266)">
+    <rect width="80" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
+    <rect width="3.5" height="44" fill="#73C7BF"/>
+    <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
+    <image href="icons/silver.png" x="26" y="7" width="22" height="22"/>
+    <image href="icons/gold.png" x="54" y="7" width="22" height="22"/>
+    <text x="37" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">1490</text>
+    <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">40</text>
+  </g>
+
+  <!-- Title: two lines, left-aligned at 30% (x=192), vertically centered,
+       sized so the longer line fills the remaining 70% (192..628). -->
+  <text x="192" y="164.5" fill="#e8e6e0" font-size="97" font-weight="bold">EPrime's</text>
+  <text x="192" y="264.5" fill="#e8e6e0" font-size="97" font-weight="bold">Readouts</text>
+</svg>

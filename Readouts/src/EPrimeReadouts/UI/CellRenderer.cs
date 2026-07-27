@@ -1,0 +1,119 @@
+using EPrimeReadouts.Core;
+using UnityEngine;
+using Verse;
+
+namespace EPrimeReadouts.UI
+{
+    /// A render model with its defNames resolved to ThingDefs, done once at
+    /// rebuild so drawing never touches DefDatabase.
+    public sealed class DrawModel
+    {
+        public RenderModel Model;
+        public ThingDef[] Defs;    // parallel to Model.Cells; null for non-icon cells
+        public int[] Counts;       // parallel; raw count for icon cells (tooltips)
+        public string[] Tokens;    // parallel; raw slot token for icon cells (tooltips)
+
+        public static DrawModel Resolve(RenderModel model)
+        {
+            var defs = new ThingDef[model.Cells.Count];
+            var counts = new int[model.Cells.Count];
+            var tokens = new string[model.Cells.Count];
+            for (int i = 0; i < model.Cells.Count; i++)
+            {
+                var cell = model.Cells[i];
+                if (cell.Kind == CellKind.Icon)
+                {
+                    defs[i] = DefDatabase<ThingDef>.GetNamedSilentFail(cell.DefName);
+                    tokens[i] = cell.Token;
+                }
+                if (cell.Kind == CellKind.Counter && int.TryParse(cell.Text, out int count))
+                {
+                    // The counter follows its icon; give the icon its count.
+                    if (i > 0 && model.Cells[i - 1].Kind == CellKind.Icon) counts[i - 1] = count;
+                }
+            }
+            return new DrawModel { Model = model, Defs = defs, Counts = counts, Tokens = tokens };
+        }
+    }
+
+    public static class CellRenderer
+    {
+        private static readonly Color DimTriangle = new Color(1f, 1f, 1f, 0.3f);
+        private static readonly Color LowTint = new Color(1f, 0.92f, 0.55f);
+        private static readonly Color CriticalTint = new Color(1f, 0.72f, 0.45f);
+        private static readonly Color LabelDim = new Color(1f, 1f, 1f, 0.6f);
+        private static readonly Color Backing = new Color(0f, 0f, 0f, 0.35f);
+        private static readonly Color NeutralStripe = new Color(1f, 1f, 1f, 0.35f);
+        private static readonly Color[] StripePalette =
+        {
+            new Color(0.36f, 0.66f, 0.86f), // blue
+            new Color(0.55f, 0.78f, 0.45f), // green
+            new Color(0.88f, 0.72f, 0.35f), // amber
+            new Color(0.80f, 0.50f, 0.70f), // plum
+            new Color(0.45f, 0.78f, 0.75f), // teal
+            new Color(0.85f, 0.55f, 0.40f), // rust
+        };
+
+        internal static Color StripeColorFor(int groupIndex) =>
+            groupIndex < 0 ? NeutralStripe : StripePalette[groupIndex % StripePalette.Length];
+
+        public static void Draw(DrawModel draw)
+        {
+            var cells = draw.Model.Cells;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                var cell = cells[i];
+                var rect = new Rect(cell.Rect.X, cell.Rect.Y, cell.Rect.W, cell.Rect.H);
+                switch (cell.Kind)
+                {
+                    case CellKind.GroupBack:
+                        Widgets.DrawBoxSolid(rect, Backing);
+                        Widgets.DrawBoxSolid(
+                            new Rect(rect.x, rect.y, LayoutMetrics.StripeW, rect.height),
+                            StripeColorFor(cell.GroupIndex));
+                        break;
+                    case CellKind.Triangle:
+                        GUI.color = cell.Triangle == TriangleState.Lit ? Color.white : DimTriangle;
+                        GUI.DrawTexture(rect, ReadoutTextures.Triangle);
+                        GUI.color = Color.white;
+                        break;
+                    case CellKind.Highlight:
+                        Widgets.DrawHighlight(rect);
+                        break;
+                    case CellKind.Icon:
+                        if (draw.Defs[i] != null)
+                        {
+                            Widgets.ThingIcon(rect, draw.Defs[i]);
+                            if (Mouse.IsOver(rect))
+                                IconTips.Tip(rect, draw.Defs[i], draw.Counts[i], cells[i + 1].Band,
+                                    draw.Tokens[i]);
+                        }
+                        break;
+                    case CellKind.Counter:
+                        if (cell.Band != Band.Normal)
+                            GUI.color = cell.Band == Band.Low ? LowTint : CriticalTint;
+                        Text.Font = GameFont.Tiny;
+                        Text.Anchor = TextAnchor.UpperCenter;
+                        Widgets.Label(rect, cell.Text);
+                        Text.Anchor = TextAnchor.UpperLeft;
+                        Text.Font = GameFont.Small;
+                        GUI.color = Color.white;
+                        break;
+                    case CellKind.Label:
+                        GUI.color = LabelDim;
+                        Text.Font = GameFont.Tiny;
+                        Widgets.Label(rect, cell.Text.Translate());
+                        Text.Font = GameFont.Small;
+                        GUI.color = Color.white;
+                        break;
+                    case CellKind.EmptySlot:
+                        Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.06f));
+                        GUI.color = new Color(1f, 1f, 1f, 0.25f);
+                        Widgets.DrawBox(rect);
+                        GUI.color = Color.white;
+                        break;
+                }
+            }
+        }
+    }
+}
