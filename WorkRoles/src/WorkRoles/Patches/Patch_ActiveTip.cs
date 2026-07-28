@@ -79,6 +79,24 @@ namespace WorkRoles.Patches
         }
     }
 
+    /// Wide activated tips can flip left of the mouse into negative X
+    /// (GenUI.GetMouseAttachedWindowPos never clamps there because vanilla
+    /// tips cap at 268px); clamp the draw position onto the screen.
+    [HarmonyPatch(typeof(ActiveTip), nameof(ActiveTip.DrawTooltip))]
+    public static class Patch_ActiveTip_DrawTooltip
+    {
+        [HarmonyPrefix]
+        public static void Prefix(ActiveTip __instance, ref Vector2 pos)
+        {
+            if (!Patch_ActiveTip_TipRect.HasModels) return;
+            Rect tipRect = __instance.TipRect;
+            pos.x = Mathf.Clamp(pos.x, 0f,
+                Mathf.Max(0f, Verse.UI.screenWidth - tipRect.width));
+            pos.y = Mathf.Clamp(pos.y, 0f,
+                Mathf.Max(0f, Verse.UI.screenHeight - tipRect.height));
+        }
+    }
+
     /// Activated models draw themselves (atlas background + WrTipUI); every
     /// other tooltip keeps the vanilla single-label path.
     [HarmonyPatch(typeof(ActiveTip), "DrawInner")]

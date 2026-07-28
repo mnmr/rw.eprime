@@ -16,7 +16,6 @@ namespace WorkRoles.UI
         private const float BadgeGap = 12f;    // title -> right-aligned badge
         private const float TitleGap = 4f;     // title line -> first section
         private const float SectionGap = 5f;   // section -> separator -> section
-        internal const float TableInset = 16f; // table left/right inset in content
         private const float TableColGap = 20f; // between table columns
         private const float CellIconSize = 16f;
         private const float CellIconGap = 2f;  // first-cell text -> icon
@@ -132,7 +131,7 @@ namespace WorkRoles.UI
                 float[] cols = ColumnWidths(section);
                 if (cols != null)
                 {
-                    float tableW = TableInset * 2f + TableColGap * (cols.Length - 1);
+                    float tableW = TableColGap * (cols.Length - 1);
                     foreach (float col in cols) tableW += col;
                     w = Mathf.Max(w, tableW);
                 }
@@ -312,7 +311,7 @@ namespace WorkRoles.UI
                             if (cols.Tight) y -= RowTighten;
                             int cellCount = cols.Cells?.Count ?? 0;
                             var rowColor = cols.Color ?? Color.white;
-                            float cx = TableInset;
+                            float cx = 0f;
                             for (int i = 0; i < tableCols.Length; i++)
                             {
                                 string cell = i < cellCount ? cols.Cells[i] : null;
@@ -358,7 +357,7 @@ namespace WorkRoles.UI
                             y -= RowTighten;
                             geo.Cmds.Add(new Cmd
                             {
-                                Rect = new Rect(TableInset + indent, y, spanW, h),
+                                Rect = new Rect(indent, y, spanW, h),
                                 Color = span.Dim ? TipText.DimColor : Color.white,
                                 Text = span.Text,
                             });
@@ -375,7 +374,7 @@ namespace WorkRoles.UI
                             y += RuleGapAbove;
                             geo.Cmds.Add(new Cmd
                             {
-                                Rect = new Rect(TableInset, y, tableLineW, 0f),
+                                Rect = new Rect(0f, y, tableLineW, 0f),
                                 Color = SeparatorColor,
                             });
                             y += 1f + RuleGapBelow;

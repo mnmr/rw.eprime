@@ -12,11 +12,18 @@ namespace WorkRoles.Core.Recs
             public long RoleStamp;
             public long UsedSourceStamp;
             public long TrainedSourceStamp;
+            public long TouchSourceStamp;
             public int UsedJobs;
             public int TrainedJobs;
+            public int WeightedJobs;
             public int RequiredContent;
             public string SkillDefName;
         }
+
+        /// Weighted share denominator: every source counts 1, XP-training
+        /// (long) sources count 4 via SetSourceWeight.
+        public int RoleWeight { get; private set; }
+        private int sourceWeight = 1;
 
         private readonly Dictionary<string, SkillTotals> totalsBySkill =
             new Dictionary<string, SkillTotals>(StringComparer.Ordinal);
@@ -41,18 +48,31 @@ namespace WorkRoles.Core.Recs
             roleTotals.Clear();
             flatEvidence.Clear();
             sourceActive = false;
+            RoleWeight = 0;
+        }
+
+        /// Declares the current source's weight (4 = long/XP-training job);
+        /// call right after a successful BeginSource, before adding skills.
+        public void SetSourceWeight(int weight)
+        {
+            if (!sourceActive) return;
+            RoleWeight += weight - sourceWeight;
+            sourceWeight = weight;
         }
 
         public bool BeginSource(string sourceKey)
         {
             sourceActive = sourceKey != null && seenSources.Add(sourceKey);
             if (!sourceActive) return false;
+            sourceWeight = 1;
+            RoleWeight++;
             if (sourceStamp == long.MaxValue)
             {
                 foreach (SkillTotals totals in totalsBySkill.Values)
                 {
                     totals.UsedSourceStamp = 0;
                     totals.TrainedSourceStamp = 0;
+                    totals.TouchSourceStamp = 0;
                 }
                 sourceStamp = 0;
             }
@@ -90,7 +110,8 @@ namespace WorkRoles.Core.Recs
             {
                 SkillTotals totals = roleTotals[i];
                 flatEvidence.Add(new RoleSkillEvidence(totals.SkillDefName,
-                    totals.UsedJobs, totals.TrainedJobs, totals.RequiredContent));
+                    totals.UsedJobs, totals.TrainedJobs, totals.RequiredContent,
+                    totals.WeightedJobs));
             }
             flatEvidence.Sort((left, right) => string.CompareOrdinal(
                 left.SkillDefName, right.SkillDefName));
@@ -101,6 +122,17 @@ namespace WorkRoles.Core.Recs
         private SkillTotals Current(string skillDefName)
         {
             if (!sourceActive || string.IsNullOrEmpty(skillDefName)) return null;
+            SkillTotals touched = CurrentRaw(skillDefName);
+            if (touched != null && touched.TouchSourceStamp != sourceStamp)
+            {
+                touched.TouchSourceStamp = sourceStamp;
+                touched.WeightedJobs += sourceWeight;
+            }
+            return touched;
+        }
+
+        private SkillTotals CurrentRaw(string skillDefName)
+        {
             if (!totalsBySkill.TryGetValue(skillDefName, out SkillTotals totals))
             {
                 totals = new SkillTotals { SkillDefName = skillDefName };
@@ -111,8 +143,10 @@ namespace WorkRoles.Core.Recs
                 totals.RoleStamp = roleStamp;
                 totals.UsedSourceStamp = 0;
                 totals.TrainedSourceStamp = 0;
+                totals.TouchSourceStamp = 0;
                 totals.UsedJobs = 0;
                 totals.TrainedJobs = 0;
+                totals.WeightedJobs = 0;
                 totals.RequiredContent = 0;
                 roleTotals.Add(totals);
             }

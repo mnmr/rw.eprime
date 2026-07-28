@@ -18,7 +18,7 @@ public class VanillaSignalCatalogTests
     }
 
     [Test]
-    public async Task AptitudeTemplatesArePassiveExactAndAlreadyReflected()
+    public async Task AptitudeTemplatesShipAsPassiveInbornAndActiveImplantTwins()
     {
         var expected = new Dictionary<string, float>
         {
@@ -31,14 +31,25 @@ public class VanillaSignalCatalogTests
             x.Source.Kind == SignalSourceKind.Gene && x.Source.DefName.StartsWith("Aptitude", StringComparison.Ordinal))
             .ToArray();
 
-        await Assert.That(actual.Length).IsEqualTo(4);
+        await Assert.That(actual.Length).IsEqualTo(8);
         foreach (var definition in actual)
         {
-            await Assert.That(definition.Type).IsEqualTo(SignalType.Passive);
+            bool implant = definition.Source.EffectDiscriminator == "implant";
+            await Assert.That(definition.Type)
+                .IsEqualTo(implant ? SignalType.Active : SignalType.Passive);
             await Assert.That(definition.DerivesSkillFromSource).IsTrue();
             var effect = definition.Effects.Single(x => x.Kind == SignalEffectKind.SkillLevel);
             await Assert.That(effect.Magnitude).IsEqualTo(expected[definition.Source.DefName]);
             await Assert.That(effect.AlreadyReflected).IsTrue();
+        }
+
+        foreach (string template in expected.Keys)
+        {
+            var twins = actual.Where(x => x.Source.DefName == template).ToArray();
+            await Assert.That(twins.Length).IsEqualTo(2);
+            await Assert.That(twins.Count(x => x.Source.EffectDiscriminator == "implant"))
+                .IsEqualTo(1);
+            await Assert.That(twins[0].Effects.SequenceEqual(twins[1].Effects)).IsTrue();
         }
 
         await Assert.That(One(SignalSourceKind.Gene, "AptitudeTerrible").Effects

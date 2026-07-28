@@ -22,6 +22,9 @@ namespace WorkRoles.UI
         private const float RemoveSize = ChipUI.RemoveSize;
         public static readonly Color DefaultChipColor = new Color(0.25f, 0.35f, 0.45f);
         private static readonly Color OutlineColor = new Color(1f, 1f, 1f, 0.25f);
+        // Outline recolor (never a second ring) marking the role whose job the
+        // pawn is doing right now; matches the path-chip selection idiom.
+        private static readonly Color ActiveOutlineColor = new Color(1f, 1f, 1f, 0.85f);
         private static readonly Color LabelColor = new Color(0.95f, 0.95f, 0.95f);
         // #e8e6e0 at 0.85 alpha — tint for the auto-role marker icon.
         public static readonly Color RuleMarkerColor = new Color(232f / 255f, 230f / 255f, 224f / 255f, 0.85f);
@@ -118,7 +121,7 @@ namespace WorkRoles.UI
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool paint = true)
+            bool paint = true, bool activeOutline = false)
         {
             if (paint)
             {
@@ -148,7 +151,7 @@ namespace WorkRoles.UI
                 var spec = new ChipSpec
                 {
                     Bg = bg,
-                    Outline = OutlineColor,
+                    Outline = activeOutline ? ActiveOutlineColor : OutlineColor,
                     LabelColor = labelColor,
                     Label = display == ChipDisplay.Minimal ? null
                         : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,

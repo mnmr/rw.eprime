@@ -118,6 +118,7 @@ namespace WorkRoles.Patches
         {
             PrioritySetWatcher.ReleaseForTeardown();
             WorkRolesGameComponent.ReleaseForTeardown();
+            ActivityTracker.ReleaseForTeardown();
             BillRoleTransfer.ReleaseForTeardown();
             UI.RoleDrag.Cancel();
             UI.KeyOverride.Restore();

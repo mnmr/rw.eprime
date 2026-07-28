@@ -9,27 +9,108 @@ namespace WorkRoles.Core.Tests;
 public class RecsSignalBandTests
 {
     [Test]
-    public async Task RequiredAwfulSkillVetoesRoleAndSecondaryStrengthCannotQualifyIt()
+    public async Task PrimaryAwfulVetoes_SecondaryAwfulOnlyDampensOneStep()
     {
-        var role = RecsTestBed.Role(1, "Crafting");
-        role.Skills.Add(new RoleSkillView { SkillDefName = "Crafting", Primary = true, Importance = 3 });
-        role.Skills.Add(new RoleSkillView { SkillDefName = "Intellectual", Importance = 1 });
-        var pawn = RecsTestBed.Pawn();
-        pawn.SkillLevels["Crafting"] = 12;
-        pawn.SkillLevels["Intellectual"] = 8;
+        var role = CrafterRole();
+        var pawn = CrafterPawn();
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Great;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Awful;
+        var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
+
+        SignalBucket dampened = context.BestSignal(0, role, out string dampSkill, out _);
+        await Assert.That(dampened).IsEqualTo(SignalBucket.Strong);
+        await Assert.That(dampSkill).IsEqualTo("Crafting");
+
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Awful;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Exceptional;
+        SignalBucket vetoed = context.BestSignal(0, role, out string vetoSkill, out _);
+        await Assert.That(vetoed).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(vetoSkill).IsEqualTo("Crafting");
+    }
+
+    [Test]
+    public async Task SecondaryStrengthCannotQualifyARole()
+    {
+        var role = CrafterRole();
+        var pawn = CrafterPawn();
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Exceptional;
+        var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
+
+        SignalBucket bucket = context.BestSignal(0, role, out string skill, out _);
+        await Assert.That(bucket).IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(skill).IsEqualTo("Crafting");
+    }
+
+    [Test]
+    public async Task SecondaryAwfulDampFloorsAtPoorAndNeverManufacturesAVeto()
+    {
+        var role = CrafterRole();
+        var pawn = CrafterPawn();
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Poor;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Awful;
+        var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
+
+        await Assert.That(context.BestSignal(0, role, out _, out _))
+            .IsEqualTo(SignalBucket.Poor);
+    }
+
+    [Test]
+    public async Task DampedBelowStrongLosesQualificationButStaysDraftEligible()
+    {
+        var role = CrafterRole();
+        role.MinHolders = 1;
+        var pawn = CrafterPawn();
         pawn.SignalBuckets["Crafting"] = SignalBucket.Strong;
         pawn.SignalBuckets["Intellectual"] = SignalBucket.Awful;
         var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
 
-        SignalBucket vetoed = context.BestSignal(0, role, out string vetoSkill, out _);
-        await Assert.That(vetoed).IsEqualTo(SignalBucket.Awful);
-        await Assert.That(vetoSkill).IsEqualTo("Intellectual");
+        new SignalCandidatesRule().Apply(context, 0);
+        await Assert.That(context.Candidates[0].ContainsKey(role.Id)).IsFalse();
 
-        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
-        pawn.SignalBuckets["Intellectual"] = SignalBucket.Exceptional;
-        SignalBucket secondaryOnly = context.BestSignal(0, role, out string primarySkill, out _);
-        await Assert.That(secondaryOnly).IsEqualTo(SignalBucket.Neutral);
-        await Assert.That(primarySkill).IsEqualTo("Crafting");
+        new CoverageScalingRule(new UnitScaling()).Apply(context);
+        new BestInColonyDraftRule().Apply(context);
+        await Assert.That(context.Candidates[0].ContainsKey(role.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task DisabledSecondaryNeitherVetoesNorDampens_DisabledPrimaryStillVetoes()
+    {
+        var role = CrafterRole();
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Great;
+        var context = new EngineContext(RecsTestBed.Colony(new List<RoleView> { role }, pawn));
+
+        await Assert.That(context.BestSignal(0, role, out _, out _))
+            .IsEqualTo(SignalBucket.Great);
+
+        var incapable = RecsTestBed.Pawn();
+        incapable.SkillLevels["Intellectual"] = 8;
+        var vetoContext = new EngineContext(RecsTestBed.Colony(
+            new List<RoleView> { CrafterRole() }, incapable));
+        SignalBucket vetoed = vetoContext.BestSignal(
+            0, vetoContext.RoleOf(1), out string skill, out _);
+        await Assert.That(vetoed).IsEqualTo(SignalBucket.Awful);
+        await Assert.That(skill).IsEqualTo("Crafting");
+    }
+
+    /// Crafting primary + Intellectual secondary, mirroring a role whose job
+    /// evidence touches a second skill.
+    private static RoleView CrafterRole()
+    {
+        var role = RecsTestBed.Role(1, "Crafting");
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Crafting", Primary = true, Importance = 3 });
+        role.Skills.Add(new RoleSkillView { SkillDefName = "Intellectual", Importance = 1 });
+        return role;
+    }
+
+    private static PawnView CrafterPawn()
+    {
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SkillLevels["Intellectual"] = 8;
+        return pawn;
     }
 
     [Test]

@@ -78,6 +78,13 @@ namespace WorkRoles.Core.Signals
             Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "MeleeDamage_Weak", SignalBucket.Poor);
             Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "Nearsighted", SignalBucket.Poor);
 
+            // Only the implant twins classify; inborn aptitude genes stay passive.
+            string implant = VanillaSignalDefinitions.ImplantDiscriminator;
+            Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "AptitudeTerrible", SignalBucket.Awful, null, implant);
+            Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "AptitudePoor", SignalBucket.Poor, null, implant);
+            Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "AptitudeStrong", SignalBucket.Strong, null, implant);
+            Add(values, SignalRelation.Primary, SignalSourceKind.Gene, Biotech, "AptitudeRemarkable", SignalBucket.Strong, null, implant);
+
             Add(values, SignalRelation.Primary, SignalSourceKind.Trait, Core, "Brawler", SignalBucket.Strong,
                 0, "melee");
             Add(values, SignalRelation.Primary, SignalSourceKind.Trait, Core, "Brawler", SignalBucket.Poor,

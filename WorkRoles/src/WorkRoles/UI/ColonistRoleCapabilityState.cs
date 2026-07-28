@@ -84,6 +84,13 @@ namespace WorkRoles.UI
             string incapableReason = null;
             string noRangedWeaponReason = null;
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;
+            string primarySkill = RecsAdapter.PrimarySkillOf(role);
+            bool awfulPrimarySkill = false;
+            // Only skills that pass the role profile's share filter matter for
+            // warnings — a sliver like Finish Off's melee never marks.
+            var participatingSkills = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var skillView in RoleSkillProfiles.ForRole(role))
+                participatingSkills.Add(skillView.SkillDefName);
 
             foreach (string giverName in role.Coverage())
             {
@@ -110,10 +117,15 @@ namespace WorkRoles.UI
 
                 if (def.workType?.relevantSkills != null)
                     foreach (SkillDef skill in def.workType.relevantSkills)
-                        if (signalSnapshot.SkillBuckets.ForSkill(skill.defName)?.Bucket
+                        if (participatingSkills.Contains(skill.defName)
+                            && signalSnapshot.SkillBuckets.ForSkill(skill.defName)?.Bucket
                             == SignalBucket.Awful)
+                        {
                             (awfulSkills ??= new SortedSet<string>(
                                 System.StringComparer.Ordinal)).Add(skill.LabelCap);
+                            if (skill.defName == primarySkill)
+                                awfulPrimarySkill = true;
+                        }
 
                 bool incapable = !externalSnapshot.CanDo(def);
                 bool lacksHuntingWeapon = def.workType == WorkTypeDefOf.Hunting
@@ -182,7 +194,9 @@ namespace WorkRoles.UI
             }
 
             RoleAssignmentWarningSeverity severity =
-                RoleAssignmentWarningSummary.From(availability, hasAwfulSignal);
+                RoleAssignmentWarningSummary.From(availability,
+                    hasVetoSignal: awfulWorkTypes?.Count > 0 || awfulPrimarySkill,
+                    hasDampenedSignal: awfulSkills?.Count > 0);
             return new RoleCapabilityPresentation(
                 severity, string.Join("\n", warnings));
         }

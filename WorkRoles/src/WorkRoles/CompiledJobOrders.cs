@@ -19,6 +19,8 @@ namespace WorkRoles
             /// Role ids whose assignment, global toggle and runtime rules all
             /// passed when this pawn snapshot was compiled.
             public int[] ActiveRoleIds;
+            /// giver defName -> role id whose claim ranked it (first-claim-wins).
+            public Dictionary<string, int> GiverRoleIds;
             /// Flat def-index priorities: the GetPriority prefix
             /// runs thousands of times per second — array reads, no hashing.
             public int[] PriorityByIndex;
@@ -244,6 +246,29 @@ namespace WorkRoles
             return (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
         }
 
+        /// The role whose claim ranked this giver for the pawn (first-claim-wins).
+        internal static bool TryGetClaimingRole(Pawn pawn, string giverDefName, out int roleId)
+        {
+            roleId = -1;
+            return giverDefName != null
+                && For(pawn).GiverRoleIds.TryGetValue(giverDefName, out roleId);
+        }
+
+        /// Work-type-level attribution for jobs that carry no giver (non-scan
+        /// givers): the claimant of the type's highest-priority claimed giver.
+        internal static bool TryGetClaimingRoleForWorkType(
+            Pawn pawn, string workTypeDefName, out int roleId)
+        {
+            roleId = -1;
+            if (workTypeDefName == null) return false;
+            var map = For(pawn).GiverRoleIds;
+            var givers = GameJobCatalog.Instance.WorkGiversOf(workTypeDefName);
+            for (int i = 0; i < givers.Count; i++)
+                if (map.TryGetValue(givers[i], out roleId))
+                    return true;
+            return false;
+        }
+
         internal static bool IsRoleActive(Pawn pawn, int roleId)
         {
             var activeRoleIds = For(pawn).ActiveRoleIds;
@@ -458,9 +483,15 @@ namespace WorkRoles
                 Normal = new List<WorkGiver>(compiled.Normal.Count),
                 Emergency = new List<WorkGiver>(compiled.Emergency.Count),
                 ActiveRoleIds = activeRoleIds?.ToArray() ?? Array.Empty<int>(),
+                GiverRoleIds = new Dictionary<string, int>(compiled.ClaimedBySlice.Count),
                 PriorityByIndex = new int[defCount],
                 VanillaByIndex = new int[defCount],
             };
+            // Slice indexes are positional: activeRoleIds grew in lockstep with
+            // the role slices handed to the compiler.
+            if (activeRoleIds != null)
+                foreach (var claim in compiled.ClaimedBySlice)
+                    entry.GiverRoleIds[claim.Key] = activeRoleIds[claim.Value];
             foreach (string giver in compiled.Normal)
                 entry.Normal.Add(GameJobCatalog.Instance.GiverDef(giver).Worker);
             foreach (string giver in compiled.Emergency)

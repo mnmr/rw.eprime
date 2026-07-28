@@ -260,6 +260,21 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Add-role float menu when all roles are already assigned -->
   <WR_AllRolesAssigned>All roles assigned</WR_AllRolesAssigned>
 
+  <!-- Current activity (stats panel slot + tooltip); labels for non-role activity -->
+  <WR_NowDrafted>Drafted</WR_NowDrafted>
+  <WR_NowMental>Mental state</WR_NowMental>
+  <WR_NowIdle>Idle</WR_NowIdle>
+  <WR_NowForced>Player order</WR_NowForced>
+  <WR_NowSleeping>Sleeping</WR_NowSleeping>
+  <WR_NowRecreation>Recreation</WR_NowRecreation>
+  <WR_NowNeeds>Personal needs</WR_NowNeeds>
+  <WR_NowBusy>Busy</WR_NowBusy>
+  <!-- {0} = role label or activity label, {1} = the job's own report text -->
+  <WR_NowTip>{0}: {1}</WR_NowTip>
+  <WR_TipActivityLabel>Current activity</WR_TipActivityLabel>
+  <!-- {0} = colonist short name, {1} = activity phrase (job report or activity label) -->
+  <WR_TipActivityValue>{0} is {1}</WR_TipActivityValue>
+
   <!-- ===== Roles tab ===== -->
 
   <!-- Restore button (top-right corner, Roles tab) -->
@@ -322,6 +337,10 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} = role label -->
   <WR_RestoreColorItem>{0} (restore default color)</WR_RestoreColorItem>
   <!-- {0} = role label -->
+  <WR_RestoreJobsItem>{0} (reset jobs to default)</WR_RestoreJobsItem>
+  <!-- {0} = role label -->
+  <WR_RestoreSnapColorItem>{0} (align color with palette)</WR_RestoreSnapColorItem>
+  <!-- {0} = role label -->
   <WR_RestoreHoldersItem>{0} (restore holder defaults)</WR_RestoreHoldersItem>
   <WR_RestoreRecOrder>Recommendation order (reset to default)</WR_RestoreRecOrder>
   <!-- Restore preview: warning line when highlighted items would undo player changes -->
@@ -336,6 +355,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} = the role's default group name -->
   <WR_RestoreExplainGroup>Moves the role back to group '{0}'.</WR_RestoreExplainGroup>
   <WR_RestoreExplainColor>Resets the color to the template default.</WR_RestoreExplainColor>
+  <WR_RestoreExplainJobs>Resets the role's job list to the mod's current default. Colonists keep their overall jobs: roles covering any removed jobs are assigned to them automatically.</WR_RestoreExplainJobs>
+  <WR_RestoreExplainSnapColor>Replaces the generated color with the nearest palette color, so the color picker highlights it.</WR_RestoreExplainSnapColor>
   <WR_RestoreExplainHolders>Resets the holder mode and range to the template-driven Auto default.</WR_RestoreExplainHolders>
   <WR_RestoreExplainRecOrder>Clears your custom order.</WR_RestoreExplainRecOrder>
   <WR_RestoreExplainPath>Creates the training path.</WR_RestoreExplainPath>

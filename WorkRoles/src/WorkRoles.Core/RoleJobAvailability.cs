@@ -30,13 +30,17 @@ namespace WorkRoles.Core
 
     public static class RoleAssignmentWarningSummary
     {
+        /// Veto signals (work-type Awful, primary-skill Awful) are Critical;
+        /// a dampened signal (Awful on a non-primary skill) is only Caution,
+        /// matching the recommendation engine's primary-only disqualification.
         public static RoleAssignmentWarningSeverity From(
             RoleJobAvailability availability,
-            bool hasAwfulSignal)
+            bool hasVetoSignal,
+            bool hasDampenedSignal = false)
         {
-            if (hasAwfulSignal || availability == RoleJobAvailability.AllUnavailable)
+            if (hasVetoSignal || availability == RoleJobAvailability.AllUnavailable)
                 return RoleAssignmentWarningSeverity.Critical;
-            return availability == RoleJobAvailability.SomeUnavailable
+            return hasDampenedSignal || availability == RoleJobAvailability.SomeUnavailable
                 ? RoleAssignmentWarningSeverity.Caution
                 : RoleAssignmentWarningSeverity.None;
         }

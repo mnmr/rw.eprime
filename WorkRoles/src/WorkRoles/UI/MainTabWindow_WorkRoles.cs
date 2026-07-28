@@ -188,6 +188,7 @@ namespace WorkRoles.UI
         {
             ObserveLanguageRevision();
             base.PreOpen();
+            ActivityTracker.Enable();
             RoleDrag.Cancel();
             colonistsTab.Reset();
             rolesTab.Reset();
@@ -198,6 +199,7 @@ namespace WorkRoles.UI
         public override void PostClose()
         {
             base.PostClose();
+            ActivityTracker.Disable();
             RoleDrag.Cancel();
             resizing = false;
             pendingWindowRect.Clear();

@@ -10,6 +10,8 @@ namespace WorkRoles.Core.Signals
         private const string Biotech = "Ludeon.RimWorld.Biotech";
         private const string Anomaly = "Ludeon.RimWorld.Anomaly";
 
+        public const string ImplantDiscriminator = "implant";
+
         public static readonly IReadOnlyList<SignalDefinition> All = Build();
 
         public static bool IsGeneratedAptitudeIdentity(
@@ -24,17 +26,25 @@ namespace WorkRoles.Core.Signals
 
         private static IReadOnlyList<SignalDefinition> Build()
         {
-            var result = new List<SignalDefinition>
-            {
-                Aptitude("AptitudeTerrible", "awful aptitude", -8f,
-                    new SignalEffect(SignalEffectKind.Passion, SignalOperation.Disable, null,
-                        SignalValueUnit.None, "CurrentSkill", alreadyReflected: true)),
-                Aptitude("AptitudePoor", "poor aptitude", -4f),
-                Aptitude("AptitudeStrong", "strong aptitude", 4f),
-                Aptitude("AptitudeRemarkable", "great aptitude", 8f,
-                    new SignalEffect(SignalEffectKind.Passion, SignalOperation.Add, 1f,
-                        SignalValueUnit.PassionLevels, "CurrentSkill", alreadyReflected: true)),
+            var result = new List<SignalDefinition>();
 
+            // Each aptitude template ships as twins: the passive one for inborn
+            // genes, the active "implant" one when a player-built xenogerm
+            // implanted the gene and its tier therefore conveys intent.
+            foreach (SignalType type in new[] { SignalType.Passive, SignalType.Active })
+            {
+                result.Add(Aptitude(type, "AptitudeTerrible", "awful aptitude", -8f,
+                    new SignalEffect(SignalEffectKind.Passion, SignalOperation.Disable, null,
+                        SignalValueUnit.None, "CurrentSkill", alreadyReflected: true)));
+                result.Add(Aptitude(type, "AptitudePoor", "poor aptitude", -4f));
+                result.Add(Aptitude(type, "AptitudeStrong", "strong aptitude", 4f));
+                result.Add(Aptitude(type, "AptitudeRemarkable", "great aptitude", 8f,
+                    new SignalEffect(SignalEffectKind.Passion, SignalOperation.Add, 1f,
+                        SignalValueUnit.PassionLevels, "CurrentSkill", alreadyReflected: true)));
+            }
+
+            result.AddRange(new List<SignalDefinition>
+            {
                 Gene("MeleeDamage_Strong", "strong melee damage", "Melee",
                     Effect(SignalEffectKind.Damage, SignalOperation.Multiply, 1.5f,
                         SignalValueUnit.Factor, "MeleeDamageFactor")),
@@ -145,18 +155,19 @@ namespace WorkRoles.Core.Signals
                 HediffAptitude("Animals"),
                 HediffAptitude("Social"),
                 HediffAptitude("Artistic"),
-            };
+            });
 
             return new ReadOnlyCollection<SignalDefinition>(result);
         }
 
         private static SignalDefinition Aptitude(
-            string template, string label, float value, params SignalEffect[] extras)
+            SignalType type, string template, string label, float value,
+            params SignalEffect[] extras)
         {
             var effects = new List<SignalEffect> { ReflectedSkill(value, "CurrentSkill") };
             effects.AddRange(extras);
             return Definition(
-                SignalType.Passive,
+                type,
                 SignalSourceKind.Gene,
                 template,
                 Biotech,
@@ -166,7 +177,8 @@ namespace WorkRoles.Core.Signals
                 true,
                 effects,
                 label,
-                "UI/Icons/Genes/Skills/{skill}/" + template.Substring("Aptitude".Length));
+                "UI/Icons/Genes/Skills/{skill}/" + template.Substring("Aptitude".Length),
+                type == SignalType.Active ? ImplantDiscriminator : null);
         }
 
         private static SignalDefinition Gene(

@@ -61,8 +61,15 @@ namespace WorkRoles.Signals
                 }
 
                 Aptitude aptitude = gene.def.aptitudes[0];
+                // Xenogenes of a player-built xenogerm convey intent, so they
+                // use the classified implant twin instead of the passive one.
+                bool implanted = pawn.genes.UniqueXenotype && pawn.genes.IsXenogene(gene);
                 foreach (SignalDefinition definition in catalog.Find(SignalSourceKind.Gene, template))
                 {
+                    bool implantTwin = StringComparer.Ordinal.Equals(
+                        definition.Source.EffectDiscriminator,
+                        VanillaSignalDefinitions.ImplantDiscriminator);
+                    if (implantTwin != implanted) continue;
                     result.Add(SignalFactory.Instantiate(
                         definition,
                         aptitude.skill.defName,

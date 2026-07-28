@@ -12,8 +12,11 @@ namespace WorkRoles
             => role == null ? new List<RoleSkillView>() : ForCoverage(role.Coverage());
 
         internal static List<RoleSkillView> ForCoverage(IEnumerable<string> giverNames)
-            => RoleSkillProfile.Build(EvidenceForCoverage(
-                giverNames, new RoleSkillEvidenceAccumulator()));
+        {
+            var scratch = new RoleSkillEvidenceAccumulator();
+            var evidence = EvidenceForCoverage(giverNames, scratch);
+            return RoleSkillProfile.Build(evidence, scratch.RoleWeight);
+        }
 
         internal static IReadOnlyList<RoleSkillEvidence> EvidenceForCoverage(
             IEnumerable<string> giverNames,
@@ -29,6 +32,8 @@ namespace WorkRoles
                 if (!scratch.BeginSource(giverName)) continue;
                 var profile = JobSkillProfiles.ForGiver(giverName);
                 if (profile == null) continue;
+                if (profile.TrainedSkillDefNames.Count > 0)
+                    scratch.SetSourceWeight(4);
                 for (int i = 0; i < profile.UsedSkillDefNames.Count; i++)
                     scratch.AddUsedSkill(profile.UsedSkillDefNames[i]);
                 for (int i = 0; i < profile.TrainedSkillDefNames.Count; i++)

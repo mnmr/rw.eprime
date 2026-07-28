@@ -32,7 +32,10 @@ namespace WorkRoles.UI
             statsState = new ColonistStatsState();
             rosterState = new ColonistsRosterState(profile, statsState.SkillSortValue);
             roleCapabilityState = new ColonistRoleCapabilityState();
+            activityState = new ActivityState();
         }
+
+        private readonly ActivityState activityState;
 
         private Vector2 paletteScroll;
         private Pawn selectedPawn;
@@ -95,6 +98,13 @@ namespace WorkRoles.UI
         private const float DefaultHeight = 684f;
 
         private const float PortraitDisplaySize = 96f;
+        // Locked-height stats panel (see TODO review note): the smaller frame
+        // and the activity slot below the name borrow bottom padding instead of
+        // growing the panel.
+        private const float PortraitFrameSize = 88f;
+        private const float PortraitFrameH = 96f;
+        private const float PortraitNameH = 20f;
+        private const float ActivitySlotH = 18f;
 
         // Stats panel layout constants
         private const float SkillColWidth = 200f;   // minimum; signal decorators may widen both columns
@@ -115,6 +125,7 @@ namespace WorkRoles.UI
             tableScroll = Vector2.zero;
             selectedPawn = null;
             rosterState.Reset();
+            activityState.Release();
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
             roleCapabilityState.Invalidate();
             recommendationState.Reset();
@@ -141,6 +152,7 @@ namespace WorkRoles.UI
 
             statsState.InvalidateLanguageCaches();
             roleCapabilityState.Invalidate();
+            activityState.Release();
             chipLayouts.Clear();
             chipLayoutStamp = ScopeCacheStamp.Invalid;
 
@@ -201,6 +213,7 @@ namespace WorkRoles.UI
         {
             statsState.ReleaseSnapshots();
             roleCapabilityState.Invalidate();
+            activityState.Release();
 
             selectedPawn = null;
             recommendationState.ReleaseSnapshots();
@@ -927,8 +940,8 @@ namespace WorkRoles.UI
 
         // Open-window snapshot of the unified role tips: handles are built once
         // per (role, context[, pawn]) per stamp, then activated at visible use sites.
-        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn), StructuredTip> roleTipCache
-            = new Dictionary<(int, RoleTipContext, Pawn), StructuredTip>();
+        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn, int activityRevision), StructuredTip> roleTipCache
+            = new Dictionary<(int, RoleTipContext, Pawn, int), StructuredTip>();
         private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
 
         /// The one role tooltip: palette chips, tree rows and assignment chips
@@ -940,12 +953,16 @@ namespace WorkRoles.UI
             ScopeCacheStamp stamp = PawnListStamp;
             if (roleTipStamp != stamp)
                 roleTipCache.Clear();
-            var key = (role.id, context, pawn);
+            // The assignment tip embeds the pawn's current activity, so a job
+            // transition (revision bump) must produce a fresh tip.
+            int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
+                ? ActivityTracker.RevisionOf(pawn) : 0;
+            var key = (role.id, context, pawn, activityRevision);
             if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
             {
                 int pawnId = pawn?.thingIDNumber ?? -1;
                 roleTipCache[key] = tip = new StructuredTip(
-                    $"role:{role.id}:{context}:{pawnId}",
+                    $"role:{role.id}:{context}:{pawnId}:{activityRevision}",
                     BuildRoleTip(store, role, context, pawn));
             }
             roleTipStamp = PawnListStamp;
@@ -996,12 +1013,24 @@ namespace WorkRoles.UI
                 facts.Fact("WR_TipTrainingHeader".Translate(), recommend);
             }
 
-            string fits = BestFits(skills);
-            if (!fits.NullOrEmpty())
-                model.AddSection("WR_TipBestFitsLabel".Translate()).Text(fits);
+            List<string> fits = BestFits(skills);
+            if (fits != null && fits.Count > 0)
+            {
+                // Tier lines share the value column; only the first row carries
+                // the "Best fits" label.
+                var fitsSection = model.AddSection();
+                for (int i = 0; i < fits.Count; i++)
+                    fitsSection.Fact(
+                        i == 0 ? "WR_TipBestFitsLabel".Translate().ToString() : "",
+                        fits[i]);
+            }
 
             if (context == RoleTipContext.AssignmentChip && pawn != null)
             {
+                // The colonist this chip belongs to, with their live activity.
+                model.AddSection().Fact("WR_TipActivityLabel".Translate(),
+                    "WR_TipActivityValue".Translate(pawn.LabelShortCap,
+                        ActivityState.ActivityPhrase(pawn, store)));
                 store.pawnSets.TryGetValue(pawn, out var set);
                 var assignment = set?.assignments.FirstOrDefault(a => a.roleId == role.id);
                 TipSection state = null;
@@ -1038,8 +1067,7 @@ namespace WorkRoles.UI
                 case RoleTipContext.AssignmentChip:
                     actions.Action("WR_ActClick".Translate(), "WR_ActChipClick".Translate())
                         .Action("WR_ActRightClick".Translate(), "WR_ActChipRightClick".Translate())
-                        .Action("WR_ActDrag".Translate(), "WR_ActChipDrag".Translate())
-                        .Action("WR_ActX".Translate(), "WR_ActChipX".Translate());
+                        .Action("WR_ActDrag".Translate(), "WR_ActChipDrag".Translate());
                     break;
             }
             return model;
@@ -1079,10 +1107,16 @@ namespace WorkRoles.UI
             return parts.ToCommaList();
         }
 
+        // One value-column line stays comfortably inside the tooltip without
+        // wrapping (fact values size the tip to their unwrapped width).
+        private const float BestFitsValueBudget = 380f;
+
         /// Colonists best suited to the role's skills according to the same
         /// aggregated bucket verdicts consumed by recommendations. Verdict ties
-        /// are broken by skill level. Capped at six.
-        private string BestFits(List<SkillDef> skills)
+        /// are broken by skill level. At most six names, grouped into one
+        /// value-column line per tier ("Exceptional: A, B"); trailing names
+        /// drop into the final "+N more" until every line fits unwrapped.
+        private List<string> BestFits(List<SkillDef> skills)
         {
             if (skills.Count == 0) return null;
             var ranked = new List<(string label, SignalBucket bucket, int level)>();
@@ -1098,21 +1132,60 @@ namespace WorkRoles.UI
                 SkillBucketChoice best = SkillBucketRanking.Best(
                     SignalSnapshotFor(pawn).SkillBuckets, candidates);
                 if (best == null || best.Bucket < SignalBucket.Strong) continue;
-                string tag = SkillSignalPresentation.BucketLabel(best.Bucket);
-                Color tierColor = SkillSignalPresentation.VerdictColor(best.Bucket);
-                ranked.Add(($"{pawn.LabelShortCap} ({tag})".Colorize(tierColor),
-                    best.Bucket, best.SkillLevel));
+                ranked.Add((pawn.LabelShortCap, best.Bucket, best.SkillLevel));
             }
             if (ranked.Count == 0) return null;
             var top = ranked
                 .OrderByDescending(t => t.bucket)
                 .ThenByDescending(t => t.level)
                 .Take(6)
-                .Select(t => t.label)
                 .ToList();
-            if (ranked.Count > 6)
-                top.Add("WR_TipMore".Translate(ranked.Count - 6).ToString());
-            return top.ToCommaList();
+            int overflow = ranked.Count - top.Count;
+
+            var tiers = new List<(SignalBucket bucket, List<string> names)>();
+            for (int i = 0; i < top.Count;)
+            {
+                SignalBucket bucket = top[i].bucket;
+                var names = new List<string>();
+                while (i < top.Count && top[i].bucket == bucket)
+                    names.Add(top[i++].label);
+                tiers.Add((bucket, names));
+            }
+
+            // Width fitting measures plain text against the value-column
+            // budget; color markup is emit-time only.
+            Text.Font = GameFont.Small;
+            string Plain((SignalBucket bucket, List<string> names) tier, int more) =>
+                SkillSignalPresentation.BucketLabel(tier.bucket) + ": "
+                + tier.names.ToCommaList()
+                + (more > 0 ? ", " + "WR_TipMore".Translate(more).ToString() : "");
+            for (int i = 0; i < tiers.Count; i++)
+                while (tiers[i].names.Count > 1
+                       && WrText.FitWidth(Plain(tiers[i], 0)) > BestFitsValueBudget)
+                {
+                    tiers[i].names.RemoveAt(tiers[i].names.Count - 1);
+                    overflow++;
+                }
+            var lastTier = tiers[tiers.Count - 1];
+            while (overflow > 0 && lastTier.names.Count > 1
+                   && WrText.FitWidth(Plain(lastTier, overflow)) > BestFitsValueBudget)
+            {
+                lastTier.names.RemoveAt(lastTier.names.Count - 1);
+                overflow++;
+            }
+
+            var lines = new List<string>(tiers.Count);
+            for (int i = 0; i < tiers.Count; i++)
+            {
+                int more = i == tiers.Count - 1 ? overflow : 0;
+                string label = SkillSignalPresentation.BucketLabel(tiers[i].bucket)
+                    .Colorize(SkillSignalPresentation.VerdictColor(tiers[i].bucket));
+                lines.Add(label + ": " + tiers[i].names.ToCommaList()
+                    + (more > 0
+                        ? ", " + TipText.Dim("WR_TipMore".Translate(more).ToString())
+                        : ""));
+            }
+            return lines;
         }
 
         // ----- Colonist table -----
@@ -1160,6 +1233,54 @@ namespace WorkRoles.UI
                 else DrawRow(rowRect, row.Pawn, store);
             }
             Widgets.EndScrollView();
+            DrawScrollEdgeFades(outRect, tableScroll.y, totalH);
+        }
+
+        /// 20px fade bands hinting at off-screen rows: a shadow at the edge
+        /// stepping to transparent, drawn only when content extends past it.
+        private static void DrawScrollEdgeFades(Rect outRect, float scrollY, float contentH)
+        {
+            if (contentH <= outRect.height) return;
+            if (scrollY > 0f) DrawEdgeFade(outRect, top: true);
+            if (scrollY + outRect.height < contentH - 1f) DrawEdgeFade(outRect, top: false);
+        }
+
+        private const float FadePx = 20f;
+        private static Texture2D fadeTexture;
+
+        /// 1px-wide gradient (section bg fading to transparent), stretched to
+        /// the panel width at draw time; bilinear sampling makes it smooth
+        /// where stacked 1px strips banded.
+        private static Texture2D FadeTexture
+        {
+            get
+            {
+                if (fadeTexture == null)
+                {
+                    const int steps = 20;
+                    fadeTexture = new Texture2D(1, steps, TextureFormat.RGBA32, mipChain: false)
+                    {
+                        wrapMode = TextureWrapMode.Clamp,
+                        filterMode = FilterMode.Bilinear,
+                    };
+                    Color bg = Widgets.MenuSectionBGFillColor;
+                    // Texture top row (highest index) is opaque; alpha ramps to
+                    // transparent toward the bottom row.
+                    for (int y = 0; y < steps; y++)
+                        fadeTexture.SetPixel(0, y,
+                            new Color(bg.r, bg.g, bg.b, y / (float)(steps - 1)));
+                    fadeTexture.Apply();
+                }
+                return fadeTexture;
+            }
+        }
+
+        private static void DrawEdgeFade(Rect outRect, bool top)
+        {
+            var rect = new Rect(outRect.x,
+                top ? outRect.y : outRect.yMax - FadePx, outRect.width, FadePx);
+            if (top) GUI.DrawTexture(rect, FadeTexture);
+            else GUI.DrawTextureWithTexCoords(rect, FadeTexture, new Rect(0f, 1f, 1f, -1f));
         }
 
         private void EnsureTableLayout(
@@ -1668,6 +1789,7 @@ namespace WorkRoles.UI
         {
             var (layout, stripContentHeight) = ChipLayoutFor(pawn, store, stripWidth);
 
+            int activeRoleId = activityState.For(pawn).RoleId;
             float yOffset = stripRect.y + (stripRect.height - stripContentHeight) / 2f;
 
             for (int chipIndex = 0; chipIndex < layout.Count; chipIndex++)
@@ -1724,7 +1846,8 @@ namespace WorkRoles.UI
                     onClick: onClick,
                     display: TableChips, abbrev: AbbrevIfCompact(store, role),
                     pinned: assignment.pinned,
-                    warningSeverity: capability.WarningSeverity);
+                    warningSeverity: capability.WarningSeverity,
+                    activeOutline: style == ChipStyle.Normal && role.id == activeRoleId);
                 if (click == ChipClick.Remove) RoleCommands.RemoveRoleFromPawn(pawn, role.id);
                 if (click == ChipClick.Context)
                 {
@@ -1792,6 +1915,43 @@ namespace WorkRoles.UI
 
         // ----- Stats panel -----
 
+        /// Current activity under the portrait name: the claiming role as a chip
+        /// (bright outline, display-only), or a caption-colored label for
+        /// non-role activity. The tooltip composes role and report text live.
+        private void DrawActivitySlot(Rect slotRect, RoleStore store)
+        {
+            ActivitySnapshot activity = activityState.For(selectedPawn);
+            Role role = activity.RoleId >= 0 ? store.RoleById(activity.RoleId) : null;
+            if (role != null)
+            {
+                float width = Mathf.Min(RoleChipUI.WidthFor(role, showRemove: false), slotRect.width);
+                var chipRect = new Rect(slotRect.x + (slotRect.width - width) / 2f,
+                    slotRect.y, width, slotRect.height);
+                RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
+                    dragSource: null, onClick: null, interactive: false);
+            }
+            else
+            {
+                Text.Font = GameFont.Tiny;
+                Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = WrStyle.CaptionText;
+                bool wrap = Text.WordWrap;
+                Text.WordWrap = false;
+                Widgets.Label(slotRect, activity.Label);
+                Text.WordWrap = wrap;
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+                Text.Font = GameFont.Small;
+            }
+            if (Mouse.IsOver(slotRect))
+            {
+                Pawn tipPawn = selectedPawn;
+                TooltipHandler.TipRegion(slotRect, new TipSignal(
+                    () => ActivityState.LiveTip(tipPawn, store),
+                    tipPawn.thingIDNumber ^ 0x57AC71));
+            }
+        }
+
         private void DrawStatsPanel(Rect rect, RoleStore store)
         {
             Widgets.DrawBoxSolidWithOutline(
@@ -1799,27 +1959,50 @@ namespace WorkRoles.UI
             rect = rect.ContractedBy(StatsPadding);
             if (selectedPawn == null) return;
 
-            // Left section: portrait framed + name below
+            // Left section: framed portrait with the name in a tag overlaying
+            // the frame's top border, then the current-activity slot below.
+            // The frame is smaller than the portrait texture, which draws
+            // full-size centered so its transparent margins overflow evenly.
+            // Frame offset matches the left inset (padding + centering) so the
+            // top and left distances to the panel border are identical.
             float portraitBoxSize = PortraitDisplaySize;
-            var portraitFrameRect = new Rect(rect.x, rect.y, portraitBoxSize, portraitBoxSize);
+            float frameInset = (portraitBoxSize - PortraitFrameSize) / 2f;
+            // Whole cluster sits 4px lower so top and bottom spacing match.
+            var portraitFrameRect = new Rect(rect.x + frameInset, rect.y + frameInset + 4f,
+                PortraitFrameSize, PortraitFrameH);
 
             Widgets.DrawBoxSolidWithOutline(portraitFrameRect,
                 new Color(0.05f, 0.05f, 0.05f, 1f),
                 new Color(1f, 1f, 1f, 0.25f));
-            GUI.DrawTexture(portraitFrameRect,
+            // Portrait centered in the taller frame, nudged 8px below center.
+            GUI.DrawTexture(
+                new Rect(rect.x,
+                    portraitFrameRect.y + (PortraitFrameH - portraitBoxSize) / 2f + 8f,
+                    portraitBoxSize, portraitBoxSize),
                 PortraitsCache.Get(selectedPawn, new Vector2(portraitBoxSize, portraitBoxSize), Rot4.South));
 
-            // Pawn name directly below portrait, centered (slaves in vanilla's color)
+            // Name tag centered on the frame's top border, drawn after the
+            // portrait so it overlays both the border and any portrait bleed.
             Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.UpperCenter;
+            string pawnName = selectedPawn.LabelShortCap;
+            float tagWidth = Mathf.Clamp(WrText.FitWidth(pawnName) + 10f, 40f, portraitBoxSize);
+            var nameTagRect = new Rect(
+                portraitFrameRect.x + (portraitFrameRect.width - tagWidth) / 2f,
+                portraitFrameRect.y - PortraitNameH / 2f, tagWidth, PortraitNameH);
+            Widgets.DrawBoxSolidWithOutline(nameTagRect,
+                new Color(0.05f, 0.05f, 0.05f, 1f),
+                new Color(1f, 1f, 1f, 0.25f));
+            Text.Anchor = TextAnchor.MiddleCenter;
             GUI.color = selectedPawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(selectedPawn) : Color.white;
-            Widgets.Label(new Rect(rect.x, rect.y + portraitBoxSize + 2f, portraitBoxSize, 20f),
-                selectedPawn.LabelShortCap);
+            Widgets.Label(nameTagRect, pawnName);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            // Trait list under the name (saves a trip to the Bio tab); tooltips
-            // carry the vanilla trait descriptions.
+            float slotY = portraitFrameRect.yMax + 4f;
+            DrawActivitySlot(new Rect(rect.x, slotY, portraitBoxSize, ActivitySlotH), store);
+
+            // Trait list under the activity slot (saves a trip to the Bio tab);
+            // tooltips carry the vanilla trait descriptions.
             var pawnTraits = selectedPawn.story?.traits?.allTraits;
             if (pawnTraits != null)
             {
@@ -1827,7 +2010,7 @@ namespace WorkRoles.UI
                 GUI.color = new Color(0.7f, 0.7f, 0.7f);
                 bool traitWrap = Text.WordWrap;
                 Text.WordWrap = false;
-                float traitY = rect.y + portraitBoxSize + 24f;
+                float traitY = slotY + ActivitySlotH + 2f;
                 foreach (var trait in pawnTraits)
                 {
                     if (trait.Suppressed) continue;

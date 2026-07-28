@@ -51,6 +51,7 @@ namespace WorkRoles.Core
         {
             var result = new CompiledOrder();
             var seen = new HashSet<string>();
+            int sliceIndex = -1;
 
             void TryAdd(string giverDefName, bool block)
             {
@@ -58,11 +59,16 @@ namespace WorkRoles.Core
                 if (catalog.WorkTypeOf(giverDefName) == null) return;
                 if (!pawnCanDo(context, giverDefName)) return;
                 seen.Add(giverDefName);
-                if (!block) result.AllInOrder.Add(giverDefName);
+                if (!block)
+                {
+                    result.AllInOrder.Add(giverDefName);
+                    result.ClaimedBySlice.Add(giverDefName, sliceIndex);
+                }
             }
 
             foreach (var (roleEntries, blocker) in orderedEnabledRoles)
             {
+                sliceIndex++;
                 foreach (var entry in roleEntries)
                 {
                     if (entry.Kind == JobEntryKind.WorkGiver)

@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.2.4 — 2026-07-28
+
+- Added: Show current activity for colonists while tab is open. Shown as role in skills panel and as highlighted role in the assignment list. Job details in tooltip.
+- Changed: An Awful recommendation signal now only disqualifies a role when it hits the role's primary skill; on secondary skills it just lowers the verdict one step, and the warning marker shows yellow instead of red.
+- Changed: Role skill profiles now weight sustained XP-training jobs 4x and ignore skills below half the role's weighted jobs, so one-off jobs (e.g. AllowTool's Finish Off) no longer classify Basics or Hunter as melee roles.
+- Fixed: Restore Defaults now does what the name implies (and overwrites user edits to any of the default roles when restoring).
+- Fixed: Minor UI tweaks and polish.
+
 ## 1.2.3 — 2026-07-22
 
 - Added: More Than Capable integration. Hated work is treated as an Awful recommendation signal and assigned roles containing hated work now show a red warning marker.

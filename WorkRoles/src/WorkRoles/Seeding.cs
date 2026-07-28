@@ -484,6 +484,8 @@ namespace WorkRoles
             public int groupRoleId = -1;
             public int colorRoleId = -1;
             public int holderRoleId = -1;
+            public int entriesRoleId = -1;
+            public int paletteSnapRoleId = -1;
             public string pathDef;
             public bool recommendationOrder;
 
@@ -491,6 +493,7 @@ namespace WorkRoles
             /// types): the preview highlights these with a warning tint.
             public bool UndoesUserChange =>
                 groupRoleId != -1 || colorRoleId != -1 || holderRoleId != -1
+                || entriesRoleId != -1 || paletteSnapRoleId != -1
                 || recommendationOrder;
         }
 
@@ -514,6 +517,56 @@ namespace WorkRoles
             var (has, color) = def.ResolvedColor();
             if (has != role.hasCustomColor) return true;
             return has && !role.color.IndistinguishableFrom(color);
+        }
+
+        /// Def-derived entries including the seed-time appends (EveryoneWorkTypes
+        /// into Basics), so drift detection and entry resets reproduce a fresh
+        /// seed rather than the raw def.
+        internal static List<WorkRoles.Core.JobEntry> DefaultEntriesFor(RoleDef def)
+        {
+            var entries = def.ParsedEntries();
+            if (def.defName != "WS_Basics") return entries;
+            var host = new Role { entries = entries };
+            foreach (var everyoneType in EveryoneWorkTypes)
+            {
+                var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(everyoneType);
+                if (workType == null) continue;
+                if (entries.Any(e => e.Kind == WorkRoles.Core.JobEntryKind.WorkType
+                        && e.DefName == everyoneType)) continue;
+                entries.Insert(NaturalInsertIndex(host, workType),
+                    new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, everyoneType));
+            }
+            return entries;
+        }
+
+        /// The role's job entries differ (content or order) from the def's
+        /// derived default.
+        private static bool EntriesDrifted(Role role, RoleDef def)
+        {
+            var expected = DefaultEntriesFor(def);
+            if (role.entries.Count != expected.Count) return true;
+            for (int i = 0; i < expected.Count; i++)
+                if (role.entries[i].Kind != expected[i].Kind
+                    || role.entries[i].DefName != expected[i].DefName)
+                    return true;
+            return false;
+        }
+
+        /// A legacy generated coverage role: single work-type entry whose
+        /// gerund still names the role, but carrying a pre-palette color.
+        private static bool IsOffPaletteGeneratedRole(Role role)
+        {
+            if (role.templateDefName != null || !role.hasCustomColor) return false;
+            if (role.entries.Count != 1
+                || role.entries[0].Kind != WorkRoles.Core.JobEntryKind.WorkType) return false;
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(role.entries[0].DefName);
+            if (workType == null) return false;
+            string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
+            if (!string.Equals(role.label, label, System.StringComparison.OrdinalIgnoreCase))
+                return false;
+            foreach (var swatch in SwatchPalette.Swatches)
+                if (swatch.IndistinguishableFrom(role.color)) return false;
+            return true;
         }
 
         private static bool HoldersDrifted(Role role) =>
@@ -569,6 +622,31 @@ namespace WorkRoles
                     label = "WR_RestoreMovedJobs".Translate(role.label, count),
                     explanation = "WR_RestoreExplainBackfill".Translate(count),
                     backfillRoleId = role.id,
+                });
+            }
+            // Seeded roles whose job entries drifted from their def (older seed
+            // data or player edits); restoring resets the job list.
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !EntriesDrifted(role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreJobsItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainJobs".Translate(),
+                    entriesRoleId = role.id,
+                });
+            }
+            // Legacy generated coverage roles carrying pre-palette colors.
+            foreach (var role in store.roles)
+            {
+                if (!IsOffPaletteGeneratedRole(role)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreSnapColorItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainSnapColor".Translate(),
+                    paletteSnapRoleId = role.id,
                 });
             }
             // Seeded roles whose group drifted from their def; restoring moves
@@ -659,6 +737,91 @@ namespace WorkRoles
             WorkTypeCoverage.MovedGivers(role.entries, role.workTypeSnapshots,
                 VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
 
+        /// Each pawn's enabled assignments in order with copied coverage sets,
+        /// captured before restore mutates any role.
+        private static Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>>
+            CapturePawnCoverage(RoleStore store)
+        {
+            var result = new Dictionary<Pawn, List<(int, HashSet<string>)>>();
+            foreach (var pair in store.pawnSets)
+            {
+                var pawn = pair.Key;
+                var set = pair.Value;
+                if (pawn == null || set?.assignments == null) continue;
+                List<(int, HashSet<string>)> roles = null;
+                foreach (var assignment in set.assignments)
+                {
+                    if (assignment == null || !assignment.enabled) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role == null || !role.enabled) continue;
+                    (roles ??= new List<(int, HashSet<string>)>())
+                        .Add((role.id, new HashSet<string>(role.Coverage())));
+                }
+                if (roles != null) result[pawn] = roles;
+            }
+            return result;
+        }
+
+        /// Assigns template roles that recover coverage a pawn lost to this
+        /// restore, inserted at the position of the role that previously carried
+        /// those jobs so compiled priorities stay stable. Coverage math only;
+        /// custom user roles are never auto-assigned.
+        private static void PreservePawnCoverage(RoleStore store,
+            Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>> prior)
+        {
+            var candidates = new List<(int roleId, IReadOnlyCollection<string> coverage)>();
+            foreach (var role in store.roles)
+                if (role != null && role.templateDefName != null && role.enabled && !role.blocker)
+                    candidates.Add((role.id, role.Coverage()));
+
+            List<Pawn> touched = null;
+            foreach (var pair in prior)
+            {
+                var pawn = pair.Key;
+                if (!store.pawnSets.TryGetValue(pawn, out var set)
+                    || set?.assignments == null) continue;
+                var current = new HashSet<string>();
+                foreach (var assignment in set.assignments)
+                {
+                    if (assignment == null || !assignment.enabled) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role != null && role.enabled) current.UnionWith(role.Coverage());
+                }
+                var lost = new HashSet<string>();
+                foreach (var (_, coverage) in pair.Value) lost.UnionWith(coverage);
+                lost.ExceptWith(current);
+                if (lost.Count == 0) continue;
+
+                foreach (int roleId in WorkRoles.Core.RestoreCoveragePlanner
+                             .RecoveryRoles(lost, candidates))
+                {
+                    if (set.assignments.Any(a => a?.roleId == roleId)) continue;
+                    set.assignments.Insert(RecoveryInsertIndex(store, set, pair.Value, roleId),
+                        new RoleAssignment { roleId = roleId });
+                    (touched ??= new List<Pawn>()).Add(pawn);
+                }
+            }
+            if (touched != null) CompiledJobOrders.InvalidateBatch(touched);
+        }
+
+        /// Position of the first still-assigned prior role whose old coverage
+        /// overlaps the recovery role's; the recovered jobs then rank where
+        /// their old carrier ranked. No overlap or carrier gone: append.
+        private static int RecoveryInsertIndex(RoleStore store, PawnRoleSet set,
+            List<(int roleId, HashSet<string> coverage)> prior, int recoveryRoleId)
+        {
+            var recovery = store.RoleById(recoveryRoleId);
+            if (recovery != null)
+                foreach (var (roleId, coverage) in prior)
+                {
+                    if (!coverage.Overlaps(recovery.Coverage())) continue;
+                    for (int i = 0; i < set.assignments.Count; i++)
+                        if (set.assignments[i]?.roleId == roleId) return i;
+                    break;
+                }
+            return set.assignments.Count;
+        }
+
         /// Applies the selected restore items. Each application self-guards against
         /// staleness (an already-present template, path name or covered work type
         /// no-ops). Returns labels of what was actually restored.
@@ -667,6 +830,9 @@ namespace WorkRoles
             var store = RoleStore.Current;
             var result = new List<string>();
             if (store == null || selection == null) return result;
+            // Coverage snapshot before anything mutates: pawns keep their
+            // effective jobs when entry resets shrink a role.
+            var priorCoverage = CapturePawnCoverage(store);
             var templateDefs = selection.templateDefs;
             var workTypes = selection.workTypes;
             var backfillRoleIds = selection.backfillRoleIds;
@@ -709,6 +875,34 @@ namespace WorkRoles
                     result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
                     CompiledJobOrders.InvalidateRole(roleId);
                 }
+
+            if (selection.entriesRoleIds != null && selection.entriesRoleIds.Count > 0)
+            {
+                foreach (var roleId in selection.entriesRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (def == null || !EntriesDrifted(role, def)) continue;
+                    role.entries = DefaultEntriesFor(def);
+                    // Stale union-only snapshots could resurrect removed givers.
+                    role.workTypeSnapshots.Clear();
+                    result.Add("WR_RestoreJobsItem".Translate(role.label));
+                    CompiledJobOrders.InvalidateRole(roleId);
+                }
+                RefreshWorkTypeSnapshots();
+            }
+
+            if (selection.paletteSnapRoleIds != null)
+                foreach (var roleId in selection.paletteSnapRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    if (role == null || !role.hasCustomColor) continue;
+                    role.color = NearestPaletteColor(role.color);
+                    result.Add(role.label);
+                }
+
+            PreservePawnCoverage(store, priorCoverage);
 
             if (groupRoleIds != null)
             {

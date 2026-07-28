@@ -52,11 +52,41 @@ if ($descriptionBytes -gt 8000) {
 
 # steamcmd's VDF parser has escape sequences off: values are written raw,
 # newlines are fine inside quoted values, but a double quote is unrepresentable.
-if ($ChangeNote.Contains('"')) {
-    throw "ChangeNote contains a double quote; steamcmd VDF cannot represent it"
-}
 if ($description.Contains('"')) {
     throw "workshop-description.bbcode contains a double quote; steamcmd VDF cannot represent it"
+}
+
+# Change notes are write-once on Steam: collect deliberately, then confirm.
+if (-not $ChangeNote) {
+    Write-Host "Enter the change note (BBCode allowed, no double quotes)."
+    Write-Host "Finish by pressing Enter three times in a row (two blank lines)."
+    $lines = @()
+    $blanks = 0
+    while ($true) {
+        $line = Read-Host
+        if ($line -eq "") {
+            $blanks++
+            if ($blanks -ge 2) { break }
+        }
+        else {
+            $blanks = 0
+        }
+        $lines += $line
+    }
+    $ChangeNote = ($lines -join "`n").TrimEnd()
+}
+if ($ChangeNote.Contains('"')) {
+    throw "Change note contains a double quote; steamcmd VDF cannot represent it"
+}
+
+Write-Host ""
+Write-Host "---- Change note (published immediately, can never be edited) ----"
+if ($ChangeNote) { Write-Host $ChangeNote } else { Write-Host "(none: the changelog entry will be blank)" }
+Write-Host "-------------------------------------------------------------------"
+$answer = Read-Host "Upload to the Steam Workshop now? Type yes to confirm"
+if ($answer -notin @('y', 'yes')) {
+    Write-Host "Aborted, nothing uploaded."
+    exit 1
 }
 
 # Omitted keys (title, previewfile, and changenote when none is given) are left

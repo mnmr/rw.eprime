@@ -257,6 +257,10 @@ namespace WorkRoles.Core.Signals
             string colorKey,
             string sourceDisplayName)
         {
+            // Labels are first-letter-uppercased only when the leading char is
+            // standard Latin a-z; anything else passes through untouched.
+            if (!string.IsNullOrEmpty(label) && label[0] >= 'a' && label[0] <= 'z')
+                label = char.ToUpperInvariant(label[0]) + label.Substring(1);
             Label = label;
             Description = description;
             IconKey = iconKey;

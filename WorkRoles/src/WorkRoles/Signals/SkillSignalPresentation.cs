@@ -20,6 +20,8 @@ namespace WorkRoles.Signals
         private static readonly Color TableGrey = new Color(0.65f, 0.65f, 0.65f);
         // Passive rows: dimmer than active, brighter than descriptions.
         private static readonly Color PassiveGrey = new Color(0.8f, 0.8f, 0.8f);
+        // Vertical space between the head facts and the signals table.
+        private const float TableGap = 16f;
 
         internal static List<Texture2D> ResolveIcons(SkillSignalView view)
         {
@@ -74,7 +76,7 @@ namespace WorkRoles.Signals
                     labelColor: Color.white);
             }
 
-            table.Gap(UI.WrTipUI.TableInset);
+            table.Gap(TableGap);
             table.Columns(new[]
             {
                 "WR_SignalColSignal".Translate().ToString(),

@@ -109,6 +109,8 @@ namespace WorkRoles
             BindList(sync, ref selection.groupRoleIds);
             BindList(sync, ref selection.colorRoleIds);
             BindList(sync, ref selection.holderRoleIds);
+            BindList(sync, ref selection.entriesRoleIds);
+            BindList(sync, ref selection.paletteSnapRoleIds);
             sync.Bind(ref selection.recommendationOrder);
         }
     }

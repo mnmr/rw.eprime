@@ -126,6 +126,67 @@ public class JobOrderCompilerTests
     }
 
     [Test]
+    public async Task ClaimMapAttributesGiversToTheFirstClaimingSlice()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Doctor", "TendPatients", "FeedPatients")
+            .WithWorkType("Hauling", "HaulGeneral");
+        // Role 0 claims all of Doctor; role 1's duplicate TendPatients is inert.
+        var roles = Roles(
+            new[] { WT("Doctor") },
+            new[] { WT("Hauling"), WG("TendPatients") });
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        await Assert.That(result.ClaimedBySlice["TendPatients"]).IsEqualTo(0);
+        await Assert.That(result.ClaimedBySlice["FeedPatients"]).IsEqualTo(0);
+        await Assert.That(result.ClaimedBySlice["HaulGeneral"]).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task BlockedGiversAreAbsentFromClaimMap()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Firefighter", "FightFires")
+            .WithWorkType("Hauling", "HaulGeneral");
+        var roles = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>
+        {
+            (new List<JobEntry> { WT("Firefighter") }, true),
+            (new List<JobEntry> { WT("Firefighter"), WT("Hauling") }, false),
+        };
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        await Assert.That(result.ClaimedBySlice.ContainsKey("FightFires")).IsFalse();
+        await Assert.That(result.ClaimedBySlice["HaulGeneral"]).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task CapabilityFilteredGiversAreAbsentFromClaimMap()
+    {
+        var catalog = new FakeCatalog().WithWorkType("Doctor", "TendPatients", "FeedPatients");
+        var roles = Roles(new[] { WT("Doctor") });
+        var result = JobOrderCompiler.Compile(roles, catalog, g => g != "TendPatients");
+        await Assert.That(result.ClaimedBySlice.ContainsKey("TendPatients")).IsFalse();
+        await Assert.That(result.ClaimedBySlice["FeedPatients"]).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task MovedSnapshotGiverClaimsToTheRoleCarryingIt()
+    {
+        // TendAnimals was moved out of Doctor by a mod; the snapshot expansion
+        // re-adds it to role 0, whose slice must claim it.
+        var catalog = new FakeCatalog()
+            .WithWorkType("Doctor", "TendPatients")
+            .WithWorkType("Veterinary", "TendAnimals");
+        var snapshot = new Dictionary<string, List<string>>
+        {
+            ["Doctor"] = new List<string> { "TendPatients", "TendAnimals" },
+        };
+        var expanded = JobOrderCompiler.WithMovedSnapshotGivers(
+            new List<JobEntry> { WT("Doctor") }, snapshot, catalog);
+        var result = JobOrderCompiler.Compile(Roles(expanded.ToArray()), catalog, _ => true);
+        await Assert.That(result.ClaimedBySlice["TendPatients"]).IsEqualTo(0);
+        await Assert.That(result.ClaimedBySlice["TendAnimals"]).IsEqualTo(0);
+    }
+
+    [Test]
     public async Task JobInNoRoleIsAbsent()
     {
         var catalog = new FakeCatalog()

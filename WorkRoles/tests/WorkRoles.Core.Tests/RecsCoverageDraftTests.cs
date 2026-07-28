@@ -312,7 +312,7 @@ public class RecsCoverageDraftTests
     }
 
     [Test]
-    public async Task MissingRequiredSkillIsAwfulAndCannotBeDrafted()
+    public async Task MissingSecondarySkillNoLongerVetoesTheDraft()
     {
         var mixedSkill = RecsTestBed.Role(1, "Crafting");
         mixedSkill.MinHolders = 1;
@@ -335,10 +335,12 @@ public class RecsCoverageDraftTests
         new CoverageScalingRule(new UnitScaling()).Apply(context);
         new BestInColonyDraftRule().Apply(context);
 
-        await Assert.That(bucket).IsEqualTo(SignalBucket.Awful);
-        await Assert.That(skill).IsEqualTo("Intellectual");
+        // A disabled non-primary skill is the capability lane's business:
+        // the verdict stays the primary's and the draft may still pick the pawn.
+        await Assert.That(bucket).IsEqualTo(SignalBucket.Strong);
+        await Assert.That(skill).IsEqualTo("Crafting");
         await Assert.That(source).IsEqualTo(SignalSource.Aggregated);
-        await Assert.That(context.Candidates[0].ContainsKey(mixedSkill.Id)).IsFalse();
+        await Assert.That(context.Candidates[0].ContainsKey(mixedSkill.Id)).IsTrue();
     }
 
     [Test]

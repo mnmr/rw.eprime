@@ -21,7 +21,7 @@ public class SkillSignalAggregatorTests
                 throw new Exception("Missing classification: " + definition.IdentityForTest());
         }
 
-        await Assert.That(definitions.Length).IsEqualTo(89);
+        await Assert.That(definitions.Length).IsEqualTo(93);
     }
 
     [Test]
@@ -45,6 +45,14 @@ public class SkillSignalAggregatorTests
             Mapping(SignalSourceKind.Gene, "MeleeDamage_Strong", SignalBucket.Strong),
             Mapping(SignalSourceKind.Gene, "MeleeDamage_Weak", SignalBucket.Poor),
             Mapping(SignalSourceKind.Gene, "Nearsighted", SignalBucket.Poor),
+            Mapping(SignalSourceKind.Gene, "AptitudeTerrible", SignalBucket.Awful,
+                discriminator: "implant"),
+            Mapping(SignalSourceKind.Gene, "AptitudePoor", SignalBucket.Poor,
+                discriminator: "implant"),
+            Mapping(SignalSourceKind.Gene, "AptitudeStrong", SignalBucket.Strong,
+                discriminator: "implant"),
+            Mapping(SignalSourceKind.Gene, "AptitudeRemarkable", SignalBucket.Strong,
+                discriminator: "implant"),
             Mapping(SignalSourceKind.Trait, "Brawler", SignalBucket.Strong, degree: 0,
                 discriminator: "melee"),
             Mapping(SignalSourceKind.Trait, "Brawler", SignalBucket.Poor, degree: 0,
@@ -118,7 +126,8 @@ public class SkillSignalAggregatorTests
     public async Task EnabledSkillsStartNeutralAndPassiveOrGlobalSignalsDoNotContribute()
     {
         Signal passive = SignalFactory.Instantiate(
-            VanillaSignalDefinitions.All.Single(x => x.Source.DefName == "AptitudeStrong"),
+            VanillaSignalDefinitions.All.Single(x => x.Source.DefName == "AptitudeStrong"
+                && x.Type == SignalType.Passive),
             "Cooking", "AptitudeStrong_Cooking");
         Signal global = SignalFactory.Instantiate(
             VanillaSignalDefinitions.All.Single(x => x.Source.DefName == "FastLearner"));

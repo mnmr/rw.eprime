@@ -30,6 +30,8 @@ namespace WorkRoles
         public List<int> groupRoleIds = new List<int>();
         public List<int> colorRoleIds = new List<int>();
         public List<int> holderRoleIds = new List<int>();
+        public List<int> entriesRoleIds = new List<int>();
+        public List<int> paletteSnapRoleIds = new List<int>();
         public bool recommendationOrder;
     }
 }

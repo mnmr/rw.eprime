@@ -10,5 +10,8 @@ namespace WorkRoles.Core
         /// <summary>workType defName -> unique rank (1..N, by first appearance in the compiled
         /// order); a work type absent from this map is priority 0 (never).</summary>
         public Dictionary<string, int> WorkTypePriorities = new Dictionary<string, int>();
+        /// <summary>giver defName -> index of the ordered role slice whose claim ranked it.
+        /// Blocked and capability-filtered givers are absent.</summary>
+        public Dictionary<string, int> ClaimedBySlice = new Dictionary<string, int>();
     }
 }

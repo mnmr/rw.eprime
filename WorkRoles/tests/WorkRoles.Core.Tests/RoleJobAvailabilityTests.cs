@@ -41,13 +41,27 @@ public class RoleJobAvailabilityTests
     }
 
     [Test]
-    public async Task AwfulSignalUsesOneCriticalMarkerAndDominatesPartialCapability()
+    public async Task VetoSignalUsesOneCriticalMarkerAndDominatesPartialCapability()
     {
         await Assert.That(RoleAssignmentWarningSummary.From(
-                RoleJobAvailability.Available, hasAwfulSignal: true))
+                RoleJobAvailability.Available, hasVetoSignal: true))
             .IsEqualTo(RoleAssignmentWarningSeverity.Critical);
         await Assert.That(RoleAssignmentWarningSummary.From(
-                RoleJobAvailability.SomeUnavailable, hasAwfulSignal: true))
+                RoleJobAvailability.SomeUnavailable, hasVetoSignal: true))
+            .IsEqualTo(RoleAssignmentWarningSeverity.Critical);
+    }
+
+    [Test]
+    public async Task DampenedSignalIsCautionUnlessCapabilityEscalates()
+    {
+        await Assert.That(RoleAssignmentWarningSummary.From(
+                RoleJobAvailability.Available, hasVetoSignal: false, hasDampenedSignal: true))
+            .IsEqualTo(RoleAssignmentWarningSeverity.Caution);
+        await Assert.That(RoleAssignmentWarningSummary.From(
+                RoleJobAvailability.SomeUnavailable, hasVetoSignal: false, hasDampenedSignal: true))
+            .IsEqualTo(RoleAssignmentWarningSeverity.Caution);
+        await Assert.That(RoleAssignmentWarningSummary.From(
+                RoleJobAvailability.AllUnavailable, hasVetoSignal: false, hasDampenedSignal: true))
             .IsEqualTo(RoleAssignmentWarningSeverity.Critical);
     }
 
@@ -55,13 +69,13 @@ public class RoleJobAvailabilityTests
     public async Task CapabilityAvailabilityMapsToExistingMarkerSeverities()
     {
         await Assert.That(RoleAssignmentWarningSummary.From(
-                RoleJobAvailability.Available, hasAwfulSignal: false))
+                RoleJobAvailability.Available, hasVetoSignal: false))
             .IsEqualTo(RoleAssignmentWarningSeverity.None);
         await Assert.That(RoleAssignmentWarningSummary.From(
-                RoleJobAvailability.SomeUnavailable, hasAwfulSignal: false))
+                RoleJobAvailability.SomeUnavailable, hasVetoSignal: false))
             .IsEqualTo(RoleAssignmentWarningSeverity.Caution);
         await Assert.That(RoleAssignmentWarningSummary.From(
-                RoleJobAvailability.AllUnavailable, hasAwfulSignal: false))
+                RoleJobAvailability.AllUnavailable, hasVetoSignal: false))
             .IsEqualTo(RoleAssignmentWarningSeverity.Critical);
     }
 }

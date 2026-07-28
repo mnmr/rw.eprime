@@ -105,6 +105,8 @@ namespace WorkRoles.UI
                     groupRoleIds = selected.Where(i => i.groupRoleId != -1).Select(i => i.groupRoleId).ToList(),
                     colorRoleIds = selected.Where(i => i.colorRoleId != -1).Select(i => i.colorRoleId).ToList(),
                     holderRoleIds = selected.Where(i => i.holderRoleId != -1).Select(i => i.holderRoleId).ToList(),
+                    entriesRoleIds = selected.Where(i => i.entriesRoleId != -1).Select(i => i.entriesRoleId).ToList(),
+                    paletteSnapRoleIds = selected.Where(i => i.paletteSnapRoleId != -1).Select(i => i.paletteSnapRoleId).ToList(),
                     recommendationOrder = selected.Any(i => i.recommendationOrder),
                 });
                 Close();

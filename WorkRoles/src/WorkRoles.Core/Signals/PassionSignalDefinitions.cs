@@ -31,10 +31,10 @@ namespace WorkRoles.Core.Signals
         {
             var result = new List<SignalDefinition>
             {
-                Passion("Minor", Core, "RimWorld", SignalType.Active, "interested", 1f,
+                Passion("Minor", Core, "RimWorld", SignalType.Active, "Mild passion", 1f,
                     tier: "Minor", icon: "UI/Icons/PassionMinor",
                     extras: Mood("work:passionate", "Mood from doing passionate work")),
-                Passion("Major", Core, "RimWorld", SignalType.Active, "burning", 1.5f,
+                Passion("Major", Core, "RimWorld", SignalType.Active, "Burning passion", 1.5f,
                     tier: "Major", icon: "UI/Icons/PassionMajor",
                     extras: Mood("work:passionate", "Mood from doing passionate work")),
 

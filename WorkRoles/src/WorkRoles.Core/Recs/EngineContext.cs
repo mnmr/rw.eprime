@@ -253,15 +253,21 @@ namespace WorkRoles.Core.Recs
                     return SignalBucket.Awful;
                 }
             }
-            foreach (var required in RequiredSkills(role))
+            var required = RequiredSkills(role);
+            // Only the primary skill (sorted first) can veto: disabled or
+            // Awful there disqualifies the role. Non-primary trouble merely
+            // dampens the verdict below.
+            if (required.Count > 0)
             {
-                if (pawn.SkillLevels.TryGetValue(required.SkillDefName, out _)
-                    && (!pawn.SignalBuckets.TryGetValue(required.SkillDefName, out var requiredBucket)
-                        || requiredBucket != SignalBucket.Awful))
-                    continue;
-                skill = required.SkillDefName;
-                source = SignalSource.Aggregated;
-                return SignalBucket.Awful;
+                var primaryRequired = required[0];
+                if (!pawn.SkillLevels.ContainsKey(primaryRequired.SkillDefName)
+                    || (pawn.SignalBuckets.TryGetValue(primaryRequired.SkillDefName, out var primaryBucket)
+                        && primaryBucket == SignalBucket.Awful))
+                {
+                    skill = primaryRequired.SkillDefName;
+                    source = SignalSource.Aggregated;
+                    return SignalBucket.Awful;
+                }
             }
 
             if (role.Skills.Count > 0)
@@ -272,14 +278,16 @@ namespace WorkRoles.Core.Recs
                     if (!pawn.SkillLevels.ContainsKey(primary.SkillDefName)) continue;
                     skill = primary.SkillDefName;
                     source = SignalSource.Aggregated;
-                    return pawn.SignalBuckets.TryGetValue(skill, out var classified)
+                    SignalBucket bucket = pawn.SignalBuckets.TryGetValue(skill, out var classified)
                         ? classified : SignalBucket.Neutral;
+                    return Dampen(pawn, required, skill, bucket);
                 }
             }
             skill = null;
             source = SignalSource.None;
             bool any = false;
             var best = SignalBucket.Awful;
+            // Fallback scan below has no primary to damp against.
             foreach (var workType in role.WorkTypes)
             {
                 if (!Colony.WorkTypeSkills.TryGetValue(workType, out var skills)) continue;
@@ -300,7 +308,29 @@ namespace WorkRoles.Core.Recs
                     any = true;
                 }
             }
+            // No primary skill means no disqualification: the fallback's best
+            // touched-skill verdict never reads Awful, only Poor.
+            if (any && best == SignalBucket.Awful) best = SignalBucket.Poor;
             return any ? best : SignalBucket.Neutral;
+        }
+
+        /// An Awful signal on a non-primary required skill reads as one net
+        /// detrimental step for the whole role: one bucket down, floored at
+        /// Poor (the hard veto stays primary-only). Disabled skills belong to
+        /// the capability lane and never dampen.
+        private static SignalBucket Dampen(PawnView pawn,
+            IReadOnlyList<RoleSkillView> required, string primarySkill, SignalBucket bucket)
+        {
+            if (bucket <= SignalBucket.Poor) return bucket;
+            foreach (var roleSkill in required)
+            {
+                if (roleSkill.SkillDefName == primarySkill) continue;
+                if (pawn.SkillLevels.ContainsKey(roleSkill.SkillDefName)
+                    && pawn.SignalBuckets.TryGetValue(roleSkill.SkillDefName, out var secondary)
+                    && secondary == SignalBucket.Awful)
+                    return bucket - 1;
+            }
+            return bucket;
         }
 
         public void AddCandidate(int pawnIndex, int roleId, Reason reason, SignalBucket strength,
