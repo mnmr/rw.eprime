@@ -51,6 +51,10 @@ namespace WorkRoles.Core
             IJobCatalog catalog)
         {
             Dictionary<string, List<string>> result = null;
+            HashSet<string> explicitGivers = null;
+            foreach (var entry in entries)
+                if (entry.Kind == JobEntryKind.WorkGiver)
+                    (explicitGivers ??= new HashSet<string>()).Add(entry.DefName);
             foreach (var entry in entries)
             {
                 if (entry.Kind != JobEntryKind.WorkType) continue;
@@ -59,6 +63,8 @@ namespace WorkRoles.Core
                     if (pair.Value != entry.DefName) continue;                    // not originally this type
                     var currentType = catalog.WorkTypeOf(pair.Key);
                     if (currentType == null || currentType == entry.DefName) continue; // gone, or not moved
+                    if (explicitGivers != null && explicitGivers.Contains(pair.Key))
+                        continue;                                                 // carried as its own entry
                     if (snapshots.TryGetValue(entry.DefName, out var known)
                         && known != null && known.Contains(pair.Key)) continue;   // already remembered
                     result ??= new Dictionary<string, List<string>>();

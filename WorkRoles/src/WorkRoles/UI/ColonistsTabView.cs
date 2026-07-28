@@ -2139,6 +2139,7 @@ namespace WorkRoles.UI
                 float chipY = rect.y + 28f;
                 float chipX = recX;
                 var chips = preview.Chips;
+                store.pawnSets.TryGetValue(selectedPawn, out var selectedSet);
                 for (int previewIndex = 0; previewIndex < chips.Count; previewIndex++)
                 {
                     var (role, state, tip) = chips[previewIndex];
@@ -2157,11 +2158,18 @@ namespace WorkRoles.UI
                     if (isAssigned)
                     {
                         // Assigned: Subtle style, remove icon, body click inert.
-                        var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Subtle,
+                        // Disabled roles dim WITHOUT the strike (this panel
+                        // shows recommendations, not verdicts); the red outline
+                        // marks only enabled roles the plan would remove.
+                        var assignment = selectedSet?.assignments
+                            .FirstOrDefault(a => a.roleId == role.id);
+                        bool chipEnabled = role.enabled && assignment?.enabled != false;
+                        var click = RoleChipUI.Draw(chipRect, role,
+                            chipEnabled ? ChipStyle.Subtle : ChipStyle.AutoOff,
                             showRemove: true, dragSource: null, onClick: null);
                         if (click == ChipClick.Remove)
                             RoleCommands.RemoveRoleFromPawn(capturedPawn, capturedId);
-                        if (state == Dialog_ChangesPreview.ChipState.Removed)
+                        if (chipEnabled && state == Dialog_ChangesPreview.ChipState.Removed)
                         {
                             RoleChipUI.DrawRemovedOutline(chipRect);
                         }

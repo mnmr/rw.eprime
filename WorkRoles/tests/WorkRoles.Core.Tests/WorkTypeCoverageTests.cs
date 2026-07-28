@@ -74,6 +74,25 @@ public class WorkTypeCoverageTests
     }
 
     [Test]
+    public async Task MovedGiversSkipsGiversCarriedAsExplicitEntries()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Doctor", "TendPatients")
+            .WithWorkType("Rescuing", "DoctorRescue");
+        var baseline = new Dictionary<string, string>
+        {
+            ["TendPatients"] = "Doctor",
+            ["DoctorRescue"] = "Doctor",
+        };
+        // The role already carries the moved giver as its own entry (e.g. a
+        // reset appended it): nothing is lost, nothing to recover.
+        var moved = WorkTypeCoverage.MovedGivers(
+            new List<JobEntry> { WT("Doctor"), WG("DoctorRescue") },
+            new Dictionary<string, List<string>>(), baseline, catalog);
+        await Assert.That(moved == null).IsTrue();
+    }
+
+    [Test]
     public async Task MovedGiversReturnsNullWhenNothingMoved()
     {
         var catalog = new FakeCatalog().WithWorkType("Doctor", "TendPatients");

@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.2.5 — 2026-07-28
+
+- Added: MultiFloors and "As above, so below" mod support (floors on same tile are now treated as a single location).
+- Fixed: Colonists in a caravan are now considered part of the tile they left from, so that traveling doesn't mess with recommendations. You can still create auto-roles that only apply to pawns while caravaning.
+
 ## 1.2.4 — 2026-07-28
 
 - Added: Show current activity for colonists while tab is open. Shown as role in skills panel and as highlighted role in the assignment list. Job details in tooltip.

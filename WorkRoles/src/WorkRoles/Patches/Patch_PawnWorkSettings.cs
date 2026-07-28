@@ -80,20 +80,22 @@ namespace WorkRoles.Patches
         }
     }
 
-    /// Location rules depend on which map (if any) holds the pawn — recompile on
-    /// every map entry so Home/Away gating tracks the pawn's actual location.
+    /// Location rules depend on which canonical map (if any) holds the pawn.
+    /// The tracker recompiles only when that actually changed, so hops between
+    /// floors of one stack stay free.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.SpawnSetup))]
     public static class Patch_Pawn_SpawnSetup
     {
-        public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
+        public static void Postfix(Pawn __instance) => PawnLocationTracker.NotifySpawned(__instance);
     }
 
-    /// ...and on every despawn. Pawn.ExitMap normally funnels through this,
-    /// while gravship takeoff calls DeSpawn directly.
+    /// A despawn's destination is unknown here (floor transfers respawn within
+    /// the same call stack); the tracker resolves it next tick. Pawn.ExitMap
+    /// normally funnels through this, gravship takeoff calls DeSpawn directly.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.DeSpawn))]
     public static class Patch_Pawn_DeSpawn
     {
-        public static void Postfix(Pawn __instance) => CompiledJobOrders.Invalidate(__instance);
+        public static void Postfix(Pawn __instance) => PawnLocationTracker.NotifyDespawned(__instance);
     }
 
     /// Evict destroyed pawns from runtime orders and the persistent role store.
@@ -104,6 +106,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance)
         {
             CompiledJobOrders.Invalidate(__instance);
+            PawnLocationTracker.NotifyDestroyed(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
         }
     }
@@ -128,6 +131,8 @@ namespace WorkRoles.Patches
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
+            FloorMaps.ReleaseForTeardown();
+            PawnLocationTracker.ReleaseForTeardown();
             RoleStore.ClearCached();
             Patch_ActiveTip_TipRect.Clear();
         }

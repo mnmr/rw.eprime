@@ -61,6 +61,7 @@ namespace WorkRoles
 
         public override void GameComponentTick()
         {
+            PawnLocationTracker.ProcessPendingDepartures();
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);

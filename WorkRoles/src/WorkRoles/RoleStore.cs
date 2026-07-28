@@ -40,6 +40,10 @@ namespace WorkRoles
         public List<string> customSwatchNames = new List<string>();
         /// Per-bill role restrictions (see BillRoles). Mutate via RoleCommands.
         public Dictionary<Bill, int> billRoles = NewBillRoleDictionary();
+        /// Last canonical location (map uniqueID) each pawn spawned on; off-map
+        /// pawns (caravans) keep the location they departed from. Maintained by
+        /// PawnLocationTracker from sim-side spawn patches.
+        public Dictionary<Pawn, int> lastLocationMapIds = new Dictionary<Pawn, int>();
         /// Role-list groups in display order. Mutate via RoleCommands.
         public List<RoleGroup> groups = new List<RoleGroup>();
         /// Named training paths (Options tab). Mutate via RoleCommands.
@@ -52,6 +56,8 @@ namespace WorkRoles
         private List<PawnRoleSet> setValuesWorkingList;
         private List<Bill> billKeysWorkingList;
         private List<int> billValuesWorkingList;
+        private List<Pawn> locationKeysWorkingList;
+        private List<int> locationValuesWorkingList;
 
         private static RoleStore cached;
 
@@ -385,6 +391,9 @@ namespace WorkRoles
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
+            Scribe_Collections.Look(ref lastLocationMapIds, "lastLocationMapIds",
+                LookMode.Reference, LookMode.Value,
+                ref locationKeysWorkingList, ref locationValuesWorkingList);
             // Scribe replaces dictionaries with its default comparer in LoadingVars
             // and fills reference-keyed maps only in ResolvingCrossRefs. Replace the
             // still-empty shell now; the working lists remain owned by Scribe.
@@ -402,6 +411,8 @@ namespace WorkRoles
                 SyncSwatchNames();
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
+                lastLocationMapIds ??= new Dictionary<Pawn, int>();
+                lastLocationMapIds.RemoveAll(kv => kv.Key == null);
                 EnsureBillRoleIdentityComparer();
                 // Bill.DeletedOrDereferenced dereferences billStack without a null
                 // guard in 1.6. Remove only definitely dead bill references here;

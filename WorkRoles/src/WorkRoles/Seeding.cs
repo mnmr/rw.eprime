@@ -519,24 +519,53 @@ namespace WorkRoles
             return has && !role.color.IndistinguishableFrom(color);
         }
 
+        private static readonly Dictionary<string, List<string>> NoSnapshots =
+            new Dictionary<string, List<string>>();
+
         /// Def-derived entries including the seed-time appends (EveryoneWorkTypes
-        /// into Basics), so drift detection and entry resets reproduce a fresh
-        /// seed rather than the raw def.
+        /// into Basics) and explicit entries for vanilla givers that mods moved
+        /// out of the def's work types — so drift detection and entry resets
+        /// reproduce a fresh seed on the CURRENT mod list, and coverage
+        /// (nesting) keeps the moved jobs, which snapshots cannot provide.
         internal static List<WorkRoles.Core.JobEntry> DefaultEntriesFor(RoleDef def)
         {
             var entries = def.ParsedEntries();
-            if (def.defName != "WS_Basics") return entries;
-            var host = new Role { entries = entries };
-            foreach (var everyoneType in EveryoneWorkTypes)
+            if (def.defName == "WS_Basics")
             {
-                var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(everyoneType);
-                if (workType == null) continue;
-                if (entries.Any(e => e.Kind == WorkRoles.Core.JobEntryKind.WorkType
-                        && e.DefName == everyoneType)) continue;
-                entries.Insert(NaturalInsertIndex(host, workType),
-                    new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, everyoneType));
+                var host = new Role { entries = entries };
+                foreach (var everyoneType in EveryoneWorkTypes)
+                {
+                    var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(everyoneType);
+                    if (workType == null) continue;
+                    if (entries.Any(e => e.Kind == WorkRoles.Core.JobEntryKind.WorkType
+                            && e.DefName == everyoneType)) continue;
+                    entries.Insert(NaturalInsertIndex(host, workType),
+                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, everyoneType));
+                }
             }
+            var moved = WorkTypeCoverage.MovedGivers(entries, NoSnapshots,
+                VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
+            if (moved != null)
+                foreach (var pair in moved)
+                {
+                    int insertAt = IndexAfterWorkTypeEntry(entries, pair.Key);
+                    foreach (var giver in pair.Value)
+                        entries.Insert(insertAt++, new WorkRoles.Core.JobEntry(
+                            WorkRoles.Core.JobEntryKind.WorkGiver, giver));
+                }
             return entries;
+        }
+
+        /// Moved givers slot directly after the work-type entry they came from,
+        /// keeping their old first-claim position in the role's order.
+        private static int IndexAfterWorkTypeEntry(
+            List<WorkRoles.Core.JobEntry> entries, string workTypeDefName)
+        {
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i].Kind == WorkRoles.Core.JobEntryKind.WorkType
+                    && entries[i].DefName == workTypeDefName)
+                    return i + 1;
+            return entries.Count;
         }
 
         /// The role's job entries differ (content or order) from the def's

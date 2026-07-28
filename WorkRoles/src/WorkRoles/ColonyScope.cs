@@ -30,6 +30,7 @@ namespace WorkRoles
         {
             InvalidateLanguageCaches();
             gravEngineSearch = null;
+            FloorMaps.ReleaseForTeardown();
         }
 
         internal static List<LocationInfo> Locations()
@@ -48,10 +49,14 @@ namespace WorkRoles
         private static List<LocationInfo> BuildLocations()
         {
             var result = new List<LocationInfo>();
+            var seen = new HashSet<string>();
             foreach (var map in Find.Maps)
             {
                 var place = PlaceOf(map, out var gravEngine);
                 if (!place.IsSettlement && !place.IsShip) continue;
+                // Floor maps canonicalize to their ground map's id: one
+                // location per stack.
+                if (!seen.Add(place.LocationId)) continue;
                 // Unnamed ships fall back to a short label — the map parent's
                 // ("Gravship landing site") overflows every dropdown.
                 string label = place.IsShip
@@ -85,6 +90,10 @@ namespace WorkRoles
         private static PawnPlace PlaceOf(
             Map map, out Building_GravEngine gravEngine)
         {
+            // Floor maps classify as their ground map: grav machinery must sit
+            // in the ground substructure footprint, so the engine search stays
+            // single-map.
+            map = FloorMaps.Canonical(map);
             gravEngine = FindGravEngineFresh(map);
             bool hasEngine = gravEngine != null;
             bool ship = hasEngine
@@ -181,9 +190,12 @@ namespace WorkRoles
             }
         }
 
-        internal static string LocationId(Map map) => map?.uniqueID.ToStringCached();
+        internal static string LocationId(Map map) =>
+            FloorMaps.Canonical(map)?.uniqueID.ToStringCached();
 
-        internal static string LocationIdOf(Pawn pawn) => LocationId(pawn.MapHeld);
+        /// Off-map pawns (caravans) report the location they departed from.
+        internal static string LocationIdOf(Pawn pawn) =>
+            PawnLocationTracker.EffectiveLocationId(pawn);
 
         internal static string CurrentLocationId() => LocationId(Find.CurrentMap);
 
@@ -199,14 +211,24 @@ namespace WorkRoles
                 result.AddRange(map.mapPawns.FreeColonistsSpawned);
                 result.AddRange(map.mapPawns.SlavesOfColonySpawned);
             }
-            if (scope.Kind == ScopeKind.All)
-                foreach (var caravan in Find.WorldObjects.Caravans)
+            // Caravan pawns list under Everywhere and under the location they
+            // departed from; rule matching still classifies them as caravanning.
+            foreach (var caravan in Find.WorldObjects.Caravans)
+            {
+                if (!caravan.IsPlayerControlled) continue;
+                foreach (var pawn in caravan.PawnsListForReading)
                 {
-                    if (!caravan.IsPlayerControlled) continue;
-                    foreach (var pawn in caravan.PawnsListForReading)
-                        if (pawn.IsFreeColonist || pawn.IsSlaveOfColony)
-                            result.Add(pawn);
+                    if (!pawn.IsFreeColonist && !pawn.IsSlaveOfColony) continue;
+                    if (scope.Kind == ScopeKind.All)
+                    {
+                        result.Add(pawn);
+                        continue;
+                    }
+                    string lastId = PawnLocationTracker.EffectiveLocationId(pawn);
+                    if (lastId != null && ScopeEngine.Matches(scope, lastId, currentId))
+                        result.Add(pawn);
                 }
+            }
             return result
                 .Where(p => !p.DevelopmentalStage.Baby())
                 .Distinct()

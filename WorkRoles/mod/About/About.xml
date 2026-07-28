@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.2.4</modVersion>
+  <modVersion>1.2.5</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -82,12 +82,13 @@ Recommendation Logic:
 Compatibility:
 - Save Compatible: Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 - Multiplayer compatible.
-- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many, many others.
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many, many others.
 - Requires Harmony.
 
 Mod integrations (these will be used when installed, but are not requirements):
 - Vanilla Skills Expanded and Alpha Skills (expertise and passions are recommendation signals)
 - More Than Capable (hated work becomes an Awful recommendation signal and is flagged on assigned roles)
+- MultiFloors and "As above, so below" (floors on single tile treated as single location)
 - Colony Groups (your pawn groups appear as a grouping option for the colonist table)
 
 Known Incompatible:
