@@ -9,31 +9,100 @@ namespace EPrimeReadouts.UI
     /// Right panel: the selected group rendered by the layout engine in editor
     /// mode (stacked rows, one per tier). The engine produces the same geometry
     /// as the in-game band so each row looks identical to the readout at that
-    /// tier. Below the band: rename row, then — when a slot is selected — an
-    /// Options section with show-when-zero and threshold controls.
+    /// tier. Below the band — when a slot is selected — an Options section with
+    /// show-when-zero and threshold controls.
     public sealed class EditorView
     {
-        private const float NameRowH = 28f;
+        private const float PencilW = 18f;
+        private const float PencilH = 18f;
 
-        private string nameBuffer;
-        private int nameForGroupId = -1;
+        // Caching fields (NeedsRebuild pattern)
+        private int builtVersion = -1;
+        private int builtGroupId = -1;
+        private float builtWidth = -1f;
+        private long builtFingerprint;
+        private int lastCountsCheckFrame = -1000;
+        private int builtPoolsSnapshotVersion = -1;
+
+        // Cached draw models: one per tier depth
+        private List<(RenderModel model, DrawModel draw)> cachedBands;
+        private float cachedBandsHeight; // total height of all tier bands + gaps
+
+        // Cached name width (rebuilt alongside bands or when group changes)
+        private float cachedNameWidth = -1f;
+        private int cachedNameGroupId = -1;
+
+        // Options fields
         private int lowValue;
         private string lowBuffer = "0";
         private int criticalValue;
         private string criticalBuffer = "0";
 
+        // Cached display name for the Options section — resolved at select time
+        private string selectedDisplayName;
+
+        // Tracks external selection changes (e.g. the resource tree selecting a
+        // freshly added token) so buffers/display name re-derive exactly once.
+        private string lastSyncedCanonical;
+
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
             var settings = EPrimeReadoutsMod.Settings;
+            var store = ReadoutStore.Current;
+            if (store == null) return;
 
-            // Section header with fold toggle
+            var group = owner.SelectedGroup;
+
+            if (owner.selectedCanonical != lastSyncedCanonical)
+            {
+                if (owner.selectedCanonical != null)
+                    Select(owner.selectedCanonical, owner);
+                lastSyncedCanonical = owner.selectedCanonical;
+            }
+
+            // --- Rebuild cached band models and name width when needed ---
+            if (group != null && NeedsRebuild(store, group.Id, rect.width, owner.poolsSnapshotVersion))
+                Rebuild(store, group, rect.width, owner);
+
+            // --- Section header: group name with rename pencil ---
+            // Measure cached name width (update when group changes)
             bool folded = settings.helpEditorFolded;
+            string headerLabel = group != null ? group.Name : "EPR.Editor".Translate();
+
+            // Cache name width alongside rebuild gate (only per group change, not per frame)
+            if (group != null && (cachedNameGroupId != group.Id || cachedNameWidth < 0f))
+            {
+                Text.Font = GameFont.Small;
+                cachedNameWidth = Text.CalcSize(group.Name).x;
+                cachedNameGroupId = group.Id;
+            }
+
+            // Pencil sits right of the name text; SectionHeader clickable region shrinks to
+            // name width + small padding so the pencil does not trigger the fold toggle.
+            float pencilX = group != null
+                ? Mathf.Min(rect.x + cachedNameWidth + 6f, rect.xMax - PencilW - 2f)
+                : rect.xMax; // no pencil
+            float clickableW = group != null ? (pencilX - rect.x) : rect.width;
+
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                "EPR.Editor".Translate(), "EPR.HelpEditor".Translate(), ref folded);
+                headerLabel, "EPR.HelpEditor".Translate(), ref folded, clickableW);
             if (folded != settings.helpEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpEditorFolded = folded);
 
-            var group = owner.SelectedGroup;
+            // Draw rename pencil (handled before the invisible button above so it gets priority)
+            if (group != null)
+            {
+                var pencilRect = new Rect(pencilX, rect.y + 2f, PencilW, PencilH);
+                if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
+                {
+                    int capturedId = group.Id;
+                    string capturedName = group.Name;
+                    Find.WindowStack.Add(new Dialog_NameInput(
+                        "EPR.RenameGroup", capturedName,
+                        name => ReadoutCommands.RenameGroup(capturedId, name.Trim())));
+                }
+            }
+
             if (group == null)
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.5f);
@@ -45,20 +114,76 @@ namespace EPrimeReadouts.UI
 
             float y = rect.y + headerUsed;
 
-            // Rename row
-            DrawNameRow(new Rect(rect.x, y, rect.width, NameRowH), group, owner);
-            y += NameRowH + 6f;
+            // --- Draw cached band rows ---
+            int rowCount = cachedBands != null ? cachedBands.Count : 0;
+            float bandY = y;
+            for (int t = 0; t < rowCount; t++)
+            {
+                var (model, dm) = cachedBands[t];
+                float bandH = model.TotalHeight;
+                var bandRect = new Rect(rect.x, bandY, rect.width, bandH);
 
-            // --- Engine-rendered band rows (one per tier) ---
-            var store = ReadoutStore.Current;
-            if (store == null) return;
+                Widgets.BeginGroup(bandRect);
+                CellRenderer.Draw(dm);
+                HandleEditorInput(dm, model, group, store, owner, bandRect);
+                Widgets.EndGroup();
 
-            float availableW = rect.width;
-            var counts = Find.CurrentMap != null
-                ? GameCounts.Snapshot(Find.CurrentMap)
+                bandY += bandH;
+                if (t < rowCount - 1) bandY += LayoutMetrics.GroupGap;
+            }
+
+            y = bandY + 16f;
+
+            // --- Options section (only when a slot is selected and still in the group) ---
+            if (owner.selectedCanonical != null && IsStillInGroup(owner.selectedCanonical, group))
+            {
+                string optHeader = "EPR.OptionsFor".Translate(selectedDisplayName ?? owner.selectedCanonical);
+                bool dummy = false;
+                float optHeaderUsed = EprStyle.SectionHeader(rect.x, y, rect.width,
+                    optHeader, null, ref dummy);
+                y += optHeaderUsed;
+                DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y), group, owner);
+            }
+        }
+
+        private bool NeedsRebuild(ReadoutStore store, int groupId, float width, int poolsSnapshotVersion)
+        {
+            if (cachedBands == null) return true;
+            if (store.Version != builtVersion) return true;
+            if (groupId != builtGroupId) return true;
+            if (width != builtWidth) return true;
+            if (poolsSnapshotVersion != builtPoolsSnapshotVersion) return true;
+            // Throttled counts fingerprint check (~every 30 frames)
+            if (Time.frameCount - lastCountsCheckFrame >= 30)
+            {
+                lastCountsCheckFrame = Time.frameCount;
+                var map = Find.CurrentMap;
+                long fp = map != null ? GameCounts.Fingerprint(map, store) : 0L;
+                if (fp != builtFingerprint) return true;
+            }
+            return false;
+        }
+
+        private void Rebuild(ReadoutStore store, ReadoutGroup group, float width, Dialog_ReadoutConfig owner)
+        {
+            builtVersion = store.Version;
+            builtGroupId = group.Id;
+            builtWidth = width;
+            builtPoolsSnapshotVersion = owner.poolsSnapshotVersion;
+            lastCountsCheckFrame = Time.frameCount;
+
+            var map = Find.CurrentMap;
+            var counts = map != null
+                ? GameCounts.Snapshot(map, store)
                 : new Dictionary<string, int>();
+            builtFingerprint = map != null ? GameCounts.Fingerprint(map, store) : 0L;
+
+            // Use the shared pools snapshot from the dialog
+            var pools = owner.PoolsSnapshot;
 
             int rowCount = EditorBand.MaxDepth(group.Tiers);
+            cachedBands = new List<(RenderModel, DrawModel)>(rowCount);
+            float totalH = 0f;
             for (int t = 1; t <= rowCount; t++)
             {
                 int capturedTier = t;
@@ -69,35 +194,17 @@ namespace EPrimeReadouts.UI
                     DepthOf = g => capturedTier,
                     Counts = counts,
                     Thresholds = store.Model.Thresholds,
-                    Width = availableW,
+                    Width = width,
                     Catalog = GameResourceCatalog.Instance,
+                    Pools = pools,
                 };
                 var model = ReadoutLayoutEngine.Build(input);
                 var dm = DrawModel.Resolve(model);
-
-                float bandH = model.TotalHeight;
-                var bandRect = new Rect(rect.x, y, availableW, bandH);
-
-                Widgets.BeginGroup(bandRect);
-                CellRenderer.Draw(dm);
-                HandleEditorInput(dm, model, group, store, owner, bandRect);
-                Widgets.EndGroup();
-
-                y += bandH;
-                if (t < rowCount) y += LayoutMetrics.GroupGap;
+                cachedBands.Add((model, dm));
+                totalH += model.TotalHeight;
+                if (t < rowCount) totalH += LayoutMetrics.GroupGap;
             }
-
-            y += 16f;
-
-            // --- Options section (only when a slot is selected and still in the group) ---
-            if (owner.selectedCanonical != null && IsStillInGroup(owner.selectedCanonical, group))
-            {
-                bool dummy = false;
-                float optHeaderUsed = EprStyle.SectionHeader(rect.x, y, rect.width,
-                    "EPR.Options".Translate(), null, ref dummy);
-                y += optHeaderUsed;
-                DrawThresholdRow(new Rect(rect.x, y, rect.width, rect.yMax - y), group, owner);
-            }
+            cachedBandsHeight = totalH;
         }
 
         private void HandleEditorInput(DrawModel dm, RenderModel model,
@@ -127,7 +234,13 @@ namespace EPrimeReadouts.UI
                         Widgets.DrawHighlight(cellRect);
                         // Determine label for tooltip
                         string tipLabel;
-                        if (SlotToken.IsPool(token))
+                        if (SlotToken.IsPoolRef(token))
+                        {
+                            int poolId = SlotToken.PoolId(token);
+                            var pool = store.Model.PoolById(poolId);
+                            tipLabel = pool != null ? pool.Name : token;
+                        }
+                        else if (SlotToken.IsPool(token))
                             tipLabel = GameResourceCatalog.Instance.CategoryLabelOf(
                                 SlotToken.MemberName(token)).CapitalizeFirst();
                         else
@@ -249,24 +362,10 @@ namespace EPrimeReadouts.UI
             return false;
         }
 
-        private void DrawNameRow(Rect rect, ReadoutGroup group, Dialog_ReadoutConfig owner)
-        {
-            if (nameForGroupId != group.Id)
-            {
-                nameBuffer = group.Name;
-                nameForGroupId = group.Id;
-                owner.selectedCanonical = null;
-            }
-            nameBuffer = Widgets.TextField(new Rect(rect.x, rect.y, rect.width - 84f, 24f), nameBuffer);
-            if (nameBuffer.Trim() != group.Name
-                && Widgets.ButtonText(new Rect(rect.xMax - 80f, rect.y, 80f, 24f),
-                    "EPR.Rename".Translate()))
-                ReadoutCommands.RenameGroup(group.Id, nameBuffer.Trim());
-        }
-
         private void Select(string canonical, Dialog_ReadoutConfig owner)
         {
             owner.selectedCanonical = canonical;
+            lastSyncedCanonical = canonical;
             var store = ReadoutStore.Current;
             if (store != null && store.Model.Thresholds.TryGetValue(canonical, out var spec))
             {
@@ -280,37 +379,36 @@ namespace EPrimeReadouts.UI
             }
             lowBuffer = lowValue.ToString();
             criticalBuffer = criticalValue.ToString();
-        }
 
-        private void DrawThresholdRow(Rect rect, ReadoutGroup group, Dialog_ReadoutConfig owner)
-        {
-            if (owner.selectedCanonical == null) return;
-            bool isPool = SlotToken.IsPool(owner.selectedCanonical);
-            string memberName = SlotToken.MemberName(owner.selectedCanonical);
-            string label;
-            if (isPool)
+            // Resolve display name at select time (cached — not per frame)
+            bool isPoolRef = SlotToken.IsPoolRef(canonical);
+            bool isPool = SlotToken.IsPool(canonical);
+            if (isPoolRef)
             {
-                label = GameResourceCatalog.Instance.CategoryLabelOf(memberName).CapitalizeFirst();
+                int poolId = SlotToken.PoolId(canonical);
+                var pool = store?.Model.PoolById(poolId);
+                selectedDisplayName = pool != null ? pool.Name : canonical;
+            }
+            else if (isPool)
+            {
+                string memberName = SlotToken.MemberName(canonical);
+                selectedDisplayName = GameResourceCatalog.Instance.CategoryLabelOf(memberName).CapitalizeFirst();
             }
             else
             {
+                string memberName = SlotToken.MemberName(canonical);
                 var def = DefDatabase<ThingDef>.GetNamedSilentFail(memberName);
-                if (def == null) return;
-                label = def.LabelCap;
+                selectedDisplayName = def != null ? (string)def.LabelCap : canonical;
             }
+        }
+
+        private void DrawOptionsBody(Rect rect, ReadoutGroup group, Dialog_ReadoutConfig owner)
+        {
+            if (owner.selectedCanonical == null) return;
 
             float y = rect.y;
 
-            // Line 1: label
-            Text.Font = GameFont.Tiny;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rect.x, y, rect.width, 22f),
-                "EPR.Thresholds".Translate() + ": " + label);
-            Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
-            y += 24f;
-
-            // Line 2: show-when-zero checkbox
+            // Line 1: show-when-zero checkbox (width capped at 50% of panel)
             string storedToken = null;
             if (group != null)
             {
@@ -320,8 +418,9 @@ namespace EPrimeReadouts.UI
             }
             bool showWhenZero = storedToken == null || SlotToken.ShowWhenZero(storedToken);
             bool prevShow = showWhenZero;
+            float checkboxW = Mathf.Min(rect.width * 0.5f, rect.width);
             Widgets.CheckboxLabeled(
-                new Rect(rect.x, y, rect.width, 22f),
+                new Rect(rect.x, y, checkboxW, 22f),
                 "EPR.ShowWhenZero".Translate(), ref showWhenZero);
             if (showWhenZero != prevShow && storedToken != null)
             {
@@ -339,7 +438,16 @@ namespace EPrimeReadouts.UI
             }
             y += 24f;
 
-            // Line 3: low/critical/set/clear
+            // Line 2: threshold caption (Tiny, CaptionText style)
+            Text.Font = GameFont.Tiny;
+            GUI.color = EprStyle.CaptionText;
+            Widgets.Label(new Rect(rect.x, y, rect.width, 22f),
+                "EPR.ThresholdCaption".Translate());
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            y += 24f;
+
+            // Line 3: low/critical/set/clear (unchanged column alignment)
             Text.Font = GameFont.Tiny;
             Widgets.Label(new Rect(rect.x, y + 3f, 34f, 22f), "EPR.Low".Translate());
             Text.Font = GameFont.Small;
@@ -353,7 +461,13 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(new Rect(rect.x + 234f, y, 50f, 24f), "EPR.Set".Translate()))
                 ReadoutCommands.SetThreshold(owner.selectedCanonical, lowValue, criticalValue);
             if (Widgets.ButtonText(new Rect(rect.x + 288f, y, 56f, 24f), "EPR.Clear".Translate()))
+            {
                 ReadoutCommands.ClearThreshold(owner.selectedCanonical);
+                lowValue = 0;
+                criticalValue = 0;
+                lowBuffer = "0";
+                criticalBuffer = "0";
+            }
         }
     }
 }

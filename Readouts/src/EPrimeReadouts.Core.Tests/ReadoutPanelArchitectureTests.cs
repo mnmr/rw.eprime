@@ -23,7 +23,7 @@ public class ReadoutPanelArchitectureTests
     {
         string needs = Method(Source("UI", "ReadoutPanel.cs"), "private static bool NeedsRebuild(");
         await Assert.That(needs).Contains("Time.frameCount - lastCountsCheckFrame >= 30");
-        await Assert.That(needs).Contains("GameCounts.Fingerprint(map)");
+        await Assert.That(needs).Contains("GameCounts.Fingerprint(map, store)");
     }
 
     [Test]

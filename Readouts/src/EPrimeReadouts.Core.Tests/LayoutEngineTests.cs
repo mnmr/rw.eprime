@@ -245,6 +245,28 @@ public class LayoutEngineTests
     }
 
     [Test]
+    public async Task CounterTextUsesCompactFormatAbove10000()
+    {
+        // A slot with count 12786 must display "12.8k" (not "12786")
+        var input = new LayoutInput
+        {
+            Groups = new List<ReadoutGroup> { Group(1, new[] { "Steel" }) },
+            Counts = StaticResources.Counts(("Steel", 12786)),
+            Thresholds = new Dictionary<string, ThresholdSpec>(),
+            Catalog = StaticResources.Catalog(),
+            Width = 140f,
+        };
+        var model = ReadoutLayoutEngine.Build(input);
+        var counters = CellsOf(model, CellKind.Counter);
+        await Assert.That(counters.Count).IsEqualTo(1);
+        await Assert.That(counters[0].Text).IsEqualTo("12.8k");
+        // The RAW count must survive on both cells — tooltips read it from the
+        // cell, never by parsing the compact display text.
+        await Assert.That(counters[0].Count).IsEqualTo(12786);
+        await Assert.That(CellsOf(model, CellKind.Icon)[0].Count).IsEqualTo(12786);
+    }
+
+    [Test]
     public async Task TotalWidthCoversWidestContainer()
     {
         // Two groups: 1 slot and 5 slots at Width=140.

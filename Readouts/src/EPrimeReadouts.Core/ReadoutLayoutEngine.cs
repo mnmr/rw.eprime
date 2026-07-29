@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 
 namespace EPrimeReadouts.Core
 {
@@ -15,6 +14,8 @@ namespace EPrimeReadouts.Core
         public float Width = 140f;
         public IResourceCatalog Catalog;
         public bool EditorMode;
+        /// Pool snapshot built at rebuild time; null treated as empty.
+        public PoolSnapshot Pools;
     }
 
     /// Builds the panel's complete draw plan from pure inputs. Runs only when
@@ -31,6 +32,8 @@ namespace EPrimeReadouts.Core
             public string Token;
             public List<string> Members;  // def members (1+ entries)
             public int Sum;
+            public string IconDefName;    // icon defName (pool snapshot icon for #tokens; first member otherwise)
+            public string HighlightName;  // pool name (for #tokens) or null (use member labels for @tokens)
         }
 
         // Content inset: X is stripe + pad, Y is GroupPadY.
@@ -82,6 +85,73 @@ namespace EPrimeReadouts.Core
             return model;
         }
 
+        /// Resolves a token to its members list, icon defName, highlight name, and count sum.
+        /// Returns true when the token is resolvable (has ≥1 member), unless editorMode is true
+        /// in which case pool-ref tokens with zero members are still included.
+        private static bool ResolveToken(string token, LayoutInput input, bool editorMode,
+            out List<string> members, out string iconDefName, out string highlightName, out int sum)
+        {
+            members = null;
+            iconDefName = null;
+            highlightName = null;
+            sum = 0;
+
+            if (SlotToken.IsPoolRef(token))
+            {
+                // First-class pool reference: #poolId
+                int poolId = SlotToken.PoolId(token);
+                var pools = input.Pools;
+                if (pools == null || !pools.TryGet(poolId, out var poolMembers, out var poolIcon, out var poolName))
+                {
+                    // Unknown pool: skip in normal mode; in editor mode return an empty slot
+                    if (!editorMode) return false;
+                    members = new List<string>();
+                    iconDefName = null;
+                    highlightName = null;
+                    sum = 0;
+                    return true;
+                }
+                // Known pool
+                if (poolMembers.Count == 0)
+                {
+                    // Zero members: skip in normal mode; in editor mode include with empty list
+                    if (!editorMode) return false;
+                    members = new List<string>();
+                    iconDefName = poolIcon; // may be null
+                    highlightName = poolName;
+                    sum = 0;
+                    return true;
+                }
+                members = new List<string>(poolMembers);
+                iconDefName = poolIcon;
+                highlightName = poolName;
+                foreach (var m in members) { input.Counts.TryGetValue(m, out int c); sum += c; }
+                return true;
+            }
+            else if (SlotToken.IsPool(token))
+            {
+                // Legacy @Category token
+                var cats = input.Catalog.CountedDefsIn(SlotToken.MemberName(token));
+                if (cats.Count == 0) return false;
+                members = new List<string>(cats);
+                iconDefName = members[0];
+                highlightName = null; // use member labels for legacy pools
+                foreach (var m in members) { input.Counts.TryGetValue(m, out int c); sum += c; }
+                return true;
+            }
+            else
+            {
+                // Plain defName
+                string defName = SlotToken.MemberName(token);
+                if (!input.Catalog.Exists(defName)) return false;
+                members = new List<string> { defName };
+                iconDefName = defName;
+                highlightName = null;
+                input.Counts.TryGetValue(defName, out sum);
+                return true;
+            }
+        }
+
         private static void CollectVisible(ReadoutGroup group, LayoutInput input,
             List<ResolvedSlot> into)
         {
@@ -90,29 +160,9 @@ namespace EPrimeReadouts.Core
             {
                 foreach (var token in group.Tiers[t])
                 {
-                    // Resolve members
-                    var members = new List<string>();
-                    if (SlotToken.IsPool(token))
-                    {
-                        var cats = input.Catalog.CountedDefsIn(SlotToken.MemberName(token));
-                        foreach (var m in cats) members.Add(m);
-                    }
-                    else
-                    {
-                        string defName = SlotToken.MemberName(token);
-                        if (input.Catalog.Exists(defName)) members.Add(defName);
-                    }
-
-                    // Skip tokens with zero members (unknown def / empty category)
-                    if (members.Count == 0) continue;
-
-                    // Sum counts
-                    int sum = 0;
-                    foreach (var m in members)
-                    {
-                        input.Counts.TryGetValue(m, out int c);
-                        sum += c;
-                    }
+                    if (!ResolveToken(token, input, editorMode: false,
+                        out var members, out var iconDefName, out var highlightName, out int sum))
+                        continue;
 
                     // Visibility check
                     string canonical = SlotToken.Canonical(token);
@@ -121,7 +171,14 @@ namespace EPrimeReadouts.Core
                         || input.Thresholds.ContainsKey(canonical);
                     if (!visible) continue;
 
-                    into.Add(new ResolvedSlot { Token = token, Members = members, Sum = sum });
+                    into.Add(new ResolvedSlot
+                    {
+                        Token = token,
+                        Members = members,
+                        Sum = sum,
+                        IconDefName = iconDefName,
+                        HighlightName = highlightName,
+                    });
                 }
             }
         }
@@ -185,28 +242,42 @@ namespace EPrimeReadouts.Core
             for (int c = 0; c < slots.Count; c++)
             {
                 var slot = slots[c];
-                string firstMember = slot.Members[0];
+                // Icon defName: snapshot icon for pool refs, first member otherwise.
+                // May be null for empty pools in editor mode — cell still gets emitted.
+                string iconDefName = slot.IconDefName;
+                // For DefName on cells: use iconDefName (may be null for zero-member pools)
+                string cellDefName = iconDefName ?? (slot.Members.Count > 0 ? slot.Members[0] : null);
                 float x = insetX + LayoutMetrics.MarkerColW + c * LayoutMetrics.CellW;
                 var iconRect = new RectF(
                     x + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                     LayoutMetrics.IconSize, LayoutMetrics.IconSize);
 
-                // Highlight: any member label matches, or pool category label matches
+                // Highlight: pool name match (for #tokens) or any member label match
+                // or legacy @category label match
                 if (highlightMatches)
                 {
                     bool match = false;
-                    foreach (var m in slot.Members)
-                        if (SearchMatcher.Matches(input.Catalog.LabelOf(m), input.SearchText))
-                        { match = true; break; }
-                    if (!match && SlotToken.IsPool(slot.Token))
-                        match = SearchMatcher.Matches(
-                            input.Catalog.CategoryLabelOf(SlotToken.MemberName(slot.Token)),
-                            input.SearchText);
+                    if (slot.HighlightName != null)
+                    {
+                        // #poolId: match pool name
+                        match = SearchMatcher.Matches(slot.HighlightName, input.SearchText);
+                    }
+                    else
+                    {
+                        // Plain def or @category: match member labels
+                        foreach (var m in slot.Members)
+                            if (SearchMatcher.Matches(input.Catalog.LabelOf(m), input.SearchText))
+                            { match = true; break; }
+                        if (!match && SlotToken.IsPool(slot.Token))
+                            match = SearchMatcher.Matches(
+                                input.Catalog.CategoryLabelOf(SlotToken.MemberName(slot.Token)),
+                                input.SearchText);
+                    }
                     if (match)
                         model.Cells.Add(new RenderCell
                         {
                             Kind = CellKind.Highlight,
-                            DefName = firstMember,
+                            DefName = cellDefName,
                             Token = slot.Token,
                             Rect = iconRect,
                         });
@@ -215,8 +286,9 @@ namespace EPrimeReadouts.Core
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Icon,
-                    DefName = firstMember,
+                    DefName = cellDefName,
                     Token = slot.Token,
+                    Count = slot.Sum,
                     Rect = iconRect,
                 });
 
@@ -224,9 +296,10 @@ namespace EPrimeReadouts.Core
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Counter,
-                    DefName = firstMember,
+                    DefName = cellDefName,
                     Token = slot.Token,
-                    Text = slot.Sum.ToString(CultureInfo.InvariantCulture),
+                    Count = slot.Sum,
+                    Text = CountFormat.Compact(slot.Sum),
                     Band = input.Thresholds.TryGetValue(canonical, out var spec)
                         ? ThresholdBands.For(slot.Sum, spec) : Band.Normal,
                     Rect = new RectF(x, y + LayoutMetrics.IconRowH,
@@ -244,8 +317,9 @@ namespace EPrimeReadouts.Core
             int depth = EditorBand.ClampDepth(tiers, input.DepthOf(group));
             int tierIndex = depth - 1;
             int tokenCount = tierIndex < tiers.Count ? tiers[tierIndex].Count : 0;
-            // tokens + 1 empty slot
-            float contentW = (tokenCount + 1) * LayoutMetrics.CellW;
+            // tokens + 1 empty slot (omitted when tier is at cap)
+            bool atCap = tokenCount >= TierOps.MaxSlotsPerTier;
+            float contentW = (tokenCount + (atCap ? 0 : 1)) * LayoutMetrics.CellW;
             return LayoutMetrics.StripeW + LayoutMetrics.GroupPadX
                    + LayoutMetrics.MarkerColW + contentW + LayoutMetrics.GroupPadX;
         }
@@ -305,26 +379,14 @@ namespace EPrimeReadouts.Core
             for (int s = 0; s < tokenCount; s++)
             {
                 string token = tierTokens[s];
-                // Resolve members; skip if not in catalog (advance colX regardless)
-                List<string> members = null;
-                if (SlotToken.IsPool(token))
-                {
-                    var cats = input.Catalog.CountedDefsIn(SlotToken.MemberName(token));
-                    if (cats.Count > 0)
-                    {
-                        members = new List<string>();
-                        foreach (var m in cats) members.Add(m);
-                    }
-                }
-                else
-                {
-                    string defName = SlotToken.MemberName(token);
-                    if (input.Catalog.Exists(defName))
-                        members = new List<string> { defName };
-                }
-                if (members == null || members.Count == 0) { colX += LayoutMetrics.CellW; continue; }
+                // Resolve token in editor mode — pool refs with zero/no members still emit cells
+                bool resolved = ResolveToken(token, input, editorMode: true,
+                    out var members, out var iconDefName, out _, out int sum);
+                if (!resolved) { colX += LayoutMetrics.CellW; continue; }
 
-                string firstMember = members[0];
+                // cellDefName may be null for zero-member pools in editor (icon cell still occupies column)
+                string cellDefName = iconDefName ?? (members.Count > 0 ? members[0] : null);
+
                 var iconRect = new RectF(
                     colX + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
                     LayoutMetrics.IconSize, LayoutMetrics.IconSize);
@@ -332,24 +394,24 @@ namespace EPrimeReadouts.Core
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Icon,
-                    DefName = firstMember,
+                    DefName = cellDefName,
                     Token = token,
                     Tier = t,
                     Slot = s,
+                    Count = sum,
                     Rect = iconRect,
                 });
 
-                int sum = 0;
-                foreach (var m in members) { input.Counts.TryGetValue(m, out int c); sum += c; }
                 string canonical = SlotToken.Canonical(token);
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Counter,
-                    DefName = firstMember,
+                    DefName = cellDefName,
                     Token = token,
                     Tier = t,
                     Slot = s,
-                    Text = sum.ToString(CultureInfo.InvariantCulture),
+                    Count = sum,
+                    Text = CountFormat.Compact(sum),
                     Band = input.Thresholds.TryGetValue(canonical, out var spec)
                         ? ThresholdBands.For(sum, spec) : Band.Normal,
                     Rect = new RectF(colX, insetY + LayoutMetrics.IconRowH,
@@ -359,17 +421,20 @@ namespace EPrimeReadouts.Core
                 colX += LayoutMetrics.CellW;
             }
 
-            // One trailing EmptySlot (append position = tokenCount)
-            var emptyRect = new RectF(
-                colX + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
-                LayoutMetrics.IconSize, LayoutMetrics.IconSize);
-            model.Cells.Add(new RenderCell
+            // One trailing EmptySlot (append position = tokenCount) — omitted when tier is at cap
+            if (tokenCount < TierOps.MaxSlotsPerTier)
             {
-                Kind = CellKind.EmptySlot,
-                Tier = t,
-                Slot = tokenCount,
-                Rect = emptyRect,
-            });
+                var emptyRect = new RectF(
+                    colX + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
+                    LayoutMetrics.IconSize, LayoutMetrics.IconSize);
+                model.Cells.Add(new RenderCell
+                {
+                    Kind = CellKind.EmptySlot,
+                    Tier = t,
+                    Slot = tokenCount,
+                    Rect = emptyRect,
+                });
+            }
 
             return yTop + containerH;
         }
@@ -431,14 +496,15 @@ namespace EPrimeReadouts.Core
                     var iconRect = new RectF(
                         x + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                         LayoutMetrics.IconSize, LayoutMetrics.IconSize);
-                    model.Cells.Add(new RenderCell
-                        { Kind = CellKind.Icon, DefName = defName, Rect = iconRect });
                     input.Counts.TryGetValue(defName, out int count);
+                    model.Cells.Add(new RenderCell
+                        { Kind = CellKind.Icon, DefName = defName, Count = count, Rect = iconRect });
                     model.Cells.Add(new RenderCell
                     {
                         Kind = CellKind.Counter,
                         DefName = defName,
-                        Text = count.ToString(CultureInfo.InvariantCulture),
+                        Count = count,
+                        Text = CountFormat.Compact(count),
                         Band = input.Thresholds.TryGetValue(defName, out var spec)
                             ? ThresholdBands.For(count, spec) : Band.Normal,
                         Rect = new RectF(x, y + LayoutMetrics.IconRowH,

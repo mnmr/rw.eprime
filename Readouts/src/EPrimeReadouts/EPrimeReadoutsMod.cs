@@ -9,16 +9,25 @@ namespace EPrimeReadouts
     {
         public static ReadoutSettings Settings;
 
+        /// The mod's content pack — used to locate shipped data files (Seed/).
+        public static ModContentPack ContentPack;
+
         public EPrimeReadoutsMod(ModContentPack content) : base(content)
         {
             Settings = GetSettings<ReadoutSettings>();
+            ContentPack = content;
             new Harmony("mnmr.eprimereadouts").PatchAll();
         }
 
+        /// Applies a settings change and writes to disk — deferred while any
+        /// Scribe operation is active, because ModSettings.Write() spins up
+        /// its own ScribeSaver and vanilla force-stops whatever load/save is
+        /// in flight when that happens.
         public static void Persist(Action<ReadoutSettings> change)
         {
             change(Settings);
-            Settings.Write();
+            if (Scribe.mode == LoadSaveMode.Inactive) Settings.Write();
+            else LongEventHandler.ExecuteWhenFinished(Settings.Write);
         }
 
         public override string SettingsCategory() => "EPrime's Readouts";

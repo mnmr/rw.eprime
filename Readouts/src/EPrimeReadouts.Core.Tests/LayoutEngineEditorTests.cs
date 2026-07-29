@@ -288,4 +288,74 @@ public class LayoutEngineEditorTests
         await Assert.That(model.MarkerHits.Count).IsEqualTo(1);
         await Assert.That(model.MarkerHits[0].GroupId).IsEqualTo(1);
     }
+
+    // -----------------------------------------------------------------------
+    // Empty-slot suppression at cap (MaxSlotsPerTier = 8)
+
+    private static ReadoutGroup FullTierGroup(int id)
+    {
+        // Build a group whose first tier has exactly MaxSlotsPerTier tokens
+        string[] tokens = Enumerable.Range(1, TierOps.MaxSlotsPerTier).Select(i => "Def" + i).ToArray();
+        return Group(id, tokens);
+    }
+
+    private static LayoutInput EditorInputWithCatalog(ReadoutGroup group)
+    {
+        // Build a catalog that recognises all DefN tokens
+        var catalogEntries = Enumerable.Range(1, TierOps.MaxSlotsPerTier)
+            .Select(i => "Def" + i).ToArray();
+        var counts = catalogEntries.Select(d => (d, 1)).ToArray();
+        return new LayoutInput
+        {
+            Groups = new List<ReadoutGroup> { group },
+            Counts = StaticResources.Counts(counts),
+            Thresholds = new Dictionary<string, ThresholdSpec>(),
+            Catalog = StaticResources.CatalogWith(catalogEntries),
+            Width = 600f,
+            EditorMode = true,
+        };
+    }
+
+    [Test]
+    public async Task FullTierHasNoEmptySlot()
+    {
+        // A tier with 8 tokens must produce 8 Icon cells and zero EmptySlot cells.
+        var group = FullTierGroup(1);
+        var input = EditorInputWithCatalog(group);
+        var model = ReadoutLayoutEngine.Build(input);
+
+        var icons = CellsOf(model, CellKind.Icon);
+        await Assert.That(icons.Count).IsEqualTo(TierOps.MaxSlotsPerTier);
+
+        var empties = CellsOf(model, CellKind.EmptySlot);
+        await Assert.That(empties.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task SevenTokensStillGetEmptySlot()
+    {
+        // A tier with 7 tokens (one below cap) must still produce the trailing EmptySlot.
+        int count = TierOps.MaxSlotsPerTier - 1;
+        string[] tokens = Enumerable.Range(1, count).Select(i => "Def" + i).ToArray();
+        var group = Group(1, tokens);
+        var catalogEntries = tokens;
+        var inputCounts = catalogEntries.Select(d => (d, 1)).ToArray();
+        var input = new LayoutInput
+        {
+            Groups = new List<ReadoutGroup> { group },
+            Counts = StaticResources.Counts(inputCounts),
+            Thresholds = new Dictionary<string, ThresholdSpec>(),
+            Catalog = StaticResources.CatalogWith(catalogEntries),
+            Width = 600f,
+            EditorMode = true,
+        };
+        var model = ReadoutLayoutEngine.Build(input);
+
+        var icons = CellsOf(model, CellKind.Icon);
+        await Assert.That(icons.Count).IsEqualTo(count);
+
+        var empties = CellsOf(model, CellKind.EmptySlot);
+        await Assert.That(empties.Count).IsEqualTo(1);
+        await Assert.That(empties[0].Slot).IsEqualTo(count);
+    }
 }

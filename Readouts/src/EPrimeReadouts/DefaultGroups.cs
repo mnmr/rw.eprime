@@ -1,22 +1,65 @@
 using System.Collections.Generic;
+using System.IO;
 using EPrimeReadouts.Core;
+using Verse;
 
 namespace EPrimeReadouts
 {
-    /// Curated first-run groups covering all vanilla + official-DLC counted
-    /// resources. Slot tokens may be plain defNames or "@CategoryDefName" pool
-    /// tokens (pools expand dynamically at display time). DefNames missing from
-    /// the current mod list are skipped at seed time; pool tokens are skipped
-    /// when their category contains zero counted defs. Groups that end up empty
-    /// are not created. Deterministic, so MP clients seed identically.
-    /// All seeded groups have DefaultEnabled = true (the ReadoutGroup default),
-    /// so the readout mirrors vanilla out of the box. Future pre-made "extra"
-    /// groups that should be opt-in can pass DefaultEnabled = false after creation.
+    /// Default pools + groups seeded into new saves (and via Restore Defaults).
+    /// The authoritative definitions ship as Seed/Readouts.xml in the mod
+    /// folder — the same format Import/Export uses — curated in-game and
+    /// exported. The programmatic tables below are only the fallback when the
+    /// file is missing or unparsable. Both paths are deterministic functions
+    /// of the shipped data + installed defs, so MP clients seed identically.
     public static class DefaultGroups
     {
-        // Curated in-game (extracted from a live save 2026-07-21); '~' entries
-        // are hidden while their count is zero.
-        private static readonly (string name, string[][] tiers)[] Seeds =
+        public static void Seed(ReadoutStore store)
+        {
+            if (TrySeedFromFile(store)) return;
+            SeedFallback(store);
+        }
+
+        private static bool TrySeedFromFile(ReadoutStore store)
+        {
+            try
+            {
+                string root = EPrimeReadoutsMod.ContentPack?.RootDir;
+                if (string.IsNullOrEmpty(root)) return false;
+                string path = Path.Combine(root, "Seed", "Readouts.xml");
+                if (!File.Exists(path)) return false;
+                string xml = File.ReadAllText(path);
+                if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out string error))
+                {
+                    Log.Warning("[EPrimeReadouts] Seed/Readouts.xml invalid (" + error
+                        + "); falling back to built-in defaults.");
+                    return false;
+                }
+                store.Model.ApplyImport(pools, groups, store.TakePoolId, store.TakeGroupId);
+                return true;
+            }
+            catch (System.Exception e)
+            {
+                Log.Warning("[EPrimeReadouts] Failed reading Seed/Readouts.xml ("
+                    + e.Message + "); falling back to built-in defaults.");
+                return false;
+            }
+        }
+
+        // Fixed pool seed order → deterministic ids
+        private static readonly (string name, string catRef)[] PoolSeeds =
+        {
+            ("Meats",           "@MeatRaw"),
+            ("Plant food",      "@PlantFoodRaw"),
+            ("Eggs",            "@EggsUnfertilized"),
+            ("Fertilized eggs", "@EggsFertilized"),
+            ("Leathers",        "@Leathers"),
+            ("Wools",           "@Wools"),
+            ("Stone blocks",    "@StoneBlocks"),
+        };
+
+        // Group seeds use pool name keys instead of @Category tokens.
+        // '~' prefix on pool name key = hide-when-zero on the resulting #id token.
+        private static readonly (string name, string[][] tiers)[] GroupSeeds =
         {
             ("Food", new[]
             {
@@ -26,8 +69,8 @@ namespace EPrimeReadouts
             }),
             ("Raw", new[]
             {
-                new[] { "@MeatRaw", "@PlantFoodRaw", "~@EggsUnfertilized", "~Milk" },
-                new[] { "~InsectJelly", "~@EggsFertilized" },
+                new[] { "pool:Meats", "pool:Plant food", "~pool:Eggs", "~Milk" },
+                new[] { "~InsectJelly", "~pool:Fertilized eggs" },
             }),
             ("Medicine", new[]
             {
@@ -42,14 +85,14 @@ namespace EPrimeReadouts
             }),
             ("Textiles", new[]
             {
-                new[] { "Cloth", "@Leathers", "@Wools" },
+                new[] { "Cloth", "pool:Leathers", "pool:Wools" },
                 new[] { "~DevilstrandCloth", "~Hyperweave", "~Synthread" },
             }),
             ("Materials", new[]
             {
                 new[] { "Steel", "WoodLog", "ComponentIndustrial" },
                 new[] { "Plasteel", "ComponentSpacer", "Uranium", "Chemfuel" },
-                new[] { "@StoneBlocks", "Bioferrite", "Obsidian" },
+                new[] { "pool:Stone blocks", "Bioferrite", "Obsidian" },
             }),
             ("Wealth", new[]
             {
@@ -57,9 +100,24 @@ namespace EPrimeReadouts
             }),
         };
 
-        public static void Seed(ReadoutStore store)
+        private static void SeedFallback(ReadoutStore store)
         {
-            foreach (var (name, tiers) in Seeds)
+            // 1. Seed pools first, recording name→id map
+            var poolIdByName = new Dictionary<string, int>();
+            foreach (var (name, catRef) in PoolSeeds)
+            {
+                string catDefName = catRef.Substring(1); // strip '@'
+                // Only create pool when category resolves AND has ≥1 counted def
+                var members = GameResourceCatalog.Instance.CountedDefsIn(catDefName);
+                if (members.Count == 0) continue;
+                int poolId = store.TakePoolId();
+                var pool = store.Model.CreatePool(poolId, name);
+                pool.Members.Add(catRef);
+                poolIdByName[name] = poolId;
+            }
+
+            // 2. Seed groups, resolving pool: references → #id tokens
+            foreach (var (name, tiers) in GroupSeeds)
             {
                 var layout = new List<List<string>>();
                 foreach (var tier in tiers)
@@ -67,10 +125,9 @@ namespace EPrimeReadouts
                     var kept = new List<string>();
                     foreach (var token in tier)
                     {
-                        bool valid = SlotToken.IsPool(token)
-                            ? GameResourceCatalog.Instance.CountedDefsIn(SlotToken.MemberName(token)).Count > 0
-                            : GameResourceCatalog.Instance.Exists(SlotToken.MemberName(token));
-                        if (valid) kept.Add(token);
+                        string resolved = ResolveGroupToken(token, poolIdByName);
+                        if (resolved == null) continue;
+                        kept.Add(resolved);
                     }
                     if (kept.Count > 0) layout.Add(kept);
                 }
@@ -78,6 +135,28 @@ namespace EPrimeReadouts
                 var group = store.Model.CreateGroup(store.TakeGroupId(), name);
                 store.Model.SetTiers(group.Id, layout);
             }
+        }
+
+        /// Resolves a group-seed token string:
+        ///   "pool:Name"  → "#id" (or "~#id" if prefixed with "~pool:")
+        ///   "~pool:Name" → "~#id"
+        ///   plain defName (or "~defName") → validated via catalog, returns as-is or null
+        private static string ResolveGroupToken(string token, Dictionary<string, int> poolIdByName)
+        {
+            bool hide = token.StartsWith("~");
+            string core = hide ? token.Substring(1) : token;
+
+            if (core.StartsWith("pool:"))
+            {
+                string poolName = core.Substring(5); // strip "pool:"
+                if (!poolIdByName.TryGetValue(poolName, out int poolId)) return null;
+                string poolToken = SlotToken.PoolToken(poolId);
+                return hide ? ("~" + poolToken) : poolToken;
+            }
+
+            // Plain defName: validate via catalog
+            bool valid = GameResourceCatalog.Instance.Exists(core);
+            return valid ? token : null;
         }
     }
 }

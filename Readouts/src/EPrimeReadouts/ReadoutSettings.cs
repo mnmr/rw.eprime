@@ -22,6 +22,10 @@ namespace EPrimeReadouts
         public bool helpGroupsFolded;
         public bool helpResourcesFolded;
         public bool helpEditorFolded;
+        public bool helpPoolsFolded;
+        public bool helpPoolEditorFolded;
+        public bool showSearchFilter = true;
+        public bool showModNameWhenNoSearch = true;
 
         public override void ExposeData()
         {
@@ -36,6 +40,10 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref helpGroupsFolded, "helpGroupsFolded", false);
             Scribe_Values.Look(ref helpResourcesFolded, "helpResourcesFolded", false);
             Scribe_Values.Look(ref helpEditorFolded, "helpEditorFolded", false);
+            Scribe_Values.Look(ref helpPoolsFolded, "helpPoolsFolded", false);
+            Scribe_Values.Look(ref helpPoolEditorFolded, "helpPoolEditorFolded", false);
+            Scribe_Values.Look(ref showSearchFilter, "showSearchFilter", true);
+            Scribe_Values.Look(ref showModNameWhenNoSearch, "showModNameWhenNoSearch", true);
             Scribe_Collections.Look(ref tierDepths, "tierDepths", LookMode.Value, LookMode.Value);
             if (tierDepths == null) tierDepths = new Dictionary<string, int>();
             Scribe_Collections.Look(ref enabledGroups, "enabledGroups", LookMode.Value, LookMode.Value);

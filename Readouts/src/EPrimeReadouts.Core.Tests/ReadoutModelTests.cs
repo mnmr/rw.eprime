@@ -91,7 +91,7 @@ public class ReadoutModelTests
         model.SetTiers(1, new List<List<string>> { new() { "Gone", "Steel" } });
         model.SetThreshold("Gone", 10, 2);
         model.SetThreshold("Steel", 100, 20);
-        model.CleanupMissing(d => d == "Steel");
+        model.CleanupMissing(d => d == "Steel", m => true);
         await Assert.That(string.Join(",", model.GroupById(1).Tiers[0])).IsEqualTo("Steel");
         await Assert.That(model.Thresholds.ContainsKey("Gone")).IsFalse();
         await Assert.That(model.Thresholds.ContainsKey("Steel")).IsTrue();

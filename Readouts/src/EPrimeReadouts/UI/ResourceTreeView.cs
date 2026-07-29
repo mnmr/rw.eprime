@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimWorld;
@@ -14,10 +13,13 @@ namespace EPrimeReadouts.UI
         private const float RowH = 24f;
         private const float FilterH = 28f;
 
+        /// Right-side width the dialog reserves in the header strip (toggle
+        /// button); the fold-clickable region shrinks to stay clear of it.
+        public float HeaderReservedRight;
+
         private Vector2 scroll;
         private string filter = "";
         private readonly HashSet<string> expanded = new HashSet<string>();
-        private List<ResourceTreeNode> roots;
         private List<TreeRow> rows;
         private int stamp;
         private int builtStamp = -1;
@@ -28,8 +30,11 @@ namespace EPrimeReadouts.UI
 
             // Section header with fold toggle
             bool folded = settings.helpResourcesFolded;
+            float clickableW = HeaderReservedRight > 0f
+                ? rect.width - HeaderReservedRight : -1f;
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                "EPR.Resources".Translate(), "EPR.HelpResources".Translate(), ref folded);
+                "EPR.Resources".Translate(), "EPR.HelpResources".Translate(), ref folded,
+                clickableW);
             if (folded != settings.helpResourcesFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpResourcesFolded = folded);
 
@@ -49,11 +54,13 @@ namespace EPrimeReadouts.UI
                 stamp++;
             }
 
-            EnsureRoots();
             EnsureRows();
 
-            var outRect = new Rect(rect.x, rect.y + headerUsed + FilterH, rect.width,
-                rect.height - headerUsed - FilterH);
+            // Guard against a squeezed-to-nothing panel (Calculate rejects a
+            // non-positive viewport extent).
+            float listH = rect.height - headerUsed - FilterH;
+            if (listH <= 0f) return;
+            var outRect = new Rect(rect.x, rect.y + headerUsed + FilterH, rect.width, listH);
             var viewRect = new Rect(0f, 0f, outRect.width - 16f, rows.Count * RowH);
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
             var visible = UniformViewportRange.Calculate(rows.Count, RowH, 0f, scroll.y, outRect.height);
@@ -70,7 +77,7 @@ namespace EPrimeReadouts.UI
                 var arrowRect = new Rect(x, rect.y + 3f, 18f, 18f);
                 GUI.DrawTexture(arrowRect, row.Expanded ? TexButton.Collapse : TexButton.Reveal);
 
-                // Check if category row should be tinted (selected slot is this pool or is in this category)
+                // Check if category row should be tinted (selected slot is in this category)
                 bool categoryTinted = IsCategoryTinted(row.Id, owner);
                 if (categoryTinted) GUI.color = EprStyle.SelectionTint;
                 Text.Anchor = TextAnchor.MiddleLeft;
@@ -78,75 +85,11 @@ namespace EPrimeReadouts.UI
                 Text.Anchor = TextAnchor.UpperLeft;
                 if (categoryTinted) GUI.color = Color.white;
 
-                if (row.Poolable)
+                // Plain browser: no pool copy-icon buttons; categories only expand/collapse.
+                if (Widgets.ButtonInvisible(rect))
                 {
-                    var catSelected = owner.SelectedGroup;
-                    var poolBtnRect = new Rect(rect.xMax - 20f, rect.y + 3f, 18f, 18f);
-                    string poolToken = "@" + row.Id;
-                    bool alreadyInGroup = catSelected != null
-                        && TierOps.Contains(catSelected.Tiers, poolToken);
-                    if (alreadyInGroup)
-                    {
-                        GUI.color = new Color(1f, 1f, 1f, 0.4f);
-                        GUI.DrawTexture(poolBtnRect, TexButton.Copy);
-                        GUI.color = Color.white;
-                        // Shift-click to remove
-                        if (catSelected != null
-                            && Event.current.type == EventType.MouseDown
-                            && Event.current.button == 0
-                            && Event.current.shift
-                            && poolBtnRect.Contains(Event.current.mousePosition))
-                        {
-                            var tiers = TierOps.Clone(catSelected.Tiers);
-                            if (TierOps.Remove(tiers, poolToken))
-                                ReadoutCommands.SetGroupLayout(catSelected.Id, TierBlobCodec.Encode(tiers));
-                            Event.current.Use();
-                        }
-                    }
-                    else
-                    {
-                        if (Mouse.IsOver(poolBtnRect))
-                            TooltipHandler.TipRegion(poolBtnRect, (TaggedString)"EPR.PoolTip".Translate());
-                        GUI.DrawTexture(poolBtnRect, TexButton.Copy);
-                        if (catSelected != null)
-                        {
-                            int controlId = GUIUtility.GetControlID(FocusType.Passive, poolBtnRect);
-                            EprDrag.ObserveSource(controlId, poolBtnRect);
-                            if (Event.current.type == EventType.MouseDown
-                                && Event.current.button == 0
-                                && !Event.current.shift
-                                && poolBtnRect.Contains(Event.current.mousePosition))
-                            {
-                                int groupId = catSelected.Id;
-                                string token = poolToken;
-                                EprDrag.OnPressToken(controlId, token, -1, -1, () =>
-                                {
-                                    var g = ReadoutStore.Current?.Model.GroupById(groupId);
-                                    if (g == null) return;
-                                    var tiers = TierOps.Clone(g.Tiers);
-                                    int tier = tiers.Count == 0 ? 0 : tiers.Count - 1;
-                                    if (TierOps.Add(tiers, token, tier, -1))
-                                        ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
-                                });
-                                Event.current.Use();
-                            }
-                        }
-                    }
-                    // Exclude pool button from expand/collapse clickable rect
-                    var clickableRect = new Rect(rect.x, rect.y, rect.width - 22f, rect.height);
-                    if (Widgets.ButtonInvisible(clickableRect))
-                    {
-                        if (!expanded.Remove(row.Id)) expanded.Add(row.Id);
-                        stamp++;
-                    }
-                }
-                else
-                {
-                    if (Widgets.ButtonInvisible(rect))
-                    {
-                        if (!expanded.Remove(row.Id)) expanded.Add(row.Id);
-                        stamp++;
-                    }
+                    if (!expanded.Remove(row.Id)) expanded.Add(row.Id);
+                    stamp++;
                 }
                 return;
             }
@@ -159,6 +102,15 @@ namespace EPrimeReadouts.UI
             // Selection tint on label when this row matches the selected slot
             bool rowTinted = IsResourceTinted(row.DefName, owner);
 
+            // Tint when def is a member of the selected pool (owner.selectedPoolId)
+            if (!rowTinted && owner.selectedPoolId >= 0 && owner.PoolsSnapshot != null)
+            {
+                owner.PoolsSnapshot.TryGet(owner.selectedPoolId, out var poolMembers, out _, out _);
+                if (poolMembers != null)
+                    for (int m = 0; m < poolMembers.Count; m++)
+                        if (poolMembers[m] == row.DefName) { rowTinted = true; break; }
+            }
+
             if (inGroup) GUI.color = new Color(1f, 1f, 1f, 0.4f);
             Widgets.ThingIcon(new Rect(x, rect.y + 2f, 20f, 20f), def);
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -169,18 +121,22 @@ namespace EPrimeReadouts.UI
 
             if (inGroup)
             {
-                GUI.DrawTexture(new Rect(rect.xMax - 20f, rect.y + 3f, 18f, 18f),
-                    Widgets.CheckboxOnTex);
-                // Shift-click to remove
+                var checkRect = new Rect(rect.xMax - 20f, rect.y + 3f, 18f, 18f);
+                GUI.DrawTexture(checkRect, Widgets.CheckboxOnTex);
+                // Remove via: shift-click anywhere on the row, right-click
+                // anywhere on the row, or a plain click on the checkmark.
                 if (selected != null
                     && Event.current.type == EventType.MouseDown
-                    && Event.current.button == 0
-                    && Event.current.shift
-                    && rect.Contains(Event.current.mousePosition))
+                    && rect.Contains(Event.current.mousePosition)
+                    && (Event.current.button == 1
+                        || (Event.current.button == 0
+                            && (Event.current.shift
+                                || checkRect.Contains(Event.current.mousePosition)))))
                 {
                     var tiers = TierOps.Clone(selected.Tiers);
                     if (TierOps.Remove(tiers, row.DefName))
                         ReadoutCommands.SetGroupLayout(selected.Id, TierBlobCodec.Encode(tiers));
+                    if (owner.selectedCanonical == row.DefName) owner.selectedCanonical = null;
                     Event.current.Use();
                 }
                 return;
@@ -203,7 +159,11 @@ namespace EPrimeReadouts.UI
                     var tiers = TierOps.Clone(g.Tiers);
                     int tier = tiers.Count == 0 ? 0 : tiers.Count - 1;
                     if (TierOps.Add(tiers, defName, tier, -1))
+                    {
                         ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
+                        // Auto-select the added resource so the Options panel opens.
+                        owner.selectedCanonical = defName;
+                    }
                 });
                 Event.current.Use();
             }
@@ -219,13 +179,11 @@ namespace EPrimeReadouts.UI
         }
 
         /// Returns true if a category row should receive a selection tint.
-        /// Tint when: selected canonical is a pool for this category, OR
-        /// selected canonical (non-pool member) is a counted def within this category.
+        /// Tint when: selected canonical (non-pool member) is a counted def within this category.
         private static bool IsCategoryTinted(string categoryId, Dialog_ReadoutConfig owner)
         {
             if (owner.selectedCanonical == null) return false;
-            if (SlotToken.IsPool(owner.selectedCanonical))
-                return categoryId == SlotToken.MemberName(owner.selectedCanonical);
+            if (SlotToken.IsPool(owner.selectedCanonical)) return false;
             string memberName = SlotToken.MemberName(owner.selectedCanonical);
             var members = GameResourceCatalog.Instance.CountedDefsIn(categoryId);
             for (int i = 0; i < members.Count; i++)
@@ -233,39 +191,9 @@ namespace EPrimeReadouts.UI
             return false;
         }
 
-        private void EnsureRoots()
-        {
-            if (roots != null) return;
-            roots = new List<ResourceTreeNode>();
-            // Take ALL resourceReadoutRoot categories as top-level roots (vanilla semantics).
-            // Child recursion in BuildNode skips children where child.resourceReadoutRoot
-            // (matching vanilla Listing_ResourceReadout.DoCategoryChildren line 61).
-            foreach (var category in DefDatabase<ThingCategoryDef>.AllDefs)
-                if (category.resourceReadoutRoot)
-                    roots.Add(BuildNode(category));
-        }
-
-        private static ResourceTreeNode BuildNode(ThingCategoryDef category)
-        {
-            var node = new ResourceTreeNode { Id = category.defName, Label = category.LabelCap };
-            foreach (var child in category.childCategories)
-            {
-                // Skip children that are themselves resourceReadoutRoot (vanilla line 61)
-                if (child.resourceReadoutRoot) continue;
-                node.Children.Add(BuildNode(child));
-            }
-            var defs = new List<ThingDef>(category.childThingDefs);
-            defs.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.OrdinalIgnoreCase));
-            // Include PlayerAcquirable defs (vanilla line 68: restores stone chunks etc.)
-            foreach (var def in defs)
-                if (def.PlayerAcquirable)
-                    node.DefNames.Add(def.defName);
-            node.Poolable = GameResourceCatalog.Instance.CountedDefsIn(category.defName).Count >= 2;
-            return node;
-        }
-
         private void EnsureRows()
         {
+            var roots = GameResourceTree.GetRoots();
             if (rows != null && builtStamp == stamp) return;
             rows = ResourceTreeFlattener.Flatten(roots, expanded, filter, GameResourceCatalog.Instance);
             builtStamp = stamp;

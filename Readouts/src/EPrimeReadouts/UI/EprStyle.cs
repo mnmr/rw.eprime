@@ -16,8 +16,12 @@ namespace EPrimeReadouts.UI
         /// Underlined section header; clicking toggles the folded flag. When
         /// unfolded, wraps the caption below in Tiny caption text and returns
         /// the total height consumed; folded returns just the header height.
+        /// <paramref name="clickableWidth"/> limits the width of the invisible
+        /// button that toggles folding (defaults to full <paramref name="width"/>),
+        /// allowing the caller to place controls (e.g. a rename pencil) to the
+        /// right of the clickable region without triggering the fold toggle.
         internal static float SectionHeader(float x, float y, float width, string label,
-            string caption, ref bool folded)
+            string caption, ref bool folded, float clickableWidth = -1f)
         {
             Text.Font = GameFont.Small;
             var labelRect = new Rect(x, y, width, 22f);
@@ -26,8 +30,10 @@ namespace EPrimeReadouts.UI
             GUI.color = HeaderRule;
             WrText.LineHorizontal(x, y + 24f, width);
             GUI.color = Color.white;
-            Widgets.DrawHighlightIfMouseover(labelRect);
-            if (Widgets.ButtonInvisible(labelRect)) folded = !folded;
+            float clickW = clickableWidth > 0f ? clickableWidth : width;
+            var clickRect = new Rect(x, y, clickW, 22f);
+            Widgets.DrawHighlightIfMouseover(clickRect);
+            if (Widgets.ButtonInvisible(clickRect)) folded = !folded;
             float used = 28f;
             if (!folded && !caption.NullOrEmpty())
             {

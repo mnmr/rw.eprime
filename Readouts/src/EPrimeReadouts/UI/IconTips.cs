@@ -38,42 +38,69 @@ namespace EPrimeReadouts.UI
         private static StructuredTip Build(ThingDef def, int count, Band band, string token)
         {
             string canonical = token != null ? SlotToken.Canonical(token) : def.defName;
-            bool isPool = token != null && SlotToken.IsPool(token);
-            string member = token != null ? SlotToken.MemberName(token) : def.defName;
+            bool isLegacyPool = token != null && SlotToken.IsPool(token);
+            bool isPoolRef = token != null && SlotToken.IsPoolRef(token);
+
             string title;
-            if (isPool)
+            System.Collections.Generic.IReadOnlyList<string> poolMembers = null;
+
+            if (isPoolRef)
+            {
+                // First-class pool: look up snapshot for name and members
+                int poolId = SlotToken.PoolId(token);
+                var store = ReadoutStore.Current;
+                var pool = store?.Model.PoolById(poolId);
+                title = pool != null ? pool.Name : canonical;
+                // Expand members on hover (acceptable — hover-only)
+                if (pool != null)
+                {
+                    var snapshot = PoolSnapshot.Build(
+                        new System.Collections.Generic.List<ResourcePool> { pool },
+                        GameResourceCatalog.Instance);
+                    snapshot.TryGet(poolId, out poolMembers, out _, out _);
+                }
+            }
+            else if (isLegacyPool)
+            {
+                string member = SlotToken.MemberName(token);
                 title = GameResourceCatalog.Instance.CategoryLabelOf(member).CapitalizeFirst();
+                poolMembers = GameResourceCatalog.Instance.CountedDefsIn(member);
+            }
             else
+            {
                 title = def.LabelCap;
+            }
+
             var model = new TipModel
             {
                 Title = title,
                 Badge = count.ToString(),
             };
-            if (!isPool)
+
+            if (!isLegacyPool && !isPoolRef)
             {
                 var body = model.AddSection();
                 body.Text(def.description);
             }
-            else
+            else if (poolMembers != null && poolMembers.Count > 0)
             {
-                // Pool: per-member count breakdown
-                var members = GameResourceCatalog.Instance.CountedDefsIn(member);
-                if (members.Count > 0)
+                // Pool: per-member count breakdown (LiveCount also covers
+                // extra-counted defs like stone chunks)
+                var breakdown = model.AddSection();
+                var map = Find.CurrentMap;
+                var breakdownStore = ReadoutStore.Current;
+                for (int m = 0; m < poolMembers.Count; m++)
                 {
-                    var breakdown = model.AddSection();
-                    var map = Find.CurrentMap;
-                    for (int m = 0; m < members.Count; m++)
-                    {
-                        var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(members[m]);
-                        if (memberDef == null) continue;
-                        int memberCount = map?.resourceCounter.GetCount(memberDef) ?? 0;
-                        breakdown.Fact(memberDef.LabelCap, memberCount.ToString());
-                    }
+                    var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(poolMembers[m]);
+                    if (memberDef == null) continue;
+                    int memberCount = map != null
+                        ? GameCounts.LiveCount(map, breakdownStore, memberDef) : 0;
+                    breakdown.Fact(memberDef.LabelCap, memberCount.ToString());
                 }
             }
-            var store = ReadoutStore.Current;
-            if (store != null && store.Model.Thresholds.TryGetValue(canonical, out var spec))
+
+            var tipStore = ReadoutStore.Current;
+            if (tipStore != null && tipStore.Model.Thresholds.TryGetValue(canonical, out var spec))
             {
                 var levels = model.AddSection("EPR.Thresholds".Translate());
                 levels.Fact("EPR.Low".Translate(), spec.Low.ToString());

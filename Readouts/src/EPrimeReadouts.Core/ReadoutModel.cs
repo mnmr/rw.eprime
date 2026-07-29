@@ -21,13 +21,14 @@ namespace EPrimeReadouts.Core
     }
 
     /// <summary>
-    /// Shared readout definition: groups plus global thresholds. Pure state
-    /// and operations; persistence and MP sync live in the game assembly,
+    /// Shared readout definition: groups, pools, and global thresholds. Pure
+    /// state and operations; persistence and MP sync live in the game assembly,
     /// which routes every mutation through these methods.
     /// </summary>
     public sealed class ReadoutModel
     {
         public List<ReadoutGroup> Groups = new List<ReadoutGroup>();
+        public List<ResourcePool> Pools = new List<ResourcePool>();
         public Dictionary<string, ThresholdSpec> Thresholds = new Dictionary<string, ThresholdSpec>();
 
         public ReadoutGroup GroupById(int id)
@@ -123,18 +124,262 @@ namespace EPrimeReadouts.Core
 
         public bool ClearThreshold(string defName) => Thresholds.Remove(defName);
 
-        /// <summary>
-        /// Load-time cleanup: purge defNames that no longer resolve, compact
-        /// tiers, drop stale thresholds. Deterministic for a given save plus
-        /// def set, so MP clients converge without any syncing.
-        /// </summary>
-        public void CleanupMissing(Func<string, bool> exists)
+        // ── Pool operations ───────────────────────────────────────────────
+
+        public ResourcePool PoolById(int id)
         {
-            foreach (var group in Groups) TierOps.Cleanup(group.Tiers, exists);
+            foreach (var pool in Pools)
+                if (pool.Id == id) return pool;
+            return null;
+        }
+
+        /// Adds a new pool with the given id and name, returns it. The pools
+        /// list stays name-sorted.
+        public ResourcePool CreatePool(int id, string name)
+        {
+            var pool = new ResourcePool { Id = id, Name = name ?? "" };
+            Pools.Add(pool);
+            SortPools();
+            return pool;
+        }
+
+        public bool RenamePool(int id, string name)
+        {
+            var pool = PoolById(id);
+            if (pool == null) return false;
+            pool.Name = name ?? "";
+            SortPools();
+            return true;
+        }
+
+        /// Pools are kept name-sorted (case-insensitive, id tie-break) as a
+        /// list invariant — deterministic, so safe inside sync commands.
+        private void SortPools() =>
+            Pools.Sort((a, b) =>
+            {
+                int byName = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+                return byName != 0 ? byName : a.Id.CompareTo(b.Id);
+            });
+
+        /// Deletes the pool and purges all #id tokens (including ~#id) from
+        /// every group's tiers, then removes threshold entries keyed "#id".
+        public bool DeletePool(int id)
+        {
+            var pool = PoolById(id);
+            if (pool == null) return false;
+            Pools.Remove(pool);
+
+            // Build the canonical token string to match against
+            string canonicalToken = SlotToken.PoolToken(id); // "#id"
+
+            foreach (var group in Groups)
+            {
+                foreach (var tier in group.Tiers)
+                    tier.RemoveAll(t => SlotToken.Canonical(t) == canonicalToken);
+                TierOps.Compact(group.Tiers);
+            }
+
+            // Remove threshold keyed "#id"
+            Thresholds.Remove(canonicalToken);
+            return true;
+        }
+
+        /// Replaces the pool's member list with a clone of the supplied list.
+        public bool SetPoolMembers(int id, List<string> members)
+        {
+            var pool = PoolById(id);
+            if (pool == null) return false;
+            pool.Members = members != null ? new List<string>(members) : new List<string>();
+            return true;
+        }
+
+        /// Sets the explicit icon def name for the pool.
+        public bool SetPoolIcon(int id, string defName)
+        {
+            var pool = PoolById(id);
+            if (pool == null) return false;
+            pool.IconDefName = defName;
+            return true;
+        }
+
+        // ── Cleanup ───────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Load-time cleanup: purge tokens that no longer resolve (per
+        /// <paramref name="tokenValid"/>), compact tiers, drop stale
+        /// thresholds. Also purges pool members that fail
+        /// <paramref name="memberValid"/> (pools themselves are kept even when
+        /// empty — they are user-owned). Deterministic for a given save plus
+        /// def set, so MP clients converge without any syncing.
+        /// <para>
+        /// The game passes "#id" tokens through <paramref name="tokenValid"/>
+        /// as raw tokens — the predicate resolves pool existence. For members,
+        /// plain defNames are checked via def existence; "@Category" refs via
+        /// category existence.
+        /// </para>
+        /// </summary>
+        public void CleanupMissing(Func<string, bool> tokenValid, Func<string, bool> memberValid)
+        {
+            foreach (var group in Groups) TierOps.Cleanup(group.Tiers, tokenValid);
+
             var stale = new List<string>();
-            foreach (var defName in Thresholds.Keys)
-                if (!exists(defName)) stale.Add(defName);
-            foreach (var defName in stale) Thresholds.Remove(defName);
+            foreach (var key in Thresholds.Keys)
+                if (!tokenValid(key)) stale.Add(key);
+            foreach (var key in stale) Thresholds.Remove(key);
+
+            foreach (var pool in Pools)
+                pool.Members.RemoveAll(m => !memberValid(m));
+        }
+
+        // ── Import ───────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Overwrite-import: clears Pools, Groups and Thresholds, then recreates
+        /// pools (new ids) and groups (new ids, file order = display order),
+        /// resolving "pool:Name" slot tokens to "#id" (flag preserved; refs to
+        /// unknown pool names dropped, tiers compacted). Deterministic given the
+        /// same xml + id allocators, so it is MP-sync safe.
+        /// <para>
+        /// Pool-name lookup: when duplicate pool names exist in the import data,
+        /// the LAST pool with that name wins (its id is used for resolution).
+        /// </para>
+        /// </summary>
+        public void ApplyImport(
+            List<ResourcePool> pools,
+            List<ReadoutGroup> groups,
+            Func<int> takePoolId,
+            Func<int> takeGroupId)
+        {
+            Pools.Clear();
+            Groups.Clear();
+            Thresholds.Clear();
+
+            // Create pools with real ids; build name→id map (last wins on duplicate names)
+            var nameToId = new Dictionary<string, int>();
+            if (pools != null)
+            {
+                foreach (var imported in pools)
+                {
+                    int newId = takePoolId();
+                    var pool = new ResourcePool
+                    {
+                        Id = newId,
+                        Name = imported.Name ?? "",
+                        IconDefName = imported.IconDefName,
+                        Members = imported.Members != null
+                            ? new List<string>(imported.Members)
+                            : new List<string>(),
+                    };
+                    Pools.Add(pool);
+                    nameToId[pool.Name] = newId; // last pool wins on duplicate names
+                }
+                SortPools();
+            }
+
+            // Create groups, resolving "pool:Name" tokens and compacting
+            if (groups != null)
+            {
+                int orderIndex = 0;
+                foreach (var imported in groups)
+                {
+                    int newId = takeGroupId();
+                    var group = new ReadoutGroup
+                    {
+                        Id = newId,
+                        Name = imported.Name ?? "",
+                        OrderIndex = orderIndex++,
+                        DefaultEnabled = imported.DefaultEnabled,
+                    };
+
+                    if (imported.Tiers != null)
+                    {
+                        foreach (var importedTier in imported.Tiers)
+                        {
+                            var resolvedTier = new List<string>();
+                            foreach (var token in importedTier)
+                            {
+                                if (string.IsNullOrEmpty(token)) continue;
+
+                                if (ReadoutsXml.IsPortablePoolRef(token))
+                                {
+                                    // Resolve "pool:Name" → "#id" (flag preserved)
+                                    string poolName = ReadoutsXml.PortablePoolName(token);
+                                    if (!nameToId.TryGetValue(poolName, out int resolvedId))
+                                        continue; // unknown pool name → drop
+                                    bool flag = !SlotToken.ShowWhenZero(token);
+                                    resolvedTier.Add(SlotToken.WithShowWhenZero(
+                                        SlotToken.PoolToken(resolvedId), !flag));
+                                }
+                                else
+                                {
+                                    resolvedTier.Add(token);
+                                }
+                            }
+                            if (resolvedTier.Count > 0)
+                                group.Tiers.Add(resolvedTier);
+                        }
+                        TierOps.Compact(group.Tiers);
+                    }
+
+                    Groups.Add(group);
+                }
+            }
+        }
+
+        // ── Migration ─────────────────────────────────────────────────────
+
+        /// <summary>
+        /// Deterministic save migration: scans all groups in display order,
+        /// replacing each "@Category" slot token with a "#poolId" token.
+        /// Find-or-create: if a pool already exists whose Members == exactly
+        /// [that @ref], reuse it; otherwise create a new one via
+        /// <paramref name="takeId"/> and name it via
+        /// <paramref name="nameForCategory"/>. Preserves the '~' flag.
+        /// Returns true when at least one token was changed.
+        /// </summary>
+        public bool MigrateCategoryTokens(Func<int> takeId, Func<string, string> nameForCategory)
+        {
+            bool changed = false;
+            foreach (var group in InDisplayOrder())
+            {
+                foreach (var tier in group.Tiers)
+                {
+                    for (int i = 0; i < tier.Count; i++)
+                    {
+                        string token = tier[i];
+                        string canonical = SlotToken.Canonical(token);
+                        if (!canonical.StartsWith("@")) continue;
+
+                        // Find existing pool whose members == exactly [canonical]
+                        ResourcePool match = null;
+                        foreach (var pool in Pools)
+                        {
+                            if (pool.Members.Count == 1 && pool.Members[0] == canonical)
+                            {
+                                match = pool;
+                                break;
+                            }
+                        }
+
+                        if (match == null)
+                        {
+                            string catName = canonical.Substring(1); // strip '@'
+                            int newId = takeId();
+                            string poolName = nameForCategory != null
+                                ? nameForCategory(catName)
+                                : catName;
+                            match = CreatePool(newId, poolName);
+                            match.Members.Add(canonical);
+                        }
+
+                        bool showWhenZero = SlotToken.ShowWhenZero(token);
+                        tier[i] = SlotToken.WithShowWhenZero(
+                            SlotToken.PoolToken(match.Id), showWhenZero);
+                        changed = true;
+                    }
+                }
+            }
+            return changed;
         }
     }
 }

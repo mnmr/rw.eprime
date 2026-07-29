@@ -1,0 +1,47 @@
+using UnityEngine;
+using Verse;
+
+namespace EPrimeReadouts.UI
+{
+    /// Small per-player display options opened from the config dialog's
+    /// Options button. Changes persist immediately.
+    public class Dialog_PanelOptions : Window
+    {
+        public Dialog_PanelOptions()
+        {
+            doCloseX = true;
+            doCloseButton = true;
+            absorbInputAroundWindow = true;
+            forcePause = false;
+        }
+
+        public override Vector2 InitialSize => new Vector2(380f, 190f);
+
+        public override void DoWindowContents(Rect inRect)
+        {
+            var settings = EPrimeReadoutsMod.Settings;
+            var listing = new Listing_Standard();
+            listing.Begin(inRect);
+
+            bool showSearch = settings.showSearchFilter;
+            listing.CheckboxLabeled("EPR.ShowSearchFilter".Translate(), ref showSearch);
+            if (showSearch != settings.showSearchFilter)
+            {
+                EPrimeReadoutsMod.Persist(s => s.showSearchFilter = showSearch);
+                // A hidden filter must not keep filtering the panel.
+                if (!showSearch) ReadoutPanel.SearchText = "";
+                ReadoutPanel.BumpView();
+            }
+
+            bool showName = settings.showModNameWhenNoSearch;
+            listing.CheckboxLabeled("EPR.ShowModName".Translate(), ref showName);
+            if (showName != settings.showModNameWhenNoSearch)
+            {
+                EPrimeReadoutsMod.Persist(s => s.showModNameWhenNoSearch = showName);
+                ReadoutPanel.BumpView();
+            }
+
+            listing.End();
+        }
+    }
+}

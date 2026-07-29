@@ -128,15 +128,32 @@ namespace EPrimeReadouts.UI
             ConsumeStrayEvents();
         }
 
-        /// Single header row: gear (opens the config dialog), then the search
-        /// field with its clear-X overlaid at the right edge.
+        /// Single header row: gear (opens the config dialog), then — per the
+        /// display options — the search field with its clear-X, or the mod
+        /// name, or nothing.
         private static void DrawSearchRow(Rect rect)
         {
+            var settings = EPrimeReadoutsMod.Settings;
             var gearRect = new Rect(rect.x, rect.y + 2f, 22f, 22f);
             if (inputBlocked)
                 GUI.DrawTexture(gearRect, ReadoutTextures.Gear);
             else if (Widgets.ButtonImage(gearRect, ReadoutTextures.Gear))
                 Find.WindowStack.Add(new Dialog_ReadoutConfig());
+
+            if (!settings.showSearchFilter)
+            {
+                if (settings.showModNameWhenNoSearch)
+                {
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    GUI.color = EprStyle.HeaderText;
+                    Widgets.Label(new Rect(rect.x + 26f, rect.y, rect.width - 26f, rect.height),
+                        "EPR.Title".Translate());
+                    GUI.color = Color.white;
+                    Text.Anchor = TextAnchor.UpperLeft;
+                }
+                return;
+            }
+
             var fieldRect = new Rect(rect.x + 26f, rect.y + 1f, rect.width - 26f, 22f);
             if (inputBlocked)
             {
@@ -216,7 +233,7 @@ namespace EPrimeReadouts.UI
             if (Time.frameCount - lastCountsCheckFrame >= 30)
             {
                 lastCountsCheckFrame = Time.frameCount;
-                if (GameCounts.Fingerprint(map) != builtFingerprint) return true;
+                if (GameCounts.Fingerprint(map, store) != builtFingerprint) return true;
             }
             return false;
         }
@@ -233,18 +250,19 @@ namespace EPrimeReadouts.UI
                 // Unset depth defaults to tier 1 only; users expand per group.
                 DepthOf = g => settings.tierDepths.TryGetValue(store.DepthKey(g.Id), out int depth)
                     ? depth : 1,
-                Counts = GameCounts.Snapshot(map),
+                Counts = GameCounts.Snapshot(map, store),
                 Thresholds = store.Model.Thresholds,
                 SearchText = SearchText,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
+                Pools = PoolSnapshot.Build(store.Model.Pools, GameResourceCatalog.Instance),
             };
             draw = DrawModel.Resolve(ReadoutLayoutEngine.Build(input));
             builtVersion = store.Version;
             builtStamp = viewStamp;
             builtMap = map;
             builtWidth = width;
-            builtFingerprint = GameCounts.Fingerprint(map);
+            builtFingerprint = GameCounts.Fingerprint(map, store);
             lastCountsCheckFrame = Time.frameCount;
         }
     }

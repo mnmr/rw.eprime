@@ -22,15 +22,21 @@ public class CommandsArchitectureTests
         {
             Path.Combine("UI", "ReadoutPanel.cs"),
             Path.Combine("UI", "Dialog_ReadoutConfig.cs"),
+            Path.Combine("UI", "Dialog_ExportReadouts.cs"),
+            Path.Combine("UI", "Dialog_ImportReadouts.cs"),
+            Path.Combine("UI", "ReadoutsPreviewUI.cs"),
             Path.Combine("UI", "GroupListView.cs"),
             Path.Combine("UI", "ResourceTreeView.cs"),
             Path.Combine("UI", "EditorView.cs"),
             Path.Combine("UI", "PreviewView.cs"),
+            Path.Combine("UI", "PoolListView.cs"),
+            Path.Combine("UI", "PoolEditorView.cs"),
         };
         string[] mutators =
         {
             ".CreateGroup(", ".RenameGroup(", ".DeleteGroup(", ".ReorderGroup(",
             ".SetTiers(", ".SetThreshold(", ".ClearThreshold(", ".CleanupMissing(",
+            ".CreatePool(", ".RenamePool(", ".DeletePool(", ".SetPoolMembers(", ".SetPoolIcon(",
         };
         foreach (var file in uiFiles)
         {

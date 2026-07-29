@@ -25,11 +25,9 @@ namespace EPrimeReadouts.UI
                 {
                     defs[i] = DefDatabase<ThingDef>.GetNamedSilentFail(cell.DefName);
                     tokens[i] = cell.Token;
-                }
-                if (cell.Kind == CellKind.Counter && int.TryParse(cell.Text, out int count))
-                {
-                    // The counter follows its icon; give the icon its count.
-                    if (i > 0 && model.Cells[i - 1].Kind == CellKind.Icon) counts[i - 1] = count;
+                    // Raw count carried on the cell — never parse the display
+                    // text, which is compact-formatted ("12.8k") above 10000.
+                    counts[i] = cell.Count;
                 }
             }
             return new DrawModel { Model = model, Defs = defs, Counts = counts, Tokens = tokens };

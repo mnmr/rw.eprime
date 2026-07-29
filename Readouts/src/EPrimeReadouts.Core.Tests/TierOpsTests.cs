@@ -139,4 +139,44 @@ public class TierOpsTests
         await Assert.That(TierOps.Remove(tiers, "Steel")).IsTrue();
         await Assert.That(tiers.Count).IsEqualTo(0);
     }
+
+    // -----------------------------------------------------------------------
+    // Slot cap (MaxSlotsPerTier = 8)
+
+    [Test]
+    public async Task AddRefusesNinthSlot()
+    {
+        // Build a tier with exactly MaxSlotsPerTier tokens
+        string[] tokens = Enumerable.Range(1, TierOps.MaxSlotsPerTier).Select(i => "Def" + i).ToArray();
+        var tiers = Tiers(tokens);
+        await Assert.That(tiers[0].Count).IsEqualTo(TierOps.MaxSlotsPerTier);
+
+        // Attempting to add a 9th slot must be refused
+        await Assert.That(TierOps.Add(tiers, "Extra", 0, -1)).IsFalse();
+        await Assert.That(tiers[0].Count).IsEqualTo(TierOps.MaxSlotsPerTier);
+    }
+
+    [Test]
+    public async Task MoveIntoFullTierRefused()
+    {
+        // Tier 0 has MaxSlotsPerTier tokens; tier 1 has one token.
+        // Moving tier 1's token into tier 0 must be refused.
+        string[] full = Enumerable.Range(1, TierOps.MaxSlotsPerTier).Select(i => "Def" + i).ToArray();
+        var tiers = Tiers(full, new[] { "Extra" });
+        await Assert.That(TierOps.Move(tiers, 1, 0, 0, 0)).IsFalse();
+        await Assert.That(tiers[0].Count).IsEqualTo(TierOps.MaxSlotsPerTier);
+        await Assert.That(tiers[1].Count).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task SameTierReorderAllowedAtCap()
+    {
+        // A tier with exactly MaxSlotsPerTier tokens can still be reordered within itself.
+        string[] tokens = Enumerable.Range(1, TierOps.MaxSlotsPerTier).Select(i => "Def" + i).ToArray();
+        var tiers = Tiers(tokens);
+        // Move first slot to the end
+        await Assert.That(TierOps.Move(tiers, 0, 0, 0, TierOps.MaxSlotsPerTier)).IsTrue();
+        await Assert.That(tiers[0].Count).IsEqualTo(TierOps.MaxSlotsPerTier);
+        await Assert.That(tiers[0][TierOps.MaxSlotsPerTier - 1]).IsEqualTo("Def1");
+    }
 }

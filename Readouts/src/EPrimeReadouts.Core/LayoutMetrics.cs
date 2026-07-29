@@ -12,10 +12,10 @@ namespace EPrimeReadouts.Core
         public const float IconSize = 27f;    // vanilla resource icon size
         public const float IconRowH = 29f;    // icon 27 + 2px gap to the counter text
         public const float CounterRowH = 16f; // GameFont.Tiny line fits in 16
-        public const float GroupGap = 6f;
+        public const float GroupGap = 2f;
         public const float LabelRowH = 20f;
         public const float StripeW = 3f;      // colored band on a container's left edge
         public const float GroupPadX = 4f;    // content inset right of the stripe
-        public const float GroupPadY = 2f;    // content inset top/bottom of a container
+        public const float GroupPadY = 1f;    // content inset top/bottom of a container
     }
 }

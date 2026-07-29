@@ -12,6 +12,7 @@
   <EPR.Groups>Groups</EPR.Groups>
   <EPR.Resources>Resources</EPR.Resources>
   <EPR.Editor>Editor</EPR.Editor>
+  <EPR.RenameGroup>Rename group</EPR.RenameGroup>
   <EPR.Add>Add</EPR.Add>
   <EPR.Rename>Rename</EPR.Rename>
   <EPR.DeleteConfirm>Delete group "{0}"?</EPR.DeleteConfirm>
@@ -30,4 +31,48 @@
   <EPR.HelpResources>These are in-game items you can display counters for. Use the copy icon to add resource sets (a single entry displaying the sum of all items in the set). Click to add to the selected group; shift-click to remove.</EPR.HelpResources>
   <EPR.HelpEditor>Here you can edit what resources (or resource sets) a group displays. A group can have up to three display tiers. The small triangles indicate how many tiers are currently visible (click to cycle).</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
+  <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
+  <EPR.ShowModName>Show mod name when search filter is disabled</EPR.ShowModName>
+  <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
+  <EPR.ShowPools>Resource Pools</EPR.ShowPools>
+  <EPR.ShowResources>Resources</EPR.ShowResources>
+  <EPR.Pools>Resource Pools</EPR.Pools>
+  <EPR.HelpPools>Reusable sets of resources displayed as a single entry with a combined count. Drag a pool into a group tier like any resource.</EPR.HelpPools>
+  <EPR.ConfigurePool>Configure Resource Pool</EPR.ConfigurePool>
+  <EPR.HelpPoolEditor>Tick categories or individual resources to include them. Click a resource's name to use its icon for the pool.</EPR.HelpPoolEditor>
+  <EPR.DeletePoolConfirm>Delete pool "{0}"? Slots using it will be removed from all groups.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Name</EPR.NameLabel>
+  <EPR.OK>OK</EPR.OK>
+  <EPR.Cancel>Cancel</EPR.Cancel>
+  <EPR.Export>Export</EPR.Export>
+  <EPR.Import>Import</EPR.Import>
+  <EPR.Exported>Exported to {0}</EPR.Exported>
+  <EPR.Imported>Import applied successfully.</EPR.Imported>
+  <EPR.NoFiles>No export files found.</EPR.NoFiles>
+
+  <!-- Export preview dialog -->
+  <EPR.ExportPreviewTitle>Export Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Copy to Clipboard</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Readout config copied to clipboard.</EPR.CopiedToClipboard>
+  <EPR.SaveToFile>Save to File…</EPR.SaveToFile>
+  <EPR.SaveToFileCaption>Save as file (in EPrimeReadouts data folder):</EPR.SaveToFileCaption>
+
+  <!-- Import dialog -->
+  <EPR.ImportTitle>Import Readouts</EPR.ImportTitle>
+  <EPR.FromFile>Select a previously exported file:</EPR.FromFile>
+  <EPR.FromClipboard>From Clipboard</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>Clipboard is empty or does not contain a readout export.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>WARNING: This will REPLACE all current pools, groups, and thresholds. This affects every player in multiplayer.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Could not parse readout XML: {0}</EPR.ImportParseFailed>
+  <EPR.Back>Back</EPR.Back>
+  <EPR.DeleteFileConfirm>Delete the file &quot;{0}&quot;? This cannot be undone.</EPR.DeleteFileConfirm>
+
+  <!-- Shared preview listing -->
+  <EPR.ContentSummary>{0} pools, {1} groups</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Pools</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Groups</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} members)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} tiers, {2} slots)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(none)</EPR.PreviewNone>
 </LanguageData>

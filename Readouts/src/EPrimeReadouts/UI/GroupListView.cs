@@ -123,8 +123,13 @@ namespace EPrimeReadouts.UI
 
             Widgets.EndScrollView();
 
-            // Footer: add field
-            var footer = new Rect(rect.x, rect.yMax - FooterH + 4f, rect.width, FooterH - 4f);
+            // Footer (name field + Add) sits directly below the last group row
+            // with 8px margin, falling back to bottom-anchored when the list
+            // fills the available space.
+            float footerY = Mathf.Min(
+                listRect.y + ordered.Count * RowH + 8f,
+                rect.yMax - FooterH + 4f);
+            var footer = new Rect(rect.x, footerY, rect.width, FooterH - 4f);
             newName = Widgets.TextField(
                 new Rect(footer.x, footer.y, footer.width - 60f, 24f), newName);
             if (Widgets.ButtonText(new Rect(footer.xMax - 56f, footer.y, 56f, 24f),

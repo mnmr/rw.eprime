@@ -11,6 +11,7 @@ namespace EPrimeReadouts.Core
     public static class TierOps
     {
         public const int MaxTiers = 3;
+        public const int MaxSlotsPerTier = 8;
 
         public static List<List<string>> Clone(List<List<string>> tiers)
         {
@@ -46,6 +47,7 @@ namespace EPrimeReadouts.Core
                 tiers.Add(new List<string>());
             }
             var target = tiers[tier];
+            if (target.Count >= MaxSlotsPerTier) return false;
             if (slot < 0 || slot > target.Count) slot = target.Count;
             target.Insert(slot, token);
             return true;
@@ -80,6 +82,8 @@ namespace EPrimeReadouts.Core
             if (fromSlot < 0 || fromSlot >= tiers[fromTier].Count) return false;
             if (toTier < 0 || toTier > tiers.Count) return false;
             if (toTier == tiers.Count && tiers.Count >= MaxTiers) return false;
+            // Refuse cross-tier move into a full tier (same-tier reorders always allowed)
+            if (toTier != fromTier && toTier < tiers.Count && tiers[toTier].Count >= MaxSlotsPerTier) return false;
             string token = tiers[fromTier][fromSlot];
             tiers[fromTier].RemoveAt(fromSlot);
             if (toTier == tiers.Count) tiers.Add(new List<string>());

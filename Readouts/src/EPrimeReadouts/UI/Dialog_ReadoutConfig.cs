@@ -1,31 +1,48 @@
 using EPrimeReadouts.Core;
 using EPrimeReadouts.Patches;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// The configuration window: inset top panel, then Groups | Resources |
-    /// (Editor over Preview). Every completed action fires a sync command
-    /// immediately — no Apply/Cancel. Resizable; size persists per-player.
+    /// The configuration window: inset top panel, then (left) Groups panel,
+    /// (right) a vertical split — left half EditorView (full height), right half
+    /// toggles between ResourceTreeView and Pools UI (PoolListView + PoolEditorView).
+    /// Every completed action fires a sync command immediately — no Apply/Cancel.
+    /// Resizable; size persists.
     public class Dialog_ReadoutConfig : Window
     {
         private const float PanelH = 56f;
         private const float Gap = 10f;
         private const float LeftW = 220f;
-        private const float CenterW = 280f;
+        private const float ToggleBtnW = 110f;
+        private const float ToggleBtnH = 24f;
+        private const float PoolEditorMinH = 120f;
 
+        /// Currently selected group id; -1 = none.
         public int selectedGroupId = -1;
 
-        /// Canonical token of the currently selected slot (e.g. "Steel" or
-        /// "@MeatRaw"). Set by the editor task; may be null. ResourceTreeView
-        /// reads this to tint matching rows.
+        /// Currently selected pool id; -1 = none.
+        public int selectedPoolId = -1;
+
+        /// Canonical token of the currently selected slot (e.g. "Steel" or "#3").
+        /// Set by the editor view; may be null. ResourceTreeView reads this.
         public string selectedCanonical;
+
+        // Shared per-frame-safe pools snapshot — rebuilt once when store.Version changes.
+        public PoolSnapshot PoolsSnapshot { get; private set; }
+        public int poolsSnapshotVersion = -1;
+
+        /// Session state: false = show Resources tree, true = show Pools UI.
+        private bool showPools;
 
         private readonly object structuredTipOwner = new object();
         private readonly GroupListView groups = new GroupListView();
         private readonly ResourceTreeView tree = new ResourceTreeView();
         private readonly EditorView editor = new EditorView();
+        private readonly PoolListView poolList = new PoolListView();
+        private readonly PoolEditorView poolEditor = new PoolEditorView();
 
         public Dialog_ReadoutConfig()
         {
@@ -41,7 +58,7 @@ namespace EPrimeReadouts.UI
         public override Vector2 InitialSize =>
             EPrimeReadoutsMod.Settings.dialogW > 0f
                 ? new Vector2(EPrimeReadoutsMod.Settings.dialogW, EPrimeReadoutsMod.Settings.dialogH)
-                : new Vector2(920f, 640f);
+                : new Vector2(960f, 660f);
 
         public ReadoutGroup SelectedGroup =>
             ReadoutStore.Current?.Model.GroupById(selectedGroupId);
@@ -68,6 +85,13 @@ namespace EPrimeReadouts.UI
             {
                 EprDrag.Update();
 
+                // --- Rebuild shared pools snapshot when store version changes ---
+                if (store.Version != poolsSnapshotVersion)
+                {
+                    PoolsSnapshot = PoolSnapshot.Build(store.Model.Pools, GameResourceCatalog.Instance);
+                    poolsSnapshotVersion = store.Version;
+                }
+
                 // --- Top panel ---
                 var panelRect = new Rect(inRect.x, inRect.y, inRect.width, PanelH);
                 Widgets.DrawBoxSolidWithOutline(panelRect, EprStyle.PanelBackground, EprStyle.PanelOutline);
@@ -80,29 +104,110 @@ namespace EPrimeReadouts.UI
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleLeft;
                 GUI.color = EprStyle.HeaderText;
-                Widgets.Label(new Rect(iconRect.xMax + 8f, panelRect.y, panelRect.width - iconRect.xMax - 8f - 150f, PanelH),
+                Widgets.Label(new Rect(iconRect.xMax + 8f, panelRect.y,
+                    panelRect.width - iconRect.xMax - 8f - 150f, PanelH),
                     "EPR.Title".Translate());
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
 
-                // Restore-defaults button vertically centred in panel, 8px from right edge
-                var restoreRect = new Rect(panelRect.xMax - 138f, panelRect.y + (PanelH - 28f) / 2f, 130f, 28f);
+                // Right-cluster buttons, all vertically centred in panel, 28px tall, 8px gaps,
+                // right-to-left: [Restore defaults] [Import] [Export]
+                float btnY = panelRect.y + (PanelH - 28f) / 2f;
+                const float BtnGap = 8f;
+
+                // [Restore defaults] — 130px wide, 8px from right edge
+                var restoreRect = new Rect(panelRect.xMax - 138f, btnY, 130f, 28f);
                 if (Widgets.ButtonText(restoreRect, "EPR.RestoreDefaults".Translate()))
                     Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
                         "EPR.RestoreConfirm".Translate(),
                         ReadoutCommands.RestoreDefaults, destructive: true));
 
-                // --- Content area ---
+                // [Import] — 90px wide, to the left of Restore
+                var importRect = new Rect(restoreRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                if (Widgets.ButtonText(importRect, "EPR.Import".Translate()))
+                    Find.WindowStack.Add(new Dialog_ImportReadouts());
+
+                // [Options] — 90px wide, to the left of Export
+                var exportRect = new Rect(importRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                var optionsRect = new Rect(exportRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                if (Widgets.ButtonText(optionsRect, "EPR.Options".Translate()))
+                    Find.WindowStack.Add(new Dialog_PanelOptions());
+
+                // [Export] — 90px wide, to the left of Import
+                if (Widgets.ButtonText(exportRect, "EPR.Export".Translate()))
+                    Find.WindowStack.Add(new Dialog_ExportReadouts());
+
+                // --- Content area (below top panel) ---
                 var content = new Rect(inRect.x, inRect.y + PanelH + Gap,
                     inRect.width, inRect.height - PanelH - Gap);
-                var leftRect = new Rect(content.x, content.y, LeftW, content.height);
-                var centerRect = new Rect(leftRect.xMax + Gap, content.y, CenterW, content.height);
-                var rightRect = new Rect(centerRect.xMax + Gap, content.y,
-                    content.xMax - centerRect.xMax - Gap, content.height);
 
+                // Left column: Groups panel (fixed 220px, full height)
+                var leftRect = new Rect(content.x, content.y, LeftW, content.height);
+
+                // Remaining area to the right — split into left half (editor) and right half
+                float rightX = leftRect.xMax + Gap;
+                float rightW = content.xMax - rightX;
+                float halfW = (rightW - Gap) / 2f;
+
+                var editorRect = new Rect(rightX, content.y, halfW, content.height);
+                var rightHalf = new Rect(rightX + halfW + Gap, content.y, halfW, content.height);
+
+                // Toggle button FIRST: IMGUI gives the click to the earliest
+                // drawn control, and the views' section headers lay an
+                // invisible full-width fold toggle over this same strip.
+                string toggleLabel = showPools
+                    ? "EPR.ShowResources".Translate()
+                    : "EPR.ShowPools".Translate();
+                var toggleRect = new Rect(rightHalf.xMax - ToggleBtnW, rightHalf.y - 2f,
+                    ToggleBtnW, ToggleBtnH);
+                if (Widgets.ButtonText(toggleRect, toggleLabel))
+                    showPools = !showPools;
+                tree.HeaderReservedRight = ToggleBtnW + 8f;
+                poolList.HeaderReservedRight = ToggleBtnW + 8f;
+
+                // --- Right half: Resources or Pools depending on showPools toggle ---
+                Rect poolListRect, poolEditorRect;
+                if (showPools)
+                {
+                    // Dynamic height: desired height clamped so pool editor gets at least 120px
+                    float desiredListH = poolList.DesiredHeight(rightHalf.width);
+                    float maxListH = selectedPoolId >= 0
+                        ? Mathf.Max(0f, rightHalf.height - PoolEditorMinH - Gap)
+                        : rightHalf.height;
+                    float poolListH = Mathf.Min(desiredListH, maxListH);
+
+                    poolListRect = new Rect(rightHalf.x, rightHalf.y, rightHalf.width, poolListH);
+                    if (selectedPoolId >= 0)
+                    {
+                        float poolEditorH = rightHalf.height - poolListH - Gap;
+                        poolEditorRect = new Rect(rightHalf.x, rightHalf.y + poolListH + Gap,
+                            rightHalf.width, poolEditorH);
+                    }
+                    else
+                    {
+                        poolEditorRect = default(Rect);
+                    }
+                }
+                else
+                {
+                    poolListRect = default(Rect);
+                    poolEditorRect = default(Rect);
+                }
+
+                // Draw all panels
                 groups.Draw(leftRect, this);
-                tree.Draw(centerRect, this);
-                editor.Draw(rightRect, this);
+                editor.Draw(editorRect, this);
+
+                if (showPools)
+                {
+                    poolList.Draw(poolListRect, this);
+                    if (selectedPoolId >= 0)
+                        poolEditor.Draw(poolEditorRect, this);
+                }
+                else
+                {
+                    tree.Draw(rightHalf, this);
+                }
 
                 DrawDragGhost();
                 EprDrag.ResolveMouseUp();
@@ -113,12 +218,22 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private static void DrawDragGhost()
+        private void DrawDragGhost()
         {
             if (!EprDrag.Active || EprDrag.Payload == null) return;
-            // Resolve the icon def: pools → first CountedDefsIn member; defs → direct lookup.
+            // Resolve the icon def: pool refs → snapshot icon; plain defs → direct lookup.
             ThingDef def;
-            if (SlotToken.IsPool(EprDrag.Payload))
+            if (SlotToken.IsPoolRef(EprDrag.Payload))
+            {
+                int poolId = SlotToken.PoolId(EprDrag.Payload);
+                if (PoolsSnapshot != null
+                    && PoolsSnapshot.TryGet(poolId, out _, out string iconDefName, out _)
+                    && !string.IsNullOrEmpty(iconDefName))
+                    def = DefDatabase<ThingDef>.GetNamedSilentFail(iconDefName);
+                else
+                    def = null;
+            }
+            else if (SlotToken.IsPool(EprDrag.Payload))
             {
                 var members = GameResourceCatalog.Instance.CountedDefsIn(
                     SlotToken.MemberName(EprDrag.Payload));

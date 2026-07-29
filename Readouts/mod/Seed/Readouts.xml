@@ -1,0 +1,274 @@
+<Readouts>
+  <Pools>
+    <Pool Name="Eggs">
+      <Member>@EggsUnfertilized</Member>
+    </Pool>
+    <Pool Name="Fertilized eggs">
+      <Member>@EggsFertilized</Member>
+    </Pool>
+    <Pool Name="Hard Drugs">
+      <Member>@DavaiHardDrugs</Member>
+      <Member>Yayo</Member>
+      <Member>Flake</Member>
+      <Member>WakeUp</Member>
+      <Member>GoJuice</Member>
+    </Pool>
+    <Pool Name="Leathers">
+      <Member>@Leathers</Member>
+    </Pool>
+    <Pool Name="Meals" Icon="MealLavish">
+      <Member>@FoodMeals</Member>
+    </Pool>
+    <Pool Name="Meats">
+      <Member>Meat_Bear_Grizzly</Member>
+      <Member>Meat_Cassowary</Member>
+      <Member>Meat_Cougar</Member>
+      <Member>Meat_Panther</Member>
+      <Member>Meat_Lynx</Member>
+      <Member>Meat_Cat</Member>
+      <Member>Meat_YorkshireTerrier</Member>
+      <Member>Meat_GuineaPig</Member>
+      <Member>Meat_LabradorRetriever</Member>
+      <Member>Meat_Husky</Member>
+      <Member>Meat_Monkey</Member>
+      <Member>Meat_Chicken</Member>
+      <Member>Meat_Duck</Member>
+      <Member>Meat_Turkey</Member>
+      <Member>Meat_Cow</Member>
+      <Member>Meat_Boomalope</Member>
+      <Member>Meat_Muffalo</Member>
+      <Member>Meat_Bison</Member>
+      <Member>Meat_Dromedary</Member>
+      <Member>Meat_Goat</Member>
+      <Member>Meat_Elk</Member>
+      <Member>Meat_Yak</Member>
+      <Member>Meat_Caribou</Member>
+      <Member>Meat_Horse</Member>
+      <Member>Meat_Donkey</Member>
+      <Member>Meat_Elephant</Member>
+      <Member>Meat_Rhinoceros</Member>
+      <Member>Meat_Hare</Member>
+      <Member>Meat_Thrumbo</Member>
+      <Member>Meat_Cobra</Member>
+      <Member>Meat_Tortoise</Member>
+      <Member>Meat_Alphabeaver</Member>
+      <Member>Meat_Pig</Member>
+      <Member>Meat_Ibex</Member>
+      <Member>Meat_Deer</Member>
+      <Member>Meat_Gazelle</Member>
+      <Member>Meat_Chinchilla</Member>
+      <Member>Meat_Sheep</Member>
+      <Member>Meat_Alpaca</Member>
+      <Member>Meat_Megasloth</Member>
+      <Member>Meat_Capybara</Member>
+      <Member>Meat_Squirrel</Member>
+      <Member>Meat_Rat</Member>
+      <Member>Meat_Boomrat</Member>
+      <Member>Meat_Raccoon</Member>
+      <Member>Meat_Iguana</Member>
+      <Member>Meat_Warg</Member>
+      <Member>Meat_Wolf_Timber</Member>
+      <Member>Meat_Fox_Fennec</Member>
+      <Member>Meat_Dryad_Basic</Member>
+      <Member>Meat_WasteRat</Member>
+      <Member>Meat_Walrus</Member>
+      <Member>Meat_SeaLion</Member>
+      <Member>Meat_Seal</Member>
+      <Member>Meat_HermitCrab</Member>
+      <Member>Meat_StoneCrab</Member>
+      <Member>Meat_SeaTurtle</Member>
+      <Member>Meat_Otter</Member>
+      <Member>Meat_BogHound</Member>
+      <Member>Meat_MonitorLizard</Member>
+      <Member>Meat_PrairieDog</Member>
+      <Member>Meat_Porcupine</Member>
+      <Member>Meat_Mastodon</Member>
+      <Member>Meat_Cat_Scimitar</Member>
+      <Member>Meat_Wolverine</Member>
+      <Member>Meat_Wolf_Great</Member>
+      <Member>Meat_Moose</Member>
+      <Member>Meat_AlphaThrumbo</Member>
+      <Member>Meat_Muskox</Member>
+      <Member>Meat_Tiger</Member>
+      <Member>Meat_Mink</Member>
+      <Member>Meat_Gorilla</Member>
+      <Member>Meat_Badger</Member>
+      <Member>Meat_Panda</Member>
+      <Member>Meat_Hippo</Member>
+      <Member>Meat_Megavole</Member>
+      <Member>Meat_Armadillo</Member>
+      <Member>Meat_Alligator</Member>
+      <Member>Meat_Bullfrog</Member>
+      <Member>Meat_ColossusToad</Member>
+      <Member>Meat_LavaSnail</Member>
+      <Member>Fish_Salmon</Member>
+      <Member>Fish_Bass</Member>
+      <Member>Fish_Tilapia</Member>
+      <Member>Fish_Cod</Member>
+      <Member>Fish_Bluefish</Member>
+      <Member>Fish_Guppy</Member>
+      <Member>Fish_Frostfish</Member>
+      <Member>Fish_Catfish</Member>
+      <Member>Fish_Piranha</Member>
+      <Member>Fish_Dogfish</Member>
+      <Member>Fish_Marlin</Member>
+      <Member>Fish_Tuna</Member>
+      <Member>Fish_Flounder</Member>
+      <Member>Fish_Toxfish</Member>
+    </Pool>
+    <Pool Name="Mechs">
+      <Member>SignalChip</Member>
+      <Member>NanostructuringChip</Member>
+      <Member>PowerfocusChip</Member>
+      <Member>SubcoreBasic</Member>
+      <Member>SubcoreRegular</Member>
+      <Member>SubcoreHigh</Member>
+    </Pool>
+    <Pool Name="Mortar shells">
+      <Member>Shell_AntigrainWarhead</Member>
+      <Member>Shell_Deadlife</Member>
+      <Member>Shell_EMP</Member>
+      <Member>Shell_Firefoam</Member>
+      <Member>Shell_HighExplosive</Member>
+      <Member>Shell_Incendiary</Member>
+      <Member>Shell_Smoke</Member>
+      <Member>Shell_Toxic</Member>
+    </Pool>
+    <Pool Name="Plant food">
+      <Member>@PlantFoodRaw</Member>
+    </Pool>
+    <Pool Name="Sera">
+      <Member>@DavaiSera</Member>
+      <Member>MechSerumHealer</Member>
+      <Member>MechSerumResurrector</Member>
+      <Member>VoidsightSerum</Member>
+      <Member>MetalbloodSerum</Member>
+      <Member>JuggernautSerum</Member>
+      <Member>MindNumbSerum</Member>
+      <Member>GhoulResurrectionSerum</Member>
+    </Pool>
+    <Pool Name="Social Drugs">
+      <Member>@DavaiSocialDrugs</Member>
+      <Member>Beer</Member>
+      <Member>SmokeleafJoint</Member>
+      <Member>Ambrosia</Member>
+    </Pool>
+    <Pool Name="Stone blocks">
+      <Member>@StoneBlocks</Member>
+    </Pool>
+    <Pool Name="Stone chunks" Icon="ChunkMarble">
+      <Member>@StoneChunks</Member>
+    </Pool>
+    <Pool Name="Wools">
+      <Member>@Wools</Member>
+    </Pool>
+  </Pools>
+  <Groups>
+    <Group Name="Food">
+      <Tier>
+        <Slot>pool:Meals</Slot>
+        <Slot>BabyFood</Slot>
+        <Slot>Kibble</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~MealSimple</Slot>
+        <Slot>~MealFine</Slot>
+        <Slot>~MealLavish</Slot>
+        <Slot>~MealSurvivalPack</Slot>
+        <Slot>~MealNutrientPaste</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~Hay</Slot>
+        <Slot>~Pemmican</Slot>
+        <Slot>~Chocolate</Slot>
+        <Slot>~HemogenPack</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Raw">
+      <Tier>
+        <Slot>pool:Meats</Slot>
+        <Slot>pool:Plant food</Slot>
+        <Slot>~pool:Eggs</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~Milk</Slot>
+        <Slot>~InsectJelly</Slot>
+        <Slot>~pool:Fertilized eggs</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~PsychoidLeaves</Slot>
+        <Slot>~SmokeleafLeaves</Slot>
+        <Slot>~RawHops</Slot>
+        <Slot>~Wort</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Medicine">
+      <Tier>
+        <Slot>MedicineHerbal</Slot>
+        <Slot>MedicineIndustrial</Slot>
+        <Slot>MedicineUltratech</Slot>
+      </Tier>
+      <Tier>
+        <Slot>Neutroamine</Slot>
+        <Slot>Cloth</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Drugs">
+      <Tier>
+        <Slot>Penoxycyline</Slot>
+        <Slot>~PsychiteTea</Slot>
+        <Slot>pool:Social Drugs</Slot>
+        <Slot>pool:Hard Drugs</Slot>
+      </Tier>
+      <Tier>
+        <Slot>Luciferium</Slot>
+        <Slot>pool:Sera</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Textiles">
+      <Tier>
+        <Slot>Cloth</Slot>
+        <Slot>pool:Leathers</Slot>
+        <Slot>pool:Wools</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~DevilstrandCloth</Slot>
+        <Slot>~Hyperweave</Slot>
+        <Slot>~Synthread</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Materials">
+      <Tier>
+        <Slot>Steel</Slot>
+        <Slot>WoodLog</Slot>
+        <Slot>ComponentIndustrial</Slot>
+        <Slot>pool:Stone blocks</Slot>
+      </Tier>
+      <Tier>
+        <Slot>Plasteel</Slot>
+        <Slot>ComponentSpacer</Slot>
+        <Slot>~Uranium</Slot>
+        <Slot>Chemfuel</Slot>
+        <Slot>~Dye</Slot>
+      </Tier>
+      <Tier>
+        <Slot>~GravlitePanel</Slot>
+        <Slot>~Bioferrite</Slot>
+        <Slot>~Obsidian</Slot>
+        <Slot>pool:Stone chunks</Slot>
+        <Slot>~Shard</Slot>
+      </Tier>
+    </Group>
+    <Group Name="Wealth">
+      <Tier>
+        <Slot>Silver</Slot>
+        <Slot>Gold</Slot>
+        <Slot>~Jade</Slot>
+      </Tier>
+      <Tier>
+        <Slot>pool:Mortar shells</Slot>
+        <Slot>pool:Mechs</Slot>
+      </Tier>
+    </Group>
+  </Groups>
+</Readouts>
