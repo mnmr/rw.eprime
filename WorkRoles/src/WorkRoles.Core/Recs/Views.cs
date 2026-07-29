@@ -60,6 +60,18 @@ namespace WorkRoles.Core.Recs
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
         public RoleHolderMode HolderMode;
+        /// Banded holder demand; when set it overrides the scalar fields and
+        /// scaling formulas with direct band lookups.
+        public HolderScale Scale;
+
+        public int MinHoldersAt(int colonySize) =>
+            Scale != null ? Scale.MinAt(colonySize) : MinHolders;
+
+        public int MaxHoldersAt(int colonySize) =>
+            Scale != null ? Scale.MaxAt(colonySize) : MaxHolders;
+
+        public int TrainingWaiversAt(int colonySize) =>
+            Scale != null ? Scale.TrainAt(colonySize) : TrainingWaivers;
         /// -2 never, -1 auto-coverage (one scaled unit), 0 interest-only,
         /// N needed slots.
         public int MinHolders;

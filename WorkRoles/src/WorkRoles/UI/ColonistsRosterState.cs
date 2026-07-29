@@ -33,6 +33,7 @@ namespace WorkRoles.UI
         private int sectionsMapId = -1;
         private string sectionsSearch;
         private int sectionsRoleFilter;
+        private string sectionsJobFilter;
         private string sectionsGroupBy;
         private string sectionsSort;
         private ColonistOrder sectionsOrder;
@@ -52,7 +53,11 @@ namespace WorkRoles.UI
 
         internal string Search { get; set; } = "";
         internal int RoleFilterId { get; set; } = -1;
-        internal bool FiltersActive => !Search.NullOrEmpty() || RoleFilterId != -1;
+        /// Work-giver defName; pawns pass when an assigned non-blocker role's
+        /// coverage contains it.
+        internal string JobFilterDefName { get; set; }
+        internal bool FiltersActive =>
+            !Search.NullOrEmpty() || RoleFilterId != -1 || JobFilterDefName != null;
         internal ScopeCacheStamp PawnListStamp
         {
             get
@@ -108,6 +113,7 @@ namespace WorkRoles.UI
         {
             Search = "";
             RoleFilterId = -1;
+            JobFilterDefName = null;
             InvalidatePawnSnapshot();
             InvalidateSections();
         }
@@ -123,6 +129,7 @@ namespace WorkRoles.UI
         {
             Search = "";
             RoleFilterId = -1;
+            JobFilterDefName = null;
             scope = null;
             pawns = null;
             pawnsStamp = ScopeCacheStamp.Invalid;
@@ -133,6 +140,7 @@ namespace WorkRoles.UI
             sectionsMapId = -1;
             sectionsSearch = null;
             sectionsRoleFilter = -1;
+            sectionsJobFilter = null;
             sectionsGroupBy = null;
             sectionsSort = null;
             skillColumns.Clear();
@@ -199,6 +207,13 @@ namespace WorkRoles.UI
                 RoleFilterId = -1;
                 InvalidateSections();
             }
+            // A removed mod can take the filtered giver with it.
+            if (JobFilterDefName != null
+                && DefDatabase<WorkGiverDef>.GetNamedSilentFail(JobFilterDefName) == null)
+            {
+                JobFilterDefName = null;
+                InvalidateSections();
+            }
         }
 
         internal IReadOnlyList<GroupSection<Pawn>> Sections(RoleStore store)
@@ -209,6 +224,7 @@ namespace WorkRoles.UI
             if (sections == null || sectionsStamp != stamp
                 || sectionsMapId != pawnsMapId || sectionsSearch != Search
                 || sectionsRoleFilter != RoleFilterId
+                || sectionsJobFilter != JobFilterDefName
                 || sectionsGroupBy != profile.GetGroupBy()
                 || sectionsSort != profile.GetSortColumn() || sectionsOrder != order)
             {
@@ -216,6 +232,7 @@ namespace WorkRoles.UI
                 sectionsMapId = pawnsMapId;
                 sectionsSearch = Search;
                 sectionsRoleFilter = RoleFilterId;
+                sectionsJobFilter = JobFilterDefName;
                 sectionsGroupBy = profile.GetGroupBy();
                 sectionsSort = profile.GetSortColumn();
                 sectionsOrder = order;
@@ -264,12 +281,18 @@ namespace WorkRoles.UI
                             matchingRoles.Add(role.id);
             }
 
+            // Search matches pawn names OR job names: the term expands once to
+            // the giver set whose display name (or work-type gerund) contains it.
+            HashSet<string> searchGivers = SearchMatchingGivers(Search);
+
             var result = new List<Pawn>();
             for (int i = 0; i < listed.Count; i++)
             {
                 Pawn pawn = listed[i];
-                if (!Search.NullOrEmpty() && pawn.LabelShortCap.IndexOf(
-                        Search, StringComparison.OrdinalIgnoreCase) < 0)
+                if (!Search.NullOrEmpty()
+                    && pawn.LabelShortCap.IndexOf(
+                        Search, StringComparison.OrdinalIgnoreCase) < 0
+                    && !PawnCoverageIntersects(store, pawn, searchGivers))
                     continue;
                 if (matchingRoles != null)
                 {
@@ -278,7 +301,59 @@ namespace WorkRoles.UI
                         || !set.assignments.Any(a => matchingRoles.Contains(a.roleId)))
                         continue;
                 }
+                if (JobFilterDefName != null
+                    && !PawnCoverageContains(store, pawn, JobFilterDefName))
+                    continue;
                 result.Add(pawn);
+            }
+            return result;
+        }
+
+        /// Union coverage of the pawn's assigned non-blocker roles contains
+        /// the giver (blockers veto the job, so they never count as having it).
+        private static bool PawnCoverageContains(RoleStore store, Pawn pawn, string giverDefName)
+        {
+            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
+            foreach (var assignment in set.assignments)
+            {
+                Role role = store.RoleById(assignment.roleId);
+                if (role != null && !role.blocker
+                    && role.Coverage().Contains(giverDefName))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool PawnCoverageIntersects(RoleStore store, Pawn pawn, HashSet<string> givers)
+        {
+            if (givers == null || givers.Count == 0) return false;
+            if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
+            foreach (var assignment in set.assignments)
+            {
+                Role role = store.RoleById(assignment.roleId);
+                if (role == null || role.blocker) continue;
+                foreach (string giver in role.Coverage())
+                    if (givers.Contains(giver)) return true;
+            }
+            return false;
+        }
+
+        /// Giver defNames whose display name or work-type gerund contains the
+        /// term; null when the term is empty. Runs once per sections rebuild.
+        private static HashSet<string> SearchMatchingGivers(string term)
+        {
+            if (term.NullOrEmpty()) return null;
+            HashSet<string> result = null;
+            foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading)
+            {
+                if (def.workType == null) continue;
+                bool matches = WorkJobLabels.GiverDisplayName(def)
+                        .IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
+                    || (def.workType.gerundLabel != null
+                        && def.workType.gerundLabel.IndexOf(
+                            term, StringComparison.OrdinalIgnoreCase) >= 0);
+                if (matches)
+                    (result ??= new HashSet<string>(StringComparer.Ordinal)).Add(def.defName);
             }
             return result;
         }

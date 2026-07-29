@@ -474,13 +474,17 @@ namespace WorkRoles.UI
                 return cluster;
             }
 
-            // Tree rows repeat a child under every covering root (including
+            // Tree rows repeat a child under every covering parent (including
             // virtual cross-group rows); the palette shows each role once,
-            // clustered under its first real appearance.
+            // clustered under the root of its first real appearance.
             var seen = new HashSet<int>();
-            foreach (var (role, parent, virtualRow) in RolesListState.BuildRoleTree(store).rows)
+            Role root = null;
+            foreach (var (role, _, depth, virtualRow) in RolesListState.BuildRoleTree(store).rows)
+            {
+                if (depth == 0) root = role;
                 if (!virtualRow && seen.Add(role.id))
-                    ClusterFor(parent ?? role).roles.Add(role);
+                    ClusterFor(depth == 0 ? role : root).roles.Add(role);
+            }
 
             var result = new List<PaletteCluster>();
             if (everyone != null) result.Add(everyone);
@@ -720,10 +724,12 @@ namespace WorkRoles.UI
 
         private void DrawFilterRow(Rect rect, RoleStore store)
         {
+            // Slimmed so the added job filter still fits the design width
+            // (left cluster 619px + right cluster 354px inside ~990px).
             const float SearchLabelW = 46f;
-            const float SearchW = 150f;
+            const float SearchW = 110f;
             const float SearchH = 24f;
-            const float RoleBtnW = 150f;
+            const float RoleBtnW = 135f;
             float y = rect.y + (rect.height - SearchH) / 2f;
 
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -774,16 +780,54 @@ namespace WorkRoles.UI
                 Find.WindowStack.Add(new FloatMenu(options));
             }
 
+            // Job filter: pawns whose assigned roles cover the selected job.
+            float jobX = btnX + RoleBtnW + 8f;
+            var jobGiver = rosterState.JobFilterDefName == null ? null
+                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(rosterState.JobFilterDefName);
+            string jobLabel = jobGiver != null
+                ? WorkJobLabels.GiverDisplayName(jobGiver)
+                : "WR_FilterAnyJob".Translate().ToString();
+            var jobBtnRect = new Rect(jobX, y, RoleBtnW, SearchH);
+            string jobShown = jobLabel.Truncate(jobBtnRect.width - 20f);
+            if (jobShown != jobLabel)
+                TooltipHandler.TipRegion(jobBtnRect, jobLabel);
+            if (Widgets.ButtonText(jobBtnRect, jobShown))
+            {
+                var options = new List<FloatMenuOption>
+                {
+                    new FloatMenuOption("WR_FilterAnyJob".Translate(),
+                        () => rosterState.JobFilterDefName = null),
+                };
+                foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading
+                    .Where(d => d.workType != null)
+                    .OrderBy(WorkJobLabels.GiverDisplayName,
+                        System.StringComparer.OrdinalIgnoreCase))
+                {
+                    var captured = def.defName;
+                    options.Add(new FloatMenuOption(WorkJobLabels.GiverDisplayName(def),
+                        () => rosterState.JobFilterDefName = captured));
+                }
+                Find.WindowStack.Add(new FloatMenu(options));
+            }
+
             // Scope dropdown: which locations' pawns the table lists (options
             // come from the pawn snapshot — ListedPawns keeps them fresh).
-            float scopeX = btnX + RoleBtnW + 8f;
+            // Long location names widen the button; RoleBtnW is only the minimum.
+            float scopeX = jobX + RoleBtnW + 8f;
             IReadOnlyList<ScopeOption> scopeOptions = rosterState.ScopeOptions;
-            if (Widgets.ButtonText(new Rect(scopeX, y, RoleBtnW, SearchH),
-                    ColonyScope.LabelOf(rosterState.Scope)))
+            string scopeLabel = ColonyScope.LabelOf(rosterState.Scope);
+            float scopeW = Mathf.Max(RoleBtnW, WrText.FitWidth(scopeLabel) + 20f);
+            if (Widgets.ButtonText(new Rect(scopeX, y, scopeW, SearchH), scopeLabel))
             {
                 var menu = new List<FloatMenuOption>();
+                string currentLocationId = ColonyScope.CurrentLocationId();
                 foreach (var option in scopeOptions)
                 {
+                    // The current location's named entry folds into the
+                    // "(current location)" item instead of listing twice.
+                    if (option.Kind == ScopeKind.Location
+                        && option.LocationId == currentLocationId)
+                        continue;
                     var captured = option;
                     var item = new FloatMenuOption(ColonyScope.LabelOf(option), () =>
                     {
@@ -797,12 +841,13 @@ namespace WorkRoles.UI
 
             if (rosterState.FiltersActive)
             {
-                var clearRect = new Rect(scopeX + RoleBtnW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
+                var clearRect = new Rect(scopeX + scopeW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
                 TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                 {
                     rosterState.Search = "";
                     rosterState.RoleFilterId = -1;
+                    rosterState.JobFilterDefName = null;
                 }
             }
 
@@ -904,7 +949,9 @@ namespace WorkRoles.UI
 
         // Abbreviation building lives in Core (RoleAbbreviations) with tests.
 
-        private const float SkillCellContentW = 82f; // "12.37" + up to two signal decorators
+        // Trailing air so the last decorator never sits flush against the
+        // neighbouring column or the chip strip.
+        private const float SkillColumnPad = 8f;
 
         // CapitalizeFirst allocates for lowercase labels; header labels are
         // needed per column per pass, so memoize per def (language switch clears).
@@ -923,11 +970,13 @@ namespace WorkRoles.UI
             skillHeaderLabels.Clear();
         }
 
-        /// Header label (localized) or cell content, whichever is wider.
+        /// Header label (localized) or the generation's widest cell content,
+        /// whichever is wider, plus trailing air.
         internal float SkillColumnWidth(SkillDef skill)
         {
             Text.Font = GameFont.Small;
-            return Mathf.Max(SkillCellContentW, WrText.FitWidth(SkillHeaderLabel(skill)) + 18f);
+            return Mathf.Max(statsState.RosterCellWidth(skill),
+                WrText.FitWidth(SkillHeaderLabel(skill)) + 18f) + SkillColumnPad;
         }
 
         private float SkillColumnsWidth()

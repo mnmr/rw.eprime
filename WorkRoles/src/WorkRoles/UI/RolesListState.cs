@@ -15,7 +15,7 @@ namespace WorkRoles.UI
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
         private static int collapseRevision;
 
-        private List<(RoleSection section, Role role, Role parent, bool virtualRow)> displayRows;
+        private List<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> displayRows;
         private RoleListSnapshot snapshot;
         private int displayStamp = -1;
         private int displayCollapseRevision = -1;
@@ -69,20 +69,20 @@ namespace WorkRoles.UI
                 displayNested = nested;
                 displaySearch = RoleSearch;
                 displayJobFilter = JobFilterDefName;
-                displayRows = new List<(RoleSection, Role, Role, bool)>();
+                displayRows = new List<(RoleSection, Role, Role, int, bool)>();
                 if (filtered)
                 {
                     foreach (Role role in store.roles.Where(MatchesFilters))
-                        displayRows.Add((null, role, null, false));
+                        displayRows.Add((null, role, null, 0, false));
                 }
                 else
                 {
                     foreach (RoleSection section in sections)
                     {
-                        displayRows.Add((section, null, null, false));
+                        displayRows.Add((section, null, null, 0, false));
                         if (!IsSectionCollapsed(section.key))
-                            foreach (var (member, parent, virtualRow) in section.rows)
-                                displayRows.Add((section, member, parent, virtualRow));
+                            foreach (var (member, parent, depth, virtualRow) in section.rows)
+                                displayRows.Add((section, member, parent, depth, virtualRow));
                     }
                 }
                 snapshot = new RoleListSnapshot(displayRows, filtered);
@@ -142,11 +142,11 @@ namespace WorkRoles.UI
         }
 
         internal static (IReadOnlyList<Role> roots,
-            IReadOnlyList<(Role role, Role parent, bool virtualRow)> rows)
+            IReadOnlyList<(Role role, Role parent, int depth, bool virtualRow)> rows)
             BuildRoleTree(RoleStore store)
         {
             var roots = new List<Role>();
-            var rows = new List<(Role role, Role parent, bool virtualRow)>();
+            var rows = new List<(Role role, Role parent, int depth, bool virtualRow)>();
             foreach (RoleSection section in BuildSections(store, nested: true))
             {
                 roots.AddRange(section.roots);
@@ -155,31 +155,47 @@ namespace WorkRoles.UI
             return (roots, rows);
         }
 
+        /// Blockers nest under blockers, normal roles under normal roles;
+        /// rule-carrying roles stay flat (they display under Auto-Roles).
+        internal static bool CanNest(Role parent, Role child)
+            => parent.blocker == child.blocker && !parent.HasRules && !child.HasRules;
+
         private static (List<Role> roots,
-            List<(Role role, Role parent, bool virtualRow)> rows)
+            List<(Role role, Role parent, int depth, bool virtualRow)> rows)
             BuildRoleTree(List<Role> members, List<Role> allRoles)
         {
-            bool Eligible(Role role) => !role.blocker && !role.HasRules;
-
             var memberSet = new HashSet<Role>(members);
             var nested = new HashSet<Role>();
             foreach (Role role in members)
-                if (Eligible(role) && members.Any(other =>
-                        Eligible(other) && other.Covers(role)))
+                if (members.Any(other => CanNest(other, role) && other.Covers(role)))
                     nested.Add(role);
 
             List<Role> roots = members.Where(role => !nested.Contains(role)).ToList();
-            var rows = new List<(Role role, Role parent, bool virtualRow)>(members.Count);
+            var rows = new List<(Role role, Role parent, int depth, bool virtualRow)>(members.Count);
             foreach (Role root in roots)
             {
-                rows.Add((root, null, false));
-                if (!Eligible(root)) continue;
-                foreach (Role child in allRoles
-                    .Where(role => Eligible(role) && root.Covers(role))
-                    .OrderBy(role => RoleCommands.BlockStart(root.entries, role)))
-                    rows.Add((child, root, !memberSet.Contains(child)));
+                rows.Add((root, null, 0, false));
+                AddChildren(root, 1);
             }
             return (roots, rows);
+
+            void AddChildren(Role parent, int depth)
+            {
+                var covered = allRoles
+                    .Where(role => CanNest(parent, role) && parent.Covers(role))
+                    .ToList();
+                if (covered.Count == 0) return;
+                var coverages = covered.Select(role => role.Coverage()).ToList();
+                var orderedCoverage = CoverageMath.OrderedCoverageOf(
+                    parent.entries, GameJobCatalog.Instance);
+                foreach (int index in CoverageMath.ImmediatelyCoveredIndexes(coverages)
+                    .OrderBy(i => CoverageMath.FirstCoveredIndex(orderedCoverage, coverages[i])))
+                {
+                    Role child = covered[index];
+                    rows.Add((child, parent, depth, !memberSet.Contains(child)));
+                    AddChildren(child, depth + 1);
+                }
+            }
         }
 
         private static List<RoleSection> BuildSectionsUncached(RoleStore store, bool nested)
@@ -246,7 +262,7 @@ namespace WorkRoles.UI
                 {
                     section.roots = section.members;
                     section.rows = section.members
-                        .Select(role => (role, (Role)null, false)).ToList();
+                        .Select(role => (role, (Role)null, 0, false)).ToList();
                 }
                 section.displayTitle = section.title + " (" + section.members.Count + ")";
             }
@@ -257,14 +273,14 @@ namespace WorkRoles.UI
     internal sealed class RoleListSnapshot
     {
         internal RoleListSnapshot(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, bool virtualRow)> rows,
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> rows,
             bool filtered)
         {
             Rows = rows;
             Filtered = filtered;
         }
 
-        internal IReadOnlyList<(RoleSection section, Role role, Role parent, bool virtualRow)> Rows { get; }
+        internal IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> Rows { get; }
         internal bool Filtered { get; }
     }
 
@@ -281,7 +297,7 @@ namespace WorkRoles.UI
         internal bool dropTarget;
         internal List<Role> members = new List<Role>();
         internal List<Role> roots;
-        internal List<(Role role, Role parent, bool virtualRow)> rows;
+        internal List<(Role role, Role parent, int depth, bool virtualRow)> rows;
         internal string displayTitle;
     }
 }

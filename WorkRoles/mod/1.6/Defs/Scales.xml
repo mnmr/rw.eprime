@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Shipped holder scales (12 colony-size bands of 3: 1-3 .. 34+). Roles
+       reference them by label via RoleDef.holderScale; several roles can share
+       one scale. Seeded once per save as editable scales; max omitted =
+       uncapped. -->
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleDoctoring</defName>
+    <label>Doctoring</label>
+    <min>2,2,3,3,4,4,5,5,6,6,7,7</min>
+    <train>1,1,2,2,2,2,3,3,3,3,4,4</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleWardening</defName>
+    <label>Wardening</label>
+    <min>2,2,2,3,3,3,4,4,4,5,5,5</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleResearch</defName>
+    <label>Research</label>
+    <min>3,3,3,4,4,4,4,4,4,4,4,4</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef MayRequire="Ludeon.RimWorld.Anomaly">
+    <defName>WS_ScaleDarkStudy</defName>
+    <label>Dark Study</label>
+    <min>1,1,1,1,1,1,1,1,1,1,1,1</min>
+    <train>0,0,0,0,0,0,0,0,0,0,0,0</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleMining</defName>
+    <label>Mining</label>
+    <min>2,2,2,3,3,3,4,4,4,5,5,5</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <!-- Per-role copies: every root role owns its scale, none shared. -->
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleCooking</defName>
+    <label>Cooking</label>
+    <min>2,2,2,3,3,3,4,4,4,5,5,5</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleCrafting</defName>
+    <label>Crafting</label>
+    <min>2,2,2,3,3,3,4,4,4,5,5,5</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleCaretaking</defName>
+    <label>Caretaking</label>
+    <min>2,2,2,3,3,3,4,4,4,5,5,5</min>
+    <train>1,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleHandling</defName>
+    <label>Handling</label>
+    <min>2,2,3,3,4,4,5,5,5,5,5,5</min>
+    <train>1,1,2,2,2,2,3,3,3,3,3,3</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleSmithing</defName>
+    <label>Smithing</label>
+    <min>2,2,3,3,4,4,5,5,5,5,5,5</min>
+    <train>1,1,2,2,2,2,3,3,3,3,3,3</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleBuilding</defName>
+    <label>Building</label>
+    <min>2,2,3,3,4,4,5,5,6,6,7,7</min>
+    <train>1,1,2,2,2,2,3,3,3,3,4,4</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef MayRequire="Ludeon.RimWorld.Odyssey">
+    <defName>WS_ScaleFishing</defName>
+    <label>Fishing</label>
+    <min>2,2,3,3,4,4,5,5,6,6,7,7</min>
+    <train>1,1,1,1,1,1,1,2,2,2,2,2</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleFarming</defName>
+    <label>Farming</label>
+    <min>2,2,3,3,4,4,5,5,6,6,7,7</min>
+    <train>1,1,1,1,1,1,1,2,2,2,2,2</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleDrugFabrication</defName>
+    <label>Drug Fabrication</label>
+    <min>1,1,1,2,2,2,3,3,3,4,4,4</min>
+    <train>1,1,0,1,1,1,2,2,2,3,3,3</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleTailoring</defName>
+    <label>Tailoring</label>
+    <min>2,2,3,3,4,4,5,5,5,5,5,5</min>
+    <train>1,1,2,2,2,2,3,3,3,3,3,3</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleFabrication</defName>
+    <label>Fabrication</label>
+    <min>1,1,2,3,4,4,5,5,6,6,6,6</min>
+    <train>1,1,1,2,2,2,3,3,4,4,4,4</train>
+  </WorkRoles.ScaleDef>
+
+  <WorkRoles.ScaleDef>
+    <defName>WS_ScaleArtistry</defName>
+    <label>Artistry</label>
+    <min>0,1,1,2,2,2,2,2,2,2,2,2</min>
+    <train>0,1,1,1,1,1,1,1,1,1,1,1</train>
+  </WorkRoles.ScaleDef>
+
+</Defs>

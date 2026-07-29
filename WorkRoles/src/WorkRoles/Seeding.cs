@@ -73,10 +73,10 @@ namespace WorkRoles
                         if (workType != null && !workType.visible) continue;
                         if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
                         {
-                            // Everyone-types live only in Basics; a priority that
-                            // differs from the pawn's other Basics types has no
-                            // role to ride and drops legitimately.
-                            if (EveryoneWorkTypes.Contains(pair.Key))
+                            // Compat types ride only their declared roles; a
+                            // priority with no matching role assignment drops
+                            // legitimately.
+                            if (IsTemplateCompatType(pair.Key))
                                 Log.Warning($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
                             else
                                 Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
@@ -96,6 +96,26 @@ namespace WorkRoles
 
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
             ShowSeedReport(store.roles.Count, assigned, generated, failures);
+        }
+
+        /// The invariant "Never" preset (max 0 everywhere) returns on every
+        /// load; ScaleDefs seed as ordinary editable scales, once per save
+        /// (knownScaleDefs), so renaming or deleting them sticks. A same-name
+        /// player scale wins — the def is only marked known.
+        internal static void EnsurePresetScales()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            if (store.ScaleByName("Never") == null)
+                store.holderScales.Add(HolderScale.Never("Never"));
+            foreach (var def in DefDatabase<ScaleDef>.AllDefsListForReading)
+            {
+                if (def.label.NullOrEmpty()
+                    || store.knownScaleDefs.Contains(def.defName)) continue;
+                store.knownScaleDefs.Add(def.defName);
+                if (store.ScaleByName(def.label) == null)
+                    store.holderScales.Add(def.ToScale());
+            }
         }
 
         /// Runs only alongside role seeding (members resolve by RoleDef template):
@@ -277,29 +297,43 @@ namespace WorkRoles
             }
         }
 
-        /// Visible modded work types that belong to everyone rather than a vocation:
-        /// appended to Basics instead of getting a generated role.
-        private static readonly HashSet<string> EveryoneWorkTypes = new HashSet<string>
+        /// Modded work types declared by RoleDef compat entries (MayRequire in
+        /// Roles.xml): supported mods' types, placed by template rather than
+        /// generated roles.
+        private static bool IsTemplateCompatType(string workTypeDefName)
         {
-            "HaulingUrgent", // Allow Tool's "haul urgently"
-        };
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
+            if (workType?.modContentPack == null || workType.modContentPack.IsOfficialMod)
+                return false;
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+                foreach (var entry in def.ParsedEntries())
+                    if (entry.Kind == JobEntryKind.WorkType && entry.DefName == workTypeDefName)
+                        return true;
+            return false;
+        }
 
-        /// Index in the role where a work type belongs by naturalPriority
-        /// (before the first entry of lower effective priority), so
-        /// everyone-types slot where vanilla's Work tab would put them
-        /// instead of trailing the role.
-        private static int NaturalInsertIndex(Role role, WorkTypeDef workType)
+        /// A newly seen work type that RoleDefs declare (MayRequire compat
+        /// entries): inserted into each template-linked live role at the
+        /// template's position, so a mod added mid-save lands like a fresh
+        /// seed. Returns whether any role took the type.
+        private static bool RestoreTemplateEntries(
+            RoleStore store, WorkTypeDef workType, List<string> result)
         {
-            for (int i = 0; i < role.entries.Count; i++)
+            bool restored = false;
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
             {
-                var entry = role.entries[i];
-                var type = entry.Kind == WorkRoles.Core.JobEntryKind.WorkType
-                    ? DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName)
-                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(entry.DefName)?.workType;
-                if (type != null && type.naturalPriority < workType.naturalPriority)
-                    return i;
+                var templateEntries = def.ParsedEntries();
+                int at = templateEntries.FindIndex(e =>
+                    e.Kind == JobEntryKind.WorkType && e.DefName == workType.defName);
+                if (at < 0) continue;
+                var role = store.RoleByTemplate(def.defName);
+                if (role == null || role.entries.Contains(templateEntries[at])) continue;
+                RoleCommands.AddEntryDirect(role.id, templateEntries[at],
+                    TemplatePlacement.AnchoredInsertIndex(role.entries, templateEntries, at));
+                result.Add(role.label);
+                restored = true;
             }
-            return role.entries.Count;
+            return restored;
         }
 
         /// Stable string hash (FNV-1a): string.GetHashCode is not guaranteed
@@ -314,12 +348,6 @@ namespace WorkRoles
                 hash *= 16777619u;
             }
             return hash;
-        }
-
-        private static UnityEngine.Color PaletteColor(string defName)
-        {
-            var def = DefDatabase<PaletteDef>.GetNamedSilentFail(defName);
-            return def?.color ?? new UnityEngine.Color(0.200f, 0.255f, 0.333f);
         }
 
         /// Snaps an arbitrary color to the nearest editor swatch (RGB distance)
@@ -344,9 +372,11 @@ namespace WorkRoles
             return best;
         }
 
-        /// Ensures every work type is reachable through some role. Runs on every load;
-        /// each work type is processed once per save (store.knownWorkTypes), so deleting
-        /// a generated role sticks. Returns labels of newly generated roles.
+        /// Ensures every work type is reachable through some role: types declared
+        /// by RoleDef compat entries restore into their template roles, other
+        /// visible types get generated roles. Runs on every load; each work type
+        /// is processed once per save (store.knownWorkTypes), so removing a
+        /// restored entry or generated role sticks. Returns labels of changed roles.
         public static List<string> EnsureWorkTypeCoverage()
         {
             var store = RoleStore.Current;
@@ -363,31 +393,20 @@ namespace WorkRoles
 
                 if (covered.Contains(workType.defName)) continue;
 
-                var basics = EveryoneWorkTypes.Contains(workType.defName)
-                    ? store.RoleByTemplate("WS_Basics")
-                    : null;
-                if (basics != null)
-                {
-                    RoleCommands.AddEntryDirect(basics.id,
-                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName),
-                        NaturalInsertIndex(basics, workType));
-                    result.Add(basics.label);
-                }
-                else if (workType.visible)
+                if (RestoreTemplateEntries(store, workType, result)) continue;
+
+                if (workType.visible)
                 {
                     string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
                         // Palette colors only, chosen deterministically across MP
-                        // clients: Everyone-work stays in Basics' family
-                        // (slate-700); other types hash (FNV-1a — stable, unlike
-                        // string.GetHashCode) to a hue and snap to the nearest
+                        // clients: the defName hashes (FNV-1a — stable, unlike
+                        // string.GetHashCode) to a hue snapped to the nearest
                         // palette color.
-                        role.color = EveryoneWorkTypes.Contains(workType.defName)
-                            ? PaletteColor("slate-700")
-                            : NearestPaletteColor(UnityEngine.Color.HSVToRGB(
-                                Fnv1a(workType.defName) % 360u / 360f, 0.5f, 0.55f));
+                        role.color = NearestPaletteColor(UnityEngine.Color.HSVToRGB(
+                            Fnv1a(workType.defName) % 360u / 360f, 0.5f, 0.55f));
                         role.hasCustomColor = true;
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                         result.Add(role.label);
@@ -522,27 +541,14 @@ namespace WorkRoles
         private static readonly Dictionary<string, List<string>> NoSnapshots =
             new Dictionary<string, List<string>>();
 
-        /// Def-derived entries including the seed-time appends (EveryoneWorkTypes
-        /// into Basics) and explicit entries for vanilla givers that mods moved
-        /// out of the def's work types — so drift detection and entry resets
-        /// reproduce a fresh seed on the CURRENT mod list, and coverage
+        /// Def-derived entries (MayRequire filtering makes ParsedEntries
+        /// mod-list-current) plus explicit entries for vanilla givers that mods
+        /// moved out of the def's work types — so drift detection and entry
+        /// resets reproduce a fresh seed on the CURRENT mod list, and coverage
         /// (nesting) keeps the moved jobs, which snapshots cannot provide.
         internal static List<WorkRoles.Core.JobEntry> DefaultEntriesFor(RoleDef def)
         {
             var entries = def.ParsedEntries();
-            if (def.defName == "WS_Basics")
-            {
-                var host = new Role { entries = entries };
-                foreach (var everyoneType in EveryoneWorkTypes)
-                {
-                    var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(everyoneType);
-                    if (workType == null) continue;
-                    if (entries.Any(e => e.Kind == WorkRoles.Core.JobEntryKind.WorkType
-                            && e.DefName == everyoneType)) continue;
-                    entries.Insert(NaturalInsertIndex(host, workType),
-                        new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, everyoneType));
-                }
-            }
             var moved = WorkTypeCoverage.MovedGivers(entries, NoSnapshots,
                 VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
             if (moved != null)
@@ -598,10 +604,21 @@ namespace WorkRoles
             return true;
         }
 
-        private static bool HoldersDrifted(Role role) =>
-            role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
-            || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped
-            || role.trainingWaivers != 0;
+        /// Stored holder fields differ from the def-resolved Auto defaults
+        /// (mode, explicit range flag, the scale reference, or the mirrored
+        /// values themselves).
+        private static bool HoldersDrifted(Role role, RoleDef def)
+        {
+            if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet)
+                return true;
+            if (!string.Equals(role.holderScaleName ?? "", def.holderScale ?? "",
+                    System.StringComparison.OrdinalIgnoreCase))
+                return true;
+            RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
+            return role.minHolders != defaults.Min
+                || role.maxHolders != defaults.Max
+                || role.trainingWaivers != defaults.Train;
+        }
 
         /// Everything Restore Defaults could do right now: recreate missing
         /// template roles and default training paths, regenerate coverage for work
@@ -710,7 +727,7 @@ namespace WorkRoles
             {
                 var def = role.templateDefName == null ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-                if (def == null || !HoldersDrifted(role)) continue;
+                if (def == null || !HoldersDrifted(role, def)) continue;
                 result.Add(new RestoreItem
                 {
                     label = "WR_RestoreHoldersItem".Translate(role.label),
@@ -966,12 +983,30 @@ namespace WorkRoles
                 foreach (var roleId in holderRoleIds)
                 {
                     var role = store.RoleById(roleId);
-                    if (role == null || !HoldersDrifted(role)) continue;
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (def == null || !HoldersDrifted(role, def)) continue;
                     role.holderMode = RoleHolderMode.Auto;
                     role.holderRangeSet = false;
-                    role.minHolders = 0;
-                    role.maxHolders = RoleHolderRange.Uncapped;
-                    role.trainingWaivers = 0;
+                    role.holderScaleName = def.holderScale.NullOrEmpty()
+                        ? null : def.holderScale;
+                    // A renamed or deleted seed scale returns from its def so
+                    // the restored reference resolves.
+                    if (!def.holderScale.NullOrEmpty()
+                        && store.ScaleByName(def.holderScale) == null)
+                    {
+                        var scaleDef = DefDatabase<ScaleDef>.AllDefsListForReading
+                            .FirstOrDefault(d => string.Equals(d.label, def.holderScale,
+                                System.StringComparison.OrdinalIgnoreCase));
+                        if (scaleDef != null)
+                            store.holderScales.Add(scaleDef.ToScale());
+                    }
+                    // Stored fields mirror the resolved defaults so the editor
+                    // shows the def values instead of zeros.
+                    RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
+                    role.minHolders = defaults.Min;
+                    role.maxHolders = defaults.Max;
+                    role.trainingWaivers = defaults.Train;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 

@@ -82,6 +82,7 @@ namespace WorkRoles.Core.Recs
         // lists are computed once instead of per pawn or per query.
         private readonly Dictionary<int, HashSet<int>> redundantBy;
         private readonly Dictionary<int, PathView> soloPathByRole;
+        private readonly Dictionary<int, PathView> targetPathByRole;
         private readonly Dictionary<int, IReadOnlyList<RoleSkillView>> requiredSkillsByRole =
             new Dictionary<int, IReadOnlyList<RoleSkillView>>();
         private readonly Dictionary<int, List<RoleSkillView>> orderedSkillsByRole =
@@ -129,6 +130,21 @@ namespace WorkRoles.Core.Recs
                     }
                     else soloPathByRole[roleId] = path;
                 }
+
+            // First path (colony order) where the role holds the highest min
+            // band: the ordering fallback for multi-path members with no
+            // pawn-specific placement — a role follows the path it tops.
+            targetPathByRole = new Dictionary<int, PathView>();
+            foreach (var path in colony.Paths)
+            {
+                int highest = int.MinValue;
+                foreach (int min in path.BandMins)
+                    if (min > highest) highest = min;
+                for (int i = 0; i < path.RoleIds.Count && i < path.BandMins.Count; i++)
+                    if (path.BandMins[i] >= highest
+                        && !targetPathByRole.ContainsKey(path.RoleIds[i]))
+                        targetPathByRole[path.RoleIds[i]] = path;
+            }
         }
 
         public RoleView RoleOf(int id) => RolesById.TryGetValue(id, out var role) ? role : null;
@@ -141,6 +157,11 @@ namespace WorkRoles.Core.Recs
         /// The unique path containing the role, or null (none, or ambiguous).
         public PathView SoloPathOf(int roleId)
             => soloPathByRole.TryGetValue(roleId, out var path) ? path : null;
+
+        /// The first path (colony order) where the role sits at the highest
+        /// min band, or null; ordering fallback for multi-path members.
+        public PathView TargetPathOf(int roleId)
+            => targetPathByRole.TryGetValue(roleId, out var path) ? path : null;
 
         /// The pawn-independent ordering skeleton, computed once per run and
         /// exposed through one immutable view shared by all rules.

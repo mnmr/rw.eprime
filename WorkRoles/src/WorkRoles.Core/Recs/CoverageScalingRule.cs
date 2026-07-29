@@ -7,12 +7,21 @@ namespace WorkRoles.Core.Recs
         int Want(RoleView role, int colonySize);
     }
 
-    /// 1-per-6 colony units: auto-coverage roles want one unit, needed roles
-    /// want MinHolders per unit; interest-only and Never want nothing.
+    /// Banded scales are direct lookups; roles without a scale keep the legacy
+    /// 1-per-6 unit formula (auto-coverage roles want one unit, needed roles
+    /// MinHolders per unit; interest-only and Never want nothing).
     public sealed class UnitScaling : IScalingAlgorithm
     {
         public int Want(RoleView role, int colonySize)
         {
+            if (role.Scale != null)
+            {
+                int want = System.Math.Max(0, role.Scale.MinAt(colonySize));
+                int cap = role.Scale.MaxAt(colonySize);
+                if (cap != RoleHolderRange.Uncapped)
+                    want = System.Math.Min(want, cap);
+                return System.Math.Min(colonySize, want);
+            }
             if (role.HolderMode == RoleHolderMode.Custom)
                 return System.Math.Max(0, role.MinHolders);
             int units = System.Math.Max(1, (colonySize + 5) / 6);

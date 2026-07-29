@@ -107,6 +107,7 @@ namespace WorkRoles.Patches
         {
             CompiledJobOrders.Invalidate(__instance);
             PawnLocationTracker.NotifyDestroyed(__instance);
+            JobRankBaseline.NotifyDestroyed(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
         }
     }
@@ -131,6 +132,7 @@ namespace WorkRoles.Patches
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
+            JobRankBaseline.ReleaseForTeardown();
             FloorMaps.ReleaseForTeardown();
             PawnLocationTracker.ReleaseForTeardown();
             RoleStore.ClearCached();

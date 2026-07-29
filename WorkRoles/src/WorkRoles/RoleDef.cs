@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -20,6 +21,9 @@ namespace WorkRoles
         /// Auto-mode minimum and the number of minimum slots training roles may satisfy.
         public RoleHolderMinimum minHolders = new RoleHolderMinimum();
         public int maxHolders = RoleHolderRange.Uncapped;
+        /// Holder scale name (a ScaleDef label) driving banded recommendation
+        /// demand; when set it overrides the scalar fields. Empty = none.
+        public string holderScale;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -53,7 +57,7 @@ namespace WorkRoles
                 label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 group, activeHours, string.Join("|", locations),
                 minHolders.Count.ToString(), minHolders.Waivers.ToString(),
-                maxHolders.ToString(),
+                maxHolders.ToString(), holderScale,
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -79,6 +83,10 @@ namespace WorkRoles
                 yield return $"unknown colorRef '{colorRef}'";
             if (minHolders.Waivers > minHolders.Count)
                 yield return $"minHolders waivers ({minHolders.Waivers}) exceed its count ({minHolders.Count})";
+            if (!holderScale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
+                    .Any(d => string.Equals(d.label, holderScale,
+                        System.StringComparison.OrdinalIgnoreCase)))
+                yield return $"holderScale '{holderScale}' matches no ScaleDef label";
         }
     }
 }

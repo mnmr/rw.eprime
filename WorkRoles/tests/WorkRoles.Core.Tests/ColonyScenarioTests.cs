@@ -85,8 +85,12 @@ public class ColonyScenarioTests
         {
             string defName = def.Element("defName")?.Value.Trim() ?? $"?{id}";
             var entries = new List<JobEntry>();
+            // The fixture models a vanilla mod list: MayRequire entries load
+            // only with their mod, whose work types (and pawn capability for
+            // them) don't exist here — keeping them would fail FullyCapable.
             foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
-                if (JobEntry.TryDecode(li.Value.Trim(), out var entry))
+                if (li.Attribute("MayRequire") == null
+                    && JobEntry.TryDecode(li.Value.Trim(), out var entry))
                     entries.Add(entry);
             var workTypes = new List<string>();
             foreach (var entry in entries)

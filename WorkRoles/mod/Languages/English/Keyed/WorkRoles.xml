@@ -124,6 +124,8 @@
   <!-- {0} = scope name (location or Everywhere/Current location) -->
   <WR_ScopeAll>Everywhere</WR_ScopeAll>
   <WR_ScopeCurrent>Current location</WR_ScopeCurrent>
+  <!-- {0} = the current location's name -->
+  <WR_ScopeCurrentNamed>{0} (current location)</WR_ScopeCurrentNamed>
   <WR_ShipFallback>Gravship</WR_ShipFallback>
   <WR_ShipTip>The gravship, while it is not parked at a settlement (a settlement tile takes precedence).</WR_ShipTip>
   <WR_GroupNone>No grouping</WR_GroupNone>
@@ -196,6 +198,10 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_SignalFromSkill>(from {0})</WR_SignalFromSkill>
   <WR_SignalAlreadyReflected>Already reflected in the displayed skill level.</WR_SignalAlreadyReflected>
   <WR_SignalDisabled>Disabled</WR_SignalDisabled>
+  <!-- {0} = the blocked work, e.g. Firefighting; Awful variant shows when
+       More Than Capable turns incapabilities into hated-but-possible work -->
+  <WR_SignalCapabilityOff>{0} disabled</WR_SignalCapabilityOff>
+  <WR_SignalCapabilityAwful>{0} treated as awful</WR_SignalCapabilityAwful>
   <WR_SignalDescriptive>Descriptive</WR_SignalDescriptive>
   <WR_SignalExpertiseScale>base {0}, expertise level {1}, current {2}</WR_SignalExpertiseScale>
   <WR_VerdictAwful>Awful</WR_VerdictAwful>
@@ -428,6 +434,28 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoldersMax>Max</WR_HoldersMax>
   <WR_HoldersWaivers>Waivers</WR_HoldersWaivers>
   <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
+
+  <!-- Holder scale editor -->
+  <WR_ScaleRenameTip>Rename this scale (roles referencing it follow).</WR_ScaleRenameTip>
+  <WR_ScaleRenameTitle>Rename scale</WR_ScaleRenameTitle>
+  <WR_ScaleNewTitle>New scale (copies the current one)</WR_ScaleNewTitle>
+  <!-- {0} = up to three role names, optionally suffixed with "+N more" -->
+  <WR_ScaleUsedBy>Used by {0}</WR_ScaleUsedBy>
+  <WR_ScaleReset>Reset</WR_ScaleReset>
+  <WR_ScaleResetTip>Restore the values from before your edits (since selecting this role or scale).</WR_ScaleResetTip>
+  <WR_ScaleSaveAs>Save As</WR_ScaleSaveAs>
+  <!-- {0} = scale name, {1} = "Used by ..." summary -->
+  <WR_ScaleDeleteConfirm>Delete scale '{0}'?\n\n{1}. These roles will use Never instead.</WR_ScaleDeleteConfirm>
+  <WR_ScaleSaveAsTitle>Save changes as a new scale (this scale reverts to its saved values)</WR_ScaleSaveAsTitle>
+  <WR_ScaleDirectTip>Minimum direct assignments for this band; the rest of the total may be filled by trainees. Raising it past the total raises the total too. Click +1 (wraps at 8), right-click -1, drag across bands to copy.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Recommended assignments (training substitutions included)</WR_ScaleTotalsCaption>
+  <!-- {0} = role label -->
+  <WR_ScaleMinsCaption>Assignment minimums for {0}</WR_ScaleMinsCaption>
+  <!-- {0} = target role label, {1} = this role's label -->
+  <WR_ScaleTrainingHelp>This role is a training role for {0} and assignments are therefore controlled by the tuning options for {0} (even when this is set to Never). However, you can still force minimum assignment counts for {1} here.</WR_ScaleTrainingHelp>
+  <!-- {0} = target role label -->
+  <WR_ScaleControlledBy>Controlled by {0}</WR_ScaleControlledBy>
+  <WR_ScaleTotalTip>Total recommended assignments for this band, trainees included. Click +1, right-click -1, drag across bands to copy.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
   <!-- Editor: collapsible recommendation tuning section -->
@@ -499,12 +527,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RenameGroup>Rename group</WR_RenameGroup>
   <WR_RenameGroupTitle>Rename group</WR_RenameGroupTitle>
   <WR_GroupOverlayTip>Roles with rules display under Auto-Roles. The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
-  <WR_IncludeRole>Include role...</WR_IncludeRole>
-  <!-- {0} = the group the included role currently lives in -->
-  <WR_IncludeMove>(will move from {0})</WR_IncludeMove>
-  <!-- {0} = the parent role's name -->
-  <WR_RemoveFromParent>Remove from {0}</WR_RemoveFromParent>
-  <WR_NothingToInclude>Nothing to include</WR_NothingToInclude>
   <WR_TreeNested>Nested</WR_TreeNested>
   <WR_TreeFlat>Flat</WR_TreeFlat>
   <WR_TreeToggleTip>Toggle nesting of covered roles under their combo role.</WR_TreeToggleTip>

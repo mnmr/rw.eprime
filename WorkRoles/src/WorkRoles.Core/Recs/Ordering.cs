@@ -78,9 +78,12 @@ namespace WorkRoles.Core.Recs
         /// replace their members' keys (band-min DESCENDING inside the block;
         /// same-anchor blocks rank by the pawn's strongest bucket in the
         /// block, then the block's smallest base position, then path id);
-        /// then the unlisted-Hunter and fire-safety overrides. A training
-        /// assignment uses its selected path. An otherwise ambiguous role
-        /// keeps its configured base position.
+        /// then the unlisted-Hunter and fire-safety overrides. Anchors CHAIN:
+        /// a block reads its anchor role at the position the role's own path
+        /// resolved it to (see GroupOrder). A training assignment uses its
+        /// selected path; an unplaced multi-path member follows the path it
+        /// tops; an otherwise ambiguous role keeps its configured base
+        /// position.
         public static Dictionary<int, long> SortKeys(EngineContext context, int pawnIndex)
         {
             var colony = context.Colony;
@@ -88,11 +91,21 @@ namespace WorkRoles.Core.Recs
             var keys = context.CopyBasePositions();
             var anchoredKeys = new Dictionary<int, Dictionary<int, long>>();
 
-            foreach (var group in colony.Paths
-                         .Where(p => p.AnchorRoleId != -1 && baseKeys.ContainsKey(p.AnchorRoleId))
-                         .GroupBy(p => (p.AnchorRoleId, p.AnchorBefore)))
+            var groups = colony.Paths
+                .Where(p => p.AnchorRoleId != -1 && baseKeys.ContainsKey(p.AnchorRoleId))
+                .GroupBy(p => (p.AnchorRoleId, p.AnchorBefore))
+                .ToList();
+            var groupIndexByPathId = new Dictionary<int, int>();
+            for (int i = 0; i < groups.Count; i++)
+                foreach (var path in groups[i])
+                    groupIndexByPathId[path.Id] = i;
+
+            foreach (int groupIndex in GroupOrder(
+                         context, pawnIndex, groups, groupIndexByPathId, baseKeys))
             {
-                long anchorKey = baseKeys[group.Key.AnchorRoleId];
+                var group = groups[groupIndex];
+                long anchorKey = ResolvedRoleKey(
+                    context, pawnIndex, group.Key.AnchorRoleId, baseKeys, anchoredKeys);
                 var blocks = group
                     .Select(path => (path,
                         strength: BlockStrength(context, pawnIndex, path),
@@ -110,8 +123,11 @@ namespace WorkRoles.Core.Recs
                     for (int m = 0; m < members.Count; m++)
                     {
                         if (!baseKeys.ContainsKey(members[m])) continue;
+                        // Before-offsets sit 1 off a multiple of 1000 so a
+                        // chained before+after pair can never cancel to an
+                        // exact tie with the anchor's own key.
                         pathKeys[members[m]] = group.Key.AnchorBefore
-                            ? anchorKey - (blocks.Count - rank) * 1000 + m
+                            ? anchorKey - (blocks.Count - rank) * 1000 + 1 + m
                             : anchorKey + (rank + 1) * 1000 + m;
                     }
                     anchoredKeys[path.Id] = pathKeys;
@@ -153,7 +169,75 @@ namespace WorkRoles.Core.Recs
             if (context.TrainingPathPlacements[pawnIndex].TryGetValue(
                     roleId, out var placement))
                 return placement.PathId;
-            return context.SoloPathOf(roleId)?.Id;
+            // Multi-path members without a placement follow the path they
+            // TOP; pure trainer roles stay ambiguous and keep base position.
+            return (context.SoloPathOf(roleId) ?? context.TargetPathOf(roleId))?.Id;
+        }
+
+        /// Anchored groups process in dependency order so a block reads its
+        /// anchor role at the position the role's OWN path resolved it to
+        /// (anchors chain). Cycles break deterministically: the stuck group
+        /// whose anchor sits lowest in the template goes first, reading
+        /// whatever has resolved so far.
+        private static List<int> GroupOrder(EngineContext context, int pawnIndex,
+            List<IGrouping<(int AnchorRoleId, bool AnchorBefore), PathView>> groups,
+            IReadOnlyDictionary<int, int> groupIndexByPathId,
+            IReadOnlyDictionary<int, long> baseKeys)
+        {
+            int count = groups.Count;
+            var dependsOn = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                dependsOn[i] = -1;
+                int anchorId = groups[i].Key.AnchorRoleId;
+                if (context.RoleOf(anchorId)?.PreserveRecommendationOrder == true) continue;
+                int? pathId = ApplicablePathId(context, pawnIndex, anchorId);
+                if (pathId.HasValue
+                    && groupIndexByPathId.TryGetValue(pathId.Value, out int at) && at != i)
+                    dependsOn[i] = at;
+            }
+
+            var order = new List<int>(count);
+            var emitted = new bool[count];
+            while (order.Count < count)
+            {
+                bool progress = false;
+                for (int i = 0; i < count; i++)
+                {
+                    if (emitted[i] || (dependsOn[i] != -1 && !emitted[dependsOn[i]]))
+                        continue;
+                    emitted[i] = true;
+                    order.Add(i);
+                    progress = true;
+                }
+                if (progress) continue;
+                int cycleBreaker = Enumerable.Range(0, count)
+                    .Where(i => !emitted[i])
+                    .OrderBy(i => baseKeys[groups[i].Key.AnchorRoleId])
+                    .ThenBy(i => groups[i].Key.AnchorRoleId)
+                    .ThenBy(i => groups[i].Key.AnchorBefore)
+                    .First();
+                emitted[cycleBreaker] = true;
+                order.Add(cycleBreaker);
+            }
+            return order;
+        }
+
+        /// The role's position after its own applicable path placed it; base
+        /// position when unplaced (or when the role preserves its slot).
+        private static long ResolvedRoleKey(EngineContext context, int pawnIndex,
+            int roleId, IReadOnlyDictionary<int, long> baseKeys,
+            Dictionary<int, Dictionary<int, long>> anchoredKeys)
+        {
+            if (context.RoleOf(roleId)?.PreserveRecommendationOrder != true)
+            {
+                int? pathId = ApplicablePathId(context, pawnIndex, roleId);
+                if (pathId.HasValue
+                    && anchoredKeys.TryGetValue(pathId.Value, out var pathKeys)
+                    && pathKeys.TryGetValue(roleId, out long key))
+                    return key;
+            }
+            return baseKeys[roleId];
         }
 
         private static bool TryUnanchoredKey(EngineContext context, int pawnIndex,

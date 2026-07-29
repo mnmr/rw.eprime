@@ -21,6 +21,10 @@ namespace WorkRoles.UI
         private const float LabelDecoratorGap = 4f;
         private const float SkillValueGap = 8f;
         private const float SkillValueWidth = 48f;
+        // Roster cell layout (DrawSkillCell): value slot, then 16px icons at
+        // an 18px stride from x+48. Floor keeps room for two decorators.
+        private const float RosterIconStartX = 48f;
+        private const float RosterCellMinWidth = 82f;
 
         private static readonly Color Low = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color Major = new Color(1f, 0.65f, 0.2f);
@@ -32,6 +36,8 @@ namespace WorkRoles.UI
             new Dictionary<Pawn, List<SkillLine>>();
         private readonly Dictionary<(Pawn pawn, SkillDef skill), SkillLine> skillLines =
             new Dictionary<(Pawn, SkillDef), SkillLine>();
+        private readonly Dictionary<SkillDef, float> rosterCellWidths =
+            new Dictionary<SkillDef, float>();
 
         private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
             presentations =
@@ -63,6 +69,7 @@ namespace WorkRoles.UI
             externalSnapshots.Clear();
             pawnSkillLines.Clear();
             skillLines.Clear();
+            rosterCellWidths.Clear();
             InvalidatePresentations();
         }
 
@@ -77,6 +84,7 @@ namespace WorkRoles.UI
             externalSnapshots.Clear();
             pawnSkillLines.Clear();
             skillLines.Clear();
+            rosterCellWidths.Clear();
             if (pawns != null)
                 foreach (Pawn pawn in pawns)
                 {
@@ -115,6 +123,30 @@ namespace WorkRoles.UI
 
         internal float SkillSortValue(Pawn pawn, SkillDef skill) =>
             SkillLineSnapshot(pawn, skill).SortValue;
+
+        /// Widest roster cell for this skill across the whole generation, so a
+        /// third-plus decorator widens the column instead of clipping. Whole
+        /// pixels by construction (48 + 16/2 multiples). Generation-scoped like
+        /// the lines it measures; lazy per skill, so column toggles stay free.
+        internal float RosterCellWidth(SkillDef skill)
+        {
+            if (skill == null) return RosterCellMinWidth;
+            if (rosterCellWidths.TryGetValue(skill, out float width)) return width;
+            width = RosterCellMinWidth;
+            foreach (Pawn pawn in externalSnapshots.Keys)
+            {
+                if (!skillLines.TryGetValue((pawn, skill), out SkillLine line)
+                    || line.Disabled) continue;
+                SkillSignalView view = SignalPresentationPolicy.ForSkill(
+                    SignalSnapshot(pawn).Signals, skill.defName);
+                int icons = SkillSignalPresentation.ResolveIcons(view).Count;
+                if (icons == 0) continue;
+                width = Mathf.Max(width, RosterIconStartX
+                    + icons * DecoratorSize + (icons - 1) * DecoratorGap);
+            }
+            rosterCellWidths[skill] = width;
+            return width;
+        }
 
         private void InvalidatePresentations()
         {

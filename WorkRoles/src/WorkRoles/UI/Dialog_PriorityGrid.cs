@@ -38,6 +38,8 @@ namespace WorkRoles.UI
         private const float RowH = 27f;
         private const float LabelAngle = 45f;
         private const float HeaderRunOutPadding = 20f;
+        private const float ScrollChromeH = 24f;
+        private const float MaxScreenHeightFraction = 0.9f;
 
         public Dialog_PriorityGrid(List<Pawn> pawns)
         {
@@ -63,11 +65,17 @@ namespace WorkRoles.UI
                 EnsureColumnCache();
                 // The last label rises past its column; reserve its run-out.
                 float labelRunOut = HeaderHorizontalRunOut(headerH);
-                float w = Mathf.Min(NameW + workTypes.Count * ColW + labelRunOut + 36f + 20f,
+                float w = Mathf.Min(NameW + workTypes.Count * ColW + labelRunOut
+                        + Margin * 2f + 20f,
                     Verse.UI.screenWidth * 0.95f);
-                float h = Mathf.Min(TitleH + headerH + pawns.Count * RowH + 36f + 24f,
-                    Verse.UI.screenHeight * 0.9f);
-                return new Vector2(w, h);
+                var heightLayout = PriorityGridHeightLayout.Calculate(
+                    rowCount: pawns.Count,
+                    rowHeight: RowH,
+                    fixedContentHeight: TitleH + headerH,
+                    windowMarginsHeight: Margin * 2f,
+                    scrollChromeHeight: ScrollChromeH,
+                    maxWindowHeight: Verse.UI.screenHeight * MaxScreenHeightFraction);
+                return new Vector2(w, heightLayout.WindowHeight);
             }
         }
 
@@ -91,10 +99,19 @@ namespace WorkRoles.UI
                     showVanilla = !showVanilla;
             }
 
-            var outRect = new Rect(inRect.x, inRect.y + TitleH, inRect.width, inRect.height - TitleH);
+            // Header pinned above the scroll view: the rotated labels are only
+            // position-stable in an unscrolled group (their GUIClip.Unclip pivot
+            // breaks under a scroll offset), and fixed headers match vanilla.
+            var headerRect = new Rect(inRect.x, inRect.y + TitleH, inRect.width, headerH);
+            var outRect = new Rect(inRect.x, headerRect.yMax, inRect.width,
+                inRect.height - TitleH - headerH);
             var viewRect = new Rect(0f, 0f,
                 NameW + workTypes.Count * ColW + HeaderHorizontalProjection(headerH),
-                headerH + pawns.Count * RowH);
+                pawns.Count * RowH);
+
+            if (Event.current.type == EventType.Repaint)
+                DrawHeader(headerRect);
+
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
 
             var scrollViewport = new Rect(scroll.x, scroll.y, outRect.width, outRect.height);
@@ -104,28 +121,15 @@ namespace WorkRoles.UI
                 contentStart: NameW,
                 viewportStart: scrollViewport.x,
                 viewportExtent: scrollViewport.width);
-            // Inclined labels project to the right of their base columns. Expand
-            // the viewport left by that exact run-out so the last label remains
-            // visible while scrolling through the reserved trailing header area.
-            float headerRunOut = HeaderHorizontalRunOut(headerH);
-            var visibleHeaderColumns = UniformViewportRange.Calculate(
-                itemCount: workTypes.Count,
-                itemExtent: ColW,
-                contentStart: NameW,
-                viewportStart: scrollViewport.x - headerRunOut,
-                viewportExtent: scrollViewport.width + headerRunOut);
             var visibleRows = UniformViewportRange.Calculate(
                 itemCount: pawns.Count,
                 itemExtent: RowH,
-                contentStart: headerH,
+                contentStart: 0f,
                 viewportStart: scrollViewport.y,
                 viewportExtent: scrollViewport.height);
-            bool headerVisible = scrollViewport.y < headerH && scrollViewport.yMax > 0f;
 
             if (Event.current.type == EventType.Repaint)
             {
-                if (headerVisible)
-                    DrawVisibleHeaderLabels(visibleHeaderColumns);
                 DrawVisibleColumnChrome(visibleBodyColumns, pawns.Count * RowH);
                 DrawVisibleRows(visibleRows, visibleBodyColumns, viewRect.width, numeric,
                     scrollViewport.x < NameW);
@@ -175,19 +179,36 @@ namespace WorkRoles.UI
             headerH = Mathf.Clamp(maxLabel + 8f, 40f, 140f);
         }
 
-        private void DrawVisibleHeaderLabels(UniformViewportRange visibleHeaderColumns)
+        private void DrawHeader(Rect headerRect)
         {
+            Widgets.BeginGroup(headerRect);
+            // Inclined labels project to the right of their base columns. Expand
+            // the viewport left by that exact run-out so the last label remains
+            // visible while scrolling through the reserved trailing header area.
+            float headerRunOut = HeaderHorizontalRunOut(headerH);
+            var visibleHeaderColumns = UniformViewportRange.Calculate(
+                itemCount: workTypes.Count,
+                itemExtent: ColW,
+                contentStart: NameW,
+                viewportStart: scroll.x - headerRunOut,
+                viewportExtent: headerRect.width + headerRunOut);
             // Each label draws only its own trailing 45° line; the first label
             // needs the line BEFORE it drawn separately (an empty phantom label
             // one column to the left).
-            WrText.InclinedLabel(new Rect(NameW - ColW, 0f, ColW, headerH), "",
+            WrText.InclinedLabel(new Rect(NameW - ColW - scroll.x, 0f, ColW, headerH), "",
                 phantomLabelSize, LabelAngle);
             for (int c = visibleHeaderColumns.Start; c < visibleHeaderColumns.EndExclusive; c++)
             {
-                float x = NameW + c * ColW;
+                float x = NameW + c * ColW - scroll.x;
                 var headRect = new Rect(x, 0f, ColW, headerH);
                 WrText.InclinedLabel(headRect, columnLabels[c], columnLabelSizes[c], LabelAngle);
+                TooltipHandler.TipRegion(headRect, columnTips[c]);
+                // Header stub of the column separator; the body draws the rest.
+                GUI.color = new Color(1f, 1f, 1f, 0.12f);
+                WrText.LineVertical(x, headerH - 2f, 2f);
+                GUI.color = Color.white;
             }
+            Widgets.EndGroup();
         }
 
         private void DrawVisibleColumnChrome(
@@ -197,11 +218,10 @@ namespace WorkRoles.UI
             for (int c = visibleBodyColumns.Start; c < visibleBodyColumns.EndExclusive; c++)
             {
                 float x = NameW + c * ColW;
-                TooltipHandler.TipRegion(new Rect(x, 0f, ColW, headerH + bodyH),
-                    columnTips[c]);
+                TooltipHandler.TipRegion(new Rect(x, 0f, ColW, bodyH), columnTips[c]);
                 // Column separator, vanilla Work-tab style (pixel-snapped).
                 GUI.color = new Color(1f, 1f, 1f, 0.12f);
-                WrText.LineVertical(x, headerH - 2f, bodyH + 2f);
+                WrText.LineVertical(x, 0f, bodyH);
                 GUI.color = Color.white;
             }
         }
@@ -217,7 +237,7 @@ namespace WorkRoles.UI
             for (int r = visibleRows.Start; r < visibleRows.EndExclusive; r++)
             {
                 var pawn = pawns[r];
-                float y = headerH + r * RowH;
+                float y = r * RowH;
                 if (r % 2 == 0)
                     Widgets.DrawBoxSolid(new Rect(0f, y, viewWidth, RowH),
                         new Color(1f, 1f, 1f, 0.04f));

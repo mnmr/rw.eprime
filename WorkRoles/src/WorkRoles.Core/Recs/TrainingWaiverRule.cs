@@ -21,13 +21,14 @@ namespace WorkRoles.Core.Recs
         public override RuleKind Kind => RuleKind.Colony;
         public override bool Relevant(EngineContext context)
             => context.Colony.Paths.Count > 0
-            && context.Colony.Roles.Any(r => r.TrainingWaivers > 0);
+            && context.Colony.Roles.Any(
+                r => r.TrainingWaiversAt(context.Colony.Pawns.Count) > 0);
 
         public override void Apply(EngineContext context)
         {
             var positions = context.BasePositions();
             foreach (var target in context.Colony.Roles
-                         .Where(r => r.TrainingWaivers > 0
+                         .Where(r => r.TrainingWaiversAt(context.Colony.Pawns.Count) > 0
                              && context.Want.TryGetValue(r.Id, out int want) && want > 0)
                          .OrderBy(r => positions[r.Id]).ThenBy(r => r.Id))
                 AllocateTarget(context, target);
@@ -68,7 +69,8 @@ namespace WorkRoles.Core.Recs
                 .Take(open)
                 .ToList();
 
-            int directFloor = System.Math.Max(0, want - target.TrainingWaivers);
+            int directFloor = System.Math.Max(0,
+                want - target.TrainingWaiversAt(context.Colony.Pawns.Count));
             int direct = context.HoldersOf(target.Id)
                 + selected.Count(m => m.InTargetBand);
             int promotions = System.Math.Max(0, directFloor - direct);
@@ -83,7 +85,8 @@ namespace WorkRoles.Core.Recs
             foreach (var match in below.Take(promotions))
                 AddTarget(context, target, match);
 
-            int waiversLeft = System.Math.Max(0, target.TrainingWaivers);
+            int waiversLeft = System.Math.Max(0,
+                target.TrainingWaiversAt(context.Colony.Pawns.Count));
             foreach (var match in below.Skip(promotions))
             {
                 if (waiversLeft > 0 && match.TrainingRoles.Count > 0)

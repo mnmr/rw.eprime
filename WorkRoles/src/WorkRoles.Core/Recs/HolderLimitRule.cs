@@ -24,7 +24,8 @@ namespace WorkRoles.Core.Recs
                 if (role.AutoAssign || role.HasRules || role.Blocker) continue;
                 int inbound = context.InboundTraining.TryGetValue(role.Id, out int count)
                     ? count : 0;
-                int maximum = demandPolicy.Maximum(role.MaxHolders, inbound);
+                int maximum = demandPolicy.Maximum(
+                    role.MaxHoldersAt(context.Colony.Pawns.Count), inbound);
                 context.EffectiveMaxHolders[role.Id] = maximum;
                 if (maximum >= RoleHolderRange.Uncapped) continue;
 

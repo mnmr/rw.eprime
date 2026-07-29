@@ -74,7 +74,7 @@ namespace WorkRoles.Core.Recs
         /// (MinHolders >= 1) or a path member (their own low-band audience).
         private static bool SkippedForCoverer(EngineContext context, RoleView role)
         {
-            if (role.MinHolders >= 1) return false;
+            if (role.MinHoldersAt(context.Colony.Pawns.Count) >= 1) return false;
             if (context.Colony.Paths.Any(p => p.RoleIds.Contains(role.Id))) return false;
             return context.AllocatedHoldersOf(role.Id) >= context.Want[role.Id];
         }

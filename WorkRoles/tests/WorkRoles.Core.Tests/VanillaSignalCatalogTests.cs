@@ -72,7 +72,12 @@ public class VanillaSignalCatalogTests
 
         await Assert.That(Effect("MeleeDamage_Strong", SignalEffectKind.Damage).Magnitude).IsEqualTo(1.5f);
         await Assert.That(Effect("MeleeDamage_Weak", SignalEffectKind.Damage).Magnitude).IsEqualTo(0.5f);
-        await Assert.That(One(SignalSourceKind.Gene, "Nearsighted").Effects.Count).IsEqualTo(2);
+        var nearsighted = One(SignalSourceKind.Gene, "Nearsighted");
+        await Assert.That(nearsighted.Effects.Count).IsEqualTo(2);
+        await Assert.That(nearsighted.Effects.Any(x => x.Magnitude == 0.5f
+            && x.Conditions.Any(c => c.Key == "range:medium"))).IsTrue();
+        await Assert.That(nearsighted.Effects.Any(x => x.Magnitude == 0.25f
+            && x.Conditions.Any(c => c.Key == "range:long"))).IsTrue();
         await Assert.That(One(SignalSourceKind.Gene, "ViolenceDisabled").Effects
             .Any(x => x.Kind == SignalEffectKind.Capability && x.Operation == SignalOperation.Disable)).IsTrue();
 
@@ -80,7 +85,9 @@ public class VanillaSignalCatalogTests
         await Assert.That(fire.Effects.Any(x => x.Kind == SignalEffectKind.Mood && x.Magnitude == -10f)).IsTrue();
         await Assert.That(fire.Effects.Any(x => x.Kind == SignalEffectKind.MentalBreak
             && x.Magnitude == 0.1f && x.Unit == SignalValueUnit.Days)).IsTrue();
-        await Assert.That(fire.Effects.Any(x => x.TargetDefName == "Pyromaniac")).IsTrue();
+        // Vanilla FireTerror only panics near fire; its Pyromaniac trait
+        // suppression never surfaces (suppressed traits emit no signals).
+        await Assert.That(fire.Effects.Count).IsEqualTo(2);
     }
 
     [Test]

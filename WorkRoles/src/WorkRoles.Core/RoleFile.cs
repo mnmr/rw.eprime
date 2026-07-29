@@ -49,6 +49,8 @@ namespace WorkRoles.Core
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
         public RoleHolderMode holderMode;
+        /// Named holder scale reference (document <Scales> or an existing scale).
+        public string holderScale;
         public bool holderRangeSet;
         public int minHolders;
         public int maxHolders = RoleHolderRange.Uncapped;
@@ -133,6 +135,8 @@ namespace WorkRoles.Core
         public List<FileGroup> groupsWithIds = new List<FileGroup>();
         public List<FileRole> roles = new List<FileRole>();
         public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
+        /// Named holder scales (banded min/train/max).
+        public List<HolderScale> scales = new List<HolderScale>();
         /// The stored recommendation-order template as role names; empty = the
         /// derived default (never exported).
         public List<string> recommendationOrder = new List<string>();
@@ -152,10 +156,12 @@ namespace WorkRoles.Core
         /// and gave <Holders> an inTraining attribute; v5 replaces the old
         /// holder floor/allowance with an explicit Auto/Never/Custom range;
         /// v6 adds the Custom training-waiver count; v7 adds document-local
-        /// role/group ids and id-backed references while retaining labels.
+        /// role/group ids and id-backed references while retaining labels;
+        /// v8 adds named <Scales> (banded holder demand) and the Holders
+        /// scale attribute referencing them.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "7";
+        public const string FormatVersion = "8";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -183,6 +189,10 @@ namespace WorkRoles.Core
     members slot into a colonist's list — before that role unless before=""false"".
   - <RecommendationOrder> lists roleId references with labels: importing it
     replaces the stored recommendation order (unlisted roles place dynamically).
+  - A <Scales> <Scale name=""...""> holds banded holder demand: <Min>, <Train>
+    and <Max> are comma lists with one value per colony-size band (12 bands of
+    3 colonists: 1-3, 4-6, ... 34+; short lists extend flat, -1 max = uncapped).
+    A Role references a scale via <Holders scale=""name""/>.
 ";
         private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
 
@@ -253,6 +263,23 @@ namespace WorkRoles.Core
                 root.Add(paths);
             }
 
+            if (doc.scales?.Count > 0)
+            {
+                var scales = new XElement("Scales");
+                foreach (var scale in doc.scales)
+                {
+                    if (scale == null) continue;
+                    var el = new XElement("Scale",
+                        new XAttribute("name", scale.Name ?? ""));
+                    if (scale.Preset) el.Add(new XAttribute("preset", "true"));
+                    el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(scale.Min)),
+                        new XElement("Train", HolderScaleCodec.EncodeRow(scale.Train)),
+                        new XElement("Max", HolderScaleCodec.EncodeRow(scale.Max)));
+                    scales.Add(el);
+                }
+                root.Add(scales);
+            }
+
             IReadOnlyList<FileRoleReference> effectiveOrder =
                 RecommendationOrderWithStableIds(doc);
             if (effectiveOrder.Count > 0)
@@ -295,10 +322,12 @@ namespace WorkRoles.Core
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
             if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
                 || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped
-                || role.trainingWaivers != 0)
+                || role.trainingWaivers != 0 || !string.IsNullOrEmpty(role.holderScale))
             {
                 var holders = new XElement("Holders",
                     new XAttribute("mode", role.holderMode.ToString().ToLowerInvariant()));
+                if (!string.IsNullOrEmpty(role.holderScale))
+                    holders.Add(new XAttribute("scale", role.holderScale));
                 if (role.holderMode == RoleHolderMode.Custom || role.holderRangeSet
                     || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped)
                 {
@@ -385,6 +414,26 @@ namespace WorkRoles.Core
             {
                 var role = ParseRole(roleEl, v5Holders, v6Training);
                 if (role != null) doc.roles.Add(role);
+            }
+            foreach (var scaleEl in root.Element("Scales")?.Elements("Scale")
+                     ?? Enumerable.Empty<XElement>())
+            {
+                string name = scaleEl.Attribute("name")?.Value?.Trim();
+                if (string.IsNullOrEmpty(name)) continue;
+                var scale = new HolderScale
+                {
+                    Name = name,
+                    Preset = string.Equals(scaleEl.Attribute("preset")?.Value,
+                        "true", StringComparison.OrdinalIgnoreCase),
+                    Min = HolderScaleCodec.DecodeRow(
+                        scaleEl.Element("Min")?.Value, 0),
+                    Train = HolderScaleCodec.DecodeRow(
+                        scaleEl.Element("Train")?.Value, 0),
+                    Max = HolderScaleCodec.DecodeRow(
+                        scaleEl.Element("Max")?.Value, RoleHolderRange.Uncapped),
+                };
+                scale.Normalize();
+                doc.scales.Add(scale);
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
                      ?? Enumerable.Empty<XElement>())
@@ -645,6 +694,8 @@ namespace WorkRoles.Core
                 var holders = options.Element("Holders");
                 if (holders != null && v5Holders)
                 {
+                    string scaleName = holders.Attribute("scale")?.Value?.Trim();
+                    if (!string.IsNullOrEmpty(scaleName)) role.holderScale = scaleName;
                     string mode = holders.Attribute("mode")?.Value?.Trim();
                     if (string.Equals(mode, "never", StringComparison.OrdinalIgnoreCase))
                         role.holderMode = RoleHolderMode.Never;

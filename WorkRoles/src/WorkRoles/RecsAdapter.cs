@@ -108,6 +108,7 @@ namespace WorkRoles
                 NaturalPriority = projection.MaxNaturalPriority,
                 WorkTypes = projection.CopyWorkTypes(),
                 HolderMode = role.holderMode,
+                Scale = RoleStore.Current?.ScaleFor(role),
                 MinHolders = role.ResolvedMinHolders(),
                 MaxHolders = role.ResolvedMaxHolders(),
                 TrainingWaivers = role.ResolvedTrainingWaivers(),

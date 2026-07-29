@@ -53,6 +53,15 @@ namespace WorkRoles
                 iconPath = def.iconPath,
                 entries = def.ParsedEntries()
             };
+            // Stored holder fields mirror the def so the editor and drift
+            // detection read def values; Auto mode still resolves dynamically.
+            var range = RoleHolderPolicy.WithMin(0, def.maxHolders, def.minHolders.Count);
+            role.minHolders = range.min;
+            role.maxHolders = range.max;
+            role.trainingWaivers = RoleHolderPolicy.WithTraining(
+                range.min, def.minHolders.Waivers);
+            if (!def.holderScale.NullOrEmpty())
+                role.holderScaleName = def.holderScale;
             if (!def.group.NullOrEmpty())
                 role.groupId = ResolveOrCreateGroup(def.group).id;
             if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
@@ -138,6 +147,86 @@ namespace WorkRoles
         {
             if (Store == null) return;
             Store.recommendationOrder = roleIds ?? new List<int>();
+            UiVersion.Bump();
+        }
+
+        /// One atomic scale mutation: ensure the target scale exists (cloning
+        /// sourceName when new), apply row values when provided, and point the
+        /// role at it. Preset scales never mutate — the editor forks them into
+        /// a fresh target name client-side before committing.
+        [SyncMethod]
+        public static void CommitScaleEdit(ScaleEdit edit)
+        {
+            if (Store == null || edit == null || edit.targetName.NullOrEmpty()) return;
+            string targetName = edit.targetName.Trim();
+            var target = Store.ScaleByName(targetName);
+            if (target == null)
+            {
+                var source = Store.ScaleByName(edit.sourceName);
+                target = source?.Copy() ?? new HolderScale();
+                target.Name = targetName;
+                target.Preset = false;
+                // Only the Never preset carries max 0; its forks start uncapped.
+                if (target.IsNever)
+                    for (int i = 0; i < HolderScale.Bands; i++)
+                        target.Max[i] = RoleHolderRange.Uncapped;
+                Store.holderScales.Add(target);
+            }
+            if (!target.Preset)
+            {
+                if (edit.min != null)
+                    target.Min = HolderScaleCodec.DecodeRow(edit.min, 0);
+                if (edit.train != null)
+                    target.Train = HolderScaleCodec.DecodeRow(edit.train, 0);
+                if (edit.max != null)
+                    target.Max = HolderScaleCodec.DecodeRow(
+                        edit.max, RoleHolderRange.Uncapped);
+                target.Normalize();
+            }
+            if (edit.roleId >= 0 && FindRole(edit.roleId) is Role role)
+                role.holderScaleName = target.Name;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetRoleScale(int roleId, string scaleName)
+        {
+            var role = FindRole(roleId);
+            if (role == null || Store.ScaleByName(scaleName) == null) return;
+            role.holderScaleName = scaleName;
+            UiVersion.Bump();
+        }
+
+        /// User scales only; roles referencing it fall back to Never.
+        [SyncMethod]
+        public static void DeleteScale(string name)
+        {
+            if (Store == null) return;
+            var scale = Store.ScaleByName(name);
+            if (scale == null || scale.Preset) return;
+            Store.holderScales.Remove(scale);
+            foreach (var role in Store.roles)
+                if (string.Equals(role.holderScaleName, scale.Name,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    role.holderScaleName = "Never";
+            UiVersion.Bump();
+        }
+
+        /// User scales only; every role referencing the old name follows.
+        [SyncMethod]
+        public static void RenameScale(string oldName, string newName)
+        {
+            if (Store == null) return;
+            newName = newName?.Trim();
+            var scale = Store.ScaleByName(oldName);
+            if (scale == null || scale.Preset || newName.NullOrEmpty()
+                || Store.ScaleByName(newName) != null) return;
+            string previous = scale.Name;
+            scale.Name = newName;
+            foreach (var role in Store.roles)
+                if (string.Equals(role.holderScaleName, previous,
+                        System.StringComparison.OrdinalIgnoreCase))
+                    role.holderScaleName = newName;
             UiVersion.Bump();
         }
 
@@ -293,6 +382,7 @@ namespace WorkRoles
             if (role == null || role.blocker == value) return;
             role.blocker = value;
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         [SyncMethod]
@@ -306,6 +396,10 @@ namespace WorkRoles
                     && kv.Value.assignments.TrueForAll(a => a.roleId == roleId))
                 .Select(kv => kv.Key)
                 .ToList();
+            // Holders that keep other roles lose this role's work; unmanaged
+            // pawns keep vanilla authority by design (mirrored fallback).
+            var keepers = Store.PawnsWithRole(roleId)
+                .Except(losingLastAssignment).ToList();
             foreach (var pawn in losingLastAssignment)
                 Store.UnmanagePawn(pawn, uiBatch.Request);
             CompiledJobOrders.InvalidateRole(roleId, uiBatch.Request);
@@ -333,6 +427,7 @@ namespace WorkRoles
             Store.roles.Remove(role);
             Store.InvalidateRoleIndex();
             SweepEmptyGroups();
+            CompiledJobOrders.ReconcileAll(keepers);
         }
 
         // ----- Role groups (purely organizational: no priority impact) -----
@@ -365,13 +460,15 @@ namespace WorkRoles
         /// The role plus (optionally) its same-group tree-children, catalog order.
         /// Overlay members (rules/blocker) never ride along — they don't
         /// display under the parent.
+        /// The dragged role plus every same-group role its subtree displays —
+        /// the same pair rule the tree uses, so drag moves what the user sees.
         private static List<Role> MovingBlock(Role role, bool withChildren)
         {
             var moving = new List<Role> { role };
             if (withChildren)
                 foreach (var other in Store.roles)
                     if (other.groupId == role.groupId && other != role
-                        && !other.blocker && !other.HasRules
+                        && UI.RolesListState.CanNest(role, other)
                         && role.Covers(other))
                         moving.Add(other);
             return moving;
@@ -453,36 +550,6 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
-        /// Composition: the parent gains the child's jobs (appended; job order is
-        /// edited in the Selected Jobs pane) and the child moves into the
-        /// parent's group so coverage nesting shows it there.
-        [SyncMethod]
-        public static void IncludeRole(int parentId, int childId)
-        {
-            var parent = FindRole(parentId);
-            var child = FindRole(childId);
-            if (parent == null || child == null || parent == child || child.blocker) return;
-            foreach (var entry in child.entries)
-                if (!parent.entries.Contains(entry))
-                    parent.entries.Add(entry);
-            child.groupId = parent.groupId;
-            SweepEmptyGroups();
-            CompiledJobOrders.InvalidateRole(parentId);
-        }
-
-        /// Un-composition: the parent loses the child's jobs (the child role
-        /// itself is untouched and un-nests by no longer being covered).
-        [SyncMethod]
-        public static void ExcludeChild(int parentId, int childId)
-        {
-            var parent = FindRole(parentId);
-            var child = FindRole(childId);
-            if (parent == null || child == null || parent == child) return;
-            var childSet = new HashSet<JobEntry>(child.entries);
-            if (parent.entries.RemoveAll(e => childSet.Contains(e)) > 0)
-                CompiledJobOrders.InvalidateRole(parentId);
-        }
-
         [SyncMethod]
         public static void RenameRole(int roleId, string label)
         {
@@ -523,6 +590,11 @@ namespace WorkRoles
             Store.customSwatches[index] = color;
         }
 
+        /// Role-level mutations can revoke or demote work the holders are
+        /// already doing; reconcile every holder after the invalidation.
+        private static void ReconcileHolders(int roleId) =>
+            CompiledJobOrders.ReconcileAll(Store.PawnsWithRole(roleId));
+
         [SyncMethod]
         public static void ToggleRoleGlobal(int roleId)
         {
@@ -530,6 +602,7 @@ namespace WorkRoles
             if (role == null) return;
             role.enabled = !role.enabled;
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         // Void like CreateRole: MP-deferred execution eats return values.
@@ -623,6 +696,7 @@ namespace WorkRoles
             if (role == null || role.activeHours == hoursMask) return;
             role.activeHours = hoursMask;
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         /// Adds/removes one location token; the role is active wherever any of
@@ -635,6 +709,7 @@ namespace WorkRoles
             if (!role.locationTokens.Remove(token))
                 role.locationTokens.Add(token);
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         [SyncMethod]
@@ -644,6 +719,7 @@ namespace WorkRoles
             if (role == null || role.locationTokens.Count == 0) return;
             role.locationTokens.Clear();
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         /// Restricts a bill to workers actively holding the role (-1 clears).
@@ -663,6 +739,9 @@ namespace WorkRoles
             role.activeHours = Role.AllHours;
             role.locationTokens.Clear();
             CompiledJobOrders.InvalidateRole(roleId);
+            // Activation-only, but newly active work can demote holders'
+            // in-flight jobs below it.
+            ReconcileHolders(roleId);
         }
 
         // ----- Role content -----
@@ -678,6 +757,7 @@ namespace WorkRoles
             if (index < 0 || index > role.entries.Count) index = role.entries.Count;
             role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         /// Removes entries with no effect (claimed above, duplicates). Behavior-
@@ -709,6 +789,7 @@ namespace WorkRoles
             if (role == null || index < 0 || index >= role.entries.Count) return;
             role.entries.RemoveAt(index);
             CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
         }
 
         [SyncMethod]
@@ -720,25 +801,19 @@ namespace WorkRoles
             role.entries.RemoveAt(from);
             role.entries.Insert(to, entry);
             CompiledJobOrders.InvalidateRole(roleId);
-        }
-
-        /// Min index in entries of any of child's entries (int.MaxValue when none present).
-        internal static int BlockStart(List<JobEntry> entries, Role child)
-        {
-            int min = int.MaxValue;
-            foreach (var entry in child.entries)
-            {
-                int idx = entries.IndexOf(entry);
-                if (idx >= 0 && idx < min) min = idx;
-            }
-            return min;
+            ReconcileHolders(roleId);
         }
 
         // ----- Pawn assignments -----
 
         [SyncMethod]
         public static void AssignRole(Pawn pawn, int roleId, int index = -1)
-            => AssignRoleDirect(pawn, roleId, index);
+        {
+            AssignRoleDirect(pawn, roleId, index);
+            // Assigning a blocker role can veto the pawn's current job; the
+            // engine path stays interruption-free (load-time seeding).
+            CompiledJobOrders.ReconcileInFlightWork(pawn);
+        }
 
         /// Engine-initiated path (coverage generation): creates a role without going through
         /// sync interception — runs deterministically on every client at load time.
@@ -788,6 +863,7 @@ namespace WorkRoles
             set.assignments.RemoveAll(a => a.roleId == roleId);
             if (set.assignments.Count == 0) Store.pawnSets.Remove(pawn);
             CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.ReconcileInFlightWork(pawn);
         }
 
         [SyncMethod]
@@ -799,6 +875,7 @@ namespace WorkRoles
             set.assignments.RemoveAt(from);
             set.assignments.Insert(to, assignment);
             CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.ReconcileInFlightWork(pawn);
         }
 
         [SyncMethod]
@@ -819,10 +896,13 @@ namespace WorkRoles
                             other.enabled = false;
                 assignment.enabled = true;
                 CompiledJobOrders.InvalidateRole(roleId);
+                // Every other holder just lost this role's work.
+                ReconcileHolders(roleId);
                 return;
             }
             assignment.enabled = !assignment.enabled;
             CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.ReconcileInFlightWork(pawn);
         }
 
         /// Pinned assignments are the player's placement: fixes never touch them.
@@ -859,6 +939,7 @@ namespace WorkRoles
             }
             Store.SetFor(pawn).assignments = assignments;
             CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.ReconcileInFlightWork(pawn);
         }
     }
 }

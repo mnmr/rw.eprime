@@ -73,4 +73,46 @@ public class CoverageMathTests
         var cook = CoverageMath.CoverageOf(new[] { Type("Cooking") }, Catalog);
         await Assert.That(CoverageMath.MakesRedundant(cook, 5, cook, 5)).IsFalse();
     }
+
+    [Test]
+    public async Task ImmediateCoverageShadowsDescendantsButNeverEquals()
+    {
+        var cooking = CoverageMath.CoverageOf(new[] { Type("Cooking") }, Catalog);
+        var butcherBrew = CoverageMath.CoverageOf(
+            new[] { Giver("Butcher"), Giver("Brew") }, Catalog);
+        var butcher = CoverageMath.CoverageOf(new[] { Giver("Butcher") }, Catalog);
+        var haul = CoverageMath.CoverageOf(new[] { Giver("HaulGeneral") }, Catalog);
+        var cookingAgain = CoverageMath.CoverageOf(
+            new[] { Giver("Cook"), Giver("Butcher"), Giver("Brew") }, Catalog);
+
+        // Both cooking subsets hide behind full cooking; the incomparable haul
+        // survives; equal coverages both survive (Covers is strict).
+        var immediate = CoverageMath.ImmediatelyCoveredIndexes(
+            new[] { cooking, butcherBrew, butcher, haul, cookingAgain });
+        await Assert.That(immediate).IsEquivalentTo(new[] { 0, 3, 4 });
+
+        // Without full cooking present, Butcher+Brew surfaces and shadows Butcher.
+        var reduced = CoverageMath.ImmediatelyCoveredIndexes(
+            new[] { butcherBrew, butcher, haul });
+        await Assert.That(reduced).IsEquivalentTo(new[] { 0, 2 });
+
+        await Assert.That(CoverageMath.ImmediatelyCoveredIndexes(
+            new List<HashSet<string>>())).IsEmpty();
+    }
+
+    [Test]
+    public async Task FirstCoveredIndexFindsTheEarliestGiverOrMaxValue()
+    {
+        var ordered = CoverageMath.OrderedCoverageOf(
+            new[] { Type("Cooking"), Giver("HaulGeneral") }, Catalog);
+        var brewHaul = CoverageMath.CoverageOf(
+            new[] { Giver("Brew"), Giver("HaulGeneral") }, Catalog);
+        var haul = CoverageMath.CoverageOf(new[] { Giver("HaulGeneral") }, Catalog);
+        var none = CoverageMath.CoverageOf(new[] { Giver("ModdedGone") }, Catalog);
+
+        // Cooking expands Cook,Butcher,Brew: Brew sits at index 2.
+        await Assert.That(CoverageMath.FirstCoveredIndex(ordered, brewHaul)).IsEqualTo(2);
+        await Assert.That(CoverageMath.FirstCoveredIndex(ordered, haul)).IsEqualTo(3);
+        await Assert.That(CoverageMath.FirstCoveredIndex(ordered, none)).IsEqualTo(int.MaxValue);
+    }
 }

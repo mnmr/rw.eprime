@@ -4,6 +4,7 @@ using System.Linq;
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using Verse.AI;
 using WorkRoles.Core;
 
 namespace WorkRoles
@@ -34,6 +35,10 @@ namespace WorkRoles
         }
 
         private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
+        /// Pawns evicted by patches that run mid-operation (location-rule
+        /// transitions): job interruption is unsafe there, so it is deferred
+        /// to the next game-component tick.
+        private static readonly List<Pawn> pendingReconciles = new List<Pawn>();
         private static readonly Func<Pawn, string, bool> PawnCanDoJob = CanPawnDoJob;
         private static ProjectionDefinitionCache projectionDefinitions;
         private static VanillaProjectionMetadata projectionMetadata;
@@ -91,11 +96,27 @@ namespace WorkRoles
                         if (role?.locationTokens == null
                             || role.locationTokens.Count == 0) continue;
                         cache.Remove(pawn);
+                        pendingReconciles.Add(pawn);
                         break;
                     }
                 }
 
             UiVersion.Bump();
+        }
+
+        /// Defers a reconcile to the next game-component tick (deterministic,
+        /// fully initialized, and only while the game is running).
+        internal static void EnqueueReconcile(Pawn pawn)
+        {
+            if (pawn != null) pendingReconciles.Add(pawn);
+        }
+
+        internal static void DrainPendingReconciles()
+        {
+            if (pendingReconciles.Count == 0) return;
+            var pawns = pendingReconciles.ToList();
+            pendingReconciles.Clear();
+            ReconcileAll(pawns);
         }
 
         public static void InvalidateRole(int roleId) => InvalidateRole(roleId, UiVersion.Bump);
@@ -158,6 +179,7 @@ namespace WorkRoles
         internal static void ReleaseForTeardown()
         {
             cache.Clear();
+            pendingReconciles.Clear();
             InvalidateProjectionMetadata();
         }
 
@@ -221,6 +243,68 @@ namespace WorkRoles
                 cache.Remove(pawn);
             }
             UiVersion.Bump();
+            // Plan order is deterministic (thingIDNumber), so the interruption
+            // cascade (new job searches, reservations) matches across MP clients.
+            for (int i = 0; i < plan.Pawns.Count; i++)
+                ReconcileInFlightWork(plan.Pawns[i]);
+        }
+
+        /// Deterministic wrapper for callers holding an unordered pawn set:
+        /// interruption cascades into job searches and reservations, so MP
+        /// clients must process pawns identically.
+        internal static void ReconcileAll(IEnumerable<Pawn> pawns)
+        {
+            if (pawns == null) return;
+            var ordered = pawns
+                .Where(pawn => pawn != null)
+                .Distinct(ReferenceIdentityComparer<Pawn>.Instance)
+                .OrderBy(pawn => pawn.thingIDNumber)
+                .ToList();
+            for (int i = 0; i < ordered.Count; i++)
+                ReconcileInFlightWork(ordered[i]);
+        }
+
+        /// Ends in-flight jobs whose work type lost authority (rank 0) or
+        /// standing (worse rank than when the job was issued) after a role-state
+        /// change. Synced contexts only (commands, ticks): the rebuild this
+        /// forces, and the interruptions, must not originate from one client's UI.
+        internal static void ReconcileInFlightWork(Pawn pawn)
+        {
+            if (pawn == null || RoleStore.Current?.IsManaged(pawn) != true) return;
+            var jobs = pawn.jobs;
+            if (jobs == null) return;
+
+            var current = jobs.curJob;
+            var currentType = current?.workGiverDef?.workType;
+
+            // Revoked types across the current and queued jobs: vanilla's
+            // notify scrubs the queue and ends the current job unless
+            // player-forced. PriorityFor forces the rebuild first, so the job
+            // search triggered by an interruption sees the new giver lists.
+            List<WorkTypeDef> revoked = null;
+            void CollectRevoked(WorkTypeDef workType)
+            {
+                if (workType == null || PriorityFor(pawn, workType) != 0) return;
+                revoked = revoked ?? new List<WorkTypeDef>();
+                if (!revoked.Contains(workType)) revoked.Add(workType);
+            }
+            CollectRevoked(currentType);
+            if (jobs.jobQueue != null)
+                foreach (var queued in jobs.jobQueue)
+                    CollectRevoked(queued?.job?.workGiverDef?.workType);
+            if (revoked != null)
+                for (int i = 0; i < revoked.Count; i++)
+                    jobs.Notify_WorkTypeDisabled(revoked[i]);
+
+            // Demoted current job: the type stayed active but ranks worse than
+            // at issue (its claimant deactivated, or new work entered above).
+            if (currentType == null || current.playerForced) return;
+            if (jobs.curJob != current) return;
+            int rank = PriorityFor(pawn, currentType);
+            if (rank == 0) return;
+            if (JobRankBaseline.TryGetRank(pawn, current, out int issueRank)
+                && rank > issueRank)
+                jobs.EndCurrentJob(JobCondition.InterruptForced);
         }
 
         /// Returned lists are owned by the cache — callers must never mutate them.

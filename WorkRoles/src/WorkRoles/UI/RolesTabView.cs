@@ -310,15 +310,14 @@ namespace WorkRoles.UI
                 (int)((listScroll.y + scrollRect.height) / RowHeight));
             for (int i = firstRow; i <= lastRow; i++)
             {
-                var (section, role, parentRole, virtualRow) = display[i];
+                var (section, role, _, depth, virtualRow) = display[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (role == null)
                 {
                     DrawGroupHeader(store, row, section, i, dragged, groupDrag);
                     continue;
                 }
-                bool isChild = parentRole != null;
-                float indent = isChild ? 18f : 0f;
+                float indent = depth * 18f;
 
                 if (role.id == selectedRoleId) Widgets.DrawHighlightSelected(row);
                 else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
@@ -387,12 +386,6 @@ namespace WorkRoles.UI
                     if (virtualRow) SelectRole(capturedId);
                     else RoleDrag.OnPress(dragControlId, capturedId, null,
                         () => SelectRole(capturedId));
-                    e.Use();
-                }
-
-                if (e.type == EventType.MouseDown && e.button == 1 && row.Contains(e.mousePosition))
-                {
-                    ShowRoleContextMenu(store, role, parentRole);
                     e.Use();
                 }
 
@@ -523,39 +516,41 @@ namespace WorkRoles.UI
 
         /// Organize-only drop while dragging a role: an insertion line at root
         /// granularity — above a root = before its block, below (or anywhere on
-        /// its children) = after its block. Landing in another group moves the
-        /// role (and its tree-children) there; overlay sections block.
+        /// its descendants) = after its block. Landing in another group moves
+        /// the role (and its tree-children) there; overlay sections block.
         private static void RegisterRoleDrop(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, bool virtualRow)> display,
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> display,
             int i, Rect row, Role dragged)
         {
-            var (section, role, parent, _) = display[i];
+            var (section, role, _, depth, _) = display[i];
             // A nested child's within-own-group drop is a no-op — its display
             // position comes from the tree, not the catalog order. Its virtual
             // rows elsewhere don't block: dropping there moves it to that group.
             bool nestedHere = section.rows != null
                 && section.rows.Any(t => t.role == dragged && t.parent != null && !t.virtualRow);
-            if (!section.dropTarget || role == dragged || parent == dragged || nestedHere)
+            if (!section.dropTarget || role == dragged || nestedHere
+                || HasAncestor(display, i, dragged))
             {
                 RoleDrag.HoverBlocked = true;
                 Widgets.DrawBoxSolid(row, BlockedTint);
                 return;
             }
-            var root = parent ?? role;
             float my = Event.current.mousePosition.y - row.y;
             int roleId = dragged.id;
             string groupName = section.commandName;
-            if (parent == null && my < row.height / 2f)
+            if (depth == 0 && my < row.height / 2f)
             {
                 DrawInsertMarker(row, row.y);
-                int beforeId = root.id;
+                int beforeId = role.id;
                 RoleDrag.HoverDropAction = () =>
                     RoleCommands.MoveRoleTo(roleId, groupName, beforeId, withChildren: true);
             }
             else
             {
+                // Block end: every following row of the root's subtree.
                 int end = i;
-                while (end + 1 < display.Count && display[end + 1].parent == root) end++;
+                while (end + 1 < display.Count && display[end + 1].role != null
+                    && display[end + 1].depth > 0) end++;
                 DrawInsertMarker(row, (end + 1) * RowHeight);
                 var next = end + 1 < display.Count ? display[end + 1].role : null;
                 int beforeId = next?.id ?? -1;
@@ -564,58 +559,22 @@ namespace WorkRoles.UI
             }
         }
 
-        // ----- Role-row context menu: composition without drag -----
-
-        private static void ShowRoleContextMenu(RoleStore store, Role role, Role parent)
+        /// Whether the row's display ancestor chain contains the candidate:
+        /// walking up, each ancestor is the nearest earlier row one level up.
+        private static bool HasAncestor(
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> display,
+            int i, Role candidate)
         {
-            var options = new List<FloatMenuOption>();
-            options.Add(new FloatMenuOption("WR_IncludeRole".Translate(),
-                () => ShowIncludeMenu(store, role)));
-            if (parent != null)
+            int need = display[i].depth - 1;
+            for (int at = i - 1; at >= 0 && need >= 0; at--)
             {
-                int pid = parent.id, cid = role.id;
-                string label = role.label;
-                // A child nests because jobs overlap within the group — the
-                // ways out are taking the jobs off the parent, or deleting it.
-                options.Add(new FloatMenuOption("WR_RemoveFromParent".Translate(parent.label),
-                    () => RoleCommands.ExcludeChild(pid, cid)));
-                options.Add(new FloatMenuOption("WR_Delete".Translate(), () =>
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                        "WR_DeleteConfirm".Translate(label),
-                        () => RoleCommands.DeleteRole(cid), destructive: true))));
+                var (_, role, _, depth, _) = display[at];
+                if (role == null) break;
+                if (depth != need) continue;
+                if (role == candidate) return true;
+                need--;
             }
-            if (options.Count > 0)
-                Find.WindowStack.Add(new FloatMenu(options));
-        }
-
-        /// Candidates for inclusion: any non-blocker role the target doesn't
-        /// already cover. Cross-group entries render subdued with a
-        /// "(will move from X)" suffix — inclusion pulls them into the group.
-        private static void ShowIncludeMenu(RoleStore store, Role parent)
-        {
-            var options = new List<FloatMenuOption>();
-            foreach (var candidate in store.roles
-                .OrderBy(r => r.label, System.StringComparer.OrdinalIgnoreCase))
-            {
-                if (candidate == parent || candidate.blocker) continue;
-                if (candidate.entries.Count > 0
-                    && candidate.entries.All(e => parent.entries.Contains(e))) continue;
-                string label = candidate.label;
-                if (candidate.groupId != parent.groupId)
-                {
-                    string from = candidate.groupId == RoleGroup.DefaultId
-                        ? "WR_GroupDefault".Translate().ToString()
-                        : store.GroupById(candidate.groupId)?.label
-                            ?? "WR_GroupDefault".Translate().ToString();
-                    label = (candidate.label + " " + "WR_IncludeMove".Translate(from))
-                        .Colorize(new Color(0.62f, 0.62f, 0.62f));
-                }
-                int pid = parent.id, cid = candidate.id;
-                options.Add(new FloatMenuOption(label, () => RoleCommands.IncludeRole(pid, cid)));
-            }
-            if (options.Count == 0)
-                options.Add(new FloatMenuOption("WR_NothingToInclude".Translate(), null));
-            Find.WindowStack.Add(new FloatMenu(options));
+            return false;
         }
 
         /// 2px horizontal insertion marker across the row width at the given boundary.
@@ -981,32 +940,43 @@ namespace WorkRoles.UI
         private const float TuningRowH = 24f;
         private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
 
-        /// Mode plus resolved min/max/waivers, e.g. "Auto: 2/*/1" (* = uncapped).
+        /// Collapsed-header summary: scale name plus the Min row's value range
+        /// across the bands, e.g. "Mining 2-5" (scale-less roles read Never).
+        /// Training roles read "Controlled by <target>" instead, with the
+        /// range appended when they carry their own non-Never min scale.
         private string HolderSummary(Role role)
         {
-            if (role.holderMode == RoleHolderMode.Never)
-                return "WR_HoldersNever".Translate();
-            bool auto = role.holderMode == RoleHolderMode.Auto;
-            int min = auto ? AutoHolderWant(role) : role.minHolders;
-            int max = auto ? role.ResolvedMaxHolders() : role.maxHolders;
-            int waivers = auto ? role.ResolvedTrainingWaivers() : role.trainingWaivers;
-            string maxText = max >= RoleHolderRange.Uncapped ? "*" : max.ToStringCached();
-            return (auto ? "WR_HoldersAuto" : "WR_HoldersCustom").Translate()
-                + ": " + min + "/" + maxText + "/" + waivers;
+            var store = RoleStore.Current;
+            var scale = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
+            if (scale == null) return "";
+            int lo = int.MaxValue, hi = int.MinValue;
+            foreach (int value in scale.Min)
+            {
+                lo = Mathf.Min(lo, value);
+                hi = Mathf.Max(hi, value);
+            }
+            var target = ScaleEditorUI.ControllingTarget(store, role.id);
+            if (target != null)
+            {
+                string label = "WR_ScaleControlledBy".Translate(target.label).ToString();
+                return scale.IsNever ? label : $"{label} ({lo}-{hi})";
+            }
+            return $"{scale.Name} {lo}-{hi}";
         }
 
         // Hidden entirely for roles excluded from ordinary recommendations (a
-        // holder target would be inert and misleading).
+        // holder target would be inert and misleading); hunting demand is
+        // driven by prey and weapons, not colony size, so hunters hide too.
         private bool TuningShown(Role role)
-            => !role.autoAssign && !role.blocker && !role.HasRules;
+            => !role.autoAssign && !role.blocker && !role.HasRules
+                && !RecsAdapter.ProvidesHunting(role);
 
         private float TuningHeight(Role role, float width)
         {
             if (!TuningShown(role)) return 0f;
             float h = 4f + TuningHeaderRowH;
             if (!tuningExpanded.Contains(role.id)) return h;
-            return h + editorState.TuningLayout(
-                width, role.holderMode, TuningRowH).ExpandedHeight;
+            return h + 4f + ScaleEditorUI.HeightFor(role, RoleStore.Current, width);
         }
 
         /// "Recommendations Tuning": group header (colonist-tab style, arrow on
@@ -1031,7 +1001,7 @@ namespace WorkRoles.UI
             {
                 Text.Anchor = TextAnchor.MiddleRight;
                 GUI.color = WrStyle.MinorAccent;
-                Widgets.Label(new Rect(x, y, width - 6f, TuningHeaderRowH), HolderSummary(role));
+                Widgets.Label(new Rect(x, y, width - 14f, TuningHeaderRowH), HolderSummary(role));
                 GUI.color = Color.white;
             }
             Text.Anchor = TextAnchor.UpperLeft;
@@ -1043,35 +1013,8 @@ namespace WorkRoles.UI
             y += TuningHeaderRowH;
             if (!expanded) return;
             y += 4f;
-
-            RoleHolderMode layoutMode = role.holderMode;
-            RoleTuningLayout layout = editorState.TuningLayout(
-                width, layoutMode, TuningRowH);
-            GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x, y, width, layout.IntroHeight), layout.Intro);
-            GUI.color = Color.white;
-            y += layout.IntroHeight + 2f;
-
-            DrawModeRow(x, ref y, width, role, layout);
-
-            // A synced command may execute immediately in single-player. The
-            // top-box height belongs to the mode captured at pass start, so a
-            // mode change is laid out cleanly on the next pass.
-            if (role.holderMode != layoutMode) return;
-            if (layoutMode != RoleHolderMode.Custom) return;
-            y += 4f;
-            // Small colonies still get a workable range to plan ahead with.
-            int colonists = System.Math.Min(RoleHolderRange.Uncapped,
-                System.Math.Max(8, listedPawns?.Invoke().Count ?? 0));
-            var btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMin",
-                layout.MinHelp, layout.MinHeight);
-            DrawHolderRangeButton(btn, role.minHolders, colonists, role.id, maximum: false);
-            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersMax",
-                layout.MaxHelp, layout.MaxHeight);
-            DrawHolderRangeButton(btn, role.maxHolders, colonists, role.id, maximum: true);
-            btn = DrawCustomRowFrame(x, ref y, width, "WR_HoldersWaivers",
-                layout.WaiversHelp, layout.WaiversHeight);
-            DrawWaiverButton(btn, role);
+            ScaleEditorUI.Draw(new Rect(x, y, width,
+                ScaleEditorUI.HeightFor(role, RoleStore.Current, width)), role, RoleStore.Current);
         }
 
         /// Label + help columns of a Custom picker row; the caller fills the
@@ -1731,10 +1674,22 @@ namespace WorkRoles.UI
                     // (reorderable) entry.
                     if (currentState == MultiCheckboxState.Partial)
                         TooltipHandler.TipRegion(row, "WR_CoveredByTypeTip".Translate());
-                    bool giverAdds = currentState != MultiCheckboxState.On;
-                    if (MultiCheckboxClicked(checkboxRect, currentState, giverAdds))
-                        ApplyGiverState(role, type, giver,
-                            giverAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
+                    GUI.color = Mouse.IsOver(checkboxRect) ? GenUI.MouseoverColor : Color.white;
+                    GUI.DrawTexture(checkboxRect, StateTex(currentState));
+                    GUI.color = Color.white;
+                    // Mouse-down starts a paint drag: the anchor's add/remove
+                    // spreads to every giver row of this type the drag spans.
+                    var ge = Event.current;
+                    if (ge.type == EventType.MouseDown && ge.button == 0
+                        && checkboxRect.Contains(ge.mousePosition))
+                    {
+                        paintAnchorRow = i;
+                        paintTypeDefName = type.defName;
+                        paintAdds = currentState != MultiCheckboxState.On;
+                        paintApplied.Clear();
+                        PaintGiver(role, type, giver);
+                        ge.Use();
+                    }
 
                     if (coverage.Givers.Contains(giver.defName)) GUI.color = WarningYellow;
                     Widgets.Label(new Rect(row.x + 70f, row.y, row.width - 70f, RowHeight), nodeLabel);
@@ -1747,20 +1702,73 @@ namespace WorkRoles.UI
                 }
                 Text.Anchor = TextAnchor.UpperLeft;
             }
+            PaintRange(role, nodes);
             Widgets.EndScrollView();
+            if (paintAnchorRow >= 0)
+                GenUI.DrawMouseAttachment(paintAdds ? Widgets.CheckboxOnTex : Widgets.CheckboxOffTex);
         }
 
         // ----- Tri-state helpers -----
+
+        // Paint-select drag over giver checkboxes (state lives for one drag).
+        private int paintAnchorRow = -1;
+        private string paintTypeDefName;
+        private bool paintAdds;
+        private readonly HashSet<string> paintApplied = new HashSet<string>();
+
+        /// While the paint drag is held, applies the anchor state to every
+        /// giver row of the anchor's work type between anchor and cursor. The
+        /// whole range applies every frame, so fast drags skip nothing.
+        private void PaintRange(Role role, IReadOnlyList<RoleJobTreeNode> nodes)
+        {
+            if (paintAnchorRow < 0) return;
+            var e = Event.current;
+            if (e.rawType == EventType.MouseUp || !Input.GetMouseButton(0) || nodes.Count == 0)
+            {
+                paintAnchorRow = -1;
+                paintTypeDefName = null;
+                paintApplied.Clear();
+                return;
+            }
+            int current = Mathf.Clamp((int)(e.mousePosition.y / RowHeight), 0, nodes.Count - 1);
+            int low = Mathf.Min(Mathf.Min(paintAnchorRow, nodes.Count - 1), current);
+            int high = Mathf.Min(Mathf.Max(paintAnchorRow, current), nodes.Count - 1);
+            for (int i = low; i <= high; i++)
+            {
+                RoleJobTreeNode node = nodes[i];
+                if (node.Giver == null || node.Type.defName != paintTypeDefName) continue;
+                PaintGiver(role, node.Type, node.Giver);
+            }
+        }
+
+        /// One paint application; idempotent per drag so MP-deferred commands
+        /// are never double-issued and the toggle sound fires once per change.
+        private void PaintGiver(Role role, WorkTypeDef type, WorkGiverDef giver)
+        {
+            if (!paintApplied.Add(giver.defName)) return;
+            MultiCheckboxState state = editorState.GiverState(role, type, giver);
+            // Off only ever removes an own entry: partial rows have none.
+            bool changes = paintAdds
+                ? state != MultiCheckboxState.On
+                : state == MultiCheckboxState.On;
+            if (!changes) return;
+            ApplyGiverState(role, type, giver,
+                paintAdds ? MultiCheckboxState.On : MultiCheckboxState.Off);
+            (paintAdds ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff)
+                .PlayOneShotOnCamera();
+        }
+
+        private static Texture2D StateTex(MultiCheckboxState state)
+            => state == MultiCheckboxState.On ? Widgets.CheckboxOnTex
+                : state == MultiCheckboxState.Off ? Widgets.CheckboxOffTex
+                : Widgets.CheckboxPartialTex;
 
         /// CheckboxMulti look-alike whose click sound matches OUR action — the
         /// vanilla widget keys the sound to the state it proposes, which is
         /// wrong for the promote-from-~ click.
         private static bool MultiCheckboxClicked(Rect rect, MultiCheckboxState state, bool adds)
         {
-            var tex = state == MultiCheckboxState.On ? Widgets.CheckboxOnTex
-                : state == MultiCheckboxState.Off ? Widgets.CheckboxOffTex
-                : Widgets.CheckboxPartialTex;
-            if (!Widgets.ButtonImage(rect, tex)) return false;
+            if (!Widgets.ButtonImage(rect, StateTex(state))) return false;
             (adds ? SoundDefOf.Checkbox_TurnedOn : SoundDefOf.Checkbox_TurnedOff).PlayOneShotOnCamera();
             return true;
         }

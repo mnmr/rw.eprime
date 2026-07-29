@@ -174,9 +174,10 @@ namespace WorkRoles
             ["Tame"] = new[] { "Animals" },
             ["Train"] = new[] { "Animals" },
             ["RebalanceAnimalsInPens"] = new string[0],
-            // Allow Tool: finish-off is an execution-style instant kill, no XP
-            // (same footing as Slaughter/DoExecution).
+            // Finish-off (Allow Tool, Keyz' Allow Utilities): an execution-style
+            // instant kill, no XP (same footing as Slaughter/DoExecution).
             ["FinishOff"] = new string[0],
+            ["KAU_FinishOff"] = new string[0],
             ["CookFillHopper"] = new string[0],
             ["HunterHunt"] = new[] { "Shooting" },
             ["FixBrokenDownBuilding"] = new string[0],

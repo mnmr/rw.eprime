@@ -12,6 +12,20 @@ namespace WorkRoles.Core.Signals
 
         public const string ImplantDiscriminator = "implant";
 
+        /// Human text for condition tokens; keys stay stable machine tokens.
+        /// package:* tokens resolve to mod names in the display layer instead.
+        /// Declared before All: Build() reads it during static init.
+        private static readonly Dictionary<string, string> ConditionText =
+            new Dictionary<string, string>
+            {
+                ["environment:near-fire"] = "near fire",
+                ["range:medium"] = "at medium range",
+                ["range:long"] = "at long range",
+                ["equipment:ranged-weapon"] = "with a ranged weapon equipped",
+                ["passion:conflicting"] = "a Shooting passion conflicts with this trait",
+                ["after:mental-break"] = "after a mental break",
+            };
+
         public static readonly IReadOnlyList<SignalDefinition> All = Build();
 
         public static bool IsGeneratedAptitudeIdentity(
@@ -53,9 +67,9 @@ namespace WorkRoles.Core.Signals
                         SignalValueUnit.Factor, "MeleeDamageFactor")),
                 Gene("Nearsighted", "nearsighted", "Shooting",
                     Effect(SignalEffectKind.Accuracy, SignalOperation.Multiply, 0.5f,
-                        SignalValueUnit.Factor, "ShootingAccuracyFactor_Medium"),
+                        SignalValueUnit.Factor, "ShootingAccuracyFactor_Medium", "range:medium"),
                     Effect(SignalEffectKind.Accuracy, SignalOperation.Multiply, 0.25f,
-                        SignalValueUnit.Factor, "ShootingAccuracyFactor_Long")),
+                        SignalValueUnit.Factor, "ShootingAccuracyFactor_Long", "range:long")),
                 Gene("Learning_Fast", "quick study", null,
                     Effect(SignalEffectKind.LearningRate, SignalOperation.Add, 0.5f,
                         SignalValueUnit.Factor, "GlobalLearningFactor")),
@@ -63,13 +77,15 @@ namespace WorkRoles.Core.Signals
                     Effect(SignalEffectKind.LearningRate, SignalOperation.Multiply, 0.5f,
                         SignalValueUnit.Factor, "GlobalLearningFactor")),
                 Gene("ViolenceDisabled", "violence disabled", null,
-                    Disabled(SignalEffectKind.Capability, "Violent", "work-tag:Violent")),
+                    Disabled(SignalEffectKind.Capability, "ViolentWork")),
+                // Vanilla FireTerror only panics near fire and suppresses the
+                // Pyromaniac trait; suppressed traits never emit signals, so
+                // there is nothing capability-like to report here.
                 Gene("FireTerror", "pyrophobia", null,
                     Effect(SignalEffectKind.Mood, SignalOperation.Add, -10f,
                         SignalValueUnit.MoodPoints, "NearFire", "environment:near-fire"),
                     Effect(SignalEffectKind.MentalBreak, SignalOperation.Set, 0.1f,
-                        SignalValueUnit.Days, "FireTerror", "environment:near-fire"),
-                    Disabled(SignalEffectKind.Capability, "Pyromaniac", "trait:suppressed")),
+                        SignalValueUnit.Days, "FireTerror", "environment:near-fire")),
 
                 Trait("Brawler", 0, "brawler", "Melee", "melee", SignalType.Active,
                     ReflectedSkill(4f, "Melee"),
@@ -139,8 +155,8 @@ namespace WorkRoles.Core.Signals
                     packageId: Anomaly, sourceDisplayName: "Anomaly"),
                 Trait("Pyromaniac", 0, "pyromaniac", null, null, SignalType.Active,
                     Disabled(SignalEffectKind.Capability, "Firefighting"),
-                    Descriptive(SignalEffectKind.WorkPreference, "Fire", "environment:fire"),
-                    Descriptive(SignalEffectKind.MentalBreak, "FireStartingSpree", "mental-break:fire-starting")),
+                    Descriptive(SignalEffectKind.WorkPreference, "Fire", null),
+                    Descriptive(SignalEffectKind.MentalBreak, "FireStartingSpree", null)),
                 Trait("Gourmand", 0, "gourmand", "Cooking", null, SignalType.Passive,
                     ReflectedSkill(4f, "Cooking")),
                 Trait("Immunity", -1, "sickly", "Medicine", null, SignalType.Passive,
@@ -148,9 +164,9 @@ namespace WorkRoles.Core.Signals
                 Trait("TorturedArtist", 0, "tortured artist", "Artistic", null, SignalType.Active,
                     Effect(SignalEffectKind.Passion, SignalOperation.Set, 1f,
                         SignalValueUnit.PassionLevels, "Artistic", alreadyReflected: true),
-                    Descriptive(SignalEffectKind.Mood, "TorturedArtist", "mood:constant-debuff"),
-                    Effect(SignalEffectKind.MentalBreak, SignalOperation.Set, 0.5f,
-                        SignalValueUnit.Scalar, "Inspired_Creativity", "after:mental-break")),
+                    Descriptive(SignalEffectKind.Mood, "ConstantDebuff", null),
+                    Effect(SignalEffectKind.StatModifier, SignalOperation.Set, 0.5f,
+                        SignalValueUnit.Factor, "Inspired_Creativity", "after:mental-break")),
 
                 HediffAptitude("Animals"),
                 HediffAptitude("Social"),
@@ -296,7 +312,11 @@ namespace WorkRoles.Core.Signals
                 Conditions(condition), alreadyReflected: alreadyReflected);
 
         private static IReadOnlyList<SignalCondition> Conditions(string condition) =>
-            condition == null ? null : new[] { new SignalCondition(condition, condition) };
+            condition == null ? null : new[]
+            {
+                new SignalCondition(condition,
+                    ConditionText.TryGetValue(condition, out string text) ? text : condition),
+            };
 
         private static SignalEffect[] Combine(SignalEffect first, SignalEffect[] rest)
         {

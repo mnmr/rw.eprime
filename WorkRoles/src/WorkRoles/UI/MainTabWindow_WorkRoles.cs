@@ -208,6 +208,7 @@ namespace WorkRoles.UI
             // Producer snapshots regrow on reopen (Reset forces every stamp
             // stale); dropping them here releases pawns from unloaded saves.
             RoleClipboard.Clear();
+            ScaleEditorUI.ReleaseState();
             colonistsTab.ReleaseSnapshots();
             rolesTab.ReleaseWindowData();
             optionsTab.ReleaseWindowData();

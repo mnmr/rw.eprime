@@ -70,5 +70,30 @@ namespace WorkRoles.Core
         public static bool MakesRedundant(HashSet<string> a, int aId, HashSet<string> b, int bId)
             => Covers(a, b)
                || (aId < bId && b.Count == a.Count && b.Count > 0 && b.SetEquals(a));
+
+        /// Indexes of the covered coverages no OTHER one strictly covers — a
+        /// parent's immediate tree children; deeper descendants display under
+        /// the intermediate coverer instead. Equals never shadow each other.
+        public static List<int> ImmediatelyCoveredIndexes(IReadOnlyList<HashSet<string>> covered)
+        {
+            var result = new List<int>();
+            for (int i = 0; i < covered.Count; i++)
+            {
+                bool shadowed = false;
+                for (int j = 0; j < covered.Count && !shadowed; j++)
+                    shadowed = j != i && Covers(covered[j], covered[i]);
+                if (!shadowed) result.Add(i);
+            }
+            return result;
+        }
+
+        /// Position of the coverage's earliest giver within an ordered coverage
+        /// (int.MaxValue when absent) — the tree's child sort key.
+        public static int FirstCoveredIndex(IReadOnlyList<string> orderedCoverage, HashSet<string> coverage)
+        {
+            for (int i = 0; i < orderedCoverage.Count; i++)
+                if (coverage.Contains(orderedCoverage[i])) return i;
+            return int.MaxValue;
+        }
     }
 }

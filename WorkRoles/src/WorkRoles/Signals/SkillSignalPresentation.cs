@@ -114,8 +114,8 @@ namespace WorkRoles.Signals
                 {
                     SignalEffect effect = signal.Effects[i];
                     table.Columns(i == 0
-                        ? new[] { name, EffectText(effect), ConditionText(effect), source }
-                        : new[] { null, EffectText(effect), ConditionText(effect), null },
+                        ? new[] { name, EffectText(signal, effect), ConditionText(effect), source }
+                        : new[] { null, EffectText(signal, effect), ConditionText(effect), null },
                         rowColor,
                         i == 0 ? icon : null,
                         tight: i > 0);
@@ -141,16 +141,47 @@ namespace WorkRoles.Signals
             }
         }
 
-        /// Generic stat modifiers surface the stat itself; named kinds carry
-        /// enough meaning on their own now that targets are no longer shown.
-        private static string EffectText(SignalEffect effect)
+        /// Generic stat modifiers surface the stat itself; capability and
+        /// descriptive effects surface their target too, since the kind alone
+        /// says nothing about WHAT is disabled or preferred.
+        private static string EffectText(PawnSignal signal, SignalEffect effect)
         {
-            string label = effect.Kind == SignalEffectKind.StatModifier
+            if (effect.Kind == SignalEffectKind.Capability)
+            {
+                string subject = SentenceCase(Humanize(effect.TargetDefName));
+                // With More Than Capable loaded, "incapable" work is merely
+                // hated (treated as Awful), never blocked outright.
+                return MoreThanCapableSignalProvider.Available
+                    ? "WR_SignalCapabilityAwful".Translate(subject).ToString()
+                    : "WR_SignalCapabilityOff".Translate(subject).ToString();
+            }
+            if (effect.Operation == SignalOperation.Descriptive)
+            {
+                string label = Humanize(effect.Kind.ToString());
+                string subject = DescriptiveSubject(signal, effect);
+                return subject == null ? label : label + ": " + subject.ToLowerInvariant();
+            }
+            string head = effect.Kind == SignalEffectKind.StatModifier
                 && !string.IsNullOrWhiteSpace(effect.TargetDefName)
                 ? Humanize(effect.TargetDefName)
                 : Humanize(effect.Kind.ToString());
-            return label + " " + EffectValue(effect);
+            return head + " " + EffectValue(effect);
         }
+
+        /// The descriptive effect's subject; suppressed when it would repeat
+        /// the tooltip's own skill (or the CurrentSkill placeholder).
+        private static string DescriptiveSubject(PawnSignal signal, SignalEffect effect)
+        {
+            string target = effect.TargetDefName;
+            if (string.IsNullOrWhiteSpace(target) || target == "CurrentSkill"
+                || string.Equals(target, signal.SkillDefName, StringComparison.Ordinal))
+                return null;
+            return Humanize(target);
+        }
+
+        private static string SentenceCase(string text) =>
+            string.IsNullOrEmpty(text) ? text
+            : char.ToUpperInvariant(text[0]) + text.Substring(1).ToLowerInvariant();
 
         private static string ConditionText(SignalEffect effect)
         {
@@ -211,7 +242,8 @@ namespace WorkRoles.Signals
                     value = factor ? Percent(displayedMagnitude.Value) : "×" + Number(displayedMagnitude);
                     break;
                 case SignalOperation.Set:
-                    value = "= " + Number(displayedMagnitude);
+                    value = "= " + (factor
+                        ? Percent(displayedMagnitude.Value) : Number(displayedMagnitude));
                     break;
                 case SignalOperation.Disable:
                     value = "WR_SignalDisabled".Translate();

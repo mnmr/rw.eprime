@@ -39,6 +39,8 @@ namespace WorkRoles
         public override void FinalizeInit()
         {
             Seeding.SweepEmptyRoleSets();
+            // Scales first: role seeding copies def scale references by name.
+            Seeding.EnsurePresetScales();
             Seeding.SeedIfNeeded();
             Seeding.RefreshWorkTypeSnapshots();
             var generated = Seeding.EnsureWorkTypeCoverage();
@@ -57,11 +59,24 @@ namespace WorkRoles
 
             CompiledJobOrders.WarmProjectionMetadata();
             JobSkillProfiles.WarmDefinitionFacts();
+
+            // Jobs resumed from the save predate the in-memory rank baselines.
+            // A job that survived until the save was never demoted below its
+            // issue rank, so the loaded rank is a valid stand-in: re-stamp it,
+            // and queue a first-tick reconcile to sweep revocations left by
+            // saves from versions without interruption.
+            if (store != null)
+                foreach (var pawn in store.pawnSets.Keys)
+                {
+                    JobRankBaseline.NotifyJobStarted(pawn);
+                    CompiledJobOrders.EnqueueReconcile(pawn);
+                }
         }
 
         public override void GameComponentTick()
         {
             PawnLocationTracker.ProcessPendingDepartures();
+            CompiledJobOrders.DrainPendingReconciles();
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);

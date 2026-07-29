@@ -126,6 +126,82 @@ public class RecsOrderingTests
     }
 
     [Test]
+    public async Task AnchorChainsFollowTheAnchorRolesResolvedPosition()
+    {
+        var a = RecsTestBed.Role(1, "A");
+        var b = RecsTestBed.Role(2, "B");
+        var c = RecsTestBed.Role(3, "C");
+        var d = RecsTestBed.Role(4, "D");
+        var colony = RecsTestBed.Colony(new List<RoleView> { a, b, c, d }, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 2, 3, 4 };
+        var moveC = RecsTestBed.Path(1, (3, 4, 21));
+        moveC.AnchorRoleId = 2; moveC.AnchorBefore = true;   // C before B
+        var moveD = RecsTestBed.Path(2, (4, 4, 21));
+        moveD.AnchorRoleId = 3; moveD.AnchorBefore = true;   // D before C's MOVED position
+        colony.Paths.Add(moveC);
+        colony.Paths.Add(moveD);
+        var context = new EngineContext(colony);
+        for (int id = 1; id <= 4; id++) Candidate(context, 0, id);
+
+        new OrderingRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,4,3,2");
+    }
+
+    [Test]
+    public async Task CyclicAnchorChainsResolveToAConsistentOrder()
+    {
+        // Fabricator > Smith > Tailor template; Smith after Fabricator,
+        // Tailor before Smith, Fabricator before Tailor. The placement
+        // dependencies cycle but the order constraints do not: the expected
+        // result is Fabricator > Tailor > Smith.
+        var fab = RecsTestBed.Role(1, "Crafting", "Fab");
+        var smith = RecsTestBed.Role(2, "Crafting", "Smith");
+        var tailor = RecsTestBed.Role(3, "Crafting", "Tailor");
+        var colony = RecsTestBed.Colony(new List<RoleView> { fab, smith, tailor }, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 2, 3 };
+        var smithPath = RecsTestBed.Path(1, (2, 4, 21));
+        smithPath.AnchorRoleId = 1; smithPath.AnchorBefore = false;
+        var tailorPath = RecsTestBed.Path(2, (3, 2, 21));
+        tailorPath.AnchorRoleId = 2; tailorPath.AnchorBefore = true;
+        var fabPath = RecsTestBed.Path(3, (1, 8, 21));
+        fabPath.AnchorRoleId = 3; fabPath.AnchorBefore = true;
+        colony.Paths.Add(smithPath);
+        colony.Paths.Add(tailorPath);
+        colony.Paths.Add(fabPath);
+        var context = new EngineContext(colony);
+        for (int id = 1; id <= 3; id++) Candidate(context, 0, id);
+
+        new OrderingRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,3,2");
+    }
+
+    [Test]
+    public async Task MultiPathMemberFollowsThePathItTops()
+    {
+        var first = RecsTestBed.Role(1, "Cooking", "First");
+        var shared = RecsTestBed.Role(2, "Crafting", "Shared");
+        var trained = RecsTestBed.Role(3, "Doctor", "Trained");
+        var colony = RecsTestBed.Colony(
+            new List<RoleView> { first, shared, trained }, RecsTestBed.Pawn());
+        colony.OrderTemplate = new List<int> { 1, 3, 2 };
+        // Shared trains toward Trained in one path but TOPS its own path,
+        // whose anchor must apply when no placement selects either.
+        var trainerPath = RecsTestBed.Path(1, (2, 0, 21), (3, 6, 21));
+        var ownPath = RecsTestBed.Path(2, (2, 4, 21));
+        ownPath.AnchorRoleId = 1; ownPath.AnchorBefore = false;
+        colony.Paths.Add(trainerPath);
+        colony.Paths.Add(ownPath);
+        var context = new EngineContext(colony);
+        for (int id = 1; id <= 3; id++) Candidate(context, 0, id);
+
+        new OrderingRule().Apply(context, 0);
+
+        await Assert.That(RecsTestBed.Ids(context.Results[0])).IsEqualTo("1,2,3");
+    }
+
+    [Test]
     public async Task ExplicitHunterTemplatePositionOverridesSkillTier()
     {
         var blocker = RecsTestBed.Role(1, "Cooking", "Firefight"); blocker.Blocker = true;

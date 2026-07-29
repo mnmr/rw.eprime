@@ -259,7 +259,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("7");
+            .IsEqualTo("8");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -480,7 +480,7 @@ public class RoleFileTests
             return role.fileId == "role-a" ? 101 : 102;
         }).ToArray();
 
-        await Assert.That(RoleFile.FormatVersion).IsEqualTo("7");
+        await Assert.That(RoleFile.FormatVersion).IsEqualTo("8");
         await Assert.That(parsed.groupsWithIds.Select(group => group.fileId))
             .IsEquivalentTo(new[] { "group-a", "group-b" });
         await Assert.That(RoleFile.ResolveGroup(parsed, second.groupId, second.group)?.fileId)

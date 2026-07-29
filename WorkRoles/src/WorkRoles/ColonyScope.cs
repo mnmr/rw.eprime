@@ -235,9 +235,17 @@ namespace WorkRoles
                 .ToList();
         }
 
-        internal static string LabelOf(ScopeOption option) =>
-            option.Kind == ScopeKind.All ? "WR_ScopeAll".Translate().ToString()
-            : option.Kind == ScopeKind.CurrentLocation ? "WR_ScopeCurrent".Translate().ToString()
-            : option.Label;
+        internal static string LabelOf(ScopeOption option)
+        {
+            if (option.Kind == ScopeKind.All) return "WR_ScopeAll".Translate().ToString();
+            if (option.Kind != ScopeKind.CurrentLocation) return option.Label;
+            // The current location folds its name in ("Rimosa (current
+            // location)"), so the menu carries no separate named entry for it.
+            string currentId = CurrentLocationId();
+            foreach (var location in Locations())
+                if (location.Id == currentId)
+                    return "WR_ScopeCurrentNamed".Translate(location.Label).ToString();
+            return "WR_ScopeCurrent".Translate().ToString();
+        }
     }
 }

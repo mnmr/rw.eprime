@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using Verse;
 
@@ -22,6 +23,21 @@ namespace WorkRoles
         /// Display color override; without one the highest-band role colors the path.
         public bool hasCustomColor;
         public Color color = Color.white;
+
+        /// Full value equality except id: name, members, bands, anchor and
+        /// color. Import skip and the load-time duplicate sweep both use this.
+        public bool DuplicateOf(TrainingPath other)
+        {
+            if (other == null || other == this) return false;
+            return string.Equals(name, other.name, System.StringComparison.Ordinal)
+                && roleIds.SequenceEqual(other.roleIds)
+                && bandMins.SequenceEqual(other.bandMins)
+                && bandMaxes.SequenceEqual(other.bandMaxes)
+                && anchorRoleId == other.anchorRoleId
+                && anchorBefore == other.anchorBefore
+                && hasCustomColor == other.hasCustomColor
+                && (!hasCustomColor || color.IndistinguishableFrom(other.color));
+        }
 
         public void ExposeData()
         {

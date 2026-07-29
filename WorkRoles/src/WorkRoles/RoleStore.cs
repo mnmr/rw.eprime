@@ -48,6 +48,12 @@ namespace WorkRoles
         public List<RoleGroup> groups = new List<RoleGroup>();
         /// Named training paths (Options tab). Mutate via RoleCommands.
         public List<TrainingPath> trainingPaths = new List<TrainingPath>();
+        /// Named holder scales (banded min/train/max); roles reference them by
+        /// name via Role.holderScaleName.
+        public List<HolderScale> holderScales = new List<HolderScale>();
+        /// ScaleDefs already seeded into holderScales, by defName: each def
+        /// seeds once per save so renaming or deleting its scale sticks.
+        public List<string> knownScaleDefs = new List<string>();
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
         private int nextPathId = 1;
@@ -114,6 +120,16 @@ namespace WorkRoles
 
         public TrainingPath PathById(int id) =>
             trainingPaths.FirstOrDefault(p => p.id == id);
+
+        public HolderScale ScaleByName(string name) =>
+            name.NullOrEmpty() ? null : holderScales.FirstOrDefault(c =>
+                string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
+
+        /// The scale driving a role's banded holder demand; null for Never
+        /// mode, unset references, and dangling names (legacy scalars apply).
+        internal HolderScale ScaleFor(Role role) =>
+            role == null || role.holderMode == RoleHolderMode.Never
+                ? null : ScaleByName(role.holderScaleName);
 
         /// The Default group (id 0), materialized on demand: pinned first,
         /// swept like any user group when it empties. The stored label is
@@ -385,6 +401,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref nextGroupId, "nextGroupId", 1);
             Scribe_Collections.Look(ref groups, "groups", LookMode.Deep);
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
+            Scribe_Collections.Look(ref knownScaleDefs, "knownScaleDefs", LookMode.Value);
             Scribe_Collections.Look(ref customSwatches, "customSwatches", LookMode.Value);
             Scribe_Collections.Look(ref customSwatchNames, "customSwatchNames", LookMode.Value);
             Scribe_Collections.Look(ref pawnSets, "pawnSets", LookMode.Reference, LookMode.Deep,
@@ -401,6 +418,39 @@ namespace WorkRoles
                 billRoles = NewBillRoleDictionary();
             Scribe_Values.Look(ref nextPathId, "nextPathId", 1);
             Scribe_Collections.Look(ref trainingPaths, "trainingPaths", LookMode.Deep);
+            // Scales scribe as compact strings (name + three codec rows,
+            // newline-separated) — HolderScale is a Verse-free Core type.
+            List<string> scribeScales = null;
+            if (Scribe.mode == LoadSaveMode.Saving && holderScales.Count > 0)
+                scribeScales = holderScales.Select(c => string.Join("\n",
+                    c.Name ?? "",
+                    HolderScaleCodec.EncodeRow(c.Min),
+                    HolderScaleCodec.EncodeRow(c.Train),
+                    HolderScaleCodec.EncodeRow(c.Max),
+                    c.Preset ? "1" : "0")).ToList();
+            Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                holderScales = new List<HolderScale>();
+                if (scribeScales != null)
+                    foreach (var raw in scribeScales)
+                    {
+                        string[] parts = raw?.Split('\n');
+                        if (parts == null || parts.Length < 4
+                            || parts[0].Trim().Length == 0) continue;
+                        var scale = new HolderScale
+                        {
+                            Name = parts[0].Trim(),
+                            Min = HolderScaleCodec.DecodeRow(parts[1], 0),
+                            Train = HolderScaleCodec.DecodeRow(parts[2], 0),
+                            Max = HolderScaleCodec.DecodeRow(
+                                parts[3], RoleHolderRange.Uncapped),
+                            Preset = parts.Length > 4 && parts[4].Trim() == "1",
+                        };
+                        scale.Normalize();
+                        holderScales.Add(scale);
+                    }
+            }
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 roles ??= new List<Role>();
@@ -418,6 +468,8 @@ namespace WorkRoles
                 // guard in 1.6. Remove only definitely dead bill references here;
                 // role-id sanitation waits until legacy allRole has migrated.
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.deleted);
+                holderScales ??= new List<HolderScale>();
+                knownScaleDefs ??= new List<string>();
                 trainingPaths ??= new List<TrainingPath>();
                 // Empty paths survive (named containers); only non-empty corrupt geometry drops.
                 trainingPaths.RemoveAll(p =>
@@ -429,6 +481,16 @@ namespace WorkRoles
                         path.bandMins.Clear();
                         path.bandMaxes.Clear();
                     }
+                // Sweep full-value duplicate paths (an old import bug appended
+                // identical paths instead of skipping); the first stays.
+                for (int i = trainingPaths.Count - 1; i >= 0; i--)
+                    for (int j = 0; j < i; j++)
+                        if (trainingPaths[i].DuplicateOf(trainingPaths[j]))
+                        {
+                            Log.Message($"[WorkRoles] removed duplicate training path '{trainingPaths[i].name}'");
+                            trainingPaths.RemoveAt(i);
+                            break;
+                        }
                 // Migration: the once-hidden All role becomes an ordinary catalog
                 // role, assigned to every managed pawn at the last position (its
                 // old implicit spot).

@@ -26,6 +26,9 @@ namespace WorkRoles
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
         public RoleHolderMode holderMode;
+        /// Named holder scale (RoleStore.holderScales) driving banded
+        /// min/train/max lookups; null = legacy scalar behavior.
+        public string holderScaleName;
         /// Custom range stays stored while Auto or Never is selected.
         public bool holderRangeSet;
         public int minHolders;
@@ -138,6 +141,7 @@ namespace WorkRoles
             // Old minHolders/maxHolders/inTrainingAllowance fields are ignored.
             // Their recommendation values were not meaningful enough to migrate.
             Scribe_Values.Look(ref holderMode, "holderMode", RoleHolderMode.Auto);
+            Scribe_Values.Look(ref holderScaleName, "holderScale");
             Scribe_Values.Look(ref holderRangeSet, "holderRangeSet");
             Scribe_Values.Look(ref minHolders, "holderRangeMin");
             Scribe_Values.Look(ref maxHolders, "holderRangeMax", RoleHolderRange.Uncapped);

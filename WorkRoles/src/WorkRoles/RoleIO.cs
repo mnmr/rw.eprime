@@ -77,6 +77,7 @@ namespace WorkRoles
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
                     holderMode = role.holderMode,
+                    holderScale = role.holderScaleName,
                     holderRangeSet = role.holderRangeSet,
                     minHolders = role.minHolders,
                     maxHolders = role.maxHolders,
@@ -112,6 +113,11 @@ namespace WorkRoles
                 }
                 doc.trainingPaths.Add(filePath);
             }
+            // Scales export as independent named entities; roles carry a
+            // reference by name (Holders scale attribute).
+            foreach (var scale in store.holderScales)
+                if (scale != null && !scale.Name.NullOrEmpty())
+                    doc.scales.Add(scale.Copy());
             // Only the stored template travels (empty = the derived default).
             doc.recommendationOrderWithIds = store.recommendationOrder
                 .Select(id => store.RoleById(id))
@@ -371,6 +377,21 @@ namespace WorkRoles
             Dictionary<FileRole, Role> runtimeRoles = null;
             store.SyncSwatchNames();
 
+            // Scales ride the roles section: same-name scales overwrite
+            // wholesale, new names append; imported role references then
+            // resolve against the updated list.
+            if (rolesInclude && doc.scales != null)
+                foreach (var scale in doc.scales)
+                {
+                    if (scale == null || scale.Name.NullOrEmpty()) continue;
+                    var existing = store.ScaleByName(scale.Name);
+                    if (existing == null)
+                        store.holderScales.Add(scale.Copy());
+                    else if (!existing.SameValuesAs(scale))
+                        store.holderScales[store.holderScales.IndexOf(existing)]
+                            = scale.Copy();
+                }
+
             if (paletteInclude && paletteOverwrite)
             {
                 var oldColors = store.customSwatches.ToList();
@@ -526,6 +547,7 @@ namespace WorkRoles
                     target.locationTokens = row.role.locations
                         .Select(RuntimeLocationToken).Where(t => t != null).ToList();
                     target.holderMode = row.role.holderMode;
+                    target.holderScaleName = row.role.holderScale;
                     target.holderRangeSet = row.role.holderRangeSet;
                     target.minHolders = row.role.minHolders;
                     target.maxHolders = row.role.maxHolders;
@@ -559,9 +581,11 @@ namespace WorkRoles
                         fileRole => runtimeRoles.TryGetValue(fileRole, out var runtime)
                             ? runtime.id : (int?)null);
                     var (hasPathColor, pathColor) = ResolveColor(filePath.colorRef, store, doc);
-                    // Always a NEW path (names are not identities); unknown names
-                    // dropped already, an unknown anchor means no anchor.
-                    store.trainingPaths.Add(new TrainingPath
+                    // A NEW path (names are not identities); unknown names
+                    // dropped already, an unknown anchor means no anchor. A
+                    // full-value duplicate of an existing path skips: importing
+                    // the same file twice must not double the paths.
+                    var path = new TrainingPath
                     {
                         id = store.NextPathId(),
                         name = filePath.name,
@@ -573,7 +597,10 @@ namespace WorkRoles
                         anchorBefore = filePath.anchorBefore,
                         hasCustomColor = hasPathColor,
                         color = hasPathColor ? pathColor : Color.white,
-                    });
+                    };
+                    if (store.trainingPaths.Any(existing => existing.DuplicateOf(path)))
+                        continue;
+                    store.trainingPaths.Add(path);
                     pathsAdded++;
                 }
             }

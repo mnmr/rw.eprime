@@ -1,5 +1,15 @@
 ﻿# Changelog
 
+## 1.3.0 — 2026-07-29
+
+- Added: Support for Keyz' Allow Utilities mod (recommended replacement for AllowTool).
+- Added: Colonist view now has a dedicated job filter button and the search filter also matches job names.
+- Changed: Recommendations tuning in the role editor now allows you to set values across colony sizes, making scaling and training substitutions explicit choices. Use the presets or define your own scales.
+- Changed: Allow multi-level nesting of roles in the role tree (and allow blocker roles to nest).
+- Changed: Removed right-click menu options (include/exclude/delete) in favor of click-and-drag to multi-select in Available Jobs (to quick-select jobs within a work type).
+- Fixed: Priority grid header was rendered inside scroll area (visual glitch for larger colonies).
+- Fixed: Current work was not interrupted for colonists when priorities changed (player-set forced work is still not interrupted).
+
 ## 1.2.5 — 2026-07-28
 
 - Added: MultiFloors and "As above, so below" mod support (floors on same tile are now treated as a single location).
