@@ -42,9 +42,31 @@ public class RuntimeCacheArchitectureTests
         await Assert.That(iconScale).Contains("internal static void ProcessPending(");
         await Assert.That(iconScale).Contains("finally");
         await Assert.That(iconScale).Contains("RenderTexture.ReleaseTemporary(rt)");
-        await Assert.That(iconScale).Contains("Object.Destroy(reader)");
+        await Assert.That(iconScale).Contains("Object.Destroy(owned)");
         await Assert.That(textures).Contains("internal static void ResetOwned()");
-        await Assert.That(textures).Contains("Object.Destroy(triangle)");
+        await Assert.That(textures).Contains("Object.Destroy(owned)");
+    }
+
+    [Test]
+    public async Task MapLoadNeverCreatesOrDestroysUnityResourcesOnTheWorkerThread()
+    {
+        string lifecycle = Source("RuntimeTeardown.cs");
+        string textures = Source("UI", "ReadoutTextures.cs");
+        string iconScale = Source("UI", "IconScaleCache.cs");
+        string constructor = Method(lifecycle,
+            "public ReadoutRenderMapComponent(Map map)");
+        string update = Method(lifecycle,
+            "public override void MapComponentUpdate()");
+        string textureReset = Method(textures,
+            "internal static void ResetOwned()");
+        string iconReset = Method(iconScale,
+            "internal static void Reset()");
+
+        await Assert.That(constructor).DoesNotContain("ReadoutTextures");
+        await Assert.That(constructor).DoesNotContain("Texture2D");
+        await Assert.That(update).Contains("ReadoutTextures.EnsureOwned()");
+        await Assert.That(textureReset).Contains("LongEventHandler.ExecuteWhenFinished");
+        await Assert.That(iconReset).Contains("LongEventHandler.ExecuteWhenFinished");
     }
 
     [Test]

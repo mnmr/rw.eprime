@@ -116,8 +116,12 @@ namespace EPrimeReadouts.UI
             pendingSet.Clear();
             if (reader != null)
             {
-                Object.Destroy(reader);
+                Texture2D owned = reader;
                 reader = null;
+                // World teardown may originate on a long-event worker thread;
+                // Unity objects must only be destroyed after returning to the
+                // main thread.
+                LongEventHandler.ExecuteWhenFinished(() => Object.Destroy(owned));
             }
         }
     }

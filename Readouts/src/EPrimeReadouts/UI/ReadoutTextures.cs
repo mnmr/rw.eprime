@@ -51,8 +51,12 @@ namespace EPrimeReadouts.UI
         internal static void ResetOwned()
         {
             if (triangle == null) return;
-            Object.Destroy(triangle);
+            Texture2D owned = triangle;
             triangle = null;
+            // ClearAllMapsAndWorld can run on RimWorld's asynchronous long-event
+            // thread. ExecuteWhenFinished runs this immediately when already on
+            // the main thread, or queues it until the long event completes.
+            LongEventHandler.ExecuteWhenFinished(() => Object.Destroy(owned));
         }
     }
 }

@@ -29,13 +29,20 @@ namespace EPrimeReadouts
     /// <summary>Releases the per-map render entry as soon as a map is removed.</summary>
     public sealed class ReadoutRenderMapComponent : MapComponent
     {
-        public ReadoutRenderMapComponent(Map map) : base(map)
-        {
-            ReadoutTextures.EnsureOwned();
-        }
+        private bool graphicsInitialized;
+
+        // Map components are constructed while save data is deserialized on a
+        // LongEventHandler worker thread. Keep this constructor free of Unity
+        // API calls; graphics initialization belongs in the main-thread update.
+        public ReadoutRenderMapComponent(Map map) : base(map) { }
 
         public override void MapComponentUpdate()
         {
+            if (!graphicsInitialized)
+            {
+                ReadoutTextures.EnsureOwned();
+                graphicsInitialized = true;
+            }
             IconScaleCache.ProcessPending();
         }
 
