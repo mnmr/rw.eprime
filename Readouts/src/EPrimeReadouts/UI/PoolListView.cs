@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using UnityEngine;
@@ -19,9 +20,9 @@ namespace EPrimeReadouts.UI
         public float HeaderReservedRight;
 
         private Vector2 scroll;
-        private int builtVersion = -1;
+        private int builtPoolsVersion = -1;
 
-        // Cached row data (rebuilt only when store.Version changes)
+        // Cached row data (rebuilt only when pools change)
         private struct PoolRow
         {
             public int Id;
@@ -32,38 +33,38 @@ namespace EPrimeReadouts.UI
         private List<PoolRow> cachedRows;
         private string pendingSelectName;
 
-        // DesiredHeight caching
-        private float cachedDesiredHeight = -1f;
-        private bool cachedFoldState;
-        private float cachedDesiredHeightWidth = -1f;
+        private readonly PoolListHeightCache heightCache = new PoolListHeightCache(
+            headerHeight: 28f,
+            captionGap: 4f,
+            rowHeight: RowH,
+            maxVisibleRows: 8,
+            footerHeight: FooterH);
+        private static readonly Func<float, float> measureCaptionHeight = MeasureCaptionHeight;
 
         /// Returns the desired height for this panel: header (including caption when
         /// unfolded) + min(rowCount, 8) * RowH + FooterH. Recomputed only when the
-        /// fold state or available width changes; the row count comes from the already-
-        /// cached row list so there is no extra work in steady state.
+        /// fold state, available width, or pool version changes. Caption measurement
+        /// is cached separately, so pool edits only redo the cheap row calculation.
         public float DesiredHeight(float availableWidth)
         {
+            UiVersion.ObserveCurrentMetrics();
+            var store = ReadoutStore.Current;
             var settings = EPrimeReadoutsMod.Settings;
             bool folded = settings.helpPoolsFolded;
-            if (cachedDesiredHeight < 0f
-                || cachedFoldState != folded
-                || cachedDesiredHeightWidth != availableWidth)
-            {
-                float h = 28f; // SectionHeader baseline
-                if (!folded)
-                {
-                    Text.Font = GameFont.Tiny;
-                    h += Text.CalcHeight("EPR.HelpPools".Translate(), availableWidth) + 4f;
-                    Text.Font = GameFont.Small;
-                }
-                int rowCount = cachedRows != null ? cachedRows.Count : 0;
-                h += Mathf.Min(rowCount, 8) * RowH;
-                h += FooterH;
-                cachedDesiredHeight = h;
-                cachedFoldState = folded;
-                cachedDesiredHeightWidth = availableWidth;
-            }
-            return cachedDesiredHeight;
+            int poolsVersion = store != null ? store.PoolsVersion : -1;
+            int rowCount = store != null ? store.Model.Pools.Count : 0;
+            return heightCache.GetDesiredHeight(
+                poolsVersion,
+                UiVersion.Current,
+                rowCount,
+                folded,
+                availableWidth,
+                measureCaptionHeight);
+        }
+
+        private static float MeasureCaptionHeight(float availableWidth)
+        {
+            return EprStyle.CaptionHeight("EPR.HelpPools".Translate(), availableWidth);
         }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -82,8 +83,8 @@ namespace EPrimeReadouts.UI
             if (folded != settings.helpPoolsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpPoolsFolded = folded);
 
-            // Rebuild cached rows when store version changes
-            if (builtVersion != store.Version)
+            // Rebuild cached rows when pool data changes
+            if (builtPoolsVersion != store.PoolsVersion)
                 Rebuild(store, owner);
 
             // Defensive: clear selection if selected pool is gone
@@ -215,7 +216,7 @@ namespace EPrimeReadouts.UI
 
         private void Rebuild(ReadoutStore store, Dialog_ReadoutConfig owner)
         {
-            builtVersion = store.Version;
+            builtPoolsVersion = store.PoolsVersion;
             var snapshot = owner.PoolsSnapshot;
 
             cachedRows = new List<PoolRow>(store.Model.Pools.Count);
@@ -228,8 +229,6 @@ namespace EPrimeReadouts.UI
                         : null;
                 cachedRows.Add(new PoolRow { Id = pool.Id, Name = pool.Name, IconDef = iconDef });
             }
-            // Invalidate the desired-height cache so the next call recomputes with the new row count
-            cachedDesiredHeight = -1f;
         }
     }
 }

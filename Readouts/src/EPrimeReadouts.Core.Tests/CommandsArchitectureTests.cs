@@ -11,7 +11,7 @@ public class CommandsArchitectureTests
         int methods = CountOf(source, "public static void ");
         await Assert.That(methods).IsGreaterThan(5);
         await Assert.That(CountOf(source, "[SyncMethod]")).IsEqualTo(methods);
-        await Assert.That(CountOf(source, "store.Bump()")).IsEqualTo(methods);
+        await Assert.That(CountOf(source, "store.Bump(")).IsEqualTo(methods);
     }
 
     [Test]

@@ -8,22 +8,23 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// Import dialog: source stage (file list or clipboard) → preview stage
-    /// (parsed listing + warning) → commit. Lives in one window with a stage enum.
-    /// Mirrors WorkRoles Dialog_ImportSource + Dialog_ImportPreview pattern but
-    /// fits our simpler always-overwrite-everything semantics.
-    public class Dialog_ImportReadouts : Dialog_EprPreviewBase
+    /// Import dialog: source stage (location picker + file list, or clipboard)
+    /// → preview stage (parsed listing + warning) → commit. Lives in one window
+    /// with a stage enum. The location picker mirrors the export dialog's, so
+    /// anything saved there can be loaded from here.
+    public class Dialog_ImportReadouts : Dialog_EprFilePicker
     {
         private enum Stage { Source, Preview }
 
-        private const float RowH       = 28f;
-        private const float DeleteW    = 22f;
+        private const float FileRowH = 28f;
+        private const float DeleteW  = 22f;
 
         // ── Stage ────────────────────────────────────────────────────────────
         private Stage stage = Stage.Source;
 
         // ── Source stage state ───────────────────────────────────────────────
         private List<(string name, string fullPath, DateTime modified)> files;
+        private string listedDir;   // directory the current file list came from
         private Vector2 sourceScroll;
         private string clip;
         private bool clipUsable;
@@ -34,31 +35,38 @@ namespace EPrimeReadouts.UI
         private List<ReadoutGroup> previewGroups;
         private Vector2 previewScroll;
 
-        public override Vector2 InitialSize => new Vector2(540f, 520f);
-
-        public Dialog_ImportReadouts()
-        {
-            RefreshFiles();
-            RefreshClipboard();
-        }
+        public override Vector2 InitialSize => new Vector2(560f, 560f);
 
         public override void PreOpen()
         {
             base.PreOpen();
-            RefreshFiles();
+            files = null;   // force a fresh directory listing
             RefreshClipboard();
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
-        private void RefreshFiles()
+        /// Directory listing for the picked location, refreshed on user
+        /// interaction when the resolved directory changed — never on idle
+        /// repaints (Desktop/UserHome resolution and Directory.GetFiles are
+        /// syscalls, several times per frame).
+        private void EnsureFiles()
         {
-            files = ReadoutsFiles.ListFiles();
+            var e = Event.current;
+            bool interact = e != null
+                && (e.type == EventType.MouseDown || e.type == EventType.KeyDown);
+            if (files != null && !interact) return;
+            string dir = ResolvedDir();
+            if (files != null && string.Equals(dir, listedDir, StringComparison.Ordinal))
+                return;
+            listedDir = dir;
+            files = ReadoutsFiles.ListFiles(dir);
+            sourceScroll = Vector2.zero;
         }
 
         private void RefreshClipboard()
         {
-            clip      = GUIUtility.systemCopyBuffer;
+            clip       = GUIUtility.systemCopyBuffer;
             clipUsable = !string.IsNullOrEmpty(clip) && clip.Contains("<Readouts");
         }
 
@@ -101,31 +109,36 @@ namespace EPrimeReadouts.UI
         {
             float bodyTop = DrawTitle(inRect, "EPR.ImportTitle");
 
-            float footerY = FooterY(inRect);
-
-            // [From clipboard] button top-right, mirroring export's Copy button.
+            // [From clipboard] top-right, mirroring export's Copy button.
             var clipRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, FooterH);
             if (!clipUsable)
                 TooltipHandler.TipRegion(clipRect, "EPR.ClipboardEmpty".Translate());
             if (Widgets.ButtonText(clipRect, "EPR.FromClipboard".Translate(), active: clipUsable)
                 && clipUsable)
             {
-                if (TryEnterPreview(clip)) { /* stage changed */ }
+                TryEnterPreview(clip);
             }
 
-            // Caption above the file list
-            Text.Font   = GameFont.Tiny;
-            GUI.color   = EprStyle.CaptionText;
-            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, 18f),
-                "EPR.FromFile".Translate());
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            bodyTop  += 20f;
+            // Location picker (no name field — a file is picked from the list).
+            DrawCaption(new Rect(inRect.x, bodyTop, 200f, CaptionRowH - 2f),
+                "EPR.ImportLocationLabel".Translate());
+            bodyTop += CaptionRowH;
+            float locRowY = bodyTop;
+            float customRowY = locRowY + RowH;
+            DrawLocationRows(inRect, locRowY, customRowY, includeNameField: false);
+            bodyTop += RowH + (location == Location.Custom ? RowH : 0f);
 
-            // File list
-            var listRect = new Rect(inRect.x, bodyTop, inRect.width, footerY - bodyTop - FooterGap);
+            float footerY = FooterY(inRect);
 
-            if (files.Count == 0)
+            // ── Framed file list ─────────────────────────────────────────────
+            var frameRect = new Rect(inRect.x, bodyTop, inRect.width,
+                footerY - FooterGap - bodyTop);
+            var listRect = DrawFrame(frameRect);
+            if (listRect.height <= 0f) return;
+
+            EnsureFiles();
+
+            if (files == null || files.Count == 0)
             {
                 Text.Anchor = TextAnchor.MiddleCenter;
                 GUI.color   = EprStyle.CaptionText;
@@ -135,7 +148,7 @@ namespace EPrimeReadouts.UI
             }
             else
             {
-                float totalH  = files.Count * RowH;
+                float totalH  = files.Count * FileRowH;
                 bool needsBar = totalH > listRect.height;
                 var viewRect  = new Rect(0f, 0f,
                     listRect.width - (needsBar ? GenUI.ScrollBarWidth : 0f), totalH);
@@ -145,7 +158,7 @@ namespace EPrimeReadouts.UI
                 for (int i = 0; i < files.Count; i++)
                 {
                     var (name, fullPath, modified) = files[i];
-                    var rowRect = new Rect(0f, i * RowH, viewRect.width, RowH);
+                    var rowRect = new Rect(0f, i * FileRowH, viewRect.width, FileRowH);
 
                     if (i % 2 == 0)
                         Widgets.DrawBoxSolid(rowRect, new Color(1f, 1f, 1f, 0.03f));
@@ -153,7 +166,7 @@ namespace EPrimeReadouts.UI
 
                     // Delete ✕ button (right side, inside the row)
                     var delRect = new Rect(rowRect.xMax - DeleteW - 2f,
-                        rowRect.y + (RowH - DeleteW) / 2f, DeleteW, DeleteW);
+                        rowRect.y + (FileRowH - DeleteW) / 2f, DeleteW, DeleteW);
                     if (Widgets.ButtonImage(delRect, TexButton.CloseXSmall))
                     {
                         string capturedPath = fullPath;
@@ -168,7 +181,7 @@ namespace EPrimeReadouts.UI
                                     Messages.Message(ex.Message,
                                         MessageTypeDefOf.RejectInput, historical: false);
                                 }
-                                RefreshFiles();
+                                files = null;   // force re-list next frame
                             },
                             destructive: true));
                     }
@@ -176,14 +189,14 @@ namespace EPrimeReadouts.UI
                     // File name (left)
                     float availW = rowRect.width - DeleteW - 8f;
                     Text.Anchor = TextAnchor.MiddleLeft;
-                    Widgets.Label(new Rect(rowRect.x + 4f, rowRect.y, availW * 0.60f, RowH), name);
+                    Widgets.Label(new Rect(rowRect.x + 4f, rowRect.y, availW * 0.60f, FileRowH), name);
 
                     // Modified date (right, caption style)
                     Text.Font   = GameFont.Tiny;
                     GUI.color   = EprStyle.CaptionText;
                     float dateW = availW * 0.38f;
                     Text.Anchor = TextAnchor.MiddleRight;
-                    Widgets.Label(new Rect(rowRect.x + availW * 0.60f, rowRect.y, dateW, RowH),
+                    Widgets.Label(new Rect(rowRect.x + availW * 0.60f, rowRect.y, dateW, FileRowH),
                         modified.ToString("yyyy-MM-dd HH:mm"));
                     GUI.color   = Color.white;
                     Text.Font   = GameFont.Small;
@@ -191,7 +204,7 @@ namespace EPrimeReadouts.UI
 
                     // Row click → read + enter preview
                     if (Widgets.ButtonInvisible(
-                        new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteW - 4f, RowH)))
+                        new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteW - 4f, FileRowH)))
                     {
                         if (!ReadoutsFiles.TryRead(fullPath, out string xml, out string readError))
                         {
@@ -234,15 +247,17 @@ namespace EPrimeReadouts.UI
             // Warning line
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(1f, 0.75f, 0.35f);   // warm warning tint
-            float warnH = Text.CalcHeight("EPR.ImportWarning".Translate(), inRect.width);
-            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, warnH),
-                "EPR.ImportWarning".Translate());
+            string warning = "EPR.ImportWarning".Translate();
+            float warnH = EprStyle.CaptionHeight(warning, inRect.width);
+            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, warnH), warning);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             bodyTop  += warnH + 4f;
 
-            // Preview listing
-            var listRect = new Rect(inRect.x, bodyTop, inRect.width, footerY - bodyTop - FooterGap);
+            // ── Framed preview listing ───────────────────────────────────────
+            var frameRect = new Rect(inRect.x, bodyTop, inRect.width,
+                footerY - bodyTop - FooterGap);
+            var listRect = DrawFrame(frameRect);
             if (previewPools != null && previewGroups != null)
                 ReadoutsPreviewUI.DrawListing(listRect, previewPools, previewGroups, ref previewScroll);
 
@@ -259,7 +274,7 @@ namespace EPrimeReadouts.UI
                 "EPR.Back".Translate()))
             {
                 stage = Stage.Source;
-                RefreshFiles();
+                files = null;   // re-list on return
                 ReadoutsPreviewUI.Invalidate();
             }
 

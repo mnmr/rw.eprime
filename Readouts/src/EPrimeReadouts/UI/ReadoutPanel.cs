@@ -9,7 +9,7 @@ namespace EPrimeReadouts.UI
 {
     /// The readout itself, drawn from vanilla's ResourceReadoutOnGUI hook.
     /// Steady state blits the cached DrawModel; rebuilds happen only when the
-    /// store version, view state, map, width or counts fingerprint change.
+    /// relevant model domain, view state, map, width or shared data changes.
     public static class ReadoutPanel
     {
         private const float SearchRowH = 26f;
@@ -36,19 +36,23 @@ namespace EPrimeReadouts.UI
         private static readonly object structuredTipOwner = new object();
         private static DrawModel draw;
         private static Vector2 scroll;
+        private static float cachedTitleWidth = -1f;
+        private static int cachedTitleUiVersion = -1;
         private static int viewStamp;
-        private static int builtVersion = -1;
+        private static int builtGroupsVersion = -1;
+        private static int builtThresholdsVersion = -1;
         private static int builtStamp = -1;
         private static Map builtMap;
         private static float builtWidth;
-        private static long builtFingerprint;
-        private static int lastCountsCheckFrame = -999;
+        private static PoolSnapshot builtPools;
+        private static RenderCountSnapshot builtCounts;
 
         /// Call after any per-player view-state change (depth, search, settings).
         public static void BumpView() => viewStamp++;
 
         public static void OnGUI()
         {
+            UiVersion.ObserveCurrentMetrics();
             hotRects.Clear();
             if (Event.current.type == EventType.Layout) return;
             if (Current.ProgramState != ProgramState.Playing) return;
@@ -59,7 +63,9 @@ namespace EPrimeReadouts.UI
             var settings = EPrimeReadoutsMod.Settings;
 
             float width = settings.panelWidth;
-            if (NeedsRebuild(store, map, width)) Rebuild(store, map, width);
+            var renderData = GameRenderData.Get(map, store);
+            if (NeedsRebuild(store, map, width, renderData))
+                Rebuild(store, map, width, renderData);
 
             inputBlocked = Find.WindowStack.GetWindowAt(Event.current.mousePosition) != null;
             bool repaint = Event.current.type == EventType.Repaint;
@@ -144,12 +150,23 @@ namespace EPrimeReadouts.UI
             {
                 if (settings.showModNameWhenNoSearch)
                 {
+                    // Width measured once (Tiny font) — never per frame; the
+                    // label rect fits the text exactly so it cannot wrap.
+                    if (cachedTitleWidth < 0f || cachedTitleUiVersion != UiVersion.Current)
+                    {
+                        Text.Font = GameFont.Tiny;
+                        cachedTitleWidth = Text.CalcSize("EPR.Title".Translate()).x + 4f;
+                        cachedTitleUiVersion = UiVersion.Current;
+                        Text.Font = GameFont.Small;
+                    }
+                    Text.Font = GameFont.Tiny;
                     Text.Anchor = TextAnchor.MiddleLeft;
                     GUI.color = EprStyle.HeaderText;
-                    Widgets.Label(new Rect(rect.x + 26f, rect.y, rect.width - 26f, rect.height),
+                    Widgets.Label(new Rect(rect.x + 26f, rect.y, cachedTitleWidth, rect.height),
                         "EPR.Title".Translate());
                     GUI.color = Color.white;
                     Text.Anchor = TextAnchor.UpperLeft;
+                    Text.Font = GameFont.Small;
                 }
                 return;
             }
@@ -225,20 +242,28 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private static bool NeedsRebuild(ReadoutStore store, Map map, float width)
+        private static bool NeedsRebuild(
+            ReadoutStore store,
+            Map map,
+            float width,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
         {
-            if (draw == null || builtVersion != store.Version || builtStamp != viewStamp
-                || builtMap != map || builtWidth != width)
+            if (draw == null
+                || builtGroupsVersion != store.GroupsVersion
+                || builtThresholdsVersion != store.ThresholdsVersion
+                || builtStamp != viewStamp
+                || builtMap != map || builtWidth != width
+                || !ReferenceEquals(builtPools, renderData.Structure)
+                || !ReferenceEquals(builtCounts, renderData.Counts))
                 return true;
-            if (Time.frameCount - lastCountsCheckFrame >= 30)
-            {
-                lastCountsCheckFrame = Time.frameCount;
-                if (GameCounts.Fingerprint(map, store) != builtFingerprint) return true;
-            }
             return false;
         }
 
-        private static void Rebuild(ReadoutStore store, Map map, float width)
+        private static void Rebuild(
+            ReadoutStore store,
+            Map map,
+            float width,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
         {
             var settings = EPrimeReadoutsMod.Settings;
             var groups = store.Model.InDisplayOrder();
@@ -250,20 +275,21 @@ namespace EPrimeReadouts.UI
                 // Unset depth defaults to tier 1 only; users expand per group.
                 DepthOf = g => settings.tierDepths.TryGetValue(store.DepthKey(g.Id), out int depth)
                     ? depth : 1,
-                Counts = GameCounts.Snapshot(map, store),
+                Counts = renderData.Counts.Counts,
                 Thresholds = store.Model.Thresholds,
                 SearchText = SearchText,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
-                Pools = PoolSnapshot.Build(store.Model.Pools, GameResourceCatalog.Instance),
+                Pools = renderData.Structure,
             };
-            draw = DrawModel.Resolve(ReadoutLayoutEngine.Build(input));
-            builtVersion = store.Version;
+            draw = DrawModel.Resolve(ReadoutLayoutEngine.Build(input), renderData);
+            builtGroupsVersion = store.GroupsVersion;
+            builtThresholdsVersion = store.ThresholdsVersion;
             builtStamp = viewStamp;
             builtMap = map;
             builtWidth = width;
-            builtFingerprint = GameCounts.Fingerprint(map, store);
-            lastCountsCheckFrame = Time.frameCount;
+            builtPools = renderData.Structure;
+            builtCounts = renderData.Counts;
         }
     }
 }

@@ -59,7 +59,9 @@ namespace EPrimeReadouts.Core
         {
             var group = GroupById(id);
             if (group == null) return false;
-            group.Name = name ?? "";
+            string nextName = name ?? "";
+            if (group.Name == nextName) return false;
+            group.Name = nextName;
             return true;
         }
 
@@ -80,7 +82,7 @@ namespace EPrimeReadouts.Core
             var order = InDisplayOrder();
             int index = order.FindIndex(g => g.Id == id);
             int target = index + delta;
-            if (index < 0 || target < 0 || target >= order.Count) return false;
+            if (index < 0 || target < 0 || target >= order.Count || target == index) return false;
             (order[index].OrderIndex, order[target].OrderIndex) =
                 (order[target].OrderIndex, order[index].OrderIndex);
             return true;
@@ -99,8 +101,10 @@ namespace EPrimeReadouts.Core
             if (group == null) return false;
             var order = InDisplayOrder();
             int count = order.Count;
-            if (count <= 1) return true;
+            if (count <= 1) return false;
             int clampedTarget = Math.Max(0, Math.Min(count - 1, targetDisplayIndex));
+            int currentIndex = order.IndexOf(group);
+            if (currentIndex == clampedTarget) return false;
             // Remove from current position, insert at target
             order.Remove(group);
             order.Insert(clampedTarget, group);
@@ -114,13 +118,21 @@ namespace EPrimeReadouts.Core
         {
             var group = GroupById(id);
             if (group == null || tiers == null || tiers.Count > TierOps.MaxTiers) return false;
-            group.Tiers = TierOps.Clone(tiers);
-            TierOps.Compact(group.Tiers);
+            var nextTiers = TierOps.Clone(tiers);
+            TierOps.Compact(nextTiers);
+            if (TiersEqual(group.Tiers, nextTiers)) return false;
+            group.Tiers = nextTiers;
             return true;
         }
 
-        public void SetThreshold(string defName, int low, int critical) =>
+        public bool SetThreshold(string defName, int low, int critical)
+        {
+            if (Thresholds.TryGetValue(defName, out var current)
+                && current.Low == low && current.Critical == critical)
+                return false;
             Thresholds[defName] = new ThresholdSpec(low, critical);
+            return true;
+        }
 
         public bool ClearThreshold(string defName) => Thresholds.Remove(defName);
 
@@ -147,7 +159,9 @@ namespace EPrimeReadouts.Core
         {
             var pool = PoolById(id);
             if (pool == null) return false;
-            pool.Name = name ?? "";
+            string nextName = name ?? "";
+            if (pool.Name == nextName) return false;
+            pool.Name = nextName;
             SortPools();
             return true;
         }
@@ -163,24 +177,35 @@ namespace EPrimeReadouts.Core
 
         /// Deletes the pool and purges all #id tokens (including ~#id) from
         /// every group's tiers, then removes threshold entries keyed "#id".
-        public bool DeletePool(int id)
+        public bool DeletePool(int id) => DeletePool(id, out _);
+
+        public bool DeletePool(int id, out ReadoutChange change)
         {
+            change = ReadoutChange.None;
             var pool = PoolById(id);
             if (pool == null) return false;
             Pools.Remove(pool);
+            change = ReadoutChange.Pools;
 
             // Build the canonical token string to match against
             string canonicalToken = SlotToken.PoolToken(id); // "#id"
 
             foreach (var group in Groups)
             {
+                bool groupChanged = false;
                 foreach (var tier in group.Tiers)
-                    tier.RemoveAll(t => SlotToken.Canonical(t) == canonicalToken);
-                TierOps.Compact(group.Tiers);
+                    groupChanged |= tier.RemoveAll(
+                        t => SlotToken.Canonical(t) == canonicalToken) > 0;
+                if (groupChanged)
+                {
+                    TierOps.Compact(group.Tiers);
+                    change |= ReadoutChange.Groups;
+                }
             }
 
             // Remove threshold keyed "#id"
-            Thresholds.Remove(canonicalToken);
+            if (Thresholds.Remove(canonicalToken))
+                change |= ReadoutChange.Thresholds;
             return true;
         }
 
@@ -189,6 +214,7 @@ namespace EPrimeReadouts.Core
         {
             var pool = PoolById(id);
             if (pool == null) return false;
+            if (ListEqual(pool.Members, members)) return false;
             pool.Members = members != null ? new List<string>(members) : new List<string>();
             return true;
         }
@@ -198,7 +224,29 @@ namespace EPrimeReadouts.Core
         {
             var pool = PoolById(id);
             if (pool == null) return false;
-            pool.IconDefName = defName;
+            string currentDefName = string.IsNullOrEmpty(pool.IconDefName) ? null : pool.IconDefName;
+            string nextDefName = string.IsNullOrEmpty(defName) ? null : defName;
+            if (currentDefName == nextDefName) return false;
+            pool.IconDefName = nextDefName;
+            return true;
+        }
+
+        private static bool TiersEqual(List<List<string>> left, List<List<string>> right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null || left.Count != right.Count) return false;
+            for (int tier = 0; tier < left.Count; tier++)
+                if (!ListEqual(left[tier], right[tier])) return false;
+            return true;
+        }
+
+        private static bool ListEqual(List<string> left, List<string> right)
+        {
+            int leftCount = left != null ? left.Count : 0;
+            int rightCount = right != null ? right.Count : 0;
+            if (leftCount != rightCount) return false;
+            for (int i = 0; i < leftCount; i++)
+                if (left[i] != right[i]) return false;
             return true;
         }
 

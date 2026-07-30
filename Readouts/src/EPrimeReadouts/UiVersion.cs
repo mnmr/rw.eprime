@@ -1,3 +1,6 @@
+using EPrimeReadouts.Core;
+using Verse;
+
 namespace EPrimeReadouts
 {
     /// Monotonic UI cache stamp. WrText.FitWidth caches measured widths against
@@ -5,8 +8,17 @@ namespace EPrimeReadouts
     /// changes).
     public static class UiVersion
     {
-        public static int Current { get; private set; }
+        private static readonly UiMetricRevision revision = new UiMetricRevision();
 
-        public static void Bump() => Current++;
+        public static int Current => revision.Current;
+
+        public static void ObserveCurrentMetrics() =>
+            revision.Observe(Prefs.UIScale, Prefs.DisableTinyText);
+
+        public static void Bump()
+        {
+            ObserveCurrentMetrics();
+            revision.Bump();
+        }
     }
 }

@@ -12,8 +12,11 @@ namespace EPrimeReadouts.UI
         public ThingDef[] Defs;    // parallel to Model.Cells; null for non-icon cells
         public int[] Counts;       // parallel; raw count for icon cells (tooltips)
         public string[] Tokens;    // parallel; raw slot token for icon cells (tooltips)
+        public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
 
-        public static DrawModel Resolve(RenderModel model)
+        public static DrawModel Resolve(
+            RenderModel model,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData = null)
         {
             var defs = new ThingDef[model.Cells.Count];
             var counts = new int[model.Cells.Count];
@@ -30,7 +33,14 @@ namespace EPrimeReadouts.UI
                     counts[i] = cell.Count;
                 }
             }
-            return new DrawModel { Model = model, Defs = defs, Counts = counts, Tokens = tokens };
+            return new DrawModel
+            {
+                Model = model,
+                Defs = defs,
+                Counts = counts,
+                Tokens = tokens,
+                RenderData = renderData,
+            };
         }
     }
 
@@ -81,10 +91,19 @@ namespace EPrimeReadouts.UI
                     case CellKind.Icon:
                         if (draw.Defs[i] != null)
                         {
-                            Widgets.ThingIcon(rect, draw.Defs[i]);
+                            // Per-def scale correction evens out how much of
+                            // each texture is transparent padding, so icons
+                            // read as visually same-sized. Cached lookup.
+                            float iconScale = IconScaleCache.ScaleFor(draw.Defs[i]);
+                            var iconRect = iconScale == 1f ? rect : new Rect(
+                                rect.x + rect.width * (1f - iconScale) / 2f,
+                                rect.y + rect.height * (1f - iconScale) / 2f,
+                                rect.width * iconScale,
+                                rect.height * iconScale);
+                            Widgets.ThingIcon(iconRect, draw.Defs[i]);
                             if (Mouse.IsOver(rect))
                                 IconTips.Tip(rect, draw.Defs[i], draw.Counts[i], cells[i + 1].Band,
-                                    draw.Tokens[i]);
+                                    draw.Tokens[i], draw.RenderData);
                         }
                         break;
                     case CellKind.Counter:

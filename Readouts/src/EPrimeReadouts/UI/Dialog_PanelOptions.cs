@@ -20,8 +20,11 @@ namespace EPrimeReadouts.UI
         public override void DoWindowContents(Rect inRect)
         {
             var settings = EPrimeReadoutsMod.Settings;
+            float headerUsed = EprStyle.SectionHeader(inRect.x, inRect.y, inRect.width,
+                "EPR.Options".Translate());
             var listing = new Listing_Standard();
-            listing.Begin(inRect);
+            listing.Begin(new Rect(inRect.x, inRect.y + headerUsed + 4f,
+                inRect.width, inRect.height - headerUsed - 4f));
 
             bool showSearch = settings.showSearchFilter;
             listing.CheckboxLabeled("EPR.ShowSearchFilter".Translate(), ref showSearch);

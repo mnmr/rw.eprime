@@ -10,20 +10,13 @@ public class ReadoutPanelArchitectureTests
         string source = Source("UI", "ReadoutPanel.cs");
         await Assert.That(source).Contains("private static bool NeedsRebuild(");
         string onGui = Method(source, "public static void OnGUI(");
-        await Assert.That(onGui)
-            .Contains("if (NeedsRebuild(store, map, width)) Rebuild(store, map, width);");
+        await Assert.That(onGui).Contains("var renderData = GameRenderData.Get(map, store);");
+        await Assert.That(onGui).Contains("if (NeedsRebuild(store, map, width, renderData))");
+        await Assert.That(onGui).Contains("Rebuild(store, map, width, renderData);");
         // The layout engine runs only inside Rebuild, never per-frame.
         await Assert.That(CountOf(source, "new LayoutInput")).IsEqualTo(1);
         await Assert.That(Method(source, "private static void Rebuild(")).Contains("new LayoutInput");
         await Assert.That(onGui).DoesNotContain("ReadoutLayoutEngine.Build(");
-    }
-
-    [Test]
-    public async Task CountsProbeIsThrottled()
-    {
-        string needs = Method(Source("UI", "ReadoutPanel.cs"), "private static bool NeedsRebuild(");
-        await Assert.That(needs).Contains("Time.frameCount - lastCountsCheckFrame >= 30");
-        await Assert.That(needs).Contains("GameCounts.Fingerprint(map, store)");
     }
 
     [Test]

@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using System;
 using EPrimeReadouts.Core;
 using RimWorld;
 using UnityEngine;
@@ -8,35 +8,83 @@ namespace EPrimeReadouts.UI
 {
     /// Structured hover tips for resource icons: label + count badge,
     /// description prose, threshold facts. Models are cached per token and
-    /// rebuilt only when count or band changes.
+    /// rebuilt only when their shared render-data snapshot changes.
     public static class IconTips
     {
-        private struct CachedTip
+        private readonly struct TipRevision : IEquatable<TipRevision>
         {
-            public int Count;
-            public Band Band;
-            public StructuredTip Tip;
+            private readonly RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData;
+            private readonly int thresholdsVersion;
+
+            public TipRevision(
+                RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData,
+                int thresholdsVersion)
+            {
+                this.renderData = renderData;
+                this.thresholdsVersion = thresholdsVersion;
+            }
+
+            public bool Equals(TipRevision other) =>
+                ReferenceEquals(renderData, other.renderData)
+                && thresholdsVersion == other.thresholdsVersion;
+
+            public override bool Equals(object obj) =>
+                obj is TipRevision other && Equals(other);
+
+            public override int GetHashCode() =>
+                ((renderData != null ? renderData.GetHashCode() : 0) * 397)
+                ^ thresholdsVersion;
         }
 
-        private static readonly Dictionary<string, CachedTip> cache =
-            new Dictionary<string, CachedTip>();
+        private struct BuildState
+        {
+            public ThingDef Def;
+            public int Count;
+            public string Token;
+            public ReadoutStore Store;
+            public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
+        }
 
-        public static void Tip(Rect rect, ThingDef def, int count, Band band, string token)
+        private static readonly RevisionedCache<string, TipRevision, StructuredTip> cache =
+            new RevisionedCache<string, TipRevision, StructuredTip>();
+        private static readonly Func<BuildState, StructuredTip> buildTip = Build;
+
+        public static void Tip(
+            Rect rect,
+            ThingDef def,
+            int count,
+            Band band,
+            string token,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
         {
             // Use token as cache key (null-safe fallback to defName for plain slots)
             string cacheKey = token ?? def.defName;
-            if (!cache.TryGetValue(cacheKey, out var cached)
-                || cached.Count != count || cached.Band != band)
+            StructuredTip tip;
+            var store = ReadoutStore.Current;
+            var state = new BuildState
             {
-                cached = new CachedTip { Count = count, Band = band,
-                    Tip = Build(def, count, band, token) };
-                cache[cacheKey] = cached;
-            }
-            TooltipHandler.TipRegion(rect, new TipSignal(cached.Tip.Activate(), def.shortHash));
+                Def = def,
+                Count = count,
+                Token = token,
+                Store = store,
+                RenderData = renderData,
+            };
+            if (renderData != null)
+                tip = cache.Get(
+                    cacheKey,
+                    new TipRevision(renderData, store != null ? store.ThresholdsVersion : 0),
+                    state,
+                    buildTip);
+            else
+                tip = Build(state);
+            TooltipHandler.TipRegion(rect, new TipSignal(tip.Activate(), def.shortHash));
         }
 
-        private static StructuredTip Build(ThingDef def, int count, Band band, string token)
+        private static StructuredTip Build(BuildState state)
         {
+            var def = state.Def;
+            int count = state.Count;
+            string token = state.Token;
             string canonical = token != null ? SlotToken.Canonical(token) : def.defName;
             bool isLegacyPool = token != null && SlotToken.IsPool(token);
             bool isPoolRef = token != null && SlotToken.IsPoolRef(token);
@@ -48,17 +96,13 @@ namespace EPrimeReadouts.UI
             {
                 // First-class pool: look up snapshot for name and members
                 int poolId = SlotToken.PoolId(token);
-                var store = ReadoutStore.Current;
-                var pool = store?.Model.PoolById(poolId);
-                title = pool != null ? pool.Name : canonical;
-                // Expand members on hover (acceptable — hover-only)
-                if (pool != null)
+                if (state.RenderData != null
+                    && state.RenderData.Structure.TryGet(
+                        poolId, out poolMembers, out _, out string poolName))
                 {
-                    var snapshot = PoolSnapshot.Build(
-                        new System.Collections.Generic.List<ResourcePool> { pool },
-                        GameResourceCatalog.Instance);
-                    snapshot.TryGet(poolId, out poolMembers, out _, out _);
+                    title = poolName;
                 }
+                else title = canonical;
             }
             else if (isLegacyPool)
             {
@@ -84,22 +128,21 @@ namespace EPrimeReadouts.UI
             }
             else if (poolMembers != null && poolMembers.Count > 0)
             {
-                // Pool: per-member count breakdown (LiveCount also covers
-                // extra-counted defs like stone chunks)
+                // Pool: per-member count breakdown from the shared count snapshot.
                 var breakdown = model.AddSection();
-                var map = Find.CurrentMap;
-                var breakdownStore = ReadoutStore.Current;
                 for (int m = 0; m < poolMembers.Count; m++)
                 {
                     var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(poolMembers[m]);
                     if (memberDef == null) continue;
-                    int memberCount = map != null
-                        ? GameCounts.LiveCount(map, breakdownStore, memberDef) : 0;
+                    int memberCount = state.RenderData != null
+                        && state.RenderData.Counts.Counts.TryGetValue(
+                            memberDef.defName, out int cachedCount)
+                        ? cachedCount : 0;
                     breakdown.Fact(memberDef.LabelCap, memberCount.ToString());
                 }
             }
 
-            var tipStore = ReadoutStore.Current;
+            var tipStore = state.Store;
             if (tipStore != null && tipStore.Model.Thresholds.TryGetValue(canonical, out var spec))
             {
                 var levels = model.AddSection("EPR.Thresholds".Translate());

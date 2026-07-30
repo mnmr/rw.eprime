@@ -19,7 +19,7 @@ namespace EPrimeReadouts.UI
         private int expandStamp;
 
         // Caching fields
-        private int builtVersion = -1;
+        private int builtPoolsVersion = -1;
         private int builtPoolId = -1;
         private int builtExpandStamp = -1;
 
@@ -76,7 +76,7 @@ namespace EPrimeReadouts.UI
         private bool NeedsRebuild(ReadoutStore store, int poolId)
         {
             if (cachedRows == null) return true;
-            if (store.Version != builtVersion) return true;
+            if (store.PoolsVersion != builtPoolsVersion) return true;
             if (poolId != builtPoolId) return true;
             if (expandStamp != builtExpandStamp) return true;
             return false;
@@ -85,7 +85,7 @@ namespace EPrimeReadouts.UI
         private void Rebuild(ReadoutStore store, ResourcePool pool)
         {
             bool poolChanged = pool.Id != builtPoolId;
-            builtVersion = store.Version;
+            builtPoolsVersion = store.PoolsVersion;
             builtPoolId = pool.Id;
 
             var members = pool.Members;

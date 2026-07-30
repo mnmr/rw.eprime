@@ -30,9 +30,10 @@ namespace EPrimeReadouts.UI
         /// Set by the editor view; may be null. ResourceTreeView reads this.
         public string selectedCanonical;
 
-        // Shared per-frame-safe pools snapshot — rebuilt once when store.Version changes.
+        // Shared per-frame-safe pools snapshot — rebuilt only for pool edits.
         public PoolSnapshot PoolsSnapshot { get; private set; }
         public int poolsSnapshotVersion = -1;
+        internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData { get; private set; }
 
         /// Session state: false = show Resources tree, true = show Pools UI.
         private bool showPools;
@@ -85,11 +86,18 @@ namespace EPrimeReadouts.UI
             {
                 EprDrag.Update();
 
-                // --- Rebuild shared pools snapshot when store version changes ---
-                if (store.Version != poolsSnapshotVersion)
+                // --- Read the same per-map snapshot used by the main panel. ---
+                var map = Find.CurrentMap;
+                RenderData = map != null ? GameRenderData.Get(map, store) : null;
+                if (RenderData != null)
+                {
+                    PoolsSnapshot = RenderData.Structure;
+                    poolsSnapshotVersion = store.PoolsVersion;
+                }
+                else if (store.PoolsVersion != poolsSnapshotVersion)
                 {
                     PoolsSnapshot = PoolSnapshot.Build(store.Model.Pools, GameResourceCatalog.Instance);
-                    poolsSnapshotVersion = store.Version;
+                    poolsSnapshotVersion = store.PoolsVersion;
                 }
 
                 // --- Top panel ---

@@ -16,6 +16,6 @@ namespace EPrimeReadouts.Core
         public const float LabelRowH = 20f;
         public const float StripeW = 3f;      // colored band on a container's left edge
         public const float GroupPadX = 4f;    // content inset right of the stripe
-        public const float GroupPadY = 1f;    // content inset top/bottom of a container
+        public const float GroupPadY = 0f;    // content inset top/bottom of a container
     }
 }

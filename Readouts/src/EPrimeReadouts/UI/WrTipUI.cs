@@ -41,6 +41,7 @@ namespace EPrimeReadouts.UI
         private sealed class Geometry
         {
             public float MaxWidth;
+            public int UiVersion;
             public Vector2 Size;
             public readonly List<Cmd> Cmds = new List<Cmd>();
         }
@@ -87,9 +88,13 @@ namespace EPrimeReadouts.UI
 
         private static Geometry Ensure(TipModel model, float maxWidth)
         {
-            if (model.RenderCache is Geometry cached && cached.MaxWidth == maxWidth)
+            UiVersion.ObserveCurrentMetrics();
+            int uiVersion = UiVersion.Current;
+            if (model.RenderCache is Geometry cached
+                && cached.MaxWidth == maxWidth
+                && cached.UiVersion == uiVersion)
                 return cached;
-            var geo = new Geometry { MaxWidth = maxWidth };
+            var geo = new Geometry { MaxWidth = maxWidth, UiVersion = uiVersion };
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
             float frame = Pad + model.Padding;

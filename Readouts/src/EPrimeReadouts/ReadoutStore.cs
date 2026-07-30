@@ -19,8 +19,13 @@ namespace EPrimeReadouts
         private List<PoolRecord> poolRecords;
         private Dictionary<string, string> thresholdRecords;
 
-        /// Bumped on every mutation; the panel rebuilds when it changes.
-        public int Version { get; private set; }
+        private readonly ReadoutRevisions revisions = new ReadoutRevisions();
+
+        /// Global mutation stamp for consumers that depend on the entire model.
+        public int Version => revisions.Version;
+        public int GroupsVersion => revisions.Groups;
+        public int PoolsVersion => revisions.Pools;
+        public int ThresholdsVersion => revisions.Thresholds;
 
         public ReadoutStore(World world) : base(world) { }
 
@@ -30,7 +35,7 @@ namespace EPrimeReadouts
 
         public int TakePoolId() => nextPoolId++;
 
-        public void Bump() => Version++;
+        public void Bump(ReadoutChange change) => revisions.Bump(change);
 
         public string DepthKey(int groupId) =>
             world.info.persistentRandomValue + ":" + groupId;
@@ -90,7 +95,7 @@ namespace EPrimeReadouts
                 seeded = true;
             }
             PruneDepthKeys();
-            Bump();
+            Bump(ReadoutChange.All);
         }
 
         private static string CategoryLabelName(string catDefName)

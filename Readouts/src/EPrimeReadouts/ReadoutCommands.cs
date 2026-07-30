@@ -18,7 +18,7 @@ namespace EPrimeReadouts
             if (store == null) return;
             if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _)) return;
             store.Model.ApplyImport(pools, groups, store.TakePoolId, store.TakeGroupId);
-            store.Bump();
+            store.Bump(ReadoutChange.All);
         }
 
         [SyncMethod]
@@ -27,7 +27,7 @@ namespace EPrimeReadouts
             var store = ReadoutStore.Current;
             if (store == null) return;
             store.Model.CreateGroup(store.TakeGroupId(), name);
-            store.Bump();
+            store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -35,8 +35,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.RenameGroup(id, name);
-            store.Bump();
+            if (store.Model.RenameGroup(id, name))
+                store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -44,8 +44,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.DeleteGroup(id);
-            store.Bump();
+            if (store.Model.DeleteGroup(id))
+                store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -53,8 +53,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.ReorderGroup(id, delta);
-            store.Bump();
+            if (store.Model.ReorderGroup(id, delta))
+                store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -62,8 +62,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.SetTiers(id, TierBlobCodec.Decode(tierBlob));
-            store.Bump();
+            if (store.Model.SetTiers(id, TierBlobCodec.Decode(tierBlob)))
+                store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -71,8 +71,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.SetThreshold(defName, low, critical);
-            store.Bump();
+            if (store.Model.SetThreshold(defName, low, critical))
+                store.Bump(ReadoutChange.Thresholds);
         }
 
         [SyncMethod]
@@ -80,8 +80,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.ClearThreshold(defName);
-            store.Bump();
+            if (store.Model.ClearThreshold(defName))
+                store.Bump(ReadoutChange.Thresholds);
         }
 
         [SyncMethod]
@@ -89,8 +89,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.MoveGroupTo(id, displayIndex);
-            store.Bump();
+            if (store.Model.MoveGroupTo(id, displayIndex))
+                store.Bump(ReadoutChange.Groups);
         }
 
         [SyncMethod]
@@ -102,7 +102,7 @@ namespace EPrimeReadouts
             store.Model.Pools.Clear();
             store.Model.Thresholds.Clear();
             DefaultGroups.Seed(store);
-            store.Bump();
+            store.Bump(ReadoutChange.All);
         }
 
         [SyncMethod]
@@ -111,7 +111,7 @@ namespace EPrimeReadouts
             var store = ReadoutStore.Current;
             if (store == null) return;
             store.Model.CreatePool(store.TakePoolId(), name);
-            store.Bump();
+            store.Bump(ReadoutChange.Pools);
         }
 
         [SyncMethod]
@@ -119,8 +119,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.RenamePool(id, name);
-            store.Bump();
+            if (store.Model.RenamePool(id, name))
+                store.Bump(ReadoutChange.Pools);
         }
 
         [SyncMethod]
@@ -128,8 +128,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.DeletePool(id);
-            store.Bump();
+            if (store.Model.DeletePool(id, out var change))
+                store.Bump(change);
         }
 
         [SyncMethod]
@@ -137,8 +137,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.SetPoolMembers(id, PoolMembersCodec.Decode(membersBlob));
-            store.Bump();
+            if (store.Model.SetPoolMembers(id, PoolMembersCodec.Decode(membersBlob)))
+                store.Bump(ReadoutChange.Pools);
         }
 
         [SyncMethod]
@@ -146,8 +146,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.SetPoolIcon(id, defName);
-            store.Bump();
+            if (store.Model.SetPoolIcon(id, defName))
+                store.Bump(ReadoutChange.Pools);
         }
     }
 }

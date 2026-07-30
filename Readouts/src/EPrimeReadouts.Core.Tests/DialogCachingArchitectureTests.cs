@@ -25,15 +25,15 @@ public class DialogCachingArchitectureTests
     public async Task PoolListViewHasVersionGate()
     {
         string source = Source("UI", "PoolListView.cs");
-        await Assert.That(source).Contains("builtVersion");
+        await Assert.That(source).Contains("builtPoolsVersion");
     }
 
     [Test]
     public async Task PoolEditorViewHasVersionGate()
     {
         string source = Source("UI", "PoolEditorView.cs");
-        // Either builtVersion or an equivalent stamp gate
-        bool hasVersionGate = source.Contains("builtVersion") || source.Contains("builtPoolId");
+        // Either the pool-domain revision or an equivalent stamp gate
+        bool hasVersionGate = source.Contains("builtPoolsVersion") || source.Contains("builtPoolId");
         await Assert.That(hasVersionGate).IsTrue();
     }
 

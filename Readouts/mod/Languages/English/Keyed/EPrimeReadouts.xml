@@ -54,13 +54,23 @@
   <!-- Export preview dialog -->
   <EPR.ExportPreviewTitle>Export Readouts</EPR.ExportPreviewTitle>
   <EPR.CopyToClipboard>Copy to Clipboard</EPR.CopyToClipboard>
-  <EPR.CopiedToClipboard>Readout config copied to clipboard.</EPR.CopiedToClipboard>
-  <EPR.SaveToFile>Save to File…</EPR.SaveToFile>
-  <EPR.SaveToFileCaption>Save as file (in EPrimeReadouts data folder):</EPR.SaveToFileCaption>
+  <EPR.CopiedToClipboard>Copied to clipboard.</EPR.CopiedToClipboard>
+  <EPR.Save>Save</EPR.Save>
+  <EPR.ExportLocationLabel>Save location</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Copy Path</EPR.CopyPath>
+
+  <!-- Shared location picker -->
+  <EPR.LocGameData>Game data folder</EPR.LocGameData>
+  <EPR.LocDesktop>Desktop</EPR.LocDesktop>
+  <EPR.LocUserHome>User home</EPR.LocUserHome>
+  <EPR.LocCustom>Custom...</EPR.LocCustom>
+  <EPR.EnterPath>Enter path</EPR.EnterPath>
+  <EPR.BadFileName>Enter a valid file name.</EPR.BadFileName>
+  <EPR.BadDirectory>Enter a valid directory path.</EPR.BadDirectory>
 
   <!-- Import dialog -->
   <EPR.ImportTitle>Import Readouts</EPR.ImportTitle>
-  <EPR.FromFile>Select a previously exported file:</EPR.FromFile>
+  <EPR.ImportLocationLabel>Import location</EPR.ImportLocationLabel>
   <EPR.FromClipboard>From Clipboard</EPR.FromClipboard>
   <EPR.ClipboardEmpty>Clipboard is empty or does not contain a readout export.</EPR.ClipboardEmpty>
   <EPR.ImportWarning>WARNING: This will REPLACE all current pools, groups, and thresholds. This affects every player in multiplayer.</EPR.ImportWarning>

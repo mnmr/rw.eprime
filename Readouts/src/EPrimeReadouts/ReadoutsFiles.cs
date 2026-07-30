@@ -24,43 +24,32 @@ namespace EPrimeReadouts
             }
         }
 
-        /// Sanitizes <paramref name="name"/> (strips invalid filename chars) and
-        /// returns the full path, appending ".xml" if the name lacks it.
-        public static string PathFor(string name)
-        {
-            if (string.IsNullOrEmpty(name)) name = "readouts";
-
-            // Strip invalid filename characters
-            char[] invalid = Path.GetInvalidFileNameChars();
-            var sb = new System.Text.StringBuilder(name.Length);
-            foreach (char c in name)
-                if (Array.IndexOf(invalid, c) < 0)
-                    sb.Append(c);
-            name = sb.Length > 0 ? sb.ToString() : "readouts";
-
-            if (!name.EndsWith(Extension, StringComparison.OrdinalIgnoreCase))
-                name += Extension;
-
-            return Path.Combine(Folder, name);
-        }
-
-        /// Lists all .xml files in the export folder, newest-modified first.
-        public static List<(string name, string fullPath, DateTime modified)> ListFiles()
+        /// Lists all .xml files in <paramref name="directory"/>, newest-modified
+        /// first. Bad or inaccessible paths (the picker allows custom input)
+        /// yield an empty list rather than throwing.
+        public static List<(string name, string fullPath, DateTime modified)> ListFiles(string directory)
         {
             var result = new List<(string name, string fullPath, DateTime modified)>();
-            string folder = Folder;
-            if (!Directory.Exists(folder)) return result;
-
-            var files = Directory.GetFiles(folder, "*" + Extension, SearchOption.TopDirectoryOnly);
-            foreach (var fullPath in files)
+            try
             {
-                string name = Path.GetFileNameWithoutExtension(fullPath);
-                DateTime modified = File.GetLastWriteTime(fullPath);
-                result.Add((name, fullPath, modified));
-            }
+                if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
+                    return result;
 
-            // Newest first
-            result.Sort((a, b) => b.modified.CompareTo(a.modified));
+                var files = Directory.GetFiles(directory, "*" + Extension, SearchOption.TopDirectoryOnly);
+                foreach (var fullPath in files)
+                {
+                    string name = Path.GetFileNameWithoutExtension(fullPath);
+                    DateTime modified = File.GetLastWriteTime(fullPath);
+                    result.Add((name, fullPath, modified));
+                }
+
+                // Newest first
+                result.Sort((a, b) => b.modified.CompareTo(a.modified));
+            }
+            catch (Exception)
+            {
+                result.Clear();
+            }
             return result;
         }
 
