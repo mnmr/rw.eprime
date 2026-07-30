@@ -67,13 +67,16 @@ namespace WorkRoles.UI
             return Other("WR_NowBusy");
         }
 
-        /// Vanilla's non-scan work givers issue jobs without workGiverDef
-        /// (JobGiver_Work's NonScanJob path); job def plus tag pin down the
-        /// work type. DLC-gated JobDefOf fields are null when inactive.
+        /// Jobs carrying no workGiverDef: vanilla's non-scan givers, plus
+        /// opportunistic and bill-product hauls started outside JobGiver_Work.
+        /// Job def plus tag pin down the work type; DLC-gated JobDefOf fields
+        /// are null when inactive.
         private static string NonScanWorkTypeFor(Pawn pawn, Job job)
         {
             JobDef def = job.def;
             if (def == null) return null;
+            if (def == JobDefOf.HaulToCell || def == JobDefOf.HaulToContainer)
+                return "Hauling";
             JobTag? tag = pawn.mindState?.lastJobTag;
             if (def == JobDefOf.LayDown)
                 return tag == JobTag.RestingForMedicalReasons ? "Patient" : null;

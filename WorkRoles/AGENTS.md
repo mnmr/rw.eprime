@@ -31,7 +31,7 @@ A steady render pass may:
 A steady render pass must not:
 
 - traverse authoritative models to derive display data;
-- aggregate resource counts or rebuild layouts;
+- aggregate pawn or role data or rebuild layouts;
 - sort, filter, group, flatten, or expand collections;
 - resolve defs, work types, icons, roles, or labels;
 - call `Text.CalcSize` or `Text.CalcHeight`;

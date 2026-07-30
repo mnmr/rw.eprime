@@ -24,6 +24,10 @@ namespace WorkRoles.UI
         // Runtime-built white disc (no art asset needed), tinted via GUI.color
         // at draw time — e.g. the training path color dot.
         public static readonly Texture2D Circle;
+        // 1px-wide gradient (section bg fading to transparent), stretched to
+        // the panel width at draw time; bilinear sampling makes it smooth
+        // where stacked 1px strips banded.
+        public static readonly Texture2D ScrollEdgeFade;
 
         static WorkRolesTex()
         {
@@ -41,6 +45,7 @@ namespace WorkRoles.UI
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
             Circle = MakeCircle(32);
+            ScrollEdgeFade = MakeScrollEdgeFade(20);
             StartupTiming.Record("textures", sw.ElapsedMilliseconds);
         }
 
@@ -61,6 +66,24 @@ namespace WorkRoles.UI
             tex.Apply();
             tex.wrapMode = TextureWrapMode.Clamp;
             tex.name = "WorkRolesCircle";
+            return tex;
+        }
+
+        private static Texture2D MakeScrollEdgeFade(int steps)
+        {
+            var tex = new Texture2D(1, steps, TextureFormat.RGBA32, mipChain: false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                name = "WorkRolesScrollEdgeFade",
+            };
+            Color bg = Widgets.MenuSectionBGFillColor;
+            // Texture top row (highest index) is opaque; alpha ramps to
+            // transparent toward the bottom row.
+            for (int y = 0; y < steps; y++)
+                tex.SetPixel(0, y,
+                    new Color(bg.r, bg.g, bg.b, y / (float)(steps - 1)));
+            tex.Apply();
             return tex;
         }
     }

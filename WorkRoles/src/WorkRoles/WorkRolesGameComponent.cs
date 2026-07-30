@@ -58,6 +58,10 @@ namespace WorkRoles
 
             CompiledJobOrders.WarmProjectionMetadata();
             JobSkillProfiles.WarmDefinitionFacts();
+            // Deferred to load end: the remaining first-open costs (localized
+            // facade, signal builders, recs engine) warm while the loading
+            // screen still owns the frame instead of on the first click.
+            FirstOpenWarmup.Queue();
 
             // Jobs resumed from the save predate the in-memory rank baselines.
             // A job that survived until the save was never demoted below its

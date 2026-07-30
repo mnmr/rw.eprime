@@ -100,23 +100,24 @@ namespace WorkRoles.Patches
     /// Activated models draw themselves (atlas background + WrTipUI); every
     /// other tooltip keeps the vanilla single-label path.
     [HarmonyPatch(typeof(ActiveTip), "DrawInner")]
+    [StaticConstructorOnStartup]
     public static class Patch_ActiveTip_DrawInner
     {
-        // Vanilla's private background atlas; fetched lazily. A miss (field
-        // renamed) leaves atlas null and vanilla draws the plain-text fallback.
-        private static Texture2D atlas;
-        private static bool atlasTried;
+        // Vanilla's private background atlas. A miss (field renamed) leaves
+        // atlas null and vanilla draws the plain-text fallback.
+        private static readonly Texture2D atlas;
+
+        static Patch_ActiveTip_DrawInner()
+        {
+            atlas = AccessTools.Field(typeof(ActiveTip), "TooltipBGAtlas")
+                ?.GetValue(null) as Texture2D;
+        }
 
         [HarmonyPrefix]
         public static bool Prefix(Rect bgRect, string label)
         {
             if (!Patch_ActiveTip_TipRect.HasModels) return true;
             if (!Patch_ActiveTip_TipRect.TryGetModel(label?.TrimEnd(), out var model)) return true;
-            if (!atlasTried)
-            {
-                atlasTried = true;
-                atlas = AccessTools.Field(typeof(ActiveTip), "TooltipBGAtlas")?.GetValue(null) as Texture2D;
-            }
             if (atlas == null) return true;
             Widgets.DrawAtlas(bgRect, atlas);
             WrTipUI.Draw(bgRect, model);

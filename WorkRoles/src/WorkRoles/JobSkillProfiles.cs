@@ -311,7 +311,7 @@ namespace WorkRoles
             DefinitionFacts();
         }
 
-        private static void WarmLocalizedFacade() => EnsureBuilt();
+        internal static void WarmLocalizedFacade() => EnsureBuilt();
 
         /// Late language injection runs inside LongEventHandler's completion
         /// list. Append a main-thread facade-only warm and make any callback

@@ -1295,41 +1295,14 @@ namespace WorkRoles.UI
         }
 
         private const float FadePx = 20f;
-        private static Texture2D fadeTexture;
-
-        /// 1px-wide gradient (section bg fading to transparent), stretched to
-        /// the panel width at draw time; bilinear sampling makes it smooth
-        /// where stacked 1px strips banded.
-        private static Texture2D FadeTexture
-        {
-            get
-            {
-                if (fadeTexture == null)
-                {
-                    const int steps = 20;
-                    fadeTexture = new Texture2D(1, steps, TextureFormat.RGBA32, mipChain: false)
-                    {
-                        wrapMode = TextureWrapMode.Clamp,
-                        filterMode = FilterMode.Bilinear,
-                    };
-                    Color bg = Widgets.MenuSectionBGFillColor;
-                    // Texture top row (highest index) is opaque; alpha ramps to
-                    // transparent toward the bottom row.
-                    for (int y = 0; y < steps; y++)
-                        fadeTexture.SetPixel(0, y,
-                            new Color(bg.r, bg.g, bg.b, y / (float)(steps - 1)));
-                    fadeTexture.Apply();
-                }
-                return fadeTexture;
-            }
-        }
 
         private static void DrawEdgeFade(Rect outRect, bool top)
         {
             var rect = new Rect(outRect.x,
                 top ? outRect.y : outRect.yMax - FadePx, outRect.width, FadePx);
-            if (top) GUI.DrawTexture(rect, FadeTexture);
-            else GUI.DrawTextureWithTexCoords(rect, FadeTexture, new Rect(0f, 1f, 1f, -1f));
+            if (top) GUI.DrawTexture(rect, WorkRolesTex.ScrollEdgeFade);
+            else GUI.DrawTextureWithTexCoords(rect, WorkRolesTex.ScrollEdgeFade,
+                new Rect(0f, 1f, 1f, -1f));
         }
 
         private void EnsureTableLayout(
