@@ -19,10 +19,19 @@ namespace EPrimeReadouts
         private static readonly Func<BuildState, PoolSnapshot> buildPools =
             state => PoolSnapshot.Build(state.Store.Model.Pools, GameResourceCatalog.Instance);
         private static readonly Func<BuildState, PoolSnapshot, RenderCountSnapshot> buildCounts =
-            (state, pools) => GameCounts.BuildSnapshot(state.Map, state.Store, pools);
+            (state, _) => GameCounts.BuildSnapshot(state.Map);
 
+        // Cache contract:
+        // Owner: one ReadoutStore/world at a time.
+        // Key: Map identity.
+        // Value: immutable shared pool/count render snapshot.
+        // Dependencies: PoolsVersion immediately and 204 elapsed game ticks for counts.
+        // Refresh policy: immediate structure; tick-throttled counts.
+        // Equality policy: equal refreshed counts preserve snapshot identity.
+        // Teardown: Remove on map removal; Reset on world teardown/owner change.
         private static ReadoutStore cacheOwner;
-        private static RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot> cache = NewCache();
+        private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
+            cache = NewCache();
 
         internal static RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> Get(
             Map map,
@@ -33,8 +42,8 @@ namespace EPrimeReadouts
 
             if (!ReferenceEquals(cacheOwner, store))
             {
+                cache.Clear();
                 cacheOwner = store;
-                cache = NewCache();
             }
 
             return cache.Get(
@@ -44,6 +53,19 @@ namespace EPrimeReadouts
                 new BuildState { Map = map, Store = store },
                 buildPools,
                 buildCounts);
+        }
+
+        internal static void Remove(Map map)
+        {
+            if (map == null) return;
+            cache.Remove(map);
+            if (cache.Count == 0) cacheOwner = null;
+        }
+
+        internal static void Reset()
+        {
+            cache.Clear();
+            cacheOwner = null;
         }
 
         private static RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot> NewCache() =>

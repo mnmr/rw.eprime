@@ -4,6 +4,11 @@ using System.Collections.Generic;
 namespace EPrimeReadouts.Core
 {
     /// Caches one value per key until the caller-provided revision changes.
+    /// Cache contract: Owner = caller; Key = <typeparamref name="TKey"/>;
+    /// Value = caller-owned immutable <typeparamref name="TValue"/>;
+    /// Dependencies = <typeparamref name="TRevision"/> and builder state;
+    /// Refresh policy = immediate on revision mismatch; Equality policy = a
+    /// matching revision preserves value identity; Teardown = Remove or Clear.
     public sealed class RevisionedCache<TKey, TRevision, TValue>
     {
         private sealed class Entry
@@ -14,6 +19,8 @@ namespace EPrimeReadouts.Core
 
         private readonly Dictionary<TKey, Entry> entries = new Dictionary<TKey, Entry>();
         private readonly IEqualityComparer<TRevision> revisionComparer;
+
+        public int Count => entries.Count;
 
         public RevisionedCache()
             : this(EqualityComparer<TRevision>.Default)
@@ -40,5 +47,9 @@ namespace EPrimeReadouts.Core
             entries[key] = new Entry { Revision = revision, Value = value };
             return value;
         }
+
+        public bool Remove(TKey key) => entries.Remove(key);
+
+        public void Clear() => entries.Clear();
     }
 }

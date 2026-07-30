@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using UnityEngine;
@@ -5,150 +6,151 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// Shared preview listing renderer used by both the export and import preview
-    /// dialogs. Builds a flat list of display lines once (cached by list identity
-    /// and store version), then draws only the rows inside the scroll viewport.
-    internal static class ReadoutsPreviewUI
+    /// <summary>Window-owned renderer for a detached readout snapshot.</summary>
+    internal sealed class ReadoutsPreviewView
     {
-        private const float RowH         = 22f;
-        private const float HeaderH      = 26f;
-        private const float BottomPad    = 8f;
+        private const float RowH = 22f;
+        private const float HeaderH = 26f;
+        private const float BottomPad = 8f;
 
-        // Cache keys — rebuilt when pools/groups lists change identity or content.
-        private static List<ResourcePool> s_lastPools;
-        private static List<ReadoutGroup> s_lastGroups;
-        private static string[] s_lines;   // null = header, non-null = row label
-        private static bool[] s_isHeader;
-        private static float s_contentH;
+        // Cache contract:
+        // Owner: one import/export dialog window.
+        // Key: detached snapshot identity.
+        // Value: immutable parallel arrays of translated preview rows.
+        // Dependencies: snapshot identity and UiVersion.Current (language/metrics).
+        // Refresh policy: immediate when either dependency changes.
+        // Equality policy: unchanged dependencies preserve the arrays by identity.
+        // Teardown: Reset is called by the owning dialog during PreClose.
+        private ReadoutSnapshot lastSnapshot;
+        private int lastUiVersion = -1;
+        private string[] lines;
+        private bool[] isHeader;
+        private float contentHeight;
 
-        /// Builds (cached) and draws the listing inside <paramref name="outRect"/>.
-        /// <paramref name="scroll"/> is the caller's persistent scroll position.
-        internal static void DrawListing(
-            Rect outRect,
-            List<ResourcePool> pools,
-            List<ReadoutGroup> groups,
-            ref Vector2 scroll)
+        internal void DrawListing(Rect outRect, ReadoutSnapshot snapshot, ref Vector2 scroll)
         {
-            EnsureLines(pools, groups);
+            EnsureLines(snapshot);
 
-            var viewRect = new Rect(0f, 0f, outRect.width - GenUI.ScrollBarWidth, s_contentH);
+            var viewRect = new Rect(0f, 0f,
+                outRect.width - GenUI.ScrollBarWidth, contentHeight);
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
-
-            float y = 0f;
-            for (int i = 0; i < s_lines.Length; i++)
+            try
             {
-                float h = s_isHeader[i] ? HeaderH : RowH;
-                // Viewport cull: skip rows outside the visible strip.
-                if (y + h > scroll.y - RowH && y < scroll.y + outRect.height + RowH)
+                float y = 0f;
+                for (int i = 0; i < lines.Length; i++)
                 {
-                    if (s_isHeader[i])
-                        DrawMiniHeader(s_lines[i], 0f, y, viewRect.width);
-                    else
-                        DrawRow(s_lines[i], 0f, y, viewRect.width);
+                    float height = isHeader[i] ? HeaderH : RowH;
+                    if (y + height > scroll.y - RowH
+                        && y < scroll.y + outRect.height + RowH)
+                    {
+                        if (isHeader[i])
+                            DrawMiniHeader(lines[i], 0f, y, viewRect.width);
+                        else
+                            DrawRow(lines[i], 0f, y, viewRect.width);
+                    }
+                    y += height;
                 }
-                y += h;
             }
-
-            Widgets.EndScrollView();
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
-        private static void EnsureLines(List<ResourcePool> pools, List<ReadoutGroup> groups)
+        private void EnsureLines(ReadoutSnapshot snapshot)
         {
-            if (ReferenceEquals(s_lastPools, pools) && ReferenceEquals(s_lastGroups, groups)
-                && s_lines != null)
+            UiVersion.ObserveCurrentMetrics();
+            int uiVersion = UiVersion.Current;
+            if (ReferenceEquals(lastSnapshot, snapshot)
+                && lastUiVersion == uiVersion
+                && lines != null)
                 return;
 
-            s_lastPools  = pools;
-            s_lastGroups = groups;
+            lastSnapshot = snapshot;
+            lastUiVersion = uiVersion;
 
-            var lines    = new List<string>();
-            var isHeader = new List<bool>();
+            var builtLines = new List<string>();
+            var builtHeaders = new List<bool>();
+            int poolCount = snapshot?.Pools.Count ?? 0;
+            int groupCount = snapshot?.Groups.Count ?? 0;
 
-            int poolCount  = pools  != null ? pools.Count  : 0;
-            int groupCount = groups != null ? groups.Count : 0;
-
-            // ── Pools section ────────────────────────────────────────────────
-            lines.Add("EPR.PreviewPoolsHeader".Translate());
-            isHeader.Add(true);
-
+            builtLines.Add(UiText.Get("EPR.PreviewPoolsHeader"));
+            builtHeaders.Add(true);
             if (poolCount == 0)
             {
-                lines.Add("EPR.PreviewNone".Translate());
-                isHeader.Add(false);
+                builtLines.Add(UiText.Get("EPR.PreviewNone"));
+                builtHeaders.Add(false);
             }
             else
             {
-                for (int i = 0; i < pools.Count; i++)
+                for (int i = 0; i < snapshot.Pools.Count; i++)
                 {
-                    var pool = pools[i];
-                    int members = pool.Members != null ? pool.Members.Count : 0;
-                    lines.Add("EPR.PreviewPoolRow".Translate(pool.Name, members));
-                    isHeader.Add(false);
+                    ReadoutSnapshot.Pool pool = snapshot.Pools[i];
+                    builtLines.Add("EPR.PreviewPoolRow".Translate(
+                        pool.Name, pool.Members.Count));
+                    builtHeaders.Add(false);
                 }
             }
 
-            // ── Groups section ───────────────────────────────────────────────
-            lines.Add("EPR.PreviewGroupsHeader".Translate());
-            isHeader.Add(true);
-
+            builtLines.Add(UiText.Get("EPR.PreviewGroupsHeader"));
+            builtHeaders.Add(true);
             if (groupCount == 0)
             {
-                lines.Add("EPR.PreviewNone".Translate());
-                isHeader.Add(false);
+                builtLines.Add(UiText.Get("EPR.PreviewNone"));
+                builtHeaders.Add(false);
             }
             else
             {
-                for (int i = 0; i < groups.Count; i++)
+                for (int i = 0; i < snapshot.Groups.Count; i++)
                 {
-                    var group = groups[i];
-                    int tiers = group.TierCount;
+                    ReadoutSnapshot.Group group = snapshot.Groups[i];
                     int slots = 0;
-                    if (group.Tiers != null)
-                        foreach (var tier in group.Tiers)
-                            slots += tier.Count;
-                    lines.Add("EPR.PreviewGroupRow".Translate(group.Name, tiers, slots));
-                    isHeader.Add(false);
+                    for (int tier = 0; tier < group.Tiers.Count; tier++)
+                        slots += group.Tiers[tier].Count;
+                    builtLines.Add("EPR.PreviewGroupRow".Translate(
+                        group.Name, group.Tiers.Count, slots));
+                    builtHeaders.Add(false);
                 }
             }
 
-            s_lines    = lines.ToArray();
-            s_isHeader = isHeader.ToArray();
-
+            lines = builtLines.ToArray();
+            isHeader = builtHeaders.ToArray();
             float total = 0f;
-            for (int i = 0; i < s_isHeader.Length; i++)
-                total += s_isHeader[i] ? HeaderH : RowH;
-            s_contentH = total + BottomPad;
+            for (int i = 0; i < isHeader.Length; i++)
+                total += isHeader[i] ? HeaderH : RowH;
+            contentHeight = total + BottomPad;
         }
 
         private static void DrawMiniHeader(string text, float x, float y, float width)
         {
             if (Event.current.type != EventType.Repaint) return;
-            Text.Font   = GameFont.Small;
-            GUI.color   = EprStyle.HeaderText;
+            Text.Font = GameFont.Small;
+            GUI.color = EprStyle.HeaderText;
             Widgets.Label(new Rect(x, y, width, HeaderH - 4f), text);
-            GUI.color   = EprStyle.HeaderRule;
+            GUI.color = EprStyle.HeaderRule;
             WrText.LineHorizontal(x, y + HeaderH - 4f, width);
-            GUI.color   = Color.white;
+            GUI.color = Color.white;
         }
 
         private static void DrawRow(string text, float x, float y, float width)
         {
             if (Event.current.type != EventType.Repaint) return;
-            Text.Font   = GameFont.Tiny;
-            GUI.color   = EprStyle.CaptionText;
+            Text.Font = GameFont.Tiny;
+            GUI.color = EprStyle.CaptionText;
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(x + 8f, y, width - 8f, RowH), text);
             Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color   = Color.white;
-            Text.Font   = GameFont.Small;
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
         }
 
-        /// Invalidates the cache so the next DrawListing call rebuilds.
-        internal static void Invalidate()
+        internal void Reset()
         {
-            s_lines    = null;
-            s_lastPools  = null;
-            s_lastGroups = null;
+            lastSnapshot = null;
+            lastUiVersion = -1;
+            lines = null;
+            isHeader = null;
+            contentHeight = 0f;
         }
     }
 }

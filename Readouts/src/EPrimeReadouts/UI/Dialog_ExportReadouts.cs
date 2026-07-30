@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimWorld;
 using UnityEngine;
@@ -12,48 +11,88 @@ namespace EPrimeReadouts.UI
     /// Chrome pattern mirrors WorkRoles Dialog_ExportPreview.
     public class Dialog_ExportReadouts : Dialog_EprFilePicker
     {
-        // Snapshot frozen at open time; thresholds are not part of the export.
-        private List<ResourcePool> pools;
-        private List<ReadoutGroup> groups;
+        // Cache contract:
+        // Owner: one export window.
+        // Key: ReadoutStore identity plus GroupsVersion and PoolsVersion.
+        // Value: detached immutable ReadoutSnapshot and its serialized XML.
+        // Dependencies: group/pool domains only; thresholds are unrelated.
+        // Refresh policy: immediate in WindowUpdate, never in OnGUI.
+        // Equality policy: unchanged domain revisions preserve snapshot/XML identity.
+        // Teardown: PreClose releases snapshot, XML and preview rows.
+        private ReadoutSnapshot snapshot;
+        private ReadoutStore snapshotStore;
         private int snapshotGroupsVersion = -1;
         private int snapshotPoolsVersion = -1;
 
         private string xml;           // export XML, rebuilt alongside the snapshot
         private Vector2 scroll;
+        private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
+        private ReadoutSnapshot textSnapshot;
+        private int textUiVersion = -1;
+        private string summaryText;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
         public Dialog_ExportReadouts()
         {
             RebuildSnapshot();
+            RefreshResolvedPathCache();
         }
 
         private void RebuildSnapshot()
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
+            snapshotStore = store;
             snapshotGroupsVersion = store.GroupsVersion;
             snapshotPoolsVersion = store.PoolsVersion;
-            pools  = new List<ResourcePool>(store.Model.Pools);
-            groups = store.Model.InDisplayOrder();
-            xml    = ReadoutsXml.Export(pools, groups);
-            ReadoutsPreviewUI.Invalidate();
+            snapshot = ReadoutSnapshot.Capture(
+                store.Model.Pools, store.Model.InDisplayOrder());
+            xml = snapshot.ToXml();
+        }
+
+        public override void PreClose()
+        {
+            preview.Reset();
+            snapshot = null;
+            snapshotStore = null;
+            textSnapshot = null;
+            xml = null;
+            base.PreClose();
+        }
+
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            RefreshResolvedPathCache();
+            var store = ReadoutStore.Current;
+            if (store == null)
+            {
+                snapshotStore = null;
+                snapshot = null;
+                xml = null;
+                snapshotGroupsVersion = -1;
+                snapshotPoolsVersion = -1;
+                return;
+            }
+            if (!ReferenceEquals(store, snapshotStore)
+                    || store.GroupsVersion != snapshotGroupsVersion
+                    || store.PoolsVersion != snapshotPoolsVersion)
+                RebuildSnapshot();
         }
 
         public override void DoWindowContents(Rect inRect)
         {
-            var store = ReadoutStore.Current;
-            if (store != null
-                && (store.GroupsVersion != snapshotGroupsVersion
-                    || store.PoolsVersion != snapshotPoolsVersion))
-                RebuildSnapshot();
+            using (new GuiStateScope())
+            {
+            EnsureText();
 
             float bodyTop = DrawTitle(inRect, "EPR.ExportPreviewTitle");
 
             // Copy to Clipboard lives top-right, beside the title: it acts on
             // the previewed config, not on the save controls below.
             var copyRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, FooterH);
-            if (Widgets.ButtonText(copyRect, "EPR.CopyToClipboard".Translate()))
+            if (Widgets.ButtonText(copyRect, UiText.Get("EPR.CopyToClipboard")))
             {
                 GUIUtility.systemCopyBuffer = xml ?? "";
                 Messages.Message("EPR.CopiedToClipboard".Translate(),
@@ -61,12 +100,10 @@ namespace EPrimeReadouts.UI
             }
 
             // ── Summary line ────────────────────────────────────────────────
-            int poolCount  = pools  != null ? pools.Count  : 0;
-            int groupCount = groups != null ? groups.Count : 0;
             Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
             Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, 18f),
-                "EPR.ContentSummary".Translate(poolCount, groupCount));
+                summaryText);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             bodyTop  += 20f;
@@ -81,18 +118,18 @@ namespace EPrimeReadouts.UI
             // ── Framed listing fills the middle region ──────────────────────
             var frameRect = new Rect(inRect.x, bodyTop, inRect.width, captionRowY - 6f - bodyTop);
             var listRect  = DrawFrame(frameRect);
-            if (pools != null && groups != null)
-                ReadoutsPreviewUI.DrawListing(listRect, pools, groups, ref scroll);
+            if (snapshot != null)
+                preview.DrawListing(listRect, snapshot, ref scroll);
 
             string path = CachedResolvedPath(out string problem, out _);
 
             DrawCaption(new Rect(inRect.x, captionRowY, 200f, CaptionRowH - 2f),
-                "EPR.ExportLocationLabel".Translate());
+                UiText.Get("EPR.ExportLocationLabel"));
 
             // Copy Path: a link (no button chrome), right-aligned over the file
             // name it copies. With nothing to copy it CLEARS the clipboard, so a
             // paste can't insert stale content.
-            string copyPathLabel = "EPR.CopyPath".Translate();
+            string copyPathLabel = UiText.Get("EPR.CopyPath");
             UiVersion.ObserveCurrentMetrics();
             float linkW = WrText.FitWidth(copyPathLabel) + 6f;
             var linkRect = new Rect(inRect.xMax - linkW, captionRowY, linkW, CaptionRowH - 4f);
@@ -111,11 +148,11 @@ namespace EPrimeReadouts.UI
             // Bottom row: Cancel escapes on the left, Save commits on the right.
             var cancelRect = new Rect(inRect.x, btnY, ButtonW, FooterH);
             var saveRect   = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, FooterH);
-            if (Widgets.ButtonText(cancelRect, "EPR.Cancel".Translate()))
+            if (Widgets.ButtonText(cancelRect, UiText.Get("EPR.Cancel")))
                 Close();
             if (problem != null)
                 TooltipHandler.TipRegion(saveRect, problem);
-            if (Widgets.ButtonText(saveRect, "EPR.Save".Translate(), active: path != null)
+            if (Widgets.ButtonText(saveRect, UiText.Get("EPR.Save"), active: path != null)
                 && path != null)
             {
                 if (ReadoutsFiles.TryWrite(path, xml, out string writeError))
@@ -129,6 +166,21 @@ namespace EPrimeReadouts.UI
                     Messages.Message(writeError, MessageTypeDefOf.RejectInput, historical: false);
                 }
             }
+            }
+        }
+
+        private void EnsureText()
+        {
+            UiVersion.ObserveCurrentMetrics();
+            if (ReferenceEquals(textSnapshot, snapshot)
+                && textUiVersion == UiVersion.Current
+                && summaryText != null)
+                return;
+            int pools = snapshot?.Pools.Count ?? 0;
+            int groups = snapshot?.Groups.Count ?? 0;
+            summaryText = "EPR.ContentSummary".Translate(pools, groups);
+            textSnapshot = snapshot;
+            textUiVersion = UiVersion.Current;
         }
     }
 }

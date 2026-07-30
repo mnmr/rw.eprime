@@ -16,18 +16,33 @@ namespace EPrimeReadouts.UI
     {
         private const float PencilW = 18f;
         private const float PencilH = 18f;
+        private static readonly IReadOnlyDictionary<string, int> emptyCounts =
+            new Dictionary<string, int>();
 
-        // Caching fields (NeedsRebuild pattern)
+        // Cache contract:
+        // Owner: one configuration-dialog EditorView and one ReadoutStore.
+        // Key: selected group, exact group/threshold revisions, width,
+        // UiVersion and shared pool/count snapshot identities.
+        // Value: detached group snapshot and immutable resolved band DrawModels.
+        // Dependencies: only the keys above plus selected-token presentation.
+        // Refresh policy: immediate on exact dependency changes.
+        // Equality policy: unchanged dependencies preserve band/model identity.
+        // Teardown: Reset releases all store, model, snapshot and def references.
         private int builtGroupsVersion = -1;
         private int builtThresholdsVersion = -1;
         private int builtGroupId = -1;
+        private int builtUiVersion = -1;
         private float builtWidth = -1f;
         private RenderCountSnapshot builtCounts;
         private PoolSnapshot builtPools;
 
+        private ReadoutStore groupOwner;
+        private int groupSnapshotVersion = -1;
+        private int groupSnapshotId = -1;
+        private ReadoutGroup groupSnapshot;
+
         // Cached draw models: one per tier depth
         private List<(RenderModel model, DrawModel draw)> cachedBands;
-        private float cachedBandsHeight; // total height of all tier bands + gaps
 
         // Cached name width (rebuilt alongside bands or when group changes)
         private float cachedNameWidth = -1f;
@@ -46,6 +61,15 @@ namespace EPrimeReadouts.UI
         // freshly added token) so buffers/display name re-derive exactly once.
         private string lastSyncedCanonical;
 
+        private int selectionGroupsVersion = -1;
+        private int selectionGroupId = -1;
+        private string selectionCanonical;
+        private bool selectionInGroup;
+        private string selectionStoredToken;
+        private string optionsDisplayName;
+        private string optionsHeader;
+        private int optionsUiVersion = -1;
+
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
             UiVersion.ObserveCurrentMetrics();
@@ -53,7 +77,7 @@ namespace EPrimeReadouts.UI
             var store = ReadoutStore.Current;
             if (store == null) return;
 
-            var group = owner.SelectedGroup;
+            var group = GetGroupSnapshot(store, owner.selectedGroupId);
 
             if (owner.selectedCanonical != lastSyncedCanonical)
             {
@@ -65,6 +89,8 @@ namespace EPrimeReadouts.UI
             {
                 thresholdEditor.Refresh(store.ThresholdsVersion, store.Model.Thresholds);
             }
+
+            EnsureSelection(group, store.GroupsVersion, owner.selectedCanonical);
 
             // --- Rebuild cached band models and name width when needed ---
             if (group != null && NeedsRebuild(
@@ -78,7 +104,7 @@ namespace EPrimeReadouts.UI
             // --- Section header: group name with rename pencil ---
             // Measure cached name width (update when group changes)
             bool folded = settings.helpEditorFolded;
-            string headerLabel = group != null ? group.Name : "EPR.Editor".Translate();
+            string headerLabel = group != null ? group.Name : UiText.Get("EPR.Editor");
 
             // Cache name width alongside rebuild gate (only per group change, not per frame)
             if (group != null && (cachedNameGroupId != group.Id
@@ -86,7 +112,7 @@ namespace EPrimeReadouts.UI
                 || cachedNameWidth < 0f))
             {
                 Text.Font = GameFont.Small;
-                cachedNameWidth = Text.CalcSize(group.Name).x;
+                cachedNameWidth = WrText.FitWidth(group.Name);
                 cachedNameGroupId = group.Id;
                 cachedNameUiVersion = UiVersion.Current;
             }
@@ -99,7 +125,7 @@ namespace EPrimeReadouts.UI
             float clickableW = group != null ? (pencilX - rect.x) : rect.width;
 
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                headerLabel, "EPR.HelpEditor".Translate(), ref folded, clickableW);
+                headerLabel, UiText.Get("EPR.HelpEditor"), ref folded, clickableW);
             if (folded != settings.helpEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpEditorFolded = folded);
 
@@ -121,7 +147,7 @@ namespace EPrimeReadouts.UI
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.5f);
                 Widgets.Label(new Rect(rect.x, rect.y + headerUsed, rect.width, 24f),
-                    "EPR.SelectGroupHint".Translate());
+                    UiText.Get("EPR.SelectGroupHint"));
                 GUI.color = Color.white;
                 return;
             }
@@ -138,9 +164,15 @@ namespace EPrimeReadouts.UI
                 var bandRect = new Rect(rect.x, bandY, rect.width, bandH);
 
                 Widgets.BeginGroup(bandRect);
-                CellRenderer.Draw(dm);
-                HandleEditorInput(dm, model, group, store, owner, bandRect);
-                Widgets.EndGroup();
+                try
+                {
+                    CellRenderer.Draw(dm);
+                    HandleEditorInput(dm, model, group, store, owner, bandRect);
+                }
+                finally
+                {
+                    Widgets.EndGroup();
+                }
 
                 bandY += bandH;
                 if (t < rowCount - 1) bandY += LayoutMetrics.GroupGap;
@@ -149,19 +181,30 @@ namespace EPrimeReadouts.UI
             y = bandY + 16f;
 
             // --- Options section (only when a slot is selected and still in the group) ---
-            if (owner.selectedCanonical != null && IsStillInGroup(owner.selectedCanonical, group))
+            if (owner.selectedCanonical != null && selectionInGroup)
             {
                 string selectedDisplayName = selectedDisplayNames.Get(
+                    store,
                     owner.selectedCanonical,
                     store.PoolsVersion,
+                    UiVersion.Current,
                     SlotToken.IsPoolRef(owner.selectedCanonical),
                     resolveDisplayName);
-                string optHeader = "EPR.OptionsFor".Translate(selectedDisplayName ?? owner.selectedCanonical);
+                string displayName = selectedDisplayName ?? owner.selectedCanonical;
+                if (optionsUiVersion != UiVersion.Current
+                    || !string.Equals(optionsDisplayName, displayName,
+                        StringComparison.Ordinal))
+                {
+                    optionsDisplayName = displayName;
+                    optionsUiVersion = UiVersion.Current;
+                    optionsHeader = "EPR.OptionsFor".Translate(displayName);
+                }
                 bool dummy = false;
                 float optHeaderUsed = EprStyle.SectionHeader(rect.x, y, rect.width,
-                    optHeader, null, ref dummy);
+                    optionsHeader, null, ref dummy);
                 y += optHeaderUsed;
-                DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y), group, owner);
+                DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y),
+                    group, selectionStoredToken, owner);
             }
         }
 
@@ -176,6 +219,7 @@ namespace EPrimeReadouts.UI
             if (store.GroupsVersion != builtGroupsVersion) return true;
             if (store.ThresholdsVersion != builtThresholdsVersion) return true;
             if (groupId != builtGroupId) return true;
+            if (UiVersion.Current != builtUiVersion) return true;
             if (width != builtWidth) return true;
             if (!ReferenceEquals(builtPools, pools)) return true;
             if (!ReferenceEquals(builtCounts, counts)) return true;
@@ -189,20 +233,20 @@ namespace EPrimeReadouts.UI
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
             builtGroupId = group.Id;
+            builtUiVersion = UiVersion.Current;
             builtWidth = width;
             builtPools = owner.PoolsSnapshot;
             builtCounts = owner.RenderData?.Counts;
 
             IReadOnlyDictionary<string, int> counts = builtCounts != null
                 ? builtCounts.Counts
-                : new Dictionary<string, int>();
+                : emptyCounts;
 
             // Use the shared pools snapshot from the dialog
             var pools = owner.PoolsSnapshot;
 
             int rowCount = EditorBand.MaxDepth(group.Tiers);
             cachedBands = new List<(RenderModel, DrawModel)>(rowCount);
-            float totalH = 0f;
             for (int t = 1; t <= rowCount; t++)
             {
                 int capturedTier = t;
@@ -220,10 +264,7 @@ namespace EPrimeReadouts.UI
                 var model = ReadoutLayoutEngine.Build(input);
                 var dm = DrawModel.Resolve(model, owner.RenderData);
                 cachedBands.Add((model, dm));
-                totalH += model.TotalHeight;
-                if (t < rowCount) totalH += LayoutMetrics.GroupGap;
             }
-            cachedBandsHeight = totalH;
         }
 
         private void HandleEditorInput(DrawModel dm, RenderModel model,
@@ -251,23 +292,7 @@ namespace EPrimeReadouts.UI
                     if (Mouse.IsOver(cellRect))
                     {
                         Widgets.DrawHighlight(cellRect);
-                        // Determine label for tooltip
-                        string tipLabel;
-                        if (SlotToken.IsPoolRef(token))
-                        {
-                            int poolId = SlotToken.PoolId(token);
-                            var pool = store.Model.PoolById(poolId);
-                            tipLabel = pool != null ? pool.Name : token;
-                        }
-                        else if (SlotToken.IsPool(token))
-                            tipLabel = GameResourceCatalog.Instance.CategoryLabelOf(
-                                SlotToken.MemberName(token)).CapitalizeFirst();
-                        else
-                        {
-                            var def = DefDatabase<ThingDef>.GetNamedSilentFail(cell.DefName);
-                            tipLabel = def != null ? def.LabelCap : cell.DefName;
-                        }
-                        TooltipHandler.TipRegion(cellRect, (TaggedString)tipLabel);
+                        TooltipHandler.TipRegion(cellRect, (TaggedString)dm.Tooltips[i]);
                     }
 
                     // Selection highlight
@@ -285,24 +310,9 @@ namespace EPrimeReadouts.UI
                             float markerX = rightHalf ? cellRect.xMax - 1f : cellRect.x - 1f;
                             Widgets.DrawBoxSolid(new Rect(markerX, cellRect.y, 2f, cellRect.height),
                                 new Color(1f, 1f, 1f, 0.9f));
-                            int groupId = group.Id;
-                            int toTier = cell.Tier;
-                            int toSlot = insertSlot;
-                            bool bandSourced = EprDrag.FromTier >= 0;
-                            string dragToken = EprDrag.Payload;
-                            int fromTier = EprDrag.FromTier;
-                            int fromSlot = EprDrag.FromSlot;
-                            EprDrag.HoverDropAction = () =>
-                            {
-                                var g = ReadoutStore.Current?.Model.GroupById(groupId);
-                                if (g == null) return;
-                                var tiers = TierOps.Clone(g.Tiers);
-                                bool changed = bandSourced
-                                    ? TierOps.Move(tiers, fromTier, fromSlot, toTier, toSlot)
-                                    : TierOps.Add(tiers, dragToken, toTier, toSlot);
-                                if (changed)
-                                    ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
-                            };
+                            EprDrag.SetTokenDrop(group.Id, cell.Tier, insertSlot,
+                                EprDrag.FromTier >= 0, EprDrag.Payload,
+                                EprDrag.FromTier, EprDrag.FromSlot);
                         }
                     }
 
@@ -350,35 +360,59 @@ namespace EPrimeReadouts.UI
                     if (tokenDrag && Mouse.IsOver(cellRect))
                     {
                         Widgets.DrawHighlight(cellRect);
-                        int groupId = group.Id;
-                        int toTier = cell.Tier;
-                        int toSlot = cell.Slot;
-                        bool bandSourced = EprDrag.FromTier >= 0;
-                        string dragToken = EprDrag.Payload;
-                        int fromTier = EprDrag.FromTier;
-                        int fromSlot = EprDrag.FromSlot;
-                        EprDrag.HoverDropAction = () =>
-                        {
-                            var g = ReadoutStore.Current?.Model.GroupById(groupId);
-                            if (g == null) return;
-                            var tiers = TierOps.Clone(g.Tiers);
-                            bool changed = bandSourced
-                                ? TierOps.Move(tiers, fromTier, fromSlot, toTier, toSlot)
-                                : TierOps.Add(tiers, dragToken, toTier, toSlot);
-                            if (changed)
-                                ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
-                        };
+                        EprDrag.SetTokenDrop(group.Id, cell.Tier, cell.Slot,
+                            EprDrag.FromTier >= 0, EprDrag.Payload,
+                            EprDrag.FromTier, EprDrag.FromSlot);
                     }
                 }
             }
         }
 
-        private static bool IsStillInGroup(string canonical, ReadoutGroup group)
+        private void EnsureSelection(ReadoutGroup group, int groupsVersion, string canonical)
         {
-            foreach (var tier in group.Tiers)
-                foreach (var t in tier)
-                    if (SlotToken.Canonical(t) == canonical) return true;
-            return false;
+            int groupId = group?.Id ?? -1;
+            if (selectionGroupsVersion == groupsVersion
+                && selectionGroupId == groupId
+                && string.Equals(selectionCanonical, canonical, StringComparison.Ordinal))
+                return;
+
+            selectionGroupsVersion = groupsVersion;
+            selectionGroupId = groupId;
+            selectionCanonical = canonical;
+            selectionInGroup = false;
+            selectionStoredToken = null;
+            if (group == null || canonical == null) return;
+            for (int tier = 0; tier < group.Tiers.Count; tier++)
+                for (int slot = 0; slot < group.Tiers[tier].Count; slot++)
+                {
+                    string token = group.Tiers[tier][slot];
+                    if (SlotToken.Canonical(token) != canonical) continue;
+                    selectionInGroup = true;
+                    selectionStoredToken = token;
+                    return;
+                }
+        }
+
+        private ReadoutGroup GetGroupSnapshot(ReadoutStore store, int groupId)
+        {
+            if (ReferenceEquals(groupOwner, store)
+                && groupSnapshotVersion == store.GroupsVersion
+                && groupSnapshotId == groupId)
+                return groupSnapshot;
+
+            ReadoutGroup source = store.Model.GroupById(groupId);
+            groupSnapshot = source == null ? null : new ReadoutGroup
+            {
+                Id = source.Id,
+                Name = source.Name,
+                OrderIndex = source.OrderIndex,
+                DefaultEnabled = source.DefaultEnabled,
+                Tiers = TierOps.Clone(source.Tiers),
+            };
+            groupOwner = store;
+            groupSnapshotVersion = store.GroupsVersion;
+            groupSnapshotId = groupId;
+            return groupSnapshot;
         }
 
         private void Select(string canonical, Dialog_ReadoutConfig owner)
@@ -415,26 +449,20 @@ namespace EPrimeReadouts.UI
             return def != null ? (string)def.LabelCap : canonical;
         }
 
-        private void DrawOptionsBody(Rect rect, ReadoutGroup group, Dialog_ReadoutConfig owner)
+        private void DrawOptionsBody(Rect rect, ReadoutGroup group, string storedToken,
+            Dialog_ReadoutConfig owner)
         {
             if (owner.selectedCanonical == null) return;
 
             float y = rect.y;
 
             // Line 1: show-when-zero checkbox (width capped at 50% of panel)
-            string storedToken = null;
-            if (group != null)
-            {
-                foreach (var tier in group.Tiers)
-                    foreach (var t in tier)
-                        if (SlotToken.Canonical(t) == owner.selectedCanonical) { storedToken = t; break; }
-            }
             bool showWhenZero = storedToken == null || SlotToken.ShowWhenZero(storedToken);
             bool prevShow = showWhenZero;
             float checkboxW = Mathf.Min(rect.width * 0.5f, rect.width);
             Widgets.CheckboxLabeled(
                 new Rect(rect.x, y, checkboxW, 22f),
-                "EPR.ShowWhenZero".Translate(), ref showWhenZero);
+                UiText.Get("EPR.ShowWhenZero"), ref showWhenZero);
             if (showWhenZero != prevShow && storedToken != null)
             {
                 string newToken = SlotToken.WithShowWhenZero(storedToken, showWhenZero);
@@ -455,26 +483,26 @@ namespace EPrimeReadouts.UI
             Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
             Widgets.Label(new Rect(rect.x, y, rect.width, 22f),
-                "EPR.ThresholdCaption".Translate());
+                UiText.Get("EPR.ThresholdCaption"));
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             y += 24f;
 
             // Line 3: low/critical/set/clear (unchanged column alignment)
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x, y + 3f, 34f, 22f), "EPR.Low".Translate());
+            Widgets.Label(new Rect(rect.x, y + 3f, 34f, 22f), UiText.Get("EPR.Low"));
             Text.Font = GameFont.Small;
             Widgets.TextFieldNumeric(new Rect(rect.x + 38f, y, 60f, 24f),
                 ref thresholdEditor.LowValue, ref thresholdEditor.LowBuffer, 0f, 999999f);
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x + 106f, y + 3f, 56f, 22f), "EPR.Critical".Translate());
+            Widgets.Label(new Rect(rect.x + 106f, y + 3f, 56f, 22f), UiText.Get("EPR.Critical"));
             Text.Font = GameFont.Small;
             Widgets.TextFieldNumeric(new Rect(rect.x + 166f, y, 60f, 24f),
                 ref thresholdEditor.CriticalValue, ref thresholdEditor.CriticalBuffer, 0f, 999999f);
-            if (Widgets.ButtonText(new Rect(rect.x + 234f, y, 50f, 24f), "EPR.Set".Translate()))
+            if (Widgets.ButtonText(new Rect(rect.x + 234f, y, 50f, 24f), UiText.Get("EPR.Set")))
                 ReadoutCommands.SetThreshold(owner.selectedCanonical,
                     thresholdEditor.LowValue, thresholdEditor.CriticalValue);
-            if (Widgets.ButtonText(new Rect(rect.x + 288f, y, 56f, 24f), "EPR.Clear".Translate()))
+            if (Widgets.ButtonText(new Rect(rect.x + 288f, y, 56f, 24f), UiText.Get("EPR.Clear")))
             {
                 ReadoutCommands.ClearThreshold(owner.selectedCanonical);
                 thresholdEditor.LowValue = 0;
@@ -482,6 +510,31 @@ namespace EPrimeReadouts.UI
                 thresholdEditor.LowBuffer = "0";
                 thresholdEditor.CriticalBuffer = "0";
             }
+        }
+
+        internal void Reset()
+        {
+            cachedBands = null;
+            builtGroupsVersion = -1;
+            builtThresholdsVersion = -1;
+            builtGroupId = -1;
+            builtUiVersion = -1;
+            builtWidth = -1f;
+            builtCounts = null;
+            builtPools = null;
+            groupOwner = null;
+            groupSnapshotVersion = -1;
+            groupSnapshotId = -1;
+            groupSnapshot = null;
+            selectionGroupsVersion = -1;
+            selectionGroupId = -1;
+            selectionCanonical = null;
+            selectionStoredToken = null;
+            selectionInGroup = false;
+            selectedDisplayNames.Reset();
+            optionsDisplayName = null;
+            optionsHeader = null;
+            optionsUiVersion = -1;
         }
     }
 }

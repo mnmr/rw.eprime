@@ -8,7 +8,16 @@ namespace EPrimeReadouts.UI
     {
         /// Right-facing triangle (game-speed style), generated procedurally so
         /// the mod ships no texture assets. Tinted via GUI.color at draw time.
-        public static readonly Texture2D Triangle = MakeTriangle(14, 18);
+        // Cache contract:
+        // Owner: mod process; this mod owns only the generated triangle.
+        // Key: fixed 14x18 procedural geometry.
+        // Value: owned Texture2D.
+        // Dependencies: none after construction.
+        // Refresh policy: eager at map construction, lazy safety fallback.
+        // Equality policy: preserve texture identity until teardown.
+        // Teardown: ResetOwned destroys only triangle, never vanilla/mod assets.
+        private static Texture2D triangle;
+        public static Texture2D Triangle => triangle ?? (triangle = MakeTriangle(14, 18));
 
         public static readonly Texture2D Gear =
             ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsGeneral", false)
@@ -32,6 +41,18 @@ namespace EPrimeReadouts.UI
             tex.wrapMode = TextureWrapMode.Clamp;
             tex.Apply();
             return tex;
+        }
+
+        internal static void EnsureOwned()
+        {
+            _ = Triangle;
+        }
+
+        internal static void ResetOwned()
+        {
+            if (triangle == null) return;
+            Object.Destroy(triangle);
+            triangle = null;
         }
     }
 }

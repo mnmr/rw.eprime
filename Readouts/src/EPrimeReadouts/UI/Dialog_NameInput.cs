@@ -27,12 +27,14 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using (new GuiStateScope())
+            {
             float y = inRect.y;
 
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(inRect.x, y, inRect.width, 24f),
-                "EPR.NameLabel".Translate());
+                UiText.Get("EPR.NameLabel"));
             Text.Anchor = TextAnchor.UpperLeft;
             y += 28f;
 
@@ -46,9 +48,9 @@ namespace EPrimeReadouts.UI
             float totalBtnW = btnW * 2f + btnGap;
             float btnX = inRect.x + (inRect.width - totalBtnW) / 2f;
 
-            bool accepted = Widgets.ButtonText(new Rect(btnX, y, btnW, 24f), "EPR.OK".Translate());
+            bool accepted = Widgets.ButtonText(new Rect(btnX, y, btnW, 24f), UiText.Get("EPR.OK"));
             bool cancelled = Widgets.ButtonText(new Rect(btnX + btnW + btnGap, y, btnW, 24f),
-                "EPR.Cancel".Translate());
+                UiText.Get("EPR.Cancel"));
 
             // Enter key accepts
             if (Event.current.type == EventType.KeyDown
@@ -67,6 +69,7 @@ namespace EPrimeReadouts.UI
             else if (cancelled)
             {
                 Close();
+            }
             }
         }
     }

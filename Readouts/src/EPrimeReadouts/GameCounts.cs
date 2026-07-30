@@ -10,9 +10,7 @@ namespace EPrimeReadouts
     public static class GameCounts
     {
         internal static RenderCountSnapshot BuildSnapshot(
-            Map map,
-            ReadoutStore store,
-            PoolSnapshot pools)
+            Map map)
         {
             var counts = new Dictionary<string, int>();
             long fp = 17;
@@ -23,20 +21,19 @@ namespace EPrimeReadouts
                 fp = fp * 31 + pair.Value;
             }
 
-            var extraDefs = new List<ThingDef>();
-            var extraDefSet = new HashSet<ThingDef>();
-            CollectExtraDefs(store, pools, extraDefs, extraDefSet);
-            for (int i = 0; i < extraDefs.Count; i++) counts[extraDefs[i].defName] = 0;
+            int extraDefCount = GameResourceCatalog.ExtraCountedDefCount;
+            for (int i = 0; i < extraDefCount; i++)
+                counts[GameResourceCatalog.ExtraCountedDefAt(i).defName] = 0;
 
             // Mirror ResourceCounter.UpdateResourceCounts: stored things only
             // (haul destinations), inner-of-minified, fresh, not fogged.
             var groups = map.haulDestinationManager.AllGroupsListForReading;
             for (int i = 0; i < groups.Count; i++)
             {
-                foreach (var held in groups[i].HeldThings)
+                foreach (Thing held in groups[i].HeldThings)
                 {
                     var inner = held.GetInnerIfMinified();
-                    if (!extraDefSet.Contains(inner.def)) continue;
+                    if (!GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
                     if (inner.IsNotFresh()) continue;
                     if (inner.SpawnedOrAnyParentSpawned && inner.PositionHeld.Fogged(inner.MapHeld))
                         continue;
@@ -44,9 +41,9 @@ namespace EPrimeReadouts
                 }
             }
 
-            for (int i = 0; i < extraDefs.Count; i++)
+            for (int i = 0; i < extraDefCount; i++)
             {
-                var def = extraDefs[i];
+                var def = GameResourceCatalog.ExtraCountedDefAt(i);
                 int count = counts[def.defName];
                 fp = fp * 31 + def.shortHash;
                 fp = fp * 31 + count;
@@ -62,38 +59,5 @@ namespace EPrimeReadouts
             return snapshot.Counts.TryGetValue(def.defName, out int count) ? count : 0;
         }
 
-        private static void CollectExtraDefs(
-            ReadoutStore store,
-            PoolSnapshot pools,
-            List<ThingDef> extraDefs,
-            HashSet<ThingDef> extraDefSet)
-        {
-            foreach (var group in store.Model.Groups)
-                foreach (var tier in group.Tiers)
-                    foreach (var token in tier)
-                    {
-                        if (SlotToken.IsPoolRef(token))
-                        {
-                            if (!pools.TryGet(SlotToken.PoolId(token),
-                                    out var members, out _, out _)) continue;
-                            for (int i = 0; i < members.Count; i++)
-                                AddExtraDef(members[i], extraDefs, extraDefSet);
-                        }
-                        else if (!SlotToken.IsPool(token))
-                        {
-                            AddExtraDef(SlotToken.MemberName(token), extraDefs, extraDefSet);
-                        }
-                    }
-        }
-
-        private static void AddExtraDef(
-            string defName,
-            List<ThingDef> extraDefs,
-            HashSet<ThingDef> extraDefSet)
-        {
-            var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
-            if (def == null || def.CountAsResource || !def.PlayerAcquirable) return;
-            if (extraDefSet.Add(def)) extraDefs.Add(def);
-        }
     }
 }

@@ -292,12 +292,20 @@ namespace EPrimeReadouts.Core
         /// the LAST pool with that name wins (its id is used for resolution).
         /// </para>
         /// </summary>
-        public void ApplyImport(
+        public ReadoutChange ApplyImport(
             List<ResourcePool> pools,
             List<ReadoutGroup> groups,
             Func<int> takePoolId,
             Func<int> takeGroupId)
         {
+            ReadoutChange change = ReadoutChange.None;
+            if (Pools.Count > 0 || (pools != null && pools.Count > 0))
+                change |= ReadoutChange.Pools;
+            if (Groups.Count > 0 || (groups != null && groups.Count > 0))
+                change |= ReadoutChange.Groups;
+            if (Thresholds.Count > 0)
+                change |= ReadoutChange.Thresholds;
+
             Pools.Clear();
             Groups.Clear();
             Thresholds.Clear();
@@ -372,6 +380,7 @@ namespace EPrimeReadouts.Core
                     Groups.Add(group);
                 }
             }
+            return change;
         }
 
         // ── Migration ─────────────────────────────────────────────────────

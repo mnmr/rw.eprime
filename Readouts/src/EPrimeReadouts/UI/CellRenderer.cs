@@ -12,6 +12,8 @@ namespace EPrimeReadouts.UI
         public ThingDef[] Defs;    // parallel to Model.Cells; null for non-icon cells
         public int[] Counts;       // parallel; raw count for icon cells (tooltips)
         public string[] Tokens;    // parallel; raw slot token for icon cells (tooltips)
+        public string[] Labels;    // parallel; translated labels for label cells
+        public string[] Tooltips;  // parallel; resolved icon hover labels
         public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
 
         public static DrawModel Resolve(
@@ -21,17 +23,32 @@ namespace EPrimeReadouts.UI
             var defs = new ThingDef[model.Cells.Count];
             var counts = new int[model.Cells.Count];
             var tokens = new string[model.Cells.Count];
+            var labels = new string[model.Cells.Count];
+            var tooltips = new string[model.Cells.Count];
             for (int i = 0; i < model.Cells.Count; i++)
             {
                 var cell = model.Cells[i];
                 if (cell.Kind == CellKind.Icon)
                 {
                     defs[i] = DefDatabase<ThingDef>.GetNamedSilentFail(cell.DefName);
+                    IconScaleCache.Request(defs[i]);
                     tokens[i] = cell.Token;
                     // Raw count carried on the cell — never parse the display
                     // text, which is compact-formatted ("12.8k") above 10000.
                     counts[i] = cell.Count;
+                    if (tokens[i] != null && SlotToken.IsPoolRef(tokens[i])
+                        && renderData != null
+                        && renderData.Structure.TryGet(SlotToken.PoolId(tokens[i]),
+                            out _, out _, out string poolName))
+                        tooltips[i] = poolName;
+                    else if (tokens[i] != null && SlotToken.IsPool(tokens[i]))
+                        tooltips[i] = GameResourceCatalog.Instance.CategoryLabelOf(
+                            SlotToken.MemberName(tokens[i])).CapitalizeFirst();
+                    else
+                        tooltips[i] = defs[i] != null ? defs[i].LabelCap : cell.DefName;
                 }
+                else if (cell.Kind == CellKind.Label)
+                    labels[i] = UiText.Get(cell.Text);
             }
             return new DrawModel
             {
@@ -39,6 +56,8 @@ namespace EPrimeReadouts.UI
                 Defs = defs,
                 Counts = counts,
                 Tokens = tokens,
+                Labels = labels,
+                Tooltips = tooltips,
                 RenderData = renderData,
             };
         }
@@ -67,6 +86,8 @@ namespace EPrimeReadouts.UI
 
         public static void Draw(DrawModel draw)
         {
+            using (new GuiStateScope())
+            {
             var cells = draw.Model.Cells;
             for (int i = 0; i < cells.Count; i++)
             {
@@ -119,7 +140,7 @@ namespace EPrimeReadouts.UI
                     case CellKind.Label:
                         GUI.color = LabelDim;
                         Text.Font = GameFont.Tiny;
-                        Widgets.Label(rect, cell.Text.Translate());
+                        Widgets.Label(rect, draw.Labels[i]);
                         Text.Font = GameFont.Small;
                         GUI.color = Color.white;
                         break;
@@ -130,6 +151,7 @@ namespace EPrimeReadouts.UI
                         GUI.color = Color.white;
                         break;
                 }
+            }
             }
         }
     }

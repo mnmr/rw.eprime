@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace EPrimeReadouts.Core
 {
@@ -14,7 +15,7 @@ namespace EPrimeReadouts.Core
             if (counts == null) throw new ArgumentNullException(nameof(counts));
             var copy = new Dictionary<string, int>(counts.Count);
             foreach (var pair in counts) copy[pair.Key] = pair.Value;
-            this.counts = copy;
+            this.counts = new ReadOnlyDictionary<string, int>(copy);
             Fingerprint = fingerprint;
         }
 

@@ -12,6 +12,14 @@ namespace EPrimeReadouts.Patches
     [HarmonyPatch(typeof(ActiveTip), "TipRect", MethodType.Getter)]
     public static class Patch_ActiveTip_TipRect
     {
+        // Cache contract:
+        // Owner: each readout panel/config window tooltip producer.
+        // Key: owner-local stable key and exact plain-text lookup key.
+        // Value: immutable TipModel graph for the active/retired generation.
+        // Dependencies: producer generations and activated StructuredTip identity.
+        // Refresh policy: event-driven Begin/Touch/End per repaint generation.
+        // Equality policy: untouched values retain identity until retirement flush.
+        // Teardown: ReleaseOwner per window and Clear on global teardown.
         private static readonly OwnerGenerationRegistry<object, string, string, TipModel> models =
             new OwnerGenerationRegistry<object, string, string, TipModel>();
         private static bool generationActive;
@@ -67,7 +75,7 @@ namespace EPrimeReadouts.Patches
         public static bool Prefix(TipSignal ___signal, ref Rect __result)
         {
             if (!HasModels) return true;
-            string text = ___signal.text?.TrimEnd();
+            string text = ___signal.text;
             if (text == null) return true;
             if (models.TryGet(text, out var model))
             {
@@ -84,21 +92,17 @@ namespace EPrimeReadouts.Patches
     [HarmonyPatch(typeof(ActiveTip), "DrawInner")]
     public static class Patch_ActiveTip_DrawInner
     {
-        // Vanilla's private background atlas; fetched lazily. A miss (field
-        // renamed) leaves atlas null and vanilla draws the plain-text fallback.
-        private static Texture2D atlas;
-        private static bool atlasTried;
+        // Resolved once when Harmony initializes this patch type. A miss leaves
+        // atlas null and vanilla draws the plain-text fallback.
+        // Process-owned reference to a vanilla-owned asset. It is resolved once,
+        // never mutated/destroyed by this mod, and expires with the game process.
+        private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;
 
         [HarmonyPrefix]
         public static bool Prefix(Rect bgRect, string label)
         {
             if (!Patch_ActiveTip_TipRect.HasModels) return true;
-            if (!Patch_ActiveTip_TipRect.TryGetModel(label?.TrimEnd(), out var model)) return true;
-            if (!atlasTried)
-            {
-                atlasTried = true;
-                atlas = AccessTools.Field(typeof(ActiveTip), "TooltipBGAtlas")?.GetValue(null) as Texture2D;
-            }
+            if (!Patch_ActiveTip_TipRect.TryGetModel(label, out var model)) return true;
             if (atlas == null) return true;
             Widgets.DrawAtlas(bgRect, atlas);
             WrTipUI.Draw(bgRect, model);

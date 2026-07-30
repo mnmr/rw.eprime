@@ -58,7 +58,7 @@ namespace EPrimeReadouts.Core
 
                 entries[pool.Id] = new Entry
                 {
-                    Members = expanded,
+                    Members = expanded.AsReadOnly(),
                     IconDefName = icon,
                     Name = pool.Name ?? "",
                 };

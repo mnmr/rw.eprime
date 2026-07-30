@@ -18,6 +18,12 @@ namespace EPrimeReadouts.Core
     /// Shared per-key render data. Structure and count data have independent
     /// invalidation rules so user edits can apply immediately while expensive
     /// count refreshes remain tick-throttled.
+    /// Cache contract: Owner = caller; Key = <typeparamref name="TKey"/>;
+    /// Value = immutable <see cref="RenderDataSnapshot{TStructure,TCounts}"/>;
+    /// Dependencies = structure revision, tick and caller-owned builder inputs;
+    /// Refresh policy = immediate structure and tick-throttled counts;
+    /// Equality policy = equal count refreshes preserve snapshot identity;
+    /// Teardown = <see cref="Remove"/> per owner key or <see cref="Clear"/>.
     public sealed class RenderDataCache<TKey, TRevision, TStructure, TCounts>
     {
         private sealed class Entry
@@ -30,6 +36,8 @@ namespace EPrimeReadouts.Core
         private readonly Dictionary<TKey, Entry> entries = new Dictionary<TKey, Entry>();
         private readonly int countRefreshInterval;
         private readonly IEqualityComparer<TCounts> countsComparer;
+
+        public int Count => entries.Count;
 
         public RenderDataCache(int countRefreshInterval)
             : this(countRefreshInterval, EqualityComparer<TCounts>.Default)
@@ -124,5 +132,9 @@ namespace EPrimeReadouts.Core
             entries.Add(key, entry);
             return entry.Snapshot;
         }
+
+        public bool Remove(TKey key) => entries.Remove(key);
+
+        public void Clear() => entries.Clear();
     }
 }

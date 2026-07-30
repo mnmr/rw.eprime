@@ -13,7 +13,10 @@ namespace EPrimeReadouts
         public static int Current => revision.Current;
 
         public static void ObserveCurrentMetrics() =>
-            revision.Observe(Prefs.UIScale, Prefs.DisableTinyText);
+            revision.Observe(
+                Prefs.UIScale,
+                Prefs.DisableTinyText,
+                LanguageDatabase.activeLanguage?.folderName);
 
         public static void Bump()
         {

@@ -19,15 +19,19 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using (new GuiStateScope())
+            {
             var settings = EPrimeReadoutsMod.Settings;
             float headerUsed = EprStyle.SectionHeader(inRect.x, inRect.y, inRect.width,
-                "EPR.Options".Translate());
+                UiText.Get("EPR.Options"));
             var listing = new Listing_Standard();
             listing.Begin(new Rect(inRect.x, inRect.y + headerUsed + 4f,
                 inRect.width, inRect.height - headerUsed - 4f));
+            try
+            {
 
             bool showSearch = settings.showSearchFilter;
-            listing.CheckboxLabeled("EPR.ShowSearchFilter".Translate(), ref showSearch);
+            listing.CheckboxLabeled(UiText.Get("EPR.ShowSearchFilter"), ref showSearch);
             if (showSearch != settings.showSearchFilter)
             {
                 EPrimeReadoutsMod.Persist(s => s.showSearchFilter = showSearch);
@@ -37,14 +41,19 @@ namespace EPrimeReadouts.UI
             }
 
             bool showName = settings.showModNameWhenNoSearch;
-            listing.CheckboxLabeled("EPR.ShowModName".Translate(), ref showName);
+            listing.CheckboxLabeled(UiText.Get("EPR.ShowModName"), ref showName);
             if (showName != settings.showModNameWhenNoSearch)
             {
                 EPrimeReadoutsMod.Persist(s => s.showModNameWhenNoSearch = showName);
                 ReadoutPanel.BumpView();
             }
 
-            listing.End();
+            }
+            finally
+            {
+                listing.End();
+            }
+            }
         }
     }
 }

@@ -56,4 +56,15 @@ public class CommandsArchitectureTests
         await Assert.That(source).Contains("[StaticConstructorOnStartup]");
         await Assert.That(source).Contains("if (MP.enabled) MP.RegisterAll();");
     }
+
+    [Test]
+    public async Task RestoreDefaultsUsesTheSynchronizedPayloadOnly()
+    {
+        string source = Source("ReadoutCommands.cs");
+        string restore = Method(source, "public static void RestoreDefaults(");
+
+        await Assert.That(restore).Contains("string xml");
+        await Assert.That(restore).DoesNotContain("DefaultGroups.Seed");
+        await Assert.That(restore).DoesNotContain("File.");
+    }
 }

@@ -21,6 +21,8 @@ namespace EPrimeReadouts.UI
 
         private Vector2 scroll;
         private int builtPoolsVersion = -1;
+        private ReadoutStore builtStore;
+        private PoolSnapshot builtSnapshot;
 
         // Cached row data (rebuilt only when pools change)
         private struct PoolRow
@@ -30,7 +32,15 @@ namespace EPrimeReadouts.UI
             public ThingDef IconDef; // resolved from snapshot; null when unresolvable
         }
 
-        private List<PoolRow> cachedRows;
+        // Cache contract:
+        // Owner: this dialog view and one ReadoutStore.
+        // Key: store identity, PoolsVersion, and shared PoolSnapshot identity.
+        // Value: immutable row array with resolved ThingDef icons.
+        // Dependencies: pool id/name/icon data.
+        // Refresh policy: immediate on a dependency change.
+        // Equality policy: unchanged dependencies preserve array identity.
+        // Teardown: Reset releases row and snapshot references on dialog close.
+        private PoolRow[] cachedRows;
         private string pendingSelectName;
 
         private readonly PoolListHeightCache heightCache = new PoolListHeightCache(
@@ -39,32 +49,35 @@ namespace EPrimeReadouts.UI
             rowHeight: RowH,
             maxVisibleRows: 8,
             footerHeight: FooterH);
-        private static readonly Func<float, float> measureCaptionHeight = MeasureCaptionHeight;
+        private static readonly Func<string, float, float> measureCaptionHeight = MeasureCaptionHeight;
 
         /// Returns the desired height for this panel: header (including caption when
         /// unfolded) + min(rowCount, 8) * RowH + FooterH. Recomputed only when the
         /// fold state, available width, or pool version changes. Caption measurement
         /// is cached separately, so pool edits only redo the cheap row calculation.
-        public float DesiredHeight(float availableWidth)
+        public float DesiredHeight(float availableWidth, Dialog_ReadoutConfig owner)
         {
             UiVersion.ObserveCurrentMetrics();
             var store = ReadoutStore.Current;
             var settings = EPrimeReadoutsMod.Settings;
             bool folded = settings.helpPoolsFolded;
+            if (store != null) EnsureRows(store, owner);
             int poolsVersion = store != null ? store.PoolsVersion : -1;
-            int rowCount = store != null ? store.Model.Pools.Count : 0;
+            int rowCount = cachedRows?.Length ?? 0;
             return heightCache.GetDesiredHeight(
+                store,
                 poolsVersion,
                 UiVersion.Current,
                 rowCount,
                 folded,
                 availableWidth,
+                UiText.Get("EPR.HelpPools"),
                 measureCaptionHeight);
         }
 
-        private static float MeasureCaptionHeight(float availableWidth)
+        private static float MeasureCaptionHeight(string caption, float availableWidth)
         {
-            return EprStyle.CaptionHeight("EPR.HelpPools".Translate(), availableWidth);
+            return EprStyle.CaptionHeight(caption, availableWidth);
         }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -78,24 +91,28 @@ namespace EPrimeReadouts.UI
             float clickableW = HeaderReservedRight > 0f
                 ? rect.width - HeaderReservedRight : -1f;
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                "EPR.Pools".Translate(), "EPR.HelpPools".Translate(), ref folded,
+                UiText.Get("EPR.Pools"), UiText.Get("EPR.HelpPools"), ref folded,
                 clickableW);
             if (folded != settings.helpPoolsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpPoolsFolded = folded);
 
             // Rebuild cached rows when pool data changes
-            if (builtPoolsVersion != store.PoolsVersion)
-                Rebuild(store, owner);
+            EnsureRows(store, owner);
 
             // Defensive: clear selection if selected pool is gone
-            if (owner.selectedPoolId >= 0 && store.Model.PoolById(owner.selectedPoolId) == null)
-                owner.selectedPoolId = -1;
+            if (owner.selectedPoolId >= 0)
+            {
+                bool found = false;
+                for (int i = 0; i < cachedRows.Length; i++)
+                    if (cachedRows[i].Id == owner.selectedPoolId) { found = true; break; }
+                if (!found) owner.selectedPoolId = -1;
+            }
 
             // Pending selection by name (after create) — select AND scroll the
             // new row into view (pools are name-sorted, so it can land anywhere).
             if (pendingSelectName != null)
             {
-                for (int i = 0; i < (cachedRows?.Count ?? 0); i++)
+                for (int i = 0; i < (cachedRows?.Length ?? 0); i++)
                     if (cachedRows[i].Name == pendingSelectName)
                     {
                         owner.selectedPoolId = cachedRows[i].Id;
@@ -110,13 +127,14 @@ namespace EPrimeReadouts.UI
                 pendingSelectName = null;
             }
 
-            int rowCount = cachedRows != null ? cachedRows.Count : 0;
+            int rowCount = cachedRows?.Length ?? 0;
 
             var listRect = new Rect(rect.x, rect.y + headerUsed,
                 rect.width, rect.height - headerUsed - FooterH);
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, rowCount * RowH);
             Widgets.BeginScrollView(listRect, ref scroll, viewRect);
-
+            try
+            {
             if (rowCount > 0)
             {
                 bool useVirtual = rowCount > VirtualizeThreshold;
@@ -133,14 +151,18 @@ namespace EPrimeReadouts.UI
                 }
 
                 for (int i = start; i < end; i++)
-                    DrawPoolRow(cachedRows[i], i, viewRect.width, owner, store);
+                    DrawPoolRow(cachedRows[i], i, viewRect.width, owner);
             }
 
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             // Footer: Add button → name dialog
             var footer = new Rect(rect.x, rect.yMax - FooterH + 4f, rect.width, FooterH - 4f);
-            if (Widgets.ButtonText(footer, "EPR.Add".Translate()))
+            if (Widgets.ButtonText(footer, UiText.Get("EPR.Add")))
             {
                 Find.WindowStack.Add(new Dialog_NameInput(
                     "EPR.Pools", "",
@@ -152,8 +174,7 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private void DrawPoolRow(PoolRow row, int index, float viewW, Dialog_ReadoutConfig owner,
-            ReadoutStore store)
+        private void DrawPoolRow(PoolRow row, int index, float viewW, Dialog_ReadoutConfig owner)
         {
             var rect = new Rect(0f, index * RowH, viewW, RowH);
 
@@ -214,21 +235,43 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private void Rebuild(ReadoutStore store, Dialog_ReadoutConfig owner)
+        private void EnsureRows(ReadoutStore store, Dialog_ReadoutConfig owner)
         {
-            builtPoolsVersion = store.PoolsVersion;
-            var snapshot = owner.PoolsSnapshot;
+            PoolSnapshot snapshot = owner.PoolsSnapshot;
+            if (ReferenceEquals(builtStore, store)
+                && builtPoolsVersion == store.PoolsVersion
+                && ReferenceEquals(builtSnapshot, snapshot)
+                && cachedRows != null)
+                return;
 
-            cachedRows = new List<PoolRow>(store.Model.Pools.Count);
-            foreach (var pool in store.Model.Pools)
+            builtStore = store;
+            builtPoolsVersion = store.PoolsVersion;
+            builtSnapshot = snapshot;
+
+            var pools = store.Model.Pools;
+            var built = new PoolRow[pools.Count];
+            for (int i = 0; i < pools.Count; i++)
             {
+                ResourcePool pool = pools[i];
                 ThingDef iconDef = null;
                 if (snapshot != null && snapshot.TryGet(pool.Id, out _, out string iconDefName, out _))
                     iconDef = !string.IsNullOrEmpty(iconDefName)
                         ? DefDatabase<ThingDef>.GetNamedSilentFail(iconDefName)
                         : null;
-                cachedRows.Add(new PoolRow { Id = pool.Id, Name = pool.Name, IconDef = iconDef });
+                built[i] = new PoolRow { Id = pool.Id, Name = pool.Name, IconDef = iconDef };
             }
+            cachedRows = built;
+        }
+
+        internal void Reset()
+        {
+            builtStore = null;
+            builtPoolsVersion = -1;
+            builtSnapshot = null;
+            cachedRows = null;
+            pendingSelectName = null;
+            heightCache.Reset();
+            scroll = Vector2.zero;
         }
     }
 }

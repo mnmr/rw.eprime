@@ -27,9 +27,25 @@ namespace EPrimeReadouts
         /// Lists all .xml files in <paramref name="directory"/>, newest-modified
         /// first. Bad or inaccessible paths (the picker allows custom input)
         /// yield an empty list rather than throwing.
-        public static List<(string name, string fullPath, DateTime modified)> ListFiles(string directory)
+        public sealed class Entry
         {
-            var result = new List<(string name, string fullPath, DateTime modified)>();
+            internal Entry(string name, string fullPath, DateTime modified)
+            {
+                Name = name;
+                FullPath = fullPath;
+                Modified = modified;
+                ModifiedText = modified.ToString("yyyy-MM-dd HH:mm");
+            }
+
+            public string Name { get; }
+            public string FullPath { get; }
+            public DateTime Modified { get; }
+            public string ModifiedText { get; }
+        }
+
+        public static List<Entry> ListFiles(string directory)
+        {
+            var result = new List<Entry>();
             try
             {
                 if (string.IsNullOrEmpty(directory) || !Directory.Exists(directory))
@@ -40,11 +56,11 @@ namespace EPrimeReadouts
                 {
                     string name = Path.GetFileNameWithoutExtension(fullPath);
                     DateTime modified = File.GetLastWriteTime(fullPath);
-                    result.Add((name, fullPath, modified));
+                    result.Add(new Entry(name, fullPath, modified));
                 }
 
                 // Newest first
-                result.Sort((a, b) => b.modified.CompareTo(a.modified));
+                result.Sort((a, b) => b.Modified.CompareTo(a.Modified));
             }
             catch (Exception)
             {

@@ -15,26 +15,50 @@ namespace EPrimeReadouts
     {
         public static void Seed(ReadoutStore store)
         {
-            if (TrySeedFromFile(store)) return;
-            SeedFallback(store);
+            if (TryReadSeedFile(out _, out var pools, out var groups))
+            {
+                store.Model.ApplyImport(pools, groups,
+                    store.TakePoolId, store.TakeGroupId);
+                return;
+            }
+            SeedFallback(store.Model, store.TakePoolId, store.TakeGroupId);
         }
 
-        private static bool TrySeedFromFile(ReadoutStore store)
+        /// <summary>
+        /// Reads or constructs the complete deterministic restore payload on the
+        /// initiating client. The synced command receives this string and never
+        /// performs local filesystem or installed-def discovery.
+        /// </summary>
+        public static string GetRestorePayload()
         {
+            if (TryReadSeedFile(out string xml, out _, out _)) return xml;
+
+            var model = new ReadoutModel();
+            int nextPoolId = 1;
+            int nextGroupId = 1;
+            SeedFallback(model, () => nextPoolId++, () => nextGroupId++);
+            return ReadoutsXml.Export(model.Pools, model.InDisplayOrder());
+        }
+
+        private static bool TryReadSeedFile(out string xml,
+            out List<ResourcePool> pools, out List<ReadoutGroup> groups)
+        {
+            xml = null;
+            pools = null;
+            groups = null;
             try
             {
                 string root = EPrimeReadoutsMod.ContentPack?.RootDir;
                 if (string.IsNullOrEmpty(root)) return false;
                 string path = Path.Combine(root, "Seed", "Readouts.xml");
                 if (!File.Exists(path)) return false;
-                string xml = File.ReadAllText(path);
-                if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out string error))
+                xml = File.ReadAllText(path);
+                if (!ReadoutsXml.TryImport(xml, out pools, out groups, out string error))
                 {
                     Log.Warning("[EPrimeReadouts] Seed/Readouts.xml invalid (" + error
                         + "); falling back to built-in defaults.");
                     return false;
                 }
-                store.Model.ApplyImport(pools, groups, store.TakePoolId, store.TakeGroupId);
                 return true;
             }
             catch (System.Exception e)
@@ -100,7 +124,8 @@ namespace EPrimeReadouts
             }),
         };
 
-        private static void SeedFallback(ReadoutStore store)
+        private static void SeedFallback(ReadoutModel model,
+            System.Func<int> takePoolId, System.Func<int> takeGroupId)
         {
             // 1. Seed pools first, recording name→id map
             var poolIdByName = new Dictionary<string, int>();
@@ -110,8 +135,8 @@ namespace EPrimeReadouts
                 // Only create pool when category resolves AND has ≥1 counted def
                 var members = GameResourceCatalog.Instance.CountedDefsIn(catDefName);
                 if (members.Count == 0) continue;
-                int poolId = store.TakePoolId();
-                var pool = store.Model.CreatePool(poolId, name);
+                int poolId = takePoolId();
+                var pool = model.CreatePool(poolId, name);
                 pool.Members.Add(catRef);
                 poolIdByName[name] = poolId;
             }
@@ -132,8 +157,8 @@ namespace EPrimeReadouts
                     if (kept.Count > 0) layout.Add(kept);
                 }
                 if (layout.Count == 0) continue;
-                var group = store.Model.CreateGroup(store.TakeGroupId(), name);
-                store.Model.SetTiers(group.Id, layout);
+                var group = model.CreateGroup(takeGroupId(), name);
+                model.SetTiers(group.Id, layout);
             }
         }
 

@@ -31,4 +31,18 @@ public class RevisionedCacheTests
         await Assert.That(rebuilt).IsEqualTo("tip-2");
         await Assert.That(state.Builds).IsEqualTo(2);
     }
+
+    [Test]
+    public async Task ClearReleasesEveryOwnedValue()
+    {
+        var cache = new RevisionedCache<string, int, object>();
+        object first = cache.Get("a", 1, 0, static _ => new object());
+        cache.Get("b", 1, 0, static _ => new object());
+
+        cache.Clear();
+        object rebuilt = cache.Get("a", 1, 0, static _ => new object());
+
+        await Assert.That(cache.Count).IsEqualTo(1);
+        await Assert.That(rebuilt).IsNotSameReferenceAs(first);
+    }
 }

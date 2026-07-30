@@ -110,4 +110,38 @@ public class RenderDataCacheTests
             "map-a-counts-from-map-a-structure");
     }
 
+    [Test]
+    public async Task RemovingAMapReleasesOnlyThatMapsSnapshot()
+    {
+        var cache = new RenderDataCache<string, int, string, string>(204);
+        var mapA = cache.Get("map-a", 1, 100, () => "a-structure", () => "a-counts");
+        var mapB = cache.Get("map-b", 1, 100, () => "b-structure", () => "b-counts");
+
+        bool removed = cache.Remove("map-a");
+        var mapBAgain = cache.Get("map-b", 1, 101,
+            () => "unexpected-structure", () => "unexpected-counts");
+        var mapARebuilt = cache.Get("map-a", 1, 101,
+            () => "a-structure-2", () => "a-counts-2");
+
+        await Assert.That(removed).IsTrue();
+        await Assert.That(mapBAgain).IsSameReferenceAs(mapB);
+        await Assert.That(mapARebuilt).IsNotSameReferenceAs(mapA);
+        await Assert.That(cache.Count).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task ClearReleasesEveryMapSnapshot()
+    {
+        var cache = new RenderDataCache<string, int, object, object>(204);
+        object mapA = cache.Get("map-a", 1, 0, () => new object(), () => new object());
+        object mapB = cache.Get("map-b", 1, 0, () => new object(), () => new object());
+
+        cache.Clear();
+        var rebuiltA = cache.Get("map-a", 1, 1, () => new object(), () => new object());
+
+        await Assert.That(cache.Count).IsEqualTo(1);
+        await Assert.That(rebuiltA).IsNotSameReferenceAs(mapA);
+        await Assert.That(rebuiltA).IsNotSameReferenceAs(mapB);
+    }
+
 }

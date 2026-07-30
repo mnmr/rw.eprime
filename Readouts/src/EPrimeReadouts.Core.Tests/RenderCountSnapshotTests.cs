@@ -53,4 +53,14 @@ public class RenderCountSnapshotTests
 
         await Assert.That(reordered.Equals(first)).IsTrue();
     }
+
+    [Test]
+    public async Task PublishedCountDictionaryRejectsConsumerMutation()
+    {
+        var snapshot = new RenderCountSnapshot(
+            new Dictionary<string, int> { ["Steel"] = 40 }, 1L);
+
+        await Assert.That(() => ((IDictionary<string, int>)snapshot.Counts)["Steel"] = 99)
+            .Throws<NotSupportedException>();
+    }
 }

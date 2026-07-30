@@ -470,4 +470,31 @@ public class ReadoutsXmlTests
         // Also verify the raw XML does not contain Icon=
         await Assert.That(xml.Contains("Icon=")).IsFalse();
     }
+
+    [Test]
+    public async Task ApplyImport_EmptyToEmptyReportsNoChangedDomain()
+    {
+        var model = new ReadoutModel();
+
+        ReadoutChange change = model.ApplyImport(
+            new List<ResourcePool>(), new List<ReadoutGroup>(), Counter(), Counter());
+
+        await Assert.That(change).IsEqualTo(ReadoutChange.None);
+    }
+
+    [Test]
+    public async Task ApplyImport_ReportsOnlyDomainsWhoseContentsAreReplaced()
+    {
+        var model = new ReadoutModel();
+        model.CreateGroup(7, "Old");
+        var groups = new List<ReadoutGroup>
+        {
+            new ReadoutGroup { Name = "New" },
+        };
+
+        ReadoutChange change = model.ApplyImport(
+            new List<ResourcePool>(), groups, Counter(), Counter());
+
+        await Assert.That(change).IsEqualTo(ReadoutChange.Groups);
+    }
 }

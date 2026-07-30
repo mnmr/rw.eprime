@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+using EPrimeReadouts.Core;
 using UnityEngine;
 using Verse;
 
@@ -15,6 +15,29 @@ namespace EPrimeReadouts.UI
         private string newName = "";
         private string pendingSelect;
 
+        private struct GroupRow
+        {
+            internal int Id;
+            internal string Name;
+            internal string DepthKey;
+            internal bool Enabled;
+        }
+
+        // Cache contract:
+        // Owner: this dialog view and one ReadoutStore.
+        // Key: store identity plus GroupsVersion.
+        // Value: immutable display-ordered group row array.
+        // Dependencies: group structure, owning world's depth-key prefix and
+        // the exact enabled-group presentation revision.
+        // Refresh policy: immediate on store/version change.
+        // Equality policy: unchanged dependencies preserve row-array identity.
+        // Teardown: view becomes collectible with its dialog; Reset drops rows.
+        private ReadoutStore builtStore;
+        private int builtGroupsVersion = -1;
+        private int builtPresentationVersion = -1;
+        private static int presentationVersion;
+        private GroupRow[] rows;
+
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
             var store = ReadoutStore.Current;
@@ -23,20 +46,22 @@ namespace EPrimeReadouts.UI
             // Section header with fold toggle
             bool folded = settings.helpGroupsFolded;
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                "EPR.Groups".Translate(), "EPR.HelpGroups".Translate(), ref folded);
+                UiText.Get("EPR.Groups"), UiText.Get("EPR.HelpGroups"), ref folded);
             if (folded != settings.helpGroupsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpGroupsFolded = folded);
 
-            var ordered = store.Model.InDisplayOrder();
+            EnsureRows(store);
 
             if (pendingSelect != null)
             {
-                foreach (var g in ordered)
-                    if (g.Name == pendingSelect)
+                for (int i = 0; i < rows.Length; i++)
+                    if (rows[i].Name == pendingSelect)
                     {
-                        owner.selectedGroupId = g.Id;
-                        string newKey = store.DepthKey(g.Id);
+                        owner.selectedGroupId = rows[i].Id;
+                        string newKey = rows[i].DepthKey;
                         EPrimeReadoutsMod.Persist(s => s.enabledGroups[newKey] = true);
+                        rows[i].Enabled = true;
+                        builtPresentationVersion = ++presentationVersion;
                         ReadoutPanel.BumpView();
                         break;
                     }
@@ -45,15 +70,17 @@ namespace EPrimeReadouts.UI
 
             var listRect = new Rect(rect.x, rect.y + headerUsed, rect.width,
                 rect.height - headerUsed - FooterH);
-            var viewRect = new Rect(0f, 0f, listRect.width - 16f, ordered.Count * RowH);
+            var viewRect = new Rect(0f, 0f, listRect.width - 16f, rows.Length * RowH);
             Widgets.BeginScrollView(listRect, ref scroll, viewRect);
+            try
+            {
 
             bool groupDrag = EprDrag.Active && EprDrag.GroupId >= 0;
             var e = Event.current;
 
-            for (int i = 0; i < ordered.Count; i++)
+            for (int i = 0; i < rows.Length; i++)
             {
-                var group = ordered[i];
+                GroupRow group = rows[i];
                 var row = new Rect(0f, i * RowH, viewRect.width, RowH);
 
                 // WorkRoles-style: get a control id per row for drag registration,
@@ -64,19 +91,21 @@ namespace EPrimeReadouts.UI
                 if (group.Id == owner.selectedGroupId) Widgets.DrawHighlightSelected(row);
                 else if (Mouse.IsOver(row)) Widgets.DrawHighlight(row);
 
-                string key = store.DepthKey(group.Id);
-                bool enabled = settings.enabledGroups.TryGetValue(key, out bool on) ? on : group.DefaultEnabled;
+                string key = group.DepthKey;
+                bool enabled = group.Enabled;
                 bool prev = enabled;
                 Widgets.Checkbox(new Vector2(row.x + 2f, row.y + 5f), ref enabled, 16f);
                 if (enabled != prev)
                 {
                     bool localEnabled = enabled;
                     EPrimeReadoutsMod.Persist(s => s.enabledGroups[key] = localEnabled);
+                    rows[i].Enabled = enabled;
+                    builtPresentationVersion = ++presentationVersion;
                     ReadoutPanel.BumpView();
                 }
                 var checkRect = new Rect(row.x + 2f, row.y + 5f, 16f, 16f);
                 if (Mouse.IsOver(checkRect))
-                    TooltipHandler.TipRegion(checkRect, (TaggedString)"EPR.EnableTip".Translate());
+                    TooltipHandler.TipRegion(checkRect, (TaggedString)UiText.Get("EPR.EnableTip"));
 
                 // Name area: right of checkbox, left of delete button
                 var nameRect = new Rect(row.x + 24f, row.y, row.width - 48f, RowH);
@@ -100,14 +129,12 @@ namespace EPrimeReadouts.UI
                 {
                     bool below = e.mousePosition.y - row.y >= row.height / 2f;
                     int target = i + (below ? 1 : 0);
-                    int from = DisplayIndex(ordered, EprDrag.GroupId);
+                    int from = DisplayIndex(rows, EprDrag.GroupId);
                     int to = target > from ? target - 1 : target;
                     if (to != from)
                     {
                         DrawInsertMarker(row, below ? row.yMax : row.y, viewRect.width);
-                        int dragId = EprDrag.GroupId;
-                        int targetIndex = to;
-                        EprDrag.HoverDropAction = () => ReadoutCommands.MoveGroupTo(dragId, targetIndex);
+                        EprDrag.SetGroupDrop(EprDrag.GroupId, to);
                     }
                 }
 
@@ -120,20 +147,23 @@ namespace EPrimeReadouts.UI
                         () => ReadoutCommands.DeleteGroup(id), destructive: true));
                 }
             }
-
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             // Footer (name field + Add) sits directly below the last group row
             // with 8px margin, falling back to bottom-anchored when the list
             // fills the available space.
             float footerY = Mathf.Min(
-                listRect.y + ordered.Count * RowH + 8f,
+                listRect.y + rows.Length * RowH + 8f,
                 rect.yMax - FooterH + 4f);
             var footer = new Rect(rect.x, footerY, rect.width, FooterH - 4f);
             newName = Widgets.TextField(
                 new Rect(footer.x, footer.y, footer.width - 60f, 24f), newName);
             if (Widgets.ButtonText(new Rect(footer.xMax - 56f, footer.y, 56f, 24f),
-                    "EPR.Add".Translate())
+                    UiText.Get("EPR.Add"))
                 && !newName.NullOrEmpty())
             {
                 ReadoutCommands.CreateGroup(newName.Trim());
@@ -142,11 +172,50 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private static int DisplayIndex(List<Core.ReadoutGroup> ordered, int groupId)
+        private static int DisplayIndex(GroupRow[] ordered, int groupId)
         {
-            for (int i = 0; i < ordered.Count; i++)
+            for (int i = 0; i < ordered.Length; i++)
                 if (ordered[i].Id == groupId) return i;
             return -1;
+        }
+
+        private void EnsureRows(ReadoutStore store)
+        {
+            if (ReferenceEquals(builtStore, store)
+                && builtGroupsVersion == store.GroupsVersion
+                && builtPresentationVersion == presentationVersion
+                && rows != null)
+                return;
+
+            var ordered = store.Model.InDisplayOrder();
+            var built = new GroupRow[ordered.Count];
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                ReadoutGroup group = ordered[i];
+                built[i] = new GroupRow
+                {
+                    Id = group.Id,
+                    Name = group.Name,
+                    DepthKey = store.DepthKey(group.Id),
+                    Enabled = EPrimeReadoutsMod.Settings.enabledGroups.TryGetValue(
+                        store.DepthKey(group.Id), out bool enabled)
+                            ? enabled : group.DefaultEnabled,
+                };
+            }
+            builtStore = store;
+            builtGroupsVersion = store.GroupsVersion;
+            builtPresentationVersion = presentationVersion;
+            rows = built;
+        }
+
+        internal void Reset()
+        {
+            builtStore = null;
+            builtGroupsVersion = -1;
+            builtPresentationVersion = -1;
+            rows = null;
+            pendingSelect = null;
+            scroll = Vector2.zero;
         }
 
         private static void DrawInsertMarker(Rect row, float markerY, float width)

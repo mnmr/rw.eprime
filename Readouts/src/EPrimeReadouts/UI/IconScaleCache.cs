@@ -19,22 +19,43 @@ namespace EPrimeReadouts.UI
         private const float MinScale = 0.80f;
         private const float MaxScale = 1.25f;
 
+        // Cache contract:
+        // Owner: process/loaded def set.
+        // Key: ThingDef identity.
+        // Value: immutable measured icon-scale factor.
+        // Dependencies: uiIcon pixels and GenUI.IconDrawScale for the loaded def.
+        // Refresh policy: requested by snapshot builders and processed in bounded
+        // batches by MapComponentUpdate, never by OnGUI.
+        // Equality policy: each value is measured once per cache lifetime.
+        // Teardown: Reset clears entries and destroys the owned readback texture.
         private static readonly Dictionary<ThingDef, float> cache =
             new Dictionary<ThingDef, float>();
+        private static readonly Queue<ThingDef> pending = new Queue<ThingDef>();
+        private static readonly HashSet<ThingDef> pendingSet = new HashSet<ThingDef>();
         private static Texture2D reader;
 
         /// Correction factor for the def's icon (1 when unmeasurable).
-        /// Measurement runs lazily on the first Repaint that draws the def.
+        /// Missing values use neutral scale until the update queue publishes one.
         public static float ScaleFor(ThingDef def)
         {
             if (def == null) return 1f;
-            if (cache.TryGetValue(def, out float cached)) return cached;
-            // GPU readback needs a render context; only measure on Repaint.
-            if (Event.current == null || Event.current.type != EventType.Repaint)
-                return 1f;
-            float scale = Measure(def);
-            cache[def] = scale;
-            return scale;
+            return cache.TryGetValue(def, out float cached) ? cached : 1f;
+        }
+
+        internal static void Request(ThingDef def)
+        {
+            if (def == null || cache.ContainsKey(def) || !pendingSet.Add(def)) return;
+            pending.Enqueue(def);
+        }
+
+        internal static void ProcessPending(int budget = 4)
+        {
+            while (budget-- > 0 && pending.Count > 0)
+            {
+                ThingDef def = pending.Dequeue();
+                pendingSet.Remove(def);
+                if (!cache.ContainsKey(def)) cache.Add(def, Measure(def));
+            }
         }
 
         private static float Measure(ThingDef def)
@@ -48,11 +69,17 @@ namespace EPrimeReadouts.UI
             var rt = RenderTexture.GetTemporary(SampleSize, SampleSize, 0,
                 RenderTextureFormat.ARGB32);
             var prev = RenderTexture.active;
-            Graphics.Blit(tex, rt);
-            RenderTexture.active = rt;
-            reader.ReadPixels(new Rect(0f, 0f, SampleSize, SampleSize), 0, 0, false);
-            RenderTexture.active = prev;
-            RenderTexture.ReleaseTemporary(rt);
+            try
+            {
+                Graphics.Blit(tex, rt);
+                RenderTexture.active = rt;
+                reader.ReadPixels(new Rect(0f, 0f, SampleSize, SampleSize), 0, 0, false);
+            }
+            finally
+            {
+                RenderTexture.active = prev;
+                RenderTexture.ReleaseTemporary(rt);
+            }
 
             var pixels = reader.GetPixels32();
             int minX = SampleSize, maxX = -1, minY = SampleSize, maxY = -1;
@@ -80,6 +107,18 @@ namespace EPrimeReadouts.UI
             // resampling a fine icon only smears it.
             if (Mathf.Abs(scale - 1f) < 0.08f) scale = 1f;
             return scale;
+        }
+
+        internal static void Reset()
+        {
+            cache.Clear();
+            pending.Clear();
+            pendingSet.Clear();
+            if (reader != null)
+            {
+                Object.Destroy(reader);
+                reader = null;
+            }
         }
     }
 }

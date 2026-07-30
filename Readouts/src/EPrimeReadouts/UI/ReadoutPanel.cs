@@ -34,10 +34,23 @@ namespace EPrimeReadouts.UI
         public static string SearchText = "";
 
         private static readonly object structuredTipOwner = new object();
+
+        // Cache contract:
+        // Owner: process/current world and selected map.
+        // Key: map identity, exact domain revisions, view stamp, width,
+        // UiVersion, and shared pool/count snapshot identities.
+        // Value: immutable resolved DrawModel plus presentation measurements.
+        // Dependencies: those keys and per-player depth/search/settings state.
+        // Refresh policy: immediate on dependency changes; counts arrive via
+        // GameRenderData's 204-tick publisher.
+        // Equality policy: unchanged dependencies preserve DrawModel identity.
+        // Teardown: ReleaseMap/Reset drops map, store-derived and tooltip state.
         private static DrawModel draw;
         private static Vector2 scroll;
         private static float cachedTitleWidth = -1f;
         private static int cachedTitleUiVersion = -1;
+        private static string cachedTitleText;
+        private static string cachedCycleTip;
         private static int viewStamp;
         private static int builtGroupsVersion = -1;
         private static int builtThresholdsVersion = -1;
@@ -46,21 +59,71 @@ namespace EPrimeReadouts.UI
         private static float builtWidth;
         private static PoolSnapshot builtPools;
         private static RenderCountSnapshot builtCounts;
+        private static int builtUiVersion = -1;
+
+        // Cache contract:
+        // Owner: process/current main readout panel.
+        // Key: draw-model identity, panel position/viewport, and scroll offset.
+        // Value: screen-space interaction Rect list.
+        // Dependencies: draw cells, x/header/content geometry and scroll.y.
+        // Refresh policy: immediate when an exact dependency changes.
+        // Equality policy: unchanged dependencies reuse the existing list contents.
+        // Teardown: Hide/Reset clears rectangles and all retained identities.
+        private static DrawModel hotDraw;
+        private static float hotX;
+        private static float hotHeaderY;
+        private static float hotContentTop;
+        private static float hotOutWidth;
+        private static float hotOutHeight;
+        private static float hotScrollY;
+        private static bool hotVisible;
 
         /// Call after any per-player view-state change (depth, search, settings).
         public static void BumpView() => viewStamp++;
 
+        internal static void ReleaseMap(Map map)
+        {
+            if (map == null || !ReferenceEquals(builtMap, map)) return;
+            Reset();
+        }
+
+        internal static void Reset()
+        {
+            Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+            hotRects.Clear();
+            draw = null;
+            scroll = Vector2.zero;
+            cachedTitleWidth = -1f;
+            cachedTitleUiVersion = -1;
+            cachedTitleText = null;
+            cachedCycleTip = null;
+            builtGroupsVersion = -1;
+            builtThresholdsVersion = -1;
+            builtStamp = -1;
+            builtMap = null;
+            builtWidth = 0f;
+            builtPools = null;
+            builtCounts = null;
+            builtUiVersion = -1;
+            inputBlocked = false;
+            SearchText = "";
+            viewStamp = 0;
+            hotDraw = null;
+            hotVisible = false;
+        }
+
         public static void OnGUI()
         {
             UiVersion.ObserveCurrentMetrics();
-            hotRects.Clear();
             if (Event.current.type == EventType.Layout) return;
-            if (Current.ProgramState != ProgramState.Playing) return;
+            if (Current.ProgramState != ProgramState.Playing) { Hide(); return; }
             var map = Find.CurrentMap;
-            if (map == null || Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu) return;
+            if (map == null || Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu)
+            { Hide(); return; }
             var store = ReadoutStore.Current;
-            if (store == null) return;
+            if (store == null) { Hide(); return; }
             var settings = EPrimeReadoutsMod.Settings;
+            EnsurePresentationText();
 
             float width = settings.panelWidth;
             var renderData = GameRenderData.Get(map, store);
@@ -70,7 +133,10 @@ namespace EPrimeReadouts.UI
             inputBlocked = Find.WindowStack.GetWindowAt(Event.current.mousePosition) != null;
             bool repaint = Event.current.type == EventType.Repaint;
             if (repaint) Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
-            try { Draw(map, store, settings); }
+            try
+            {
+                using (new GuiStateScope()) Draw(map, store, settings);
+            }
             finally { if (repaint) Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner); }
         }
 
@@ -85,9 +151,6 @@ namespace EPrimeReadouts.UI
             DrawSearchRow(new Rect(x, y, width, SearchRowH));
             y += SearchRowH;
 
-            // Header hot rect (gear + search)
-            hotRects.Add(new Rect(x, settings.offsetY, width, SearchRowH));
-
             float maxContentH = Verse.UI.screenHeight - y - settings.bottomMargin;
             float totalH = draw.Model.TotalHeight;
             float contentW = draw.Model.TotalWidth;
@@ -95,41 +158,25 @@ namespace EPrimeReadouts.UI
             float contentH = scrolling ? maxContentH : totalH;
             var outRect = new Rect(x, y, contentW, contentH);
             var viewRect = new Rect(0f, 0f, contentW, totalH);
-            if (scrolling)
-            {
-                Widgets.BeginScrollView(outRect, ref scroll, viewRect, showScrollbars: false);
-            }
+            if (scrolling) Widgets.BeginScrollView(outRect, ref scroll, viewRect,
+                showScrollbars: false);
             else
             {
                 scroll = Vector2.zero;
                 Widgets.BeginGroup(outRect);
             }
-            CellRenderer.Draw(draw);
-            HandleContentInput(store);
-            if (scrolling) Widgets.EndScrollView();
-            else Widgets.EndGroup();
-
-            // Populate hot rects for each group container (GroupBack cells),
-            // translated to screen space and clipped against the scroll outRect.
-            float contentTop = y;
-            var cells = draw.Model.Cells;
-            for (int i = 0; i < cells.Count; i++)
+            try
             {
-                var cell = cells[i];
-                if (cell.Kind != CellKind.GroupBack) continue;
-                var screenRect = new Rect(
-                    x + cell.Rect.X,
-                    contentTop + cell.Rect.Y - scroll.y,
-                    cell.Rect.W,
-                    cell.Rect.H);
-                // Clip against the scroll outRect so off-screen parts don't count.
-                float clipLeft   = screenRect.x < outRect.x ? outRect.x : screenRect.x;
-                float clipTop    = screenRect.y < outRect.y ? outRect.y : screenRect.y;
-                float clipRight  = screenRect.xMax > outRect.xMax ? outRect.xMax : screenRect.xMax;
-                float clipBottom = screenRect.yMax > outRect.yMax ? outRect.yMax : screenRect.yMax;
-                if (clipRight <= clipLeft || clipBottom <= clipTop) continue;
-                hotRects.Add(new Rect(clipLeft, clipTop, clipRight - clipLeft, clipBottom - clipTop));
+                CellRenderer.Draw(draw);
+                HandleContentInput(store);
             }
+            finally
+            {
+                if (scrolling) Widgets.EndScrollView();
+                else Widgets.EndGroup();
+            }
+
+            EnsureHotRects(x, settings.offsetY, y, outRect, scroll.y);
 
             ConsumeStrayEvents();
         }
@@ -152,18 +199,11 @@ namespace EPrimeReadouts.UI
                 {
                     // Width measured once (Tiny font) — never per frame; the
                     // label rect fits the text exactly so it cannot wrap.
-                    if (cachedTitleWidth < 0f || cachedTitleUiVersion != UiVersion.Current)
-                    {
-                        Text.Font = GameFont.Tiny;
-                        cachedTitleWidth = Text.CalcSize("EPR.Title".Translate()).x + 4f;
-                        cachedTitleUiVersion = UiVersion.Current;
-                        Text.Font = GameFont.Small;
-                    }
                     Text.Font = GameFont.Tiny;
                     Text.Anchor = TextAnchor.MiddleLeft;
                     GUI.color = EprStyle.HeaderText;
                     Widgets.Label(new Rect(rect.x + 26f, rect.y, cachedTitleWidth, rect.height),
-                        "EPR.Title".Translate());
+                        cachedTitleText);
                     GUI.color = Color.white;
                     Text.Anchor = TextAnchor.UpperLeft;
                     Text.Font = GameFont.Small;
@@ -207,7 +247,7 @@ namespace EPrimeReadouts.UI
                 if (Mouse.IsOver(rect))
                 {
                     Widgets.DrawHighlight(rect);
-                    TooltipHandler.TipRegion(rect, (TaggedString)"EPR.CycleTip".Translate());
+                    TooltipHandler.TipRegion(rect, (TaggedString)cachedCycleTip);
                 }
                 if (Widgets.ButtonInvisible(rect))
                 {
@@ -252,6 +292,7 @@ namespace EPrimeReadouts.UI
                 || builtGroupsVersion != store.GroupsVersion
                 || builtThresholdsVersion != store.ThresholdsVersion
                 || builtStamp != viewStamp
+                || builtUiVersion != UiVersion.Current
                 || builtMap != map || builtWidth != width
                 || !ReferenceEquals(builtPools, renderData.Structure)
                 || !ReferenceEquals(builtCounts, renderData.Counts))
@@ -290,6 +331,72 @@ namespace EPrimeReadouts.UI
             builtWidth = width;
             builtPools = renderData.Structure;
             builtCounts = renderData.Counts;
+            builtUiVersion = UiVersion.Current;
+        }
+
+        private static void EnsurePresentationText()
+        {
+            if (cachedTitleUiVersion == UiVersion.Current
+                && cachedTitleText != null) return;
+            cachedTitleText = UiText.Get("EPR.Title");
+            cachedCycleTip = UiText.Get("EPR.CycleTip");
+            using (new GuiStateScope())
+            {
+                Text.Font = GameFont.Tiny;
+                cachedTitleWidth = WrText.FitWidth(cachedTitleText) + 4f;
+            }
+            cachedTitleUiVersion = UiVersion.Current;
+        }
+
+        private static void EnsureHotRects(float x, float headerY,
+            float contentTop, Rect outRect, float scrollY)
+        {
+            if (hotVisible
+                && ReferenceEquals(hotDraw, draw)
+                && hotX == x
+                && hotHeaderY == headerY
+                && hotContentTop == contentTop
+                && hotOutWidth == outRect.width
+                && hotOutHeight == outRect.height
+                && hotScrollY == scrollY)
+                return;
+
+            hotRects.Clear();
+            hotRects.Add(new Rect(x, headerY,
+                EPrimeReadoutsMod.Settings.panelWidth, SearchRowH));
+            var cells = draw.Model.Cells;
+            for (int i = 0; i < cells.Count; i++)
+            {
+                var cell = cells[i];
+                if (cell.Kind != CellKind.GroupBack) continue;
+                var screenRect = new Rect(x + cell.Rect.X,
+                    contentTop + cell.Rect.Y - scrollY, cell.Rect.W, cell.Rect.H);
+                float clipLeft = screenRect.x < outRect.x ? outRect.x : screenRect.x;
+                float clipTop = screenRect.y < outRect.y ? outRect.y : screenRect.y;
+                float clipRight = screenRect.xMax > outRect.xMax
+                    ? outRect.xMax : screenRect.xMax;
+                float clipBottom = screenRect.yMax > outRect.yMax
+                    ? outRect.yMax : screenRect.yMax;
+                if (clipRight <= clipLeft || clipBottom <= clipTop) continue;
+                hotRects.Add(new Rect(clipLeft, clipTop,
+                    clipRight - clipLeft, clipBottom - clipTop));
+            }
+            hotDraw = draw;
+            hotX = x;
+            hotHeaderY = headerY;
+            hotContentTop = contentTop;
+            hotOutWidth = outRect.width;
+            hotOutHeight = outRect.height;
+            hotScrollY = scrollY;
+            hotVisible = true;
+        }
+
+        private static void Hide()
+        {
+            if (!hotVisible) return;
+            hotRects.Clear();
+            hotDraw = null;
+            hotVisible = false;
         }
     }
 }

@@ -17,8 +17,8 @@ namespace EPrimeReadouts
             var store = ReadoutStore.Current;
             if (store == null) return;
             if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _)) return;
-            store.Model.ApplyImport(pools, groups, store.TakePoolId, store.TakeGroupId);
-            store.Bump(ReadoutChange.All);
+            store.Bump(store.Model.ApplyImport(
+                pools, groups, store.TakePoolId, store.TakeGroupId));
         }
 
         [SyncMethod]
@@ -94,15 +94,13 @@ namespace EPrimeReadouts
         }
 
         [SyncMethod]
-        public static void RestoreDefaults()
+        public static void RestoreDefaults(string xml)
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.Groups.Clear();
-            store.Model.Pools.Clear();
-            store.Model.Thresholds.Clear();
-            DefaultGroups.Seed(store);
-            store.Bump(ReadoutChange.All);
+            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _)) return;
+            store.Bump(store.Model.ApplyImport(
+                pools, groups, store.TakePoolId, store.TakeGroupId));
         }
 
         [SyncMethod]

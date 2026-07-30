@@ -23,7 +23,15 @@ namespace EPrimeReadouts.UI
         private Stage stage = Stage.Source;
 
         // ── Source stage state ───────────────────────────────────────────────
-        private List<(string name, string fullPath, DateTime modified)> files;
+        // Cache contract:
+        // Owner: one import window.
+        // Key: resolved directory string.
+        // Value: file entries with preformatted immutable display metadata.
+        // Dependencies: explicit directory changes/deletion refresh requests.
+        // Refresh policy: WindowUpdate only, never OnGUI.
+        // Equality policy: unchanged directory preserves list/entry identities.
+        // Teardown: PreClose releases entries, XML and preview snapshots.
+        private List<ReadoutsFiles.Entry> files;
         private string listedDir;   // directory the current file list came from
         private Vector2 sourceScroll;
         private string clip;
@@ -31,9 +39,13 @@ namespace EPrimeReadouts.UI
 
         // ── Preview stage state ──────────────────────────────────────────────
         private string pendingXml;
-        private List<ResourcePool> previewPools;
-        private List<ReadoutGroup> previewGroups;
+        private ReadoutSnapshot previewSnapshot;
         private Vector2 previewScroll;
+        private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
+        private ReadoutSnapshot previewTextSnapshot;
+        private int previewTextUiVersion = -1;
+        private string previewSummary;
+        private string previewWarning;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
@@ -46,22 +58,22 @@ namespace EPrimeReadouts.UI
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
-        /// Directory listing for the picked location, refreshed on user
-        /// interaction when the resolved directory changed — never on idle
-        /// repaints (Desktop/UserHome resolution and Directory.GetFiles are
-        /// syscalls, several times per frame).
+        /// Directory listing for the picked location, refreshed by WindowUpdate
+        /// when the directory changed or an explicit action invalidated it.
         private void EnsureFiles()
         {
-            var e = Event.current;
-            bool interact = e != null
-                && (e.type == EventType.MouseDown || e.type == EventType.KeyDown);
-            if (files != null && !interact) return;
             string dir = ResolvedDir();
             if (files != null && string.Equals(dir, listedDir, StringComparison.Ordinal))
                 return;
             listedDir = dir;
             files = ReadoutsFiles.ListFiles(dir);
             sourceScroll = Vector2.zero;
+        }
+
+        public override void WindowUpdate()
+        {
+            base.WindowUpdate();
+            if (stage == Stage.Source) EnsureFiles();
         }
 
         private void RefreshClipboard()
@@ -83,17 +95,28 @@ namespace EPrimeReadouts.UI
                 return false;
             }
             pendingXml    = xml;
-            previewPools  = parsedPools;
-            previewGroups = parsedGroups;
-            ReadoutsPreviewUI.Invalidate();
+            previewSnapshot = ReadoutSnapshot.Capture(parsedPools, parsedGroups);
             stage = Stage.Preview;
             return true;
+        }
+
+        public override void PreClose()
+        {
+            preview.Reset();
+            previewSnapshot = null;
+            previewTextSnapshot = null;
+            files = null;
+            pendingXml = null;
+            clip = null;
+            base.PreClose();
         }
 
         // ── DoWindowContents ─────────────────────────────────────────────────
 
         public override void DoWindowContents(Rect inRect)
         {
+            using (new GuiStateScope())
+            {
             if (Event.current.type == EventType.MouseDown)
                 RefreshClipboard();
 
@@ -101,6 +124,7 @@ namespace EPrimeReadouts.UI
                 DrawSource(inRect);
             else
                 DrawPreview(inRect);
+            }
         }
 
         // ── Source stage ─────────────────────────────────────────────────────
@@ -112,8 +136,8 @@ namespace EPrimeReadouts.UI
             // [From clipboard] top-right, mirroring export's Copy button.
             var clipRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, FooterH);
             if (!clipUsable)
-                TooltipHandler.TipRegion(clipRect, "EPR.ClipboardEmpty".Translate());
-            if (Widgets.ButtonText(clipRect, "EPR.FromClipboard".Translate(), active: clipUsable)
+                TooltipHandler.TipRegion(clipRect, UiText.Get("EPR.ClipboardEmpty"));
+            if (Widgets.ButtonText(clipRect, UiText.Get("EPR.FromClipboard"), active: clipUsable)
                 && clipUsable)
             {
                 TryEnterPreview(clip);
@@ -121,7 +145,7 @@ namespace EPrimeReadouts.UI
 
             // Location picker (no name field — a file is picked from the list).
             DrawCaption(new Rect(inRect.x, bodyTop, 200f, CaptionRowH - 2f),
-                "EPR.ImportLocationLabel".Translate());
+                UiText.Get("EPR.ImportLocationLabel"));
             bodyTop += CaptionRowH;
             float locRowY = bodyTop;
             float customRowY = locRowY + RowH;
@@ -136,13 +160,11 @@ namespace EPrimeReadouts.UI
             var listRect = DrawFrame(frameRect);
             if (listRect.height <= 0f) return;
 
-            EnsureFiles();
-
             if (files == null || files.Count == 0)
             {
                 Text.Anchor = TextAnchor.MiddleCenter;
                 GUI.color   = EprStyle.CaptionText;
-                Widgets.Label(listRect, "EPR.NoFiles".Translate());
+                Widgets.Label(listRect, UiText.Get("EPR.NoFiles"));
                 GUI.color   = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
             }
@@ -154,10 +176,13 @@ namespace EPrimeReadouts.UI
                     listRect.width - (needsBar ? GenUI.ScrollBarWidth : 0f), totalH);
 
                 Widgets.BeginScrollView(listRect, ref sourceScroll, viewRect);
-
+                try
+                {
                 for (int i = 0; i < files.Count; i++)
                 {
-                    var (name, fullPath, modified) = files[i];
+                    ReadoutsFiles.Entry file = files[i];
+                    string name = file.Name;
+                    string fullPath = file.FullPath;
                     var rowRect = new Rect(0f, i * FileRowH, viewRect.width, FileRowH);
 
                     if (i % 2 == 0)
@@ -197,7 +222,7 @@ namespace EPrimeReadouts.UI
                     float dateW = availW * 0.38f;
                     Text.Anchor = TextAnchor.MiddleRight;
                     Widgets.Label(new Rect(rowRect.x + availW * 0.60f, rowRect.y, dateW, FileRowH),
-                        modified.ToString("yyyy-MM-dd HH:mm"));
+                        file.ModifiedText);
                     GUI.color   = Color.white;
                     Text.Font   = GameFont.Small;
                     Text.Anchor = TextAnchor.UpperLeft;
@@ -216,13 +241,16 @@ namespace EPrimeReadouts.UI
                         }
                     }
                 }
-
-                Widgets.EndScrollView();
+                }
+                finally
+                {
+                    Widgets.EndScrollView();
+                }
             }
 
             // Cancel
             if (Widgets.ButtonText(new Rect(inRect.xMax - ButtonW, footerY, ButtonW, FooterH),
-                "EPR.Cancel".Translate()))
+                UiText.Get("EPR.Cancel")))
                 Close();
         }
 
@@ -232,14 +260,13 @@ namespace EPrimeReadouts.UI
         {
             float bodyTop = DrawTitle(inRect, "EPR.ImportTitle");
             float footerY = FooterY(inRect);
+            EnsurePreviewText();
 
             // Summary line
-            int poolCount  = previewPools  != null ? previewPools.Count  : 0;
-            int groupCount = previewGroups != null ? previewGroups.Count : 0;
             Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
             Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, 18f),
-                "EPR.ContentSummary".Translate(poolCount, groupCount));
+                previewSummary);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             bodyTop  += 20f;
@@ -247,7 +274,7 @@ namespace EPrimeReadouts.UI
             // Warning line
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(1f, 0.75f, 0.35f);   // warm warning tint
-            string warning = "EPR.ImportWarning".Translate();
+            string warning = previewWarning;
             float warnH = EprStyle.CaptionHeight(warning, inRect.width);
             Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, warnH), warning);
             GUI.color = Color.white;
@@ -258,8 +285,8 @@ namespace EPrimeReadouts.UI
             var frameRect = new Rect(inRect.x, bodyTop, inRect.width,
                 footerY - bodyTop - FooterGap);
             var listRect = DrawFrame(frameRect);
-            if (previewPools != null && previewGroups != null)
-                ReadoutsPreviewUI.DrawListing(listRect, previewPools, previewGroups, ref previewScroll);
+            if (previewSnapshot != null)
+                preview.DrawListing(listRect, previewSnapshot, ref previewScroll);
 
             // Footer: [Import]  [Back]  [Cancel]
             float importX = inRect.xMax - ButtonW;
@@ -267,25 +294,41 @@ namespace EPrimeReadouts.UI
             float cancelX = backX   - FooterGap - ButtonW;
 
             if (Widgets.ButtonText(new Rect(cancelX, footerY, ButtonW, FooterH),
-                "EPR.Cancel".Translate()))
+                UiText.Get("EPR.Cancel")))
                 Close();
 
             if (Widgets.ButtonText(new Rect(backX, footerY, ButtonW, FooterH),
-                "EPR.Back".Translate()))
+                UiText.Get("EPR.Back")))
             {
                 stage = Stage.Source;
                 files = null;   // re-list on return
-                ReadoutsPreviewUI.Invalidate();
+                preview.Reset();
+                previewSnapshot = null;
             }
 
             if (Widgets.ButtonText(new Rect(importX, footerY, ButtonW, FooterH),
-                "EPR.Import".Translate()))
+                UiText.Get("EPR.Import")))
             {
                 ReadoutCommands.ImportAll(pendingXml);
-                Messages.Message("EPR.Imported".Translate(),
+                Messages.Message(UiText.Get("EPR.Imported"),
                     MessageTypeDefOf.TaskCompletion, historical: false);
                 Close();
             }
+        }
+
+        private void EnsurePreviewText()
+        {
+            UiVersion.ObserveCurrentMetrics();
+            if (ReferenceEquals(previewTextSnapshot, previewSnapshot)
+                && previewTextUiVersion == UiVersion.Current
+                && previewSummary != null)
+                return;
+            int pools = previewSnapshot?.Pools.Count ?? 0;
+            int groups = previewSnapshot?.Groups.Count ?? 0;
+            previewSummary = "EPR.ContentSummary".Translate(pools, groups);
+            previewWarning = UiText.Get("EPR.ImportWarning");
+            previewTextSnapshot = previewSnapshot;
+            previewTextUiVersion = UiVersion.Current;
         }
     }
 }

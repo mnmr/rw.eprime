@@ -31,9 +31,36 @@ namespace EPrimeReadouts.UI
         private static Action pendingClickAction;
         private static bool pendingReleaseOverSource;
 
-        /// Drop action registered by whichever cell or row the mouse is over
-        /// this frame; invoked on mouse-up when a drag is resolved.
-        public static Action HoverDropAction;
+        private enum DropKind { None, Group, Token }
+        private static DropKind dropKind;
+        private static int dropGroupId;
+        private static int dropTargetIndex;
+        private static int dropToTier;
+        private static int dropToSlot;
+        private static bool dropBandSourced;
+        private static string dropToken;
+        private static int dropFromTier;
+        private static int dropFromSlot;
+
+        internal static void SetGroupDrop(int groupId, int targetIndex)
+        {
+            dropKind = DropKind.Group;
+            dropGroupId = groupId;
+            dropTargetIndex = targetIndex;
+        }
+
+        internal static void SetTokenDrop(int groupId, int toTier, int toSlot,
+            bool bandSourced, string token, int fromTier, int fromSlot)
+        {
+            dropKind = DropKind.Token;
+            dropGroupId = groupId;
+            dropToTier = toTier;
+            dropToSlot = toSlot;
+            dropBandSourced = bandSourced;
+            dropToken = token;
+            dropFromTier = fromTier;
+            dropFromSlot = fromSlot;
+        }
 
         /// Register a press on a resource token slot. controlId is the IMGUI
         /// identity of the source control; release containment is confirmed by
@@ -91,7 +118,7 @@ namespace EPrimeReadouts.UI
                 FromSlot = pendingFromSlot;
                 GroupId = pendingGroupId;
             }
-            HoverDropAction = null;
+            dropKind = DropKind.None;
         }
 
         /// Call once per OnGUI pass AFTER drawing dialog content (including the
@@ -110,9 +137,9 @@ namespace EPrimeReadouts.UI
                     return;
                 }
 
-                if (Active && HoverDropAction != null)
+                if (Active && dropKind != DropKind.None)
                 {
-                    HoverDropAction();
+                    ExecuteDrop();
                     return;
                 }
                 // Active but no drop target registered → drag cancelled silently.
@@ -123,6 +150,24 @@ namespace EPrimeReadouts.UI
                 // action throws.
                 Cancel();
             }
+        }
+
+        private static void ExecuteDrop()
+        {
+            if (dropKind == DropKind.Group)
+            {
+                ReadoutCommands.MoveGroupTo(dropGroupId, dropTargetIndex);
+                return;
+            }
+
+            var group = ReadoutStore.Current?.Model.GroupById(dropGroupId);
+            if (group == null) return;
+            var tiers = Core.TierOps.Clone(group.Tiers);
+            bool changed = dropBandSourced
+                ? Core.TierOps.Move(tiers, dropFromTier, dropFromSlot, dropToTier, dropToSlot)
+                : Core.TierOps.Add(tiers, dropToken, dropToTier, dropToSlot);
+            if (changed)
+                ReadoutCommands.SetGroupLayout(dropGroupId, Core.TierBlobCodec.Encode(tiers));
         }
 
         public static void Cancel()
@@ -141,7 +186,15 @@ namespace EPrimeReadouts.UI
             FromTier = -1;
             FromSlot = -1;
             GroupId = -1;
-            HoverDropAction = null;
+            dropKind = DropKind.None;
+            dropGroupId = -1;
+            dropTargetIndex = -1;
+            dropToTier = -1;
+            dropToSlot = -1;
+            dropBandSourced = false;
+            dropToken = null;
+            dropFromTier = -1;
+            dropFromSlot = -1;
         }
     }
 }

@@ -43,4 +43,17 @@ public class DialogCachingArchitectureTests
         string source = Source("UI", "Dialog_ReadoutConfig.cs");
         await Assert.That(CountOf(source, "PoolSnapshot.Build(")).IsEqualTo(1);
     }
+
+    [Test]
+    public async Task PreviewCacheIsOwnedByEachDialogInstance()
+    {
+        string preview = Source("UI", "ReadoutsPreviewUI.cs");
+        string export = Source("UI", "Dialog_ExportReadouts.cs");
+        string import = Source("UI", "Dialog_ImportReadouts.cs");
+
+        await Assert.That(preview).Contains("internal sealed class ReadoutsPreviewView");
+        await Assert.That(preview).DoesNotContain("private static string[]");
+        await Assert.That(export).Contains("new ReadoutsPreviewView()");
+        await Assert.That(import).Contains("new ReadoutsPreviewView()");
+    }
 }

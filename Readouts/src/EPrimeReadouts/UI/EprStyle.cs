@@ -14,6 +14,14 @@ namespace EPrimeReadouts.UI
             internal float Width;
         }
 
+        // Cache contract:
+        // Owner: process/current UI presentation.
+        // Key: caption text, Tiny font, width and UiVersion.Current.
+        // Value: wrapped caption height.
+        // Dependencies: the complete measurement key above.
+        // Refresh policy: immediate when a key component changes.
+        // Equality policy: equal keys reuse the measured float.
+        // Teardown: Reset clears all caption measurements.
         private static readonly TextHeightCache captionHeights = new TextHeightCache();
         private static readonly Func<CaptionMeasureState, float> measureCaptionHeight =
             state => Text.CalcHeight(state.Caption, state.Width);
@@ -44,6 +52,8 @@ namespace EPrimeReadouts.UI
         internal static float SectionHeader(float x, float y, float width, string label,
             string caption, ref bool folded, float clickableWidth = -1f, bool foldable = true)
         {
+            using (new GuiStateScope())
+            {
             Text.Font = GameFont.Small;
             var labelRect = new Rect(x, y, width, 22f);
             GUI.color = HeaderText;
@@ -70,6 +80,7 @@ namespace EPrimeReadouts.UI
                 used += capH + 4f;
             }
             return used;
+            }
         }
 
         internal static float CaptionHeight(string caption, float width)
@@ -81,6 +92,7 @@ namespace EPrimeReadouts.UI
             {
                 return captionHeights.Get(
                     caption,
+                    (int)GameFont.Tiny,
                     width,
                     UiVersion.Current,
                     new CaptionMeasureState { Caption = caption, Width = width },
@@ -91,5 +103,7 @@ namespace EPrimeReadouts.UI
                 Text.Font = previousFont;
             }
         }
+
+        internal static void Reset() => captionHeights.Reset();
     }
 }

@@ -27,7 +27,7 @@ namespace EPrimeReadouts.UI
         {
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH),
-                titleKey.Translate());
+                UiText.Get(titleKey));
             Text.Font = GameFont.Small;
             return inRect.y + TitleH;
         }

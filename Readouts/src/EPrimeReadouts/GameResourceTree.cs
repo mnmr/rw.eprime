@@ -11,12 +11,24 @@ namespace EPrimeReadouts
     /// so the expensive DefDatabase walk happens only once per game session.
     public static class GameResourceTree
     {
+        // Cache contract:
+        // Owner: process/loaded def set.
+        // Key: loaded defs and the current UI language revision.
+        // Value: detached resource-tree nodes consumed by both editor trees.
+        // Dependencies: ThingCategoryDef/ThingDef data and UiVersion.Current.
+        // Refresh policy: lazy, immediate on UI language revision changes.
+        // Equality policy: unchanged dependencies preserve root identity.
+        // Teardown: Reset releases all cached nodes on global teardown.
         private static List<ResourceTreeNode> cachedRoots;
+        private static int cachedUiVersion = -1;
 
         public static List<ResourceTreeNode> GetRoots()
         {
-            if (cachedRoots != null) return cachedRoots;
+            UiVersion.ObserveCurrentMetrics();
+            if (cachedRoots != null && cachedUiVersion == UiVersion.Current)
+                return cachedRoots;
             cachedRoots = new List<ResourceTreeNode>();
+            cachedUiVersion = UiVersion.Current;
             foreach (var category in DefDatabase<ThingCategoryDef>.AllDefs)
                 if (category.resourceReadoutRoot)
                     cachedRoots.Add(BuildNode(category));
@@ -38,6 +50,12 @@ namespace EPrimeReadouts
                     node.DefNames.Add(def.defName);
             node.Poolable = GameResourceCatalog.Instance.CountedDefsIn(category.defName).Count >= 2;
             return node;
+        }
+
+        internal static void Reset()
+        {
+            cachedRoots = null;
+            cachedUiVersion = -1;
         }
     }
 }

@@ -44,8 +44,11 @@ namespace EPrimeReadouts
         public float Padding = 8f;
         public List<TipSection> Sections = new List<TipSection>();
 
-        // WrTipUI's cached geometry; models are immutable after construction, so
-        // measurement happens once instead of every hover frame.
+        // Cache contract: Owner = this immutable TipModel; Key = maximum width
+        // plus UiVersion; Value = positioned immutable draw geometry;
+        // Dependencies = model content, font metrics and width; Refresh =
+        // immediate on width/UI revision; Equality = equal key preserves object
+        // identity; Teardown = releasing the TipModel releases the geometry.
         internal object RenderCache;
 
         public TipSection AddSection(string header = null)

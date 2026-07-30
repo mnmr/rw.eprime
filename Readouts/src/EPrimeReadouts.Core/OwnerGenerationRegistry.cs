@@ -8,6 +8,11 @@ namespace EPrimeReadouts.Core
     /// lookup key. Values not touched in an owner's latest generation are
     /// retired, but remain resolvable until <see cref="FlushRetired"/> so a
     /// consumer later in the same frame can finish using them.
+    /// Cache contract: Owner = caller-supplied producer owner; Key = owner-local
+    /// stable key plus lookup key; Value = caller-owned generation value;
+    /// Dependencies = Begin/Touch/End generation events; Refresh = event-driven;
+    /// Equality = untouched entries retain identity until retired/flushed;
+    /// Teardown = Release(owner) or Clear().
     /// </summary>
     public sealed class OwnerGenerationRegistry<TOwner, TLocalKey, TLookupKey, TValue>
     {

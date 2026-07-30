@@ -28,10 +28,10 @@ namespace EPrimeReadouts.UI
             || Application.platform == RuntimePlatform.WindowsEditor;
 
         private string LocationLabel(Location l) =>
-            l == Location.Desktop ? "EPR.LocDesktop".Translate().ToString()
-            : l == Location.UserHome ? "EPR.LocUserHome".Translate().ToString()
-            : l == Location.Custom ? "EPR.LocCustom".Translate().ToString()
-            : "EPR.LocGameData".Translate().ToString();
+            l == Location.Desktop ? UiText.Get("EPR.LocDesktop")
+            : l == Location.UserHome ? UiText.Get("EPR.LocUserHome")
+            : l == Location.Custom ? UiText.Get("EPR.LocCustom")
+            : UiText.Get("EPR.LocGameData");
 
         protected string ResolvedDir()
         {
@@ -44,6 +44,14 @@ namespace EPrimeReadouts.UI
             }
         }
 
+        // Cache contract:
+        // Owner: one file-picker window.
+        // Key: location, file name and custom directory.
+        // Value: resolved path, validation problem and existence flag.
+        // Dependencies: exact key fields and filesystem state sampled by WindowUpdate.
+        // Refresh policy: immediate outside OnGUI when an input changes.
+        // Equality policy: unchanged inputs preserve strings and avoid syscalls.
+        // Teardown: window collection releases all cached strings.
         private Location cachedLocation;
         private string cachedFileName;
         private string cachedCustomDir;
@@ -52,29 +60,29 @@ namespace EPrimeReadouts.UI
         private bool cachedExists;
         private bool cacheValid;
 
-        /// Path + existence, recomputed when the inputs change or on user
-        /// interaction — never on idle repaints (File.Exists is a syscall and
-        /// Desktop/UserHome resolution a shell call, several times per frame).
+        /// Returns path state previously sampled by WindowUpdate. This draw-path
+        /// accessor never resolves shell folders or touches the filesystem.
         protected string CachedResolvedPath(out string problem, out bool exists)
         {
-            var e = Event.current;
-            bool interact = e != null
-                && (e.type == EventType.MouseDown || e.type == EventType.KeyDown);
-            if (!cacheValid || interact
-                || cachedLocation != location
-                || !string.Equals(cachedFileName, fileName, StringComparison.Ordinal)
-                || !string.Equals(cachedCustomDir, customDir, StringComparison.Ordinal))
-            {
-                cachedLocation = location;
-                cachedFileName = fileName;
-                cachedCustomDir = customDir;
-                cachedPath = ResolvedPath(out cachedProblem);
-                cachedExists = cachedPath != null && File.Exists(cachedPath);
-                cacheValid = true;
-            }
             problem = cachedProblem;
             exists = cachedExists;
             return cachedPath;
+        }
+
+        /// <summary>Refreshes filesystem-backed path state outside OnGUI.</summary>
+        protected void RefreshResolvedPathCache()
+        {
+            if (cacheValid
+                && cachedLocation == location
+                && string.Equals(cachedFileName, fileName, StringComparison.Ordinal)
+                && string.Equals(cachedCustomDir, customDir, StringComparison.Ordinal))
+                return;
+            cachedLocation = location;
+            cachedFileName = fileName;
+            cachedCustomDir = customDir;
+            cachedPath = ResolvedPath(out cachedProblem);
+            cachedExists = cachedPath != null && File.Exists(cachedPath);
+            cacheValid = true;
         }
 
         /// Full destination, or null (with a reason) when not usable. The result
@@ -86,13 +94,13 @@ namespace EPrimeReadouts.UI
             string name = fileName.Trim();
             if (name.NullOrEmpty() || name.IndexOfAny(InvalidNameChars) >= 0)
             {
-                problem = "EPR.BadFileName".Translate();
+                problem = UiText.Get("EPR.BadFileName");
                 return null;
             }
             string dir = ResolvedDir();
             if (dir.NullOrEmpty() || dir.IndexOfAny(Path.GetInvalidPathChars()) >= 0)
             {
-                problem = "EPR.BadDirectory".Translate();
+                problem = UiText.Get("EPR.BadDirectory");
                 return null;
             }
             try
@@ -100,7 +108,7 @@ namespace EPrimeReadouts.UI
                 return Path.Combine(dir, name)
                     .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             }
-            catch (Exception) { problem = "EPR.BadDirectory".Translate(); return null; }
+            catch (Exception) { problem = UiText.Get("EPR.BadDirectory"); return null; }
         }
 
         // Characters the file system rejects can't be typed at all. A file name
@@ -166,7 +174,7 @@ namespace EPrimeReadouts.UI
 
             if (location == Location.Custom)
             {
-                string enterPath = "EPR.EnterPath".Translate();
+                string enterPath = UiText.Get("EPR.EnterPath");
                 UiVersion.ObserveCurrentMetrics();
                 float labelW = WrText.FitWidth(enterPath) + 6f;
                 Text.Anchor = TextAnchor.MiddleLeft;

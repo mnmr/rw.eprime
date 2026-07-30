@@ -22,8 +22,18 @@ namespace EPrimeReadouts.UI
         private int builtPoolsVersion = -1;
         private int builtPoolId = -1;
         private int builtExpandStamp = -1;
+        private int builtUiVersion = -1;
+        private ReadoutStore builtStore;
 
-        private List<EditorRow> cachedRows;
+        // Cache contract:
+        // Owner: this dialog view and one ReadoutStore.
+        // Key: store identity, pool id, PoolsVersion, expansion stamp, UI revision.
+        // Value: immutable flattened editor rows with resolved ThingDefs/state.
+        // Dependencies: selected pool raw members/icon, tree expansion and language.
+        // Refresh policy: immediate on any dependency change.
+        // Equality policy: unchanged dependencies preserve row-array identity.
+        // Teardown: Reset releases rows/store/def references on dialog close.
+        private EditorRow[] cachedRows;
 
         private struct EditorRow
         {
@@ -34,6 +44,8 @@ namespace EPrimeReadouts.UI
             public string Label;
             public bool Expanded;    // categories
             public TriState State;   // derived from pool members
+            public ThingDef Def;
+            public bool IsCurrentIcon;
         }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -45,18 +57,16 @@ namespace EPrimeReadouts.UI
             // Section header with fold toggle
             bool folded = settings.helpPoolEditorFolded;
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                "EPR.ConfigurePool".Translate(), "EPR.HelpPoolEditor".Translate(), ref folded);
+                UiText.Get("EPR.ConfigurePool"), UiText.Get("EPR.HelpPoolEditor"), ref folded);
             if (folded != settings.helpPoolEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpPoolEditorFolded = folded);
 
-            var pool = store.Model.PoolById(owner.selectedPoolId);
-            if (pool == null) return;
-
             // Rebuild cached rows when needed
             if (NeedsRebuild(store, owner.selectedPoolId))
-                Rebuild(store, pool);
+                Rebuild(store, owner.selectedPoolId);
+            if (cachedRows == null || builtPoolId < 0) return;
 
-            int rowCount = cachedRows != null ? cachedRows.Count : 0;
+            int rowCount = cachedRows.Length;
 
             // The panel can be squeezed to nothing (small dialog, unfolded
             // captions); a non-positive viewport must not reach Calculate.
@@ -65,28 +75,42 @@ namespace EPrimeReadouts.UI
             var outRect = new Rect(rect.x, rect.y + headerUsed, rect.width, listH);
             var viewRect = new Rect(0f, 0f, outRect.width - 16f, rowCount * RowH);
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
-
+            try
+            {
             var vr = UniformViewportRange.Calculate(rowCount, RowH, 0f, scroll.y, outRect.height);
             for (int i = vr.Start; i < vr.EndExclusive; i++)
-                DrawEditorRow(cachedRows[i], i, viewRect.width, pool, owner, store);
-
-            Widgets.EndScrollView();
+                DrawEditorRow(cachedRows[i], i, viewRect.width);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         private bool NeedsRebuild(ReadoutStore store, int poolId)
         {
             if (cachedRows == null) return true;
+            if (!ReferenceEquals(store, builtStore)) return true;
             if (store.PoolsVersion != builtPoolsVersion) return true;
             if (poolId != builtPoolId) return true;
             if (expandStamp != builtExpandStamp) return true;
+            if (UiVersion.Current != builtUiVersion) return true;
             return false;
         }
 
-        private void Rebuild(ReadoutStore store, ResourcePool pool)
+        private void Rebuild(ReadoutStore store, int poolId)
         {
-            bool poolChanged = pool.Id != builtPoolId;
+            ResourcePool pool = store.Model.PoolById(poolId);
+            bool poolChanged = poolId != builtPoolId;
+            builtStore = store;
             builtPoolsVersion = store.PoolsVersion;
-            builtPoolId = pool.Id;
+            builtPoolId = poolId;
+            builtUiVersion = UiVersion.Current;
+            if (pool == null)
+            {
+                cachedRows = System.Array.Empty<EditorRow>();
+                return;
+            }
 
             var members = pool.Members;
             var roots = GameResourceTree.GetRoots();
@@ -103,16 +127,17 @@ namespace EPrimeReadouts.UI
             }
             builtExpandStamp = expandStamp;
 
-            cachedRows = new List<EditorRow>();
+            var builtRows = new List<EditorRow>();
             foreach (var root in roots)
-                AddNode(root, 0, members);
+                AddNode(root, 0, members, pool.IconDefName, builtRows);
+            cachedRows = builtRows.ToArray();
 
             // Scroll so the first partially selected category sits at the top
             // of the view (fallback: first fully selected one; else the top).
             if (poolChanged)
             {
                 int firstPartial = -1, firstOn = -1;
-                for (int i = 0; i < cachedRows.Count; i++)
+                for (int i = 0; i < cachedRows.Length; i++)
                 {
                     if (!cachedRows[i].IsCategory) continue;
                     if (cachedRows[i].State == TriState.Partial) { firstPartial = i; break; }
@@ -132,12 +157,13 @@ namespace EPrimeReadouts.UI
                 ExpandSelected(child, members);
         }
 
-        private void AddNode(ResourceTreeNode node, int indent, List<string> members)
+        private void AddNode(ResourceTreeNode node, int indent, List<string> members,
+            string iconDefName, List<EditorRow> into)
         {
             bool open = expanded.Contains(node.Id);
             var state = PoolTriState.CategoryState(members, node.Id, GameResourceCatalog.Instance);
 
-            cachedRows.Add(new EditorRow
+            into.Add(new EditorRow
             {
                 IsCategory = true,
                 Indent = indent,
@@ -150,25 +176,28 @@ namespace EPrimeReadouts.UI
             if (!open) return;
 
             foreach (var child in node.Children)
-                AddNode(child, indent + 1, members);
+                AddNode(child, indent + 1, members, iconDefName, into);
 
             foreach (var defName in node.DefNames)
             {
                 bool selected = PoolTriState.IsSelected(members, defName, GameResourceCatalog.Instance);
                 var label = GameResourceCatalog.Instance.LabelOf(defName);
-                cachedRows.Add(new EditorRow
+                ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+                if (def == null) continue;
+                into.Add(new EditorRow
                 {
                     IsCategory = false,
                     Indent = indent + 1,
                     DefName = defName,
                     Label = label,
                     State = selected ? TriState.On : TriState.Off,
+                    Def = def,
+                    IsCurrentIcon = iconDefName == defName,
                 });
             }
         }
 
-        private void DrawEditorRow(EditorRow row, int index, float viewW,
-            ResourcePool pool, Dialog_ReadoutConfig owner, ReadoutStore store)
+        private void DrawEditorRow(EditorRow row, int index, float viewW)
         {
             var rect = new Rect(0f, index * RowH, viewW, RowH);
             float x = rect.x + row.Indent * 12f;
@@ -184,9 +213,13 @@ namespace EPrimeReadouts.UI
                 bool adds = row.State != TriState.On;
                 if (MultiCheckboxClicked(cbRect, row.State, adds))
                 {
-                    var newMembers = PoolTriState.ToggleCategory(pool.Members, row.Id,
-                        GameResourceCatalog.Instance);
-                    ReadoutCommands.SetPoolMembers(pool.Id, PoolMembersCodec.Encode(newMembers));
+                    var pool = ReadoutStore.Current?.Model.PoolById(builtPoolId);
+                    if (pool != null)
+                    {
+                        var newMembers = PoolTriState.ToggleCategory(pool.Members, row.Id,
+                            GameResourceCatalog.Instance);
+                        ReadoutCommands.SetPoolMembers(pool.Id, PoolMembersCodec.Encode(newMembers));
+                    }
                 }
 
                 // Label (clickable to expand/collapse)
@@ -213,41 +246,54 @@ namespace EPrimeReadouts.UI
             else
             {
                 // Resource row
-                var def = DefDatabase<ThingDef>.GetNamedSilentFail(row.DefName);
-                if (def == null) return;
-
                 // Tri-state checkbox
                 var cbRect = new Rect(x, rect.y + (RowH - CheckboxW) / 2f, CheckboxW, CheckboxW);
                 bool adds = row.State != TriState.On;
                 if (MultiCheckboxClicked(cbRect, row.State, adds))
                 {
-                    var newMembers = PoolTriState.ToggleDef(pool.Members, row.DefName,
-                        GameResourceCatalog.Instance);
-                    ReadoutCommands.SetPoolMembers(pool.Id, PoolMembersCodec.Encode(newMembers));
+                    var pool = ReadoutStore.Current?.Model.PoolById(builtPoolId);
+                    if (pool != null)
+                    {
+                        var newMembers = PoolTriState.ToggleDef(pool.Members, row.DefName,
+                            GameResourceCatalog.Instance);
+                        ReadoutCommands.SetPoolMembers(pool.Id, PoolMembersCodec.Encode(newMembers));
+                    }
                 }
 
                 // Icon
-                Widgets.ThingIcon(new Rect(x + CheckboxW + 4f, rect.y + 2f, 20f, 20f), def);
+                Widgets.ThingIcon(new Rect(x + CheckboxW + 4f, rect.y + 2f, 20f, 20f), row.Def);
 
                 // Label — clicking sets pool icon; tint when this IS the current explicit icon
-                bool isCurrentIcon = pool.IconDefName == row.DefName;
-                if (isCurrentIcon) GUI.color = EprStyle.SelectionTint;
+                if (row.IsCurrentIcon) GUI.color = EprStyle.SelectionTint;
                 Text.Anchor = TextAnchor.MiddleLeft;
                 float labelX = x + CheckboxW + 4f + 22f;
                 var labelRect = new Rect(labelX, rect.y, viewW - labelX, RowH);
-                Widgets.Label(labelRect, def.LabelCap);
+                Widgets.Label(labelRect, row.Label);
                 Text.Anchor = TextAnchor.UpperLeft;
                 GUI.color = Color.white;
 
                 // Icon area + label area: clicking sets pool icon
                 var iconClickRect = new Rect(x + CheckboxW + 4f, rect.y, viewW - x - CheckboxW - 4f, RowH);
                 if (Widgets.ButtonInvisible(iconClickRect))
-                    ReadoutCommands.SetPoolIcon(pool.Id, row.DefName);
+                    ReadoutCommands.SetPoolIcon(builtPoolId, row.DefName);
 
                 if (Mouse.IsOver(iconClickRect))
                     TooltipHandler.TipRegion(iconClickRect,
-                        (TaggedString)"EPR.HelpPoolEditor".Translate());
+                        (TaggedString)UiText.Get("EPR.HelpPoolEditor"));
             }
+        }
+
+        internal void Reset()
+        {
+            builtStore = null;
+            builtPoolsVersion = -1;
+            builtPoolId = -1;
+            builtExpandStamp = -1;
+            builtUiVersion = -1;
+            cachedRows = null;
+            expanded.Clear();
+            expandStamp = 0;
+            scroll = Vector2.zero;
         }
 
         /// WorkRoles-style MultiCheckboxClicked: draws the appropriate checkbox

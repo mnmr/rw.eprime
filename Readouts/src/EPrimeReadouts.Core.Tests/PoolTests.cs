@@ -556,4 +556,17 @@ public class PoolTests
 
         await Assert.That(icon).IsEqualTo("Gold");
     }
+
+    [Test]
+    public async Task PoolSnapshot_PublishedMembersRejectConsumerMutation()
+    {
+        var catalog = StaticResources.Catalog();
+        var pool = new ResourcePool { Id = 1, Name = "Metals" };
+        pool.Members.Add("Steel");
+        var snapshot = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
+        snapshot.TryGet(1, out var members, out _, out _);
+
+        await Assert.That(() => ((IList<string>)members)[0] = "Gold")
+            .Throws<NotSupportedException>();
+    }
 }

@@ -52,17 +52,16 @@ namespace EPrimeReadouts.UI
 
         public static void Draw(Rect bgRect, TipModel model)
         {
+            using (new GuiStateScope())
+            {
             Geometry geo = Ensure(model, MaxContentWidth);
-            var oldFont = Text.Font;
-            var oldAnchor = Text.Anchor;
-            var oldColor = GUI.color;
-            bool oldWrap = Text.WordWrap;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
             float ox = bgRect.x + Pad + model.Padding;
             float oy = bgRect.y + Pad + model.Padding;
-            foreach (Cmd cmd in geo.Cmds)
+            for (int i = 0; i < geo.Cmds.Count; i++)
             {
+                Cmd cmd = geo.Cmds[i];
                 GUI.color = cmd.Color;
                 if (cmd.Icon != null)
                 {
@@ -80,10 +79,7 @@ namespace EPrimeReadouts.UI
                         cmd.Rect.width, cmd.Rect.height), cmd.Text);
                 }
             }
-            Text.WordWrap = oldWrap;
-            GUI.color = oldColor;
-            Text.Anchor = oldAnchor;
-            Text.Font = oldFont;
+            }
         }
 
         private static Geometry Ensure(TipModel model, float maxWidth)
@@ -97,11 +93,20 @@ namespace EPrimeReadouts.UI
             var geo = new Geometry { MaxWidth = maxWidth, UiVersion = uiVersion };
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
-            float frame = Pad + model.Padding;
-            float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
-            float contentW = Mathf.Min(NaturalWidth(model), contentMax);
-            float contentH = Compose(model, contentW, geo);
-            Text.Font = oldFont;
+            float frame;
+            float contentW;
+            float contentH;
+            try
+            {
+                frame = Pad + model.Padding;
+                float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
+                contentW = Mathf.Min(NaturalWidth(model), contentMax);
+                contentH = Compose(model, contentW, geo);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
             geo.Size = new Vector2(Mathf.Ceil(contentW + frame * 2f), Mathf.Ceil(contentH + frame * 2f));
             model.RenderCache = geo;
             return geo;
