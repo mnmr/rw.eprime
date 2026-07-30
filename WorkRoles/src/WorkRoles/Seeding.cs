@@ -25,7 +25,7 @@ namespace WorkRoles
             // Groups first, in authored order — roles then land in them by label.
             foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
                          .OrderBy(d => d.order))
-                RoleCommands.EnsureGroup(groupDef.label);
+                RoleCommands.EnsureGroup(SeededDefIdentity.GroupLabel(groupDef));
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
@@ -110,10 +110,11 @@ namespace WorkRoles
                 store.holderScales.Add(HolderScale.Never("Never"));
             foreach (var def in DefDatabase<ScaleDef>.AllDefsListForReading)
             {
-                if (def.label.NullOrEmpty()
+                string name = SeededDefIdentity.ScaleName(def);
+                if (name.NullOrEmpty()
                     || store.knownScaleDefs.Contains(def.defName)) continue;
                 store.knownScaleDefs.Add(def.defName);
-                if (store.ScaleByName(def.label) == null)
+                if (store.ScaleByName(name) == null)
                     store.holderScales.Add(def.ToScale());
             }
         }
@@ -131,13 +132,14 @@ namespace WorkRoles
         }
 
         /// RoleDef reference -> live role: template link first, then a unique
-        /// case-insensitive match on the def's label (survives player renames).
+        /// case-insensitive match on the def's invariant seeded label.
         private static Role ResolvePathRole(RoleStore store, string roleDefName)
         {
             if (roleDefName.NullOrEmpty()) return null;
             var role = store.RoleByTemplate(roleDefName);
             if (role != null) return role;
-            string label = DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName)?.label;
+            string label = SeededDefIdentity.RoleLabel(
+                DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName));
             if (label.NullOrEmpty()) return null;
             Role match = null;
             foreach (var candidate in store.roles)
@@ -170,7 +172,7 @@ namespace WorkRoles
             }
             if (roleIds.Count < 2)
             {
-                Log.Message($"[WorkRoles] training path '{def.label}' not created: "
+                Log.Message($"[WorkRoles] training path '{SeededDefIdentity.PathName(def)}' not created: "
                     + $"only {roleIds.Count} role(s) resolved (unresolved: {unresolved.ToCommaList()})");
                 return null;
             }
@@ -183,7 +185,7 @@ namespace WorkRoles
             var path = new TrainingPath
             {
                 id = store.NextPathId(),
-                name = def.label,
+                name = SeededDefIdentity.PathName(def),
                 roleIds = roleIds,
                 bandMins = mins,
                 bandMaxes = maxes,
@@ -397,7 +399,7 @@ namespace WorkRoles
 
                 if (workType.visible)
                 {
-                    string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
+                    string label = SeededDefIdentity.WorkTypeRoleLabel(workType);
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
@@ -441,8 +443,7 @@ namespace WorkRoles
                 .Select(kv => kv.Key).ToList();
             foreach (var pawn in empty)
             {
-                store.pawnSets.Remove(pawn);
-                CompiledJobOrders.Invalidate(pawn);
+                store.UnmanagePawn(pawn);
                 var workSettings = pawn?.workSettings;
                 if (pawn == null || pawn.Destroyed || pawn.Dead
                     || workSettings == null || !workSettings.EverWork) continue;
@@ -517,18 +518,20 @@ namespace WorkRoles
         }
 
         /// The role's def-declared group differs from where it sits now, by
-        /// label (empty def group = Default).
+        /// invariant seeded name (empty def group = Default).
         private static bool GroupDrifted(RoleStore store, Role role, RoleDef def)
         {
             if (def.group.NullOrEmpty())
                 return role.groupId != RoleGroup.DefaultId;
             var current = store.GroupById(role.groupId);
-            return current == null || !string.Equals(current.label, def.group.Trim(),
+            return current == null || !string.Equals(current.label,
+                SeededDefIdentity.GroupLabel(def),
                 System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static string DefGroupLabel(RoleDef def) => def.group.NullOrEmpty()
-            ? "WR_GroupDefault".Translate().ToString() : def.group.Trim();
+            ? "WR_GroupDefault".Translate().ToString()
+            : SeededDefIdentity.GroupLabel(def);
 
         /// The role's color differs from what its def resolves today.
         private static bool ColorDrifted(Role role, RoleDef def)
@@ -611,7 +614,8 @@ namespace WorkRoles
         {
             if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet)
                 return true;
-            if (!string.Equals(role.holderScaleName ?? "", def.holderScale ?? "",
+            if (!string.Equals(role.holderScaleName ?? "",
+                    SeededDefIdentity.ScaleName(def) ?? "",
                     System.StringComparison.OrdinalIgnoreCase))
                 return true;
             RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
@@ -639,13 +643,14 @@ namespace WorkRoles
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
             {
                 if (store.RoleByTemplate(def.defName) != null) continue;
-                bool labelTaken = store.roles.Any(r => string.Equals(r.label, def.label,
+                string seedLabel = SeededDefIdentity.RoleLabel(def);
+                bool labelTaken = store.roles.Any(r => string.Equals(r.label, seedLabel,
                     System.StringComparison.OrdinalIgnoreCase));
                 result.Add(new RestoreItem
                 {
                     label = labelTaken
-                        ? def.label + " " + "WR_RestoreDuplicateHint".Translate()
-                        : def.label,
+                        ? seedLabel + " " + "WR_RestoreDuplicateHint".Translate()
+                        : seedLabel,
                     explanation = "WR_RestoreExplainRole".Translate(),
                     templateDef = def.defName,
                 });
@@ -741,12 +746,14 @@ namespace WorkRoles
             // are suppressed — they could never be created (perpetual no-ops).
             foreach (var def in DefDatabase<TrainingPathDef>.AllDefsListForReading
                          .OrderBy(d => d.order))
-                if (!store.trainingPaths.Any(p => string.Equals(p.name, def.label,
+                if (!store.trainingPaths.Any(p => string.Equals(p.name,
+                        SeededDefIdentity.PathName(def),
                         System.StringComparison.OrdinalIgnoreCase))
                     && RestorablePathEntryCount(store, def) >= 2)
                     result.Add(new RestoreItem
                     {
-                        label = "WR_RestorePathItem".Translate(def.label),
+                        label = "WR_RestorePathItem".Translate(
+                            SeededDefIdentity.PathName(def)),
                         explanation = "WR_RestoreExplainPath".Translate(),
                         pathDef = def.defName,
                     });
@@ -959,7 +966,8 @@ namespace WorkRoles
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                     if (def == null || !GroupDrifted(store, role, def)) continue;
-                    role.groupId = RoleCommands.EnsureGroup(def.group).id;
+                    role.groupId = RoleCommands.EnsureGroup(
+                        SeededDefIdentity.GroupLabel(def)).id;
                     result.Add("WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)));
                     anyMoved = true;
                 }
@@ -988,16 +996,15 @@ namespace WorkRoles
                     if (def == null || !HoldersDrifted(role, def)) continue;
                     role.holderMode = RoleHolderMode.Auto;
                     role.holderRangeSet = false;
-                    role.holderScaleName = def.holderScale.NullOrEmpty()
-                        ? null : def.holderScale;
+                    string scaleName = SeededDefIdentity.ScaleName(def);
+                    role.holderScaleName = scaleName.NullOrEmpty()
+                        ? null : scaleName;
                     // A renamed or deleted seed scale returns from its def so
                     // the restored reference resolves.
-                    if (!def.holderScale.NullOrEmpty()
-                        && store.ScaleByName(def.holderScale) == null)
+                    if (!scaleName.NullOrEmpty()
+                        && store.ScaleByName(scaleName) == null)
                     {
-                        var scaleDef = DefDatabase<ScaleDef>.AllDefsListForReading
-                            .FirstOrDefault(d => string.Equals(d.label, def.holderScale,
-                                System.StringComparison.OrdinalIgnoreCase));
+                        var scaleDef = SeededDefIdentity.ScaleDef(def);
                         if (scaleDef != null)
                             store.holderScales.Add(scaleDef.ToScale());
                     }
@@ -1016,7 +1023,8 @@ namespace WorkRoles
                 {
                     var def = DefDatabase<TrainingPathDef>.GetNamedSilentFail(defName);
                     if (def == null) continue;
-                    if (store.trainingPaths.Any(p => string.Equals(p.name, def.label,
+                    if (store.trainingPaths.Any(p => string.Equals(p.name,
+                            SeededDefIdentity.PathName(def),
                             System.StringComparison.OrdinalIgnoreCase))) continue;
                     var path = CreatePathFromDef(store, def);
                     if (path != null) result.Add(path.name);

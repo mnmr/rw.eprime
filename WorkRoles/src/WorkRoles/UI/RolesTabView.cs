@@ -22,6 +22,8 @@ namespace WorkRoles.UI
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
+        private readonly MemoizedFactory<int, System.Action<int, int>>
+            entryReorderCallbacks;
         private Vector2 listScroll;
         private Vector2 entriesScroll;
         private Vector2 treeScroll;
@@ -60,6 +62,17 @@ namespace WorkRoles.UI
         // Recommendations Tuning disclosure per role: collapsed by default,
         // session-local UI state like rulesRevealed.
         private readonly HashSet<int> tuningExpanded = new HashSet<int>();
+
+        public RolesTabView()
+        {
+            entryReorderCallbacks =
+                new MemoizedFactory<int, System.Action<int, int>>(roleId =>
+                    (from, to) =>
+                    {
+                        if (to > from) to--;
+                        RoleCommands.MoveEntry(roleId, from, to);
+                    });
+        }
 
         /// Content-driven height for window sizing: the role list on the left and
         /// the editor's collapsed job tree on the right are the tall pieces.
@@ -109,6 +122,7 @@ namespace WorkRoles.UI
             pendingHoursMask = 0;
             paintRoleId = -1;
             entriesReorderableGroupId = -1;
+            entryReorderCallbacks.Clear();
             pendingSelectLabel = null;
             scrollToSelected = false;
             scrollJobTreeToSelection = false;
@@ -310,7 +324,7 @@ namespace WorkRoles.UI
                 (int)((listScroll.y + scrollRect.height) / RowHeight));
             for (int i = firstRow; i <= lastRow; i++)
             {
-                var (section, role, _, depth, virtualRow) = display[i];
+                var (section, role, _, depth, virtualRow, invalid, rowLabel) = display[i];
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (role == null)
                 {
@@ -334,11 +348,9 @@ namespace WorkRoles.UI
                     TooltipHandler.TipRegion(row, "WR_VirtualRoleTip".Translate(
                         store.GroupById(role.groupId)?.label ?? "WR_GroupDefault".Translate().ToString()));
 
-                string rowLabel = role.enabled ? role.label : "WR_RoleLabelOff".Translate(role.label).ToString();
                 var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
                 // Invalid roles (no jobs, or every named location gone) render
                 // subdued grey — they can never act until fixed.
-                bool invalid = RoleInvalid(role);
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (!role.enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
                 else if (invalid) GUI.color = new Color(0.55f, 0.55f, 0.55f);
@@ -519,10 +531,11 @@ namespace WorkRoles.UI
         /// its descendants) = after its block. Landing in another group moves
         /// the role (and its tree-children) there; overlay sections block.
         private static void RegisterRoleDrop(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> display,
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
+                bool virtualRow, bool invalid, string label)> display,
             int i, Rect row, Role dragged)
         {
-            var (section, role, _, depth, _) = display[i];
+            var (section, role, _, depth, _, _, _) = display[i];
             // A nested child's within-own-group drop is a no-op — its display
             // position comes from the tree, not the catalog order. Its virtual
             // rows elsewhere don't block: dropping there moves it to that group.
@@ -562,13 +575,14 @@ namespace WorkRoles.UI
         /// Whether the row's display ancestor chain contains the candidate:
         /// walking up, each ancestor is the nearest earlier row one level up.
         private static bool HasAncestor(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> display,
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
+                bool virtualRow, bool invalid, string label)> display,
             int i, Role candidate)
         {
             int need = display[i].depth - 1;
             for (int at = i - 1; at >= 0 && need >= 0; at--)
             {
-                var (_, role, _, depth, _) = display[at];
+                var (_, role, _, depth, _, _, _) = display[at];
                 if (role == null) break;
                 if (depth != need) continue;
                 if (role == candidate) return true;
@@ -941,9 +955,10 @@ namespace WorkRoles.UI
         private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
 
         /// Collapsed-header summary: scale name plus the Min row's value range
-        /// across the bands, e.g. "Mining 2-5" (scale-less roles read Never).
-        /// Training roles read "Controlled by <target>" instead, with the
-        /// range appended when they carry their own non-Never min scale.
+        /// across the bands, e.g. "Mining (2-5)" (scale-less roles read
+        /// Never). Training roles read "Controlled by <target>" and subsets
+        /// of auto-assigned roles "In auto-assigned role <parent>" instead,
+        /// both with the range appended when a non-Never min scale applies.
         private string HolderSummary(Role role)
         {
             var store = RoleStore.Current;
@@ -955,13 +970,21 @@ namespace WorkRoles.UI
                 lo = Mathf.Min(lo, value);
                 hi = Mathf.Max(hi, value);
             }
+            string range = $" ({lo}-{hi})";
             var target = ScaleEditorUI.ControllingTarget(store, role.id);
             if (target != null)
             {
                 string label = "WR_ScaleControlledBy".Translate(target.label).ToString();
-                return scale.IsNever ? label : $"{label} ({lo}-{hi})";
+                return scale.IsNever ? label : label + range;
             }
-            return $"{scale.Name} {lo}-{hi}";
+            var autoParent = store.roles.FirstOrDefault(a =>
+                a.autoAssign && a.enabled && a.CoversOrMatches(role));
+            if (autoParent != null)
+            {
+                string label = "WR_ScaleInAutoRole".Translate(autoParent.label).ToString();
+                return scale.IsNever ? label : label + range;
+            }
+            return scale.Name + range;
         }
 
         // Hidden entirely for roles excluded from ordinary recommendations (a
@@ -1281,18 +1304,6 @@ namespace WorkRoles.UI
             else pendingHoursMask &= ~(1 << hour);
         }
 
-        /// A role that can never act: no jobs, or every location it names is gone.
-        internal static bool RoleInvalid(Role role) =>
-            role.entries.Count == 0
-            || (role.locationTokens.Count > 0 && role.locationTokens.All(StaleLocationToken));
-
-        private static bool StaleLocationToken(string token)
-        {
-            if (token == LocationRules.Settlements || token == LocationRules.Caravans) return false;
-            string id = token.Substring(token.IndexOf(':') + 1);
-            return ColonyScope.Locations().All(l => l.Id != id);
-        }
-
         private static string LocationSummary(Role role)
         {
             var tokens = role.locationTokens;
@@ -1414,12 +1425,8 @@ namespace WorkRoles.UI
 
             if (Event.current.type == EventType.Repaint)
             {
-                int capturedRoleId = role.id;
                 entriesReorderableGroupId = ReorderableWidget.NewGroup(
-                    (from, to) => {
-                        if (to > from) to--;
-                        RoleCommands.MoveEntry(capturedRoleId, from, to);
-                    },
+                    entryReorderCallbacks.For(role.id),
                     ReorderableDirection.Vertical,
                     scrollRect);
             }

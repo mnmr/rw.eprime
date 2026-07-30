@@ -12,7 +12,10 @@ namespace WorkRoles.Patches
         internal static void Invalidate(Map map)
         {
             if (map != null)
+            {
+                ColonyScope.InvalidateClassification(map);
                 CompiledJobOrders.InvalidateLocationRules(map);
+            }
         }
     }
 
@@ -94,5 +97,28 @@ namespace WorkRoles.Patches
     {
         public static void Postfix(Map map) =>
             LocationRuleTransitions.Invalidate(map);
+    }
+
+    /// Maps can enter or leave the loaded map set without changing a parent
+    /// faction. These events own settlement/filter membership and floor-stack
+    /// canonicalization.
+    [HarmonyPatch(typeof(Game), nameof(Game.AddMap))]
+    public static class Patch_Game_AddMap_LocationRules
+    {
+        public static void Postfix()
+        {
+            ColonyScope.InvalidateMapSet();
+            UiVersion.Bump();
+        }
+    }
+
+    [HarmonyPatch(typeof(Game), nameof(Game.DeinitAndRemoveMap))]
+    public static class Patch_Game_RemoveMap_LocationRules
+    {
+        public static void Postfix()
+        {
+            ColonyScope.InvalidateMapSet();
+            UiVersion.Bump();
+        }
     }
 }

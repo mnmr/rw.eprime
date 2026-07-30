@@ -223,9 +223,7 @@ namespace WorkRoles.UI
 
         private static List<Pawn> MapColonists(Map map)
         {
-            if (map == null) return new List<Pawn>();
-            return map.mapPawns.FreeColonistsSpawned
-                .Concat(map.mapPawns.SlavesOfColonySpawned)
+            return ColonyScope.PawnsOnMap(map)
                 .Where(pawn => !pawn.DevelopmentalStage.Baby())
                 .Distinct()
                 .ToList();

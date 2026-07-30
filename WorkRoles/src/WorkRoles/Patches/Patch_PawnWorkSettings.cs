@@ -34,15 +34,14 @@ namespace WorkRoles.Patches
         [HarmonyPatch(nameof(Pawn_WorkSettings.GetPriority))]
         public static bool GetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, ref int __result)
         {
-            // Hottest patched path (JobGiver_Work): one store fetch, then flat
-            // array reads inside CompiledJobOrders.
+            // Hottest patched path (JobGiver_Work): the compiled cache hit also
+            // proves managed ownership, followed by one flat-array read.
             var store = RoleStore.Current;
-            if (store == null || !store.IsManaged(___pawn)) return true;
+            if (store == null || !CompiledJobOrders.TryPriorityForManaged(
+                    ___pawn, w, store.reportVanillaPriorities, out __result))
+                return true;
             // Raw ranks (1..N) by default; optionally vanilla 0-4 for readers
             // like Numbers that expect that range (Options tab toggle).
-            __result = store.reportVanillaPriorities
-                ? CompiledJobOrders.VanillaPriorityFor(___pawn, w)
-                : CompiledJobOrders.PriorityFor(___pawn, w);
             return false;
         }
 
@@ -76,6 +75,8 @@ namespace WorkRoles.Patches
     {
         public static void Postfix(Pawn __instance)
         {
+            if (ExternalPawnFacts.IsRelevant(__instance))
+                ExternalPawnFacts.Invalidate(__instance);
             CompiledJobOrders.Invalidate(__instance);
         }
     }
@@ -103,12 +104,16 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Destroy))]
     public static class Patch_Pawn_Destroy
     {
-        public static void Postfix(Pawn __instance)
+        public static void Prefix(Pawn __instance, out bool __state) =>
+            __state = ExternalPawnFacts.IsRelevant(__instance);
+
+        public static void Postfix(Pawn __instance, bool __state)
         {
             CompiledJobOrders.Invalidate(__instance);
             PawnLocationTracker.NotifyDestroyed(__instance);
             JobRankBaseline.NotifyDestroyed(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
+            if (__state) ExternalPawnFacts.Release(__instance);
         }
     }
 

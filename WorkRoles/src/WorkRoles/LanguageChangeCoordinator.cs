@@ -31,7 +31,7 @@ namespace WorkRoles
             JobSkillProfiles.InvalidateLanguageCaches();
             JobSkillProfiles.QueueLocalizedFacadeWarm();
             ColonyScope.InvalidateLanguageCaches();
-            PawnSignalSnapshotCache.Clear();
+            ExternalPawnFacts.InvalidateAll();
             Patches.Patch_ActiveTip_TipRect.Clear();
         }
     }

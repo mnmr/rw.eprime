@@ -63,7 +63,21 @@ namespace WorkRoles.Core.Signals
         public SignalCondition(string key, string description)
         {
             Key = Required(key, nameof(key));
-            Description = description;
+            Description = NormalizeDescription(description);
+        }
+
+        /// Display normalization at the source, so every producer feeds the
+        /// tooltip consistently: trailing periods stripped, first Latin
+        /// letter upper-cased. Keys stay untouched machine tokens.
+        private static string NormalizeDescription(string text)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return text;
+            text = text.Trim();
+            while (text.Length > 0 && text[text.Length - 1] == '.')
+                text = text.Substring(0, text.Length - 1).TrimEnd();
+            if (text.Length > 0 && text[0] >= 'a' && text[0] <= 'z')
+                text = char.ToUpperInvariant(text[0]) + text.Substring(1);
+            return text;
         }
 
         public bool Equals(SignalCondition other) => other != null

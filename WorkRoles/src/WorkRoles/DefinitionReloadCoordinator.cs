@@ -35,7 +35,7 @@ namespace WorkRoles
             GameJobCatalog.Instance.InvalidateSessionCache();
             CompiledJobOrders.InvalidateDefinitions();
             VseSignalReflection.InvalidateDefinitions();
-            PawnSignalSnapshotCache.Clear();
+            ExternalPawnFacts.InvalidateAll();
         }
 
         /// Late generation completion is authoritative even when no clear/reload

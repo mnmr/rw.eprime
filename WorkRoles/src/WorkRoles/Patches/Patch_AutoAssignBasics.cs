@@ -33,7 +33,7 @@ namespace WorkRoles.Patches
             var store = RoleStore.Current;
             if (store != null)
             {
-                if (__instance.Faction != Faction.OfPlayer)
+                if (__instance.Faction?.IsPlayer != true)
                     store.UnmanagePawn(__instance);
                 else if (Current.ProgramState == ProgramState.Playing)
                     Seeding.TryAutoAssignBasics(__instance);
@@ -42,9 +42,12 @@ namespace WorkRoles.Patches
             // Role removal/auto-assignment normally invalidates the UI itself.
             // A roleless joiner or leaver changes roster membership without
             // touching role state, so provide exactly one fallback bump.
-            if (__state.WasColonyMember != IsColonyMember(__instance)
-                && UiVersion.Current == __state.UiRevision)
-                UiVersion.Bump();
+            if (__state.WasColonyMember != IsColonyMember(__instance))
+            {
+                ExternalPawnFacts.Invalidate(__instance);
+                if (UiVersion.Current == __state.UiRevision)
+                    UiVersion.Bump();
+            }
         }
     }
 
@@ -61,7 +64,7 @@ namespace WorkRoles.Patches
             if (RoleStore.Current?.IsManaged(___pawn) == true)
             {
                 CompiledJobOrders.Invalidate(___pawn);
-                CompiledJobOrders.EnsureFresh(___pawn);
+                CompiledJobOrders.MirrorFreshVanillaFallback(___pawn);
             }
         }
     }

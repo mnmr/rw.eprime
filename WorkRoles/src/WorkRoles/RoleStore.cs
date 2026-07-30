@@ -199,6 +199,7 @@ namespace WorkRoles
             if (set.assignments.Count == 0)
             {
                 pawnSets.Remove(pawn);
+                PawnLocationTracker.NotifyUnmanaged(pawn);
                 CompiledJobOrders.RemoveCached(pawn);
                 requestUiInvalidation();
                 return true;
@@ -215,6 +216,7 @@ namespace WorkRoles
                 removeManagedState: () =>
                 {
                     pawnSets.Remove(pawn);
+                    PawnLocationTracker.NotifyUnmanaged(pawn);
                     CompiledJobOrders.RemoveCached(pawn);
                 },
                 notifyVanilla: () => workSettings.Notify_UseWorkPrioritiesChanged(),
@@ -386,7 +388,7 @@ namespace WorkRoles
                 // syncing it would zero their real vanilla priorities.
                 foreach (var kv in pawnSets)
                     if (kv.Key != null && !kv.Key.Destroyed && kv.Value.assignments.Count > 0)
-                        CompiledJobOrders.EnsureFresh(kv.Key);
+                        CompiledJobOrders.MirrorFreshVanillaFallback(kv.Key);
                 SweepBillRolesBeforeSave();
             }
             Scribe_Values.Look(ref seeded, "seeded");
@@ -497,7 +499,7 @@ namespace WorkRoles
                 if (allRole != null)
                 {
                     allRole.autoAssign = true;
-                    allRole.label = "WR_OddJobsRole".Translate();
+                    allRole.label = "Odd Jobs";
                     roles.Add(allRole);
                     InvalidateRoleIndex();
                     foreach (var set in pawnSets.Values)
@@ -514,6 +516,7 @@ namespace WorkRoles
                 foreach (var set in pawnSets.Values)
                     set.assignments?.RemoveAll(a => RoleById(a.roleId) == null);
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
+                lastLocationMapIds.RemoveAll(kv => !IsManaged(kv.Key));
                 CompiledJobOrders.InvalidateAll();
             }
         }

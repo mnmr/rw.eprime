@@ -1,19 +1,18 @@
 using RimWorld;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
     public class WorkRolesGameComponent : GameComponent
     {
-        // Game tick of the next local-hour boundary. Local hours advance when
-        // absolute ticks cross a 2500 boundary — the longitude offset is a
-        // whole number of hours (GenDate.LocalTicksOffsetFromLongitude), so one
-        // global schedule covers every map and caravan, and the per-tick cost
-        // is a single comparison. (A caravan crossing a timezone mid-hour is
-        // caught on the crossing tick by Patch_WorldObject_SetTile.) Ticks are
-        // never skipped, only batched: TickManager runs DoSingleTick
-        // sequentially at every speed.
-        private int nextHourCheckTick;
+        // World-pawn local hours advance when absolute ticks cross a 2500
+        // boundary; map pawns have independent gates in WorkRolesMapComponent
+        // so Multiplayer Async Time runs them in the owning map context. A
+        // caravan crossing a timezone mid-hour is still caught immediately by
+        // Patch_WorldObject_SetTile.
+        private readonly FixedTickBoundaryGate worldHourBoundary =
+            new FixedTickBoundaryGate(2500);
 
         public WorkRolesGameComponent(Game game) { }
 
@@ -76,13 +75,12 @@ namespace WorkRoles
         public override void GameComponentTick()
         {
             PawnLocationTracker.ProcessPendingDepartures();
-            CompiledJobOrders.DrainPendingReconciles();
+            CompiledJobOrders.DrainWorldPendingReconciles();
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);
-            if (now < nextHourCheckTick) return;
-            nextHourCheckTick = now + 2500 - (int)GenMath.PositiveMod(GenTicks.TicksAbs, 2500);
-            CompiledJobOrders.InvalidateAllTimeRuled();
+            if (worldHourBoundary.ShouldRun(GenTicks.TicksAbs))
+                CompiledJobOrders.InvalidateWorldTimeRuled();
         }
     }
 }

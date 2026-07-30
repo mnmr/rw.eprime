@@ -97,6 +97,8 @@ namespace WorkRoles
             BindList(sync, ref selection.paletteRows);
             BindList(sync, ref selection.roleRows);
             BindList(sync, ref selection.pathRows);
+            BindList(sync, ref selection.locationFileTokens);
+            BindList(sync, ref selection.locationRuntimeTokens);
         }
 
         [SyncWorker(shouldConstruct = true)]

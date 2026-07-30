@@ -97,10 +97,11 @@ namespace WorkRoles.Signals
         private static void AddSignalRows(TipSection table, PawnSignal signal, Color? rowColor, Pawn pawn)
         {
             string name = string.IsNullOrWhiteSpace(signal.Ui.Label)
-                ? Humanize(signal.Source.DefName)
+                ? InvariantDefName.Humanize(signal.Source.DefName)
                 : signal.Ui.Label;
             if (signal.Relation == SignalRelation.Spillover)
-                name += " " + "WR_SignalFromSkill".Translate(Humanize(signal.OriginSkillDefName));
+                name += " " + "WR_SignalFromSkill".Translate(
+                    InvariantDefName.Humanize(signal.OriginSkillDefName));
             Texture2D icon = ResolveIcon(signal.Ui.IconKey);
             string source = signal.Ui.SourceDisplayName;
 
@@ -148,7 +149,7 @@ namespace WorkRoles.Signals
         {
             if (effect.Kind == SignalEffectKind.Capability)
             {
-                string subject = SentenceCase(Humanize(effect.TargetDefName));
+                string subject = SentenceCase(InvariantDefName.Humanize(effect.TargetDefName));
                 // With More Than Capable loaded, "incapable" work is merely
                 // hated (treated as Awful), never blocked outright.
                 return MoreThanCapableSignalProvider.Available
@@ -157,14 +158,14 @@ namespace WorkRoles.Signals
             }
             if (effect.Operation == SignalOperation.Descriptive)
             {
-                string label = Humanize(effect.Kind.ToString());
+                string label = InvariantDefName.Humanize(effect.Kind.ToString());
                 string subject = DescriptiveSubject(signal, effect);
                 return subject == null ? label : label + ": " + subject.ToLowerInvariant();
             }
             string head = effect.Kind == SignalEffectKind.StatModifier
                 && !string.IsNullOrWhiteSpace(effect.TargetDefName)
-                ? Humanize(effect.TargetDefName)
-                : Humanize(effect.Kind.ToString());
+                ? InvariantDefName.Humanize(effect.TargetDefName)
+                : InvariantDefName.Humanize(effect.Kind.ToString());
             return head + " " + EffectValue(effect);
         }
 
@@ -176,7 +177,7 @@ namespace WorkRoles.Signals
             if (string.IsNullOrWhiteSpace(target) || target == "CurrentSkill"
                 || string.Equals(target, signal.SkillDefName, StringComparison.Ordinal))
                 return null;
-            return Humanize(target);
+            return InvariantDefName.Humanize(target);
         }
 
         private static string SentenceCase(string text) =>
@@ -255,7 +256,8 @@ namespace WorkRoles.Signals
 
             if (effect.Unit != SignalValueUnit.None && effect.Unit != SignalValueUnit.Factor
                 && displayedMagnitude.HasValue)
-                value += " " + Humanize(effect.Unit.ToString()).ToLowerInvariant();
+                value += " " + InvariantDefName.Humanize(
+                    effect.Unit.ToString()).ToLowerInvariant();
 
             if (effect.ScaleKind == SignalScaleKind.ExpertiseLevel)
             {
@@ -297,30 +299,6 @@ namespace WorkRoles.Signals
 
         private static string Number(float? value) =>
             value.HasValue ? value.Value.ToString("0.##") : "?";
-
-        private static string Humanize(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value)) return "?";
-            var result = new StringBuilder(value.Length + 8);
-            char previous = '\0';
-            foreach (char current in value)
-            {
-                if (current == '_' || current == '-')
-                {
-                    if (result.Length > 0 && result[result.Length - 1] != ' ')
-                        result.Append(' ');
-                }
-                else
-                {
-                    if (result.Length > 0 && char.IsUpper(current)
-                        && (char.IsLower(previous) || char.IsDigit(previous)))
-                        result.Append(' ');
-                    result.Append(current);
-                }
-                previous = current;
-            }
-            return result.ToString();
-        }
 
         private static void WarnOfficialMissing(PawnSignal signal, string iconKey)
         {

@@ -10,9 +10,10 @@ using WorkRoles.Signals;
 
 namespace WorkRoles.UI
 {
-    /// Owns the explicit external pawn snapshot generation and all skill/stats
-    /// presentation derived from it. Live game state is read only when a UI
-    /// revision requests a complete generation refresh.
+    /// Owns explicit external pawn snapshots and all skill/stats presentation
+    /// derived from them. Role/UI revisions never recapture live pawn data;
+    /// external invalidation rebuilds only dirty owners unless the complete
+    /// generation changed.
     internal sealed class ColonistStatsState
     {
         private const float MinimumSkillColumnWidth = 200f;
@@ -29,13 +30,16 @@ namespace WorkRoles.UI
         private static readonly Color Low = new Color(0.65f, 0.65f, 0.65f);
         private static readonly Color Major = new Color(1f, 0.65f, 0.2f);
 
-        private int externalSnapshotStamp = -1;
-        private readonly Dictionary<Pawn, PawnExternalSnapshot> externalSnapshots =
-            new Dictionary<Pawn, PawnExternalSnapshot>();
-        private readonly Dictionary<Pawn, List<SkillLine>> pawnSkillLines =
-            new Dictionary<Pawn, List<SkillLine>>();
-        private readonly Dictionary<(Pawn pawn, SkillDef skill), SkillLine> skillLines =
-            new Dictionary<(Pawn, SkillDef), SkillLine>();
+        private sealed class ExternalCapture
+        {
+            internal PawnExternalSnapshot Snapshot;
+            internal List<SkillLine> SkillLines;
+            internal Dictionary<SkillDef, SkillLine> SkillLinesByDef;
+        }
+
+        private readonly SelectiveSnapshotCache<Pawn, ExternalCapture> externalSnapshots =
+            new SelectiveSnapshotCache<Pawn, ExternalCapture>(
+                CaptureExternal, ReferenceIdentityComparer<Pawn>.Instance);
         private readonly Dictionary<SkillDef, float> rosterCellWidths =
             new Dictionary<SkillDef, float>();
 
@@ -49,11 +53,12 @@ namespace WorkRoles.UI
         private ColonistStatsSnapshot stats;
 
         internal bool NeedsExternalSnapshotRefresh =>
-            externalSnapshotStamp != UiVersion.Current;
+            externalSnapshots.NeedsRefresh(ExternalPawnFacts.Revisions);
 
         internal void Reset(IEnumerable<Pawn> pawns)
         {
-            externalSnapshotStamp = -1;
+            PawnSignalSnapshotCache.Clear();
+            externalSnapshots.Clear();
             RefreshExternalSnapshot(pawns);
         }
 
@@ -64,48 +69,42 @@ namespace WorkRoles.UI
 
         internal void ReleaseSnapshots()
         {
-            externalSnapshotStamp = -1;
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
-            pawnSkillLines.Clear();
-            skillLines.Clear();
             rosterCellWidths.Clear();
             InvalidatePresentations();
         }
 
-        /// Rebuilds one complete generation only after an explicit UiVersion
-        /// event. The caller invokes this at the window's Layout boundary.
+        /// Reconciles the external cohort at the window's Layout boundary.
+        /// Unaffected owner snapshots survive targeted invalidations.
         internal bool RefreshExternalSnapshot(IEnumerable<Pawn> pawns)
         {
-            int current = UiVersion.Current;
-            if (!NeedsExternalSnapshotRefresh) return false;
+            if (!externalSnapshots.Refresh(pawns, ExternalPawnFacts.Revisions))
+                return false;
 
-            PawnSignalSnapshotCache.Clear();
-            externalSnapshots.Clear();
-            pawnSkillLines.Clear();
-            skillLines.Clear();
             rosterCellWidths.Clear();
-            if (pawns != null)
-                foreach (Pawn pawn in pawns)
-                {
-                    if (pawn == null || externalSnapshots.ContainsKey(pawn)) continue;
-                    PawnSignalSnapshot signals = PawnSignalSnapshotCache.Get(pawn);
-                    List<SkillLine> lines = SkillsTip.Lines(pawn);
-                    pawnSkillLines.Add(pawn, lines);
-                    for (int i = 0; i < lines.Count; i++)
-                        skillLines[(pawn, lines[i].Def)] = lines[i];
-                    externalSnapshots.Add(pawn,
-                        RecsAdapter.CapturePawnSnapshot(pawn, signals));
-                }
-            externalSnapshotStamp = current;
             InvalidatePresentations();
             return true;
         }
 
+        private static ExternalCapture CaptureExternal(Pawn pawn)
+        {
+            PawnSignalSnapshot signals = PawnSignalSnapshotCache.Get(pawn);
+            List<SkillLine> lines = SkillsTip.Lines(pawn);
+            var byDef = new Dictionary<SkillDef, SkillLine>();
+            for (int i = 0; i < lines.Count; i++)
+                byDef[lines[i].Def] = lines[i];
+            return new ExternalCapture
+            {
+                Snapshot = RecsAdapter.CapturePawnSnapshot(pawn, signals),
+                SkillLines = lines,
+                SkillLinesByDef = byDef,
+            };
+        }
+
         internal PawnExternalSnapshot ExternalSnapshot(Pawn pawn) =>
-            pawn != null && externalSnapshots.TryGetValue(
-                pawn, out PawnExternalSnapshot snapshot)
-                ? snapshot
+            externalSnapshots.TryGet(pawn, out ExternalCapture capture)
+                ? capture.Snapshot
                 : PawnExternalSnapshot.Empty;
 
         internal PawnSignalSnapshot SignalSnapshot(Pawn pawn) =>
@@ -114,7 +113,8 @@ namespace WorkRoles.UI
         internal SkillLine SkillLineSnapshot(Pawn pawn, SkillDef skill)
         {
             if (pawn != null && skill != null
-                && skillLines.TryGetValue((pawn, skill), out SkillLine line))
+                && externalSnapshots.TryGet(pawn, out ExternalCapture capture)
+                && capture.SkillLinesByDef.TryGetValue(skill, out SkillLine line))
                 return line;
             return new SkillLine(skill,
                 skill?.skillLabel.CapitalizeFirst() ?? "",
@@ -133,9 +133,10 @@ namespace WorkRoles.UI
             if (skill == null) return RosterCellMinWidth;
             if (rosterCellWidths.TryGetValue(skill, out float width)) return width;
             width = RosterCellMinWidth;
-            foreach (Pawn pawn in externalSnapshots.Keys)
+            foreach (Pawn pawn in externalSnapshots.Owners)
             {
-                if (!skillLines.TryGetValue((pawn, skill), out SkillLine line)
+                if (!externalSnapshots.TryGet(pawn, out ExternalCapture capture)
+                    || !capture.SkillLinesByDef.TryGetValue(skill, out SkillLine line)
                     || line.Disabled) continue;
                 SkillSignalView view = SignalPresentationPolicy.ForSkill(
                     SignalSnapshot(pawn).Signals, skill.defName);
@@ -201,8 +202,10 @@ namespace WorkRoles.UI
             statsStamp = UiVersion.Current;
             statsPawn = pawn;
 
-            if (!pawnSkillLines.TryGetValue(pawn, out List<SkillLine> lines))
-                lines = new List<SkillLine>();
+            List<SkillLine> lines = externalSnapshots.TryGet(
+                pawn, out ExternalCapture capture)
+                ? capture.SkillLines
+                : new List<SkillLine>();
             var items = new List<ColonistSkillPresentation>(lines.Count);
             float columnWidth = MinimumSkillColumnWidth;
             using (new TextBlock(GameFont.Small))

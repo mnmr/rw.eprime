@@ -1,6 +1,6 @@
 ﻿# Changelog
 
-## 1.3.0 — 2026-07-29
+## 1.3.0 — 2026-07-30
 
 - Added: Support for Keyz' Allow Utilities mod (recommended replacement for AllowTool).
 - Added: Colonist view now has a dedicated job filter button and the search filter also matches job names.

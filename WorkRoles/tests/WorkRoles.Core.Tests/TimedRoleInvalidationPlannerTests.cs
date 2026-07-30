@@ -62,6 +62,47 @@ public class TimedRoleInvalidationPlannerTests
     }
 
     [Test]
+    public async Task RuntimeApplyInvalidatesHoldersWithoutInvalidatingRoleDerivedData()
+    {
+        var pawn20 = new PawnToken("pawn-20");
+        var pawn10 = new PawnToken("pawn-10");
+        var plan = TimedRoleInvalidationPlanner.Plan(
+            new[]
+            {
+                new TimedRoleInvalidationSource(4, hasTimeRule: true),
+                new TimedRoleInvalidationSource(2, hasTimeRule: true),
+            },
+            new[]
+            {
+                Assignment(pawn20, 20, 4),
+                Assignment(pawn10, 10, 2),
+            });
+        var calls = new List<string>();
+
+        plan.ApplyRuntime(
+            pawn => calls.Add("pawn:" + pawn.Name),
+            () => calls.Add("complete"));
+
+        await Assert.That(string.Join(",", calls))
+            .IsEqualTo("pawn:pawn-10,pawn:pawn-20,complete");
+    }
+
+    [Test]
+    public async Task RuntimeApplyStillCompletesForATimedRoleWithoutHolders()
+    {
+        var plan = TimedRoleInvalidationPlanner.Plan(
+            new[] { new TimedRoleInvalidationSource(9, hasTimeRule: true) },
+            Array.Empty<TimedRoleHolderAssignment<PawnToken>>());
+        int completions = 0;
+
+        plan.ApplyRuntime(
+            _ => throw new Exception("no holders expected"),
+            () => completions++);
+
+        await Assert.That(completions).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task NoTimedRolesProducesNoTargetsOrCompletion()
     {
         var plan = TimedRoleInvalidationPlanner.Plan(

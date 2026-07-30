@@ -196,7 +196,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_SignalSource>Source</WR_SignalSource>
   <WR_SignalVerdict>Verdict</WR_SignalVerdict>
   <WR_SignalFromSkill>(from {0})</WR_SignalFromSkill>
-  <WR_SignalAlreadyReflected>Already reflected in the displayed skill level.</WR_SignalAlreadyReflected>
+  <WR_SignalAlreadyReflected>Already reflected in the displayed skill level</WR_SignalAlreadyReflected>
   <WR_SignalDisabled>Disabled</WR_SignalDisabled>
   <!-- {0} = the blocked work, e.g. Firefighting; Awful variant shows when
        More Than Capable turns incapabilities into hated-but-possible work -->
@@ -455,6 +455,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ScaleTrainingHelp>This role is a training role for {0} and assignments are therefore controlled by the tuning options for {0} (even when this is set to Never). However, you can still force minimum assignment counts for {1} here.</WR_ScaleTrainingHelp>
   <!-- {0} = target role label -->
   <WR_ScaleControlledBy>Controlled by {0}</WR_ScaleControlledBy>
+  <!-- {0} = the covering auto-assigned role's label -->
+  <WR_ScaleInAutoRole>In auto-assigned role {0}</WR_ScaleInAutoRole>
   <WR_ScaleTotalTip>Total recommended assignments for this band, trainees included. Click +1, right-click -1, drag across bands to copy.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 

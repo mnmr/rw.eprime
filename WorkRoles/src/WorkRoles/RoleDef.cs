@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -8,6 +9,9 @@ namespace WorkRoles
 {
     public class RoleDef : Def
     {
+        /// Optional invariant persisted name when it intentionally differs from
+        /// the readable form of defName. Never translate this field.
+        public string seedLabel;
         /// Entries as "WorkType:DefName" or "WorkGiver:DefName" strings (tolerant of missing defs).
         public List<string> entries = new List<string>();
         public bool autoAssign;
@@ -21,14 +25,14 @@ namespace WorkRoles
         /// Auto-mode minimum and the number of minimum slots training roles may satisfy.
         public RoleHolderMinimum minHolders = new RoleHolderMinimum();
         public int maxHolders = RoleHolderRange.Uncapped;
-        /// Holder scale name (a ScaleDef label) driving banded recommendation
+        /// Holder scale name (the invariant name derived from a ScaleDef) driving banded recommendation
         /// demand; when set it overrides the scalar fields. Empty = none.
         public string holderScale;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
 
-        /// Role-list group label (a RoleGroupDef label); empty = Default.
+        /// Role-list group name (resolved to a RoleGroupDef invariant name); empty = Default.
         public string group;
         /// Time rule: 24-char bitstring, hour 0 leftmost, '1' = active. Null = always.
         public string activeHours;
@@ -54,10 +58,12 @@ namespace WorkRoles
         {
             // Hash-input change is safe: templateHash has no readers yet.
             var text = string.Join("\n",
-                label, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
-                group, activeHours, string.Join("|", locations),
-                minHolders.Count.ToString(), minHolders.Waivers.ToString(),
-                maxHolders.ToString(), holderScale,
+                defName, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
+                SeededDefIdentity.GroupIdentity(this), activeHours, string.Join("|", locations),
+                minHolders.Count.ToString(CultureInfo.InvariantCulture),
+                minHolders.Waivers.ToString(CultureInfo.InvariantCulture),
+                maxHolders.ToString(CultureInfo.InvariantCulture),
+                SeededDefIdentity.ScaleIdentity(this),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -84,8 +90,10 @@ namespace WorkRoles
             if (minHolders.Waivers > minHolders.Count)
                 yield return $"minHolders waivers ({minHolders.Waivers}) exceed its count ({minHolders.Count})";
             if (!holderScale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
-                    .Any(d => string.Equals(d.label, holderScale,
-                        System.StringComparison.OrdinalIgnoreCase)))
+                    .Any(d => string.Equals(SeededDefIdentity.ScaleName(d), holderScale,
+                            System.StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(d.label, holderScale,
+                            System.StringComparison.OrdinalIgnoreCase)))
                 yield return $"holderScale '{holderScale}' matches no ScaleDef label";
         }
     }

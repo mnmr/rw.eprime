@@ -34,12 +34,18 @@ namespace WorkRoles
             public VanillaProjectionDefinitionMetadata Metadata;
         }
 
-        private static readonly Dictionary<Pawn, Entry> cache = new Dictionary<Pawn, Entry>();
+        private static readonly ExplicitProjectionCache<Pawn, Entry> cache =
+            new ExplicitProjectionCache<Pawn, Entry>(
+                Build, SyncVanillaFallback,
+                ReferenceIdentityComparer<Pawn>.Instance);
         /// Pawns evicted by patches that run mid-operation (location-rule
         /// transitions): job interruption is unsafe there, so it is deferred
         /// to the next game-component tick.
-        private static readonly List<Pawn> pendingReconciles = new List<Pawn>();
+        private static readonly ContextualDrainQueue<Pawn> pendingReconciles =
+            new ContextualDrainQueue<Pawn>(ReferenceIdentityComparer<Pawn>.Instance);
         private static readonly Func<Pawn, string, bool> PawnCanDoJob = CanPawnDoJob;
+        private static readonly Func<Pawn, bool> PawnIsManaged =
+            pawn => RoleStore.Current?.IsManaged(pawn) == true;
         private static ProjectionDefinitionCache projectionDefinitions;
         private static VanillaProjectionMetadata projectionMetadata;
         private static int basicsRevision;
@@ -96,7 +102,7 @@ namespace WorkRoles
                         if (role?.locationTokens == null
                             || role.locationTokens.Count == 0) continue;
                         cache.Remove(pawn);
-                        pendingReconciles.Add(pawn);
+                        pendingReconciles.Enqueue(pawn);
                         break;
                     }
                 }
@@ -108,14 +114,25 @@ namespace WorkRoles
         /// fully initialized, and only while the game is running).
         internal static void EnqueueReconcile(Pawn pawn)
         {
-            if (pawn != null) pendingReconciles.Add(pawn);
+            pendingReconciles.Enqueue(pawn);
         }
 
-        internal static void DrainPendingReconciles()
+        internal static void EnqueueReconciles(IEnumerable<Pawn> pawns)
+        {
+            if (pawns == null) return;
+            foreach (var pawn in pawns) pendingReconciles.Enqueue(pawn);
+        }
+
+        internal static void DrainPendingReconciles(Map map)
+            => DrainPendingReconciles(pawn => pawn.MapHeld == map);
+
+        internal static void DrainWorldPendingReconciles()
+            => DrainPendingReconciles(pawn => pawn.MapHeld == null);
+
+        private static void DrainPendingReconciles(Func<Pawn, bool> belongsToContext)
         {
             if (pendingReconciles.Count == 0) return;
-            var pawns = pendingReconciles.ToList();
-            pendingReconciles.Clear();
+            var pawns = pendingReconciles.Drain(belongsToContext);
             ReconcileAll(pawns);
         }
 
@@ -184,13 +201,21 @@ namespace WorkRoles
         }
 
         /// Recompile every pawn holding a role with a time rule (hour boundary crossed).
-        public static void InvalidateAllTimeRuled()
+        internal static void InvalidateTimeRuledForMap(Map map)
+        {
+            if (map != null)
+                InvalidateTimeRuled(pawn => pawn.MapHeld == map);
+        }
+
+        internal static void InvalidateWorldTimeRuled()
+            => InvalidateTimeRuled(pawn => pawn.MapHeld == null);
+
+        private static void InvalidateTimeRuled(Func<Pawn, bool> belongsToContext)
         {
             var store = RoleStore.Current;
             if (store?.roles == null) return;
 
             List<TimedRoleInvalidationSource> roleSources = null;
-            Dictionary<int, Role> rolesById = null;
             for (int i = 0; i < store.roles.Count; i++)
             {
                 var role = store.roles[i];
@@ -198,17 +223,10 @@ namespace WorkRoles
                 if (role.activeHours != Role.AllHours)
                 {
                     if (roleSources == null)
-                    {
                         roleSources = new List<TimedRoleInvalidationSource>();
-                        rolesById = new Dictionary<int, Role>();
-                    }
                     roleSources.Add(new TimedRoleInvalidationSource(role.id,
                         hasTimeRule: true, role.enabled, role.blocker, role.autoAssign));
                 }
-                // RoleById is last-wins for corrupt duplicate ids. Once a timed
-                // id has appeared, every possible later winner must be retained.
-                if (rolesById != null)
-                    rolesById[role.id] = role;
             }
             if (roleSources == null) return;
 
@@ -220,7 +238,8 @@ namespace WorkRoles
                 {
                     var pawn = pair.Key;
                     var set = pair.Value;
-                    if (pawn == null || set?.assignments == null) continue;
+                    if (pawn == null || !belongsToContext(pawn)
+                        || set?.assignments == null) continue;
 
                     foreach (var assignment in set.assignments)
                     {
@@ -234,15 +253,7 @@ namespace WorkRoles
 
             var plan = TimedRoleInvalidationPlanner.Plan(
                 roleSources, AssignmentSources());
-            for (int i = 0; i < plan.RoleIds.Count; i++)
-                if (rolesById.TryGetValue(plan.RoleIds[i], out var role))
-                    role.InvalidateCoverage();
-            for (int i = 0; i < plan.Pawns.Count; i++)
-            {
-                var pawn = plan.Pawns[i];
-                cache.Remove(pawn);
-            }
-            UiVersion.Bump();
+            plan.ApplyRuntime(pawn => cache.Remove(pawn), UiVersion.Bump);
             // Plan order is deterministic (thingIDNumber), so the interruption
             // cascade (new job searches, reservations) matches across MP clients.
             for (int i = 0; i < plan.Pawns.Count; i++)
@@ -319,6 +330,24 @@ namespace WorkRoles
             return (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
         }
 
+        /// One cache probe on the steady managed path. A miss proves ownership
+        /// before publishing, so unmanaged pawns keep vanilla authority and do
+        /// not acquire empty compiled entries.
+        internal static bool TryPriorityForManaged(Pawn pawn, WorkTypeDef workType,
+            bool vanillaProjection, out int priority)
+        {
+            priority = 0;
+            if (workType == null
+                || !cache.TryGetManaged(pawn, PawnIsManaged, out Entry entry))
+                return false;
+            int[] byIndex = vanillaProjection
+                ? entry.VanillaByIndex
+                : entry.PriorityByIndex;
+            int index = workType.index;
+            priority = (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
+            return true;
+        }
+
         /// The rank projected onto vanilla's 0-4 scale, such that vanilla's
         /// replay of the numbers reproduces the internal order where four
         /// numbers suffice (same values as the dormant fallback map).
@@ -362,16 +391,7 @@ namespace WorkRoles
             return false;
         }
 
-        private static Entry For(Pawn pawn)
-        {
-            if (!cache.TryGetValue(pawn, out var entry))
-            {
-                entry = Build(pawn);
-                cache[pawn] = entry;
-                SyncVanillaFallback(pawn, entry);
-            }
-            return entry;
-        }
+        private static Entry For(Pawn pawn) => cache.GetOrBuild(pawn);
 
         /// Ensures the pawn's compiled order (and its vanilla fallback map) is current.
         public static void EnsureFresh(Pawn pawn) => For(pawn);
@@ -380,8 +400,7 @@ namespace WorkRoles
         /// reflects the role set that is about to relinquish authority.
         internal static void MirrorFreshVanillaFallback(Pawn pawn)
         {
-            cache.Remove(pawn);
-            EnsureFresh(pawn);
+            cache.PublishFresh(pawn);
         }
 
         /// Cache-only eviction for lifecycle code that owns its own UI bump.

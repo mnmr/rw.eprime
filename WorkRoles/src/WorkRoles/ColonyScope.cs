@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Multiplayer.API;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -11,48 +12,101 @@ namespace WorkRoles
     /// (RoleRules, RoleIO) consumes it, so it lives outside the UI layer.
     internal static class ColonyScope
     {
-        // Open-window snapshot (UiVersion + map count): several draw paths hit
-        // this per row/pass, and each rebuild walks all maps with gravship
-        // lookups. Callers must never mutate the returned list.
-        private static List<LocationInfo> locationsCache;
-        private static int locationsStamp = -1;
+        private sealed class MapClassification
+        {
+            internal Building_GravEngine GravEngine;
+            internal Faction OwnerFaction;
+            internal bool SpawnedViaGravship;
+            internal bool ParentCanBePlayerHome;
+            internal bool ParentIsSettlement;
+        }
+
+        private sealed class LocationSnapshot
+        {
+            internal List<LocationInfo> Locations;
+            internal int Stamp = -1;
+        }
+
+        // Map classification changes only at the exact lifecycle transitions
+        // patched below. Consumers share one canonical-map result instead of
+        // walking the holder graph per role or render projection.
+        private static readonly VersionedSnapshotCache<Map, MapClassification>
+            mapClassifications = new VersionedSnapshotCache<Map, MapClassification>(
+                BuildMapClassification);
+
+        // Open-window location-list snapshot. Callers must never mutate it.
+        private static readonly Dictionary<Faction, LocationSnapshot>
+            locationSnapshots = new Dictionary<Faction, LocationSnapshot>(
+                ReferenceIdentityComparer<Faction>.Instance);
         private static int locationsMapCount = -1;
         [System.ThreadStatic] private static List<Thing> gravEngineSearch;
 
+        internal static int LocationRevision => mapClassifications.Revision;
+
         internal static void InvalidateLanguageCaches()
         {
-            locationsCache = null;
-            locationsStamp = -1;
-            locationsMapCount = -1;
+            locationSnapshots.Clear();
+        }
+
+        internal static void InvalidateClassification(Map map)
+        {
+            map = FloorMaps.Canonical(map);
+            if (map == null) return;
+            mapClassifications.Invalidate(map);
+            locationSnapshots.Clear();
+        }
+
+        internal static void InvalidateMapSet()
+        {
+            FloorMaps.ReleaseForTeardown();
+            mapClassifications.Clear();
+            locationSnapshots.Clear();
+            locationsMapCount = Find.Maps?.Count ?? -1;
         }
 
         internal static void ReleaseSnapshot()
         {
             InvalidateLanguageCaches();
+            mapClassifications.Clear();
+            locationsMapCount = -1;
             gravEngineSearch = null;
             FloorMaps.ReleaseForTeardown();
         }
 
-        internal static List<LocationInfo> Locations()
+        private static Faction ViewFaction =>
+            MP.enabled && MP.RealPlayerFaction != null
+                ? MP.RealPlayerFaction : Faction.OfPlayer;
+
+        internal static List<LocationInfo> Locations() => Locations(ViewFaction);
+
+        internal static List<LocationInfo> Locations(Faction faction)
         {
             var maps = Find.Maps;
-            if (locationsCache == null || locationsStamp != UiVersion.Current
-                || locationsMapCount != maps.Count)
+            if (locationsMapCount != maps.Count)
+                InvalidateMapSet();
+            if (faction == null) return new List<LocationInfo>();
+            if (!locationSnapshots.TryGetValue(faction, out var snapshot))
             {
-                locationsStamp = UiVersion.Current;
-                locationsMapCount = maps.Count;
-                locationsCache = BuildLocations();
+                snapshot = new LocationSnapshot();
+                locationSnapshots.Add(faction, snapshot);
             }
-            return locationsCache;
+            if (snapshot.Locations == null
+                || snapshot.Stamp != mapClassifications.Revision)
+            {
+                snapshot.Stamp = mapClassifications.Revision;
+                locationsMapCount = maps.Count;
+                snapshot.Locations = BuildLocations(faction);
+            }
+            return snapshot.Locations;
         }
 
-        private static List<LocationInfo> BuildLocations()
+        private static List<LocationInfo> BuildLocations(Faction faction)
         {
             var result = new List<LocationInfo>();
             var seen = new HashSet<string>();
             foreach (var map in Find.Maps)
             {
-                var place = PlaceOf(map, out var gravEngine);
+                var place = PlaceOf(map, faction, out var gravEngine);
                 if (!place.IsSettlement && !place.IsShip) continue;
                 // Floor maps canonicalize to their ground map's id: one
                 // location per stack.
@@ -76,39 +130,52 @@ namespace WorkRoles
 
         /// A gravship map that isn't parked at a settlement — a ship landed at
         /// one of the player's settlements counts as that settlement.
-        internal static bool IsShipMap(Map map) => PlaceOf(map).IsShip;
+        internal static bool IsShipMap(Map map) => PlaceOf(map, ViewFaction).IsShip;
 
-        internal static bool IsSettlementMap(Map map) => PlaceOf(map).IsSettlement;
+        internal static bool IsSettlementMap(Map map) =>
+            PlaceOf(map, ViewFaction).IsSettlement;
 
         /// The pawn's place for Core location-rule matching: settlement = home,
         /// not ship.
-        internal static PawnPlace PlaceOf(Pawn pawn) => PlaceOf(pawn.MapHeld);
+        internal static PawnPlace PlaceOf(Pawn pawn) =>
+            pawn == null ? new PawnPlace() : PlaceOf(pawn.MapHeld, pawn.Faction);
 
-        private static PawnPlace PlaceOf(Map map) =>
-            PlaceOf(map, out _);
+        private static PawnPlace PlaceOf(Map map, Faction faction) =>
+            PlaceOf(map, faction, out _);
 
         private static PawnPlace PlaceOf(
-            Map map, out Building_GravEngine gravEngine)
+            Map map, Faction faction, out Building_GravEngine gravEngine)
         {
             // Floor maps classify as their ground map: grav machinery must sit
             // in the ground substructure footprint, so the engine search stays
             // single-map.
             map = FloorMaps.Canonical(map);
-            gravEngine = FindGravEngineFresh(map);
-            bool hasEngine = gravEngine != null;
-            bool ship = hasEngine
-                && !(map?.Parent is RimWorld.Planet.Settlement);
-            bool playerHome = map != null
-                && (map.wasSpawnedViaGravShipLanding
-                    || (map.Parent != null
-                        && map.Parent.Faction == Faction.OfPlayer
-                        && map.Parent.def.canBePlayerHome)
-                    || hasEngine);
-            return new PawnPlace
+            if (map == null)
             {
-                LocationId = LocationId(map),
-                IsSettlement = playerHome && !ship,
-                IsShip = ship,
+                gravEngine = null;
+                return new PawnPlace();
+            }
+            MapClassification classification = mapClassifications.Get(map);
+            gravEngine = classification.GravEngine;
+            return FactionLocationClassifier.Classify(
+                LocationId(map),
+                faction != null && classification.OwnerFaction == faction,
+                classification.SpawnedViaGravship,
+                classification.ParentCanBePlayerHome,
+                classification.ParentIsSettlement,
+                gravEngine != null);
+        }
+
+        private static MapClassification BuildMapClassification(Map map)
+        {
+            Building_GravEngine gravEngine = FindGravEngineFresh(map);
+            return new MapClassification
+            {
+                GravEngine = gravEngine,
+                OwnerFaction = map?.Parent?.Faction ?? gravEngine?.Faction,
+                SpawnedViaGravship = map?.wasSpawnedViaGravShipLanding == true,
+                ParentCanBePlayerHome = map?.Parent?.def.canBePlayerHome == true,
+                ParentIsSettlement = map?.Parent is RimWorld.Planet.Settlement,
             };
         }
 
@@ -199,26 +266,42 @@ namespace WorkRoles
 
         internal static string CurrentLocationId() => LocationId(Find.CurrentMap);
 
+        internal static List<Pawn> PawnsOnMap(Map map)
+        {
+            var result = new List<Pawn>();
+            var faction = ViewFaction;
+            if (map == null || faction == null) return result;
+            foreach (var pawn in map.mapPawns.AllPawnsSpawned)
+                if (IsFactionColonist(pawn, faction)) result.Add(pawn);
+            return result;
+        }
+
+        private static bool IsFactionColonist(Pawn pawn, Faction faction) =>
+            pawn?.Faction == faction
+            && (pawn.IsFreeColonist || pawn.IsSlaveOfColony);
+
         /// Colonists and slaves within the scope (no babies): spawned map pawns,
         /// plus pawns travelling in player caravans under All.
         internal static List<Pawn> PawnsIn(ScopeOption scope)
         {
             var result = new List<Pawn>();
+            var faction = ViewFaction;
+            if (faction == null) return result;
             string currentId = CurrentLocationId();
             foreach (var map in Find.Maps)
             {
                 if (!ScopeEngine.Matches(scope, LocationId(map), currentId)) continue;
-                result.AddRange(map.mapPawns.FreeColonistsSpawned);
-                result.AddRange(map.mapPawns.SlavesOfColonySpawned);
+                foreach (var pawn in map.mapPawns.AllPawnsSpawned)
+                    if (IsFactionColonist(pawn, faction)) result.Add(pawn);
             }
             // Caravan pawns list under Everywhere and under the location they
             // departed from; rule matching still classifies them as caravanning.
             foreach (var caravan in Find.WorldObjects.Caravans)
             {
-                if (!caravan.IsPlayerControlled) continue;
+                if (caravan.Faction != faction) continue;
                 foreach (var pawn in caravan.PawnsListForReading)
                 {
-                    if (!pawn.IsFreeColonist && !pawn.IsSlaveOfColony) continue;
+                    if (!IsFactionColonist(pawn, faction)) continue;
                     if (scope.Kind == ScopeKind.All)
                     {
                         result.Add(pawn);

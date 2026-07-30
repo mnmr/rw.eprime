@@ -11,8 +11,8 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]No Priorities:[/b] A role is an ordered list of jobs (whole work types like Cooking or single jobs like Smelting). A colonist's roles combine into one clear work order: earlier roles win, and within a role, earlier jobs win. If no role mentions a job, the colonist never does it.
 [*][b]No Setup:[/b] Seeds pre-made roles covering every vanilla and official DLC work type. Auto-assigns roles to match existing priorities.
 [*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign [i]Emergency Harvester[/i] to half the colony at high priority but disabled, and when blight or a cold snap hits, one click re-tasks everyone to the fields.
-[*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
 [img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
+[*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
 [*][b]Modded Jobs:[/b] Work types and jobs added by other mods appear automatically, no compatibility patches needed.
 [*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day or at specific locations (settlements, the gravship, caravans).
 [*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
@@ -24,7 +24,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Import/Export:[/b] Easily share or backup your role setup. Import allows overwrite or merge.
 [*][b]Multiplayer Support:[/b] Fully RimWorld Multiplayer compatible.
 [*][b]Translation Ready:[/b] All text resources are read from resource files.
-[*][b]Designed for Performance:[/b] Work priorities are cached; auto-roles recompute every in-game hour (every 2500 ticks).
+[*][b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
 [/list]
 
 [h1]Worth Noting[/h1]
@@ -33,7 +33,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Combo Roles:[/b] Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
 [*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment).
 [*][b]Extra Roles:[/b] Training roles that enable role progression and convenience roles to make prioritization easier.
-[*][b]Modded Jobs:[/b] Jobs added by mods are unassigned by default; the role editor warns when a job isn't in any role. AllowTool jobs are assigned automatically (Haul urgently to Basics, Finish off to Herder/Hunter).
+[*][b]Modded Jobs:[/b] Jobs added by mods are unassigned by default; the role editor warns when a job isn't in any role. Jobs from AllowTool and Keyz' Allow Utilities are assigned to existing roles automatically.
 [/list]
 
 [h1]How It Works[/h1]
@@ -47,11 +47,12 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 
 [h1]Recommendation Logic[/h1]
 [list]
-[*][b]Colony Needs:[/b] Keeps essential roles covered using customizable minimum assignments.
+[*][b]Colony Needs:[/b] Keeps essential roles covered; configurable per role via recommendation tuning options.
 [*][b]Suggestions:[/b] Uses passions, genes, traits, skills/expertise and training paths; armed pawns also get skill-tiered Hunting recommendations.
 [*][b]Applying:[/b] Cherry-pick for one colonist or preview and apply colony-wide. Pin assignments that must stay untouched.
 [*][b]Protected:[/b] Auto-roles, pinned roles and blockers are never suggested, moved or removed.
 [*][b]Genetics:[/b] Fire-fearing pawns get Pyrophobe before Core.
+[*][b]Signal Visibility:[/b] Skill tooltips show every signal behind a recommendation verdict.
 [*][b]Full Spec:[/b] See [url=https://github.com/mnmr/rw.workroles#readme]README[/url] for full details.
 [/list]
 
@@ -60,8 +61,9 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 [*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 [*][b]Vanilla Skills Expanded / Alpha Skills:[/b] Expertise and passions are recommendation signals.
 [*][b]More Than Capable:[/b] Hated work becomes an Awful recommendation signal and is flagged on assigned roles.
+[*][b]MultiFloors / As above, so below:[/b] Floors on a single tile are treated as one location.
 [*][b]Colony Groups:[/b] Pawn groups appear in the colonist table's Group dropdown.
-[*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many others.
+[*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many others.
 [*]Multiplayer compatible.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
 [/list]

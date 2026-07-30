@@ -4,7 +4,7 @@ using WorkRoles.Core;
 
 namespace WorkRoles
 {
-    /// A seeded training path (label = path name), created once per save after
+    /// A seeded training path (path name derived from invariant defName), created once per save after
     /// roles land. Role references are RoleDef defNames; entries whose role is
     /// absent (DLC/mod gated) are skipped at seed time — no ConfigErrors for them.
     public class TrainingPathDef : Def

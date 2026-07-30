@@ -3,16 +3,12 @@ using HarmonyLib;
 using LudeonTK;
 using UnityEngine;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
     public static class WrText
     {
-        // GUIClip is Unity-internal; Unclip converts group-local to screen
-        // coordinates — matrix rotation inside a GUI window needs it (vanilla's
-        // UI.RotateAroundPivot only compensates for UI scale, not group offsets).
-        // Resolve lazily so a Unity-internal rename disables only inclined
-        // headers instead of making every WrText method unusable.
         private static Func<Vector2, Vector2> unclip;
         private static bool unclipResolved;
 
@@ -23,40 +19,31 @@ namespace WorkRoles.UI
             Rect columnRect,
             string label,
             Vector2 labelSize,
-            float degrees)
+            InclinedLabelGeometry geometry,
+            float degrees,
+            Color? labelColor = null)
         {
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
-            var rotated = new Rect(0f, 0f, columnRect.height, labelSize.y) { center = columnRect.center };
+            var rotated = new Rect(0f, 0f, labelSize.x, labelSize.y)
+            {
+                center = new Vector2(
+                    columnRect.xMax + geometry.AnchorToCenterX,
+                    columnRect.yMax + geometry.AnchorToCenterY)
+            };
 
-            // Offset so the label's bottom-left corner lands on the column's
-            // bottom-right after rotation.
             float theta = Mathf.Deg2Rad * degrees;
-            Vector2 center = rotated.center;
-            var cRelative = new Vector2(-rotated.width / 2f, -rotated.height / 2f);
-            var cPrime = new Vector2(
-                Mathf.Cos(theta) * cRelative.x - Mathf.Sin(theta) * cRelative.y + center.x,
-                Mathf.Sin(theta) * cRelative.x + Mathf.Cos(theta) * cRelative.y + center.y);
-            rotated.x += columnRect.xMax - cPrime.x;
-
-            if (!TryUnclip(rotated.center, out Vector2 pivot))
+            if (!TryApplyInclinedTransform(
+                    rotated.center, degrees, out Matrix4x4 originalMatrix))
             {
                 Text.Font = oldFont;
                 return;
             }
 
-            Matrix4x4 originalMatrix = GUI.matrix;
-            GUI.matrix = Matrix4x4.identity;
-            Matrix4x4 transform = originalMatrix;
-            transform *= Matrix4x4.TRS(pivot, Quaternion.identity, Vector3.one);
-            transform *= Matrix4x4.TRS(Vector3.zero, Quaternion.Euler(0f, 0f, -degrees), Vector3.one);
-            transform *= Matrix4x4.TRS(-pivot, Quaternion.identity, Vector3.one);
-            GUI.matrix = transform;
-
             var oldColor = GUI.color;
             var oldAnchor = Text.Anchor;
             bool oldWrap = Text.WordWrap;
-            GUI.color = new Color(0.8f, 0.8f, 0.8f);
+            GUI.color = labelColor ?? new Color(0.8f, 0.8f, 0.8f);
             Text.Anchor = TextAnchor.MiddleLeft;
             Text.WordWrap = false;
             // Text sits 2px SCREEN-right of the line's position so it clears the
@@ -66,13 +53,68 @@ namespace WorkRoles.UI
             textRect.x += 2f * Mathf.Cos(theta);
             textRect.y += 2f * Mathf.Sin(theta);
             Widgets.Label(textRect, label);
-            Widgets.DrawLine(new Vector2(rotated.xMax, rotated.yMax),
-                new Vector2(rotated.xMin, rotated.yMax), new Color(1f, 1f, 1f, 0.2f), 1f);
+            GUI.color = oldColor;
+            Vector2 lineStart = new Vector2(rotated.xMin, rotated.yMax);
+            Widgets.DrawLine(lineStart,
+                new Vector2(lineStart.x + columnRect.height, lineStart.y),
+                new Color(1f, 1f, 1f, 0.2f), 1f);
             Text.WordWrap = oldWrap;
             Text.Anchor = oldAnchor;
             GUI.color = oldColor;
             GUI.matrix = originalMatrix;
             Text.Font = oldFont;
+        }
+
+        /// Invisible hit target transformed exactly like the inclined label, so
+        /// clicking the visible text selects its column rather than whichever
+        /// vertical strip happens to lie beneath that part of the label.
+        public static bool InclinedLabelButton(
+            Rect columnRect,
+            Vector2 labelSize,
+            InclinedLabelGeometry geometry,
+            float degrees)
+        {
+            var rotated = new Rect(0f, 0f, labelSize.x, labelSize.y)
+            {
+                center = new Vector2(
+                    columnRect.xMax + geometry.AnchorToCenterX,
+                    columnRect.yMax + geometry.AnchorToCenterY)
+            };
+            if (!TryApplyInclinedTransform(
+                    rotated.center, degrees, out Matrix4x4 originalMatrix))
+                return false;
+            bool clicked = Widgets.ButtonInvisible(rotated);
+            GUI.matrix = originalMatrix;
+            return clicked;
+        }
+
+        private static bool TryApplyInclinedTransform(
+            Vector2 localPivot,
+            float degrees,
+            out Matrix4x4 originalMatrix)
+        {
+            // Compact Work Tab's critical workaround: GUIClip.Unclip must run
+            // while GUI.matrix is identity. That converts the group-local pivot
+            // into the true screen coordinate expected by the matrix rotation.
+            originalMatrix = GUI.matrix;
+            GUI.matrix = Matrix4x4.identity;
+            if (!TryUnclip(localPivot, out Vector2 screenPivot))
+            {
+                GUI.matrix = originalMatrix;
+                return false;
+            }
+
+            Matrix4x4 transform = originalMatrix;
+            transform *= Matrix4x4.TRS(
+                screenPivot, Quaternion.identity, Vector3.one);
+            transform *= Matrix4x4.TRS(
+                Vector3.zero,
+                Quaternion.Euler(0f, 0f, -degrees),
+                Vector3.one);
+            transform *= Matrix4x4.TRS(
+                -screenPivot, Quaternion.identity, Vector3.one);
+            GUI.matrix = transform;
+            return true;
         }
 
         private static bool TryUnclip(Vector2 point, out Vector2 result)
@@ -122,7 +164,9 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
             Vector2 labelSize = Text.CalcSize(label);
             Text.Font = oldFont;
-            InclinedLabel(columnRect, label, labelSize, degrees);
+            InclinedLabel(columnRect, label, labelSize,
+                InclinedLabelGeometry.Calculate(labelSize.x, labelSize.y, degrees),
+                degrees);
         }
 
         /// Pixel-snapped 1px lines, tinted by the ambient GUI.color: an

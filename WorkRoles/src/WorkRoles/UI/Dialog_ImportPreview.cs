@@ -160,7 +160,7 @@ namespace WorkRoles.UI
                 || (orderInclude && doc.recommendationOrder.Count > 0);
             if (DrawPreviewFooter(inRect, canApply))
             {
-                RoleCommands.ApplyImport(new ImportSelection
+                var selection = new ImportSelection
                 {
                     xml = xml,
                     palette = paletteInclude,
@@ -173,7 +173,9 @@ namespace WorkRoles.UI
                     paletteRows = SelectedIndices(paletteMergeUi),
                     roleRows = SelectedIndices(roleMergeUi),
                     pathRows = SelectedIndices(pathMergeUi),
-                });
+                };
+                RoleIO.ResolveImportLocations(selection, doc, ColonyScope.Locations());
+                RoleCommands.ApplyImport(selection);
                 Close();
             }
         }

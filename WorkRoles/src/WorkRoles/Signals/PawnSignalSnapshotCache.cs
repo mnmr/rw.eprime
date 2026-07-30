@@ -24,6 +24,14 @@ namespace WorkRoles.Signals
             return snapshots.Get(pawn);
         }
 
+        internal static void Invalidate(Pawn pawn)
+        {
+            snapshots.Invalidate(pawn);
+            // Global integration inputs are captured with the first rebuilt
+            // owner in an explicit generation. A targeted owner refresh keeps
+            // that shared generation stable.
+        }
+
         internal static void Clear()
         {
             snapshots.Clear();

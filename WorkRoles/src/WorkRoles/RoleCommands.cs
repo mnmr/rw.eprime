@@ -36,7 +36,7 @@ namespace WorkRoles
         {
             if (Store == null || def == null) return null;
             string label = CatalogNameRules.Unique(
-                def.label, Store.roles, existing => existing.label);
+                SeededDefIdentity.RoleLabel(def), Store.roles, existing => existing.label);
             if (label == null) return null;
             var (hasColor, color) = def.ResolvedColor();
             var role = new Role
@@ -61,9 +61,9 @@ namespace WorkRoles
             role.trainingWaivers = RoleHolderPolicy.WithTraining(
                 range.min, def.minHolders.Waivers);
             if (!def.holderScale.NullOrEmpty())
-                role.holderScaleName = def.holderScale;
+                role.holderScaleName = SeededDefIdentity.ScaleName(def);
             if (!def.group.NullOrEmpty())
-                role.groupId = ResolveOrCreateGroup(def.group).id;
+                role.groupId = ResolveOrCreateGroup(SeededDefIdentity.GroupLabel(def)).id;
             if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
                 role.activeHours = RoleFile.BitsToHours(def.activeHours);
             foreach (var location in def.locations)
@@ -94,11 +94,13 @@ namespace WorkRoles
             if (Store == null || selection == null || selection.xml.NullOrEmpty()) return;
             var doc = RoleIO.Parse(selection.xml);
             if (doc.error != null) return;
+            var resolvedLocations = ImportLocationResolver.BuildMap(
+                selection.locationFileTokens, selection.locationRuntimeTokens);
             string summary = RoleIO.Apply(Store, doc,
                 selection.palette, selection.paletteOverwrite, selection.paletteRows,
                 selection.roles, selection.rolesOverwrite, selection.roleRows,
                 selection.paths, selection.pathsOverwrite, selection.pathRows,
-                selection.order);
+                selection.order, resolvedLocations);
             UiVersion.Bump();
             UI.WrToast.Show(summary, MessageTypeDefOf.PositiveEvent);
         }
@@ -427,7 +429,7 @@ namespace WorkRoles
             Store.roles.Remove(role);
             Store.InvalidateRoleIndex();
             SweepEmptyGroups();
-            CompiledJobOrders.ReconcileAll(keepers);
+            CompiledJobOrders.EnqueueReconciles(keepers);
         }
 
         // ----- Role groups (purely organizational: no priority impact) -----
@@ -593,7 +595,7 @@ namespace WorkRoles
         /// Role-level mutations can revoke or demote work the holders are
         /// already doing; reconcile every holder after the invalidation.
         private static void ReconcileHolders(int roleId) =>
-            CompiledJobOrders.ReconcileAll(Store.PawnsWithRole(roleId));
+            CompiledJobOrders.EnqueueReconciles(Store.PawnsWithRole(roleId));
 
         [SyncMethod]
         public static void ToggleRoleGlobal(int roleId)
@@ -812,7 +814,7 @@ namespace WorkRoles
             AssignRoleDirect(pawn, roleId, index);
             // Assigning a blocker role can veto the pawn's current job; the
             // engine path stays interruption-free (load-time seeding).
-            CompiledJobOrders.ReconcileInFlightWork(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
         /// Engine-initiated path (coverage generation): creates a role without going through
@@ -842,10 +844,12 @@ namespace WorkRoles
         internal static void AssignRoleDirect(Pawn pawn, int roleId, int index = -1)
         {
             if (Store == null || pawn == null || Store.RoleById(roleId) == null) return;
+            bool wasManaged = Store.IsManaged(pawn);
             var set = Store.SetFor(pawn);
             if (set.assignments.Any(a => a.roleId == roleId)) return;
             if (index < 0 || index > set.assignments.Count) index = set.assignments.Count;
             set.assignments.Insert(index, new RoleAssignment { roleId = roleId });
+            if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
             CompiledJobOrders.Invalidate(pawn);
         }
 
@@ -861,9 +865,13 @@ namespace WorkRoles
                 return;
             }
             set.assignments.RemoveAll(a => a.roleId == roleId);
-            if (set.assignments.Count == 0) Store.pawnSets.Remove(pawn);
+            if (set.assignments.Count == 0)
+            {
+                Store.UnmanagePawn(pawn);
+                return;
+            }
             CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.ReconcileInFlightWork(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
         [SyncMethod]
@@ -875,7 +883,7 @@ namespace WorkRoles
             set.assignments.RemoveAt(from);
             set.assignments.Insert(to, assignment);
             CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.ReconcileInFlightWork(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
         [SyncMethod]
@@ -890,10 +898,13 @@ namespace WorkRoles
                 // Enabling a globally-disabled role on one pawn means "run it here only":
                 // the role comes back on globally, restricted to this pawn.
                 role.enabled = true;
-                foreach (var otherSet in Store.pawnSets.Values)
-                    foreach (var other in otherSet.assignments)
+                foreach (var pair in Store.pawnSets)
+                {
+                    if (pair.Key?.Faction != pawn.Faction) continue;
+                    foreach (var other in pair.Value.assignments)
                         if (other.roleId == roleId)
                             other.enabled = false;
+                }
                 assignment.enabled = true;
                 CompiledJobOrders.InvalidateRole(roleId);
                 // Every other holder just lost this role's work.
@@ -902,7 +913,7 @@ namespace WorkRoles
             }
             assignment.enabled = !assignment.enabled;
             CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.ReconcileInFlightWork(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
         /// Pinned assignments are the player's placement: fixes never touch them.
@@ -937,9 +948,11 @@ namespace WorkRoles
                 Store.UnmanagePawn(pawn);
                 return;
             }
+            bool wasManaged = Store.IsManaged(pawn);
             Store.SetFor(pawn).assignments = assignments;
+            if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
             CompiledJobOrders.Invalidate(pawn);
-            CompiledJobOrders.ReconcileInFlightWork(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
         }
     }
 }

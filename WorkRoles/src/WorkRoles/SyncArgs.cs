@@ -17,6 +17,10 @@ namespace WorkRoles
         public List<int> paletteRows = new List<int>();
         public List<int> roleRows = new List<int>();
         public List<int> pathRows = new List<int>();
+        /// Portable file token -> issuer-resolved runtime token. Empty runtime
+        /// strings record unresolved names so other clients never retry locally.
+        public List<string> locationFileTokens = new List<string>();
+        public List<string> locationRuntimeTokens = new List<string>();
     }
 
     /// Single synced arg for CommitScaleEdit: scale rows travel as codec

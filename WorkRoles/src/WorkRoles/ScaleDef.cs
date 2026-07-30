@@ -5,7 +5,7 @@ using WorkRoles.Core;
 namespace WorkRoles
 {
     /// A shipped holder scale. Seeded once per save as an ordinary editable
-    /// scale named by the label; players may rename, edit or delete it and the
+    /// scale named from its invariant defName; players may rename, edit or delete it and the
     /// change sticks (only the code-seeded Never scale is immutable).
     public class ScaleDef : Def
     {
@@ -19,7 +19,7 @@ namespace WorkRoles
         {
             var scale = new HolderScale
             {
-                Name = label,
+                Name = SeededDefIdentity.ScaleName(this),
                 Min = HolderScaleCodec.DecodeRow(min, 0),
                 Train = HolderScaleCodec.DecodeRow(train, 0),
             };

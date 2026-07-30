@@ -69,6 +69,19 @@ namespace WorkRoles.Core
             for (int i = 0; i < Pawns.Count; i++) invalidatePawn(Pawns[i]);
             complete();
         }
+
+        /// Applies only runtime effects of an hour transition. Timed rules can
+        /// change a pawn's compiled order, but they cannot change role data
+        /// derived solely from job entries and definitions.
+        public void ApplyRuntime(Action<TPawn> invalidatePawn, Action complete)
+        {
+            if (invalidatePawn == null) throw new ArgumentNullException(nameof(invalidatePawn));
+            if (complete == null) throw new ArgumentNullException(nameof(complete));
+            if (RoleIds.Count == 0) return;
+
+            for (int i = 0; i < Pawns.Count; i++) invalidatePawn(Pawns[i]);
+            complete();
+        }
     }
 
     public static class TimedRoleInvalidationPlanner

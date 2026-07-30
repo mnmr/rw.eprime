@@ -16,12 +16,14 @@ namespace WorkRoles.UI
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
         private readonly object structuredTipOwner = new object();
+        private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
         private const float TabHeight = 32f;
 
         public MainTabWindow_WorkRoles()
         {
+            drawGrip = DrawGripContents;
             observedLanguageRevision = LanguageChangeCoordinator.Revision;
             resizeable = false;
             draggable = false;   // main tab windows are not draggable
@@ -82,18 +84,20 @@ namespace WorkRoles.UI
         /// right and height UP — the bottom is pinned. Double-click = auto.
         internal const float GripSize = 18f;
         private const int GripWindowId = 147723001;
+        private Rect gripScreen;
 
         public override void ExtraOnGUI()
         {
             base.ExtraOnGUI();
-            var gripScreen = new Rect(windowRect.xMax - GripSize - 2f, windowRect.y + 2f, GripSize, GripSize);
+            gripScreen = new Rect(windowRect.xMax - GripSize - 2f,
+                windowRect.y + 2f, GripSize, GripSize);
             // Dialog layer: clicking our window refocuses it to the top of
             // GameUI, which would bury a same-layer grip.
             Find.WindowStack.ImmediateWindow(GripWindowId, gripScreen, WindowLayer.Dialog,
-                () => GripContents(gripScreen), doBackground: false, absorbInputAroundWindow: false, 0f);
+                drawGrip, doBackground: false, absorbInputAroundWindow: false, 0f);
         }
 
-        private void GripContents(Rect gripScreen)
+        private void DrawGripContents()
         {
             var settings = WorkRolesMod.Settings;
             var local = new Rect(0f, 0f, GripSize, GripSize);

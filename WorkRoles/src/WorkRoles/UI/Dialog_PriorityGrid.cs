@@ -14,6 +14,7 @@ namespace WorkRoles.UI
     public class Dialog_PriorityGrid : Window
     {
         private readonly List<Pawn> pawns;
+        private readonly PriorityGridSortState sortState;
         private readonly List<WorkTypeDef> workTypes = new List<WorkTypeDef>();
         private readonly RevisionPairGate columnCacheRevisions = new RevisionPairGate();
         private float headerH;
@@ -22,7 +23,10 @@ namespace WorkRoles.UI
         private readonly string[] pawnNames;
         private string[] columnLabels;
         private Vector2[] columnLabelSizes;
+        private InclinedLabelGeometry[] columnLabelGeometries;
         private Vector2 phantomLabelSize;
+        private InclinedLabelGeometry phantomLabelGeometry;
+        private float headerRunOut;
         private string[] columnTips;
         private string titleLabel;
         private string rawModeLabel;
@@ -40,10 +44,12 @@ namespace WorkRoles.UI
         private const float HeaderRunOutPadding = 20f;
         private const float ScrollChromeH = 24f;
         private const float MaxScreenHeightFraction = 0.9f;
+        private static readonly Color SortedHeaderColor = new Color(1f, 0.82f, 0.25f);
 
         public Dialog_PriorityGrid(List<Pawn> pawns)
         {
             this.pawns = pawns;
+            sortState = new PriorityGridSortState(pawns.Count);
             showVanilla = RoleStore.Current?.reportVanillaPriorities == true;
             using (new TextBlock(GameFont.Small))
             {
@@ -64,8 +70,7 @@ namespace WorkRoles.UI
             {
                 EnsureColumnCache();
                 // The last label rises past its column; reserve its run-out.
-                float labelRunOut = HeaderHorizontalRunOut(headerH);
-                float w = Mathf.Min(NameW + workTypes.Count * ColW + labelRunOut
+                float w = Mathf.Min(NameW + workTypes.Count * ColW + headerRunOut
                         + Margin * 2f + 20f,
                     Verse.UI.screenWidth * 0.95f);
                 var heightLayout = PriorityGridHeightLayout.Calculate(
@@ -82,10 +87,15 @@ namespace WorkRoles.UI
         public override void DoWindowContents(Rect inRect)
         {
             EnsureColumnCache();
+            var titleRect = new Rect(inRect.x, inRect.y, inRect.width, TitleH);
+            var headerRect = new Rect(inRect.x, titleRect.yMax, inRect.width, headerH);
+            var rowsRect = new Rect(inRect.x, headerRect.yMax, inRect.width,
+                Mathf.Max(0f, inRect.yMax - headerRect.yMax));
+
             if (Event.current.type == EventType.Repaint)
             {
                 Text.Font = GameFont.Medium;
-                Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, TitleH), titleLabel);
+                Widgets.Label(titleRect, titleLabel);
             }
             Text.Font = GameFont.Small;
 
@@ -93,28 +103,22 @@ namespace WorkRoles.UI
 
             if (numeric)
             {
-                var toggleRect = new Rect(inRect.xMax - modeToggleW - 26f, inRect.y + 2f,
+                var toggleRect = new Rect(titleRect.xMax - modeToggleW - 26f, titleRect.y + 2f,
                     modeToggleW, 28f);
                 if (Widgets.ButtonText(toggleRect, showVanilla ? vanillaModeLabel : rawModeLabel))
+                {
                     showVanilla = !showVanilla;
+                    RefreshSort();
+                }
             }
 
-            // Header pinned above the scroll view: the rotated labels are only
-            // position-stable in an unscrolled group (their GUIClip.Unclip pivot
-            // breaks under a scroll offset), and fixed headers match vanilla.
-            var headerRect = new Rect(inRect.x, inRect.y + TitleH, inRect.width, headerH);
-            var outRect = new Rect(inRect.x, headerRect.yMax, inRect.width,
-                inRect.height - TitleH - headerH);
             var viewRect = new Rect(0f, 0f,
-                NameW + workTypes.Count * ColW + HeaderHorizontalProjection(headerH),
+                NameW + workTypes.Count * ColW + headerRunOut,
                 pawns.Count * RowH);
 
-            if (Event.current.type == EventType.Repaint)
-                DrawHeader(headerRect);
+            Widgets.BeginScrollView(rowsRect, ref scroll, viewRect);
 
-            Widgets.BeginScrollView(outRect, ref scroll, viewRect);
-
-            var scrollViewport = new Rect(scroll.x, scroll.y, outRect.width, outRect.height);
+            var scrollViewport = new Rect(scroll.x, scroll.y, rowsRect.width, rowsRect.height);
             var visibleBodyColumns = UniformViewportRange.Calculate(
                 itemCount: workTypes.Count,
                 itemExtent: ColW,
@@ -135,6 +139,13 @@ namespace WorkRoles.UI
                     scrollViewport.x < NameW);
             }
             Widgets.EndScrollView();
+
+            HandleHeaderInteractions(headerRect);
+
+            // Draw the pinned header after the row panel so it remains the top
+            // visual layer even if a future label style reaches the shared edge.
+            if (Event.current.type == EventType.Repaint)
+                DrawHeader(headerRect);
         }
 
         private void EnsureColumnCache()
@@ -143,6 +154,10 @@ namespace WorkRoles.UI
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             if (!columnCacheRevisions.ShouldRefresh(languageRevision, definitionRevision)) return;
 
+            // Column indices are definition-order dependent. A cache rebuild is
+            // rare, so discard the transient sort instead of risking its index
+            // now referring to a different work type.
+            sortState.Reset();
             workTypes.Clear();
             foreach (WorkTypeDef workType in WorkTypeDefsUtility.WorkTypeDefsInPriorityOrder)
                 if (workType.visible)
@@ -150,16 +165,19 @@ namespace WorkRoles.UI
 
             columnLabels = new string[workTypes.Count];
             columnLabelSizes = new Vector2[workTypes.Count];
+            columnLabelGeometries = new InclinedLabelGeometry[workTypes.Count];
             columnTips = new string[workTypes.Count];
             titleLabel = "WR_PriorityGridTitle".Translate();
             rawModeLabel = "WR_GridModeRaw".Translate();
             vanillaModeLabel = "WR_GridModeVanilla".Translate();
 
-            // Inclined labels need diagonal headroom: width*sin + height*cos.
-            float maxLabel = 0f;
+            float maxVerticalExtent = 0f;
+            float maxRightRunOut = 0f;
             using (new TextBlock(GameFont.Small))
             {
                 phantomLabelSize = Text.CalcSize("");
+                phantomLabelGeometry = InclinedLabelGeometry.Calculate(
+                    phantomLabelSize.x, phantomLabelSize.y, LabelAngle);
                 modeToggleW = Mathf.Max(WrText.FitWidth(rawModeLabel),
                     WrText.FitWidth(vanillaModeLabel)) + 24f;
                 for (int c = 0; c < workTypes.Count; c++)
@@ -169,23 +187,40 @@ namespace WorkRoles.UI
                     columnTips[c] = workTypes[c].gerundLabel.CapitalizeFirst()
                         + (workTypes[c].description.NullOrEmpty()
                             ? "" : "\n" + workTypes[c].description);
-                    columnLabelSizes[c] = Text.CalcSize(columnLabels[c]);
-                    Vector2 size = columnLabelSizes[c];
-                    maxLabel = Mathf.Max(maxLabel,
-                        size.x * Mathf.Sin(Mathf.Deg2Rad * LabelAngle)
-                        + size.y * Mathf.Cos(Mathf.Deg2Rad * LabelAngle));
+                    Vector2 size = Text.CalcSize(columnLabels[c]);
+                    size.x = WrText.FitWidth(columnLabels[c]);
+                    columnLabelSizes[c] = size;
+                    var geometry = InclinedLabelGeometry.Calculate(
+                        size.x, size.y, LabelAngle);
+                    columnLabelGeometries[c] = geometry;
+                    maxVerticalExtent = Mathf.Max(maxVerticalExtent, geometry.VerticalExtent);
+                    maxRightRunOut = Mathf.Max(maxRightRunOut, geometry.RightRunOut);
                 }
             }
-            headerH = Mathf.Clamp(maxLabel + 8f, 40f, 140f);
+            headerH = Mathf.Max(maxVerticalExtent + 8f, 40f);
+            float separatorRunOut = headerH * Mathf.Cos(Mathf.Deg2Rad * LabelAngle);
+            headerRunOut = Mathf.Max(maxRightRunOut, separatorRunOut)
+                + HeaderRunOutPadding;
+        }
+
+        private void HandleHeaderInteractions(Rect headerRect)
+        {
+            for (int c = 0; c < workTypes.Count; c++)
+            {
+                float x = headerRect.x + NameW + c * ColW - scroll.x;
+                var headRect = new Rect(x, headerRect.y, ColW, headerRect.height);
+                TooltipHandler.TipRegion(headRect, columnTips[c]);
+                if (WrText.InclinedLabelButton(headRect, columnLabelSizes[c],
+                        columnLabelGeometries[c], LabelAngle))
+                    ToggleSort(c);
+            }
         }
 
         private void DrawHeader(Rect headerRect)
         {
-            Widgets.BeginGroup(headerRect);
             // Inclined labels project to the right of their base columns. Expand
             // the viewport left by that exact run-out so the last label remains
             // visible while scrolling through the reserved trailing header area.
-            float headerRunOut = HeaderHorizontalRunOut(headerH);
             var visibleHeaderColumns = UniformViewportRange.Calculate(
                 itemCount: workTypes.Count,
                 itemExtent: ColW,
@@ -195,20 +230,26 @@ namespace WorkRoles.UI
             // Each label draws only its own trailing 45° line; the first label
             // needs the line BEFORE it drawn separately (an empty phantom label
             // one column to the left).
-            WrText.InclinedLabel(new Rect(NameW - ColW - scroll.x, 0f, ColW, headerH), "",
-                phantomLabelSize, LabelAngle);
+            WrText.InclinedLabel(new Rect(
+                    headerRect.x + NameW - ColW - scroll.x,
+                    headerRect.y,
+                    ColW,
+                    headerRect.height),
+                "", phantomLabelSize, phantomLabelGeometry, LabelAngle);
             for (int c = visibleHeaderColumns.Start; c < visibleHeaderColumns.EndExclusive; c++)
             {
-                float x = NameW + c * ColW - scroll.x;
-                var headRect = new Rect(x, 0f, ColW, headerH);
-                WrText.InclinedLabel(headRect, columnLabels[c], columnLabelSizes[c], LabelAngle);
-                TooltipHandler.TipRegion(headRect, columnTips[c]);
+                float x = headerRect.x + NameW + c * ColW - scroll.x;
+                var headRect = new Rect(x, headerRect.y, ColW, headerRect.height);
+                Color? labelColor = sortState.SortedColumnIndex == c
+                    ? SortedHeaderColor
+                    : (Color?)null;
+                WrText.InclinedLabel(headRect, columnLabels[c], columnLabelSizes[c],
+                    columnLabelGeometries[c], LabelAngle, labelColor);
                 // Header stub of the column separator; the body draws the rest.
                 GUI.color = new Color(1f, 1f, 1f, 0.12f);
-                WrText.LineVertical(x, headerH - 2f, 2f);
+                WrText.LineVertical(x, headerRect.yMax - 2f, 2f);
                 GUI.color = Color.white;
             }
-            Widgets.EndGroup();
         }
 
         private void DrawVisibleColumnChrome(
@@ -236,7 +277,8 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             for (int r = visibleRows.Start; r < visibleRows.EndExclusive; r++)
             {
-                var pawn = pawns[r];
+                int sourceRow = sortState.RowOrder[r];
+                var pawn = pawns[sourceRow];
                 float y = r * RowH;
                 if (r % 2 == 0)
                     Widgets.DrawBoxSolid(new Rect(0f, y, viewWidth, RowH),
@@ -245,7 +287,7 @@ namespace WorkRoles.UI
                 if (pawnNamesVisible)
                 {
                     Text.Anchor = TextAnchor.MiddleLeft;
-                    Widgets.Label(new Rect(2f, y, NameW - 6f, RowH), pawnNames[r]);
+                    Widgets.Label(new Rect(2f, y, NameW - 6f, RowH), pawnNames[sourceRow]);
                     Text.Anchor = TextAnchor.UpperLeft;
                 }
 
@@ -258,11 +300,7 @@ namespace WorkRoles.UI
                     // x smears the box textures at every UI scale.
                     var box = new Rect(NameW + c * ColW + Mathf.Floor((ColW - 25f) / 2f), y + (RowH - 25f) / 2f, 25f, 25f);
                     DrawWorkBoxBackground(box, pawn, wt);
-                    int priority = managed
-                        ? (showVanilla
-                            ? CompiledJobOrders.VanillaPriorityFor(pawn, wt)
-                            : CompiledJobOrders.PriorityFor(pawn, wt))
-                        : pawn.workSettings?.GetPriority(wt) ?? 0;
+                    int priority = PriorityFor(pawn, wt, store);
                     if (priority <= 0) continue;
                     if (!numeric)
                     {
@@ -287,11 +325,37 @@ namespace WorkRoles.UI
             }
         }
 
-        private static float HeaderHorizontalProjection(float headerHeight) =>
-            headerHeight / Mathf.Tan(Mathf.Deg2Rad * LabelAngle);
+        private void ToggleSort(int columnIndex)
+        {
+            sortState.Toggle(columnIndex, PrioritiesFor(workTypes[columnIndex]));
+        }
 
-        private static float HeaderHorizontalRunOut(float headerHeight) =>
-            HeaderHorizontalProjection(headerHeight) + HeaderRunOutPadding;
+        private void RefreshSort()
+        {
+            if (sortState.SortedColumnIndex is int columnIndex)
+                sortState.Refresh(PrioritiesFor(workTypes[columnIndex]));
+        }
+
+        private int[] PrioritiesFor(WorkTypeDef workType)
+        {
+            var priorities = new int[pawns.Count];
+            var store = RoleStore.Current;
+            for (int r = 0; r < pawns.Count; r++)
+                priorities[r] = pawns[r].WorkTypeIsDisabled(workType)
+                    ? 0
+                    : PriorityFor(pawns[r], workType, store);
+            return priorities;
+        }
+
+        private int PriorityFor(Pawn pawn, WorkTypeDef workType, RoleStore store)
+        {
+            bool managed = store != null && store.IsManaged(pawn);
+            return managed
+                ? (showVanilla
+                    ? CompiledJobOrders.VanillaPriorityFor(pawn, workType)
+                    : CompiledJobOrders.PriorityFor(pawn, workType))
+                : pawn.workSettings?.GetPriority(workType) ?? 0;
+        }
 
         /// Vanilla's WidgetsWork.DrawWorkBoxBackground is private; this is its
         /// look-alike (skill-shaded background lerp + passion overlay), minus

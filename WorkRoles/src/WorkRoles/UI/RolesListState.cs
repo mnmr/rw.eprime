@@ -15,9 +15,11 @@ namespace WorkRoles.UI
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
         private static int collapseRevision;
 
-        private List<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> displayRows;
+        private List<(RoleSection section, Role role, Role parent, int depth,
+            bool virtualRow, bool invalid, string label)> displayRows;
         private RoleListSnapshot snapshot;
         private int displayStamp = -1;
+        private int displayLocationRevision = -1;
         private int displayCollapseRevision = -1;
         private bool displayNested;
         private string displaySearch;
@@ -34,6 +36,7 @@ namespace WorkRoles.UI
             displayRows = null;
             snapshot = null;
             displayStamp = -1;
+            displayLocationRevision = -1;
             displayCollapseRevision = -1;
             displayNested = false;
             displaySearch = null;
@@ -61,31 +64,50 @@ namespace WorkRoles.UI
                         ToggleSectionCollapsed(section.key);
 
             if (displayRows == null || displayStamp != UiVersion.Current
+                || displayLocationRevision != ColonyScope.LocationRevision
                 || displayCollapseRevision != collapseRevision || displayNested != nested
                 || displaySearch != RoleSearch || displayJobFilter != JobFilterDefName)
             {
                 displayStamp = UiVersion.Current;
+                displayLocationRevision = ColonyScope.LocationRevision;
                 displayCollapseRevision = collapseRevision;
                 displayNested = nested;
                 displaySearch = RoleSearch;
                 displayJobFilter = JobFilterDefName;
-                displayRows = new List<(RoleSection, Role, Role, int, bool)>();
+                displayRows = new List<(RoleSection, Role, Role, int, bool, bool, string)>();
+                var liveLocationIds = new HashSet<string>(
+                    ColonyScope.Locations().Select(location => location.Id));
                 if (filtered)
                 {
                     foreach (Role role in store.roles.Where(MatchesFilters))
-                        displayRows.Add((null, role, null, 0, false));
+                        displayRows.Add(Row(null, role, null, 0, false));
                 }
                 else
                 {
                     foreach (RoleSection section in sections)
                     {
-                        displayRows.Add((section, null, null, 0, false));
+                        displayRows.Add(Row(section, null, null, 0, false));
                         if (!IsSectionCollapsed(section.key))
                             foreach (var (member, parent, depth, virtualRow) in section.rows)
-                                displayRows.Add((section, member, parent, depth, virtualRow));
+                                displayRows.Add(Row(section, member, parent, depth, virtualRow));
                     }
                 }
                 snapshot = new RoleListSnapshot(displayRows, filtered);
+
+                (RoleSection section, Role role, Role parent, int depth,
+                    bool virtualRow, bool invalid, string label) Row(
+                    RoleSection section, Role role, Role parent, int depth,
+                    bool virtualRow)
+                {
+                    if (role == null)
+                        return (section, null, parent, depth, virtualRow, false, null);
+                    return (section, role, parent, depth, virtualRow,
+                        RoleLocationValidity.IsInvalid(role.entries.Count,
+                            role.locationTokens, liveLocationIds),
+                        role.enabled
+                            ? role.label
+                            : "WR_RoleLabelOff".Translate(role.label).ToString());
+                }
             }
             return snapshot;
         }
@@ -273,14 +295,16 @@ namespace WorkRoles.UI
     internal sealed class RoleListSnapshot
     {
         internal RoleListSnapshot(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> rows,
+            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
+                bool virtualRow, bool invalid, string label)> rows,
             bool filtered)
         {
             Rows = rows;
             Filtered = filtered;
         }
 
-        internal IReadOnlyList<(RoleSection section, Role role, Role parent, int depth, bool virtualRow)> Rows { get; }
+        internal IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
+            bool virtualRow, bool invalid, string label)> Rows { get; }
         internal bool Filtered { get; }
     }
 

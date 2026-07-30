@@ -23,19 +23,15 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 - **Multiplayer Support:** fully RimWorld Multiplayer compatible.
 - **Translation Ready:** all text resources are read from resource files.
 - **Rules Engine:** configure roles to only be enabled at certain times of day or at specific locations (settlements, the gravship, caravans).
-
-## Performance
-
-- **Designed for Performance:** everything is pre-computed at assignment.
-- **Cache Invalidation:** if you use auto-roles, priorities get invalidated and recomputed every game hour (every 2500 ticks; not measurable).
+- **Designed for Performance:** extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
 
 ## Worth noting
 
 - **Seeded Roles:** an initial role set is seeded into the game, covering all detected work types and jobs.
 - **Combo Roles:** various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
-- **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobe before Core (which has Firefighting).
+- **Blocker Roles:** used to specify things that pawns will never do (for jobs in any subsequent role assignment), e.g. so you can put Pyrophobe before Core (to block its Firefighting).
 - **Extra Roles:** training roles that enable role progression and convenience roles to make prioritization easier.
-- **Modded Jobs:** jobs added by mods are unassigned by default. The role editor shows a warning when it detects a job that isn't in any role. AllowTool jobs are automatically assigned (Haul urgently to Basics, Finish off to Herder/Hunter).
+- **Modded Jobs:** jobs added by mods are unassigned by default. The role editor shows a warning when it detects a job that isn't in any role. Jobs from AllowTool and Keyz' Allow Utilities are automatically assigned to existing roles.
 
 ## How it works
 
@@ -51,7 +47,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 
 ## Recommendation logic
 
-- **Colony Needs:** ensures that every essential role is assigned to at least one pawn. Roles are configured to be essential by specifying a min assignment requirement.
+- **Colony Needs:** ensures that every essential role is assigned to someone. Configurable per role as 'recommendation tuning' options.
 - **Intelligent Defaults:** WorkRoles seeds roles with reasonable defaults (but you can override these to set your own requirements).
 - **Training Paths:** design your own role progressions or use the default set to flexibly configure how pawns should progress as their skill improves.
 - **Shiny Happy People:** training paths are suggested based on colonist genes, traits, passions and expertise, to make sure pawns primarily do what they like or are good at.
@@ -60,7 +56,8 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - **Fix My Colony:** apply recommendations across all colonists, with a preview to see what would change.
 - **Role Pinning:** pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
 - **Untouched:** auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
-- **Genetics:** pawns terrified of fire automatically get Pyrophobe (blocker role) placed before Core (which has Firefighting).
+- **Genetics:** pawns terrified of fire automatically get Pyrophobe (blocker role) placed before Core (to block its Firefighting).
+- **Signal Visibility:** colonist skill tooltips show the full signal set used to compute the recommendation verdict.
 
 ## Compatibility
 
@@ -68,8 +65,9 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 - Integrates with Vanilla Skills Expanded and Alpha Skills when installed: expertise and passions are recommendation signals.
 - Integrates with More Than Capable when installed: hated work becomes an Awful recommendation signal and is flagged on assigned roles.
+- Integrates with MultiFloors and "As above, so below" when installed: floors on a single tile are treated as a single location.
 - Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
-- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense and many, many others.
+- Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many, many others.
 - Multiplayer compatible.
 
 ## Known incompatible

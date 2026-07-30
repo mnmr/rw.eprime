@@ -13,6 +13,7 @@
   <WorkRoles.RoleDef>
     <defName>WS_NoFirefighting</defName>
     <label>Pyrophobe</label>
+    <seedLabel>Pyrophobe</seedLabel>
     <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
     <blocker>true</blocker>
     <colorRef>rose-800</colorRef>
@@ -119,6 +120,7 @@
   <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
     <defName>WS_Childminder</defName>
     <label>Caretaker</label>
+    <seedLabel>Caretaker</seedLabel>
     <description>Childcare and teaching.</description>
     <colorRef>cyan-700</colorRef>
     <group>Social</group>
@@ -338,6 +340,7 @@
   <WorkRoles.RoleDef>
     <defName>WS_Repairer</defName>
     <label>Handyman</label>
+    <seedLabel>Handyman</seedLabel>
     <description>All construction work except constructing new buildings.</description>
     <colorRef>yellow-800</colorRef>
     <group>Indoors</group>
@@ -478,6 +481,7 @@
   <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
     <defName>WS_DarkStudier</defName>
     <label>Anomalist</label>
+    <seedLabel>Anomalist</seedLabel>
     <description>Study of anomalous entities.</description>
     <colorRef>slate-700</colorRef>
     <group>Research</group>

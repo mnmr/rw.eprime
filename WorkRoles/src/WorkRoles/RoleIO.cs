@@ -144,17 +144,24 @@ namespace WorkRoles
             return (ship ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Label;
         }
 
-        /// Import direction: resolve exported names against this save's
-        /// locations (case-insensitive); unresolved names drop out.
-        private static string RuntimeLocationToken(string fileToken)
+        /// Resolves every portable location name before the synced import is
+        /// issued. The parallel lists travel with the command, including empty
+        /// values for unresolved names, so remote clients never consult their
+        /// language- or faction-local location view.
+        internal static void ResolveImportLocations(ImportSelection selection,
+            RoleFileDocument doc, IReadOnlyList<WorkRoles.Core.LocationInfo> locations)
         {
-            if (fileToken == LocationRules.Settlements || fileToken == LocationRules.Caravans) return fileToken;
-            bool ship = fileToken.StartsWith(LocationRules.ShipPrefix);
-            string name = fileToken.Substring(fileToken.IndexOf(':') + 1);
-            var loc = ColonyScope.Locations().FirstOrDefault(l => l.IsShip == ship
-                && string.Equals(l.Label, name, System.StringComparison.OrdinalIgnoreCase));
-            if (loc == null) return null;
-            return (ship ? LocationRules.ShipPrefix : LocationRules.SettlementPrefix) + loc.Id;
+            if (selection == null || doc?.roles == null) return;
+            var seen = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (var role in doc.roles)
+                if (role?.locations != null)
+                    foreach (string fileToken in role.locations)
+                    {
+                        if (fileToken.NullOrEmpty() || !seen.Add(fileToken)) continue;
+                        selection.locationFileTokens.Add(fileToken);
+                        selection.locationRuntimeTokens.Add(
+                            ImportLocationResolver.Resolve(fileToken, locations) ?? "");
+                    }
         }
 
         /// Writes xml to path, creating directories; returns an error or null.
@@ -365,7 +372,8 @@ namespace WorkRoles
             bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
             bool rolesInclude, bool rolesOverwrite, List<int> roleRows,
             bool pathsInclude, bool pathsOverwrite, List<int> pathRows,
-            bool orderInclude)
+            bool orderInclude,
+            IReadOnlyDictionary<string, string> resolvedLocations)
         {
             if (!rolesInclude)
             {
@@ -545,7 +553,9 @@ namespace WorkRoles
                     target.enabled = row.role.enabled;
                     target.activeHours = row.role.activeHours;
                     target.locationTokens = row.role.locations
-                        .Select(RuntimeLocationToken).Where(t => t != null).ToList();
+                        .Select(token => ImportLocationResolver.FromMap(
+                            token, resolvedLocations))
+                        .Where(token => token != null).ToList();
                     target.holderMode = row.role.holderMode;
                     target.holderScaleName = row.role.holderScale;
                     target.holderRangeSet = row.role.holderRangeSet;
