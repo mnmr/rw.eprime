@@ -81,6 +81,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 - No-op mutations must not advance any revision.
 - Multi-domain mutations must report and bump only the domains they actually changed.
 - Structural and user-authored configuration edits must become visible immediately, including while paused.
+- An active tooltip display session is intentionally frozen: it must retain the content and geometry captured when the session began, even if those dependencies change. The changed dependencies must be observed when the tooltip is reopened or a different token starts a new display session.
 - Correctness-sensitive invalidation must never be delayed to satisfy a throttle.
 - Time-driven invalidation must fire on computed game-tick boundaries, never on per-frame or per-tick polling.
 - The canonical boundary is the 2500-tick hour flip via `FixedTickBoundaryGate`.
@@ -202,6 +203,7 @@ Cache tests must prove, where applicable:
 - the configured refresh tick rebuilds data;
 - equal refreshed contents preserve identity;
 - structural edits update immediately while paused;
+- an active tooltip display session remains unchanged across dependency changes, and reopening it observes those changes;
 - language and definition reloads invalidate measurement-dependent geometry;
 - width changes invalidate wrapped measurements without invalidating unrelated data;
 - teardown removes owned registrations, resources, and obsolete entries safely.
@@ -226,8 +228,8 @@ A change is not complete until all applicable items are true:
 Canonical verification commands:
 
 ```powershell
-dotnet build -c Release
-dotnet test tests/WorkRoles.Core.Tests
+dotnet build -c Release --no-restore
+dotnet test tests/WorkRoles.Core.Tests --no-restore
 ```
 
 Building never deploys: in-game verification requires `pwsh scripts/deploy.ps1` and a game restart.

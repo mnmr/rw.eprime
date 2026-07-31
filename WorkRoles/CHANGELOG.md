@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.3.1 — 2026-07-31
+ 
+- Fixed: Improved performance of drag operations and tooltip rendering.
+- Fixed: Fixed an edge case for work invalidation when gravship travel crossed time zones.
+
 ## 1.3.0 — 2026-07-30
 
 - Added: Support for Keyz' Allow Utilities mod (recommended replacement for AllowTool).

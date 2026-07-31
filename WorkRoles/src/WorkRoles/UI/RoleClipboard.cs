@@ -17,6 +17,10 @@ namespace WorkRoles.UI
             owner, RoleStore.Current, copied, Snapshot);
 
         public static void CopyFrom(RoleStore store, PawnRoleSet set)
+            => CopyFromSnapshot(store, set?.assignments);
+
+        internal static void CopyFromSnapshot(RoleStore store,
+            IReadOnlyList<RoleAssignment> assignments)
         {
             if (store == null)
             {
@@ -25,9 +29,9 @@ namespace WorkRoles.UI
             }
 
             owner = store;
-            copied = set == null
+            copied = assignments == null
                 ? new List<RoleAssignment>()
-                : set.assignments
+                : assignments
                     .Where(assignment => assignment != null)
                     .Select(Snapshot)
                     .ToList();

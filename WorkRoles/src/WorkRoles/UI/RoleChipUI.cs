@@ -15,6 +15,35 @@ namespace WorkRoles.UI
         AutoOff     // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
     }
 
+    internal readonly struct RoleChipRenderData
+    {
+        internal RoleChipRenderData(int roleId, string label, Color baseColor,
+            bool blocker, bool hasTimeRule, bool hasLocationRule, bool hasRules)
+        {
+            RoleId = roleId;
+            Label = label;
+            BaseColor = baseColor;
+            Blocker = blocker;
+            HasTimeRule = hasTimeRule;
+            HasLocationRule = hasLocationRule;
+            HasRules = hasRules;
+        }
+
+        internal static RoleChipRenderData From(Role role) =>
+            new RoleChipRenderData(role.id, role.label,
+                role.hasCustomColor ? role.color : RoleChipUI.DefaultChipColor,
+                role.blocker, role.activeHours != Role.AllHours,
+                role.locationTokens.Count > 0, role.HasRules);
+
+        internal int RoleId { get; }
+        internal string Label { get; }
+        internal Color BaseColor { get; }
+        internal bool Blocker { get; }
+        internal bool HasTimeRule { get; }
+        internal bool HasLocationRule { get; }
+        internal bool HasRules { get; }
+    }
+
     public static class RoleChipUI
     {
         public const float Height = 24f;
@@ -44,14 +73,21 @@ namespace WorkRoles.UI
         /// would be redundant.
         private static int MarkerCount(Role role, bool pinned,
             RoleAssignmentWarningSeverity warningSeverity) =>
+            MarkerCount(RoleChipRenderData.From(role), pinned, warningSeverity);
+
+        private static int MarkerCount(RoleChipRenderData role, bool pinned,
+            RoleAssignmentWarningSeverity warningSeverity) =>
             (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
-            + (role.blocker ? 1 : 0)
-            + (role.activeHours != Role.AllHours ? 1 : 0)
-            + (role.locationTokens.Count > 0 ? 1 : 0)
+            + (role.Blocker ? 1 : 0)
+            + (role.HasTimeRule ? 1 : 0)
+            + (role.HasLocationRule ? 1 : 0)
             + (PinShown(role, pinned) ? 1 : 0);
 
         private static bool PinShown(Role role, bool pinned) =>
             pinned && !role.blocker && !role.HasRules;
+
+        private static bool PinShown(RoleChipRenderData role, bool pinned) =>
+            pinned && !role.Blocker && !role.HasRules;
 
         /// One role drag ghost for every tab. It uses the normal chip renderer
         /// and adds a red veil and outline only when the current target rejects
@@ -80,6 +116,13 @@ namespace WorkRoles.UI
         public static float WidthFor(Role role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
+            => WidthFor(RoleChipRenderData.From(role), showRemove, display,
+                abbrev, pinned, warningSeverity);
+
+        internal static float WidthFor(RoleChipRenderData role, bool showRemove,
+            ChipDisplay display = ChipDisplay.Normal, string abbrev = null,
+            bool pinned = false,
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
         {
             Text.Font = GameFont.Small;
             int markers = MarkerCount(role, pinned, warningSeverity);
@@ -89,7 +132,7 @@ namespace WorkRoles.UI
                 ? (markers > 0 ? 0f : 10f)
                 : display == ChipDisplay.Compact && abbrev != null
                     ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
-                    : WrText.FitWidth(role.label);
+                    : WrText.FitWidth(role.Label);
             return labelW + PadFor(display) * 2f
                 + (showRemove ? RemoveSize + 2f : 0f)
                 + markers * (RemoveSize + 2f);
@@ -122,10 +165,20 @@ namespace WorkRoles.UI
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false)
+            => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
+                dragSource, onClick, interactive, display, abbrev, pinned,
+                warningSeverity, paint, activeOutline);
+
+        internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
+            ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
+            bool interactive = true, ChipDisplay display = ChipDisplay.Normal,
+            string abbrev = null, bool pinned = false,
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
+            bool paint = true, bool activeOutline = false)
         {
             if (paint)
             {
-                Color bg = role.hasCustomColor ? role.color : DefaultChipColor;
+                Color bg = role.BaseColor;
 
                 switch (style)
                 {
@@ -154,7 +207,7 @@ namespace WorkRoles.UI
                     Outline = activeOutline ? ActiveOutlineColor : OutlineColor,
                     LabelColor = labelColor,
                     Label = display == ChipDisplay.Minimal ? null
-                        : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.label,
+                        : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.Label,
                     ShowRemove = showRemove,
                     LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
                         + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
@@ -183,9 +236,9 @@ namespace WorkRoles.UI
                                 ? WorkRolesTex.RoleCapabilityPartial
                                 : WorkRolesTex.RoleCapabilityAll,
                             tinted: false);
-                    if (role.blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
-                    if (role.activeHours != Role.AllHours) Marker(WorkRolesTex.TimeMarker, tinted: true);
-                    if (role.locationTokens.Count > 0) Marker(WorkRolesTex.LocationMarker, tinted: true);
+                    if (role.Blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
+                    if (role.HasTimeRule) Marker(WorkRolesTex.TimeMarker, tinted: true);
+                    if (role.HasLocationRule) Marker(WorkRolesTex.LocationMarker, tinted: true);
                     // The pin texture has less padding than the others; drawn
                     // smaller so it doesn't dominate the strip.
                     if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
@@ -217,7 +270,7 @@ namespace WorkRoles.UI
                     return ChipClick.Remove;
                 }
                 // Register press; click fires in ResolveMouseUp if no drag threshold reached.
-                RoleDrag.OnPress(dragControlId, role.id, dragSource, onClick);
+                RoleDrag.OnPress(dragControlId, role.RoleId, dragSource, onClick);
                 e.Use();
             }
             return ChipClick.None;

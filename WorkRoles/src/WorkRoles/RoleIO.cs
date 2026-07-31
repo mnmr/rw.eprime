@@ -182,7 +182,7 @@ namespace WorkRoles
 
         // ----- Colors -----
 
-        private static Color ToUnity(ColorRgb c) => new Color(c.R, c.G, c.B);
+        internal static Color ToUnity(ColorRgb c) => new Color(c.R, c.G, c.B);
         private static ColorRgb ToRgb(Color c) => new ColorRgb(c.r, c.g, c.b);
 
         /// Built-in swatch -> its Tailwind name ("red-800"); custom-slot color ->
@@ -243,7 +243,7 @@ namespace WorkRoles
         /// slot name, then the file's palette, then a PaletteDef, then hex
         /// (undocumented leniency for hand-edited files); unknown names fall back
         /// to slate-600. Null = no custom color.
-        private static (bool has, Color color) ResolveColor(string colorRef, RoleStore store, RoleFileDocument doc)
+        internal static (bool has, Color color) ResolveColor(string colorRef, RoleStore store, RoleFileDocument doc)
         {
             if (colorRef.NullOrEmpty()) return (false, default);
             var swatches = SwatchPalette.Swatches;
@@ -358,17 +358,21 @@ namespace WorkRoles
             return OverwriteDeletes(store, RoleRows(store, doc, overwrite: true));
         }
 
-        private static List<Role> OverwriteDeletes(RoleStore store, List<RoleRow> rows)
+        internal static List<Role> OverwriteDeletes(RoleStore store, List<RoleRow> rows)
         {
             var kept = new HashSet<Role>(rows.Where(r => r.existing != null)
                 .Select(r => r.existing));
             return store.roles.Where(r => !kept.Contains(r)).ToList();
         }
 
+    }
+
+    public static partial class RoleCommands
+    {
         /// Applies an import. Selections are row indices into PaletteMergeRows /
         /// RoleRows / doc.trainingPaths; ignored in overwrite modes (wholesale).
         /// Returns a summary.
-        public static string Apply(RoleStore store, RoleFileDocument doc,
+        private static string ApplyImportToStore(RoleStore store, RoleFileDocument doc,
             bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
             bool rolesInclude, bool rolesOverwrite, List<int> roleRows,
             bool pathsInclude, bool pathsOverwrite, List<int> pathRows,
@@ -408,7 +412,7 @@ namespace WorkRoles
                 store.customSwatchNames.Clear();
                 foreach (var (name, rgb) in doc.palette.Take(RoleStore.MaxCustomSwatches))
                 {
-                    store.customSwatches.Add(ToUnity(rgb));
+                    store.customSwatches.Add(RoleIO.ToUnity(rgb));
                     store.customSwatchNames.Add(name);
                     paletteChanges++;
                 }
@@ -424,7 +428,7 @@ namespace WorkRoles
             }
             else if (paletteInclude)
             {
-                var rows = PaletteMergeRows(store, doc);
+                var rows = RoleIO.PaletteMergeRows(store, doc);
                 foreach (int index in paletteRows ?? new List<int>())
                 {
                     if (index < 0 || index >= rows.Count) continue;
@@ -451,7 +455,7 @@ namespace WorkRoles
 
             if (rolesInclude)
             {
-                var plannedRoles = RoleRows(store, doc, rolesOverwrite);
+                var plannedRoles = RoleIO.RoleRows(store, doc, rolesOverwrite);
                 runtimeRoles = plannedRoles
                     .Where(row => row.existing != null)
                     .ToDictionary(row => row.role, row => row.existing);
@@ -508,7 +512,7 @@ namespace WorkRoles
                     : (roleRows ?? new List<int>());
                 if (rolesOverwrite)
                 {
-                    foreach (var role in OverwriteDeletes(store, plannedRoles))
+                    foreach (var role in RoleIO.OverwriteDeletes(store, plannedRoles))
                     {
                         RoleCommands.DeleteRole(role.id);
                         deleted++;
@@ -516,7 +520,7 @@ namespace WorkRoles
                     // Matched renames may swap names. Remove every changing
                     // target from the live name namespace before final labels
                     // are validated and assigned in deterministic file order.
-                    foreach (RoleRow row in plannedRoles)
+                    foreach (RoleIO.RoleRow row in plannedRoles)
                         if (row.existing != null && !row.preservesExistingLabel
                             && !row.displayLabel.NullOrEmpty())
                             row.existing.label = null;
@@ -530,7 +534,7 @@ namespace WorkRoles
                             row.displayLabel, store.roles,
                             existing => existing.label, row.existing))
                         continue;
-                    var (hasColor, color) = ResolveColor(row.role.colorRef, store, doc);
+                    var (hasColor, color) = RoleIO.ResolveColor(row.role.colorRef, store, doc);
                     var target = row.existing;
                     if (target == null)
                     {
@@ -590,7 +594,7 @@ namespace WorkRoles
                     var (ids, mins, maxes) = RoleFile.ResolvePathEntries(filePath, doc,
                         fileRole => runtimeRoles.TryGetValue(fileRole, out var runtime)
                             ? runtime.id : (int?)null);
-                    var (hasPathColor, pathColor) = ResolveColor(filePath.colorRef, store, doc);
+                    var (hasPathColor, pathColor) = RoleIO.ResolveColor(filePath.colorRef, store, doc);
                     // A NEW path (names are not identities); unknown names
                     // dropped already, an unknown anchor means no anchor. A
                     // full-value duplicate of an existing path skips: importing
@@ -672,7 +676,7 @@ namespace WorkRoles
         {
             if (name.NullOrEmpty()) return null;
             foreach (var (n, c) in doc.palette)
-                if (n == name) return ToUnity(c);
+                if (n == name) return RoleIO.ToUnity(c);
             return null;
         }
 

@@ -228,10 +228,19 @@ namespace WorkRoles.UI
 
         private static void DrawHelpParagraph(Rect rect, string text)
         {
-            Text.Font = GameFont.Small;
-            GUI.color = WrStyle.CaptionText;
-            Widgets.Label(rect, text);
-            GUI.color = Color.white;
+            GameFont previousFont = Text.Font;
+            Color previousColor = GUI.color;
+            try
+            {
+                Text.Font = GameFont.Small;
+                GUI.color = WrStyle.CaptionText;
+                Widgets.Label(rect, text);
+            }
+            finally
+            {
+                GUI.color = previousColor;
+                Text.Font = previousFont;
+            }
         }
 
         private static Rect Offset(Rect r, Vector2 by) =>

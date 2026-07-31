@@ -13,9 +13,16 @@ namespace WorkRoles.Core
     /// A place colony pawns can be: a player-home map (ship or settlement).
     public sealed class LocationInfo
     {
-        public string Id;     // stable per-session id (map unique id)
-        public string Label;  // display name (settlement name / ship name)
-        public bool IsShip;
+        public LocationInfo(string id, string label, bool isShip)
+        {
+            Id = id;
+            Label = label;
+            IsShip = isShip;
+        }
+
+        public string Id { get; }     // stable per-session id (map unique id)
+        public string Label { get; }  // display name (settlement name / ship name)
+        public bool IsShip { get; }
     }
 
     public sealed class ScopeOption

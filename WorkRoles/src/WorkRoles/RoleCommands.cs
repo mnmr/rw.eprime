@@ -8,7 +8,7 @@ using WorkRoles.Core;
 
 namespace WorkRoles
 {
-    public static class RoleCommands
+    public static partial class RoleCommands
     {
         private static RoleStore Store => RoleStore.Current;
 
@@ -96,7 +96,7 @@ namespace WorkRoles
             if (doc.error != null) return;
             var resolvedLocations = ImportLocationResolver.BuildMap(
                 selection.locationFileTokens, selection.locationRuntimeTokens);
-            string summary = RoleIO.Apply(Store, doc,
+            string summary = ApplyImportToStore(Store, doc,
                 selection.palette, selection.paletteOverwrite, selection.paletteRows,
                 selection.roles, selection.rolesOverwrite, selection.roleRows,
                 selection.paths, selection.pathsOverwrite, selection.pathRows,
@@ -115,10 +115,10 @@ namespace WorkRoles
         {
             if (Store == null || selection == null) return;
             var restored = Seeding.RestoreSelected(selection);
+            if (restored.Count == 0) return;
             UiVersion.Bump();
-            if (restored.Count > 0)
-                UI.WrToast.Show("WR_RolesRestored".Translate(restored.ToCommaList()),
-                    MessageTypeDefOf.PositiveEvent);
+            UI.WrToast.Show("WR_RolesRestored".Translate(restored.ToCommaList()),
+                MessageTypeDefOf.PositiveEvent);
         }
 
         /// Vanilla's manual-priorities flag — per-save game state whose only
@@ -148,6 +148,8 @@ namespace WorkRoles
         public static void SetRecommendationOrder(List<int> roleIds)
         {
             if (Store == null) return;
+            if (TrainingPathMutationPolicy.IntSequenceEqual(
+                    Store.recommendationOrder, roleIds)) return;
             Store.recommendationOrder = roleIds ?? new List<int>();
             UiVersion.Bump();
         }
@@ -162,6 +164,7 @@ namespace WorkRoles
             if (Store == null || edit == null || edit.targetName.NullOrEmpty()) return;
             string targetName = edit.targetName.Trim();
             var target = Store.ScaleByName(targetName);
+            bool changed = false;
             if (target == null)
             {
                 var source = Store.ScaleByName(edit.sourceName);
@@ -173,20 +176,38 @@ namespace WorkRoles
                     for (int i = 0; i < HolderScale.Bands; i++)
                         target.Max[i] = RoleHolderRange.Uncapped;
                 Store.holderScales.Add(target);
+                changed = true;
             }
-            if (!target.Preset)
+            if (!target.Preset && (edit.min != null || edit.train != null
+                || edit.max != null))
             {
+                HolderScale candidate = target.Copy();
                 if (edit.min != null)
-                    target.Min = HolderScaleCodec.DecodeRow(edit.min, 0);
+                    candidate.Min = HolderScaleCodec.DecodeRow(edit.min, 0);
                 if (edit.train != null)
-                    target.Train = HolderScaleCodec.DecodeRow(edit.train, 0);
+                    candidate.Train = HolderScaleCodec.DecodeRow(edit.train, 0);
                 if (edit.max != null)
-                    target.Max = HolderScaleCodec.DecodeRow(
+                    candidate.Max = HolderScaleCodec.DecodeRow(
                         edit.max, RoleHolderRange.Uncapped);
-                target.Normalize();
+                candidate.Normalize();
+                if (!target.SameValuesAs(candidate))
+                {
+                    target.Min = candidate.Min;
+                    target.Train = candidate.Train;
+                    target.Max = candidate.Max;
+                    changed = true;
+                }
             }
             if (edit.roleId >= 0 && FindRole(edit.roleId) is Role role)
-                role.holderScaleName = target.Name;
+            {
+                if (!string.Equals(role.holderScaleName, target.Name,
+                        System.StringComparison.OrdinalIgnoreCase))
+                {
+                    role.holderScaleName = target.Name;
+                    changed = true;
+                }
+            }
+            if (!changed) return;
             UiVersion.Bump();
         }
 
@@ -194,7 +215,9 @@ namespace WorkRoles
         public static void SetRoleScale(int roleId, string scaleName)
         {
             var role = FindRole(roleId);
-            if (role == null || Store.ScaleByName(scaleName) == null) return;
+            if (role == null || Store.ScaleByName(scaleName) == null
+                || string.Equals(role.holderScaleName, scaleName,
+                    System.StringComparison.OrdinalIgnoreCase)) return;
             role.holderScaleName = scaleName;
             UiVersion.Bump();
         }
@@ -293,7 +316,7 @@ namespace WorkRoles
             var role = FindRole(roleId);
             if (role == null) return;
             int training = RoleHolderPolicy.WithTraining(role.minHolders, value);
-            if (role.trainingWaivers == training) return;
+            if (role.holderRangeSet && role.trainingWaivers == training) return;
             role.trainingWaivers = training;
             role.holderRangeSet = true;
             UiVersion.Bump();
@@ -312,7 +335,10 @@ namespace WorkRoles
         public static void RenameTrainingPath(int pathId, string name)
         {
             var path = Store?.PathById(pathId);
-            if (path == null || name.NullOrEmpty() || path.name == name) return;
+            name = name?.Trim();
+            if (path == null || name.NullOrEmpty()
+                || string.Equals(path.name, name,
+                    System.StringComparison.Ordinal)) return;
             path.name = name;
             UiVersion.Bump();
         }
@@ -323,6 +349,10 @@ namespace WorkRoles
         {
             var path = Store?.PathById(pathId);
             if (path == null) return;
+            if (TrainingPathMutationPolicy.ColorEqual(
+                    path.hasCustomColor,
+                    path.color.r, path.color.g, path.color.b, path.color.a,
+                    hasColor, color.r, color.g, color.b, color.a)) return;
             path.hasCustomColor = hasColor;
             path.color = hasColor ? color : UnityEngine.Color.white;
             UiVersion.Bump();
@@ -350,6 +380,11 @@ namespace WorkRoles
                 }
             if (roleIds.Count > 0
                 && !SkillProgressionMath.Validate(roleIds.Count, bandMins, bandMaxes)) return;
+            IReadOnlyList<int> normalizedMins = roleIds.Count == 0 ? null : bandMins;
+            IReadOnlyList<int> normalizedMaxes = roleIds.Count == 0 ? null : bandMaxes;
+            if (TrainingPathMutationPolicy.BandsEqual(
+                    path.roleIds, path.bandMins, path.bandMaxes,
+                    roleIds, normalizedMins, normalizedMaxes)) return;
             path.roleIds = roleIds;
             path.bandMins = roleIds.Count == 0 ? new List<int>() : bandMins;
             path.bandMaxes = roleIds.Count == 0 ? new List<int>() : bandMaxes;
@@ -484,10 +519,18 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
+            int groupCount = Store.groups.Count;
             var group = ResolveOrCreateGroup(groupName);
             if (group == null) return;
-            foreach (var moved in MovingBlock(role, withChildren))
-                moved.groupId = group.id;
+            List<Role> moving = MovingBlock(role, withChildren);
+            bool changed = Store.groups.Count != groupCount;
+            foreach (var moved in moving)
+                if (moved.groupId != group.id)
+                {
+                    moved.groupId = group.id;
+                    changed = true;
+                }
+            if (!changed) return;
             SweepEmptyGroups();
             UiVersion.Bump();
         }
@@ -500,17 +543,40 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
+            int groupCount = Store.groups.Count;
             var group = ResolveOrCreateGroup(groupName);
             if (group == null) return;
             var moving = MovingBlock(role, withChildren);
-            foreach (var moved in moving)
-                moved.groupId = group.id;
             var before = beforeRoleId >= 0 ? FindRole(beforeRoleId) : null;
+            List<Role> reordered = null;
             if (before == null || !moving.Contains(before))
             {
-                Store.roles.RemoveAll(moving.Contains);
-                int insertAt = before != null ? Store.roles.IndexOf(before) : Store.roles.Count;
-                Store.roles.InsertRange(insertAt, moving);
+                reordered = Store.roles.Where(candidate =>
+                    !moving.Contains(candidate)).ToList();
+                int insertAt = before != null
+                    ? reordered.IndexOf(before) : reordered.Count;
+                reordered.InsertRange(insertAt, moving);
+            }
+            bool changed = Store.groups.Count != groupCount;
+            for (int i = 0; i < moving.Count && !changed; i++)
+                changed = moving[i].groupId != group.id;
+            bool orderChanged = false;
+            if (reordered != null)
+            {
+                for (int i = 0; i < reordered.Count; i++)
+                    if (!ReferenceEquals(reordered[i], Store.roles[i]))
+                    {
+                        orderChanged = true;
+                        break;
+                    }
+            }
+            if (!changed && !orderChanged) return;
+            for (int i = 0; i < moving.Count; i++)
+                moving[i].groupId = group.id;
+            if (orderChanged)
+            {
+                Store.roles.Clear();
+                Store.roles.AddRange(reordered);
                 Store.InvalidateRoleIndex();
             }
             SweepEmptyGroups();
@@ -523,6 +589,8 @@ namespace WorkRoles
             var group = Store?.GroupById(groupId);
             name = name?.Trim();
             if (group == null || groupId == RoleGroup.DefaultId
+                || string.Equals(group.label, name,
+                    System.StringComparison.Ordinal)
                 || !GroupNameRules.IsAvailable(
                     name, Store.groups, existing => existing.label, group)) return;
             group.label = name;
@@ -536,19 +604,28 @@ namespace WorkRoles
             var groups = Store?.groups;
             if (groups == null || from < 0 || from >= groups.Count || to < 0 || to >= groups.Count || from == to) return;
             if (groups[from].id == RoleGroup.DefaultId) return;
-            var group = groups[from];
-            groups.RemoveAt(from);
-            groups.Insert(to, group);
-            if (groups.Count > 1 && groups[0].id != RoleGroup.DefaultId)
+            var reordered = new List<RoleGroup>(groups);
+            var group = reordered[from];
+            reordered.RemoveAt(from);
+            reordered.Insert(to, group);
+            if (reordered.Count > 1
+                && reordered[0].id != RoleGroup.DefaultId)
             {
-                int defaultIdx = groups.FindIndex(g => g.id == RoleGroup.DefaultId);
+                int defaultIdx = reordered.FindIndex(g =>
+                    g.id == RoleGroup.DefaultId);
                 if (defaultIdx > 0)
                 {
-                    var def = groups[defaultIdx];
-                    groups.RemoveAt(defaultIdx);
-                    groups.Insert(0, def);
+                    var def = reordered[defaultIdx];
+                    reordered.RemoveAt(defaultIdx);
+                    reordered.Insert(0, def);
                 }
             }
+            bool changed = false;
+            for (int i = 0; i < groups.Count && !changed; i++)
+                changed = !ReferenceEquals(groups[i], reordered[i]);
+            if (!changed) return;
+            groups.Clear();
+            groups.AddRange(reordered);
             UiVersion.Bump();
         }
 
@@ -557,7 +634,9 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             label = label?.Trim();
-            if (role == null || !CatalogNameRules.IsAvailable(
+            if (role == null || string.Equals(role.label, label,
+                    System.StringComparison.Ordinal)
+                || !CatalogNameRules.IsAvailable(
                     label, Store.roles, existing => existing.label, role)) return;
             role.label = label;
             UiVersion.Bump();
@@ -567,7 +646,10 @@ namespace WorkRoles
         public static void SetRoleColor(int roleId, UnityEngine.Color color)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || TrainingPathMutationPolicy.ColorEqual(
+                    role.hasCustomColor,
+                    role.color.r, role.color.g, role.color.b, role.color.a,
+                    true, color.r, color.g, color.b, color.a)) return;
             role.color = color;
             role.hasCustomColor = true;
         }
@@ -577,7 +659,7 @@ namespace WorkRoles
         public static void SetRoleAutoAssign(int roleId, bool value)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || role.autoAssign == value) return;
             role.autoAssign = value;
             UiVersion.Bump();
         }
@@ -587,9 +669,17 @@ namespace WorkRoles
         public static void SetCustomSwatch(int index, UnityEngine.Color color)
         {
             if (Store == null || index < 0 || index >= RoleStore.MaxCustomSwatches) return;
+            if (index < Store.customSwatches.Count)
+            {
+                UnityEngine.Color current = Store.customSwatches[index];
+                if (TrainingPathMutationPolicy.ColorEqual(true,
+                        current.r, current.g, current.b, current.a,
+                        true, color.r, color.g, color.b, color.a)) return;
+            }
             while (Store.customSwatches.Count <= index)
                 Store.customSwatches.Add(UnityEngine.Color.clear);
             Store.customSwatches[index] = color;
+            UiVersion.Bump();
         }
 
         /// Role-level mutations can revoke or demote work the holders are
@@ -798,7 +888,8 @@ namespace WorkRoles
         public static void MoveEntry(int roleId, int from, int to)
         {
             var role = FindRole(roleId);
-            if (role == null || from < 0 || from >= role.entries.Count || to < 0 || to >= role.entries.Count) return;
+            if (role == null || from < 0 || from >= role.entries.Count
+                || to < 0 || to >= role.entries.Count || from == to) return;
             var entry = role.entries[from];
             role.entries.RemoveAt(from);
             role.entries.Insert(to, entry);
@@ -811,7 +902,7 @@ namespace WorkRoles
         [SyncMethod]
         public static void AssignRole(Pawn pawn, int roleId, int index = -1)
         {
-            AssignRoleDirect(pawn, roleId, index);
+            if (!AssignRoleDirect(pawn, roleId, index)) return;
             // Assigning a blocker role can veto the pawn's current job; the
             // engine path stays interruption-free (load-time seeding).
             CompiledJobOrders.EnqueueReconcile(pawn);
@@ -841,16 +932,19 @@ namespace WorkRoles
 
         /// Engine-initiated path (seeding, joiner auto-assign): runs inside the synced
         /// simulation on every client, so it must NOT go through sync interception.
-        internal static void AssignRoleDirect(Pawn pawn, int roleId, int index = -1)
+        internal static bool AssignRoleDirect(Pawn pawn, int roleId,
+            int index = -1)
         {
-            if (Store == null || pawn == null || Store.RoleById(roleId) == null) return;
+            if (Store == null || pawn == null || Store.RoleById(roleId) == null)
+                return false;
             bool wasManaged = Store.IsManaged(pawn);
             var set = Store.SetFor(pawn);
-            if (set.assignments.Any(a => a.roleId == roleId)) return;
+            if (set.assignments.Any(a => a.roleId == roleId)) return false;
             if (index < 0 || index > set.assignments.Count) index = set.assignments.Count;
             set.assignments.Insert(index, new RoleAssignment { roleId = roleId });
             if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
             CompiledJobOrders.Invalidate(pawn);
+            return true;
         }
 
         [SyncMethod]
@@ -859,6 +953,9 @@ namespace WorkRoles
             // TryGetValue, not SetFor: a removal against an unmanaged pawn must not
             // create (and scribe) an empty set for it.
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
+            int assignmentIndex = set.assignments.FindIndex(
+                assignment => assignment.roleId == roleId);
+            if (assignmentIndex < 0) return;
             if (set.assignments.Count > 0 && set.assignments.TrueForAll(a => a.roleId == roleId))
             {
                 Store.UnmanagePawn(pawn);
@@ -878,7 +975,8 @@ namespace WorkRoles
         public static void MoveRoleOnPawn(Pawn pawn, int from, int to)
         {
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
-            if (from < 0 || from >= set.assignments.Count || to < 0 || to >= set.assignments.Count) return;
+            if (from < 0 || from >= set.assignments.Count || to < 0
+                || to >= set.assignments.Count || from == to) return;
             var assignment = set.assignments[from];
             set.assignments.RemoveAt(from);
             set.assignments.Insert(to, assignment);
@@ -945,14 +1043,41 @@ namespace WorkRoles
             // Pasting an empty set unmanages the pawn — never store an empty set.
             if (assignments.Count == 0)
             {
+                if (!Store.IsManaged(pawn)) return;
                 Store.UnmanagePawn(pawn);
                 return;
             }
             bool wasManaged = Store.IsManaged(pawn);
+            if (wasManaged && Store.pawnSets.TryGetValue(pawn,
+                    out PawnRoleSet existing)
+                && AssignmentSequencesEqual(existing.assignments, assignments))
+                return;
             Store.SetFor(pawn).assignments = assignments;
             if (!wasManaged) PawnLocationTracker.NotifyManaged(pawn);
             CompiledJobOrders.Invalidate(pawn);
             CompiledJobOrders.EnqueueReconcile(pawn);
+        }
+
+        private static bool AssignmentSequencesEqual(
+            IReadOnlyList<RoleAssignment> left,
+            IReadOnlyList<RoleAssignment> right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null || left.Count != right.Count)
+                return false;
+            for (int i = 0; i < left.Count; i++)
+            {
+                RoleAssignment a = left[i];
+                RoleAssignment b = right[i];
+                if (a == null || b == null)
+                {
+                    if (!ReferenceEquals(a, b)) return false;
+                    continue;
+                }
+                if (a.roleId != b.roleId || a.enabled != b.enabled
+                    || a.pinned != b.pinned) return false;
+            }
+            return true;
         }
     }
 }

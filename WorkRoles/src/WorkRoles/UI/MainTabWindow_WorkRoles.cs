@@ -180,9 +180,28 @@ namespace WorkRoles.UI
         private void ObserveLanguageRevision()
         {
             int current = LanguageChangeCoordinator.Revision;
-            if (observedLanguageRevision == current) return;
+            if (observedLanguageRevision == current && tabs != null) return;
             observedLanguageRevision = current;
-            tabs = null;
+            tabs = new List<TabRecord>
+            {
+                new TabRecord("WR_ColonistsTab".Translate(), () =>
+                {
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
+                    curTab = Tab.Colonists;
+                }, () => curTab == Tab.Colonists),
+                new TabRecord("WR_RolesTab".Translate(),
+                    () => curTab = Tab.Roles, () => curTab == Tab.Roles),
+                new TabRecord("WR_OptionsTab".Translate(), () =>
+                {
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
+                    curTab = Tab.Options;
+                }, () => curTab == Tab.Options),
+            };
+            fixMyColonyLabel = "WR_FixMyColony".Translate().ToString();
+            restoreDefaultsLabel = "WR_RestoreDefaults".Translate().ToString();
+            nothingToRestoreMessage = "WR_NothingToRestore".Translate().ToString();
+            exportLabel = "WR_Export".Translate().ToString();
+            importLabel = "WR_Import".Translate().ToString();
             colonistsTab.InvalidateLanguageCaches();
             rolesTab.InvalidateLanguageCaches();
             optionsTab.InvalidateLanguageCaches();
@@ -191,6 +210,7 @@ namespace WorkRoles.UI
         public override void PreOpen()
         {
             ObserveLanguageRevision();
+            WorkRolesTex.EnsureRuntimeTextures();
             base.PreOpen();
             ActivityTracker.Enable();
             RoleDrag.Cancel();
@@ -221,7 +241,18 @@ namespace WorkRoles.UI
             Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
         }
 
+        // Owner: window. Key: LanguageChangeCoordinator.Revision. Value:
+        // translated static labels plus tab records and their cached delegates.
+        // Dependencies: language and this window's tab-selection state.
+        // Refresh: immediately when the observed language revision changes.
+        // Equality: matching revision reuses strings, list, and delegates.
+        // Teardown: PostClose clears the tab list; strings follow the window.
         private List<TabRecord> tabs;
+        private string fixMyColonyLabel;
+        private string restoreDefaultsLabel;
+        private string nothingToRestoreMessage;
+        private string exportLabel;
+        private string importLabel;
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -280,22 +311,6 @@ namespace WorkRoles.UI
                 }
             }
 
-            // Built once (Func<bool> selection getters): a fresh list with three
-            // closures per pass is pure GC pressure.
-            tabs ??= new List<TabRecord>
-            {
-                new TabRecord("WR_ColonistsTab".Translate(), () =>
-                {
-                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
-                    curTab = Tab.Colonists;
-                }, () => curTab == Tab.Colonists),
-                new TabRecord("WR_RolesTab".Translate(), () => curTab = Tab.Roles, () => curTab == Tab.Roles),
-                new TabRecord("WR_OptionsTab".Translate(), () =>
-                {
-                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
-                    curTab = Tab.Options;
-                }, () => curTab == Tab.Options),
-            };
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);
             TabDrawer.DrawTabs(content, tabs);
@@ -313,7 +328,7 @@ namespace WorkRoles.UI
                 bool spansLocations = colonistsTab.ScopeSpansMultipleLocations;
                 (spansLocations ? WrTips.Key("WR_FixNeedsSingleLocation")
                     : WrTips.Key("WR_FixMyColonyTip")).Region(actionRect);
-                if (Widgets.ButtonText(actionRect, "WR_FixMyColony".Translate(), drawBackground: true,
+                if (Widgets.ButtonText(actionRect, fixMyColonyLabel, drawBackground: true,
                         doMouseoverSound: true, active: !spansLocations)
                     && !spansLocations)
                     colonistsTab.ShowFixPreview();
@@ -321,11 +336,12 @@ namespace WorkRoles.UI
             else if (curTab == Tab.Roles)
             {
                 WrTips.Key("WR_RestoreDefaultsTip").Region(actionRect);
-                if (Widgets.ButtonText(actionRect, "WR_RestoreDefaults".Translate()))
+                if (Widgets.ButtonText(actionRect, restoreDefaultsLabel))
                 {
                     var items = Seeding.ComputeRestoreItems();
                     if (items.Count == 0)
-                        WrToast.Show("WR_NothingToRestore".Translate(), MessageTypeDefOf.RejectInput);
+                        WrToast.Show(nothingToRestoreMessage,
+                            MessageTypeDefOf.RejectInput);
                     else
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
@@ -333,12 +349,12 @@ namespace WorkRoles.UI
                 const float IoBtnW = 90f;
                 var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
-                if (Widgets.ButtonText(exportRect, "WR_Export".Translate()))
+                if (Widgets.ButtonText(exportRect, exportLabel))
                     Find.WindowStack.Add(new Dialog_ExportPreview(RoleIO.BuildXml(RoleStore.Current)));
 
                 var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 WrTips.Key("WR_ImportTip", RoleIO.ExportFile).Region(importRect);
-                if (Widgets.ButtonText(importRect, "WR_Import".Translate()))
+                if (Widgets.ButtonText(importRect, importLabel))
                     Find.WindowStack.Add(new Dialog_ImportSource());
             }
 

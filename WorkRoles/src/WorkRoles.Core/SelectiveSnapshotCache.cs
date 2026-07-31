@@ -45,11 +45,6 @@ namespace WorkRoles.Core
             if (!NeedsRefresh(revisions)) return false;
 
             bool full = observedFullGeneration != revisions.FullGeneration;
-            if (full)
-            {
-                snapshots.Clear();
-                observedOwnerRevisions.Clear();
-            }
 
             cohort.Clear();
             if (owners != null)
@@ -57,12 +52,16 @@ namespace WorkRoles.Core
                 {
                     if (owner == null || !cohort.Add(owner)) continue;
                     int ownerRevision = revisions.RevisionOf(owner);
-                    if (!snapshots.ContainsKey(owner)
+                    if (full || !snapshots.ContainsKey(owner)
                         || !observedOwnerRevisions.TryGetValue(owner,
                             out int observedOwnerRevision)
                         || observedOwnerRevision != ownerRevision)
                     {
-                        snapshots[owner] = build(owner);
+                        TSnapshot rebuilt = build(owner);
+                        if (!snapshots.TryGetValue(owner, out TSnapshot published)
+                            || !EqualityComparer<TSnapshot>.Default.Equals(
+                                published, rebuilt))
+                            snapshots[owner] = rebuilt;
                         observedOwnerRevisions[owner] = ownerRevision;
                     }
                 }

@@ -21,6 +21,14 @@ namespace WorkRoles.UI
         private readonly PawnListRevisionTracker pawnListRevisions =
             new PawnListRevisionTracker();
 
+        // Owner: Colonists window. Key: current-map identity plus the selected
+        // ScopeOption. Value: the current scope options and producer-owned pawn
+        // cohort; live Pawn references are stable external identities and the
+        // collection itself is not exposed for mutation. Dependencies: UiVersion,
+        // observed-map/pawn-list revision, map set, selected scope, and language.
+        // Refresh: immediate on the next ListedPawns read after invalidation.
+        // Equality: matching ScopeCacheStamp and map identity reuse the cohort.
+        // Teardown: ReleaseSnapshots clears scope, options, pawns, and stamps.
         private ScopeOption scope;
         private List<Pawn> pawns;
         private ScopeCacheStamp pawnsStamp = ScopeCacheStamp.Invalid;
@@ -28,6 +36,13 @@ namespace WorkRoles.UI
         private List<ScopeOption> scopeOptions;
         private bool spansMultipleLocations;
 
+        // Owner: Colonists window. Key: pawn-scope stamp, map identity, filters,
+        // grouping/sort preferences, and colonist order. Value: producer-owned
+        // grouped display sections and title strings. Dependencies: the complete
+        // key plus role state and language through UiVersion. Refresh: immediate
+        // on the next Sections read after a key change. Equality: an exact key hit
+        // preserves section identity. Teardown: InvalidateSections/ReleaseSnapshots
+        // releases sections, titles, and all remembered keys.
         private List<GroupSection<Pawn>> sections;
         private ScopeCacheStamp sectionsStamp = ScopeCacheStamp.Invalid;
         private int sectionsMapId = -1;
@@ -40,6 +55,13 @@ namespace WorkRoles.UI
         private readonly Dictionary<string, string> sectionTitles =
             new Dictionary<string, string>();
 
+        // Owner: Colonists window profile. Key: the profile's persisted skill
+        // column names. Value: a bounded resolved SkillDef selection; definitions
+        // are game-owned stable assets and are never mutated. Dependencies:
+        // profile edits, definition availability, and initial profile load.
+        // Refresh: immediate on an explicit column edit; otherwise lazy once.
+        // Equality: unchanged selections retain list identity. Teardown:
+        // ReleaseSnapshots clears the resolved list and resets the load gate.
         private readonly List<SkillDef> skillColumns = new List<SkillDef>();
         private bool skillColumnsLoaded;
 
@@ -157,7 +179,7 @@ namespace WorkRoles.UI
         }
 
         /// Skill ordering consumes the window's external pawn generation. A
-        /// post-UiVersion Layout refresh must discard any sections that were
+        /// post-UiVersion Repaint refresh must discard any sections that were
         /// built during the input event before that generation was recaptured.
         internal void InvalidateSnapshotConsumers() => InvalidateSections();
 

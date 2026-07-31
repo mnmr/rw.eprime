@@ -84,6 +84,43 @@ public class SelectiveSnapshotCacheTests
         await Assert.That(cache.Refresh(ThrowingOwners(), revisions)).IsFalse();
     }
 
+    [Test]
+    public async Task EqualTargetedRefreshPreservesPublishedSnapshotIdentity()
+    {
+        var owner = new Owner("owner");
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        var cache = new SelectiveSnapshotCache<Owner, Snapshot>(item =>
+            new Snapshot(item.Name));
+        cache.Refresh(new[] { owner }, revisions);
+        Snapshot published = cache.Get(owner);
+
+        revisions.Invalidate(owner);
+        cache.Refresh(new[] { owner }, revisions);
+
+        await Assert.That(ReferenceEquals(cache.Get(owner), published)).IsTrue();
+    }
+
+    [Test]
+    public async Task EqualFullRefreshRebuildsButPreservesPublishedSnapshotIdentity()
+    {
+        var owner = new Owner("owner");
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        int builds = 0;
+        var cache = new SelectiveSnapshotCache<Owner, Snapshot>(item =>
+        {
+            builds++;
+            return new Snapshot(item.Name);
+        });
+        cache.Refresh(new[] { owner }, revisions);
+        Snapshot published = cache.Get(owner);
+
+        revisions.InvalidateAll();
+        cache.Refresh(new[] { owner }, revisions);
+
+        await Assert.That(builds).IsEqualTo(2);
+        await Assert.That(ReferenceEquals(cache.Get(owner), published)).IsTrue();
+    }
+
     private static IEnumerable<Owner> ThrowingOwners()
     {
         throw new Exception("unchanged snapshots must not enumerate owners");
@@ -96,5 +133,18 @@ public class SelectiveSnapshotCacheTests
     {
         internal Owner(string name) => Name = name;
         internal string Name { get; }
+    }
+
+    private sealed class Snapshot : IEquatable<Snapshot>
+    {
+        internal Snapshot(string name) => Name = name;
+        private string Name { get; }
+
+        public bool Equals(Snapshot other) =>
+            other != null && string.Equals(Name, other.Name, StringComparison.Ordinal);
+
+        public override bool Equals(object obj) => Equals(obj as Snapshot);
+
+        public override int GetHashCode() => Name.GetHashCode();
     }
 }

@@ -132,6 +132,7 @@ namespace WorkRoles.Patches
             UI.RoleDrag.Cancel();
             UI.KeyOverride.Restore();
             UI.WindowDataLifecycle.ReleaseShared();
+            UI.WorkRolesTex.ReleaseForTeardown();
             Patch_DialogBillConfig_DoWindowContents.ReleaseForTeardown();
             DefinitionReloadCoordinator.CancelPendingWarm();
             DefinitionReloadCoordinator.ReleaseForTeardown();

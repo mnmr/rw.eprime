@@ -5,7 +5,17 @@ namespace WorkRoles.Core.Tests;
 public class ScopeEngineTests
 {
     private static LocationInfo Loc(string id, string label, bool ship = false) =>
-        new LocationInfo { Id = id, Label = label, IsShip = ship };
+        new LocationInfo(id, label, ship);
+
+    [Test]
+    public async Task LocationInfoPublishesNoPublicMutableFields()
+    {
+        Type type = typeof(LocationInfo);
+
+        await Assert.That(type.GetFields(
+            System.Reflection.BindingFlags.Instance
+            | System.Reflection.BindingFlags.Public)).IsEmpty();
+    }
 
     [Test]
     public async Task OptionsAreAllCurrentThenShipsThenSettlementsAlphabetically()

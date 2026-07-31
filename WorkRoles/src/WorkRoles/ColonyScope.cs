@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
@@ -21,20 +22,46 @@ namespace WorkRoles
             internal bool ParentIsSettlement;
         }
 
-        private sealed class LocationSnapshot
+        private sealed class LocationSnapshot : IReadOnlyList<LocationInfo>
         {
-            internal List<LocationInfo> Locations;
+            private List<LocationInfo> locations;
             internal int Stamp = -1;
+
+            internal bool IsPublished => locations != null;
+            internal void Publish(List<LocationInfo> value) => locations = value;
+            public int Count => locations?.Count ?? 0;
+            public LocationInfo this[int index] => locations[index];
+            public IEnumerator<LocationInfo> GetEnumerator() =>
+                (locations ?? Empty).GetEnumerator();
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+            private static readonly List<LocationInfo> Empty =
+                new List<LocationInfo>(0);
         }
 
-        // Map classification changes only at the exact lifecycle transitions
-        // patched below. Consumers share one canonical-map result instead of
-        // walking the holder graph per role or render projection.
+        private static readonly IReadOnlyList<LocationInfo> NoLocations =
+            new LocationInfo[0];
+
+        // Owner: process, partitioned by the active map set. Key: canonical Map
+        // reference identity. Value: a private classification projection; its
+        // game-owned references are observed but never mutated. Dependencies:
+        // map spawn/removal, parent kind/ownership, and grav-engine lifecycle.
+        // Refresh: event-driven by the exact lifecycle patches below. Equality:
+        // a cache hit preserves the private value; rebuilt identity is not
+        // published outside ColonyScope. Teardown: ReleaseSnapshot clears all
+        // map entries and releases the canonical-floor-map owner state.
         private static readonly VersionedSnapshotCache<Map, MapClassification>
             mapClassifications = new VersionedSnapshotCache<Map, MapClassification>(
                 BuildMapClassification);
 
-        // Open-window location-list snapshot. Callers must never mutate it.
+        // Owner: process, partitioned by the current map set. Key: Faction
+        // reference identity. Value: an immutable published location projection
+        // whose producer-owned List is hidden behind indexed read access.
+        // Dependencies: map-classification revision, map-set membership, faction,
+        // and language. Refresh: immediate on the next Locations read after an
+        // event invalidation. Equality: the LocationSnapshot wrapper identity is
+        // preserved across rebuilds. Teardown: ReleaseSnapshot/language or map-set
+        // invalidation clears faction entries and their owned buffers.
         private static readonly Dictionary<Faction, LocationSnapshot>
             locationSnapshots = new Dictionary<Faction, LocationSnapshot>(
                 ReferenceIdentityComparer<Faction>.Instance);
@@ -77,27 +104,28 @@ namespace WorkRoles
             MP.enabled && MP.RealPlayerFaction != null
                 ? MP.RealPlayerFaction : Faction.OfPlayer;
 
-        internal static List<LocationInfo> Locations() => Locations(ViewFaction);
+        internal static IReadOnlyList<LocationInfo> Locations() =>
+            Locations(ViewFaction);
 
-        internal static List<LocationInfo> Locations(Faction faction)
+        internal static IReadOnlyList<LocationInfo> Locations(Faction faction)
         {
             var maps = Find.Maps;
             if (locationsMapCount != maps.Count)
                 InvalidateMapSet();
-            if (faction == null) return new List<LocationInfo>();
+            if (faction == null) return NoLocations;
             if (!locationSnapshots.TryGetValue(faction, out var snapshot))
             {
                 snapshot = new LocationSnapshot();
                 locationSnapshots.Add(faction, snapshot);
             }
-            if (snapshot.Locations == null
+            if (!snapshot.IsPublished
                 || snapshot.Stamp != mapClassifications.Revision)
             {
                 snapshot.Stamp = mapClassifications.Revision;
                 locationsMapCount = maps.Count;
-                snapshot.Locations = BuildLocations(faction);
+                snapshot.Publish(BuildLocations(faction));
             }
-            return snapshot.Locations;
+            return snapshot;
         }
 
         private static List<LocationInfo> BuildLocations(Faction faction)
@@ -118,12 +146,7 @@ namespace WorkRoles
                         ? gravEngine.RenamableLabel
                         : "WR_ShipFallback".Translate().ToString())
                     : map.Parent?.LabelCap.ToString() ?? "?";
-                result.Add(new LocationInfo
-                {
-                    Id = place.LocationId,
-                    Label = label,
-                    IsShip = place.IsShip
-                });
+                result.Add(new LocationInfo(place.LocationId, label, place.IsShip));
             }
             return result;
         }

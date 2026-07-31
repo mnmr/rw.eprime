@@ -6,8 +6,8 @@ public class ImportLocationResolverTests
 {
     private static readonly List<LocationInfo> IssuerLocations = new()
     {
-        new LocationInfo { Id = "4", Label = "Rimosa", IsShip = false },
-        new LocationInfo { Id = "9", Label = "The Wanderer", IsShip = true },
+        new LocationInfo("4", "Rimosa", false),
+        new LocationInfo("9", "The Wanderer", true),
     };
 
     [Test]

@@ -37,17 +37,45 @@ namespace WorkRoles.UI
             internal Dictionary<SkillDef, SkillLine> SkillLinesByDef;
         }
 
+        // Owner: Colonists window. Key: Pawn reference identity. Value: immutable
+        // game-derived pawn/signal snapshots plus producer-owned skill indexes;
+        // only stable external Def references are retained. Dependencies:
+        // ExternalPawnFacts current/full/per-pawn revisions; live skill XP is
+        // deliberately excluded. Refresh: explicit at the window's Repaint
+        // boundary, targeted where possible. Equality: unchanged revision gates
+        // preserve capture identity; an invalidated external capture is replaced.
+        // Teardown: Reset/ReleaseSnapshots
+        // clears entries and the shared pawn-signal generation.
         private readonly SelectiveSnapshotCache<Pawn, ExternalCapture> externalSnapshots =
             new SelectiveSnapshotCache<Pawn, ExternalCapture>(
                 CaptureExternal, ReferenceIdentityComparer<Pawn>.Instance);
+
+        // Owner: Colonists window external-snapshot generation. Key: SkillDef
+        // reference identity. Value: measured maximum roster-cell width.
+        // Dependencies: the published external captures and signal decorators.
+        // Refresh: lazy per skill after external generation refresh. Equality:
+        // repeated reads reuse the stored float. Teardown: external refresh or
+        // ReleaseSnapshots clears every measured width.
         private readonly Dictionary<SkillDef, float> rosterCellWidths =
             new Dictionary<SkillDef, float>();
 
+        // Owner: Colonists window. Key: (Pawn, SkillDef). Value: immutable skill
+        // render presentation with stable external texture references.
+        // Dependencies: UiVersion presentation stamp, language, and the current
+        // external pawn snapshot. Refresh: lazy on first presentation read after
+        // invalidation. Equality: exact key hits preserve presentation identity.
+        // Teardown: InvalidatePresentations/ReleaseSnapshots clears the table.
         private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
             presentations =
                 new Dictionary<(Pawn, SkillDef), ColonistSkillPresentation>();
         private int presentationStamp = -1;
 
+        // Owner: Colonists window. Key: (UiVersion, selected Pawn identity).
+        // Value: immutable selected-pawn stats render projection with a
+        // producer-owned presentation buffer. Dependencies: presentation cache,
+        // language, and the published external pawn snapshot. Refresh: immediate
+        // on the next Snapshot read after key change. Equality: exact key hits
+        // preserve snapshot identity. Teardown: InvalidatePresentations clears it.
         private int statsStamp = -1;
         private Pawn statsPawn;
         private ColonistStatsSnapshot stats;
@@ -75,7 +103,7 @@ namespace WorkRoles.UI
             InvalidatePresentations();
         }
 
-        /// Reconciles the external cohort at the window's Layout boundary.
+        /// Reconciles the external cohort at the window's Repaint boundary.
         /// Unaffected owner snapshots survive targeted invalidations.
         internal bool RefreshExternalSnapshot(IEnumerable<Pawn> pawns)
         {

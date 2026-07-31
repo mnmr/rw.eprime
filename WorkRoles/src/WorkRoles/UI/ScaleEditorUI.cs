@@ -6,6 +6,81 @@ using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
+    internal sealed class ScaleEditorSnapshot
+    {
+        private readonly List<ScaleOptionSnapshot> options;
+        private readonly HolderScale stored;
+
+        internal ScaleEditorSnapshot(int roleId, string roleLabel,
+            HolderScale stored, bool pathTarget, string trainingHelp,
+            float height, string pickerLabel, string usedBy,
+            string forkName, List<ScaleOptionSnapshot> options,
+            string totalsCaption, string minsCaption, string resetLabel,
+            string addLabel, string saveAsLabel, string renameTitle,
+            string newTitle, string saveAsTitle)
+        {
+            RoleId = roleId;
+            RoleLabel = roleLabel;
+            this.stored = stored;
+            PathTarget = pathTarget;
+            TrainingHelp = trainingHelp;
+            Height = height;
+            PickerLabel = pickerLabel;
+            UsedBy = usedBy;
+            ForkName = forkName;
+            this.options = options;
+            TotalsCaption = totalsCaption;
+            MinsCaption = minsCaption;
+            ResetLabel = resetLabel;
+            AddLabel = addLabel;
+            SaveAsLabel = saveAsLabel;
+            RenameTitle = renameTitle;
+            NewTitle = newTitle;
+            SaveAsTitle = saveAsTitle;
+        }
+
+        internal int RoleId { get; }
+        internal string RoleLabel { get; }
+        internal string StoredName => stored.Name;
+        internal bool StoredPreset => stored.Preset;
+        internal int StoredMinAt(int band) => stored.Min[band];
+        internal int StoredTrainAt(int band) => stored.Train[band];
+        internal HolderScale CopyStored() => stored.Copy();
+        internal bool StoredSameValuesAs(HolderScale other) =>
+            stored.SameValuesAs(other);
+        internal bool PathTarget { get; }
+        internal string TrainingHelp { get; }
+        internal float Height { get; }
+        internal string PickerLabel { get; }
+        internal string UsedBy { get; }
+        internal string ForkName { get; }
+        internal int OptionCount => options.Count;
+        internal ScaleOptionSnapshot OptionAt(int index) => options[index];
+        internal string TotalsCaption { get; }
+        internal string MinsCaption { get; }
+        internal string ResetLabel { get; }
+        internal string AddLabel { get; }
+        internal string SaveAsLabel { get; }
+        internal string RenameTitle { get; }
+        internal string NewTitle { get; }
+        internal string SaveAsTitle { get; }
+    }
+
+    internal readonly struct ScaleOptionSnapshot
+    {
+        internal ScaleOptionSnapshot(string name, bool preset,
+            string deleteConfirmation)
+        {
+            Name = name;
+            Preset = preset;
+            DeleteConfirmation = deleteConfirmation;
+        }
+
+        internal string Name { get; }
+        internal bool Preset { get; }
+        internal string DeleteConfirmation { get; }
+    }
+
     /// The holder-scale editor: two captioned numeric rows over a band-label
     /// row. The totals row edits recommended assignments (trainees included);
     /// the minimums row edits the direct-assignment floor, with the trainee
@@ -20,6 +95,50 @@ namespace WorkRoles.UI
         private const float BandRowH = 20f;
         private const float CaptionH = 16f;
         private const float BandLabelRowH = 16f;
+
+        internal static ScaleEditorSnapshot BuildSnapshot(RoleStore store,
+            Role role, float width)
+        {
+            HolderScale source = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
+            if (source == null) return null;
+            HolderScale stored = source.Copy();
+            bool pathTarget = IsPathTarget(store, role.id);
+            Role controlling = pathTarget ? null : ControllingTarget(store, role.id);
+            string trainingHelp = controlling == null
+                ? null : TrainingHelp(controlling, role);
+            float height = PickerRowH + 4f + CaptionH + BandRowH + 2f
+                + BandLabelRowH;
+            if (pathTarget) height += CaptionH + BandRowH + 2f;
+            else if (trainingHelp != null) height += HelpHeight(trainingHelp, width);
+
+            var options = new List<ScaleOptionSnapshot>();
+            foreach (HolderScale candidate in store.holderScales
+                .OrderBy(item => item.Name, System.StringComparer.OrdinalIgnoreCase))
+            {
+                string usedBy = UsedBySummary(store, candidate.Name);
+                options.Add(new ScaleOptionSnapshot(candidate.Name,
+                    candidate.Preset, usedBy == null ? null
+                        : "WR_ScaleDeleteConfirm".Translate(
+                            candidate.Name, usedBy).ToString()));
+            }
+            string forkName = source.Preset
+                ? CatalogNameRules.Unique(source.Name, store.holderScales,
+                    candidate => candidate.Name)
+                : source.Name;
+            const float PickW = 150f;
+            return new ScaleEditorSnapshot(role.id, role.label, stored,
+                pathTarget, trainingHelp, height,
+                source.Name.Truncate(PickW - 20f),
+                UsedBySummary(store, source.Name), forkName, options,
+                "WR_ScaleTotalsCaption".Translate().ToString(),
+                "WR_ScaleMinsCaption".Translate(role.label).ToString(),
+                "WR_ScaleReset".Translate().ToString(),
+                "WR_AddNew".Translate().ToString(),
+                "WR_ScaleSaveAs".Translate().ToString(),
+                "WR_ScaleRenameTitle".Translate().ToString(),
+                "WR_ScaleNewTitle".Translate().ToString(),
+                "WR_ScaleSaveAsTitle".Translate().ToString());
+        }
 
         /// Editor height for this role: path targets get the totals row,
         /// their training roles a help paragraph in its place.
@@ -129,30 +248,29 @@ namespace WorkRoles.UI
             baselineForked = false;
         }
 
-        internal static void Draw(Rect rect, Role role, RoleStore store)
+        internal static void Draw(Rect rect, ScaleEditorSnapshot model)
         {
-            HolderScale stored = store.ScaleFor(role) ?? store.ScaleByName("Never");
-            if (stored == null) return; // pre-seed frame
-            UpdateBaseline(role, stored);
-            HolderScale shown = dragRoleId == role.id && dragScale != null
-                ? dragScale : stored;
+            if (model == null) return;
+            UpdateBaseline(model);
+            HolderScale shown = dragRoleId == model.RoleId && dragScale != null
+                ? dragScale : null;
 
             DrawPickerRow(new Rect(rect.x, rect.y, rect.width, PickerRowH),
-                role, store, stored);
+                model);
             float y = rect.y + PickerRowH + 4f;
 
-            if (IsPathTarget(store, role.id))
+            if (model.PathTarget)
             {
                 DrawCaption(new Rect(rect.x, y, rect.width, CaptionH),
-                    "WR_ScaleTotalsCaption".Translate());
+                    model.TotalsCaption);
                 y += CaptionH;
                 DrawValueRow(new Rect(rect.x, y, rect.width, BandRowH),
-                    role, shown, stored, totalsRow: true);
+                    model, shown, totalsRow: true);
                 y += BandRowH + 2f;
             }
-            else if (ControllingTarget(store, role.id) is Role target)
+            else if (model.TrainingHelp != null)
             {
-                string help = TrainingHelp(target, role);
+                string help = model.TrainingHelp;
                 float helpH = HelpHeight(help, rect.width);
                 Text.Font = GameFont.Tiny;
                 GUI.color = WrStyle.CaptionText;
@@ -163,10 +281,10 @@ namespace WorkRoles.UI
             }
 
             DrawCaption(new Rect(rect.x, y, rect.width, CaptionH),
-                "WR_ScaleMinsCaption".Translate(role.label));
+                model.MinsCaption);
             y += CaptionH;
             DrawValueRow(new Rect(rect.x, y, rect.width, BandRowH),
-                role, shown, stored, totalsRow: false);
+                model, shown, totalsRow: false);
             y += BandRowH + 2f;
 
             DrawBandLabels(new Rect(rect.x, y, rect.width, BandLabelRowH));
@@ -174,21 +292,21 @@ namespace WorkRoles.UI
 
         /// Recaptures the pre-edit values whenever the user switches role or
         /// picks another scale; our own fork commits only carry the name over.
-        private static void UpdateBaseline(Role role, HolderScale stored)
+        private static void UpdateBaseline(ScaleEditorSnapshot model)
         {
-            if (baselineRoleId == role.id
-                && string.Equals(stored.Name, baselineName,
+            if (baselineRoleId == model.RoleId
+                && string.Equals(model.StoredName, baselineName,
                     System.StringComparison.OrdinalIgnoreCase)) return;
-            if (baselineRoleId == role.id && expectedName != null
-                && string.Equals(stored.Name, expectedName,
+            if (baselineRoleId == model.RoleId && expectedName != null
+                && string.Equals(model.StoredName, expectedName,
                     System.StringComparison.OrdinalIgnoreCase))
             {
-                baselineName = stored.Name;
+                baselineName = model.StoredName;
                 return;
             }
-            baselineRoleId = role.id;
-            baselineName = stored.Name;
-            baseline = stored.Copy();
+            baselineRoleId = model.RoleId;
+            baselineName = model.StoredName;
+            baseline = model.CopyStored();
             expectedName = null;
             baselineForked = false;
         }
@@ -234,22 +352,21 @@ namespace WorkRoles.UI
 
         // ----- Picker row (scale selection) -----
 
-        private static void DrawPickerRow(Rect rect, Role role, RoleStore store,
-            HolderScale scale)
+        private static void DrawPickerRow(Rect rect, ScaleEditorSnapshot model)
         {
             const float PickW = 150f;
             const float AddW = 90f;
             const float ResetW = 70f;
             var pickRect = new Rect(rect.x, rect.y, PickW, rect.height - 2f);
-            if (Widgets.ButtonText(pickRect, scale.Name.Truncate(PickW - 20f)))
+            if (Widgets.ButtonText(pickRect, model.PickerLabel))
             {
                 var options = new List<FloatMenuOption>();
-                foreach (var candidate in store.holderScales
-                             .OrderBy(c => c.Name, System.StringComparer.OrdinalIgnoreCase))
+                for (int i = 0; i < model.OptionCount; i++)
                 {
+                    ScaleOptionSnapshot candidate = model.OptionAt(i);
                     string captured = candidate.Name;
                     var option = new FloatMenuOption(candidate.Name,
-                        () => RoleCommands.SetRoleScale(role.id, captured));
+                        () => RoleCommands.SetRoleScale(model.RoleId, captured));
                     if (!candidate.Preset)
                     {
                         // Same dismiss icon as role chips (ChipUI remove X).
@@ -260,7 +377,7 @@ namespace WorkRoles.UI
                                 part.y + (part.height - 16f) / 2f, 16f, 16f);
                             if (Widgets.ButtonImage(iconRect, TexButton.Delete))
                             {
-                                RequestDelete(captured);
+                                RequestDelete(candidate);
                                 return true;
                             }
                             return false;
@@ -272,27 +389,27 @@ namespace WorkRoles.UI
             }
 
             float x = pickRect.xMax + 4f;
-            if (!scale.Preset)
+            if (!model.StoredPreset)
             {
                 var renameRect = new Rect(x, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
                 WrTips.Key("WR_ScaleRenameTip").Region(renameRect);
                 if (Widgets.ButtonImage(renameRect, TexButton.Rename))
                 {
-                    string oldName = scale.Name;
+                    string oldName = model.StoredName;
                     Find.WindowStack.Add(new Dialog_RenameRole(
-                        "WR_ScaleRenameTitle".Translate(),
+                        model.RenameTitle,
                         name => RoleCommands.RenameScale(oldName, name),
                         oldName));
                 }
                 x = renameRect.xMax + 6f;
             }
 
-            bool dirty = baseline != null && !MatchesBaseline(scale);
+            bool dirty = baseline != null && !MatchesBaseline(model);
             var addRect = new Rect(rect.xMax - AddW, rect.y, AddW, rect.height - 2f);
             var resetRect = new Rect(addRect.x - 4f - ResetW, rect.y,
                 ResetW, rect.height - 2f);
 
-            string usedBy = UsedBySummary(store, scale.Name);
+            string usedBy = model.UsedBy;
             if (usedBy != null)
             {
                 float labelEnd = (dirty ? resetRect.x : addRect.x) - 8f;
@@ -309,26 +426,26 @@ namespace WorkRoles.UI
             if (dirty)
             {
                 WrTips.Key("WR_ScaleResetTip").Region(resetRect);
-                if (Widgets.ButtonText(resetRect, "WR_ScaleReset".Translate()))
-                    CommitValues(role, scale, baseline);
+                if (Widgets.ButtonText(resetRect, model.ResetLabel))
+                    CommitValues(model, model.CopyStored(), baseline);
             }
 
             if (Widgets.ButtonText(addRect,
-                    (dirty ? "WR_ScaleSaveAs" : "WR_AddNew").Translate()))
+                    dirty ? model.SaveAsLabel : model.AddLabel))
             {
-                if (dirty) OpenSaveAsDialog(role, scale);
-                else OpenAddNewDialog(role, scale);
+                if (dirty) OpenSaveAsDialog(model);
+                else OpenAddNewDialog(model);
             }
         }
 
         /// Clean state: a plain copy of the current scale under a new name,
         /// with the role pointed at it.
-        private static void OpenAddNewDialog(Role role, HolderScale scale)
+        private static void OpenAddNewDialog(ScaleEditorSnapshot model)
         {
-            string sourceName = scale.Name;
-            int roleId = role.id;
+            string sourceName = model.StoredName;
+            int roleId = model.RoleId;
             Find.WindowStack.Add(new Dialog_RenameRole(
-                "WR_ScaleNewTitle".Translate(), name =>
+                model.NewTitle, name =>
                 {
                     var store = RoleStore.Current;
                     name = name?.Trim();
@@ -346,15 +463,15 @@ namespace WorkRoles.UI
         /// Dirty state: the session's edits land under the new name (with the
         /// role pointed at it) and the edited scale reverts to its pre-edit
         /// values. A preset fork just renames — the preset never changed.
-        private static void OpenSaveAsDialog(Role role, HolderScale scale)
+        private static void OpenSaveAsDialog(ScaleEditorSnapshot model)
         {
-            string sourceName = scale.Name;
+            string sourceName = model.StoredName;
             bool forked = baselineForked;
-            var edited = scale.Copy();
+            var edited = model.CopyStored();
             var original = baseline.Copy();
-            int roleId = role.id;
+            int roleId = model.RoleId;
             Find.WindowStack.Add(new Dialog_RenameRole(
-                "WR_ScaleSaveAsTitle".Translate(), name =>
+                model.SaveAsTitle, name =>
                 {
                     var store = RoleStore.Current;
                     name = name?.Trim();
@@ -384,30 +501,27 @@ namespace WorkRoles.UI
                 }));
         }
 
-        private static bool MatchesBaseline(HolderScale stored)
+        private static bool MatchesBaseline(ScaleEditorSnapshot model)
         {
             for (int i = 0; i < HolderScale.Bands; i++)
-                if (stored.Min[i] != baseline.Min[i]
-                    || stored.Train[i] != baseline.Train[i])
+                if (model.StoredMinAt(i) != baseline.Min[i]
+                    || model.StoredTrainAt(i) != baseline.Train[i])
                     return false;
             return true;
         }
 
         /// Dropdown delete: unused scales go immediately; referenced ones
         /// confirm first, naming the roles that will fall back to Never.
-        private static void RequestDelete(string name)
+        private static void RequestDelete(ScaleOptionSnapshot option)
         {
-            var store = RoleStore.Current;
-            if (store == null) return;
-            string usedBy = UsedBySummary(store, name);
-            if (usedBy == null)
+            if (option.DeleteConfirmation == null)
             {
-                RoleCommands.DeleteScale(name);
+                RoleCommands.DeleteScale(option.Name);
                 return;
             }
             Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                "WR_ScaleDeleteConfirm".Translate(name, usedBy),
-                () => RoleCommands.DeleteScale(name), destructive: true));
+                option.DeleteConfirmation,
+                () => RoleCommands.DeleteScale(option.Name), destructive: true));
         }
 
         /// "Used by Doctor, Medic, Nurse +2 more" — first three names, dim.
@@ -458,15 +572,15 @@ namespace WorkRoles.UI
 
         // ----- Band value rows (totals and direct minimums) -----
 
-        private static void DrawValueRow(Rect rect, Role role,
-            HolderScale shown, HolderScale stored, bool totalsRow)
+        private static void DrawValueRow(Rect rect, ScaleEditorSnapshot model,
+            HolderScale shown, bool totalsRow)
         {
             int colW = ColW(rect.width);
             float startX = StartX(rect);
             var e = Event.current;
             int series = totalsRow ? SeriesTotalRow : SeriesDirectRow;
             int wrapAt = totalsRow ? MaxTotalPick : MaxDirectPick;
-            bool picking = dragRoleId == role.id && dragSeries == series
+            bool picking = dragRoleId == model.RoleId && dragSeries == series
                 && dragScale != null;
 
             for (int band = 0; band < HolderScale.Bands; band++)
@@ -478,8 +592,11 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Tiny;
                 Text.Anchor = TextAnchor.MiddleCenter;
                 Widgets.Label(cell, totalsRow
-                    ? shown.Min[band].ToStringCached()
-                    : DirectOf(shown, band).ToStringCached());
+                    ? (shown != null ? shown.Min[band]
+                        : model.StoredMinAt(band)).ToStringCached()
+                    : (shown != null ? DirectOf(shown, band)
+                        : Mathf.Max(0, model.StoredMinAt(band)
+                            - model.StoredTrainAt(band))).ToStringCached());
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.Font = GameFont.Small;
                 if (Mouse.IsOver(cell))
@@ -490,7 +607,7 @@ namespace WorkRoles.UI
                 {
                     // Nothing changes on press: a plain click increments on
                     // release, a drag-across copies the ORIGIN's value as-is.
-                    BeginGesture(role, stored, series);
+                    BeginGesture(model, series);
                     dragOriginBand = band;
                     dragButton = e.button;
                     dragMoved = false;
@@ -518,7 +635,7 @@ namespace WorkRoles.UI
                         : dragPickValue >= wrapAt ? 0 : dragPickValue + 1;
                     ApplyRowValue(dragOriginBand, totalsRow);
                 }
-                Commit(role);
+                Commit(model);
                 EndGesture();
                 if (e.type == EventType.MouseUp) e.Use();
             }
@@ -531,15 +648,15 @@ namespace WorkRoles.UI
             dragScale.Normalize();
         }
 
-        private static void BeginGesture(Role role, HolderScale stored, int series)
+        private static void BeginGesture(ScaleEditorSnapshot model, int series)
         {
-            dragRoleId = role.id;
+            dragRoleId = model.RoleId;
             dragSeries = series;
-            dragScale = stored.Copy();
-            dragSourceName = stored.Name;
+            dragScale = model.CopyStored();
+            dragSourceName = model.StoredName;
             dragDirect = new int[HolderScale.Bands];
             for (int band = 0; band < HolderScale.Bands; band++)
-                dragDirect[band] = DirectOf(stored, band);
+                dragDirect[band] = DirectOf(dragScale, band);
         }
 
         private static void EndGesture()
@@ -554,24 +671,23 @@ namespace WorkRoles.UI
         }
 
         /// Presets fork into "<name> N" (unique); user scales commit in place.
-        private static void Commit(Role role)
+        private static void Commit(ScaleEditorSnapshot model)
         {
             if (dragScale == null) return;
-            var store = RoleStore.Current;
-            var source = store?.ScaleByName(dragSourceName);
-            if (store == null || source != null && source.SameValuesAs(dragScale))
+            if (model.StoredSameValuesAs(dragScale))
                 return;
-            CommitValues(role, source, dragScale);
+            HolderScale source = model.CopyStored();
+            CommitValues(model, source, dragScale);
         }
 
-        private static void CommitValues(Role role, HolderScale source,
+        private static void CommitValues(ScaleEditorSnapshot model,
+            HolderScale source,
             HolderScale values)
         {
-            var store = RoleStore.Current;
-            if (store == null || values == null) return;
+            if (values == null) return;
             string sourceName = source?.Name;
             string targetName = source != null && source.Preset
-                ? CatalogNameRules.Unique(sourceName, store.holderScales, c => c.Name)
+                ? model.ForkName
                 : sourceName;
             if (targetName.NullOrEmpty()) return;
             expectedName = targetName;
@@ -580,7 +696,7 @@ namespace WorkRoles.UI
             // the target keeps its stored row (uncapped for new scales).
             RoleCommands.CommitScaleEdit(new ScaleEdit
             {
-                roleId = role.id,
+                roleId = model.RoleId,
                 sourceName = sourceName,
                 targetName = targetName,
                 min = HolderScaleCodec.EncodeRow(values.Min),

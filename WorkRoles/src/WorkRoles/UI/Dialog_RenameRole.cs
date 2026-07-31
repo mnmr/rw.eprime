@@ -10,8 +10,8 @@ namespace WorkRoles.UI
         private readonly string title;
         private readonly string sourceLabel;      // copy mode: the original role's name
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
-        private readonly Role exceptRole;
-        private readonly RoleGroup exceptGroup;
+        private readonly int exceptRoleId = -1;
+        private readonly int exceptGroupId = -1;
         private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
         private string validatedName;
@@ -25,12 +25,20 @@ namespace WorkRoles.UI
 
         /// Role-rename constructor: prefilled with the current name.
         public Dialog_RenameRole(Role role)
+            : this(role.id, role.label, renameRole: true)
         {
-            onConfirm = n => RoleCommands.RenameRole(role.id, n);
-            exceptRole = role;
+        }
+
+        internal static Dialog_RenameRole ForRole(int roleId, string roleLabel)
+            => new Dialog_RenameRole(roleId, roleLabel, renameRole: true);
+
+        private Dialog_RenameRole(int roleId, string roleLabel, bool renameRole)
+        {
+            onConfirm = n => RoleCommands.RenameRole(roleId, n);
+            exceptRoleId = roleId;
             requireUniqueName = true;
             title = "WR_RenameRoleTitle".Translate();
-            name = role.label;
+            name = roleLabel;
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
@@ -39,13 +47,18 @@ namespace WorkRoles.UI
         /// Group-rename constructor: prefilled with the current name and validates
         /// against groups while excluding the group being renamed.
         public Dialog_RenameRole(RoleGroup group)
+            : this(group.id, group.label)
         {
-            onConfirm = n => RoleCommands.RenameGroup(group.id, n);
-            exceptGroup = group;
+        }
+
+        internal Dialog_RenameRole(int groupId, string groupLabel)
+        {
+            onConfirm = n => RoleCommands.RenameGroup(groupId, n);
+            exceptGroupId = groupId;
             requireUniqueName = true;
             showCancel = true;
             title = "WR_RenameGroupTitle".Translate();
-            name = group.label;
+            name = groupLabel;
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
@@ -84,11 +97,13 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return false;
-            if (exceptGroup != null)
+            if (exceptGroupId >= 0)
                 return !WorkRoles.Core.GroupNameRules.IsAvailable(
-                    candidate, store.groups, group => group.label, exceptGroup);
+                    candidate, store.groups, group => group.label,
+                    store.GroupById(exceptGroupId));
             return !WorkRoles.Core.CatalogNameRules.IsAvailable(
-                candidate, store.roles, role => role.label, exceptRole);
+                candidate, store.roles, role => role.label,
+                exceptRoleId < 0 ? null : store.RoleById(exceptRoleId));
         }
 
         private void EnsureValidation(bool force = false)

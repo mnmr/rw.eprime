@@ -24,15 +24,51 @@ namespace WorkRoles.UI
         protected string fileName = RoleIO.DefaultFileName;
         protected string customDir = "";
 
+        // Owner: dialog. Key: LanguageChangeCoordinator.Revision. Value:
+        // translated location/enter-path labels and the Small-font enter-path
+        // width. Dependencies: language and font. Refresh: immediately on
+        // language revision. Equality: matching revision reuses strings/width.
+        // Teardown: dialog close releases the instance and its owned array.
+        private readonly string[] locationLabels = new string[4];
+        private int textLanguageRevision = -1;
+        private string enterPathLabel;
+        private float enterPathLabelWidth;
+
         private static bool OnWindows =>
             Application.platform == RuntimePlatform.WindowsPlayer
             || Application.platform == RuntimePlatform.WindowsEditor;
 
-        private string LocationLabel(Location l) =>
-            l == Location.Desktop ? "WR_LocDesktop".Translate().ToString()
-            : l == Location.UserHome ? "WR_LocUserHome".Translate().ToString()
-            : l == Location.Custom ? "WR_LocCustom".Translate().ToString()
-            : "WR_LocGameData".Translate().ToString();
+        private string LocationLabel(Location location)
+        {
+            EnsureTextCache();
+            return locationLabels[(int)location];
+        }
+
+        private void EnsureTextCache()
+        {
+            int revision = LanguageChangeCoordinator.Revision;
+            if (textLanguageRevision == revision) return;
+            textLanguageRevision = revision;
+            locationLabels[(int)Location.GameData] =
+                "WR_LocGameData".Translate().ToString();
+            locationLabels[(int)Location.Desktop] =
+                "WR_LocDesktop".Translate().ToString();
+            locationLabels[(int)Location.UserHome] =
+                "WR_LocUserHome".Translate().ToString();
+            locationLabels[(int)Location.Custom] =
+                "WR_LocCustom".Translate().ToString();
+            enterPathLabel = "WR_EnterPath".Translate().ToString();
+            GameFont previousFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                enterPathLabelWidth = WrText.FitWidth(enterPathLabel) + 8f;
+            }
+            finally
+            {
+                Text.Font = previousFont;
+            }
+        }
 
         private string ResolvedDir()
         {
@@ -45,6 +81,13 @@ namespace WorkRoles.UI
             }
         }
 
+        // Owner: dialog. Key: (location, file-name text, custom-directory text).
+        // Value: immutable resolved path/problem strings and existence scalar.
+        // Dependencies: picker inputs, platform special folders, filesystem
+        // existence, and translated validation messages. Refresh: queued once in
+        // GameComponentUpdate after an input-key miss, never from OnGUI. Equality:
+        // ordinally equal input keys reuse the complete result. Teardown: dialog
+        // close and completion of any queued cached delegate release the instance.
         private Location cachedLocation;
         private string cachedFileName;
         private string cachedCustomDir;
@@ -52,30 +95,45 @@ namespace WorkRoles.UI
         private string cachedProblem;
         private bool cachedExists;
         private bool cacheValid;
+        private bool pathRefreshPending;
+        private readonly Action refreshPathAction;
 
-        /// Path + existence, recomputed when the inputs change or on user
-        /// interaction — never on idle repaints (File.Exists is a syscall and
-        /// Desktop/UserHome resolution a shell call, several times per frame).
+        protected Dialog_RoleFilePicker()
+        {
+            refreshPathAction = RefreshPathOutsideOnGUI;
+        }
+
+        /// Path + existence, recomputed outside OnGUI when the input key changes.
+        /// Idle passes only compare the cached key; File.Exists and special-folder
+        /// resolution execute at most once for each queued refresh.
         protected string CachedResolvedPath(out string problem, out bool exists)
         {
-            var e = Event.current;
-            bool interact = e != null
-                && (e.type == EventType.MouseDown || e.type == EventType.KeyDown);
-            if (!cacheValid || interact
-                || cachedLocation != location
-                || !string.Equals(cachedFileName, fileName, StringComparison.Ordinal)
-                || !string.Equals(cachedCustomDir, customDir, StringComparison.Ordinal))
+            bool current = cacheValid
+                && cachedLocation == location
+                && string.Equals(cachedFileName, fileName,
+                    StringComparison.Ordinal)
+                && string.Equals(cachedCustomDir, customDir,
+                    StringComparison.Ordinal);
+            if (!current && !pathRefreshPending)
             {
-                cachedLocation = location;
-                cachedFileName = fileName;
-                cachedCustomDir = customDir;
-                cachedPath = ResolvedPath(out cachedProblem);
-                cachedExists = cachedPath != null && File.Exists(cachedPath);
-                cacheValid = true;
+                cacheValid = false;
+                pathRefreshPending = true;
+                WorkRolesGameComponent.RunOutsideOnGUI(refreshPathAction);
             }
-            problem = cachedProblem;
-            exists = cachedExists;
-            return cachedPath;
+            problem = current ? cachedProblem : null;
+            exists = current && cachedExists;
+            return current ? cachedPath : null;
+        }
+
+        private void RefreshPathOutsideOnGUI()
+        {
+            pathRefreshPending = false;
+            cachedLocation = location;
+            cachedFileName = fileName;
+            cachedCustomDir = customDir;
+            cachedPath = ResolvedPath(out cachedProblem);
+            cachedExists = cachedPath != null && File.Exists(cachedPath);
+            cacheValid = true;
         }
 
         /// Full destination, or null (with a reason) when not usable. The result
@@ -137,6 +195,7 @@ namespace WorkRoles.UI
         /// clear X) while Custom is picked.
         protected void DrawLocationRows(Rect inRect, float locRowY, float customRowY)
         {
+            EnsureTextCache();
             var locRect = new Rect(inRect.x, locRowY, 170f, RowH - 6f);
             if (Widgets.ButtonText(locRect, LocationLabel(location)))
             {
@@ -155,14 +214,15 @@ namespace WorkRoles.UI
 
             if (location == Location.Custom)
             {
-                string enterPath = "WR_EnterPath".Translate();
-                float labelW = Text.CalcSize(enterPath).x + 8f;
                 Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(inRect.x, customRowY, labelW, RowH - 6f), enterPath);
+                Widgets.Label(new Rect(inRect.x, customRowY,
+                    enterPathLabelWidth, RowH - 6f), enterPathLabel);
                 Text.Anchor = TextAnchor.UpperLeft;
                 const float ClearW = 24f;
                 customDir = Strip(Widgets.TextField(
-                    new Rect(inRect.x + labelW, customRowY, inRect.width - labelW - ClearW - 4f, RowH - 6f), customDir),
+                    new Rect(inRect.x + enterPathLabelWidth, customRowY,
+                        inRect.width - enterPathLabelWidth - ClearW - 4f,
+                        RowH - 6f), customDir),
                     InvalidDirChars);
                 var clearRect = new Rect(inRect.xMax - ClearW, customRowY + (RowH - 6f - ClearW) / 2f, ClearW, ClearW);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))

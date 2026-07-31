@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 
@@ -11,12 +12,26 @@ namespace WorkRoles.UI
     /// view; other views may consume the same read-only catalog projection.
     internal sealed class RolesListState
     {
+        // Owner: process role catalog, with explicit window lifecycle release.
+        // Key: nested/flat slot plus UiVersion. Value: private section-builder
+        // projections; their mutable Lists and authoritative Role references are
+        // never published to rendering. Dependencies: role/group structure,
+        // ordering, collapse-independent nesting, and language through UiVersion.
+        // Refresh: lazy on the first BuildSections read after revision change.
+        // Equality: exact slot/revision hits preserve builder identity. Teardown:
+        // ReleaseSectionsSnapshot clears both slots when window data is released.
         private static readonly List<RoleSection>[] sectionsCache = new List<RoleSection>[2];
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
         private static int collapseRevision;
 
-        private List<(RoleSection section, Role role, Role parent, int depth,
-            bool virtualRow, bool invalid, string label)> displayRows;
+        // Owner: window. Key: this RolesListState instance. Value: immutable
+        // role-list render rows; producer-owned buffers are transferred directly
+        // and never exposed for mutation. Dependencies: UiVersion, location and
+        // collapse revisions, nested/search/job-filter state, language.
+        // Refresh: immediate at the next Snapshot call after a dependency moves.
+        // Equality: unchanged dependencies preserve snapshot identity. Teardown:
+        // Reset/ReleaseWindowData and language invalidation release the rows.
+        private List<RoleListRowSnapshot> displayRows;
         private RoleListSnapshot snapshot;
         private int displayStamp = -1;
         private int displayLocationRevision = -1;
@@ -51,7 +66,7 @@ namespace WorkRoles.UI
         }
 
         internal RoleListSnapshot Snapshot(RoleStore store, int selectedRoleId,
-            bool revealSelected)
+            bool revealSelected, System.Func<Role, string> roleTooltip)
         {
             bool filtered = FiltersActive;
             bool nested = (WorkRolesMod.Settings?.nestedRoleTree ?? true) && !filtered;
@@ -74,42 +89,78 @@ namespace WorkRoles.UI
                 displayNested = nested;
                 displaySearch = RoleSearch;
                 displayJobFilter = JobFilterDefName;
-                displayRows = new List<(RoleSection, Role, Role, int, bool, bool, string)>();
+                displayRows = new List<RoleListRowSnapshot>();
                 var liveLocationIds = new HashSet<string>(
                     ColonyScope.Locations().Select(location => location.Id));
                 if (filtered)
                 {
                     foreach (Role role in store.roles.Where(MatchesFilters))
-                        displayRows.Add(Row(null, role, null, 0, false));
+                        displayRows.Add(PublishRoleRow(null, role, store, 0,
+                            virtualRow: false, liveLocationIds, roleTooltip));
                 }
                 else
                 {
+                    var publishedSections = new Dictionary<RoleSection,
+                        RoleListSectionSnapshot>(sections.Count);
+                    foreach (RoleSection section in sections)
+                        publishedSections.Add(section,
+                            PublishSection(section, store));
                     foreach (RoleSection section in sections)
                     {
-                        displayRows.Add(Row(section, null, null, 0, false));
+                        RoleListSectionSnapshot publishedSection =
+                            publishedSections[section];
+                        displayRows.Add(RoleListRowSnapshot.ForHeader(
+                            publishedSection));
                         if (!IsSectionCollapsed(section.key))
                             foreach (var (member, parent, depth, virtualRow) in section.rows)
-                                displayRows.Add(Row(section, member, parent, depth, virtualRow));
+                                displayRows.Add(PublishRoleRow(publishedSection,
+                                    member, store, depth, virtualRow,
+                                    liveLocationIds, roleTooltip));
                     }
                 }
                 snapshot = new RoleListSnapshot(displayRows, filtered);
-
-                (RoleSection section, Role role, Role parent, int depth,
-                    bool virtualRow, bool invalid, string label) Row(
-                    RoleSection section, Role role, Role parent, int depth,
-                    bool virtualRow)
-                {
-                    if (role == null)
-                        return (section, null, parent, depth, virtualRow, false, null);
-                    return (section, role, parent, depth, virtualRow,
-                        RoleLocationValidity.IsInvalid(role.entries.Count,
-                            role.locationTokens, liveLocationIds),
-                        role.enabled
-                            ? role.label
-                            : "WR_RoleLabelOff".Translate(role.label).ToString());
-                }
             }
             return snapshot;
+        }
+
+        private static RoleListRowSnapshot PublishRoleRow(
+            RoleListSectionSnapshot section, Role role, RoleStore store,
+            int depth, bool virtualRow, ISet<string> liveLocationIds,
+            System.Func<Role, string> roleTooltip)
+        {
+            string originGroupLabel = null;
+            if (virtualRow)
+                originGroupLabel = store.GroupById(role.groupId)?.label
+                    ?? "WR_GroupDefault".Translate().ToString();
+            return new RoleListRowSnapshot(section, role.id, depth, virtualRow,
+                RoleLocationValidity.IsInvalid(role.entries.Count,
+                    role.locationTokens, liveLocationIds),
+                role.enabled
+                    ? role.label
+                    : "WR_RoleLabelOff".Translate(role.label).ToString(),
+                roleTooltip?.Invoke(role), role.enabled, role.hasCustomColor,
+                role.color, role.blocker, role.activeHours != Role.AllHours,
+                role.locationTokens.Count > 0, originGroupLabel);
+        }
+
+        private static RoleListSectionSnapshot PublishSection(RoleSection section,
+            RoleStore store)
+        {
+            var nested = new List<int>();
+            if (section.rows != null)
+                for (int i = 0; i < section.rows.Count; i++)
+                {
+                    var row = section.rows[i];
+                    if (row.parent != null && !row.virtualRow)
+                        nested.Add(row.role.id);
+                }
+            return new RoleListSectionSnapshot(section.key, section.displayTitle,
+                section.commandName, section.group?.id ?? -1,
+                section.group == null ? -1 : store.groups.IndexOf(section.group),
+                section.renamable, section.draggable, section.dropTarget,
+                section.roots != null && section.roots.Count > 0
+                    ? section.roots[0].id : -1,
+                nested);
         }
 
         private bool MatchesFilters(Role role)
@@ -295,17 +346,112 @@ namespace WorkRoles.UI
     internal sealed class RoleListSnapshot
     {
         internal RoleListSnapshot(
-            IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
-                bool virtualRow, bool invalid, string label)> rows,
+            List<RoleListRowSnapshot> rows,
             bool filtered)
         {
-            Rows = rows;
+            this.rows = rows;
             Filtered = filtered;
         }
 
-        internal IReadOnlyList<(RoleSection section, Role role, Role parent, int depth,
-            bool virtualRow, bool invalid, string label)> Rows { get; }
+        private readonly List<RoleListRowSnapshot> rows;
+        internal int Count => rows.Count;
+        internal RoleListRowSnapshot RowAt(int index) => rows[index];
         internal bool Filtered { get; }
+
+        internal int GroupIndexOf(int groupId)
+        {
+            for (int i = 0; i < rows.Count; i++)
+            {
+                RoleListSectionSnapshot section = rows[i].Section;
+                if (section != null && section.GroupId == groupId)
+                    return section.GroupIndex;
+            }
+            return -1;
+        }
+    }
+
+    internal sealed class RoleListRowSnapshot
+    {
+        internal RoleListRowSnapshot(RoleListSectionSnapshot section, int roleId,
+            int depth, bool virtualRow, bool invalid, string label,
+            string tooltip, bool enabled, bool hasCustomColor, Color color,
+            bool blocker, bool hasTimeRule, bool hasLocationRule,
+            string virtualOriginGroupLabel)
+        {
+            Section = section;
+            RoleId = roleId;
+            Depth = depth;
+            VirtualRow = virtualRow;
+            Invalid = invalid;
+            Label = label;
+            Tooltip = tooltip;
+            Enabled = enabled;
+            HasCustomColor = hasCustomColor;
+            Color = color;
+            Blocker = blocker;
+            HasTimeRule = hasTimeRule;
+            HasLocationRule = hasLocationRule;
+            VirtualOriginGroupLabel = virtualOriginGroupLabel;
+        }
+
+        internal static RoleListRowSnapshot ForHeader(
+            RoleListSectionSnapshot section) =>
+            new RoleListRowSnapshot(section, -1, 0, false, false, null,
+                null, true, false, default, false, false, false, null);
+
+        internal RoleListSectionSnapshot Section { get; }
+        internal int RoleId { get; }
+        internal int Depth { get; }
+        internal bool VirtualRow { get; }
+        internal bool Invalid { get; }
+        internal string Label { get; }
+        internal string Tooltip { get; }
+        internal bool Enabled { get; }
+        internal bool HasCustomColor { get; }
+        internal Color Color { get; }
+        internal bool Blocker { get; }
+        internal bool HasTimeRule { get; }
+        internal bool HasLocationRule { get; }
+        internal string VirtualOriginGroupLabel { get; }
+    }
+
+    internal sealed class RoleListSectionSnapshot
+    {
+        private readonly List<int> nestedRoleIds;
+
+        internal RoleListSectionSnapshot(string key, string displayTitle,
+            string commandName, int groupId, int groupIndex, bool renamable,
+            bool draggable, bool dropTarget, int firstRootRoleId,
+            List<int> nestedRoleIds)
+        {
+            Key = key;
+            DisplayTitle = displayTitle;
+            CommandName = commandName;
+            GroupId = groupId;
+            GroupIndex = groupIndex;
+            Renamable = renamable;
+            Draggable = draggable;
+            DropTarget = dropTarget;
+            FirstRootRoleId = firstRootRoleId;
+            this.nestedRoleIds = nestedRoleIds;
+        }
+
+        internal bool ContainsNestedRole(int roleId)
+        {
+            for (int i = 0; i < nestedRoleIds.Count; i++)
+                if (nestedRoleIds[i] == roleId) return true;
+            return false;
+        }
+
+        internal string Key { get; }
+        internal string DisplayTitle { get; }
+        internal string CommandName { get; }
+        internal int GroupId { get; }
+        internal int GroupIndex { get; }
+        internal bool Renamable { get; }
+        internal bool Draggable { get; }
+        internal bool DropTarget { get; }
+        internal int FirstRootRoleId { get; }
     }
 
     /// One display section of the role list: a user group or the derived

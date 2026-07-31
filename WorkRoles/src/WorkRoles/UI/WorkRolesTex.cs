@@ -21,13 +21,19 @@ namespace WorkRoles.UI
         public static readonly Texture2D RoleCapabilityAll;
         public static readonly Texture2D DisplayOptions;
         public static readonly Texture2D Logo;
+        // Owner: world session. Key: the current world lifecycle (one shared
+        // slot). Value: two WorkRoles-owned Texture2D assets. Dependencies:
+        // fixed dimensions and the UI section background used by the fade.
+        // Refresh: eagerly at startup/PreOpen after teardown. Equality: reuse
+        // the existing texture references while present. Teardown:
+        // ReleaseForTeardown destroys only these owned assets and clears them.
         // Runtime-built white disc (no art asset needed), tinted via GUI.color
         // at draw time — e.g. the training path color dot.
-        public static readonly Texture2D Circle;
+        public static Texture2D Circle { get; private set; }
         // 1px-wide gradient (section bg fading to transparent), stretched to
         // the panel width at draw time; bilinear sampling makes it smooth
         // where stacked 1px strips banded.
-        public static readonly Texture2D ScrollEdgeFade;
+        public static Texture2D ScrollEdgeFade { get; private set; }
 
         static WorkRolesTex()
         {
@@ -44,9 +50,22 @@ namespace WorkRoles.UI
                 "UI/Icons/ColonistBar/MentalStateAggro");
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
-            Circle = MakeCircle(32);
-            ScrollEdgeFade = MakeScrollEdgeFade(20);
+            EnsureRuntimeTextures();
             StartupTiming.Record("textures", sw.ElapsedMilliseconds);
+        }
+
+        internal static void EnsureRuntimeTextures()
+        {
+            if (Circle == null) Circle = MakeCircle(32);
+            if (ScrollEdgeFade == null) ScrollEdgeFade = MakeScrollEdgeFade(20);
+        }
+
+        internal static void ReleaseForTeardown()
+        {
+            if (Circle != null) UnityEngine.Object.Destroy(Circle);
+            if (ScrollEdgeFade != null) UnityEngine.Object.Destroy(ScrollEdgeFade);
+            Circle = null;
+            ScrollEdgeFade = null;
         }
 
         /// 32px so a 16px draw stays anti-aliased at UI scales above 1.
