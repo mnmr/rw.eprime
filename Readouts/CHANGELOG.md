@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.0.1 — 2026-07-31
+
+- Fixed: Group references to DLC resources are now conditional on the DLC being available.
+
 ## 1.0.0 — 2026-07-31
 
 - Fixed: Improved performance of tooltip rendering.

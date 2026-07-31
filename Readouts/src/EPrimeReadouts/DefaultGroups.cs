@@ -37,7 +37,8 @@ namespace EPrimeReadouts
             int nextPoolId = 1;
             int nextGroupId = 1;
             SeedFallback(model, () => nextPoolId++, () => nextGroupId++);
-            return ReadoutsXml.Export(model.Pools, model.InDisplayOrder());
+            return ReadoutsXml.Export(model.Pools, model.InDisplayOrder(),
+                ModRequirements.PackageIdOf);
         }
 
         private static bool TryReadSeedFile(out string xml,
@@ -53,7 +54,8 @@ namespace EPrimeReadouts
                 string path = Path.Combine(root, "Seed", "Readouts.xml");
                 if (!File.Exists(path)) return false;
                 xml = File.ReadAllText(path);
-                if (!ReadoutsXml.TryImport(xml, out pools, out groups, out string error))
+                if (!ReadoutsXml.TryImport(xml, out pools, out groups, out string error,
+                    ModRequirements.IsModActive))
                 {
                     Log.Warning("[EPrimeReadouts] Seed/Readouts.xml invalid (" + error
                         + "); falling back to built-in defaults.");

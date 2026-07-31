@@ -87,7 +87,7 @@ namespace EPrimeReadouts.UI
         private bool TryEnterPreview(string xml)
         {
             if (!ReadoutsXml.TryImport(xml, out var parsedPools, out var parsedGroups,
-                out string parseError))
+                out string parseError, ModRequirements.IsModActive))
             {
                 Messages.Message(
                     "EPR.ImportParseFailed".Translate(parseError),

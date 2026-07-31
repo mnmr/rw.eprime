@@ -7,7 +7,7 @@
       <Member>@EggsFertilized</Member>
     </Pool>
     <Pool Name="Hard Drugs">
-      <Member>@DavaiHardDrugs</Member>
+      <Member MayRequire="davai.sortedcategories">@DavaiHardDrugs</Member>
       <Member>Yayo</Member>
       <Member>Flake</Member>
       <Member>WakeUp</Member>
@@ -69,54 +69,54 @@
       <Member>Meat_Warg</Member>
       <Member>Meat_Wolf_Timber</Member>
       <Member>Meat_Fox_Fennec</Member>
-      <Member>Meat_Dryad_Basic</Member>
-      <Member>Meat_WasteRat</Member>
-      <Member>Meat_Walrus</Member>
-      <Member>Meat_SeaLion</Member>
-      <Member>Meat_Seal</Member>
-      <Member>Meat_HermitCrab</Member>
-      <Member>Meat_StoneCrab</Member>
-      <Member>Meat_SeaTurtle</Member>
-      <Member>Meat_Otter</Member>
-      <Member>Meat_BogHound</Member>
-      <Member>Meat_MonitorLizard</Member>
-      <Member>Meat_PrairieDog</Member>
-      <Member>Meat_Porcupine</Member>
-      <Member>Meat_Mastodon</Member>
-      <Member>Meat_Cat_Scimitar</Member>
-      <Member>Meat_Wolverine</Member>
-      <Member>Meat_Wolf_Great</Member>
-      <Member>Meat_Moose</Member>
-      <Member>Meat_AlphaThrumbo</Member>
-      <Member>Meat_Muskox</Member>
-      <Member>Meat_Tiger</Member>
-      <Member>Meat_Mink</Member>
-      <Member>Meat_Gorilla</Member>
-      <Member>Meat_Badger</Member>
-      <Member>Meat_Panda</Member>
-      <Member>Meat_Hippo</Member>
-      <Member>Meat_Megavole</Member>
-      <Member>Meat_Armadillo</Member>
-      <Member>Meat_Alligator</Member>
-      <Member>Meat_Bullfrog</Member>
-      <Member>Meat_ColossusToad</Member>
-      <Member>Meat_LavaSnail</Member>
-      <Member>Fish_Salmon</Member>
-      <Member>Fish_Bass</Member>
-      <Member>Fish_Tilapia</Member>
-      <Member>Fish_Cod</Member>
-      <Member>Fish_Bluefish</Member>
-      <Member>Fish_Guppy</Member>
-      <Member>Fish_Frostfish</Member>
-      <Member>Fish_Catfish</Member>
-      <Member>Fish_Piranha</Member>
-      <Member>Fish_Dogfish</Member>
-      <Member>Fish_Marlin</Member>
-      <Member>Fish_Tuna</Member>
-      <Member>Fish_Flounder</Member>
-      <Member>Fish_Toxfish</Member>
+      <Member MayRequire="Ludeon.RimWorld.Ideology">Meat_Dryad_Basic</Member>
+      <Member MayRequire="Ludeon.RimWorld.Biotech">Meat_WasteRat</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Walrus</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_SeaLion</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Seal</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_HermitCrab</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_StoneCrab</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_SeaTurtle</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Otter</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_BogHound</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_MonitorLizard</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_PrairieDog</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Porcupine</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Mastodon</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Cat_Scimitar</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Wolverine</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Wolf_Great</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Moose</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_AlphaThrumbo</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Muskox</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Tiger</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Mink</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Gorilla</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Badger</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Panda</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Hippo</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Megavole</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Armadillo</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Alligator</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_Bullfrog</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_ColossusToad</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Meat_LavaSnail</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Salmon</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Bass</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Tilapia</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Cod</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Bluefish</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Guppy</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Frostfish</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Catfish</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Piranha</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Dogfish</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Marlin</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Tuna</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Flounder</Member>
+      <Member MayRequire="Ludeon.RimWorld.Odyssey">Fish_Toxfish</Member>
     </Pool>
-    <Pool Name="Mechs">
+    <Pool Name="Mechs" MayRequire="Ludeon.RimWorld.Biotech">
       <Member>SignalChip</Member>
       <Member>NanostructuringChip</Member>
       <Member>PowerfocusChip</Member>
@@ -126,29 +126,29 @@
     </Pool>
     <Pool Name="Mortar shells">
       <Member>Shell_AntigrainWarhead</Member>
-      <Member>Shell_Deadlife</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">Shell_Deadlife</Member>
       <Member>Shell_EMP</Member>
       <Member>Shell_Firefoam</Member>
       <Member>Shell_HighExplosive</Member>
       <Member>Shell_Incendiary</Member>
       <Member>Shell_Smoke</Member>
-      <Member>Shell_Toxic</Member>
+      <Member MayRequire="Ludeon.RimWorld.Biotech">Shell_Toxic</Member>
     </Pool>
     <Pool Name="Plant food">
       <Member>@PlantFoodRaw</Member>
     </Pool>
     <Pool Name="Sera">
-      <Member>@DavaiSera</Member>
+      <Member MayRequire="davai.sortedcategories">@DavaiSera</Member>
       <Member>MechSerumHealer</Member>
       <Member>MechSerumResurrector</Member>
-      <Member>VoidsightSerum</Member>
-      <Member>MetalbloodSerum</Member>
-      <Member>JuggernautSerum</Member>
-      <Member>MindNumbSerum</Member>
-      <Member>GhoulResurrectionSerum</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">VoidsightSerum</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">MetalbloodSerum</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">JuggernautSerum</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">MindNumbSerum</Member>
+      <Member MayRequire="Ludeon.RimWorld.Anomaly">GhoulResurrectionSerum</Member>
     </Pool>
     <Pool Name="Social Drugs">
-      <Member>@DavaiSocialDrugs</Member>
+      <Member MayRequire="davai.sortedcategories">@DavaiSocialDrugs</Member>
       <Member>Beer</Member>
       <Member>SmokeleafJoint</Member>
       <Member>Ambrosia</Member>
@@ -167,7 +167,7 @@
     <Group Name="Food">
       <Tier>
         <Slot>pool:Meals</Slot>
-        <Slot>BabyFood</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Biotech">BabyFood</Slot>
         <Slot>Kibble</Slot>
       </Tier>
       <Tier>
@@ -181,7 +181,7 @@
         <Slot>~Hay</Slot>
         <Slot>~Pemmican</Slot>
         <Slot>~Chocolate</Slot>
-        <Slot>~HemogenPack</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Biotech">~HemogenPack</Slot>
       </Tier>
     </Group>
     <Group Name="Raw">
@@ -252,11 +252,11 @@
         <Slot>~Dye</Slot>
       </Tier>
       <Tier>
-        <Slot>~GravlitePanel</Slot>
-        <Slot>~Bioferrite</Slot>
-        <Slot>~Obsidian</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Odyssey">~GravlitePanel</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Anomaly">~Bioferrite</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Odyssey">~Obsidian</Slot>
         <Slot>pool:Stone chunks</Slot>
-        <Slot>~Shard</Slot>
+        <Slot MayRequire="Ludeon.RimWorld.Anomaly">~Shard</Slot>
       </Tier>
     </Group>
     <Group Name="Wealth">

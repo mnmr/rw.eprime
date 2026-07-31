@@ -16,7 +16,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _)) return;
+            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _,
+                ModRequirements.IsModActive)) return;
             store.Bump(store.Model.ApplyImport(
                 pools, groups, store.TakePoolId, store.TakeGroupId));
         }
@@ -98,7 +99,8 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _)) return;
+            if (!ReadoutsXml.TryImport(xml, out var pools, out var groups, out _,
+                ModRequirements.IsModActive)) return;
             store.Bump(store.Model.ApplyImport(
                 pools, groups, store.TakePoolId, store.TakeGroupId));
         }

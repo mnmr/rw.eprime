@@ -79,7 +79,7 @@ namespace EPrimeReadouts.Core
             return new ReadoutSnapshot(poolCopy, groupCopy);
         }
 
-        public string ToXml()
+        public string ToXml(Func<string, string> packageIdOf = null)
         {
             var pools = new List<ResourcePool>(Pools.Count);
             for (int i = 0; i < Pools.Count; i++)
@@ -110,7 +110,7 @@ namespace EPrimeReadouts.Core
                     Tiers = tiers,
                 });
             }
-            return ReadoutsXml.Export(pools, groups);
+            return ReadoutsXml.Export(pools, groups, packageIdOf);
         }
     }
 }

@@ -48,7 +48,7 @@ namespace EPrimeReadouts.UI
             snapshotPoolsVersion = store.PoolsVersion;
             snapshot = ReadoutSnapshot.Capture(
                 store.Model.Pools, store.Model.InDisplayOrder());
-            xml = snapshot.ToXml();
+            xml = snapshot.ToXml(ModRequirements.PackageIdOf);
         }
 
         public override void PreClose()
