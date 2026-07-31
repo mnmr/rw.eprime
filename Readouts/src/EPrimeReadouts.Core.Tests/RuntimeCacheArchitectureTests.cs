@@ -170,6 +170,33 @@ public class RuntimeCacheArchitectureTests
     }
 
     [Test]
+    public async Task IconTipHoverPathDefersGatheringToDisplay()
+    {
+        string source = Source("UI", "IconTips.cs");
+        string hover = Method(source, "public static void Tip(");
+        string gather = Method(source, "private string Gather()");
+        string patch = Source("Patches", "Patch_ActiveTip.cs");
+
+        // Hovering must cost a dictionary read plus field writes: no model
+        // building, cache probing, or registry activation until the tooltip
+        // actually renders after its hover delay.
+        await Assert.That(hover).DoesNotContain("Build(");
+        await Assert.That(hover).DoesNotContain("cache.Get");
+        await Assert.That(hover).DoesNotContain("Activate");
+        await Assert.That(hover).Contains(".Getter");
+
+        // The display-time getter freezes its gathered tip behind a
+        // frame-continuity check standing in for a "tip closed" callback.
+        await Assert.That(gather).Contains("TipContinuity.IsBroken");
+        await Assert.That(gather).Contains("Frozen");
+
+        // Closed tips must drop their registration so vanilla tooltips stop
+        // paying the registry probe.
+        await Assert.That(Method(patch, "public static void Postfix()"))
+            .Contains("RetireStaleDisplayed");
+    }
+
+    [Test]
     public async Task CatalogDoesNotPublishItsMutableMemberLists()
     {
         string source = Source("GameResourceCatalog.cs");

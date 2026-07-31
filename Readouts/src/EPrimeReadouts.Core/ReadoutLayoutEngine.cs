@@ -25,6 +25,13 @@ namespace EPrimeReadouts.Core
     {
         public const string ResultsLabelKey = "EPR.Results";
         public const string NoMatchesLabelKey = "EPR.NoMatches";
+        /// Truncation indicator below the results grid; the cell's Count
+        /// carries the number of hidden matches for the "{0}" placeholder.
+        public const string MoreResultsLabelKey = "EPR.MoreResults";
+
+        // Results section display cap: at most 3 rows of up to 6 items each.
+        public const int MaxResultColumns = 6;
+        public const int MaxResultRows = 3;
 
         /// Private struct for resolved token data in group layout.
         private struct ResolvedSlot
@@ -39,9 +46,10 @@ namespace EPrimeReadouts.Core
         // Content inset: X is stripe + pad, Y is GroupPadY.
         private static float InsetX => LayoutMetrics.StripeW + LayoutMetrics.GroupPadX;
 
-        // Columns for the Results section (wraps at panel width).
+        // Columns for the Results section (wraps at panel width, capped).
         private static int ResultsColumns(float width) =>
-            Math.Max(1, (int)((width - InsetX - LayoutMetrics.MarkerColW) / LayoutMetrics.CellW));
+            Math.Min(MaxResultColumns,
+                Math.Max(1, (int)((width - InsetX - LayoutMetrics.MarkerColW) / LayoutMetrics.CellW)));
 
         // Width of a group container for a given slot count (never wraps).
         private static float GroupContainerWidth(int slotCount) =>
@@ -454,9 +462,14 @@ namespace EPrimeReadouts.Core
 
             // Pre-compute container height so GroupBack spans the full container
             int columns = ResultsColumns(input.Width);
+            int shown = Math.Min(matches.Count, columns * MaxResultRows);
+            int hidden = matches.Count - shown;
+            if (hidden > 0)
+                matches.RemoveRange(shown, hidden);
             int gridRows = matches.Count > 0 ? (matches.Count + columns - 1) / columns : 0;
             float gridH = gridRows * (LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH);
-            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.LabelRowH + gridH;
+            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.LabelRowH + gridH
+                + (hidden > 0 ? LayoutMetrics.LabelRowH : 0f);
 
             // GroupBack with GroupIndex = -1 emitted BEFORE label cell
             model.Cells.Add(new RenderCell
@@ -477,6 +490,16 @@ namespace EPrimeReadouts.Core
 
             if (matches.Count > 0)
                 BuildResultsGrid(input, model, matches, insetY);
+
+            if (hidden > 0)
+                model.Cells.Add(new RenderCell
+                {
+                    Kind = CellKind.Label,
+                    Text = MoreResultsLabelKey,
+                    Count = hidden,
+                    Rect = new RectF(insetX, insetY + gridH,
+                        input.Width - insetX, LayoutMetrics.LabelRowH),
+                });
 
             return y + containerH;
         }

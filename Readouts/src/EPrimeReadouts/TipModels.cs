@@ -7,8 +7,8 @@ using Verse;
 namespace EPrimeReadouts
 {
     /// A producer-owned structured tooltip. PlainText is computed exactly once
-    /// and remains the vanilla TipSignal fallback; activation only associates
-    /// the model with the current EPrimeReadouts window generation.
+    /// and remains the vanilla TipSignal fallback; activation runs from the
+    /// displayed tooltip's text getter and registers the model for rendering.
     internal sealed class StructuredTip
     {
         internal StructuredTip(string stableKey, TipModel model)
@@ -26,7 +26,7 @@ namespace EPrimeReadouts
 
         internal string Activate()
         {
-            Patches.Patch_ActiveTip_TipRect.Activate(this);
+            Patches.Patch_ActiveTip_TipRect.ActivateDisplayed(this);
             return PlainText;
         }
     }
@@ -109,6 +109,13 @@ namespace EPrimeReadouts
                         case TipSpanRow span:
                             sb.Append(span.Text);
                             break;
+                        case TipFactGridRow grid:
+                            for (int i = 0; i < grid.Labels.Count; i++)
+                            {
+                                if (i > 0) sb.Append('\n');
+                                sb.Append(grid.Labels[i]).Append(": ").Append(grid.Values[i]);
+                            }
+                            break;
                     }
                 }
             }
@@ -150,6 +157,13 @@ namespace EPrimeReadouts
         public TipSection Span(string text, float indent = 0f, bool dim = true, int alignColumn = -1)
         {
             Rows.Add(new TipSpanRow(text, indent, dim, alignColumn));
+            return this;
+        }
+
+        public TipSection FactGrid(
+            IReadOnlyList<string> labels, IReadOnlyList<string> values, int maxRowsPerColumn)
+        {
+            Rows.Add(new TipFactGridRow(labels, values, maxRowsPerColumn));
             return this;
         }
 
@@ -198,6 +212,24 @@ namespace EPrimeReadouts
             Value = value;
             ValueColor = valueColor;
             LabelColor = labelColor;
+        }
+    }
+
+    /// Column-major grid of dim-label/white-value pairs: MaxRowsPerColumn pairs
+    /// fill a column before the next column starts, so a long list widens the
+    /// tooltip instead of growing it taller. Labels and Values are parallel.
+    public sealed class TipFactGridRow : TipRow
+    {
+        public readonly IReadOnlyList<string> Labels;
+        public readonly IReadOnlyList<string> Values;
+        public readonly int MaxRowsPerColumn;
+
+        public TipFactGridRow(
+            IReadOnlyList<string> labels, IReadOnlyList<string> values, int maxRowsPerColumn)
+        {
+            Labels = labels;
+            Values = values;
+            MaxRowsPerColumn = maxRowsPerColumn;
         }
     }
 

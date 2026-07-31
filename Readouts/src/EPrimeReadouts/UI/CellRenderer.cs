@@ -48,7 +48,11 @@ namespace EPrimeReadouts.UI
                         tooltips[i] = defs[i] != null ? defs[i].LabelCap : cell.DefName;
                 }
                 else if (cell.Kind == CellKind.Label)
-                    labels[i] = UiText.Get(cell.Text);
+                    // Count > 0 marks a parameterized label ("…and {0} more");
+                    // formatted here so drawing never builds strings.
+                    labels[i] = cell.Count > 0
+                        ? string.Format(UiText.Get(cell.Text), cell.Count)
+                        : UiText.Get(cell.Text);
             }
             return new DrawModel
             {

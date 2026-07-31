@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
-using EPrimeReadouts.Patches;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -13,6 +12,10 @@ namespace EPrimeReadouts.UI
     public static class ReadoutPanel
     {
         private const float SearchRowH = 26f;
+        // Right-edge column reserved for the clear-X so the text field and the
+        // button never share screen space (rows above/below align to it too).
+        private const float ClearColW = 22f;
+        private const string SearchControlName = "EPR.SearchField";
 
         // The readout runs before the window stack in the OnGUI order, so any
         // event it consumes never reaches a window drawn over it. While a
@@ -33,8 +36,6 @@ namespace EPrimeReadouts.UI
 
         public static string SearchText = "";
 
-        private static readonly object structuredTipOwner = new object();
-
         // Cache contract:
         // Owner: process/current world and selected map.
         // Key: map identity, exact domain revisions, view stamp, width,
@@ -44,7 +45,7 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate on dependency changes; counts arrive via
         // GameRenderData's 204-tick publisher.
         // Equality policy: unchanged dependencies preserve DrawModel identity.
-        // Teardown: ReleaseMap/Reset drops map, store-derived and tooltip state.
+        // Teardown: ReleaseMap/Reset drops map and store-derived state.
         private static DrawModel draw;
         private static Vector2 scroll;
         private static float cachedTitleWidth = -1f;
@@ -89,7 +90,6 @@ namespace EPrimeReadouts.UI
 
         internal static void Reset()
         {
-            Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
             hotRects.Clear();
             draw = null;
             scroll = Vector2.zero;
@@ -131,13 +131,7 @@ namespace EPrimeReadouts.UI
                 Rebuild(store, map, width, renderData);
 
             inputBlocked = Find.WindowStack.GetWindowAt(Event.current.mousePosition) != null;
-            bool repaint = Event.current.type == EventType.Repaint;
-            if (repaint) Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
-            try
-            {
-                using (new GuiStateScope()) Draw(map, store, settings);
-            }
-            finally { if (repaint) Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner); }
+            using (new GuiStateScope()) Draw(map, store, settings);
         }
 
         private static void Draw(Map map, ReadoutStore store, ReadoutSettings settings)
@@ -211,13 +205,26 @@ namespace EPrimeReadouts.UI
                 return;
             }
 
-            var fieldRect = new Rect(rect.x + 26f, rect.y + 1f, rect.width - 26f, 22f);
+            // The field stops short of the clear-X column; overlapping rects
+            // would let the field consume the X's mouse-down.
+            var fieldRect = new Rect(rect.x + 26f, rect.y + 1f,
+                rect.width - 26f - ClearColW, 22f);
+
+            // IMGUI never releases keyboard focus on its own: a click outside
+            // the field (map, other rows, the clear-X) must unfocus it here.
+            var evt = Event.current;
+            if (evt.type == EventType.MouseDown
+                && !fieldRect.Contains(evt.mousePosition)
+                && GUI.GetNameOfFocusedControl() == SearchControlName)
+                Verse.UI.UnfocusCurrentControl();
+
             if (inputBlocked)
             {
                 GUI.Label(fieldRect, SearchText ?? "", Text.CurTextFieldStyle);
             }
             else
             {
+                GUI.SetNextControlName(SearchControlName);
                 string newText = Widgets.TextField(fieldRect, SearchText ?? "");
                 if (newText != SearchText)
                 {
@@ -233,6 +240,9 @@ namespace EPrimeReadouts.UI
             {
                 SearchText = "";
                 BumpView();
+                // A focused field would redraw its editor's stale text over
+                // the cleared state; drop focus so the empty string sticks.
+                Verse.UI.UnfocusCurrentControl();
             }
         }
 

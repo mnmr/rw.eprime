@@ -3,6 +3,7 @@
   <EPR.Title>EPrime's Readouts</EPR.Title>
   <EPR.Results>Results</EPR.Results>
   <EPR.NoMatches>No matches</EPR.NoMatches>
+  <EPR.MoreResults>…and {0} more</EPR.MoreResults>
   <EPR.CycleTip>Cycle visible tiers</EPR.CycleTip>
   <EPR.UseVanilla>Use vanilla readout</EPR.UseVanilla>
   <EPR.OffsetX>Horizontal offset</EPR.OffsetX>

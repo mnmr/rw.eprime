@@ -1,5 +1,4 @@
 using EPrimeReadouts.Core;
-using EPrimeReadouts.Patches;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -39,7 +38,6 @@ namespace EPrimeReadouts.UI
         /// Session state: false = show Resources tree, true = show Pools UI.
         private bool showPools;
 
-        private readonly object structuredTipOwner = new object();
         private readonly GroupListView groups = new GroupListView();
         private readonly ResourceTreeView tree = new ResourceTreeView();
         private readonly EditorView editor = new EditorView();
@@ -73,7 +71,6 @@ namespace EPrimeReadouts.UI
                 s.dialogW = windowRect.width;
                 s.dialogH = windowRect.height;
             });
-            Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
             EprDrag.Cancel();
             groups.Reset();
             tree.Reset();
@@ -93,12 +90,8 @@ namespace EPrimeReadouts.UI
             var store = ReadoutStore.Current;
             if (store == null) return;
 
-            bool repaint = Event.current.type == EventType.Repaint;
-            if (repaint) Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
-            try
+            using (new GuiStateScope())
             {
-                using (new GuiStateScope())
-                {
                 EprDrag.Update();
 
                 // --- Read the same per-map snapshot used by the main panel. ---
@@ -240,11 +233,6 @@ namespace EPrimeReadouts.UI
 
                 DrawDragGhost();
                 EprDrag.ResolveMouseUp();
-                }
-            }
-            finally
-            {
-                if (repaint) Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner);
             }
         }
 

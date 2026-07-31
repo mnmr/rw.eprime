@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using EPrimeReadouts.Core;
 using UnityEngine;
 using Verse;
 
@@ -23,6 +24,7 @@ namespace EPrimeReadouts.UI
         private const float RuleGapAbove = 2f; // table rule hugs the row above
         private const float RuleGapBelow = 3f;
         private const float RowTighten = 4f;   // tight rows pull toward their parent
+        private const float FactGridColGap = 8f; // between fact-grid columns
         internal const float MaxContentWidth = 800f;
 
         private static readonly Color SeparatorColor = new Color(1f, 1f, 1f, 0.2f);
@@ -138,6 +140,9 @@ namespace EPrimeReadouts.UI
                         case TipActionRow action:
                             w = Mathf.Max(w, factCol + ColGap + WrText.FitWidth(action.Description));
                             break;
+                        case TipFactGridRow grid:
+                            w = Mathf.Max(w, FactGridWidth(grid));
+                            break;
                     }
                 float[] cols = ColumnWidths(section);
                 if (cols != null)
@@ -172,6 +177,36 @@ namespace EPrimeReadouts.UI
                 }
             if (anyIcon) widths[0] += CellIconGap + CellIconSize;
             return widths;
+        }
+
+        /// Natural label/value widths of one fact-grid column (max over the
+        /// pairs it holds).
+        private static void FactGridColumnWidths(TipFactGridRow grid, int column,
+            out float labelW, out float valueW)
+        {
+            labelW = 0f;
+            valueW = 0f;
+            int start = column * grid.MaxRowsPerColumn;
+            int end = Mathf.Min(start + grid.MaxRowsPerColumn, grid.Labels.Count);
+            for (int i = start; i < end; i++)
+            {
+                labelW = Mathf.Max(labelW, WrText.FitWidth(grid.Labels[i]));
+                valueW = Mathf.Max(valueW, WrText.FitWidth(grid.Values[i]));
+            }
+        }
+
+        /// Total unwrapped width of a fact grid across all of its columns.
+        private static float FactGridWidth(TipFactGridRow grid)
+        {
+            int cols = ColumnGrid.ColumnCount(grid.Labels.Count, grid.MaxRowsPerColumn);
+            float w = 0f;
+            for (int c = 0; c < cols; c++)
+            {
+                if (c > 0) w += FactGridColGap;
+                FactGridColumnWidths(grid, c, out float labelW, out float valueW);
+                w += labelW + ColGap + valueW;
+            }
+            return w;
         }
 
         /// Shared label/token column across the whole model: fact and action
@@ -352,6 +387,45 @@ namespace EPrimeReadouts.UI
                                 cx += tableCols[i] + TableColGap;
                             }
                             y += lineH;
+                            break;
+                        }
+                        case TipFactGridRow grid:
+                        {
+                            int n = grid.Labels.Count;
+                            if (n == 0) break;
+                            int gridCols = ColumnGrid.ColumnCount(n, grid.MaxRowsPerColumn);
+                            float gx = 0f;
+                            for (int c = 0; c < gridCols; c++)
+                            {
+                                FactGridColumnWidths(grid, c,
+                                    out float gLabelW, out float gValueW);
+                                int start = c * grid.MaxRowsPerColumn;
+                                int end = Mathf.Min(start + grid.MaxRowsPerColumn, n);
+                                for (int i = start; i < end; i++)
+                                {
+                                    float ry = y + (i - start) * lineH;
+                                    geo.Cmds.Add(new Cmd
+                                    {
+                                        Rect = new Rect(gx, ry, gLabelW, lineH),
+                                        Color = TipText.DimColor,
+                                        Text = grid.Labels[i],
+                                        NoWrap = true,
+                                    });
+                                    geo.Cmds.Add(new Cmd
+                                    {
+                                        Rect = new Rect(gx + gLabelW + ColGap, ry,
+                                            gValueW, lineH),
+                                        Color = Color.white,
+                                        Text = grid.Values[i],
+                                        NoWrap = true,
+                                    });
+                                }
+                                gx += gLabelW + ColGap + gValueW + FactGridColGap;
+                            }
+                            // Column-major: the first column always holds the
+                            // most rows, so it alone sets the grid's height.
+                            y += ColumnGrid.RowsInColumn(0, n, grid.MaxRowsPerColumn)
+                                * lineH;
                             break;
                         }
                         case TipSpanRow span:

@@ -13,16 +13,18 @@ namespace EPrimeReadouts.Patches
     public static class Patch_ActiveTip_TipRect
     {
         // Cache contract:
-        // Owner: each readout panel/config window tooltip producer.
-        // Key: owner-local stable key and exact plain-text lookup key.
-        // Value: immutable TipModel graph for the active/retired generation.
-        // Dependencies: producer generations and activated StructuredTip identity.
-        // Refresh policy: event-driven Begin/Touch/End per repaint generation.
-        // Equality policy: untouched values retain identity until retirement flush.
-        // Teardown: ReleaseOwner per window and Clear on global teardown.
+        // Owner: the displayed-tooltip session (single synthetic owner).
+        // Key: producer stable key and exact plain-text lookup key.
+        // Value: immutable TipModel graph for the displayed tip.
+        // Dependencies: display-time activation on every rendered tooltip frame.
+        // Refresh policy: event-driven; a registration not re-activated within
+        // one frame is dropped by the continuity check after DoTooltipGUI.
+        // Equality policy: re-activated values retain identity.
+        // Teardown: ReleaseDisplayed per producer reset, Clear on teardown.
         private static readonly OwnerGenerationRegistry<object, string, string, TipModel> models =
             new OwnerGenerationRegistry<object, string, string, TipModel>();
-        private static bool generationActive;
+        private static readonly object displayedOwner = new object();
+        private static int lastDisplayedFrame = TipContinuity.NoFrame;
         private static int registryEpoch;
 
         internal static bool HasModels => models.Count > 0;
@@ -31,33 +33,35 @@ namespace EPrimeReadouts.Patches
         internal static void Clear()
         {
             models.Clear();
-            generationActive = false;
+            lastDisplayedFrame = TipContinuity.NoFrame;
             registryEpoch++;
         }
 
-        internal static void BeginGeneration(object owner)
+        /// Called from a displayed tooltip's text getter: registers the model
+        /// so TipRect/DrawInner take over rendering for that exact text.
+        internal static void ActivateDisplayed(StructuredTip tip)
         {
-            models.Begin(owner);
-            generationActive = true;
-        }
-
-        internal static void EndGeneration(object owner)
-        {
-            if (!generationActive) return;
-            models.End(owner);
-            generationActive = false;
-        }
-
-        internal static void ReleaseOwner(object owner)
-        {
-            models.Release(owner);
-        }
-
-        internal static void Activate(StructuredTip tip)
-        {
-            if (!generationActive || tip == null
-                || tip.RegistryEpoch != registryEpoch) return;
+            if (tip == null || tip.RegistryEpoch != registryEpoch) return;
+            models.Begin(displayedOwner);
             models.Touch(tip.StableKey, tip.PlainText, tip.Model);
+            models.End(displayedOwner);
+            lastDisplayedFrame = Time.frameCount;
+        }
+
+        /// Vanilla never says "tooltip closed"; a >1 frame gap since the last
+        /// activation stands in for it and drops the registration, so vanilla
+        /// tooltips stop paying the lookup probe once our tip closes.
+        internal static void RetireStaleDisplayed()
+        {
+            if (models.Count == 0) return;
+            if (!TipContinuity.IsBroken(lastDisplayedFrame, Time.frameCount)) return;
+            ReleaseDisplayed();
+        }
+
+        internal static void ReleaseDisplayed()
+        {
+            models.Release(displayedOwner);
+            lastDisplayedFrame = TipContinuity.NoFrame;
         }
 
         internal static void FlushRetired()
@@ -74,8 +78,22 @@ namespace EPrimeReadouts.Patches
         [HarmonyPrefix]
         public static bool Prefix(TipSignal ___signal, ref Rect __result)
         {
-            if (!HasModels) return true;
-            string text = ___signal.text;
+            string text;
+            var getter = ___signal.textGetter;
+            if (getter != null)
+            {
+                // Only invoke getters this mod created (recognized by their
+                // delegate target): this is the designed gather point, run
+                // when the tip actually renders. Foreign getter tips keep the
+                // untouched vanilla path.
+                if (!(getter.Target is IDeferredTipSource)) return true;
+                text = getter();
+            }
+            else
+            {
+                if (!HasModels) return true;
+                text = ___signal.text;
+            }
             if (text == null) return true;
             if (models.TryGet(text, out var model))
             {
@@ -111,7 +129,8 @@ namespace EPrimeReadouts.Patches
     }
 
     /// Retired models remain available through vanilla's ActiveTip draw, then
-    /// disappear only after the tooltip GUI has finished with the old signal.
+    /// disappear only after the tooltip GUI has finished with the old signal;
+    /// a closed tip's registration is dropped via the continuity check.
     [HarmonyPatch(typeof(TooltipHandler), "DoTooltipGUI")]
     public static class Patch_TooltipHandler_DoTooltipGUI
     {
@@ -119,6 +138,7 @@ namespace EPrimeReadouts.Patches
         public static void Postfix()
         {
             Patch_ActiveTip_TipRect.FlushRetired();
+            Patch_ActiveTip_TipRect.RetireStaleDisplayed();
         }
     }
 }

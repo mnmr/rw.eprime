@@ -1,16 +1,29 @@
 using System;
+using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using EPrimeReadouts.Patches;
 using RimWorld;
 using UnityEngine;
 using Verse;
 
 namespace EPrimeReadouts.UI
 {
+    /// Marks this mod's deferred tooltip getters so Patch_ActiveTip can
+    /// recognize them by delegate target without invoking foreign getters.
+    internal interface IDeferredTipSource
+    {
+    }
+
     /// Structured hover tips for resource icons: label + count badge,
-    /// description prose, threshold facts. Models are cached per token and
-    /// rebuilt only when their shared render-data snapshot changes.
+    /// description prose, pool breakdown, threshold facts. Hovering only
+    /// records intent (a dictionary read plus field writes); gathering is
+    /// deferred into a per-token TipSignal getter that vanilla invokes only
+    /// once the tooltip actually renders after its hover delay.
     public static class IconTips
     {
+        /// Pool breakdown rows per tooltip column before a new column starts.
+        private const int MaxBreakdownRowsPerColumn = 20;
+
         private readonly struct TipRevision : IEquatable<TipRevision>
         {
             private readonly RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData;
@@ -55,12 +68,81 @@ namespace EPrimeReadouts.UI
         // Key: canonical token.
         // Value: immutable StructuredTip/TipModel graph.
         // Dependencies: shared render snapshot identity, ThresholdsVersion, UiVersion.
-        // Refresh policy: immediate on dependency change.
+        // Refresh policy: probed only at display-session start; a dependency
+        // change rebuilds on the next display, never mid-display.
         // Equality policy: cache hits preserve StructuredTip identity.
         // Teardown: Reset clears all models on world teardown.
         private static readonly RevisionedCache<string, TipRevision, StructuredTip> cache =
             new RevisionedCache<string, TipRevision, StructuredTip>();
         private static readonly Func<BuildState, StructuredTip> buildTip = Build;
+
+        // Cache contract:
+        // Owner: current world/store presentation session.
+        // Key: slot token (defName fallback) — same key as the model cache.
+        // Value: mutable DeferredTip carrying a once-built getter delegate,
+        // the latest hovered state, and the frozen displayed tip.
+        // Dependencies: hover state fields are overwritten on every hovered
+        // frame; the frozen tip depends only on display-frame continuity.
+        // Refresh policy: gathering runs on the first frame of each display
+        // session, through the revisioned model cache above.
+        // Equality policy: entry and getter identity are stable per key.
+        // Teardown: Reset clears entries and the displayed registration.
+        private static readonly Dictionary<string, DeferredTip> deferredTips =
+            new Dictionary<string, DeferredTip>();
+
+        /// One per hovered token: TipRegion hands vanilla the cached Getter,
+        /// so hover passes build no closures, models, or strings. Gather runs
+        /// only while vanilla renders the tooltip, after the hover delay.
+        private sealed class DeferredTip : IDeferredTipSource
+        {
+            internal readonly string CacheKey;
+            internal readonly Func<string> Getter;
+            internal ThingDef Def;
+            internal int Count;
+            internal string Token;
+            internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
+            private StructuredTip Frozen;
+            private int lastDisplayFrame = TipContinuity.NoFrame;
+
+            internal DeferredTip(string cacheKey)
+            {
+                CacheKey = cacheKey;
+                Getter = Gather;
+            }
+
+            /// The first invocation of a display session gathers through the
+            /// revisioned cache and freezes the result; a broken frame
+            /// continuity means the tip closed, so the next display regathers.
+            /// Users leave and re-hover to see updated info.
+            private string Gather()
+            {
+                int frame = Time.frameCount;
+                if (Frozen == null || TipContinuity.IsBroken(lastDisplayFrame, frame))
+                {
+                    UiVersion.ObserveCurrentMetrics();
+                    var store = ReadoutStore.Current;
+                    var state = new BuildState
+                    {
+                        Def = Def,
+                        Count = Count,
+                        Token = Token,
+                        Store = store,
+                        RenderData = RenderData,
+                    };
+                    Frozen = RenderData != null
+                        ? cache.Get(
+                            CacheKey,
+                            new TipRevision(RenderData,
+                                store != null ? store.ThresholdsVersion : 0,
+                                UiVersion.Current),
+                            state,
+                            buildTip)
+                        : Build(state);
+                }
+                lastDisplayFrame = frame;
+                return Frozen.Activate();
+            }
+        }
 
         public static void Tip(
             Rect rect,
@@ -70,30 +152,18 @@ namespace EPrimeReadouts.UI
             string token,
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
         {
-            UiVersion.ObserveCurrentMetrics();
             // Use token as cache key (null-safe fallback to defName for plain slots)
             string cacheKey = token ?? def.defName;
-            StructuredTip tip;
-            var store = ReadoutStore.Current;
-            var state = new BuildState
+            if (!deferredTips.TryGetValue(cacheKey, out var deferred))
             {
-                Def = def,
-                Count = count,
-                Token = token,
-                Store = store,
-                RenderData = renderData,
-            };
-            if (renderData != null)
-                tip = cache.Get(
-                    cacheKey,
-                    new TipRevision(renderData,
-                        store != null ? store.ThresholdsVersion : 0,
-                        UiVersion.Current),
-                    state,
-                    buildTip);
-            else
-                tip = Build(state);
-            TooltipHandler.TipRegion(rect, new TipSignal(tip.Activate(), def.shortHash));
+                deferred = new DeferredTip(cacheKey);
+                deferredTips.Add(cacheKey, deferred);
+            }
+            deferred.Def = def;
+            deferred.Count = count;
+            deferred.Token = token;
+            deferred.RenderData = renderData;
+            TooltipHandler.TipRegion(rect, new TipSignal(deferred.Getter, def.shortHash));
         }
 
         private static StructuredTip Build(BuildState state)
@@ -144,8 +214,11 @@ namespace EPrimeReadouts.UI
             }
             else if (poolMembers != null && poolMembers.Count > 0)
             {
-                // Pool: per-member count breakdown from the shared count snapshot.
-                var breakdown = model.AddSection();
+                // Pool: per-member count breakdown from the shared count
+                // snapshot. Zero-count members are omitted; long lists wrap
+                // into extra columns so the tooltip widens instead of growing.
+                var memberLabels = new System.Collections.Generic.List<string>();
+                var memberValues = new System.Collections.Generic.List<string>();
                 for (int m = 0; m < poolMembers.Count; m++)
                 {
                     var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(poolMembers[m]);
@@ -154,8 +227,13 @@ namespace EPrimeReadouts.UI
                         && state.RenderData.Counts.Counts.TryGetValue(
                             memberDef.defName, out int cachedCount)
                         ? cachedCount : 0;
-                    breakdown.Fact(memberDef.LabelCap, memberCount.ToString());
+                    if (memberCount == 0) continue;
+                    memberLabels.Add(memberDef.LabelCap);
+                    memberValues.Add(memberCount.ToString());
                 }
+                if (memberLabels.Count > 0)
+                    model.AddSection().FactGrid(
+                        memberLabels, memberValues, MaxBreakdownRowsPerColumn);
             }
 
             var tipStore = state.Store;
@@ -168,6 +246,11 @@ namespace EPrimeReadouts.UI
             return new StructuredTip("EPR.Tip." + canonical, model);
         }
 
-        internal static void Reset() => cache.Clear();
+        internal static void Reset()
+        {
+            cache.Clear();
+            deferredTips.Clear();
+            Patch_ActiveTip_TipRect.ReleaseDisplayed();
+        }
     }
 }

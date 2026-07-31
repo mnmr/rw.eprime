@@ -19,7 +19,7 @@ These rules apply to the entire repository. They are fail-closed.
 
 ## Non-negotiable render-path rule
 
-All UI and rendering must operate on cached, immutable, or snapshot data.
+All UI and rendering must operate on cached snapshot data (immutable by either design or specification).
 
 A steady render pass may:
 
