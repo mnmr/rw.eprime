@@ -310,7 +310,7 @@ namespace WorkRoles.Patches
             // click was already handled by the dropdown underneath this frame.
             var rect = new Rect(0f, 0f, listing.ColumnWidth, 30f);
             Widgets.ButtonText(rect, "WR_BillRoleOption".Translate(role.label));
-            TooltipHandler.TipRegion(rect, "WR_BillWorkerRoleTip".Translate());
+            UI.WrTips.Key("WR_BillWorkerRoleTip").Region(rect);
         }
     }
 }

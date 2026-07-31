@@ -101,7 +101,7 @@ namespace WorkRoles.UI
         {
             var settings = WorkRolesMod.Settings;
             var local = new Rect(0f, 0f, GripSize, GripSize);
-            TooltipHandler.TipRegion(local, "WR_ResizeGripTip".Translate());
+            WrTips.Key("WR_ResizeGripTip").Region(local);
             // Reddish = player-sized. UV flip, not rotation: GUI matrix
             // rotation misplaces draws inside GUI windows.
             bool custom = settings != null && (settings.windowWidth > 0f || settings.windowHeight > 0f);
@@ -225,13 +225,14 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            if (WrEvent.SkipContentPass()) return;
             ObserveLanguageRevision();
-            // UiVersion is advanced by WorkRoles mutations and authoritative
-            // time-rule events. Refresh once at the next frame boundary; this
-            // is an event stamp check, never a scan for external-world changes.
-            if (Event.current.type == EventType.Layout)
-                colonistsTab.RefreshExternalSnapshotIfNeeded();
             bool repaint = Event.current.type == EventType.Repaint;
+            // UiVersion is advanced by WorkRoles mutations and authoritative
+            // time-rule events. Refresh at the frame's repaint pass before
+            // drawing; an event stamp check, never a scan for external changes.
+            if (repaint)
+                colonistsTab.RefreshExternalSnapshotIfNeeded();
             if (repaint)
                 Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
             try
@@ -310,9 +311,8 @@ namespace WorkRoles.UI
                 // Colony planning is per location: with pawns from several maps
                 // (or caravans) in view, Fix My Colony disables.
                 bool spansLocations = colonistsTab.ScopeSpansMultipleLocations;
-                TooltipHandler.TipRegion(actionRect, spansLocations
-                    ? "WR_FixNeedsSingleLocation".Translate()
-                    : "WR_FixMyColonyTip".Translate());
+                (spansLocations ? WrTips.Key("WR_FixNeedsSingleLocation")
+                    : WrTips.Key("WR_FixMyColonyTip")).Region(actionRect);
                 if (Widgets.ButtonText(actionRect, "WR_FixMyColony".Translate(), drawBackground: true,
                         doMouseoverSound: true, active: !spansLocations)
                     && !spansLocations)
@@ -320,7 +320,7 @@ namespace WorkRoles.UI
             }
             else if (curTab == Tab.Roles)
             {
-                TooltipHandler.TipRegion(actionRect, "WR_RestoreDefaultsTip".Translate());
+                WrTips.Key("WR_RestoreDefaultsTip").Region(actionRect);
                 if (Widgets.ButtonText(actionRect, "WR_RestoreDefaults".Translate()))
                 {
                     var items = Seeding.ComputeRestoreItems();
@@ -332,12 +332,12 @@ namespace WorkRoles.UI
 
                 const float IoBtnW = 90f;
                 var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
-                TooltipHandler.TipRegion(exportRect, "WR_ExportTip".Translate(RoleIO.ExportFile));
+                WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
                 if (Widgets.ButtonText(exportRect, "WR_Export".Translate()))
                     Find.WindowStack.Add(new Dialog_ExportPreview(RoleIO.BuildXml(RoleStore.Current)));
 
                 var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
-                TooltipHandler.TipRegion(importRect, "WR_ImportTip".Translate(RoleIO.ExportFile));
+                WrTips.Key("WR_ImportTip", RoleIO.ExportFile).Region(importRect);
                 if (Widgets.ButtonText(importRect, "WR_Import".Translate()))
                     Find.WindowStack.Add(new Dialog_ImportSource());
             }

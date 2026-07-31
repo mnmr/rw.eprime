@@ -86,6 +86,9 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            // Vanilla GUI.DragWindow runs after this returns, so skipping
+            // MouseDrag passes here leaves window-move dragging intact.
+            if (WrEvent.SkipContentPass()) return;
             EnsureColumnCache();
             var titleRect = new Rect(inRect.x, inRect.y, inRect.width, TitleH);
             var headerRect = new Rect(inRect.x, titleRect.yMax, inRect.width, headerH);

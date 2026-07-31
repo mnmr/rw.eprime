@@ -212,8 +212,35 @@ namespace WorkRoles
 
         private static void InvalidateTimeRuled(Func<Pawn, bool> belongsToContext)
         {
+            var plan = PlanTimeRuled(belongsToContext);
+            if (plan == null) return;
+            plan.ApplyRuntime(pawn => cache.Remove(pawn), UiVersion.Bump);
+            // Plan order is deterministic (thingIDNumber), so the interruption
+            // cascade (new job searches, reservations) matches across MP clients.
+            for (int i = 0; i < plan.Pawns.Count; i++)
+                ReconcileInFlightWork(plan.Pawns[i]);
+        }
+
+        /// A live map crossed a timezone meridian (dev map moves, modded moving
+        /// map parents): aboard holders' local hours jumped mid-interval. Runs
+        /// inside the tile setter, so reconciles defer to the map component tick.
+        internal static void InvalidateTimeRuledForMovedMap(Map map)
+        {
+            if (map == null) return;
+            var plan = PlanTimeRuled(pawn => pawn.MapHeld == map);
+            if (plan == null) return;
+            plan.ApplyRuntime(pawn =>
+            {
+                cache.Remove(pawn);
+                pendingReconciles.Enqueue(pawn);
+            }, UiVersion.Bump);
+        }
+
+        private static TimedRoleInvalidationPlan<Pawn> PlanTimeRuled(
+            Func<Pawn, bool> belongsToContext)
+        {
             var store = RoleStore.Current;
-            if (store?.roles == null) return;
+            if (store?.roles == null) return null;
 
             List<TimedRoleInvalidationSource> roleSources = null;
             for (int i = 0; i < store.roles.Count; i++)
@@ -228,7 +255,7 @@ namespace WorkRoles
                         hasTimeRule: true, role.enabled, role.blocker, role.autoAssign));
                 }
             }
-            if (roleSources == null) return;
+            if (roleSources == null) return null;
 
             var pawnSets = store.pawnSets;
             IEnumerable<TimedRoleHolderAssignment<Pawn>> AssignmentSources()
@@ -251,13 +278,8 @@ namespace WorkRoles
                 }
             }
 
-            var plan = TimedRoleInvalidationPlanner.Plan(
+            return TimedRoleInvalidationPlanner.Plan(
                 roleSources, AssignmentSources());
-            plan.ApplyRuntime(pawn => cache.Remove(pawn), UiVersion.Bump);
-            // Plan order is deterministic (thingIDNumber), so the interruption
-            // cascade (new job searches, reservations) matches across MP clients.
-            for (int i = 0; i < plan.Pawns.Count; i++)
-                ReconcileInFlightWork(plan.Pawns[i]);
         }
 
         /// Deterministic wrapper for callers holding an unordered pawn set:

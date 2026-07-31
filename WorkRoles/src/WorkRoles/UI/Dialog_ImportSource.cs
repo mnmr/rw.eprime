@@ -53,7 +53,7 @@ namespace WorkRoles.UI
             // frame would be waste, and arbitrary clipboard text stays out.
             var clipRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, ButtonH);
             if (!clipUsable)
-                TooltipHandler.TipRegion(clipRect, "WR_ImportClipboardInvalid".Translate());
+                WrTips.Key("WR_ImportClipboardInvalid").Region(clipRect);
             if (Widgets.ButtonText(clipRect, "WR_ImportFromClipboard".Translate(), active: clipUsable)
                 && clipUsable && TryOpenPreview(clip))
                 Close();
@@ -76,7 +76,7 @@ namespace WorkRoles.UI
             if (problem != null)
                 TooltipHandler.TipRegion(importRect, problem);
             else if (!exists && Mouse.IsOver(importRect))
-                TooltipHandler.TipRegion(importRect, "WR_ImportFileMissing".Translate(path));
+                WrTips.Key("WR_ImportFileMissing", path).Region(importRect);
             if (Widgets.ButtonText(importRect, "WR_Import".Translate(), active: exists) && exists)
             {
                 string xml;

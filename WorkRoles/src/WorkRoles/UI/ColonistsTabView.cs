@@ -141,9 +141,20 @@ namespace WorkRoles.UI
 
         /// Language-only invalidation. User selection, filters, scroll positions,
         /// scope and disclosure state remain untouched.
+        // Job filter button label: def resolution + Truncate measurement are
+        // render-forbidden, so both cache per selected filter.
+        // Owner: view. Key: JobFilterDefName (single slot, fixed width).
+        // Value: label + truncated label (immutable strings). Dependencies:
+        // filter selection, language. Refresh: on selection change.
+        // Teardown: language invalidation resets; strings hold no game state.
+        private string jobFilterCachedFor = "\0";
+        private string jobFilterLabel;
+        private string jobFilterShown;
+
         internal void InvalidateLanguageCaches()
         {
             colonistHeaderCache = null;
+            jobFilterCachedFor = "\0";
             sizeStamp = ScopeCacheStamp.Invalid;
 
             paletteStamp = -1;
@@ -220,6 +231,9 @@ namespace WorkRoles.UI
 
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
+            pawnTips.Clear();
+            activityTips.Clear();
+            traitTips.Clear();
             rosterState.ReleaseSnapshots();
             chipLayouts.Clear();
             chipLayoutStamp = ScopeCacheStamp.Invalid;
@@ -645,7 +659,7 @@ namespace WorkRoles.UI
             var modeRect = new Rect(rect.xMax - PaletteModeW + 6f, rect.y, PaletteModeW - 12f, 22f);
             var settings = WorkRolesMod.Settings;
             var mode = settings?.paletteMode ?? PaletteMode.Skills;
-            TooltipHandler.TipRegion(modeRect, "WR_PaletteModeTip".Translate());
+            WrTips.Key("WR_PaletteModeTip").Region(modeRect);
             if (Widgets.ButtonText(modeRect,
                     (mode == PaletteMode.Groups ? "WR_PaletteByGroups"
                     : mode == PaletteMode.Hidden ? "WR_PaletteHidden"
@@ -782,13 +796,19 @@ namespace WorkRoles.UI
 
             // Job filter: pawns whose assigned roles cover the selected job.
             float jobX = btnX + RoleBtnW + 8f;
-            var jobGiver = rosterState.JobFilterDefName == null ? null
-                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(rosterState.JobFilterDefName);
-            string jobLabel = jobGiver != null
-                ? WorkJobLabels.GiverDisplayName(jobGiver)
-                : "WR_FilterAnyJob".Translate().ToString();
             var jobBtnRect = new Rect(jobX, y, RoleBtnW, SearchH);
-            string jobShown = jobLabel.Truncate(jobBtnRect.width - 20f);
+            if (jobFilterCachedFor != rosterState.JobFilterDefName)
+            {
+                jobFilterCachedFor = rosterState.JobFilterDefName;
+                var jobGiver = jobFilterCachedFor == null ? null
+                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterCachedFor);
+                jobFilterLabel = jobGiver != null
+                    ? WorkJobLabels.GiverDisplayName(jobGiver)
+                    : "WR_FilterAnyJob".Translate().ToString();
+                jobFilterShown = jobFilterLabel.Truncate(jobBtnRect.width - 20f);
+            }
+            string jobLabel = jobFilterLabel;
+            string jobShown = jobFilterShown;
             if (jobShown != jobLabel)
                 TooltipHandler.TipRegion(jobBtnRect, jobLabel);
             if (Widgets.ButtonText(jobBtnRect, jobShown))
@@ -842,7 +862,7 @@ namespace WorkRoles.UI
             if (rosterState.FiltersActive)
             {
                 var clearRect = new Rect(scopeX + scopeW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
-                TooltipHandler.TipRegion(clearRect, "WR_ClearFilters".Translate());
+                WrTips.Key("WR_ClearFilters").Region(clearRect);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                 {
                     rosterState.Search = "";
@@ -858,7 +878,7 @@ namespace WorkRoles.UI
             {
                 const float DisplayBtnW = 90f;
                 var displayRect = new Rect(rect.xMax - DisplayBtnW, y, DisplayBtnW, SearchH);
-                TooltipHandler.TipRegion(displayRect, "WR_DisplayOptions".Translate());
+                WrTips.Key("WR_DisplayOptions").Region(displayRect);
                 if (Widgets.ButtonText(displayRect, "WR_DisplayButton".Translate()))
                 {
                     string ChipsLabel(ChipDisplay d) =>
@@ -1363,7 +1383,7 @@ namespace WorkRoles.UI
 
             // Priority grid over every listed colonist (the filtered table set).
             var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
-            TooltipHandler.TipRegion(gridRect, "WR_ShowPriorityGridTip".Translate());
+            WrTips.Key("WR_ShowPriorityGridTip").Region(gridRect);
             if (Widgets.ButtonImage(gridRect, TexButton.Info))
             {
                 var listed = new List<Pawn>();
@@ -1476,7 +1496,7 @@ namespace WorkRoles.UI
             DrawChipStrip(new Rect(x, rect.y, rolesW, rect.height), pawn, store, rolesW);
             x += rolesW;
             var plusRect = new Rect(x + 2f, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
-            TooltipHandler.TipRegion(plusRect, "WR_AddRoleTip".Translate());
+            WrTips.Key("WR_AddRoleTip").Region(plusRect);
             if (Widgets.ButtonImage(plusRect, TexButton.Plus))
                 OpenAddMenu(pawn, store);
 
@@ -1666,13 +1686,13 @@ namespace WorkRoles.UI
 
             var selectRect = new Rect(rect.x, rect.y, portraitRect.width + 6f + NameWidth, rect.height);
             if (Mouse.IsOver(selectRect))
-                TooltipHandler.TipRegion(selectRect, pawn.GetTooltip());
+                PawnTip(pawn).Region(selectRect);
             if (Widgets.ButtonInvisible(selectRect))
                 selectedPawn = pawn;
 
             var copyRect = new Rect(nameRect.xMax + 2f, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
             var pasteRect = new Rect(copyRect.xMax + 2f, copyRect.y, IconButton, IconButton);
-            TooltipHandler.TipRegion(copyRect, "WR_CopyRolesTip".Translate());
+            WrTips.Key("WR_CopyRolesTip").Region(copyRect);
             if (Widgets.ButtonImage(copyRect, TexButton.Copy))
             {
                 store.pawnSets.TryGetValue(pawn, out var toCopy);
@@ -1680,7 +1700,7 @@ namespace WorkRoles.UI
                 WrToast.Show("WR_CopiedRoles".Translate(pawn.LabelShortCap), MessageTypeDefOf.NeutralEvent);
             }
             Color pasteColor = RoleClipboard.HasContent ? Color.white : new Color(1f, 1f, 1f, 0.3f);
-            TooltipHandler.TipRegion(pasteRect, "WR_PasteRolesTip".Translate());
+            WrTips.Key("WR_PasteRolesTip").Region(pasteRect);
             if (Widgets.ButtonImage(pasteRect, TexButton.Paste, pasteColor) && RoleClipboard.HasContent)
                 RoleCommands.PasteRoleSet(pawn, RoleClipboard.Content);
         }
@@ -1807,6 +1827,59 @@ namespace WorkRoles.UI
             return pass;
         }
 
+        // Lazy per-pawn tips (name column, activity slot, trait list): the
+        // vanilla builders run per call, so WrTip defers them to the first
+        // hovered pass and freezes the text per hover session.
+        // Owner: view (window scope). Key: pawn (traits: trait instance).
+        // Value: WrTip (stable identity, gather closure built once).
+        // Dependencies: none while cached; text gathers at hover time.
+        // Refresh: per hover session. Equality: n/a. Teardown:
+        // ReleaseSnapshots clears all three.
+        // Creation helpers keep the capturing lambdas out of the lookup
+        // methods (display-class-at-entry allocation on hits otherwise).
+        private readonly Dictionary<Pawn, WrTip> pawnTips = new Dictionary<Pawn, WrTip>();
+        private readonly Dictionary<Pawn, WrTip> activityTips = new Dictionary<Pawn, WrTip>();
+        private readonly Dictionary<Trait, WrTip> traitTips = new Dictionary<Trait, WrTip>();
+
+        private WrTip PawnTip(Pawn pawn)
+        {
+            if (!pawnTips.TryGetValue(pawn, out WrTip tip))
+                tip = CreatePawnTip(pawn);
+            return tip;
+        }
+
+        // Vanilla's pawn-tip identity (id scheme and priority): the tip
+        // dedups exactly like the eager signal it replaces.
+        private WrTip CreatePawnTip(Pawn pawn)
+            => pawnTips[pawn] = WrTip.PerSession("pawn:" + pawn.thingIDNumber,
+                pawn.thingIDNumber * 152317, () => pawn.GetTooltip().text,
+                TooltipPriority.Pawn);
+
+        private WrTip ActivityTip(Pawn pawn)
+        {
+            if (!activityTips.TryGetValue(pawn, out WrTip tip))
+                tip = CreateActivityTip(pawn);
+            return tip;
+        }
+
+        private WrTip CreateActivityTip(Pawn pawn)
+            => activityTips[pawn] = WrTip.PerSession("activity:" + pawn.thingIDNumber,
+                pawn.thingIDNumber ^ 0x57AC71,
+                () => ActivityState.LiveTip(pawn, RoleStore.Current));
+
+        private WrTip TraitTip(Pawn pawn, Trait trait)
+        {
+            if (!traitTips.TryGetValue(trait, out WrTip tip))
+                tip = CreateTraitTip(pawn, trait);
+            return tip;
+        }
+
+        private WrTip CreateTraitTip(Pawn pawn, Trait trait)
+            => traitTips[trait] = WrTip.PerSession(
+                "trait:" + pawn.thingIDNumber + ":" + trait.def.defName,
+                (pawn.thingIDNumber * 397) ^ trait.def.defName.GetHashCode(),
+                () => trait.TipString(pawn));
+
         internal void DrawChipStrip(Rect stripRect, Pawn pawn, RoleStore store, float stripWidth)
         {
             var (layout, stripContentHeight) = ChipLayoutFor(pawn, store, stripWidth);
@@ -1886,8 +1959,13 @@ namespace WorkRoles.UI
 
             if (RoleDrag.Active && Mouse.IsOver(stripRect))
             {
-                bool alreadyHasRole = store.pawnSets.TryGetValue(pawn, out var pawnSet)
-                    && pawnSet.assignments.Any(a => a.roleId == RoleDrag.RoleId);
+                bool alreadyHasRole = false;
+                if (store.pawnSets.TryGetValue(pawn, out var pawnSet))
+                {
+                    List<RoleAssignment> assigned = pawnSet.assignments;
+                    for (int i = 0; i < assigned.Count && !alreadyHasRole; i++)
+                        alreadyHasRole = assigned[i].roleId == RoleDrag.RoleId;
+                }
                 bool isSamePawn = RoleDrag.SourcePawn == pawn;
 
                 if (alreadyHasRole && !isSamePawn)
@@ -1966,12 +2044,7 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
             }
             if (Mouse.IsOver(slotRect))
-            {
-                Pawn tipPawn = selectedPawn;
-                TooltipHandler.TipRegion(slotRect, new TipSignal(
-                    () => ActivityState.LiveTip(tipPawn, store),
-                    tipPawn.thingIDNumber ^ 0x57AC71));
-            }
+                ActivityTip(selectedPawn).Region(slotRect);
         }
 
         private void DrawStatsPanel(Rect rect, RoleStore store)
@@ -2040,7 +2113,7 @@ namespace WorkRoles.UI
                     var traitRect = new Rect(rect.x, traitY, portraitBoxSize, 16f);
                     Widgets.Label(traitRect, trait.LabelCap);
                     if (Mouse.IsOver(traitRect))
-                        TooltipHandler.TipRegion(traitRect, trait.TipString(selectedPawn));
+                        TraitTip(selectedPawn, trait).Region(traitRect);
                     traitY += 16f;
                 }
                 Text.WordWrap = traitWrap;

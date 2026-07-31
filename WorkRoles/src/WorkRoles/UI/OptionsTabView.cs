@@ -70,7 +70,15 @@ namespace WorkRoles.UI
         internal void InvalidateLanguageCaches()
         {
             state.InvalidateLanguageCaches();
+            whenCaptionWidth = -1f;
         }
+
+        // WHEN caption: translate + Truncate measurement per pass are
+        // render-forbidden. Owner: view. Key: caption width (single slot).
+        // Value: truncated caption. Dependencies: width, language.
+        // Refresh: on width change. Teardown: language invalidation resets.
+        private float whenCaptionWidth = -1f;
+        private string whenCaptionShown;
 
         private void ClearBandDrag()
         {
@@ -261,7 +269,7 @@ namespace WorkRoles.UI
                     Widgets.DrawBox(chipRect);
                     GUI.color = Color.white;
                     if (Mouse.IsOver(chipRect))
-                        TooltipHandler.TipRegion(chipRect, "WR_OptLockedTip".Translate());
+                        WrTips.Key("WR_OptLockedTip").Region(chipRect);
                 }
             }
 
@@ -383,9 +391,14 @@ namespace WorkRoles.UI
             // Caption above the WHEN panel (single line, truncated; full text as tooltip).
             Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
-            string whenCaption = "WR_WhenPanelCaption".Translate();
-            Widgets.Label(whenCaptionRect, whenCaption.Truncate(whenCaptionRect.width));
-            TooltipHandler.TipRegion(whenCaptionRect, whenCaption);
+            if (whenCaptionWidth != whenCaptionRect.width)
+            {
+                whenCaptionWidth = whenCaptionRect.width;
+                whenCaptionShown = "WR_WhenPanelCaption".Translate().ToString()
+                    .Truncate(whenCaptionRect.width);
+            }
+            Widgets.Label(whenCaptionRect, whenCaptionShown);
+            WrTips.Key("WR_WhenPanelCaption").Region(whenCaptionRect);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
@@ -461,7 +474,7 @@ namespace WorkRoles.UI
             GUI.color = view.Color;
             GUI.DrawTexture(dotRect, WorkRolesTex.Circle);
             GUI.color = Color.white;
-            TooltipHandler.TipRegion(dotRect, "WR_PathColorTip".Translate());
+            WrTips.Key("WR_PathColorTip").Region(dotRect);
             if (Widgets.ButtonInvisible(dotRect))
                 Find.WindowStack.Add(new Dialog_PathColor(view.PathId));
             x += 16f + 6f;

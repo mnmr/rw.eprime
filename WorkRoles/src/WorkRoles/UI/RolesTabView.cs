@@ -146,7 +146,19 @@ namespace WorkRoles.UI
         {
             listState.InvalidateLanguageCaches();
             editorState.InvalidateLanguageCaches();
+            jobFilterCachedFor = "\0";
+            groupButtonKey = (-2, false, -1f, -1);
         }
+
+        // Job filter button label: def resolution + Truncate measurement are
+        // render-forbidden, so both cache per selected filter.
+        // Owner: view. Key: JobFilterDefName (single slot, fixed width).
+        // Value: label + truncated label (immutable strings). Dependencies:
+        // filter selection, language. Refresh: on selection change.
+        // Teardown: language invalidation resets; strings hold no game state.
+        private string jobFilterCachedFor = "\0";
+        private string jobFilterLabel;
+        private string jobFilterShown;
 
         public void Draw(Rect rect)
         {
@@ -213,7 +225,7 @@ namespace WorkRoles.UI
             FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, LabelH), "WR_DisplayModeLabel");
             var treeSettings = WorkRolesMod.Settings;
             bool nestedNow = treeSettings?.nestedRoleTree ?? true;
-            TooltipHandler.TipRegion(toggleRect, "WR_TreeToggleTip".Translate());
+            WrTips.Key("WR_TreeToggleTip").Region(toggleRect);
             if (Widgets.ButtonText(toggleRect, (nestedNow ? "WR_TreeNested" : "WR_TreeFlat").Translate())
                 && treeSettings != null)
             {
@@ -225,14 +237,20 @@ namespace WorkRoles.UI
             float y2 = y2Label + LabelH;
             FilterCaption(new Rect(rect.x, y2Label, JobBtnW, LabelH), "WR_JobFilterLabel");
             var jobRect = new Rect(rect.x, y2, JobBtnW, InputH);
-            var giverDef = listState.JobFilterDefName == null ? null
-                : DefDatabase<WorkGiverDef>.GetNamedSilentFail(listState.JobFilterDefName);
-            string jobLabel = giverDef != null
-                ? WorkJobLabels.GiverDisplayName(giverDef)
-                : "WR_FilterAnyJob".Translate().ToString();
             // Long job names truncate to the button (the ButtonText inset eats
             // ~10px a side); the tooltip carries the full name.
-            string jobShown = jobLabel.Truncate(jobRect.width - 20f);
+            if (jobFilterCachedFor != listState.JobFilterDefName)
+            {
+                jobFilterCachedFor = listState.JobFilterDefName;
+                var giverDef = jobFilterCachedFor == null ? null
+                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterCachedFor);
+                jobFilterLabel = giverDef != null
+                    ? WorkJobLabels.GiverDisplayName(giverDef)
+                    : "WR_FilterAnyJob".Translate().ToString();
+                jobFilterShown = jobFilterLabel.Truncate(jobRect.width - 20f);
+            }
+            string jobLabel = jobFilterLabel;
+            string jobShown = jobFilterShown;
             if (jobShown != jobLabel)
                 TooltipHandler.TipRegion(jobRect, jobLabel);
             if (Widgets.ButtonText(jobRect, jobShown))
@@ -345,8 +363,9 @@ namespace WorkRoles.UI
                 Widgets.DrawBox(swatch.ExpandedBy(1f));
                 GUI.color = Color.white;
                 if (virtualRow && Mouse.IsOver(row))
-                    TooltipHandler.TipRegion(row, "WR_VirtualRoleTip".Translate(
-                        store.GroupById(role.groupId)?.label ?? "WR_GroupDefault".Translate().ToString()));
+                    WrTips.Key("WR_VirtualRoleTip",
+                        store.GroupById(role.groupId)?.label
+                        ?? "WR_GroupDefault".Translate().ToString()).Region(row);
 
                 var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
                 // Invalid roles (no jobs, or every named location gone) render
@@ -361,7 +380,7 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
                 if (invalid && Mouse.IsOver(row))
-                    TooltipHandler.TipRegion(row, TipText.Warning("WR_InvalidRoleTip".Translate()));
+                    WrTips.Warning("WR_InvalidRoleTip").Region(row);
 
                 // Marker strip after the label: the same icons the chips carry
                 // (pin excluded — it marks assignments, not role definitions).
@@ -465,7 +484,7 @@ namespace WorkRoles.UI
             var pencilRect = new Rect(row.xMax - 26f, row.y + (row.height - 18f) / 2f, 18f, 18f);
             if (section.renamable)
             {
-                TooltipHandler.TipRegion(pencilRect, "WR_RenameGroup".Translate());
+                WrTips.Key("WR_RenameGroup").Region(pencilRect);
                 if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
                     Find.WindowStack.Add(new Dialog_RenameRole(section.group));
             }
@@ -725,7 +744,7 @@ namespace WorkRoles.UI
                     Widgets.Label(slotRect, "+");
                     Text.Anchor = TextAnchor.UpperLeft;
                     GUI.color = Color.white;
-                    TooltipHandler.TipRegion(slotRect, "WR_CustomSwatchEmpty".Translate());
+                    WrTips.Key("WR_CustomSwatchEmpty").Region(slotRect);
                     if (Widgets.ButtonInvisible(slotRect))
                         OpenPicker(applyToRole: true);
                 }
@@ -734,7 +753,7 @@ namespace WorkRoles.UI
                     Widgets.DrawBoxSolid(slotRect, slotColor);
                     if (role.hasCustomColor && role.color.IndistinguishableFrom(slotColor))
                         Widgets.DrawBox(slotRect.ExpandedBy(2f));
-                    TooltipHandler.TipRegion(slotRect, "WR_CustomSwatchTip".Translate());
+                    WrTips.Key("WR_CustomSwatchTip").Region(slotRect);
                     if (Widgets.ButtonInvisible(slotRect))
                         RoleCommands.SetRoleColor(role.id, slotColor);
                     var e = Event.current;
@@ -833,19 +852,37 @@ namespace WorkRoles.UI
         /// a combo role separated from its children would un-nest both. Overlay
         /// members (Auto-Roles) show a disabled "Group: Auto-Roles" instead —
         /// the stored group resumes when rules clear.
+        // Group button label: translate + Truncate measurement per pass are
+        // render-forbidden; single slot keyed by everything that changes it.
+        // Owner: view. Key: (groupId, overlay, width, UiVersion). Value:
+        // full + truncated label (immutable strings). Dependencies: group
+        // membership and labels (via UiVersion), button width, language.
+        // Refresh: on key change. Teardown: language invalidation resets.
+        private (int groupId, bool overlay, float width, int uiVersion) groupButtonKey
+            = (-2, false, -1f, -1);
+        private string groupButtonFull;
+        private string groupButtonShown;
+
         private void DrawGroupPickerRow(Rect rect, Role role, RoleStore store)
         {
             Text.Font = GameFont.Small;
             bool overlay = role.HasRules;
-            string current = overlay
-                ? "WR_GroupAutoRules".Translate().ToString()
-                : role.groupId == RoleGroup.DefaultId
-                    ? "WR_GroupDefault".Translate().ToString()
-                    : store.GroupById(role.groupId)?.label
-                        ?? "WR_GroupDefault".Translate().ToString();
-            string full = "WR_GroupButton".Translate(current);
             var pickRect = new Rect(rect.x, rect.y, Mathf.Min(rect.width, 180f), rect.height);
-            string shown = full.Truncate(pickRect.width - 16f);
+            var cacheKey = (role.groupId, overlay, pickRect.width, UiVersion.Current);
+            if (groupButtonKey != cacheKey)
+            {
+                groupButtonKey = cacheKey;
+                string current = overlay
+                    ? "WR_GroupAutoRules".Translate().ToString()
+                    : role.groupId == RoleGroup.DefaultId
+                        ? "WR_GroupDefault".Translate().ToString()
+                        : store.GroupById(role.groupId)?.label
+                            ?? "WR_GroupDefault".Translate().ToString();
+                groupButtonFull = "WR_GroupButton".Translate(current);
+                groupButtonShown = groupButtonFull.Truncate(pickRect.width - 16f);
+            }
+            string full = groupButtonFull;
+            string shown = groupButtonShown;
             if (shown != full)
                 TooltipHandler.TipRegion(pickRect, full);
 
@@ -853,7 +890,7 @@ namespace WorkRoles.UI
             {
                 Widgets.ButtonText(pickRect, shown,
                     drawBackground: true, doMouseoverSound: false, active: false);
-                TooltipHandler.TipRegion(pickRect, "WR_GroupOverlayTip".Translate());
+                WrTips.Key("WR_GroupOverlayTip").Region(pickRect);
                 return;
             }
 
@@ -893,7 +930,7 @@ namespace WorkRoles.UI
             float y = rect.y;
 
             var assignRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(assignRect, "WR_AutoAssignTip".Translate());
+            WrTips.Key("WR_AutoAssignTip").Region(assignRect);
             bool autoAssign = role.autoAssign;
             Widgets.CheckboxLabeled(assignRect, "WR_AutoAssign".Translate(), ref autoAssign);
             if (autoAssign != role.autoAssign)
@@ -910,7 +947,7 @@ namespace WorkRoles.UI
             y += rowH;
 
             var autoRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(autoRect, "WR_AutoRoleTip".Translate());
+            WrTips.Key("WR_AutoRoleTip").Region(autoRect);
             bool rulesWanted = rulesShown;
             Widgets.CheckboxLabeled(autoRect, "WR_AutoRole".Translate(), ref rulesWanted);
             y += rowH;
@@ -1207,7 +1244,7 @@ namespace WorkRoles.UI
 
             var gridRect = new Rect(x0, cellsY, HourGridW, HourCellH);
             if (Mouse.IsOver(gridRect))
-                TooltipHandler.TipRegion(gridRect, "WR_ActiveHours".Translate());
+                WrTips.Key("WR_ActiveHours").Region(gridRect);
 
             for (int h = 0; h < 24; h++)
             {
@@ -1483,9 +1520,9 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 if (missing)
-                    TooltipHandler.TipRegion(row, TipText.Warning("WR_MissingDef".Translate(entry.DefName)));
+                    WrTips.Warning("WR_MissingDef", entry.DefName).Region(row);
                 else if (dead)
-                    TooltipHandler.TipRegion(row, "WR_DeadEntryTip".Translate());
+                    WrTips.Key("WR_DeadEntryTip").Region(row);
                 if (!missing && Mouse.IsOver(row))
                 {
                     string skillTip = entry.Kind == JobEntryKind.WorkType
@@ -1680,7 +1717,7 @@ namespace WorkRoles.UI
                     // ~ = covered via the work type; a click promotes to an own
                     // (reorderable) entry.
                     if (currentState == MultiCheckboxState.Partial)
-                        TooltipHandler.TipRegion(row, "WR_CoveredByTypeTip".Translate());
+                        WrTips.Key("WR_CoveredByTypeTip").Region(row);
                     GUI.color = Mouse.IsOver(checkboxRect) ? GenUI.MouseoverColor : Color.white;
                     GUI.DrawTexture(checkboxRect, StateTex(currentState));
                     GUI.color = Color.white;

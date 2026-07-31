@@ -275,7 +275,7 @@ namespace WorkRoles.UI
             if (!scale.Preset)
             {
                 var renameRect = new Rect(x, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
-                TooltipHandler.TipRegion(renameRect, "WR_ScaleRenameTip".Translate());
+                WrTips.Key("WR_ScaleRenameTip").Region(renameRect);
                 if (Widgets.ButtonImage(renameRect, TexButton.Rename))
                 {
                     string oldName = scale.Name;
@@ -308,7 +308,7 @@ namespace WorkRoles.UI
 
             if (dirty)
             {
-                TooltipHandler.TipRegion(resetRect, "WR_ScaleResetTip".Translate());
+                WrTips.Key("WR_ScaleResetTip").Region(resetRect);
                 if (Widgets.ButtonText(resetRect, "WR_ScaleReset".Translate()))
                     CommitValues(role, scale, baseline);
             }
@@ -483,9 +483,8 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.Font = GameFont.Small;
                 if (Mouse.IsOver(cell))
-                    TooltipHandler.TipRegion(cell, totalsRow
-                        ? "WR_ScaleTotalTip".Translate()
-                        : "WR_ScaleDirectTip".Translate());
+                    (totalsRow ? WrTips.Key("WR_ScaleTotalTip")
+                        : WrTips.Key("WR_ScaleDirectTip")).Region(cell);
 
                 if (e.type == EventType.MouseDown && cell.Contains(e.mousePosition))
                 {
@@ -499,12 +498,13 @@ namespace WorkRoles.UI
                         ? dragScale.Min[band] : DirectOf(dragScale, band);
                     e.Use();
                 }
-                else if (picking && e.type == EventType.MouseDrag
-                    && cell.Contains(e.mousePosition) && band != dragOriginBand)
+                // Position polling, not MouseDrag events: drag passes are
+                // filtered out before tab content draws (WrEvent), and the
+                // repeated apply is idempotent.
+                else if (picking && cell.Contains(e.mousePosition) && band != dragOriginBand)
                 {
                     dragMoved = true;
                     ApplyRowValue(band, totalsRow);
-                    e.Use();
                 }
             }
 

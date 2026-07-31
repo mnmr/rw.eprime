@@ -19,7 +19,7 @@ These rules apply to the entire repository. They are fail-closed.
 
 ## Non-negotiable render-path rule
 
-All UI and rendering must operate on cached, immutable, or snapshot data.
+All UI and rendering must operate on cached snapshot data (immutable by either design or specification).
 
 A steady render pass may:
 
@@ -45,7 +45,11 @@ If a render path needs derived data, that data must be built behind an explicit 
 ## Snapshot and cache rules
 
 - Game-derived render data must be published as immutable snapshots.
-- Snapshots must not expose mutable collections owned by live models. Copy or wrap data when constructing the snapshot.
+- Snapshot immutability is an ownership and publication guarantee, not a requirement to use immutable collection types or defensively copy mod-owned data.
+- A buffer created exclusively for a snapshot may be transferred directly without copying or wrapping, provided mutable access does not escape and the buffer is never mutated after publication.
+- Snapshots must not expose mutable collections owned by live authoritative models, the game, Unity, Verse, or other mods. When retained source data can change independently, project or copy only the fields required for rendering rather than cloning complete object graphs.
+- Projecting authoritative state into a compact render artifact is not a defensive copy. Once published, that render artifact follows the snapshot ownership rules above.
+- Stable externally owned assets such as textures may be referenced under their declared invalidation and lifecycle rules; the mod must not copy, mutate, destroy, or dispose them.
 - Map-derived data must be keyed by map identity.
 - World/store-derived data must be scoped by world/store identity.
 - A process-static cache must reset or partition itself when its owning world, store, or map changes.
@@ -92,13 +96,13 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 | Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; mid-operation evictions defer reconciles to the next game-component tick |
 | Pawn signal snapshot (`PawnSignalSnapshotCache`) | Explicit invalidation via `ExternalPawnFacts`; generation cleared on window open and release; live skill XP intentionally not a dependency |
 | External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded |
-| Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Layout boundary; presentations stamped by `UiVersion.Current` |
+| Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current` |
 | Roles list display (`RolesListState`) | `UiVersion.Current`, `ColonyScope.LocationRevision`, collapse revision, nested/search/job-filter state, language change |
 | Priority grid column cache (`Dialog_PriorityGrid`) | `LanguageChangeCoordinator.Revision` + `DefinitionReloadCoordinator.Revision` via `RevisionPairGate`; sort state discarded on rebuild; pawn rows fixed at dialog construction |
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
 | Map classification and locations (`ColonyScope`) | Classification invalidation per map and map-set changes; publishes `LocationRevision` |
 | Window scope stamps (roster/recommendation/editor states) | `ScopeCacheStamp` of `UiVersion.Current` and `PawnListRevisionTracker.Revision` (advances on observed-map change or explicit invalidation) |
-| Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only |
+| Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy` |
 
 Changes to these dependencies require updated behavioral tests in the same change.
 
