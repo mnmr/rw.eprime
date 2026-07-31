@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.0.0 — 2026-07-31
+
+- Fixed: Improved performance of tooltip rendering.
+- Fixed: Search input now correctly gives up focus when it should.
+
 ## 0.2.1 — 2026-07-30
 
 - Fixed: Fixed render bug.

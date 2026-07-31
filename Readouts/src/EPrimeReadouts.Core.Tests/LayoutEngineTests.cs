@@ -131,9 +131,22 @@ public class LayoutEngineTests
         // TotalWidth equals that container width
         await Assert.That(model.TotalWidth).IsEqualTo(expectedContainerW);
 
-        // TotalHeight = 2*GroupPadY + IconRowH + CounterRowH (single row)
-        float expectedH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+        // TotalHeight = 2*GroupPadY + RowPairH (single row)
+        float expectedH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.RowPairH;
         await Assert.That(model.TotalHeight).IsEqualTo(expectedH);
+    }
+
+    [Test]
+    public async Task CounterRowOverlapsTheFontPaddingBelowTheIcon()
+    {
+        var model = ReadoutLayoutEngine.Build(Input(Group(1, new[] { "Steel" })));
+        var icon = CellsOf(model, CellKind.Icon)[0];
+        var counter = CellsOf(model, CellKind.Counter)[0];
+        // The icon row is flush with the 27px icon; the counter box rises 2px
+        // into it so the Tiny font's internal top padding provides the visual
+        // gap instead of blank canvas.
+        await Assert.That(counter.Rect.Y).IsEqualTo(icon.Rect.Y + LayoutMetrics.IconSize - 2f);
+        await Assert.That(model.TotalHeight).IsEqualTo(41f);
     }
 
     [Test]
@@ -145,7 +158,8 @@ public class LayoutEngineTests
         float iconCenter = icon.Rect.X + icon.Rect.W / 2f;
         float counterCenter = counter.Rect.X + counter.Rect.W / 2f;
         await Assert.That(counterCenter).IsEqualTo(iconCenter);
-        await Assert.That(counter.Rect.Y).IsEqualTo(icon.Rect.Y + LayoutMetrics.IconRowH);
+        await Assert.That(counter.Rect.Y)
+            .IsEqualTo(icon.Rect.Y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap);
     }
 
     [Test]
@@ -154,7 +168,7 @@ public class LayoutEngineTests
         var model = ReadoutLayoutEngine.Build(Input(
             Group(1, new[] { "Steel" }),
             Group(2, new[] { "Silver" })));
-        float rowPairH = LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+        float rowPairH = LayoutMetrics.RowPairH;
         // Each container = 2*GroupPadY + rowPairH. MarkerHit is inset by GroupPadY from container top.
         // MarkerHits[1].Y = container1H + GroupGap + GroupPadY
         //                  = (2*GroupPadY + rowPairH) + GroupGap + GroupPadY
@@ -203,8 +217,8 @@ public class LayoutEngineTests
         await Assert.That(backs[0].Rect.W).IsEqualTo(expectedW);
         await Assert.That(backs[1].Rect.W).IsEqualTo(expectedW);
 
-        // Single-row group container height = 2*GroupPadY + IconRowH + CounterRowH
-        float rowPairH = LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+        // Single-row group container height = 2*GroupPadY + RowPairH
+        float rowPairH = LayoutMetrics.RowPairH;
         float containerH = 2f * LayoutMetrics.GroupPadY + rowPairH;
         await Assert.That(backs[0].Rect.H).IsEqualTo(containerH);
         await Assert.That(backs[1].Rect.H).IsEqualTo(containerH);

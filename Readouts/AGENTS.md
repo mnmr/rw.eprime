@@ -45,7 +45,11 @@ If a render path needs derived data, that data must be built behind an explicit 
 ## Snapshot and cache rules
 
 - Game-derived render data must be published as immutable snapshots.
-- Snapshots must not expose mutable collections owned by live models. Copy or wrap data when constructing the snapshot.
+- Snapshot immutability is an ownership and publication guarantee, not a requirement to use immutable collection types or defensively copy mod-owned data.
+- A buffer created exclusively for a snapshot may be transferred directly without copying or wrapping, provided mutable access does not escape and the buffer is never mutated after publication.
+- Snapshots must not expose mutable collections owned by live authoritative models, the game, Unity, Verse, or other mods. When retained source data can change independently, project or copy only the fields required for rendering rather than cloning complete object graphs.
+- Projecting authoritative state into a compact render artifact is not a defensive copy. Once published, that render artifact follows the snapshot ownership rules above.
+- Stable externally owned assets such as textures may be referenced under their declared invalidation and lifecycle rules; the mod must not copy, mutate, destroy, or dispose them.
 - Map-derived data must be keyed by map identity.
 - World/store-derived data must be scoped by world/store identity.
 - A process-static cache must reset or partition itself when its owning world, store, or map changes.
@@ -77,6 +81,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 - No-op mutations must not advance any revision.
 - Multi-domain mutations must report and bump only the domains they actually changed.
 - Structural and user-authored configuration edits must become visible immediately, including while paused.
+- An active tooltip display session is intentionally frozen: it must retain the content and geometry captured when the session began, even if those dependencies change. The changed dependencies must be observed when the tooltip is reopened or a different token starts a new display session.
 - Correctness-sensitive invalidation must never be delayed to satisfy a throttle.
 - Dynamic game-derived data such as resource counts must be tick-throttled.
 - The canonical resource-count refresh interval is 204 game ticks.
@@ -96,8 +101,8 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Pool list/editor rows | `PoolsVersion` and relevant selection or expansion state |
 | Pool list desired height | `PoolsVersion`, row count, fold state, width, UI metric revision |
-| Tooltip content | Token, render snapshot identity, `ThresholdsVersion` |
-| Tooltip geometry | Tooltip model identity, maximum width, UI metric revision |
+| Tooltip content | Token, render snapshot identity, `ThresholdsVersion`; capture when a display session begins and retain until it ends |
+| Tooltip geometry | Tooltip model identity, maximum width, UI metric revision; capture when a display session begins and retain until it ends |
 | Text width/height | Text, font, available width where applicable, UI metric revision |
 | Export snapshot | `GroupsVersion` and `PoolsVersion`; threshold-only edits must not invalidate it |
 
@@ -108,7 +113,7 @@ Changes to these dependencies require updated behavioral tests in the same chang
 - `Text.CalcSize` and `Text.CalcHeight` are allowed only inside an explicitly revision-gated cache builder.
 - A text measurement cache key must include the text, font, width when wrapping is possible, and UI metric revision.
 - UI scale and tiny-font preference changes must automatically advance the UI metric revision.
-- Cached tooltip geometry, desired heights, label widths, and header measurements must observe that revision.
+- Cached tooltip geometry must observe the UI metric revision when a display session begins; during that session it follows the frozen-session rule. Desired heights, label widths, and header measurements must observe the revision immediately.
 - Two consumers needing the same measurement must share the measurement cache instead of measuring independently.
 - Window resizing may invalidate width-dependent measurements immediately. Unchanged widths must reuse cached measurements.
 - A UI metric change may rebuild measurement-dependent geometry, but must not invalidate unrelated model or count snapshots.
@@ -198,6 +203,7 @@ Cache tests must prove, where applicable:
 - the configured refresh tick rebuilds data;
 - equal refreshed contents preserve identity;
 - structural edits update immediately while paused;
+- an active tooltip display session remains unchanged across dependency changes, and reopening it observes those changes;
 - UI metric changes invalidate measurement-dependent geometry;
 - width changes invalidate wrapped measurements without invalidating unrelated data;
 - teardown removes owned registrations, resources, and obsolete entries safely.
@@ -211,8 +217,8 @@ A change is not complete until all applicable items are true:
 - New cache dependencies and teardown behavior are documented beside the cache.
 - Regression tests were observed failing before the production fix.
 - Relevant focused tests pass.
-- The complete solution test suite passes.
-- The complete solution builds with zero warnings and zero errors.
+- The complete repository test suite passes.
+- The repository builds with zero warnings and zero errors.
 - Remaining `Text.CalcSize` and `Text.CalcHeight` calls are confirmed to be behind measurement caches.
 - Render and repeated tick paths were reviewed for allocations, LINQ, model traversal, def lookup, translation, logging, string creation, and hidden delegate creation.
 - Cache invalidations were reviewed for both stale-data risk and unnecessary rebuilds.
@@ -222,9 +228,11 @@ A change is not complete until all applicable items are true:
 Canonical verification commands:
 
 ```powershell
-dotnet build src\EPrimeReadouts.sln --no-restore
+dotnet build -c Release src\EPrimeReadouts.sln --no-restore
 dotnet test src\EPrimeReadouts.sln --no-restore
 ```
+
+Building never deploys: in-game verification requires `pwsh scripts/deploy.ps1` and a game restart.
 
 ## Exceptions
 

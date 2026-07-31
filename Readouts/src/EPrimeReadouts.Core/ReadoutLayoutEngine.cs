@@ -195,9 +195,8 @@ namespace EPrimeReadouts.Core
             List<ResolvedSlot> slots, float yTop, bool searching, int groupDisplayIndex,
             float containerW)
         {
-            // Single row always: one row of IconRowH + CounterRowH.
-            float containerH = 2f * LayoutMetrics.GroupPadY
-                + LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+            // Single row always: one icon+counter row pair.
+            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.RowPairH;
 
             // GroupBack cell spans the computed container width — emitted FIRST
             model.Cells.Add(new RenderCell
@@ -232,7 +231,7 @@ namespace EPrimeReadouts.Core
             {
                 GroupId = group.Id,
                 Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH),
+                    LayoutMetrics.RowPairH),
             });
 
             // Build the icon/counter row, inset (single row, no wrapping)
@@ -310,7 +309,8 @@ namespace EPrimeReadouts.Core
                     Text = CountFormat.Compact(slot.Sum),
                     Band = input.Thresholds.TryGetValue(canonical, out var spec)
                         ? ThresholdBands.For(slot.Sum, spec) : Band.Normal,
-                    Rect = new RectF(x, y + LayoutMetrics.IconRowH,
+                    Rect = new RectF(x,
+                        y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                         LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
                 });
             }
@@ -335,8 +335,7 @@ namespace EPrimeReadouts.Core
         private static float BuildEditorGroup(ReadoutGroup group, LayoutInput input, RenderModel model,
             float yTop, int groupDisplayIndex, float containerW)
         {
-            float containerH = 2f * LayoutMetrics.GroupPadY
-                + LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.RowPairH;
 
             model.Cells.Add(new RenderCell
             {
@@ -373,7 +372,7 @@ namespace EPrimeReadouts.Core
             {
                 GroupId = group.Id,
                 Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH),
+                    LayoutMetrics.RowPairH),
             });
 
             // Render exactly one tier: tier at index depth-1
@@ -422,7 +421,8 @@ namespace EPrimeReadouts.Core
                     Text = CountFormat.Compact(sum),
                     Band = input.Thresholds.TryGetValue(canonical, out var spec)
                         ? ThresholdBands.For(sum, spec) : Band.Normal,
-                    Rect = new RectF(colX, insetY + LayoutMetrics.IconRowH,
+                    Rect = new RectF(colX,
+                        insetY + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                         LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
                 });
 
@@ -467,7 +467,7 @@ namespace EPrimeReadouts.Core
             if (hidden > 0)
                 matches.RemoveRange(shown, hidden);
             int gridRows = matches.Count > 0 ? (matches.Count + columns - 1) / columns : 0;
-            float gridH = gridRows * (LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH);
+            float gridH = gridRows * LayoutMetrics.RowPairH;
             float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.LabelRowH + gridH
                 + (hidden > 0 ? LayoutMetrics.LabelRowH : 0f);
 
@@ -530,11 +530,12 @@ namespace EPrimeReadouts.Core
                         Text = CountFormat.Compact(count),
                         Band = input.Thresholds.TryGetValue(defName, out var spec)
                             ? ThresholdBands.For(count, spec) : Band.Normal,
-                        Rect = new RectF(x, y + LayoutMetrics.IconRowH,
+                        Rect = new RectF(x,
+                            y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                             LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
                     });
                 }
-                y += LayoutMetrics.IconRowH + LayoutMetrics.CounterRowH;
+                y += LayoutMetrics.RowPairH;
             }
         }
     }
