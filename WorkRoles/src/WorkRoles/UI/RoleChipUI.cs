@@ -10,7 +10,7 @@ namespace WorkRoles.UI
     public enum ChipStyle
     {
         Normal,     // standard chip
-        Disabled,   // role off globally or per-pawn: strong dim + red strike-through
+        Disabled,   // role off: strong dim + strikes (RoleChipStrikes: 1 pawn, 2 global, 3 both)
         Subtle,     // already-assigned recommendation: bg at ~75% brightness, NO strike, full-brightness label
         AutoOff     // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
     }
@@ -161,20 +161,23 @@ namespace WorkRoles.UI
         /// Only ChipClick.Remove is returned directly (immediate on MouseDown).
         /// interactive: false renders a display-only chip (no clicks, no drag).
         /// paint: false retains control registration/interaction but skips visuals.
+        /// strikes: RoleChipStrikes pattern, consumed only by ChipStyle.Disabled.
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool paint = true, bool activeOutline = false)
+            bool paint = true, bool activeOutline = false,
+            int strikes = RoleChipStrikes.PawnOff)
             => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
                 dragSource, onClick, interactive, display, abbrev, pinned,
-                warningSeverity, paint, activeOutline);
+                warningSeverity, paint, activeOutline, strikes);
 
         internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
             ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal,
             string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool paint = true, bool activeOutline = false)
+            bool paint = true, bool activeOutline = false,
+            int strikes = RoleChipStrikes.PawnOff)
         {
             if (paint)
             {
@@ -212,7 +215,8 @@ namespace WorkRoles.UI
                     LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
                         + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
                     LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
-                    StrikeThrough = style == ChipStyle.Disabled,
+                    StrikeCount = style == ChipStyle.Disabled
+                        ? strikes : RoleChipStrikes.None,
                 };
                 ChipUI.Draw(rect, in spec);
 

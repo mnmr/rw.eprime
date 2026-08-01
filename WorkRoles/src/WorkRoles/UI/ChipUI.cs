@@ -15,7 +15,7 @@ namespace WorkRoles.UI
         public bool ShowRemove;
         public bool Grips;         // inner band-resize grips at both ends
         public float LabelInsetLeft, LabelInsetRight; // computed by composers (markers etc.)
-        public bool StrikeThrough;
+        public int StrikeCount;    // RoleChipStrikes pattern: 1 pawn, 2 global, 3 both
     }
 
     /// Core chip renderer + the shared geometry (remove slot, grip zones).
@@ -30,6 +30,8 @@ namespace WorkRoles.UI
         // Grip bars: two 1px verticals centered in a handle zone.
         private static readonly Color GripColor = new Color(1f, 1f, 1f, 0.45f);
         private static readonly Color StrikeColor = new Color(1f, 0.3f, 0.3f, 0.75f);
+        // Gap between the midline and each line of the global-off pair.
+        private const float StrikePairOffset = 4f;
 
         /// The remove-icon rect Draw uses on grip-less chips — for callers
         /// that run their own hit-testing on non-interactive chips.
@@ -85,10 +87,19 @@ namespace WorkRoles.UI
             Text.WordWrap = wrap;
             Text.Anchor = TextAnchor.UpperLeft;
 
-            if (spec.StrikeThrough)
+            if (spec.StrikeCount > 0)
             {
                 GUI.color = StrikeColor;
-                WrText.LineHorizontal(labelRect.x, rect.y + rect.height / 2f, labelRect.width);
+                float mid = rect.y + rect.height / 2f;
+                // Odd counts use the midline; the global pair brackets it so a
+                // single pawn strike stays visually distinct in the middle.
+                if ((spec.StrikeCount & 1) != 0)
+                    WrText.LineHorizontal(labelRect.x, mid, labelRect.width);
+                if (spec.StrikeCount >= 2)
+                {
+                    WrText.LineHorizontal(labelRect.x, mid - StrikePairOffset, labelRect.width);
+                    WrText.LineHorizontal(labelRect.x, mid + StrikePairOffset, labelRect.width);
+                }
                 GUI.color = Color.white;
             }
 

@@ -442,9 +442,6 @@ namespace WorkRoles.UI
                         role.enabled, a.enabled, a.pinned, suppressed,
                         abbreviation,
                         RoleTipText(role, RoleTipContext.AssignmentChip, pawn),
-                        "WR_EnableHereOnly".Translate(
-                            role.label, pawn.LabelShortCap).ToString(),
-                        "WR_EnableGlobally".Translate(role.label).ToString(),
                         (a.pinned ? "WR_UnpinAssignment" : "WR_PinAssignment")
                             .Translate().ToString()));
                     assignmentSnapshots?.Add(new RoleAssignment
@@ -773,7 +770,8 @@ namespace WorkRoles.UI
                 }
                 var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
                     showRemove: false, dragSource: null, onClick: onClick,
-                    paint: repaint && visible);
+                    paint: repaint && visible,
+                    strikes: RoleChipStrikes.GlobalOff);
                 if (visible && Mouse.IsOver(chipRect))
                     TooltipHandler.TipRegion(chipRect, RoleTipText(role, RoleTipContext.Palette));
             }
@@ -1104,9 +1102,22 @@ namespace WorkRoles.UI
                 Title = role.label.Colorize(WrStyle.MinorAccent),
             };
 
-            string stateText = (role.enabled ? "WR_RoleTipEnabled" : "WR_RoleTipDisabled")
-                .Translate().ToString()
-                .Colorize(role.enabled ? RoleStateEnabled : RoleStateDisabled);
+            // Chip tips carry the pawn dimension so the badge names which of
+            // the two independent toggles (global, this colonist) is off.
+            RoleAssignment assignment = null;
+            if (context == RoleTipContext.AssignmentChip && pawn != null)
+            {
+                store.pawnSets.TryGetValue(pawn, out var chipSet);
+                assignment = chipSet?.assignments.FirstOrDefault(a => a.roleId == role.id);
+            }
+            bool pawnOn = assignment?.enabled != false;
+            bool active = role.enabled && pawnOn;
+            string stateKey = active ? "WR_RoleTipEnabled"
+                : pawnOn ? "WR_RoleTipDisabled"
+                : role.enabled ? "WR_RoleTipDisabledHere"
+                : "WR_RoleTipDisabledBoth";
+            string stateText = stateKey.Translate().ToString()
+                .Colorize(active ? RoleStateEnabled : RoleStateDisabled);
             var markers = new List<string>();
             if (role.blocker) markers.Add("WR_BadgeBlocker".Translate());
             if (role.activeHours != Role.AllHours) markers.Add("WR_BadgeHours".Translate());
@@ -1159,8 +1170,6 @@ namespace WorkRoles.UI
                 model.AddSection().Fact("WR_TipActivityLabel".Translate(),
                     "WR_TipActivityValue".Translate(pawn.LabelShortCap,
                         ActivityState.ActivityPhrase(pawn, store)));
-                store.pawnSets.TryGetValue(pawn, out var set);
-                var assignment = set?.assignments.FirstOrDefault(a => a.roleId == role.id);
                 TipSection state = null;
                 // Same stamp and shared invalidation as the tip cache, so the
                 // embedded capability sentence can never outlive its inputs.
@@ -1775,7 +1784,6 @@ namespace WorkRoles.UI
                 int line, RoleCapabilityPresentation capability,
                 bool globalEnabled, bool assignmentEnabled, bool pinned,
                 bool suppressed, string abbreviation, string tooltip,
-                string enableHereOnlyLabel, string enableGloballyLabel,
                 string pinToggleLabel)
             {
                 RenderData = renderData;
@@ -1788,8 +1796,6 @@ namespace WorkRoles.UI
                 Suppressed = suppressed;
                 Abbreviation = abbreviation;
                 Tooltip = tooltip;
-                EnableHereOnlyLabel = enableHereOnlyLabel;
-                EnableGloballyLabel = enableGloballyLabel;
                 PinToggleLabel = pinToggleLabel;
             }
 
@@ -1803,8 +1809,6 @@ namespace WorkRoles.UI
             internal bool Suppressed { get; }
             internal string Abbreviation { get; }
             internal string Tooltip { get; }
-            internal string EnableHereOnlyLabel { get; }
-            internal string EnableGloballyLabel { get; }
             internal string PinToggleLabel { get; }
         }
 
@@ -2069,27 +2073,8 @@ namespace WorkRoles.UI
                 {
                     Pawn capturedPawn = row.Pawn;
                     int capturedRoleId = chip.RenderData.RoleId;
-                    bool capturedGlobalEnabled = chip.GlobalEnabled;
-                    string enableHereOnlyLabel = chip.EnableHereOnlyLabel;
-                    string enableGloballyLabel = chip.EnableGloballyLabel;
-                    onClick = () =>
-                    {
-                        // Enabling a globally-disabled role via ToggleRoleForPawn
-                        // re-enables it globally and turns it off for every other
-                        // holder — too big a blast radius for a silent chip click.
-                        if (!capturedGlobalEnabled)
-                            Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
-                            {
-                                new FloatMenuOption(enableHereOnlyLabel,
-                                    () => RoleCommands.ToggleRoleForPawn(
-                                        capturedPawn, capturedRoleId)),
-                                new FloatMenuOption(enableGloballyLabel,
-                                    () => RoleCommands.ToggleRoleGlobal(capturedRoleId)),
-                            }));
-                        else
-                            RoleCommands.ToggleRoleForPawn(
-                                capturedPawn, capturedRoleId);
-                    };
+                    onClick = () => RoleCommands.ToggleRoleForPawn(
+                        capturedPawn, capturedRoleId);
                 }
                 // The chip's one tooltip: marker meanings are folded into it.
                 if (Mouse.IsOver(chipRect))
@@ -2101,7 +2086,9 @@ namespace WorkRoles.UI
                     pinned: chip.Pinned,
                     warningSeverity: capability.WarningSeverity,
                     activeOutline: style == ChipStyle.Normal
-                        && chip.RenderData.RoleId == row.ActiveRoleId);
+                        && chip.RenderData.RoleId == row.ActiveRoleId,
+                    strikes: RoleChipStrikes.Count(
+                        chip.GlobalEnabled, chip.AssignmentEnabled));
                 if (click == ChipClick.Remove)
                     RoleCommands.RemoveRoleFromPawn(
                         row.Pawn, chip.RenderData.RoleId);

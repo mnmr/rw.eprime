@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.3 — 2026-08-01
+ 
+- Changed: Global and colonist role toggles are now independent. Globally disabled roles render with double strike-through, pawn disabled roles with single strike-through.
+
 ## 1.3.2 — 2026-08-01
  
 - Fixed: Added workaround for when another mod (loaded before WorkRoles) included an older version of the MultiPlayer shim. Fixes Work tab not opening for some people.

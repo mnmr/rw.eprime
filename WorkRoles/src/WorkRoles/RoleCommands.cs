@@ -990,25 +990,8 @@ namespace WorkRoles
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
             if (assignment == null) return;
-            var role = Store.RoleById(roleId);
-            if (role != null && !role.enabled)
-            {
-                // Enabling a globally-disabled role on one pawn means "run it here only":
-                // the role comes back on globally, restricted to this pawn.
-                role.enabled = true;
-                foreach (var pair in Store.pawnSets)
-                {
-                    if (pair.Key?.Faction != pawn.Faction) continue;
-                    foreach (var other in pair.Value.assignments)
-                        if (other.roleId == roleId)
-                            other.enabled = false;
-                }
-                assignment.enabled = true;
-                CompiledJobOrders.InvalidateRole(roleId);
-                // Every other holder just lost this role's work.
-                ReconcileHolders(roleId);
-                return;
-            }
+            // Fully independent of the global toggle: flips only this pawn's
+            // bit and never touches the role or other holders.
             assignment.enabled = !assignment.enabled;
             CompiledJobOrders.Invalidate(pawn);
             CompiledJobOrders.EnqueueReconcile(pawn);

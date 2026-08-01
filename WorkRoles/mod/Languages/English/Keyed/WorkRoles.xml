@@ -78,7 +78,9 @@
 
   <!-- Unified role tooltip (palette chips, tree rows, assignment chips) -->
   <WR_RoleTipEnabled>enabled</WR_RoleTipEnabled>
-  <WR_RoleTipDisabled>DISABLED</WR_RoleTipDisabled>
+  <WR_RoleTipDisabled>DISABLED globally</WR_RoleTipDisabled>
+  <WR_RoleTipDisabledHere>DISABLED for this colonist</WR_RoleTipDisabledHere>
+  <WR_RoleTipDisabledBoth>DISABLED globally and for this colonist</WR_RoleTipDisabledBoth>
   <!-- Badge-line rule markers (dim, after the enabled state) -->
   <WR_BadgeBlocker>blocker</WR_BadgeBlocker>
   <WR_BadgeHours>limited hours</WR_BadgeHours>
@@ -149,9 +151,6 @@
   <WR_CopyRolesTip>Copy this colonist's roles.</WR_CopyRolesTip>
   <WR_PasteRolesTip>Paste the copied roles onto this colonist.</WR_PasteRolesTip>
   <WR_AddRoleTip>Assign a role.</WR_AddRoleTip>
-  <!-- Clicking a globally-disabled role's chip; {0} = role, {1} = colonist -->
-  <WR_EnableHereOnly>Enable '{0}' for {1} only (turns it off for its other holders)</WR_EnableHereOnly>
-  <WR_EnableGlobally>Enable '{0}' for everyone holding it</WR_EnableGlobally>
   <WR_SkillsButton>Skills</WR_SkillsButton>
   <!-- {0} = active skill columns, {1} = maximum -->
   <WR_SkillsButtonCount>Skills ({0}/{1})</WR_SkillsButtonCount>
