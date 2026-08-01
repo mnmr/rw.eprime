@@ -100,9 +100,34 @@ namespace WorkRoles
             FloorMaps.ReleaseForTeardown();
         }
 
-        private static Faction ViewFaction =>
-            MP.enabled && MP.RealPlayerFaction != null
-                ? MP.RealPlayerFaction : Faction.OfPlayer;
+        // MP.RealPlayerFaction exists only in Multiplayer API 0.5+, but the
+        // first Multiplayer.API assembly in mod-list order wins resolution, so
+        // an older stub shipped by another mod would make a direct call throw
+        // MissingMethodException at JIT time. Bind via reflection once instead.
+        private static readonly System.Func<Faction> realPlayerFactionGetter =
+            ResolveRealPlayerFactionGetter();
+
+        private static System.Func<Faction> ResolveRealPlayerFactionGetter()
+        {
+            var getter = typeof(MP).GetProperty(
+                "RealPlayerFaction",
+                System.Reflection.BindingFlags.Public
+                    | System.Reflection.BindingFlags.Static)?.GetGetMethod();
+            if (getter == null || getter.ReturnType != typeof(Faction))
+                return null;
+            return (System.Func<Faction>)System.Delegate.CreateDelegate(
+                typeof(System.Func<Faction>), getter);
+        }
+
+        private static Faction ViewFaction
+        {
+            get
+            {
+                if (!MP.enabled) return Faction.OfPlayer;
+                var faction = realPlayerFactionGetter?.Invoke();
+                return faction ?? Faction.OfPlayer;
+            }
+        }
 
         internal static IReadOnlyList<LocationInfo> Locations() =>
             Locations(ViewFaction);

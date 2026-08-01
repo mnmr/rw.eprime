@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.2 — 2026-08-01
+ 
+- Fixed: Added workaround for when another mod (loaded before WorkRoles) included an older version of the MultiPlayer shim. Fixes Work tab not opening for some people.
+
 ## 1.3.1 — 2026-07-31
  
 - Fixed: Improved performance of drag operations and tooltip rendering.
