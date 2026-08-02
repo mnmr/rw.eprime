@@ -8,37 +8,47 @@ namespace WorkRoles
     /// Canonicalizes floor maps to the map at the bottom of their stack, so
     /// every location consumer (location rules, scope filter, recommendations)
     /// treats a multi-map stack as one location. Three lanes: vanilla pocket
-    /// maps (undercaves and mods built on them) follow their source map;
+    /// maps (undercaves, Strata levels, and other mods built on them) follow
+    /// their source map;
     /// MultiFloors' level controller and As above So below's ABApi supply the
     /// ground map where the pocket chain doesn't (verified against the 1.6
     /// assemblies, temp/inspect-multifloors.ps1 + temp/inspect-asabove2.ps1).
     internal static class FloorMaps
     {
-        private const int MaxDepth = 8;
+        // Strata digs have no depth cap; 32 exceeds any practical stack.
+        private const int MaxDepth = 32;
 
         private static bool resolved;
         private static MethodInfo tryGetController; // LevelUtility.TryGetLevelControllerOnCurrentTile[Always](Map, out MF_LevelMapComp)
         private static PropertyInfo mapByLevel;     // MF_LevelMapComp.MapByLevel: Dictionary<int, Map>
         private static MethodInfo abGetGroundMap;   // AsAboveSoBelow.ABApi.GetGroundMap(Map)
 
-        // Stacks change only when maps are created or removed.
+        // Stacks change only when maps are created or removed, but a same-tick
+        // destroy+create (gravship stack travel) keeps the count equal, so the
+        // guard hashes map ids instead.
         private static readonly Dictionary<Map, Map> cache = new Dictionary<Map, Map>();
-        private static int cacheMapCount = -1;
+        private static int cacheStamp = -1;
 
         internal static void ReleaseForTeardown()
         {
             cache.Clear();
-            cacheMapCount = -1;
+            cacheStamp = -1;
         }
 
         internal static Map Canonical(Map map)
         {
             if (map == null) return null;
             var maps = Find.Maps;
-            if (maps != null && maps.Count != cacheMapCount)
+            if (maps != null)
             {
-                cache.Clear();
-                cacheMapCount = maps.Count;
+                int stamp = maps.Count;
+                for (int i = 0; i < maps.Count; i++)
+                    stamp = unchecked(stamp * 31 + maps[i].uniqueID);
+                if (stamp != cacheStamp)
+                {
+                    cache.Clear();
+                    cacheStamp = stamp;
+                }
             }
             if (cache.TryGetValue(map, out Map canonical)) return canonical;
             canonical = Compute(map);

@@ -190,7 +190,36 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 ## Required testing
 
-Every bug fix and behavior change must begin with a failing regression test that fails for the intended reason.
+Every bug fix and behavior change must begin with a failing executable
+regression at the highest stable observable boundary that can prove the user
+visible behavior. For recommendation changes, prefer final ordered colony
+assignments and chosen training paths over claims, ledgers, repair scores,
+selection states, or other intermediate planner machinery.
+
+Test count is not a goal and must never be used as evidence of behavioral
+quality. A smaller scenario test that exposes the complete interaction is
+preferred over many isolated tests that merely reproduce implementation
+steps.
+
+Tests must not:
+
+- mirror the production algorithm or assert its mutation sequence;
+- turn temporary internal types, enum members, collection shapes, or stage
+  boundaries into behavioral contracts;
+- assert intermediate state when the same rule can be verified through the
+  published result;
+- use a simplified fixture that omits interactions central to the behavior
+  under test, such as coverage, automatic roles, training-path bands, real
+  demand scales, or required skills;
+- generate expected values from the implementation and accept them without
+  human review;
+- add one test per mechanical branch when a single end-to-end scenario makes
+  the intended distinctions reviewable.
+
+A focused internal test is appropriate only when the invariant has no stable
+observable boundary, or when it protects an independently meaningful safety,
+determinism, cache, codec, or lifecycle contract. Such a test must state why
+the published behavior cannot prove the invariant.
 
 Cache tests must prove, where applicable:
 
@@ -208,7 +237,10 @@ Cache tests must prove, where applicable:
 - width changes invalidate wrapped measurements without invalidating unrelated data;
 - teardown removes owned registrations, resources, and obsolete entries safely.
 
-Tests must assert observable behavior. Source-text tests are allowed only when no executable boundary can reasonably verify an architectural requirement.
+Tests must assert observable behavior. Seeded or generated fixtures must model
+every relevant input faithfully, and their expected outputs must remain easy
+for a human to review. Source-text tests are allowed only when no executable
+boundary can reasonably verify an architectural requirement.
 
 ## Definition of done
 

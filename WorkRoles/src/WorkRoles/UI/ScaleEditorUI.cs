@@ -85,7 +85,10 @@ namespace WorkRoles.UI
     /// row. The totals row edits recommended assignments (trainees included);
     /// the minimums row edits the direct-assignment floor, with the trainee
     /// share the implicit difference. Click +1 (wraps at the cap), right-click
-    /// -1, drag across bands to copy the pressed band's value. Max is not
+    /// -1. Left-drag copies the pressed band's value across bands; a
+    /// right-click mid-drag nudges that value (+1 after moving right, -1
+    /// after moving left). Right-drag ramps one step per band, rising
+    /// rightward, falling leftward. Max is not
     /// editable here (uncapped in practice). Presets fork on first edit; every
     /// gesture commits once, on release. Reset restores the values captured
     /// when the role or scale was selected.
@@ -217,6 +220,8 @@ namespace WorkRoles.UI
         private static int dragSeries = -1;
         private static int dragPickValue;
         private static int dragOriginBand = -1;
+        private static int dragLastBand = -1;
+        private static int dragBumpDir = 1;
         private static int dragButton;
         private static bool dragMoved;
         private static int[] dragDirect;
@@ -583,6 +588,19 @@ namespace WorkRoles.UI
             bool picking = dragRoleId == model.RoleId && dragSeries == series
                 && dragScale != null;
 
+            // A press of the other button mid-gesture nudges the carried
+            // value: +1 after the last band crossing moved right, -1 after
+            // moving left. The cap follows the active series, not this row.
+            if (dragRoleId == model.RoleId && dragScale != null
+                && e.type == EventType.MouseDown && e.button != dragButton)
+            {
+                int cap = dragSeries == SeriesTotalRow
+                    ? MaxTotalPick : MaxDirectPick;
+                dragPickValue = Mathf.Clamp(dragPickValue + dragBumpDir, 0, cap);
+                dragMoved = true;
+                e.Use();
+            }
+
             for (int band = 0; band < HolderScale.Bands; band++)
             {
                 var cell = new Rect(startX + band * colW + 4f, rect.y,
@@ -603,12 +621,15 @@ namespace WorkRoles.UI
                     (totalsRow ? WrTips.Key("WR_ScaleTotalTip")
                         : WrTips.Key("WR_ScaleDirectTip")).Region(cell);
 
-                if (e.type == EventType.MouseDown && cell.Contains(e.mousePosition))
+                if (e.type == EventType.MouseDown && cell.Contains(e.mousePosition)
+                    && dragScale == null)
                 {
                     // Nothing changes on press: a plain click increments on
                     // release, a drag-across copies the ORIGIN's value as-is.
                     BeginGesture(model, series);
                     dragOriginBand = band;
+                    dragLastBand = band;
+                    dragBumpDir = 1;
                     dragButton = e.button;
                     dragMoved = false;
                     dragPickValue = totalsRow
@@ -616,17 +637,24 @@ namespace WorkRoles.UI
                     e.Use();
                 }
                 // Position polling, not MouseDrag events: drag passes are
-                // filtered out before tab content draws (WrEvent), and the
-                // repeated apply is idempotent.
-                else if (picking && cell.Contains(e.mousePosition) && band != dragOriginBand)
+                // filtered out before tab content draws (WrEvent), and both
+                // paints are idempotent functions of origin and cursor. The
+                // origin cell is painted too so nudges land while hovering it.
+                else if (picking && cell.Contains(e.mousePosition))
                 {
-                    dragMoved = true;
-                    ApplyRowValue(band, totalsRow);
+                    if (band != dragLastBand)
+                    {
+                        dragBumpDir = band > dragLastBand ? 1 : -1;
+                        dragLastBand = band;
+                    }
+                    if (band != dragOriginBand) dragMoved = true;
+                    if (dragButton == 1) ApplyRamp(band, totalsRow);
+                    else ApplyRowValue(band, totalsRow);
                 }
             }
 
-            if (picking && (e.type == EventType.MouseUp || !Input.GetMouseButton(0)
-                && !Input.GetMouseButton(1)))
+            if (picking && (e.type == EventType.MouseUp && e.button == dragButton
+                || !Input.GetMouseButton(dragButton)))
             {
                 if (!dragMoved)
                 {
@@ -639,12 +667,35 @@ namespace WorkRoles.UI
                 EndGesture();
                 if (e.type == EventType.MouseUp) e.Use();
             }
+            // The other button must not restart or end the gesture mid-drag.
+            else if (picking && (e.type == EventType.MouseDown
+                || e.type == EventType.MouseUp))
+            {
+                e.Use();
+            }
         }
 
         private static void ApplyRowValue(int band, bool totalsRow)
         {
             if (totalsRow) SetTotal(dragScale, band, dragPickValue);
             else SetDirect(dragScale, band, dragPickValue);
+            dragScale.Normalize();
+        }
+
+        /// Right-drag: bands from the origin to the cursor get the origin
+        /// value shifted one step per band, rising rightward and falling
+        /// leftward; the row clamps saturate the ends. Painting the whole
+        /// span heals bands a fast drag skipped over.
+        private static void ApplyRamp(int hovered, bool totalsRow)
+        {
+            int step = hovered >= dragOriginBand ? 1 : -1;
+            for (int band = dragOriginBand; ; band += step)
+            {
+                int value = dragPickValue + (band - dragOriginBand);
+                if (totalsRow) SetTotal(dragScale, band, value);
+                else SetDirect(dragScale, band, value);
+                if (band == hovered) break;
+            }
             dragScale.Normalize();
         }
 
@@ -664,6 +715,8 @@ namespace WorkRoles.UI
             dragRoleId = -1;
             dragSeries = -1;
             dragOriginBand = -1;
+            dragLastBand = -1;
+            dragBumpDir = 1;
             dragMoved = false;
             dragScale = null;
             dragDirect = null;

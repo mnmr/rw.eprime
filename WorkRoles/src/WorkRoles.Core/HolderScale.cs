@@ -16,7 +16,9 @@ namespace WorkRoles.Core
         /// Shipped/seeded scales are immutable in the editor: the first edit
         /// forks them into a uniquely named user scale.
         public bool Preset;
+        /// Direct holder minimum. Training allowance is additive.
         public int[] Min = new int[Bands];
+        /// Additional holders whose target role may be substituted by a path.
         public int[] Train = new int[Bands];
         public int[] Max = UncappedRow();
 

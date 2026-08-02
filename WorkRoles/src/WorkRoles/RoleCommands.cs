@@ -652,6 +652,7 @@ namespace WorkRoles
                     true, color.r, color.g, color.b, color.a)) return;
             role.color = color;
             role.hasCustomColor = true;
+            UiVersion.Bump();
         }
 
         /// Auto-assign roles go to newcomers and lead every plan target.
@@ -679,6 +680,18 @@ namespace WorkRoles
             while (Store.customSwatches.Count <= index)
                 Store.customSwatches.Add(UnityEngine.Color.clear);
             Store.customSwatches[index] = color;
+            UiVersion.Bump();
+        }
+
+        /// Empties one shared custom swatch slot; it renders as a "+" picker
+        /// again. Roles keep the color they copied from it.
+        [SyncMethod]
+        public static void ClearCustomSwatch(int index)
+        {
+            if (Store == null || index < 0
+                || index >= Store.customSwatches.Count) return;
+            if (Store.customSwatches[index].a < 0.5f) return;
+            Store.customSwatches[index] = UnityEngine.Color.clear;
             UiVersion.Bump();
         }
 

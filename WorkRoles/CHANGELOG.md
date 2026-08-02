@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.3.4 — 2026-08-02
+
+- Added: Support for Strata (already worked, but extended multi-floors to allow for up to 32 levels since Strata is unbounded).
+- Added: You can now drag-copy values in role recommendations tuning. Left-click drag to copy. Right-click drag to ramp up/down as you drag across.
+- Fixed: Color selection did not invalidate render cache, so it looked like it wasn't working. Also fixed right-click not working over color palette.
+
 ## 1.3.3 — 2026-08-01
  
 - Changed: Global and colonist role toggles are now independent. Globally disabled roles render with double strike-through, pawn disabled roles with single strike-through.

@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.3.3</modVersion>
+  <modVersion>1.3.4</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -86,7 +86,7 @@ Compatibility:
 Mod integrations (these will be used when installed, but are not requirements):
 - Vanilla Skills Expanded and Alpha Skills (expertise and passions are recommendation signals)
 - More Than Capable (hated work becomes an Awful recommendation signal and is flagged on assigned roles)
-- MultiFloors and 'As above, so below' (floors on single tile treated as single location)
+- MultiFloors, Strata and 'As above, so below' (floors on single tile treated as single location)
 - Colony Groups (your pawn groups appear as a grouping option for the colonist table)
 
 Known Incompatible:

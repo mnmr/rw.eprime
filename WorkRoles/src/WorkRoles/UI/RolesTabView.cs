@@ -686,6 +686,9 @@ namespace WorkRoles.UI
             // RIGHT half: swatch grid, right-aligned inside box
             float swatchStartX = topBox.xMax - TopBoxPadding - swatchGridW;
             float swatchStartY = topBox.y + TopBoxPadding;
+            // Only the first color match carries the selection outline, so
+            // legacy duplicate palette entries cannot all light up.
+            bool selectionMarked = false;
             for (int i = 0; i < SwatchPalette.Swatches.Length; i++)
             {
                 int col = i % SwatchCols;
@@ -695,9 +698,12 @@ namespace WorkRoles.UI
                     swatchStartY + row * (SwatchSize + SwatchGap),
                     SwatchSize, SwatchSize);
                 Widgets.DrawBoxSolid(swatchRect, SwatchPalette.Swatches[i]);
-                if (header.HasCustomColor
+                if (!selectionMarked && header.HasCustomColor
                     && header.RoleColor.IndistinguishableFrom(SwatchPalette.Swatches[i]))
+                {
                     Widgets.DrawBox(swatchRect.ExpandedBy(2f));
+                    selectionMarked = true;
+                }
                 TooltipHandler.TipRegion(swatchRect, SwatchPalette.Names[i]);
                 if (Widgets.ButtonInvisible(swatchRect))
                     RoleCommands.SetRoleColor(model.RoleId, SwatchPalette.Swatches[i]);
@@ -737,19 +743,25 @@ namespace WorkRoles.UI
                 else
                 {
                     Widgets.DrawBoxSolid(slotRect, slotColor);
-                    if (header.HasCustomColor
+                    if (!selectionMarked && header.HasCustomColor
                         && header.RoleColor.IndistinguishableFrom(slotColor))
+                    {
                         Widgets.DrawBox(slotRect.ExpandedBy(2f));
+                        selectionMarked = true;
+                    }
                     WrTips.Key("WR_CustomSwatchTip").Region(slotRect);
-                    if (Widgets.ButtonInvisible(slotRect))
-                        RoleCommands.SetRoleColor(model.RoleId, slotColor);
+                    // ButtonInvisible (GUI.Button) eats MouseDown for any
+                    // button, so the right-click must be read first.
                     var e = Event.current;
-                    if (e.type == EventType.MouseDown && e.button == 1 && slotRect.Contains(e.mousePosition))
+                    if (e.type == EventType.MouseDown && e.button == 1
+                        && slotRect.Contains(e.mousePosition))
                     {
                         e.Use();
                         OpenCustomColorPicker(capturedRoleId, initialColor,
                             capturedSlot, applyToRole: false);
                     }
+                    else if (Widgets.ButtonInvisible(slotRect))
+                        RoleCommands.SetRoleColor(model.RoleId, slotColor);
                 }
             }
 
@@ -836,6 +848,10 @@ namespace WorkRoles.UI
             DrawEntries(entriesRect, model);
         }
 
+        /// Slot picker (empty slot defines and applies; right-click redefines
+        /// without applying). A pick indistinguishable from an existing
+        /// palette color reuses that color and empties the slot instead, so
+        /// the palette never holds duplicates.
         private static void OpenCustomColorPicker(int roleId, Color initial,
             int slot, bool applyToRole)
         {
@@ -843,9 +859,12 @@ namespace WorkRoles.UI
             {
                 WorkRolesGameComponent.RunOutsideOnGUI(() =>
                 {
-                    RoleCommands.SetCustomSwatch(slot, picked);
+                    if (!TryMatchPalette(picked, out Color match))
+                        RoleCommands.SetCustomSwatch(slot, picked);
+                    else
+                        RoleCommands.ClearCustomSwatch(slot);
                     if (applyToRole)
-                        RoleCommands.SetRoleColor(roleId, picked);
+                        RoleCommands.SetRoleColor(roleId, match);
                 });
             }));
         }
@@ -905,6 +924,32 @@ namespace WorkRoles.UI
         /// role opt-in and Allow training substitutions.
         /// Auto role opt-in derives from HasRules — unchecking clears the rules
         /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
+        /// The palette-canonical form of a picked color: an indistinguishable
+        /// standard swatch or filled custom slot wins over defining a
+        /// duplicate. Runs from picker callbacks outside OnGUI, never from
+        /// the render path.
+        private static bool TryMatchPalette(Color picked, out Color match)
+        {
+            var swatches = SwatchPalette.Swatches;
+            for (int i = 0; i < swatches.Length; i++)
+                if (picked.IndistinguishableFrom(swatches[i]))
+                {
+                    match = swatches[i];
+                    return true;
+                }
+            var custom = RoleStore.Current?.customSwatches;
+            if (custom != null)
+                for (int i = 0; i < custom.Count; i++)
+                    if (custom[i].a >= 0.5f
+                        && picked.IndistinguishableFrom(custom[i]))
+                    {
+                        match = custom[i];
+                        return true;
+                    }
+            match = picked;
+            return false;
+        }
+
         private void DrawEditorChecks(Rect rect, RoleEditorSnapshot model,
             bool rulesShown, float rowH)
         {

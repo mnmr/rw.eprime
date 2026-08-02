@@ -446,7 +446,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} = scale name, {1} = "Used by ..." summary -->
   <WR_ScaleDeleteConfirm>Delete scale '{0}'?\n\n{1}. These roles will use Never instead.</WR_ScaleDeleteConfirm>
   <WR_ScaleSaveAsTitle>Save changes as a new scale (this scale reverts to its saved values)</WR_ScaleSaveAsTitle>
-  <WR_ScaleDirectTip>Minimum direct assignments for this band; the rest of the total may be filled by trainees. Raising it past the total raises the total too. Click +1 (wraps at 8), right-click -1, drag across bands to copy.</WR_ScaleDirectTip>
+  <WR_ScaleDirectTip>Minimum direct assignments for this band; the rest of the total may be filled by trainees. Raising it past the total raises the total too. Click +1 (wraps at 8), right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleDirectTip>
   <WR_ScaleTotalsCaption>Recommended assignments (training substitutions included)</WR_ScaleTotalsCaption>
   <!-- {0} = role label -->
   <WR_ScaleMinsCaption>Assignment minimums for {0}</WR_ScaleMinsCaption>
@@ -456,7 +456,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ScaleControlledBy>Controlled by {0}</WR_ScaleControlledBy>
   <!-- {0} = the covering auto-assigned role's label -->
   <WR_ScaleInAutoRole>In auto-assigned role {0}</WR_ScaleInAutoRole>
-  <WR_ScaleTotalTip>Total recommended assignments for this band, trainees included. Click +1, right-click -1, drag across bands to copy.</WR_ScaleTotalTip>
+  <WR_ScaleTotalTip>Total recommended assignments for this band, trainees included. Click +1, right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
   <!-- Editor: collapsible recommendation tuning section -->

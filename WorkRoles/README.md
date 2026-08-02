@@ -65,7 +65,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
 - Integrates with Vanilla Skills Expanded and Alpha Skills when installed: expertise and passions are recommendation signals.
 - Integrates with More Than Capable when installed: hated work becomes an Awful recommendation signal and is flagged on assigned roles.
-- Integrates with MultiFloors and "As above, so below" when installed: floors on a single tile are treated as a single location.
+- Integrates with MultiFloors, Strata and "As above, so below" when installed: floors on a single tile are treated as a single location.
 - Integrates with Colony Groups when installed: pawn groups appear as a grouping option for the colonist table.
 - Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many, many others.
 - Multiplayer compatible.
