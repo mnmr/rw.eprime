@@ -332,6 +332,7 @@ namespace EPrimeReadouts.UI
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
                 Pools = renderData.Structure,
+                Metrics = PanelCellMetrics.Current,
             };
             draw = DrawModel.Resolve(ReadoutLayoutEngine.Build(input), renderData);
             builtGroupsVersion = store.GroupsVersion;

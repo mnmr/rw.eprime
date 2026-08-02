@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.0.3 — 2026-08-02
+
+- Fixed: Icon rendering was blurry. Aligned preview image with my other mods.
+
+## 1.0.2 — 2026-08-01
+
+- Fixed: Detect when tiny font is disabled and scale appropriately to fit larger text.
+
 ## 1.0.1 — 2026-07-31
 
 - Fixed: Group references to DLC resources are now conditional on the DLC being available.

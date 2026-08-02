@@ -28,6 +28,39 @@ $idFile = Join-Path $content "About\PublishedFileId.txt"
 $firstPublish = -not (Test-Path -LiteralPath $idFile -PathType Leaf)
 $publishedFileId = if ($firstPublish) { "0" } else { (Get-Content -LiteralPath $idFile -Raw).Trim() }
 
+# Preview: sent on first publish or when the deployed Preview.png differs from
+# the image currently on the Workshop (fetched via the item's preview_url and
+# compared by hash; Steam serves the uploaded bytes verbatim). If the current
+# preview cannot be fetched, it is sent — re-sending an identical image is
+# harmless.
+$previewFile = Join-Path $content "About\Preview.png"
+$repoPreview = Join-Path $repo "mod\About\Preview.png"
+$previewHash = (Get-FileHash -LiteralPath $previewFile -Algorithm SHA256).Hash
+if ($previewHash -ne (Get-FileHash -LiteralPath $repoPreview -Algorithm SHA256).Hash) {
+    throw "Preview.png in the game's Mods folder ($content) differs from the repo's; the upload sends the deployed folder, so run scripts/deploy.ps1 first"
+}
+if ((Get-Item -LiteralPath $previewFile).Length -gt 1MB) {
+    throw "Preview.png is $((Get-Item -LiteralPath $previewFile).Length) bytes; Steam caps workshop previews at 1MB"
+}
+$sendPreview = $firstPublish
+if (-not $firstPublish) {
+    try {
+        $details = Invoke-RestMethod -Method Post `
+            -Uri "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/" `
+            -Body @{ itemcount = "1"; "publishedfileids[0]" = $publishedFileId }
+        $previewUrl = $details.response.publishedfiledetails[0].preview_url
+        if (-not $previewUrl) { throw "no preview_url in API response" }
+        $remotePreview = Join-Path ([System.IO.Path]::GetTempPath()) "workshop-preview-$publishedFileId.png"
+        Invoke-WebRequest -Uri $previewUrl -OutFile $remotePreview | Out-Null
+        $sendPreview = (Get-FileHash -LiteralPath $remotePreview -Algorithm SHA256).Hash -ne $previewHash
+        Remove-Item -LiteralPath $remotePreview
+    }
+    catch {
+        Write-Warning "Could not fetch the current Workshop preview ($_); sending Preview.png"
+        $sendPreview = $true
+    }
+}
+
 if (-not $SteamCmd) {
     $cmd = Get-Command steamcmd -ErrorAction SilentlyContinue
     if ($cmd) { $SteamCmd = $cmd.Source }
@@ -89,16 +122,19 @@ if ($answer -notin @('y', 'yes')) {
     exit 1
 }
 
-# Omitted keys (title, and changenote when none is given) are left untouched by
-# Steam for updates. A first publish sets title + preview so the new item is
-# complete; updates never touch them (managed on the web page).
+# Omitted keys (title, changenote when none is given, previewfile when
+# unchanged) are left untouched by Steam for updates. A first publish sets
+# title + visibility so the new item is complete; updates never touch them
+# (managed on the web page). The preview is sent whenever $sendPreview says
+# it differs from the image currently on the Workshop.
 $contentPath = (Resolve-Path -LiteralPath $content).Path
 $noteLine = if ($ChangeNote) { "`n    `"changenote`"       `"$ChangeNote`"" } else { "" }
+$previewLine = if ($sendPreview) {
+    "`n    `"previewfile`"      `"$((Resolve-Path -LiteralPath $previewFile).Path)`""
+} else { "" }
 $firstLines = ""
 if ($firstPublish) {
-    $previewPath = (Resolve-Path -LiteralPath (Join-Path $content "About\Preview.png")).Path
     $firstLines = "`n    `"title`"            `"EPrime's Readouts`"" +
-                  "`n    `"previewfile`"      `"$previewPath`"" +
                   "`n    `"visibility`"       `"0`""
 }
 $vdf = @"
@@ -107,7 +143,7 @@ $vdf = @"
     "appid"            "294100"
     "publishedfileid"  "$publishedFileId"
     "contentfolder"    "$contentPath"
-    "description"      "$description"$firstLines$noteLine
+    "description"      "$description"$firstLines$previewLine$noteLine
 }
 "@
 
@@ -134,6 +170,7 @@ if ($firstPublish) {
     Set-Content -LiteralPath (Join-Path $repo "mod\About\PublishedFileId.txt") -Value $assigned -NoNewline
     Write-Host "First publish complete: item $assigned (id written to deployed + repo About)."
 } else {
-    Write-Host "Upload complete. Description updated ($descriptionBytes bytes); title/preview not modified."
+    $previewMsg = if ($sendPreview) { "preview updated" } else { "preview unchanged, not sent" }
+    Write-Host "Upload complete. Description updated ($descriptionBytes bytes); $previewMsg; title not modified."
 }
 exit 0

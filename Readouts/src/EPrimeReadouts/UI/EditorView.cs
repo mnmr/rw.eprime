@@ -260,6 +260,7 @@ namespace EPrimeReadouts.UI
                     Width = width,
                     Catalog = GameResourceCatalog.Instance,
                     Pools = pools,
+                    Metrics = PanelCellMetrics.Current,
                 };
                 var model = ReadoutLayoutEngine.Build(input);
                 var dm = DrawModel.Resolve(model, owner.RenderData);
@@ -449,6 +450,40 @@ namespace EPrimeReadouts.UI
             return def != null ? (string)def.LabelCap : canonical;
         }
 
+        // Cache contract:
+        // Owner: this EditorView instance.
+        // Key: none (single value).
+        // Value: immutable ThresholdRowLayout.
+        // Dependencies: UiVersion.Current (language, UI scale, tiny-text
+        // preference — label/button text and the resolved font both follow it).
+        // Refresh policy: immediate on UI revision change.
+        // Equality policy: value struct; equal rebuilds are identical.
+        // Teardown: Reset restores the unset stamp.
+        private ThresholdRowLayout thresholdRow;
+        private int thresholdRowUiVersion = -1;
+
+        /// Extra width ButtonText needs around its caption.
+        private const float ButtonPadX = 16f;
+
+        private ThresholdRowLayout EnsureThresholdRow()
+        {
+            if (thresholdRowUiVersion == UiVersion.Current) return thresholdRow;
+            using (new GuiStateScope())
+            {
+                // Labels render in Tiny, which RimWorld resolves to Small when
+                // tiny text is unavailable; measure whatever it resolves to.
+                Text.Font = GameFont.Tiny;
+                float lowW = WrText.FitWidth(UiText.Get("EPR.Low"));
+                float criticalW = WrText.FitWidth(UiText.Get("EPR.Critical"));
+                Text.Font = GameFont.Small;
+                float setW = WrText.FitWidth(UiText.Get("EPR.Set")) + ButtonPadX;
+                float clearW = WrText.FitWidth(UiText.Get("EPR.Clear")) + ButtonPadX;
+                thresholdRow = ThresholdRowLayout.Compute(lowW, criticalW, setW, clearW);
+            }
+            thresholdRowUiVersion = UiVersion.Current;
+            return thresholdRow;
+        }
+
         private void DrawOptionsBody(Rect rect, ReadoutGroup group, string storedToken,
             Dialog_ReadoutConfig owner)
         {
@@ -488,21 +523,30 @@ namespace EPrimeReadouts.UI
             Text.Font = GameFont.Small;
             y += 24f;
 
-            // Line 3: low/critical/set/clear (unchanged column alignment)
+            // Line 3: low/critical/set/clear. Columns start where measured
+            // labels end, so substituted fonts and long translations shift
+            // the row instead of clipping.
+            var row = EnsureThresholdRow();
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x, y + 3f, 34f, 22f), UiText.Get("EPR.Low"));
+            Widgets.Label(new Rect(rect.x, y + 3f, row.LowLabelW, 22f),
+                UiText.Get("EPR.Low"));
             Text.Font = GameFont.Small;
-            Widgets.TextFieldNumeric(new Rect(rect.x + 38f, y, 60f, 24f),
+            Widgets.TextFieldNumeric(
+                new Rect(rect.x + row.LowFieldX, y, ThresholdRowLayout.FieldW, 24f),
                 ref thresholdEditor.LowValue, ref thresholdEditor.LowBuffer, 0f, 999999f);
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x + 106f, y + 3f, 56f, 22f), UiText.Get("EPR.Critical"));
+            Widgets.Label(new Rect(rect.x + row.CriticalLabelX, y + 3f,
+                row.CriticalLabelW, 22f), UiText.Get("EPR.Critical"));
             Text.Font = GameFont.Small;
-            Widgets.TextFieldNumeric(new Rect(rect.x + 166f, y, 60f, 24f),
+            Widgets.TextFieldNumeric(
+                new Rect(rect.x + row.CriticalFieldX, y, ThresholdRowLayout.FieldW, 24f),
                 ref thresholdEditor.CriticalValue, ref thresholdEditor.CriticalBuffer, 0f, 999999f);
-            if (Widgets.ButtonText(new Rect(rect.x + 234f, y, 50f, 24f), UiText.Get("EPR.Set")))
+            if (Widgets.ButtonText(new Rect(rect.x + row.SetX, y, row.SetW, 24f),
+                UiText.Get("EPR.Set")))
                 ReadoutCommands.SetThreshold(owner.selectedCanonical,
                     thresholdEditor.LowValue, thresholdEditor.CriticalValue);
-            if (Widgets.ButtonText(new Rect(rect.x + 288f, y, 56f, 24f), UiText.Get("EPR.Clear")))
+            if (Widgets.ButtonText(new Rect(rect.x + row.ClearX, y, row.ClearW, 24f),
+                UiText.Get("EPR.Clear")))
             {
                 ReadoutCommands.ClearThreshold(owner.selectedCanonical);
                 thresholdEditor.LowValue = 0;
@@ -535,6 +579,8 @@ namespace EPrimeReadouts.UI
             optionsDisplayName = null;
             optionsHeader = null;
             optionsUiVersion = -1;
+            thresholdRow = default;
+            thresholdRowUiVersion = -1;
         }
     }
 }

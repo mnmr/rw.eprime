@@ -17,6 +17,7 @@ namespace EPrimeReadouts
             ReadoutPanel.Reset();
             IconTips.Reset();
             WrText.Reset();
+            PanelCellMetrics.Reset();
             UiText.Reset();
             EprStyle.Reset();
             EprDrag.Cancel();

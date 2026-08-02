@@ -14,6 +14,9 @@ namespace EPrimeReadouts.Core
         public float Width = 140f;
         public IResourceCatalog Catalog;
         public bool EditorMode;
+        /// Font-resolved cell geometry; default reproduces the tiny-font
+        /// baseline. See CellMetrics.
+        public CellMetrics Metrics;
         /// Pool snapshot built at rebuild time; null treated as empty.
         public PoolSnapshot Pools;
     }
@@ -47,14 +50,15 @@ namespace EPrimeReadouts.Core
         private static float InsetX => LayoutMetrics.StripeW + LayoutMetrics.GroupPadX;
 
         // Columns for the Results section (wraps at panel width, capped).
-        private static int ResultsColumns(float width) =>
+        private static int ResultsColumns(LayoutInput input) =>
             Math.Min(MaxResultColumns,
-                Math.Max(1, (int)((width - InsetX - LayoutMetrics.MarkerColW) / LayoutMetrics.CellW)));
+                Math.Max(1, (int)((input.Width - InsetX - LayoutMetrics.MarkerColW)
+                    / input.Metrics.CellW)));
 
         // Width of a group container for a given slot count (never wraps).
-        private static float GroupContainerWidth(int slotCount) =>
+        private static float GroupContainerWidth(int slotCount, CellMetrics metrics) =>
             LayoutMetrics.StripeW + LayoutMetrics.GroupPadX
-            + LayoutMetrics.MarkerColW + slotCount * LayoutMetrics.CellW
+            + LayoutMetrics.MarkerColW + slotCount * metrics.CellW
             + LayoutMetrics.GroupPadX;
 
         public static RenderModel Build(LayoutInput input)
@@ -82,7 +86,7 @@ namespace EPrimeReadouts.Core
                     CollectVisible(group, input, slots);
                     if (slots.Count == 0) continue;
                     if (y > 0f) y += LayoutMetrics.GroupGap;
-                    float containerW = GroupContainerWidth(slots.Count);
+                    float containerW = GroupContainerWidth(slots.Count, input.Metrics);
                     if (containerW > maxGroupW) maxGroupW = containerW;
                     y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
                     groupDisplayIndex++;
@@ -196,7 +200,7 @@ namespace EPrimeReadouts.Core
             float containerW)
         {
             // Single row always: one icon+counter row pair.
-            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.RowPairH;
+            float containerH = 2f * LayoutMetrics.GroupPadY + input.Metrics.RowPairH;
 
             // GroupBack cell spans the computed container width — emitted FIRST
             model.Cells.Add(new RenderCell
@@ -231,7 +235,7 @@ namespace EPrimeReadouts.Core
             {
                 GroupId = group.Id,
                 Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    LayoutMetrics.RowPairH),
+                    input.Metrics.RowPairH),
             });
 
             // Build the icon/counter row, inset (single row, no wrapping)
@@ -244,6 +248,7 @@ namespace EPrimeReadouts.Core
         private static void BuildGroupGrid(RenderModel model, List<ResolvedSlot> slots,
             LayoutInput input, float yInset, bool highlightMatches)
         {
+            var metrics = input.Metrics;
             float insetX = InsetX;
             float y = yInset;
             for (int c = 0; c < slots.Count; c++)
@@ -254,9 +259,9 @@ namespace EPrimeReadouts.Core
                 string iconDefName = slot.IconDefName;
                 // For DefName on cells: use iconDefName (may be null for zero-member pools)
                 string cellDefName = iconDefName ?? (slot.Members.Count > 0 ? slot.Members[0] : null);
-                float x = insetX + LayoutMetrics.MarkerColW + c * LayoutMetrics.CellW;
+                float x = insetX + LayoutMetrics.MarkerColW + c * metrics.CellW;
                 var iconRect = new RectF(
-                    x + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, y,
+                    x + (metrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                     LayoutMetrics.IconSize, LayoutMetrics.IconSize);
 
                 // Highlight: pool name match (for #tokens) or any member label match
@@ -311,7 +316,7 @@ namespace EPrimeReadouts.Core
                         ? ThresholdBands.For(slot.Sum, spec) : Band.Normal,
                     Rect = new RectF(x,
                         y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
-                        LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
+                        metrics.CellW, metrics.CounterRowH),
                 });
             }
         }
@@ -327,7 +332,7 @@ namespace EPrimeReadouts.Core
             int tokenCount = tierIndex < tiers.Count ? tiers[tierIndex].Count : 0;
             // tokens + 1 empty slot (omitted when tier is at cap)
             bool atCap = tokenCount >= TierOps.MaxSlotsPerTier;
-            float contentW = (tokenCount + (atCap ? 0 : 1)) * LayoutMetrics.CellW;
+            float contentW = (tokenCount + (atCap ? 0 : 1)) * input.Metrics.CellW;
             return LayoutMetrics.StripeW + LayoutMetrics.GroupPadX
                    + LayoutMetrics.MarkerColW + contentW + LayoutMetrics.GroupPadX;
         }
@@ -335,7 +340,8 @@ namespace EPrimeReadouts.Core
         private static float BuildEditorGroup(ReadoutGroup group, LayoutInput input, RenderModel model,
             float yTop, int groupDisplayIndex, float containerW)
         {
-            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.RowPairH;
+            var metrics = input.Metrics;
+            float containerH = 2f * LayoutMetrics.GroupPadY + metrics.RowPairH;
 
             model.Cells.Add(new RenderCell
             {
@@ -372,7 +378,7 @@ namespace EPrimeReadouts.Core
             {
                 GroupId = group.Id,
                 Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    LayoutMetrics.RowPairH),
+                    metrics.RowPairH),
             });
 
             // Render exactly one tier: tier at index depth-1
@@ -389,13 +395,13 @@ namespace EPrimeReadouts.Core
                 // Resolve token in editor mode — pool refs with zero/no members still emit cells
                 bool resolved = ResolveToken(token, input, editorMode: true,
                     out var members, out var iconDefName, out _, out int sum);
-                if (!resolved) { colX += LayoutMetrics.CellW; continue; }
+                if (!resolved) { colX += metrics.CellW; continue; }
 
                 // cellDefName may be null for zero-member pools in editor (icon cell still occupies column)
                 string cellDefName = iconDefName ?? (members.Count > 0 ? members[0] : null);
 
                 var iconRect = new RectF(
-                    colX + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
+                    colX + (metrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
                     LayoutMetrics.IconSize, LayoutMetrics.IconSize);
 
                 model.Cells.Add(new RenderCell
@@ -423,17 +429,17 @@ namespace EPrimeReadouts.Core
                         ? ThresholdBands.For(sum, spec) : Band.Normal,
                     Rect = new RectF(colX,
                         insetY + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
-                        LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
+                        metrics.CellW, metrics.CounterRowH),
                 });
 
-                colX += LayoutMetrics.CellW;
+                colX += metrics.CellW;
             }
 
             // One trailing EmptySlot (append position = tokenCount) — omitted when tier is at cap
             if (tokenCount < TierOps.MaxSlotsPerTier)
             {
                 var emptyRect = new RectF(
-                    colX + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
+                    colX + (metrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,
                     LayoutMetrics.IconSize, LayoutMetrics.IconSize);
                 model.Cells.Add(new RenderCell
                 {
@@ -457,19 +463,20 @@ namespace EPrimeReadouts.Core
             matches.Sort((a, b) => string.CompareOrdinal(
                 input.Catalog.LabelOf(a), input.Catalog.LabelOf(b)));
 
+            var metrics = input.Metrics;
             float insetX = InsetX;
             float insetY = y + LayoutMetrics.GroupPadY;
 
             // Pre-compute container height so GroupBack spans the full container
-            int columns = ResultsColumns(input.Width);
+            int columns = ResultsColumns(input);
             int shown = Math.Min(matches.Count, columns * MaxResultRows);
             int hidden = matches.Count - shown;
             if (hidden > 0)
                 matches.RemoveRange(shown, hidden);
             int gridRows = matches.Count > 0 ? (matches.Count + columns - 1) / columns : 0;
-            float gridH = gridRows * LayoutMetrics.RowPairH;
-            float containerH = 2f * LayoutMetrics.GroupPadY + LayoutMetrics.LabelRowH + gridH
-                + (hidden > 0 ? LayoutMetrics.LabelRowH : 0f);
+            float gridH = gridRows * metrics.RowPairH;
+            float containerH = 2f * LayoutMetrics.GroupPadY + metrics.LabelRowH + gridH
+                + (hidden > 0 ? metrics.LabelRowH : 0f);
 
             // GroupBack with GroupIndex = -1 emitted BEFORE label cell
             model.Cells.Add(new RenderCell
@@ -484,9 +491,9 @@ namespace EPrimeReadouts.Core
             {
                 Kind = CellKind.Label,
                 Text = matches.Count == 0 ? NoMatchesLabelKey : ResultsLabelKey,
-                Rect = new RectF(insetX, insetY, input.Width - insetX, LayoutMetrics.LabelRowH),
+                Rect = new RectF(insetX, insetY, input.Width - insetX, metrics.LabelRowH),
             });
-            insetY += LayoutMetrics.LabelRowH;
+            insetY += metrics.LabelRowH;
 
             if (matches.Count > 0)
                 BuildResultsGrid(input, model, matches, insetY);
@@ -498,7 +505,7 @@ namespace EPrimeReadouts.Core
                     Text = MoreResultsLabelKey,
                     Count = hidden,
                     Rect = new RectF(insetX, insetY + gridH,
-                        input.Width - insetX, LayoutMetrics.LabelRowH),
+                        input.Width - insetX, metrics.LabelRowH),
                 });
 
             return y + containerH;
@@ -507,17 +514,18 @@ namespace EPrimeReadouts.Core
         private static void BuildResultsGrid(LayoutInput input, RenderModel model,
             List<string> defNames, float y)
         {
+            var metrics = input.Metrics;
             float insetX = InsetX;
-            int columns = ResultsColumns(input.Width);
+            int columns = ResultsColumns(input);
             for (int i = 0; i < defNames.Count; i += columns)
             {
                 int rowCount = Math.Min(columns, defNames.Count - i);
                 for (int c = 0; c < rowCount; c++)
                 {
                     string defName = defNames[i + c];
-                    float x = insetX + LayoutMetrics.MarkerColW + c * LayoutMetrics.CellW;
+                    float x = insetX + LayoutMetrics.MarkerColW + c * metrics.CellW;
                     var iconRect = new RectF(
-                        x + (LayoutMetrics.CellW - LayoutMetrics.IconSize) / 2f, y,
+                        x + (metrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                         LayoutMetrics.IconSize, LayoutMetrics.IconSize);
                     input.Counts.TryGetValue(defName, out int count);
                     model.Cells.Add(new RenderCell
@@ -532,10 +540,10 @@ namespace EPrimeReadouts.Core
                             ? ThresholdBands.For(count, spec) : Band.Normal,
                         Rect = new RectF(x,
                             y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
-                            LayoutMetrics.CellW, LayoutMetrics.CounterRowH),
+                            metrics.CellW, metrics.CounterRowH),
                     });
                 }
-                y += LayoutMetrics.RowPairH;
+                y += metrics.RowPairH;
             }
         }
     }
