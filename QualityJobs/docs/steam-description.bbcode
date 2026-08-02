@@ -1,0 +1,38 @@
+Get high-quality gear and furniture reliably: work on quality items and buildings is set aside at the last moment and finished by your best (or inspired) pawn, capturing their quality roll.
+
+Quality in RimWorld is rolled by the pawn who [b]finishes[/b] the work — that's vanilla. Players exploit it manually by parking nearly-done items until an inspired master crafter can do the final touch. This mod automates the entire loop.
+
+[h1]Crafting[/h1]
+[list]
+[*] Quality bill work pauses the instant before completion; the item waits — haulable and safe on any shelf — until a qualifying colonist exists.
+[*] Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview: your configuration vs. your current best crafter.
+[*] Automatic finisher dispatch: a one-shot "Finish …" bill restricted to the chosen pawn, plus a letter so you can intervene. If the current crafter already qualifies, they simply finish it themselves.
+[*] Shared unfinished work: bills are no longer locked to the pawn who started an item — anyone can continue idle unfinished items (also rescues items whose creator died).
+[*] Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still complete.
+[/list]
+
+[h1]Construction[/h1]
+[list]
+[*] Opt in per building via the [b]Quality job[/b] gizmo on any quality blueprint or frame. Set any option and it's managed; hit Clear to turn it off. Managed builds get a sparkle overlay.
+[*] Managed builds pause at 100% and wait for a builder who meets your conditions.
+[*] Target quality: builds that roll below your chosen quality are automatically deconstructed and rebuilt until you get what you asked for. Each attempt costs some materials; cancel the deconstruct designation to stop.
+[/list]
+
+[h1]Worth Knowing[/h1]
+[list]
+[*] Paused items show "Author: reserved (Quality Jobs)" and cannot be resumed until a qualifying pawn exists.
+[*] Inspired Creativity is consumed on the finishing touch, exactly as vanilla intends.
+[*] Ideology's production specialist role is supported but not required; no DLC is needed.
+[/list]
+
+[h1]Compatibility[/h1]
+[list]
+[*] Multiplayer compatible (RimWorld Multiplayer).
+[*] Safe to add mid-game. To remove: disable in mod settings first — everything is restored to vanilla and later saves contain no trace of the mod. Even without disabling, saves stay loadable; set-aside items can be cancelled for most of their materials.
+[*] No defs are patched; unmanaged bills and builds behave exactly as vanilla. Integration is a handful of targeted Harmony patches at job boundaries.
+[*] Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
+[*] Requires Harmony.
+[/list]
+
+[h1]Disclaimer[/h1]
+Created with the help of Claude Code (see WorkRoles for my longer take on this). The mod is free, made in my spare time, and without AI it likely wouldn't exist.

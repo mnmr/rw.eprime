@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>EPrime's Quality Jobs</name>
+  <author>Morten Mertner</author>
+  <packageId>EPrime.QualityJobs</packageId>
+  <modVersion>0.9.0</modVersion>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <description>
+Get high-quality gear and furniture reliably: work on quality items and buildings is set aside at the last moment and finished by your best (or inspired) pawn.
+
+Crafting:
+- Pauses quality bill work the instant before completion; the item waits, haulable and safe on any shelf, until a qualifying colonist exists.
+- Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and your current best crafter.
+- Automatic finisher dispatch: a one-shot "Finish ..." bill restricted to the chosen pawn, with a letter so you can intervene. If the current crafter already qualifies, they simply finish it themselves.
+- Shared unfinished work: bills are no longer locked to the pawn who started an item - anyone can continue idle unfinished items (also rescues items whose creator died).
+- Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
+
+Construction:
+- Opt in per building via the "Quality job" gizmo on any quality blueprint or frame. Set any option and it is managed; hit Clear to turn it off.
+- Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
+- Target quality: builds that roll below your chosen quality are automatically deconstructed and rebuilt until you get what you asked for.
+
+Worth Knowing:
+- This mod isn't a cheat that gives you better quality items. Quality is rolled by the pawn who finishes the work, and this mod just helps ensure that is someone with a high success rate.
+- Inspired Creativity is consumed on the finishing touch, exactly as vanilla intends.
+- Paused items show "Author: reserved (Quality Jobs)" and cannot be resumed until a qualifying pawn exists.
+- Ideology's production specialist role is supported but not required; no DLC is needed.
+
+Compatibility:
+- Multiplayer compatible (RimWorld Multiplayer).
+- Safe to add/remove mid-game, but removal without disabling in mod settings will leave unfinished items without an owner (they must be cancelled). Disabling the mod makes items resumable by their (new) owner.
+- No defs are patched and unmanaged bills/builds behave exactly as vanilla; integration is a handful of targeted Harmony patches at job boundaries.
+- Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
+- Requires Harmony.
+
+Check Out My Other Mods:
+- EPrime's Readouts: A modern, compact resource readout with support for custom resource pools.
+- WorkRoles: Easily and intuitively manage work priorities by assigning named roles to colonists.
+
+Disclaimer:
+- Created with the help of Claude Code (see WorkRoles for my longer take on this). The mod is free, made in my spare time, and without AI it likely would not exist.
+  </description>
+</ModMetaData>

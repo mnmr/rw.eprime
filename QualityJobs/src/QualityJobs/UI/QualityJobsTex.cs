@@ -1,0 +1,48 @@
+using UnityEngine;
+using Verse;
+
+namespace QualityJobs.UI
+{
+    /// Texture and material constants for Quality Jobs UI.
+    ///
+    /// Cache contract:
+    ///   Owner:       process (static fields, lifetime = game process)
+    ///   Key:         n/a — singleton constants
+    ///   Value:       Texture2D and Material references — immutable-after-init
+    ///   Dependencies: game content load; no runtime dependencies
+    ///   Refresh:     none — load-time constants set once by [StaticConstructorOnStartup]
+    ///   Equality:    n/a
+    ///   Teardown:    none — textures and materials are game-owned assets; per
+    ///                AGENTS.md we must never destroy or dispose assets we did not
+    ///                create (MaterialPool owns the materials; ContentFinder owns
+    ///                the textures).
+    [StaticConstructorOnStartup]
+    public static class QualityJobsTex
+    {
+        /// Mod icon shown in the settings window header panel (40x40).
+        public static readonly Texture2D ModIcon =
+            ContentFinder<Texture2D>.Get("QualityJobs/ModIcon");
+
+        /// Gizmo icon shown when a quality construction plan is active on the target.
+        public static readonly Texture2D GizmoEnabled =
+            ContentFinder<Texture2D>.Get("QualityJobs/QualityJob_Enabled");
+
+        /// Gizmo icon shown when no quality construction plan exists for the target.
+        public static readonly Texture2D GizmoDisabled =
+            ContentFinder<Texture2D>.Get("QualityJobs/QualityJob_Disabled");
+
+        /// Four sparkle tile materials (A–D), drawn as a MetaOverlay above
+        /// Blueprint_Build and Frame cells. MaterialPool.MatFrom(path, shader)
+        /// verified at Decompiled\Verse\MaterialPool.cs:47.
+        /// ShaderDatabase.MetaOverlay verified at Decompiled\Verse\ShaderDatabase.cs:107.
+        /// Frame uses the same shader for its corner/tile overlay markers
+        /// (Decompiled\RimWorld\Frame.cs:110-125).
+        public static readonly Material[] SparkleMats = new Material[4]
+        {
+            MaterialPool.MatFrom("QualityJobs/SparkleTile_A", ShaderDatabase.MetaOverlay),
+            MaterialPool.MatFrom("QualityJobs/SparkleTile_B", ShaderDatabase.MetaOverlay),
+            MaterialPool.MatFrom("QualityJobs/SparkleTile_C", ShaderDatabase.MetaOverlay),
+            MaterialPool.MatFrom("QualityJobs/SparkleTile_D", ShaderDatabase.MetaOverlay),
+        };
+    }
+}

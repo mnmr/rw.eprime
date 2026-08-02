@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+<QJ_FinishBillLabel>Finish {0} — {1}</QJ_FinishBillLabel>
+  <QJ_AtStockCap>unfinished stock cap reached</QJ_AtStockCap>
+  <QJ_DispatchLetterLabel>Finishing: {0}</QJ_DispatchLetterLabel>
+  <QJ_DispatchLetterText>{0} will finish the {1} (skill {2}{3}).</QJ_DispatchLetterText>
+  <QJ_DispatchLetterInspired>, inspired</QJ_DispatchLetterInspired>
+  <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
+  <QJ_ManageBill>Manage this bill</QJ_ManageBill>
+  <QJ_FinisherSkill>Finisher skill: {0}</QJ_FinisherSkill>
+  <QJ_FinisherSkillTip>Only colonists with at least this skill level are allowed to finish the work.</QJ_FinisherSkillTip>
+  <QJ_RequireInspired>Require inspired creativity</QJ_RequireInspired>
+  <QJ_RequireSpecialist>Require production specialist</QJ_RequireSpecialist>
+  <QJ_StockCapLabel>Stock cap: {0}</QJ_StockCapLabel>
+  <QJ_StockCapTooltip>Max unfinished items of this product. Shared per product: all bills producing this item count against the same cap. 0 = unlimited.</QJ_StockCapTooltip>
+  <QJ_StockCapStatus>At stock cap ({0}/{1} unfinished)</QJ_StockCapStatus>
+  <QJ_OddsHeader>Quality odds</QJ_OddsHeader>
+  <QJ_OddsColConfig>Config</QJ_OddsColConfig>
+  <QJ_OddsColBest>Best</QJ_OddsColBest>
+  <QJ_SettingsDefaults>Defaults for new saves</QJ_SettingsDefaults>
+  <QJ_SettingsManageNewBills>Manage new quality bills</QJ_SettingsManageNewBills>
+  <QJ_SettingsShareWork>Share unfinished work</QJ_SettingsShareWork>
+  <QJ_SettingsDefaultCap>Default unfinished stock cap (0 = unlimited)</QJ_SettingsDefaultCap>
+  <QJ_SettingsDispatchLetter>Show notification when a finisher is dispatched</QJ_SettingsDispatchLetter>
+  <QJ_SettingsEnabledNote>Toggle applies to the loaded save. Disabling restores all items to vanilla and discards this save's Quality Jobs configuration. If the mod stays installed, it re-activates with default settings the next time the save is loaded — disable is intended as preparation for removing the mod.</QJ_SettingsEnabledNote>
+  <QJ_DisableButton>Disable Quality Jobs</QJ_DisableButton>
+  <QJ_EnableButton>Enable Quality Jobs</QJ_EnableButton>
+  <QJ_DisableWarning>Disabling restores all set-aside items to vanilla ownership and permanently discards Quality Jobs configuration for this save (bill conditions, stock caps). Saves made afterwards contain no trace of the mod, so this is the clean way to prepare for uninstalling.\n\nNote: if you keep the mod installed, it will re-activate with default settings the next time you load this save.\n\nDisable Quality Jobs?</QJ_DisableWarning>
+  <QJ_NoGameLoaded>Load a save to change per-save behavior.</QJ_NoGameLoaded>
+  <QJ_GizmoQualityJobLabel>Quality job</QJ_GizmoQualityJobLabel>
+  <QJ_GizmoManageDesc>Configure Quality Jobs for this construction: pause at the last moment until a qualifying builder exists, and optionally rebuild until a target quality is rolled.</QJ_GizmoManageDesc>
+  <QJ_MinQualityLabel>Target quality</QJ_MinQualityLabel>
+  <QJ_NoRetries>No retries</QJ_NoRetries>
+  <QJ_AnyQuality>Any</QJ_AnyQuality>
+  <QJ_RetriedUntilTip>Build will be retried until the selected quality level is produced.</QJ_RetriedUntilTip>
+  <QJ_Clear>Clear</QJ_Clear>
+  <QJ_RetryLetterLabel>Rebuilding: {0}</QJ_RetryLetterLabel>
+  <QJ_RetryLetterText>The {0} came out {1} (wanted {2} or better). It has been marked for deconstruction and will be rebuilt. Some materials are lost each attempt.</QJ_RetryLetterText>
+  <QJ_ConstructionPanelTitle>Quality job</QJ_ConstructionPanelTitle>
+</LanguageData>

@@ -1,0 +1,7 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QualityJobs.Core.Tests/QualityJobs.Core.Tests.csproj" />
+    <Project Path="src/QualityJobs.Core/QualityJobs.Core.csproj" />
+    <Project Path="src/QualityJobs/QualityJobs.csproj" />
+  </Folder>
+</Solution>
