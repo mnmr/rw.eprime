@@ -189,7 +189,13 @@ namespace WorkRoles.UI
                     .Select(a => new RoleAssignment
                     {
                         roleId = a.RoleId,
-                        enabled = a.Enabled,
+                        // The engine only sees on/off: re-applying a plan must
+                        // not demote a held ForceOn assignment to Enabled.
+                        state = !a.Enabled ? AssignmentState.Disabled
+                            : existing.FirstOrDefault(e => e.roleId == a.RoleId)?.state
+                                == AssignmentState.ForceOn
+                                ? AssignmentState.ForceOn
+                                : AssignmentState.Enabled,
                         pinned = a.Pinned,
                     })
                     .ToList();

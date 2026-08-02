@@ -207,7 +207,10 @@ namespace WorkRoles
             if (store.pawnSets.TryGetValue(pawn, out var set))
                 foreach (var a in set.assignments)
                     view.Existing.Add(new AssignmentView
-                    { RoleId = a.roleId, Enabled = a.enabled, Pinned = a.pinned });
+                    // ForceOn counts as enabled: the engine judges the role's
+                    // global toggle separately.
+                    { RoleId = a.roleId, Enabled = a.state != AssignmentState.Disabled,
+                        Pinned = a.pinned });
             return view;
         }
 

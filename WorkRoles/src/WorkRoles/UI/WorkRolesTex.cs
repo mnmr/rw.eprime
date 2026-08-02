@@ -17,6 +17,7 @@ namespace WorkRoles.UI
         public static readonly Texture2D TimeMarker;
         public static readonly Texture2D LocationMarker;
         public static readonly Texture2D PinMarker;
+        public static readonly Texture2D ForceOnMarker;
         public static readonly Texture2D RoleCapabilityPartial;
         public static readonly Texture2D RoleCapabilityAll;
         public static readonly Texture2D DisplayOptions;
@@ -44,6 +45,7 @@ namespace WorkRoles.UI
             TimeMarker = ContentFinder<Texture2D>.Get("WorkRoles/Clock");
             LocationMarker = ContentFinder<Texture2D>.Get("WorkRoles/LocationPin");
             PinMarker = ContentFinder<Texture2D>.Get("UI/Icons/Pin-Outline");
+            ForceOnMarker = ContentFinder<Texture2D>.Get("UI/Designators/Claim");
             RoleCapabilityPartial = ContentFinder<Texture2D>.Get(
                 "UI/Icons/ColonistBar/MentalStateNonAggro");
             RoleCapabilityAll = ContentFinder<Texture2D>.Get(

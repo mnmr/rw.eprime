@@ -8,27 +8,36 @@ public class RoleChipStrikesTests
     public async Task FullyEnabledChipDrawsNoStrike()
     {
         await Assert.That(RoleChipStrikes.Count(
-            globalEnabled: true, assignmentEnabled: true)).IsEqualTo(RoleChipStrikes.None);
+            globalEnabled: true, AssignmentState.Enabled)).IsEqualTo(RoleChipStrikes.None);
     }
 
     [Test]
     public async Task PawnOffAloneDrawsTheSingleCenterStrike()
     {
         await Assert.That(RoleChipStrikes.Count(
-            globalEnabled: true, assignmentEnabled: false)).IsEqualTo(RoleChipStrikes.PawnOff);
+            globalEnabled: true, AssignmentState.Disabled)).IsEqualTo(RoleChipStrikes.PawnOff);
     }
 
     [Test]
     public async Task GlobalOffAloneDrawsTheDoubleStrike()
     {
         await Assert.That(RoleChipStrikes.Count(
-            globalEnabled: false, assignmentEnabled: true)).IsEqualTo(RoleChipStrikes.GlobalOff);
+            globalEnabled: false, AssignmentState.Enabled)).IsEqualTo(RoleChipStrikes.GlobalOff);
     }
 
     [Test]
     public async Task BothOffDrawsTheTripleStrike()
     {
         await Assert.That(RoleChipStrikes.Count(
-            globalEnabled: false, assignmentEnabled: false)).IsEqualTo(RoleChipStrikes.BothOff);
+            globalEnabled: false, AssignmentState.Disabled)).IsEqualTo(RoleChipStrikes.BothOff);
+    }
+
+    [Test]
+    public async Task ForcedOnChipIsNeverStruckUnderEitherGlobalState()
+    {
+        await Assert.That(RoleChipStrikes.Count(
+            globalEnabled: true, AssignmentState.ForceOn)).IsEqualTo(RoleChipStrikes.None);
+        await Assert.That(RoleChipStrikes.Count(
+            globalEnabled: false, AssignmentState.ForceOn)).IsEqualTo(RoleChipStrikes.None);
     }
 }

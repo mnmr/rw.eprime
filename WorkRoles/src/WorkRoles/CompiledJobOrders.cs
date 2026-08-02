@@ -273,7 +273,8 @@ namespace WorkRoles
                         if (assignment == null) continue;
                         yield return new TimedRoleHolderAssignment<Pawn>(pawn,
                             pawn.thingIDNumber, assignment.roleId,
-                            assignment.enabled, assignment.pinned);
+                            assignment.state != AssignmentState.Disabled,
+                            assignment.pinned);
                     }
                 }
             }
@@ -585,9 +586,10 @@ namespace WorkRoles
             {
                 foreach (var assignment in set.assignments)
                 {
-                    if (!assignment.enabled) continue;
                     var role = store.RoleById(assignment.roleId);
-                    if (role != null && role.enabled && RoleRules.Pass(role, pawn))
+                    if (role != null
+                        && RoleActivation.IsActive(role.enabled, assignment.state)
+                        && RoleRules.Pass(role, pawn))
                     {
                         if (activeRoleIds == null) activeRoleIds = new List<int>();
                         activeRoleIds.Add(role.id);

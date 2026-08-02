@@ -41,7 +41,11 @@ namespace WorkRoles
         private static void SyncRoleAssignment(SyncWorker sync, ref RoleAssignment assignment)
         {
             sync.Bind(ref assignment.roleId);
-            sync.Bind(ref assignment.enabled);
+            // Enum synced as its stable int value: Bind only guarantees primitives.
+            if (sync.isWriting)
+                sync.Write((int)assignment.state);
+            else
+                assignment.state = (AssignmentState)sync.Read<int>();
             sync.Bind(ref assignment.pinned);
         }
 

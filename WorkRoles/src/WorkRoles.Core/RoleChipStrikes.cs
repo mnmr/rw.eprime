@@ -13,8 +13,12 @@ namespace WorkRoles.Core
         /// All three lines.
         public const int BothOff = 3;
 
-        public static int Count(bool globalEnabled, bool assignmentEnabled) =>
-            (globalEnabled ? None : GlobalOff)
-            + (assignmentEnabled ? None : PawnOff);
+        /// ForceOn is active regardless of the global toggle, so it never
+        /// strikes; its running-despite-global-off story is told by the
+        /// forced-on chip marker instead.
+        public static int Count(bool globalEnabled, AssignmentState state) =>
+            state == AssignmentState.ForceOn ? None
+            : (globalEnabled ? None : GlobalOff)
+              + (state == AssignmentState.Disabled ? PawnOff : None);
     }
 }

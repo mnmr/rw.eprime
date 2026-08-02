@@ -1,12 +1,13 @@
 using System.Collections.Generic;
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
     public class RoleAssignment : IExposable
     {
         public int roleId;
-        public bool enabled = true;
+        public AssignmentState state = AssignmentState.Enabled;
         /// Pinned assignments are never added, removed or moved by Fix My Colony /
         /// Make It So — the player's placement wins.
         public bool pinned;
@@ -14,7 +15,15 @@ namespace WorkRoles
         public void ExposeData()
         {
             Scribe_Values.Look(ref roleId, "roleId");
-            Scribe_Values.Look(ref enabled, "enabled", true);
+            Scribe_Values.Look(ref state, "state", AssignmentState.Enabled);
+            // Saves that predate the tri-state carry an "enabled" bool instead.
+            if (Scribe.mode == LoadSaveMode.LoadingVars
+                && state == AssignmentState.Enabled)
+            {
+                bool enabled = true;
+                Scribe_Values.Look(ref enabled, "enabled", true);
+                if (!enabled) state = AssignmentState.Disabled;
+            }
             Scribe_Values.Look(ref pinned, "pinned");
         }
     }

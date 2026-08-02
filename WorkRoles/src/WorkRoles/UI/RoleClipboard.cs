@@ -47,7 +47,7 @@ namespace WorkRoles.UI
             new RoleAssignment
             {
                 roleId = assignment.roleId,
-                enabled = assignment.enabled,
+                state = assignment.state,
                 pinned = assignment.pinned
             };
     }

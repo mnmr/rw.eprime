@@ -3,8 +3,9 @@
 ## 1.3.4 — 2026-08-02
 
 - Added: Support for Strata (already worked, but extended multi-floors to allow for up to 32 levels since Strata is unbounded).
-- Added: You can now drag-copy values in role recommendations tuning. Left-click drag to copy. Right-click drag to ramp up/down as you drag across.
-- Fixed: Color selection did not invalidate render cache, so it looked like it wasn't working. Also fixed right-click not working over color palette.
+- Changed: You can now drag-copy values in role recommendations tuning. Left-click drag to copy. Right-click drag to ramp up/down as you drag across.
+- Fixed: Color selection did not invalidate render cache, so it looked like it wasn't working. Also fixed right-click not working over color slots.
+- Fixed: Pawn role assignment is now a tri-state (Enabled, Disabled or ForcedOn), so it's possible override a globally disabled role. ForcedOn chips also get a flag decorator.
 
 ## 1.3.3 — 2026-08-01
  

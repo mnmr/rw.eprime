@@ -350,7 +350,8 @@ namespace WorkRoles.UI
                     RoleCapabilityPresentation capability =
                         roleCapabilityState.PresentationFor(
                             pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
-                    w += TableChipWidth(store, role, a.pinned, capability) + ChipGap;
+                    w += TableChipWidth(store, role, a.pinned,
+                        a.state == AssignmentState.ForceOn, capability) + ChipGap;
                 }
                 if (w > widestStrip) widestStrip = w;
             }
@@ -395,15 +396,15 @@ namespace WorkRoles.UI
         /// The one width formula for a table chip — measurement and layout must
         /// never disagree.
         private float TableChipWidth(RoleStore store, Role role, bool pinned,
-            RoleCapabilityPresentation capability) =>
+            bool forcedOn, RoleCapabilityPresentation capability) =>
             TableChipWidth(RoleChipRenderData.From(role),
-                AbbrevIfCompact(store, role), pinned, capability);
+                AbbrevIfCompact(store, role), pinned, forcedOn, capability);
 
         private float TableChipWidth(RoleChipRenderData role,
-            string abbreviation, bool pinned,
+            string abbreviation, bool pinned, bool forcedOn,
             RoleCapabilityPresentation capability) =>
             RoleChipUI.WidthFor(role, showRemove: true, TableChips,
-                abbreviation, pinned, capability.WarningSeverity);
+                abbreviation, pinned, capability.WarningSeverity, forcedOn);
 
         /// The roles-column width used by both desired-height measurement and
         /// live table layout.
@@ -426,7 +427,7 @@ namespace WorkRoles.UI
                 RoleChipRenderData renderData = RoleChipRenderData.From(role);
                 string abbreviation = AbbrevIfCompact(store, role);
                 float w = TableChipWidth(renderData, abbreviation,
-                    a.pinned, capability);
+                    a.pinned, a.state == AssignmentState.ForceOn, capability);
                 if (x + w > stripWidth && x > 0f)
                 {
                     line++;
@@ -435,19 +436,19 @@ namespace WorkRoles.UI
                 }
                 if (result != null)
                 {
-                    bool chipEnabled = role.enabled && a.enabled;
+                    bool chipEnabled = RoleActivation.IsActive(role.enabled, a.state);
                     bool suppressed = chipEnabled && !RulesPass(role, pawn);
                     result.Add(new RoleChipLayout(renderData,
                         new Rect(x, y, w, RoleChipUI.Height), line, capability,
-                        role.enabled, a.enabled, a.pinned, suppressed,
+                        role.enabled, a.state, a.pinned, suppressed,
                         abbreviation,
-                        RoleTipText(role, RoleTipContext.AssignmentChip, pawn),
+                        RoleTip(role, RoleTipContext.AssignmentChip, pawn),
                         (a.pinned ? "WR_UnpinAssignment" : "WR_PinAssignment")
                             .Translate().ToString()));
                     assignmentSnapshots?.Add(new RoleAssignment
                     {
                         roleId = a.roleId,
-                        enabled = a.enabled,
+                        state = a.state,
                         pinned = a.pinned,
                     });
                 }
@@ -1062,20 +1063,24 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: role id, context, optional Pawn identity,
         // and activity revision within the pawn-scope stamp. Value: immutable
         // StructuredTip models. Dependencies: UiVersion, pawn-list revision,
-        // language, role/assignment facts, and pawn activity where applicable.
-        // Refresh: lazy on a key miss; the whole table clears on stamp change.
-        // Equality: exact key hits preserve tip identity. Teardown:
-        // ReleaseSnapshots/language invalidation clears all tips and the stamp.
+        // language, role/assignment facts, pawn activity where applicable, and
+        // the tip registry epoch (a cleared registry ignores older tips, so an
+        // epoch-stale hit rebuilds). Refresh: lazy on a key miss; the whole
+        // table clears on stamp change. Equality: exact key hits preserve tip
+        // identity. Teardown: ReleaseSnapshots/language invalidation clears all
+        // tips and the stamp.
         private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn, int activityRevision), StructuredTip> roleTipCache
             = new Dictionary<(int, RoleTipContext, Pawn, int), StructuredTip>();
         private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
 
         /// The one role tooltip: palette chips, tree rows and assignment chips
         /// share the content; context varies the actions and pawn facts.
-        internal string RoleTipText(Role role, RoleTipContext context, Pawn pawn = null)
+        /// Callers must re-Activate on every hovered pass (the registry retires
+        /// models not touched in the latest repaint generation).
+        internal StructuredTip RoleTip(Role role, RoleTipContext context, Pawn pawn = null)
         {
             var store = RoleStore.Current;
-            if (store == null) return role.label;
+            if (store == null) return null;
             ScopeCacheStamp stamp = PawnListStamp;
             if (roleTipStamp != stamp)
                 roleTipCache.Clear();
@@ -1084,7 +1089,9 @@ namespace WorkRoles.UI
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
                 ? ActivityTracker.RevisionOf(pawn) : 0;
             var key = (role.id, context, pawn, activityRevision);
-            if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
+            if (!roleTipCache.TryGetValue(key, out StructuredTip tip)
+                || tip.RegistryEpoch
+                    != Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch)
             {
                 int pawnId = pawn?.thingIDNumber ?? -1;
                 roleTipCache[key] = tip = new StructuredTip(
@@ -1092,8 +1099,11 @@ namespace WorkRoles.UI
                     BuildRoleTip(store, role, context, pawn));
             }
             roleTipStamp = PawnListStamp;
-            return tip.Activate();
+            return tip;
         }
+
+        internal string RoleTipText(Role role, RoleTipContext context, Pawn pawn = null)
+            => RoleTip(role, context, pawn)?.Activate() ?? role.label;
 
         private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn pawn)
         {
@@ -1110,10 +1120,14 @@ namespace WorkRoles.UI
                 store.pawnSets.TryGetValue(pawn, out var chipSet);
                 assignment = chipSet?.assignments.FirstOrDefault(a => a.roleId == role.id);
             }
-            bool pawnOn = assignment?.enabled != false;
-            bool active = role.enabled && pawnOn;
-            string stateKey = active ? "WR_RoleTipEnabled"
-                : pawnOn ? "WR_RoleTipDisabled"
+            var chipState = assignment?.state ?? AssignmentState.Enabled;
+            bool active = RoleActivation.IsActive(role.enabled, chipState);
+            string stateKey =
+                chipState == AssignmentState.ForceOn
+                    ? (role.enabled ? "WR_RoleTipForcedOn"
+                        : "WR_RoleTipForcedOnGlobalOff")
+                : active ? "WR_RoleTipEnabled"
+                : chipState == AssignmentState.Enabled ? "WR_RoleTipDisabled"
                 : role.enabled ? "WR_RoleTipDisabledHere"
                 : "WR_RoleTipDisabledBoth";
             string stateText = stateKey.Translate().ToString()
@@ -1178,7 +1192,9 @@ namespace WorkRoles.UI
                         pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
                 if (capability.Tooltip != null)
                     (state = model.AddSection()).Text(TipText.Warning(capability.Tooltip));
-                if (role.enabled && assignment?.enabled == true && !RulesPass(role, pawn))
+                if (assignment != null
+                    && RoleActivation.IsActive(role.enabled, assignment.state)
+                    && !RulesPass(role, pawn))
                 {
                     string reason = SuppressionReason(role, pawn);
                     if (!reason.NullOrEmpty())
@@ -1782,8 +1798,8 @@ namespace WorkRoles.UI
         {
             internal RoleChipLayout(RoleChipRenderData renderData, Rect rect,
                 int line, RoleCapabilityPresentation capability,
-                bool globalEnabled, bool assignmentEnabled, bool pinned,
-                bool suppressed, string abbreviation, string tooltip,
+                bool globalEnabled, AssignmentState state, bool pinned,
+                bool suppressed, string abbreviation, StructuredTip tooltip,
                 string pinToggleLabel)
             {
                 RenderData = renderData;
@@ -1791,7 +1807,7 @@ namespace WorkRoles.UI
                 Line = line;
                 Capability = capability;
                 GlobalEnabled = globalEnabled;
-                AssignmentEnabled = assignmentEnabled;
+                State = state;
                 Pinned = pinned;
                 Suppressed = suppressed;
                 Abbreviation = abbreviation;
@@ -1804,11 +1820,11 @@ namespace WorkRoles.UI
             internal int Line { get; }
             internal RoleCapabilityPresentation Capability { get; }
             internal bool GlobalEnabled { get; }
-            internal bool AssignmentEnabled { get; }
+            internal AssignmentState State { get; }
             internal bool Pinned { get; }
             internal bool Suppressed { get; }
             internal string Abbreviation { get; }
-            internal string Tooltip { get; }
+            internal StructuredTip Tooltip { get; }
             internal string PinToggleLabel { get; }
         }
 
@@ -2060,11 +2076,12 @@ namespace WorkRoles.UI
                 RoleCapabilityPresentation capability = chip.Capability;
                 var chipRect = new Rect(stripRect.x + localRect.x, yOffset + localRect.y, localRect.width, localRect.height);
 
-                bool chipEnabled = chip.GlobalEnabled && chip.AssignmentEnabled;
+                bool chipEnabled = RoleActivation.IsActive(
+                    chip.GlobalEnabled, chip.State);
                 ChipStyle style = !chipEnabled ? ChipStyle.Disabled
                     : chip.Suppressed ? ChipStyle.AutoOff
                     : ChipStyle.Normal;
-                // The toggle closure allocates: create it only on the one pass
+                // The cycle closure allocates: create it only on the one pass
                 // that can consume it (left mouse-down inside this chip).
                 System.Action onClick = null;
                 var pressEvent = Event.current;
@@ -2073,12 +2090,14 @@ namespace WorkRoles.UI
                 {
                     Pawn capturedPawn = row.Pawn;
                     int capturedRoleId = chip.RenderData.RoleId;
-                    onClick = () => RoleCommands.ToggleRoleForPawn(
+                    onClick = () => RoleCommands.CycleRoleForPawn(
                         capturedPawn, capturedRoleId);
                 }
                 // The chip's one tooltip: marker meanings are folded into it.
-                if (Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, chip.Tooltip);
+                // Re-activated per hovered pass so the structured model stays
+                // registered (untouched models retire every repaint generation).
+                if (chip.Tooltip != null && Mouse.IsOver(chipRect))
+                    TooltipHandler.TipRegion(chipRect, chip.Tooltip.Activate());
                 var click = RoleChipUI.Draw(chipRect, chip.RenderData, style,
                     showRemove: true, dragSource: row.Pawn,
                     onClick: onClick,
@@ -2088,7 +2107,8 @@ namespace WorkRoles.UI
                     activeOutline: style == ChipStyle.Normal
                         && chip.RenderData.RoleId == row.ActiveRoleId,
                     strikes: RoleChipStrikes.Count(
-                        chip.GlobalEnabled, chip.AssignmentEnabled));
+                        chip.GlobalEnabled, chip.State),
+                    forcedOn: chip.State == AssignmentState.ForceOn);
                 if (click == ChipClick.Remove)
                     RoleCommands.RemoveRoleFromPawn(
                         row.Pawn, chip.RenderData.RoleId);
@@ -2135,7 +2155,8 @@ namespace WorkRoles.UI
                     {
                         int prevIdx = insertIndex - 1;
                         Rect prevR = row.ChipAt(prevIdx).Rect;
-                        markerX = stripRect.x + prevR.xMax - ChipGap / 2f;
+                        // Centered in the gap after the previous chip, never inside it.
+                        markerX = stripRect.x + prevR.xMax + ChipGap / 2f;
                         markerY = yOffset + prevR.y + 3f;
                         markerH = prevR.height - 6f;
                     }
@@ -2399,7 +2420,8 @@ namespace WorkRoles.UI
                         // marks only enabled roles the plan would remove.
                         var assignment = selectedSet?.assignments
                             .FirstOrDefault(a => a.roleId == role.id);
-                        bool chipEnabled = role.enabled && assignment?.enabled != false;
+                        bool chipEnabled = RoleActivation.IsActive(role.enabled,
+                            assignment?.state ?? AssignmentState.Enabled);
                         var click = RoleChipUI.Draw(chipRect, role,
                             chipEnabled ? ChipStyle.Subtle : ChipStyle.AutoOff,
                             showRemove: true, dragSource: null, onClick: null);

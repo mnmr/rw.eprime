@@ -461,6 +461,9 @@ namespace WorkRoles
                 customSwatches ??= new List<UnityEngine.Color>();
                 customSwatchNames ??= new List<string>();
                 SyncSwatchNames();
+                // Self-heal saves whose past imports stranded role colors
+                // outside the palette; deterministic for the same save data.
+                RoleCommands.EnforcePaletteCoverage(this);
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
                 lastLocationMapIds ??= new Dictionary<Pawn, int>();

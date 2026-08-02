@@ -417,7 +417,8 @@ namespace WorkRoles
                     paletteChanges++;
                 }
                 // A slot name surviving the overwrite recolors the roles that used
-                // its old color; dropped names leave their roles' colors as-is.
+                // its old color; roles of dropped names keep their color and the
+                // coverage sweep below re-slots or snaps it.
                 for (int i = 0; i < oldColors.Count; i++)
                 {
                     if (oldColors[i].a < 0.5f || i >= oldNames.Count) continue;
@@ -443,7 +444,8 @@ namespace WorkRoles
                     else
                     {
                         int free = FreeSlot(store);
-                        if (free < 0) continue; // no capacity: role colors resolve via file palette
+                        // No capacity: the coverage sweep below snaps affected roles.
+                        if (free < 0) continue;
                         while (store.customSwatches.Count <= free) store.customSwatches.Add(Color.clear);
                         store.SyncSwatchNames();
                         store.customSwatches[free] = row.color;
@@ -627,7 +629,42 @@ namespace WorkRoles
                     .Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
             }
 
+            // Invariant close-out: no import outcome (skipped palette rows,
+            // dropped slots, hex or PaletteDef colors, capacity misses) may
+            // leave a role color outside the palette.
+            EnforcePaletteCoverage(store);
+
             return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges, pathsAdded);
+        }
+
+        /// Orphan role colors claim free custom slots; past capacity they snap
+        /// to the nearest palette color. Deterministic (store order), so it is
+        /// safe inside the synced import apply and load normalization.
+        internal static void EnforcePaletteCoverage(RoleStore store)
+        {
+            var custom = new List<Rgba>(store.customSwatches.Count);
+            for (int i = 0; i < store.customSwatches.Count; i++)
+                custom.Add(PaletteColors.ToRgba(store.customSwatches[i]));
+            var colored = new List<(int id, Rgba color)>();
+            foreach (var role in store.roles)
+                if (role != null && role.hasCustomColor)
+                    colored.Add((role.id, PaletteColors.ToRgba(role.color)));
+
+            var plan = PaletteCoverageEnforcer.Plan(PaletteColors.StandardRgba(),
+                custom, RoleStore.MaxCustomSwatches, colored);
+            if (plan.IsEmpty) return;
+            foreach (var (slot, color) in plan.DefineSlots)
+            {
+                while (store.customSwatches.Count <= slot)
+                    store.customSwatches.Add(Color.clear);
+                store.customSwatches[slot] = PaletteColors.ToColor(color);
+            }
+            store.SyncSwatchNames();
+            foreach (var (roleId, color) in plan.SnapRoles)
+            {
+                var role = store.RoleById(roleId);
+                if (role != null) role.color = PaletteColors.ToColor(color);
+            }
         }
 
         private static Role RuntimeRole(RoleFileDocument document,

@@ -804,9 +804,10 @@ namespace WorkRoles
                 List<(int, HashSet<string>)> roles = null;
                 foreach (var assignment in set.assignments)
                 {
-                    if (assignment == null || !assignment.enabled) continue;
+                    if (assignment == null) continue;
                     var role = store.RoleById(assignment.roleId);
-                    if (role == null || !role.enabled) continue;
+                    if (role == null
+                        || !RoleActivation.IsActive(role.enabled, assignment.state)) continue;
                     (roles ??= new List<(int, HashSet<string>)>())
                         .Add((role.id, new HashSet<string>(role.Coverage())));
                 }
@@ -836,9 +837,11 @@ namespace WorkRoles
                 var current = new HashSet<string>();
                 foreach (var assignment in set.assignments)
                 {
-                    if (assignment == null || !assignment.enabled) continue;
+                    if (assignment == null) continue;
                     var role = store.RoleById(assignment.roleId);
-                    if (role != null && role.enabled) current.UnionWith(role.Coverage());
+                    if (role != null
+                        && RoleActivation.IsActive(role.enabled, assignment.state))
+                        current.UnionWith(role.Coverage());
                 }
                 var lost = new HashSet<string>();
                 foreach (var (_, coverage) in pair.Value) lost.UnionWith(coverage);

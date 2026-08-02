@@ -81,6 +81,8 @@
   <WR_RoleTipDisabled>DISABLED globally</WR_RoleTipDisabled>
   <WR_RoleTipDisabledHere>DISABLED for this colonist</WR_RoleTipDisabledHere>
   <WR_RoleTipDisabledBoth>DISABLED globally and for this colonist</WR_RoleTipDisabledBoth>
+  <WR_RoleTipForcedOn>enabled, forced on for this colonist</WR_RoleTipForcedOn>
+  <WR_RoleTipForcedOnGlobalOff>FORCED ON for this colonist (role DISABLED globally)</WR_RoleTipForcedOnGlobalOff>
   <!-- Badge-line rule markers (dim, after the enabled state) -->
   <WR_BadgeBlocker>blocker</WR_BadgeBlocker>
   <WR_BadgeHours>limited hours</WR_BadgeHours>
@@ -116,7 +118,7 @@
   <WR_ActTreeClick>Select for editing</WR_ActTreeClick>
   <WR_ActTreeDrag>Reorder or move between groups</WR_ActTreeDrag>
   <WR_ActTreeRightClick>Compose the role (include/exclude)</WR_ActTreeRightClick>
-  <WR_ActChipClick>Toggle for this colonist</WR_ActChipClick>
+  <WR_ActChipClick>Cycle on, off, or forced on for this colonist</WR_ActChipClick>
   <WR_ActChipRightClick>Pin options</WR_ActChipRightClick>
   <WR_ActChipDrag>Reorder or move to another colonist</WR_ActChipDrag>
   <WR_ActChipX>Remove</WR_ActChipX>

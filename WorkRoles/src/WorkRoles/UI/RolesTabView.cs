@@ -737,8 +737,8 @@ namespace WorkRoles.UI
                     GUI.color = Color.white;
                     WrTips.Key("WR_CustomSwatchEmpty").Region(slotRect);
                     if (Widgets.ButtonInvisible(slotRect))
-                        OpenCustomColorPicker(capturedRoleId, initialColor,
-                            capturedSlot, applyToRole: true);
+                        SwatchPicking.Open(capturedRoleId, initialColor,
+                            capturedSlot, applyToEditedRole: true);
                 }
                 else
                 {
@@ -757,8 +757,10 @@ namespace WorkRoles.UI
                         && slotRect.Contains(e.mousePosition))
                     {
                         e.Use();
-                        OpenCustomColorPicker(capturedRoleId, initialColor,
-                            capturedSlot, applyToRole: false);
+                        // Redefining starts from the slot's color, so an
+                        // immediate accept is a genuine no-op.
+                        SwatchPicking.Open(capturedRoleId, slotColor,
+                            capturedSlot, applyToEditedRole: false);
                     }
                     else if (Widgets.ButtonInvisible(slotRect))
                         RoleCommands.SetRoleColor(model.RoleId, slotColor);
@@ -848,27 +850,6 @@ namespace WorkRoles.UI
             DrawEntries(entriesRect, model);
         }
 
-        /// Slot picker (empty slot defines and applies; right-click redefines
-        /// without applying). A pick indistinguishable from an existing
-        /// palette color reuses that color and empties the slot instead, so
-        /// the palette never holds duplicates.
-        private static void OpenCustomColorPicker(int roleId, Color initial,
-            int slot, bool applyToRole)
-        {
-            Find.WindowStack.Add(new Dialog_RoleColorPicker(initial, picked =>
-            {
-                WorkRolesGameComponent.RunOutsideOnGUI(() =>
-                {
-                    if (!TryMatchPalette(picked, out Color match))
-                        RoleCommands.SetCustomSwatch(slot, picked);
-                    else
-                        RoleCommands.ClearCustomSwatch(slot);
-                    if (applyToRole)
-                        RoleCommands.SetRoleColor(roleId, match);
-                });
-            }));
-        }
-
         /// The role's group as a "Group: <name>" button: a dropdown of the
         /// existing groups plus "New..." (a name dialog; the role moves in, so
         /// no empty group ever exists). A parent moves WITH its nested roles —
@@ -924,32 +905,6 @@ namespace WorkRoles.UI
         /// role opt-in and Allow training substitutions.
         /// Auto role opt-in derives from HasRules — unchecking clears the rules
         /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
-        /// The palette-canonical form of a picked color: an indistinguishable
-        /// standard swatch or filled custom slot wins over defining a
-        /// duplicate. Runs from picker callbacks outside OnGUI, never from
-        /// the render path.
-        private static bool TryMatchPalette(Color picked, out Color match)
-        {
-            var swatches = SwatchPalette.Swatches;
-            for (int i = 0; i < swatches.Length; i++)
-                if (picked.IndistinguishableFrom(swatches[i]))
-                {
-                    match = swatches[i];
-                    return true;
-                }
-            var custom = RoleStore.Current?.customSwatches;
-            if (custom != null)
-                for (int i = 0; i < custom.Count; i++)
-                    if (custom[i].a >= 0.5f
-                        && picked.IndistinguishableFrom(custom[i]))
-                    {
-                        match = custom[i];
-                        return true;
-                    }
-            match = picked;
-            return false;
-        }
-
         private void DrawEditorChecks(Rect rect, RoleEditorSnapshot model,
             bool rulesShown, float rowH)
         {

@@ -684,7 +684,8 @@ namespace WorkRoles
         }
 
         /// Empties one shared custom swatch slot; it renders as a "+" picker
-        /// again. Roles keep the color they copied from it.
+        /// again. Callers owning roles painted with the slot's color must
+        /// recolor them (SwatchPickPlanner), or their palette highlight dies.
         [SyncMethod]
         public static void ClearCustomSwatch(int index)
         {
@@ -998,14 +999,29 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void ToggleRoleForPawn(Pawn pawn, int roleId)
+        public static void CycleRoleForPawn(Pawn pawn, int roleId)
         {
             if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
             var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
             if (assignment == null) return;
-            // Fully independent of the global toggle: flips only this pawn's
-            // bit and never touches the role or other holders.
-            assignment.enabled = !assignment.enabled;
+            // Fully independent of the global toggle: advances only this pawn's
+            // state and never touches the role or other holders.
+            assignment.state = RoleActivation.Next(assignment.state);
+            CompiledJobOrders.Invalidate(pawn);
+            CompiledJobOrders.EnqueueReconcile(pawn);
+        }
+
+        /// Restores a specific state (int for sync-primitive safety), e.g. after
+        /// a drag-move re-creates the assignment on the target pawn.
+        [SyncMethod]
+        public static void SetAssignmentState(Pawn pawn, int roleId, int state)
+        {
+            if (state < (int)AssignmentState.Enabled
+                || state > (int)AssignmentState.ForceOn) return;
+            if (Store == null || pawn == null || !Store.pawnSets.TryGetValue(pawn, out var set)) return;
+            var assignment = set.assignments.FirstOrDefault(a => a.roleId == roleId);
+            if (assignment == null || assignment.state == (AssignmentState)state) return;
+            assignment.state = (AssignmentState)state;
             CompiledJobOrders.Invalidate(pawn);
             CompiledJobOrders.EnqueueReconcile(pawn);
         }
@@ -1033,7 +1049,7 @@ namespace WorkRoles
                 assignment => new RoleAssignment
                 {
                     roleId = assignment.roleId,
-                    enabled = assignment.enabled,
+                    state = assignment.state,
                     pinned = assignment.pinned
                 });
             // Pasting an empty set unmanages the pawn — never store an empty set.
@@ -1070,7 +1086,7 @@ namespace WorkRoles
                     if (!ReferenceEquals(a, b)) return false;
                     continue;
                 }
-                if (a.roleId != b.roleId || a.enabled != b.enabled
+                if (a.roleId != b.roleId || a.state != b.state
                     || a.pinned != b.pinned) return false;
             }
             return true;

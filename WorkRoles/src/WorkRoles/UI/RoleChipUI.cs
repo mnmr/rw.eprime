@@ -68,19 +68,22 @@ namespace WorkRoles.UI
         }
 
         /// Prefix markers: cached pawn capability, blocker, time rule, location
-        /// rule, and — on plain manual roles only — the assignment pin. Blockers
-        /// and rule-carrying roles are already plan-protected, so a pin there
-        /// would be redundant.
+        /// rule, the forced-on flag, and — on plain manual roles only — the
+        /// assignment pin. Blockers and rule-carrying roles are already
+        /// plan-protected, so a pin there would be redundant. Every visible
+        /// marker owns a full slot; this count and the Draw sequence must agree.
         private static int MarkerCount(Role role, bool pinned,
-            RoleAssignmentWarningSeverity warningSeverity) =>
-            MarkerCount(RoleChipRenderData.From(role), pinned, warningSeverity);
+            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn) =>
+            MarkerCount(RoleChipRenderData.From(role), pinned, warningSeverity,
+                forcedOn);
 
         private static int MarkerCount(RoleChipRenderData role, bool pinned,
-            RoleAssignmentWarningSeverity warningSeverity) =>
+            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn) =>
             (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
             + (role.Blocker ? 1 : 0)
             + (role.HasTimeRule ? 1 : 0)
             + (role.HasLocationRule ? 1 : 0)
+            + (forcedOn ? 1 : 0)
             + (PinShown(role, pinned) ? 1 : 0);
 
         private static bool PinShown(Role role, bool pinned) =>
@@ -115,17 +118,19 @@ namespace WorkRoles.UI
 
         public static float WidthFor(Role role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
-            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
+            bool forcedOn = false)
             => WidthFor(RoleChipRenderData.From(role), showRemove, display,
-                abbrev, pinned, warningSeverity);
+                abbrev, pinned, warningSeverity, forcedOn);
 
         internal static float WidthFor(RoleChipRenderData role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string abbrev = null,
             bool pinned = false,
-            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None)
+            RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
+            bool forcedOn = false)
         {
             Text.Font = GameFont.Small;
-            int markers = MarkerCount(role, pinned, warningSeverity);
+            int markers = MarkerCount(role, pinned, warningSeverity, forcedOn);
             // Minimal chips with markers carry no blank label square; Compact
             // chips share one width (the widest initials) so columns line up.
             float labelW = display == ChipDisplay.Minimal
@@ -162,14 +167,16 @@ namespace WorkRoles.UI
         /// interactive: false renders a display-only chip (no clicks, no drag).
         /// paint: false retains control registration/interaction but skips visuals.
         /// strikes: RoleChipStrikes pattern, consumed only by ChipStyle.Disabled.
+        /// forcedOn: draws the Claim marker; the assignment overrides the
+        /// role's global off.
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
-            int strikes = RoleChipStrikes.PawnOff)
+            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false)
             => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
                 dragSource, onClick, interactive, display, abbrev, pinned,
-                warningSeverity, paint, activeOutline, strikes);
+                warningSeverity, paint, activeOutline, strikes, forcedOn);
 
         internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
             ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
@@ -177,7 +184,7 @@ namespace WorkRoles.UI
             string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
-            int strikes = RoleChipStrikes.PawnOff)
+            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false)
         {
             if (paint)
             {
@@ -213,7 +220,8 @@ namespace WorkRoles.UI
                         : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.Label,
                     ShowRemove = showRemove,
                     LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
-                        + MarkerCount(role, pinned, warningSeverity) * (RemoveSize + 2f),
+                        + MarkerCount(role, pinned, warningSeverity, forcedOn)
+                            * (RemoveSize + 2f),
                     LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
                     StrikeCount = style == ChipStyle.Disabled
                         ? strikes : RoleChipStrikes.None,
@@ -243,6 +251,8 @@ namespace WorkRoles.UI
                     if (role.Blocker) Marker(WorkRolesTex.BlockerMarker, tinted: false); // full-color red X
                     if (role.HasTimeRule) Marker(WorkRolesTex.TimeMarker, tinted: true);
                     if (role.HasLocationRule) Marker(WorkRolesTex.LocationMarker, tinted: true);
+                    // Claim keeps its own colors so the override reads at a glance.
+                    if (forcedOn) Marker(WorkRolesTex.ForceOnMarker, tinted: false);
                     // The pin texture has less padding than the others; drawn
                     // smaller so it doesn't dominate the strip.
                     if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
