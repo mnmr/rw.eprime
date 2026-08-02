@@ -17,11 +17,11 @@ public class SwatchPickPlannerTests
     private static List<Rgba> Custom() => new List<Rgba> { C0, C1 };
 
     /// Custom-colored roles only: 1 follows slot 0, 4 follows slot 1,
-    /// 3 carries an unrelated custom color.
+    /// 3 wears a standard swatch (picks must leave it untouched).
     private static List<(int id, Rgba color)> Roles() => new List<(int, Rgba)>
     {
         (1, C0),
-        (3, new Rgba(0.7f, 0.3f, 0.2f, 1f)),
+        (3, S2),
         (4, C1),
     };
 
@@ -116,12 +116,8 @@ public class SwatchPickPlannerTests
                 || (plan.RecolorEditedRole && roles[i].id == editedRoleId))
                 roles[i] = (roles[i].id, plan.Applied);
 
-        foreach (var (id, color) in roles)
+        foreach (var (_, color) in roles)
         {
-            // Role 3's unrelated color predates the pick unless it was the
-            // edited role; the pick must never strand anyone it touched.
-            if (id == 3 && !plan.RecolorEditedRole && editedRoleId != 3
-                && !plan.RecolorRoleIds.Contains(3)) continue;
             bool inPalette = Standard.Any(s => s.Matches(color))
                 || custom.Any(c => c.Defined && c.Matches(color));
             await Assert.That(inPalette).IsTrue();

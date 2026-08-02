@@ -23,19 +23,6 @@ public class PaletteCoverageEnforcerTests
     }
 
     [Test]
-    public async Task OrphanRoleColorClaimsAFreeSlot()
-    {
-        var orphan = new Rgba(0.1f, 0.7f, 0.3f, 1f);
-        var plan = PaletteCoverageEnforcer.Plan(Standard,
-            new List<Rgba> { C0 }, maxCustomSwatches: 4,
-            new List<(int, Rgba)> { (1, orphan) });
-        await Assert.That(plan.DefineSlots.Count).IsEqualTo(1);
-        await Assert.That(plan.DefineSlots[0].slot).IsEqualTo(1);
-        await Assert.That(plan.DefineSlots[0].color.Matches(orphan)).IsTrue();
-        await Assert.That(plan.SnapRoles).IsEmpty();
-    }
-
-    [Test]
     public async Task RolesSharingAnOrphanColorShareOneSlot()
     {
         var orphan = new Rgba(0.1f, 0.7f, 0.3f, 1f);
@@ -46,42 +33,28 @@ public class PaletteCoverageEnforcerTests
         await Assert.That(plan.SnapRoles).IsEmpty();
     }
 
-    [Test]
-    public async Task ExhaustedCapacitySnapsToTheNearestPaletteColor()
-    {
-        var nearS2 = new Rgba(0.85f, 0.15f, 0.12f, 1f);
-        var plan = PaletteCoverageEnforcer.Plan(Standard,
-            new List<Rgba> { C0 }, maxCustomSwatches: 1,
-            new List<(int, Rgba)> { (7, nearS2) });
-        await Assert.That(plan.DefineSlots).IsEmpty();
-        await Assert.That(plan.SnapRoles.Count).IsEqualTo(1);
-        await Assert.That(plan.SnapRoles[0].roleId).IsEqualTo(7);
-        await Assert.That(plan.SnapRoles[0].color.R).IsEqualTo(S2.R);
-    }
-
-    [Test]
-    public async Task SnapPrefersACloserDefinedCustomSlot()
-    {
-        var nearC0 = new Rgba(0.52f, 0.48f, 0.5f, 1f);
-        var plan = PaletteCoverageEnforcer.Plan(Standard,
-            new List<Rgba> { C0 }, maxCustomSwatches: 1,
-            new List<(int, Rgba)> { (3, nearC0) });
-        await Assert.That(plan.SnapRoles.Count).IsEqualTo(1);
-        await Assert.That(plan.SnapRoles[0].color.Matches(C0)).IsTrue();
-    }
-
+    /// The complete overflow interaction: slots claim in role order until
+    /// capacity, then roles snap to the nearest palette color — an exact
+    /// standard swatch for one, a defined custom slot for the other (snapping
+    /// searches standard AND custom, unlike seeding's standard-only rule).
+    /// Result order doubles as the determinism contract for MP and load.
     [Test]
     public async Task OverflowClaimsSlotsInRoleOrderThenSnapsTheRest()
     {
         var orphanA = new Rgba(0.1f, 0.7f, 0.3f, 1f);
-        var orphanB = new Rgba(0.7f, 0.1f, 0.7f, 1f);
+        var nearS2 = new Rgba(0.85f, 0.15f, 0.12f, 1f);
+        var nearC0 = new Rgba(0.52f, 0.48f, 0.5f, 1f);
         var plan = PaletteCoverageEnforcer.Plan(Standard,
             new List<Rgba> { C0 }, maxCustomSwatches: 2,
-            new List<(int, Rgba)> { (1, orphanA), (2, orphanB) });
+            new List<(int, Rgba)> { (1, orphanA), (2, nearS2), (3, nearC0) });
         await Assert.That(plan.DefineSlots.Count).IsEqualTo(1);
+        await Assert.That(plan.DefineSlots[0].slot).IsEqualTo(1);
         await Assert.That(plan.DefineSlots[0].color.Matches(orphanA)).IsTrue();
-        await Assert.That(plan.SnapRoles.Count).IsEqualTo(1);
+        await Assert.That(plan.SnapRoles.Count).IsEqualTo(2);
         await Assert.That(plan.SnapRoles[0].roleId).IsEqualTo(2);
+        await Assert.That(plan.SnapRoles[0].color.R).IsEqualTo(S2.R);
+        await Assert.That(plan.SnapRoles[1].roleId).IsEqualTo(3);
+        await Assert.That(plan.SnapRoles[1].color.Matches(C0)).IsTrue();
     }
 
     /// The invariant, executed: after applying any plan, every custom role
