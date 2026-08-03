@@ -33,6 +33,9 @@
   <EPR.HelpEditor>Here you can edit what resources (or resource sets) a group displays. A group can have up to three display tiers. The small triangles indicate how many tiers are currently visible (click to cycle).</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Search: hide zero-count results</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Search: only count items in storage</EPR.SearchStorageOnly>
+  <EPR.SearchHideForbidden>Search: ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.ShowModName>Show mod name when search filter is disabled</EPR.ShowModName>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>

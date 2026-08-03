@@ -3,7 +3,7 @@
   <name>EPrime's Readouts</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.eprimereadouts</packageId>
-  <modVersion>1.0.4</modVersion>
+  <modVersion>1.0.5</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -30,7 +30,7 @@ Features:
 - Tiered: Click to cycle how many tiers are rendered.
 - Ignore Missing: Per-item option to skip rendering if count is 0 (to keep readouts minimal).
 - Warning Thresholds: Per-item option to set thresholds, so counts render in different colors when running low.
-- Search: Quick search and inline result display. Can be turned off in options.
+- Search: Quick search and inline result display. Can be configured or turned off in options.
 
 Compatibility:
 - Safe to add/remove mid-game.

@@ -50,20 +50,48 @@ namespace EPrimeReadouts
                 accumulator.AddZero(def.defName, def.shortHash);
             }
 
-            // Mirror ResourceCounter.UpdateResourceCounts: stored things only
-            // (haul destinations), inner-of-minified, fresh, not fogged.
+            // Stored pass, mirroring ResourceCounter.UpdateResourceCounts:
+            // haul destinations, inner-of-minified, fresh, not fogged. Extra
+            // counted defs feed the group-count basis exactly as vanilla's
+            // counter would if it knew them; every stored stack additionally
+            // feeds the search breakdown with its forbidden flag (read from
+            // the outer thing — a minified wrapper carries the comp).
             var groups = map.haulDestinationManager.AllGroupsListForReading;
             for (int i = 0; i < groups.Count; i++)
             {
                 foreach (Thing held in groups[i].HeldThings)
                 {
                     var inner = held.GetInnerIfMinified();
-                    if (!GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
+                    bool extra = GameResourceCatalog.IsExtraCountedDef(inner.def);
+                    if (!extra && !inner.def.CountAsResource) continue;
                     if (inner.IsNotFresh()) continue;
                     if (inner.SpawnedOrAnyParentSpawned && inner.PositionHeld.Fogged(inner.MapHeld))
                         continue;
-                    accumulator.Add(inner.def.defName, inner.def.shortHash, inner.stackCount);
+                    if (extra)
+                        accumulator.Add(inner.def.defName, inner.def.shortHash, inner.stackCount);
+                    accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
+                        inner.stackCount, stored: true,
+                        forbidden: held.IsForbidden(Faction.OfPlayer));
                 }
+            }
+
+            // Scattered pass: spawned haulables outside any slot group. The
+            // group-count basis stays storage-only (vanilla behavior); these
+            // stacks only widen the search breakdown so the search options can
+            // include or exclude loose items.
+            var things = map.listerThings.ThingsInGroup(ThingRequestGroup.HaulableEver);
+            for (int i = 0; i < things.Count; i++)
+            {
+                Thing thing = things[i];
+                if (thing.IsInAnyStorage()) continue;
+                var inner = thing.GetInnerIfMinified();
+                if (!inner.def.CountAsResource
+                    && !GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
+                if (inner.IsNotFresh()) continue;
+                if (thing.Position.Fogged(map)) continue;
+                accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
+                    inner.stackCount, stored: false,
+                    forbidden: thing.IsForbidden(Faction.OfPlayer));
             }
         }
 

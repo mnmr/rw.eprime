@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.0.5 — 2026-08-03
+
+- Changed: Search results are now configurable in settings, and don't display unavailable items by default.
+- Fixed: Search input no longer triggers game shortcuts while typing.
+- Fixed: Swapped order of buttons so Import/Export matches WorkRoles order. Consistency matters, after all.
+
 ## 1.0.4 — 2026-08-03
 
 - Added: MultiFloors support (readouts show combined resource counts across all floors). Other multi-floor mods (Strata, 'As above, so below I/II') do not need special support to work.

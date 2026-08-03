@@ -147,4 +147,102 @@ public class LayoutEngineSearchTests
         await Assert.That(model.Cells.Any(c => c.Kind == CellKind.Label
             && c.Text == ReadoutLayoutEngine.MoreResultsLabelKey)).IsFalse();
     }
+
+    /// Groupless input over four defs whose labels equal their defNames, with
+    /// an optional per-def search breakdown and filter flags.
+    private static LayoutInput FilterInput(
+        Dictionary<string, int> counts,
+        Dictionary<string, SearchCount> searchCounts = null,
+        bool hideZero = false, bool storageOnly = false, bool hideForbidden = false)
+    {
+        var defs = new string[counts.Count];
+        counts.Keys.CopyTo(defs, 0);
+        return new LayoutInput
+        {
+            Groups = new List<ReadoutGroup>(),
+            Counts = counts,
+            SearchCounts = searchCounts,
+            SearchHideZero = hideZero,
+            SearchStorageOnly = storageOnly,
+            SearchHideForbidden = hideForbidden,
+            Thresholds = new Dictionary<string, ThresholdSpec>(),
+            Catalog = StaticResources.CatalogWith(defs),
+            Width = 400f,
+            SearchText = "match",
+        };
+    }
+
+    private static (string DefName, int Count)[] Results(RenderModel model) =>
+        model.Cells.Where(c => c.Kind == CellKind.Icon)
+            .Select(c => (c.DefName, c.Count)).ToArray();
+
+    [Test]
+    public async Task ResultsWithCountsSortBeforeZeroCountResults()
+    {
+        var model = ReadoutLayoutEngine.Build(FilterInput(StaticResources.Counts(
+            ("MatchA", 0), ("MatchB", 5), ("MatchC", 0), ("MatchD", 2))));
+        // Non-zero first (alphabetical), zero-count after (alphabetical).
+        await Assert.That(Icons(model)).IsEqualTo("MatchB,MatchD,MatchA,MatchC");
+    }
+
+    [Test]
+    public async Task HideZeroOptionRemovesZeroCountResults()
+    {
+        var model = ReadoutLayoutEngine.Build(FilterInput(StaticResources.Counts(
+            ("MatchA", 0), ("MatchB", 5), ("MatchC", 0), ("MatchD", 2)),
+            hideZero: true));
+        await Assert.That(Icons(model)).IsEqualTo("MatchB,MatchD");
+    }
+
+    [Test]
+    public async Task StorageOnlyOptionKeepsStoredItemsAndShowsStoredCounts()
+    {
+        var model = ReadoutLayoutEngine.Build(FilterInput(
+            StaticResources.Counts(("MatchA", 0), ("MatchB", 0)),
+            new Dictionary<string, SearchCount>
+            {
+                // A: 10 on the map, none stored -> excluded.
+                ["MatchA"] = new SearchCount(10, 0, 10, 0),
+                // B: 10 on the map, 4 stored -> shown with the stored count.
+                ["MatchB"] = new SearchCount(10, 4, 10, 4),
+            },
+            storageOnly: true));
+        await Assert.That(Results(model)).IsEquivalentTo(new[] { ("MatchB", 4) });
+    }
+
+    [Test]
+    public async Task HideForbiddenOptionDropsFullyForbiddenItemsAndForbiddenStacks()
+    {
+        var model = ReadoutLayoutEngine.Build(FilterInput(
+            StaticResources.Counts(("MatchA", 0), ("MatchB", 0), ("MatchC", 0)),
+            new Dictionary<string, SearchCount>
+            {
+                // A: everything forbidden -> excluded.
+                ["MatchA"] = new SearchCount(5, 0, 0, 0),
+                // B: 6 of 8 unforbidden -> shown as 6.
+                ["MatchB"] = new SearchCount(8, 0, 6, 0),
+                // C: nothing on the map -> a zero row, not a forbidden item.
+                ["MatchC"] = new SearchCount(0, 0, 0, 0),
+            },
+            hideForbidden: true));
+        await Assert.That(Results(model))
+            .IsEquivalentTo(new[] { ("MatchB", 6), ("MatchC", 0) });
+    }
+
+    [Test]
+    public async Task StorageAndForbiddenOptionsComposeOnStoredUnforbiddenStacks()
+    {
+        var model = ReadoutLayoutEngine.Build(FilterInput(
+            StaticResources.Counts(("MatchA", 0), ("MatchB", 0)),
+            new Dictionary<string, SearchCount>
+            {
+                // A: stored stacks exist but all are forbidden; the unforbidden
+                // stacks are scattered -> excluded.
+                ["MatchA"] = new SearchCount(8, 5, 3, 0),
+                // B: 2 of 5 stored stacks unforbidden -> shown as 2.
+                ["MatchB"] = new SearchCount(9, 5, 6, 2),
+            },
+            storageOnly: true, hideForbidden: true));
+        await Assert.That(Results(model)).IsEquivalentTo(new[] { ("MatchB", 2) });
+    }
 }

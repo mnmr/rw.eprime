@@ -22,6 +22,17 @@ namespace EPrimeReadouts.UI
         // window owns the cursor the panel renders inert.
         private static bool inputBlocked;
 
+        // Search-field keyboard capture. Vanilla gates every KeyBindingDef
+        // check (event-based and Input-polled alike) on
+        // WindowStack.AnySearchWidgetFocused; Patch_WindowStack reports this
+        // flag through that gate so typing never fires game shortcuts. The
+        // frame stamp releases the guard within one frame if the panel stops
+        // drawing (e.g. the map interface is no longer rendered).
+        private static bool searchFieldFocused;
+        private static int searchFocusFrame = -1;
+        internal static bool SearchFieldCapturesInput =>
+            searchFieldFocused && Time.frameCount - searchFocusFrame <= 1;
+
         /// Screen-space rects that count as "over the panel": the title/search
         /// header plus each group container (scroll-adjusted). Rebuilt every
         /// drawn frame; empty while the panel is hidden.
@@ -106,6 +117,7 @@ namespace EPrimeReadouts.UI
             builtCounts = null;
             builtUiVersion = -1;
             inputBlocked = false;
+            searchFieldFocused = false;
             SearchText = "";
             viewStamp = 0;
             hotDraw = null;
@@ -189,6 +201,7 @@ namespace EPrimeReadouts.UI
 
             if (!settings.showSearchFilter)
             {
+                searchFieldFocused = false;
                 if (settings.showModNameWhenNoSearch)
                 {
                     // Width measured once (Tiny font) — never per frame; the
@@ -218,8 +231,19 @@ namespace EPrimeReadouts.UI
                 && GUI.GetNameOfFocusedControl() == SearchControlName)
                 Verse.UI.UnfocusCurrentControl();
 
+            // Escape leaves the field (QuickSearchWidget behavior). Consuming
+            // the event here keeps vanilla's raw Escape handling — which runs
+            // later in the frame and opens the menu — from also seeing it.
+            if (searchFieldFocused && evt.type == EventType.KeyDown
+                && evt.keyCode == KeyCode.Escape)
+            {
+                Verse.UI.UnfocusCurrentControl();
+                evt.Use();
+            }
+
             if (inputBlocked)
             {
+                searchFieldFocused = false;
                 GUI.Label(fieldRect, SearchText ?? "", Text.CurTextFieldStyle);
             }
             else
@@ -231,6 +255,8 @@ namespace EPrimeReadouts.UI
                     SearchText = newText;
                     BumpView();
                 }
+                searchFieldFocused = GUI.GetNameOfFocusedControl() == SearchControlName;
+                searchFocusFrame = Time.frameCount;
             }
             if (SearchText.NullOrEmpty()) return;
             var clearRect = new Rect(rect.xMax - 20f, rect.y + 5f, 16f, 16f);
@@ -329,6 +355,10 @@ namespace EPrimeReadouts.UI
                 Counts = renderData.Counts.Counts,
                 Thresholds = store.Model.Thresholds,
                 SearchText = SearchText,
+                SearchCounts = renderData.Counts.SearchCounts,
+                SearchHideZero = settings.searchHideZero,
+                SearchStorageOnly = settings.searchStorageOnly,
+                SearchHideForbidden = settings.searchHideForbidden,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
                 Pools = renderData.Structure,
@@ -404,6 +434,7 @@ namespace EPrimeReadouts.UI
 
         private static void Hide()
         {
+            searchFieldFocused = false;
             if (!hotVisible) return;
             hotRects.Clear();
             hotDraw = null;

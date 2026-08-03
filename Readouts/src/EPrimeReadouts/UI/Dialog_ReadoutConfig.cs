@@ -130,7 +130,7 @@ namespace EPrimeReadouts.UI
                 Text.Anchor = TextAnchor.UpperLeft;
 
                 // Right-cluster buttons, all vertically centred in panel, 28px tall, 8px gaps,
-                // right-to-left: [Restore defaults] [Import] [Export]
+                // right-to-left: [Restore defaults] [Export] [Import] [Options]
                 float btnY = panelRect.y + (PanelH - 28f) / 2f;
                 const float BtnGap = 8f;
 
@@ -144,20 +144,20 @@ namespace EPrimeReadouts.UI
                         () => ReadoutCommands.RestoreDefaults(restorePayload), destructive: true));
                 }
 
-                // [Import] — 90px wide, to the left of Restore
-                var importRect = new Rect(restoreRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                // [Export] — 90px wide, to the left of Restore
+                var exportRect = new Rect(restoreRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                if (Widgets.ButtonText(exportRect, UiText.Get("EPR.Export")))
+                    Find.WindowStack.Add(new Dialog_ExportReadouts());
+
+                // [Import] — 90px wide, to the left of Export
+                var importRect = new Rect(exportRect.x - BtnGap - 90f, btnY, 90f, 28f);
                 if (Widgets.ButtonText(importRect, UiText.Get("EPR.Import")))
                     Find.WindowStack.Add(new Dialog_ImportReadouts());
 
-                // [Options] — 90px wide, to the left of Export
-                var exportRect = new Rect(importRect.x - BtnGap - 90f, btnY, 90f, 28f);
-                var optionsRect = new Rect(exportRect.x - BtnGap - 90f, btnY, 90f, 28f);
+                // [Options] — 90px wide, to the left of Import
+                var optionsRect = new Rect(importRect.x - BtnGap - 90f, btnY, 90f, 28f);
                 if (Widgets.ButtonText(optionsRect, UiText.Get("EPR.Options")))
                     Find.WindowStack.Add(new Dialog_PanelOptions());
-
-                // [Export] — 90px wide, to the left of Import
-                if (Widgets.ButtonText(exportRect, UiText.Get("EPR.Export")))
-                    Find.WindowStack.Add(new Dialog_ExportReadouts());
 
                 // --- Content area (below top panel) ---
                 var content = new Rect(inRect.x, inRect.y + PanelH + Gap,

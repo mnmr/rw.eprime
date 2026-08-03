@@ -26,6 +26,10 @@ namespace EPrimeReadouts
         public bool helpPoolEditorFolded;
         public bool showSearchFilter = true;
         public bool showModNameWhenNoSearch = true;
+        /// Search-result filters; see ReadoutLayoutEngine.BuildResults.
+        public bool searchHideZero = true;
+        public bool searchStorageOnly = true;
+        public bool searchHideForbidden = true;
 
         public override void ExposeData()
         {
@@ -44,6 +48,9 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref helpPoolEditorFolded, "helpPoolEditorFolded", false);
             Scribe_Values.Look(ref showSearchFilter, "showSearchFilter", true);
             Scribe_Values.Look(ref showModNameWhenNoSearch, "showModNameWhenNoSearch", true);
+            Scribe_Values.Look(ref searchHideZero, "searchHideZero", true);
+            Scribe_Values.Look(ref searchStorageOnly, "searchStorageOnly", true);
+            Scribe_Values.Look(ref searchHideForbidden, "searchHideForbidden", true);
             Scribe_Collections.Look(ref tierDepths, "tierDepths", LookMode.Value, LookMode.Value);
             if (tierDepths == null) tierDepths = new Dictionary<string, int>();
             Scribe_Collections.Look(ref enabledGroups, "enabledGroups", LookMode.Value, LookMode.Value);

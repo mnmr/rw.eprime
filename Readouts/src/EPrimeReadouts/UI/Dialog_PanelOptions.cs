@@ -15,7 +15,7 @@ namespace EPrimeReadouts.UI
             forcePause = false;
         }
 
-        public override Vector2 InitialSize => new Vector2(380f, 190f);
+        public override Vector2 InitialSize => new Vector2(380f, 265f);
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -37,6 +37,30 @@ namespace EPrimeReadouts.UI
                 EPrimeReadoutsMod.Persist(s => s.showSearchFilter = showSearch);
                 // A hidden filter must not keep filtering the panel.
                 if (!showSearch) ReadoutPanel.SearchText = "";
+                ReadoutPanel.BumpView();
+            }
+
+            bool hideZero = settings.searchHideZero;
+            listing.CheckboxLabeled(UiText.Get("EPR.SearchHideZero"), ref hideZero);
+            if (hideZero != settings.searchHideZero)
+            {
+                EPrimeReadoutsMod.Persist(s => s.searchHideZero = hideZero);
+                ReadoutPanel.BumpView();
+            }
+
+            bool storageOnly = settings.searchStorageOnly;
+            listing.CheckboxLabeled(UiText.Get("EPR.SearchStorageOnly"), ref storageOnly);
+            if (storageOnly != settings.searchStorageOnly)
+            {
+                EPrimeReadoutsMod.Persist(s => s.searchStorageOnly = storageOnly);
+                ReadoutPanel.BumpView();
+            }
+
+            bool hideForbidden = settings.searchHideForbidden;
+            listing.CheckboxLabeled(UiText.Get("EPR.SearchHideForbidden"), ref hideForbidden);
+            if (hideForbidden != settings.searchHideForbidden)
+            {
+                EPrimeReadoutsMod.Persist(s => s.searchHideForbidden = hideForbidden);
                 ReadoutPanel.BumpView();
             }
 

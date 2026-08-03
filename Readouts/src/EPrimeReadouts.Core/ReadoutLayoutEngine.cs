@@ -11,6 +11,13 @@ namespace EPrimeReadouts.Core
         public IReadOnlyDictionary<string, int> Counts;
         public Dictionary<string, ThresholdSpec> Thresholds;
         public string SearchText = "";
+        /// Per-def search breakdown; null falls back to Counts with every
+        /// stack treated as stored and unforbidden.
+        public IReadOnlyDictionary<string, SearchCount> SearchCounts;
+        /// Per-player search-result filters (see BuildResults).
+        public bool SearchHideZero;
+        public bool SearchStorageOnly;
+        public bool SearchHideForbidden;
         public float Width = 140f;
         public IResourceCatalog Catalog;
         public bool EditorMode;
@@ -453,15 +460,48 @@ namespace EPrimeReadouts.Core
             return yTop + containerH;
         }
 
-        // Results section: plain counted defNames, per-def counts.
+        /// A search hit resolved against the active filters; Count is the
+        /// displayed count under those filters.
+        private struct ResultEntry
+        {
+            public string DefName;
+            public int Count;
+        }
+
+        // Results section: plain counted defNames, per-def counts. The count
+        // basis is the search breakdown (stored + scattered stacks), narrowed
+        // by the per-player filters:
+        // - storage-only drops defs with nothing in player storage and counts
+        //   only stored stacks;
+        // - hide-forbidden drops defs whose (basis) stacks are all forbidden
+        //   and subtracts forbidden stacks from the displayed count;
+        // - hide-zero drops rows whose displayed count is zero.
+        // Defs with a count sort before zero rows; each half stays alphabetical.
         private static float BuildResults(LayoutInput input, RenderModel model, float y)
         {
-            var matches = new List<string>();
+            var matches = new List<ResultEntry>();
             foreach (var pair in input.Counts)
-                if (SearchMatcher.Matches(input.Catalog.LabelOf(pair.Key), input.SearchText))
-                    matches.Add(pair.Key);
-            matches.Sort((a, b) => string.CompareOrdinal(
-                input.Catalog.LabelOf(a), input.Catalog.LabelOf(b)));
+            {
+                if (!SearchMatcher.Matches(input.Catalog.LabelOf(pair.Key), input.SearchText))
+                    continue;
+                SearchCount search = ResolveSearchCount(input, pair.Key, pair.Value);
+                int basisTotal = input.SearchStorageOnly ? search.Stored : search.Total;
+                int basisUnforbidden = input.SearchStorageOnly
+                    ? search.StoredUnforbidden : search.Unforbidden;
+                int count = input.SearchHideForbidden ? basisUnforbidden : basisTotal;
+                if (input.SearchStorageOnly && basisTotal == 0) continue;
+                if (input.SearchHideForbidden && basisTotal > 0 && basisUnforbidden == 0)
+                    continue;
+                if (input.SearchHideZero && count == 0) continue;
+                matches.Add(new ResultEntry { DefName = pair.Key, Count = count });
+            }
+            matches.Sort((a, b) =>
+            {
+                bool aZero = a.Count == 0, bZero = b.Count == 0;
+                if (aZero != bZero) return aZero ? 1 : -1;
+                return string.CompareOrdinal(
+                    input.Catalog.LabelOf(a.DefName), input.Catalog.LabelOf(b.DefName));
+            });
 
             var metrics = input.Metrics;
             float insetX = InsetX;
@@ -511,23 +551,35 @@ namespace EPrimeReadouts.Core
             return y + containerH;
         }
 
+        /// Search breakdown for one def; a null SearchCounts input falls back
+        /// to the group-count basis with every stack stored and unforbidden.
+        private static SearchCount ResolveSearchCount(
+            LayoutInput input, string defName, int fallbackCount)
+        {
+            if (input.SearchCounts == null)
+                return new SearchCount(fallbackCount, fallbackCount,
+                    fallbackCount, fallbackCount);
+            input.SearchCounts.TryGetValue(defName, out SearchCount search);
+            return search;
+        }
+
         private static void BuildResultsGrid(LayoutInput input, RenderModel model,
-            List<string> defNames, float y)
+            List<ResultEntry> entries, float y)
         {
             var metrics = input.Metrics;
             float insetX = InsetX;
             int columns = ResultsColumns(input);
-            for (int i = 0; i < defNames.Count; i += columns)
+            for (int i = 0; i < entries.Count; i += columns)
             {
-                int rowCount = Math.Min(columns, defNames.Count - i);
+                int rowCount = Math.Min(columns, entries.Count - i);
                 for (int c = 0; c < rowCount; c++)
                 {
-                    string defName = defNames[i + c];
+                    string defName = entries[i + c].DefName;
+                    int count = entries[i + c].Count;
                     float x = insetX + LayoutMetrics.MarkerColW + c * metrics.CellW;
                     var iconRect = new RectF(
                         x + (metrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                         LayoutMetrics.IconSize, LayoutMetrics.IconSize);
-                    input.Counts.TryGetValue(defName, out int count);
                     model.Cells.Add(new RenderCell
                         { Kind = CellKind.Icon, DefName = defName, Count = count, Rect = iconRect });
                     model.Cells.Add(new RenderCell
