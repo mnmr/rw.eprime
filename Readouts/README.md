@@ -47,8 +47,8 @@ dotnet test src\EPrimeReadouts.sln
 
 ## Check out my other mods
 
-- **EPrime's Quality Jobs:** manage quality crafting and construction, so your items get the best possible quality.
-- **WorkRoles:** easily and intuitively manage work priorities by assigning named roles to colonists.
+- [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051): manage quality crafting and construction, so your items get the best possible quality.
+- [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134): easily and intuitively manage work priorities by assigning named roles to colonists.
 
 ## Disclaimer
 
