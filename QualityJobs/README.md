@@ -76,6 +76,11 @@ Building never deploys; in-game verification requires the deploy script and a
 game restart. The game assembly targets net472 against Krafs.Rimworld.Ref;
 Core is netstandard2.0 with no game references so its tests run anywhere.
 
+## Check out my other mods
+
+- [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092): a modern, compact resource readout with support for custom resource pools.
+- [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134): easily and intuitively manage work priorities by assigning named roles to colonists.
+
 ## License
 
 See [LICENSE](LICENSE).
