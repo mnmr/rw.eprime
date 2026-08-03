@@ -23,13 +23,17 @@ namespace EPrimeReadouts
 
         // Cache contract:
         // Owner: one ReadoutStore/world at a time.
-        // Key: Map identity.
+        // Key: Map identity; a MultiFloors floor map resolves to its stack's
+        //      canonical ground map so every floor shares one snapshot.
         // Value: immutable shared pool/count render snapshot.
-        // Dependencies: PoolsVersion immediately and 204 elapsed game ticks for counts.
+        // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
+        //               counts, and (while MultiFloors is active) the map-set
+        //               stamp so stack membership changes rebuild entries.
         // Refresh policy: immediate structure; tick-throttled counts.
         // Equality policy: equal refreshed counts preserve snapshot identity.
         // Teardown: Remove on map removal; Reset on world teardown/owner change.
         private static ReadoutStore cacheOwner;
+        private static int cacheMapSetStamp = -1;
         private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
             cache = NewCache();
 
@@ -40,10 +44,18 @@ namespace EPrimeReadouts
             if (map == null) throw new ArgumentNullException(nameof(map));
             if (store == null) throw new ArgumentNullException(nameof(store));
 
+            map = LevelStacks.CanonicalOrSelf(map);
+
             if (!ReferenceEquals(cacheOwner, store))
             {
                 cache.Clear();
                 cacheOwner = store;
+            }
+            if (LevelStacks.MultiFloorsActive
+                && cacheMapSetStamp != LevelStacks.MapSetStamp)
+            {
+                cache.Clear();
+                cacheMapSetStamp = LevelStacks.MapSetStamp;
             }
 
             return cache.Get(
@@ -66,6 +78,7 @@ namespace EPrimeReadouts
         {
             cache.Clear();
             cacheOwner = null;
+            cacheMapSetStamp = -1;
         }
 
         private static RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot> NewCache() =>

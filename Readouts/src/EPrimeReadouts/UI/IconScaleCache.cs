@@ -11,6 +11,13 @@ namespace EPrimeReadouts.UI
     /// back, alpha bounding box computed — and the resulting factor normalizes
     /// the opaque content toward a common coverage. Cached forever; rendering
     /// only does a dictionary lookup.
+    ///
+    /// [StaticConstructorOnStartup] satisfies the vanilla dev-mode scanner,
+    /// which flags any static Texture2D field regardless of lazy creation;
+    /// the static constructor only initializes plain collections, so running
+    /// it eagerly on the main thread is harmless. The readback texture itself
+    /// is still created lazily in Measure, on the main thread.
+    [StaticConstructorOnStartup]
     public static class IconScaleCache
     {
         private const int SampleSize = 48;

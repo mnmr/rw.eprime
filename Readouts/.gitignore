@@ -1,6 +1,13 @@
 # temp/work folders
 /assets
+/specs
+/plans
+/docs/superpowers/
+/temp
+/.worktrees/
 
+# Build artifacts shipped into the mod folder
+mod/1.6/Assemblies/
 
 # Build results
 [Dd]ebug/
@@ -51,11 +58,3 @@ CodeCoverage/
 TestResult.xml
 nunit-*.xml
 
-/specs
-/plans
-/docs/superpowers/
-/temp
-/.worktrees/
-
-# Build artifacts shipped into the mod folder
-mod/1.6/Assemblies/

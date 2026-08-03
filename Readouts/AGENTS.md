@@ -10,6 +10,13 @@ These rules apply to the entire repository. They are fail-closed.
 - A narrower `AGENTS.md` may add stricter rules but must not weaken this contract.
 - An exception requires the project owner's explicit approval before implementation. See **Exceptions**.
 
+## Asset dimensions
+
+- `mod/About/ModIcon.png`: 256x256.
+- `mod/Textures/EPrimeReadouts/ModIcon.png`: 256x256.
+- `mod/About/Preview.png`: 1280x720.
+- Regenerate only via `assets/workshop/export-assets.ps1`.
+
 ## Project boundaries
 
 - `src/EPrimeReadouts.Core` must remain deterministic and independent of RimWorld, Verse, Unity, Harmony, and Multiplayer APIs.
@@ -96,7 +103,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 |---|---|
 | Per-map render data | Store/world identity and map identity |
 | Pool structure snapshot | `PoolsVersion`, immediately |
-| Resource-count snapshot | Map identity and 204 elapsed game ticks; replace only when contents differ |
+| Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, and 204 elapsed game ticks; replace only when contents differ |
 | Main readout layout/draw model | Map, width, view state, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Pool list/editor rows | `PoolsVersion` and relevant selection or expansion state |

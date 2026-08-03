@@ -7,23 +7,48 @@ namespace EPrimeReadouts
 {
     /// Builds the count payload used by GameRenderData. The caller owns the
     /// 204-tick cadence; this class performs one complete, deterministic pass.
+    /// When the map belongs to a MultiFloors stack, the pass covers every
+    /// level map in ascending level order so readouts show stack totals.
     public static class GameCounts
     {
         internal static RenderCountSnapshot BuildSnapshot(
             Map map)
         {
-            var counts = new Dictionary<string, int>();
-            long fp = 17;
-            foreach (var pair in map.resourceCounter.AllCountedAmounts)
+            var accumulator = new CountAccumulator();
+            Dictionary<int, Map> levels = LevelStacks.LevelsOf(map);
+            if (levels == null)
             {
-                counts[pair.Key.defName] = pair.Value;
-                fp = fp * 31 + pair.Key.shortHash;
-                fp = fp * 31 + pair.Value;
+                AccumulateMap(map, accumulator);
+                return accumulator.ToSnapshot();
             }
+
+            // Ascending level order keeps the pass deterministic; the queried
+            // map is accumulated directly if the controller omits it.
+            var order = new List<int>(levels.Keys);
+            order.Sort();
+            bool sawQueriedMap = false;
+            for (int i = 0; i < order.Count; i++)
+            {
+                Map level = levels[order[i]];
+                if (level == null || level.Disposed) continue;
+                if (ReferenceEquals(level, map)) sawQueriedMap = true;
+                AccumulateMap(level, accumulator);
+            }
+            if (!sawQueriedMap) AccumulateMap(map, accumulator);
+            return accumulator.ToSnapshot();
+        }
+
+        private static void AccumulateMap(Map map, CountAccumulator accumulator)
+        {
+            foreach (var pair in map.resourceCounter.AllCountedAmounts)
+                accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
 
             int extraDefCount = GameResourceCatalog.ExtraCountedDefCount;
             for (int i = 0; i < extraDefCount; i++)
-                counts[GameResourceCatalog.ExtraCountedDefAt(i).defName] = 0;
+            {
+                ThingDef def = GameResourceCatalog.ExtraCountedDefAt(i);
+                accumulator.AddZero(def.defName, def.shortHash);
+            }
 
             // Mirror ResourceCounter.UpdateResourceCounts: stored things only
             // (haul destinations), inner-of-minified, fresh, not fogged.
@@ -37,18 +62,9 @@ namespace EPrimeReadouts
                     if (inner.IsNotFresh()) continue;
                     if (inner.SpawnedOrAnyParentSpawned && inner.PositionHeld.Fogged(inner.MapHeld))
                         continue;
-                    counts[inner.def.defName] += inner.stackCount;
+                    accumulator.Add(inner.def.defName, inner.def.shortHash, inner.stackCount);
                 }
             }
-
-            for (int i = 0; i < extraDefCount; i++)
-            {
-                var def = GameResourceCatalog.ExtraCountedDefAt(i);
-                int count = counts[def.defName];
-                fp = fp * 31 + def.shortHash;
-                fp = fp * 31 + count;
-            }
-            return new RenderCountSnapshot(counts, fp);
         }
 
         /// Current count for a single def from the shared render snapshot.

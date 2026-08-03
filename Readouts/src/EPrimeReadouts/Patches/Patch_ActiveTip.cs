@@ -108,10 +108,13 @@ namespace EPrimeReadouts.Patches
     /// Activated models draw themselves (atlas background + WrTipUI); every
     /// other tooltip keeps the vanilla single-label path.
     [HarmonyPatch(typeof(ActiveTip), "DrawInner")]
+    [StaticConstructorOnStartup]
     public static class Patch_ActiveTip_DrawInner
     {
-        // Resolved once when Harmony initializes this patch type. A miss leaves
-        // atlas null and vanilla draws the plain-text fallback.
+        // Resolved once at startup (StaticConstructorOnStartup runs the field
+        // initializer on the main thread after assets load, and satisfies the
+        // vanilla dev-mode scanner that flags static Texture2D fields). A miss
+        // leaves atlas null and vanilla draws the plain-text fallback.
         // Process-owned reference to a vanilla-owned asset. It is resolved once,
         // never mutated/destroyed by this mod, and expires with the game process.
         private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;

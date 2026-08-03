@@ -12,6 +12,7 @@ namespace EPrimeReadouts
         internal static void ResetAll()
         {
             GameRenderData.Reset();
+            LevelStacks.Reset();
             GameResourceCatalog.Reset();
             GameResourceTree.Reset();
             ReadoutPanel.Reset();
@@ -35,7 +36,11 @@ namespace EPrimeReadouts
         // Map components are constructed while save data is deserialized on a
         // LongEventHandler worker thread. Keep this constructor free of Unity
         // API calls; graphics initialization belongs in the main-thread update.
-        public ReadoutRenderMapComponent(Map map) : base(map) { }
+        // The map-set bump is a plain counter increment, safe off-thread.
+        public ReadoutRenderMapComponent(Map map) : base(map)
+        {
+            LevelStacks.BumpMapSet();
+        }
 
         public override void MapComponentUpdate()
         {
@@ -49,6 +54,7 @@ namespace EPrimeReadouts
 
         public override void MapRemoved()
         {
+            LevelStacks.BumpMapSet();
             GameRenderData.Remove(map);
             ReadoutPanel.ReleaseMap(map);
             base.MapRemoved();

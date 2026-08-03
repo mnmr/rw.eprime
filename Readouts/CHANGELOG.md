@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.0.4 — 2026-08-03
+
+- Added: MultiFloors support (readouts show combined resource counts across all floors). Other multi-floor mods (Strata, 'As above, so below I/II') do not need special support to work.
+
 ## 1.0.3 — 2026-08-02
 
 - Fixed: Icon rendering was blurry. Aligned preview image with my other mods.
