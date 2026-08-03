@@ -22,7 +22,7 @@ Get high-quality gear and furniture reliably: work on quality items and building
 
 Crafting:
 - Pauses quality bill work the instant before completion; the item remains unfinished until a qualifying colonist exists to complete the job. If the current crafter already qualifies, their work completion is not interrupted.
-- Shared unfinished work: bills are no longer locked to the pawn who started an item - anyone can continue idle unfinished items (also rescues items whose creator died).
+- Shared unfinished work: bills are no longer locked to the pawn who started an item, so anyone can resume work on an unfinished item. This also rescues items whose creator died.
 - Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and current best crafter.
 - Once a crafter is identified that can complete the work, a bill assigned to that pawn is created automatically (and removed when completed). 
 - Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
@@ -30,7 +30,7 @@ Crafting:
 Construction:
 - Opt in per building via the "Quality job" gizmo on any quality blueprint or frame, or globally for all quality buildings from mod settings.
 - Per-build conditions (minimum skill, require inspiration, require production specialist, retry-until quality level reached) with a live quality-odds preview for your configuration and current best builder.
-- Target quality: builds that roll below your chosen quality are automatically marked for deconstructed and will be rebuilt until you get the desired quality (or you clear the build from being a quality job).
+- Target quality: builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a quality job).
 - Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
 
 Worth Knowing:
