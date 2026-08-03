@@ -80,6 +80,96 @@ namespace QualityJobs
             store.dispatchLetter = value;
         }
 
+        // ---- Per-save bill default setters (dual-pattern) -----------------------
+
+        [SyncMethod]
+        public static void SetManageNewBillsDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.manageNewBillsDefault == value) return;
+            store.manageNewBillsDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetMinSkillDefault(int value)
+        {
+            value = System.Math.Clamp(value, 0, 20);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.minSkillDefault == value) return;
+            store.minSkillDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetRequireInspiredDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.requireInspiredDefault == value) return;
+            store.requireInspiredDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetRequireSpecialistDefault(bool value)
+        {
+            value = value && ModsConfig.IdeologyActive;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.requireSpecialistDefault == value) return;
+            store.requireSpecialistDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetProductCapDefault(int value)
+        {
+            value = System.Math.Clamp(value, 0, 50);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.productCapDefault == value) return;
+            store.productCapDefault = value;
+        }
+
+        // ---- Per-save construction default setters (dual-pattern) ---------------
+
+        [SyncMethod]
+        public static void SetManageNewConstructionDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.manageNewConstructionDefault == value) return;
+            store.manageNewConstructionDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetConstructionMinSkillDefault(int value)
+        {
+            value = System.Math.Clamp(value, 0, 20);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.constructionMinSkillDefault == value) return;
+            store.constructionMinSkillDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetConstructionRequireInspiredDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.constructionRequireInspiredDefault == value) return;
+            store.constructionRequireInspiredDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetConstructionRequireSpecialistDefault(bool value)
+        {
+            value = value && ModsConfig.IdeologyActive;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.constructionRequireSpecialistDefault == value) return;
+            store.constructionRequireSpecialistDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetConstructionTargetQualityDefault(int value)
+        {
+            value = System.Math.Clamp(value, 0, 6);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.constructionTargetQualityDefault == value) return;
+            store.constructionTargetQualityDefault = value;
+        }
+
         /// Spec §12: enable adds a fresh component seeded from the ISSUING
         /// client's defaults (passed as primitives for MP determinism — all
         /// clients seed identically from the same parameter set).
@@ -88,14 +178,13 @@ namespace QualityJobs
         /// will re-add the component with default settings the next time the
         /// save is loaded while the mod remains installed.
         [SyncMethod]
-        public static void Enable(bool manageNew, int minSkill,
-            bool reqInspired, bool reqSpecialist, int cap, bool share, bool letter)
+        public static void Enable(SeedValues v)
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store != null) return;
             var fresh = new QualityJobsStore(Current.Game);
             Current.Game.components.Add(fresh);
-            fresh.SeedExplicit(manageNew, minSkill, reqInspired, reqSpecialist, cap, share, letter);
+            fresh.SeedExplicit(v);
         }
 
         [SyncMethod]
@@ -110,13 +199,36 @@ namespace QualityJobs
             QualityJobsStore.AnyOverlays = false;
         }
 
-        /// UI helper: captures the local defaults for the synced enable call.
+        /// UI helper: captures the local defaults into the synced enable payload.
         public static void RequestEnable()
         {
-            var s = QualityJobsMod.Settings;
-            Enable(s.defaultManageNewBills, s.defaultMinSkill,
-                s.defaultRequireInspired, s.defaultRequireSpecialist,
-                s.defaultProductCap, s.defaultShareUnfinishedWork, s.dispatchLetter);
+            Enable(SeedValues.FromSettings(QualityJobsMod.Settings));
+        }
+
+        /// Fix 4: arms the synced pending-copy session state. Issued from the
+        /// initiator's copy-gizmo action; replicates to all clients so the
+        /// blueprint spawn hook reads identical settings everywhere.
+        [SyncMethod]
+        public static void SetPendingCopy(int minSkill, bool inspired, bool specialist, int quality)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null) return;
+            store.pendingCopyMinSkill   = minSkill;
+            store.pendingCopyInspired   = inspired;
+            store.pendingCopySpecialist = specialist;
+            store.pendingCopyQuality    = quality;
+            store.pendingCopyActive     = true;
+        }
+
+        /// Fix 4: disarms the synced pending-copy session state. Best-effort UI
+        /// clearing; a stale pending value is desync-safe (all clients read the
+        /// same synced value), so imperfect clearing is only a minor UX issue.
+        [SyncMethod]
+        public static void ClearPendingCopy()
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || !store.pendingCopyActive) return;
+            store.pendingCopyActive = false;
         }
 
         /// Removes the plan for the given thingId and any Deconstruct designation
@@ -249,44 +361,12 @@ namespace QualityJobs
         public static void ApplyPlanSettings(int thingId, int minSkill, bool requireInspired,
             bool requireSpecialist, int minQuality)
         {
-            // Clamp/coerce exactly as the individual setters do.
-            minSkill    = System.Math.Clamp(minSkill, 0, 20);
-            minQuality  = System.Math.Clamp(minQuality, 0, 6);
-            requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
-
+            // Fix 2: synced entry point resolves the store and delegates the
+            // create-or-overwrite-or-remove-if-neutral logic to the non-synced
+            // PlanOps.Apply core (clamping + Ideology coercion live there).
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-
-            // Check if the incoming values are all neutral.
-            bool incoming_neutral = minSkill == 0 && !requireInspired && !requireSpecialist && minQuality == 0;
-            if (incoming_neutral)
-            {
-                // Nothing to apply; remove any existing plan.
-                if (plan != null)
-                {
-                    Dispatcher.RemoveOurDeconstructDesignation(plan);
-                    store.RemovePlan(plan);
-                }
-                return;
-            }
-
-            if (plan == null)
-            {
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-
-            // Apply all fields in one shot.
-            plan.minSkill          = minSkill;
-            plan.requireInspired   = requireInspired;
-            plan.requireSpecialist = requireSpecialist;
-            plan.minQuality        = minQuality;
-
-            // RemoveIfNeutral covers the edge case where clamping/coercion turned
-            // all values neutral after the check above (e.g. Ideology deactivated
-            // between client events — extremely unlikely, but safe).
-            RemoveIfNeutral(store, plan);
+            PlanOps.Apply(store, thingId, minSkill, requireInspired, requireSpecialist, minQuality);
         }
 
         private static Thing? FindSpawnedThing(int thingId)

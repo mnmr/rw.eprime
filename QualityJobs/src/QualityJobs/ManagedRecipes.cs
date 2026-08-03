@@ -11,8 +11,8 @@ namespace QualityJobs
     /// once). Value: immutable after startup. Dependencies: def database
     /// contents; rebuilt on demand after definition reload via Invalidate().
     /// Refresh: eager at startup ([StaticConstructorOnStartup]); Invalidate()
-    /// exists for definition-reload scenarios but is not wired to any event
-    /// in v1; def reloads mid-session are dev-mode only.
+    /// also clears Dispatcher.s_workTypeCache (same dependency set) so both
+    /// caches stay coherent after a definition reload.
     /// Equality: n/a. Teardown: none needed (no world data).
     [StaticConstructorOnStartup]
     public static class ManagedRecipes
@@ -27,7 +27,13 @@ namespace QualityJobs
 
         static ManagedRecipes() => Build();
 
-        public static void Invalidate() => Build();
+        public static void Invalidate()
+        {
+            Build();
+            // The recipe→workType memo in Dispatcher shares the same def-database
+            // dependency. Clear it so WorkTypeForRecipe re-resolves after a reload.
+            Dispatcher.InvalidateWorkTypeCache();
+        }
 
         private static void Build()
         {

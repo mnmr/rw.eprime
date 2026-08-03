@@ -1,6 +1,8 @@
 using System.Collections.Generic;
+using RimWorld;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace QualityJobs.UI
 {
@@ -22,6 +24,18 @@ namespace QualityJobs.UI
     /// Gizmo height constant verified against Decompiled\Verse\Gizmo.cs line 17:
     ///   public const float Height = 75f;
     /// GetWidth(maxWidth) verified as returning 75f (Command.cs line 93).
+    ///
+    /// Click semantics:
+    ///   LEFT-click  → opens the fold-out Dialog_ConstructionPlanConfig panel.
+    ///   RIGHT-click → directly applies the user's construction default options
+    ///                 (from QualityJobsSettings) to all eligible selected things
+    ///                 via Commands.ApplyPlanSettings (synced, MP-safe).
+    ///
+    /// Right-click routing: GizmoGridDrawer (GizmoGridDrawer.cs line 433) treats
+    /// a right-click on a gizmo with no RightClickFloatMenuOptions as an ordinary
+    /// Interacted event, so ProcessInput receives ev.button == 1. We override
+    /// ProcessInput to route on ev.button: right-click calls ApplyDefaults,
+    /// left-click delegates to base.ProcessInput (plays sound + invokes action).
     public class Command_QualityJob : Command_Action
     {
         private readonly List<Thing> _things;
@@ -36,6 +50,9 @@ namespace QualityJobs.UI
         public Command_QualityJob(List<Thing> things)
         {
             _things = things;
+            // action is not used by our ProcessInput override, but keeping it
+            // set lets base-class code paths (e.g. tooltip rendering) behave
+            // normally.
             action = OpenDialog;
         }
 
@@ -47,11 +64,62 @@ namespace QualityJobs.UI
             return base.GizmoOnGUI(topLeft, maxWidth, parms);
         }
 
+        /// Routes clicks: left → open dialog; right → apply construction defaults.
+        /// Left-click calls base.ProcessInput which plays the activate sound and
+        /// invokes the action delegate (= OpenDialog). Right-click applies defaults
+        /// and plays a click so the (panel-less) action gives audible feedback.
+        public override void ProcessInput(Event ev)
+        {
+            if (ev.button == 1)
+            {
+                SoundDefOf.Tick_High.PlayOneShotOnCamera();
+                ApplyDefaults();
+            }
+            else
+            {
+                base.ProcessInput(ev); // plays sound + calls action (OpenDialog)
+            }
+        }
+
         private void OpenDialog()
         {
             // A gizmo cannot be clicked without having been drawn, so
             // lastGizmoRect is always populated here (Rect.zero would center).
             Find.WindowStack.Add(new Dialog_ConstructionPlanConfig(_things, lastGizmoRect));
+        }
+
+        /// Applies the user's construction default options to all eligible
+        /// selected things via the existing synced Commands.ApplyPlanSettings.
+        /// Eligibility matches the set the dialog operates on (_things).
+        /// Reads from the per-save store when a game is loaded (dual-pattern);
+        /// falls back to global Settings when the store is unavailable.
+        private void ApplyDefaults()
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            int minSkill;
+            bool reqInspired, reqSpecialist;
+            int targetQuality;
+            if (store != null)
+            {
+                minSkill      = store.constructionMinSkillDefault;
+                reqInspired   = store.constructionRequireInspiredDefault;
+                reqSpecialist = store.constructionRequireSpecialistDefault;
+                targetQuality = store.constructionTargetQualityDefault;
+            }
+            else
+            {
+                QualityJobsSettings s = QualityJobsMod.Settings;
+                minSkill      = s.defaultConstructionMinSkill;
+                reqInspired   = s.defaultConstructionRequireInspired;
+                reqSpecialist = s.defaultConstructionRequireSpecialist;
+                targetQuality = s.defaultConstructionTargetQuality;
+            }
+            foreach (Thing t in _things)
+            {
+                Commands.ApplyPlanSettings(
+                    t.thingIDNumber,
+                    minSkill, reqInspired, reqSpecialist, targetQuality);
+            }
         }
     }
 }

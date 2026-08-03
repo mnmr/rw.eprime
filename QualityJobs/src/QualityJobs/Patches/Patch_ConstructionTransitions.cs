@@ -136,10 +136,25 @@ namespace QualityJobs.Patches
                 return;
             }
 
-            Blueprint_Build blueprint = GenConstruct.PlaceBlueprintForBuild(
-                __state.def, __state.position, __state.map, __state.rotation,
-                __state.faction ?? Faction.OfPlayer, __state.stuff,
-                __state.styleSource, __state.styleDef);
+            // Suppress the spawn hook for this blueprint: PlaceBlueprintForBuild
+            // spawns synchronously (firing Patch_BlueprintSpawn before it returns),
+            // but this blueprint is owned by the existing AwaitingRebuild plan we
+            // retarget below — the hook must not create a second plan for it. The
+            // flag is set/cleared inside synced Building.Destroy, deterministic on
+            // all clients.
+            Blueprint_Build blueprint;
+            Patch_BlueprintSpawn.SuppressForRebuild = true;
+            try
+            {
+                blueprint = GenConstruct.PlaceBlueprintForBuild(
+                    __state.def, __state.position, __state.map, __state.rotation,
+                    __state.faction ?? Faction.OfPlayer, __state.stuff,
+                    __state.styleSource, __state.styleDef);
+            }
+            finally
+            {
+                Patch_BlueprintSpawn.SuppressForRebuild = false;
+            }
             plan.target = blueprint;
             plan.state = ConstructionPlanState.Active;
             plan.finisher = null;

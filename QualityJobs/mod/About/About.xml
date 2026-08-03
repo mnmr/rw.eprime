@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>0.9.0</modVersion>
+  <modVersion>1.0.0</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -21,16 +21,17 @@
 Get high-quality gear and furniture reliably: work on quality items and buildings is set aside at the last moment and finished by your best (or inspired) pawn.
 
 Crafting:
-- Pauses quality bill work the instant before completion; the item waits, haulable and safe on any shelf, until a qualifying colonist exists.
-- Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and your current best crafter.
-- Automatic finisher dispatch: a one-shot "Finish ..." bill restricted to the chosen pawn, with a letter so you can intervene. If the current crafter already qualifies, they simply finish it themselves.
+- Pauses quality bill work the instant before completion; the item remains unfinished until a qualifying colonist exists to complete the job. If the current crafter already qualifies, their work completion is not interrupted.
 - Shared unfinished work: bills are no longer locked to the pawn who started an item - anyone can continue idle unfinished items (also rescues items whose creator died).
+- Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and current best crafter.
+- Once a crafter is identified that can complete the work, a bill assigned to that pawn is created automatically (and removed when completed). 
 - Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
 
 Construction:
-- Opt in per building via the "Quality job" gizmo on any quality blueprint or frame. Set any option and it is managed; hit Clear to turn it off.
+- Opt in per building via the "Quality job" gizmo on any quality blueprint or frame, or globally for all quality buildings from mod settings.
+- Per-build conditions (minimum skill, require inspiration, require production specialist, retry-until quality level reached) with a live quality-odds preview for your configuration and current best builder.
+- Target quality: builds that roll below your chosen quality are automatically marked for deconstructed and will be rebuilt until you get the desired quality (or you clear the build from being a quality job).
 - Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
-- Target quality: builds that roll below your chosen quality are automatically deconstructed and rebuilt until you get what you asked for.
 
 Worth Knowing:
 - This mod isn't a cheat that gives you better quality items. Quality is rolled by the pawn who finishes the work, and this mod just helps ensure that is someone with a high success rate.

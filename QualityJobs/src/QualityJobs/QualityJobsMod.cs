@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using HarmonyLib;
 using QualityJobs.UI;
 using RimWorld;
@@ -10,20 +11,38 @@ namespace QualityJobs
     {
         // Initialized by the Mod constructor before any game code can run.
         // RimWorld constructs Mod subclasses during the earliest loading phase,
-        // so Settings is always non-null by the time patches or game components execute.
+        // so Settings and Instance are always non-null by the time patches or
+        // game components execute.
+        public static QualityJobsMod Instance = null!;
         public static QualityJobsSettings Settings = null!;
 
         public QualityJobsMod(ModContentPack content) : base(content)
         {
+            Instance = this;
             Settings = GetSettings<QualityJobsSettings>();
             new Harmony("EPrime.QualityJobs").PatchAll();
         }
 
         public override string SettingsCategory() => "EPrime's Quality Jobs";
 
-        // Header panel height and gap constants (mirroring Dialog_ReadoutConfig idiom).
+        // Header panel height constant (mirroring Dialog_ReadoutConfig idiom).
         private const float PanelH = 56f;
-        private const float PanelGap = 8f;
+
+        // Gap below the header panel: matches Window.StandardMargin (18f) so the
+        // top gap between the panel bottom and the first MiniHeader equals the
+        // 18f side margins that Window already bakes into inRect before our
+        // DoSettingsWindowContents is called.
+        private const float PanelGap = Window.StandardMargin; // 18f
+
+        // Row height constants (matching Listing_Standard / Dialog_ConstructionPlanConfig).
+        // CheckboxH = Text.LineHeight at GameFont.Small = 22f.
+        // SliderH   = Listing_Standard.SliderLabeled GetRect height = 30f.
+        // RowGap    = Listing_Standard.verticalSpacing = 2f.
+        // ColGap    = horizontal gap between the two columns.
+        private const float CheckboxH = 22f;
+        private const float SliderH   = 30f;
+        private const float RowGap    =  2f;
+        private const float ColGap    = 24f;
 
         // EprStyle color values replicated from EPrimeReadouts\src\EPrimeReadouts\UI\EprStyle.cs
         // (lines 29-31). Do not reference the other mod; values copied verbatim.
@@ -36,7 +55,9 @@ namespace QualityJobs
             SettingsLabels.Ensure();
 
             // ── Header panel ─────────────────────────────────────────────────────────
-            // Full-width, PanelH tall, drawn above the listing body.
+            // Full-width, PanelH tall, drawn at top of inRect (y=0).
+            // inRect is already ContractedBy(Window.Margin=18f) and AtZero'd by
+            // Window.InnerWindowOnGUI, so top margin equals side margins at 18f.
             var panelRect = new Rect(inRect.x, inRect.y, inRect.width, PanelH);
             Widgets.DrawBoxSolidWithOutline(panelRect, PanelBackground, PanelOutline);
 
@@ -44,11 +65,11 @@ namespace QualityJobs
             var iconRect = new Rect(panelRect.x + 8f, panelRect.y + 8f, 40f, 40f);
             GUI.DrawTexture(iconRect, QualityJobsTex.ModIcon);
 
-            // Title — Small font, MiddleLeft, header-text color.
+            // Fix 2: Title in GameFont.Medium (was Small), MiddleLeft, header-text color.
             GameFont prevFont   = Text.Font;
             TextAnchor prevAnch = Text.Anchor;
             Color prevColor     = GUI.color;
-            Text.Font   = GameFont.Small;
+            Text.Font   = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color   = HeaderText;
             Widgets.Label(
@@ -64,7 +85,7 @@ namespace QualityJobs
             // MouseUp event pass; dialog open is therefore per-click, not per-frame.
             if (Current.Game != null)
             {
-                float btnY   = panelRect.y + (PanelH - 28f) / 2f;
+                float btnY    = panelRect.y + (PanelH - 28f) / 2f;
                 var   btnRect = new Rect(panelRect.xMax - 158f, btnY, 150f, 28f);
                 QualityJobsStore? store = QualityJobsStore.Active;
                 if (store != null)
@@ -89,60 +110,248 @@ namespace QualityJobs
                 }
             }
 
-            // ── Body listing (below panel + gap) ──────────────────────────────────
-            var bodyRect = new Rect(inRect.x, inRect.y + PanelH + PanelGap,
-                inRect.width, inRect.height - PanelH - PanelGap);
-
-            var listing = new Listing_Standard();
-            listing.Begin(bodyRect);
-
+            // ── Body (below panel + gap) ──────────────────────────────────────────
             // I4: constant labels are cached by language; interpolated labels by value.
+            float bodyX = inRect.x;
+            float bodyW = inRect.width;
+            float y     = inRect.y + PanelH + PanelGap;
 
-            // ── Defaults for new saves section ───────────────────────────────────
-            // MiniHeader: group-relative x=0 (listing.Begin opened a GUI group).
-            float headerY = listing.CurHeight;
-            QjUi.MiniHeader(0f, headerY, bodyRect.width, SettingsLabels.Defaults!);
-            // Advance listing past the 30f consumed by MiniHeader.
-            listing.GetRect(30f);
+            // Dual-pattern: when a game is loaded and the store is active, the
+            // grid reads from/writes to the store via synced commands. Otherwise
+            // reads/writes global Settings directly (new-save seeds).
+            QualityJobsStore? activeStore = (Current.Game != null) ? QualityJobsStore.Active : null;
 
-            listing.CheckboxLabeled(SettingsLabels.ManageNewBills!, ref Settings.defaultManageNewBills);
+            // ── Two-column defaults grid ──────────────────────────────────────────
+            // Left column: bill defaults.  Right column: construction defaults.
+            // Column widths: (bodyW - ColGap) / 2 — split at midpoint with 24px gap.
+            //
+            // Row sequence (both columns consume identical heights on every row):
+            //   Row 0  MiniHeader               30f
+            //   Row 1  Manage bills / Manage construction     CheckboxH + RowGap = 24f
+            //   Row 2  Finisher skill sliders    SliderH   + RowGap = 32f
+            //   Row 3  Require inspired          CheckboxH + RowGap = 24f
+            //   Row 4  Require specialist        CheckboxH + RowGap = 24f
+            //            (blank on both if Ideology off; identical height)
+            //   Row 5  Stock cap / blank         SliderH   + RowGap = 32f
+            //   Row 6  "0 = unlimited" hint / Target quality picker   CheckboxH = 22f (last row)
+            float colW   = (bodyW - ColGap) / 2f;
+            float leftX  = bodyX;
+            float rightX = bodyX + colW + ColGap;
 
-            // I4: rebuild interpolated min-skill label only when the displayed value changes.
-            if (Settings.defaultMinSkill != SettingsLabels.MinSkillValue)
+            // Row 0: MiniHeaders.
+            QjUi.MiniHeader(leftX,  y, colW, SettingsLabels.BillDefaults!);
+            QjUi.MiniHeader(rightX, y, colW, SettingsLabels.ConstructionDefaults!);
+            y += 30f;
+
+            // Row 1: Manage new bills (left) / Manage new construction (right).
             {
-                SettingsLabels.MinSkillLabel = "QJ_FinisherSkill".Translate(Settings.defaultMinSkill);
-                SettingsLabels.MinSkillValue = Settings.defaultMinSkill;
+                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
+                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
+
+                // Left: manage new bills (dual-pattern).
+                if (activeStore != null)
+                {
+                    bool manageNew = activeStore.manageNewBillsDefault;
+                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref manageNew);
+                    if (manageNew != activeStore.manageNewBillsDefault)
+                        Commands.SetManageNewBillsDefault(manageNew);
+                }
+                else
+                {
+                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref Settings.defaultManageNewBills);
+                }
+
+                // Right: manage new construction (dual-pattern).
+                if (activeStore != null)
+                {
+                    bool manageNewC = activeStore.manageNewConstructionDefault;
+                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref manageNewC);
+                    if (manageNewC != activeStore.manageNewConstructionDefault)
+                        Commands.SetManageNewConstructionDefault(manageNewC);
+                }
+                else
+                {
+                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref Settings.defaultManageNewConstruction);
+                }
+
+                y += CheckboxH + RowGap;
             }
-            Settings.defaultMinSkill = (int)listing.SliderLabeled(
-                SettingsLabels.MinSkillLabel!, Settings.defaultMinSkill, 0f, 20f);
 
-            listing.CheckboxLabeled(SettingsLabels.RequireInspired!, ref Settings.defaultRequireInspired);
-            if (ModsConfig.IdeologyActive)
-                listing.CheckboxLabeled(SettingsLabels.RequireSpecialist!, ref Settings.defaultRequireSpecialist);
-
-            // I4: rebuild interpolated cap label only when the displayed value changes.
-            if (Settings.defaultProductCap != SettingsLabels.DefaultCapValue)
+            // Row 2: Finisher skill sliders (dual-pattern, both columns).
             {
-                SettingsLabels.DefaultCapLabel = SettingsLabels.DefaultCapPrefix! + ": " + Settings.defaultProductCap;
-                SettingsLabels.DefaultCapValue = Settings.defaultProductCap;
-            }
-            Settings.defaultProductCap = (int)listing.SliderLabeled(
-                SettingsLabels.DefaultCapLabel!, Settings.defaultProductCap, 0f, 50f);
+                // Left: bill finisher skill.
+                int leftSkill = activeStore != null ? activeStore.minSkillDefault : Settings.defaultMinSkill;
+                if (leftSkill != SettingsLabels.MinSkillValue)
+                {
+                    SettingsLabels.MinSkillLabel = "QJ_FinisherSkill".Translate(leftSkill);
+                    SettingsLabels.MinSkillValue = leftSkill;
+                }
+                int newLeftSkill = DrawSliderRow(leftX, y, colW,
+                    SettingsLabels.MinSkillLabel!, leftSkill, 0f, 20f);
+                if (newLeftSkill != leftSkill)
+                {
+                    if (activeStore != null)
+                        Commands.SetMinSkillDefault(newLeftSkill);
+                    else
+                        Settings.defaultMinSkill = newLeftSkill;
+                }
 
-            // Share/notification toggles: show only when no game is loaded.
-            // When a game is loaded, the per-save (store-backed) versions render below.
+                // Right: construction finisher skill.
+                int rightSkill = activeStore != null ? activeStore.constructionMinSkillDefault : Settings.defaultConstructionMinSkill;
+                if (rightSkill != SettingsLabels.ConstructionMinSkillValue)
+                {
+                    SettingsLabels.ConstructionMinSkillLabel = "QJ_FinisherSkill".Translate(rightSkill);
+                    SettingsLabels.ConstructionMinSkillValue = rightSkill;
+                }
+                int newRightSkill = DrawSliderRow(rightX, y, colW,
+                    SettingsLabels.ConstructionMinSkillLabel!, rightSkill, 0f, 20f);
+                if (newRightSkill != rightSkill)
+                {
+                    if (activeStore != null)
+                        Commands.SetConstructionMinSkillDefault(newRightSkill);
+                    else
+                        Settings.defaultConstructionMinSkill = newRightSkill;
+                }
+
+                y += SliderH + RowGap;
+            }
+
+            // Row 3: Require inspired (dual-pattern, both columns).
+            {
+                Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
+                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
+
+                // Left: bill require inspired.
+                if (activeStore != null)
+                {
+                    bool inspired = activeStore.requireInspiredDefault;
+                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref inspired);
+                    if (inspired != activeStore.requireInspiredDefault)
+                        Commands.SetRequireInspiredDefault(inspired);
+                }
+                else
+                {
+                    Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref Settings.defaultRequireInspired);
+                }
+
+                // Right: construction require inspired.
+                if (activeStore != null)
+                {
+                    bool inspired = activeStore.constructionRequireInspiredDefault;
+                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref inspired);
+                    if (inspired != activeStore.constructionRequireInspiredDefault)
+                        Commands.SetConstructionRequireInspiredDefault(inspired);
+                }
+                else
+                {
+                    Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref Settings.defaultConstructionRequireInspired);
+                }
+
+                y += CheckboxH + RowGap;
+            }
+
+            // Row 4: Require specialist (Ideology-gated; both sides consume identical height).
+            {
+                if (ModsConfig.IdeologyActive)
+                {
+                    Rect leftRow  = new Rect(leftX,  y, colW, CheckboxH);
+                    Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
+
+                    // Left: bill require specialist.
+                    if (activeStore != null)
+                    {
+                        bool specialist = activeStore.requireSpecialistDefault;
+                        Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref specialist);
+                        if (specialist != activeStore.requireSpecialistDefault)
+                            Commands.SetRequireSpecialistDefault(specialist);
+                    }
+                    else
+                    {
+                        Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultRequireSpecialist);
+                    }
+
+                    // Right: construction require specialist.
+                    if (activeStore != null)
+                    {
+                        bool specialist = activeStore.constructionRequireSpecialistDefault;
+                        Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref specialist);
+                        if (specialist != activeStore.constructionRequireSpecialistDefault)
+                            Commands.SetConstructionRequireSpecialistDefault(specialist);
+                    }
+                    else
+                    {
+                        Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultConstructionRequireSpecialist);
+                    }
+                }
+                // else: both rows are blank — identical consumed height = CheckboxH + RowGap.
+                y += CheckboxH + RowGap;
+            }
+
+            // Row 5: Stock cap (left) / blank (right).
+            {
+                int capVal = activeStore != null ? activeStore.productCapDefault : Settings.defaultProductCap;
+                // I4: rebuild interpolated cap label only when the displayed value changes.
+                if (capVal != SettingsLabels.DefaultCapValue)
+                {
+                    SettingsLabels.DefaultCapLabel = "QJ_SettingsDefaultCap".Translate(capVal);
+                    SettingsLabels.DefaultCapValue = capVal;
+                }
+                int newCap = DrawSliderRow(leftX, y, colW,
+                    SettingsLabels.DefaultCapLabel!, capVal, 0f, 50f);
+                if (newCap != capVal)
+                {
+                    if (activeStore != null)
+                        Commands.SetProductCapDefault(newCap);
+                    else
+                        Settings.defaultProductCap = newCap;
+                }
+                // right side: blank row (identical height consumed).
+                y += SliderH + RowGap;
+            }
+
+            // Row 6: "0 = unlimited" dimmed hint (left) / Target quality picker (right).
+            {
+                // Left: dimmed "0 = unlimited" hint.
+                Color savedColor = GUI.color;
+                GUI.color = new Color(savedColor.r, savedColor.g, savedColor.b, savedColor.a * 0.6f);
+                Rect hintRect = new Rect(leftX, y, colW, CheckboxH);
+                TextAnchor savedAnchor = Text.Anchor;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(hintRect, SettingsLabels.UnlimitedHint!);
+                Text.Anchor = savedAnchor;
+                GUI.color = savedColor;
+
+                // Right: target quality picker (dual-pattern).
+                Rect rightRow = new Rect(rightX, y, colW, CheckboxH);
+                DrawQualityPickerRow(rightRow, activeStore);
+
+                // No trailing RowGap — last row in the grid.
+                y += CheckboxH;
+            }
+
+            y += 6f; // small buffer before global options section.
+
+            // ── Global options section ────────────────────────────────────────────
+            // MiniHeader and toggles constrained to the LEFT column width only
+            // (not full body width), matching the spec.
+            QjUi.MiniHeader(bodyX, y, colW, SettingsLabels.GlobalOptions!);
+            y += 30f;
+
+            // Share/notification toggles: show defaults when no game is loaded;
+            // show per-save (store-backed) versions when a store is active.
+            // Existing dedupe logic: in-game shows the store version, not both.
             if (Current.Game == null)
             {
-                listing.CheckboxLabeled(SettingsLabels.ShareWork!, ref Settings.defaultShareUnfinishedWork);
-                listing.CheckboxLabeled(SettingsLabels.DispatchLetter!, ref Settings.dispatchLetter);
-            }
+                Rect shareRow = new Rect(bodyX, y, colW, CheckboxH);
+                Widgets.CheckboxLabeled(shareRow, SettingsLabels.ShareWork!, ref Settings.defaultShareUnfinishedWork);
+                y += CheckboxH + RowGap;
 
-            listing.GapLine();
+                Rect letterRow = new Rect(bodyX, y, colW, CheckboxH);
+                Widgets.CheckboxLabeled(letterRow, SettingsLabels.DispatchLetter!, ref Settings.dispatchLetter);
+                y += CheckboxH + RowGap;
 
-            // ── Per-save section ─────────────────────────────────────────────────
-            if (Current.Game == null)
-            {
-                listing.Label(SettingsLabels.NoGameLoaded!);
+                Rect noGameRow = new Rect(bodyX, y + 4f, colW, CheckboxH);
+                Widgets.Label(noGameRow, SettingsLabels.NoGameLoaded!);
             }
             else
             {
@@ -150,21 +359,91 @@ namespace QualityJobs
                 if (store != null)
                 {
                     // Per-save share/notification toggles (synced).
+                    Rect shareRow = new Rect(bodyX, y, colW, CheckboxH);
                     bool share = store.shareUnfinishedWork;
-                    listing.CheckboxLabeled(SettingsLabels.ShareWork!, ref share);
+                    Widgets.CheckboxLabeled(shareRow, SettingsLabels.ShareWork!, ref share);
                     if (share != store.shareUnfinishedWork)
                         Commands.SetShareUnfinishedWork(share);
+                    y += CheckboxH + RowGap;
 
+                    Rect letterRow = new Rect(bodyX, y, colW, CheckboxH);
                     bool letter = store.dispatchLetter;
-                    listing.CheckboxLabeled(SettingsLabels.DispatchLetter!, ref letter);
+                    Widgets.CheckboxLabeled(letterRow, SettingsLabels.DispatchLetter!, ref letter);
                     if (letter != store.dispatchLetter)
                         Commands.SetDispatchLetter(letter);
                 }
                 // If store is null the mod is disabled for this save;
                 // the Enable button in the header panel handles re-enabling.
             }
+        }
 
-            listing.End();
+        /// Draws a manual slider row (label left 50%, slider right 50%) without
+        /// Listing_Standard. Mirrors SliderLabeled's default labelPct = 0.5f.
+        /// Returns the new integer value. No allocations on cache-hit paths.
+        ///
+        /// Owner: called from DoSettingsWindowContents (render path, pre-cached label).
+        private static int DrawSliderRow(float x, float y, float width, string label,
+            int current, float min, float max)
+        {
+            TextAnchor prev = Text.Anchor;
+            Rect lRect = new Rect(x,               y, width * 0.5f, SliderH);
+            Rect sRect = new Rect(x + width * 0.5f, y, width * 0.5f, SliderH);
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(lRect, label);
+            Text.Anchor = prev;
+            return (int)Widgets.HorizontalSlider(sRect, current, min, max, middleAlignment: true);
+        }
+
+        /// Draws the target-quality button-picker row for construction defaults.
+        /// Layout: label left 50%, button right 50% — matching the SliderLabeled
+        /// 50/50 split so columns stay aligned.
+        /// Menu allocation occurs only on click, not per frame.
+        /// Dual-pattern: reads/writes store when activeStore != null, else Settings.
+        private static void DrawQualityPickerRow(Rect row, QualityJobsStore? activeStore)
+        {
+            Rect lRect = new Rect(row.x,               row.y, row.width * 0.5f, row.height);
+            Rect bRect = new Rect(row.x + row.width * 0.5f, row.y, row.width * 0.5f, row.height);
+
+            TextAnchor prev = Text.Anchor;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(lRect, SettingsLabels.TargetQualityLabel!);
+            Text.Anchor = prev;
+
+            int curQ = activeStore != null
+                ? activeStore.constructionTargetQualityDefault
+                : Settings.defaultConstructionTargetQuality;
+
+            string btnCaption = curQ <= 0
+                ? SettingsLabels.NoRetriesLabel!
+                : SettingsLabels.QualityLabels![curQ];
+
+            if (Widgets.ButtonText(bRect, btnCaption))
+            {
+                // Build options list only on click — allocation on interaction, not per frame.
+                // Capture activeStore locally so the closure holds the right reference.
+                QualityJobsStore? capturedStore = activeStore;
+                var options = new List<FloatMenuOption>();
+                options.Add(new FloatMenuOption(SettingsLabels.NoRetriesLabel!, () =>
+                {
+                    if (capturedStore != null)
+                        Commands.SetConstructionTargetQualityDefault(0);
+                    else
+                        Settings.defaultConstructionTargetQuality = 0;
+                }));
+                for (int q = 1; q <= 6; q++)
+                {
+                    int capturedQ = q;
+                    options.Add(new FloatMenuOption(SettingsLabels.QualityLabels![q], () =>
+                    {
+                        if (capturedStore != null)
+                            Commands.SetConstructionTargetQualityDefault(capturedQ);
+                        else
+                            Settings.defaultConstructionTargetQuality = capturedQ;
+                    }));
+                }
+                var menu = new FloatMenu(options) { vanishIfMouseDistant = false };
+                Find.WindowStack.Add(menu);
+            }
         }
 
         /// I4: language-keyed label cache for the settings window. Constant labels
@@ -172,19 +451,24 @@ namespace QualityJobs
         /// keyed by value and rebuilt only when the displayed value changes.
         ///
         /// Owner: process. Key: LanguageDatabase.activeLanguage (constant labels);
-        /// value integer (interpolated labels). Dependencies: language change;
-        /// value change. Teardown: none (process-static, language-safe).
+        ///   value integer (interpolated labels).
+        /// Dependencies: language change; value change.
+        /// Equality policy: identity not required (strings are value-typed).
+        /// Teardown: none (process-static; safe across language reloads).
         private static class SettingsLabels
         {
             private static LoadedLanguage? _builtForLanguage;
 
             // Constant labels (rebuilt on language change).
             public static string? Title;
-            public static string? Defaults;
+            public static string? BillDefaults;
+            public static string? ConstructionDefaults;
+            public static string? GlobalOptions;
             public static string? ManageNewBills;
+            public static string? ManageNewConstruction;
             public static string? RequireInspired;
             public static string? RequireSpecialist;
-            public static string? DefaultCapPrefix;
+            public static string? UnlimitedHint;
             public static string? ShareWork;
             public static string? DispatchLetter;
             public static string? NoGameLoaded;
@@ -192,33 +476,54 @@ namespace QualityJobs
             public static string? DisableWarning;
             public static string? DisableButton;
             public static string? EnableButton;
+            public static string? TargetQualityLabel;
+            public static string? NoRetriesLabel;
+
+            // Quality name cache: 7 entries (Awful=0 .. Legendary=6).
+            // Owner: process. Key: language. Value: string[] immutable after build.
+            // Dependencies: language change. Refresh: immediate on language change.
+            // Equality policy: N/A (strings; identity not required).
+            // Teardown: rebuilt on next language change.
+            public static string[]? QualityLabels;
 
             // Interpolated labels (rebuilt when value changes).
             public static string? MinSkillLabel;
             public static int MinSkillValue = -1;
+            public static string? ConstructionMinSkillLabel;
+            public static int ConstructionMinSkillValue = -1;
             public static string? DefaultCapLabel;
             public static int DefaultCapValue = -1;
 
             public static void Ensure()
             {
                 if (LanguageDatabase.activeLanguage == _builtForLanguage) return;
-                _builtForLanguage = LanguageDatabase.activeLanguage;
-                Title          = "EPrime's Quality Jobs"; // SettingsCategory() string — not translated
-                Defaults       = "QJ_SettingsDefaults".Translate();
-                ManageNewBills = "QJ_SettingsManageNewBills".Translate();
-                RequireInspired   = "QJ_RequireInspired".Translate();
-                RequireSpecialist = "QJ_RequireSpecialist".Translate();
-                DefaultCapPrefix  = "QJ_SettingsDefaultCap".Translate();
-                ShareWork      = "QJ_SettingsShareWork".Translate();
-                DispatchLetter = "QJ_SettingsDispatchLetter".Translate();
-                NoGameLoaded   = "QJ_NoGameLoaded".Translate();
-                EnabledNote    = "QJ_SettingsEnabledNote".Translate();
-                DisableWarning = "QJ_DisableWarning".Translate();
-                DisableButton  = "QJ_DisableButton".Translate();
-                EnableButton   = "QJ_EnableButton".Translate();
+                _builtForLanguage    = LanguageDatabase.activeLanguage;
+                Title                = "EPrime's Quality Jobs"; // SettingsCategory() string — not translated
+                BillDefaults         = "QJ_SettingsBillDefaults".Translate();
+                ConstructionDefaults = "QJ_SettingsConstructionDefaults".Translate();
+                GlobalOptions        = "QJ_SettingsGlobalOptions".Translate();
+                ManageNewBills       = "QJ_SettingsManageNewBills".Translate();
+                ManageNewConstruction = "QJ_SettingsManageNewConstruction".Translate();
+                RequireInspired      = "QJ_RequireInspired".Translate();
+                RequireSpecialist    = "QJ_RequireSpecialist".Translate();
+                UnlimitedHint        = "QJ_SettingsUnlimitedHint".Translate();
+                ShareWork            = "QJ_SettingsShareWork".Translate();
+                DispatchLetter       = "QJ_SettingsDispatchLetter".Translate();
+                NoGameLoaded         = "QJ_NoGameLoaded".Translate();
+                EnabledNote          = "QJ_SettingsEnabledNote".Translate();
+                DisableWarning       = "QJ_DisableWarning".Translate();
+                DisableButton        = "QJ_DisableButton".Translate();
+                EnableButton         = "QJ_EnableButton".Translate();
+                TargetQualityLabel   = "QJ_MinQualityLabel".Translate();
+                NoRetriesLabel       = "QJ_NoRetries".Translate();
+                // Quality names — 7 entries (Awful=0 .. Legendary=6).
+                QualityLabels = new string[7];
+                for (int q = 0; q <= 6; q++)
+                    QualityLabels[q] = ((QualityCategory)q).GetLabel().CapitalizeFirst();
                 // Force rebuild of interpolated labels at new language.
-                MinSkillValue  = -1;
-                DefaultCapValue = -1;
+                MinSkillValue             = -1;
+                ConstructionMinSkillValue = -1;
+                DefaultCapValue           = -1;
             }
         }
     }

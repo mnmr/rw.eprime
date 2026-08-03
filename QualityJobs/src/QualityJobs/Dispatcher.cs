@@ -279,15 +279,39 @@ namespace QualityJobs
         /// Same resolution as vanilla BoundWorker (Bill_ProductionWithUft.cs:36-53):
         /// the work type of the first work giver whose fixedBillGiverDefs cover
         /// benches for this recipe.
+        ///
+        /// Memo cache — Owner: process (def-derived only). Key: RecipeDef identity.
+        /// Value: WorkTypeDef? (nullable; null = no bench giver found). Dependencies:
+        /// def database contents (stable after startup; ManagedRecipes.Invalidate()
+        /// calls InvalidateWorkTypeCache() to clear this when a definition reload
+        /// occurs). Refresh: lazy on first call per recipe; cleared by
+        /// InvalidateWorkTypeCache(). Equality: n/a (single value per key).
+        /// Teardown: none needed (no world data). Cache hits are plain Dictionary
+        /// lookups — no allocation.
+        private static readonly Dictionary<RecipeDef, WorkTypeDef?> s_workTypeCache =
+            new Dictionary<RecipeDef, WorkTypeDef?>();
+
+        /// Clears the recipe→workType memo cache. Called by ManagedRecipes.Invalidate()
+        /// after a definition reload so both caches stay coherent.
+        public static void InvalidateWorkTypeCache() => s_workTypeCache.Clear();
+
         public static WorkTypeDef? WorkTypeForRecipe(RecipeDef recipe)
         {
+            if (s_workTypeCache.TryGetValue(recipe, out WorkTypeDef? cached))
+                return cached;
             List<WorkGiverDef> givers = DefDatabase<WorkGiverDef>.AllDefsListForReading;
+            WorkTypeDef? result = null;
             foreach (ThingDef benchDef in recipe.AllRecipeUsers)
                 for (int i = 0; i < givers.Count; i++)
                     if (givers[i].fixedBillGiverDefs != null
                         && givers[i].fixedBillGiverDefs.Contains(benchDef))
-                        return givers[i].workType;
-            return null;
+                    {
+                        result = givers[i].workType;
+                        goto done;
+                    }
+            done:
+            s_workTypeCache[recipe] = result;
+            return result;
         }
 
         // ---- config, revert, completion ---------------------------------------

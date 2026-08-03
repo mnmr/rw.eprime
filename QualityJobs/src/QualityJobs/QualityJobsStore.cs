@@ -40,6 +40,27 @@ namespace QualityJobs
         // shared, per-save, synced (spec §11/§13).
         public bool dispatchLetter;
 
+        // Per-save construction defaults (seeded from global defaults; dual-pattern §11).
+        public bool manageNewConstructionDefault;
+        public int constructionMinSkillDefault;
+        public bool constructionRequireInspiredDefault;
+        public bool constructionRequireSpecialistDefault;
+        public int constructionTargetQualityDefault;
+
+        // ---- pending-copy session state (Fix 4; NOT scribed) -------------------
+        //
+        // Synced runtime state for the vanilla build-copy command: when the
+        // player copies a managed thing, these carry the source plan's settings
+        // so the blueprint spawn hook (Fix 3) can apply them to placed copies on
+        // ALL clients from the SAME synced value. Deliberately not scribed:
+        // copy intent is transient session state and must load as inactive
+        // (pendingCopyActive = false) after any save/load.
+        public bool pendingCopyActive;
+        public int pendingCopyMinSkill;
+        public bool pendingCopyInspired;
+        public bool pendingCopySpecialist;
+        public int pendingCopyQuality;
+
         // Rebuilt every scan; keyed (map.uniqueID, productDefName).
         private readonly Dictionary<(int, string), int> uftCounts = new Dictionary<(int, string), int>();
         private bool seeded;
@@ -98,6 +119,11 @@ namespace QualityJobs
                 productCapDefault = s.defaultProductCap;
                 shareUnfinishedWork = s.defaultShareUnfinishedWork;
                 dispatchLetter = s.dispatchLetter;
+                manageNewConstructionDefault = s.defaultManageNewConstruction;
+                constructionMinSkillDefault = s.defaultConstructionMinSkill;
+                constructionRequireInspiredDefault = s.defaultConstructionRequireInspired;
+                constructionRequireSpecialistDefault = s.defaultConstructionRequireSpecialist;
+                constructionTargetQualityDefault = s.defaultConstructionTargetQuality;
                 seeded = true;
             }
             // Ensure AnyOverlays is correct before the first draw call on the new save.
@@ -105,17 +131,21 @@ namespace QualityJobs
         }
 
         /// Deterministic seeding for MP-synced enable (spec §12): values travel
-        /// as command parameters so every client seeds identically.
-        public void SeedExplicit(bool manageNew, int minSkill, bool reqInspired,
-            bool reqSpecialist, int cap, bool share, bool letter)
+        /// as one synced payload (SeedValues) so every client seeds identically.
+        public void SeedExplicit(SeedValues v)
         {
-            manageNewBillsDefault = manageNew;
-            minSkillDefault = minSkill;
-            requireInspiredDefault = reqInspired;
-            requireSpecialistDefault = reqSpecialist;
-            productCapDefault = cap;
-            shareUnfinishedWork = share;
-            dispatchLetter = letter;
+            manageNewBillsDefault = v.manageNewBills;
+            minSkillDefault = v.minSkill;
+            requireInspiredDefault = v.requireInspired;
+            requireSpecialistDefault = v.requireSpecialist;
+            productCapDefault = v.productCap;
+            shareUnfinishedWork = v.share;
+            dispatchLetter = v.dispatchLetter;
+            manageNewConstructionDefault = v.manageNewConstruction;
+            constructionMinSkillDefault = v.constructionMinSkill;
+            constructionRequireInspiredDefault = v.constructionRequireInspired;
+            constructionRequireSpecialistDefault = v.constructionRequireSpecialist;
+            constructionTargetQualityDefault = v.constructionTargetQuality;
             seeded = true;
         }
 
@@ -413,9 +443,14 @@ namespace QualityJobs
             Scribe_Values.Look(ref minSkillDefault, "minSkillDefault", 15);
             Scribe_Values.Look(ref requireInspiredDefault, "requireInspiredDefault", false);
             Scribe_Values.Look(ref requireSpecialistDefault, "requireSpecialistDefault", false);
-            Scribe_Values.Look(ref productCapDefault, "productCapDefault", 3);
+            Scribe_Values.Look(ref productCapDefault, "productCapDefault", 10);
             Scribe_Values.Look(ref shareUnfinishedWork, "shareUnfinishedWork", true);
             Scribe_Values.Look(ref dispatchLetter, "dispatchLetter", true);
+            Scribe_Values.Look(ref manageNewConstructionDefault, "manageNewConstructionDefault", false);
+            Scribe_Values.Look(ref constructionMinSkillDefault, "constructionMinSkillDefault", 15);
+            Scribe_Values.Look(ref constructionRequireInspiredDefault, "constructionRequireInspiredDefault", false);
+            Scribe_Values.Look(ref constructionRequireSpecialistDefault, "constructionRequireSpecialistDefault", false);
+            Scribe_Values.Look(ref constructionTargetQualityDefault, "constructionTargetQualityDefault", 0);
             Scribe_Values.Look(ref seeded, "seeded", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {

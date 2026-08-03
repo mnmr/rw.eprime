@@ -7,6 +7,32 @@ using Verse.AI;
 
 namespace QualityJobs.Patches
 {
+    /// Shared helper: builds the DoBill job for a UFT that the pawn did not
+    /// create (shared or dispatched). Mirrors WorkGiver_DoBill.FinishUftJob
+    /// (Decompiled\RimWorld\WorkGiver_DoBill.cs:168-186) minus the creator
+    /// check. Used by Patch_ShareResume_FinishJob and WorkGiver_FinishQualityWork
+    /// so the logic is never duplicated.
+    internal static class FinishUftJobHelper
+    {
+        /// Builds the same DoBill job as vanilla's FinishUftJob without
+        /// requiring the pawn to be the UFT creator.
+        /// Re-verify the body against the decompile on game updates.
+        internal static Job BuildFinishUftJob(Pawn pawn, UnfinishedThing uft,
+            Bill_ProductionWithUft bill)
+        {
+            Job? haulOffJob = WorkGiverUtility.HaulStuffOffBillGiverJob(
+                pawn, bill.billStack.billGiver, uft);
+            if (haulOffJob != null && haulOffJob.targetA.Thing != uft)
+                return haulOffJob;
+            Job job = JobMaker.MakeJob(JobDefOf.DoBill, (Thing)bill.billStack.billGiver);
+            job.bill         = bill;
+            job.targetQueueB = new List<LocalTargetInfo> { uft };
+            job.countQueue   = new List<int> { 1 };
+            job.haulMode     = HaulMode.ToCellNonStorage;
+            return job;
+        }
+    }
+
     /// Spec §8 resume matching. Read-only: also runs during client-local
     /// float-menu generation in MP, so it must not mutate anything.
     [HarmonyPatch(typeof(WorkGiver_DoBill), "ClosestUnfinishedThingForBill")]
@@ -80,21 +106,9 @@ namespace QualityJobs.Patches
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || !store.IsShared(uft)) return true;
 
-            // Body copied from WorkGiver_DoBill.FinishUftJob (RimWorld 1.6,
-            // Decompiled\RimWorld\WorkGiver_DoBill.cs:175-185) minus the creator
-            // check; re-verify against the decompile on game updates.
-            Job? haulOffJob = WorkGiverUtility.HaulStuffOffBillGiverJob(pawn, bill.billStack.billGiver, uft);
-            if (haulOffJob != null && haulOffJob.targetA.Thing != uft)
-            {
-                __result = haulOffJob;
-                return false;
-            }
-            Job job = JobMaker.MakeJob(JobDefOf.DoBill, (Thing)bill.billStack.billGiver);
-            job.bill = bill;
-            job.targetQueueB = new List<LocalTargetInfo> { uft };
-            job.countQueue = new List<int> { 1 };
-            job.haulMode = HaulMode.ToCellNonStorage;
-            __result = job;
+            // Delegate to shared helper (mirrors WorkGiver_DoBill.FinishUftJob
+            // without the creator check; re-verify on game updates).
+            __result = FinishUftJobHelper.BuildFinishUftJob(pawn, uft, bill);
             return false;
         }
     }

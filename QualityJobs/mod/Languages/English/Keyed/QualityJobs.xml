@@ -17,10 +17,14 @@
   <QJ_OddsHeader>Quality odds</QJ_OddsHeader>
   <QJ_OddsColConfig>Config</QJ_OddsColConfig>
   <QJ_OddsColBest>Best</QJ_OddsColBest>
-  <QJ_SettingsDefaults>Defaults for new saves</QJ_SettingsDefaults>
+  <QJ_SettingsBillDefaults>Default bill options</QJ_SettingsBillDefaults>
+  <QJ_SettingsConstructionDefaults>Default construction options</QJ_SettingsConstructionDefaults>
+  <QJ_SettingsGlobalOptions>Global options</QJ_SettingsGlobalOptions>
   <QJ_SettingsManageNewBills>Manage new quality bills</QJ_SettingsManageNewBills>
+  <QJ_SettingsManageNewConstruction>Manage new construction jobs</QJ_SettingsManageNewConstruction>
   <QJ_SettingsShareWork>Share unfinished work</QJ_SettingsShareWork>
-  <QJ_SettingsDefaultCap>Default unfinished stock cap (0 = unlimited)</QJ_SettingsDefaultCap>
+  <QJ_SettingsDefaultCap>Default unfinished stock cap: {0}</QJ_SettingsDefaultCap>
+  <QJ_SettingsUnlimitedHint>0 = unlimited</QJ_SettingsUnlimitedHint>
   <QJ_SettingsDispatchLetter>Show notification when a finisher is dispatched</QJ_SettingsDispatchLetter>
   <QJ_SettingsEnabledNote>Toggle applies to the loaded save. Disabling restores all items to vanilla and discards this save's Quality Jobs configuration. If the mod stays installed, it re-activates with default settings the next time the save is loaded — disable is intended as preparation for removing the mod.</QJ_SettingsEnabledNote>
   <QJ_DisableButton>Disable Quality Jobs</QJ_DisableButton>
@@ -28,7 +32,7 @@
   <QJ_DisableWarning>Disabling restores all set-aside items to vanilla ownership and permanently discards Quality Jobs configuration for this save (bill conditions, stock caps). Saves made afterwards contain no trace of the mod, so this is the clean way to prepare for uninstalling.\n\nNote: if you keep the mod installed, it will re-activate with default settings the next time you load this save.\n\nDisable Quality Jobs?</QJ_DisableWarning>
   <QJ_NoGameLoaded>Load a save to change per-save behavior.</QJ_NoGameLoaded>
   <QJ_GizmoQualityJobLabel>Quality job</QJ_GizmoQualityJobLabel>
-  <QJ_GizmoManageDesc>Configure Quality Jobs for this construction: pause at the last moment until a qualifying builder exists, and optionally rebuild until a target quality is rolled.</QJ_GizmoManageDesc>
+  <QJ_GizmoManageDesc>Left-click: configure Quality Jobs for this construction (pause until a qualifying builder exists; optionally rebuild until a target quality is rolled). Right-click: apply your construction defaults to all selected.</QJ_GizmoManageDesc>
   <QJ_MinQualityLabel>Target quality</QJ_MinQualityLabel>
   <QJ_NoRetries>No retries</QJ_NoRetries>
   <QJ_AnyQuality>Any</QJ_AnyQuality>
@@ -37,4 +41,7 @@
   <QJ_RetryLetterLabel>Rebuilding: {0}</QJ_RetryLetterLabel>
   <QJ_RetryLetterText>The {0} came out {1} (wanted {2} or better). It has been marked for deconstruction and will be rebuilt. Some materials are lost each attempt.</QJ_RetryLetterText>
   <QJ_ConstructionPanelTitle>Quality job</QJ_ConstructionPanelTitle>
+  <QJ_FinishGiverLabel>finish quality work</QJ_FinishGiverLabel>
+  <QJ_FinishGiverVerb>finish</QJ_FinishGiverVerb>
+  <QJ_FinishGiverGerund>finishing quality work</QJ_FinishGiverGerund>
 </LanguageData>

@@ -12,16 +12,17 @@ namespace QualityJobs.UI
     /// the bill dialog). Labels cached per open; interpolated labels cached by
     /// value; odds rows cached by condition key.
     ///
-    /// Implicit creation semantics (Fix 3): a plan exists IFF at least one option
-    /// is non-neutral. Editing any control fires its setter, which implicitly
-    /// creates the plan when needed. Controls always show (no manage checkbox).
-    /// A [Clear] button appears only when a plan exists and removes it entirely.
+    /// Implicit creation semantics: a plan exists IFF at least one option is
+    /// non-neutral. Editing any control fires its setter, which implicitly creates
+    /// the plan when needed (neutral auto-create handled by SetPlan* commands).
+    /// Controls always show (no manage checkbox). A [Clear] button appears only
+    /// when a plan exists and removes it entirely.
     ///
     /// Fix 2: The "Retried until" caption is removed entirely. The target-quality
     /// row now shows: label on the left portion, button flush to the RIGHT edge
     /// of the row. The whole-row tooltip (QJ_RetriedUntilTip) is kept.
     ///
-    /// Fix 3: FloatMenu for quality picker uses vanishIfMouseDistant = false
+    /// FloatMenu for quality picker uses vanishIfMouseDistant = false
     /// (verified field at Decompiled\Verse\FloatMenu.cs line 14) to prevent the
     /// menu from instantly self-closing when spawned near the screen edge.
     ///
@@ -99,9 +100,10 @@ namespace QualityJobs.UI
         // Left panel frame padding (same as DrawMenuSection inner padding used in bill dialog).
         private const float PanelPad = 6f;
 
-        // Fix 2: button width for the quality picker = 40% of the row width.
-        // The button is right-aligned; the label occupies the remaining left portion.
-        private const float QualityBtnWidthFraction = 0.40f;
+        // Fix 5: quality-picker button width = 50% of the row (midpoint to right edge),
+        // matching SliderLabeled's default labelPct of 0.5f so the button aligns with
+        // the control region of the finisher-skill slider above it.
+        private const float QualityBtnWidthFraction = 0.5f;
 
         // Per-frame local edit copies; pushed via Commands only on actual change.
         private int minSkill;
@@ -465,6 +467,8 @@ namespace QualityJobs.UI
         }
 
         /// Pushes minQuality to all selected things (Fix 5).
+        /// Plain per-field setter; auto-creates the plan when needed
+        /// (SetPlanMinQuality handles neutral auto-create/remove).
         private void PushMinQuality(int value)
         {
             minQuality = value;
@@ -473,6 +477,8 @@ namespace QualityJobs.UI
         }
 
         /// Pushes per-field changes to all selected things (Fix 5).
+        /// Plain per-field setters; each auto-creates the plan when needed
+        /// and auto-removes it if all fields become neutral.
         private void Push(int newMinSkill, bool newInspired, bool newSpecialist)
         {
             bool skillChanged     = newMinSkill   != minSkill;
