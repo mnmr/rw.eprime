@@ -84,6 +84,11 @@ These are mods I've checked for compatibility:
 - **Complex Jobs:** moves jobs to new work types — should work fine.
 - **Keep Building:** auto-creates work bills — should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
 
+## Check out my other mods
+
+- [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092): a modern, compact resource readout with support for custom resource pools.
+- [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051): manage quality crafting and construction, so your items get the best possible quality.
+
 ## Building from source
 
 ```

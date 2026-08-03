@@ -99,6 +99,10 @@ Specific Mods: (these are mods I've checked for compatibility)
 - Complex Jobs: Moves jobs to new work types - should work fine.
 - Keep Building: Auto-creates work bills - should work fine (no public source, so cannot verify that it doesn't also try to set priorities).
 
+Check Out My Other Mods:
+- EPrime's Readouts: A modern, compact resource readout with support for custom resource pools.
+- EPrime's Quality Jobs: Manage quality crafting and construction, so your items get the best possible quality.
+
 Disclaimer:
 - This was created with the help of Claude Code. Since this is controversial (and more than I'd have thought), let me just say that I've worked as a C# developer since it was released (yes, that old). I do backend/web development, and it was pretty invaluable to get help with RimWorld UI widgets and not having to hand-roll System.Drawing calls (if you don't know what that is, just think of something painful). The mod is free and was created in my spare time, and without AI it likely wouldn't exist.
   </description>
