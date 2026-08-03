@@ -102,14 +102,18 @@ namespace QualityJobs.Patches
         }
     }
 
-    [HarmonyPatch(typeof(Blueprint), nameof(Blueprint.GetGizmos))]
+    /// Patches Blueprint_Build.GetGizmos (the DERIVED class), NOT Blueprint.
+    /// The vanilla build-copy command is yielded by Blueprint_Build.GetGizmos
+    /// (Blueprint_Build.cs:87) AFTER base.GetGizmos() returns — so a postfix on
+    /// the base Blueprint.GetGizmos never sees it and could not wrap it (that was
+    /// the "copying a blueprint drops quality settings" bug). Patching the derived
+    /// method gives us the full gizmo list including the copy command.
+    [HarmonyPatch(typeof(Blueprint_Build), nameof(Blueprint_Build.GetGizmos))]
     public static class Patch_ConstructionGizmos_Blueprint
     {
-        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> gizmos, Blueprint __instance)
-            => __instance is Blueprint_Build
-                ? ConstructionGizmos.Append(gizmos, __instance,
-                    __instance.def.entityDefToBuild as ThingDef)
-                : gizmos;
+        public static IEnumerable<Gizmo> Postfix(IEnumerable<Gizmo> gizmos, Blueprint_Build __instance)
+            => ConstructionGizmos.Append(gizmos, __instance,
+                __instance.def.entityDefToBuild as ThingDef);
     }
 
     [HarmonyPatch(typeof(Frame), nameof(Frame.GetGizmos))]

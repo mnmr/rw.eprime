@@ -25,17 +25,18 @@ namespace QualityJobs.UI
     ///   public const float Height = 75f;
     /// GetWidth(maxWidth) verified as returning 75f (Command.cs line 93).
     ///
-    /// Click semantics:
-    ///   LEFT-click  → opens the fold-out Dialog_ConstructionPlanConfig panel.
-    ///   RIGHT-click → directly applies the user's construction default options
-    ///                 (from QualityJobsSettings) to all eligible selected things
-    ///                 via Commands.ApplyPlanSettings (synced, MP-safe).
+    /// Click semantics (Command_Toggle-style: the two-state icon IS the toggle):
+    ///   LEFT-click  → toggles quality management for all selected eligible things.
+    ///                 Enabling applies the construction defaults; disabling clears
+    ///                 the plan(s). State follows the primary thing's plan (the same
+    ///                 thing the Enabled/Disabled icon reflects).
+    ///   RIGHT-click → opens the fold-out Dialog_ConstructionPlanConfig panel for
+    ///                 fine-tuning (matching vanilla's "right-click = more options").
     ///
     /// Right-click routing: GizmoGridDrawer (GizmoGridDrawer.cs line 433) treats
     /// a right-click on a gizmo with no RightClickFloatMenuOptions as an ordinary
     /// Interacted event, so ProcessInput receives ev.button == 1. We override
-    /// ProcessInput to route on ev.button: right-click calls ApplyDefaults,
-    /// left-click delegates to base.ProcessInput (plays sound + invokes action).
+    /// ProcessInput to route on ev.button.
     public class Command_QualityJob : Command_Action
     {
         private readonly List<Thing> _things;
@@ -64,21 +65,37 @@ namespace QualityJobs.UI
             return base.GizmoOnGUI(topLeft, maxWidth, parms);
         }
 
-        /// Routes clicks: left → open dialog; right → apply construction defaults.
-        /// Left-click calls base.ProcessInput which plays the activate sound and
-        /// invokes the action delegate (= OpenDialog). Right-click applies defaults
-        /// and plays a click so the (panel-less) action gives audible feedback.
+        /// Routes clicks: right → open the panel (via base → action = OpenDialog);
+        /// left → toggle management for all selected things with checkbox feedback.
         public override void ProcessInput(Event ev)
         {
             if (ev.button == 1)
             {
-                SoundDefOf.Tick_High.PlayOneShotOnCamera();
-                ApplyDefaults();
+                base.ProcessInput(ev); // plays activate sound + action (OpenDialog)
+                return;
+            }
+
+            // Left-click: symmetric toggle. Flip the state the icon is showing
+            // (based on the primary thing's plan) for every selected thing.
+            if (CurrentlyEnabled())
+            {
+                SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera();
+                foreach (Thing t in _things)
+                    Commands.RemovePlan(t.thingIDNumber);
             }
             else
             {
-                base.ProcessInput(ev); // plays sound + calls action (OpenDialog)
+                SoundDefOf.Checkbox_TurnedOn.PlayOneShotOnCamera();
+                ApplyDefaults(); // creates plans from the construction defaults
             }
+        }
+
+        /// Enabled = the primary (first) selected thing has a plan — matching the
+        /// Enabled/Disabled icon set in ConstructionGizmos.Append.
+        private bool CurrentlyEnabled()
+        {
+            if (_things.Count == 0) return false;
+            return QualityJobsStore.Active?.FindPlanById(_things[0].thingIDNumber) != null;
         }
 
         private void OpenDialog()
