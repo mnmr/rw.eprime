@@ -204,16 +204,14 @@ namespace EPrimeReadouts.UI
                 searchFieldFocused = false;
                 if (settings.showModNameWhenNoSearch)
                 {
-                    // Width measured once (Tiny font) — never per frame; the
+                    // Width measured once (Small font) — never per frame; the
                     // label rect fits the text exactly so it cannot wrap.
-                    Text.Font = GameFont.Tiny;
                     Text.Anchor = TextAnchor.MiddleLeft;
                     GUI.color = EprStyle.HeaderText;
                     Widgets.Label(new Rect(rect.x + 26f, rect.y, cachedTitleWidth, rect.height),
                         cachedTitleText);
                     GUI.color = Color.white;
                     Text.Anchor = TextAnchor.UpperLeft;
-                    Text.Font = GameFont.Small;
                 }
                 return;
             }
@@ -275,8 +273,26 @@ namespace EPrimeReadouts.UI
         private static void HandleContentInput(ReadoutStore store)
         {
             if (inputBlocked) return;
-            var hits = draw.Model.MarkerHits;
             var settings = EPrimeReadoutsMod.Settings;
+
+            // Clicking a slot selects its things on the map (shift adds to the
+            // current selection). Hover/click detection is bounded iteration
+            // over prebuilt hit rects; the selection pass itself runs only
+            // inside the consumed click event.
+            var slots = draw.Model.SlotHits;
+            for (int i = 0; i < slots.Count; i++)
+            {
+                var rect = new Rect(slots[i].Rect.X, slots[i].Rect.Y,
+                    slots[i].Rect.W, slots[i].Rect.H);
+                if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
+                if (Widgets.ButtonInvisible(rect) && Event.current.button == 0)
+                    MapSelection.SelectMembers(builtMap, slots[i].Members,
+                        settings.searchStorageOnly, settings.searchHideForbidden,
+                        additive: Event.current.shift,
+                        jumpCamera: settings.selectJumpCamera);
+            }
+
+            var hits = draw.Model.MarkerHits;
             for (int i = 0; i < hits.Count; i++)
             {
                 var rect = new Rect(hits[i].Rect.X, hits[i].Rect.Y, hits[i].Rect.W, hits[i].Rect.H);
@@ -383,7 +399,7 @@ namespace EPrimeReadouts.UI
             cachedCycleTip = UiText.Get("EPR.CycleTip");
             using (new GuiStateScope())
             {
-                Text.Font = GameFont.Tiny;
+                Text.Font = GameFont.Small;
                 cachedTitleWidth = WrText.FitWidth(cachedTitleText) + 4f;
             }
             cachedTitleUiVersion = UiVersion.Current;

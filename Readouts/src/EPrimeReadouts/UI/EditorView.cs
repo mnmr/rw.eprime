@@ -22,7 +22,8 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: one configuration-dialog EditorView and one ReadoutStore.
         // Key: selected group, exact group/threshold revisions, width,
-        // UiVersion and shared pool/count snapshot identities.
+        // UiVersion, shared pool/count snapshot identities and the
+        // storage-only/hide-forbidden count-basis options.
         // Value: detached group snapshot and immutable resolved band DrawModels.
         // Dependencies: only the keys above plus selected-token presentation.
         // Refresh policy: immediate on exact dependency changes.
@@ -35,6 +36,8 @@ namespace EPrimeReadouts.UI
         private float builtWidth = -1f;
         private RenderCountSnapshot builtCounts;
         private PoolSnapshot builtPools;
+        private bool builtStorageOnly;
+        private bool builtHideForbidden;
 
         private ReadoutStore groupOwner;
         private int groupSnapshotVersion = -1;
@@ -223,6 +226,9 @@ namespace EPrimeReadouts.UI
             if (width != builtWidth) return true;
             if (!ReferenceEquals(builtPools, pools)) return true;
             if (!ReferenceEquals(builtCounts, counts)) return true;
+            var settings = EPrimeReadoutsMod.Settings;
+            if (settings.searchStorageOnly != builtStorageOnly) return true;
+            if (settings.searchHideForbidden != builtHideForbidden) return true;
             return false;
         }
 
@@ -230,6 +236,7 @@ namespace EPrimeReadouts.UI
         {
             if (builtGroupsVersion != store.GroupsVersion)
                 cachedNameWidth = -1f;
+            var basisSettings = EPrimeReadoutsMod.Settings;
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
             builtGroupId = group.Id;
@@ -237,6 +244,8 @@ namespace EPrimeReadouts.UI
             builtWidth = width;
             builtPools = owner.PoolsSnapshot;
             builtCounts = owner.RenderData?.Counts;
+            builtStorageOnly = basisSettings.searchStorageOnly;
+            builtHideForbidden = basisSettings.searchHideForbidden;
 
             IReadOnlyDictionary<string, int> counts = builtCounts != null
                 ? builtCounts.Counts
@@ -256,6 +265,11 @@ namespace EPrimeReadouts.UI
                     EditorMode = true,
                     DepthOf = g => capturedTier,
                     Counts = counts,
+                    // Editor bands show the same narrowed counts as the
+                    // readout so both agree while the options dialog is open.
+                    SearchCounts = builtCounts?.SearchCounts,
+                    SearchStorageOnly = builtStorageOnly,
+                    SearchHideForbidden = builtHideForbidden,
                     Thresholds = store.Model.Thresholds,
                     Width = width,
                     Catalog = GameResourceCatalog.Instance,

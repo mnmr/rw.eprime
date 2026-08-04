@@ -15,7 +15,7 @@ namespace EPrimeReadouts.UI
             forcePause = false;
         }
 
-        public override Vector2 InitialSize => new Vector2(380f, 265f);
+        public override Vector2 InitialSize => new Vector2(380f, 295f);
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -63,6 +63,11 @@ namespace EPrimeReadouts.UI
                 EPrimeReadoutsMod.Persist(s => s.searchHideForbidden = hideForbidden);
                 ReadoutPanel.BumpView();
             }
+
+            bool jumpCamera = settings.selectJumpCamera;
+            listing.CheckboxLabeled(UiText.Get("EPR.SelectJumpCamera"), ref jumpCamera);
+            if (jumpCamera != settings.selectJumpCamera)
+                EPrimeReadoutsMod.Persist(s => s.selectJumpCamera = jumpCamera);
 
             bool showName = settings.showModNameWhenNoSearch;
             listing.CheckboxLabeled(UiText.Get("EPR.ShowModName"), ref showName);

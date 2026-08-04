@@ -25,12 +25,24 @@ namespace EPrimeReadouts.Core
         public RectF Rect;
     }
 
+    /// Clickable slot region in the main readout: the icon+counter cell
+    /// column plus the member defNames that map selection operates on. The
+    /// list is built at layout time and owned by the render model; consumers
+    /// must not mutate it.
+    public struct SlotHit
+    {
+        public string Token;
+        public IReadOnlyList<string> Members;
+        public RectF Rect;
+    }
+
     /// Complete draw plan for one panel width + state. The game assembly
     /// resolves DefNames to ThingDefs once and then only blits.
     public sealed class RenderModel
     {
         public List<RenderCell> Cells = new List<RenderCell>();
         public List<MarkerHit> MarkerHits = new List<MarkerHit>();
+        public List<SlotHit> SlotHits = new List<SlotHit>();
         public float TotalHeight;
         public float TotalWidth;
     }

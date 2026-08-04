@@ -1,13 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="640" height="360" viewBox="0 0 640 360" font-family="Arial, Helvetica, sans-serif">
   <rect width="640" height="360" fill="#111317"/>
 
-  <!-- Left 30%: five group bands mirroring the seeded groups (Food, Raw,
+  <!-- Left side: five group bands at x=53, centered between the left edge
+       and the title (equal 53px space edge-to-bands and widest-band-to-text).
+       Bands mirror the seeded groups (Food, Raw,
        Medicine, Materials, Wealth) with the actual in-game item icons
        (assets/workshop/icons/, sourced from the RimWorld wiki's originals).
        Variable lengths 3 / 5 / 2 / 4 / 2; stripes use the mod palette. -->
 
   <!-- Band 1: Food (blue) — simple, fine, lavish meals; 1 lit + 2 dim markers -->
-  <g transform="translate(12,50)">
+  <g transform="translate(53,50)">
     <rect width="108" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
     <rect width="3.5" height="44" fill="#5CA8DB"/>
     <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
@@ -22,7 +24,7 @@
   </g>
 
   <!-- Band 2: Raw (green) — meat, rice, potatoes, corn, milk; 2 lit markers -->
-  <g transform="translate(12,104)">
+  <g transform="translate(53,104)">
     <rect width="164" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
     <rect width="3.5" height="44" fill="#8CC773"/>
     <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
@@ -40,7 +42,7 @@
   </g>
 
   <!-- Band 3: Medicine (amber) — herbal, industrial; single lit marker -->
-  <g transform="translate(12,158)">
+  <g transform="translate(53,158)">
     <rect width="80" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
     <rect width="3.5" height="44" fill="#E0B759"/>
     <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
@@ -51,7 +53,7 @@
   </g>
 
   <!-- Band 4: Materials (plum) — steel, wood, components, plasteel; 2 lit + 1 dim -->
-  <g transform="translate(12,212)">
+  <g transform="translate(53,212)">
     <rect width="136" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
     <rect width="3.5" height="44" fill="#CC80B3"/>
     <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
@@ -68,7 +70,7 @@
   </g>
 
   <!-- Band 5: Wealth (teal) — silver, gold; single lit marker -->
-  <g transform="translate(12,266)">
+  <g transform="translate(53,266)">
     <rect width="80" height="44" rx="3" fill="#ffffff" fill-opacity="0.10"/>
     <rect width="3.5" height="44" fill="#73C7BF"/>
     <path d="M8 15 L12 18 L8 21 Z" fill="#e8e6e0"/>
@@ -78,8 +80,10 @@
     <text x="65" y="39" fill="#b9b7b1" font-size="9" text-anchor="middle">40</text>
   </g>
 
-  <!-- Title: two lines, left-aligned at 30% (x=192), vertically centered,
-       sized so the longer line fills the remaining 70% (192..628). -->
-  <text x="192" y="164.5" fill="#e8e6e0" font-size="97" font-weight="bold">EPrime's</text>
-  <text x="192" y="264.5" fill="#e8e6e0" font-size="97" font-weight="bold">Readouts</text>
+  <!-- Title: two lines, centered in the right 70% zone (192..628, center 410),
+       vertically centered. Font size 63.5 / baseline spacing 72 matches the
+       measured title metrics of QualityCrafting's Preview.png (91px cap
+       height, 144px line spacing at 1280x720 output). -->
+  <text x="410" y="167" fill="#e8e6e0" font-size="63.5" font-weight="bold" text-anchor="middle">EPrime's</text>
+  <text x="410" y="239" fill="#e8e6e0" font-size="63.5" font-weight="bold" text-anchor="middle">Readouts</text>
 </svg>

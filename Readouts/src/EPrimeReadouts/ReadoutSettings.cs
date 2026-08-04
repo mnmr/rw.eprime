@@ -26,10 +26,14 @@ namespace EPrimeReadouts
         public bool helpPoolEditorFolded;
         public bool showSearchFilter = true;
         public bool showModNameWhenNoSearch = true;
-        /// Search-result filters; see ReadoutLayoutEngine.BuildResults.
+        /// Count-basis filters applied to every displayed count (group slots,
+        /// pools, thresholds, search results); hide-zero is search-only.
         public bool searchHideZero = true;
         public bool searchStorageOnly = true;
         public bool searchHideForbidden = true;
+        /// Clicking a readout slot also pans the camera to the nearest
+        /// selected stack.
+        public bool selectJumpCamera = true;
 
         public override void ExposeData()
         {
@@ -51,6 +55,7 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref searchHideZero, "searchHideZero", true);
             Scribe_Values.Look(ref searchStorageOnly, "searchStorageOnly", true);
             Scribe_Values.Look(ref searchHideForbidden, "searchHideForbidden", true);
+            Scribe_Values.Look(ref selectJumpCamera, "selectJumpCamera", true);
             Scribe_Collections.Look(ref tierDepths, "tierDepths", LookMode.Value, LookMode.Value);
             if (tierDepths == null) tierDepths = new Dictionary<string, int>();
             Scribe_Collections.Look(ref enabledGroups, "enabledGroups", LookMode.Value, LookMode.Value);

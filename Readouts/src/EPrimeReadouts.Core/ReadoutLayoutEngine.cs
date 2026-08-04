@@ -104,6 +104,19 @@ namespace EPrimeReadouts.Core
             return model;
         }
 
+        /// Displayed count for one def under the storage-only and
+        /// hide-forbidden options. These options narrow every displayed count
+        /// (group slots, pool sums, visibility, thresholds, search results),
+        /// not just the search section. A null SearchCounts input falls back
+        /// to the raw group-count basis via ResolveSearchCount.
+        private static int EffectiveCount(LayoutInput input, string defName)
+        {
+            input.Counts.TryGetValue(defName, out int raw);
+            SearchCount search = ResolveSearchCount(input, defName, raw);
+            return CountBasis.Displayed(search,
+                input.SearchStorageOnly, input.SearchHideForbidden);
+        }
+
         /// Resolves a token to its members list, icon defName, highlight name, and count sum.
         /// Returns true when the token is resolvable (has ≥1 member), unless editorMode is true
         /// in which case pool-ref tokens with zero members are still included.
@@ -144,7 +157,7 @@ namespace EPrimeReadouts.Core
                 members = new List<string>(poolMembers);
                 iconDefName = poolIcon;
                 highlightName = poolName;
-                foreach (var m in members) { input.Counts.TryGetValue(m, out int c); sum += c; }
+                foreach (var m in members) sum += EffectiveCount(input, m);
                 return true;
             }
             else if (SlotToken.IsPool(token))
@@ -155,7 +168,7 @@ namespace EPrimeReadouts.Core
                 members = new List<string>(cats);
                 iconDefName = members[0];
                 highlightName = null; // use member labels for legacy pools
-                foreach (var m in members) { input.Counts.TryGetValue(m, out int c); sum += c; }
+                foreach (var m in members) sum += EffectiveCount(input, m);
                 return true;
             }
             else
@@ -166,7 +179,7 @@ namespace EPrimeReadouts.Core
                 members = new List<string> { defName };
                 iconDefName = defName;
                 highlightName = null;
-                input.Counts.TryGetValue(defName, out sum);
+                sum = EffectiveCount(input, defName);
                 return true;
             }
         }
@@ -324,6 +337,13 @@ namespace EPrimeReadouts.Core
                     Rect = new RectF(x,
                         y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                         metrics.CellW, metrics.CounterRowH),
+                });
+
+                model.SlotHits.Add(new SlotHit
+                {
+                    Token = slot.Token,
+                    Members = slot.Members,
+                    Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
                 });
             }
         }
@@ -593,6 +613,14 @@ namespace EPrimeReadouts.Core
                         Rect = new RectF(x,
                             y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                             metrics.CellW, metrics.CounterRowH),
+                    });
+
+                    // A result row is always a single plain def.
+                    model.SlotHits.Add(new SlotHit
+                    {
+                        Token = defName,
+                        Members = new List<string> { defName },
+                        Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
                     });
                 }
                 y += metrics.RowPairH;

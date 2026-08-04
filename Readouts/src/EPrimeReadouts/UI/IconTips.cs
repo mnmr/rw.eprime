@@ -29,21 +29,31 @@ namespace EPrimeReadouts.UI
             private readonly RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData;
             private readonly int thresholdsVersion;
             private readonly int uiVersion;
+            // Count-basis options narrow the badge and the pool breakdown, so
+            // toggling them must rebuild the tip on its next display session.
+            private readonly bool storageOnly;
+            private readonly bool hideForbidden;
 
             public TipRevision(
                 RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData,
                 int thresholdsVersion,
-                int uiVersion)
+                int uiVersion,
+                bool storageOnly,
+                bool hideForbidden)
             {
                 this.renderData = renderData;
                 this.thresholdsVersion = thresholdsVersion;
                 this.uiVersion = uiVersion;
+                this.storageOnly = storageOnly;
+                this.hideForbidden = hideForbidden;
             }
 
             public bool Equals(TipRevision other) =>
                 ReferenceEquals(renderData, other.renderData)
                 && thresholdsVersion == other.thresholdsVersion
-                && uiVersion == other.uiVersion;
+                && uiVersion == other.uiVersion
+                && storageOnly == other.storageOnly
+                && hideForbidden == other.hideForbidden;
 
             public override bool Equals(object obj) =>
                 obj is TipRevision other && Equals(other);
@@ -51,7 +61,9 @@ namespace EPrimeReadouts.UI
             public override int GetHashCode() =>
                 ((renderData != null ? renderData.GetHashCode() : 0) * 397)
                 ^ thresholdsVersion
-                ^ uiVersion;
+                ^ uiVersion
+                ^ (storageOnly ? 1 << 30 : 0)
+                ^ (hideForbidden ? 1 << 29 : 0);
         }
 
         private struct BuildState
@@ -67,7 +79,8 @@ namespace EPrimeReadouts.UI
         // Owner: current world/store presentation session.
         // Key: canonical token.
         // Value: immutable StructuredTip/TipModel graph.
-        // Dependencies: shared render snapshot identity, ThresholdsVersion, UiVersion.
+        // Dependencies: shared render snapshot identity, ThresholdsVersion,
+        // UiVersion, and the storage-only/hide-forbidden count-basis options.
         // Refresh policy: probed only at display-session start; a dependency
         // change rebuilds on the next display, never mid-display.
         // Equality policy: cache hits preserve StructuredTip identity.
@@ -129,12 +142,15 @@ namespace EPrimeReadouts.UI
                         Store = store,
                         RenderData = RenderData,
                     };
+                    var settings = EPrimeReadoutsMod.Settings;
                     Frozen = RenderData != null
                         ? cache.Get(
                             CacheKey,
                             new TipRevision(RenderData,
                                 store != null ? store.ThresholdsVersion : 0,
-                                UiVersion.Current),
+                                UiVersion.Current,
+                                settings.searchStorageOnly,
+                                settings.searchHideForbidden),
                             state,
                             buildTip)
                         : Build(state);
@@ -219,14 +235,26 @@ namespace EPrimeReadouts.UI
                 // into extra columns so the tooltip widens instead of growing.
                 var memberLabels = new System.Collections.Generic.List<string>();
                 var memberValues = new System.Collections.Generic.List<string>();
+                var settings = EPrimeReadoutsMod.Settings;
                 for (int m = 0; m < poolMembers.Count; m++)
                 {
                     var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(poolMembers[m]);
                     if (memberDef == null) continue;
-                    int memberCount = state.RenderData != null
-                        && state.RenderData.Counts.Counts.TryGetValue(
-                            memberDef.defName, out int cachedCount)
-                        ? cachedCount : 0;
+                    // Same narrowed basis as the slot sums (CountBasis), so
+                    // the breakdown always adds up to the badge. An empty
+                    // breakdown map falls back to the raw counts, mirroring
+                    // ReadoutLayoutEngine.ResolveSearchCount.
+                    int memberCount = 0;
+                    if (state.RenderData != null)
+                    {
+                        var counts = state.RenderData.Counts;
+                        if (counts.SearchCounts.Count == 0)
+                            counts.Counts.TryGetValue(memberDef.defName, out memberCount);
+                        else if (counts.SearchCounts.TryGetValue(
+                            memberDef.defName, out SearchCount search))
+                            memberCount = CountBasis.Displayed(search,
+                                settings.searchStorageOnly, settings.searchHideForbidden);
+                    }
                     if (memberCount == 0) continue;
                     memberLabels.Add(memberDef.LabelCap);
                     memberValues.Add(memberCount.ToString());

@@ -34,8 +34,9 @@
   <EPR.Options>Options</EPR.Options>
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Search: hide zero-count results</EPR.SearchHideZero>
-  <EPR.SearchStorageOnly>Search: only count items in storage</EPR.SearchStorageOnly>
-  <EPR.SearchHideForbidden>Search: ignore forbidden items</EPR.SearchHideForbidden>
+  <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
+  <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
   <EPR.ShowModName>Show mod name when search filter is disabled</EPR.ShowModName>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
