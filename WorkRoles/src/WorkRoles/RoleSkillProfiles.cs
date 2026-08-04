@@ -21,31 +21,7 @@ namespace WorkRoles
         internal static IReadOnlyList<RoleSkillEvidence> EvidenceForCoverage(
             IEnumerable<string> giverNames,
             RoleSkillEvidenceAccumulator scratch)
-        {
-            if (scratch == null)
-                throw new System.ArgumentNullException(nameof(scratch));
-            scratch.BeginRole();
-            if (giverNames == null) return scratch.CompleteRole();
-
-            foreach (string giverName in giverNames)
-            {
-                if (!scratch.BeginSource(giverName)) continue;
-                var profile = JobSkillProfiles.ForGiver(giverName);
-                if (profile == null) continue;
-                if (profile.TrainedSkillDefNames.Count > 0)
-                    scratch.SetSourceWeight(4);
-                for (int i = 0; i < profile.UsedSkillDefNames.Count; i++)
-                    scratch.AddUsedSkill(profile.UsedSkillDefNames[i]);
-                for (int i = 0; i < profile.TrainedSkillDefNames.Count; i++)
-                    scratch.AddTrainedSkill(profile.TrainedSkillDefNames[i]);
-                for (int i = 0; i < profile.Requirements.Count; i++)
-                {
-                    var requirement = profile.Requirements[i];
-                    scratch.AddRequiredContent(
-                        requirement.SkillDefName, requirement.Gated);
-                }
-            }
-            return scratch.CompleteRole();
-        }
+            => RoleSkillEvidenceSource.ForCoverage(
+                giverNames, JobSkillProfiles.GiverFacts(), scratch);
     }
 }

@@ -91,21 +91,33 @@ namespace WorkRoles.Core.Recs
         private IReadOnlyDictionary<int, long> basePositionsView;
 
         public EngineContext(ColonyView colony)
+            : this(colony, initializeRuleState: true)
+        {
+        }
+
+        internal EngineContext(ColonyView colony, bool initializeRuleState)
         {
             Colony = colony;
             RolesById = colony.Roles.ToDictionary(r => r.Id);
             PathsById = colony.Paths.ToDictionary(p => p.Id);
-            HunterTiers = new int[colony.Pawns.Count];
-            FireGranted = new bool[colony.Pawns.Count];
-            for (int i = 0; i < colony.Pawns.Count; i++)
+            HunterTiers = initializeRuleState
+                ? new int[colony.Pawns.Count]
+                : System.Array.Empty<int>();
+            FireGranted = initializeRuleState
+                ? new bool[colony.Pawns.Count]
+                : System.Array.Empty<bool>();
+            if (initializeRuleState)
             {
-                HunterTiers[i] = -1;
-                Candidates.Add(new Dictionary<int, Candidate>());
-                DraftRankings.Add(new Dictionary<int, DraftRanking>());
-                TrainingToward.Add(new HashSet<int>());
-                TrainingPathPlacements.Add(new Dictionary<int, TrainingPathPlacement>());
-                HolderLimitRejected.Add(new HashSet<int>());
-                Results.Add(new PawnResult());
+                for (int i = 0; i < colony.Pawns.Count; i++)
+                {
+                    HunterTiers[i] = -1;
+                    Candidates.Add(new Dictionary<int, Candidate>());
+                    DraftRankings.Add(new Dictionary<int, DraftRanking>());
+                    TrainingToward.Add(new HashSet<int>());
+                    TrainingPathPlacements.Add(new Dictionary<int, TrainingPathPlacement>());
+                    HolderLimitRejected.Add(new HashSet<int>());
+                    Results.Add(new PawnResult());
+                }
             }
 
             redundantBy = new Dictionary<int, HashSet<int>>(colony.Roles.Count);
@@ -399,12 +411,17 @@ namespace WorkRoles.Core.Recs
         }
 
         public bool HasProtectedDirectAssignment(int pawnIndex, int roleId)
-            => Colony.Pawns[pawnIndex].Existing.Any(assignment =>
-            {
-                if (assignment.RoleId != roleId) return false;
-                var role = RoleOf(roleId);
-                return assignment.Pinned || role != null && (role.HasRules || role.Blocker);
-            });
+        {
+            IReadOnlyList<AssignmentView> existing =
+                Colony.Pawns[pawnIndex].Existing;
+            RoleView role = RoleOf(roleId);
+            for (int index = 0; index < existing.Count; index++)
+                if (existing[index].RoleId == roleId
+                    && (existing[index].Pinned
+                        || role != null && (role.HasRules || role.Blocker)))
+                    return true;
+            return false;
+        }
 
         /// Pawns whose candidates provide the role (directly or by coverage).
         public int HoldersOf(int roleId)

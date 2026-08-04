@@ -295,7 +295,70 @@ namespace WorkRoles.Core.Recs
                 .Min();
         }
 
-        private static long HunterPosition(ColonyView colony,
+        internal static int[] PreserveProtectedOrder(
+            EngineContext context,
+            int pawnIndex,
+            IReadOnlyList<int> recommended)
+        {
+            IReadOnlyList<AssignmentView> existing =
+                context.Colony.Pawns[pawnIndex].Existing;
+            if (existing.Count == 0 || recommended.Count == 0)
+                return recommended.ToArray();
+
+            var recommendedSet = new HashSet<int>(recommended);
+            var anchored = new HashSet<int>();
+            for (int index = 0; index < existing.Count; index++)
+            {
+                AssignmentView assignment = existing[index];
+                RoleView role = context.RoleOf(assignment.RoleId);
+                if (recommendedSet.Contains(assignment.RoleId)
+                    && role != null
+                    && (assignment.Pinned || role.HasRules || role.Blocker))
+                    anchored.Add(assignment.RoleId);
+            }
+            if (anchored.Count == 0) return recommended.ToArray();
+
+            var ordered = new List<int>(recommended.Count);
+            for (int index = 0; index < recommended.Count; index++)
+                if (!anchored.Contains(recommended[index]))
+                    ordered.Add(recommended[index]);
+            for (int existingIndex = 0;
+                 existingIndex < existing.Count;
+                 existingIndex++)
+            {
+                int roleId = existing[existingIndex].RoleId;
+                if (!anchored.Contains(roleId)) continue;
+                int previous = FindSurvivingNeighbor(
+                    existing, existingIndex - 1, -1, ordered);
+                int next = FindSurvivingNeighbor(
+                    existing, existingIndex + 1, 1, ordered);
+                int insertion = previous >= 0 && next >= 0
+                    ? previous < next ? next : previous + 1
+                    : previous >= 0 ? previous + 1
+                    : next >= 0 ? next
+                    : System.Math.Min(existingIndex, ordered.Count);
+                ordered.Insert(insertion, roleId);
+            }
+            return ordered.ToArray();
+        }
+
+        private static int FindSurvivingNeighbor(
+            IReadOnlyList<AssignmentView> existing,
+            int start,
+            int step,
+            List<int> ordered)
+        {
+            for (int index = start;
+                 index >= 0 && index < existing.Count;
+                 index += step)
+            {
+                int found = ordered.IndexOf(existing[index].RoleId);
+                if (found >= 0) return found;
+            }
+            return -1;
+        }
+
+        internal static long HunterPosition(ColonyView colony,
             Dictionary<int, RoleView> byId, int tier)
         {
             if (tier >= 3) return long.MaxValue;
