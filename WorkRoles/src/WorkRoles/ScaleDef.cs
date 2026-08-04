@@ -9,8 +9,9 @@ namespace WorkRoles
     /// change sticks (only the code-seeded Never scale is immutable).
     public class ScaleDef : Def
     {
-        /// Comma rows, one value per colony-size band (short rows extend
-        /// flat). Absent max = uncapped everywhere.
+        /// Persisted Def names remain min/train for compatibility. They encode
+        /// required totals and training-waiver counts respectively, one value
+        /// per colony-size band (short rows extend flat). Absent max = uncapped.
         public string min;
         public string train;
         public string max;
@@ -20,8 +21,8 @@ namespace WorkRoles
             var scale = new HolderScale
             {
                 Name = SeededDefIdentity.ScaleName(this),
-                Min = HolderScaleCodec.DecodeRow(min, 0),
-                Train = HolderScaleCodec.DecodeRow(train, 0),
+                RequiredTotals = HolderScaleCodec.DecodeRow(min, 0),
+                TrainingWaivers = HolderScaleCodec.DecodeRow(train, 0),
             };
             if (!max.NullOrEmpty())
                 scale.Max = HolderScaleCodec.DecodeRow(max, RoleHolderRange.Uncapped);

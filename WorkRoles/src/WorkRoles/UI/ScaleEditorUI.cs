@@ -15,7 +15,8 @@ namespace WorkRoles.UI
             HolderScale stored, bool pathTarget, string trainingHelp,
             float height, string pickerLabel, string usedBy,
             string forkName, List<ScaleOptionSnapshot> options,
-            string totalsCaption, string minsCaption, string resetLabel,
+            string requiredTotalCaption, string directMinimumCaption,
+            string resetLabel,
             string addLabel, string saveAsLabel, string renameTitle,
             string newTitle, string saveAsTitle)
         {
@@ -29,8 +30,8 @@ namespace WorkRoles.UI
             UsedBy = usedBy;
             ForkName = forkName;
             this.options = options;
-            TotalsCaption = totalsCaption;
-            MinsCaption = minsCaption;
+            RequiredTotalCaption = requiredTotalCaption;
+            DirectMinimumCaption = directMinimumCaption;
             ResetLabel = resetLabel;
             AddLabel = addLabel;
             SaveAsLabel = saveAsLabel;
@@ -43,8 +44,10 @@ namespace WorkRoles.UI
         internal string RoleLabel { get; }
         internal string StoredName => stored.Name;
         internal bool StoredPreset => stored.Preset;
-        internal int StoredMinAt(int band) => stored.Min[band];
-        internal int StoredTrainAt(int band) => stored.Train[band];
+        internal int StoredRequiredTotalAt(int band) =>
+            stored.RequiredTotals[band];
+        internal int StoredTrainingWaiversAt(int band) =>
+            stored.TrainingWaivers[band];
         internal HolderScale CopyStored() => stored.Copy();
         internal bool StoredSameValuesAs(HolderScale other) =>
             stored.SameValuesAs(other);
@@ -56,8 +59,8 @@ namespace WorkRoles.UI
         internal string ForkName { get; }
         internal int OptionCount => options.Count;
         internal ScaleOptionSnapshot OptionAt(int index) => options[index];
-        internal string TotalsCaption { get; }
-        internal string MinsCaption { get; }
+        internal string RequiredTotalCaption { get; }
+        internal string DirectMinimumCaption { get; }
         internal string ResetLabel { get; }
         internal string AddLabel { get; }
         internal string SaveAsLabel { get; }
@@ -82,9 +85,8 @@ namespace WorkRoles.UI
     }
 
     /// The holder-scale editor: two captioned numeric rows over a band-label
-    /// row. The totals row edits recommended assignments (trainees included);
-    /// the minimums row edits the direct-assignment floor, with the trainee
-    /// share the implicit difference. Click +1 (wraps at the cap), right-click
+    /// row. The required-total row includes training waivers; the direct-minimum
+    /// row edits the direct-assignment floor. Click +1 (wraps at the cap), right-click
     /// -1. Left-drag copies the pressed band's value across bands; a
     /// right-click mid-drag nudges that value (+1 after moving right, -1
     /// after moving left). Right-drag ramps one step per band, rising
@@ -143,7 +145,7 @@ namespace WorkRoles.UI
                 "WR_ScaleSaveAsTitle".Translate().ToString());
         }
 
-        /// Editor height for this role: path targets get the totals row,
+        /// Editor height for this role: path targets get the required-total row,
         /// their training roles a help paragraph in its place.
         internal static float HeightFor(Role role, RoleStore store, float width)
         {
@@ -169,7 +171,7 @@ namespace WorkRoles.UI
 
         /// True when some training path lists the role at its highest
         /// min-skill band (ties count): trainees may substitute for it, so
-        /// the trainee-inclusive totals row applies.
+        /// the training-waiver-inclusive required-total row applies.
         internal static bool IsPathTarget(RoleStore store, int roleId)
         {
             foreach (var path in store.trainingPaths)
@@ -214,8 +216,9 @@ namespace WorkRoles.UI
         private static readonly Color CellPanel = new Color(1f, 1f, 1f, 0.06f);
 
         // One gesture at a time: a working copy previews live, commits on
-        // release. dragDirect freezes each band's direct minimum so total
-        // edits recompute the trainee slice instead of dragging it along.
+        // release. dragDirectMinimums freezes each band's direct minimum so
+        // required-total edits recompute training waivers instead of dragging
+        // them along.
         private static int dragRoleId = -1;
         private static int dragSeries = -1;
         private static int dragPickValue;
@@ -224,7 +227,7 @@ namespace WorkRoles.UI
         private static int dragBumpDir = 1;
         private static int dragButton;
         private static bool dragMoved;
-        private static int[] dragDirect;
+        private static int[] dragDirectMinimums;
         private static HolderScale dragScale;
         private static string dragSourceName;
 
@@ -244,7 +247,7 @@ namespace WorkRoles.UI
             dragRoleId = -1;
             dragSeries = -1;
             dragScale = null;
-            dragDirect = null;
+            dragDirectMinimums = null;
             dragSourceName = null;
             baselineRoleId = -1;
             baselineName = null;
@@ -267,10 +270,10 @@ namespace WorkRoles.UI
             if (model.PathTarget)
             {
                 DrawCaption(new Rect(rect.x, y, rect.width, CaptionH),
-                    model.TotalsCaption);
+                    model.RequiredTotalCaption);
                 y += CaptionH;
                 DrawValueRow(new Rect(rect.x, y, rect.width, BandRowH),
-                    model, shown, totalsRow: true);
+                    model, shown, requiredTotalRow: true);
                 y += BandRowH + 2f;
             }
             else if (model.TrainingHelp != null)
@@ -286,10 +289,10 @@ namespace WorkRoles.UI
             }
 
             DrawCaption(new Rect(rect.x, y, rect.width, CaptionH),
-                model.MinsCaption);
+                model.DirectMinimumCaption);
             y += CaptionH;
             DrawValueRow(new Rect(rect.x, y, rect.width, BandRowH),
-                model, shown, totalsRow: false);
+                model, shown, requiredTotalRow: false);
             y += BandRowH + 2f;
 
             DrawBandLabels(new Rect(rect.x, y, rect.width, BandLabelRowH));
@@ -316,24 +319,32 @@ namespace WorkRoles.UI
             baselineForked = false;
         }
 
-        private static int DirectOf(HolderScale scale, int band) =>
-            Mathf.Max(0, scale.Min[band] - scale.Train[band]);
+        private static int DirectMinimumOf(HolderScale scale, int band) =>
+            new HolderRequirement(
+                scale.RequiredTotals[band], scale.TrainingWaivers[band])
+                .DirectMinimum;
 
-        /// Raising direct past the total grows the total with it; otherwise
-        /// the trainee share absorbs the difference.
-        private static void SetDirect(HolderScale scale, int band, int direct)
+        /// Raising the direct minimum past the required total grows that total;
+        /// otherwise training waivers absorb the difference.
+        private static void SetDirectMinimum(
+            HolderScale scale, int band, int directMinimum)
         {
-            direct = Mathf.Clamp(direct, 0, MaxDirectPick);
-            if (direct > scale.Min[band]) scale.Min[band] = direct;
-            scale.Train[band] = scale.Min[band] - direct;
+            directMinimum = Mathf.Clamp(directMinimum, 0, MaxDirectPick);
+            if (directMinimum > scale.RequiredTotals[band])
+                scale.RequiredTotals[band] = directMinimum;
+            scale.TrainingWaivers[band] =
+                scale.RequiredTotals[band] - directMinimum;
         }
 
-        /// The totals row sets the TOTAL; each band's direct minimum stays
-        /// frozen so the trainee share absorbs the change.
-        private static void SetTotal(HolderScale scale, int band, int total)
+        /// The required-total row sets the total; each band's direct minimum
+        /// stays frozen so training waivers absorb the change.
+        private static void SetRequiredTotal(
+            HolderScale scale, int band, int requiredTotal)
         {
-            scale.Min[band] = Mathf.Clamp(total, 0, MaxTotalPick);
-            scale.Train[band] = Mathf.Max(0, scale.Min[band] - dragDirect[band]);
+            scale.RequiredTotals[band] = Mathf.Clamp(
+                requiredTotal, 0, MaxTotalPick);
+            scale.TrainingWaivers[band] = Mathf.Max(
+                0, scale.RequiredTotals[band] - dragDirectMinimums[band]);
         }
 
         // ----- Shared band-column geometry (integer spacing everywhere) -----
@@ -491,15 +502,19 @@ namespace WorkRoles.UI
                             roleId = roleId,
                             sourceName = sourceName,
                             targetName = name,
-                            min = HolderScaleCodec.EncodeRow(edited.Min),
-                            train = HolderScaleCodec.EncodeRow(edited.Train),
+                            requiredTotals = HolderScaleCodec.EncodeRow(
+                                edited.RequiredTotals),
+                            trainingWaivers = HolderScaleCodec.EncodeRow(
+                                edited.TrainingWaivers),
                         });
                         RoleCommands.CommitScaleEdit(new ScaleEdit
                         {
                             sourceName = sourceName,
                             targetName = sourceName,
-                            min = HolderScaleCodec.EncodeRow(original.Min),
-                            train = HolderScaleCodec.EncodeRow(original.Train),
+                            requiredTotals = HolderScaleCodec.EncodeRow(
+                                original.RequiredTotals),
+                            trainingWaivers = HolderScaleCodec.EncodeRow(
+                                original.TrainingWaivers),
                         });
                     }
                     baselineRoleId = -1; // recapture clean from the new scale
@@ -509,8 +524,9 @@ namespace WorkRoles.UI
         private static bool MatchesBaseline(ScaleEditorSnapshot model)
         {
             for (int i = 0; i < HolderScale.Bands; i++)
-                if (model.StoredMinAt(i) != baseline.Min[i]
-                    || model.StoredTrainAt(i) != baseline.Train[i])
+                if (model.StoredRequiredTotalAt(i) != baseline.RequiredTotals[i]
+                    || model.StoredTrainingWaiversAt(i)
+                        != baseline.TrainingWaivers[i])
                     return false;
             return true;
         }
@@ -575,16 +591,16 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
         }
 
-        // ----- Band value rows (totals and direct minimums) -----
+        // ----- Band value rows (required totals and direct minimums) -----
 
         private static void DrawValueRow(Rect rect, ScaleEditorSnapshot model,
-            HolderScale shown, bool totalsRow)
+            HolderScale shown, bool requiredTotalRow)
         {
             int colW = ColW(rect.width);
             float startX = StartX(rect);
             var e = Event.current;
-            int series = totalsRow ? SeriesTotalRow : SeriesDirectRow;
-            int wrapAt = totalsRow ? MaxTotalPick : MaxDirectPick;
+            int series = requiredTotalRow ? SeriesTotalRow : SeriesDirectRow;
+            int wrapAt = requiredTotalRow ? MaxTotalPick : MaxDirectPick;
             bool picking = dragRoleId == model.RoleId && dragSeries == series
                 && dragScale != null;
 
@@ -609,16 +625,18 @@ namespace WorkRoles.UI
                 Widgets.DrawHighlightIfMouseover(cell);
                 Text.Font = GameFont.Tiny;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                Widgets.Label(cell, totalsRow
-                    ? (shown != null ? shown.Min[band]
-                        : model.StoredMinAt(band)).ToStringCached()
-                    : (shown != null ? DirectOf(shown, band)
-                        : Mathf.Max(0, model.StoredMinAt(band)
-                            - model.StoredTrainAt(band))).ToStringCached());
+                Widgets.Label(cell, requiredTotalRow
+                    ? (shown != null ? shown.RequiredTotals[band]
+                        : model.StoredRequiredTotalAt(band)).ToStringCached()
+                    : (shown != null ? DirectMinimumOf(shown, band)
+                        : new HolderRequirement(
+                            model.StoredRequiredTotalAt(band),
+                            model.StoredTrainingWaiversAt(band))
+                            .DirectMinimum).ToStringCached());
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.Font = GameFont.Small;
                 if (Mouse.IsOver(cell))
-                    (totalsRow ? WrTips.Key("WR_ScaleTotalTip")
+                    (requiredTotalRow ? WrTips.Key("WR_ScaleTotalTip")
                         : WrTips.Key("WR_ScaleDirectTip")).Region(cell);
 
                 if (e.type == EventType.MouseDown && cell.Contains(e.mousePosition)
@@ -632,8 +650,9 @@ namespace WorkRoles.UI
                     dragBumpDir = 1;
                     dragButton = e.button;
                     dragMoved = false;
-                    dragPickValue = totalsRow
-                        ? dragScale.Min[band] : DirectOf(dragScale, band);
+                    dragPickValue = requiredTotalRow
+                        ? dragScale.RequiredTotals[band]
+                        : DirectMinimumOf(dragScale, band);
                     e.Use();
                 }
                 // Position polling, not MouseDrag events: drag passes are
@@ -648,8 +667,8 @@ namespace WorkRoles.UI
                         dragLastBand = band;
                     }
                     if (band != dragOriginBand) dragMoved = true;
-                    if (dragButton == 1) ApplyRamp(band, totalsRow);
-                    else ApplyRowValue(band, totalsRow);
+                    if (dragButton == 1) ApplyRamp(band, requiredTotalRow);
+                    else ApplyRowValue(band, requiredTotalRow);
                 }
             }
 
@@ -661,7 +680,7 @@ namespace WorkRoles.UI
                     dragPickValue = dragButton == 1
                         ? Mathf.Max(0, dragPickValue - 1)
                         : dragPickValue >= wrapAt ? 0 : dragPickValue + 1;
-                    ApplyRowValue(dragOriginBand, totalsRow);
+                    ApplyRowValue(dragOriginBand, requiredTotalRow);
                 }
                 Commit(model);
                 EndGesture();
@@ -675,10 +694,12 @@ namespace WorkRoles.UI
             }
         }
 
-        private static void ApplyRowValue(int band, bool totalsRow)
+        private static void ApplyRowValue(int band, bool requiredTotalRow)
         {
-            if (totalsRow) SetTotal(dragScale, band, dragPickValue);
-            else SetDirect(dragScale, band, dragPickValue);
+            if (requiredTotalRow)
+                SetRequiredTotal(dragScale, band, dragPickValue);
+            else
+                SetDirectMinimum(dragScale, band, dragPickValue);
             dragScale.Normalize();
         }
 
@@ -686,14 +707,14 @@ namespace WorkRoles.UI
         /// value shifted one step per band, rising rightward and falling
         /// leftward; the row clamps saturate the ends. Painting the whole
         /// span heals bands a fast drag skipped over.
-        private static void ApplyRamp(int hovered, bool totalsRow)
+        private static void ApplyRamp(int hovered, bool requiredTotalRow)
         {
             int step = hovered >= dragOriginBand ? 1 : -1;
             for (int band = dragOriginBand; ; band += step)
             {
                 int value = dragPickValue + (band - dragOriginBand);
-                if (totalsRow) SetTotal(dragScale, band, value);
-                else SetDirect(dragScale, band, value);
+                if (requiredTotalRow) SetRequiredTotal(dragScale, band, value);
+                else SetDirectMinimum(dragScale, band, value);
                 if (band == hovered) break;
             }
             dragScale.Normalize();
@@ -705,9 +726,9 @@ namespace WorkRoles.UI
             dragSeries = series;
             dragScale = model.CopyStored();
             dragSourceName = model.StoredName;
-            dragDirect = new int[HolderScale.Bands];
+            dragDirectMinimums = new int[HolderScale.Bands];
             for (int band = 0; band < HolderScale.Bands; band++)
-                dragDirect[band] = DirectOf(dragScale, band);
+                dragDirectMinimums[band] = DirectMinimumOf(dragScale, band);
         }
 
         private static void EndGesture()
@@ -719,7 +740,7 @@ namespace WorkRoles.UI
             dragBumpDir = 1;
             dragMoved = false;
             dragScale = null;
-            dragDirect = null;
+            dragDirectMinimums = null;
             dragSourceName = null;
         }
 
@@ -752,8 +773,8 @@ namespace WorkRoles.UI
                 roleId = model.RoleId,
                 sourceName = sourceName,
                 targetName = targetName,
-                min = HolderScaleCodec.EncodeRow(values.Min),
-                train = HolderScaleCodec.EncodeRow(values.Train),
+                requiredTotals = HolderScaleCodec.EncodeRow(values.RequiredTotals),
+                trainingWaivers = HolderScaleCodec.EncodeRow(values.TrainingWaivers),
             });
         }
     }

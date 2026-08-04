@@ -8,16 +8,17 @@ namespace WorkRoles
 {
     internal readonly struct RoleHolderDefaults
     {
-        internal RoleHolderDefaults(int min, int max, int train)
+        internal RoleHolderDefaults(
+            int requiredTotal, int max, int trainingWaivers)
         {
-            Min = min;
+            RequiredTotal = requiredTotal;
             Max = max;
-            Train = train;
+            TrainingWaivers = trainingWaivers;
         }
 
-        internal int Min { get; }
+        internal int RequiredTotal { get; }
         internal int Max { get; }
-        internal int Train { get; }
+        internal int TrainingWaivers { get; }
     }
 
     /// Resolves Auto policy for player roles by matching their job coverage to
@@ -71,9 +72,12 @@ namespace WorkRoles
         }
 
         private static RoleHolderDefaults FromDef(RoleDef def)
-            => new RoleHolderDefaults(def.minHolders.Count, def.maxHolders,
-                RoleHolderPolicy.WithTraining(
-                    def.minHolders.Count, def.minHolders.Waivers));
+            => new RoleHolderDefaults(
+                def.minHolders.RequiredTotal,
+                def.maxHolders,
+                RoleHolderPolicy.WithTrainingWaivers(
+                    def.minHolders.RequiredTotal,
+                    def.minHolders.TrainingWaivers));
     }
 
     internal static class RoleDefPolicyExtensions

@@ -52,6 +52,8 @@ namespace WorkRoles.Core
         /// Named holder scale reference (document <Scales> or an existing scale).
         public string holderScale;
         public bool holderRangeSet;
+        /// Persisted XML name retained for compatibility. Semantically this is
+        /// the required total, including training waivers.
         public int minHolders;
         public int maxHolders = RoleHolderRange.Uncapped;
         public int trainingWaivers;
@@ -272,8 +274,10 @@ namespace WorkRoles.Core
                     var el = new XElement("Scale",
                         new XAttribute("name", scale.Name ?? ""));
                     if (scale.Preset) el.Add(new XAttribute("preset", "true"));
-                    el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(scale.Min)),
-                        new XElement("Train", HolderScaleCodec.EncodeRow(scale.Train)),
+                    el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(
+                            scale.RequiredTotals)),
+                        new XElement("Train", HolderScaleCodec.EncodeRow(
+                            scale.TrainingWaivers)),
                         new XElement("Max", HolderScaleCodec.EncodeRow(scale.Max)));
                     scales.Add(el);
                 }
@@ -334,7 +338,7 @@ namespace WorkRoles.Core
                     holders.Add(new XAttribute("min", role.minHolders));
                     holders.Add(new XAttribute("max", role.maxHolders));
                     if (role.trainingWaivers > 0)
-                        holders.Add(new XAttribute("train", RoleHolderPolicy.WithTraining(
+                        holders.Add(new XAttribute("train", RoleHolderPolicy.WithTrainingWaivers(
                             role.minHolders, role.trainingWaivers)));
                 }
                 options.Add(holders);
@@ -425,9 +429,9 @@ namespace WorkRoles.Core
                     Name = name,
                     Preset = string.Equals(scaleEl.Attribute("preset")?.Value,
                         "true", StringComparison.OrdinalIgnoreCase),
-                    Min = HolderScaleCodec.DecodeRow(
+                    RequiredTotals = HolderScaleCodec.DecodeRow(
                         scaleEl.Element("Min")?.Value, 0),
-                    Train = HolderScaleCodec.DecodeRow(
+                    TrainingWaivers = HolderScaleCodec.DecodeRow(
                         scaleEl.Element("Train")?.Value, 0),
                     Max = HolderScaleCodec.DecodeRow(
                         scaleEl.Element("Max")?.Value, RoleHolderRange.Uncapped),
@@ -711,7 +715,7 @@ namespace WorkRoles.Core
                         role.maxHolders = role.minHolders;
                     if (v6Training
                         && int.TryParse(holders.Attribute("train")?.Value, out int train))
-                        role.trainingWaivers = RoleHolderPolicy.WithTraining(
+                        role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
                             role.minHolders, train);
                 }
             }

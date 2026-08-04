@@ -55,9 +55,12 @@ namespace WorkRoles.Core.Recs
         public readonly HashSet<int> Vetoed = new HashSet<int>();
         /// Per pawn, by role id; AddCandidate keeps the strongest entry.
         public readonly List<Dictionary<int, Candidate>> Candidates = new List<Dictionary<int, Candidate>>();
-        /// Coverage want per role id (CoverageScalingRule fills it).
-        public readonly Dictionary<int, int> Want = new Dictionary<int, int>();
-        public readonly Dictionary<int, int> BaseWant = new Dictionary<int, int>();
+        /// Required total per role id (CoverageScalingRule fills it). Training
+        /// waivers are included in this value, never added to it.
+        public readonly Dictionary<int, int> RequiredTotal =
+            new Dictionary<int, int>();
+        public readonly Dictionary<int, int> BaseRequiredTotal =
+            new Dictionary<int, int>();
         public readonly Dictionary<int, int> InboundTraining = new Dictionary<int, int>();
         /// Effective exact-role maximums computed by HolderLimitRule with its
         /// injected demand policy. Explanations consume these decision facts
@@ -434,7 +437,7 @@ namespace WorkRoles.Core.Recs
             return count;
         }
 
-        public int AllocatedHoldersOf(int roleId)
+        public int CoveredTotalOf(int roleId)
         {
             var role = RoleOf(roleId);
             if (role == null) return 0;
@@ -449,7 +452,7 @@ namespace WorkRoles.Core.Recs
         /// sit inside some containing path's strict band. Roles in no path and
         /// unskilled entries never gate.
         /// Overlap coexists, disjoint supersedes. The need-driven floor
-        /// draft ignores this gate: minHolders is absolute.
+        /// draft ignores this gate: the required total is absolute.
         public bool PassesBands(int pawnIndex, RoleView role)
         {
             bool member = false;

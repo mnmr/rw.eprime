@@ -112,8 +112,10 @@ public class ColonyScenarioTests
                     || defName == "WS_DarkStudier",
                 Unskilled = workTypes.All(wt => !SkillsByWorkType.ContainsKey(wt)),
                 Hunting = workTypes.Contains("Hunting"),
-                // Defs ARE the Auto defaults, so the def value is the resolved count.
-                MinHolders = int.TryParse(def.Element("minHolders")?.Value, out var mnh) ? mnh : -1,
+                // Defs ARE the Auto defaults, so this is the required total.
+                RequiredTotal = int.TryParse(
+                    def.Element("minHolders")?.Value, out var requiredTotal)
+                    ? requiredTotal : -1,
                 NaturalPriority = workTypes
                     .Select(wt => VanillaWorkOrder.NaturalPriority.TryGetValue(wt, out var np) ? np : 0)
                     .DefaultIfEmpty(0).Max(),
@@ -273,13 +275,14 @@ public class ColonyScenarioTests
     [Arguments(10, 55)] [Arguments(50, 66)]
     public async Task NeededRolesAreCoveredWheneverAnEligiblePawnExists(int size, int seed)
     {
-        // minHolders is an ABSOLUTE floor: bands gate interest, never the
+        // Required total is an ABSOLUTE floor: bands gate interest, never the
         // need-driven fill. Eligible = capable and not hard-vetoed by an
         // Awful bucket (the draft never assigns Awful pawns).
         var (catalog, colony, results) = Execute(size, seed);
         foreach (var role in catalog.Roles)
         {
-            if (role.MinHolders < 1 || role.Blocker || role.HasRules || role.Hunting) continue;
+            if (role.RequiredTotal < 1 || role.Blocker || role.HasRules
+                || role.Hunting) continue;
             bool anyEligible = Enumerable.Range(0, colony.Pawns.Count).Any(i =>
                 role.WorkTypes.Any(colony.Pawns[i].CapableWorkTypes.Contains)
                 && !AwfulAt(colony, i, role));
@@ -309,18 +312,18 @@ public class ColonyScenarioTests
 
     [Test]
     [Arguments(3, 22)] [Arguments(10, 33)] [Arguments(50, 44)] [Arguments(50, 66)]
-    public async Task DraftGrantsStayWithinTheScaledWant(int size, int seed)
+    public async Task DraftGrantsStayWithinTheScaledRequiredTotal(int size, int seed)
     {
         var (catalog, colony, results) = Execute(size, seed);
         var scaling = new UnitScaling();
         foreach (var role in catalog.Roles)
         {
-            int want = scaling.Want(role, size);
-            if (want <= 0) continue;
+            int requiredTotal = scaling.Requirement(role, size).RequiredTotal;
+            if (requiredTotal <= 0) continue;
             int drafted = results.Count(r =>
                 r.Reasons.TryGetValue(role.Id, out var reason) && reason.RuleId == "draft");
-            await Assert.That(drafted <= want).IsTrue()
-                .Because($"{catalog.DefNames[role.Id]} drafted {drafted} > want {want} "
+            await Assert.That(drafted <= requiredTotal).IsTrue()
+                .Because($"{catalog.DefNames[role.Id]} drafted {drafted} > required total {requiredTotal} "
                     + $"(size {size}, seed {seed})");
         }
     }

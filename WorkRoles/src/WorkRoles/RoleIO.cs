@@ -79,7 +79,9 @@ namespace WorkRoles
                     holderMode = role.holderMode,
                     holderScale = role.holderScaleName,
                     holderRangeSet = role.holderRangeSet,
-                    minHolders = role.minHolders,
+                    // FileRole retains the serialized minHolders name; the
+                    // value is the required total, including training waivers.
+                    minHolders = role.requiredTotal,
                     maxHolders = role.maxHolders,
                     trainingWaivers = role.trainingWaivers,
                     entries = role.entries.ToList(),
@@ -565,7 +567,7 @@ namespace WorkRoles
                     target.holderMode = row.role.holderMode;
                     target.holderScaleName = row.role.holderScale;
                     target.holderRangeSet = row.role.holderRangeSet;
-                    target.minHolders = row.role.minHolders;
+                    target.requiredTotal = row.role.minHolders;
                     target.maxHolders = row.role.maxHolders;
                     target.trainingWaivers = row.role.trainingWaivers;
                     target.groupId = GroupIdFor(

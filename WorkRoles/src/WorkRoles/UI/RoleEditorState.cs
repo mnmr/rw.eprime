@@ -353,10 +353,10 @@ namespace WorkRoles.UI
             if (scale == null) return "";
             int lo = int.MaxValue;
             int hi = int.MinValue;
-            for (int i = 0; i < scale.Min.Length; i++)
+            for (int i = 0; i < scale.RequiredTotals.Length; i++)
             {
-                lo = Mathf.Min(lo, scale.Min[i]);
-                hi = Mathf.Max(hi, scale.Min[i]);
+                lo = Mathf.Min(lo, scale.RequiredTotals[i]);
+                hi = Mathf.Max(hi, scale.RequiredTotals[i]);
             }
             string range = " (" + lo + "-" + hi + ")";
             Role target = ScaleEditorUI.ControllingTarget(store, role.id);
@@ -570,31 +570,31 @@ namespace WorkRoles.UI
             float modeHeight = Mathf.Max(rowHeight,
                 Text.CalcHeight(modeHelp, descriptionWidth));
 
-            string minHelp = null;
+            string requiredTotalHelp = null;
             string maxHelp = null;
-            string waiversHelp = null;
-            float minHeight = 0f;
+            string trainingWaiversHelp = null;
+            float requiredTotalHeight = 0f;
             float maxHeight = 0f;
-            float waiversHeight = 0f;
+            float trainingWaiversHeight = 0f;
             if (mode == RoleHolderMode.Custom)
             {
-                minHelp = "WR_TuningMinHelp".Translate();
+                requiredTotalHelp = "WR_TuningMinHelp".Translate();
                 maxHelp = "WR_TuningMaxHelp".Translate();
-                waiversHelp = "WR_TuningWaiversHelp".Translate();
-                minHeight = Mathf.Max(rowHeight,
-                    Text.CalcHeight(minHelp, descriptionWidth));
+                trainingWaiversHelp = "WR_TuningWaiversHelp".Translate();
+                requiredTotalHeight = Mathf.Max(rowHeight,
+                    Text.CalcHeight(requiredTotalHelp, descriptionWidth));
                 maxHeight = Mathf.Max(rowHeight,
                     Text.CalcHeight(maxHelp, descriptionWidth));
-                waiversHeight = Mathf.Max(rowHeight,
-                    Text.CalcHeight(waiversHelp, descriptionWidth));
+                trainingWaiversHeight = Mathf.Max(rowHeight,
+                    Text.CalcHeight(trainingWaiversHelp, descriptionWidth));
             }
 
             tuningLayout = new RoleTuningLayout(
                 intro, introHeight,
                 modeHelp, modeHeight,
-                minHelp, minHeight,
+                requiredTotalHelp, requiredTotalHeight,
                 maxHelp, maxHeight,
-                waiversHelp, waiversHeight,
+                trainingWaiversHelp, trainingWaiversHeight,
                 mode == RoleHolderMode.Custom);
             return tuningLayout;
         }
@@ -1171,38 +1171,41 @@ namespace WorkRoles.UI
             float introHeight,
             string modeHelp,
             float modeHeight,
-            string minHelp,
-            float minHeight,
+            string requiredTotalHelp,
+            float requiredTotalHeight,
             string maxHelp,
             float maxHeight,
-            string waiversHelp,
-            float waiversHeight,
+            string trainingWaiversHelp,
+            float trainingWaiversHeight,
             bool custom)
         {
             Intro = intro;
             IntroHeight = introHeight;
             ModeHelp = modeHelp;
             ModeHeight = modeHeight;
-            MinHelp = minHelp;
-            MinHeight = minHeight;
+            RequiredTotalHelp = requiredTotalHelp;
+            RequiredTotalHeight = requiredTotalHeight;
             MaxHelp = maxHelp;
             MaxHeight = maxHeight;
-            WaiversHelp = waiversHelp;
-            WaiversHeight = waiversHeight;
+            TrainingWaiversHelp = trainingWaiversHelp;
+            TrainingWaiversHeight = trainingWaiversHeight;
             ExpandedHeight = 4f + introHeight + 2f + modeHeight
-                + (custom ? 4f + minHeight + maxHeight + waiversHeight : 0f);
+                + (custom
+                    ? 4f + requiredTotalHeight + maxHeight
+                        + trainingWaiversHeight
+                    : 0f);
         }
 
         internal string Intro { get; }
         internal float IntroHeight { get; }
         internal string ModeHelp { get; }
         internal float ModeHeight { get; }
-        internal string MinHelp { get; }
-        internal float MinHeight { get; }
+        internal string RequiredTotalHelp { get; }
+        internal float RequiredTotalHeight { get; }
         internal string MaxHelp { get; }
         internal float MaxHeight { get; }
-        internal string WaiversHelp { get; }
-        internal float WaiversHeight { get; }
+        internal string TrainingWaiversHelp { get; }
+        internal float TrainingWaiversHeight { get; }
         internal float ExpandedHeight { get; }
     }
 

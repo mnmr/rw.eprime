@@ -38,8 +38,8 @@ namespace WorkRoles.Core.Recs
         public bool Recommended;
         public RecommendationDecision Decision;
         public int RelatedRoleId = -1;
-        public int RequiredHolders;
-        public int RecommendedHolders;
+        public int RequiredTotal;
+        public int CoveredTotal;
         public int ConfiguredMaximum = RoleHolderRange.Uncapped;
         public IReadOnlyList<string> RequiredSkills = Array.Empty<string>();
         public SignalBucket SignalBucket = SignalBucket.Neutral;
@@ -61,11 +61,11 @@ namespace WorkRoles.Core.Recs
             // per role here (instead of per pawn per role) removes the run's
             // only pawn-quadratic term.
             var holders = new Dictionary<int, int>(context.Colony.Roles.Count);
-            var allocated = new Dictionary<int, int>(context.Colony.Roles.Count);
+            var coveredTotals = new Dictionary<int, int>(context.Colony.Roles.Count);
             foreach (var role in context.Colony.Roles)
             {
                 holders[role.Id] = context.HoldersOf(role.Id);
-                allocated[role.Id] = context.AllocatedHoldersOf(role.Id);
+                coveredTotals[role.Id] = context.CoveredTotalOf(role.Id);
             }
 
             for (int pawnIndex = 0; pawnIndex < context.Colony.Pawns.Count; pawnIndex++)
@@ -85,7 +85,8 @@ namespace WorkRoles.Core.Recs
                     RoleView role = context.RoleOf(roleId);
                     if (role == null) continue;
                     var explanation = Facts(context, pawnIndex, role,
-                        allocated.TryGetValue(roleId, out int alloc) ? alloc : 0);
+                        coveredTotals.TryGetValue(roleId, out int coveredTotal)
+                            ? coveredTotal : 0);
                     explanation.Recommended = recommended.Contains(roleId);
                     if (explanation.Recommended)
                     {
@@ -111,15 +112,16 @@ namespace WorkRoles.Core.Recs
             EngineContext context,
             int pawnIndex,
             RoleView role,
-            int allocatedHolders)
+            int coveredTotal)
         {
             SignalBucket signal = context.BestSignal(
                 pawnIndex, role, out string signalSkill, out _);
             var explanation = new RoleRecommendationExplanation
             {
                 RoleId = role.Id,
-                RequiredHolders = context.Want.TryGetValue(role.Id, out int want) ? want : 0,
-                RecommendedHolders = allocatedHolders,
+                RequiredTotal = context.RequiredTotal.TryGetValue(
+                    role.Id, out int requiredTotal) ? requiredTotal : 0,
+                CoveredTotal = coveredTotal,
                 ConfiguredMaximum = context.EffectiveMaxHolders.TryGetValue(
                     role.Id, out int effectiveMaximum)
                     ? effectiveMaximum : RoleHolderRange.Uncapped,
@@ -209,7 +211,9 @@ namespace WorkRoles.Core.Recs
             if (relatedRoleId != -1)
                 return RecommendationDecision.CoveredByRecommendedRole;
 
-            if (context.Want.TryGetValue(role.Id, out int want) && holders >= want)
+            if (context.RequiredTotal.TryGetValue(
+                    role.Id, out int requiredTotal)
+                && holders >= requiredTotal)
                 return RecommendationDecision.RequiredCoverageFilled;
             if (signal < SignalBucket.Strong)
                 return RecommendationDecision.SignalBelowThreshold;

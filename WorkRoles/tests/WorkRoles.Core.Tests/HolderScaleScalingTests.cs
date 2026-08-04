@@ -24,30 +24,30 @@ public class HolderScaleScalingTests
     }
 
     [Test]
-    public async Task ScaleWantIsDirectBandLookupCappedByMaxAndColony()
+    public async Task ScaleRequiredTotalIsBandLookupCappedByMaxAndColony()
     {
         var scale = new HolderScale();
         for (int i = 0; i < HolderScale.Bands; i++)
         {
-            scale.Min[i] = i + 1;   // band 0 wants 1 ... band 11 wants 12
+            scale.RequiredTotals[i] = i + 1;
             scale.Max[i] = 10;      // flat cap
         }
         var role = RecsTestBed.Role(1, "Cooking");
         role.Scale = scale;
         var scaling = new UnitScaling();
 
-        await Assert.That(scaling.Want(role, 3)).IsEqualTo(1);   // band 0
-        await Assert.That(scaling.Want(role, 12)).IsEqualTo(4);  // band 3
-        await Assert.That(scaling.Want(role, 34)).IsEqualTo(10); // band 11 wants 12, max caps at 10
-        await Assert.That(scaling.Want(role, 2)).IsEqualTo(1);   // colony floor keeps min(colony, want)
+        await Assert.That(scaling.Requirement(role, 3).RequiredTotal).IsEqualTo(1);
+        await Assert.That(scaling.Requirement(role, 12).RequiredTotal).IsEqualTo(4);
+        await Assert.That(scaling.Requirement(role, 34).RequiredTotal).IsEqualTo(10);
+        await Assert.That(scaling.Requirement(role, 2).RequiredTotal).IsEqualTo(1);
     }
 
     [Test]
     public async Task RolesWithoutScalesKeepTheLegacyFormula()
     {
         var role = RecsTestBed.Role(1, "Cooking");
-        role.MinHolders = 2;
+        role.RequiredTotal = 2;
         var scaling = new UnitScaling();
-        await Assert.That(scaling.Want(role, 12)).IsEqualTo(4); // 2 per 6-unit, legacy
+        await Assert.That(scaling.Requirement(role, 12).RequiredTotal).IsEqualTo(4);
     }
 }

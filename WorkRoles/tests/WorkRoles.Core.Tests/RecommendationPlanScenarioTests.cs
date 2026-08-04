@@ -5,6 +5,54 @@ namespace WorkRoles.Core.Tests;
 public class RecommendationPlanScenarioTests
 {
     [Test]
+    public async Task ScaleRequiredTotalIncludesTrainingWaiverAssignments()
+    {
+        RoleView target = CraftingRole(100, "TargetWork");
+        target.HolderMode = RoleHolderMode.Custom;
+        target.Scale = new HolderScale();
+        target.Scale.RequiredTotals[0] = 3;
+        target.Scale.TrainingWaivers[0] = 1;
+
+        RoleView trainee = CraftingRole(101, "TraineeWork");
+        trainee.HolderMode = RoleHolderMode.Custom;
+
+        PathView path = RecsTestBed.Path(
+            200, (trainee.Id, 0, 10), (target.Id, 10, 21));
+        path.AnchorRoleId = target.Id;
+
+        PawnView firstDirect = CraftingPawn(
+            16,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+        PawnView secondDirect = CraftingPawn(
+            15,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+        PawnView trainingWaiver = CraftingPawn(
+            5,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { target, trainee },
+            firstDirect,
+            secondDirect,
+            trainingWaiver);
+        colony.Paths.Add(path);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        var roleNames = new Dictionary<int, string>
+        {
+            [target.Id] = "Target",
+            [trainee.Id] = "Trainee",
+        };
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames)).IsEqualTo("Target");
+        await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Target");
+        await Assert.That(NamesOfRoles(plan, 2, roleNames)).IsEqualTo("Trainee");
+    }
+
+    [Test]
     public async Task Slice01_AllocatesConfiguredWantAndStrongSurplusWithoutAwfulPawns()
     {
         /*
@@ -15,16 +63,16 @@ public class RecommendationPlanScenarioTests
          */
         RoleView doctor = RecsTestBed.Role(1, "Doctor");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 2;
         doctor.TrainingWaivers = 1;
 
         RoleView cook = RecsTestBed.Role(2, "Cooking");
         cook.HolderMode = RoleHolderMode.Custom;
-        cook.MinHolders = 2;
+        cook.RequiredTotal = 2;
 
         RoleView hauler = RecsTestBed.Unskilled(3, "Hauling");
         hauler.HolderMode = RoleHolderMode.Custom;
-        hauler.MinHolders = 1;
+        hauler.RequiredTotal = 1;
 
         PawnView forcedDoctor = PawnWith(
             medicine: (14, SignalBucket.Neutral),
@@ -86,13 +134,15 @@ public class RecommendationPlanScenarioTests
          */
         RoleView fabricator = CraftingRole(10, "Fabrication");
         fabricator.HolderMode = RoleHolderMode.Custom;
-        fabricator.MinHolders = 1;
+        fabricator.RequiredTotal = 2;
         fabricator.TrainingWaivers = 1;
         RoleView drugMaker = CraftingRole(11, "DrugMaking");
         drugMaker.HolderMode = RoleHolderMode.Custom;
+        drugMaker.RequiredTotal = 1;
         drugMaker.TrainingWaivers = 1;
         RoleView smith = CraftingRole(12, "Smithing");
         smith.HolderMode = RoleHolderMode.Custom;
+        smith.RequiredTotal = 1;
         smith.TrainingWaivers = 1;
         RoleView tailor = CraftingRole(13, "Tailoring");
         tailor.HolderMode = RoleHolderMode.Custom;
@@ -170,6 +220,7 @@ public class RecommendationPlanScenarioTests
          */
         RoleView specialist = CraftingRole(24, "SpecialistWork");
         specialist.HolderMode = RoleHolderMode.Custom;
+        specialist.RequiredTotal = 1;
         specialist.TrainingWaivers = 1;
         RoleView trainee = CraftingRole(25, "TraineeWork");
         trainee.HolderMode = RoleHolderMode.Custom;
@@ -213,30 +264,31 @@ public class RecommendationPlanScenarioTests
         RoleView doctor = SkilledRole(
             30, "Doctoring", "Medicine", "Rescue", "Treat");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         RoleView rescuer = SkilledRole(
             31, "Rescuing", "Medicine", "Rescue");
         rescuer.HolderMode = RoleHolderMode.Custom;
-        rescuer.MinHolders = 2;
+        rescuer.RequiredTotal = 2;
         RoleView cook = SkilledRole(
             32, "CookingAll", "Cooking", "Cook", "Butcher", "Brew");
         cook.HolderMode = RoleHolderMode.Custom;
-        cook.MinHolders = 1;
+        cook.RequiredTotal = 1;
         RoleView butcher = SkilledRole(
             33, "Butchering", "Cooking", "Butcher");
         butcher.HolderMode = RoleHolderMode.Custom;
-        butcher.MinHolders = 2;
+        butcher.RequiredTotal = 2;
         RoleView brewer = SkilledRole(
             34, "Brewing", "Cooking", "Brew");
         brewer.HolderMode = RoleHolderMode.Custom;
-        brewer.MinHolders = 1;
+        brewer.RequiredTotal = 1;
         RoleView campCook = SkilledRole(
             35, "CampCooking", "Cooking", "Butcher", "CampMeal");
         campCook.HolderMode = RoleHolderMode.Custom;
-        campCook.MinHolders = 1;
+        campCook.RequiredTotal = 1;
         RoleView chef = SkilledRole(
             36, "Chefing", "Cooking", "Chef");
         chef.HolderMode = RoleHolderMode.Custom;
+        chef.RequiredTotal = 1;
         chef.TrainingWaivers = 1;
 
         PathView chefPath = RecsTestBed.Path(
@@ -329,26 +381,30 @@ public class RecommendationPlanScenarioTests
          */
         RoleView warden = SkilledRole(50, "Wardening", "Social");
         warden.HolderMode = RoleHolderMode.Custom;
-        warden.MinHolders = 1;
+        warden.RequiredTotal = 1;
         RoleView artist = SkilledRole(51, "ArtMaking", "Artistic");
         artist.HolderMode = RoleHolderMode.Custom;
-        artist.MinHolders = 1;
+        artist.RequiredTotal = 1;
         RoleView tailor = CraftingRole(52, "Tailoring");
         tailor.HolderMode = RoleHolderMode.Custom;
         RoleView smith = CraftingRole(53, "Smithing");
         smith.HolderMode = RoleHolderMode.Custom;
+        smith.RequiredTotal = 1;
         smith.TrainingWaivers = 1;
         RoleView researcher = SkilledRole(54, "Researching", "Intellectual");
         researcher.HolderMode = RoleHolderMode.Custom;
-        researcher.MinHolders = 1;
+        researcher.RequiredTotal = 1;
         RoleView fabricator = CraftingRole(55, "Fabrication");
         fabricator.HolderMode = RoleHolderMode.Custom;
+        fabricator.RequiredTotal = 1;
         fabricator.TrainingWaivers = 1;
         RoleView drugMaker = CraftingRole(56, "DrugMaking");
         drugMaker.HolderMode = RoleHolderMode.Custom;
+        drugMaker.RequiredTotal = 1;
         drugMaker.TrainingWaivers = 1;
         RoleView crafter = CraftingRole(57, "CraftingWork");
         crafter.HolderMode = RoleHolderMode.Custom;
+        crafter.RequiredTotal = 1;
         crafter.TrainingWaivers = 1;
 
         PathView fabricatorPath = RecsTestBed.Path(
@@ -462,11 +518,11 @@ public class RecommendationPlanScenarioTests
         RoleView crafter = SkilledRole(
             70, "CraftingWork", "Crafting", "Fabricate", "Stonecut");
         crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.MinHolders = 1;
+        crafter.RequiredTotal = 1;
         RoleView fabricator = SkilledRole(
             71, "Fabrication", "Crafting", "Fabricate");
         fabricator.HolderMode = RoleHolderMode.Custom;
-        fabricator.MinHolders = 1;
+        fabricator.RequiredTotal = 1;
         PathView path = RecsTestBed.Path(
             72, (crafter.Id, 0, 21), (fabricator.Id, 8, 21));
         path.AnchorRoleId = crafter.Id;
@@ -681,7 +737,7 @@ public class RecommendationPlanScenarioTests
         RoleView doctor = SkilledRole(
             101, "Doctoring", "Medicine", "DoctorJob");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         RoleView basics = RecsTestBed.Unskilled(102, "BasicWorker");
         basics.AutoAssign = true;
         RoleView hunter = SkilledRole(103, "Hunting", "Shooting");
@@ -755,7 +811,7 @@ public class RecommendationPlanScenarioTests
         RoleView sharpshooter = SkilledRole(
             106, "Sharpshooting", "Shooting", "Hunting", "MarksmanWork");
         sharpshooter.HolderMode = RoleHolderMode.Custom;
-        sharpshooter.MinHolders = 1;
+        sharpshooter.RequiredTotal = 1;
         RoleView hunter = SkilledRole(107, "Hunting", "Shooting", "Hunting");
         hunter.Hunting = true;
         PawnView pawn = MultiSkillPawn(

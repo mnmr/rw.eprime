@@ -109,7 +109,7 @@ namespace WorkRoles
                 WorkTypes = projection.CopyWorkTypes(),
                 HolderMode = role.holderMode,
                 Scale = RoleStore.Current?.ScaleFor(role),
-                MinHolders = role.ResolvedMinHolders(),
+                RequiredTotal = role.ResolvedRequiredTotal(),
                 MaxHolders = role.ResolvedMaxHolders(),
                 TrainingWaivers = role.ResolvedTrainingWaivers(),
                 Skills = skills,

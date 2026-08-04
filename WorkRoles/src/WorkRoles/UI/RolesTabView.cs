@@ -966,28 +966,29 @@ namespace WorkRoles.UI
         private static readonly UnitScaling holdersScaling = new UnitScaling();
         private static readonly RoleView holdersProbe = new RoleView();
 
-        private int AutoHolderWant(Role role)
+        private int AutoRequiredTotal(Role role)
         {
-            holdersProbe.MinHolders = role.ResolvedAutoMinHolders();
-            return holdersScaling.Want(holdersProbe, listedPawns?.Invoke().Count ?? 0);
+            holdersProbe.RequiredTotal = role.ResolvedAutoRequiredTotal();
+            return holdersScaling.Requirement(
+                holdersProbe, listedPawns?.Invoke().Count ?? 0).RequiredTotal;
         }
 
         private const float TuningHeaderRowH = 24f;
         private const float TuningRowH = 24f;
         private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
 
-        /// Collapsed-header summary: scale name plus the Min row's value range
+        /// Collapsed-header summary: scale name plus the required-total range
         /// across the bands, e.g. "Mining (2-5)" (scale-less roles read
         /// Never). Training roles read "Controlled by <target>" and subsets
         /// of auto-assigned roles "In auto-assigned role <parent>" instead,
-        /// both with the range appended when a non-Never min scale applies.
+        /// both with the range appended when a non-Never scale applies.
         private string HolderSummary(Role role)
         {
             var store = RoleStore.Current;
             var scale = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
             if (scale == null) return "";
             int lo = int.MaxValue, hi = int.MinValue;
-            foreach (int value in scale.Min)
+            foreach (int value in scale.RequiredTotals)
             {
                 lo = Mathf.Min(lo, value);
                 hi = Mathf.Max(hi, value);
@@ -1110,8 +1111,10 @@ namespace WorkRoles.UI
             if (Widgets.ButtonText(btnRect, shown))
             {
                 var next = RoleHolderPolicy.Next(role.holderMode);
-                int initialMin = next == RoleHolderMode.Custom ? AutoHolderWant(role) : 0;
-                RoleCommands.SetRoleHolderMode(role.id, (int)next, initialMin);
+                int initialRequiredTotal = next == RoleHolderMode.Custom
+                    ? AutoRequiredTotal(role) : 0;
+                RoleCommands.SetRoleHolderMode(
+                    role.id, (int)next, initialRequiredTotal);
             }
 
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1123,11 +1126,11 @@ namespace WorkRoles.UI
             y += layout.ModeHeight;
         }
 
-        private static void DrawWaiverButton(Rect btnRect, Role role)
+        private static void DrawTrainingWaiversButton(Rect btnRect, Role role)
         {
             if (!Widgets.ButtonText(btnRect, role.trainingWaivers.ToString())) return;
             var options = new List<FloatMenuOption>();
-            for (int n = 0; n <= role.minHolders; n++)
+            for (int n = 0; n <= role.requiredTotal; n++)
             {
                 int value = n;
                 options.Add(new FloatMenuOption(value.ToString(),
@@ -1153,7 +1156,7 @@ namespace WorkRoles.UI
                     () =>
                     {
                         if (maximum) RoleCommands.SetRoleHolderMax(roleId, value);
-                        else RoleCommands.SetRoleHolderMin(roleId, value);
+                        else RoleCommands.SetRoleRequiredTotal(roleId, value);
                     }));
             }
             if (maximum)

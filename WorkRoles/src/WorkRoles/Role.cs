@@ -31,7 +31,7 @@ namespace WorkRoles
         public string holderScaleName;
         /// Custom range stays stored while Auto or Never is selected.
         public bool holderRangeSet;
-        public int minHolders;
+        public int requiredTotal;
         public int maxHolders = RoleHolderRange.Uncapped;
         public int trainingWaivers;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
@@ -108,18 +108,21 @@ namespace WorkRoles
         }
 
         /// Auto falls back to the seeding def; player-created roles default to 0.
-        public int ResolvedAutoMinHolders() => RoleAutoDefaults.Resolve(this).Min;
+        public int ResolvedAutoRequiredTotal() =>
+            RoleAutoDefaults.Resolve(this).RequiredTotal;
 
-        public int ResolvedMinHolders() => holderMode == RoleHolderMode.Custom
-            ? minHolders : holderMode == RoleHolderMode.Never ? 0 : ResolvedAutoMinHolders();
+        public int ResolvedRequiredTotal() => holderMode == RoleHolderMode.Custom
+            ? requiredTotal
+            : holderMode == RoleHolderMode.Never ? 0 : ResolvedAutoRequiredTotal();
 
         public int ResolvedMaxHolders() => holderMode == RoleHolderMode.Custom
             ? maxHolders : holderMode == RoleHolderMode.Never
                 ? 0 : RoleAutoDefaults.Resolve(this).Max;
 
         public int ResolvedTrainingWaivers() => holderMode == RoleHolderMode.Custom
-            ? RoleHolderPolicy.WithTraining(minHolders, trainingWaivers)
-            : holderMode == RoleHolderMode.Never ? 0 : RoleAutoDefaults.Resolve(this).Train;
+            ? RoleHolderPolicy.WithTrainingWaivers(requiredTotal, trainingWaivers)
+            : holderMode == RoleHolderMode.Never
+                ? 0 : RoleAutoDefaults.Resolve(this).TrainingWaivers;
 
         public void ExposeData()
         {
@@ -143,17 +146,21 @@ namespace WorkRoles
             Scribe_Values.Look(ref holderMode, "holderMode", RoleHolderMode.Auto);
             Scribe_Values.Look(ref holderScaleName, "holderScale");
             Scribe_Values.Look(ref holderRangeSet, "holderRangeSet");
-            Scribe_Values.Look(ref minHolders, "holderRangeMin");
+            // Persisted key retained for save compatibility; its value is the
+            // required total, including training waivers.
+            Scribe_Values.Look(ref requiredTotal, "holderRangeMin");
             Scribe_Values.Look(ref maxHolders, "holderRangeMax", RoleHolderRange.Uncapped);
             Scribe_Values.Look(ref trainingWaivers, "trainingWaivers");
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 if (!System.Enum.IsDefined(typeof(RoleHolderMode), holderMode))
                     holderMode = RoleHolderMode.Auto;
-                var normalized = RoleHolderPolicy.WithMin(minHolders, maxHolders, minHolders);
-                minHolders = normalized.min;
+                var normalized = RoleHolderPolicy.WithRequiredTotal(
+                    requiredTotal, maxHolders, requiredTotal);
+                requiredTotal = normalized.requiredTotal;
                 maxHolders = normalized.max;
-                trainingWaivers = RoleHolderPolicy.WithTraining(minHolders, trainingWaivers);
+                trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
+                    requiredTotal, trainingWaivers);
             }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);

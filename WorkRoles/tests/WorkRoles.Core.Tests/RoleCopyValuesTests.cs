@@ -18,7 +18,7 @@ public class RoleCopyValuesTests
         await Assert.That(copy.Blocker).IsEqualTo(source.Blocker);
         await Assert.That(copy.HolderMode).IsEqualTo(source.HolderMode);
         await Assert.That(copy.HolderRangeSet).IsEqualTo(source.HolderRangeSet);
-        await Assert.That(copy.MinHolders).IsEqualTo(source.MinHolders);
+        await Assert.That(copy.RequiredTotal).IsEqualTo(source.RequiredTotal);
         await Assert.That(copy.MaxHolders).IsEqualTo(source.MaxHolders);
         await Assert.That(copy.TrainingWaivers).IsEqualTo(source.TrainingWaivers);
         await Assert.That(copy.GroupId).IsEqualTo(source.GroupId);
@@ -98,7 +98,7 @@ public class RoleCopyValuesTests
         Blocker = true,
         HolderMode = RoleHolderMode.Custom,
         HolderRangeSet = true,
-        MinHolders = 2,
+        RequiredTotal = 2,
         MaxHolders = 7,
         TrainingWaivers = 1,
         GroupId = 42,

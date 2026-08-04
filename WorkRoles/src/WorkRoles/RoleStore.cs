@@ -426,8 +426,8 @@ namespace WorkRoles
             if (Scribe.mode == LoadSaveMode.Saving && holderScales.Count > 0)
                 scribeScales = holderScales.Select(c => string.Join("\n",
                     c.Name ?? "",
-                    HolderScaleCodec.EncodeRow(c.Min),
-                    HolderScaleCodec.EncodeRow(c.Train),
+                    HolderScaleCodec.EncodeRow(c.RequiredTotals),
+                    HolderScaleCodec.EncodeRow(c.TrainingWaivers),
                     HolderScaleCodec.EncodeRow(c.Max),
                     c.Preset ? "1" : "0")).ToList();
             Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
@@ -443,8 +443,8 @@ namespace WorkRoles
                         var scale = new HolderScale
                         {
                             Name = parts[0].Trim(),
-                            Min = HolderScaleCodec.DecodeRow(parts[1], 0),
-                            Train = HolderScaleCodec.DecodeRow(parts[2], 0),
+                            RequiredTotals = HolderScaleCodec.DecodeRow(parts[1], 0),
+                            TrainingWaivers = HolderScaleCodec.DecodeRow(parts[2], 0),
                             Max = HolderScaleCodec.DecodeRow(
                                 parts[3], RoleHolderRange.Uncapped),
                             Preset = parts.Length > 4 && parts[4].Trim() == "1",

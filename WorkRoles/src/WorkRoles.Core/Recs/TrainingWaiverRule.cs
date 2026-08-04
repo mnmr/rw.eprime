@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace WorkRoles.Core.Recs
 {
-    /// Allocates the minimum cohort of a path target. Strictly in-band pawns
+    /// Allocates the required cohort of a path target. Strictly in-band pawns
     /// receive the target role. The most-ready remaining pawns are promoted
     /// until the non-waived floor is met; signals and biological age break
     /// skill ties. The rest may consume training waivers and receive every
@@ -29,15 +29,18 @@ namespace WorkRoles.Core.Recs
             var positions = context.BasePositions();
             foreach (var target in context.Colony.Roles
                          .Where(r => r.TrainingWaiversAt(context.Colony.Pawns.Count) > 0
-                             && context.Want.TryGetValue(r.Id, out int want) && want > 0)
+                             && context.RequiredTotal.TryGetValue(
+                                 r.Id, out int requiredTotal)
+                             && requiredTotal > 0)
                          .OrderBy(r => positions[r.Id]).ThenBy(r => r.Id))
                 AllocateTarget(context, target);
         }
 
         private void AllocateTarget(EngineContext context, RoleView target)
         {
-            int want = context.Want[target.Id];
-            int open = System.Math.Max(0, want - context.AllocatedHoldersOf(target.Id));
+            int requiredTotal = context.RequiredTotal[target.Id];
+            int open = System.Math.Max(
+                0, requiredTotal - context.CoveredTotalOf(target.Id));
             if (open == 0) return;
 
             var matches = new List<PathMatch>();
@@ -69,11 +72,13 @@ namespace WorkRoles.Core.Recs
                 .Take(open)
                 .ToList();
 
-            int directFloor = System.Math.Max(0,
-                want - target.TrainingWaiversAt(context.Colony.Pawns.Count));
+            int directMinimum = new HolderRequirement(
+                requiredTotal,
+                target.TrainingWaiversAt(context.Colony.Pawns.Count))
+                .DirectMinimum;
             int direct = context.HoldersOf(target.Id)
                 + selected.Count(m => m.InTargetBand);
-            int promotions = System.Math.Max(0, directFloor - direct);
+            int promotions = System.Math.Max(0, directMinimum - direct);
 
             foreach (var match in selected.Where(m => m.InTargetBand))
                 AddTarget(context, target, match);
@@ -85,14 +90,15 @@ namespace WorkRoles.Core.Recs
             foreach (var match in below.Take(promotions))
                 AddTarget(context, target, match);
 
-            int waiversLeft = System.Math.Max(0,
+            int remainingTrainingWaivers = System.Math.Max(0,
                 target.TrainingWaiversAt(context.Colony.Pawns.Count));
             foreach (var match in below.Skip(promotions))
             {
-                if (waiversLeft > 0 && match.TrainingRoles.Count > 0)
+                if (remainingTrainingWaivers > 0
+                    && match.TrainingRoles.Count > 0)
                 {
-                    AddWaiver(context, target, match);
-                    waiversLeft--;
+                    AddTrainingWaiver(context, target, match);
+                    remainingTrainingWaivers--;
                 }
                 else
                     AddTarget(context, target, match);
@@ -183,7 +189,8 @@ namespace WorkRoles.Core.Recs
             }, match.Bucket);
         }
 
-        private void AddWaiver(EngineContext context, RoleView target, PathMatch match)
+        private void AddTrainingWaiver(
+            EngineContext context, RoleView target, PathMatch match)
         {
             context.TrainingToward[match.Pawn].Add(target.Id);
             foreach (var pair in match.TrainingRoles)
@@ -199,9 +206,11 @@ namespace WorkRoles.Core.Recs
                 int inbound = context.InboundTraining.TryGetValue(pair.role.Id, out int count)
                     ? count + 1 : 1;
                 context.InboundTraining[pair.role.Id] = inbound;
-                int baseWant = context.BaseWant.TryGetValue(pair.role.Id, out int value)
+                int baseRequiredTotal = context.BaseRequiredTotal.TryGetValue(
+                    pair.role.Id, out int value)
                     ? value : 0;
-                context.Want[pair.role.Id] = demandPolicy.Minimum(baseWant, inbound);
+                context.RequiredTotal[pair.role.Id] = demandPolicy.RequiredTotal(
+                    baseRequiredTotal, inbound);
             }
         }
 

@@ -5,15 +5,16 @@ namespace WorkRoles.Core.Recs
     /// can change without rewriting path matching or candidate selection.
     public interface ITrainingDemandPolicy
     {
-        int Minimum(int baseMinimum, int inboundAssignments);
+        int RequiredTotal(int baseRequiredTotal, int inboundAssignments);
         int Maximum(int baseMaximum, int inboundAssignments);
     }
 
     public sealed class AdditiveTrainingDemandPolicy : ITrainingDemandPolicy
     {
-        public int Minimum(int baseMinimum, int inboundAssignments)
+        public int RequiredTotal(int baseRequiredTotal, int inboundAssignments)
             => System.Math.Min(RoleHolderRange.Uncapped,
-                System.Math.Max(0, baseMinimum) + System.Math.Max(0, inboundAssignments));
+                System.Math.Max(0, baseRequiredTotal)
+                + System.Math.Max(0, inboundAssignments));
 
         public int Maximum(int baseMaximum, int inboundAssignments)
             => baseMaximum >= RoleHolderRange.Uncapped

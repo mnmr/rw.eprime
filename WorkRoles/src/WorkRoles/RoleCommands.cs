@@ -55,11 +55,12 @@ namespace WorkRoles
             };
             // Stored holder fields mirror the def so the editor and drift
             // detection read def values; Auto mode still resolves dynamically.
-            var range = RoleHolderPolicy.WithMin(0, def.maxHolders, def.minHolders.Count);
-            role.minHolders = range.min;
+            var range = RoleHolderPolicy.WithRequiredTotal(
+                0, def.maxHolders, def.minHolders.RequiredTotal);
+            role.requiredTotal = range.requiredTotal;
             role.maxHolders = range.max;
-            role.trainingWaivers = RoleHolderPolicy.WithTraining(
-                range.min, def.minHolders.Waivers);
+            role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
+                range.requiredTotal, def.minHolders.TrainingWaivers);
             if (!def.holderScale.NullOrEmpty())
                 role.holderScaleName = SeededDefIdentity.ScaleName(def);
             if (!def.group.NullOrEmpty())
@@ -178,22 +179,25 @@ namespace WorkRoles
                 Store.holderScales.Add(target);
                 changed = true;
             }
-            if (!target.Preset && (edit.min != null || edit.train != null
+            if (!target.Preset && (edit.requiredTotals != null
+                || edit.trainingWaivers != null
                 || edit.max != null))
             {
                 HolderScale candidate = target.Copy();
-                if (edit.min != null)
-                    candidate.Min = HolderScaleCodec.DecodeRow(edit.min, 0);
-                if (edit.train != null)
-                    candidate.Train = HolderScaleCodec.DecodeRow(edit.train, 0);
+                if (edit.requiredTotals != null)
+                    candidate.RequiredTotals = HolderScaleCodec.DecodeRow(
+                        edit.requiredTotals, 0);
+                if (edit.trainingWaivers != null)
+                    candidate.TrainingWaivers = HolderScaleCodec.DecodeRow(
+                        edit.trainingWaivers, 0);
                 if (edit.max != null)
                     candidate.Max = HolderScaleCodec.DecodeRow(
                         edit.max, RoleHolderRange.Uncapped);
                 candidate.Normalize();
                 if (!target.SameValuesAs(candidate))
                 {
-                    target.Min = candidate.Min;
-                    target.Train = candidate.Train;
+                    target.RequiredTotals = candidate.RequiredTotals;
+                    target.TrainingWaivers = candidate.TrainingWaivers;
                     target.Max = candidate.Max;
                     changed = true;
                 }
@@ -256,7 +260,8 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void SetRoleHolderMode(int roleId, int modeValue, int initialMin)
+        public static void SetRoleHolderMode(
+            int roleId, int modeValue, int initialRequiredTotal)
         {
             var role = FindRole(roleId);
             if (role == null || !System.Enum.IsDefined(typeof(RoleHolderMode), modeValue)) return;
@@ -266,10 +271,12 @@ namespace WorkRoles
             {
                 var defaults = RoleAutoDefaults.Resolve(role);
                 var custom = RoleHolderPolicy.InitialCustom(
-                    initialMin, defaults.Max, defaults.Train);
-                role.minHolders = custom.min;
+                    initialRequiredTotal,
+                    defaults.Max,
+                    defaults.TrainingWaivers);
+                role.requiredTotal = custom.requiredTotal;
                 role.maxHolders = custom.max;
-                role.trainingWaivers = custom.waivers;
+                role.trainingWaivers = custom.trainingWaivers;
                 role.holderRangeSet = true;
                 initialized = true;
             }
@@ -283,16 +290,19 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void SetRoleHolderMin(int roleId, int value)
+        public static void SetRoleRequiredTotal(int roleId, int value)
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            var range = RoleHolderPolicy.WithMin(role.minHolders, role.maxHolders, value);
-            if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
-            role.minHolders = range.min;
+            var range = RoleHolderPolicy.WithRequiredTotal(
+                role.requiredTotal, role.maxHolders, value);
+            if (role.holderRangeSet
+                && role.requiredTotal == range.requiredTotal
+                && role.maxHolders == range.max) return;
+            role.requiredTotal = range.requiredTotal;
             role.maxHolders = range.max;
-            role.trainingWaivers = RoleHolderPolicy.WithTraining(
-                role.minHolders, role.trainingWaivers);
+            role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
+                role.requiredTotal, role.trainingWaivers);
             role.holderRangeSet = true;
             UiVersion.Bump();
         }
@@ -302,9 +312,12 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            var range = RoleHolderPolicy.WithMax(role.minHolders, role.maxHolders, value);
-            if (role.holderRangeSet && role.minHolders == range.min && role.maxHolders == range.max) return;
-            role.minHolders = range.min;
+            var range = RoleHolderPolicy.WithMax(
+                role.requiredTotal, role.maxHolders, value);
+            if (role.holderRangeSet
+                && role.requiredTotal == range.requiredTotal
+                && role.maxHolders == range.max) return;
+            role.requiredTotal = range.requiredTotal;
             role.maxHolders = range.max;
             role.holderRangeSet = true;
             UiVersion.Bump();
@@ -315,9 +328,11 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null) return;
-            int training = RoleHolderPolicy.WithTraining(role.minHolders, value);
-            if (role.holderRangeSet && role.trainingWaivers == training) return;
-            role.trainingWaivers = training;
+            int trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
+                role.requiredTotal, value);
+            if (role.holderRangeSet
+                && role.trainingWaivers == trainingWaivers) return;
+            role.trainingWaivers = trainingWaivers;
             role.holderRangeSet = true;
             UiVersion.Bump();
         }
@@ -743,7 +758,7 @@ namespace WorkRoles
                 Blocker = source.blocker,
                 HolderMode = source.holderMode,
                 HolderRangeSet = source.holderRangeSet,
-                MinHolders = source.minHolders,
+                RequiredTotal = source.requiredTotal,
                 MaxHolders = source.maxHolders,
                 TrainingWaivers = source.trainingWaivers,
                 GroupId = source.groupId,
@@ -768,7 +783,7 @@ namespace WorkRoles
                 blocker = values.Blocker,
                 holderMode = values.HolderMode,
                 holderRangeSet = values.HolderRangeSet,
-                minHolders = values.MinHolders,
+                requiredTotal = values.RequiredTotal,
                 maxHolders = values.MaxHolders,
                 trainingWaivers = values.TrainingWaivers,
                 groupId = values.GroupId,

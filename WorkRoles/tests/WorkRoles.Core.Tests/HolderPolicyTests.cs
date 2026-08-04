@@ -17,8 +17,10 @@ public class HolderPolicyTests
     [Test]
     public async Task ChangingEitherRangeEndMovesTheOtherWhenNecessary()
     {
-        await Assert.That(RoleHolderPolicy.WithMin(2, 4, 6)).IsEqualTo((6, 6));
-        await Assert.That(RoleHolderPolicy.WithMin(2, 4, 3)).IsEqualTo((3, 4));
+        await Assert.That(RoleHolderPolicy.WithRequiredTotal(2, 4, 6))
+            .IsEqualTo((6, 6));
+        await Assert.That(RoleHolderPolicy.WithRequiredTotal(2, 4, 3))
+            .IsEqualTo((3, 4));
         await Assert.That(RoleHolderPolicy.WithMax(2, 4, 1)).IsEqualTo((1, 1));
         await Assert.That(RoleHolderPolicy.WithMax(2, 4, 3)).IsEqualTo((2, 3));
     }
@@ -26,10 +28,10 @@ public class HolderPolicyTests
     [Test]
     public async Task TrainingWaiverIsClampedToTheConfiguredMinimum()
     {
-        await Assert.That(RoleHolderPolicy.WithTraining(3, 2)).IsEqualTo(2);
-        await Assert.That(RoleHolderPolicy.WithTraining(3, 5)).IsEqualTo(3);
-        await Assert.That(RoleHolderPolicy.WithTraining(0, 1)).IsEqualTo(0);
-        await Assert.That(RoleHolderPolicy.WithTraining(3, -1)).IsEqualTo(0);
+        await Assert.That(RoleHolderPolicy.WithTrainingWaivers(3, 2)).IsEqualTo(2);
+        await Assert.That(RoleHolderPolicy.WithTrainingWaivers(3, 5)).IsEqualTo(3);
+        await Assert.That(RoleHolderPolicy.WithTrainingWaivers(0, 1)).IsEqualTo(0);
+        await Assert.That(RoleHolderPolicy.WithTrainingWaivers(3, -1)).IsEqualTo(0);
     }
 
     [Test]
@@ -37,12 +39,12 @@ public class HolderPolicyTests
     {
         var xml = new XmlDocument();
         xml.LoadXml("<minHolders waivers=\"1\">2</minHolders>");
-        var minimum = new RoleHolderMinimum();
+        var minimum = new ConfiguredHolderRequirement();
 
         minimum.LoadDataFromXmlCustom(xml.DocumentElement!);
 
-        await Assert.That(minimum.Count).IsEqualTo(2);
-        await Assert.That(minimum.Waivers).IsEqualTo(1);
+        await Assert.That(minimum.RequiredTotal).IsEqualTo(2);
+        await Assert.That(minimum.TrainingWaivers).IsEqualTo(1);
     }
 
     [Test]
@@ -50,12 +52,12 @@ public class HolderPolicyTests
     {
         var xml = new XmlDocument();
         xml.LoadXml("<minHolders>3</minHolders>");
-        var minimum = new RoleHolderMinimum();
+        var minimum = new ConfiguredHolderRequirement();
 
         minimum.LoadDataFromXmlCustom(xml.DocumentElement!);
 
-        await Assert.That(minimum.Count).IsEqualTo(3);
-        await Assert.That(minimum.Waivers).IsEqualTo(0);
+        await Assert.That(minimum.RequiredTotal).IsEqualTo(3);
+        await Assert.That(minimum.TrainingWaivers).IsEqualTo(0);
     }
 
     [Test]
@@ -63,7 +65,7 @@ public class HolderPolicyTests
     {
         var xml = new XmlDocument();
         xml.LoadXml("<minHolders waivers=\"-1\">2</minHolders>");
-        var minimum = new RoleHolderMinimum();
+        var minimum = new ConfiguredHolderRequirement();
         bool rejected = false;
 
         try

@@ -59,7 +59,7 @@ public class RecsSignalBandTests
     public async Task DampedBelowStrongLosesQualificationButStaysDraftEligible()
     {
         var role = CrafterRole();
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         var pawn = CrafterPawn();
         pawn.SignalBuckets["Crafting"] = SignalBucket.Strong;
         pawn.SignalBuckets["Intellectual"] = SignalBucket.Awful;
@@ -163,7 +163,7 @@ public class RecsSignalBandTests
         pawn.SkillLevels["Cooking"] = 10;
         PawnSignalViewProjection.Apply(snapshot, pawn);
         RoleView role = RecsTestBed.Role(1, "Cooking");
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         ColonyView colony = RecsTestBed.Colony(
             new List<RoleView> { role }, pawn);
         var context = new EngineContext(colony);

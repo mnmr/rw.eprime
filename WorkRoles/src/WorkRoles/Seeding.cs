@@ -619,9 +619,9 @@ namespace WorkRoles
                     System.StringComparison.OrdinalIgnoreCase))
                 return true;
             RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
-            return role.minHolders != defaults.Min
+            return role.requiredTotal != defaults.RequiredTotal
                 || role.maxHolders != defaults.Max
-                || role.trainingWaivers != defaults.Train;
+                || role.trainingWaivers != defaults.TrainingWaivers;
         }
 
         /// Everything Restore Defaults could do right now: recreate missing
@@ -1014,9 +1014,9 @@ namespace WorkRoles
                     // Stored fields mirror the resolved defaults so the editor
                     // shows the def values instead of zeros.
                     RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
-                    role.minHolders = defaults.Min;
+                    role.requiredTotal = defaults.RequiredTotal;
                     role.maxHolders = defaults.Max;
-                    role.trainingWaivers = defaults.Train;
+                    role.trainingWaivers = defaults.TrainingWaivers;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 

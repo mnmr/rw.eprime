@@ -5,31 +5,37 @@ using System.Xml;
 namespace WorkRoles.Core
 {
     /// RoleDef value encoded as <minHolders waivers="N">M</minHolders>.
-    public sealed class RoleHolderMinimum
+    /// The element value is the required total; waivers are slots within it.
+    public sealed class ConfiguredHolderRequirement
     {
-        public RoleHolderMinimum() { }
+        public ConfiguredHolderRequirement() { }
 
-        public RoleHolderMinimum(int count, int waivers = 0)
+        public ConfiguredHolderRequirement(
+            int requiredTotal, int trainingWaivers = 0)
         {
-            if (count < 0) throw new ArgumentOutOfRangeException(nameof(count));
-            if (waivers < 0) throw new ArgumentOutOfRangeException(nameof(waivers));
-            Count = count;
-            Waivers = waivers;
+            if (requiredTotal < 0)
+                throw new ArgumentOutOfRangeException(nameof(requiredTotal));
+            if (trainingWaivers < 0)
+                throw new ArgumentOutOfRangeException(nameof(trainingWaivers));
+            RequiredTotal = requiredTotal;
+            TrainingWaivers = trainingWaivers;
         }
 
-        public int Count { get; private set; }
-        public int Waivers { get; private set; }
+        public int RequiredTotal { get; private set; }
+        public int TrainingWaivers { get; private set; }
 
         public void LoadDataFromXmlCustom(XmlNode xmlRoot)
         {
-            int count = int.Parse(xmlRoot.InnerText, CultureInfo.InvariantCulture);
+            int requiredTotal = int.Parse(
+                xmlRoot.InnerText, CultureInfo.InvariantCulture);
             string rawWaivers = xmlRoot.Attributes?["waivers"]?.Value;
-            int waivers = rawWaivers == null
+            int trainingWaivers = rawWaivers == null
                 ? 0 : int.Parse(rawWaivers, CultureInfo.InvariantCulture);
-            if (count < 0 || waivers < 0)
-                throw new FormatException("Role holder minimums and waivers cannot be negative.");
-            Count = count;
-            Waivers = waivers;
+            if (requiredTotal < 0 || trainingWaivers < 0)
+                throw new FormatException(
+                    "Role holder required total and training waivers cannot be negative.");
+            RequiredTotal = requiredTotal;
+            TrainingWaivers = trainingWaivers;
         }
     }
 
@@ -60,28 +66,31 @@ namespace WorkRoles.Core
             }
         }
 
-        public static (int min, int max) WithMin(int currentMin, int currentMax, int value)
+        public static (int requiredTotal, int max) WithRequiredTotal(
+            int currentRequiredTotal, int currentMax, int value)
         {
-            int min = RoleHolderRange.Clamp(value);
+            int requiredTotal = RoleHolderRange.Clamp(value);
             int max = RoleHolderRange.Clamp(currentMax);
-            return (min, System.Math.Max(min, max));
+            return (requiredTotal, System.Math.Max(requiredTotal, max));
         }
 
-        public static (int min, int max) WithMax(int currentMin, int currentMax, int value)
+        public static (int requiredTotal, int max) WithMax(
+            int currentRequiredTotal, int currentMax, int value)
         {
-            int min = RoleHolderRange.Clamp(currentMin);
+            int requiredTotal = RoleHolderRange.Clamp(currentRequiredTotal);
             int max = RoleHolderRange.Clamp(value);
-            return (System.Math.Min(min, max), max);
+            return (System.Math.Min(requiredTotal, max), max);
         }
 
-        public static int WithTraining(int minimum, int value)
-            => System.Math.Max(0, System.Math.Min(RoleHolderRange.Clamp(minimum), value));
+        public static int WithTrainingWaivers(int requiredTotal, int value)
+            => new HolderRequirement(requiredTotal, value).TrainingWaivers;
 
-        public static (int min, int max, int waivers) InitialCustom(
-            int minimum, int maximum, int waivers)
+        public static (int requiredTotal, int max, int trainingWaivers) InitialCustom(
+            int requiredTotal, int maximum, int trainingWaivers)
         {
-            var range = WithMin(0, maximum, minimum);
-            return (range.min, range.max, WithTraining(range.min, waivers));
+            var range = WithRequiredTotal(0, maximum, requiredTotal);
+            return (range.requiredTotal, range.max, WithTrainingWaivers(
+                range.requiredTotal, trainingWaivers));
         }
     }
 }

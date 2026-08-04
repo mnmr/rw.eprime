@@ -12,7 +12,7 @@ public class RecsTrainingWaiverTests
         var medic = RecsTestBed.Role(2, "Doctor", "Medic");
         var doctor = RecsTestBed.Role(3, "Doctor", "Doctor");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 3;
+        doctor.RequiredTotal = 3;
         doctor.TrainingWaivers = waivers;
         var pawns = levels.Select(level =>
         {
@@ -73,7 +73,7 @@ public class RecsTrainingWaiverTests
     public async Task EqualSkillPromotionPrefersTheBetterSignal()
     {
         var (colony, _, medic, doctor) = DoctorColony(1, 7, 7);
-        doctor.MinHolders = 2;
+        doctor.RequiredTotal = 2;
         colony.Pawns[1].SignalBuckets["Medicine"] = SignalBucket.Strong;
 
         List<PawnResult> results = RunTrainingOnly(colony);
@@ -86,7 +86,7 @@ public class RecsTrainingWaiverTests
     public async Task SkillOutranksSignalWhenSelectingThePromotionCohort()
     {
         var (colony, _, medic, doctor) = DoctorColony(1, 8, 7, 5);
-        doctor.MinHolders = 2;
+        doctor.RequiredTotal = 2;
         colony.Pawns[2].SignalBuckets["Medicine"] = SignalBucket.Strong;
 
         List<PawnResult> results = RunTrainingOnly(colony);
@@ -100,7 +100,7 @@ public class RecsTrainingWaiverTests
     public async Task EqualSkillAndSignalPromotionPrefersTheYoungerPawn()
     {
         var (colony, _, medic, doctor) = DoctorColony(1, 7, 7);
-        doctor.MinHolders = 2;
+        doctor.RequiredTotal = 2;
         colony.Pawns[0].BiologicalAgeTicks = 40;
         colony.Pawns[1].BiologicalAgeTicks = 20;
 
@@ -115,10 +115,10 @@ public class RecsTrainingWaiverTests
     {
         var researcher = RecsTestBed.Role(1, "Doctor", "Research");
         researcher.HolderMode = RoleHolderMode.Custom;
-        researcher.MinHolders = 2;
+        researcher.RequiredTotal = 2;
         var target = RecsTestBed.Role(2, "Doctor", "DrugMaking");
         target.HolderMode = RoleHolderMode.Custom;
-        target.MinHolders = 1;
+        target.RequiredTotal = 1;
         target.TrainingWaivers = 1;
         var low = RecsTestBed.Pawn(); low.SkillLevels["Medicine"] = 3;
         var middle = RecsTestBed.Pawn(); middle.SkillLevels["Medicine"] = 4;
@@ -151,7 +151,7 @@ public class RecsTrainingWaiverTests
         target.Skills.Add(new RoleSkillView
             { SkillDefName = "Intellectual", Importance = 1 });
         target.HolderMode = RoleHolderMode.Custom;
-        target.MinHolders = 1;
+        target.RequiredTotal = 1;
         target.TrainingWaivers = 1;
         var pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Crafting"] = 10;
@@ -177,7 +177,7 @@ public class RecsTrainingWaiverTests
         var medic = RecsTestBed.Role(1, "Doctor", "Medic");
         var doctor = RecsTestBed.Role(2, "Doctor", "Doctor");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         doctor.TrainingWaivers = 1;
         var pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Medicine"] = 8;
@@ -208,7 +208,7 @@ public class RecsTrainingWaiverTests
         target.Skills.Add(new RoleSkillView
             { SkillDefName = "Intellectual", Primary = true });
         target.HolderMode = RoleHolderMode.Custom;
-        target.MinHolders = 1;
+        target.RequiredTotal = 1;
         target.TrainingWaivers = 1;
         var pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Crafting"] = 5;
@@ -233,7 +233,7 @@ public class RecsTrainingWaiverTests
         core.AutoAssign = true;
         var selectedTarget = RecsTestBed.Role(2, "Doctor", "SelectedTarget");
         selectedTarget.HolderMode = RoleHolderMode.Custom;
-        selectedTarget.MinHolders = 1;
+        selectedTarget.RequiredTotal = 1;
         selectedTarget.TrainingWaivers = 1;
         var basics = RecsTestBed.Role(3, "Cooking", "Basics");
         basics.AutoAssign = true;
@@ -270,7 +270,7 @@ public class RecsTrainingWaiverTests
         core.AutoAssign = true;
         var target = RecsTestBed.Role(2, "Doctor", "Target");
         target.HolderMode = RoleHolderMode.Custom;
-        target.MinHolders = 1;
+        target.RequiredTotal = 1;
         target.TrainingWaivers = 1;
         var basics = RecsTestBed.Role(3, "Cooking", "Basics");
         basics.AutoAssign = true;
@@ -298,7 +298,7 @@ public class RecsTrainingWaiverTests
         basics.AutoAssign = true;
         var target = RecsTestBed.Role(3, "Doctor", "Target");
         target.HolderMode = RoleHolderMode.Custom;
-        target.MinHolders = 1;
+        target.RequiredTotal = 1;
         target.TrainingWaivers = 1;
         var firstLower = RecsTestBed.Role(4, "Doctor", "FirstLower");
         var secondLower = RecsTestBed.Role(5, "Doctor", "SecondLower");

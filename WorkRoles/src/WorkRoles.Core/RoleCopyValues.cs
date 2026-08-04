@@ -20,7 +20,7 @@ namespace WorkRoles.Core
         public bool Blocker { get; set; }
         public RoleHolderMode HolderMode { get; set; }
         public bool HolderRangeSet { get; set; }
-        public int MinHolders { get; set; }
+        public int RequiredTotal { get; set; }
         public int MaxHolders { get; set; } = RoleHolderRange.Uncapped;
         public int TrainingWaivers { get; set; }
         public int GroupId { get; set; }
@@ -54,7 +54,7 @@ namespace WorkRoles.Core
                 Blocker = Blocker,
                 HolderMode = HolderMode,
                 HolderRangeSet = HolderRangeSet,
-                MinHolders = MinHolders,
+                RequiredTotal = RequiredTotal,
                 MaxHolders = MaxHolders,
                 TrainingWaivers = TrainingWaivers,
                 GroupId = GroupId,

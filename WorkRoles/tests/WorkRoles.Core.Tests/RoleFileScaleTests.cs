@@ -10,8 +10,8 @@ public class RoleFileScaleTests
         var scale = new HolderScale { Name = "Gentle" };
         for (int i = 0; i < HolderScale.Bands; i++)
         {
-            scale.Min[i] = 1 + i / 2;
-            scale.Train[i] = i / 3;
+            scale.RequiredTotals[i] = 1 + i / 2;
+            scale.TrainingWaivers[i] = i / 3;
             scale.Max[i] = 6;
         }
         scale.Normalize();

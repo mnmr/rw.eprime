@@ -8,19 +8,20 @@ namespace WorkRoles.Core.Tests;
 public class RecsCoverageDraftTests
 {
     [Test]
-    public async Task UnitScalingWantsUnitsForAutoAndNTimesUnitsForNeeded()
+    public async Task UnitScalingCalculatesRequiredTotalsForAutoAndNeededRoles()
     {
         var scaling = new UnitScaling();
         var auto = RecsTestBed.Role(1, "Cooking");      // resolved -1
-        auto.MinHolders = -1;
+        auto.RequiredTotal = -1;
         var needed = RecsTestBed.Role(2, "Cooking");
-        needed.MinHolders = 2;
+        needed.RequiredTotal = 2;
         var interestOnly = RecsTestBed.Role(3, "Cooking");   // 0
-        await Assert.That(scaling.Want(auto, 6)).IsEqualTo(1);
-        await Assert.That(scaling.Want(auto, 7)).IsEqualTo(2);
-        await Assert.That(scaling.Want(needed, 6)).IsEqualTo(2);
-        await Assert.That(scaling.Want(needed, 13)).IsEqualTo(6);
-        await Assert.That(scaling.Want(interestOnly, 50)).IsEqualTo(0);
+        await Assert.That(scaling.Requirement(auto, 6).RequiredTotal).IsEqualTo(1);
+        await Assert.That(scaling.Requirement(auto, 7).RequiredTotal).IsEqualTo(2);
+        await Assert.That(scaling.Requirement(needed, 6).RequiredTotal).IsEqualTo(2);
+        await Assert.That(scaling.Requirement(needed, 13).RequiredTotal).IsEqualTo(6);
+        await Assert.That(scaling.Requirement(interestOnly, 50).RequiredTotal)
+            .IsEqualTo(0);
         // Never-mode roles are guarded by ExclusionsRule/AddCandidate, not by
         // scaling: see RecsExclusionAutoTests.
     }
@@ -31,10 +32,10 @@ public class RecsCoverageDraftTests
         var scaling = new UnitScaling();
         var role = RecsTestBed.Role(1, "Cooking");
         role.HolderMode = RoleHolderMode.Custom;
-        role.MinHolders = 2;
+        role.RequiredTotal = 2;
 
-        await Assert.That(scaling.Want(role, 6)).IsEqualTo(2);
-        await Assert.That(scaling.Want(role, 13)).IsEqualTo(2);
+        await Assert.That(scaling.Requirement(role, 6).RequiredTotal).IsEqualTo(2);
+        await Assert.That(scaling.Requirement(role, 13).RequiredTotal).IsEqualTo(2);
     }
 
     [Test]
@@ -43,31 +44,32 @@ public class RecsCoverageDraftTests
         var scaling = new UnitScaling();
         var role = RecsTestBed.Role(1, "Hauling");
         role.HolderMode = RoleHolderMode.Auto;
-        role.MinHolders = 8;
+        role.RequiredTotal = 8;
 
-        await Assert.That(scaling.Want(role, 7)).IsEqualTo(7);
+        await Assert.That(scaling.Requirement(role, 7).RequiredTotal).IsEqualTo(7);
     }
 
     [Test]
     public async Task ScalingSkipsVetoedAndAutoAssignedButIncludesUnskilledAndHunting()
     {
-        var needed = RecsTestBed.Role(1, "Cooking"); needed.MinHolders = 1;
-        var auto = RecsTestBed.Role(2, "Crafting"); auto.AutoAssign = true; auto.MinHolders = 1;
-        var grunt = RecsTestBed.Unskilled(3, "Hauling"); grunt.MinHolders = 1;
-        var hunter = RecsTestBed.Role(4, "Hunting"); hunter.Hunting = true; hunter.MinHolders = 1;
-        var vetoed = RecsTestBed.Role(5, "Doctor"); vetoed.MinHolders = 1;
+        var needed = RecsTestBed.Role(1, "Cooking"); needed.RequiredTotal = 1;
+        var auto = RecsTestBed.Role(2, "Crafting"); auto.AutoAssign = true; auto.RequiredTotal = 1;
+        var grunt = RecsTestBed.Unskilled(3, "Hauling"); grunt.RequiredTotal = 1;
+        var hunter = RecsTestBed.Role(4, "Hunting"); hunter.Hunting = true; hunter.RequiredTotal = 1;
+        var vetoed = RecsTestBed.Role(5, "Doctor"); vetoed.RequiredTotal = 1;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { needed, auto, grunt, hunter, vetoed }, RecsTestBed.Pawn()));
         context.Vetoed.Add(5);
         new CoverageScalingRule(new UnitScaling()).Apply(context);
-        await Assert.That(string.Join(",", context.Want.Keys.OrderBy(id => id))).IsEqualTo("1,3,4");
+        await Assert.That(string.Join(",",
+            context.RequiredTotal.Keys.OrderBy(id => id))).IsEqualTo("1,3,4");
     }
 
     [Test]
     public async Task DraftPrefersNeutralOverPoor_NeverDraftsAwful()
     {
         var cook = RecsTestBed.Role(1, "Cooking");
-        cook.MinHolders = 2;
+        cook.RequiredTotal = 2;
         var neutralHigh = RecsTestBed.Pawn(); neutralHigh.SkillLevels["Cooking"] = 9;
         var neutralLow = RecsTestBed.Pawn(); neutralLow.SkillLevels["Cooking"] = 3;
         var poor = RecsTestBed.Pawn(); poor.SkillLevels["Cooking"] = 0;
@@ -90,7 +92,7 @@ public class RecsCoverageDraftTests
     public async Task DraftPoolFallsBackToPoorWhenNeutralsRunOut()
     {
         var cook = RecsTestBed.Role(1, "Cooking");
-        cook.MinHolders = 2;
+        cook.RequiredTotal = 2;
         var neutral = RecsTestBed.Pawn(); neutral.SkillLevels["Cooking"] = 5;
         var poor = RecsTestBed.Pawn(); poor.SkillLevels["Cooking"] = 0;
         poor.SignalBuckets["Cooking"] = SignalBucket.Poor;
@@ -105,7 +107,7 @@ public class RecsCoverageDraftTests
     public async Task DraftRecordsTheCompleteRankingAndNumberOfOpenSlots()
     {
         var cook = RecsTestBed.Role(1, "Cooking");
-        cook.MinHolders = 2;
+        cook.RequiredTotal = 2;
         var best = RecsTestBed.Pawn(); best.SkillLevels["Cooking"] = 9;
         var second = RecsTestBed.Pawn(); second.SkillLevels["Cooking"] = 5;
         var third = RecsTestBed.Pawn(); third.SkillLevels["Cooking"] = 2;
@@ -132,7 +134,7 @@ public class RecsCoverageDraftTests
     public async Task DraftRecordsRemainingCandidatesWhenCoverageWasAlreadyFull()
     {
         var cook = RecsTestBed.Role(1, "Cooking");
-        cook.MinHolders = 1;
+        cook.RequiredTotal = 1;
         var holder = RecsTestBed.Pawn(); holder.SkillLevels["Cooking"] = 3;
         var remaining = RecsTestBed.Pawn(); remaining.SkillLevels["Cooking"] = 9;
         var context = new EngineContext(RecsTestBed.Colony(
@@ -157,7 +159,7 @@ public class RecsCoverageDraftTests
     {
         var farmer = RecsTestBed.Role(1, "Cooking", "Grow", "Cut");
         var grower = RecsTestBed.Role(2, "Cooking", "Grow");           // covered, auto-coverage
-        grower.MinHolders = -1; farmer.MinHolders = -1;
+        grower.RequiredTotal = -1; farmer.RequiredTotal = -1;
         var pawn = RecsTestBed.Pawn(); pawn.SkillLevels["Cooking"] = 5;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { farmer, grower }, pawn));
@@ -166,10 +168,10 @@ public class RecsCoverageDraftTests
         await Assert.That(context.Candidates[0].ContainsKey(1)).IsTrue();  // Farmer dealt
         await Assert.That(context.Candidates[0].ContainsKey(2)).IsFalse(); // Grower skipped
 
-        // Essential (MinHolders >= 1) covered roles are still dealt once the
-        // want exceeds what coverage supplies: the coverer's pawn counts as one
+        // Essential (RequiredTotal >= 1) covered roles are still dealt once the
+        // required total exceeds what coverage supplies: the coverer's pawn counts as one
         // holder, the uncovered pawn fills the remaining slot directly.
-        grower.MinHolders = 2;
+        grower.RequiredTotal = 2;
         var uncovered = RecsTestBed.Pawn();
         uncovered.SkillLevels["Cooking"] = 4;
         var essential = new EngineContext(RecsTestBed.Colony(
@@ -186,10 +188,10 @@ public class RecsCoverageDraftTests
         // Same coverage shape as above, but the covered role belongs to a
         // training path: the path-member exception keeps it in the draft, so
         // its ranking is recorded for the uncovered pawn (coverage still
-        // satisfies the want itself, hence no extra candidate).
+        // satisfies the required total itself, hence no extra candidate).
         var farmer = RecsTestBed.Role(1, "Cooking", "Grow", "Cut");
         var grower = RecsTestBed.Role(2, "Cooking", "Grow");
-        farmer.MinHolders = -1; grower.MinHolders = -1;
+        farmer.RequiredTotal = -1; grower.RequiredTotal = -1;
         var covered = RecsTestBed.Pawn(); covered.SkillLevels["Cooking"] = 5;
         var audience = RecsTestBed.Pawn(); audience.SkillLevels["Cooking"] = 4;
         var colony = RecsTestBed.Colony(new List<RoleView> { farmer, grower }, covered, audience);
@@ -213,7 +215,7 @@ public class RecsCoverageDraftTests
         var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
         mixed.WorkTypes.Add("Crafting");
         var crafter = RecsTestBed.Role(2, "Crafting", "Craft");
-        crafter.MinHolders = 1;
+        crafter.RequiredTotal = 1;
         var partial = RecsTestBed.Pawn();
         partial.CapableWorkTypes.Clear();
         partial.CapableWorkTypes.Add("Cooking");
@@ -240,7 +242,7 @@ public class RecsCoverageDraftTests
         var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
         mixed.WorkTypes.Add("Crafting");
         var crafter = RecsTestBed.Role(2, "Crafting", "Craft");
-        crafter.MinHolders = -1;
+        crafter.RequiredTotal = -1;
         var partial = RecsTestBed.Pawn();
         partial.CapableWorkTypes.Clear();
         partial.CapableWorkTypes.Add("Cooking");
@@ -257,7 +259,7 @@ public class RecsCoverageDraftTests
         new CoverageScalingRule(new UnitScaling()).Apply(context);
         new BestInColonyDraftRule().Apply(context);
 
-        await Assert.That(context.Want[crafter.Id]).IsEqualTo(1);
+        await Assert.That(context.RequiredTotal[crafter.Id]).IsEqualTo(1);
         await Assert.That(context.HoldersOf(crafter.Id)).IsEqualTo(1);
         await Assert.That(context.Candidates[1].ContainsKey(crafter.Id)).IsTrue();
     }
@@ -267,7 +269,7 @@ public class RecsCoverageDraftTests
     {
         var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
         mixed.WorkTypes.Add("Crafting");
-        mixed.MinHolders = 1;
+        mixed.RequiredTotal = 1;
         var partial = RecsTestBed.Pawn();
         partial.CapableWorkTypes.Clear();
         partial.CapableWorkTypes.Add("Cooking");
@@ -291,7 +293,7 @@ public class RecsCoverageDraftTests
     {
         var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
         mixed.WorkTypes.Add("Crafting");
-        mixed.MinHolders = 1;
+        mixed.RequiredTotal = 1;
         var first = RecsTestBed.Pawn();
         first.CapableWorkTypes.Clear();
         first.CapableWorkTypes.Add("Cooking");
@@ -315,7 +317,7 @@ public class RecsCoverageDraftTests
     public async Task MissingSecondarySkillNoLongerVetoesTheDraft()
     {
         var mixedSkill = RecsTestBed.Role(1, "Crafting");
-        mixedSkill.MinHolders = 1;
+        mixedSkill.RequiredTotal = 1;
         mixedSkill.Skills.Add(new RoleSkillView
         {
             SkillDefName = "Crafting", Primary = true, Importance = 3,
@@ -375,7 +377,7 @@ public class RecsCoverageDraftTests
     {
         var mixed = RecsTestBed.Role(1, "Cooking", "Cook", "Craft");
         mixed.WorkTypes.Add("Crafting");
-        mixed.MinHolders = 1;
+        mixed.RequiredTotal = 1;
         var holder = RecsTestBed.Pawn();
         holder.Existing.Add(new AssignmentView { RoleId = mixed.Id, Pinned = true });
         var available = RecsTestBed.Pawn();
@@ -396,7 +398,7 @@ public class RecsCoverageDraftTests
         // Doctor path 15-21; one in-band pawn (16), one below (4). The in-band
         // pawn takes the single floor slot.
         var doctor = RecsTestBed.Role(1, "Doctor");
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         var low = RecsTestBed.Pawn(); low.SkillLevels["Medicine"] = 4;
         var high = RecsTestBed.Pawn(); high.SkillLevels["Medicine"] = 16;
         var colony = RecsTestBed.Colony(new List<RoleView> { doctor }, low, high);
@@ -415,7 +417,7 @@ public class RecsCoverageDraftTests
         // pawn reaches Doctor's band — the floor is still met by the best
         // below-band pawn (bands gate interest, never the need-driven floor).
         var doctor = RecsTestBed.Role(1, "Doctor");
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         var medic = RecsTestBed.Role(2, "Doctor", "Tend");
         var a = RecsTestBed.Pawn(); a.SkillLevels["Medicine"] = 9;
         var b = RecsTestBed.Pawn(); b.SkillLevels["Medicine"] = 4;

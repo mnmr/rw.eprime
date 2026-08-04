@@ -507,7 +507,7 @@ public class RecsOrderingTests
         var basics = RecsTestBed.Role(1, "Cooking", "Fire", "Patient");
         basics.AutoAssign = true; basics.NaturalPriority = 100f;
         var cook = RecsTestBed.Role(2, "Cooking");
-        cook.MinHolders = 1;
+        cook.RequiredTotal = 1;
         var doctor = RecsTestBed.Role(3, "Doctor");
         var chef = RecsTestBed.Pawn();
         chef.SkillLevels["Cooking"] = 9; chef.SignalBuckets["Cooking"] = SignalBucket.Great;

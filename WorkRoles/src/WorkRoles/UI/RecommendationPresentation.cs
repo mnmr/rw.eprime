@@ -32,12 +32,12 @@ namespace WorkRoles.UI
             TipSection facts = model.AddSection();
             if (!role.autoAssign && !role.blocker)
             {
-                string need = explanation.RequiredHolders == 1
-                    ? "WR_RecTipNeedOne".Translate(explanation.RecommendedHolders)
-                    : explanation.RequiredHolders > 1
+                string need = explanation.RequiredTotal == 1
+                    ? "WR_RecTipNeedOne".Translate(explanation.CoveredTotal)
+                    : explanation.RequiredTotal > 1
                         ? "WR_RecTipNeedMany".Translate(
-                            explanation.RequiredHolders, explanation.RecommendedHolders)
-                        : "WR_RecTipNeedNone".Translate(explanation.RecommendedHolders);
+                            explanation.RequiredTotal, explanation.CoveredTotal)
+                        : "WR_RecTipNeedNone".Translate(explanation.CoveredTotal);
                 facts.Fact("WR_RecTipColonyNeed".Translate(), need);
                 if (explanation.ConfiguredMaximum < RoleHolderRange.Uncapped)
                     facts.Fact("WR_RecTipConfiguredMax".Translate(),

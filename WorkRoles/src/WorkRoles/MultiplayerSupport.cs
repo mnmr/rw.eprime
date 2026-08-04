@@ -111,8 +111,8 @@ namespace WorkRoles
             sync.Bind(ref edit.roleId);
             sync.Bind(ref edit.sourceName);
             sync.Bind(ref edit.targetName);
-            sync.Bind(ref edit.min);
-            sync.Bind(ref edit.train);
+            sync.Bind(ref edit.requiredTotals);
+            sync.Bind(ref edit.trainingWaivers);
             sync.Bind(ref edit.max);
         }
 

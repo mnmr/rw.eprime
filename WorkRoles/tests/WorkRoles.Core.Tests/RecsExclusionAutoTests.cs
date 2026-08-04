@@ -12,7 +12,7 @@ public class RecsExclusionAutoTests
         var blocker = RecsTestBed.Role(2, "Cooking"); blocker.Blocker = true;
         var never = RecsTestBed.Role(3, "Cooking");
         never.HolderMode = RoleHolderMode.Never;
-        never.MinHolders = 2;
+        never.RequiredTotal = 2;
         never.MaxHolders = 4;
         var locked = RecsTestBed.Role(4, "Cooking"); locked.Available = false;
         var disabled = RecsTestBed.Role(5, "Cooking"); disabled.Enabled = false;

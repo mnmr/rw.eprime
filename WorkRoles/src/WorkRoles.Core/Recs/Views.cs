@@ -40,7 +40,7 @@ namespace WorkRoles.Core.Recs
         public int RequiredContent;
     }
 
-    /// One catalog role as the rules see it. Auto MinHolders arrives resolved
+    /// One catalog role as the rules see it. Auto required total arrives resolved
     /// through the RoleDef; Custom carries the stored inclusive range.
     public class RoleView
     {
@@ -64,17 +64,21 @@ namespace WorkRoles.Core.Recs
         /// scaling formulas with direct band lookups.
         public HolderScale Scale;
 
-        public int MinHoldersAt(int colonySize) =>
-            Scale != null ? Scale.MinAt(colonySize) : MinHolders;
+        public int RequiredTotalAt(int colonySize) =>
+            Scale != null ? Scale.RequiredTotalAt(colonySize) : RequiredTotal;
 
         public int MaxHoldersAt(int colonySize) =>
             Scale != null ? Scale.MaxAt(colonySize) : MaxHolders;
 
         public int TrainingWaiversAt(int colonySize) =>
-            Scale != null ? Scale.TrainAt(colonySize) : TrainingWaivers;
+            Scale != null ? Scale.TrainingWaiversAt(colonySize) : TrainingWaivers;
+        public HolderRequirement RequirementAt(int colonySize) =>
+            new HolderRequirement(
+                RequiredTotalAt(colonySize),
+                TrainingWaiversAt(colonySize));
         /// -2 never, -1 auto-coverage (one scaled unit), 0 interest-only,
         /// N needed slots.
-        public int MinHolders;
+        public int RequiredTotal;
         public int MaxHolders = RoleHolderRange.Uncapped;
         public int TrainingWaivers;
         public List<RoleSkillView> Skills = new List<RoleSkillView>();

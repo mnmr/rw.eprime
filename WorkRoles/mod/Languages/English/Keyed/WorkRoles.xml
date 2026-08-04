@@ -230,9 +230,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecTipSkills>Required skills</WR_RecTipSkills>
   <WR_RecTipSignalVerdict>Signal verdict</WR_RecTipSignalVerdict>
   <WR_RecTipRecommendation>Recommendation</WR_RecTipRecommendation>
-  <WR_RecTipNeedOne>At least 1 colonist ({0} recommended)</WR_RecTipNeedOne>
-  <WR_RecTipNeedMany>At least {0} colonists ({1} recommended)</WR_RecTipNeedMany>
-  <WR_RecTipNeedNone>No required minimum ({0} recommended)</WR_RecTipNeedNone>
+  <WR_RecTipNeedOne>1 colonist required ({0} covered)</WR_RecTipNeedOne>
+  <WR_RecTipNeedMany>{0} colonists required ({1} covered)</WR_RecTipNeedMany>
+  <WR_RecTipNeedNone>No required total ({0} covered)</WR_RecTipNeedNone>
   <WR_RecTipMaximum>{0} colonists</WR_RecTipMaximum>
   <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>Strong-or-better signals qualify this pawn.</WR_RecDecisionSignals>
@@ -423,17 +423,17 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
   <!-- Editor: colonist range and skills used -->
-  <WR_HoldersTipWhat>Controls the desired range of colonists assigned this role.</WR_HoldersTipWhat>
+  <WR_HoldersTipWhat>Controls the required total covered by this role, including any training waivers, and the maximum number assigned directly.</WR_HoldersTipWhat>
   <WR_HoldersTipAuto>A preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
-  <WR_HoldersTipCustom>An inclusive minimum and maximum selected by you</WR_HoldersTipCustom>
-  <WR_HoldersTipWaivers>Minimum holder slots that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
+  <WR_HoldersTipCustom>A required total and maximum selected by you</WR_HoldersTipCustom>
+  <WR_HoldersTipWaivers>Slots within the required total that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
   <WR_HoldersTipNever>Never recommended</WR_HoldersTipNever>
   <WR_HoldersAuto>Auto</WR_HoldersAuto>
   <WR_HoldersNever>Never</WR_HoldersNever>
   <WR_HoldersCustom>Custom</WR_HoldersCustom>
-  <WR_HoldersMin>Min</WR_HoldersMin>
+  <WR_HoldersMin>Required total</WR_HoldersMin>
   <WR_HoldersMax>Max</WR_HoldersMax>
-  <WR_HoldersWaivers>Waivers</WR_HoldersWaivers>
+  <WR_HoldersWaivers>Training waivers</WR_HoldersWaivers>
   <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
 
   <!-- Holder scale editor -->
@@ -448,17 +448,17 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} = scale name, {1} = "Used by ..." summary -->
   <WR_ScaleDeleteConfirm>Delete scale '{0}'?\n\n{1}. These roles will use Never instead.</WR_ScaleDeleteConfirm>
   <WR_ScaleSaveAsTitle>Save changes as a new scale (this scale reverts to its saved values)</WR_ScaleSaveAsTitle>
-  <WR_ScaleDirectTip>Minimum direct assignments for this band; the rest of the total may be filled by trainees. Raising it past the total raises the total too. Click +1 (wraps at 8), right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleDirectTip>
-  <WR_ScaleTotalsCaption>Recommended assignments (training substitutions included)</WR_ScaleTotalsCaption>
+  <WR_ScaleDirectTip>Direct minimum for this band; the rest of the required total may be filled through training waivers. Raising it past the required total raises that total too. Click +1 (wraps at 8), right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleDirectTip>
+  <WR_ScaleTotalsCaption>Required total (training waivers included)</WR_ScaleTotalsCaption>
   <!-- {0} = role label -->
-  <WR_ScaleMinsCaption>Assignment minimums for {0}</WR_ScaleMinsCaption>
+  <WR_ScaleMinsCaption>Direct minimum for {0}</WR_ScaleMinsCaption>
   <!-- {0} = target role label, {1} = this role's label -->
   <WR_ScaleTrainingHelp>This role is a training role for {0} and assignments are therefore controlled by the tuning options for {0} (even when this is set to Never). However, you can still force minimum assignment counts for {1} here.</WR_ScaleTrainingHelp>
   <!-- {0} = target role label -->
   <WR_ScaleControlledBy>Controlled by {0}</WR_ScaleControlledBy>
   <!-- {0} = the covering auto-assigned role's label -->
   <WR_ScaleInAutoRole>In auto-assigned role {0}</WR_ScaleInAutoRole>
-  <WR_ScaleTotalTip>Total recommended assignments for this band, trainees included. Click +1, right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleTotalTip>
+  <WR_ScaleTotalTip>Required total for this band, training waivers included. Raising it creates training-waiver slots; lowering it consumes them before lowering the direct minimum. Click +1, right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
   <!-- Editor: collapsible recommendation tuning section -->
@@ -467,9 +467,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_TuningAutoHelp>Uses WorkRoles defaults (scales with colony size)</WR_TuningAutoHelp>
   <WR_TuningNeverHelp>Exclude this role from being recommended</WR_TuningNeverHelp>
   <WR_TuningCustomHelp>Set your own limits</WR_TuningCustomHelp>
-  <WR_TuningMinHelp>How many colonists should at least get this role</WR_TuningMinHelp>
+  <WR_TuningMinHelp>Total number of colonists that must be covered by this role or its training waivers</WR_TuningMinHelp>
   <WR_TuningMaxHelp>An optional upper limit on assignments</WR_TuningMaxHelp>
-  <WR_TuningWaiversHelp>How many of the minimum may be substituted with a training role (e.g. Medic instead of Doctor)</WR_TuningWaiversHelp>
+  <WR_TuningWaiversHelp>How many slots within the required total may be filled by a training role (e.g. Medic instead of Doctor)</WR_TuningWaiversHelp>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>

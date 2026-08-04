@@ -30,8 +30,8 @@ namespace WorkRoles
         public int roleId = -1;   // role to point at the target scale; -1 = none
         public string sourceName; // fork/clone source when the target is new
         public string targetName; // scale receiving the values
-        public string min;
-        public string train;
+        public string requiredTotals;
+        public string trainingWaivers;
         public string max;
     }
 

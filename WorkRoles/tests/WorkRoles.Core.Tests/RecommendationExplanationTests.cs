@@ -11,7 +11,7 @@ public class RecommendationExplanationTests
         RoleView medic = RecsTestBed.Role(1, "Doctor", "Medic");
         RoleView doctor = RecsTestBed.Role(2, "Doctor", "Doctor");
         doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.MinHolders = 1;
+        doctor.RequiredTotal = 1;
         doctor.TrainingWaivers = 1;
         PawnView pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Medicine"] = 8;
@@ -84,7 +84,7 @@ public class RecommendationExplanationTests
     public async Task StrongSignalExplainsQualificationAndCurrentCoverageFacts()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         role.MaxHolders = 3;
         PawnView pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Crafting"] = 2;
@@ -97,8 +97,8 @@ public class RecommendationExplanationTests
         await Assert.That(explanation.Recommended).IsTrue();
         await Assert.That(explanation.Decision)
             .IsEqualTo(RecommendationDecision.SignalQualified);
-        await Assert.That(explanation.RequiredHolders).IsEqualTo(1);
-        await Assert.That(explanation.RecommendedHolders).IsEqualTo(1);
+        await Assert.That(explanation.RequiredTotal).IsEqualTo(1);
+        await Assert.That(explanation.CoveredTotal).IsEqualTo(1);
         await Assert.That(explanation.ConfiguredMaximum).IsEqualTo(3);
         await Assert.That(explanation.RequiredSkills).IsEquivalentTo(new[] { "Crafting" });
         await Assert.That(explanation.SignalSkillDefName).IsEqualTo("Crafting");
@@ -109,7 +109,7 @@ public class RecommendationExplanationTests
     public async Task RemovedExistingRoleExplainsThatRequiredCoverageWasFilled()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         role.MaxHolders = 3;
         PawnView chosen = RecsTestBed.Pawn();
         chosen.SkillLevels["Crafting"] = 2;
@@ -125,8 +125,8 @@ public class RecommendationExplanationTests
         await Assert.That(explanation.Recommended).IsFalse();
         await Assert.That(explanation.Decision)
             .IsEqualTo(RecommendationDecision.RequiredCoverageFilled);
-        await Assert.That(explanation.RequiredHolders).IsEqualTo(1);
-        await Assert.That(explanation.RecommendedHolders).IsEqualTo(1);
+        await Assert.That(explanation.RequiredTotal).IsEqualTo(1);
+        await Assert.That(explanation.CoveredTotal).IsEqualTo(1);
         await Assert.That(explanation.SignalBucket).IsEqualTo(SignalBucket.Neutral);
     }
 
@@ -134,7 +134,7 @@ public class RecommendationExplanationTests
     public async Task CoverageExplanationsExposeSelectedAndRejectedCandidateRankings()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.MinHolders = 2;
+        role.RequiredTotal = 2;
         PawnView first = RecsTestBed.Pawn(); first.SkillLevels["Crafting"] = 9;
         PawnView second = RecsTestBed.Pawn(); second.SkillLevels["Crafting"] = 7;
         PawnView rejected = RecsTestBed.Pawn(); rejected.SkillLevels["Crafting"] = 3;
@@ -165,7 +165,7 @@ public class RecommendationExplanationTests
     public async Task AwfulSignalIsTheRemovalReasonEvenWhenCoverageRemainsOpen()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.MinHolders = 2;
+        role.RequiredTotal = 2;
         PawnView chosen = RecsTestBed.Pawn();
         chosen.SkillLevels["Crafting"] = 2;
         chosen.SignalBuckets["Crafting"] = SignalBucket.Strong;
@@ -205,7 +205,7 @@ public class RecommendationExplanationTests
     public async Task TrainingBandIsRankingContextNotARejectionForNeutralDraftCandidates()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         PawnView removed = RecsTestBed.Pawn();
         removed.SkillLevels["Crafting"] = 2;
         removed.Existing.Add(new AssignmentView { RoleId = role.Id, Enabled = true });
@@ -271,7 +271,8 @@ public class RecommendationExplanationTests
 
         internal FixedMaximumPolicy(int maximum) => this.maximum = maximum;
 
-        public int Minimum(int baseMinimum, int inboundAssignments) => baseMinimum;
+        public int RequiredTotal(int baseRequiredTotal, int inboundAssignments)
+            => baseRequiredTotal;
         public int Maximum(int baseMaximum, int inboundAssignments) => maximum;
     }
 }

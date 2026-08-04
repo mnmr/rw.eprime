@@ -30,7 +30,7 @@ public class RecsHolderAllocationTests
     {
         var role = RecsTestBed.Role(1, "Crafting");
         role.HolderMode = RoleHolderMode.Custom;
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         role.MaxHolders = 1;
         var pinned = RecsTestBed.Pawn();
         pinned.SkillLevels["Crafting"] = 0;
@@ -53,7 +53,7 @@ public class RecsHolderAllocationTests
     {
         var role = RecsTestBed.Unskilled(1, "Hauling");
         role.HolderMode = RoleHolderMode.Custom;
-        role.MinHolders = 2;
+        role.RequiredTotal = 2;
         role.MaxHolders = 2;
         var colony = RecsTestBed.Colony(new List<RoleView> { role },
             RecsTestBed.Pawn(), RecsTestBed.Pawn(), RecsTestBed.Pawn());
@@ -70,13 +70,13 @@ public class RecsHolderAllocationTests
         var role = RecsTestBed.Role(1, "Crafting");
         role.HasRules = true;
         role.HolderMode = RoleHolderMode.Custom;
-        role.MinHolders = 1;
+        role.RequiredTotal = 1;
         var context = new EngineContext(RecsTestBed.Colony(
             new List<RoleView> { role }, RecsTestBed.Pawn()));
 
         new CoverageScalingRule(new UnitScaling()).Apply(context);
 
-        await Assert.That(context.Want.ContainsKey(role.Id)).IsFalse();
+        await Assert.That(context.RequiredTotal.ContainsKey(role.Id)).IsFalse();
     }
 
     [Test]
@@ -85,7 +85,7 @@ public class RecsHolderAllocationTests
         var hunter = RecsTestBed.Role(1, "Hunting");
         hunter.Hunting = true;
         hunter.HolderMode = RoleHolderMode.Custom;
-        hunter.MinHolders = 2;
+        hunter.RequiredTotal = 2;
         var armed = RecsTestBed.Pawn();
         armed.HasRangedWeapon = true;
         armed.ShootingLevel = 8;

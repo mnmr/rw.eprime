@@ -157,9 +157,9 @@ internal static class RecommendationBandFixture
             {
                 Name = label,
                 Preset = true,
-                Min = HolderScaleCodec.DecodeRow(
+                RequiredTotals = HolderScaleCodec.DecodeRow(
                     definition.Element("min")?.Value, 0),
-                Train = HolderScaleCodec.DecodeRow(
+                TrainingWaivers = HolderScaleCodec.DecodeRow(
                     definition.Element("train")?.Value, 0),
                 Max = HolderScaleCodec.DecodeRow(
                     definition.Element("max")?.Value, RoleHolderRange.Uncapped),

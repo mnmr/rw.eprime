@@ -8,72 +8,91 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             SignalBucket verdict,
             int skillLevel,
-            int championScore)
+            int championScore,
+            int championSignalScore)
         {
             PawnIndex = pawnIndex;
             Verdict = verdict;
             SkillLevel = skillLevel;
             ChampionScore = championScore;
+            ChampionSignalScore = championSignalScore;
         }
 
         internal int PawnIndex { get; }
         internal SignalBucket Verdict { get; }
         internal int SkillLevel { get; }
         internal int ChampionScore { get; }
+        internal int ChampionSignalScore { get; }
     }
 
     internal sealed class RolePlan
     {
         private const byte Selected = 1;
-        private const byte Waiver = 2;
+        private const byte TrainingWaiver = 2;
         private const byte Surplus = 4;
 
         private readonly CandidateFact[] candidates;
         private readonly byte[] selectionFlags;
+        private readonly byte[] minimumBonuses;
+        private readonly RecommendationFormulaEngine formulas;
+        private int minimumPickCount;
 
         private RolePlan(
             int roleId,
-            int directWant,
+            int directMinimum,
             CandidateFact[] candidates,
-            byte[] selectionFlags)
+            byte[] selectionFlags,
+            byte[] minimumBonuses,
+            int minimumPickCount,
+            RecommendationFormulaEngine formulas)
         {
             RoleId = roleId;
-            DirectWant = directWant;
+            DirectMinimum = directMinimum;
             this.candidates = candidates;
             this.selectionFlags = selectionFlags;
+            this.minimumBonuses = minimumBonuses;
+            this.minimumPickCount = minimumPickCount;
+            this.formulas = formulas;
         }
 
         internal int RoleId { get; }
-        internal int DirectWant { get; }
+        internal int DirectMinimum { get; }
         internal int CandidateCount => candidates.Length;
         internal CandidateFact CandidateAt(int index) => candidates[index];
         internal bool IsSelected(int index) =>
             (selectionFlags[index] & Selected) != 0;
-        internal bool IsWaiver(int index) =>
-            (selectionFlags[index] & Waiver) != 0;
+        internal bool IsTrainingWaiver(int index) =>
+            (selectionFlags[index] & TrainingWaiver) != 0;
         internal bool IsSurplus(int index) =>
             (selectionFlags[index] & Surplus) != 0;
-        internal void SelectForCoverage(int index)
+        internal byte MinimumBonusAt(int index) => minimumBonuses[index];
+        internal byte SelectForCoverage(int index)
         {
-            if ((selectionFlags[index] & Selected) == 0)
-                selectionFlags[index] = Selected;
+            if (minimumBonuses[index] != 0)
+                return minimumBonuses[index];
+            selectionFlags[index] = Selected;
+            byte bonus = MinimumBonus(minimumPickCount);
+            minimumBonuses[index] = bonus;
+            minimumPickCount++;
+            return bonus;
         }
         internal static RolePlan Build(
             EngineContext facts,
             RoleView role,
-            IScalingAlgorithm scaling)
+            IScalingAlgorithm scaling,
+            RecommendationFormulaEngine formulas)
         {
             int colonySize = facts.Colony.Pawns.Count;
             int maximum = role.MaxHoldersAt(colonySize);
             int capacity = System.Math.Max(0, colonySize);
             if (maximum < RoleHolderRange.Uncapped)
                 capacity = System.Math.Min(capacity, System.Math.Max(0, maximum));
-            int directWant = System.Math.Min(
-                capacity,
-                System.Math.Max(0, scaling.Want(role, colonySize)));
-            int trainingWant = System.Math.Min(
-                System.Math.Max(0, role.TrainingWaiversAt(colonySize)),
-                capacity - directWant);
+            HolderRequirement requirement = scaling.Requirement(role, colonySize);
+            int requiredTotal = System.Math.Min(
+                capacity, requirement.RequiredTotal);
+            int trainingWaivers = System.Math.Min(
+                requirement.TrainingWaivers, requiredTotal);
+            int directMinimum = requiredTotal - trainingWaivers;
             PathView championPath = PathActivation.PreferredTargetPath(
                 facts.Colony.Paths, role.Id);
 
@@ -91,16 +110,19 @@ namespace WorkRoles.Core.Recs
                     role,
                     championPath,
                     skillLevel,
-                    verdict);
+                    verdict,
+                    formulas,
+                    out int championSignalScore);
                 if (championScore == int.MinValue) continue;
                 eligible.Add(new CandidateFact(
                     pawnIndex,
                     verdict,
                     skillLevel,
-                    championScore));
+                    championScore,
+                    championSignalScore));
             }
 
-            CandidateFact? champion = directWant > 0
+            CandidateFact? champion = directMinimum > 0
                 ? BestChampion(eligible)
                 : (CandidateFact?)null;
             var ordered = new List<CandidateFact>(eligible.Count);
@@ -114,16 +136,20 @@ namespace WorkRoles.Core.Recs
 
             CandidateFact[] candidates = ordered.ToArray();
             var flags = new byte[candidates.Length];
-            int openDirect = directWant;
-            int openTraining = trainingWant;
+            var bonuses = new byte[candidates.Length];
+            int remainingDirect = directMinimum;
+            int remainingTrainingWaivers = trainingWaivers;
+            int minimumPickCount = 0;
             for (int index = 0; index < candidates.Length; index++)
             {
                 CandidateFact candidate = candidates[index];
                 byte classification;
-                if (openDirect > 0)
+                if (remainingDirect > 0)
                 {
                     classification = 0;
-                    openDirect--;
+                    bonuses[index] = MinimumBonus(minimumPickCount);
+                    minimumPickCount++;
+                    remainingDirect--;
                 }
                 else
                 {
@@ -134,12 +160,12 @@ namespace WorkRoles.Core.Recs
                             role,
                             out bool aptitudeApplies);
                     if (!optionalAptitude) continue;
-                    if (openTraining > 0)
+                    if (remainingTrainingWaivers > 0)
                     {
-                        classification = Waiver;
-                        openTraining--;
+                        classification = TrainingWaiver;
+                        remainingTrainingWaivers--;
                     }
-                    else if (candidate.Verdict >= SignalBucket.Strong
+                    else if (candidate.Verdict >= formulas.SurplusMinimumSignal
                         || aptitudeApplies)
                     {
                         classification = Surplus;
@@ -152,7 +178,24 @@ namespace WorkRoles.Core.Recs
                 flags[index] = (byte)(Selected | classification);
             }
             return new RolePlan(
-                role.Id, directWant, candidates, flags);
+                role.Id,
+                directMinimum,
+                candidates,
+                flags,
+                bonuses,
+                minimumPickCount,
+                formulas);
+        }
+
+        private static byte MinimumBonus(int pickIndex)
+        {
+            switch (pickIndex)
+            {
+                case 0: return 10;
+                case 1: return 5;
+                case 2: return 2;
+                default: return 1;
+            }
         }
 
         private static CandidateFact? BestChampion(
@@ -161,16 +204,20 @@ namespace WorkRoles.Core.Recs
             if (candidates.Count == 0) return null;
             CandidateFact best = candidates[0];
             int bestVirtualSkill = VirtualSkill(best);
+            int bestSignalScore = best.ChampionSignalScore;
             for (int index = 1; index < candidates.Count; index++)
             {
                 CandidateFact candidate = candidates[index];
                 int virtualSkill = VirtualSkill(candidate);
                 if (virtualSkill > bestVirtualSkill
                     || virtualSkill == bestVirtualSkill
-                    && candidate.PawnIndex < best.PawnIndex)
+                    && (candidate.ChampionSignalScore > bestSignalScore
+                        || candidate.ChampionSignalScore == bestSignalScore
+                        && candidate.PawnIndex < best.PawnIndex))
                 {
                     best = candidate;
                     bestVirtualSkill = virtualSkill;
+                    bestSignalScore = candidate.ChampionSignalScore;
                 }
             }
             return best;
@@ -185,16 +232,21 @@ namespace WorkRoles.Core.Recs
             RoleView role,
             PathView path,
             int fallbackLevel,
-            SignalBucket fallbackVerdict)
+            SignalBucket fallbackVerdict,
+            RecommendationFormulaEngine formulas,
+            out int signalScore)
         {
+            signalScore = SignalTieBreakScore(fallbackVerdict);
             if (path == null)
-                return fallbackLevel + SignalAdjustment(fallbackVerdict);
+                return formulas.ChampionSkillScore(
+                    fallbackLevel, fallbackVerdict);
 
             IReadOnlyList<RoleSkillView> targetSkills =
                 facts.RequiredSkills(role);
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
             int count = 0;
             int score = 0;
+            int qualifyingSignalScore = 0;
             for (int index = 0; index < targetSkills.Count; index++)
             {
                 RoleSkillView skill = targetSkills[index];
@@ -210,21 +262,24 @@ namespace WorkRoles.Core.Recs
                     ? classified
                     : SignalBucket.Neutral;
                 if (signal == SignalBucket.Awful) return int.MinValue;
-                score += level + SignalAdjustment(signal);
+                score += formulas.ChampionSkillScore(level, signal);
+                qualifyingSignalScore += SignalTieBreakScore(signal);
             }
-            return count >= 2
-                ? score
-                : fallbackLevel + SignalAdjustment(fallbackVerdict);
+            if (count < 2)
+                return formulas.ChampionSkillScore(
+                    fallbackLevel, fallbackVerdict);
+            signalScore = qualifyingSignalScore;
+            return score;
         }
 
-        private static int SignalAdjustment(SignalBucket verdict)
+        private static int SignalTieBreakScore(SignalBucket verdict)
         {
             switch (verdict)
             {
-                case SignalBucket.Poor: return -3;
-                case SignalBucket.Strong: return 1;
-                case SignalBucket.Great: return 3;
                 case SignalBucket.Exceptional: return 5;
+                case SignalBucket.Great: return 3;
+                case SignalBucket.Strong: return 1;
+                case SignalBucket.Poor: return -3;
                 default: return 0;
             }
         }

@@ -1,37 +1,45 @@
 namespace WorkRoles.Core.Recs
 {
-    /// Per-role scaling seam (spec rule 6): how many holders a role wants at
-    /// a colony size. Refinements swap the algorithm, not the rule.
+    /// Per-role scaling seam: the complete holder requirement at a colony
+    /// size. Refinements swap the algorithm, not the interpretation.
     public interface IScalingAlgorithm
     {
-        int Want(RoleView role, int colonySize);
+        HolderRequirement Requirement(RoleView role, int colonySize);
     }
 
     /// Banded scales are direct lookups; roles without a scale keep the legacy
-    /// 1-per-6 unit formula (auto-coverage roles want one unit, needed roles
-    /// MinHolders per unit; interest-only and Never want nothing).
+    /// 1-per-6 unit formula (auto-coverage roles require one unit, needed roles
+    /// use RequiredTotal per unit; interest-only and Never require nothing).
     public sealed class UnitScaling : IScalingAlgorithm
     {
-        public int Want(RoleView role, int colonySize)
+        public HolderRequirement Requirement(RoleView role, int colonySize)
         {
+            int requiredTotal;
             if (role.Scale != null)
             {
-                int want = System.Math.Max(0, role.Scale.MinAt(colonySize));
+                requiredTotal = System.Math.Max(
+                    0, role.Scale.RequiredTotalAt(colonySize));
                 int cap = role.Scale.MaxAt(colonySize);
                 if (cap != RoleHolderRange.Uncapped)
-                    want = System.Math.Min(want, cap);
-                return System.Math.Min(colonySize, want);
+                    requiredTotal = System.Math.Min(requiredTotal, cap);
             }
-            if (role.HolderMode == RoleHolderMode.Custom)
-                return System.Math.Max(0, role.MinHolders);
-            int units = System.Math.Max(1, (colonySize + 5) / 6);
-            if (role.MinHolders >= 1)
-                return System.Math.Min(colonySize, role.MinHolders * units);
-            return role.MinHolders == -1 ? System.Math.Min(colonySize, units) : 0;
+            else if (role.HolderMode == RoleHolderMode.Custom)
+                requiredTotal = System.Math.Max(0, role.RequiredTotal);
+            else
+            {
+                int units = System.Math.Max(1, (colonySize + 5) / 6);
+                if (role.RequiredTotal >= 1)
+                    requiredTotal = role.RequiredTotal * units;
+                else
+                    requiredTotal = role.RequiredTotal == -1 ? units : 0;
+            }
+            requiredTotal = System.Math.Min(colonySize, requiredTotal);
+            return new HolderRequirement(
+                requiredTotal, role.TrainingWaiversAt(colonySize));
         }
     }
 
-    /// Fills EngineContext.Want for every dealable role.
+    /// Fills EngineContext.RequiredTotal for every dealable role.
     public sealed class CoverageScalingRule : RecRule
     {
         private readonly IScalingAlgorithm scaling;
@@ -46,11 +54,12 @@ namespace WorkRoles.Core.Recs
             {
                 if (context.Vetoed.Contains(role.Id)) continue;
                 if (role.AutoAssign || role.HasRules || role.Blocker) continue;
-                int want = scaling.Want(role, context.Colony.Pawns.Count);
-                if (want > 0)
+                HolderRequirement requirement = scaling.Requirement(
+                    role, context.Colony.Pawns.Count);
+                if (requirement.RequiredTotal > 0)
                 {
-                    context.BaseWant[role.Id] = want;
-                    context.Want[role.Id] = want;
+                    context.BaseRequiredTotal[role.Id] = requirement.RequiredTotal;
+                    context.RequiredTotal[role.Id] = requirement.RequiredTotal;
                 }
             }
         }

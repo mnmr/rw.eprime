@@ -15,7 +15,7 @@ internal static class RecsTestBed
     };
 
     /// Coverage tokens default to one token named after the work type.
-    /// MinHolders arrives RESOLVED (0 = interest-only) like the game adapter's.
+    /// RequiredTotal arrives RESOLVED (0 = interest-only) like the game adapter's.
     public static RoleView Role(int id, string workType, params string[] coverage) => new()
     {
         Id = id,
