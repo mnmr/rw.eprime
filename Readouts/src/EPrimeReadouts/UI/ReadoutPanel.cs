@@ -93,6 +93,55 @@ namespace EPrimeReadouts.UI
         /// Call after any per-player view-state change (depth, search, settings).
         public static void BumpView() => viewStamp++;
 
+        // Hover-driven tier depth (expandOnHover), PER BAND: the id of the
+        // group whose band is under the pointer, or -1. A transition bumps
+        // the view stamp so the cached DrawModel rebuilds once per band
+        // enter/leave, never per frame. Stability: band heights never vary
+        // with depth (collapse is horizontal), so expanding the hovered band
+        // cannot shift any band vertically, and an expanded band's footprint
+        // contains its collapsed footprint, so enter/leave cannot oscillate.
+        private static int hoveredGroupId = -1;
+
+        private static void UpdateHoverState(ReadoutSettings settings)
+        {
+            int hovered = -1;
+            if (settings.expandOnHover && !inputBlocked && draw != null)
+            {
+                // Same geometry as Draw: content group at (x, contentTop),
+                // clamped to the scroll viewport, offset by scroll.y.
+                float x = settings.offsetX;
+                float contentTop = settings.offsetY + SearchRowH;
+                float maxContentH = Verse.UI.screenHeight - contentTop
+                    - settings.bottomMargin;
+                float totalH = draw.Model.TotalHeight;
+                float contentH = totalH > maxContentH ? maxContentH : totalH;
+                Vector2 mouse = Event.current.mousePosition;
+                if (mouse.x >= x && mouse.y >= contentTop
+                    && mouse.y < contentTop + contentH)
+                {
+                    float cx = mouse.x - x;
+                    float cy = mouse.y - contentTop + scroll.y;
+                    var cells = draw.Model.Cells;
+                    for (int i = 0; i < cells.Count; i++)
+                    {
+                        var cell = cells[i];
+                        if (cell.Kind != CellKind.GroupBack || cell.GroupId < 0) continue;
+                        if (cx >= cell.Rect.X && cx < cell.Rect.X + cell.Rect.W
+                            && cy >= cell.Rect.Y && cy < cell.Rect.Y + cell.Rect.H)
+                        {
+                            hovered = cell.GroupId;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (hovered != hoveredGroupId)
+            {
+                hoveredGroupId = hovered;
+                BumpView();
+            }
+        }
+
         internal static void ReleaseMap(Map map)
         {
             if (map == null || !ReferenceEquals(builtMap, map)) return;
@@ -120,6 +169,7 @@ namespace EPrimeReadouts.UI
             searchFieldFocused = false;
             SearchText = "";
             viewStamp = 0;
+            hoveredGroupId = -1;
             hotDraw = null;
             hotVisible = false;
         }
@@ -139,6 +189,7 @@ namespace EPrimeReadouts.UI
 
             float width = settings.panelWidth;
             var renderData = GameRenderData.Get(map, store);
+            UpdateHoverState(settings);
             if (NeedsRebuild(store, map, width, renderData))
                 Rebuild(store, map, width, renderData);
 
@@ -229,12 +280,17 @@ namespace EPrimeReadouts.UI
                 && GUI.GetNameOfFocusedControl() == SearchControlName)
                 Verse.UI.UnfocusCurrentControl();
 
-            // Escape leaves the field (QuickSearchWidget behavior). Consuming
-            // the event here keeps vanilla's raw Escape handling — which runs
+            // Escape clears the filter and leaves the field. Consuming the
+            // event here keeps vanilla's raw Escape handling — which runs
             // later in the frame and opens the menu — from also seeing it.
             if (searchFieldFocused && evt.type == EventType.KeyDown
                 && evt.keyCode == KeyCode.Escape)
             {
+                if (!SearchText.NullOrEmpty())
+                {
+                    SearchText = "";
+                    BumpView();
+                }
                 Verse.UI.UnfocusCurrentControl();
                 evt.Use();
             }
@@ -366,8 +422,24 @@ namespace EPrimeReadouts.UI
             {
                 Groups = groups,
                 // Unset depth defaults to tier 1 only; users expand per group.
-                DepthOf = g => settings.tierDepths.TryGetValue(store.DepthKey(g.Id), out int depth)
-                    ? depth : 1,
+                // expandOnHover (per band): hovering a band expands that
+                // group's configured tiers to all tiers; with
+                // collapseWhenIdle, unhovered bands show 0 tiers (horizontal
+                // collapse) and the hovered band shows its configured tiers,
+                // never more.
+                DepthOf = g =>
+                {
+                    int configured = settings.tierDepths.TryGetValue(
+                        store.DepthKey(g.Id), out int depth) ? depth : 1;
+                    if (!settings.expandOnHover) return configured;
+                    if (g.Id == hoveredGroupId)
+                        return settings.collapseWhenIdle ? configured : g.TierCount;
+                    return settings.collapseWhenIdle ? 0 : configured;
+                },
+                // Hover-added tiers (beyond the configured depth) render
+                // HoverLit triangles so the configured depth stays visible.
+                ConfiguredDepthOf = g => settings.tierDepths.TryGetValue(
+                    store.DepthKey(g.Id), out int depth) ? depth : 1,
                 Counts = renderData.Counts.Counts,
                 Thresholds = store.Model.Thresholds,
                 SearchText = SearchText,

@@ -33,11 +33,17 @@
   <EPR.HelpEditor>Here you can edit what resources (or resource sets) a group displays. A group can have up to three display tiers. The small triangles indicate how many tiers are currently visible (click to cycle).</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
-  <EPR.SearchHideZero>Search: hide zero-count results</EPR.SearchHideZero>
+  <EPR.SearchHideZero>Hide zero-count results</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
   <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
-  <EPR.ShowModName>Show mod name when search filter is disabled</EPR.ShowModName>
+  <EPR.ExpandOnHover>Expand on hover</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Collapse when not hovering</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Show mod name</EPR.ShowModName>
+  <EPR.CountOptions>Count Options</EPR.CountOptions>
+  <EPR.ClickOptions>Click Options</EPR.ClickOptions>
+  <EPR.SearchOptions>Search Options</EPR.SearchOptions>
+  <EPR.HoverOptions>Hover Options</EPR.HoverOptions>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
   <EPR.ShowPools>Resource Pools</EPR.ShowPools>

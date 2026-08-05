@@ -8,6 +8,10 @@ namespace EPrimeReadouts.Core
         public List<ReadoutGroup> Groups = new List<ReadoutGroup>();
         /// Per-player tier depth; out-of-range values mean "all tiers".
         public Func<ReadoutGroup, int> DepthOf = g => g.TierCount;
+        /// The user-configured depth when DepthOf reflects a transient hover
+        /// expansion; tiers visible beyond it render HoverLit triangles. Null
+        /// means DepthOf IS the configured depth (no hover distinction).
+        public Func<ReadoutGroup, int> ConfiguredDepthOf;
         public IReadOnlyDictionary<string, int> Counts;
         public Dictionary<string, ThresholdSpec> Thresholds;
         public string SearchText = "";
@@ -76,16 +80,28 @@ namespace EPrimeReadouts.Core
             bool searching = !input.EditorMode && SearchMatcher.IsActive(input.SearchText);
             if (searching) y = BuildResults(input, model, y);
             var slots = new List<ResolvedSlot>();
-            int groupDisplayIndex = 0;
-            foreach (var group in input.Groups)
+            // Stripe colors key on the group's position among the enabled
+            // groups (the input list), NOT on its render position: a group
+            // that renders nothing must not shift the colors of the groups
+            // below it, and collapsed/expanded states must agree.
+            for (int groupDisplayIndex = 0; groupDisplayIndex < input.Groups.Count;
+                groupDisplayIndex++)
             {
+                var group = input.Groups[groupDisplayIndex];
                 if (input.EditorMode)
                 {
                     if (y > 0f) y += LayoutMetrics.GroupGap;
                     float containerW = EditorGroupContainerWidth(group, input);
                     if (containerW > maxGroupW) maxGroupW = containerW;
                     y = BuildEditorGroup(group, input, model, y, groupDisplayIndex, containerW);
-                    groupDisplayIndex++;
+                }
+                else if (input.DepthOf(group) == 0)
+                {
+                    // Collapsed render mode: a thin identification band for
+                    // every enabled group — including groups the expanded
+                    // layout would omit for having no visible slots.
+                    if (y > 0f) y += LayoutMetrics.GroupGap;
+                    y = BuildCollapsedGroup(group, input, model, y, groupDisplayIndex);
                 }
                 else
                 {
@@ -96,7 +112,6 @@ namespace EPrimeReadouts.Core
                     float containerW = GroupContainerWidth(slots.Count, input.Metrics);
                     if (containerW > maxGroupW) maxGroupW = containerW;
                     y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
-                    groupDisplayIndex++;
                 }
             }
             model.TotalHeight = y;
@@ -215,6 +230,41 @@ namespace EPrimeReadouts.Core
             }
         }
 
+        /// Horizontally collapsed band: the normal single-row band height at
+        /// the zero-slot container width — stripe backing and one dim
+        /// triangle per tier so the group stays identifiable. No slots, slot
+        /// hits, or marker hit — the band exists only while the pointer is
+        /// elsewhere (hovering it restores tiers), so it is never
+        /// interactable. The height matching BuildGroup exactly is what keeps
+        /// per-band hover expansion from shifting the bands below.
+        private static float BuildCollapsedGroup(ReadoutGroup group, LayoutInput input,
+            RenderModel model, float yTop, int groupDisplayIndex)
+        {
+            float containerH = 2f * LayoutMetrics.GroupPadY + input.Metrics.RowPairH;
+            model.Cells.Add(new RenderCell
+            {
+                Kind = CellKind.GroupBack,
+                GroupIndex = groupDisplayIndex,
+                GroupId = group.Id,
+                Rect = new RectF(0f, yTop,
+                    GroupContainerWidth(0, input.Metrics), containerH),
+            });
+            float insetX = InsetX;
+            float insetY = yTop + LayoutMetrics.GroupPadY;
+            int tierCount = Math.Min(group.TierCount, TierOps.MaxTiers);
+            for (int i = 0; i < tierCount; i++)
+                model.Cells.Add(new RenderCell
+                {
+                    Kind = CellKind.Triangle,
+                    Triangle = TriangleState.Dim,
+                    Rect = new RectF(
+                        insetX + i * (LayoutMetrics.TriW + LayoutMetrics.TriGap),
+                        insetY + (LayoutMetrics.IconRowH - LayoutMetrics.TriH) / 2f,
+                        LayoutMetrics.TriW, LayoutMetrics.TriH),
+                });
+            return yTop + containerH;
+        }
+
         private static float BuildGroup(ReadoutGroup group, LayoutInput input, RenderModel model,
             List<ResolvedSlot> slots, float yTop, bool searching, int groupDisplayIndex,
             float containerW)
@@ -227,13 +277,24 @@ namespace EPrimeReadouts.Core
             {
                 Kind = CellKind.GroupBack,
                 GroupIndex = groupDisplayIndex,
+                GroupId = group.Id,
                 Rect = new RectF(0f, yTop, containerW, containerH),
             });
 
-            // Emit marker triangles (inset by stripe+pad on X, GroupPadY on Y)
+            // Emit marker triangles (inset by stripe+pad on X, GroupPadY on Y).
+            // Tiers visible only through hover expansion (beyond the
+            // configured depth) show HoverLit instead of Lit.
             int depth = Markers.ClampDepth(group.TierCount, input.DepthOf(group));
             var states = new TriangleState[TierOps.MaxTiers];
             Markers.Compute(group.TierCount, depth, states);
+            if (input.ConfiguredDepthOf != null)
+            {
+                int configured = Markers.ClampDepth(
+                    group.TierCount, input.ConfiguredDepthOf(group));
+                for (int i = configured; i < depth; i++)
+                    if (states[i] == TriangleState.Lit)
+                        states[i] = TriangleState.HoverLit;
+            }
             float insetX = InsetX;
             float insetY = yTop + LayoutMetrics.GroupPadY;
             for (int i = 0; i < TierOps.MaxTiers; i++)
@@ -374,6 +435,7 @@ namespace EPrimeReadouts.Core
             {
                 Kind = CellKind.GroupBack,
                 GroupIndex = groupDisplayIndex,
+                GroupId = group.Id,
                 Rect = new RectF(0f, yTop, containerW, containerH),
             });
 
@@ -538,11 +600,12 @@ namespace EPrimeReadouts.Core
             float containerH = 2f * LayoutMetrics.GroupPadY + metrics.LabelRowH + gridH
                 + (hidden > 0 ? metrics.LabelRowH : 0f);
 
-            // GroupBack with GroupIndex = -1 emitted BEFORE label cell
+            // GroupBack with GroupIndex/GroupId = -1 emitted BEFORE label cell
             model.Cells.Add(new RenderCell
             {
                 Kind = CellKind.GroupBack,
                 GroupIndex = -1,
+                GroupId = -1,
                 Rect = new RectF(0f, y, input.Width, containerH),
             });
 

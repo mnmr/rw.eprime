@@ -2,7 +2,7 @@ using System;
 
 namespace EPrimeReadouts.Core
 {
-    public enum TriangleState { Absent, Dim, Lit }
+    public enum TriangleState { Absent, Dim, Lit, HoverLit }
 
     /// Marker triangles: one per tier the group has (max 3), lit while that
     /// tier is visible at the current depth. Depth cycles 1..tierCount and

@@ -70,6 +70,9 @@ namespace EPrimeReadouts.UI
     public static class CellRenderer
     {
         private static readonly Color DimTriangle = new Color(1f, 1f, 1f, 0.3f);
+        // Tiers shown only through hover expansion, so the white (configured)
+        // depth stays readable while cycling markers.
+        private static readonly Color HoverTriangle = new Color(1f, 0.9f, 0.45f);
         private static readonly Color LowTint = new Color(1f, 0.92f, 0.55f);
         private static readonly Color CriticalTint = new Color(1f, 0.72f, 0.45f);
         private static readonly Color LabelDim = new Color(1f, 1f, 1f, 0.6f);
@@ -106,7 +109,9 @@ namespace EPrimeReadouts.UI
                             StripeColorFor(cell.GroupIndex));
                         break;
                     case CellKind.Triangle:
-                        GUI.color = cell.Triangle == TriangleState.Lit ? Color.white : DimTriangle;
+                        GUI.color = cell.Triangle == TriangleState.Lit ? Color.white
+                            : cell.Triangle == TriangleState.HoverLit ? HoverTriangle
+                            : DimTriangle;
                         GUI.DrawTexture(rect, ReadoutTextures.Triangle);
                         GUI.color = Color.white;
                         break;

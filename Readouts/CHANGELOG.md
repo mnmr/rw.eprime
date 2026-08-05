@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.0.6 — 2026-08-05
+
+- Added: Ability to select resources to highlight them on the map. Shift-click to add/remove from current selection.
+- Added: Option to allow hovering to expand (to show all tiers). 
+- Added: Another option that collapses display to render no tiers unless hovered (and hover only expanded to configured tier, so expand becomes user configurable).
+- Changed: Options affecting item counts (include forbidden, include map items) now also apply to the resource counters (not just search results).
+- Fixed: Stable color assignment to groups so that an empty group (no visible items) doesn't cause the color band of other groups to shift.
+
 ## 1.0.5 — 2026-08-03
 
 - Changed: Search results are now configurable in settings, and don't display unavailable items by default.

@@ -34,6 +34,12 @@ namespace EPrimeReadouts
         /// Clicking a readout slot also pans the camera to the nearest
         /// selected stack.
         public bool selectJumpCamera = true;
+        /// Master hover toggle: hovering the panel changes tier depth. Alone,
+        /// hover expands configured tiers to all tiers.
+        public bool expandOnHover;
+        /// Sub-option of expandOnHover: idle shows 0 tiers (bands only) and
+        /// hover shows the configured tiers, never more.
+        public bool collapseWhenIdle;
 
         public override void ExposeData()
         {
@@ -56,6 +62,8 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref searchStorageOnly, "searchStorageOnly", true);
             Scribe_Values.Look(ref searchHideForbidden, "searchHideForbidden", true);
             Scribe_Values.Look(ref selectJumpCamera, "selectJumpCamera", true);
+            Scribe_Values.Look(ref expandOnHover, "expandOnHover", false);
+            Scribe_Values.Look(ref collapseWhenIdle, "collapseWhenIdle", false);
             Scribe_Collections.Look(ref tierDepths, "tierDepths", LookMode.Value, LookMode.Value);
             if (tierDepths == null) tierDepths = new Dictionary<string, int>();
             Scribe_Collections.Look(ref enabledGroups, "enabledGroups", LookMode.Value, LookMode.Value);

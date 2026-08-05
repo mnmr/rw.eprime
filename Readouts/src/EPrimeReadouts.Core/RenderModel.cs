@@ -14,6 +14,7 @@ namespace EPrimeReadouts.Core
         public TriangleState Triangle;
         public string Token;          // Icon and Counter: the raw slot token (null elsewhere)
         public int GroupIndex;        // GroupBack: display position (0-based); -1 for Results
+        public int GroupId;           // GroupBack: owning group id; -1 for Results
         public int Tier;              // Editor mode: tier index for Icon, Counter, EmptySlot
         public int Slot;              // Editor mode: slot index for Icon, Counter, EmptySlot
         public int Count;             // Icon and Counter: raw (unformatted) count/sum
