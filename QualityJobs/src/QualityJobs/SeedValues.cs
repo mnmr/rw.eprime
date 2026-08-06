@@ -1,7 +1,7 @@
 namespace QualityJobs
 {
-    /// MP-synced payload for the enable command (spec §12). All 12 seed values
-    /// travel as ONE synced object rather than as 12 primitive parameters:
+    /// MP-synced payload for the enable command (spec §12). All 14 seed values
+    /// travel as ONE synced object rather than as 14 primitive parameters:
     /// RimWorld-Multiplayer's MethodInvoker cannot register a [SyncMethod] with
     /// that many parameters (ILGenerator.make_room NRE at 12 params), so the
     /// payload is bound field-by-field by a [SyncWorker] instead. Every client
@@ -17,14 +17,13 @@ namespace QualityJobs
         // updating that worker silently corrupts synced values. Keep the two in
         // lockstep.
 
-        // Bill defaults (7).
+        // Bill defaults (6).
         public bool manageNewBills;
         public int minSkill;
         public bool requireInspired;
         public bool requireSpecialist;
         public int productCap;
         public bool share;
-        public bool dispatchLetter;
 
         // Construction defaults (5).
         public bool manageNewConstruction;
@@ -32,6 +31,11 @@ namespace QualityJobs
         public bool constructionRequireInspired;
         public bool constructionRequireSpecialist;
         public int constructionTargetQuality;
+
+        // Appended fields (bind order must stay stable; see WARNING above).
+        public bool autoBest;
+        public bool constructionAutoBest;
+        public int targetQuality;
 
         /// Parameterless ctor required by [SyncWorker(shouldConstruct = true)].
         public SeedValues() { }
@@ -47,12 +51,14 @@ namespace QualityJobs
                 requireSpecialist = s.defaultRequireSpecialist,
                 productCap = s.defaultProductCap,
                 share = s.defaultShareUnfinishedWork,
-                dispatchLetter = s.dispatchLetter,
                 manageNewConstruction = s.defaultManageNewConstruction,
                 constructionMinSkill = s.defaultConstructionMinSkill,
                 constructionRequireInspired = s.defaultConstructionRequireInspired,
                 constructionRequireSpecialist = s.defaultConstructionRequireSpecialist,
                 constructionTargetQuality = s.defaultConstructionTargetQuality,
+                autoBest = s.defaultAutoBest,
+                constructionAutoBest = s.defaultConstructionAutoBest,
+                targetQuality = s.defaultTargetQuality,
             };
     }
 }

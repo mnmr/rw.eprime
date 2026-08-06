@@ -21,11 +21,12 @@ namespace QualityJobs
         /// Creates, overwrites, or removes-if-neutral the plan for thingId.
         /// Clamps skill to [0,20] and quality to [0,6] and coerces
         /// requireSpecialist off when Ideology is inactive, then:
-        ///   - if the resulting values are all neutral, removes any existing plan;
+        ///   - if the resulting values (including the auto-best flag) are all
+        ///     neutral, removes any existing plan;
         ///   - otherwise creates a plan if needed and applies the values,
         ///     removing again if clamping/coercion left it neutral.
         public static void Apply(QualityJobsStore store, int thingId, int minSkill,
-            bool requireInspired, bool requireSpecialist, int minQuality)
+            bool requireInspired, bool requireSpecialist, int minQuality, bool autoBest)
         {
             // Clamp/coerce exactly as the individual setters do.
             minSkill = System.Math.Clamp(minSkill, 0, 20);
@@ -35,7 +36,7 @@ namespace QualityJobs
             ConstructionPlan? plan = store.FindPlanById(thingId);
 
             bool incomingNeutral = minSkill == 0 && !requireInspired
-                && !requireSpecialist && minQuality == 0;
+                && !requireSpecialist && minQuality == 0 && !autoBest;
             if (incomingNeutral)
             {
                 if (plan != null)
@@ -56,6 +57,7 @@ namespace QualityJobs
             plan.requireInspired = requireInspired;
             plan.requireSpecialist = requireSpecialist;
             plan.minQuality = minQuality;
+            plan.autoBest = autoBest;
 
             // Covers the edge case where clamping/coercion turned all values
             // neutral after the check above (e.g. Ideology deactivated).
@@ -64,7 +66,7 @@ namespace QualityJobs
 
         private static bool IsNeutral(ConstructionPlan plan)
             => plan.minSkill == 0 && !plan.requireInspired
-               && !plan.requireSpecialist && plan.minQuality == 0;
+               && !plan.requireSpecialist && plan.minQuality == 0 && !plan.autoBest;
 
         private static void RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
         {

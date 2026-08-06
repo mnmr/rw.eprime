@@ -2,9 +2,9 @@ using Verse;
 
 namespace QualityJobs
 {
-    /// Global defaults only (spec §11): seed values for NEW saves plus the
-    /// dispatch-letter presentation toggle. In-save behavior lives in the
-    /// store and is edited via synced commands.
+    /// Global defaults only (spec §11): seed values for NEW saves plus
+    /// presentation preferences. In-save behavior lives in the store and is
+    /// edited via synced commands.
     public class QualityJobsSettings : ModSettings
     {
         // Bill defaults.
@@ -14,7 +14,11 @@ namespace QualityJobs
         public bool defaultRequireSpecialist = false;
         public int defaultProductCap = 10;
         public bool defaultShareUnfinishedWork = true;
-        public bool dispatchLetter = true;
+        public bool defaultAutoBest = false;
+        public int defaultTargetQuality = 0; // 0 = any quality accepted
+
+        // Presentation preference (per player, never synced or scribed per save).
+        public bool showToolbarButton = true;
 
         // Construction defaults. These seed the per-save store on first load
         // (dual-pattern: store values are authoritative when a game is loaded).
@@ -24,6 +28,7 @@ namespace QualityJobs
         public bool defaultConstructionRequireInspired = false;
         public bool defaultConstructionRequireSpecialist = false;
         public int defaultConstructionTargetQuality = 0; // 0 = no retries
+        public bool defaultConstructionAutoBest = false;
 
         public override void ExposeData()
         {
@@ -34,12 +39,15 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultRequireSpecialist, "defaultRequireSpecialist", false);
             Scribe_Values.Look(ref defaultProductCap, "defaultProductCap", 10);
             Scribe_Values.Look(ref defaultShareUnfinishedWork, "defaultShareUnfinishedWork", true);
-            Scribe_Values.Look(ref dispatchLetter, "dispatchLetter", true);
+            Scribe_Values.Look(ref defaultAutoBest, "defaultAutoBest", false);
+            Scribe_Values.Look(ref defaultTargetQuality, "defaultTargetQuality", 0);
+            Scribe_Values.Look(ref showToolbarButton, "showToolbarButton", true);
             Scribe_Values.Look(ref defaultManageNewConstruction, "defaultManageNewConstruction", false);
             Scribe_Values.Look(ref defaultConstructionMinSkill, "defaultConstructionMinSkill", 15);
             Scribe_Values.Look(ref defaultConstructionRequireInspired, "defaultConstructionRequireInspired", false);
             Scribe_Values.Look(ref defaultConstructionRequireSpecialist, "defaultConstructionRequireSpecialist", false);
             Scribe_Values.Look(ref defaultConstructionTargetQuality, "defaultConstructionTargetQuality", 0);
+            Scribe_Values.Look(ref defaultConstructionAutoBest, "defaultConstructionAutoBest", false);
         }
     }
 }

@@ -19,6 +19,9 @@ namespace QualityJobs
         /// QualityLevel as int (0..6); rolled quality below this deconstructs
         /// and rebuilds. 0 (Awful) = never retry.
         public int minQuality;
+        /// <summary>Auto-best mode (auto spec §2): only the colony-wide best
+        /// builder may complete the frame; the skill threshold is dynamic.</summary>
+        public bool autoBest;
 
         public ResumeCondition Condition => new ResumeCondition(minSkill, requireInspired, requireSpecialist);
 
@@ -31,6 +34,7 @@ namespace QualityJobs
             Scribe_Values.Look(ref requireInspired, "requireInspired", false);
             Scribe_Values.Look(ref requireSpecialist, "requireSpecialist", false);
             Scribe_Values.Look(ref minQuality, "minQuality", 0);
+            Scribe_Values.Look(ref autoBest, "autoBest", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 // A minQuality > 6 would make RetryDecision retry forever

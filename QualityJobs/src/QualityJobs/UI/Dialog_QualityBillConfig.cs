@@ -25,9 +25,11 @@ namespace QualityJobs.UI
         // The two-layer idempotency matches QualityJobsMod.cs: local compare here,
         // Commands no-op compare again — AGENTS.md §authoritative-state.
         private bool managed;
+        private bool autoBest;
         private int minSkill;
         private bool requireInspired;
         private bool requireSpecialist;
+        private int targetQuality;
         private int cap;
         private bool loaded;
 
@@ -42,12 +44,29 @@ namespace QualityJobs.UI
         // Dependencies: best-candidate selection, re-evaluated every BestCandidateInterval ticks.
         // Refresh: tick-throttled at BestCandidateInterval; also reset on LoadFromStore.
         // Teardown: dies with the window.
-        private const int BestCandidateInterval = 60;
+        private const int BestCandidateInterval = QualityJobsStore.ScanInterval; // 250
         private int lastBestTick = -BestCandidateInterval; // force first evaluation
         private int cachedBestSkill;
         private bool cachedBestInspired;
         private int cachedBestRoleOffset;
         private bool cachedBestValid; // false = no eligible pawn found
+
+        // Auto current-best cache (auto spec §5).
+        // Owner: dialog (transient). Key: none (single value). Value: resolved
+        // best (id, skill, inspired, roleOffset) + built label string.
+        // Dependencies: colony pool contents and the dialog's condition filter
+        // fields. Refresh: rebuilt at window open (LoadFromStore), when a filter
+        // field is edited (PushChanges), and tick-throttled at
+        // BestCandidateInterval (= ScanInterval, 250 game ticks; spec §5).
+        // Equality: same (pawnId, skill, inspired, roleOffset) reuses the label.
+        // Teardown: dies with the window.
+        private int lastAutoBestTick = -BestCandidateInterval;
+        private int cachedAutoBestId = -1;
+        private int cachedAutoSkill;
+        private bool cachedAutoInspired;
+        private int cachedAutoRoleOffset;
+        private bool cachedAutoValid;
+        private string? _autoBestCurrentLabel;
 
         // Quality label cache: built once per dialog open in LoadFromStore.
         // Language changes are not observable while the dialog is open — the dialog
@@ -68,8 +87,10 @@ namespace QualityJobs.UI
         private string? _oddsHeaderLabel;
         private string? _oddsColConfigLabel;
         private string? _oddsColBestLabel;
-        private string? _stockCapTooltip;
-        private string? _finisherSkillTooltip;
+        private string? _autoBestLabel;
+        private string? _autoBestNoneLabel;
+        private string? _targetQualityLabel;
+        private string? _anyQualityLabel;
 
         // I4: interpolated slider labels, rebuilt only when the displayed value changes.
         // Owner: dialog instance. Teardown: dies with the window.
@@ -110,6 +131,7 @@ namespace QualityJobs.UI
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             if (!loaded) LoadFromStore(store);
+            if (autoBest) EnsureAutoBest();
 
             // Hoist odds results before Begin so any early return inside the
             // listing body cannot skip the finally that restores Text.Font.
@@ -120,31 +142,32 @@ namespace QualityJobs.UI
             listing.Begin(rect);
             GameFont prevFont = Text.Font;
             TextAnchor prevAnchor = Text.Anchor;
+            Color prevPanelColor = GUI.color;
             try
             {
                 Text.Font = GameFont.Medium;
                 listing.Label(_panelTitleLabel!);
                 Text.Font = GameFont.Small;
 
-                // A3: compute options-region height exactly from verified Listing metrics.
-                // Verified from Decompiled\Verse\Listing_Standard.cs:
-                //   CheckboxLabeled → GetRect(Text.CalcHeight(label, ColumnWidth)) + Gap(2f)
-                //     Text.CalcHeight for a single-line label at GameFont.Small = Text.LineHeight = 22f
-                //     → consumed = 22f height + 2f gap
-                //   SliderLabeled   → GetRect(30f) + Gap(2f)
-                //     → consumed = 30f height + 2f gap
-                //   verticalSpacing = 2f  (Listing.cs line 8)
-                // Content height = sum of GetRect heights + (N-1) gaps (no trailing gap).
-                // Rows drawn: manage checkbox, min-skill slider, inspired checkbox,
-                //   [specialist checkbox if Ideology], cap slider.
-                // No-Ideology: 22 + 30 + 22 + 30 = 104f heights; 3 gaps = 6f → 110f
-                // Ideology:    22 + 30 + 22 + 22 + 30 = 126f heights; 4 gaps = 8f → 134f
-                const float CheckH = 22f;  // Text.LineHeight for GameFont.Small
-                const float SliderH = 30f; // SliderLabeled GetRect height (Listing_Standard.cs line 381)
-                const float Gap = 2f;      // verticalSpacing (Listing.cs line 8)
-                float optionsContentH = ModsConfig.IdeologyActive
-                    ? CheckH + Gap + SliderH + Gap + CheckH + Gap + CheckH + Gap + SliderH
-                    : CheckH + Gap + SliderH + Gap + CheckH + Gap + SliderH;
+                // Options section, canonical row order shared with the
+                // construction fold-out and the settings grid: manage,
+                // inspired, [specialist], auto-adjust, skill row (slider, or
+                // the current-best label in auto mode), target quality, cap.
+                // Manual rects (like the fold-out) so rows, paddings, and the
+                // 50% label/control split align across both panels. Metrics:
+                // checkbox/label/button rows 22f, slider rows 30f, 2f gaps,
+                // no trailing gap on the last row.
+                const float RowH = 22f;    // Text.LineHeight for GameFont.Small
+                const float SliderH = 30f; // slider row height
+                const float Gap = 2f;      // vertical gap between rows
+                float skillRowH = autoBest ? RowH : SliderH;
+                float optionsContentH = RowH + Gap          // manage
+                    + RowH + Gap                            // inspired
+                    + (ModsConfig.IdeologyActive ? RowH + Gap : 0f)
+                    + RowH + Gap                            // auto-adjust
+                    + skillRowH + Gap                       // skill row
+                    + RowH + Gap                            // target quality
+                    + SliderH;                              // cap (last row)
                 float sectionBoxH = optionsContentH + SectionPad * 2f;
                 // CurHeight is the public property exposing protected curY (Listing.cs line 30).
                 float sectionBoxY = listing.CurHeight;
@@ -155,50 +178,110 @@ namespace QualityJobs.UI
                 // would double-offset and push everything outside the visible panel.
                 Widgets.DrawMenuSection(new Rect(0f, sectionBoxY, rect.width, sectionBoxH));
 
-                // Run a child listing inside the padded inner rect (group-relative).
-                Rect innerRect = new Rect(
-                    SectionPad,
-                    sectionBoxY + SectionPad,
-                    rect.width - SectionPad * 2f,
-                    optionsContentH);
-                var innerListing = new Listing_Standard();
-                innerListing.Begin(innerRect);
-                try
                 {
                     // Read current UI state into locals; mutate locals; push changes on
                     // actual difference. OnGUI is multi-pass; every pass must be idempotent.
+                    float x = SectionPad;
+                    float w = rect.width - SectionPad * 2f;
+                    float y = sectionBoxY + SectionPad;
+
+                    // (1) Manage this bill.
                     bool newManaged = managed;
-                    innerListing.CheckboxLabeled(_manageBillLabel!, ref newManaged);
+                    Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _manageBillLabel!, ref newManaged);
+                    y += RowH + Gap;
 
-                    // I4: rebuild interpolated label only when the displayed value changes.
-                    if (minSkill != _minSkillLabelValue)
-                    {
-                        _minSkillLabel = "QJ_FinisherSkill".Translate(minSkill);
-                        _minSkillLabelValue = minSkill;
-                    }
-                    int newMinSkill = (int)innerListing.SliderLabeled(_minSkillLabel!, minSkill, 0f, 20f,
-                        tooltip: _finisherSkillTooltip!);
-
+                    // (2) Require inspired creativity.
                     bool newInspired = requireInspired;
-                    innerListing.CheckboxLabeled(_requireInspiredLabel!, ref newInspired);
+                    Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _requireInspiredLabel!, ref newInspired);
+                    y += RowH + Gap;
 
+                    // (3) Require production specialist (Ideology only).
                     bool newSpecialist = requireSpecialist;
                     if (ModsConfig.IdeologyActive)
-                        innerListing.CheckboxLabeled(_requireSpecialistLabel!, ref newSpecialist);
+                    {
+                        Widgets.CheckboxLabeled(new Rect(x, y, w, RowH), _requireSpecialistLabel!, ref newSpecialist);
+                        y += RowH + Gap;
+                    }
 
+                    // (4) Auto-adjust finisher skill.
+                    bool newAutoBest = autoBest;
+                    Rect autoRect = new Rect(x, y, w, RowH);
+                    Widgets.CheckboxLabeled(autoRect, _autoBestLabel!, ref newAutoBest);
+                    WrTips.Key("QJ_AutoBestTip").Region(autoRect);
+                    y += RowH + Gap;
+
+                    // (5) Finisher skill: slider, or the current-best label in auto mode.
+                    int newMinSkill = minSkill;
+                    if (autoBest)
+                    {
+                        Rect autoRow = new Rect(x, y, w, RowH);
+                        Color prevRowColor = GUI.color;
+                        GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                        Text.Anchor = TextAnchor.MiddleLeft;
+                        Widgets.Label(autoRow, _autoBestCurrentLabel ?? _autoBestNoneLabel!);
+                        Text.Anchor = prevAnchor;
+                        GUI.color = prevRowColor;
+                        y += RowH + Gap;
+                    }
+                    else
+                    {
+                        // I4: rebuild interpolated label only when the displayed value changes.
+                        if (minSkill != _minSkillLabelValue)
+                        {
+                            _minSkillLabel = "QJ_FinisherSkill".Translate(minSkill);
+                            _minSkillLabelValue = minSkill;
+                        }
+                        Rect skillLabel = new Rect(x, y, w * 0.5f, SliderH);
+                        Text.Anchor = TextAnchor.MiddleLeft;
+                        Widgets.Label(skillLabel, _minSkillLabel!);
+                        Text.Anchor = prevAnchor;
+                        WrTips.Key("QJ_FinisherSkillTip").Region(skillLabel);
+                        newMinSkill = (int)Widgets.HorizontalSlider(
+                            new Rect(x + w * 0.5f, y, w * 0.5f, SliderH), minSkill, 0f, 20f,
+                            middleAlignment: true);
+                        y += SliderH + Gap;
+                    }
+
+                    // (6) Target quality: label left, picker button right.
+                    Rect qualityRow = new Rect(x, y, w, RowH);
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Widgets.Label(new Rect(x, y, w * 0.5f, RowH), _targetQualityLabel!);
+                    Text.Anchor = prevAnchor;
+                    string qualityCaption = targetQuality <= 0
+                        ? _anyQualityLabel! : _qualityLabels![targetQuality];
+                    if (Widgets.ButtonText(new Rect(x + w * 0.5f, y, w * 0.5f, RowH), qualityCaption))
+                    {
+                        // Menu built on click only; allocation on interaction, not per frame.
+                        var options = new System.Collections.Generic.List<FloatMenuOption>();
+                        options.Add(new FloatMenuOption(_anyQualityLabel!, () => PushTargetQuality(0)));
+                        for (int q = 1; q <= 6; q++)
+                        {
+                            int capturedQ = q;
+                            options.Add(new FloatMenuOption(_qualityLabels![q],
+                                () => PushTargetQuality(capturedQ)));
+                        }
+                        Find.WindowStack.Add(new FloatMenu(options) { vanishIfMouseDistant = false });
+                    }
+                    WrTips.Key("QJ_BillTargetQualityTip").Region(qualityRow);
+                    y += RowH + Gap;
+
+                    // (7) Stock cap slider (last row).
                     // I4: rebuild interpolated cap label only when the displayed value changes.
                     if (cap != _capLabelValue)
                     {
                         _capLabel = "QJ_StockCapLabel".Translate(cap);
                         _capLabelValue = cap;
                     }
-                    int newCap = (int)innerListing.SliderLabeled(_capLabel!, cap, 0f, 50f, tooltip: _stockCapTooltip!);
+                    Rect capLabel = new Rect(x, y, w * 0.5f, SliderH);
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Widgets.Label(capLabel, _capLabel!);
+                    Text.Anchor = prevAnchor;
+                    WrTips.Key("QJ_StockCapTooltip").Region(capLabel);
+                    int newCap = (int)Widgets.HorizontalSlider(
+                        new Rect(x + w * 0.5f, y, w * 0.5f, SliderH), cap, 0f, 50f,
+                        middleAlignment: true);
 
-                    PushChanges(newManaged, newMinSkill, newInspired, newSpecialist, newCap);
-                }
-                finally
-                {
-                    innerListing.End();
+                    PushChanges(newManaged, newAutoBest, newMinSkill, newInspired, newSpecialist, newCap);
                 }
 
                 // Advance the outer listing past the section box.
@@ -240,6 +323,7 @@ namespace QualityJobs.UI
             {
                 Text.Anchor = prevAnchor;
                 Text.Font = prevFont;
+                GUI.color = prevPanelColor;
                 listing.End();
             }
         }
@@ -253,10 +337,16 @@ namespace QualityJobs.UI
             // ConfigFor already coerces specialist via the Ideology gate; mirror here
             // so the local copy is clean and PushChanges never sends true without Ideology.
             requireSpecialist = config.Condition.RequireSpecialist && ModsConfig.IdeologyActive;
+            autoBest = config.AutoBest;
+            targetQuality = store.TargetQualityFor(bill);
             cap = store.CapFor(ManagedRecipes.ProductDefName(bill.recipe));
             // Force re-evaluation of best-candidate on next draw pass.
             lastBestTick = -BestCandidateInterval;
             cachedBestValid = false;
+            lastAutoBestTick = -BestCandidateInterval;
+            cachedAutoValid = false;
+            cachedAutoBestId = -1;
+            _autoBestCurrentLabel = null;
 
             // Build all instance-scoped label caches once per dialog open.
             // Reopening the dialog always constructs a fresh instance, so these
@@ -271,14 +361,16 @@ namespace QualityJobs.UI
             _oddsHeaderLabel = "QJ_OddsHeader".Translate();
             _oddsColConfigLabel = "QJ_OddsColConfig".Translate();
             _oddsColBestLabel = "QJ_OddsColBest".Translate();
-            _stockCapTooltip = "QJ_StockCapTooltip".Translate();
-            _finisherSkillTooltip = "QJ_FinisherSkillTip".Translate();
+            _autoBestLabel = "QJ_AutoBest".Translate();
+            _autoBestNoneLabel = "QJ_AutoBestNone".Translate();
+            _targetQualityLabel = "QJ_MinQualityLabel".Translate();
+            _anyQualityLabel = "QJ_AnyQuality".Translate();
 
             loaded = true;
         }
 
-        private void PushChanges(bool newManaged, int newMinSkill, bool newInspired,
-            bool newSpecialist, int newCap)
+        private void PushChanges(bool newManaged, bool newAutoBest, int newMinSkill,
+            bool newInspired, bool newSpecialist, int newCap)
         {
             // Local compare first (fast path). Commands perform a second no-op
             // compare against store truth — two defense layers per AGENTS.md.
@@ -286,6 +378,14 @@ namespace QualityJobs.UI
             {
                 managed = newManaged;
                 Commands.SetBillManaged(BillIds.IdOf(bill), newManaged);
+            }
+
+            if (newAutoBest != autoBest)
+            {
+                autoBest = newAutoBest;
+                Commands.SetBillAutoBest(BillIds.IdOf(bill), newAutoBest);
+                // Filter/mode edit: re-evaluate the current best immediately.
+                lastAutoBestTick = -BestCandidateInterval;
             }
 
             if (newMinSkill != minSkill)
@@ -298,12 +398,14 @@ namespace QualityJobs.UI
             {
                 requireInspired = newInspired;
                 Commands.SetBillRequireInspired(BillIds.IdOf(bill), newInspired);
+                lastAutoBestTick = -BestCandidateInterval;
             }
 
             if (newSpecialist != requireSpecialist)
             {
                 requireSpecialist = newSpecialist;
                 Commands.SetBillRequireSpecialist(BillIds.IdOf(bill), newSpecialist);
+                lastAutoBestTick = -BestCandidateInterval;
             }
 
             if (newCap != cap)
@@ -314,8 +416,30 @@ namespace QualityJobs.UI
             }
         }
 
+        /// Pushes the target quality picked from the float menu (click path,
+        /// not per frame). Same two-layer no-op discipline as PushChanges.
+        private void PushTargetQuality(int value)
+        {
+            if (value == targetQuality) return;
+            targetQuality = value;
+            Commands.SetBillTargetQuality(BillIds.IdOf(bill), value);
+        }
+
         private OddsRows EnsureThresholdOdds()
         {
+            if (autoBest && cachedAutoValid)
+            {
+                // Auto mode (auto spec §5): the Config column shows the odds of
+                // the pawn the gate currently demands.
+                if (thresholdOdds == null || !thresholdOdds.Matches(
+                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset))
+                    thresholdOdds = OddsRows.Build(
+                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset);
+                return thresholdOdds;
+            }
+            // Auto mode with NO eligible colonist (cachedAutoValid false) falls
+            // through here deliberately: the manual-threshold odds are the least
+            // misleading display next to the "No eligible colonist" line.
             // requireSpecialist implies a roleOffset of +1 per spec §11 display logic.
             int roleOffset = requireSpecialist ? 1 : 0;
             if (thresholdOdds == null || !thresholdOdds.Matches(minSkill, requireInspired, roleOffset))
@@ -376,6 +500,43 @@ namespace QualityJobs.UI
                 || !bestOdds.Matches(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset))
                 bestOdds = OddsRows.Build(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset);
             return bestOdds;
+        }
+
+        /// <summary>Tick-throttled auto current-best evaluation (auto spec §5):
+        /// refreshed at most once per store ScanInterval (250 game ticks); never
+        /// runs the colony scan per frame (AGENTS.md render-path rule).</summary>
+        private void EnsureAutoBest()
+        {
+            int now = Find.TickManager.TicksGame;
+            if (now - lastAutoBestTick < BestCandidateInterval && lastAutoBestTick >= 0) return;
+            lastAutoBestTick = now;
+
+            // The auto pool honors the same filters the gate will apply; MinSkill
+            // is ignored in auto mode, so pass 0.
+            var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
+            Pawn? best = Dispatcher.AutoBestForDisplay(bill.recipe, condition);
+            if (best == null)
+            {
+                cachedAutoValid = false;
+                cachedAutoBestId = -1;
+                _autoBestCurrentLabel = null;
+                return;
+            }
+            int skill = Dispatcher.SkillOf(best, bill.recipe);
+            bool inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
+            int roleOffset = Dispatcher.RoleOffsetOf(best);
+            // Equality: same resolved identity + stats keeps the label instance.
+            if (!cachedAutoValid || best.thingIDNumber != cachedAutoBestId
+                || skill != cachedAutoSkill || inspired != cachedAutoInspired
+                || roleOffset != cachedAutoRoleOffset)
+            {
+                cachedAutoBestId = best.thingIDNumber;
+                cachedAutoSkill = skill;
+                cachedAutoInspired = inspired;
+                cachedAutoRoleOffset = roleOffset;
+                _autoBestCurrentLabel = "QJ_AutoBestCurrent".Translate(best.LabelShort);
+            }
+            cachedAutoValid = true;
         }
 
         private void DrawOddsTable(Listing_Standard listing, OddsRows config, OddsRows? best)

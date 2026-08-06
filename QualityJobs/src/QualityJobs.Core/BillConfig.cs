@@ -5,15 +5,20 @@ namespace QualityJobs.Core
     public readonly struct BillConfig
     {
         public readonly bool Managed;
+        /// <summary>Auto-best mode (auto spec §2): dynamic colony-wide threshold
+        /// replaces MinSkill; inspired/specialist stay active as pool filters.</summary>
+        public readonly bool AutoBest;
         public readonly ResumeCondition Condition;
 
-        public BillConfig(bool managed, ResumeCondition condition)
+        public BillConfig(bool managed, bool autoBest, ResumeCondition condition)
         {
             Managed = managed;
+            AutoBest = autoBest;
             Condition = condition;
         }
 
         public bool Equals(in BillConfig other)
-            => Managed == other.Managed && Condition.Equals(other.Condition);
+            => Managed == other.Managed && AutoBest == other.AutoBest
+               && Condition.Equals(other.Condition);
     }
 }

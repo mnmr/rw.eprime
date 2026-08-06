@@ -56,10 +56,24 @@ namespace QualityJobs.Patches
                 ? Dispatcher.ConditionFor(store, entry)
                 : config.Condition;
 
-            CandidateFacts worker = Dispatcher.FactsFor(actor, bill.recipe,
-                Dispatcher.WorkTypeForRecipe(bill.recipe));
-            GateOutcome outcome = GateDecision.Decide(managed, uft.debugCompleted,
-                worker, condition);
+            // Auto spec §2.3: the flag resolves like the condition — entry's
+            // source bill first, else this bill's config.
+            bool autoBest = entry != null
+                ? Dispatcher.AutoBestFor(store, entry)
+                : config.AutoBest;
+            GateOutcome outcome;
+            if (autoBest)
+            {
+                outcome = Dispatcher.DecideAutoGate(managed, uft.debugCompleted,
+                    actor, bill.recipe, condition);
+            }
+            else
+            {
+                CandidateFacts worker = Dispatcher.FactsFor(actor, bill.recipe,
+                    Dispatcher.WorkTypeForRecipe(bill.recipe));
+                outcome = GateDecision.Decide(managed, uft.debugCompleted,
+                    worker, condition);
+            }
             if (outcome == GateOutcome.Complete) return false;
 
             // Pause (spec §5): end job, unbind, register, clear author.

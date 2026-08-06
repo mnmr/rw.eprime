@@ -73,20 +73,23 @@ namespace QualityJobs.Patches
                     store.pendingCopyMinSkill,
                     store.pendingCopyInspired,
                     store.pendingCopySpecialist,
-                    store.pendingCopyQuality);
+                    store.pendingCopyQuality,
+                    store.pendingCopyAutoBest);
             }
             else if (store.manageNewConstructionDefault
                 && (store.constructionMinSkillDefault > 0
                     || store.constructionRequireInspiredDefault
                     || store.constructionRequireSpecialistDefault
-                    || store.constructionTargetQualityDefault > 0))
+                    || store.constructionTargetQualityDefault > 0
+                    || store.constructionAutoBestDefault))
             {
                 // Auto-create path: apply the store's construction defaults.
                 PlanOps.Apply(store, bp.thingIDNumber,
                     store.constructionMinSkillDefault,
                     store.constructionRequireInspiredDefault,
                     store.constructionRequireSpecialistDefault,
-                    store.constructionTargetQualityDefault);
+                    store.constructionTargetQualityDefault,
+                    store.constructionAutoBestDefault);
             }
         }
     }

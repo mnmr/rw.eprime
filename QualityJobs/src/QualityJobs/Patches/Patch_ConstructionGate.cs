@@ -39,9 +39,10 @@ namespace QualityJobs.Patches
             __state.position = __instance.Position;
             __state.buildDef = __instance.BuildDef;
 
-            CandidateFacts facts = Dispatcher.ConstructionFactsFor(worker);
-            GateOutcome outcome = GateDecision.Decide(billManaged: true,
-                debugCompleted: false, facts, plan.Condition);
+            GateOutcome outcome = plan.autoBest
+                ? Dispatcher.DecideAutoConstructionGate(worker, plan.Condition)
+                : GateDecision.Decide(billManaged: true, debugCompleted: false,
+                    Dispatcher.ConstructionFactsFor(worker), plan.Condition);
             if (outcome == GateOutcome.Complete) return true;
 
             // Pause: suppress completion. No job bookkeeping needed — the
@@ -49,6 +50,15 @@ namespace QualityJobs.Patches
             // this returns (JobDriver_ConstructFinishFrame.cs:77-79), ending
             // the job; the lock patch prevents anyone but a dispatched
             // finisher from starting a new FinishFrame job.
+            //
+            // Cap the work overshoot: the driver adds the tick's work BEFORE
+            // the completion call we suppress, and vanilla's frame renderer
+            // does not clamp PercentComplete (Frame.cs:487) — anything past
+            // 100% draws phantom material tiles OUTSIDE the frame's footprint.
+            // Forced work (e.g. Achtung) bypasses the lock and can bounce here
+            // repeatedly, growing the overshoot without this clamp.
+            if (__instance.workDone > __instance.WorkToBuild)
+                __instance.workDone = __instance.WorkToBuild;
             plan.state = ConstructionPlanState.Paused;
             plan.finisher = null;
             __state.plan = null; // postfix must not run retry logic on a pause
@@ -92,13 +102,6 @@ namespace QualityJobs.Patches
             plan.finisher = null;
             __state.map.designationManager.AddDesignation(
                 new Designation(built, DesignationDefOf.Deconstruct));
-            if (store.dispatchLetter)
-                Find.LetterStack.ReceiveLetter(
-                    "QJ_RetryLetterLabel".Translate(built.LabelShort),
-                    "QJ_RetryLetterText".Translate(built.LabelShort,
-                        comp.Quality.GetLabel(),
-                        ((QualityCategory)plan.minQuality).GetLabel()),
-                    LetterDefOf.NeutralEvent, built);
         }
     }
 }

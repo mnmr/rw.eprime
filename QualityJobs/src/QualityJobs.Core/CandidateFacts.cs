@@ -15,9 +15,12 @@ namespace QualityJobs.Core
         public readonly bool WorkTypeEnabled;
         /// <summary>recipe.skillRequirements are all satisfied.</summary>
         public readonly bool MeetsRecipeSkillRequirements;
+        /// <summary>XP progress toward the next level as fixed-point milli (0-999);
+        /// rank tie-break only. 0 for mechs and skill-less pawns.</summary>
+        public readonly int XpMilli;
 
         public CandidateFacts(int id, int skill, bool inspired, int roleOffset,
-            bool workTypeEnabled, bool meetsRecipeSkillRequirements)
+            bool workTypeEnabled, bool meetsRecipeSkillRequirements, int xpMilli = 0)
         {
             Id = id;
             Skill = skill;
@@ -25,6 +28,7 @@ namespace QualityJobs.Core
             RoleOffset = roleOffset;
             WorkTypeEnabled = workTypeEnabled;
             MeetsRecipeSkillRequirements = meetsRecipeSkillRequirements;
+            XpMilli = xpMilli;
         }
     }
 }

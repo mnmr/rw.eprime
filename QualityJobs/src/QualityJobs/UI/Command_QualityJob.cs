@@ -116,12 +116,14 @@ namespace QualityJobs.UI
             int minSkill;
             bool reqInspired, reqSpecialist;
             int targetQuality;
+            bool autoBest;
             if (store != null)
             {
                 minSkill      = store.constructionMinSkillDefault;
                 reqInspired   = store.constructionRequireInspiredDefault;
                 reqSpecialist = store.constructionRequireSpecialistDefault;
                 targetQuality = store.constructionTargetQualityDefault;
+                autoBest      = store.constructionAutoBestDefault;
             }
             else
             {
@@ -130,12 +132,13 @@ namespace QualityJobs.UI
                 reqInspired   = s.defaultConstructionRequireInspired;
                 reqSpecialist = s.defaultConstructionRequireSpecialist;
                 targetQuality = s.defaultConstructionTargetQuality;
+                autoBest      = s.defaultConstructionAutoBest;
             }
             foreach (Thing t in _things)
             {
                 Commands.ApplyPlanSettings(
                     t.thingIDNumber,
-                    minSkill, reqInspired, reqSpecialist, targetQuality);
+                    minSkill, reqInspired, reqSpecialist, targetQuality, autoBest);
             }
         }
     }

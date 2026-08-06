@@ -40,12 +40,13 @@ namespace QualityJobs.Patches
             bool inspired = plan.requireInspired;
             bool specialist = plan.requireSpecialist;
             int quality = plan.minQuality;
+            bool autoBest = plan.autoBest;
 
             System.Action? originalAction = ca.action;
             ca.action = () =>
             {
                 originalAction?.Invoke();
-                Commands.SetPendingCopy(minSkill, inspired, specialist, quality);
+                Commands.SetPendingCopy(minSkill, inspired, specialist, quality, autoBest);
             };
             return g;
         }

@@ -12,6 +12,41 @@ namespace QualityJobs
         private static readonly List<CandidateFacts> candidateBuffer = new List<CandidateFacts>(32);
         private static readonly List<Pawn> pawnBuffer = new List<Pawn>(32);
 
+        // Auto-best colony pool buffers (auto spec §2.2). Same static-buffer
+        // pattern as candidateBuffer/pawnBuffer: cleared before every return so
+        // the statics never root a previous world's pawns.
+        private static readonly List<CandidateFacts> poolBuffer = new List<CandidateFacts>(64);
+        private static readonly List<Pawn> poolPawnBuffer = new List<Pawn>(64);
+
+        /// <summary>Fills poolBuffer/poolPawnBuffer with the colony-wide auto-best
+        /// pool: free colonists on all maps, caravans, and travelling transporters.
+        /// Downed/mental/asleep/off-map pawns are INCLUDED (temporary
+        /// unavailability must not lower the bar); dead are excluded (defensively
+        /// — the property is already alive-filtered); mechs are never pool
+        /// members (spec §2.2 — FreeColonists excludes them).
+        /// Capability (work type, recipe skill requirements) travels as facts
+        /// flags and is filtered in Core. recipe == null builds construction
+        /// facts.</summary>
+        private static void BuildAutoPool(RecipeDef? recipe, WorkTypeDef? workType)
+        {
+            poolBuffer.Clear();
+            poolPawnBuffer.Clear();
+            List<Pawn> all = PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive_FreeColonists;
+            for (int i = 0; i < all.Count; i++)
+            {
+                Pawn p = all[i];
+                if (p.Dead) continue;
+                poolBuffer.Add(recipe != null ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
+                poolPawnBuffer.Add(p);
+            }
+        }
+
+        private static void ClearAutoPool()
+        {
+            poolBuffer.Clear();
+            poolPawnBuffer.Clear();
+        }
+
         public static void TryDispatch(QualityJobsStore store, WorkItemEntry entry)
         {
             UnfinishedThing? uft = entry.uft;
@@ -22,7 +57,10 @@ namespace QualityJobs
             if (recipe == null) return;
 
             ResumeCondition condition = ConditionFor(store, entry);
-            Pawn? finisher = SelectFinisher(uft.Map, recipe, condition, relaxed: false);
+            bool autoBest = AutoBestFor(store, entry);
+            Pawn? finisher = autoBest
+                ? SelectAutoFinisher(uft.Map, recipe, condition)
+                : SelectFinisher(uft.Map, recipe, condition, relaxed: false);
             if (finisher == null) return;
 
             Thing? bench = FindBench(entry, recipe);
@@ -47,23 +85,12 @@ namespace QualityJobs
             string finishId = BillIds.IdOf(bill);
             BillConfig inherited = entry.sourceBill != null && !entry.sourceBill.DeletedOrDereferenced
                 ? store.ConfigFor(entry.sourceBill)
-                : new BillConfig(true, ConditionFor(store, entry));
+                : new BillConfig(true, autoBest, ConditionFor(store, entry));
             store.billManaged[finishId] = true; // finish bills are always gate-managed
             store.billMinSkill[finishId] = inherited.Condition.MinSkill;
             store.billRequireInspired[finishId] = inherited.Condition.RequireInspired;
             store.billRequireSpecialist[finishId] = inherited.Condition.RequireSpecialist;
-
-            // Fix I2: use per-save synced dispatchLetter field (spec §11/§13).
-            if (store.dispatchLetter)
-            {
-                string inspired = finisher.InspirationDef == InspirationDefOf.Inspired_Creativity
-                    ? "QJ_DispatchLetterInspired".Translate().ToString() : "";
-                int skill = SkillOf(finisher, recipe);
-                Find.LetterStack.ReceiveLetter(
-                    "QJ_DispatchLetterLabel".Translate(uft.LabelNoCount),
-                    "QJ_DispatchLetterText".Translate(finisher.LabelShort, uft.LabelNoCount, skill, inspired),
-                    LetterDefOf.NeutralEvent, uft);
-            }
+            store.billAutoBest[finishId] = inherited.AutoBest;
         }
 
         /// Spec §7 construction table.
@@ -170,8 +197,8 @@ namespace QualityJobs
             return result;
         }
 
-        /// Mech-aware Construction skill level for a pawn. Used by both
-        /// ConstructionFactsFor and TryDispatchConstruction's letter block.
+        /// Mech-aware Construction skill level for a pawn. Used by
+        /// ConstructionFactsFor and the construction dialog's display cache.
         public static int ConstructionSkillOf(Pawn p)
             => p.RaceProps.IsMechanoid
                 ? p.RaceProps.mechFixedSkillLevel
@@ -186,7 +213,8 @@ namespace QualityJobs
             bool workEnabled = p.workSettings != null
                 && p.workSettings.WorkIsActive(WorkTypeDefOf.Construction);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, RoleOffsetOf(p),
-                workEnabled, meetsRecipeSkillRequirements: true);
+                workEnabled, meetsRecipeSkillRequirements: true,
+                XpMilliOf(p, SkillDefOf.Construction));
         }
 
         /// Construction finisher (spec §10): same deterministic ranking as
@@ -216,23 +244,15 @@ namespace QualityJobs
 
         /// Paused frame -> Dispatched (spec §10: no one-shot bill; the lock
         /// admits only the recorded finisher).
-        public static void TryDispatchConstruction(QualityJobsStore store, ConstructionPlan plan)
+        public static void TryDispatchConstruction(ConstructionPlan plan)
         {
             if (!(plan.target is Frame frame) || !frame.Spawned) return;
-            Pawn? finisher = SelectConstructionFinisher(frame.Map, plan.Condition);
+            Pawn? finisher = plan.autoBest
+                ? SelectAutoFinisher(frame.Map, null, plan.Condition)
+                : SelectConstructionFinisher(frame.Map, plan.Condition);
             if (finisher == null) return;
             plan.finisher = finisher;
             plan.state = ConstructionPlanState.Dispatched;
-            if (store.dispatchLetter)
-            {
-                string inspired = finisher.InspirationDef == InspirationDefOf.Inspired_Creativity
-                    ? "QJ_DispatchLetterInspired".Translate().ToString() : "";
-                int skill = ConstructionSkillOf(finisher);
-                Find.LetterStack.ReceiveLetter(
-                    "QJ_DispatchLetterLabel".Translate(frame.LabelShort),
-                    "QJ_DispatchLetterText".Translate(finisher.LabelShort, frame.LabelShort, skill, inspired),
-                    LetterDefOf.NeutralEvent, frame);
-            }
         }
 
         /// Spec §10 revert triggers for construction dispatches.
@@ -242,7 +262,17 @@ namespace QualityJobs
             Pawn? f = plan.finisher;
             if (f == null || f.Dead || f.Destroyed || !f.Spawned || f.Downed) return true;
             CandidateFacts facts = ConstructionFactsFor(f);
-            if (!facts.WorkTypeEnabled || !plan.Condition.IsSatisfiedBy(facts)) return true;
+            if (!facts.WorkTypeEnabled) return true;
+            if (plan.autoBest)
+            {
+                // Auto spec §2.4: revert when the dispatched finisher is no
+                // longer colony-wide top (someone surpassed them mid-walk).
+                BuildAutoPool(null, null);
+                bool stillBest = FinisherSelector.WorkerPassesAutoGate(facts, poolBuffer, plan.Condition);
+                ClearAutoPool();
+                if (!stillBest) return true;
+            }
+            else if (!plan.Condition.IsSatisfiedBy(facts)) return true;
             return false;
         }
 
@@ -255,7 +285,7 @@ namespace QualityJobs
                 || (p.workSettings != null && p.workSettings.WorkIsActive(workType));
             bool meetsSkill = recipe.PawnSatisfiesSkillRequirements(p);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, roleOffset,
-                workEnabled, meetsSkill);
+                workEnabled, meetsSkill, XpMilliOf(p, recipe.workSkill));
         }
 
         public static int SkillOf(Pawn p, RecipeDef recipe)
@@ -274,6 +304,21 @@ namespace QualityJobs
                 if (role.def.roleEffects[i] is RoleEffect_ProductionQualityOffset eff)
                     return eff.offset;
             return 0;
+        }
+
+        /// <summary>XP progress toward the next level as fixed-point milli
+        /// (auto spec §2.1). Mechs and skill-less pawns return 0. Deterministic:
+        /// reads scribed floats identical on every MP client.</summary>
+        public static int XpMilliOf(Pawn p, SkillDef? skillDef)
+        {
+            if (p.RaceProps.IsMechanoid || skillDef == null || p.skills == null) return 0;
+            SkillRecord rec = p.skills.GetSkill(skillDef);
+            float required = rec.XpRequiredForLevelUp;
+            if (required <= 0f) return 0;
+            float frac = rec.xpSinceLastLevel / required;
+            if (frac < 0f) frac = 0f;
+            if (frac > 0.999f) frac = 0.999f;
+            return (int)(frac * 1000f);
         }
 
         /// Same resolution as vanilla BoundWorker (Bill_ProductionWithUft.cs:36-53):
@@ -316,16 +361,104 @@ namespace QualityJobs
 
         // ---- config, revert, completion ---------------------------------------
 
+        /// <summary>The bill whose config governs this entry: source bill while it
+        /// lives, else the finish bill. Shared by ConditionFor and AutoBestFor so
+        /// the two resolutions can never diverge.</summary>
+        private static Bill? ConfigSourceOf(WorkItemEntry entry)
+            => entry.sourceBill != null && !entry.sourceBill.DeletedOrDereferenced
+                ? entry.sourceBill : entry.finishBill;
+
         public static ResumeCondition ConditionFor(QualityJobsStore store, WorkItemEntry entry)
         {
-            Bill? configSource = entry.sourceBill != null && !entry.sourceBill.DeletedOrDereferenced
-                ? entry.sourceBill : entry.finishBill;
+            Bill? configSource = ConfigSourceOf(entry);
             if (configSource != null)
                 return store.ConfigFor(configSource).Condition; // ConfigFor already coerces specialist
             // Fallback: no bill reference available; apply the same Ideology gate as ConfigFor.
             bool specialist = store.requireSpecialistDefault && ModsConfig.IdeologyActive;
             return new ResumeCondition(store.minSkillDefault, store.requireInspiredDefault,
                 specialist);
+        }
+
+        /// <summary>Resolves the auto-best flag exactly as ConditionFor resolves
+        /// the condition: source bill first, then finish bill, then the per-save
+        /// default.</summary>
+        public static bool AutoBestFor(QualityJobsStore store, WorkItemEntry entry)
+        {
+            Bill? configSource = ConfigSourceOf(entry);
+            if (configSource != null) return store.ConfigFor(configSource).AutoBest;
+            return store.autoBestDefault;
+        }
+
+        /// <summary>Auto-best gate evaluation for the bill completion patch. The
+        /// pool is built fresh at the gate moment — never cached from the sweep
+        /// (auto spec §2.3).</summary>
+        public static GateOutcome DecideAutoGate(bool managed, bool debugCompleted,
+            Pawn actor, RecipeDef recipe, ResumeCondition condition)
+        {
+            WorkTypeDef? workType = WorkTypeForRecipe(recipe);
+            CandidateFacts worker = FactsFor(actor, recipe, workType);
+            BuildAutoPool(recipe, workType);
+            GateOutcome outcome = GateDecision.DecideAuto(managed, debugCompleted,
+                worker, poolBuffer, condition);
+            ClearAutoPool();
+            return outcome;
+        }
+
+        /// <summary>Auto-best gate evaluation for the construction gate patch.</summary>
+        public static GateOutcome DecideAutoConstructionGate(Pawn worker, ResumeCondition condition)
+        {
+            CandidateFacts facts = ConstructionFactsFor(worker);
+            BuildAutoPool(null, null);
+            GateOutcome outcome = GateDecision.DecideAuto(billManaged: true,
+                debugCompleted: false, facts, poolBuffer, condition);
+            ClearAutoPool();
+            return outcome;
+        }
+
+        /// <summary>Auto-best dispatch (auto spec §2.4): the colony-wide best must
+        /// itself be dispatchable on the item's map; otherwise returns null and
+        /// the item waits. recipe == null selects a construction finisher.</summary>
+        public static Pawn? SelectAutoFinisher(Map map, RecipeDef? recipe, ResumeCondition condition)
+        {
+            WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
+            BuildAutoPool(recipe, workType);
+            candidateBuffer.Clear();
+            pawnBuffer.Clear();
+            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            for (int i = 0; i < colonists.Count; i++)
+            {
+                Pawn p = colonists[i];
+                if (p.Dead || p.Downed || p.InMentalState) continue;
+                pawnBuffer.Add(p);
+                candidateBuffer.Add(recipe != null
+                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
+            }
+            int bestId = FinisherSelector.SelectAutoBest(candidateBuffer, poolBuffer, condition);
+            Pawn? result = null;
+            if (bestId != FinisherSelector.None)
+                for (int i = 0; i < pawnBuffer.Count; i++)
+                    if (pawnBuffer[i].thingIDNumber == bestId) { result = pawnBuffer[i]; break; }
+            candidateBuffer.Clear();
+            pawnBuffer.Clear();
+            ClearAutoPool();
+            return result;
+        }
+
+        /// <summary>Current auto-best pawn for dialog display (auto spec §5).
+        /// Ranks the full colony pool, availability ignored — shows who the gate
+        /// demands. recipe == null ranks by Construction skill. Call only from
+        /// tick-throttled dialog caches, never per frame.</summary>
+        public static Pawn? AutoBestForDisplay(RecipeDef? recipe, ResumeCondition condition)
+        {
+            WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
+            BuildAutoPool(recipe, workType);
+            int bestId = FinisherSelector.SelectBestOfPool(poolBuffer, condition);
+            Pawn? result = null;
+            if (bestId != FinisherSelector.None)
+                for (int i = 0; i < poolPawnBuffer.Count; i++)
+                    if (poolPawnBuffer[i].thingIDNumber == bestId) { result = poolPawnBuffer[i]; break; }
+            ClearAutoPool();
+            return result;
         }
 
         public static bool DispatchInvalid(QualityJobsStore store, WorkItemEntry e)
@@ -340,8 +473,19 @@ namespace QualityJobs
             if (recipe != null && e.finisher != null)
             {
                 ResumeCondition condition = ConditionFor(store, e);
-                CandidateFacts facts = FactsFor(e.finisher, recipe, WorkTypeForRecipe(recipe));
-                if (!facts.WorkTypeEnabled || !condition.IsSatisfiedBy(facts)) return true;
+                WorkTypeDef? workType = WorkTypeForRecipe(recipe);
+                CandidateFacts facts = FactsFor(e.finisher, recipe, workType);
+                if (!facts.WorkTypeEnabled) return true;
+                if (AutoBestFor(store, e))
+                {
+                    // Auto spec §2.4: revert when the dispatched finisher is no
+                    // longer colony-wide top (someone surpassed them mid-walk).
+                    BuildAutoPool(recipe, workType);
+                    bool stillBest = FinisherSelector.WorkerPassesAutoGate(facts, poolBuffer, condition);
+                    ClearAutoPool();
+                    if (!stillBest) return true;
+                }
+                else if (!condition.IsSatisfiedBy(facts)) return true;
             }
             return false;
         }
@@ -364,7 +508,7 @@ namespace QualityJobs
         }
 
         /// Removes the one-shot finish bill from its stack and cleans up the
-        /// four per-bill config entries registered for it in the store.
+        /// five per-bill config entries registered for it in the store.
         /// Compute the bill's load ID BEFORE deletion (safe: BillIds.IdOf reads
         /// the cached string, never touches billStack).
         internal static void DeleteFinishBill(QualityJobsStore store, WorkItemEntry entry)
@@ -378,6 +522,7 @@ namespace QualityJobs
             store.billMinSkill.Remove(id);
             store.billRequireInspired.Remove(id);
             store.billRequireSpecialist.Remove(id);
+            store.billAutoBest.Remove(id);
         }
 
         /// Removes the Deconstruct designation this mod placed on an

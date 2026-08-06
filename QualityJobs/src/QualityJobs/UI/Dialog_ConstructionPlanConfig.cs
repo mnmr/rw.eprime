@@ -51,7 +51,8 @@ namespace QualityJobs.UI
     ///   │  │  ── options block ── │  │                          │ │
     ///   │  │  Require inspired    │  │                          │ │
     ///   │  │  [Require specialist]│  │                          │ │
-    ///   │  │  Finisher skill: 0   │  │                          │ │
+    ///   │  │  Auto-adjust to best │  │                          │ │
+    ///   │  │  Finisher skill: 0   │  │  (or current-best label) │ │
     ///   │  │  Target quality [btn]│  │                          │ │
     ///   │  └──────────────────────┘  └──────────────────────────┘ │
     ///   └─────────────────────────────────────────────────────────┘
@@ -86,12 +87,23 @@ namespace QualityJobs.UI
         private const float RightContentH = MiniHeaderH + 7f * SmallLineH; // 30 + 154 = 184
 
         // Left options block heights (no trailing gap on the last element):
-        //   Without Ideology: inspired(22) + gap(2) + minSkill(30) + gap(2) + qualityRow(22) = 78f
-        //   With Ideology:    inspired(22) + gap(2) + specialist(22) + gap(2)
-        //                     + minSkill(30) + gap(2) + qualityRow(22) = 102f
-        private const float OptionsBlockBaseH     = SmallLineH + GapH + SliderH + GapH + SmallLineH; // 78f
-        private const float OptionsBlockIdeologyH = SmallLineH + GapH + SmallLineH + GapH            // 102f
-                                                  + SliderH + GapH + SmallLineH;
+        //   inspired(22) + gap + [specialist(22) + gap] + auto(22) + gap
+        //   + skillRow(30 slider, or 22 current-best label) + gap + qualityRow(22)
+        // All four combos (Ideology × autoBest):
+        //   no Ideology, manual: 22+2 + 22+2 + 30+2 + 22 = 102f
+        //   no Ideology, auto:   22+2 + 22+2 + 22+2 + 22 =  94f
+        //   Ideology, manual:    22+2 + 22+2 + 22+2 + 30+2 + 22 = 126f
+        //   Ideology, auto:      22+2 + 22+2 + 22+2 + 22+2 + 22 = 118f
+        private float OptionsBlockH()
+        {
+            float skillRowH = autoBest ? SmallLineH : SliderH;
+            float h = SmallLineH + GapH        // inspired
+                    + SmallLineH + GapH        // auto-best checkbox
+                    + skillRowH + GapH         // slider or current-best label
+                    + SmallLineH;              // target-quality row
+            if (ModsConfig.IdeologyActive) h += SmallLineH + GapH;
+            return h;
+        }
 
         // [Clear] button row reserved unconditionally at the top of the left panel inner area:
         //   row height = SmallLineH; followed by gap when drawing (so the button is drawn at top).
@@ -110,6 +122,7 @@ namespace QualityJobs.UI
         private bool requireInspired;
         private bool requireSpecialist;
         private int minQuality;
+        private bool autoBest;
         private bool labelsLoaded; // true after first draw
 
         // Constant translated strings cached as instance fields built on first draw.
@@ -121,10 +134,10 @@ namespace QualityJobs.UI
         private string? oddsHeaderLabel;
         private string? clearLabel;
         private string? noRetriesLabel;
-        private string? retriedUntilTip;
         private string? targetQualityLabel;
         private string? anyQualityLabel;
-        private string? finisherSkillTooltip;
+        private string? autoBestLabel;
+        private string? autoBestNoneLabel;
 
         // I4: interpolated slider label, rebuilt only when the displayed value changes.
         // Owner: dialog instance. Teardown: dies with the window.
@@ -139,6 +152,22 @@ namespace QualityJobs.UI
         // Owner: dialog (transient). Dependencies: condition fields only.
         // Teardown: dies with the window.
         private OddsRows? odds;
+
+        // Auto current-best cache (auto spec §5) — same contract as the bill
+        // dialog's: owner dialog (transient), key none, value resolved best
+        // (id, skill, inspired, roleOffset) + built label string; dependencies
+        // colony pool contents + the dialog's filter fields; refresh at open
+        // (LoadLabels), on filter edits (Push), and tick-throttled at the
+        // store ScanInterval (250 game ticks); equality — same resolved
+        // pawn+stats reuses the label; teardown — dies with the window.
+        private const int AutoBestInterval = QualityJobsStore.ScanInterval; // 250
+        private int lastAutoBestTick = -AutoBestInterval;
+        private int cachedAutoBestId = -1;
+        private int cachedAutoSkill;
+        private bool cachedAutoInspired;
+        private int cachedAutoRoleOffset;
+        private bool cachedAutoValid;
+        private string? autoBestCurrentLabel;
 
         // InitialSize.y computed from content + 2×Margin so the window fits exactly.
         // Text.LineHeightOf is a static array lookup initialized at startup — safe to
@@ -204,6 +233,11 @@ namespace QualityJobs.UI
             // Initialise label caches once per dialog open (on first draw).
             if (!labelsLoaded) LoadLabels(plan);
 
+            // Single EnsureAutoBest call site per pass, BEFORE DrawRightPanel,
+            // so the odds mirror reads a fresh auto cache in the same pass
+            // (DrawRightPanel runs before DrawLeftPanel below).
+            if (autoBest) EnsureAutoBest();
+
             GameFont prevFont = Text.Font;
             TextAnchor prevAnchor = Text.Anchor;
             try
@@ -250,8 +284,19 @@ namespace QualityJobs.UI
 
                 // Build odds for current displayed values.
                 int roleOffset = requireSpecialist ? 1 : 0;
-                if (odds == null || !odds.Matches(minSkill, requireInspired, roleOffset))
-                    odds = OddsRows.Build(minSkill, requireInspired, roleOffset);
+                int oddsSkill = minSkill;
+                bool oddsInspired = requireInspired;
+                if (autoBest && cachedAutoValid)
+                {
+                    // Auto mode (auto spec §5): odds show the pawn the gate
+                    // currently demands. With no eligible colonist we fall back
+                    // to the manual-threshold odds deliberately.
+                    oddsSkill = cachedAutoSkill;
+                    oddsInspired = cachedAutoInspired;
+                    roleOffset = cachedAutoRoleOffset;
+                }
+                if (odds == null || !odds.Matches(oddsSkill, oddsInspired, roleOffset))
+                    odds = OddsRows.Build(oddsSkill, oddsInspired, roleOffset);
 
                 // 7 quality rows, Legendary (6) down to Awful (0).
                 float rowY = afterHeader;
@@ -289,7 +334,7 @@ namespace QualityJobs.UI
                 Rect inner = panelRect.ContractedBy(PanelPad);
 
                 // Options block height (no trailing gap on last element).
-                float optionsH = ModsConfig.IdeologyActive ? OptionsBlockIdeologyH : OptionsBlockBaseH;
+                float optionsH = OptionsBlockH();
 
                 // [Clear] button row: reserved unconditionally at the TOP of inner rect.
                 // Height = SmallLineH. Only drawn when ANY selected thing has a plan.
@@ -330,18 +375,21 @@ namespace QualityJobs.UI
             return false;
         }
 
-        /// Draws the options controls (inspired checkbox, [specialist], skill slider,
-        /// target-quality row) laid out top-to-bottom starting at (x, startY).
+        /// Draws the options controls (inspired checkbox, [specialist], auto-best
+        /// checkbox, skill slider — or the current-best label when auto is on —
+        /// and the target-quality row) laid out top-to-bottom starting at (x, startY).
         /// Uses manual rects (no Listing) so we can anchor from a computed bottom position.
         /// No trailing gap after the last element.
         ///
         /// Fix 2: The "Retried until" caption is removed. The target-quality button
         /// is right-aligned (occupies the right 40% of the row); the label is left.
         ///
-        /// Rect-overlap audit:
+        /// Rect-overlap audit (manual mode):
         ///   The slider occupies [y .. y+SliderH] = [y .. y+30f].
         ///   The target-quality row starts at y+SliderH+GapH = y+32f, which is
         ///   at least 30f (SliderH) below the slider's top. No overlap.
+        ///   In auto mode the slider is replaced by a 22f label row; the
+        ///   target-quality row then starts at y+SmallLineH+GapH = y+24f.
         private void DrawOptionsBlock(float x, float startY, float width, ConstructionPlan? plan)
         {
             Color prevColor = GUI.color;
@@ -353,11 +401,13 @@ namespace QualityJobs.UI
                 bool curInspired   = plan?.requireInspired  ?? false;
                 bool curSpecialist = plan?.requireSpecialist ?? false;
                 int curMinQuality  = plan?.minQuality       ?? 0;
+                bool curAutoBest   = plan?.autoBest         ?? false;
 
                 if (minSkill       != curMinSkill)    minSkill       = curMinSkill;
                 if (requireInspired  != curInspired)  requireInspired  = curInspired;
                 if (requireSpecialist != curSpecialist) requireSpecialist = curSpecialist;
                 if (minQuality     != curMinQuality)  minQuality     = curMinQuality;
+                if (autoBest       != curAutoBest)    autoBest       = curAutoBest;
 
                 float y = startY;
 
@@ -376,27 +426,51 @@ namespace QualityJobs.UI
                     y += SmallLineH + GapH;
                 }
 
-                // (3) Finisher-skill slider.
-                // Slider occupies: y .. y+SliderH (30f). No overlap with row below
-                // because row (4) starts at y+SliderH+GapH = y+32f.
-                if (minSkill != minSkillLabelValue)
+                // (2b) Auto-best checkbox.
+                bool newAutoBest = autoBest;
+                Rect autoRect = new Rect(x, y, width, SmallLineH);
+                Widgets.CheckboxLabeled(autoRect, autoBestLabel!, ref newAutoBest);
+                WrTips.Key("QJ_AutoBestTip").Region(autoRect);
+                y += SmallLineH + GapH;
+
+                // (3) Finisher-skill slider — or current-best label in auto mode.
+                // EnsureAutoBest is NOT called here: the single per-pass call
+                // site lives in DoWindowContents (before DrawRightPanel).
+                int newMinSkill = minSkill;
+                if (autoBest)
                 {
-                    minSkillLabel = "QJ_FinisherSkill".Translate(minSkill);
-                    minSkillLabelValue = minSkill;
+                    Rect autoRow = new Rect(x, y, width, SmallLineH);
+                    Color prevRowColor = GUI.color;
+                    GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Widgets.Label(autoRow, autoBestCurrentLabel ?? autoBestNoneLabel!);
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    GUI.color = prevRowColor;
+                    y += SmallLineH + GapH;
                 }
-                Rect sliderRowRect = new Rect(x, y, width, SliderH);
-                Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(sliderRowRect.LeftHalf(), minSkillLabel!);
-                TooltipHandler.TipRegion(sliderRowRect.LeftHalf(), finisherSkillTooltip!);
-                Text.Anchor = TextAnchor.UpperLeft;
-                int newMinSkill = (int)Widgets.HorizontalSlider(
-                    sliderRowRect.RightHalf(), minSkill, 0f, 20f, middleAlignment: true);
-                y += SliderH + GapH;
+                else
+                {
+                    // Slider occupies: y .. y+SliderH (30f). No overlap with the
+                    // row below, which starts at y+SliderH+GapH = y+32f.
+                    if (minSkill != minSkillLabelValue)
+                    {
+                        minSkillLabel = "QJ_FinisherSkill".Translate(minSkill);
+                        minSkillLabelValue = minSkill;
+                    }
+                    Rect sliderRowRect = new Rect(x, y, width, SliderH);
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Widgets.Label(sliderRowRect.LeftHalf(), minSkillLabel!);
+                    WrTips.Key("QJ_FinisherSkillTip").Region(sliderRowRect.LeftHalf());
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    newMinSkill = (int)Widgets.HorizontalSlider(
+                        sliderRowRect.RightHalf(), minSkill, 0f, 20f, middleAlignment: true);
+                    y += SliderH + GapH;
+                }
 
                 // (4) Target-quality row (Fix 2): label on the left, button RIGHT-aligned.
                 // The "Retried until" caption is removed entirely.
-                // Row starts at y (= startY + SliderH + GapH + optionalIdeologyRows).
-                // No overlap with slider (which ended at y - GapH = y - 2f above this).
+                // Row starts at y (the skill row above ended at y - GapH = y - 2f,
+                // whether it was the 30f slider or the 22f current-best label).
                 Rect qualityRowRect = new Rect(x, y, width, SmallLineH);
                 float btnW = width * QualityBtnWidthFraction;
                 Rect qualityBtnRect  = new Rect(qualityRowRect.xMax - btnW, qualityRowRect.y, btnW, SmallLineH);
@@ -423,10 +497,10 @@ namespace QualityJobs.UI
                     var menu = new FloatMenu(options) { vanishIfMouseDistant = false };
                     Find.WindowStack.Add(menu);
                 }
-                TooltipHandler.TipRegion(qualityRowRect, retriedUntilTip!);
+                WrTips.Key("QJ_RetriedUntilTip").Region(qualityRowRect);
                 // y not advanced after last row (no trailing gap).
 
-                Push(newMinSkill, newInspired, newSpecialist);
+                Push(newMinSkill, newInspired, newSpecialist, newAutoBest);
             }
             finally
             {
@@ -446,20 +520,31 @@ namespace QualityJobs.UI
                 requireInspired  = plan.requireInspired;
                 requireSpecialist = plan.requireSpecialist;
                 minQuality     = plan.minQuality;
+                autoBest       = plan.autoBest;
             }
             // else: local copies stay at neutral defaults (0/false/false/0).
 
+            // At-open refresh of the auto current-best cache (matches the bill
+            // dialog's LoadFromStore reset; the field initializer covers the
+            // very first pass — this keeps the contract's "refresh at open"
+            // true by mechanism as well).
+            lastAutoBestTick = -AutoBestInterval;
+            cachedAutoValid = false;
+            cachedAutoBestId = -1;
+            autoBestCurrentLabel = null;
+
+            // Tooltips are not cached here: they render through WrTips, which
+            // owns its own caching and language invalidation.
             title                = "QJ_ConstructionPanelTitle".Translate();
             requireInspiredLabel = "QJ_RequireInspired".Translate();
             requireSpecialistLabel = "QJ_RequireSpecialist".Translate();
             oddsHeaderLabel      = "QJ_OddsHeader".Translate();
             clearLabel           = "QJ_Clear".Translate();
             noRetriesLabel       = "QJ_NoRetries".Translate();
-            // Fix 2: QJ_RetriedUntil label is removed; QJ_RetriedUntilTip stays.
-            retriedUntilTip      = "QJ_RetriedUntilTip".Translate();
             targetQualityLabel   = "QJ_MinQualityLabel".Translate();
             anyQualityLabel      = "QJ_AnyQuality".Translate();
-            finisherSkillTooltip = "QJ_FinisherSkillTip".Translate();
+            autoBestLabel        = "QJ_AutoBest".Translate();
+            autoBestNoneLabel    = "QJ_AutoBestNone".Translate();
 
             qualityLabels = new string[7];
             for (int q = 0; q <= 6; q++)
@@ -476,20 +561,59 @@ namespace QualityJobs.UI
                 Commands.SetPlanMinQuality(t.thingIDNumber, value);
         }
 
+        /// <summary>Tick-throttled auto current-best evaluation (auto spec §5):
+        /// at most one colony scan per store ScanInterval; recipe null ranks by
+        /// Construction skill (AGENTS.md render-path rule).</summary>
+        private void EnsureAutoBest()
+        {
+            int now = Find.TickManager.TicksGame;
+            if (now - lastAutoBestTick < AutoBestInterval && lastAutoBestTick >= 0) return;
+            lastAutoBestTick = now;
+            // MinSkill is ignored in auto mode, so pass 0.
+            var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
+            Pawn? best = Dispatcher.AutoBestForDisplay(null, condition);
+            if (best == null)
+            {
+                cachedAutoValid = false;
+                cachedAutoBestId = -1;
+                autoBestCurrentLabel = null;
+                return;
+            }
+            int skill = Dispatcher.ConstructionSkillOf(best);
+            bool inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
+            int roleOffset = Dispatcher.RoleOffsetOf(best);
+            // Equality: same resolved identity + stats keeps the label instance.
+            if (!cachedAutoValid || best.thingIDNumber != cachedAutoBestId
+                || skill != cachedAutoSkill || inspired != cachedAutoInspired
+                || roleOffset != cachedAutoRoleOffset)
+            {
+                cachedAutoBestId = best.thingIDNumber;
+                cachedAutoSkill = skill;
+                cachedAutoInspired = inspired;
+                cachedAutoRoleOffset = roleOffset;
+                autoBestCurrentLabel = "QJ_AutoBestCurrent".Translate(best.LabelShort);
+            }
+            cachedAutoValid = true;
+        }
+
         /// Pushes per-field changes to all selected things (Fix 5).
         /// Plain per-field setters; each auto-creates the plan when needed
         /// and auto-removes it if all fields become neutral.
-        private void Push(int newMinSkill, bool newInspired, bool newSpecialist)
+        private void Push(int newMinSkill, bool newInspired, bool newSpecialist, bool newAutoBest)
         {
             bool skillChanged     = newMinSkill   != minSkill;
             bool inspiredChanged  = newInspired   != requireInspired;
             bool specChanged      = newSpecialist != requireSpecialist;
+            bool autoChanged      = newAutoBest   != autoBest;
 
             if (skillChanged)    minSkill          = newMinSkill;
             if (inspiredChanged) requireInspired   = newInspired;
             if (specChanged)     requireSpecialist = newSpecialist;
+            if (autoChanged)     autoBest          = newAutoBest;
+            if (inspiredChanged || specChanged || autoChanged)
+                lastAutoBestTick = -AutoBestInterval; // filter/mode edit: re-evaluate now
 
-            if (!skillChanged && !inspiredChanged && !specChanged) return;
+            if (!skillChanged && !inspiredChanged && !specChanged && !autoChanged) return;
 
             foreach (Thing t in _things)
             {
@@ -497,6 +621,7 @@ namespace QualityJobs.UI
                 if (skillChanged)    Commands.SetPlanMinSkill(thingId, newMinSkill);
                 if (inspiredChanged) Commands.SetPlanRequireInspired(thingId, newInspired);
                 if (specChanged)     Commands.SetPlanRequireSpecialist(thingId, newSpecialist);
+                if (autoChanged)     Commands.SetPlanAutoBest(thingId, newAutoBest);
             }
         }
     }

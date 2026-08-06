@@ -19,8 +19,8 @@ namespace QualityJobs
         /// SyncWorker for the enable payload (Fix 1). shouldConstruct = true lets
         /// MP allocate the SeedValues via its parameterless ctor before we bind;
         /// each field is a primitive, so sync.Bind is sufficient (mirrors the
-        /// WorkRoles SyncWorker style). See SeedValues for why the 12 values are
-        /// carried as one synced object instead of 12 [SyncMethod] parameters.
+        /// WorkRoles SyncWorker style). See SeedValues for why the 14 values are
+        /// carried as one synced object instead of 14 [SyncMethod] parameters.
         [SyncWorker(shouldConstruct = true)]
         private static void SyncSeedValues(SyncWorker sync, ref SeedValues v)
         {
@@ -30,12 +30,14 @@ namespace QualityJobs
             sync.Bind(ref v.requireSpecialist);
             sync.Bind(ref v.productCap);
             sync.Bind(ref v.share);
-            sync.Bind(ref v.dispatchLetter);
             sync.Bind(ref v.manageNewConstruction);
             sync.Bind(ref v.constructionMinSkill);
             sync.Bind(ref v.constructionRequireInspired);
             sync.Bind(ref v.constructionRequireSpecialist);
             sync.Bind(ref v.constructionTargetQuality);
+            sync.Bind(ref v.autoBest);
+            sync.Bind(ref v.constructionAutoBest);
+            sync.Bind(ref v.targetQuality);
         }
     }
 }

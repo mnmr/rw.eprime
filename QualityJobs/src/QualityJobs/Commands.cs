@@ -56,6 +56,29 @@ namespace QualityJobs
         }
 
         [SyncMethod]
+        public static void SetBillAutoBest(string billId, bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null) return;
+            bool effective = store.billAutoBest.TryGetValue(billId, out bool current)
+                ? current : store.autoBestDefault;
+            if (effective == value) return;
+            store.billAutoBest[billId] = value;
+        }
+
+        [SyncMethod]
+        public static void SetBillTargetQuality(string billId, int value)
+        {
+            value = System.Math.Clamp(value, 0, 6);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null) return;
+            int effective = store.billTargetQuality.TryGetValue(billId, out int current)
+                ? current : store.targetQualityDefault;
+            if (effective == value) return;
+            store.billTargetQuality[billId] = value;
+        }
+
+        [SyncMethod]
         public static void SetProductCap(string productDefName, int cap)
         {
             QualityJobsStore? store = QualityJobsStore.Active;
@@ -70,14 +93,6 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.shareUnfinishedWork == value) return;
             store.shareUnfinishedWork = value;
-        }
-
-        [SyncMethod]
-        public static void SetDispatchLetter(bool value)
-        {
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null || store.dispatchLetter == value) return;
-            store.dispatchLetter = value;
         }
 
         // ---- Per-save bill default setters (dual-pattern) -----------------------
@@ -114,6 +129,23 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.requireSpecialistDefault == value) return;
             store.requireSpecialistDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetAutoBestDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.autoBestDefault == value) return;
+            store.autoBestDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetTargetQualityDefault(int value)
+        {
+            value = System.Math.Clamp(value, 0, 6);
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.targetQualityDefault == value) return;
+            store.targetQualityDefault = value;
         }
 
         [SyncMethod]
@@ -159,6 +191,14 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionRequireSpecialistDefault == value) return;
             store.constructionRequireSpecialistDefault = value;
+        }
+
+        [SyncMethod]
+        public static void SetConstructionAutoBestDefault(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.constructionAutoBestDefault == value) return;
+            store.constructionAutoBestDefault = value;
         }
 
         [SyncMethod]
@@ -209,7 +249,8 @@ namespace QualityJobs
         /// initiator's copy-gizmo action; replicates to all clients so the
         /// blueprint spawn hook reads identical settings everywhere.
         [SyncMethod]
-        public static void SetPendingCopy(int minSkill, bool inspired, bool specialist, int quality)
+        public static void SetPendingCopy(int minSkill, bool inspired, bool specialist,
+            int quality, bool autoBest)
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
@@ -217,6 +258,7 @@ namespace QualityJobs
             store.pendingCopyInspired   = inspired;
             store.pendingCopySpecialist = specialist;
             store.pendingCopyQuality    = quality;
+            store.pendingCopyAutoBest   = autoBest;
             store.pendingCopyActive     = true;
         }
 
@@ -301,6 +343,25 @@ namespace QualityJobs
             RemoveIfNeutral(store, plan);
         }
 
+        /// Sets the auto-best flag for the plan identified by thingId.
+        /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
+        [SyncMethod]
+        public static void SetPlanAutoBest(int thingId, bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null) return;
+            ConstructionPlan? plan = store.FindPlanById(thingId);
+            if (plan == null)
+            {
+                if (!value) return; // neutral: no plan needed
+                plan = CreateNeutralPlan(store, thingId);
+                if (plan == null) return;
+            }
+            if (plan.autoBest == value) return;
+            plan.autoBest = value;
+            RemoveIfNeutral(store, plan);
+        }
+
         /// Sets the minimum acceptable quality for the plan identified by thingId.
         /// Implicit creation/removal follows the same pattern as SetPlanMinSkill.
         [SyncMethod]
@@ -325,7 +386,8 @@ namespace QualityJobs
 
         /// Returns true when the plan has all-neutral values (no active options).
         private static bool IsNeutral(ConstructionPlan plan)
-            => plan.minSkill == 0 && !plan.requireInspired && !plan.requireSpecialist && plan.minQuality == 0;
+            => plan.minSkill == 0 && !plan.requireInspired && !plan.requireSpecialist
+               && plan.minQuality == 0 && !plan.autoBest;
 
         /// Removes the plan and its Deconstruct designation if it is fully neutral.
         private static void RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
@@ -359,14 +421,15 @@ namespace QualityJobs
         /// Used by Fix 4 (copy plan settings) to propagate plan settings to placed copies.
         [SyncMethod]
         public static void ApplyPlanSettings(int thingId, int minSkill, bool requireInspired,
-            bool requireSpecialist, int minQuality)
+            bool requireSpecialist, int minQuality, bool autoBest)
         {
             // Fix 2: synced entry point resolves the store and delegates the
             // create-or-overwrite-or-remove-if-neutral logic to the non-synced
             // PlanOps.Apply core (clamping + Ideology coercion live there).
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
-            PlanOps.Apply(store, thingId, minSkill, requireInspired, requireSpecialist, minQuality);
+            PlanOps.Apply(store, thingId, minSkill, requireInspired, requireSpecialist,
+                minQuality, autoBest);
         }
 
         private static Thing? FindSpawnedThing(int thingId)

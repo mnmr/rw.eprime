@@ -27,6 +27,8 @@ namespace QualityJobs
         public Dictionary<string, int> billMinSkill = new Dictionary<string, int>();
         public Dictionary<string, bool> billRequireInspired = new Dictionary<string, bool>();
         public Dictionary<string, bool> billRequireSpecialist = new Dictionary<string, bool>();
+        public Dictionary<string, bool> billAutoBest = new Dictionary<string, bool>();
+        public Dictionary<string, int> billTargetQuality = new Dictionary<string, int>();
         public Dictionary<string, int> productCaps = new Dictionary<string, int>();
 
         // Per-save behavior settings (seeded from global defaults; spec §11).
@@ -34,11 +36,10 @@ namespace QualityJobs
         public int minSkillDefault;
         public bool requireInspiredDefault;
         public bool requireSpecialistDefault;
+        public bool autoBestDefault;
+        public int targetQualityDefault;
         public int productCapDefault;
         public bool shareUnfinishedWork;
-        // Letters are scribed sim state created in ticking; the toggle must be
-        // shared, per-save, synced (spec §11/§13).
-        public bool dispatchLetter;
 
         // Per-save construction defaults (seeded from global defaults; dual-pattern §11).
         public bool manageNewConstructionDefault;
@@ -46,6 +47,7 @@ namespace QualityJobs
         public bool constructionRequireInspiredDefault;
         public bool constructionRequireSpecialistDefault;
         public int constructionTargetQualityDefault;
+        public bool constructionAutoBestDefault;
 
         // ---- pending-copy session state (Fix 4; NOT scribed) -------------------
         //
@@ -60,6 +62,7 @@ namespace QualityJobs
         public bool pendingCopyInspired;
         public bool pendingCopySpecialist;
         public int pendingCopyQuality;
+        public bool pendingCopyAutoBest;
 
         // Rebuilt every scan; keyed (map.uniqueID, productDefName).
         private readonly Dictionary<(int, string), int> uftCounts = new Dictionary<(int, string), int>();
@@ -116,14 +119,16 @@ namespace QualityJobs
                 minSkillDefault = s.defaultMinSkill;
                 requireInspiredDefault = s.defaultRequireInspired;
                 requireSpecialistDefault = s.defaultRequireSpecialist;
+                autoBestDefault = s.defaultAutoBest;
+                targetQualityDefault = s.defaultTargetQuality;
                 productCapDefault = s.defaultProductCap;
                 shareUnfinishedWork = s.defaultShareUnfinishedWork;
-                dispatchLetter = s.dispatchLetter;
                 manageNewConstructionDefault = s.defaultManageNewConstruction;
                 constructionMinSkillDefault = s.defaultConstructionMinSkill;
                 constructionRequireInspiredDefault = s.defaultConstructionRequireInspired;
                 constructionRequireSpecialistDefault = s.defaultConstructionRequireSpecialist;
                 constructionTargetQualityDefault = s.defaultConstructionTargetQuality;
+                constructionAutoBestDefault = s.defaultConstructionAutoBest;
                 seeded = true;
             }
             // Ensure AnyOverlays is correct before the first draw call on the new save.
@@ -138,14 +143,16 @@ namespace QualityJobs
             minSkillDefault = v.minSkill;
             requireInspiredDefault = v.requireInspired;
             requireSpecialistDefault = v.requireSpecialist;
+            autoBestDefault = v.autoBest;
+            targetQualityDefault = v.targetQuality;
             productCapDefault = v.productCap;
             shareUnfinishedWork = v.share;
-            dispatchLetter = v.dispatchLetter;
             manageNewConstructionDefault = v.manageNewConstruction;
             constructionMinSkillDefault = v.constructionMinSkill;
             constructionRequireInspiredDefault = v.constructionRequireInspired;
             constructionRequireSpecialistDefault = v.constructionRequireSpecialist;
             constructionTargetQualityDefault = v.constructionTargetQuality;
+            constructionAutoBestDefault = v.constructionAutoBest;
             seeded = true;
         }
 
@@ -164,12 +171,19 @@ namespace QualityJobs
             // regardless of how the flag was stored (e.g. from a save made with Ideology
             // active, then loaded without it).
             specialist = specialist && ModsConfig.IdeologyActive;
-            return new BillConfig(managed, new ResumeCondition(minSkill, inspired, specialist));
+            bool autoBest = billAutoBest.TryGetValue(id, out bool ab) ? ab : autoBestDefault;
+            return new BillConfig(managed, autoBest, new ResumeCondition(minSkill, inspired, specialist));
         }
 
         public int CapFor(string? productDefName)
             => productDefName != null && productCaps.TryGetValue(productDefName, out int cap)
                 ? cap : productCapDefault;
+
+        /// Target quality for a bill (0 = any quality accepted): per-bill value
+        /// with the per-save default as fallback, like the other bill config.
+        public int TargetQualityFor(Bill bill)
+            => billTargetQuality.TryGetValue(BillIds.IdOf(bill), out int q)
+                ? q : targetQualityDefault;
 
         // ---- entry lookup ------------------------------------------------------
 
@@ -364,7 +378,15 @@ namespace QualityJobs
                     p.finisher = null;
                 }
                 if (p.state == ConstructionPlanState.Paused)
-                    Dispatcher.TryDispatchConstruction(this, p);
+                {
+                    // Self-heal work overshoot on already-paused frames (saves
+                    // made before the gate clamped it): vanilla's frame renderer
+                    // does not clamp PercentComplete and draws phantom tiles
+                    // outside the footprint past 100% (Frame.cs:487).
+                    if (t is Frame pausedFrame && pausedFrame.workDone > pausedFrame.WorkToBuild)
+                        pausedFrame.workDone = pausedFrame.WorkToBuild;
+                    Dispatcher.TryDispatchConstruction(p);
+                }
             }
             // AnyOverlays is maintained incrementally by RemovePlanAt; no rebuild needed.
         }
@@ -372,7 +394,7 @@ namespace QualityJobs
         // ---- scribing ----------------------------------------------------------
 
         /// <summary>
-        /// Removes entries from the four bill-config dictionaries whose key is not
+        /// Removes entries from the five bill-config dictionaries whose key is not
         /// present in the set of live bill IDs on all current maps.  Called once at
         /// save time, so allocations here are acceptable and the method stays off the
         /// tick path (spec §14; unbounded growth otherwise).
@@ -426,6 +448,16 @@ namespace QualityJobs
             foreach (string key in billRequireSpecialist.Keys)
                 if (!liveBillIds.Contains(key)) deadKeys.Add(key);
             for (int i = 0; i < deadKeys.Count; i++) billRequireSpecialist.Remove(deadKeys[i]);
+
+            deadKeys.Clear();
+            foreach (string key in billAutoBest.Keys)
+                if (!liveBillIds.Contains(key)) deadKeys.Add(key);
+            for (int i = 0; i < deadKeys.Count; i++) billAutoBest.Remove(deadKeys[i]);
+
+            deadKeys.Clear();
+            foreach (string key in billTargetQuality.Keys)
+                if (!liveBillIds.Contains(key)) deadKeys.Add(key);
+            for (int i = 0; i < deadKeys.Count; i++) billTargetQuality.Remove(deadKeys[i]);
         }
 
         public override void ExposeData()
@@ -438,19 +470,23 @@ namespace QualityJobs
             Scribe_Collections.Look(ref billMinSkill, "billMinSkill", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref billRequireInspired, "billRequireInspired", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref billRequireSpecialist, "billRequireSpecialist", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref billAutoBest, "billAutoBest", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref billTargetQuality, "billTargetQuality", LookMode.Value, LookMode.Value);
             Scribe_Collections.Look(ref productCaps, "productCaps", LookMode.Value, LookMode.Value);
             Scribe_Values.Look(ref manageNewBillsDefault, "manageNewBillsDefault", true);
             Scribe_Values.Look(ref minSkillDefault, "minSkillDefault", 15);
             Scribe_Values.Look(ref requireInspiredDefault, "requireInspiredDefault", false);
             Scribe_Values.Look(ref requireSpecialistDefault, "requireSpecialistDefault", false);
+            Scribe_Values.Look(ref autoBestDefault, "autoBestDefault", false);
+            Scribe_Values.Look(ref targetQualityDefault, "targetQualityDefault", 0);
             Scribe_Values.Look(ref productCapDefault, "productCapDefault", 10);
             Scribe_Values.Look(ref shareUnfinishedWork, "shareUnfinishedWork", true);
-            Scribe_Values.Look(ref dispatchLetter, "dispatchLetter", true);
             Scribe_Values.Look(ref manageNewConstructionDefault, "manageNewConstructionDefault", false);
             Scribe_Values.Look(ref constructionMinSkillDefault, "constructionMinSkillDefault", 15);
             Scribe_Values.Look(ref constructionRequireInspiredDefault, "constructionRequireInspiredDefault", false);
             Scribe_Values.Look(ref constructionRequireSpecialistDefault, "constructionRequireSpecialistDefault", false);
             Scribe_Values.Look(ref constructionTargetQualityDefault, "constructionTargetQualityDefault", 0);
+            Scribe_Values.Look(ref constructionAutoBestDefault, "constructionAutoBestDefault", false);
             Scribe_Values.Look(ref seeded, "seeded", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -465,6 +501,8 @@ namespace QualityJobs
                 billMinSkill ??= new Dictionary<string, int>();
                 billRequireInspired ??= new Dictionary<string, bool>();
                 billRequireSpecialist ??= new Dictionary<string, bool>();
+                billAutoBest ??= new Dictionary<string, bool>();
+                billTargetQuality ??= new Dictionary<string, int>();
                 productCaps ??= new Dictionary<string, int>();
                 // Fix C1/I4: clean up any finish bills for entries whose UFTs
                 // failed to resolve (null uft after load). DeleteFinishBill
