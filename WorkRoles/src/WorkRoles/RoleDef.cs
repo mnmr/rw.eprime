@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -34,6 +35,12 @@ namespace WorkRoles
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
+
+        /// Recommendation-only template policy. These values are read through
+        /// templateDefName and are not persisted into saves.
+        public bool preserveRecommendationOrder;
+        public bool usesOccasionalRepeatChampionPenalty;
+        public RecommendationSpecialRoleKind recommendationSpecialRole;
 
         /// Role-list group name (resolved to a RoleGroupDef invariant name); empty = Default.
         public string group;

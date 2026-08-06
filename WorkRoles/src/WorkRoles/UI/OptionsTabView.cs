@@ -108,6 +108,7 @@ namespace WorkRoles.UI
             state.EnsurePaths(store, flowW - ChipsPanelPad * 2f);
             state.EnsureTips();
             state.EnsureHelpLayout(flowW);
+            state.EnsureTuning(store, flowW - RecPanelPad * 2f);
             OptionsPathView pathView = state.Path;
 
             // The whole y-flow is laid out up front: the scroll view needs
@@ -137,6 +138,14 @@ namespace WorkRoles.UI
             var recOrderHelpRect = new Rect(flowX, recPanel.yMax + 8f, flowW,
                 state.RecommendationOrderHelpHeight);
             y = recOrderHelpRect.yMax + 12f;
+            float formulaHeaderY = y;
+            y += 30f;
+            var tuningPanel = new Rect(
+                flowX,
+                y,
+                flowW,
+                state.TuningLayoutHeight + RecPanelPad * 2f);
+            y = tuningPanel.yMax + 12f;
             float pathsHeaderY = y;
             y += 30f;
             var trainingHelpRect = new Rect(flowX, y, flowW,
@@ -190,6 +199,14 @@ namespace WorkRoles.UI
             DrawRecommendationOrder(recPanel, store);
             DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
 
+            DrawTuningHeader(
+                flowX,
+                formulaHeaderY,
+                flowW,
+                state.TuningFormulaHeader,
+                state.TuningResetAll);
+            DrawRecommendationTuning(tuningPanel);
+
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
                 state.TrainingTip);
             DrawHelpParagraph(trainingHelpRect, state.TrainingHelp);
@@ -235,6 +252,82 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
                 GUI.color = WrStyle.CaptionText;
                 Widgets.Label(rect, text);
+            }
+            finally
+            {
+                GUI.color = previousColor;
+                Text.Font = previousFont;
+            }
+        }
+
+        private static void DrawTuningHeader(
+            float x,
+            float y,
+            float width,
+            string label,
+            string resetLabel)
+        {
+            MiniHeader(x, y, width, label, null);
+            const float resetWidth = 112f;
+            var resetRect = new Rect(
+                x + width - resetWidth, y - 1f, resetWidth, 24f);
+            if (Widgets.ButtonText(resetRect, resetLabel))
+                RoleCommands.ResetRecommendationTuning();
+        }
+
+        private void DrawRecommendationTuning(Rect panel)
+        {
+            GameFont previousFont = Text.Font;
+            Color previousColor = GUI.color;
+            try
+            {
+                Widgets.DrawBoxSolidWithOutline(
+                    panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
+                var origin = new Vector2(
+                    panel.x + RecPanelPad, panel.y + RecPanelPad);
+                IReadOnlyList<RecommendationTuningRow> rows = state.TuningRows;
+                for (int index = 0; index < rows.Count; index++)
+                {
+                    RecommendationTuningRow row = rows[index];
+                    if (row.StartsSection)
+                    {
+                        Rect section = Offset(row.SectionRect, origin);
+                        Text.Font = GameFont.Small;
+                        GUI.color = WrStyle.CaptionText;
+                        Widgets.Label(section, row.SectionLabel);
+                        GUI.color = Color.white;
+                    }
+
+                    Rect rect = Offset(row.RowRect, origin);
+                    Text.Font = GameFont.Small;
+                    Widgets.Label(new Rect(
+                        rect.x, rect.y, rect.width - 116f, 21f), row.Label);
+                    Text.Font = GameFont.Tiny;
+                    GUI.color = WrStyle.CaptionText;
+                    Widgets.Label(new Rect(
+                        rect.x,
+                        rect.y + 21f,
+                        rect.width - 116f,
+                        rect.height - 21f),
+                        row.Description);
+                    GUI.color = Color.white;
+                    Text.Font = GameFont.Small;
+
+                    float controlsX = rect.xMax - 108f;
+                    if (Widgets.ButtonText(
+                            new Rect(controlsX, rect.y + 6f, 26f, 26f), "−"))
+                        RoleCommands.SetRecommendationTuningOption(
+                            (int)row.Descriptor.Option,
+                            row.Value - row.Descriptor.Step);
+                    Widgets.Label(
+                        new Rect(controlsX + 30f, rect.y + 8f, 48f, 24f),
+                        row.ValueLabel);
+                    if (Widgets.ButtonText(
+                            new Rect(controlsX + 82f, rect.y + 6f, 26f, 26f), "+"))
+                        RoleCommands.SetRecommendationTuningOption(
+                            (int)row.Descriptor.Option,
+                            row.Value + row.Descriptor.Step);
+                }
             }
             finally
             {

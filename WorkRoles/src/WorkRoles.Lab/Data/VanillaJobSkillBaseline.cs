@@ -11,7 +11,7 @@ using System;
 using System.Collections.Generic;
 using WorkRoles.Core;
 
-namespace WorkRoles.Core.Tests;
+namespace WorkRoles.Lab.Data;
 
 /// Vanilla + DLC job-profile index snapshot for offline harnesses and
 /// tests. Consume with RoleSkillEvidenceSource and

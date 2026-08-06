@@ -46,8 +46,6 @@ namespace WorkRoles
         /// Genes that make a pawn terrified of fire (Biotech's pyrophobia;
         /// extend here if mods add equivalents).
         internal static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
-        internal static readonly HashSet<string> FixedRecommendationOrderTemplates =
-            new HashSet<string> { "WS_Researcher", "WS_DarkStudier" };
 
         public static ColonyView BuildColonyView(RoleStore store, List<Pawn> pawns)
             => BuildColonyView(store, pawns, pawn => CapturePawnSnapshot(
@@ -59,117 +57,71 @@ namespace WorkRoles
             Func<Pawn, PawnExternalSnapshot> snapshotFor)
         {
             if (snapshotFor == null) throw new ArgumentNullException(nameof(snapshotFor));
-            var roleBatch = BuildRoleProjectionBatch(store.roles);
-            var colony = new ColonyView
-            {
-                Roles = roleBatch.Views,
-                Paths = store.trainingPaths.Select(PathViewOf).ToList(),
-                WorkTypeSkills = WorkTypeSkillMap(),
-                HunterRoleId = RoleProviding(
-                    roleBatch, "Hunting", "WS_Hunter")?.id ?? -1,
-                FireBlockerRoleId = FireBlocker(roleBatch)?.id ?? -1,
-            };
-            colony.OrderTemplate = OrderTemplate.ResolveTemplate(store.recommendationOrder, colony.Roles);
+            List<PathView> paths = store.trainingPaths
+                .Select(PathViewOf)
+                .ToList();
+            RecommendationCatalogProjection catalog = BuildRoleCatalog(
+                store.roles, paths, store);
+            var pawnViews = new List<PawnView>(pawns.Count);
             foreach (var pawn in pawns)
-            {
-                PawnView view = PawnViewOf(pawn, store, snapshotFor(pawn));
-                colony.Pawns.Add(view);
-                foreach (KeyValuePair<string, int> skill in view.SkillLevels)
-                    if (!colony.SkillMaxLevels.TryGetValue(skill.Key, out int max)
-                        || skill.Value > max)
-                        colony.SkillMaxLevels[skill.Key] = skill.Value;
-            }
-            return colony;
+                pawnViews.Add(PawnViewOf(
+                    pawn, store, snapshotFor(pawn)));
+            List<int> orderTemplate = OrderTemplate.ResolveTemplate(
+                store.recommendationOrder, catalog.Roles);
+            return catalog.CreateColony(orderTemplate, pawnViews);
         }
 
-        internal static RoleView RoleViewOf(Role role)
-        {
-            var batch = BuildRoleProjectionBatch(new[] { role });
-            return batch.Views[0];
-        }
+        internal static RoleView RoleViewOf(Role role) =>
+            BuildRoleCatalog(new[] { role }).Roles[0];
 
         internal static List<RoleView> RoleViewsOf(IReadOnlyList<Role> roles)
-            => BuildRoleProjectionBatch(roles).Views;
+            => BuildRoleCatalog(roles).Roles.ToList();
 
-        private static RoleView RoleViewOf(Role role, RecommendationRoleProjection projection)
+        private static RecommendationCatalogProjection BuildRoleCatalog(
+            IReadOnlyList<Role> roles,
+            IReadOnlyList<PathView> paths = null,
+            RoleStore store = null)
         {
-            var skills = projection.CopySkillViews();
-            return new RoleView
+            var sources = new List<RecommendationRoleSource>(roles.Count);
+            for (int index = 0; index < roles.Count; index++)
             {
-                Id = role.id,
-                Coverage = role.Coverage(),
-                OrderedCoverage = CoverageMath.OrderedCoverageOf(role.entries, GameJobCatalog.Instance),
-                AutoAssign = role.autoAssign,
-                HasRules = role.HasRules,
-                Blocker = role.blocker,
-                Hunting = projection.Hunting,
-                PreserveRecommendationOrder = FixedRecommendationOrderTemplates
-                    .Contains(role.templateDefName),
-                NaturalPriority = projection.MaxNaturalPriority,
-                WorkTypes = projection.CopyWorkTypes(),
-                HolderMode = role.holderMode,
-                Scale = RoleStore.Current?.ScaleFor(role),
-                RequiredTotal = role.ResolvedRequiredTotal(),
-                MaxHolders = role.ResolvedMaxHolders(),
-                TrainingWaivers = role.ResolvedTrainingWaivers(),
-                Skills = skills,
-                PrimarySkill = projection.PrimarySkill,
-                Unskilled = !role.autoAssign && !role.HasRules
-                    && !projection.HasSkillEvidence,
-                Available = RoleAvailable(role),
-                Enabled = role.enabled,
-            };
-        }
-
-        private sealed class RoleProjectionBatch
-        {
-            internal readonly List<Role> Roles = new List<Role>();
-            internal readonly List<RecommendationRoleProjection> Projections =
-                new List<RecommendationRoleProjection>();
-            internal readonly List<RoleView> Views = new List<RoleView>();
-        }
-
-        private static RoleProjectionBatch BuildRoleProjectionBatch(
-            IReadOnlyList<Role> roles)
-        {
-            var batch = new RoleProjectionBatch();
-            var workTypes = new List<RecommendationWorkTypeEvidence>();
-            var literalWorkTypes = new List<string>();
-            var skillScratch = new RoleSkillEvidenceAccumulator();
-            for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
-            {
-                Role role = roles[roleIndex];
-                workTypes.Clear();
-                literalWorkTypes.Clear();
-                for (int entryIndex = 0; entryIndex < role.entries.Count; entryIndex++)
+                Role role = roles[index];
+                RoleDef template = role.templateDefName == null
+                    ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(
+                        role.templateDefName);
+                sources.Add(new RecommendationRoleSource
                 {
-                    JobEntry entry = role.entries[entryIndex];
-                    WorkTypeDef workType;
-                    if (entry.Kind == JobEntryKind.WorkType)
-                    {
-                        literalWorkTypes.Add(entry.DefName);
-                        workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(entry.DefName);
-                    }
-                    else
-                    {
-                        WorkGiverDef giver = DefDatabase<WorkGiverDef>
-                            .GetNamedSilentFail(entry.DefName);
-                        workType = giver?.workType;
-                    }
-                    if (workType != null)
-                        workTypes.Add(new RecommendationWorkTypeEvidence(
-                            workType.defName, workType.naturalPriority));
-                }
-
-                IReadOnlyList<RoleSkillEvidence> skillEvidence =
-                    RoleSkillProfiles.EvidenceForCoverage(role.Coverage(), skillScratch);
-                var projection = new RecommendationRoleProjection(
-                    workTypes, literalWorkTypes, skillEvidence);
-                batch.Roles.Add(role);
-                batch.Projections.Add(projection);
-                batch.Views.Add(RoleViewOf(role, projection));
+                    Id = role.id,
+                    Entries = new List<JobEntry>(role.entries),
+                    AutoAssign = role.autoAssign,
+                    HasRules = role.HasRules,
+                    Blocker = role.blocker,
+                    PreserveRecommendationOrder =
+                        template?.preserveRecommendationOrder == true,
+                    UsesOccasionalRepeatChampionPenalty = template?
+                        .usesOccasionalRepeatChampionPenalty == true,
+                    HolderMode = role.holderMode,
+                    Scale = (store ?? RoleStore.Current)?.ScaleFor(role),
+                    RequiredTotal = role.ResolvedRequiredTotal(),
+                    MaxHolders = role.ResolvedMaxHolders(),
+                    TrainingWaivers = role.ResolvedTrainingWaivers(),
+                    Available = RoleAvailable(role),
+                    Enabled = role.enabled,
+                    SpecialRole = template?.recommendationSpecialRole
+                        ?? RecommendationSpecialRoleKind.None,
+                });
             }
-            return batch;
+            Dictionary<string, int> naturalPriorities = DefDatabase<WorkTypeDef>
+                .AllDefsListForReading.ToDictionary(
+                    workType => workType.defName,
+                    workType => workType.naturalPriority);
+            return RecommendationCatalogBuilder.Build(
+                sources,
+                paths ?? Array.Empty<PathView>(),
+                GameJobCatalog.Instance,
+                naturalPriorities,
+                JobSkillProfiles.RecommendationIndex());
         }
 
         internal static PathView PathViewOf(TrainingPath path) => new PathView
@@ -332,74 +284,5 @@ namespace WorkRoles
             return !sawGiver;
         }
 
-        /// workType defName -> relevant skill defNames.
-        internal static Dictionary<string, IReadOnlyList<string>> WorkTypeSkillMap()
-        {
-            var map = new Dictionary<string, IReadOnlyList<string>>();
-            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
-                if (workType.relevantSkills != null && workType.relevantSkills.Count > 0)
-                    map[workType.defName] = workType.relevantSkills.Select(s => s.defName).ToList();
-            return map;
-        }
-
-        internal static bool HasWorkTypeEntry(Role role, string workType)
-            => role.entries.Any(e => e.Kind == JobEntryKind.WorkType && e.DefName == workType);
-
-        /// The role providing a work type: the shipped template when usable,
-        /// else the smallest enabled rule-free role carrying the whole type.
-        internal static Role RoleProviding(RoleStore store, string workType, string template)
-            => RoleProviding(BuildRoleProjectionBatch(store.roles), workType, template);
-
-        private static Role RoleProviding(RoleProjectionBatch batch,
-            string workType, string template)
-        {
-            Role shipped = null;
-            for (int i = 0; i < batch.Roles.Count; i++)
-                if (batch.Roles[i].templateDefName == template)
-                {
-                    shipped = batch.Roles[i];
-                    break;
-                }
-            if (shipped != null && shipped.enabled && !shipped.HasRules && !shipped.blocker)
-                return shipped;
-            Role best = null;
-            for (int i = 0; i < batch.Roles.Count; i++)
-            {
-                Role role = batch.Roles[i];
-                RecommendationRoleProjection projection = batch.Projections[i];
-                if (!role.enabled || role.HasRules || role.blocker
-                    || !projection.HasLiteralWorkType(workType)) continue;
-                if (best == null || role.entries.Count < best.entries.Count) best = role;
-            }
-            return best;
-        }
-
-        /// The fire blocker: the shipped template when usable, else any
-        /// enabled rule-free blocker carrying the Firefighter work type.
-        internal static Role FireBlocker(RoleStore store)
-            => FireBlocker(BuildRoleProjectionBatch(store.roles));
-
-        private static Role FireBlocker(RoleProjectionBatch batch)
-        {
-            Role blocker = null;
-            for (int i = 0; i < batch.Roles.Count; i++)
-                if (batch.Roles[i].templateDefName == "WS_NoFirefighting")
-                {
-                    blocker = batch.Roles[i];
-                    break;
-                }
-            if (blocker != null && (!blocker.enabled || blocker.HasRules || !blocker.blocker))
-                blocker = null;
-            if (blocker != null) return blocker;
-            for (int i = 0; i < batch.Roles.Count; i++)
-            {
-                Role role = batch.Roles[i];
-                RecommendationRoleProjection projection = batch.Projections[i];
-                if (role.enabled && !role.HasRules && role.blocker
-                    && projection.HasLiteralWorkType("Firefighter"))
-                    return role;
-            }
-            return null;
-        }
     }
 }

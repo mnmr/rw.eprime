@@ -1,34 +1,276 @@
 using System;
+using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
     public enum RecommendationTuningOption
     {
+        CandidateMinimumSignal,
         ChampionSkillDivisor,
+        ChampionMultiSkillMinimumCount,
+        ChampionAwfulMultiplierHalfUnits,
+        ChampionPoorMultiplierHalfUnits,
+        ChampionNeutralMultiplierHalfUnits,
+        ChampionStrongMultiplierHalfUnits,
         ChampionGreatMultiplierHalfUnits,
+        ChampionExceptionalMultiplierHalfUnits,
+        ChampionAwfulTieBreakPoints,
+        ChampionPoorTieBreakPoints,
+        ChampionNeutralTieBreakPoints,
+        ChampionStrongTieBreakPoints,
+        ChampionGreatTieBreakPoints,
+        ChampionExceptionalTieBreakPoints,
+        RankedCandidatePrioritySignal,
         SurplusMinimumSignal,
+
+        OrderingSkillDivisor,
+        OrderingAwfulSignalPoints,
+        OrderingPoorSignalPoints,
+        OrderingNeutralSignalPoints,
+        OrderingStrongSignalPoints,
         OrderingGreatSignalPoints,
+        OrderingExceptionalSignalPoints,
+        FirstMinimumPickBonus,
+        SecondMinimumPickBonus,
+        ThirdMinimumPickBonus,
+        LaterMinimumPickBonus,
+
+        PathMinimumSignal,
+        OptionalTargetMinimumSkillCount,
+        OptionalTargetMinimumSignal,
+        OptionalTargetStrongLevel,
+        OptionalTargetStrongPromotedSignal,
+        OptionalTargetGreatLevel,
+        OptionalTargetGreatPromotedSignal,
+        OptionalTargetMinimumPoints,
+
+        LeadMinimumConnectedTargets,
+        LeadMinimumSignal,
+
+        HunterFirstTierMaximum,
+        HunterSecondTierMaximum,
+        HunterThirdTierMaximum,
+
+        FallbackColonistsPerUnit,
+        FallbackMinimumUnits,
+
+        RepeatChampionOverlapPenalty,
+        RepeatChampionDistinctPenalty,
+        RepeatChampionOccasionalPenalty,
+    }
+
+    public enum RecommendationTuningValueKind
+    {
+        Integer,
+        HalfMultiplier,
+        SignalBucket,
+    }
+
+    public sealed class RecommendationTuningDescriptor
+    {
+        internal RecommendationTuningDescriptor(
+            RecommendationTuningOption option,
+            string stableKey,
+            string sectionLabelKey,
+            string labelKey,
+            string descriptionKey,
+            int defaultValue,
+            int minimumValue,
+            int maximumValue,
+            int step,
+            RecommendationTuningValueKind valueKind,
+            bool hidden = false)
+        {
+            Option = option;
+            StableKey = stableKey;
+            SectionLabelKey = sectionLabelKey;
+            LabelKey = labelKey;
+            DescriptionKey = descriptionKey;
+            DefaultValue = defaultValue;
+            MinimumValue = minimumValue;
+            MaximumValue = maximumValue;
+            Step = step;
+            ValueKind = valueKind;
+            Hidden = hidden;
+        }
+
+        public RecommendationTuningOption Option { get; }
+        public string StableKey { get; }
+        public string SectionLabelKey { get; }
+        public string LabelKey { get; }
+        public string DescriptionKey { get; }
+        public int DefaultValue { get; }
+        public int MinimumValue { get; }
+        public int MaximumValue { get; }
+        public int Step { get; }
+        public RecommendationTuningValueKind ValueKind { get; }
+        /// Persisted and editable through the options API, but not rendered
+        /// in the tuning UI.
+        public bool Hidden { get; }
     }
 
     /// <summary>
     /// Immutable, deterministic inputs to recommendation formulas. A changed
     /// value publishes a new snapshot; a normalized no-op preserves identity.
+    /// Descriptor stable keys are the save-game compatibility contract.
     /// </summary>
     public sealed class RecommendationsTuningOptions
     {
-        private static readonly int[] Defaults = { 2, 4, 2, 3 };
-        private static readonly int[] Minimums = { 1, 0, 0, -20 };
-        private static readonly int[] Maximums = { 20, 20, 4, 20 };
+        private const string ChampionSection = "WR_RecTuneChampionSection";
+        private const string OrderingSection = "WR_RecTuneOrderingSection";
+        private const string OptionalSection = "WR_RecTuneOptionalSection";
+        private const string LeadSection = "WR_RecTuneLeadSection";
+        private const string HunterSection = "WR_RecTuneHunterSection";
+        private const string ScalingSection = "WR_RecTuneScalingSection";
+
+        private static readonly RecommendationTuningDescriptor[] descriptorArray =
+        {
+            Signal(RecommendationTuningOption.CandidateMinimumSignal,
+                "candidateMinimumSignal", ChampionSection, "CandidateMinimumSignal", 1),
+            Integer(RecommendationTuningOption.ChampionSkillDivisor,
+                "championSkillDivisor", ChampionSection, "ChampionSkillDivisor", 2, 1, 20),
+            Integer(RecommendationTuningOption.ChampionMultiSkillMinimumCount,
+                "championMultiSkillMinimumCount", ChampionSection,
+                "ChampionMultiSkillMinimumCount", 2, 1, 20),
+            Half(RecommendationTuningOption.ChampionAwfulMultiplierHalfUnits,
+                "championAwfulMultiplier", ChampionSection, "ChampionAwfulMultiplier", 0),
+            Half(RecommendationTuningOption.ChampionPoorMultiplierHalfUnits,
+                "championPoorMultiplier", ChampionSection, "ChampionPoorMultiplier", 1),
+            Half(RecommendationTuningOption.ChampionNeutralMultiplierHalfUnits,
+                "championNeutralMultiplier", ChampionSection, "ChampionNeutralMultiplier", 2),
+            Half(RecommendationTuningOption.ChampionStrongMultiplierHalfUnits,
+                "championStrongMultiplier", ChampionSection, "ChampionStrongMultiplier", 3),
+            Half(RecommendationTuningOption.ChampionGreatMultiplierHalfUnits,
+                "championGreatMultiplier", ChampionSection, "ChampionGreatMultiplier", 4),
+            Half(RecommendationTuningOption.ChampionExceptionalMultiplierHalfUnits,
+                "championExceptionalMultiplier", ChampionSection,
+                "ChampionExceptionalMultiplier", 5),
+            Points(RecommendationTuningOption.ChampionAwfulTieBreakPoints,
+                "championAwfulTieBreakPoints", ChampionSection,
+                "ChampionAwfulTieBreakPoints", -5),
+            Points(RecommendationTuningOption.ChampionPoorTieBreakPoints,
+                "championPoorTieBreakPoints", ChampionSection, "ChampionPoorTieBreakPoints", -3),
+            Points(RecommendationTuningOption.ChampionNeutralTieBreakPoints,
+                "championNeutralTieBreakPoints", ChampionSection,
+                "ChampionNeutralTieBreakPoints", 0),
+            Points(RecommendationTuningOption.ChampionStrongTieBreakPoints,
+                "championStrongTieBreakPoints", ChampionSection,
+                "ChampionStrongTieBreakPoints", 1),
+            Points(RecommendationTuningOption.ChampionGreatTieBreakPoints,
+                "championGreatTieBreakPoints", ChampionSection, "ChampionGreatTieBreakPoints", 3),
+            Points(RecommendationTuningOption.ChampionExceptionalTieBreakPoints,
+                "championExceptionalTieBreakPoints", ChampionSection,
+                "ChampionExceptionalTieBreakPoints", 5),
+            Signal(RecommendationTuningOption.RankedCandidatePrioritySignal,
+                "rankedCandidatePrioritySignal", ChampionSection,
+                "RankedCandidatePrioritySignal", 3),
+            Signal(RecommendationTuningOption.SurplusMinimumSignal,
+                "surplusMinimumSignal", ChampionSection, "SurplusMinimumSignal", 3),
+
+            Integer(RecommendationTuningOption.OrderingSkillDivisor,
+                "orderingSkillDivisor", OrderingSection, "OrderingSkillDivisor", 5, 1, 20),
+            Points(RecommendationTuningOption.OrderingAwfulSignalPoints,
+                "orderingAwfulSignalPoints", OrderingSection, "OrderingAwfulSignalPoints", -5),
+            Points(RecommendationTuningOption.OrderingPoorSignalPoints,
+                "orderingPoorSignalPoints", OrderingSection, "OrderingPoorSignalPoints", -5),
+            Points(RecommendationTuningOption.OrderingNeutralSignalPoints,
+                "orderingNeutralSignalPoints", OrderingSection,
+                "OrderingNeutralSignalPoints", -3),
+            Points(RecommendationTuningOption.OrderingStrongSignalPoints,
+                "orderingStrongSignalPoints", OrderingSection, "OrderingStrongSignalPoints", 1),
+            Points(RecommendationTuningOption.OrderingGreatSignalPoints,
+                "orderingGreatSignalPoints", OrderingSection, "OrderingGreatSignalPoints", 3),
+            Points(RecommendationTuningOption.OrderingExceptionalSignalPoints,
+                "orderingExceptionalSignalPoints", OrderingSection,
+                "OrderingExceptionalSignalPoints", 5),
+            Bonus(RecommendationTuningOption.FirstMinimumPickBonus,
+                "firstMinimumPickBonus", OrderingSection, "FirstMinimumPickBonus", 10),
+            Bonus(RecommendationTuningOption.SecondMinimumPickBonus,
+                "secondMinimumPickBonus", OrderingSection, "SecondMinimumPickBonus", 5),
+            Bonus(RecommendationTuningOption.ThirdMinimumPickBonus,
+                "thirdMinimumPickBonus", OrderingSection, "ThirdMinimumPickBonus", 2),
+            Bonus(RecommendationTuningOption.LaterMinimumPickBonus,
+                "laterMinimumPickBonus", OrderingSection, "LaterMinimumPickBonus", 1),
+
+            Signal(RecommendationTuningOption.PathMinimumSignal,
+                "pathMinimumSignal", OptionalSection, "PathMinimumSignal", 1),
+            Integer(RecommendationTuningOption.OptionalTargetMinimumSkillCount,
+                "optionalTargetMinimumSkillCount", OptionalSection,
+                "OptionalTargetMinimumSkillCount", 2, 1, 20),
+            Signal(RecommendationTuningOption.OptionalTargetMinimumSignal,
+                "optionalTargetMinimumSignal", OptionalSection,
+                "OptionalTargetMinimumSignal", 2),
+            Level(RecommendationTuningOption.OptionalTargetStrongLevel,
+                "optionalTargetStrongLevel", OptionalSection, "OptionalTargetStrongLevel", 10),
+            Signal(RecommendationTuningOption.OptionalTargetStrongPromotedSignal,
+                "optionalTargetStrongPromotedSignal", OptionalSection,
+                "OptionalTargetStrongPromotedSignal", 3),
+            Level(RecommendationTuningOption.OptionalTargetGreatLevel,
+                "optionalTargetGreatLevel", OptionalSection, "OptionalTargetGreatLevel", 15),
+            Signal(RecommendationTuningOption.OptionalTargetGreatPromotedSignal,
+                "optionalTargetGreatPromotedSignal", OptionalSection,
+                "OptionalTargetGreatPromotedSignal", 4),
+            Points(RecommendationTuningOption.OptionalTargetMinimumPoints,
+                "optionalTargetMinimumPoints", OptionalSection,
+                "OptionalTargetMinimumPoints", 2, 0, 100),
+
+            Integer(RecommendationTuningOption.LeadMinimumConnectedTargets,
+                "leadMinimumConnectedTargets", LeadSection,
+                "LeadMinimumConnectedTargets", 3, 1, 20),
+            Signal(RecommendationTuningOption.LeadMinimumSignal,
+                "leadMinimumSignal", LeadSection, "LeadMinimumSignal", 3),
+
+            Level(RecommendationTuningOption.HunterFirstTierMaximum,
+                "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 10),
+            Level(RecommendationTuningOption.HunterSecondTierMaximum,
+                "hunterSecondTierMaximum", HunterSection, "HunterSecondTierMaximum", 15),
+            Level(RecommendationTuningOption.HunterThirdTierMaximum,
+                "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 18),
+
+            Integer(RecommendationTuningOption.FallbackColonistsPerUnit,
+                "fallbackColonistsPerUnit", ScalingSection,
+                "FallbackColonistsPerUnit", 6, 1, 100),
+            Integer(RecommendationTuningOption.FallbackMinimumUnits,
+                "fallbackMinimumUnits", ScalingSection, "FallbackMinimumUnits", 1, 0, 100),
+
+            Percent(RecommendationTuningOption.RepeatChampionOverlapPenalty,
+                "repeatChampionOverlapPenalty", ChampionSection,
+                "RepeatChampionOverlapPenalty", 60),
+            Percent(RecommendationTuningOption.RepeatChampionDistinctPenalty,
+                "repeatChampionDistinctPenalty", ChampionSection,
+                "RepeatChampionDistinctPenalty", 40),
+            Percent(RecommendationTuningOption.RepeatChampionOccasionalPenalty,
+                "repeatChampionOccasionalPenalty", ChampionSection,
+                "RepeatChampionOccasionalPenalty", 20),
+        };
+
+        private static readonly IReadOnlyList<RecommendationTuningDescriptor>
+            descriptorList = Array.AsReadOnly(descriptorArray);
 
         private readonly int[] values;
+
+        static RecommendationsTuningOptions()
+        {
+            int count = Enum.GetValues(typeof(RecommendationTuningOption)).Length;
+            if (descriptorArray.Length != count)
+                throw new InvalidOperationException(
+                    "Every recommendation tuning option requires a descriptor.");
+            for (int index = 0; index < descriptorArray.Length; index++)
+                if ((int)descriptorArray[index].Option != index)
+                    throw new InvalidOperationException(
+                        "Recommendation tuning descriptors must follow enum order.");
+        }
 
         private RecommendationsTuningOptions(int[] values)
         {
             this.values = values;
         }
 
+        public static IReadOnlyList<RecommendationTuningDescriptor> Descriptors =>
+            descriptorList;
+
         public static RecommendationsTuningOptions Default { get; } =
-            new RecommendationsTuningOptions((int[])Defaults.Clone());
+            new RecommendationsTuningOptions(CreateDefaults());
 
         public int Get(RecommendationTuningOption option)
         {
@@ -45,13 +287,227 @@ namespace WorkRoles.Core.Recs
             int index = (int)option;
             if (index < 0 || index >= values.Length)
                 throw new ArgumentOutOfRangeException(nameof(option));
+            RecommendationTuningDescriptor descriptor = descriptorArray[index];
             int normalized = Math.Max(
-                Minimums[index], Math.Min(Maximums[index], value));
+                descriptor.MinimumValue,
+                Math.Min(descriptor.MaximumValue, value));
+            normalized = NormalizeRelated(option, normalized);
             if (values[index] == normalized) return this;
             var changed = (int[])values.Clone();
             changed[index] = normalized;
-            return new RecommendationsTuningOptions(changed);
+            return SameValues(changed, Default.values)
+                ? Default
+                : new RecommendationsTuningOptions(changed);
         }
+
+        public static RecommendationsTuningOptions FromValues(
+            IReadOnlyDictionary<RecommendationTuningOption, int> source)
+        {
+            int[] loaded = CreateDefaults();
+            if (source != null)
+                foreach (KeyValuePair<RecommendationTuningOption, int> pair in source)
+                {
+                    int index = (int)pair.Key;
+                    if (index < 0 || index >= descriptorArray.Length) continue;
+                    RecommendationTuningDescriptor descriptor =
+                        descriptorArray[index];
+                    loaded[index] = Math.Max(
+                        descriptor.MinimumValue,
+                        Math.Min(descriptor.MaximumValue, pair.Value));
+                }
+            NormalizeRelatedValues(loaded);
+            return SameValues(loaded, Default.values)
+                ? Default
+                : new RecommendationsTuningOptions(loaded);
+        }
+
+        public static bool TryOption(
+            string stableKey,
+            out RecommendationTuningOption option)
+        {
+            for (int index = 0; index < descriptorArray.Length; index++)
+                if (string.Equals(
+                        descriptorArray[index].StableKey,
+                        stableKey,
+                        StringComparison.Ordinal))
+                {
+                    option = descriptorArray[index].Option;
+                    return true;
+                }
+            option = default;
+            return false;
+        }
+
+        private int NormalizeRelated(
+            RecommendationTuningOption option,
+            int value)
+        {
+            switch (option)
+            {
+                case RecommendationTuningOption.OptionalTargetStrongLevel:
+                    return Math.Min(value, Get(
+                        RecommendationTuningOption.OptionalTargetGreatLevel));
+                case RecommendationTuningOption.OptionalTargetGreatLevel:
+                    return Math.Max(value, Get(
+                        RecommendationTuningOption.OptionalTargetStrongLevel));
+                case RecommendationTuningOption.OptionalTargetStrongPromotedSignal:
+                    return Math.Min(value, Get(
+                        RecommendationTuningOption.OptionalTargetGreatPromotedSignal));
+                case RecommendationTuningOption.OptionalTargetGreatPromotedSignal:
+                    return Math.Max(value, Get(
+                        RecommendationTuningOption.OptionalTargetStrongPromotedSignal));
+                case RecommendationTuningOption.HunterFirstTierMaximum:
+                    return Math.Min(value, Get(
+                        RecommendationTuningOption.HunterSecondTierMaximum));
+                case RecommendationTuningOption.HunterSecondTierMaximum:
+                    return Math.Max(
+                        Get(RecommendationTuningOption.HunterFirstTierMaximum),
+                        Math.Min(value, Get(
+                            RecommendationTuningOption.HunterThirdTierMaximum)));
+                case RecommendationTuningOption.HunterThirdTierMaximum:
+                    return Math.Max(value, Get(
+                        RecommendationTuningOption.HunterSecondTierMaximum));
+                default:
+                    return value;
+            }
+        }
+
+        private static int[] CreateDefaults()
+        {
+            var defaults = new int[descriptorArray.Length];
+            for (int index = 0; index < descriptorArray.Length; index++)
+                defaults[index] = descriptorArray[index].DefaultValue;
+            return defaults;
+        }
+
+        private static void NormalizeRelatedValues(int[] loaded)
+        {
+            int strongLevel = (int)RecommendationTuningOption
+                .OptionalTargetStrongLevel;
+            int greatLevel = (int)RecommendationTuningOption
+                .OptionalTargetGreatLevel;
+            if (loaded[strongLevel] > loaded[greatLevel])
+                loaded[strongLevel] = loaded[greatLevel];
+
+            int strongSignal = (int)RecommendationTuningOption
+                .OptionalTargetStrongPromotedSignal;
+            int greatSignal = (int)RecommendationTuningOption
+                .OptionalTargetGreatPromotedSignal;
+            if (loaded[strongSignal] > loaded[greatSignal])
+                loaded[strongSignal] = loaded[greatSignal];
+
+            int firstTier = (int)RecommendationTuningOption
+                .HunterFirstTierMaximum;
+            int secondTier = (int)RecommendationTuningOption
+                .HunterSecondTierMaximum;
+            int thirdTier = (int)RecommendationTuningOption
+                .HunterThirdTierMaximum;
+            if (loaded[firstTier] > loaded[secondTier])
+                loaded[firstTier] = loaded[secondTier];
+            if (loaded[secondTier] > loaded[thirdTier])
+                loaded[thirdTier] = loaded[secondTier];
+        }
+
+        private static bool SameValues(int[] left, int[] right)
+        {
+            if (left.Length != right.Length) return false;
+            for (int index = 0; index < left.Length; index++)
+                if (left[index] != right[index]) return false;
+            return true;
+        }
+
+        private static RecommendationTuningDescriptor Integer(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue,
+            int minimum = 0,
+            int maximum = 100) => Descriptor(
+                option, stableKey, section, name, defaultValue,
+                minimum, maximum, RecommendationTuningValueKind.Integer);
+
+        private static RecommendationTuningDescriptor Level(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue) => Integer(
+                option, stableKey, section, name, defaultValue, 0, 20);
+
+        private static RecommendationTuningDescriptor Half(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue) => Descriptor(
+                option, stableKey, section, name, defaultValue,
+                0, 20, RecommendationTuningValueKind.HalfMultiplier);
+
+        /// Percent of colonist count; hidden pending the automatic
+        /// occasional-role derivation.
+        private static RecommendationTuningDescriptor Percent(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue) => new RecommendationTuningDescriptor(
+                option, stableKey, section,
+                "WR_RecTune" + name, "WR_RecTune" + name + "Desc",
+                defaultValue, 0, 100, 1,
+                RecommendationTuningValueKind.Integer, hidden: true);
+
+        private static RecommendationTuningDescriptor Signal(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue) => Descriptor(
+                option, stableKey, section, name, defaultValue,
+                (int)SignalBucket.Awful,
+                (int)SignalBucket.Exceptional,
+                RecommendationTuningValueKind.SignalBucket);
+
+        private static RecommendationTuningDescriptor Points(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue,
+            int minimum = -50,
+            int maximum = 50) => Descriptor(
+                option, stableKey, section, name, defaultValue,
+                minimum, maximum, RecommendationTuningValueKind.Integer);
+
+        private static RecommendationTuningDescriptor Bonus(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue) => Descriptor(
+                option, stableKey, section, name, defaultValue,
+                0, byte.MaxValue, RecommendationTuningValueKind.Integer);
+
+        private static RecommendationTuningDescriptor Descriptor(
+            RecommendationTuningOption option,
+            string stableKey,
+            string section,
+            string name,
+            int defaultValue,
+            int minimum,
+            int maximum,
+            RecommendationTuningValueKind valueKind) =>
+            new RecommendationTuningDescriptor(
+                option,
+                stableKey,
+                section,
+                "WR_RecTune" + name,
+                "WR_RecTune" + name + "Desc",
+                defaultValue,
+                minimum,
+                maximum,
+                1,
+                valueKind);
     }
 
     internal sealed class RecommendationFormulaEngine
@@ -65,29 +521,127 @@ namespace WorkRoles.Core.Recs
                 ?? throw new ArgumentNullException(nameof(options));
         }
 
-        internal SignalBucket SurplusMinimumSignal => (SignalBucket)options.Get(
+        internal SignalBucket CandidateMinimumSignal => Signal(
+            RecommendationTuningOption.CandidateMinimumSignal);
+        internal int ChampionMultiSkillMinimumCount => Value(
+            RecommendationTuningOption.ChampionMultiSkillMinimumCount);
+        internal SignalBucket RankedCandidatePrioritySignal => Signal(
+            RecommendationTuningOption.RankedCandidatePrioritySignal);
+        internal SignalBucket SurplusMinimumSignal => Signal(
             RecommendationTuningOption.SurplusMinimumSignal);
+        internal SignalBucket PathMinimumSignal => Signal(
+            RecommendationTuningOption.PathMinimumSignal);
+        internal int OptionalTargetMinimumSkillCount => Value(
+            RecommendationTuningOption.OptionalTargetMinimumSkillCount);
+        internal SignalBucket OptionalTargetMinimumSignal => Signal(
+            RecommendationTuningOption.OptionalTargetMinimumSignal);
+        internal int OptionalTargetStrongLevel => Value(
+            RecommendationTuningOption.OptionalTargetStrongLevel);
+        internal SignalBucket OptionalTargetStrongPromotedSignal => Signal(
+            RecommendationTuningOption.OptionalTargetStrongPromotedSignal);
+        internal int OptionalTargetGreatLevel => Value(
+            RecommendationTuningOption.OptionalTargetGreatLevel);
+        internal SignalBucket OptionalTargetGreatPromotedSignal => Signal(
+            RecommendationTuningOption.OptionalTargetGreatPromotedSignal);
+        internal int OptionalTargetMinimumPoints => Value(
+            RecommendationTuningOption.OptionalTargetMinimumPoints);
+        internal int LeadMinimumConnectedTargets => Value(
+            RecommendationTuningOption.LeadMinimumConnectedTargets);
+        internal SignalBucket LeadMinimumSignal => Signal(
+            RecommendationTuningOption.LeadMinimumSignal);
+        internal int FallbackColonistsPerUnit => Value(
+            RecommendationTuningOption.FallbackColonistsPerUnit);
+        internal int FallbackMinimumUnits => Value(
+            RecommendationTuningOption.FallbackMinimumUnits);
+
+        internal byte MinimumBonus(int pickIndex)
+        {
+            RecommendationTuningOption option = pickIndex == 0
+                ? RecommendationTuningOption.FirstMinimumPickBonus
+                : pickIndex == 1
+                    ? RecommendationTuningOption.SecondMinimumPickBonus
+                    : pickIndex == 2
+                        ? RecommendationTuningOption.ThirdMinimumPickBonus
+                        : RecommendationTuningOption.LaterMinimumPickBonus;
+            return (byte)Value(option);
+        }
 
         internal int ChampionSkillScore(int level, SignalBucket verdict)
         {
-            int divisor = options.Get(
-                RecommendationTuningOption.ChampionSkillDivisor);
+            int divisor = Value(RecommendationTuningOption.ChampionSkillDivisor);
             int roundedSkill = (Math.Max(0, level) + divisor - 1) / divisor;
-            int multiplier;
+            RecommendationTuningOption multiplier;
             switch (verdict)
             {
-                case SignalBucket.Exceptional: multiplier = 5; break;
-                case SignalBucket.Great:
-                    multiplier = options.Get(
-                        RecommendationTuningOption
-                            .ChampionGreatMultiplierHalfUnits);
+                case SignalBucket.Exceptional:
+                    multiplier = RecommendationTuningOption
+                        .ChampionExceptionalMultiplierHalfUnits;
                     break;
-                case SignalBucket.Strong: multiplier = 3; break;
-                case SignalBucket.Neutral: multiplier = 2; break;
-                case SignalBucket.Poor: multiplier = 1; break;
-                default: multiplier = 0; break;
+                case SignalBucket.Great:
+                    multiplier = RecommendationTuningOption
+                        .ChampionGreatMultiplierHalfUnits;
+                    break;
+                case SignalBucket.Strong:
+                    multiplier = RecommendationTuningOption
+                        .ChampionStrongMultiplierHalfUnits;
+                    break;
+                case SignalBucket.Neutral:
+                    multiplier = RecommendationTuningOption
+                        .ChampionNeutralMultiplierHalfUnits;
+                    break;
+                case SignalBucket.Poor:
+                    multiplier = RecommendationTuningOption
+                        .ChampionPoorMultiplierHalfUnits;
+                    break;
+                default:
+                    multiplier = RecommendationTuningOption
+                        .ChampionAwfulMultiplierHalfUnits;
+                    break;
             }
-            return roundedSkill * multiplier;
+            // Multipliers are stored in half-units. Keeping the doubled
+            // fixed-point score avoids rounding while preserving comparisons.
+            return roundedSkill * Value(multiplier);
+        }
+
+        internal int ChampionSignalTieBreak(SignalBucket verdict)
+        {
+            switch (verdict)
+            {
+                case SignalBucket.Exceptional:
+                    return Value(RecommendationTuningOption
+                        .ChampionExceptionalTieBreakPoints);
+                case SignalBucket.Great:
+                    return Value(RecommendationTuningOption
+                        .ChampionGreatTieBreakPoints);
+                case SignalBucket.Strong:
+                    return Value(RecommendationTuningOption
+                        .ChampionStrongTieBreakPoints);
+                case SignalBucket.Neutral:
+                    return Value(RecommendationTuningOption
+                        .ChampionNeutralTieBreakPoints);
+                case SignalBucket.Poor:
+                    return Value(RecommendationTuningOption
+                        .ChampionPoorTieBreakPoints);
+                default:
+                    return Value(RecommendationTuningOption
+                        .ChampionAwfulTieBreakPoints);
+            }
+        }
+
+        /// Penalty for one prior championship, in the champion score's doubled
+        /// fixed-point units: percent-of-colonist-count, so /50 instead of /100.
+        internal int RepeatChampionPenalty(
+            bool priorUsesOccasionalRepeatChampionPenalty,
+            bool skillsOverlap,
+            int colonistCount)
+        {
+            RecommendationTuningOption option =
+                priorUsesOccasionalRepeatChampionPenalty
+                ? RecommendationTuningOption.RepeatChampionOccasionalPenalty
+                : skillsOverlap
+                    ? RecommendationTuningOption.RepeatChampionOverlapPenalty
+                    : RecommendationTuningOption.RepeatChampionDistinctPenalty;
+            return colonistCount * Value(option) / 50;
         }
 
         internal int OrderingScore(
@@ -95,20 +649,50 @@ namespace WorkRoles.Core.Recs
             int skillLevel,
             byte minimumBonus)
         {
-            int signal;
+            RecommendationTuningOption points;
             switch (verdict)
             {
-                case SignalBucket.Exceptional: signal = 5; break;
-                case SignalBucket.Great:
-                    signal = options.Get(
-                        RecommendationTuningOption.OrderingGreatSignalPoints);
+                case SignalBucket.Exceptional:
+                    points = RecommendationTuningOption
+                        .OrderingExceptionalSignalPoints;
                     break;
-                case SignalBucket.Strong: signal = 1; break;
-                case SignalBucket.Neutral: signal = -3; break;
-                default: signal = -5; break;
+                case SignalBucket.Great:
+                    points = RecommendationTuningOption.OrderingGreatSignalPoints;
+                    break;
+                case SignalBucket.Strong:
+                    points = RecommendationTuningOption.OrderingStrongSignalPoints;
+                    break;
+                case SignalBucket.Neutral:
+                    points = RecommendationTuningOption.OrderingNeutralSignalPoints;
+                    break;
+                case SignalBucket.Poor:
+                    points = RecommendationTuningOption.OrderingPoorSignalPoints;
+                    break;
+                default:
+                    points = RecommendationTuningOption.OrderingAwfulSignalPoints;
+                    break;
             }
-            int skill = (Math.Max(0, skillLevel) + 4) / 5;
-            return signal + skill + minimumBonus;
+            int divisor = Value(RecommendationTuningOption.OrderingSkillDivisor);
+            int skill = (Math.Max(0, skillLevel) + divisor - 1) / divisor;
+            return Value(points) + skill + minimumBonus;
         }
+
+        internal int HunterTier(int shootingLevel)
+        {
+            if (shootingLevel <= Value(
+                    RecommendationTuningOption.HunterFirstTierMaximum))
+                return 0;
+            if (shootingLevel <= Value(
+                    RecommendationTuningOption.HunterSecondTierMaximum))
+                return 1;
+            return shootingLevel <= Value(
+                RecommendationTuningOption.HunterThirdTierMaximum) ? 2 : 3;
+        }
+
+        private int Value(RecommendationTuningOption option) =>
+            options.Get(option);
+
+        private SignalBucket Signal(RecommendationTuningOption option) =>
+            (SignalBucket)Value(option);
     }
 }

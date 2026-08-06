@@ -99,7 +99,7 @@ namespace WorkRoles.UI
                 case RecommendationDecision.SignalQualified:
                     return "WR_RecDecisionSignals".Translate();
                 case RecommendationDecision.CoverageDrafted:
-                    return CoverageDraftDecisionText(explanation);
+                    return "WR_RecDecisionCoverageDraft".Translate();
                 case RecommendationDecision.Training:
                 {
                     Role target = store?.RoleById(explanation.RelatedRoleId);
@@ -127,17 +127,13 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionHunterRequirements".Translate();
                 case RecommendationDecision.AwfulSignal:
                     return "WR_RecDecisionAwful".Translate();
-                case RecommendationDecision.OutsideTrainingBand:
-                    return "WR_RecDecisionBand".Translate();
                 case RecommendationDecision.CoveredByRecommendedRole:
                 {
                     Role covering = store?.RoleById(explanation.RelatedRoleId);
                     return "WR_RecDecisionCovered".Translate(covering?.label ?? "?");
                 }
                 case RecommendationDecision.RequiredCoverageFilled:
-                    return CoverageFilledDecisionText(explanation);
-                case RecommendationDecision.ConfiguredMaximumReached:
-                    return "WR_RecDecisionMaximum".Translate(explanation.ConfiguredMaximum);
+                    return "WR_RecDecisionCoverageFilled".Translate();
                 case RecommendationDecision.SignalBelowThreshold:
                     return "WR_RecDecisionWeakSignal".Translate();
                 case RecommendationDecision.NotSelected:
@@ -149,37 +145,5 @@ namespace WorkRoles.UI
             }
         }
 
-        private static string CoverageDraftDecisionText(
-            RoleRecommendationExplanation explanation)
-        {
-            if (explanation.CandidateRank <= 0)
-                return "WR_RecDecisionCoverageDraft".Translate();
-            if (explanation.CandidateSkillDefName.NullOrEmpty())
-                return "WR_RecDecisionCoverageDraftRankedNoSkill".Translate(
-                    explanation.CandidateRank, explanation.CandidatePoolSize);
-            return "WR_RecDecisionCoverageDraftRanked".Translate(
-                explanation.CandidateRank,
-                explanation.CandidatePoolSize,
-                SkillLabel(explanation.CandidateSkillDefName),
-                explanation.CandidateSkillLevel);
-        }
-
-        private static string CoverageFilledDecisionText(
-            RoleRecommendationExplanation explanation)
-        {
-            if (explanation.CandidateRank <= 0)
-                return "WR_RecDecisionCoverageFilled".Translate();
-            string key = explanation.CoverageOpenSlots > 0
-                ? "WR_RecDecisionCoverageFilledRanked"
-                : "WR_RecDecisionCoverageAlreadyFullRanked";
-            if (explanation.CandidateSkillDefName.NullOrEmpty())
-                return (key + "NoSkill").Translate(
-                    explanation.CandidateRank, explanation.CandidatePoolSize);
-            return key.Translate(
-                explanation.CandidateRank,
-                explanation.CandidatePoolSize,
-                SkillLabel(explanation.CandidateSkillDefName),
-                explanation.CandidateSkillLevel);
-        }
     }
 }

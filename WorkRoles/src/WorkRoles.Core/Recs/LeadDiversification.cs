@@ -60,7 +60,8 @@ namespace WorkRoles.Core.Recs
         private static void DiversifyQualifiedLeads(
             EngineContext facts,
             PawnDraft[] drafts,
-            IReadOnlyDictionary<int, long> positions)
+            IReadOnlyDictionary<int, long> positions,
+            RecommendationFormulaEngine formulas)
         {
             var targets = new List<int>();
             for (int pathIndex = 0;
@@ -86,7 +87,8 @@ namespace WorkRoles.Core.Recs
                     component.Add(roleId);
                     targets.RemoveAt(index);
                 }
-                if (component.Count < 3) continue;
+                if (component.Count < formulas.LeadMinimumConnectedTargets)
+                    continue;
                 SortLeadRoles(component, facts.Colony.Paths, positions);
 
                 var chosenPawns = new int[component.Count];
@@ -97,7 +99,8 @@ namespace WorkRoles.Core.Recs
                         component,
                         roleIndex: 0,
                         usedPawns,
-                        chosenPawns))
+                        chosenPawns,
+                        formulas))
                     continue;
                 for (int roleIndex = 0; roleIndex < component.Count; roleIndex++)
                     drafts[chosenPawns[roleIndex]].MarkLead(component[roleIndex]);
@@ -110,7 +113,8 @@ namespace WorkRoles.Core.Recs
             List<int> roleIds,
             int roleIndex,
             bool[] usedPawns,
-            int[] chosenPawns)
+            int[] chosenPawns,
+            RecommendationFormulaEngine formulas)
         {
             if (roleIndex == roleIds.Count) return true;
             int roleId = roleIds[roleIndex];
@@ -123,7 +127,13 @@ namespace WorkRoles.Core.Recs
                 if (usedPawns[pawnIndex] || !drafts[pawnIndex].ContainsRole(roleId))
                     continue;
                 if (QualifiedLead(
-                        facts, pawnIndex, role, minimum, out _, out _))
+                        facts,
+                        pawnIndex,
+                        role,
+                        minimum,
+                        formulas,
+                        out _,
+                        out _))
                     candidates.Add(pawnIndex);
             }
             candidates.Sort((left, right) => CompareQualifiedPawns(
@@ -141,7 +151,8 @@ namespace WorkRoles.Core.Recs
                         roleIds,
                         roleIndex + 1,
                         usedPawns,
-                        chosenPawns))
+                        chosenPawns,
+                        formulas))
                 {
                     return true;
                 }
@@ -173,13 +184,14 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             RoleView role,
             int minimum,
+            RecommendationFormulaEngine formulas,
             out SignalBucket verdict,
             out int level)
         {
             verdict = facts.BestSignal(
                 pawnIndex, role, out string skillDefName, out _);
             level = facts.SkillLevel(pawnIndex, skillDefName);
-            return verdict >= SignalBucket.Strong
+            return verdict >= formulas.LeadMinimumSignal
                 && MeetsMinimum(facts, pawnIndex, role, minimum);
         }
 

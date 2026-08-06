@@ -57,6 +57,10 @@ namespace WorkRoles.Core.Recs
         /// order slot. When unlisted, Ordering provides a conservative tail
         /// fallback ahead of trailing unskilled work.
         public bool PreserveRecommendationOrder;
+        /// Repeat championships following this role use the configured
+        /// occasional-work penalty instead of the full-time overlap/distinct
+        /// tiers.
+        public bool UsesOccasionalRepeatChampionPenalty;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
         public RoleHolderMode HolderMode;

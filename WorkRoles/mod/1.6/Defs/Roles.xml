@@ -16,6 +16,7 @@
     <seedLabel>Pyrophobe</seedLabel>
     <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
     <blocker>true</blocker>
+    <recommendationSpecialRole>FireBlocker</recommendationSpecialRole>
     <colorRef>rose-800</colorRef>
     <group>Essentials</group>
     <entries>
@@ -76,6 +77,7 @@
     <group>Medical</group>
     <minHolders waivers="1">2</minHolders>
     <holderScale>Doctoring</holderScale>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkType:Doctor</li>
     </entries>
@@ -88,6 +90,7 @@
     <colorRef>red-900</colorRef>
     <group>Medical</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
       <li>WorkGiver:DoctorTendToHumanlikes</li>
@@ -127,6 +130,7 @@
     <!-- Needed work only while the colony has children; the adapter zeroes it otherwise. -->
     <minHolders>1</minHolders>
     <holderScale>Caretaking</holderScale>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkType:Childcare</li>
     </entries>
@@ -172,6 +176,7 @@
     <colorRef>cyan-900</colorRef>
     <group>Social</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
          EnslavePrisoner and ConvertPrisoner; ChatWithPrisoner trains Social,
          making this a real trainer toward Warden. -->
@@ -202,6 +207,7 @@
     <group>Social</group>
     <minHolders waivers="1">2</minHolders>
     <holderScale>Wardening</holderScale>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkType:Warden</li>
     </entries>
@@ -250,6 +256,7 @@
     <group>Animals</group>
     <minHolders>1</minHolders>
     <holderScale>Handling</holderScale>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <!-- Finish-off (Allow Tool, Keyz' Allow Utilities) is handler's work too:
            above Handling, so downed animals are dispatched first. -->
@@ -279,6 +286,7 @@
     <colorRef>green-800</colorRef>
     <group>Food</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoBillsButcherFlesh</li>
     </entries>
@@ -291,6 +299,7 @@
     <colorRef>green-800</colorRef>
     <group>Food</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoBillsBrew</li>
     </entries>
@@ -300,6 +309,7 @@
     <defName>WS_Hunter</defName>
     <label>Hunter</label>
     <description>Hunting wild animals for food.</description>
+    <recommendationSpecialRole>Hunter</recommendationSpecialRole>
     <colorRef>teal-700</colorRef>
     <group>Animals</group>
     <entries>
@@ -473,6 +483,7 @@
     <group>Research</group>
     <minHolders>3</minHolders>
     <holderScale>Research</holderScale>
+    <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <entries>
       <li>WorkType:Research</li>
     </entries>
@@ -488,6 +499,8 @@
     <!-- The whole def is Anomaly-only, so this need is DLC-conditional for free. -->
     <minHolders>1</minHolders>
     <holderScale>Dark Study</holderScale>
+    <preserveRecommendationOrder>true</preserveRecommendationOrder>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkType:DarkStudy</li>
     </entries>
@@ -513,6 +526,7 @@
     <colorRef>red-900</colorRef>
     <group>Medical</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoctorTendToSelfEmergency</li>
       <li>WorkGiver:DoctorRescue</li>
@@ -564,6 +578,7 @@
     <colorRef>teal-900</colorRef>
     <group>Animals</group>
     <minHolders>0</minHolders>
+    <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:TakeRoamingAnimalsToPen</li>
       <li>WorkGiver:HandlingFeedPatientAnimals</li>

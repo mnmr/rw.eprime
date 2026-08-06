@@ -21,7 +21,8 @@ namespace WorkRoles.Core.Recs
         internal static PathActivation Find(
             EngineContext facts,
             int pawnIndex,
-            RoleView target)
+            RoleView target,
+            RecommendationFormulaEngine formulas)
         {
             PathActivation best = null;
             PathView bestPath = null;
@@ -31,7 +32,7 @@ namespace WorkRoles.Core.Recs
             {
                 PathView path = facts.Colony.Paths[pathIndex];
                 PathActivation candidate = Build(
-                    facts, pawnIndex, target, path);
+                    facts, pawnIndex, target, path, formulas);
                 if (candidate == null) continue;
                 int structure = best == null
                     ? -1 : CompareStructure(path, bestPath);
@@ -50,7 +51,8 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             int pawnIndex,
             RoleView target,
-            PathView path)
+            PathView path,
+            RecommendationFormulaEngine formulas)
         {
             int count = path.RoleIds.Count;
             if (count == 0
@@ -71,7 +73,7 @@ namespace WorkRoles.Core.Recs
                     || role.HolderMode == RoleHolderMode.Never
                     || !facts.Capable(pawnIndex, role)
                     || facts.BestSignal(pawnIndex, role, out _, out _)
-                        == SignalBucket.Awful
+                        < formulas.PathMinimumSignal
                     || !facts.InsideBand(pawnIndex, role, path, entry))
                     continue;
                 if (!activeRoles.Contains(role.Id)) activeRoles.Add(role.Id);
@@ -80,7 +82,12 @@ namespace WorkRoles.Core.Recs
             }
             if (activeRoles.Count == 0) return null;
             foreach (RoleSkillView skill in facts.RequiredSkills(target))
+            {
+                if (!IsQualifyingTargetSkill(
+                        facts, target, path, skill))
+                    continue;
                 if (!trainedSkills.Contains(skill.SkillDefName)) return null;
+            }
             return new PathActivation(
                 path.Id,
                 target.Id,
@@ -189,9 +196,10 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             int pawnIndex,
             RoleView target,
-            out bool applies)
+            RecommendationFormulaEngine formulas,
+            out bool qualifiedByMultiSkillAptitude)
         {
-            applies = false;
+            qualifiedByMultiSkillAptitude = false;
             bool targetHasPath = false;
             for (int pathIndex = 0;
                  pathIndex < facts.Colony.Paths.Count;
@@ -206,12 +214,9 @@ namespace WorkRoles.Core.Recs
             }
             if (!targetHasPath) return true;
 
-            PathActivation activation = Find(facts, pawnIndex, target);
-            if (activation == null)
-            {
-                applies = true;
-                return false;
-            }
+            PathActivation activation = Find(
+                facts, pawnIndex, target, formulas);
+            if (activation == null) return false;
 
             IReadOnlyList<RoleSkillView> targetSkills =
                 facts.RequiredSkills(target);
@@ -221,8 +226,9 @@ namespace WorkRoles.Core.Recs
                 if (IsQualifyingTargetSkill(
                         facts, target, path, targetSkills[index]))
                     qualifyingSkillCount++;
-            if (qualifyingSkillCount < 2) return true;
-            applies = true;
+            if (qualifyingSkillCount <
+                formulas.OptionalTargetMinimumSkillCount)
+                return true;
 
             int points = 0;
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
@@ -239,14 +245,19 @@ namespace WorkRoles.Core.Recs
                     skill, out SignalBucket classified)
                     ? classified
                     : SignalBucket.Neutral;
-                if (signal < SignalBucket.Neutral) return false;
-                if (level >= 15 && signal < SignalBucket.Great)
-                    signal = SignalBucket.Great;
-                else if (level >= 10 && signal < SignalBucket.Strong)
-                    signal = SignalBucket.Strong;
-                points += signal - SignalBucket.Neutral;
+                if (signal < formulas.OptionalTargetMinimumSignal)
+                    return false;
+                if (level >= formulas.OptionalTargetGreatLevel
+                    && signal < formulas.OptionalTargetGreatPromotedSignal)
+                    signal = formulas.OptionalTargetGreatPromotedSignal;
+                else if (level >= formulas.OptionalTargetStrongLevel
+                    && signal < formulas.OptionalTargetStrongPromotedSignal)
+                    signal = formulas.OptionalTargetStrongPromotedSignal;
+                points += signal - formulas.OptionalTargetMinimumSignal;
             }
-            return points >= 2;
+            qualifiedByMultiSkillAptitude = points >=
+                formulas.OptionalTargetMinimumPoints;
+            return qualifiedByMultiSkillAptitude;
         }
 
         internal static bool IsQualifyingTargetSkill(
@@ -254,31 +265,11 @@ namespace WorkRoles.Core.Recs
             RoleView target,
             PathView path,
             RoleSkillView targetSkill)
-        {
-            if (targetSkill.RequiredContent > 0) return true;
-            for (int roleIndex = 0;
-                 roleIndex < path.RoleIds.Count;
-                 roleIndex++)
-            {
-                int roleId = path.RoleIds[roleIndex];
-                if (roleId == target.Id) continue;
-                RoleView trainingRole = facts.RoleOf(roleId);
-                if (trainingRole == null) continue;
-                IReadOnlyList<RoleSkillView> trainingSkills =
-                    facts.RequiredSkills(trainingRole);
-                for (int skillIndex = 0;
-                     skillIndex < trainingSkills.Count;
-                     skillIndex++)
-                {
-                    if (!trainingSkills[skillIndex].Primary) continue;
-                    if (trainingSkills[skillIndex].SkillDefName
-                        == targetSkill.SkillDefName)
-                        return true;
-                    break;
-                }
-            }
-            return false;
-        }
+            => TrainingRoleSkillRequirements.IsTargetSkillRequired(
+                facts.RolesById,
+                target,
+                path,
+                targetSkill);
 
         internal static bool Connected(
             IReadOnlyList<PathView> paths,

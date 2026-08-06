@@ -53,6 +53,9 @@ namespace WorkRoles.Core.Recs
                 .ThenBy(s => s.SkillDefName, System.StringComparer.Ordinal)
                 .FirstOrDefault();
             if (primary != null) primary.Primary = true;
+            foreach (RoleSkillView skill in result)
+                skill.Required = TrainingRoleSkillRequirements
+                    .IsBaseSkillRequired(skill);
             return result
                 .OrderByDescending(s => s.Primary)
                 .ThenByDescending(s => s.Importance)

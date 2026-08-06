@@ -5,6 +5,7 @@ using RimWorld;
 using RimWorld.Planet;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -26,6 +27,14 @@ namespace WorkRoles
         /// vanilla-grid-derived default. A pure override: unlisted roles are
         /// not merged in — they place dynamically (RecommendationOrder).
         public List<int> recommendationOrder = new List<int>();
+        /// Shared, save-authoritative recommendation formula inputs. Mutate
+        /// only through RoleCommands so multiplayer clients and cache revisions
+        /// remain identical.
+        public RecommendationsTuningOptions recommendationTuning =
+            RecommendationsTuningOptions.Default;
+        /// Runtime-only narrow revision for recommendation tuning. It advances
+        /// only when the normalized options snapshot changes.
+        public int RecommendationTuningRevision { get; internal set; }
         /// Legacy scribe slot: very old saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as an ordinary role.
         public Role allRole;
@@ -397,6 +406,28 @@ namespace WorkRoles
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
                 recommendationOrder = new List<int>();
+            var loadedTuning = Scribe.mode == LoadSaveMode.LoadingVars
+                ? new Dictionary<RecommendationTuningOption, int>()
+                : null;
+            foreach (RecommendationTuningDescriptor descriptor in
+                     RecommendationsTuningOptions.Descriptors)
+            {
+                int value = (recommendationTuning
+                    ?? RecommendationsTuningOptions.Default).Get(
+                        descriptor.Option);
+                Scribe_Values.Look(
+                    ref value,
+                    "recommendationTuning_" + descriptor.StableKey,
+                    descriptor.DefaultValue);
+                if (loadedTuning != null)
+                    loadedTuning[descriptor.Option] = value;
+            }
+            if (loadedTuning != null)
+            {
+                recommendationTuning =
+                    RecommendationsTuningOptions.FromValues(loadedTuning);
+                RecommendationTuningRevision = 0;
+            }
             Scribe_Deep.Look(ref allRole, "allRole");
             Scribe_Values.Look(ref nextRoleId, "nextRoleId", 1);
             Scribe_Collections.Look(ref roles, "roles", LookMode.Deep);

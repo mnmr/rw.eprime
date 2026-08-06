@@ -67,9 +67,4 @@ internal static class RecsTestBed
         return colony;
     }
 
-    public static List<PawnResult> Run(ColonyView colony, params RecRule[] rules)
-        => RecsEngine.Run(colony, rules);
-
-    public static string Ids(PawnResult result)
-        => string.Join(",", result.Assignments.Select(a => a.RoleId));
 }

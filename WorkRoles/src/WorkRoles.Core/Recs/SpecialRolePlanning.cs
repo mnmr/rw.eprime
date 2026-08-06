@@ -101,9 +101,10 @@ namespace WorkRoles.Core.Recs
 
         private static void AddLateSpecialRoles(
             EngineContext facts,
-            PawnDraft[] drafts)
+            PawnDraft[] drafts,
+            RecommendationFormulaEngine formulas)
         {
-            AddHunters(facts, drafts);
+            AddHunters(facts, drafts, formulas);
             if (facts.RoleOf(facts.Colony.FireBlockerRoleId) == null) return;
             for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
                 if (facts.Colony.Pawns[pawnIndex].FireFear)
@@ -113,7 +114,8 @@ namespace WorkRoles.Core.Recs
 
         private static void AddHunters(
             EngineContext facts,
-            PawnDraft[] drafts)
+            PawnDraft[] drafts,
+            RecommendationFormulaEngine formulas)
         {
             RoleView hunter = facts.RoleOf(facts.Colony.HunterRoleId);
             if (hunter == null
@@ -135,9 +137,7 @@ namespace WorkRoles.Core.Recs
                     && PawnHasCoverer(
                         facts, drafts[pawnIndex], pawnIndex, hunter))
                     continue;
-                int tier = pawn.ShootingLevel <= 10 ? 0
-                    : pawn.ShootingLevel <= 15 ? 1
-                    : pawn.ShootingLevel <= 18 ? 2 : 3;
+                int tier = formulas.HunterTier(pawn.ShootingLevel);
                 drafts[pawnIndex].AddHunter(hunter.Id, tier);
                 if (tier == 0) tierZero = pawnIndex;
                 if (pawn.ShootingLevel < lowestShooting

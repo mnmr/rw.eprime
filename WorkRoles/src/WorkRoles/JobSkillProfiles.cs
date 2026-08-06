@@ -204,6 +204,11 @@ namespace WorkRoles
         internal static IReadOnlyDictionary<string, JobProfileGiverFacts> GiverFacts()
             => DefinitionFacts().Index.Givers;
 
+        /// Immutable language-independent job facts consumed by the shared
+        /// recommendation catalog projection.
+        internal static JobProfileIndex RecommendationIndex()
+            => DefinitionFacts().Index;
+
         private static void EnsureBuilt()
         {
             if (byGiver != null) return;

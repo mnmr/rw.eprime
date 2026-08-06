@@ -5,6 +5,7 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -153,6 +154,38 @@ namespace WorkRoles
                     Store.recommendationOrder, roleIds)) return;
             Store.recommendationOrder = roleIds ?? new List<int>();
             UiVersion.Bump();
+        }
+
+        /// One shared recommendation-formula edit. The option id is synced as
+        /// a primitive stable enum value; Core clamps and normalizes the value.
+        [SyncMethod]
+        public static void SetRecommendationTuningOption(int optionId, int value)
+        {
+            if (Store == null
+                || !System.Enum.IsDefined(
+                    typeof(RecommendationTuningOption), optionId))
+                return;
+            RecommendationsTuningOptions current = Store.recommendationTuning
+                ?? RecommendationsTuningOptions.Default;
+            RecommendationsTuningOptions changed = current.With(
+                (RecommendationTuningOption)optionId, value);
+            if (ReferenceEquals(current, changed)) return;
+            Store.recommendationTuning = changed;
+            Store.RecommendationTuningRevision++;
+        }
+
+        /// Atomic reset of every shared recommendation formula input.
+        [SyncMethod]
+        public static void ResetRecommendationTuning()
+        {
+            if (Store == null) return;
+            RecommendationsTuningOptions current = Store.recommendationTuning
+                ?? RecommendationsTuningOptions.Default;
+            if (ReferenceEquals(
+                    current, RecommendationsTuningOptions.Default))
+                return;
+            Store.recommendationTuning = RecommendationsTuningOptions.Default;
+            Store.RecommendationTuningRevision++;
         }
 
         /// One atomic scale mutation: ensure the target scale exists (cloning

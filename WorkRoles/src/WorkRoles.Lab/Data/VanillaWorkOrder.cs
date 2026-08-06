@@ -1,4 +1,4 @@
-namespace WorkRoles.Core.Tests;
+namespace WorkRoles.Lab.Data;
 
 /// Vanilla work catalog in VANILLA ORDER, generated from RimWorld 1.6.4871 Data
 /// XML (Core + all DLC, inheritance-resolved). Do not hand-edit; regenerate from

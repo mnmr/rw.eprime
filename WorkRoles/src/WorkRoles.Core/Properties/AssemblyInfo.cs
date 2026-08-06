@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
 [assembly: InternalsVisibleTo("WorkRoles.Core.Tests")]
-// Temporary: lets the temp/OrderingLab comparison harness drive the staged
-// planner until RecsEngine.Plan exists (plan Task 9); remove afterwards.
-[assembly: InternalsVisibleTo("OrderingLab")]
+// WorkRoles.Lab renders internal planner facts alongside
+// the published plan; remove this friend when those diagnostics are retired.
+[assembly: InternalsVisibleTo("WorkRoles.Lab")]

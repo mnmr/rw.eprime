@@ -27,6 +27,109 @@
   <WR_ActRecX>Unpin the role so it places dynamically again</WR_ActRecX>
   <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
   <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
+
+  <!-- Shared, save-authoritative recommendation formula inputs -->
+  <WR_RecTuneFormulaHeader>Recommendation Formula Options</WR_RecTuneFormulaHeader>
+  <WR_RecTuneResetAll>Reset all</WR_RecTuneResetAll>
+  <WR_RecTuneChampionSection>Champion selection options</WR_RecTuneChampionSection>
+  <WR_RecTuneOrderingSection>Final role ordering options</WR_RecTuneOrderingSection>
+  <WR_RecTuneOptionalSection>Training path and optional target options</WR_RecTuneOptionalSection>
+  <WR_RecTuneLeadSection>Lead diversification options</WR_RecTuneLeadSection>
+  <WR_RecTuneHunterSection>Hunter placement options</WR_RecTuneHunterSection>
+  <WR_RecTuneScalingSection>Fallback holder scaling options</WR_RecTuneScalingSection>
+
+  <WR_RecTuneCandidateMinimumSignal>Candidate minimum signal</WR_RecTuneCandidateMinimumSignal>
+  <WR_RecTuneCandidateMinimumSignalDesc>Lowest signal admitted to ordinary role selection. Raising it removes weaker candidates before champion and minimum-holder selection.</WR_RecTuneCandidateMinimumSignalDesc>
+  <WR_RecTuneChampionSkillDivisor>Champion skill divisor</WR_RecTuneChampionSkillDivisor>
+  <WR_RecTuneChampionSkillDivisorDesc>Champion skill contribution is ceil(skill level ÷ this value). Raising it reduces the influence of raw skill.</WR_RecTuneChampionSkillDivisorDesc>
+  <WR_RecTuneChampionMultiSkillMinimumCount>Combined-skill threshold</WR_RecTuneChampionMultiSkillMinimumCount>
+  <WR_RecTuneChampionMultiSkillMinimumCountDesc>Minimum number of qualifying target skills needed to sum champion scores. Below this count, only the role's best skill is scored.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
+  <WR_RecTuneChampionAwfulMultiplier>Awful signal multiplier</WR_RecTuneChampionAwfulMultiplier>
+  <WR_RecTuneChampionAwfulMultiplierDesc>Multiplies the rounded skill contribution of an Awful signal during champion selection. This matters only when the candidate minimum signal admits Awful candidates.</WR_RecTuneChampionAwfulMultiplierDesc>
+  <WR_RecTuneChampionPoorMultiplier>Poor signal multiplier</WR_RecTuneChampionPoorMultiplier>
+  <WR_RecTuneChampionPoorMultiplierDesc>Multiplies the rounded skill contribution of a Poor signal during champion selection.</WR_RecTuneChampionPoorMultiplierDesc>
+  <WR_RecTuneChampionNeutralMultiplier>Neutral signal multiplier</WR_RecTuneChampionNeutralMultiplier>
+  <WR_RecTuneChampionNeutralMultiplierDesc>Multiplies the rounded skill contribution of a Neutral signal during champion selection.</WR_RecTuneChampionNeutralMultiplierDesc>
+  <WR_RecTuneChampionStrongMultiplier>Strong signal multiplier</WR_RecTuneChampionStrongMultiplier>
+  <WR_RecTuneChampionStrongMultiplierDesc>Multiplies the rounded skill contribution of a Strong signal during champion selection.</WR_RecTuneChampionStrongMultiplierDesc>
+  <WR_RecTuneChampionGreatMultiplier>Great signal multiplier</WR_RecTuneChampionGreatMultiplier>
+  <WR_RecTuneChampionGreatMultiplierDesc>Multiplies the rounded skill contribution of a Great signal during champion selection.</WR_RecTuneChampionGreatMultiplierDesc>
+  <WR_RecTuneChampionExceptionalMultiplier>Exceptional signal multiplier</WR_RecTuneChampionExceptionalMultiplier>
+  <WR_RecTuneChampionExceptionalMultiplierDesc>Multiplies the rounded skill contribution of an Exceptional signal during champion selection.</WR_RecTuneChampionExceptionalMultiplierDesc>
+  <WR_RecTuneChampionAwfulTieBreakPoints>Awful tie-break points</WR_RecTuneChampionAwfulTieBreakPoints>
+  <WR_RecTuneChampionAwfulTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Awful signals.</WR_RecTuneChampionAwfulTieBreakPointsDesc>
+  <WR_RecTuneChampionPoorTieBreakPoints>Poor tie-break points</WR_RecTuneChampionPoorTieBreakPoints>
+  <WR_RecTuneChampionPoorTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Poor signals.</WR_RecTuneChampionPoorTieBreakPointsDesc>
+  <WR_RecTuneChampionNeutralTieBreakPoints>Neutral tie-break points</WR_RecTuneChampionNeutralTieBreakPoints>
+  <WR_RecTuneChampionNeutralTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Neutral signals.</WR_RecTuneChampionNeutralTieBreakPointsDesc>
+  <WR_RecTuneChampionStrongTieBreakPoints>Strong tie-break points</WR_RecTuneChampionStrongTieBreakPoints>
+  <WR_RecTuneChampionStrongTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Strong signals.</WR_RecTuneChampionStrongTieBreakPointsDesc>
+  <WR_RecTuneChampionGreatTieBreakPoints>Great tie-break points</WR_RecTuneChampionGreatTieBreakPoints>
+  <WR_RecTuneChampionGreatTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Great signals.</WR_RecTuneChampionGreatTieBreakPointsDesc>
+  <WR_RecTuneChampionExceptionalTieBreakPoints>Exceptional tie-break points</WR_RecTuneChampionExceptionalTieBreakPoints>
+  <WR_RecTuneChampionExceptionalTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Exceptional signals.</WR_RecTuneChampionExceptionalTieBreakPointsDesc>
+  <WR_RecTuneRankedCandidatePrioritySignal>Ranked-candidate priority signal</WR_RecTuneRankedCandidatePrioritySignal>
+  <WR_RecTuneRankedCandidatePrioritySignalDesc>Non-champion candidates at or above this signal are ranked ahead of weaker candidates before minimum slots are filled.</WR_RecTuneRankedCandidatePrioritySignalDesc>
+  <WR_RecTuneSurplusMinimumSignal>Surplus minimum signal</WR_RecTuneSurplusMinimumSignal>
+  <WR_RecTuneSurplusMinimumSignalDesc>After required slots are filled, standard candidates at or above this signal may still receive the role. Multi-skill training targets instead use the optional-target aptitude requirements, including level-based signal promotions.</WR_RecTuneSurplusMinimumSignalDesc>
+
+  <WR_RecTuneOrderingSkillDivisor>Ordering skill divisor</WR_RecTuneOrderingSkillDivisor>
+  <WR_RecTuneOrderingSkillDivisorDesc>Final-order skill points are ceil(skill level ÷ this value). Raising it reduces the effect of skill on role order.</WR_RecTuneOrderingSkillDivisorDesc>
+  <WR_RecTuneOrderingAwfulSignalPoints>Awful ordering points</WR_RecTuneOrderingAwfulSignalPoints>
+  <WR_RecTuneOrderingAwfulSignalPointsDesc>Points an Awful signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingAwfulSignalPointsDesc>
+  <WR_RecTuneOrderingPoorSignalPoints>Poor ordering points</WR_RecTuneOrderingPoorSignalPoints>
+  <WR_RecTuneOrderingPoorSignalPointsDesc>Points a Poor signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingPoorSignalPointsDesc>
+  <WR_RecTuneOrderingNeutralSignalPoints>Neutral ordering points</WR_RecTuneOrderingNeutralSignalPoints>
+  <WR_RecTuneOrderingNeutralSignalPointsDesc>Points a Neutral signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingNeutralSignalPointsDesc>
+  <WR_RecTuneOrderingStrongSignalPoints>Strong ordering points</WR_RecTuneOrderingStrongSignalPoints>
+  <WR_RecTuneOrderingStrongSignalPointsDesc>Points a Strong signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingStrongSignalPointsDesc>
+  <WR_RecTuneOrderingGreatSignalPoints>Great ordering points</WR_RecTuneOrderingGreatSignalPoints>
+  <WR_RecTuneOrderingGreatSignalPointsDesc>Points a Great signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingGreatSignalPointsDesc>
+  <WR_RecTuneOrderingExceptionalSignalPoints>Exceptional ordering points</WR_RecTuneOrderingExceptionalSignalPoints>
+  <WR_RecTuneOrderingExceptionalSignalPointsDesc>Points an Exceptional signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingExceptionalSignalPointsDesc>
+  <WR_RecTuneFirstMinimumPickBonus>First minimum-pick bonus</WR_RecTuneFirstMinimumPickBonus>
+  <WR_RecTuneFirstMinimumPickBonusDesc>Ordering points granted to the first pawn selected to satisfy a role's required holder minimum.</WR_RecTuneFirstMinimumPickBonusDesc>
+  <WR_RecTuneSecondMinimumPickBonus>Second minimum-pick bonus</WR_RecTuneSecondMinimumPickBonus>
+  <WR_RecTuneSecondMinimumPickBonusDesc>Ordering points granted to the second pawn selected to satisfy a role's required holder minimum.</WR_RecTuneSecondMinimumPickBonusDesc>
+  <WR_RecTuneThirdMinimumPickBonus>Third minimum-pick bonus</WR_RecTuneThirdMinimumPickBonus>
+  <WR_RecTuneThirdMinimumPickBonusDesc>Ordering points granted to the third pawn selected to satisfy a role's required holder minimum.</WR_RecTuneThirdMinimumPickBonusDesc>
+  <WR_RecTuneLaterMinimumPickBonus>Later minimum-pick bonus</WR_RecTuneLaterMinimumPickBonus>
+  <WR_RecTuneLaterMinimumPickBonusDesc>Ordering points granted to every subsequent pawn selected to satisfy the same role's minimum.</WR_RecTuneLaterMinimumPickBonusDesc>
+
+  <WR_RecTunePathMinimumSignal>Training-role minimum signal</WR_RecTunePathMinimumSignal>
+  <WR_RecTunePathMinimumSignalDesc>Lowest signal a role may have while participating in an activated training path.</WR_RecTunePathMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSkillCount>Optional-target skill threshold</WR_RecTuneOptionalTargetMinimumSkillCount>
+  <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Number of qualifying target skills required before the optional-target aptitude test applies. Roles with fewer qualifying skills bypass this test.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
+  <WR_RecTuneOptionalTargetMinimumSignal>Optional-target minimum signal</WR_RecTuneOptionalTargetMinimumSignal>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>Every qualifying skill must meet this signal before its aptitude points can qualify an optional target.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetStrongLevel>Middle skill promotion level</WR_RecTuneOptionalTargetStrongLevel>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured middle promotion signal for optional-target scoring.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignal>Middle promoted signal</WR_RecTuneOptionalTargetStrongPromotedSignal>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signal used for optional-target aptitude scoring at or above the middle skill promotion level.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatLevel>High skill promotion level</WR_RecTuneOptionalTargetGreatLevel>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured high promotion signal for optional-target scoring.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignal>High promoted signal</WR_RecTuneOptionalTargetGreatPromotedSignal>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal used for optional-target aptitude scoring at or above the high skill promotion level.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumPoints>Optional-target minimum points</WR_RecTuneOptionalTargetMinimumPoints>
+  <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimum summed signal steps above the configured signal floor needed to recommend an optional multi-skill target.</WR_RecTuneOptionalTargetMinimumPointsDesc>
+
+  <WR_RecTuneLeadMinimumConnectedTargets>Connected targets for diversification</WR_RecTuneLeadMinimumConnectedTargets>
+  <WR_RecTuneLeadMinimumConnectedTargetsDesc>Minimum number of connected training targets before the planner tries to assign their lead roles to different pawns.</WR_RecTuneLeadMinimumConnectedTargetsDesc>
+  <WR_RecTuneLeadMinimumSignal>Lead minimum signal</WR_RecTuneLeadMinimumSignal>
+  <WR_RecTuneLeadMinimumSignalDesc>Lowest role signal allowed for a pawn chosen as a diversified training-path lead.</WR_RecTuneLeadMinimumSignalDesc>
+
+  <WR_RecTuneHunterFirstTierMaximum>Hunter first-tier maximum</WR_RecTuneHunterFirstTierMaximum>
+  <WR_RecTuneHunterFirstTierMaximumDesc>Shooting levels at or below this value place an unpinned Hunter in the earliest dynamic Hunter slot.</WR_RecTuneHunterFirstTierMaximumDesc>
+  <WR_RecTuneHunterSecondTierMaximum>Hunter second-tier maximum</WR_RecTuneHunterSecondTierMaximum>
+  <WR_RecTuneHunterSecondTierMaximumDesc>Shooting levels above the first cutoff and at or below this value use the second dynamic Hunter slot.</WR_RecTuneHunterSecondTierMaximumDesc>
+  <WR_RecTuneHunterThirdTierMaximum>Hunter third-tier maximum</WR_RecTuneHunterThirdTierMaximum>
+  <WR_RecTuneHunterThirdTierMaximumDesc>Shooting levels above the second cutoff and at or below this value use the third dynamic Hunter slot; higher levels place Hunter last.</WR_RecTuneHunterThirdTierMaximumDesc>
+
+  <WR_RecTuneFallbackColonistsPerUnit>Colonists per fallback unit</WR_RecTuneFallbackColonistsPerUnit>
+  <WR_RecTuneFallbackColonistsPerUnitDesc>For roles without a named holder scale, each group of this many colonists adds one holder-demand unit.</WR_RecTuneFallbackColonistsPerUnitDesc>
+  <WR_RecTuneFallbackMinimumUnits>Fallback minimum units</WR_RecTuneFallbackMinimumUnits>
+  <WR_RecTuneFallbackMinimumUnitsDesc>Minimum holder-demand units used by roles without a named scale before role-specific demand and colony-size caps apply.</WR_RecTuneFallbackMinimumUnitsDesc>
+
   <!-- Options: Training Paths -->
   <WR_TrainingSection>Training Paths</WR_TrainingSection>
   <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress through roles. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
@@ -235,11 +338,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecTipNeedNone>No required total ({0} covered)</WR_RecTipNeedNone>
   <WR_RecTipMaximum>{0} colonists</WR_RecTipMaximum>
   <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
-  <WR_RecDecisionSignals>Strong-or-better signals qualify this pawn.</WR_RecDecisionSignals>
+  <WR_RecDecisionSignals>The configured signal threshold qualifies this pawn.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
-  <WR_RecDecisionCoverageDraftRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Selected to meet required coverage.</WR_RecDecisionCoverageDraftRanked>
-  <WR_RecDecisionCoverageDraftRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Selected to meet required coverage.</WR_RecDecisionCoverageDraftRankedNoSkill>
-  <WR_RecDecisionTraining>Assigned through a training waiver for {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTraining>Assigned through the training path for {0}.</WR_RecDecisionTraining>
   <WR_RecDecisionHunter>Carries a ranged weapon and is capable of hunting.</WR_RecDecisionHunter>
   <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
   <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
@@ -251,15 +352,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecDecisionIncapable>This pawn is incapable of this role's work.</WR_RecDecisionIncapable>
   <WR_RecDecisionHunterRequirements>This pawn does not carry a ranged weapon.</WR_RecDecisionHunterRequirements>
   <WR_RecDecisionAwful>An Awful signal disqualifies this pawn.</WR_RecDecisionAwful>
-  <WR_RecDecisionBand>This pawn's skill level is outside the role's training band.</WR_RecDecisionBand>
   <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>
   <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
-  <WR_RecDecisionMaximum>The configured maximum of {0} colonists was filled by higher-ranked candidates.</WR_RecDecisionMaximum>
-  <WR_RecDecisionCoverageFilledRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRanked>
-  <WR_RecDecisionCoverageFilledRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilledRankedNoSkill>
-  <WR_RecDecisionCoverageAlreadyFullRanked>Ranked {0} of {1} remaining eligible candidates ({2} skill {3}). Required coverage was already filled before additional candidates were selected.</WR_RecDecisionCoverageAlreadyFullRanked>
-  <WR_RecDecisionCoverageAlreadyFullRankedNoSkill>Ranked {0} of {1} remaining eligible candidates. Required coverage was already filled before additional candidates were selected.</WR_RecDecisionCoverageAlreadyFullRankedNoSkill>
-  <WR_RecDecisionWeakSignal>The signal verdict is below Strong and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
+  <WR_RecDecisionWeakSignal>The signal verdict is below the configured threshold and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
   <WR_RecDecisionNotSelected>This pawn was not selected by any recommendation rule.</WR_RecDecisionNotSelected>
   <WR_RecDecisionRecommended>Selected by the recommendation engine.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Make It So</WR_MakeItSo>

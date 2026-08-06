@@ -18,9 +18,17 @@ namespace WorkRoles.UI
             (Role role, Dialog_ChangesPreview.ChipState state, string tip)> NoChips =
                 Array.Empty<(Role, Dialog_ChangesPreview.ChipState, string)>();
 
+        // Cache contract — Owner: Colonists window. Key: ScopeCacheStamp, map
+        // identity, and RoleStore.RecommendationTuningRevision. Value: the
+        // window-owned colony fix-plan snapshot, never mutated after publish.
+        // Dependencies: projected colony facts, role/path/order state, roster,
+        // location scope, and normalized tuning. Refresh: immediately when a
+        // key changes. Equality: a matching key preserves list identity.
+        // Teardown: Reset/ReleaseSnapshots drops plans and all previews.
         private List<PawnFixPlan> plans;
         private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
+        private int planTuningRevision = -1;
 
         private ScopeCacheStamp previewStamp = ScopeCacheStamp.Invalid;
         private Pawn previewPawn;
@@ -32,6 +40,7 @@ namespace WorkRoles.UI
             plans = null;
             planStamp = ScopeCacheStamp.Invalid;
             planMapId = -1;
+            planTuningRevision = -1;
             ClearPreview();
         }
 
@@ -61,10 +70,16 @@ namespace WorkRoles.UI
         {
             Map map = anchor?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
-            if (plans == null || planStamp != stamp || planMapId != mapId)
+            int tuningRevision = RoleStore.Current?
+                .RecommendationTuningRevision ?? -1;
+            if (plans == null
+                || planStamp != stamp
+                || planMapId != mapId
+                || planTuningRevision != tuningRevision)
             {
                 planStamp = stamp;
                 planMapId = mapId;
+                planTuningRevision = tuningRevision;
                 plans = BuildColonyFixPlan(map, externalSnapshot);
             }
             return plans;
@@ -176,8 +191,10 @@ namespace WorkRoles.UI
             RoleStore store = RoleStore.Current;
             if (store == null) return result;
             List<Pawn> pawns = MapColonists(map);
-            var recommendations = RecsEngine.Run(
-                RecsAdapter.BuildColonyView(store, pawns, externalSnapshot));
+            RecommendationPlan recommendations = RecommendationPlan.Build(
+                RecsAdapter.BuildColonyView(store, pawns, externalSnapshot),
+                store.recommendationTuning
+                    ?? RecommendationsTuningOptions.Default);
 
             for (int i = 0; i < pawns.Count; i++)
             {
@@ -185,29 +202,51 @@ namespace WorkRoles.UI
                 store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
                 List<RoleAssignment> existing =
                     set?.assignments ?? new List<RoleAssignment>();
-                List<RoleAssignment> target = recommendations[i].Assignments
-                    .Select(a => new RoleAssignment
+                var target = new List<RoleAssignment>(
+                    recommendations.RoleCountAt(i));
+                for (int roleIndex = 0;
+                     roleIndex < recommendations.RoleCountAt(i);
+                     roleIndex++)
+                {
+                    int roleId = recommendations.RoleAt(i, roleIndex);
+                    RoleAssignment held = existing.FirstOrDefault(
+                        assignment => assignment.roleId == roleId);
+                    target.Add(new RoleAssignment
                     {
-                        roleId = a.RoleId,
-                        // The engine only sees on/off: re-applying a plan must
-                        // not demote a held ForceOn assignment to Enabled.
-                        state = !a.Enabled ? AssignmentState.Disabled
-                            : existing.FirstOrDefault(e => e.roleId == a.RoleId)?.state
-                                == AssignmentState.ForceOn
-                                ? AssignmentState.ForceOn
-                                : AssignmentState.Enabled,
-                        pinned = a.Pinned,
-                    })
-                    .ToList();
+                        roleId = roleId,
+                        state = held?.state ?? AssignmentState.Enabled,
+                        pinned = held?.pinned ?? false,
+                    });
+                }
 
                 var plan = new PawnFixPlan(
                     pawn,
                     target,
                     !existing.Select(a => a.roleId)
                         .SequenceEqual(target.Select(a => a.roleId)));
-                foreach (var pair in recommendations[i].Explanations)
-                    plan.Explanations[pair.Key] = pair.Value;
-
+                for (int roleIndex = 0;
+                     roleIndex < recommendations.RoleCountAt(i);
+                     roleIndex++)
+                {
+                    int roleId = recommendations.RoleAt(i, roleIndex);
+                    if (recommendations.TryGetExplanation(
+                            i,
+                            roleId,
+                            out RoleRecommendationExplanation explanation))
+                        plan.Explanations[roleId] = explanation;
+                }
+                for (int existingIndex = 0;
+                     existingIndex < existing.Count;
+                     existingIndex++)
+                {
+                    int roleId = existing[existingIndex].roleId;
+                    if (!plan.Explanations.ContainsKey(roleId)
+                        && recommendations.TryGetExplanation(
+                            i,
+                            roleId,
+                            out RoleRecommendationExplanation explanation))
+                        plan.Explanations[roleId] = explanation;
+                }
                 var targetIds = new HashSet<int>(target.Select(a => a.roleId));
                 var existingIds = new HashSet<int>(existing.Select(a => a.roleId));
                 foreach (RoleAssignment assignment in target)

@@ -17,6 +17,11 @@ public class RecommendationTuningScenarioTests
         PawnView neutralTwenty = RecsTestBed.Pawn();
         neutralTwenty.SkillLevels["Crafting"] = 20;
         neutralTwenty.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        neutralTwenty.Existing.Add(new AssignmentView
+        {
+            RoleId = crafter.Id,
+            Enabled = true,
+        });
         ColonyView colony = RecsTestBed.Colony(
             new List<RoleView> { crafter }, greatTen, neutralTwenty);
 
@@ -36,6 +41,16 @@ public class RecommendationTuningScenarioTests
         await Assert.That(RoleIds(defaults, 1)).IsEqualTo("");
         await Assert.That(RoleIds(reducedGreatMultiplier, 0)).IsEqualTo("");
         await Assert.That(RoleIds(reducedGreatMultiplier, 1)).IsEqualTo("1");
+        await Assert.That(defaults.TryGetExplanation(
+            0, crafter.Id, out RoleRecommendationExplanation selected)).IsTrue();
+        await Assert.That(selected.Recommended).IsTrue();
+        await Assert.That(selected.Decision)
+            .IsEqualTo(RecommendationDecision.CoverageDrafted);
+        await Assert.That(defaults.TryGetExplanation(
+            1, crafter.Id, out RoleRecommendationExplanation removed)).IsTrue();
+        await Assert.That(removed.Recommended).IsFalse();
+        await Assert.That(removed.Decision)
+            .IsEqualTo(RecommendationDecision.RequiredCoverageFilled);
     }
 
     [Test]
@@ -79,6 +94,270 @@ public class RecommendationTuningScenarioTests
         await Assert.That(normalized).IsSameReferenceAs(defaults);
     }
 
+    [Test]
+    public async Task EveryFormulaOptionPublishesPersistenceAndUiMetadata()
+    {
+        IReadOnlyList<RecommendationTuningDescriptor> descriptors =
+            RecommendationsTuningOptions.Descriptors;
+        RecommendationTuningOption[] options =
+            Enum.GetValues<RecommendationTuningOption>();
+
+        await Assert.That(descriptors.Count).IsEqualTo(options.Length);
+        await Assert.That(descriptors.Select(item => item.Option).Distinct().Count())
+            .IsEqualTo(options.Length);
+        await Assert.That(descriptors.Select(item => item.StableKey).Distinct().Count())
+            .IsEqualTo(options.Length);
+        foreach (RecommendationTuningDescriptor descriptor in descriptors)
+        {
+            await Assert.That(descriptor.StableKey).IsNotNullOrEmpty();
+            await Assert.That(descriptor.SectionLabelKey).IsNotNullOrEmpty();
+            await Assert.That(descriptor.LabelKey).IsNotNullOrEmpty();
+            await Assert.That(descriptor.DescriptionKey).IsNotNullOrEmpty();
+            await Assert.That(
+                    RecommendationsTuningOptions.Default.Get(descriptor.Option))
+                .IsEqualTo(descriptor.DefaultValue);
+        }
+    }
+
+    [Test]
+    public async Task FallbackScaleChangesThePublishedHolderCount()
+    {
+        RoleView crafter = RecsTestBed.Role(1, "Crafting");
+        crafter.RequiredTotal = -1;
+        PawnView[] pawns = Enumerable.Range(0, 7)
+            .Select(index =>
+            {
+                PawnView pawn = RecsTestBed.Pawn();
+                pawn.SkillLevels["Crafting"] = 20 - index;
+                pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+                return pawn;
+            })
+            .ToArray();
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { crafter }, pawns);
+
+        RecommendationPlan defaults = RecommendationPlan.Build(
+            colony, RecommendationsTuningOptions.Default);
+        RecommendationPlan tenPerHolder = RecommendationPlan.Build(
+            colony,
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.FallbackColonistsPerUnit,
+                10));
+
+        await Assert.That(HolderCount(defaults, crafter.Id)).IsEqualTo(2);
+        await Assert.That(HolderCount(tenPerHolder, crafter.Id)).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task MinimumPickBonusesChangeThePublishedRoleOrder()
+    {
+        RoleView crafter = RecsTestBed.Role(1, "Crafting", "CraftingWork");
+        crafter.HolderMode = RoleHolderMode.Custom;
+        crafter.RequiredTotal = 2;
+        RoleView cook = RecsTestBed.Role(2, "Cooking", "CookingWork");
+        cook.HolderMode = RoleHolderMode.Custom;
+        cook.RequiredTotal = 1;
+
+        PawnView first = RecsTestBed.Pawn();
+        first.SkillLevels["Crafting"] = 12;
+        first.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        first.SkillLevels["Cooking"] = 5;
+        first.SignalBuckets["Cooking"] = SignalBucket.Neutral;
+        PawnView second = RecsTestBed.Pawn();
+        second.SkillLevels["Crafting"] = 10;
+        second.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        second.SkillLevels["Cooking"] = 12;
+        second.SignalBuckets["Cooking"] = SignalBucket.Neutral;
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { crafter, cook }, first, second);
+
+        RecommendationPlan defaults = RecommendationPlan.Build(
+            colony, RecommendationsTuningOptions.Default);
+        RecommendationPlan noFirstBonus = RecommendationPlan.Build(
+            colony,
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.FirstMinimumPickBonus,
+                0));
+
+        await Assert.That(RoleIds(defaults, 1)).IsEqualTo("2,1");
+        await Assert.That(RoleIds(noFirstBonus, 1)).IsEqualTo("1,2");
+    }
+
+    [Test]
+    public async Task OptionalTargetPointsChangeThePublishedTrainingRole()
+    {
+        RoleView target = RecsTestBed.Role(1, "Crafting", "TargetWork");
+        target.HolderMode = RoleHolderMode.Custom;
+        target.Skills = TwoSkillProfile();
+        target.PrimarySkill = "Crafting";
+        RoleView trainee = RecsTestBed.Role(2, "Crafting", "TrainingWork");
+        trainee.HolderMode = RoleHolderMode.Custom;
+        trainee.Skills = TwoSkillProfile();
+        trainee.PrimarySkill = "Crafting";
+        PathView path = RecsTestBed.Path(
+            10, (trainee.Id, 0, 15), (target.Id, 15, 21));
+
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 10;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        pawn.SkillLevels["Intellectual"] = 10;
+        pawn.SignalBuckets["Intellectual"] = SignalBucket.Neutral;
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { target, trainee }, pawn);
+        colony.Paths.Add(path);
+
+        RecommendationPlan defaults = RecommendationPlan.Build(
+            colony, RecommendationsTuningOptions.Default);
+        RecommendationPlan higherMinimum = RecommendationPlan.Build(
+            colony,
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.OptionalTargetMinimumPoints,
+                3));
+
+        await Assert.That(RoleIds(defaults, 0)).IsEqualTo("2");
+        await Assert.That(RoleIds(higherMinimum, 0)).IsEqualTo("");
+        await Assert.That(defaults.TryGetExplanation(
+            0, trainee.Id, out RoleRecommendationExplanation training)).IsTrue();
+        await Assert.That(training.Decision)
+            .IsEqualTo(RecommendationDecision.Training);
+        await Assert.That(training.RelatedRoleId).IsEqualTo(target.Id);
+    }
+
+    [Test]
+    public async Task BulkLoadNormalizesRelatedValuesAfterReadingTheWholeSnapshot()
+    {
+        var persisted = new Dictionary<RecommendationTuningOption, int>
+        {
+            [RecommendationTuningOption.OptionalTargetStrongLevel] = 18,
+            [RecommendationTuningOption.OptionalTargetGreatLevel] = 20,
+            [RecommendationTuningOption.HunterFirstTierMaximum] = 12,
+            [RecommendationTuningOption.HunterSecondTierMaximum] = 16,
+            [RecommendationTuningOption.HunterThirdTierMaximum] = 19,
+        };
+
+        RecommendationsTuningOptions loaded =
+            RecommendationsTuningOptions.FromValues(persisted);
+
+        await Assert.That(loaded.Get(
+                RecommendationTuningOption.OptionalTargetStrongLevel))
+            .IsEqualTo(18);
+        await Assert.That(loaded.Get(
+                RecommendationTuningOption.OptionalTargetGreatLevel))
+            .IsEqualTo(20);
+        await Assert.That(loaded.Get(
+                RecommendationTuningOption.HunterFirstTierMaximum))
+            .IsEqualTo(12);
+        await Assert.That(loaded.Get(
+                RecommendationTuningOption.HunterSecondTierMaximum))
+            .IsEqualTo(16);
+        await Assert.That(loaded.Get(
+                RecommendationTuningOption.HunterThirdTierMaximum))
+            .IsEqualTo(19);
+    }
+
+    [Test]
+    public async Task ZeroMinimumBonusStillPublishesCoverageDraftExplanation()
+    {
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.RequiredTotal = 1;
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 10;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, pawn);
+        RecommendationsTuningOptions options =
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.FirstMinimumPickBonus,
+                0);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony, options);
+
+        await Assert.That(RoleIds(plan, 0)).IsEqualTo("1");
+        await Assert.That(plan.TryGetExplanation(
+            0,
+            role.Id,
+            out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.CoverageDrafted);
+    }
+
+    [Test]
+    public async Task RaisedCandidateFloorDoesNotMislabelNeutralAsAwful()
+    {
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.RequiredTotal = 1;
+        PawnView pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 10;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        pawn.Existing.Add(new AssignmentView
+        {
+            RoleId = role.Id,
+            Enabled = true,
+        });
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, pawn);
+        RecommendationsTuningOptions options =
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.CandidateMinimumSignal,
+                (int)SignalBucket.Strong);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony, options);
+
+        await Assert.That(RoleIds(plan, 0)).IsEqualTo("");
+        await Assert.That(plan.TryGetExplanation(
+            0,
+            role.Id,
+            out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.SignalBelowThreshold);
+    }
+
+    [Test]
+    public async Task AwfulChampionMultiplierIsAnEditableFormulaInput()
+    {
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        role.HolderMode = RoleHolderMode.Custom;
+        role.RequiredTotal = 1;
+        PawnView first = RecsTestBed.Pawn();
+        first.SkillLevels["Crafting"] = 1;
+        first.SignalBuckets["Crafting"] = SignalBucket.Awful;
+        PawnView second = RecsTestBed.Pawn();
+        second.SkillLevels["Crafting"] = 20;
+        second.SignalBuckets["Crafting"] = SignalBucket.Awful;
+        second.Existing.Add(new AssignmentView
+        {
+            RoleId = role.Id,
+            Enabled = true,
+        });
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, first, second);
+        RecommendationsTuningOptions admitsAwful =
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.CandidateMinimumSignal,
+                (int)SignalBucket.Awful);
+
+        RecommendationPlan zeroMultiplier = RecommendationPlan.Build(
+            colony, admitsAwful);
+        RecommendationPlan skillMultiplier = RecommendationPlan.Build(
+            colony,
+            admitsAwful.With(
+                RecommendationTuningOption.ChampionAwfulMultiplierHalfUnits,
+                2));
+
+        await Assert.That(RoleIds(zeroMultiplier, 0)).IsEqualTo("1");
+        await Assert.That(RoleIds(zeroMultiplier, 1)).IsEqualTo("");
+        await Assert.That(zeroMultiplier.TryGetExplanation(
+            1,
+            role.Id,
+            out RoleRecommendationExplanation removed)).IsTrue();
+        await Assert.That(removed.Decision)
+            .IsEqualTo(RecommendationDecision.RequiredCoverageFilled);
+        await Assert.That(RoleIds(skillMultiplier, 0)).IsEqualTo("");
+        await Assert.That(RoleIds(skillMultiplier, 1)).IsEqualTo("1");
+    }
+
     private static string RoleIds(RecommendationPlan plan, int pawnIndex)
     {
         var ids = new List<int>();
@@ -86,4 +365,32 @@ public class RecommendationTuningScenarioTests
             ids.Add(plan.RoleAt(pawnIndex, index));
         return string.Join(",", ids);
     }
+
+    private static int HolderCount(RecommendationPlan plan, int roleId)
+    {
+        int count = 0;
+        for (int pawnIndex = 0; pawnIndex < plan.PawnCount; pawnIndex++)
+            for (int roleIndex = 0;
+                 roleIndex < plan.RoleCountAt(pawnIndex);
+                 roleIndex++)
+                if (plan.RoleAt(pawnIndex, roleIndex) == roleId)
+                    count++;
+        return count;
+    }
+
+    private static List<RoleSkillView> TwoSkillProfile() =>
+        new List<RoleSkillView>
+        {
+            new RoleSkillView
+            {
+                SkillDefName = "Crafting",
+                Primary = true,
+                RequiredContent = 1,
+            },
+            new RoleSkillView
+            {
+                SkillDefName = "Intellectual",
+                RequiredContent = 1,
+            },
+        };
 }

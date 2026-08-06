@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/WorkRoles.Core/WorkRoles.Core.csproj" />
+    <Project Path="src/WorkRoles.Lab/WorkRoles.Lab.csproj" />
     <Project Path="src/WorkRoles/WorkRoles.csproj" />
   </Folder>
   <Folder Name="/tests/">

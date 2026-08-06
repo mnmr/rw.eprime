@@ -10,13 +10,15 @@ namespace WorkRoles.Core.Recs
         private readonly List<int> roleIds = new List<int>();
         private readonly List<byte> roleSources = new List<byte>();
         private readonly List<byte> roleMinimumBonuses = new List<byte>();
+        private readonly List<bool> roleMinimumPicks = new List<bool>();
         private readonly List<PathActivation> activations =
             new List<PathActivation>();
 
         internal void AddRole(
             int roleId,
             byte source = DirectSource,
-            byte minimumBonus = 0)
+            byte minimumBonus = 0,
+            bool minimumPick = false)
         {
             int index = roleIds.IndexOf(roleId);
             if (index >= 0)
@@ -24,11 +26,13 @@ namespace WorkRoles.Core.Recs
                 roleSources[index] |= source;
                 if (minimumBonus > roleMinimumBonuses[index])
                     roleMinimumBonuses[index] = minimumBonus;
+                if (minimumPick) roleMinimumPicks[index] = true;
                 return;
             }
             roleIds.Add(roleId);
             roleSources.Add(source);
             roleMinimumBonuses.Add(minimumBonus);
+            roleMinimumPicks.Add(minimumPick);
         }
 
         internal bool ContainsRole(int roleId) => roleIds.Contains(roleId);
@@ -40,6 +44,7 @@ namespace WorkRoles.Core.Recs
             roleIds.RemoveAt(index);
             roleSources.RemoveAt(index);
             roleMinimumBonuses.RemoveAt(index);
+            roleMinimumPicks.RemoveAt(index);
         }
 
         internal bool IsPathRole(int roleId)
@@ -48,7 +53,7 @@ namespace WorkRoles.Core.Recs
             return index >= 0 && (roleSources[index] & PathSource) != 0;
         }
 
-        private bool HasDirectRole(int roleId)
+        internal bool HasDirectRole(int roleId)
         {
             int index = roleIds.IndexOf(roleId);
             return index >= 0 && (roleSources[index] & DirectSource) != 0;
@@ -60,12 +65,44 @@ namespace WorkRoles.Core.Recs
             return index < 0 ? (byte)0 : roleMinimumBonuses[index];
         }
 
+        internal bool IsMinimumRole(int roleId)
+        {
+            int index = roleIds.IndexOf(roleId);
+            return index >= 0 && roleMinimumPicks[index];
+        }
+
+        internal int TrainingTargetFor(int roleId)
+        {
+            for (int activationIndex = 0;
+                 activationIndex < activations.Count;
+                 activationIndex++)
+            {
+                PathActivation activation = activations[activationIndex];
+                if (activation.TargetRoleId == roleId) continue;
+                for (int roleIndex = 0;
+                     roleIndex < activation.ActiveRoleIds.Length;
+                     roleIndex++)
+                    if (activation.ActiveRoleIds[roleIndex] == roleId)
+                        return activation.TargetRoleId;
+            }
+            return -1;
+        }
+
+        internal PathActivation ActivationToward(int targetRoleId)
+        {
+            for (int index = 0; index < activations.Count; index++)
+                if (activations[index].TargetRoleId == targetRoleId)
+                    return activations[index];
+            return null;
+        }
+
         internal int RoleCount => roleIds.Count;
         internal int RoleAt(int index) => roleIds[index];
 
         internal void AddActivation(
             PathActivation activation,
-            byte minimumBonus = 0)
+            byte minimumBonus = 0,
+            bool minimumPick = false)
         {
             bool found = false;
             for (int index = 0; index < activations.Count; index++)
@@ -79,7 +116,8 @@ namespace WorkRoles.Core.Recs
                 AddRole(
                     activation.ActiveRoleIds[index],
                     PathSource,
-                    minimumBonus);
+                    minimumBonus,
+                    minimumPick);
         }
 
         internal int[] PublishRoles(
@@ -260,18 +298,8 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             int leftRoleId,
             int rightRoleId)
-        {
-            IReadOnlyList<RoleSkillView> left = facts.RequiredSkills(
-                facts.RoleOf(leftRoleId));
-            IReadOnlyList<RoleSkillView> right = facts.RequiredSkills(
-                facts.RoleOf(rightRoleId));
-            for (int leftAt = 0; leftAt < left.Count; leftAt++)
-                for (int rightAt = 0; rightAt < right.Count; rightAt++)
-                    if (left[leftAt].SkillDefName
-                        == right[rightAt].SkillDefName)
-                        return true;
-            return false;
-        }
+            => RepeatChampionPenalties.SharesRequiredSkill(
+                facts, facts.RoleOf(leftRoleId), facts.RoleOf(rightRoleId));
 
         private static int OrderingSkillLevel(
             EngineContext facts,
@@ -495,20 +523,54 @@ namespace WorkRoles.Core.Recs
         }
     }
 
+    /// Immutable diagnostic projection of one target-role selection. It is
+    /// built from final drafts, so consumers never have to reproduce planner
+    /// classification or path-expansion logic.
+    internal sealed class RecommendationTargetAssignment
+    {
+        private readonly int[] roleIds;
+
+        internal RecommendationTargetAssignment(
+            int targetRoleId,
+            int pawnIndex,
+            RecommendationTargetAssignmentKind kind,
+            int[] roleIds)
+        {
+            TargetRoleId = targetRoleId;
+            PawnIndex = pawnIndex;
+            Kind = kind;
+            this.roleIds = roleIds;
+        }
+
+        internal int TargetRoleId { get; }
+        internal int PawnIndex { get; }
+        internal RecommendationTargetAssignmentKind Kind { get; }
+        internal int RoleCount => roleIds.Length;
+        internal int RoleAt(int index) => roleIds[index];
+    }
+
     public sealed partial class RecommendationPlan
     {
         private readonly int[][] rolesByPawn;
         private readonly int[][] pathsByPawn;
         private readonly int[] activatedPathCountsByPawn;
+        private readonly Dictionary<int, RoleRecommendationExplanation>[]
+            explanationsByPawn;
+        private readonly RecommendationTargetAssignment[] targetAssignments;
 
         private RecommendationPlan(
             int[][] rolesByPawn,
             int[][] pathsByPawn,
-            int[] activatedPathCountsByPawn)
+            int[] activatedPathCountsByPawn,
+            Dictionary<int, RoleRecommendationExplanation>[]
+                explanationsByPawn,
+            RecommendationTargetAssignment[] targetAssignments)
         {
             this.rolesByPawn = rolesByPawn;
             this.pathsByPawn = pathsByPawn;
             this.activatedPathCountsByPawn = activatedPathCountsByPawn;
+            this.explanationsByPawn = explanationsByPawn;
+            this.targetAssignments = targetAssignments;
         }
 
         public int PawnCount => rolesByPawn.Length;
@@ -518,6 +580,14 @@ namespace WorkRoles.Core.Recs
         public int PathAt(int pawnIndex, int index) => pathsByPawn[pawnIndex][index];
         public bool PathActivatedAt(int pawnIndex, int index) =>
             index < activatedPathCountsByPawn[pawnIndex];
+        public bool TryGetExplanation(
+            int pawnIndex,
+            int roleId,
+            out RoleRecommendationExplanation explanation) =>
+            explanationsByPawn[pawnIndex].TryGetValue(roleId, out explanation);
+        internal int TargetAssignmentCount => targetAssignments.Length;
+        internal RecommendationTargetAssignment TargetAssignmentAt(int index)
+            => targetAssignments[index];
 
         public static RecommendationPlan Build(ColonyView colony)
             => Build(colony, RecommendationsTuningOptions.Default);
@@ -527,7 +597,7 @@ namespace WorkRoles.Core.Recs
             RecommendationsTuningOptions options)
         {
             var formulas = new RecommendationFormulaEngine(options);
-            var facts = new EngineContext(colony, initializeRuleState: false);
+            var facts = new EngineContext(colony);
             int pawnCount = colony.Pawns.Count;
             var drafts = new PawnDraft[pawnCount];
             for (int pawnIndex = 0; pawnIndex < pawnCount; pawnIndex++)
@@ -541,8 +611,11 @@ namespace WorkRoles.Core.Recs
                 int position = positions[left.Id].CompareTo(positions[right.Id]);
                 return position != 0 ? position : left.Id.CompareTo(right.Id);
             });
-            var scaling = new UnitScaling();
+            var scaling = new RecommendationScaling(formulas);
             var rolePlans = new List<RolePlan>();
+            // Roles arrive position-sorted, so championships resolve in
+            // recommended order and each grant penalizes later repeat picks.
+            var priorChampionsByPawn = new List<int>[pawnCount];
             for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
             {
                 RoleView role = roles[roleIndex];
@@ -557,8 +630,14 @@ namespace WorkRoles.Core.Recs
                     || role.Id == colony.HunterRoleId)
                     continue;
                 RolePlan rolePlan = RolePlan.Build(
-                    facts, role, scaling, formulas);
+                    facts, role, scaling, formulas, priorChampionsByPawn);
                 rolePlans.Add(rolePlan);
+                if (rolePlan.ChampionPawnIndex < 0) continue;
+                List<int> championed =
+                    priorChampionsByPawn[rolePlan.ChampionPawnIndex]
+                    ?? (priorChampionsByPawn[rolePlan.ChampionPawnIndex] =
+                        new List<int>());
+                championed.Add(role.Id);
             }
 
             for (int planIndex = 0; planIndex < rolePlans.Count; planIndex++)
@@ -574,6 +653,8 @@ namespace WorkRoles.Core.Recs
                     bool surplus = rolePlan.IsSurplus(candidateIndex);
                     byte minimumBonus =
                         rolePlan.MinimumBonusAt(candidateIndex);
+                    bool minimumPick =
+                        rolePlan.IsMinimumPick(candidateIndex);
                     if (surplus
                         && !PathActivation.TargetBandContains(
                             facts, pawnIndex, role))
@@ -581,10 +662,11 @@ namespace WorkRoles.Core.Recs
                         PathActivation activation = PathActivation.Find(
                             facts,
                             pawnIndex,
-                            role);
+                            role,
+                            formulas);
                         if (activation != null)
                             drafts[pawnIndex].AddActivation(
-                                activation, minimumBonus);
+                                activation, minimumBonus, minimumPick);
                         continue;
                     }
                     if (rolePlan.IsTrainingWaiver(candidateIndex))
@@ -592,22 +674,26 @@ namespace WorkRoles.Core.Recs
                         PathActivation activation = PathActivation.Find(
                             facts,
                             pawnIndex,
-                            role);
+                            role,
+                            formulas);
                         if (activation != null)
                         {
                             drafts[pawnIndex].AddActivation(
-                                activation, minimumBonus);
+                                activation, minimumBonus, minimumPick);
                             continue;
                         }
                     }
                     drafts[pawnIndex].AddRole(
-                        role.Id, minimumBonus: minimumBonus);
+                        role.Id,
+                        minimumBonus: minimumBonus,
+                        minimumPick: minimumPick);
                 }
             }
 
             ResolveCoverage(facts, rolePlans, drafts);
-            DiversifyQualifiedLeads(facts, drafts, positions);
-            AddLateSpecialRoles(facts, drafts);
+            // Lead diversification is intentionally disabled while its
+            // interaction with champion and minimum-pick ordering is evaluated.
+            AddLateSpecialRoles(facts, drafts, formulas);
 
             var rolesByPawn = new int[pawnCount][];
             var pathsByPawn = new int[pawnCount][];
@@ -622,8 +708,78 @@ namespace WorkRoles.Core.Recs
                     out pathsByPawn[pawnIndex],
                     out activatedPathCountsByPawn[pawnIndex]);
             }
+            RecommendationTargetAssignment[] targetAssignments =
+                BuildTargetAssignments(rolePlans, drafts, rolesByPawn);
+            Dictionary<int, RoleRecommendationExplanation>[] explanations =
+                BuildExplanations(facts, drafts, formulas, scaling);
             return new RecommendationPlan(
-                rolesByPawn, pathsByPawn, activatedPathCountsByPawn);
+                rolesByPawn,
+                pathsByPawn,
+                activatedPathCountsByPawn,
+                explanations,
+                targetAssignments);
+        }
+
+        private static RecommendationTargetAssignment[] BuildTargetAssignments(
+            List<RolePlan> rolePlans,
+            PawnDraft[] drafts,
+            int[][] rolesByPawn)
+        {
+            var assignments = new List<RecommendationTargetAssignment>();
+            for (int planIndex = 0; planIndex < rolePlans.Count; planIndex++)
+            {
+                RolePlan plan = rolePlans[planIndex];
+                for (int candidateIndex = 0;
+                     candidateIndex < plan.CandidateCount;
+                     candidateIndex++)
+                {
+                    RecommendationTargetAssignmentKind kind =
+                        plan.AssignmentKindAt(candidateIndex);
+                    if (kind == RecommendationTargetAssignmentKind.None)
+                        continue;
+                    int pawnIndex = plan.CandidateAt(candidateIndex).PawnIndex;
+                    PawnDraft draft = drafts[pawnIndex];
+                    PathActivation activation = draft.ActivationToward(
+                        plan.RoleId);
+                    bool direct = draft.HasDirectRole(plan.RoleId);
+                    if (activation == null && !direct) continue;
+
+                    var assignedRoleIds = new List<int>();
+                    if (direct
+                        || activation != null
+                            && ContainsRole(
+                                activation.ActiveRoleIds, plan.RoleId))
+                        assignedRoleIds.Add(plan.RoleId);
+                    if (activation != null)
+                    {
+                        int[] published = rolesByPawn[pawnIndex];
+                        for (int roleIndex = 0;
+                             roleIndex < published.Length;
+                             roleIndex++)
+                        {
+                            int roleId = published[roleIndex];
+                            if (roleId != plan.RoleId
+                                && ContainsRole(
+                                    activation.ActiveRoleIds, roleId))
+                                assignedRoleIds.Add(roleId);
+                        }
+                    }
+                    if (assignedRoleIds.Count == 0) continue;
+                    assignments.Add(new RecommendationTargetAssignment(
+                        plan.RoleId,
+                        pawnIndex,
+                        kind,
+                        assignedRoleIds.ToArray()));
+                }
+            }
+            return assignments.ToArray();
+        }
+
+        private static bool ContainsRole(int[] roleIds, int roleId)
+        {
+            for (int index = 0; index < roleIds.Length; index++)
+                if (roleIds[index] == roleId) return true;
+            return false;
         }
 
         private static void ResolveCoverage(
@@ -635,6 +791,9 @@ namespace WorkRoles.Core.Recs
             {
                 RolePlan plan = rolePlans[planIndex];
                 RoleView role = facts.RoleOf(plan.RoleId);
+                bool exactMinimumRequired =
+                    PathActivation.PreferredTargetPath(
+                        facts.Colony.Paths, role.Id) != null;
                 int coveredPawns = CountCoveredPawns(facts, drafts, role);
                 if (HasCoverer(facts, drafts, role))
                 {
@@ -646,6 +805,8 @@ namespace WorkRoles.Core.Recs
                         PawnDraft draft = drafts[pawnIndex];
                         if (!draft.ContainsRole(role.Id)
                             || draft.IsPathRole(role.Id)
+                            || (exactMinimumRequired
+                                && draft.IsMinimumRole(role.Id))
                             || draft.IsSpecialRole(role.Id))
                             continue;
                         int coverageLoss = PawnHasCoverer(
@@ -668,7 +829,9 @@ namespace WorkRoles.Core.Recs
                     byte minimumBonus =
                         plan.SelectForCoverage(candidateIndex);
                     drafts[pawnIndex].AddRole(
-                        role.Id, minimumBonus: minimumBonus);
+                        role.Id,
+                        minimumBonus: minimumBonus,
+                        minimumPick: true);
                     coveredPawns++;
                 }
             }

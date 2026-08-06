@@ -46,6 +46,26 @@ namespace WorkRoles
 
             var generated = EnsureWorkTypeCoverage();
 
+            // Colony-majority reorder of roles eligible for the relaxed match
+            // (roles carrying a member type nothing else can carry, e.g. Basics
+            // with Allow Tool's urgent hauling): give such a role the entry
+            // order that agrees with the most colonists, so migration assigns
+            // the one role instead of splitting into singles. Computed before
+            // any assignment makes pawns managed or creates carrier roles.
+            var migrationRoles = MigrationRolesFromStore(store);
+            var relaxedRoles = MigrationPlanner.RelaxedMatchRoles(
+                migrationRoles, GameJobCatalog.Instance);
+            if (relaxedRoles.Count > 0)
+            {
+                var grids = new List<IReadOnlyDictionary<string, int>>();
+                foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
+                    if (pawn != null && (pawn.IsColonist || pawn.IsSlaveOfColony))
+                        grids.Add(CapablePriorities(pawn));
+                foreach (var (roleId, memberOrder) in MigrationPlanner.PreferredMemberOrders(
+                             migrationRoles, relaxedRoles, grids))
+                    ReorderRoleMembers(store, roleId, memberOrder);
+            }
+
             int assigned = 0;
             var failures = new List<string>();
             foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
@@ -55,12 +75,13 @@ namespace WorkRoles
                     // Capture the pre-migration grid: after the first assignment the
                     // pawn is managed and priority reads answer from roles.
                     var before = pawn.IsColonist || pawn.IsSlaveOfColony ? CapablePriorities(pawn) : null;
-                    if (!TryAssignRolesFromVanillaPriorities(pawn)) continue;
+                    if (!TryAssignRolesFromVanillaPriorities(pawn, relaxedRoles, generated)) continue;
                     assigned++;
 
                     // Self-check: every work type the pawn had enabled must survive
-                    // migration. A drop is a catalog/planner bug (scream), except
-                    // everyone-types, which can drop by design (warn below).
+                    // migration. Every visible giver-bearing type now has a carrier
+                    // (single-type role, relaxed multi-type match or generated
+                    // carrier role), so a drop is a catalog/planner bug.
                     foreach (var pair in before)
                     {
                         if (pair.Value == 0) continue;
@@ -73,13 +94,7 @@ namespace WorkRoles
                         if (workType != null && !workType.visible) continue;
                         if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
                         {
-                            // Compat types ride only their declared roles; a
-                            // priority with no matching role assignment drops
-                            // legitimately.
-                            if (IsTemplateCompatType(pair.Key))
-                                Log.Warning($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
-                            else
-                                Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                            Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
                             failures.Add("WR_SeedDropFailure".Translate(
                                 pawn.LabelShort, workType.labelShort ?? pair.Key, pair.Value));
                         }
@@ -237,24 +252,93 @@ namespace WorkRoles
         /// unit-tested against the shipped Roles.xml). Must read priorities BEFORE
         /// assigning anything: an unmanaged pawn's GetPriority passes through to
         /// vanilla values; the first assignment makes the pawn managed and reads
-        /// then return WorkRoles ranks.
-        public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn)
+        /// then return WorkRoles ranks. relaxedRoles is computed once per
+        /// migration by SeedIfNeeded so carrier roles created for earlier pawns
+        /// cannot change matching for later ones; a standalone call derives it
+        /// fresh. Carrier slots materialize a single-type role (reused by later
+        /// pawns through the normal single-role match); created labels are
+        /// reported through generatedRoleLabels.
+        public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn,
+            ISet<int> relaxedRoles = null, List<string> generatedRoleLabels = null)
         {
             var store = RoleStore.Current;
             if (store == null || !store.seeded) return false;
             if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return false;
             if (store.IsManaged(pawn)) return false;
 
-            var plan = MigrationPlanner.Plan(
-                store.roles.Select(r => new MigrationRole(r.id, MigratableEntries(r), r.blocker)).ToList(),
+            var migrationRoles = MigrationRolesFromStore(store);
+            var slots = MigrationPlanner.PlanSlots(
+                migrationRoles,
                 CapablePriorities(pawn),
                 DefDatabase<WorkTypeDef>.AllDefsListForReading.Select(wt => wt.defName).ToList(),
-                GameJobCatalog.Instance);
-            if (plan.Count == 0) return false;
+                GameJobCatalog.Instance,
+                relaxedRoles ?? MigrationPlanner.RelaxedMatchRoles(migrationRoles, GameJobCatalog.Instance),
+                CarrierEligible);
+            if (slots.Count == 0) return false;
 
-            foreach (var roleId in plan)
+            foreach (var slot in slots)
+            {
+                int roleId = slot.RoleId;
+                if (slot.CarrierWorkType != null)
+                {
+                    var carrier = CreateCarrierRole(slot.CarrierWorkType);
+                    if (carrier == null) continue;
+                    generatedRoleLabels?.Add(carrier.label);
+                    roleId = carrier.id;
+                }
                 RoleCommands.AssignRoleDirect(pawn, roleId);
-            return true;
+            }
+            return store.IsManaged(pawn);
+        }
+
+        private static List<MigrationRole> MigrationRolesFromStore(RoleStore store) =>
+            store.roles.Select(r => new MigrationRole(r.id, MigratableEntries(r), r.blocker)).ToList();
+
+        /// Worth a generated carrier role: visible with at least one giver.
+        /// Invisible or giver-less types keep the legacy drop (the unused-jobs
+        /// warning surfaces them).
+        private static readonly System.Func<string, bool> CarrierEligible = workTypeDefName =>
+        {
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
+            return workType != null && workType.visible
+                && GameJobCatalog.Instance.WorkGiversOf(workTypeDefName).Count > 0;
+        };
+
+        /// A migrating pawn ranks this work type apart from every role that
+        /// carries it: materialize a dedicated single-type role. labelShort
+        /// names it ("Haul+" for both Allow Tool and Keyz' Allow Utilities).
+        private static Role CreateCarrierRole(string workTypeDefName)
+        {
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
+            if (workType == null) return null;
+            string label = !workType.labelShort.NullOrEmpty()
+                ? workType.labelShort.CapitalizeFirst()
+                : SeededDefIdentity.WorkTypeRoleLabel(workType);
+            var role = RoleCommands.CreateRoleDirect(label);
+            if (role == null) return null;
+            ApplyGeneratedColor(role, workType.defName);
+            RoleCommands.AddEntryDirect(role.id,
+                new JobEntry(JobEntryKind.WorkType, workType.defName));
+            return role;
+        }
+
+        /// Rewrites a role's member work-type entries to the given order,
+        /// keeping each entry's slot. Adoption-time only: runs before the
+        /// player could have edited any role.
+        private static void ReorderRoleMembers(RoleStore store, int roleId, List<string> memberOrder)
+        {
+            var role = store.RoleById(roleId);
+            if (role == null) return;
+            var slots = new List<int>();
+            for (int i = 0; i < role.entries.Count; i++)
+                if (role.entries[i].Kind == JobEntryKind.WorkType
+                    && memberOrder.Contains(role.entries[i].DefName)) slots.Add(i);
+            if (slots.Count != memberOrder.Count) return;
+            for (int k = 0; k < slots.Count; k++)
+                role.entries[slots[k]] = new JobEntry(JobEntryKind.WorkType, memberOrder[k]);
+            CompiledJobOrders.InvalidateRole(roleId);
+            Log.Message($"[WorkRoles] adoption reordered '{role.label}' to match colony priorities: "
+                + memberOrder.ToCommaList());
         }
 
         /// Entries whose work type resolves and is visible: invisible modded
@@ -299,21 +383,6 @@ namespace WorkRoles
             }
         }
 
-        /// Modded work types declared by RoleDef compat entries (MayRequire in
-        /// Roles.xml): supported mods' types, placed by template rather than
-        /// generated roles.
-        private static bool IsTemplateCompatType(string workTypeDefName)
-        {
-            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
-            if (workType?.modContentPack == null || workType.modContentPack.IsOfficialMod)
-                return false;
-            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
-                foreach (var entry in def.ParsedEntries())
-                    if (entry.Kind == JobEntryKind.WorkType && entry.DefName == workTypeDefName)
-                        return true;
-            return false;
-        }
-
         /// A newly seen work type that RoleDefs declare (MayRequire compat
         /// entries): inserted into each template-linked live role at the
         /// template's position, so a mod added mid-save lands like a fresh
@@ -350,6 +419,16 @@ namespace WorkRoles
                 hash *= 16777619u;
             }
             return hash;
+        }
+
+        /// Palette colors only, chosen deterministically across MP clients:
+        /// the defName hashes (FNV-1a — stable, unlike string.GetHashCode) to
+        /// a hue snapped to the nearest palette color.
+        private static void ApplyGeneratedColor(Role role, string defName)
+        {
+            role.color = NearestPaletteColor(UnityEngine.Color.HSVToRGB(
+                Fnv1a(defName) % 360u / 360f, 0.5f, 0.55f));
+            role.hasCustomColor = true;
         }
 
         /// Snaps an arbitrary color to the nearest editor swatch (RGB distance)
@@ -403,13 +482,7 @@ namespace WorkRoles
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
-                        // Palette colors only, chosen deterministically across MP
-                        // clients: the defName hashes (FNV-1a — stable, unlike
-                        // string.GetHashCode) to a hue snapped to the nearest
-                        // palette color.
-                        role.color = NearestPaletteColor(UnityEngine.Color.HSVToRGB(
-                            Fnv1a(workType.defName) % 360u / 360f, 0.5f, 0.55f));
-                        role.hasCustomColor = true;
+                        ApplyGeneratedColor(role, workType.defName);
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
                         result.Add(role.label);
                     }

@@ -26,7 +26,10 @@ namespace WorkRoles
                     .Where(p => p.IsColonist || p.IsSlaveOfColony).ToList();
                 foreach (var pawn in colonists)
                     PawnSignalSnapshotCache.Get(pawn);
-                RecsEngine.Run(RecsAdapter.BuildColonyView(store, colonists));
+                RecommendationPlan.Build(
+                    RecsAdapter.BuildColonyView(store, colonists),
+                    store.recommendationTuning
+                        ?? RecommendationsTuningOptions.Default);
             }
             catch (System.Exception e)
             {

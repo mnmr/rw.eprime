@@ -60,6 +60,8 @@ public class RecommendationPlanScenarioTests
          * Training paths: none.
          * Role scales: Doctor custom direct 1 + training 1; Cook custom direct 2;
          * Hauler custom direct 1 (legacy/unskilled and therefore out of scope).
+         * Cook's earlier minimum-pick bonus places it before Doctor on the two
+         * pawns selected for both roles.
          */
         RoleView doctor = RecsTestBed.Role(1, "Doctor");
         doctor.HolderMode = RoleHolderMode.Custom;
@@ -107,8 +109,8 @@ public class RecommendationPlanScenarioTests
         string[] expectedRoles =
         {
             "Doctor",
-            "Doctor, Cook",
-            "Doctor, Cook",
+            "Cook, Doctor",
+            "Cook, Doctor",
             "",
         };
         for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
@@ -354,7 +356,9 @@ public class RecommendationPlanScenarioTests
         {
             "Doctor, Cook",
             "Rescuer",
-            "Camp Cook, Butcher, Brewer",
+            // Repeat-champion spreading hands Brewer's championship to the
+            // trainee, so its first-pick bonus leads the trainee's order.
+            "Brewer, Camp Cook, Butcher",
         };
         for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
         {
@@ -378,6 +382,8 @@ public class RecommendationPlanScenarioTests
          * Smith = Tailor[0,8), Smith[8,21), anchored before Fabricator.
          * Role scales: Warden and Artist direct 1; Tailor interest-only; Smith,
          * Fabricator, Drug Maker, and Crafter training 1; Researcher direct 1.
+         * Final per-pawn scores retain Artist immediately after Warden, while
+         * the anchored targets form the following training block.
          */
         RoleView warden = SkilledRole(50, "Wardening", "Social");
         warden.HolderMode = RoleHolderMode.Custom;
@@ -494,7 +500,7 @@ public class RecommendationPlanScenarioTests
         string[] expectedPaths = { "Fabricator, Drug Maker, Crafter", "Smith" };
         string[] expectedRoles =
         {
-            "Warden, Fabricator, Drug Maker, Crafter, Artist, Tailor, Smith",
+            "Warden, Artist, Fabricator, Drug Maker, Crafter, Smith, Tailor",
             "Researcher, Tailor",
         };
         for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
@@ -553,7 +559,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice06_DiversifiesOnlyAcrossDistinctQualifiedLeads()
+    public async Task Slice06_OrdersConnectedTargetsWithoutLeadDiversification()
     {
         /*
          * Default role recommendation order: Tailor > Smith > Fabricator > Crafter.
@@ -563,6 +569,9 @@ public class RecommendationPlanScenarioTests
          * before Crafter.
          * Role scales: all four roles are interest-only; Strong signal supplies
          * their surplus memberships.
+         * With lead diversification disabled, ordinary target minima and
+         * recommendation scores order every qualified pawn consistently. The
+         * weak fourth pawn remains below Fabricator's target minimum.
          */
         RoleView tailor = CraftingRole(80, "Tailoring");
         tailor.HolderMode = RoleHolderMode.Custom;
@@ -612,104 +621,17 @@ public class RecommendationPlanScenarioTests
 
         string[] expectedRoles =
         {
-            "Fabricator, Tailor, Smith, Crafter",
             "Fabricator, Smith, Tailor, Crafter",
-            "Tailor, Fabricator, Smith, Crafter",
-            "Tailor, Fabricator, Smith, Crafter",
-        };
-        for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
-        {
-            await Assert.That(NamesOfPaths(plan, pawnIndex, pathNames))
-                .IsEqualTo("Tailor, Smith, Fabricator");
-            await Assert.That(NamesOfRoles(plan, pawnIndex, roleNames))
-                .IsEqualTo(expectedRoles[pawnIndex]);
-        }
-    }
-
-    [Test]
-    public async Task Slice06_FindsDistinctLeadsWhenGreedyBestSkillWouldBlockThem()
-    {
-        /*
-         * Default role recommendation order: Fabricator > Smith > Tailor > Crafter.
-         * Training paths: Tailor = Crafter[0,21), Tailor[2,21), anchored before
-         * Crafter; Smith = Crafter[0,21), Smith[4,21), anchored before Crafter;
-         * Fabricator = Crafter[0,21), Smith[4,21), Fabricator[8,21), anchored
-         * before Crafter.
-         * Role scales: all four roles are interest-only; Strong signal supplies
-         * surplus. The best crafter qualifies for every lead, while the other
-         * two qualify only for Fabricator and Smith respectively.
-         */
-        RoleView fabricator = CraftingRole(93, "Fabrication");
-        RoleView smith = CraftingRole(94, "Smithing");
-        RoleView tailor = CraftingRole(95, "Tailoring");
-        RoleView crafter = CraftingRole(96, "CraftingWork");
-        foreach (RoleView role in new[] { fabricator, smith, tailor, crafter })
-            role.HolderMode = RoleHolderMode.Custom;
-        PathView tailorPath = RecsTestBed.Path(
-            97, (crafter.Id, 0, 21), (tailor.Id, 2, 21));
-        tailorPath.AnchorRoleId = crafter.Id;
-        PathView smithPath = RecsTestBed.Path(
-            98, (crafter.Id, 0, 21), (smith.Id, 4, 21));
-        smithPath.AnchorRoleId = crafter.Id;
-        PathView fabricatorPath = RecsTestBed.Path(
-            99, (crafter.Id, 0, 21), (smith.Id, 4, 21),
-            (fabricator.Id, 8, 21));
-        fabricatorPath.AnchorRoleId = crafter.Id;
-
-        PawnView all = CraftingPawn(
-            15,
-            ("Fabrication", SignalBucket.Strong),
-            ("Smithing", SignalBucket.Strong),
-            ("Tailoring", SignalBucket.Strong),
-            ("CraftingWork", SignalBucket.Strong));
-        all.SignalBuckets["Crafting"] = SignalBucket.Strong;
-        PawnView fabricatorOnly = CraftingPawn(
-            14,
-            ("Fabrication", SignalBucket.Strong),
-            ("Smithing", SignalBucket.Awful),
-            ("Tailoring", SignalBucket.Awful),
-            ("CraftingWork", SignalBucket.Strong));
-        fabricatorOnly.SignalBuckets["Crafting"] = SignalBucket.Strong;
-        PawnView smithOnly = CraftingPawn(
-            13,
-            ("Fabrication", SignalBucket.Awful),
-            ("Smithing", SignalBucket.Strong),
-            ("Tailoring", SignalBucket.Awful),
-            ("CraftingWork", SignalBucket.Strong));
-        smithOnly.SignalBuckets["Crafting"] = SignalBucket.Strong;
-        ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView> { fabricator, smith, tailor, crafter },
-            all,
-            fabricatorOnly,
-            smithOnly);
-        colony.Paths.AddRange(new[] { tailorPath, smithPath, fabricatorPath });
-        var roleNames = new Dictionary<int, string>
-        {
-            [fabricator.Id] = "Fabricator",
-            [smith.Id] = "Smith",
-            [tailor.Id] = "Tailor",
-            [crafter.Id] = "Crafter",
-        };
-        var pathNames = new Dictionary<int, string>
-        {
-            [tailorPath.Id] = "Tailor",
-            [smithPath.Id] = "Smith",
-            [fabricatorPath.Id] = "Fabricator",
-        };
-
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
-
-        string[] expectedRoles =
-        {
-            "Tailor, Fabricator, Smith, Crafter",
-            "Fabricator, Crafter",
-            "Smith, Crafter",
+            "Fabricator, Smith, Tailor, Crafter",
+            "Fabricator, Smith, Tailor, Crafter",
+            "Smith, Tailor, Crafter",
         };
         string[] expectedPaths =
         {
             "Tailor, Smith, Fabricator",
-            "Fabricator",
-            "Smith",
+            "Tailor, Smith, Fabricator",
+            "Tailor, Smith, Fabricator",
+            "Fabricator, Tailor, Smith",
         };
         for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
         {

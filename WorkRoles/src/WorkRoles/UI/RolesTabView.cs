@@ -961,15 +961,18 @@ namespace WorkRoles.UI
 
         }
 
-        // The engine's own scaling shows the exact target Auto resolves to for
-        // the listed colony (zero-alloc probe: UI thread only).
-        private static readonly UnitScaling holdersScaling = new UnitScaling();
+        // The input-event path uses the engine's configured scaling so the
+        // initial Custom value exactly matches the Auto value just displayed.
         private static readonly RoleView holdersProbe = new RoleView();
 
         private int AutoRequiredTotal(Role role)
         {
             holdersProbe.RequiredTotal = role.ResolvedAutoRequiredTotal();
-            return holdersScaling.Requirement(
+            RoleStore store = RoleStore.Current;
+            var scaling = new RecommendationScaling(
+                store?.recommendationTuning
+                    ?? RecommendationsTuningOptions.Default);
+            return scaling.Requirement(
                 holdersProbe, listedPawns?.Invoke().Count ?? 0).RequiredTotal;
         }
 

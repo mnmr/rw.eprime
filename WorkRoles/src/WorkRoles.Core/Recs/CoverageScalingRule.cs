@@ -7,11 +7,23 @@ namespace WorkRoles.Core.Recs
         HolderRequirement Requirement(RoleView role, int colonySize);
     }
 
-    /// Banded scales are direct lookups; roles without a scale keep the legacy
-    /// 1-per-6 unit formula (auto-coverage roles require one unit, needed roles
-    /// use RequiredTotal per unit; interest-only and Never require nothing).
-    public sealed class UnitScaling : IScalingAlgorithm
+    /// Recommendation holder scaling. Explicit role scales and custom totals
+    /// remain authoritative; only the no-scale unit formula is tuned.
+    public sealed class RecommendationScaling : IScalingAlgorithm
     {
+        private readonly RecommendationFormulaEngine formulas;
+
+        public RecommendationScaling(RecommendationsTuningOptions options)
+            : this(new RecommendationFormulaEngine(
+                options ?? RecommendationsTuningOptions.Default))
+        {
+        }
+
+        internal RecommendationScaling(RecommendationFormulaEngine formulas)
+        {
+            this.formulas = formulas;
+        }
+
         public HolderRequirement Requirement(RoleView role, int colonySize)
         {
             int requiredTotal;
@@ -27,7 +39,10 @@ namespace WorkRoles.Core.Recs
                 requiredTotal = System.Math.Max(0, role.RequiredTotal);
             else
             {
-                int units = System.Math.Max(1, (colonySize + 5) / 6);
+                int perUnit = formulas.FallbackColonistsPerUnit;
+                int units = System.Math.Max(
+                    formulas.FallbackMinimumUnits,
+                    (System.Math.Max(0, colonySize) + perUnit - 1) / perUnit);
                 if (role.RequiredTotal >= 1)
                     requiredTotal = role.RequiredTotal * units;
                 else
@@ -39,29 +54,4 @@ namespace WorkRoles.Core.Recs
         }
     }
 
-    /// Fills EngineContext.RequiredTotal for every dealable role.
-    public sealed class CoverageScalingRule : RecRule
-    {
-        private readonly IScalingAlgorithm scaling;
-        public CoverageScalingRule(IScalingAlgorithm scaling) { this.scaling = scaling; }
-
-        public override string Id => "scaling";
-        public override RuleKind Kind => RuleKind.Colony;
-
-        public override void Apply(EngineContext context)
-        {
-            foreach (var role in context.Colony.Roles)
-            {
-                if (context.Vetoed.Contains(role.Id)) continue;
-                if (role.AutoAssign || role.HasRules || role.Blocker) continue;
-                HolderRequirement requirement = scaling.Requirement(
-                    role, context.Colony.Pawns.Count);
-                if (requirement.RequiredTotal > 0)
-                {
-                    context.BaseRequiredTotal[role.Id] = requirement.RequiredTotal;
-                    context.RequiredTotal[role.Id] = requirement.RequiredTotal;
-                }
-            }
-        }
-    }
 }

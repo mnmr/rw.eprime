@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -32,6 +33,19 @@ namespace WorkRoles.UI
 
         private float helpWidth = -1f;
 
+        // Cache contract — Owner: Options tab. Key: RoleStore identity,
+        // RecommendationTuningRevision, available width, and language-cache
+        // generation (explicit invalidation). Value: immutable-by-publication
+        // translated rows, formatted values, and measured geometry.
+        // Dependencies: tuning descriptors, normalized values, language, font,
+        // width. Refresh: immediate on a key change. Equality: key hits preserve
+        // row/list identity. Teardown: Reset/InvalidateLanguageCaches clears it.
+        private RoleStore tuningStore;
+        private int tuningRevision = -1;
+        private float tuningWidth = -1f;
+        private readonly List<RecommendationTuningRow> tuningRows =
+            new List<RecommendationTuningRow>();
+
         internal int OrderStamp => orderStamp;
         internal IReadOnlyList<int> Order => order;
         internal IReadOnlyDictionary<int, RoleView> OrderById => orderById;
@@ -55,6 +69,11 @@ namespace WorkRoles.UI
         internal float RecommendationOrderHelpHeight { get; private set; }
         internal string TrainingHelp { get; private set; }
         internal float TrainingHelpHeight { get; private set; }
+        internal IReadOnlyList<RecommendationTuningRow> TuningRows =>
+            tuningRows;
+        internal float TuningLayoutHeight { get; private set; }
+        internal string TuningFormulaHeader { get; private set; }
+        internal string TuningResetAll { get; private set; }
 
         internal void Reset()
         {
@@ -88,6 +107,101 @@ namespace WorkRoles.UI
             RecommendationOrderHelpHeight = 0f;
             TrainingHelp = null;
             TrainingHelpHeight = 0f;
+
+            tuningStore = null;
+            tuningRevision = -1;
+            tuningWidth = -1f;
+            tuningRows.Clear();
+            TuningLayoutHeight = 0f;
+            TuningFormulaHeader = null;
+            TuningResetAll = null;
+        }
+
+        internal void EnsureTuning(RoleStore store, float width)
+        {
+            if (ReferenceEquals(tuningStore, store)
+                && tuningRevision == store.RecommendationTuningRevision
+                && tuningWidth == width)
+                return;
+            tuningStore = store;
+            tuningRevision = store.RecommendationTuningRevision;
+            tuningWidth = width;
+            tuningRows.Clear();
+            TuningFormulaHeader = "WR_RecTuneFormulaHeader".Translate();
+            TuningResetAll = "WR_RecTuneResetAll".Translate();
+
+            RecommendationsTuningOptions options = store.recommendationTuning
+                ?? RecommendationsTuningOptions.Default;
+            const float sectionHeight = 26f;
+            const float rowGap = 6f;
+            const float descriptionWidthReserve = 116f;
+            float y = 0f;
+            string previousSection = null;
+            GameFont previousFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                foreach (RecommendationTuningDescriptor descriptor in
+                         RecommendationsTuningOptions.Descriptors)
+                {
+                    if (descriptor.Hidden) continue;
+                    string sectionLabel = null;
+                    Rect sectionRect = default;
+                    if (descriptor.SectionLabelKey != previousSection)
+                    {
+                        previousSection = descriptor.SectionLabelKey;
+                        sectionLabel = descriptor.SectionLabelKey.Translate();
+                        sectionRect = new Rect(0f, y, width, sectionHeight);
+                        y += sectionHeight;
+                    }
+                    string label = descriptor.LabelKey.Translate();
+                    string description = descriptor.DescriptionKey.Translate();
+                    float descriptionHeight = Text.CalcHeight(
+                        description,
+                        System.Math.Max(80f, width - descriptionWidthReserve));
+                    float rowHeight = System.Math.Max(
+                        44f, 21f + descriptionHeight);
+                    int value = options.Get(descriptor.Option);
+                    tuningRows.Add(new RecommendationTuningRow(
+                        descriptor,
+                        value,
+                        sectionLabel,
+                        label,
+                        description,
+                        FormatTuningValue(descriptor.ValueKind, value),
+                        sectionRect,
+                        new Rect(0f, y, width, rowHeight)));
+                    y += rowHeight + rowGap;
+                }
+            }
+            finally
+            {
+                Text.Font = previousFont;
+            }
+            TuningLayoutHeight = y;
+        }
+
+        private static string FormatTuningValue(
+            RecommendationTuningValueKind kind,
+            int value)
+        {
+            if (kind == RecommendationTuningValueKind.HalfMultiplier)
+                return value % 2 == 0
+                    ? (value / 2).ToString(CultureInfo.InvariantCulture) + "×"
+                    : (value / 2).ToString(CultureInfo.InvariantCulture) + ".5×";
+            if (kind == RecommendationTuningValueKind.SignalBucket)
+            {
+                switch ((SignalBucket)value)
+                {
+                    case SignalBucket.Awful: return "WR_VerdictAwful".Translate();
+                    case SignalBucket.Poor: return "WR_VerdictPoor".Translate();
+                    case SignalBucket.Neutral: return "WR_VerdictNeutral".Translate();
+                    case SignalBucket.Strong: return "WR_VerdictStrong".Translate();
+                    case SignalBucket.Great: return "WR_VerdictGreat".Translate();
+                    default: return "WR_VerdictExceptional".Translate();
+                }
+            }
+            return value.ToString(CultureInfo.InvariantCulture);
         }
 
         internal void EnsureHelpLayout(float width)
