@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.3.5 — 2026-08-06
+
+- Changed: Recommendations logic has been revamped once more, with many improvements under the hood.
+- Fixed: When the mod was added to a save using AllowTool migration could fail to map the Basics role with Haul+ to colonists, causing a warning dialog about them losing this job assignment.
+
 ## 1.3.4 — 2026-08-02
 
 - Added: Support for Strata (already worked, but extended multi-floors to allow for up to 32 levels since Strata is unbounded).

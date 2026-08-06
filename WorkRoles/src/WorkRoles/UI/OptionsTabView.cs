@@ -108,7 +108,6 @@ namespace WorkRoles.UI
             state.EnsurePaths(store, flowW - ChipsPanelPad * 2f);
             state.EnsureTips();
             state.EnsureHelpLayout(flowW);
-            state.EnsureTuning(store, flowW - RecPanelPad * 2f);
             OptionsPathView pathView = state.Path;
 
             // The whole y-flow is laid out up front: the scroll view needs
@@ -138,14 +137,6 @@ namespace WorkRoles.UI
             var recOrderHelpRect = new Rect(flowX, recPanel.yMax + 8f, flowW,
                 state.RecommendationOrderHelpHeight);
             y = recOrderHelpRect.yMax + 12f;
-            float formulaHeaderY = y;
-            y += 30f;
-            var tuningPanel = new Rect(
-                flowX,
-                y,
-                flowW,
-                state.TuningLayoutHeight + RecPanelPad * 2f);
-            y = tuningPanel.yMax + 12f;
             float pathsHeaderY = y;
             y += 30f;
             var trainingHelpRect = new Rect(flowX, y, flowW,
@@ -198,14 +189,6 @@ namespace WorkRoles.UI
                 state.RecommendationOrderTip);
             DrawRecommendationOrder(recPanel, store);
             DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
-
-            DrawTuningHeader(
-                flowX,
-                formulaHeaderY,
-                flowW,
-                state.TuningFormulaHeader,
-                state.TuningResetAll);
-            DrawRecommendationTuning(tuningPanel);
 
             MiniHeader(flowX, pathsHeaderY, flowW, "WR_TrainingSection".Translate(),
                 state.TrainingTip);
