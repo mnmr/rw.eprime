@@ -104,6 +104,17 @@ namespace EPrimeReadouts.UI
                 float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
                 contentW = Mathf.Min(NaturalWidth(model), contentMax);
                 contentH = Compose(model, contentW, geo);
+                // Shape balance: wide-and-short tips narrow toward the √-area
+                // target and recompose once; both passes sit inside this
+                // cache-gated builder.
+                float balanced = TipBalancePolicy.BalancedWidth(contentW, contentH,
+                    Mathf.Min(FloorWidth(model), contentMax));
+                if (balanced < contentW)
+                {
+                    geo.Cmds.Clear();
+                    contentW = balanced;
+                    contentH = Compose(model, contentW, geo);
+                }
             }
             finally
             {
@@ -153,6 +164,37 @@ namespace EPrimeReadouts.UI
                 }
             }
             return Mathf.Max(w, 24f);
+        }
+
+        /// Widest element that cannot wrap (title/badge line, tables, fact
+        /// grids, the shared label column plus a minimal value width):
+        /// narrowing below this would clip content, so it floors the balanced
+        /// width.
+        private static float FloorWidth(TipModel model)
+        {
+            float w = 24f;
+            if (!model.Title.NullOrEmpty())
+            {
+                float titleW = WrText.FitWidth(model.Title);
+                if (!model.Badge.NullOrEmpty()) titleW += BadgeGap + WrText.FitWidth(model.Badge);
+                w = Mathf.Max(w, titleW);
+            }
+            float factCol = LabelColumnWidth(model);
+            if (factCol > 0f) w = Mathf.Max(w, factCol + ColGap + 24f);
+            foreach (var section in model.Sections)
+            {
+                foreach (var row in section.Rows)
+                    if (row is TipFactGridRow grid)
+                        w = Mathf.Max(w, FactGridWidth(grid));
+                float[] cols = ColumnWidths(section);
+                if (cols != null)
+                {
+                    float tableW = TableInset * 2f + TableColGap * (cols.Length - 1);
+                    foreach (float col in cols) tableW += col;
+                    w = Mathf.Max(w, tableW);
+                }
+            }
+            return w;
         }
 
         /// Natural per-column widths across a section's columns rows, or null if
