@@ -16,7 +16,7 @@ namespace QualityJobs.UI
     /// label+icon (verified Command.GroupsWith at Decompiled\Verse\Command.cs line 275:
     ///   hotKey == command.hotKey && Label == command.Label && icon == command.icon
     ///   && groupKey == command.groupKey).
-    /// All commands share label "Quality job" and the same icon, so they group
+    /// All commands share label "Quality Job" and the same icon, so they group
     /// and one click opens a dialog operating on all selected eligible things.
     ///
     /// GizmoOnGUI signature verified against Decompiled\Verse\Command.cs line 96:

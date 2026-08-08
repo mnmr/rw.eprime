@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using QualityJobs.Core;
+using QualityJobs.UI;
 using RimWorld;
 using Verse;
 
@@ -66,7 +67,25 @@ namespace QualityJobs
 
         // Rebuilt every scan; keyed (map.uniqueID, productDefName).
         private readonly Dictionary<(int, string), int> uftCounts = new Dictionary<(int, string), int>();
+
+        // Completion-retry signal — Owner: Game/store. Key: executing bill load
+        // ID + current game tick. Value: one transient below-target marker.
+        // Dependencies: the final product quality decision for the current bill
+        // iteration. Refresh: immediate mark in PostProcessProduct and synchronous
+        // consume in Notify_IterationCompleted. Equality: marking the same pair is
+        // a no-op. Teardown: the signal dies with this GameComponent; it is not
+        // scribed because producer and consumer run in the same call chain.
+        private readonly CompletionRetrySignal completionRetry = new CompletionRetrySignal();
         private bool seeded;
+
+        // Existing-bill migration state — authoritative per save. Bills that
+        // predate the mod are quarantined with an explicit managed=false
+        // override before play begins, then listed here until the host accepts
+        // or declines the migration dialog. Sharing does not read this state.
+        public const int CurrentExistingBillMigrationVersion = 1;
+        public int existingBillMigrationVersion;
+        public List<string> pendingExistingBillMigrationIds = new List<string>();
+        private bool initializeExistingBillsOnLoad;
 
         // ---- overlay flag (NOT scribed) ----------------------------------------
         //
@@ -112,6 +131,7 @@ namespace QualityJobs
 
         public override void FinalizeInit()
         {
+            bool firstInitialization = !seeded;
             if (!seeded)
             {
                 var s = QualityJobsMod.Settings;
@@ -131,8 +151,97 @@ namespace QualityJobs
                 constructionAutoBestDefault = s.defaultConstructionAutoBest;
                 seeded = true;
             }
+            // LoadedGame is load-only; remembering the pre-seed state here
+            // distinguishes adding the mod to an existing save from starting a
+            // new game and from loading a save Quality Jobs already initialized.
+            initializeExistingBillsOnLoad = firstInitialization;
             // Ensure AnyOverlays is correct before the first draw call on the new save.
             AnyOverlays = plans.Count > 0;
+        }
+
+        public override void LoadedGame()
+        {
+            // Sharing is independent from bill management. Adopt existing idle
+            // unfinished items immediately so paused-on-load games do not wait
+            // for the next 250-tick sweep.
+            RecountAndPool();
+            InitializeExistingBillMigration();
+        }
+
+        private void InitializeExistingBillMigration()
+        {
+            // A save made while the prompt was pending must show it again even
+            // though the store is no longer undergoing first initialization.
+            if (ExistingBillMigrationPolicy.ShouldShowDialog(
+                    pendingExistingBillMigrationIds.Count))
+            {
+                Dialog_ExistingBillMigration.QueueIfNeeded(this);
+                return;
+            }
+
+            if (existingBillMigrationVersion >= CurrentExistingBillMigrationVersion)
+                return;
+
+            // Existing Quality Jobs saves already made their bill-management
+            // choice through the established defaults/configuration. This
+            // migration is only for a store first added to an existing save.
+            if (!initializeExistingBillsOnLoad)
+            {
+                existingBillMigrationVersion = CurrentExistingBillMigrationVersion;
+                return;
+            }
+
+            QuarantineExistingBills();
+            initializeExistingBillsOnLoad = false;
+            if (!ExistingBillMigrationPolicy.ShouldShowDialog(
+                    pendingExistingBillMigrationIds.Count))
+            {
+                existingBillMigrationVersion = CurrentExistingBillMigrationVersion;
+                return;
+            }
+
+            Dialog_ExistingBillMigration.QueueIfNeeded(this);
+        }
+
+        private void QuarantineExistingBills()
+        {
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Thing> potentialGivers = maps[m].listerThings
+                    .ThingsInGroup(ThingRequestGroup.PotentialBillGiver);
+                for (int t = 0; t < potentialGivers.Count; t++)
+                {
+                    if (potentialGivers[t] is not IBillGiver giver) continue;
+                    List<Bill> bills = giver.BillStack.Bills;
+                    for (int b = 0; b < bills.Count; b++)
+                    {
+                        if (bills[b] is not Bill_ProductionWithUft bill) continue;
+                        string id = BillIds.IdOf(bill);
+                        bool hasExplicitOverride = billManaged.ContainsKey(id);
+                        if (!ExistingBillMigrationPolicy.ShouldQuarantine(
+                                firstInitialization: true,
+                                supportsQualityJobs: ManagedRecipes.IsManagedRecipe(bill.recipe),
+                                hasExplicitOverride,
+                                manageNewBillsDefault,
+                                targetQualityDefault))
+                            continue;
+
+                        // Install the safe override before any post-load tick can
+                        // reach the completion gate. The dialog later changes
+                        // only these recorded bills if the user opts in.
+                        ExistingBillMigrationConfig config =
+                            ExistingBillMigrationPolicy.ConfigurationFor(
+                                enableQualityJobs: false);
+                        billManaged[id] = config.Managed;
+                        billAutoBest[id] = config.AutoBest;
+                        billRequireInspired[id] = config.RequireInspired;
+                        billRequireSpecialist[id] = config.RequireSpecialist;
+                        billTargetQuality[id] = config.TargetQuality;
+                        pendingExistingBillMigrationIds.Add(id);
+                    }
+                }
+            }
         }
 
         /// Deterministic seeding for MP-synced enable (spec §12): values travel
@@ -225,6 +334,12 @@ namespace QualityJobs
         public int SpawnedUftCount(Map map, string? productDefName)
             => productDefName != null
                && uftCounts.TryGetValue((map.uniqueID, productDefName), out int n) ? n : 0;
+
+        public void MarkBillRetry(Bill bill)
+            => completionRetry.Mark(BillIds.IdOf(bill), Find.TickManager.TicksGame);
+
+        public bool ConsumeBillRetry(Bill bill)
+            => completionRetry.Consume(BillIds.IdOf(bill), Find.TickManager.TicksGame);
 
         public void RegisterPaused(UnfinishedThing uft, Pawn? originalCreator,
             Bill_ProductionWithUft? sourceBill, StyleSnapshot? snapshot)
@@ -488,6 +603,10 @@ namespace QualityJobs
             Scribe_Values.Look(ref constructionTargetQualityDefault, "constructionTargetQualityDefault", 0);
             Scribe_Values.Look(ref constructionAutoBestDefault, "constructionAutoBestDefault", false);
             Scribe_Values.Look(ref seeded, "seeded", false);
+            Scribe_Values.Look(ref existingBillMigrationVersion,
+                "existingBillMigrationVersion", 0);
+            Scribe_Collections.Look(ref pendingExistingBillMigrationIds,
+                "pendingExistingBillMigrationIds", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 // Null-harden collections FIRST: absent XML nodes leave them
@@ -504,6 +623,7 @@ namespace QualityJobs
                 billAutoBest ??= new Dictionary<string, bool>();
                 billTargetQuality ??= new Dictionary<string, int>();
                 productCaps ??= new Dictionary<string, int>();
+                pendingExistingBillMigrationIds ??= new List<string>();
                 // Fix C1/I4: clean up any finish bills for entries whose UFTs
                 // failed to resolve (null uft after load). DeleteFinishBill
                 // guards against a null finishBill internally.

@@ -6,30 +6,23 @@ using Verse;
 namespace QualityJobs.Patches
 {
     /// Bill target quality: when a finished product rolls below the bill's
-    /// target, the bill count is raised by one so a replacement is produced
-    /// (the sub-target item is kept). Quality is rolled inside vanilla's
-    /// GenRecipe.PostProcessProduct, so a postfix there sees the final value.
+    /// target, mark the executing iteration for retry without changing a bill
+    /// counter. Quality is rolled inside vanilla's GenRecipe.PostProcessProduct,
+    /// so a postfix there sees the final value.
     ///
     /// Scope: bills in RepeatCount mode only. TargetCount ("do until you have
     /// X") already filters counted items by quality range in vanilla, and
-    /// Forever never stops; both would drift if we raised their numbers.
+    /// Forever never stops.
     ///
-    /// One-shot finish bills route the increment to their SOURCE bill via the
-    /// store entry: raising the one-shot's own count would make the finisher
-    /// craft a brand-new item from scratch off a single-iteration bill.
+    /// One-shot finish bills resolve target-quality configuration from their
+    /// SOURCE bill, but mark the executing temporary bill so the completion
+    /// patch can consume the signal for the exact iteration.
     ///
     /// MP determinism: runs inside product creation (synced sim), reads only
-    /// synced store state, and mutates the bill identically on every client.
+    /// synced store state, and records the same transient signal on every client.
     [HarmonyPatch(typeof(GenRecipe), "PostProcessProduct")]
     public static class Patch_BillTargetQuality
     {
-        // Recipes can yield several products per iteration; the count must
-        // rise once per completed iteration, not once per product. The guard
-        // keys on (bill id, tick): same sim values on every client, and a
-        // string+int pair cannot root game objects across world unloads.
-        private static string? lastBumpBillId;
-        private static int lastBumpTick = -1;
-
         public static void Postfix(Thing __result, Pawn worker)
         {
             QualityJobsStore? store = QualityJobsStore.Active;
@@ -64,16 +57,9 @@ namespace QualityJobs.Patches
             if (!RetryDecision.ShouldRetry((QualityLevel)(int)comp.Quality,
                     (QualityLevel)target)) return;
 
-            string billId = BillIds.IdOf(targetBill);
-            int tick = Find.TickManager.TicksGame;
-            if (tick == lastBumpTick && billId == lastBumpBillId) return;
-            lastBumpBillId = billId;
-            lastBumpTick = tick;
-
-            // Vanilla's Notify_IterationCompleted decrements repeatCount after
-            // products are made; raising it here nets out to "this item did
-            // not count", so the bill produces one more.
-            targetBill.repeatCount++;
+            // Multiple products from one iteration mark the same (bill, tick)
+            // pair idempotently. Completion consumes it once.
+            store.MarkBillRetry(bill);
         }
     }
 }

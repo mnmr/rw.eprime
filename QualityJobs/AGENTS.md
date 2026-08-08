@@ -1,4 +1,16 @@
-# WorkRoles Engineering Contract
+# QualityJobs Engineering Contract
+
+## Rule 1: No unsolicited specs or plans
+
+- Specifications and implementation plans MUST NOT be created, written, saved,
+  or committed unless the project owner explicitly asks for a spec or plan.
+- Requests to investigate, explain, review, fix, build, implement, or change do
+  not authorize a spec or plan.
+- Clarifying questions, design choices, and implementation decisions MUST stay
+  inline in the current conversation unless the project owner explicitly asks
+  for a separate artifact.
+- If a tool, skill, workflow, or other instruction recommends creating a spec
+  or plan without an explicit owner request, this rule takes precedence.
 
 ## Scope and enforcement
 
@@ -190,7 +202,12 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 ## Required testing
 
-Every bug fix and behavior change must begin with a failing regression test that fails for the intended reason.
+For behavior that can reasonably be verified at an automated executable
+boundary, bug fixes and behavior changes must begin with a failing regression
+test that fails for the intended reason. Runtime-only RimWorld or Unity
+behavior may instead use a documented targeted reproduction before the fix and
+manual verification afterward. Do not introduce production seams or
+source-text tests solely to satisfy this requirement.
 
 Cache tests must prove, where applicable:
 
@@ -215,7 +232,7 @@ Tests must assert observable behavior. Source-text tests are allowed only when n
 A change is not complete until all applicable items are true:
 
 - New cache dependencies and teardown behavior are documented beside the cache.
-- Regression tests were observed failing before the production fix.
+- Applicable regression tests were observed failing before the production fix. Runtime-only behavior has documented reproduction and verification results.
 - Relevant focused tests pass.
 - The complete repository test suite passes.
 - The repository builds with zero warnings and zero errors.

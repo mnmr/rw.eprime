@@ -501,8 +501,28 @@ namespace QualityJobs
             entry.finishBill = null;
         }
 
-        public static void CompleteDispatch(QualityJobsStore store, WorkItemEntry entry)
+        public static void CompleteDispatch(QualityJobsStore store, WorkItemEntry entry,
+            bool retry)
         {
+            Bill_ProductionWithUft? source = entry.sourceBill;
+            if (source != null)
+            {
+                int before = source.repeatCount;
+                SourceBillCompletion completion = BillLifecyclePolicy.CompleteSource(
+                    before,
+                    sourceAvailable: !source.DeletedOrDereferenced,
+                    repeatCountMode: source.repeatMode == BillRepeatModeDefOf.RepeatCount,
+                    aliasesFinishBill: ReferenceEquals(source, entry.finishBill),
+                    retry);
+                if (completion.RepeatCount != before)
+                    source.repeatCount = completion.RepeatCount;
+                if (completion.NotifyCompletion
+                    && source.billStack?.billGiver is Thing giver)
+                {
+                    Messages.Message("MessageBillComplete".Translate(source.LabelCap),
+                        giver, MessageTypeDefOf.TaskCompletion);
+                }
+            }
             DeleteFinishBill(store, entry);
             store.RemoveEntry(entry);
         }
@@ -515,6 +535,8 @@ namespace QualityJobs
         {
             Bill_ProductionWithUft? bill = entry.finishBill;
             if (bill == null) return;
+            if (!BillLifecyclePolicy.CanDeleteFinishBill(
+                    ReferenceEquals(bill, entry.sourceBill))) return;
             string id = BillIds.IdOf(bill);
             if (!bill.DeletedOrDereferenced)
                 bill.billStack?.Delete(bill);

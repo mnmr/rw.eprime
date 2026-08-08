@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>1.0.1</modVersion>
+  <modVersion>1.0.3</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -28,9 +28,9 @@ Crafting:
 - Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
 
 Construction:
-- Opt in per building via the "Quality job" gizmo on any quality blueprint or frame, or globally for all quality buildings from mod settings.
+- Opt in per building via the "Quality Job" button on any quality blueprint or frame, or globally for all quality buildings from mod settings.
 - Per-build conditions (minimum skill, require inspiration, require production specialist, retry-until quality level reached) with a live quality-odds preview for your configuration and current best builder.
-- Target quality: builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a quality job).
+- Target quality: builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a Quality Job).
 - Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
 
 Worth Knowing:

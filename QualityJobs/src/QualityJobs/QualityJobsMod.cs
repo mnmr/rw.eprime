@@ -164,6 +164,7 @@ namespace QualityJobs
                 {
                     Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref Settings.defaultManageNewBills);
                 }
+                WrTips.Key("QJ_SettingsManageNewBillsTip").Region(leftRow);
 
                 // Right: manage new construction (dual-pattern).
                 if (activeStore != null)
@@ -177,6 +178,7 @@ namespace QualityJobs
                 {
                     Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref Settings.defaultManageNewConstruction);
                 }
+                WrTips.Key("QJ_SettingsManageNewConstructionTip").Region(rightRow);
 
                 y += CheckboxH + RowGap;
             }
@@ -198,6 +200,7 @@ namespace QualityJobs
                 {
                     Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref Settings.defaultRequireInspired);
                 }
+                WrTips.Key("QJ_RequireInspiredTip").Region(leftRow);
 
                 // Right: construction require inspired.
                 if (activeStore != null)
@@ -211,6 +214,7 @@ namespace QualityJobs
                 {
                     Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref Settings.defaultConstructionRequireInspired);
                 }
+                WrTips.Key("QJ_RequireInspiredTip").Region(rightRow);
 
                 y += CheckboxH + RowGap;
             }
@@ -234,6 +238,7 @@ namespace QualityJobs
                     {
                         Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultRequireSpecialist);
                     }
+                    WrTips.Key("QJ_RequireSpecialistTip").Region(leftRow);
 
                     // Right: construction require specialist.
                     if (activeStore != null)
@@ -247,6 +252,7 @@ namespace QualityJobs
                     {
                         Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref Settings.defaultConstructionRequireSpecialist);
                     }
+                    WrTips.Key("QJ_RequireSpecialistTip").Region(rightRow);
                 }
                 // else: both rows are blank — identical consumed height = CheckboxH + RowGap.
                 y += CheckboxH + RowGap;
@@ -314,6 +320,8 @@ namespace QualityJobs
                 int newLeftSkill = DrawSliderRow(leftX, y, colW,
                     SettingsLabels.MinSkillLabel!, leftSkill, 0f, 20f);
                 GUI.color = rowColor;
+                WrTips.Key("QJ_SettingsFinisherSkillTip")
+                    .Region(new Rect(leftX, y, colW, SliderH));
                 if (newLeftSkill != leftSkill)
                 {
                     if (activeStore != null)
@@ -334,6 +342,8 @@ namespace QualityJobs
                 int newRightSkill = DrawSliderRow(rightX, y, colW,
                     SettingsLabels.ConstructionMinSkillLabel!, rightSkill, 0f, 20f);
                 GUI.color = rowColor;
+                WrTips.Key("QJ_SettingsFinisherSkillTip")
+                    .Region(new Rect(rightX, y, colW, SliderH));
                 if (newRightSkill != rightSkill)
                 {
                     if (activeStore != null)
@@ -365,6 +375,8 @@ namespace QualityJobs
                 }
                 int newCap = DrawSliderRow(leftX, y, colW,
                     SettingsLabels.DefaultCapLabel!, capVal, 0f, 50f);
+                WrTips.Key("QJ_SettingsDefaultCapTip")
+                    .Region(new Rect(leftX, y, colW, SliderH));
                 if (newCap != capVal)
                 {
                     if (activeStore != null)

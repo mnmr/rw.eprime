@@ -95,6 +95,34 @@ namespace QualityJobs
             store.shareUnfinishedWork = value;
         }
 
+        /// Resolves the first-install migration for bills that were explicitly
+        /// quarantined before play began. Closing the dialog is the safe decline
+        /// path: bills remain unmanaged while unfinished-work sharing continues.
+        [SyncMethod]
+        public static void ResolveExistingBillMigration(bool enableQualityJobs)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.pendingExistingBillMigrationIds.Count == 0)
+                return;
+
+            ExistingBillMigrationConfig config =
+                ExistingBillMigrationPolicy.ConfigurationFor(enableQualityJobs);
+            List<string> pending = store.pendingExistingBillMigrationIds;
+            for (int i = 0; i < pending.Count; i++)
+            {
+                string id = pending[i];
+                store.billManaged[id] = config.Managed;
+                store.billAutoBest[id] = config.AutoBest;
+                store.billRequireInspired[id] = config.RequireInspired;
+                store.billRequireSpecialist[id] = config.RequireSpecialist;
+                store.billTargetQuality[id] = config.TargetQuality;
+            }
+
+            pending.Clear();
+            store.existingBillMigrationVersion =
+                QualityJobsStore.CurrentExistingBillMigrationVersion;
+        }
+
         // ---- Per-save bill default setters (dual-pattern) -----------------------
 
         [SyncMethod]

@@ -29,7 +29,7 @@ master crafter do the final touch — this mod automates the entire loop.
 
 **Construction**
 
-- Per-building opt-in via the "Quality job" gizmo on quality blueprints and
+- Per-building opt-in via the "Quality Job" button on quality blueprints and
   frames. Enablement is implicit: set any option and the build is managed; the
   Clear button resets it. Managed builds are marked with a sparkle overlay.
 - Managed frames pause at 100% work until a builder meets your conditions,

@@ -18,7 +18,7 @@ namespace QualityJobs.Patches
     ///
     /// Multi-select (Fix 5): Command.GroupsWith (Command.cs:275) merges commands
     /// with matching hotKey+Label+icon+groupKey. All our commands share label
-    /// "Quality job" and the same icon, so they group and one click opens a dialog
+    /// "Quality Job" and the same icon, so they group and one click opens a dialog
     /// that captures all selected eligible things at open time.
     public static class ConstructionGizmos
     {

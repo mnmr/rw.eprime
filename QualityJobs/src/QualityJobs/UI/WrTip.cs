@@ -6,46 +6,44 @@ using Verse;
 
 namespace QualityJobs.UI
 {
-    /// Marks this mod's deferred tooltip getters so Patch_ActiveTip can
-    /// recognize them by delegate target without invoking foreign getters.
-    internal interface IDeferredTipSource
-    {
-    }
-
     /// A lazily gathered tooltip rendered through the StructuredTip pipeline,
     /// so it gets the same inner padding as every structured tip. Text
-    /// gathers on the first hovered pass and freezes while the pointer stays
+    /// gathers when the hover delay opens and freezes while the pointer stays
     /// (Pinned: kept until Reset; PerSession: leave and re-hover to regather).
     /// (Ported from WorkRoles; keep in lockstep.)
-    internal sealed class WrTip
+    internal sealed class WrTip : IStructuredTipSource
     {
         private readonly string stableKey;
-        private readonly int uniqueId;
         private readonly Func<string> gather;
         private readonly TipRefresh refresh;
         private string? text;
         private int lastFrame;
         private StructuredTip? structured;
 
-        private WrTip(string stableKey, int uniqueId, Func<string> gather, TipRefresh refresh)
+        private WrTip(string stableKey, Func<string> gather, TipRefresh refresh)
         {
             this.stableKey = stableKey;
-            this.uniqueId = uniqueId;
             this.gather = gather;
             this.refresh = refresh;
         }
 
         internal static WrTip Pinned(string stableKey, Func<string> gather)
-            => new WrTip(stableKey, stableKey.GetHashCode(), gather, TipRefresh.Pinned);
+            => new WrTip(stableKey, gather, TipRefresh.Pinned);
 
         internal static WrTip PerSession(string stableKey, int uniqueId, Func<string> gather)
-            => new WrTip(stableKey, uniqueId, gather, TipRefresh.PerSession);
+            => new WrTip(stableKey + ":" + uniqueId, gather, TipRefresh.PerSession);
 
-        /// Call while drawing the owning control; gathers and registers only
-        /// when hovered. No per-pass allocation once the session text exists.
+        /// Call while drawing the owning control; the presenter gathers only
+        /// when the hover delay opens. The steady offer path does not allocate.
         internal void Region(Rect rect)
         {
-            if (!Mouse.IsOver(rect)) return;
+            StructuredTipPresenter.TipRegion(rect, this);
+        }
+
+        string IStructuredTipSource.StableKey => stableKey;
+
+        StructuredTip? IStructuredTipSource.Resolve()
+        {
             int frame = Time.frameCount;
             if (TipGatherPolicy.ShouldGather(refresh, text != null, frame, lastFrame))
             {
@@ -53,19 +51,14 @@ namespace QualityJobs.UI
                 structured = null;
             }
             lastFrame = frame;
-            if (text!.Length == 0) return;
-            // Rebuilt after a registry epoch change (teardown cleared the
-            // model registry) so the padded rendering survives reopen.
-            if (structured == null || structured.RegistryEpoch
-                    != Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch)
+            if (text!.Length == 0) return null;
+            if (structured == null)
             {
                 var model = new TipModel();
                 model.AddSection().Text(text);
                 structured = new StructuredTip(stableKey, model);
             }
-            structured.Activate();
-            TooltipHandler.TipRegion(rect,
-                new TipSignal(structured.PlainText, uniqueId));
+            return structured;
         }
 
         /// Drops gathered text so the next hover regathers (language change).
@@ -125,6 +118,7 @@ namespace QualityJobs.UI
             int current = UiVersion.Current;
             if (observedUiVersion == current) return;
             observedUiVersion = current;
+            StructuredTipPresenter.Reset();
             plain.Clear();
             withArg.Clear();
         }

@@ -39,7 +39,7 @@ namespace QualityJobs.UI
     ///
     ///   inRect
     ///   ┌─────────────────────────────────────────────────────────┐
-    ///   │  Title "Quality job"  (GameFont.Medium)                  │
+    ///   │  Title "Quality Job"  (GameFont.Medium)                  │
     ///   │  ───────────────────────────────────────────────────     │
     ///   │  bodyRect (inRect minus title+gap)                       │
     ///   │  ┌──────────────────────┐  ┌──────────────────────────┐ │
