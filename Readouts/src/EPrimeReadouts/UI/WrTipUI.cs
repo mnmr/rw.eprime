@@ -5,14 +5,14 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// Renders TipModels inside vanilla tooltip rects (see Patch_ActiveTip):
+    /// Renders TipModels inside this mod's owned tooltip windows:
     /// title + right-aligned badge, dim section headers, per-section aligned
     /// fact/action columns, unwrapped signal tables, wrapped prose spans,
     /// pixel-snapped separators. All text measurement happens once per model
     /// (cached on it); Draw only replays positioned primitives.
     public static class WrTipUI
     {
-        private const float Pad = 4f;          // vanilla DrawInner contract
+        private const float Pad = 4f;          // tooltip frame inset
         private const float ColGap = 10f;      // label column -> value column
         private const float BadgeGap = 12f;    // title -> right-aligned badge
         private const float TitleGap = 4f;     // title line -> first section
@@ -48,7 +48,7 @@ namespace EPrimeReadouts.UI
             public readonly List<Cmd> Cmds = new List<Cmd>();
         }
 
-        /// Full tip rect size (content + vanilla 4f padding all around).
+        /// Full tip rect size (content plus the complete frame inset).
         public static Vector2 Measure(TipModel model, float maxWidth) =>
             Ensure(model, maxWidth).Size;
 
@@ -94,15 +94,17 @@ namespace EPrimeReadouts.UI
                 return cached;
             var geo = new Geometry { MaxWidth = maxWidth, UiVersion = uiVersion };
             var oldFont = Text.Font;
+            bool oldWordWrap = Text.WordWrap;
             Text.Font = GameFont.Small;
+            Text.WordWrap = true;
             float frame;
             float contentW;
             float contentH;
             try
             {
                 frame = Pad + model.Padding;
-                float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
-                contentW = Mathf.Min(NaturalWidth(model), contentMax);
+                float contentMax = Mathf.Min(maxWidth, MaxContentWidth);
+                contentW = TipLayoutPolicy.ContentWidth(NaturalWidth(model), contentMax);
                 contentH = Compose(model, contentW, geo);
                 // Shape balance: wide-and-short tips narrow toward the √-area
                 // target and recompose once; both passes sit inside this
@@ -118,9 +120,12 @@ namespace EPrimeReadouts.UI
             }
             finally
             {
+                Text.WordWrap = oldWordWrap;
                 Text.Font = oldFont;
             }
-            geo.Size = new Vector2(Mathf.Ceil(contentW + frame * 2f), Mathf.Ceil(contentH + frame * 2f));
+            geo.Size = new Vector2(
+                Mathf.Ceil(TipLayoutPolicy.FramedExtent(contentW, frame)),
+                Mathf.Ceil(TipLayoutPolicy.FramedExtent(contentH, frame)));
             model.RenderCache = geo;
             return geo;
         }
@@ -163,6 +168,8 @@ namespace EPrimeReadouts.UI
                     w = Mathf.Max(w, tableW);
                 }
             }
+            if (TrySingleFactGridLayout(model, out _, out TipColumnLayout shared))
+                w = Mathf.Max(w, shared.TotalWidth);
             return Mathf.Max(w, 24f);
         }
 
@@ -194,6 +201,8 @@ namespace EPrimeReadouts.UI
                     w = Mathf.Max(w, tableW);
                 }
             }
+            if (TrySingleFactGridLayout(model, out _, out TipColumnLayout shared))
+                w = Mathf.Max(w, shared.TotalWidth);
             return w;
         }
 
@@ -251,6 +260,37 @@ namespace EPrimeReadouts.UI
             return w;
         }
 
+        private static bool TrySingleFactGridLayout(
+            TipModel model, out TipFactGridRow singleGrid,
+            out TipColumnLayout layout)
+        {
+            singleGrid = null;
+            layout = default(TipColumnLayout);
+            foreach (var section in model.Sections)
+                foreach (var row in section.Rows)
+                    if (row is TipFactGridRow grid && grid.Labels.Count > 0)
+                    {
+                        if (singleGrid != null || ColumnGrid.ColumnCount(
+                                grid.Labels.Count, grid.MaxRowsPerColumn) != 1)
+                        {
+                            singleGrid = null;
+                            return false;
+                        }
+                        singleGrid = grid;
+                    }
+            if (singleGrid == null) return false;
+
+            FactGridColumnWidths(singleGrid, 0,
+                out float rowLabelW, out float rowValueW);
+            float titleW = model.Title.NullOrEmpty()
+                ? 0f : WrText.FitWidth(model.Title);
+            float badgeW = model.Badge.NullOrEmpty()
+                ? 0f : WrText.FitWidth(model.Badge);
+            layout = TipLayoutPolicy.SharedColumns(
+                titleW, badgeW, rowLabelW, rowValueW, BadgeGap);
+            return true;
+        }
+
         /// Shared label/token column across the whole model: fact and action
         /// sections align as one table.
         private static float LabelColumnWidth(TipModel model)
@@ -276,6 +316,17 @@ namespace EPrimeReadouts.UI
         {
             float lineH = Text.LineHeightOf(GameFont.Small);
             float y = 0f;
+            bool hasSharedGrid = TrySingleFactGridLayout(
+                model, out TipFactGridRow sharedGrid,
+                out TipColumnLayout sharedLayout);
+            float sharedLabelW = 0f;
+            float sharedValueX = 0f;
+            if (hasSharedGrid)
+            {
+                sharedLabelW = sharedLayout.LabelWidth
+                    + Mathf.Max(0f, contentW - sharedLayout.TotalWidth);
+                sharedValueX = sharedLabelW + BadgeGap;
+            }
 
             if (!model.Title.NullOrEmpty())
             {
@@ -283,16 +334,21 @@ namespace EPrimeReadouts.UI
                 geo.Cmds.Add(new Cmd
                 {
                     Rect = new Rect(0f, y,
-                        Mathf.Max(0f, contentW - (badgeW > 0f ? badgeW + BadgeGap : 0f)), lineH),
+                        hasSharedGrid ? sharedLabelW : Mathf.Max(0f,
+                            contentW - (badgeW > 0f ? badgeW + BadgeGap : 0f)), lineH),
                     Color = Color.white,
                     Text = model.Title,
                     NoWrap = true,
                 });
                 if (badgeW > 0f)
                 {
+                    float badgeX = hasSharedGrid
+                        ? TipLayoutPolicy.RightAlignedTextX(
+                            sharedValueX, sharedLayout.ValueWidth, badgeW)
+                        : contentW - badgeW;
                     geo.Cmds.Add(new Cmd
                     {
-                        Rect = new Rect(contentW - badgeW, y, badgeW, lineH),
+                        Rect = new Rect(badgeX, y, badgeW, lineH),
                         Color = model.BadgeColor,
                         Text = model.Badge,
                         NoWrap = true,
@@ -441,6 +497,15 @@ namespace EPrimeReadouts.UI
                             {
                                 FactGridColumnWidths(grid, c,
                                     out float gLabelW, out float gValueW);
+                                float gridGap = ColGap;
+                                if (hasSharedGrid && gridCols == 1
+                                    && ReferenceEquals(grid, sharedGrid))
+                                {
+                                    gLabelW = sharedLabelW;
+                                    gValueW = sharedLayout.ValueWidth;
+                                    gridGap = BadgeGap;
+                                }
+                                float gridValueX = gx + gLabelW + gridGap;
                                 int start = c * grid.MaxRowsPerColumn;
                                 int end = Mathf.Min(start + grid.MaxRowsPerColumn, n);
                                 for (int i = start; i < end; i++)
@@ -453,16 +518,19 @@ namespace EPrimeReadouts.UI
                                         Text = grid.Labels[i],
                                         NoWrap = true,
                                     });
+                                    float textW = WrText.FitWidth(grid.Values[i]);
                                     geo.Cmds.Add(new Cmd
                                     {
-                                        Rect = new Rect(gx + gLabelW + ColGap, ry,
-                                            gValueW, lineH),
+                                        Rect = new Rect(
+                                            TipLayoutPolicy.RightAlignedTextX(
+                                                gridValueX, gValueW, textW),
+                                            ry, textW, lineH),
                                         Color = Color.white,
                                         Text = grid.Values[i],
                                         NoWrap = true,
                                     });
                                 }
-                                gx += gLabelW + ColGap + gValueW + FactGridColGap;
+                                gx += gLabelW + gridGap + gValueW + FactGridColGap;
                             }
                             // Column-major: the first column always holds the
                             // most rows, so it alone sets the grid's height.

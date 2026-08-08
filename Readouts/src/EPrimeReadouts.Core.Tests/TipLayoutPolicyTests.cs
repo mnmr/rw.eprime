@@ -1,0 +1,40 @@
+using EPrimeReadouts.Core;
+
+namespace EPrimeReadouts.Core.Tests;
+
+public class TipLayoutPolicyTests
+{
+    [Test]
+    public async Task ContentCapIsAppliedBeforeTheSymmetricFrame()
+    {
+        float withinCap = TipLayoutPolicy.ContentWidth(792f, 800f);
+        float capped = TipLayoutPolicy.ContentWidth(900f, 800f);
+
+        await Assert.That(TipLayoutPolicy.FramedExtent(withinCap, 8f))
+            .IsEqualTo(808f);
+        await Assert.That(TipLayoutPolicy.FramedExtent(capped, 8f))
+            .IsEqualTo(816f);
+    }
+
+    [Test]
+    public async Task SingleColumnPoolHeaderAndRowsShareColumnWidths()
+    {
+        TipColumnLayout columns = TipLayoutPolicy.SharedColumns(
+            headerLabelWidth: 96f,
+            headerValueWidth: 18f,
+            rowLabelWidth: 64f,
+            rowValueWidth: 24f,
+            gap: 12f);
+
+        await Assert.That(columns.LabelWidth).IsEqualTo(96f);
+        await Assert.That(columns.ValueWidth).IsEqualTo(24f);
+        await Assert.That(columns.ValueX).IsEqualTo(108f);
+        await Assert.That(columns.TotalWidth).IsEqualTo(132f);
+        await Assert.That(TipLayoutPolicy.RightAlignedTextX(
+            columns.ValueX, columns.ValueWidth, textWidth: 18f))
+            .IsEqualTo(114f);
+        await Assert.That(TipLayoutPolicy.RightAlignedTextX(
+            columns.ValueX, columns.ValueWidth, textWidth: 12f))
+            .IsEqualTo(120f);
+    }
+}

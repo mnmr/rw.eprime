@@ -6,46 +6,34 @@ using Verse;
 
 namespace EPrimeReadouts
 {
-    /// A producer-owned structured tooltip. PlainText is computed exactly once
-    /// and remains the vanilla TipSignal fallback; activation runs from the
-    /// displayed tooltip's text getter and registers the model for rendering.
+    /// A producer-owned structured tooltip rendered by StructuredTipPresenter.
     internal sealed class StructuredTip
     {
         internal StructuredTip(string stableKey, TipModel model)
         {
             StableKey = stableKey ?? throw new ArgumentNullException(nameof(stableKey));
             Model = model ?? throw new ArgumentNullException(nameof(model));
-            PlainText = model.ToPlainText();
-            RegistryEpoch = Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch;
         }
 
         internal string StableKey { get; }
         internal TipModel Model { get; }
-        internal string PlainText { get; }
-        internal int RegistryEpoch { get; }
-
-        internal string Activate()
-        {
-            Patches.Patch_ActiveTip_TipRect.ActivateDisplayed(this);
-            return PlainText;
-        }
     }
 
     /// Structured tooltip content: a title/badge line plus sections of rows.
-    /// ToPlainText() is both the TipSignal text (failure-safe fallback) and the
-    /// draw-registry key (see Patch_ActiveTip); WrTipUI renders the model.
+    /// ToPlainText() provides a deterministic plain-text representation for
+    /// exports and diagnostics; WrTipUI renders the model.
     public sealed class TipModel
     {
         public string Title;
         public string Badge;
         public Color BadgeColor = Color.white;
-        /// Extra padding inside the tooltip, around all content (on top of the
-        /// vanilla 4px frame).
-        public float Padding = 8f;
+        /// Extra inset beyond the tooltip renderer's 4px frame inset, for a
+        /// total content inset of 8px.
+        public float Padding = 4f;
         public List<TipSection> Sections = new List<TipSection>();
 
-        // Cache contract: Owner = this immutable TipModel; Key = maximum width
-        // plus UiVersion; Value = positioned immutable draw geometry;
+        // Cache contract: Owner = this immutable TipModel; Key = maximum
+        // content width plus UiVersion; Value = positioned immutable draw geometry;
         // Dependencies = model content, font metrics and width; Refresh =
         // immediate on width/UI revision; Equality = equal key preserves object
         // identity; Teardown = releasing the TipModel releases the geometry.

@@ -70,19 +70,6 @@ public class RuntimeCacheArchitectureTests
     }
 
     [Test]
-    public async Task ActiveTipPrefixDoesNotPerformReflection()
-    {
-        string source = Source("Patches", "Patch_ActiveTip.cs");
-        string prefix = Method(source, "public static bool Prefix(Rect bgRect, string label)");
-        string rectPrefix = Method(source,
-            "public static bool Prefix(TipSignal ___signal, ref Rect __result)");
-
-        await Assert.That(prefix).DoesNotContain("AccessTools.Field");
-        await Assert.That(prefix).DoesNotContain("TrimEnd(");
-        await Assert.That(rectPrefix).DoesNotContain("TrimEnd(");
-    }
-
-    [Test]
     public async Task SteadyDrawMethodsConsumeResolvedRowsOnly()
     {
         string cells = Method(Source("UI", "CellRenderer.cs"),
@@ -174,26 +161,21 @@ public class RuntimeCacheArchitectureTests
     {
         string source = Source("UI", "IconTips.cs");
         string hover = Method(source, "public static void Tip(");
-        string gather = Method(source, "private string Gather()");
-        string patch = Source("Patches", "Patch_ActiveTip.cs");
+        string resolve = Method(source,
+            "StructuredTip IStructuredTipSource.Resolve()");
+        string presenterSource = Source("UI", "StructuredTipPresenter.cs");
+        string present = Method(presenterSource, "private static void Present(");
 
         // Hovering must cost a dictionary read plus field writes: no model
-        // building, cache probing, or registry activation until the tooltip
-        // actually renders after its hover delay.
+        // building or cache probing until the tooltip opens after its delay.
         await Assert.That(hover).DoesNotContain("Build(");
         await Assert.That(hover).DoesNotContain("cache.Get");
-        await Assert.That(hover).DoesNotContain("Activate");
-        await Assert.That(hover).Contains(".Getter");
+        await Assert.That(hover).Contains("StructuredTipPresenter.TipRegion");
 
-        // The display-time getter freezes its gathered tip behind a
-        // frame-continuity check standing in for a "tip closed" callback.
-        await Assert.That(gather).Contains("TipContinuity.IsBroken");
-        await Assert.That(gather).Contains("Frozen");
-
-        // Closed tips must drop their registration so vanilla tooltips stop
-        // paying the registry probe.
-        await Assert.That(Method(patch, "public static void Postfix()"))
-            .Contains("RetireStaleDisplayed");
+        await Assert.That(resolve).Contains("cache.Get");
+        await Assert.That(present).Contains(
+            "state == TooltipDisplayState.Opened");
+        await Assert.That(present).Contains("source.Resolve()");
     }
 
     [Test]

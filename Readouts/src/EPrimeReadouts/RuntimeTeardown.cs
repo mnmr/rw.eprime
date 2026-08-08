@@ -22,7 +22,6 @@ namespace EPrimeReadouts
             UiText.Reset();
             EprStyle.Reset();
             EprDrag.Cancel();
-            Patch_ActiveTip_TipRect.Clear();
             IconScaleCache.Reset();
             ReadoutTextures.ResetOwned();
         }

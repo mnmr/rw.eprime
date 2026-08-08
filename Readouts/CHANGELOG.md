@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.0.7 — 2026-08-08
+
+- Fixed: Resource/pool tooltips were being clipped.
+- Fixed: Resource counts are now properly right-aligned in pool tooltips.
+
 ## 1.0.6 — 2026-08-05
 
 - Added: Ability to select resources to highlight them on the map. Shift-click to add/remove from current selection.
