@@ -18,7 +18,7 @@ namespace WorkRoles.UI
 
         // Unified role tip (TreeRow context), injected by MainTabWindow: the
         // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
-        internal System.Func<Role, string> roleTip;
+        internal System.Func<Role, StructuredTip> roleTip;
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
@@ -365,7 +365,7 @@ namespace WorkRoles.UI
                 else if (Mouse.IsOver(row) && !RoleDrag.Active) Widgets.DrawHighlight(row);
 
                 if (Mouse.IsOver(row) && publishedRow.Tooltip != null)
-                    TooltipHandler.TipRegion(row, publishedRow.Tooltip);
+                    StructuredTipPresenter.TipRegion(row, publishedRow.Tooltip);
 
                 var swatch = new Rect(Mathf.Round(row.x) + 6f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
                 Widgets.DrawBoxSolid(swatch, publishedRow.HasCustomColor
@@ -923,7 +923,7 @@ namespace WorkRoles.UI
 
             // Blocker: the role's jobs become vetoes.
             var blockRect = new Rect(rect.x, y, rect.width, rowH);
-            TooltipHandler.TipRegion(blockRect, header.BlockerTip);
+            StructuredTipPresenter.TipRegion(blockRect, header.BlockerTip);
             bool blocker = header.Blocker;
             Widgets.CheckboxLabeled(blockRect, header.BlockerLabel, ref blocker);
             if (blocker != header.Blocker)
@@ -961,77 +961,10 @@ namespace WorkRoles.UI
 
         }
 
-        // The input-event path uses the engine's configured scaling so the
-        // initial Custom value exactly matches the Auto value just displayed.
-        private static readonly RoleView holdersProbe = new RoleView();
-
-        private int AutoRequiredTotal(Role role)
-        {
-            holdersProbe.RequiredTotal = role.ResolvedAutoRequiredTotal();
-            RoleStore store = RoleStore.Current;
-            var scaling = new RecommendationScaling(
-                store?.recommendationTuning
-                    ?? RecommendationsTuningOptions.Default);
-            return scaling.Requirement(
-                holdersProbe, listedPawns?.Invoke().Count ?? 0).RequiredTotal;
-        }
-
         private const float TuningHeaderRowH = 24f;
-        private const float TuningRowH = 24f;
-        private static readonly Color EditorLabelText = new Color(0.85f, 0.85f, 0.85f);
-
-        /// Collapsed-header summary: scale name plus the required-total range
-        /// across the bands, e.g. "Mining (2-5)" (scale-less roles read
-        /// Never). Training roles read "Controlled by <target>" and subsets
-        /// of auto-assigned roles "In auto-assigned role <parent>" instead,
-        /// both with the range appended when a non-Never scale applies.
-        private string HolderSummary(Role role)
-        {
-            var store = RoleStore.Current;
-            var scale = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
-            if (scale == null) return "";
-            int lo = int.MaxValue, hi = int.MinValue;
-            foreach (int value in scale.RequiredTotals)
-            {
-                lo = Mathf.Min(lo, value);
-                hi = Mathf.Max(hi, value);
-            }
-            string range = $" ({lo}-{hi})";
-            var target = ScaleEditorUI.ControllingTarget(store, role.id);
-            if (target != null)
-            {
-                string label = "WR_ScaleControlledBy".Translate(target.label).ToString();
-                return scale.IsNever ? label : label + range;
-            }
-            var autoParent = store.roles.FirstOrDefault(a =>
-                a.autoAssign && a.enabled && a.CoversOrMatches(role));
-            if (autoParent != null)
-            {
-                string label = "WR_ScaleInAutoRole".Translate(autoParent.label).ToString();
-                return scale.IsNever ? label : label + range;
-            }
-            return scale.Name + range;
-        }
-
-        // Hidden entirely for roles excluded from ordinary recommendations (a
-        // holder target would be inert and misleading); hunting demand is
-        // driven by prey and weapons, not colony size, so hunters hide too.
-        private bool TuningShown(Role role)
-            => !role.autoAssign && !role.blocker && !role.HasRules
-                && !RecsAdapter.ProvidesHunting(role);
-
-        private float TuningHeight(Role role, float width)
-        {
-            if (!TuningShown(role)) return 0f;
-            float h = 4f + TuningHeaderRowH;
-            if (!tuningExpanded.Contains(role.id)) return h;
-            return h + 4f + ScaleEditorUI.HeightFor(role, RoleStore.Current, width);
-        }
 
         /// "Recommendations Tuning": group header (colonist-tab style, arrow on
-        /// the left, summary right-aligned while collapsed), then intro, the
-        /// mode toggle row (current mode's help beside the button) and, in
-        /// Custom mode, one row per picker with its help text.
+        /// the left and the current scale summary right-aligned while collapsed).
         private void DrawTuningSection(float x, float y, float width,
             RoleEditorSnapshot model)
         {
@@ -1069,103 +1002,6 @@ namespace WorkRoles.UI
             y += 4f;
             ScaleEditorUI.Draw(new Rect(x, y, width,
                 header.Scale?.Height ?? 0f), header.Scale);
-        }
-
-        /// Label + help columns of a Custom picker row; the caller fills the
-        /// returned button rect between them.
-        private Rect DrawCustomRowFrame(float x, ref float y, float width,
-            string labelKey, string help, float height)
-        {
-            Text.Font = GameFont.Small;
-            float labelWidth = editorState.TuningLabelWidth;
-            float buttonWidth = editorState.TuningButtonWidth;
-            float descX = labelWidth + buttonWidth + 8f;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = EditorLabelText;
-            Widgets.Label(new Rect(x, y, labelWidth, TuningRowH), labelKey.Translate());
-            GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x + descX, y, width - descX, height), help);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            var btnRect = new Rect(x + labelWidth, y, buttonWidth, TuningRowH - 2f);
-            y += height;
-            return btnRect;
-        }
-
-        /// Auto/Never/Custom toggle spanning the label+button columns, with the
-        /// current mode's help text beside it (aligned with the picker rows).
-        private void DrawModeRow(float x, ref float y, float width, Role role,
-            RoleTuningLayout layout)
-        {
-            Text.Font = GameFont.Small;
-            float labelWidth = editorState.TuningLabelWidth;
-            float buttonWidth = editorState.TuningButtonWidth;
-            float descX = labelWidth + buttonWidth + 8f;
-
-            // Auto surfaces all three resolved values; Custom keeps the bare
-            // mode word (the picker rows below carry the numbers).
-            string shown = role.holderMode == RoleHolderMode.Auto
-                ? HolderSummary(role)
-                : role.holderMode == RoleHolderMode.Never
-                    ? "WR_HoldersNever".Translate().ToString()
-                    : "WR_HoldersCustom".Translate().ToString();
-            var btnRect = new Rect(x, y, labelWidth + buttonWidth, TuningRowH - 2f);
-            TooltipHandler.TipRegion(btnRect, editorState.HoldersTip.Activate());
-            if (Widgets.ButtonText(btnRect, shown))
-            {
-                var next = RoleHolderPolicy.Next(role.holderMode);
-                int initialRequiredTotal = next == RoleHolderMode.Custom
-                    ? AutoRequiredTotal(role) : 0;
-                RoleCommands.SetRoleHolderMode(
-                    role.id, (int)next, initialRequiredTotal);
-            }
-
-            Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x + descX, y, width - descX,
-                layout.ModeHeight), layout.ModeHelp);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            y += layout.ModeHeight;
-        }
-
-        private static void DrawTrainingWaiversButton(Rect btnRect, Role role)
-        {
-            if (!Widgets.ButtonText(btnRect, role.trainingWaivers.ToString())) return;
-            var options = new List<FloatMenuOption>();
-            for (int n = 0; n <= role.requiredTotal; n++)
-            {
-                int value = n;
-                options.Add(new FloatMenuOption(value.ToString(),
-                    () => RoleCommands.SetRoleTrainingWaivers(role.id, value)));
-            }
-            Find.WindowStack.Add(new FloatMenu(options));
-        }
-
-        private static void DrawHolderRangeButton(Rect btnRect,
-            int current, int colonists, int roleId, bool maximum)
-        {
-            string shown = maximum && current == RoleHolderRange.Uncapped
-                ? "WR_HoldersUncapped".Translate().ToString() : current.ToString();
-            if (!Widgets.ButtonText(btnRect, shown)) return;
-            var options = new List<FloatMenuOption>();
-            int numericMax = maximum
-                ? System.Math.Min(colonists, RoleHolderRange.Uncapped - 1)
-                : colonists;
-            for (int n = 0; n <= numericMax; n++)
-            {
-                int value = n;
-                options.Add(new FloatMenuOption(value.ToString(),
-                    () =>
-                    {
-                        if (maximum) RoleCommands.SetRoleHolderMax(roleId, value);
-                        else RoleCommands.SetRoleRequiredTotal(roleId, value);
-                    }));
-            }
-            if (maximum)
-                options.Add(new FloatMenuOption("WR_HoldersUncapped".Translate(),
-                    () => RoleCommands.SetRoleHolderMax(roleId, RoleHolderRange.Uncapped)));
-            Find.WindowStack.Add(new FloatMenu(options));
         }
 
         /// "Skills used:" with the primary (most frequent) skill white and the
@@ -1350,6 +1186,7 @@ namespace WorkRoles.UI
         {
             if (token == LocationRules.Settlements) return "WR_LocationSettlements".Translate();
             if (token == LocationRules.Caravans) return "WR_LocationCaravans".Translate();
+            if (token == LocationRules.Nowhere) return "WR_LocationNowhere".Translate();
             string id = token.Substring(token.IndexOf(':') + 1);
             var loc = ColonyScope.Locations().FirstOrDefault(l => l.Id == id);
             return loc != null ? LocationItemLabel(loc) : "WR_LocationGone".Translate().ToString();
@@ -1522,8 +1359,9 @@ namespace WorkRoles.UI
                     WrTips.Key("WR_DeadEntryTip").Region(row);
                 if (!missing && Mouse.IsOver(row))
                 {
-                    string skillTip = publishedRow.SkillTip;
-                    if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                    StructuredTip skillTip = publishedRow.SkillTip;
+                    if (skillTip != null)
+                        StructuredTipPresenter.TipRegion(row, skillTip);
                 }
 
                 float btnY = row.y + (RowHeight - IconButton) / 2f;
@@ -1676,8 +1514,9 @@ namespace WorkRoles.UI
                         editorState.ToggleWorkTypeExpanded(node.TypeDefName);
                     if (Mouse.IsOver(row))
                     {
-                        string skillTip = node.SkillTip;
-                        if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                        StructuredTip skillTip = node.SkillTip;
+                        if (skillTip != null)
+                            StructuredTipPresenter.TipRegion(row, skillTip);
                     }
                 }
                 else
@@ -1711,8 +1550,9 @@ namespace WorkRoles.UI
                     GUI.color = Color.white;
                     if (Mouse.IsOver(row))
                     {
-                        string skillTip = node.SkillTip;
-                        if (skillTip != null) TooltipHandler.TipRegion(row, skillTip);
+                        StructuredTip skillTip = node.SkillTip;
+                        if (skillTip != null)
+                            StructuredTipPresenter.TipRegion(row, skillTip);
                     }
                 }
                 Text.Anchor = TextAnchor.UpperLeft;

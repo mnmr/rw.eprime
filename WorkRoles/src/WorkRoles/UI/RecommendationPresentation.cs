@@ -21,7 +21,7 @@ namespace WorkRoles.UI
             var model = new TipModel { Title = role.label };
             if (explanation == null)
             {
-                model.AddSection().Fact("WR_RecTipRecommendation".Translate(),
+                model.AddSection().Fact("WR_RecTipSelection".Translate(),
                     state == Dialog_ChangesPreview.ChipState.Removed
                         ? "WR_ReasonRemoved".Translate()
                         : "WR_AlreadyAssigned".Translate());
@@ -30,19 +30,9 @@ namespace WorkRoles.UI
             }
 
             TipSection facts = model.AddSection();
-            if (!role.autoAssign && !role.blocker)
-            {
-                string need = explanation.RequiredTotal == 1
-                    ? "WR_RecTipNeedOne".Translate(explanation.CoveredTotal)
-                    : explanation.RequiredTotal > 1
-                        ? "WR_RecTipNeedMany".Translate(
-                            explanation.RequiredTotal, explanation.CoveredTotal)
-                        : "WR_RecTipNeedNone".Translate(explanation.CoveredTotal);
-                facts.Fact("WR_RecTipColonyNeed".Translate(), need);
-                if (explanation.ConfiguredMaximum < RoleHolderRange.Uncapped)
-                    facts.Fact("WR_RecTipConfiguredMax".Translate(),
-                        "WR_RecTipMaximum".Translate(explanation.ConfiguredMaximum));
-            }
+            if (explanation.HolderScaleApplies)
+                facts.Fact("WR_RecTipColonyNeed".Translate(),
+                    ColonyNeedText(explanation));
 
             if (explanation.RequiredSkills.Count > 0)
                 facts.Fact("WR_RecTipSkills".Translate(),
@@ -53,8 +43,8 @@ namespace WorkRoles.UI
                     SignalVerdict(skillBuckets, explanation),
                     SkillSignalPresentation.VerdictColor(explanation.SignalBucket));
 
-            facts.Fact("WR_RecTipRecommendation".Translate(),
-                RecommendationDecisionText(store, explanation));
+            facts.Fact("WR_RecTipSelection".Translate(),
+                RecommendationDecisionText(store, role, explanation));
             return new StructuredTip(
                 $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
         }
@@ -63,7 +53,8 @@ namespace WorkRoles.UI
             SkillBucketSnapshot skillBuckets,
             RoleRecommendationExplanation explanation)
         {
-            string verdict = SkillSignalPresentation.BucketLabel(explanation.SignalBucket);
+            string verdict = SkillSignalPresentation.BucketLabel(
+                explanation.SignalBucket);
             SkillBucketSignal bucket = (skillBuckets ?? SkillBucketSnapshot.Empty)
                 .ForSkill(explanation.SignalSkillDefName);
             if (bucket == null) return verdict;
@@ -90,8 +81,13 @@ namespace WorkRoles.UI
 
         private static string RecommendationDecisionText(
             RoleStore store,
+            Role role,
             RoleRecommendationExplanation explanation)
         {
+            string selection = SelectionDecisionText(
+                store, role, explanation);
+            if (selection != null) return selection;
+
             switch (explanation.Decision)
             {
                 case RecommendationDecision.AutoAssigned:
@@ -103,7 +99,10 @@ namespace WorkRoles.UI
                 case RecommendationDecision.Training:
                 {
                     Role target = store?.RoleById(explanation.RelatedRoleId);
-                    return "WR_RecDecisionTraining".Translate(target?.label ?? "?");
+                    return target == null
+                        ? "WR_RecDecisionTrainingUnknown".Translate().ToString()
+                        : "WR_RecDecisionTraining".Translate(
+                            target.label).ToString();
                 }
                 case RecommendationDecision.Hunter:
                     return "WR_RecDecisionHunter".Translate();
@@ -113,8 +112,16 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionRetained".Translate();
                 case RecommendationDecision.ProtectedAssignment:
                     return "WR_RecDecisionProtected".Translate();
-                case RecommendationDecision.HolderModeNever:
+                case RecommendationDecision.ScaleNever:
                     return "WR_RecDecisionNever".Translate();
+                case RecommendationDecision.ControlledByTrainingTarget:
+                {
+                    Role controller = store?.RoleById(explanation.RelatedRoleId);
+                    return controller == null
+                        ? "WR_RecDecisionNever".Translate().ToString()
+                        : "WR_RecDecisionControlledByTraining".Translate(
+                            controller.label).ToString();
+                }
                 case RecommendationDecision.RoleDisabled:
                     return "WR_RecDecisionDisabled".Translate();
                 case RecommendationDecision.RoleUnavailable:
@@ -130,7 +137,10 @@ namespace WorkRoles.UI
                 case RecommendationDecision.CoveredByRecommendedRole:
                 {
                     Role covering = store?.RoleById(explanation.RelatedRoleId);
-                    return "WR_RecDecisionCovered".Translate(covering?.label ?? "?");
+                    return covering == null
+                        ? "WR_RecDecisionCoveredUnknown".Translate().ToString()
+                        : "WR_RecDecisionCovered".Translate(
+                            covering.label).ToString();
                 }
                 case RecommendationDecision.RequiredCoverageFilled:
                     return "WR_RecDecisionCoverageFilled".Translate();
@@ -144,6 +154,95 @@ namespace WorkRoles.UI
                         : "WR_RecDecisionNotSelected".Translate();
             }
         }
+
+        private static string ColonyNeedText(
+            RoleRecommendationExplanation explanation)
+        {
+            string result = explanation.RequiredTotal == 1
+                ? "WR_RecTipAssignmentsOne".Translate().ToString()
+                : "WR_RecTipAssignmentsMany"
+                    .Translate(explanation.RequiredTotal).ToString();
+            if (explanation.TrainingWaivers == 1)
+                result = "WR_RecTipWithWaiverOne".Translate(result).ToString();
+            else if (explanation.TrainingWaivers > 1)
+                result = "WR_RecTipWithWaiversMany"
+                    .Translate(result, explanation.TrainingWaivers).ToString();
+            if (explanation.ConfiguredMaximum < RoleHolderRange.Uncapped)
+                result = "WR_RecTipWithCap"
+                    .Translate(result, explanation.ConfiguredMaximum).ToString();
+            return result;
+        }
+
+        private static string SelectionDecisionText(
+            RoleStore store,
+            Role role,
+            RoleRecommendationExplanation explanation)
+        {
+            switch (explanation.SelectionStage)
+            {
+                case RecommendationSelectionStage.Required:
+                    return HasSelectionSlot(explanation)
+                        ? "WR_RecDecisionDirectSlot".Translate(
+                            explanation.SelectionSlot,
+                            explanation.SelectionSlotCount,
+                            role.label).ToString()
+                        : null;
+                case RecommendationSelectionStage.TrainingWaiver:
+                {
+                    Role target = store?.RoleById(explanation.RelatedRoleId);
+                    if (!HasSelectionSlot(explanation)) return null;
+                    if (target == null)
+                        return "WR_RecDecisionTrainingSlotUnknown".Translate(
+                            explanation.SelectionSlot,
+                            explanation.SelectionSlotCount,
+                            role.label).ToString();
+                    string targetLabel = target.label;
+                    if (explanation.TrainingSkills.Count == 0)
+                        return "WR_RecDecisionTrainingSlotSimple".Translate(
+                            explanation.SelectionSlot,
+                            explanation.SelectionSlotCount,
+                            targetLabel,
+                            role.label).ToString();
+                    string skills = explanation.TrainingSkills
+                        .Select(skill => "WR_RecTrainingSkill".Translate(
+                            SkillLabel(skill.SkillDefName),
+                            skill.PawnLevel).ToString())
+                        .ToCommaList(useAnd: true);
+                    return "WR_RecDecisionTrainingSlot".Translate(
+                        explanation.SelectionSlot,
+                        explanation.SelectionSlotCount,
+                        targetLabel,
+                        role.label,
+                        skills,
+                        explanation.TrainingSkills[0].TargetMinimum).ToString();
+                }
+                case RecommendationSelectionStage.DirectFallback:
+                    return HasSelectionSlot(explanation)
+                        ? "WR_RecDecisionDirectFallbackSlot".Translate(
+                            explanation.SelectionSlot,
+                            explanation.SelectionSlotCount,
+                            role.label).ToString()
+                        : null;
+                case RecommendationSelectionStage.CoverageRepair:
+                    return HasSelectionSlot(explanation)
+                        ? "WR_RecDecisionCoverageRepairSlot".Translate(
+                            explanation.SelectionSlot,
+                            explanation.SelectionSlotCount,
+                            role.label).ToString()
+                        : null;
+                case RecommendationSelectionStage.Surplus:
+                    return explanation.SurplusQualifiedBySignal
+                        ? "WR_RecDecisionSignalSurplus".Translate().ToString()
+                        : "WR_RecDecisionAptitudeSurplus".Translate().ToString();
+                default:
+                    return null;
+            }
+        }
+
+        private static bool HasSelectionSlot(
+            RoleRecommendationExplanation explanation) =>
+            explanation.SelectionSlot > 0
+            && explanation.SelectionSlot <= explanation.SelectionSlotCount;
 
     }
 }

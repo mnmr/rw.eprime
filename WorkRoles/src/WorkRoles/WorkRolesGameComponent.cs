@@ -47,6 +47,8 @@ namespace WorkRoles
                 UI.WrToast.Show("WR_NewWorkDetected".Translate(generated.ToCommaList()),
                     MessageTypeDefOf.NeutralEvent);
 
+            RoleCommands.MigrateLocationTokensOnce();
+
             // Dead entries are visible (dimmed) while editing but scrubbed at
             // rest; older saves carry subset-marker givers that coverage-based
             // nesting no longer needs.

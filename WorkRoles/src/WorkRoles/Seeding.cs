@@ -113,7 +113,7 @@ namespace WorkRoles
             ShowSeedReport(store.roles.Count, assigned, generated, failures);
         }
 
-        /// The invariant "Never" preset (max 0 everywhere) returns on every
+        /// The invariant behavioral presets (Never, Unskilled) return on every
         /// load; ScaleDefs seed as ordinary editable scales, once per save
         /// (knownScaleDefs), so renaming or deleting them sticks. A same-name
         /// player scale wins — the def is only marked known.
@@ -122,7 +122,10 @@ namespace WorkRoles
             var store = RoleStore.Current;
             if (store == null) return;
             if (store.ScaleByName("Never") == null)
-                store.holderScales.Add(HolderScale.Never("Never"));
+                store.holderScales.Add(RoleAssignmentStrategy.Never("Never"));
+            if (store.ScaleByName("Unskilled") == null)
+                store.holderScales.Add(
+                    RoleAssignmentStrategy.Unskilled("Unskilled"));
             foreach (var def in DefDatabase<ScaleDef>.AllDefsListForReading)
             {
                 string name = SeededDefIdentity.ScaleName(def);
@@ -680,21 +683,13 @@ namespace WorkRoles
             return true;
         }
 
-        /// Stored holder fields differ from the def-resolved Auto defaults
-        /// (mode, explicit range flag, the scale reference, or the mirrored
-        /// values themselves).
+        /// The stored holder-scale reference differs from the template.
         private static bool HoldersDrifted(Role role, RoleDef def)
         {
-            if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet)
-                return true;
-            if (!string.Equals(role.holderScaleName ?? "",
-                    SeededDefIdentity.ScaleName(def) ?? "",
-                    System.StringComparison.OrdinalIgnoreCase))
-                return true;
-            RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
-            return role.requiredTotal != defaults.RequiredTotal
-                || role.maxHolders != defaults.Max
-                || role.trainingWaivers != defaults.TrainingWaivers;
+            string expected = SeededDefIdentity.ScaleName(def);
+            if (expected.NullOrEmpty()) expected = "Never";
+            return !string.Equals(role.holderScaleName, expected,
+                System.StringComparison.OrdinalIgnoreCase);
         }
 
         /// Everything Restore Defaults could do right now: recreate missing
@@ -1070,11 +1065,9 @@ namespace WorkRoles
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                     if (def == null || !HoldersDrifted(role, def)) continue;
-                    role.holderMode = RoleHolderMode.Auto;
-                    role.holderRangeSet = false;
                     string scaleName = SeededDefIdentity.ScaleName(def);
                     role.holderScaleName = scaleName.NullOrEmpty()
-                        ? null : scaleName;
+                        ? "Never" : scaleName;
                     // A renamed or deleted seed scale returns from its def so
                     // the restored reference resolves.
                     if (!scaleName.NullOrEmpty()
@@ -1084,12 +1077,6 @@ namespace WorkRoles
                         if (scaleDef != null)
                             store.holderScales.Add(scaleDef.ToScale());
                     }
-                    // Stored fields mirror the resolved defaults so the editor
-                    // shows the def values instead of zeros.
-                    RoleHolderDefaults defaults = RoleAutoDefaults.Resolve(role);
-                    role.requiredTotal = defaults.RequiredTotal;
-                    role.maxHolders = defaults.Max;
-                    role.trainingWaivers = defaults.TrainingWaivers;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 

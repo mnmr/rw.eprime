@@ -16,11 +16,7 @@ public class RoleCopyValuesTests
         await Assert.That(copy.Color).IsEqualTo(source.Color);
         await Assert.That(copy.IconPath).IsEqualTo(source.IconPath);
         await Assert.That(copy.Blocker).IsEqualTo(source.Blocker);
-        await Assert.That(copy.HolderMode).IsEqualTo(source.HolderMode);
-        await Assert.That(copy.HolderRangeSet).IsEqualTo(source.HolderRangeSet);
-        await Assert.That(copy.RequiredTotal).IsEqualTo(source.RequiredTotal);
-        await Assert.That(copy.MaxHolders).IsEqualTo(source.MaxHolders);
-        await Assert.That(copy.TrainingWaivers).IsEqualTo(source.TrainingWaivers);
+        await Assert.That(copy.HolderScaleName).IsEqualTo(source.HolderScaleName);
         await Assert.That(copy.GroupId).IsEqualTo(source.GroupId);
         await Assert.That(copy.ActiveHours).IsEqualTo(source.ActiveHours);
         await Assert.That(copy.TemplateDefName).IsNull();
@@ -96,11 +92,7 @@ public class RoleCopyValuesTests
         TemplateHash = 0xDEADBEEFu,
         AutoAssign = true,
         Blocker = true,
-        HolderMode = RoleHolderMode.Custom,
-        HolderRangeSet = true,
-        RequiredTotal = 2,
-        MaxHolders = 7,
-        TrainingWaivers = 1,
+        HolderScaleName = "Building",
         GroupId = 42,
         ActiveHours = 0x00F0F0,
         LocationTokens = new List<string> { "Settlements", "settlement:17" },

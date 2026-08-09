@@ -56,11 +56,9 @@ public class RepeatChampionPenaltyTests
     public async Task ZeroedPenaltiesKeepChampionshipsClustered()
     {
         RoleView crafter = RecsTestBed.Role(1, "Crafting");
-        crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.RequiredTotal = 1;
+        RecsTestBed.Require(crafter, 1);
         RoleView doctor = RecsTestBed.Role(2, "Doctor");
-        doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.RequiredTotal = 1;
+        RecsTestBed.Require(doctor, 1);
 
         // The ace ties the rival on Medicine, so any nonzero repeat penalty
         // from the Crafting championship would hand Doctor to the rival.

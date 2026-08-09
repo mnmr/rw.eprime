@@ -24,7 +24,8 @@ namespace WorkRoles.Core
         private static bool IsStale(string token, ISet<string> liveLocationIds)
         {
             if (token == LocationRules.Settlements
-                || token == LocationRules.Caravans)
+                || token == LocationRules.Caravans
+                || token == LocationRules.Nowhere)
                 return false;
             int prefixLength;
             if (token != null && token.StartsWith(

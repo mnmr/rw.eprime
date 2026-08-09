@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using UnityEngine;
 using Verse;
@@ -23,14 +22,8 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        /// Auto-mode minimum and the number of minimum slots training roles may satisfy.
-        // Field name is part of the Def XML format; its value is a configured
-        // required total with an included training-waiver count.
-        public ConfiguredHolderRequirement minHolders =
-            new ConfiguredHolderRequirement();
-        public int maxHolders = RoleHolderRange.Uncapped;
-        /// Holder scale name (the invariant name derived from a ScaleDef) driving banded recommendation
-        /// demand; when set it overrides the scalar fields. Empty = none.
+        /// Holder scale name (the invariant name derived from a ScaleDef)
+        /// driving banded recommendation demand. Empty means Never.
         public string holderScale;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
@@ -70,9 +63,6 @@ namespace WorkRoles
             var text = string.Join("\n",
                 defName, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 SeededDefIdentity.GroupIdentity(this), activeHours, string.Join("|", locations),
-                minHolders.RequiredTotal.ToString(CultureInfo.InvariantCulture),
-                minHolders.TrainingWaivers.ToString(CultureInfo.InvariantCulture),
-                maxHolders.ToString(CultureInfo.InvariantCulture),
                 SeededDefIdentity.ScaleIdentity(this),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
@@ -97,8 +87,6 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
-            if (minHolders.TrainingWaivers > minHolders.RequiredTotal)
-                yield return $"minHolders waivers ({minHolders.TrainingWaivers}) exceed its required total ({minHolders.RequiredTotal})";
             if (!holderScale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
                     .Any(d => string.Equals(SeededDefIdentity.ScaleName(d), holderScale,
                             System.StringComparison.OrdinalIgnoreCase)

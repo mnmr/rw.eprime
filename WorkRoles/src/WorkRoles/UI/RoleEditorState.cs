@@ -14,27 +14,12 @@ namespace WorkRoles.UI
     internal sealed class RoleEditorState
     {
         // Owner: Roles window. Key: UiVersion/language generation. Value:
-        // immutable blocker and holder StructuredTip models. Dependencies: role
+        // immutable blocker StructuredTip model. Dependencies: role
         // terminology and language. Refresh: lazy on first tip read after a
         // revision change. Equality: a matching stamp preserves tip identity.
-        // Teardown: Reset/language invalidation releases both tip references.
+        // Teardown: Reset/language invalidation releases the tip reference.
         private int tipsStamp = -1;
         private StructuredTip blockerTip;
-        private StructuredTip holdersTip;
-
-        // Owner: Roles window. Key: language generation for label/button widths,
-        // then (editor width, row height, holder mode) for the layout. Value:
-        // measured scalars and an immutable RoleTuningLayout. Dependencies:
-        // translated tuning text, font, available width, row height, and mode.
-        // Refresh: lazy after language or geometry key change. Equality: exact
-        // keys reuse the measured values/layout identity. Teardown: Reset/language
-        // invalidation clears every metric and the layout reference.
-        private float tuningLabelWidth = -1f;
-        private float tuningButtonWidth = -1f;
-        private float tuningLayoutWidth = -1f;
-        private float tuningLayoutRowHeight = -1f;
-        private RoleHolderMode tuningLayoutMode;
-        private RoleTuningLayout tuningLayout;
 
         // Owner: Roles window. Key: (UiVersion, selected role id). Value:
         // producer-owned immutable skill presentations. Dependencies: role job
@@ -264,7 +249,7 @@ namespace WorkRoles.UI
                 role.autoAssign, role.blocker, role.HasRules,
                 role.HasRules || rulesRevealed, customSwatches, customRows,
                 checksWidth, autoAssignLabel, blockerLabel, autoRoleLabel,
-                BlockerTip.Activate(),
+                BlockerTip,
                 "WR_ClearRulesConfirm".Translate(role.label).ToString(),
                 assignedLabel, assignedLabelWidth,
                 holders, holderOverflowLabels,
@@ -294,10 +279,10 @@ namespace WorkRoles.UI
                 JobEntry entry = role.entries[i];
                 RoleEntryPresentation presentation = EntryPresentation(
                     entry, typeWidth - 4f, jobWidth - 4f);
-                string skillTip = presentation.Missing ? null
+                StructuredTip skillTip = presentation.Missing ? null
                     : entry.Kind == JobEntryKind.WorkType
-                        ? JobSkillProfiles.WorkTypeTip(entry.DefName)
-                        : JobSkillProfiles.GiverTip(entry.DefName);
+                        ? JobSkillProfiles.WorkTypeStructuredTip(entry.DefName)
+                        : JobSkillProfiles.GiverStructuredTip(entry.DefName);
                 entryRows.Add(new RoleEntryRowSnapshot(entry, presentation,
                     !presentation.Missing && deadEntries.Contains(i), skillTip));
             }
@@ -349,16 +334,19 @@ namespace WorkRoles.UI
 
         private static string HolderSummary(RoleStore store, Role role)
         {
-            HolderScale scale = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
+            RoleAssignmentStrategy scale =
+                store?.ScaleFor(role) ?? store?.ScaleByName("Never");
             if (scale == null) return "";
             int lo = int.MaxValue;
             int hi = int.MinValue;
-            for (int i = 0; i < scale.RequiredTotals.Length; i++)
-            {
-                lo = Mathf.Min(lo, scale.RequiredTotals[i]);
-                hi = Mathf.Max(hi, scale.RequiredTotals[i]);
-            }
-            string range = " (" + lo + "-" + hi + ")";
+            int[] totals = scale.Scale?.RequiredTotals;
+            if (totals != null)
+                for (int i = 0; i < totals.Length; i++)
+                {
+                    lo = Mathf.Min(lo, totals[i]);
+                    hi = Mathf.Max(hi, totals[i]);
+                }
+            string range = totals == null ? "" : " (" + lo + "-" + hi + ")";
             Role target = ScaleEditorUI.ControllingTarget(store, role.id);
             if (target != null)
             {
@@ -387,11 +375,16 @@ namespace WorkRoles.UI
                 new RoleLocationOptionSnapshot(
                     Check(role.locationTokens.Count == 0,
                         "WR_LocationAny".Translate()), null, null),
-                new RoleLocationOptionSnapshot(
-                    Check(role.locationTokens.Contains(LocationRules.Settlements),
-                        "WR_LocationSettlements".Translate()),
-                    LocationRules.Settlements, null),
             };
+            if (role.locationTokens.Contains(LocationRules.Nowhere))
+                result.Add(new RoleLocationOptionSnapshot(
+                    Check(true, "WR_LocationNowhere".Translate()),
+                    LocationRules.Nowhere,
+                    "WR_LocationNowhereTip".Translate().ToString()));
+            result.Add(new RoleLocationOptionSnapshot(
+                Check(role.locationTokens.Contains(LocationRules.Settlements),
+                    "WR_LocationSettlements".Translate()),
+                LocationRules.Settlements, null));
             foreach (WorkRoles.Core.LocationInfo location in ColonyScope.Locations()
                 .OrderBy(item => item.IsShip)
                 .ThenBy(item => item.Label,
@@ -424,6 +417,8 @@ namespace WorkRoles.UI
                 return "WR_LocationSettlements".Translate();
             if (token == LocationRules.Caravans)
                 return "WR_LocationCaravans".Translate();
+            if (token == LocationRules.Nowhere)
+                return "WR_LocationNowhere".Translate();
             string id = token.Substring(token.IndexOf(':') + 1);
             WorkRoles.Core.LocationInfo location = ColonyScope.Locations()
                 .FirstOrDefault(item => item.Id == id);
@@ -439,21 +434,6 @@ namespace WorkRoles.UI
         internal StructuredTip BlockerTip
         {
             get { EnsureTips(); return blockerTip; }
-        }
-
-        internal StructuredTip HoldersTip
-        {
-            get { EnsureTips(); return holdersTip; }
-        }
-
-        internal float TuningLabelWidth
-        {
-            get { EnsureTuningMetrics(); return tuningLabelWidth; }
-        }
-
-        internal float TuningButtonWidth
-        {
-            get { EnsureTuningMetrics(); return tuningButtonWidth; }
         }
 
         internal void Reset()
@@ -488,10 +468,6 @@ namespace WorkRoles.UI
             editorSnapshotFilter = null;
             tipsStamp = -1;
             blockerTip = null;
-            holdersTip = null;
-            tuningLabelWidth = tuningButtonWidth = -1f;
-            tuningLayoutWidth = tuningLayoutRowHeight = -1f;
-            tuningLayout = null;
             skillsUsed = null;
             skillsStamp = -1;
             skillsRoleId = -1;
@@ -513,96 +489,12 @@ namespace WorkRoles.UI
         {
             if (tipsStamp == UiVersion.Current) return;
             tipsStamp = UiVersion.Current;
-            tuningLabelWidth = tuningButtonWidth = -1f;
 
             var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
             blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
             blocker.AddSection().Text("WR_BlockerRoleTipWhy".Translate(), dim: true);
             blockerTip = new StructuredTip("roles:blocker", blocker);
-
-            var holderModel = new TipModel();
-            holderModel.AddSection().Text("WR_HoldersTipWhat".Translate());
-            holderModel.AddSection()
-                .Fact("WR_HoldersAuto".Translate(), "WR_HoldersTipAuto".Translate())
-                .Fact("WR_HoldersCustom".Translate(), "WR_HoldersTipCustom".Translate())
-                .Fact("WR_HoldersWaivers".Translate(), "WR_HoldersTipWaivers".Translate())
-                .Fact("WR_HoldersNever".Translate(), "WR_HoldersTipNever".Translate());
-            holdersTip = new StructuredTip("roles:holders", holderModel);
         }
-
-        private void EnsureTuningMetrics()
-        {
-            EnsureTips();
-            if (tuningLabelWidth >= 0f) return;
-            Text.Font = GameFont.Small;
-            tuningLabelWidth = Mathf.Max(
-                Mathf.Max(WrText.FitWidth("WR_HoldersAuto".Translate()),
-                    Mathf.Max(WrText.FitWidth("WR_HoldersNever".Translate()),
-                        WrText.FitWidth("WR_HoldersCustom".Translate()))),
-                Mathf.Max(WrText.FitWidth("WR_HoldersMin".Translate()),
-                    Mathf.Max(WrText.FitWidth("WR_HoldersMax".Translate()),
-                        WrText.FitWidth("WR_HoldersWaivers".Translate())))) + 10f;
-            tuningButtonWidth = WrText.FitWidth("WR_HoldersUncapped".Translate()) + 16f;
-        }
-
-        internal RoleTuningLayout TuningLayout(
-            float width,
-            RoleHolderMode mode,
-            float rowHeight)
-        {
-            EnsureTuningMetrics();
-            if (tuningLayout != null
-                && tuningLayoutWidth == width
-                && tuningLayoutRowHeight == rowHeight
-                && tuningLayoutMode == mode)
-                return tuningLayout;
-
-            tuningLayoutWidth = width;
-            tuningLayoutRowHeight = rowHeight;
-            tuningLayoutMode = mode;
-
-            Text.Font = GameFont.Small;
-            float descriptionWidth = width
-                - (tuningLabelWidth + tuningButtonWidth + 8f);
-            string intro = "WR_TuningHelp".Translate();
-            string modeHelp = TuningModeHelpKey(mode).Translate();
-            float introHeight = Text.CalcHeight(intro, width);
-            float modeHeight = Mathf.Max(rowHeight,
-                Text.CalcHeight(modeHelp, descriptionWidth));
-
-            string requiredTotalHelp = null;
-            string maxHelp = null;
-            string trainingWaiversHelp = null;
-            float requiredTotalHeight = 0f;
-            float maxHeight = 0f;
-            float trainingWaiversHeight = 0f;
-            if (mode == RoleHolderMode.Custom)
-            {
-                requiredTotalHelp = "WR_TuningMinHelp".Translate();
-                maxHelp = "WR_TuningMaxHelp".Translate();
-                trainingWaiversHelp = "WR_TuningWaiversHelp".Translate();
-                requiredTotalHeight = Mathf.Max(rowHeight,
-                    Text.CalcHeight(requiredTotalHelp, descriptionWidth));
-                maxHeight = Mathf.Max(rowHeight,
-                    Text.CalcHeight(maxHelp, descriptionWidth));
-                trainingWaiversHeight = Mathf.Max(rowHeight,
-                    Text.CalcHeight(trainingWaiversHelp, descriptionWidth));
-            }
-
-            tuningLayout = new RoleTuningLayout(
-                intro, introHeight,
-                modeHelp, modeHeight,
-                requiredTotalHelp, requiredTotalHeight,
-                maxHelp, maxHeight,
-                trainingWaiversHelp, trainingWaiversHeight,
-                mode == RoleHolderMode.Custom);
-            return tuningLayout;
-        }
-
-        private static string TuningModeHelpKey(RoleHolderMode mode)
-            => mode == RoleHolderMode.Auto ? "WR_TuningAutoHelp"
-                : mode == RoleHolderMode.Never ? "WR_TuningNeverHelp"
-                : "WR_TuningCustomHelp";
 
         internal IReadOnlyList<RoleSkillPresentation> SkillsUsed(Role role)
         {
@@ -816,7 +708,7 @@ namespace WorkRoles.UI
                     typeName + " (" + givers.Count + ")",
                     WorkTypeState(role, type), expanded,
                     coverage.WorkTypes.Contains(type.defName),
-                    JobSkillProfiles.WorkTypeTip(type.defName),
+                    JobSkillProfiles.WorkTypeStructuredTip(type.defName),
                     typeEntryIndex, typeEntryIndex, role.entries.Count,
                     missingGivers));
                 if (!expanded) continue;
@@ -833,7 +725,7 @@ namespace WorkRoles.UI
                         WorkJobLabels.GiverDisplayName(giver),
                         GiverState(role, type, giver), expanded: true,
                         coverage.Givers.Contains(giver.defName),
-                        JobSkillProfiles.GiverTip(giver.defName),
+                        JobSkillProfiles.GiverStructuredTip(giver.defName),
                         giverEntryIndex, typeEntryIndex, role.entries.Count,
                         missingGivers: null));
                 }
@@ -949,7 +841,7 @@ namespace WorkRoles.UI
             bool blocker, bool hasRules, bool rulesShown,
             List<Color> customSwatches, int customRows, float checksWidth,
             string autoAssignLabel, string blockerLabel, string autoRoleLabel,
-            string blockerTip, string clearRulesConfirmation,
+            StructuredTip blockerTip, string clearRulesConfirmation,
             string assignedLabel, float assignedLabelWidth,
             IReadOnlyList<RoleHolderPresentation> holders,
             List<string> holderOverflowLabels, string nobodyLabel,
@@ -1017,7 +909,7 @@ namespace WorkRoles.UI
         internal string AutoAssignLabel { get; }
         internal string BlockerLabel { get; }
         internal string AutoRoleLabel { get; }
-        internal string BlockerTip { get; }
+        internal StructuredTip BlockerTip { get; }
         internal string ClearRulesConfirmation { get; }
         internal string AssignedLabel { get; }
         internal float AssignedLabelWidth { get; }
@@ -1123,7 +1015,7 @@ namespace WorkRoles.UI
     internal readonly struct RoleEntryRowSnapshot
     {
         internal RoleEntryRowSnapshot(JobEntry entry,
-            RoleEntryPresentation presentation, bool dead, string skillTip)
+            RoleEntryPresentation presentation, bool dead, StructuredTip skillTip)
         {
             Entry = entry;
             Presentation = presentation;
@@ -1134,7 +1026,7 @@ namespace WorkRoles.UI
         internal JobEntry Entry { get; }
         internal RoleEntryPresentation Presentation { get; }
         internal bool Dead { get; }
-        internal string SkillTip { get; }
+        internal StructuredTip SkillTip { get; }
     }
 
     internal sealed class RoleJobTreeSnapshot
@@ -1162,51 +1054,6 @@ namespace WorkRoles.UI
         internal int Count => nodes.Count;
         internal RoleJobTreeNode NodeAt(int index) => nodes[index];
         internal int TargetIndex { get; }
-    }
-
-    internal sealed class RoleTuningLayout
-    {
-        internal RoleTuningLayout(
-            string intro,
-            float introHeight,
-            string modeHelp,
-            float modeHeight,
-            string requiredTotalHelp,
-            float requiredTotalHeight,
-            string maxHelp,
-            float maxHeight,
-            string trainingWaiversHelp,
-            float trainingWaiversHeight,
-            bool custom)
-        {
-            Intro = intro;
-            IntroHeight = introHeight;
-            ModeHelp = modeHelp;
-            ModeHeight = modeHeight;
-            RequiredTotalHelp = requiredTotalHelp;
-            RequiredTotalHeight = requiredTotalHeight;
-            MaxHelp = maxHelp;
-            MaxHeight = maxHeight;
-            TrainingWaiversHelp = trainingWaiversHelp;
-            TrainingWaiversHeight = trainingWaiversHeight;
-            ExpandedHeight = 4f + introHeight + 2f + modeHeight
-                + (custom
-                    ? 4f + requiredTotalHeight + maxHeight
-                        + trainingWaiversHeight
-                    : 0f);
-        }
-
-        internal string Intro { get; }
-        internal float IntroHeight { get; }
-        internal string ModeHelp { get; }
-        internal float ModeHeight { get; }
-        internal string RequiredTotalHelp { get; }
-        internal float RequiredTotalHeight { get; }
-        internal string MaxHelp { get; }
-        internal float MaxHeight { get; }
-        internal string TrainingWaiversHelp { get; }
-        internal float TrainingWaiversHeight { get; }
-        internal float ExpandedHeight { get; }
     }
 
     internal readonly struct RoleSkillPresentation
@@ -1273,7 +1120,7 @@ namespace WorkRoles.UI
 
         internal RoleJobTreeNode(string typeDefName, string giverDefName,
             string label, MultiCheckboxState state, bool expanded,
-            bool warning, string skillTip, int ownEntryIndex,
+            bool warning, StructuredTip skillTip, int ownEntryIndex,
             int typeEntryIndex, int entryCount, List<string> missingGivers)
         {
             TypeDefName = typeDefName;
@@ -1295,7 +1142,7 @@ namespace WorkRoles.UI
         internal MultiCheckboxState State { get; }
         internal bool Expanded { get; }
         internal bool Warning { get; }
-        internal string SkillTip { get; }
+        internal StructuredTip SkillTip { get; }
         internal int OwnEntryIndex { get; }
         internal int TypeEntryIndex { get; }
         internal int EntryCount { get; }

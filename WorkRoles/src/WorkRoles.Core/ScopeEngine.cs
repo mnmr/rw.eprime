@@ -10,19 +10,23 @@ namespace WorkRoles.Core
         Location,        // one specific named location (ship or settlement)
     }
 
-    /// A place colony pawns can be: a player-home map (ship or settlement).
+    /// A named settlement or ship in the location catalog. Inactive ships stay
+    /// available to rule editors but are excluded from pawn-scope options.
     public sealed class LocationInfo
     {
-        public LocationInfo(string id, string label, bool isShip)
+        public LocationInfo(string id, string label, bool isShip,
+            bool isActive = true)
         {
             Id = id;
             Label = label;
             IsShip = isShip;
+            IsActive = isActive;
         }
 
-        public string Id { get; }     // stable per-session id (map unique id)
+        public string Id { get; }     // stable settlement-map or ship identity
         public string Label { get; }  // display name (settlement name / ship name)
         public bool IsShip { get; }
+        public bool IsActive { get; } // false while a ship is parked or traveling
     }
 
     public sealed class ScopeOption
@@ -39,7 +43,7 @@ namespace WorkRoles.Core
     public static class ScopeEngine
     {
         /// The scope menu: All, Current Location, then ships A-Z, then
-        /// settlements A-Z. Named entries only exist when the location does.
+        /// settlements A-Z. Named entries only exist while the location is active.
         public static List<ScopeOption> BuildOptions(IReadOnlyList<LocationInfo> locations)
         {
             var options = new List<ScopeOption>
@@ -48,6 +52,7 @@ namespace WorkRoles.Core
                 new ScopeOption { Kind = ScopeKind.CurrentLocation },
             };
             options.AddRange(locations
+                .Where(l => l.IsActive)
                 .OrderByDescending(l => l.IsShip)
                 .ThenBy(l => l.Label, System.StringComparer.OrdinalIgnoreCase)
                 .Select(l => new ScopeOption

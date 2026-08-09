@@ -64,6 +64,7 @@
     <description>Rescuing downed colonists.</description>
     <colorRef>slate-800</colorRef>
     <group>Medical</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkGiver:DoctorRescue</li>
     </entries>
@@ -75,7 +76,6 @@
     <description>Medical care for colonists, prisoners and animals.</description>
     <colorRef>red-800</colorRef>
     <group>Medical</group>
-    <minHolders waivers="1">2</minHolders>
     <holderScale>Doctoring</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
@@ -89,7 +89,7 @@
     <description>Medical work except operating on colonists.</description>
     <colorRef>red-900</colorRef>
     <group>Medical</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoctorTendEmergency</li>
@@ -115,6 +115,7 @@
     <description>Miscellaneous simple tasks.</description>
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:BasicWorker</li>
     </entries>
@@ -128,7 +129,6 @@
     <colorRef>cyan-700</colorRef>
     <group>Social</group>
     <!-- Needed work only while the colony has children; the adapter zeroes it otherwise. -->
-    <minHolders>1</minHolders>
     <holderScale>Caretaking</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
@@ -142,6 +142,7 @@
     <description>Fighting fires.</description>
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:Firefighter</li>
     </entries>
@@ -153,6 +154,7 @@
     <description>Accepting medical treatment.</description>
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:Patient</li>
     </entries>
@@ -164,6 +166,7 @@
     <description>Resting in bed when ill or injured.</description>
     <colorRef>slate-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:PatientBedRest</li>
     </entries>
@@ -175,7 +178,7 @@
     <description>Prisoner handling except interrogation, enslavement and conversion: feeding, escorting, chatting, suppression, release and executions.</description>
     <colorRef>cyan-900</colorRef>
     <group>Social</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
          EnslavePrisoner and ConvertPrisoner; ChatWithPrisoner trains Social,
@@ -205,7 +208,6 @@
     <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
     <colorRef>cyan-800</colorRef>
     <group>Social</group>
-    <minHolders waivers="1">2</minHolders>
     <holderScale>Wardening</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
@@ -232,6 +234,7 @@
     <description>Hauling items.</description>
     <colorRef>stone-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:Hauling</li>
     </entries>
@@ -243,6 +246,7 @@
     <description>Cleaning.</description>
     <colorRef>stone-800</colorRef>
     <group>Essentials</group>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:Cleaning</li>
     </entries>
@@ -254,7 +258,6 @@
     <description>Animal taming, training and slaughter.</description>
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
-    <minHolders>1</minHolders>
     <holderScale>Handling</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
@@ -272,7 +275,6 @@
     <description>Meal preparation and butchering.</description>
     <colorRef>green-700</colorRef>
     <group>Food</group>
-    <minHolders>1</minHolders>
     <holderScale>Cooking</holderScale>
     <entries>
       <li>WorkType:Cooking</li>
@@ -285,7 +287,7 @@
     <description>Butchering creatures.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoBillsButcherFlesh</li>
@@ -298,7 +300,7 @@
     <description>Brewing wort at the brewery.</description>
     <colorRef>green-800</colorRef>
     <group>Food</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoBillsBrew</li>
@@ -327,7 +329,6 @@
     <description>Fishing.</description>
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
-    <minHolders>0</minHolders>
     <holderScale>Fishing</holderScale>
     <entries>
       <li>WorkType:Fishing</li>
@@ -340,7 +341,6 @@
     <description>Construction, repair and deconstruction.</description>
     <colorRef>yellow-700</colorRef>
     <group>Indoors</group>
-    <minHolders>1</minHolders>
     <holderScale>Building</holderScale>
     <entries>
       <li>WorkType:Construction</li>
@@ -354,7 +354,7 @@
     <description>All construction work except constructing new buildings.</description>
     <colorRef>yellow-800</colorRef>
     <group>Indoors</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkGiver:Repair</li>
       <li>WorkGiver:FixBrokenDownBuilding</li>
@@ -379,7 +379,6 @@
     <description>Sowing, harvesting and plant cutting.</description>
     <colorRef>lime-700</colorRef>
     <group>Outdoors</group>
-    <minHolders waivers="1">2</minHolders>
     <holderScale>Farming</holderScale>
     <entries>
       <li>WorkType:Growing</li>
@@ -393,7 +392,7 @@
     <description>Sowing and harvesting in growing zones.</description>
     <colorRef>lime-800</colorRef>
     <group>Outdoors</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:Growing</li>
     </entries>
@@ -405,7 +404,7 @@
     <description>Cutting and harvesting wild plants and trees.</description>
     <colorRef>lime-800</colorRef>
     <group>Outdoors</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkType:PlantCutting</li>
     </entries>
@@ -417,7 +416,6 @@
     <description>Mining and drilling.</description>
     <colorRef>sky-700</colorRef>
     <group>Outdoors</group>
-    <minHolders>1</minHolders>
     <holderScale>Mining</holderScale>
     <entries>
       <li>WorkType:Mining</li>
@@ -430,7 +428,6 @@
     <description>Apparel creation.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
-    <minHolders>1</minHolders>
     <holderScale>Tailoring</holderScale>
     <entries>
       <li>WorkType:Tailoring</li>
@@ -443,7 +440,6 @@
     <description>Weapon and armor smithing.</description>
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
-    <minHolders>1</minHolders>
     <holderScale>Smithing</holderScale>
     <entries>
       <li>WorkType:Smithing</li>
@@ -468,7 +464,6 @@
     <description>General crafting: stonecutting, smelting, drugs and components.</description>
     <colorRef>orange-700</colorRef>
     <group>Indoors</group>
-    <minHolders>1</minHolders>
     <holderScale>Crafting</holderScale>
     <entries>
       <li>WorkType:Crafting</li>
@@ -481,7 +476,6 @@
     <description>Research at a research bench.</description>
     <colorRef>slate-700</colorRef>
     <group>Research</group>
-    <minHolders>3</minHolders>
     <holderScale>Research</holderScale>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <entries>
@@ -497,7 +491,6 @@
     <colorRef>slate-700</colorRef>
     <group>Research</group>
     <!-- The whole def is Anomaly-only, so this need is DLC-conditional for free. -->
-    <minHolders>1</minHolders>
     <holderScale>Dark Study</holderScale>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
@@ -512,7 +505,6 @@
     <description>Sculpting and artwork.</description>
     <colorRef>purple-700</colorRef>
     <group>Indoors</group>
-    <minHolders>0</minHolders>
     <holderScale>Artistry</holderScale>
     <entries>
       <li>WorkType:Art</li>
@@ -525,7 +517,7 @@
     <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
     <colorRef>red-900</colorRef>
     <group>Medical</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:DoctorTendToSelfEmergency</li>
@@ -559,7 +551,7 @@
     <description>Painting and paint removal.</description>
     <colorRef>purple-800</colorRef>
     <group>Indoors</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <entries>
       <li>WorkGiver:RemovePaintBuilding</li>
       <li>WorkGiver:RemovePaintFloor</li>
@@ -577,7 +569,7 @@
     <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
     <colorRef>teal-900</colorRef>
     <group>Animals</group>
-    <minHolders>0</minHolders>
+    <holderScale>Surplus</holderScale>
     <usesOccasionalRepeatChampionPenalty>true</usesOccasionalRepeatChampionPenalty>
     <entries>
       <li>WorkGiver:TakeRoamingAnimalsToPen</li>

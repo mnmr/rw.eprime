@@ -6,9 +6,8 @@ using Verse;
 
 namespace WorkRoles
 {
-    /// A producer-owned structured tooltip. PlainText is computed exactly once
-    /// and remains the vanilla TipSignal fallback; activation only associates
-    /// the model with the current WorkRoles window generation.
+    /// A producer-owned structured tooltip rendered by StructuredTipPresenter.
+    /// PlainText remains available to the public diagnostic tooltip APIs.
     internal sealed class StructuredTip
     {
         internal StructuredTip(string stableKey, TipModel model)
@@ -16,32 +15,25 @@ namespace WorkRoles
             StableKey = stableKey ?? throw new ArgumentNullException(nameof(stableKey));
             Model = model ?? throw new ArgumentNullException(nameof(model));
             PlainText = model.ToPlainText();
-            RegistryEpoch = Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch;
         }
 
         internal string StableKey { get; }
         internal TipModel Model { get; }
         internal string PlainText { get; }
-        internal int RegistryEpoch { get; }
 
-        internal string Activate()
-        {
-            Patches.Patch_ActiveTip_TipRect.Activate(this);
-            return PlainText;
-        }
     }
 
     /// Structured tooltip content: a title/badge line plus sections of rows.
-    /// ToPlainText() is both the TipSignal text (failure-safe fallback) and the
-    /// draw-registry key (see Patch_ActiveTip); WrTipUI renders the model.
+    /// ToPlainText() supports public diagnostic tooltip APIs; WrTipUI renders
+    /// the model directly from cached snapshots.
     public sealed class TipModel
     {
         public string Title;
         public string Badge;
         public Color BadgeColor = Color.white;
-        /// Extra padding inside the tooltip, around all content (on top of the
-        /// vanilla 4px frame).
-        public float Padding = 8f;
+        /// Extra inset beyond the tooltip renderer's 4px frame inset, for a
+        /// total content inset of 8px.
+        public float Padding = 4f;
         public List<TipSection> Sections = new List<TipSection>();
 
         // WrTipUI's cached geometry; models are immutable after construction, so
@@ -55,8 +47,7 @@ namespace WorkRoles
             return section;
         }
 
-        /// Deterministic plain-text rendering; never ends in whitespace so the
-        /// text survives ActiveTip's TrimEnd as a registry key.
+        /// Deterministic plain-text rendering with no trailing whitespace.
         public string ToPlainText()
         {
             var sb = new StringBuilder();

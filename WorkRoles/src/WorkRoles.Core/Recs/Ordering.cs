@@ -98,6 +98,8 @@ namespace WorkRoles.Core.Recs
             {
                 AssignmentView assignment = existing[index];
                 RoleView role = context.RoleOf(assignment.RoleId);
+                // Auto-assign roles are automatic and follow the default order;
+                // only user-placed pins and rule/blocker roles keep their slot.
                 if (recommendedSet.Contains(assignment.RoleId)
                     && role != null
                     && (assignment.Pinned || role.HasRules || role.Blocker))

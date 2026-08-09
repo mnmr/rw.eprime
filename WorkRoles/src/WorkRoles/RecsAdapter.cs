@@ -90,6 +90,8 @@ namespace WorkRoles
                     ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(
                         role.templateDefName);
+                RoleAssignmentStrategy strategy =
+                    (store ?? RoleStore.Current)?.ScaleFor(role);
                 sources.Add(new RecommendationRoleSource
                 {
                     Id = role.id,
@@ -101,11 +103,8 @@ namespace WorkRoles
                         template?.preserveRecommendationOrder == true,
                     UsesOccasionalRepeatChampionPenalty = template?
                         .usesOccasionalRepeatChampionPenalty == true,
-                    HolderMode = role.holderMode,
-                    Scale = (store ?? RoleStore.Current)?.ScaleFor(role),
-                    RequiredTotal = role.ResolvedRequiredTotal(),
-                    MaxHolders = role.ResolvedMaxHolders(),
-                    TrainingWaivers = role.ResolvedTrainingWaivers(),
+                    Scale = strategy?.Scale,
+                    Mode = strategy?.Mode ?? ScaleMode.Never,
                     Available = RoleAvailable(role),
                     Enabled = role.enabled,
                     SpecialRole = template?.recommendationSpecialRole

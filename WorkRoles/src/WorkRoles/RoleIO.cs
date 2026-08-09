@@ -76,14 +76,7 @@ namespace WorkRoles
                     enabled = role.enabled,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
-                    holderMode = role.holderMode,
                     holderScale = role.holderScaleName,
-                    holderRangeSet = role.holderRangeSet,
-                    // FileRole retains the serialized minHolders name; the
-                    // value is the required total, including training waivers.
-                    minHolders = role.requiredTotal,
-                    maxHolders = role.maxHolders,
-                    trainingWaivers = role.trainingWaivers,
                     entries = role.entries.ToList(),
                 });
             }
@@ -138,7 +131,10 @@ namespace WorkRoles
         /// (a location that no longer exists) drop out of the export.
         private static string FileLocationToken(string token)
         {
-            if (token == LocationRules.Settlements || token == LocationRules.Caravans) return token;
+            if (token == LocationRules.Settlements
+                || token == LocationRules.Caravans
+                || token == LocationRules.Nowhere)
+                return token;
             bool ship = token.StartsWith(LocationRules.ShipPrefix);
             string id = token.Substring(token.IndexOf(':') + 1);
             var loc = ColonyScope.Locations().FirstOrDefault(l => l.Id == id);
@@ -391,20 +387,12 @@ namespace WorkRoles
             Dictionary<FileRole, Role> runtimeRoles = null;
             store.SyncSwatchNames();
 
-            // Scales ride the roles section: same-name scales overwrite
-            // wholesale, new names append; imported role references then
-            // resolve against the updated list.
+            // Scales ride the roles section: same-name user scales overwrite,
+            // presets keep their invariant values, and new names append.
+            // Imported role references then resolve against the updated list.
             if (rolesInclude && doc.scales != null)
                 foreach (var scale in doc.scales)
-                {
-                    if (scale == null || scale.Name.NullOrEmpty()) continue;
-                    var existing = store.ScaleByName(scale.Name);
-                    if (existing == null)
-                        store.holderScales.Add(scale.Copy());
-                    else if (!existing.SameValuesAs(scale))
-                        store.holderScales[store.holderScales.IndexOf(existing)]
-                            = scale.Copy();
-                }
+                    HolderScaleImport.Merge(store.holderScales, scale);
 
             if (paletteInclude && paletteOverwrite)
             {
@@ -564,12 +552,7 @@ namespace WorkRoles
                         .Select(token => ImportLocationResolver.FromMap(
                             token, resolvedLocations))
                         .Where(token => token != null).ToList();
-                    target.holderMode = row.role.holderMode;
-                    target.holderScaleName = row.role.holderScale;
-                    target.holderRangeSet = row.role.holderRangeSet;
-                    target.requiredTotal = row.role.minHolders;
-                    target.maxHolders = row.role.maxHolders;
-                    target.trainingWaivers = row.role.trainingWaivers;
+                    target.holderScaleName = row.role.holderScale ?? "Never";
                     target.groupId = GroupIdFor(
                         row.role.groupId, row.role.group, doc, runtimeGroups, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.

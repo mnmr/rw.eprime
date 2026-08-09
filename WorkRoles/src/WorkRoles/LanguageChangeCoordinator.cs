@@ -32,7 +32,7 @@ namespace WorkRoles
             JobSkillProfiles.QueueLocalizedFacadeWarm();
             ColonyScope.InvalidateLanguageCaches();
             ExternalPawnFacts.InvalidateAll();
-            Patches.Patch_ActiveTip_TipRect.Clear();
+            UI.StructuredTipPresenter.Reset();
         }
     }
 }

@@ -25,15 +25,18 @@ public class FactionLocationClassifierTests
     public async Task GravshipBelongsOnlyToItsOwningPlayerFaction()
     {
         var ownerView = FactionLocationClassifier.Classify(
-            "23", ownedByFaction: true, spawnedViaGravship: true,
+            mapLocationId: "23", shipLocationId: "GravEngine42",
+            ownedByFaction: true, spawnedViaGravship: true,
             parentCanBePlayerHome: true, parentIsSettlement: false,
             hasGravEngine: true);
         var otherView = FactionLocationClassifier.Classify(
-            "23", ownedByFaction: false, spawnedViaGravship: true,
+            mapLocationId: "23", shipLocationId: "GravEngine42",
+            ownedByFaction: false, spawnedViaGravship: true,
             parentCanBePlayerHome: true, parentIsSettlement: false,
             hasGravEngine: true);
 
         await Assert.That(ownerView.IsShip).IsTrue();
+        await Assert.That(ownerView.LocationId).IsEqualTo("GravEngine42");
         await Assert.That(otherView.IsShip).IsFalse();
     }
 
@@ -41,11 +44,13 @@ public class FactionLocationClassifierTests
     public async Task GravshipParkedAtSettlementClassifiesAsSettlement()
     {
         var place = FactionLocationClassifier.Classify(
-            "29", ownedByFaction: true, spawnedViaGravship: true,
+            mapLocationId: "29", shipLocationId: "GravEngine42",
+            ownedByFaction: true, spawnedViaGravship: true,
             parentCanBePlayerHome: true, parentIsSettlement: true,
             hasGravEngine: true);
 
         await Assert.That(place.IsSettlement).IsTrue();
         await Assert.That(place.IsShip).IsFalse();
+        await Assert.That(place.LocationId).IsEqualTo("29");
     }
 }

@@ -25,15 +25,9 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        public RoleHolderMode holderMode;
         /// Named holder scale (RoleStore.holderScales) driving banded
-        /// min/train/max lookups; null = legacy scalar behavior.
-        public string holderScaleName;
-        /// Custom range stays stored while Auto or Never is selected.
-        public bool holderRangeSet;
-        public int requiredTotal;
-        public int maxHolders = RoleHolderRange.Uncapped;
-        public int trainingWaivers;
+        /// required/train/max lookups. Missing or dangling references are Never.
+        public string holderScaleName = "Never";
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
@@ -51,17 +45,10 @@ namespace WorkRoles
         private Dictionary<string, string> scribeSnapshots;
         private string scribeLocations;
         private HashSet<string> coverageCache;
-        private RoleHolderDefaults? autoDefaultsCache;
         // Cached XP-frequency primary skill (null is a valid value, hence the
         // flag); derived from coverage, so it invalidates with it.
         private string primarySkillCache;
         private bool primarySkillCached;
-
-        internal RoleHolderDefaults? AutoDefaultsCache
-        {
-            get => autoDefaultsCache;
-            set => autoDefaultsCache = value;
-        }
 
         internal bool TryGetPrimarySkillCache(out string skill)
         {
@@ -86,7 +73,6 @@ namespace WorkRoles
         public void InvalidateCoverage()
         {
             coverageCache = null;
-            autoDefaultsCache = null;
             primarySkillCache = null;
             primarySkillCached = false;
         }
@@ -107,23 +93,6 @@ namespace WorkRoles
             return CoverageMath.CoversOrMatches(Coverage(), other.Coverage());
         }
 
-        /// Auto falls back to the seeding def; player-created roles default to 0.
-        public int ResolvedAutoRequiredTotal() =>
-            RoleAutoDefaults.Resolve(this).RequiredTotal;
-
-        public int ResolvedRequiredTotal() => holderMode == RoleHolderMode.Custom
-            ? requiredTotal
-            : holderMode == RoleHolderMode.Never ? 0 : ResolvedAutoRequiredTotal();
-
-        public int ResolvedMaxHolders() => holderMode == RoleHolderMode.Custom
-            ? maxHolders : holderMode == RoleHolderMode.Never
-                ? 0 : RoleAutoDefaults.Resolve(this).Max;
-
-        public int ResolvedTrainingWaivers() => holderMode == RoleHolderMode.Custom
-            ? RoleHolderPolicy.WithTrainingWaivers(requiredTotal, trainingWaivers)
-            : holderMode == RoleHolderMode.Never
-                ? 0 : RoleAutoDefaults.Resolve(this).TrainingWaivers;
-
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id");
@@ -141,31 +110,11 @@ namespace WorkRoles
             // the role as an ordinary player role, keeping entries and holders.
             bool legacyManaged = false;
             Scribe_Values.Look(ref legacyManaged, "managed");
-            // Old minHolders/maxHolders/inTrainingAllowance fields are ignored.
-            // Their recommendation values were not meaningful enough to migrate.
-            Scribe_Values.Look(ref holderMode, "holderMode", RoleHolderMode.Auto);
-            Scribe_Values.Look(ref holderScaleName, "holderScale");
-            Scribe_Values.Look(ref holderRangeSet, "holderRangeSet");
-            // Persisted key retained for save compatibility; its value is the
-            // required total, including training waivers.
-            Scribe_Values.Look(ref requiredTotal, "holderRangeMin");
-            Scribe_Values.Look(ref maxHolders, "holderRangeMax", RoleHolderRange.Uncapped);
-            Scribe_Values.Look(ref trainingWaivers, "trainingWaivers");
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
-            {
-                if (!System.Enum.IsDefined(typeof(RoleHolderMode), holderMode))
-                    holderMode = RoleHolderMode.Auto;
-                var normalized = RoleHolderPolicy.WithRequiredTotal(
-                    requiredTotal, maxHolders, requiredTotal);
-                requiredTotal = normalized.requiredTotal;
-                maxHolders = normalized.max;
-                trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                    requiredTotal, trainingWaivers);
-            }
+            Scribe_Values.Look(ref holderScaleName, "holderScale", "Never");
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
-            // Location tokens scribe comma-joined (ids are numeric, category
-            // words fixed — no commas possible).
+            // Location tokens scribe comma-joined (category words and game
+            // map/Thing identifiers cannot contain commas).
             if (Scribe.mode == LoadSaveMode.Saving && locationTokens.Count > 0)
                 scribeLocations = string.Join(",", locationTokens);
             Scribe_Values.Look(ref scribeLocations, "locations");

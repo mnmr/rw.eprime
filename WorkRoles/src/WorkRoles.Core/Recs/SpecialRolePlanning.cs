@@ -66,8 +66,7 @@ namespace WorkRoles.Core.Recs
                     || role.HasRules
                     || role.Blocker
                     || !role.Enabled
-                    || !role.Available
-                    || role.HolderMode == RoleHolderMode.Never)
+                    || !role.Available)
                     continue;
                 for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
                     if (facts.Capable(pawnIndex, role))
@@ -83,15 +82,26 @@ namespace WorkRoles.Core.Recs
                 {
                     AssignmentView assignment = pawn.Existing[assignmentIndex];
                     RoleView role = facts.RoleOf(assignment.RoleId);
-                    if (role == null || role.HolderMode == RoleHolderMode.Never)
+                    if (role == null)
                         continue;
                     bool protectedRole = assignment.Pinned
                         || role.HasRules
                         || role.Blocker;
+                    // A role on the Unskilled strategy is planned and coverage-
+                    // folded like any other; only pure skill-less chores (not on
+                    // the Unskilled strategy) are retained as special roles.
+                    // A role on the Unskilled strategy is planned and coverage-
+                    // folded like any other; only pure skill-less chores (not on
+                    // the Unskilled strategy) are retained as special roles.
                     bool retainedChore = role.Unskilled
+                        && role.Mode != ScaleMode.Unskilled
                         && !role.AutoAssign
                         && role.Enabled
                         && role.Available;
+                    // Never suppresses only the retained-chore carry-over; an
+                    // explicit pin/rule/blocker is always kept.
+                    if (!protectedRole && role.UsesHolderScale && role.IsNever)
+                        continue;
                     if (protectedRole || retainedChore)
                         drafts[pawnIndex].AddSpecialRole(role.Id);
                 }
@@ -122,8 +132,7 @@ namespace WorkRoles.Core.Recs
                 || hunter.HasRules
                 || hunter.Blocker
                 || !hunter.Enabled
-                || !hunter.Available
-                || hunter.HolderMode == RoleHolderMode.Never)
+                || !hunter.Available)
                 return;
             int tierZero = -1;
             int lowest = -1;

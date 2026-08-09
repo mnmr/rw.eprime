@@ -15,7 +15,8 @@ internal static class RecsTestBed
     };
 
     /// Coverage tokens default to one token named after the work type.
-    /// RequiredTotal arrives RESOLVED (0 = interest-only) like the game adapter's.
+    /// Ordinary roles use an explicit interest-only scale by default, like the
+    /// shipped catalog. Tests for missing-scale behavior clear Scale explicitly.
     public static RoleView Role(int id, string workType, params string[] coverage) => new()
     {
         Id = id,
@@ -23,6 +24,7 @@ internal static class RecsTestBed
         Coverage = coverage.Length > 0
             ? new HashSet<string>(coverage) : new HashSet<string> { workType },
         PrimarySkill = Skills.TryGetValue(workType, out var s) && s.Count > 0 ? s[0] : null,
+        Scale = new HolderScale(),
     };
 
     public static RoleView Unskilled(int id, string workType, params string[] coverage)
@@ -31,6 +33,19 @@ internal static class RecsTestBed
         role.Unskilled = true;
         role.PrimarySkill = null;
         return role;
+    }
+
+    public static void Require(
+        RoleView role,
+        int requiredTotal,
+        int trainingWaivers = 0,
+        int maximum = RoleHolderRange.Uncapped)
+    {
+        role.Scale ??= new HolderScale();
+        Array.Fill(role.Scale.RequiredTotals, requiredTotal);
+        Array.Fill(role.Scale.TrainingWaivers, trainingWaivers);
+        Array.Fill(role.Scale.Max, maximum);
+        role.Scale.Normalize();
     }
 
     public static PawnView Pawn() => new()

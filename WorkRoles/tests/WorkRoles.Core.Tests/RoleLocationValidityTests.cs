@@ -44,4 +44,18 @@ public class RoleLocationValidityTests
         await Assert.That(RoleLocationValidity.IsInvalid(
             1, new[] { "garbage" }, Live)).IsTrue();
     }
+
+    [Test]
+    public async Task NowhereRestrictionIsIntentionalRatherThanStale()
+    {
+        await Assert.That(RoleLocationValidity.IsInvalid(
+            1, new[] { "nowhere" }, new HashSet<string>())).IsFalse();
+
+        await Assert.That(LocationRules.Matches(
+            new[] { "nowhere" }, new PawnPlace
+            {
+                LocationId = "4",
+                IsSettlement = true,
+            })).IsFalse();
+    }
 }

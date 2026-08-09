@@ -774,7 +774,8 @@ namespace WorkRoles.UI
                     paint: repaint && visible,
                     strikes: RoleChipStrikes.GlobalOff);
                 if (visible && Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, RoleTipText(role, RoleTipContext.Palette));
+                    StructuredTipPresenter.TipRegion(
+                        chipRect, RoleTip(role, RoleTipContext.Palette));
             }
             Widgets.EndScrollView();
         }
@@ -1089,9 +1090,7 @@ namespace WorkRoles.UI
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
                 ? ActivityTracker.RevisionOf(pawn) : 0;
             var key = (role.id, context, pawn, activityRevision);
-            if (!roleTipCache.TryGetValue(key, out StructuredTip tip)
-                || tip.RegistryEpoch
-                    != Patches.Patch_ActiveTip_TipRect.CurrentRegistryEpoch)
+            if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
             {
                 int pawnId = pawn?.thingIDNumber ?? -1;
                 roleTipCache[key] = tip = new StructuredTip(
@@ -1101,9 +1100,6 @@ namespace WorkRoles.UI
             roleTipStamp = PawnListStamp;
             return tip;
         }
-
-        internal string RoleTipText(Role role, RoleTipContext context, Pawn pawn = null)
-            => RoleTip(role, context, pawn)?.Activate() ?? role.label;
 
         private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn pawn)
         {
@@ -1982,7 +1978,7 @@ namespace WorkRoles.UI
             }
 
             if (presentation.Tooltip != null && Mouse.IsOver(cell))
-                TooltipHandler.TipRegion(cell, presentation.Tooltip.Activate());
+                StructuredTipPresenter.TipRegion(cell, presentation.Tooltip);
         }
 
         // Owner: Colonists window. Key: (role id, Pawn identity) within the
@@ -2097,7 +2093,7 @@ namespace WorkRoles.UI
                 // Re-activated per hovered pass so the structured model stays
                 // registered (untouched models retire every repaint generation).
                 if (chip.Tooltip != null && Mouse.IsOver(chipRect))
-                    TooltipHandler.TipRegion(chipRect, chip.Tooltip.Activate());
+                    StructuredTipPresenter.TipRegion(chipRect, chip.Tooltip);
                 var click = RoleChipUI.Draw(chipRect, chip.RenderData, style,
                     showRemove: true, dragSource: row.Pawn,
                     onClick: onClick,
@@ -2117,11 +2113,13 @@ namespace WorkRoles.UI
                     Pawn menuPawn = row.Pawn;
                     int menuRoleId = chip.RenderData.RoleId;
                     string pinToggleLabel = chip.PinToggleLabel;
-                    Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+                    var menu = new RoleChipFloatMenu(new List<FloatMenuOption>
                     {
                         new FloatMenuOption(pinToggleLabel,
                             () => RoleCommands.ToggleAssignmentPin(menuPawn, menuRoleId))
-                    }));
+                    });
+                    Find.WindowStack.Add(menu);
+                    StructuredTipPresenter.SetSuppressed(true);
                 }
             }
 
@@ -2161,6 +2159,26 @@ namespace WorkRoles.UI
                         markerH = prevR.height - 6f;
                     }
                     Widgets.DrawBoxSolid(new Rect(markerX - 1f, markerY, 2f, markerH), new Color(1f, 1f, 1f, 0.9f));
+                }
+            }
+        }
+
+        private sealed class RoleChipFloatMenu : FloatMenu
+        {
+            internal RoleChipFloatMenu(List<FloatMenuOption> options)
+                : base(options)
+            {
+            }
+
+            public override void PostClose()
+            {
+                try
+                {
+                    base.PostClose();
+                }
+                finally
+                {
+                    StructuredTipPresenter.SetSuppressed(false);
                 }
             }
         }
@@ -2376,7 +2394,7 @@ namespace WorkRoles.UI
                 var cellRect = new Rect(cellX, cellY, skillColWidth, CellH);
                 StructuredTip signalTip = presentation.Tooltip;
                 if (signalTip != null && Mouse.IsOver(cellRect))
-                    TooltipHandler.TipRegion(cellRect, signalTip.Activate());
+                    StructuredTipPresenter.TipRegion(cellRect, signalTip);
             }
 
             // Recommended Roles section: mirrors the Make It So outcome — kept roles
@@ -2434,10 +2452,13 @@ namespace WorkRoles.UI
                         if (Mouse.IsOver(chipRect))
                         {
                             StructuredTip structuredTip = preview.Line?.StructuredTipAt(previewIndex);
-                            TooltipHandler.TipRegion(chipRect, structuredTip?.Activate() ?? tip
-                                ?? (state == Dialog_ChangesPreview.ChipState.Removed
-                                    ? "WR_WillBeRemoved".Translate()
-                                    : "WR_AlreadyAssigned".Translate()));
+                            if (structuredTip != null)
+                                StructuredTipPresenter.TipRegion(chipRect, structuredTip);
+                            else
+                                TooltipHandler.TipRegion(chipRect, tip
+                                    ?? (state == Dialog_ChangesPreview.ChipState.Removed
+                                        ? "WR_WillBeRemoved".Translate()
+                                        : "WR_AlreadyAssigned".Translate()));
                         }
                     }
                     else
@@ -2459,8 +2480,10 @@ namespace WorkRoles.UI
                         if (tip != null && Mouse.IsOver(chipRect))
                         {
                             StructuredTip structuredTip = preview.Line?.StructuredTipAt(previewIndex);
-                            TooltipHandler.TipRegion(chipRect,
-                                structuredTip?.Activate() ?? tip);
+                            if (structuredTip != null)
+                                StructuredTipPresenter.TipRegion(chipRect, structuredTip);
+                            else
+                                TooltipHandler.TipRegion(chipRect, tip);
                         }
                     }
                     chipX += chipW + ChipGap;

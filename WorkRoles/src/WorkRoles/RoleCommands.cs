@@ -6,6 +6,7 @@ using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
+using ScaleMode = WorkRoles.Core.ScaleMode;
 
 namespace WorkRoles
 {
@@ -54,16 +55,9 @@ namespace WorkRoles
                 iconPath = def.iconPath,
                 entries = def.ParsedEntries()
             };
-            // Stored holder fields mirror the def so the editor and drift
-            // detection read def values; Auto mode still resolves dynamically.
-            var range = RoleHolderPolicy.WithRequiredTotal(
-                0, def.maxHolders, def.minHolders.RequiredTotal);
-            role.requiredTotal = range.requiredTotal;
-            role.maxHolders = range.max;
-            role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                range.requiredTotal, def.minHolders.TrainingWaivers);
-            if (!def.holderScale.NullOrEmpty())
-                role.holderScaleName = SeededDefIdentity.ScaleName(def);
+            string scaleName = SeededDefIdentity.ScaleName(def);
+            role.holderScaleName = scaleName.NullOrEmpty()
+                ? "Never" : scaleName;
             if (!def.group.NullOrEmpty())
                 role.groupId = ResolveOrCreateGroup(SeededDefIdentity.GroupLabel(def)).id;
             if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
@@ -202,21 +196,27 @@ namespace WorkRoles
             if (target == null)
             {
                 var source = Store.ScaleByName(edit.sourceName);
-                target = source?.Copy() ?? new HolderScale();
+                target = source?.Copy()
+                    ?? new RoleAssignmentStrategy { Mode = ScaleMode.Skilled };
                 target.Name = targetName;
                 target.Preset = false;
-                // Only the Never preset carries max 0; its forks start uncapped.
-                if (target.IsNever)
-                    for (int i = 0; i < HolderScale.Bands; i++)
-                        target.Max[i] = RoleHolderRange.Uncapped;
+                // A fork must be editable: a Never fork becomes a fresh
+                // uncapped Skilled scale (new HolderScale defaults to uncapped).
+                if (target.Scale == null)
+                {
+                    target.Scale = new HolderScale();
+                    if (target.Mode == ScaleMode.Never)
+                        target.Mode = ScaleMode.Skilled;
+                }
                 Store.holderScales.Add(target);
                 changed = true;
             }
-            if (!target.Preset && (edit.requiredTotals != null
-                || edit.trainingWaivers != null
-                || edit.max != null))
+            if (!target.Preset && target.Scale != null
+                && (edit.requiredTotals != null
+                    || edit.trainingWaivers != null
+                    || edit.max != null))
             {
-                HolderScale candidate = target.Copy();
+                HolderScale candidate = target.Scale.Copy();
                 if (edit.requiredTotals != null)
                     candidate.RequiredTotals = HolderScaleCodec.DecodeRow(
                         edit.requiredTotals, 0);
@@ -227,11 +227,11 @@ namespace WorkRoles
                     candidate.Max = HolderScaleCodec.DecodeRow(
                         edit.max, RoleHolderRange.Uncapped);
                 candidate.Normalize();
-                if (!target.SameValuesAs(candidate))
+                if (!target.Scale.SameValuesAs(candidate))
                 {
-                    target.RequiredTotals = candidate.RequiredTotals;
-                    target.TrainingWaivers = candidate.TrainingWaivers;
-                    target.Max = candidate.Max;
+                    target.Scale.RequiredTotals = candidate.RequiredTotals;
+                    target.Scale.TrainingWaivers = candidate.TrainingWaivers;
+                    target.Scale.Max = candidate.Max;
                     changed = true;
                 }
             }
@@ -289,84 +289,6 @@ namespace WorkRoles
                 if (string.Equals(role.holderScaleName, previous,
                         System.StringComparison.OrdinalIgnoreCase))
                     role.holderScaleName = newName;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleHolderMode(
-            int roleId, int modeValue, int initialRequiredTotal)
-        {
-            var role = FindRole(roleId);
-            if (role == null || !System.Enum.IsDefined(typeof(RoleHolderMode), modeValue)) return;
-            var mode = (RoleHolderMode)modeValue;
-            bool initialized = false;
-            if (mode == RoleHolderMode.Custom && !role.holderRangeSet)
-            {
-                var defaults = RoleAutoDefaults.Resolve(role);
-                var custom = RoleHolderPolicy.InitialCustom(
-                    initialRequiredTotal,
-                    defaults.Max,
-                    defaults.TrainingWaivers);
-                role.requiredTotal = custom.requiredTotal;
-                role.maxHolders = custom.max;
-                role.trainingWaivers = custom.trainingWaivers;
-                role.holderRangeSet = true;
-                initialized = true;
-            }
-            if (role.holderMode == mode)
-            {
-                if (initialized) UiVersion.Bump();
-                return;
-            }
-            role.holderMode = mode;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleRequiredTotal(int roleId, int value)
-        {
-            var role = FindRole(roleId);
-            if (role == null) return;
-            var range = RoleHolderPolicy.WithRequiredTotal(
-                role.requiredTotal, role.maxHolders, value);
-            if (role.holderRangeSet
-                && role.requiredTotal == range.requiredTotal
-                && role.maxHolders == range.max) return;
-            role.requiredTotal = range.requiredTotal;
-            role.maxHolders = range.max;
-            role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                role.requiredTotal, role.trainingWaivers);
-            role.holderRangeSet = true;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleHolderMax(int roleId, int value)
-        {
-            var role = FindRole(roleId);
-            if (role == null) return;
-            var range = RoleHolderPolicy.WithMax(
-                role.requiredTotal, role.maxHolders, value);
-            if (role.holderRangeSet
-                && role.requiredTotal == range.requiredTotal
-                && role.maxHolders == range.max) return;
-            role.requiredTotal = range.requiredTotal;
-            role.maxHolders = range.max;
-            role.holderRangeSet = true;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleTrainingWaivers(int roleId, int value)
-        {
-            var role = FindRole(roleId);
-            if (role == null) return;
-            int trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                role.requiredTotal, value);
-            if (role.holderRangeSet
-                && role.trainingWaivers == trainingWaivers) return;
-            role.trainingWaivers = trainingWaivers;
-            role.holderRangeSet = true;
             UiVersion.Bump();
         }
 
@@ -789,11 +711,7 @@ namespace WorkRoles
                 TemplateHash = source.templateHash,
                 AutoAssign = source.autoAssign,
                 Blocker = source.blocker,
-                HolderMode = source.holderMode,
-                HolderRangeSet = source.holderRangeSet,
-                RequiredTotal = source.requiredTotal,
-                MaxHolders = source.maxHolders,
-                TrainingWaivers = source.trainingWaivers,
+                HolderScaleName = source.holderScaleName,
                 GroupId = source.groupId,
                 ActiveHours = source.activeHours,
                 LocationTokens = source.locationTokens,
@@ -814,11 +732,7 @@ namespace WorkRoles
                 templateHash = values.TemplateHash,
                 autoAssign = values.AutoAssign,
                 blocker = values.Blocker,
-                holderMode = values.HolderMode,
-                holderRangeSet = values.HolderRangeSet,
-                requiredTotal = values.RequiredTotal,
-                maxHolders = values.MaxHolders,
-                trainingWaivers = values.TrainingWaivers,
+                holderScaleName = values.HolderScaleName,
                 groupId = values.GroupId,
                 activeHours = values.ActiveHours,
                 locationTokens = values.LocationTokens,
@@ -843,6 +757,62 @@ namespace WorkRoles
 
         // ----- Role rules -----
 
+        /// Deterministic load/setup migration. Legacy ship tokens used landing
+        /// map ids; the game has exactly one Gravship, so every recognized ship
+        /// token maps to its sole stable engine identity. This runs at most once
+        /// per save and never from UI or render code.
+        internal static void MigrateLocationTokensOnce()
+        {
+            var store = Store;
+            if (store == null || store.LocationTokenSchemaVersion
+                >= RoleStore.CurrentLocationTokenSchemaVersion)
+                return;
+
+            var liveSettlementTokens = new HashSet<string>(
+                System.StringComparer.Ordinal);
+            string stableShipToken = ColonyScope.CollectLocationMigrationFacts(
+                liveSettlementTokens);
+
+            var changedRoles = new List<Role>();
+            var replacements = new List<List<string>>();
+            for (int i = 0; i < store.roles.Count; i++)
+            {
+                Role role = store.roles[i];
+                if (role == null) continue;
+                List<string> normalized = LocationTokenMigration.Normalize(
+                    role.locationTokens, stableShipToken,
+                    liveSettlementTokens);
+                if (SameLocationTokens(role.locationTokens, normalized))
+                    continue;
+                changedRoles.Add(role);
+                replacements.Add(normalized);
+            }
+
+            using (var uiBatch = new UiInvalidationBatch(UiVersion.Bump))
+                for (int i = 0; i < changedRoles.Count; i++)
+                {
+                    Role role = changedRoles[i];
+                    role.locationTokens = replacements[i];
+                    CompiledJobOrders.InvalidateRole(
+                        role.id, uiBatch.Request);
+                }
+
+            PawnLocationTracker.RefreshManagedLocations();
+            store.LocationTokenSchemaVersion =
+                RoleStore.CurrentLocationTokenSchemaVersion;
+        }
+
+        private static bool SameLocationTokens(
+            IReadOnlyList<string> left, IReadOnlyList<string> right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null || left.Count != right.Count)
+                return false;
+            for (int i = 0; i < left.Count; i++)
+                if (left[i] != right[i]) return false;
+            return true;
+        }
+
         [SyncMethod]
         public static void SetRoleActiveHours(int roleId, int hoursMask)
         {
@@ -860,8 +830,8 @@ namespace WorkRoles
         {
             var role = FindRole(roleId);
             if (role == null || token.NullOrEmpty()) return;
-            if (!role.locationTokens.Remove(token))
-                role.locationTokens.Add(token);
+            if (!LocationTokenSelection.Toggle(role.locationTokens, token))
+                return;
             CompiledJobOrders.InvalidateRole(roleId);
             ReconcileHolders(roleId);
         }

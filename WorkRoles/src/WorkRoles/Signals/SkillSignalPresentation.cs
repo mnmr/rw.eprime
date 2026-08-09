@@ -58,7 +58,10 @@ namespace WorkRoles.Signals
             string valueText,
             Color valueColor,
             SkillSignalView view,
-            SignalBucket? bucket)
+            SignalBucket? bucket,
+            SignalBucket? baseBucket,
+            int skillLevel,
+            int promotionThreshold)
         {
             if (view == null || !view.HasTooltip) return null;
 
@@ -76,19 +79,39 @@ namespace WorkRoles.Signals
                     labelColor: Color.white);
             }
 
-            table.Gap(TableGap);
-            table.Columns(new[]
+            bool promoted = bucket.HasValue
+                && baseBucket.HasValue
+                && bucket.Value > baseBucket.Value
+                && promotionThreshold >= 0;
+            if (promoted
+                || view.ActiveSignals.Count > 0
+                || view.PassiveSignals.Count > 0)
             {
-                "WR_SignalColSignal".Translate().ToString(),
-                "WR_SignalColEffects".Translate().ToString(),
-                "WR_SignalCondition".Translate().ToString(),
-                "WR_SignalSource".Translate().ToString(),
-            }, TableGrey);
-            table.Rule();
-            foreach (PawnSignal signal in view.ActiveSignals)
-                AddSignalRows(table, signal, null, pawn);
-            foreach (PawnSignal signal in view.PassiveSignals)
-                AddSignalRows(table, signal, PassiveGrey, pawn);
+                table.Gap(TableGap);
+                table.Columns(new[]
+                {
+                    "WR_SignalColSignal".Translate().ToString(),
+                    "WR_SignalColEffects".Translate().ToString(),
+                    "WR_SignalCondition".Translate().ToString(),
+                    "WR_SignalSource".Translate().ToString(),
+                }, TableGrey);
+                table.Rule();
+                if (promoted)
+                    table.Columns(new[]
+                    {
+                        "WR_SignalSkillPromotion".Translate().ToString(),
+                        "WR_SignalSkillPromotionEffect".Translate(
+                            BucketLabel(baseBucket.Value),
+                            BucketLabel(bucket.Value)).ToString(),
+                        "WR_SignalSkillPromotionCondition".Translate(
+                            skillLevel, promotionThreshold).ToString(),
+                        "WorkRoles",
+                    });
+                foreach (PawnSignal signal in view.ActiveSignals)
+                    AddSignalRows(table, signal, null, pawn);
+                foreach (PawnSignal signal in view.PassiveSignals)
+                    AddSignalRows(table, signal, PassiveGrey, pawn);
+            }
 
             return new StructuredTip(
                 $"skill-signal:{pawn.thingIDNumber}:{skillDefName}", model);

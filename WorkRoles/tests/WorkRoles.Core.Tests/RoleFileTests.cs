@@ -7,6 +7,29 @@ namespace WorkRoles.Core.Tests;
 public class RoleFileTests
 {
     [Test]
+    public async Task NowhereLocationRoundTripsWithoutBecomingAnywhere()
+    {
+        var document = new RoleFileDocument
+        {
+            roles =
+            {
+                new FileRole
+                {
+                    label = "Disabled by migration",
+                    locations = { LocationRules.Nowhere },
+                },
+            },
+        };
+
+        string xml = RoleFile.Build(document);
+        RoleFileDocument parsed = RoleFile.Parse(xml);
+
+        await Assert.That(RoleFile.FormatVersion).IsEqualTo("10");
+        await Assert.That(string.Join("|", parsed.roles[0].locations))
+            .IsEqualTo("nowhere");
+    }
+
+    [Test]
     public async Task WhitespaceOnlyRoleNamesAreRejectedAfterNormalization()
     {
         RoleFileDocument parsed = RoleFile.Parse(
@@ -110,9 +133,7 @@ public class RoleFileTests
         enabled = false,
         activeHours = RoleFile.BitsToHours("111111000000000000000000"),
         locations = { LocationRules.Caravans, "settlement:Bö & <Wood> \"Camp\"", "ship:The Wanderer" },
-        holderMode = RoleHolderMode.Custom,
-        minHolders = 2,
-        maxHolders = 4,
+        holderScale = "Night Shift",
         entries = new List<JobEntry>
         {
             new(JobEntryKind.WorkGiver, "FightFires"),
@@ -148,18 +169,14 @@ public class RoleFileTests
             .IsEqualTo("caravans|settlement:Bö & <Wood> \"Camp\"|ship:The Wanderer");
         await Assert.That(string.Join(",", role.entries.Select(e => e.Encode())))
             .IsEqualTo("WorkGiver:FightFires,WorkType:Hauling"); // ORDER preserved across kinds
-        await Assert.That(role.minHolders).IsEqualTo(2);
-        await Assert.That(role.maxHolders).IsEqualTo(4);
-        await Assert.That(role.holderMode).IsEqualTo(RoleHolderMode.Custom);
+        await Assert.That(role.holderScale).IsEqualTo("Night Shift");
 
         var plain = parsed.roles[1];
         await Assert.That(plain.templateDef == null).IsTrue();
         await Assert.That(plain.colorRef == null).IsTrue();
         await Assert.That(plain.enabled).IsTrue();
         await Assert.That(plain.activeHours).IsEqualTo(FileRole.AllHours);
-        await Assert.That(plain.holderMode).IsEqualTo(RoleHolderMode.Auto);
-        await Assert.That(plain.minHolders).IsEqualTo(0);
-        await Assert.That(plain.maxHolders).IsEqualTo(RoleHolderRange.Uncapped);
+        await Assert.That(plain.holderScale == null).IsTrue();
     }
 
     [Test]
@@ -259,7 +276,7 @@ public class RoleFileTests
         };
         string xml = RoleFile.Build(doc);
         await Assert.That(System.Xml.Linq.XElement.Parse(xml).Attribute("version")!.Value)
-            .IsEqualTo("8");
+            .IsEqualTo("10");
 
         var parsed = RoleFile.Parse(xml);
         await Assert.That(parsed.error == null).IsTrue();
@@ -480,7 +497,7 @@ public class RoleFileTests
             return role.fileId == "role-a" ? 101 : 102;
         }).ToArray();
 
-        await Assert.That(RoleFile.FormatVersion).IsEqualTo("8");
+        await Assert.That(RoleFile.FormatVersion).IsEqualTo("10");
         await Assert.That(parsed.groupsWithIds.Select(group => group.fileId))
             .IsEquivalentTo(new[] { "group-a", "group-b" });
         await Assert.That(RoleFile.ResolveGroup(parsed, second.groupId, second.group)?.fileId)

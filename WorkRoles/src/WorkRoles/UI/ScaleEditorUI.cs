@@ -9,10 +9,10 @@ namespace WorkRoles.UI
     internal sealed class ScaleEditorSnapshot
     {
         private readonly List<ScaleOptionSnapshot> options;
-        private readonly HolderScale stored;
+        private readonly RoleAssignmentStrategy stored;
 
         internal ScaleEditorSnapshot(int roleId, string roleLabel,
-            HolderScale stored, bool pathTarget, string trainingHelp,
+            RoleAssignmentStrategy stored, bool pathTarget, string trainingHelp,
             float height, string pickerLabel, string usedBy,
             string forkName, List<ScaleOptionSnapshot> options,
             string requiredTotalCaption, string directMinimumCaption,
@@ -44,13 +44,16 @@ namespace WorkRoles.UI
         internal string RoleLabel { get; }
         internal string StoredName => stored.Name;
         internal bool StoredPreset => stored.Preset;
+        /// Never carries no numerics: the band editor is suppressed for it.
+        internal bool HasBands => stored.Scale != null;
         internal int StoredRequiredTotalAt(int band) =>
-            stored.RequiredTotals[band];
+            stored.Scale?.RequiredTotals[band] ?? 0;
         internal int StoredTrainingWaiversAt(int band) =>
-            stored.TrainingWaivers[band];
-        internal HolderScale CopyStored() => stored.Copy();
+            stored.Scale?.TrainingWaivers[band] ?? 0;
+        internal HolderScale CopyStored() =>
+            stored.Scale?.Copy() ?? new HolderScale();
         internal bool StoredSameValuesAs(HolderScale other) =>
-            stored.SameValuesAs(other);
+            (stored.Scale ?? new HolderScale()).SameValuesAs(other);
         internal bool PathTarget { get; }
         internal string TrainingHelp { get; }
         internal float Height { get; }
@@ -104,20 +107,27 @@ namespace WorkRoles.UI
         internal static ScaleEditorSnapshot BuildSnapshot(RoleStore store,
             Role role, float width)
         {
-            HolderScale source = store?.ScaleFor(role) ?? store?.ScaleByName("Never");
+            RoleAssignmentStrategy source =
+                store?.ScaleFor(role) ?? store?.ScaleByName("Never");
             if (source == null) return null;
-            HolderScale stored = source.Copy();
-            bool pathTarget = IsPathTarget(store, role.id);
-            Role controlling = pathTarget ? null : ControllingTarget(store, role.id);
+            RoleAssignmentStrategy stored = source.Copy();
+            bool hasBands = source.Scale != null;
+            bool pathTarget = hasBands && IsPathTarget(store, role.id);
+            Role controlling = !hasBands || pathTarget
+                ? null : ControllingTarget(store, role.id);
             string trainingHelp = controlling == null
                 ? null : TrainingHelp(controlling, role);
-            float height = PickerRowH + 4f + CaptionH + BandRowH + 2f
-                + BandLabelRowH;
-            if (pathTarget) height += CaptionH + BandRowH + 2f;
-            else if (trainingHelp != null) height += HelpHeight(trainingHelp, width);
+            float height = PickerRowH + 4f;
+            if (hasBands)
+            {
+                height += CaptionH + BandRowH + 2f + BandLabelRowH;
+                if (pathTarget) height += CaptionH + BandRowH + 2f;
+                else if (trainingHelp != null)
+                    height += HelpHeight(trainingHelp, width);
+            }
 
             var options = new List<ScaleOptionSnapshot>();
-            foreach (HolderScale candidate in store.holderScales
+            foreach (RoleAssignmentStrategy candidate in store.holderScales
                 .OrderBy(item => item.Name, System.StringComparer.OrdinalIgnoreCase))
             {
                 string usedBy = UsedBySummary(store, candidate.Name);
@@ -149,8 +159,14 @@ namespace WorkRoles.UI
         /// their training roles a help paragraph in its place.
         internal static float HeightFor(Role role, RoleStore store, float width)
         {
-            float h = PickerRowH + 4f + CaptionH + BandRowH + 2f + BandLabelRowH;
-            if (store == null) return h;
+            float picker = PickerRowH + 4f;
+            if (store == null) return picker + CaptionH + BandRowH + 2f
+                + BandLabelRowH;
+            // Never carries no numerics: only the picker row is shown.
+            if ((store.ScaleFor(role) ?? store.ScaleByName("Never"))?.Scale
+                == null)
+                return picker;
+            float h = picker + CaptionH + BandRowH + 2f + BandLabelRowH;
             if (IsPathTarget(store, role.id))
                 return h + CaptionH + BandRowH + 2f;
             var target = ControllingTarget(store, role.id);
@@ -266,6 +282,8 @@ namespace WorkRoles.UI
             DrawPickerRow(new Rect(rect.x, rect.y, rect.width, PickerRowH),
                 model);
             float y = rect.y + PickerRowH + 4f;
+            // Never carries no numerics: nothing below the picker to edit.
+            if (!model.HasBands) return;
 
             if (model.PathTarget)
             {
@@ -443,7 +461,7 @@ namespace WorkRoles.UI
             {
                 WrTips.Key("WR_ScaleResetTip").Region(resetRect);
                 if (Widgets.ButtonText(resetRect, model.ResetLabel))
-                    CommitValues(model, model.CopyStored(), baseline);
+                    CommitValues(model, baseline);
             }
 
             if (Widgets.ButtonText(addRect,
@@ -750,22 +768,20 @@ namespace WorkRoles.UI
             if (dragScale == null) return;
             if (model.StoredSameValuesAs(dragScale))
                 return;
-            HolderScale source = model.CopyStored();
-            CommitValues(model, source, dragScale);
+            CommitValues(model, dragScale);
         }
 
         private static void CommitValues(ScaleEditorSnapshot model,
-            HolderScale source,
             HolderScale values)
         {
             if (values == null) return;
-            string sourceName = source?.Name;
-            string targetName = source != null && source.Preset
+            string sourceName = model.StoredName;
+            string targetName = model.StoredPreset
                 ? model.ForkName
                 : sourceName;
             if (targetName.NullOrEmpty()) return;
             expectedName = targetName;
-            if (source != null && source.Preset) baselineForked = true;
+            if (model.StoredPreset) baselineForked = true;
             // Max is deliberately not sent: the editor never touches it, so
             // the target keeps its stored row (uncapped for new scales).
             RoleCommands.CommitScaleEdit(new ScaleEdit

@@ -534,17 +534,54 @@ namespace WorkRoles.Core.Recs
             int targetRoleId,
             int pawnIndex,
             RecommendationTargetAssignmentKind kind,
-            int[] roleIds)
+            int[] roleIds,
+            RecommendationSelectionStage stage,
+            int candidateRank,
+            int candidateCount,
+            int stageRank,
+            int selectionSlot,
+            int selectionSlotCount,
+            int pathId,
+            SignalBucket signalBucket,
+            SignalBucket surplusMinimumSignalBucket,
+            bool surplusQualifiedBySignal)
         {
             TargetRoleId = targetRoleId;
             PawnIndex = pawnIndex;
             Kind = kind;
             this.roleIds = roleIds;
+            Stage = stage;
+            CandidateRank = candidateRank;
+            CandidateCount = candidateCount;
+            StageRank = stageRank;
+            SelectionSlot = selectionSlot;
+            SelectionSlotCount = selectionSlotCount;
+            PathId = pathId;
+            SignalBucket = signalBucket;
+            SurplusMinimumSignalBucket = surplusMinimumSignalBucket;
+            SurplusQualifiedBySignal = surplusQualifiedBySignal;
+            for (int index = 0; index < roleIds.Length; index++)
+                if (roleIds[index] == targetRoleId)
+                {
+                    AssignsTargetRole = true;
+                    break;
+                }
         }
 
         internal int TargetRoleId { get; }
         internal int PawnIndex { get; }
         internal RecommendationTargetAssignmentKind Kind { get; }
+        internal RecommendationSelectionStage Stage { get; }
+        internal int CandidateRank { get; }
+        internal int CandidateCount { get; }
+        internal int StageRank { get; }
+        internal int SelectionSlot { get; }
+        internal int SelectionSlotCount { get; }
+        internal int PathId { get; }
+        internal bool AssignsTargetRole { get; }
+        internal SignalBucket SignalBucket { get; }
+        internal SignalBucket SurplusMinimumSignalBucket { get; }
+        internal bool SurplusQualifiedBySignal { get; }
         internal int RoleCount => roleIds.Length;
         internal int RoleAt(int index) => roleIds[index];
     }
@@ -611,7 +648,6 @@ namespace WorkRoles.Core.Recs
                 int position = positions[left.Id].CompareTo(positions[right.Id]);
                 return position != 0 ? position : left.Id.CompareTo(right.Id);
             });
-            var scaling = new RecommendationScaling(formulas);
             var rolePlans = new List<RolePlan>();
             // Roles arrive position-sorted, so championships resolve in
             // recommended order and each grant penalizes later repeat picks.
@@ -621,16 +657,15 @@ namespace WorkRoles.Core.Recs
                 RoleView role = roles[roleIndex];
                 if (!role.Available
                     || !role.Enabled
-                    || role.HolderMode == RoleHolderMode.Never
-                    || role.AutoAssign
-                    || role.HasRules
-                    || role.Blocker
-                    || role.Unskilled
-                    || role.Hunting
+                    || !role.UsesHolderScale
+                    || role.IsNever
+                    // Skill-less roles are retained chores unless the player
+                    // opted them into the Unskilled strategy (assign all capable).
+                    || (role.Unskilled && role.Mode != ScaleMode.Unskilled)
                     || role.Id == colony.HunterRoleId)
                     continue;
                 RolePlan rolePlan = RolePlan.Build(
-                    facts, role, scaling, formulas, priorChampionsByPawn);
+                    facts, role, formulas, priorChampionsByPawn);
                 rolePlans.Add(rolePlan);
                 if (rolePlan.ChampionPawnIndex < 0) continue;
                 List<int> championed =
@@ -709,9 +744,11 @@ namespace WorkRoles.Core.Recs
                     out activatedPathCountsByPawn[pawnIndex]);
             }
             RecommendationTargetAssignment[] targetAssignments =
-                BuildTargetAssignments(rolePlans, drafts, rolesByPawn);
+                BuildTargetAssignments(
+                    rolePlans, drafts, rolesByPawn, formulas);
             Dictionary<int, RoleRecommendationExplanation>[] explanations =
-                BuildExplanations(facts, drafts, formulas, scaling);
+                BuildExplanations(
+                    facts, drafts, formulas, targetAssignments);
             return new RecommendationPlan(
                 rolesByPawn,
                 pathsByPawn,
@@ -723,7 +760,8 @@ namespace WorkRoles.Core.Recs
         private static RecommendationTargetAssignment[] BuildTargetAssignments(
             List<RolePlan> rolePlans,
             PawnDraft[] drafts,
-            int[][] rolesByPawn)
+            int[][] rolesByPawn,
+            RecommendationFormulaEngine formulas)
         {
             var assignments = new List<RecommendationTargetAssignment>();
             for (int planIndex = 0; planIndex < rolePlans.Count; planIndex++)
@@ -769,7 +807,17 @@ namespace WorkRoles.Core.Recs
                         plan.RoleId,
                         pawnIndex,
                         kind,
-                        assignedRoleIds.ToArray()));
+                        assignedRoleIds.ToArray(),
+                        plan.SelectionStageAt(candidateIndex),
+                        candidateIndex + 1,
+                        plan.CandidateCount,
+                        plan.StageRankAt(candidateIndex),
+                        plan.SelectionSlotAt(candidateIndex),
+                        plan.SelectionSlotCount,
+                        activation?.PathId ?? -1,
+                        plan.SelectionSignalAt(candidateIndex),
+                        formulas.SurplusMinimumSignal,
+                        plan.IsSignalQualifiedSurplus(candidateIndex)));
                 }
             }
             return assignments.ToArray();
@@ -805,7 +853,14 @@ namespace WorkRoles.Core.Recs
                         PawnDraft draft = drafts[pawnIndex];
                         if (!draft.ContainsRole(role.Id)
                             || draft.IsPathRole(role.Id)
-                            || (exactMinimumRequired
+                            || (plan.IsSignalQualifiedSurplus(candidateIndex)
+                                && !PawnHasEarlierCoverer(
+                                    facts, draft, pawnIndex, role))
+                            // Unskilled reqTotal picks (e.g. a Hauler champion)
+                            // coexist with a broader coverer like Grunt and are
+                            // never folded; path targets keep their exact minimum.
+                            || ((exactMinimumRequired
+                                    || role.Mode == ScaleMode.Unskilled)
                                 && draft.IsMinimumRole(role.Id))
                             || draft.IsSpecialRole(role.Id))
                             continue;
@@ -827,7 +882,8 @@ namespace WorkRoles.Core.Recs
                     if (PawnCovers(facts, drafts[pawnIndex], pawnIndex, role))
                         continue;
                     byte minimumBonus =
-                        plan.SelectForCoverage(candidateIndex);
+                        plan.SelectForCoverage(
+                            candidateIndex, coveredPawns + 1);
                     drafts[pawnIndex].AddRole(
                         role.Id,
                         minimumBonus: minimumBonus,
@@ -880,6 +936,28 @@ namespace WorkRoles.Core.Recs
                 RoleView other = facts.RoleOf(otherRoleId);
                 if (otherRoleId != role.Id
                     && other != null
+                    && !other.Blocker
+                    && facts.Redundant(otherRoleId, role.Id)
+                    && !HigherInSharedPath(
+                        facts.Colony.Paths, role.Id, otherRoleId))
+                    return true;
+            }
+            return false;
+        }
+
+        private static bool PawnHasEarlierCoverer(
+            EngineContext facts,
+            PawnDraft draft,
+            int pawnIndex,
+            RoleView role)
+        {
+            if (!facts.FullyCapable(pawnIndex, role)) return false;
+            for (int index = 0; index < draft.RoleCount; index++)
+            {
+                int otherRoleId = draft.RoleAt(index);
+                if (otherRoleId == role.Id) return false;
+                RoleView other = facts.RoleOf(otherRoleId);
+                if (other != null
                     && !other.Blocker
                     && facts.Redundant(otherRoleId, role.Id)
                     && !HigherInSharedPath(

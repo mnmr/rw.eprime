@@ -74,11 +74,11 @@ public class SignalPresentationPolicyTests
     }
 
     [Test]
-    public async Task NoSignalsMeansNoTooltipAndNoPassionColour()
+    public async Task NoSignalsStillAllowsTheSkillFactsTooltip()
     {
         var view = SignalPresentationPolicy.ForSkill(SignalSnapshot.Empty, "Shooting");
 
-        await Assert.That(view.HasTooltip).IsFalse();
+        await Assert.That(view.HasTooltip).IsTrue();
         await Assert.That(view.PassionTier).IsEqualTo(SignalPassionTier.None);
         await Assert.That(view.IconCandidates.Count).IsEqualTo(0);
         await Assert.That(view.ActiveSignals.Count).IsEqualTo(0);

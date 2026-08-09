@@ -34,22 +34,10 @@ public class HolderScaleScalingTests
         }
         var role = RecsTestBed.Role(1, "Cooking");
         role.Scale = scale;
-        var scaling = new RecommendationScaling(
-            RecommendationsTuningOptions.Default);
-
-        await Assert.That(scaling.Requirement(role, 3).RequiredTotal).IsEqualTo(1);
-        await Assert.That(scaling.Requirement(role, 12).RequiredTotal).IsEqualTo(4);
-        await Assert.That(scaling.Requirement(role, 34).RequiredTotal).IsEqualTo(10);
-        await Assert.That(scaling.Requirement(role, 2).RequiredTotal).IsEqualTo(1);
+        await Assert.That(role.RequirementAt(3).RequiredTotal).IsEqualTo(1);
+        await Assert.That(role.RequirementAt(12).RequiredTotal).IsEqualTo(4);
+        await Assert.That(role.RequirementAt(34).RequiredTotal).IsEqualTo(10);
+        await Assert.That(role.RequirementAt(2).RequiredTotal).IsEqualTo(1);
     }
 
-    [Test]
-    public async Task RolesWithoutScalesUseTheDefaultConfiguredFormula()
-    {
-        var role = RecsTestBed.Role(1, "Cooking");
-        role.RequiredTotal = 2;
-        var scaling = new RecommendationScaling(
-            RecommendationsTuningOptions.Default);
-        await Assert.That(scaling.Requirement(role, 12).RequiredTotal).IsEqualTo(4);
-    }
 }

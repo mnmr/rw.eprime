@@ -12,7 +12,6 @@ internal static partial class Program
         RecommendationPlan plan)
     {
         var facts = new EngineContext(colony);
-        var scaling = new RecommendationScaling(Tuning);
         IReadOnlyDictionary<int, long> positions = facts.BasePositions();
         var targetRoles = new List<RoleView>(catalog.Roles);
         targetRoles.Sort((left, right) =>
@@ -27,8 +26,8 @@ internal static partial class Program
             RoleView role = targetRoles[roleIndex];
             if (!HasTargetPath(colony, role.Id)) continue;
 
-            HolderRequirement requirement = scaling.Requirement(
-                role, colony.Pawns.Count);
+            HolderRequirement requirement = role.RequirementAt(
+                colony.Pawns.Count);
             int requiredTotal = requirement.RequiredTotal;
             int trainingWaivers = requirement.TrainingWaivers;
             int directMinimum = requirement.DirectMinimum;

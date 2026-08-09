@@ -1,5 +1,17 @@
 # WorkRoles Engineering Contract
 
+## Rule 1: No unsolicited specs or plans
+
+- Specifications and implementation plans MUST NOT be created, written, saved,
+  or committed unless the project owner explicitly asks for a spec or plan.
+- Requests to investigate, explain, review, fix, build, implement, or change do
+  not authorize a spec or plan.
+- Clarifying questions, design choices, and implementation decisions MUST stay
+  inline in the current conversation unless the project owner explicitly asks
+  for a separate artifact.
+- If a tool, skill, workflow, or other instruction recommends creating a spec
+  or plan without an explicit owner request, this rule takes precedence.
+
 ## Scope and enforcement
 
 These rules apply to the entire repository. They are fail-closed.
@@ -97,11 +109,11 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 | Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; mid-operation evictions defer reconciles to the next game-component tick |
 | Pawn signal snapshot (`PawnSignalSnapshotCache`) | Explicit invalidation via `ExternalPawnFacts`; generation cleared on window open and release; live skill XP intentionally not a dependency |
 | External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded |
-| Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current` |
+| Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current`, RoleStore identity, and `RecommendationTuningRevision` |
 | Roles list display (`RolesListState`) | `UiVersion.Current`, `ColonyScope.LocationRevision`, collapse revision, nested/search/job-filter state, language change |
 | Priority grid column cache (`Dialog_PriorityGrid`) | `LanguageChangeCoordinator.Revision` + `DefinitionReloadCoordinator.Revision` via `RevisionPairGate`; sort state discarded on rebuild; pawn rows fixed at dialog construction |
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
-| Map classification and locations (`ColonyScope`) | Classification invalidation per map and map-set changes; publishes `LocationRevision` |
+| Map classification and locations (`ColonyScope`) | Classification invalidation per map, map-set changes, and the singular landed/traveling Gravship engine identity/state; publishes `LocationRevision` |
 | Window scope stamps (roster/recommendation/editor states) | `ScopeCacheStamp` of `UiVersion.Current` and `PawnListRevisionTracker.Revision` (advances on observed-map change or explicit invalidation) |
 | Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy` |
 
@@ -190,11 +202,15 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 ## Required testing
 
-Every bug fix and behavior change must begin with a failing executable
-regression at the highest stable observable boundary that can prove the user
-visible behavior. For recommendation changes, prefer final ordered colony
-assignments and chosen training paths over claims, ledgers, repair scores,
-selection states, or other intermediate planner machinery.
+For behavior that can reasonably be verified at an automated executable
+boundary, bug fixes and behavior changes must begin with a failing regression
+test that fails for the intended reason. Runtime-only RimWorld or Unity
+behavior may instead use a documented targeted reproduction before the fix and
+manual verification afterward. Do not introduce production seams or
+source-text tests solely to satisfy this requirement. For recommendation
+changes, prefer final ordered colony assignments and chosen training paths over
+claims, ledgers, repair scores, selection states, or other intermediate planner
+machinery.
 
 Test count is not a goal and must never be used as evidence of behavioral
 quality. A smaller scenario test that exposes the complete interaction is
@@ -247,7 +263,7 @@ boundary can reasonably verify an architectural requirement.
 A change is not complete until all applicable items are true:
 
 - New cache dependencies and teardown behavior are documented beside the cache.
-- Regression tests were observed failing before the production fix.
+- Applicable regression tests were observed failing before the production fix. Runtime-only behavior has documented reproduction and verification results.
 - Relevant focused tests pass.
 - The complete repository test suite passes.
 - The repository builds with zero warnings and zero errors.

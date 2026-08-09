@@ -36,7 +36,6 @@
   <WR_RecTuneOptionalSection>Training path and optional target options</WR_RecTuneOptionalSection>
   <WR_RecTuneLeadSection>Lead diversification options</WR_RecTuneLeadSection>
   <WR_RecTuneHunterSection>Hunter placement options</WR_RecTuneHunterSection>
-  <WR_RecTuneScalingSection>Fallback holder scaling options</WR_RecTuneScalingSection>
 
   <WR_RecTuneCandidateMinimumSignal>Candidate minimum signal</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Lowest signal admitted to ordinary role selection. Raising it removes weaker candidates before champion and minimum-holder selection.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -71,7 +70,7 @@
   <WR_RecTuneRankedCandidatePrioritySignal>Ranked-candidate priority signal</WR_RecTuneRankedCandidatePrioritySignal>
   <WR_RecTuneRankedCandidatePrioritySignalDesc>Non-champion candidates at or above this signal are ranked ahead of weaker candidates before minimum slots are filled.</WR_RecTuneRankedCandidatePrioritySignalDesc>
   <WR_RecTuneSurplusMinimumSignal>Surplus minimum signal</WR_RecTuneSurplusMinimumSignal>
-  <WR_RecTuneSurplusMinimumSignalDesc>After required slots are filled, standard candidates at or above this signal may still receive the role. Multi-skill training targets instead use the optional-target aptitude requirements, including level-based signal promotions.</WR_RecTuneSurplusMinimumSignalDesc>
+  <WR_RecTuneSurplusMinimumSignalDesc>After required slots are filled, standard candidates at or above this signal may still receive the role. Level-based promotion applies to single-skill roles within their configured training band; multi-skill targets use the optional-target aptitude requirements.</WR_RecTuneSurplusMinimumSignalDesc>
 
   <WR_RecTuneOrderingSkillDivisor>Ordering skill divisor</WR_RecTuneOrderingSkillDivisor>
   <WR_RecTuneOrderingSkillDivisorDesc>Final-order skill points are ceil(skill level ÷ this value). Raising it reduces the effect of skill on role order.</WR_RecTuneOrderingSkillDivisorDesc>
@@ -101,15 +100,15 @@
   <WR_RecTuneOptionalTargetMinimumSkillCount>Optional-target skill threshold</WR_RecTuneOptionalTargetMinimumSkillCount>
   <WR_RecTuneOptionalTargetMinimumSkillCountDesc>Number of qualifying target skills required before the optional-target aptitude test applies. Roles with fewer qualifying skills bypass this test.</WR_RecTuneOptionalTargetMinimumSkillCountDesc>
   <WR_RecTuneOptionalTargetMinimumSignal>Optional-target minimum signal</WR_RecTuneOptionalTargetMinimumSignal>
-  <WR_RecTuneOptionalTargetMinimumSignalDesc>Every qualifying skill must meet this signal before its aptitude points can qualify an optional target.</WR_RecTuneOptionalTargetMinimumSignalDesc>
+  <WR_RecTuneOptionalTargetMinimumSignalDesc>A skill must meet this signal before level promotion can affect single-skill surplus eligibility or contribute aptitude points toward an optional target.</WR_RecTuneOptionalTargetMinimumSignalDesc>
   <WR_RecTuneOptionalTargetStrongLevel>Middle skill promotion level</WR_RecTuneOptionalTargetStrongLevel>
-  <WR_RecTuneOptionalTargetStrongLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured middle promotion signal for optional-target scoring.</WR_RecTuneOptionalTargetStrongLevelDesc>
+  <WR_RecTuneOptionalTargetStrongLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured middle signal for single-skill surplus eligibility and optional-target scoring.</WR_RecTuneOptionalTargetStrongLevelDesc>
   <WR_RecTuneOptionalTargetStrongPromotedSignal>Middle promoted signal</WR_RecTuneOptionalTargetStrongPromotedSignal>
-  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signal used for optional-target aptitude scoring at or above the middle skill promotion level.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetStrongPromotedSignalDesc>Signal used for single-skill surplus eligibility and optional-target aptitude scoring at or above the middle skill promotion level.</WR_RecTuneOptionalTargetStrongPromotedSignalDesc>
   <WR_RecTuneOptionalTargetGreatLevel>High skill promotion level</WR_RecTuneOptionalTargetGreatLevel>
-  <WR_RecTuneOptionalTargetGreatLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured high promotion signal for optional-target scoring.</WR_RecTuneOptionalTargetGreatLevelDesc>
+  <WR_RecTuneOptionalTargetGreatLevelDesc>At this skill level, a weaker qualifying signal is promoted to the configured high signal for single-skill surplus eligibility and optional-target scoring.</WR_RecTuneOptionalTargetGreatLevelDesc>
   <WR_RecTuneOptionalTargetGreatPromotedSignal>High promoted signal</WR_RecTuneOptionalTargetGreatPromotedSignal>
-  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal used for optional-target aptitude scoring at or above the high skill promotion level.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
+  <WR_RecTuneOptionalTargetGreatPromotedSignalDesc>Signal used for single-skill surplus eligibility and optional-target aptitude scoring at or above the high skill promotion level.</WR_RecTuneOptionalTargetGreatPromotedSignalDesc>
   <WR_RecTuneOptionalTargetMinimumPoints>Optional-target minimum points</WR_RecTuneOptionalTargetMinimumPoints>
   <WR_RecTuneOptionalTargetMinimumPointsDesc>Minimum summed signal steps above the configured signal floor needed to recommend an optional multi-skill target.</WR_RecTuneOptionalTargetMinimumPointsDesc>
 
@@ -125,10 +124,6 @@
   <WR_RecTuneHunterThirdTierMaximum>Hunter third-tier maximum</WR_RecTuneHunterThirdTierMaximum>
   <WR_RecTuneHunterThirdTierMaximumDesc>Shooting levels above the second cutoff and at or below this value use the third dynamic Hunter slot; higher levels place Hunter last.</WR_RecTuneHunterThirdTierMaximumDesc>
 
-  <WR_RecTuneFallbackColonistsPerUnit>Colonists per fallback unit</WR_RecTuneFallbackColonistsPerUnit>
-  <WR_RecTuneFallbackColonistsPerUnitDesc>For roles without a named holder scale, each group of this many colonists adds one holder-demand unit.</WR_RecTuneFallbackColonistsPerUnitDesc>
-  <WR_RecTuneFallbackMinimumUnits>Fallback minimum units</WR_RecTuneFallbackMinimumUnits>
-  <WR_RecTuneFallbackMinimumUnitsDesc>Minimum holder-demand units used by roles without a named scale before role-specific demand and colony-size caps apply.</WR_RecTuneFallbackMinimumUnitsDesc>
 
   <!-- Options: Training Paths -->
   <WR_TrainingSection>Training Paths</WR_TrainingSection>
@@ -299,6 +294,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_SignalCondition>Condition</WR_SignalCondition>
   <WR_SignalSource>Source</WR_SignalSource>
   <WR_SignalVerdict>Verdict</WR_SignalVerdict>
+  <WR_SignalSkillPromotion>High skill</WR_SignalSkillPromotion>
+  <WR_SignalSkillPromotionEffect>{0} → {1}</WR_SignalSkillPromotionEffect>
+  <WR_SignalSkillPromotionCondition>Level {0} meets threshold {1}</WR_SignalSkillPromotionCondition>
   <WR_SignalFromSkill>(from {0})</WR_SignalFromSkill>
   <WR_SignalAlreadyReflected>Already reflected in the displayed skill level</WR_SignalAlreadyReflected>
   <WR_SignalDisabled>Disabled</WR_SignalDisabled>
@@ -329,23 +327,35 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_AlreadyAssigned>Already assigned</WR_AlreadyAssigned>
   <WR_WillBeRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_WillBeRemoved>
   <WR_RecTipColonyNeed>Colony needs</WR_RecTipColonyNeed>
-  <WR_RecTipConfiguredMax>Configured maximum</WR_RecTipConfiguredMax>
   <WR_RecTipSkills>Required skills</WR_RecTipSkills>
   <WR_RecTipSignalVerdict>Signal verdict</WR_RecTipSignalVerdict>
-  <WR_RecTipRecommendation>Recommendation</WR_RecTipRecommendation>
-  <WR_RecTipNeedOne>1 colonist required ({0} covered)</WR_RecTipNeedOne>
-  <WR_RecTipNeedMany>{0} colonists required ({1} covered)</WR_RecTipNeedMany>
-  <WR_RecTipNeedNone>No required total ({0} covered)</WR_RecTipNeedNone>
-  <WR_RecTipMaximum>{0} colonists</WR_RecTipMaximum>
+  <WR_RecTipSelection>Selection</WR_RecTipSelection>
+  <WR_RecTipAssignmentsOne>1 assignment requested</WR_RecTipAssignmentsOne>
+  <WR_RecTipAssignmentsMany>{0} assignments requested</WR_RecTipAssignmentsMany>
+  <WR_RecTipWithWaiverOne>{0} (1 training waiver)</WR_RecTipWithWaiverOne>
+  <WR_RecTipWithWaiversMany>{0} ({1} training waivers)</WR_RecTipWithWaiversMany>
+  <WR_RecTipWithCap>{0}, capped at {1}</WR_RecTipWithCap>
   <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>The configured signal threshold qualifies this pawn.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
   <WR_RecDecisionTraining>Assigned through the training path for {0}.</WR_RecDecisionTraining>
+  <WR_RecDecisionTrainingUnknown>Assigned through a training path.</WR_RecDecisionTrainingUnknown>
+  <WR_RecDecisionDirectSlot>Selected directly to fill slot {0} of {1} for {2}.</WR_RecDecisionDirectSlot>
+  <!-- {0}=slot, {1}=requested slots, {2}=target role, {3}=substitute role, {4}=skill and pawn-level list, {5}=chosen path's target-band minimum. -->
+  <WR_RecDecisionTrainingSlot>Selected to fill slot {0} of {1} for {2}. A training waiver substituted {2} with {3} ({4}; {2} requires {5}).</WR_RecDecisionTrainingSlot>
+  <WR_RecDecisionTrainingSlotSimple>Selected to fill slot {0} of {1} for {2}. A training waiver substituted {2} with {3}.</WR_RecDecisionTrainingSlotSimple>
+  <WR_RecDecisionTrainingSlotUnknown>Selected to fill slot {0} of {1} through a training waiver, assigning {2}.</WR_RecDecisionTrainingSlotUnknown>
+  <WR_RecTrainingSkill>{0} {1}</WR_RecTrainingSkill>
+  <WR_RecDecisionDirectFallbackSlot>Selected directly to fill slot {0} of {1} for {2} because no training substitute qualified for that slot.</WR_RecDecisionDirectFallbackSlot>
+  <WR_RecDecisionCoverageRepairSlot>Selected directly to fill remaining required slot {0} of {1} for {2}.</WR_RecDecisionCoverageRepairSlot>
+  <WR_RecDecisionSignalSurplus>Selected as a surplus candidate based on signal verdict.</WR_RecDecisionSignalSurplus>
+  <WR_RecDecisionAptitudeSurplus>Selected as a surplus candidate because the combined skill aptitude is at or above the level required for this role.</WR_RecDecisionAptitudeSurplus>
   <WR_RecDecisionHunter>Carries a ranged weapon and is capable of hunting.</WR_RecDecisionHunter>
   <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
   <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
   <WR_RecDecisionProtected>Existing protected assignment retained.</WR_RecDecisionProtected>
   <WR_RecDecisionNever>This role is configured to receive no recommendations.</WR_RecDecisionNever>
+  <WR_RecDecisionControlledByTraining>Controlled by {0}: assigned through its training path, not on its own.</WR_RecDecisionControlledByTraining>
   <WR_RecDecisionDisabled>This role is disabled.</WR_RecDecisionDisabled>
   <WR_RecDecisionUnavailable>This role's work is unavailable until its research is finished.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>This role is managed by rules and excluded from ordinary recommendations.</WR_RecDecisionExcluded>
@@ -353,6 +363,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecDecisionHunterRequirements>This pawn does not carry a ranged weapon.</WR_RecDecisionHunterRequirements>
   <WR_RecDecisionAwful>An Awful signal disqualifies this pawn.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>
+  <WR_RecDecisionCoveredUnknown>Covered by another recommended role.</WR_RecDecisionCoveredUnknown>
   <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
   <WR_RecDecisionWeakSignal>The signal verdict is below the configured threshold and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
   <WR_RecDecisionNotSelected>This pawn was not selected by any recommendation rule.</WR_RecDecisionNotSelected>
@@ -459,7 +470,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RestoreExplainColor>Resets the color to the template default.</WR_RestoreExplainColor>
   <WR_RestoreExplainJobs>Resets the role's job list to the mod's current default. Colonists keep their overall jobs: roles covering any removed jobs are assigned to them automatically.</WR_RestoreExplainJobs>
   <WR_RestoreExplainSnapColor>Replaces the generated color with the nearest palette color, so the color picker highlights it.</WR_RestoreExplainSnapColor>
-  <WR_RestoreExplainHolders>Resets the holder mode and range to the template-driven Auto default.</WR_RestoreExplainHolders>
+  <WR_RestoreExplainHolders>Resets the holder scale to the template default.</WR_RestoreExplainHolders>
   <WR_RestoreExplainRecOrder>Clears your custom order.</WR_RestoreExplainRecOrder>
   <WR_RestoreExplainPath>Creates the training path.</WR_RestoreExplainPath>
   <WR_NothingToRestore>Nothing to restore: all pre-made roles and training paths are present with their default groups, colors, and holder settings, the recommendation order is the default, and no jobs were moved.</WR_NothingToRestore>
@@ -517,20 +528,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
-  <!-- Editor: colonist range and skills used -->
-  <WR_HoldersTipWhat>Controls the required total covered by this role, including any training waivers, and the maximum number assigned directly.</WR_HoldersTipWhat>
-  <WR_HoldersTipAuto>A preconfigured default based on the jobs the role contains</WR_HoldersTipAuto>
-  <WR_HoldersTipCustom>A required total and maximum selected by you</WR_HoldersTipCustom>
-  <WR_HoldersTipWaivers>Slots within the required total that may be filled by roles from a matching training path</WR_HoldersTipWaivers>
-  <WR_HoldersTipNever>Never recommended</WR_HoldersTipNever>
-  <WR_HoldersAuto>Auto</WR_HoldersAuto>
-  <WR_HoldersNever>Never</WR_HoldersNever>
-  <WR_HoldersCustom>Custom</WR_HoldersCustom>
-  <WR_HoldersMin>Required total</WR_HoldersMin>
-  <WR_HoldersMax>Max</WR_HoldersMax>
-  <WR_HoldersWaivers>Training waivers</WR_HoldersWaivers>
-  <WR_HoldersUncapped>Uncapped</WR_HoldersUncapped>
-
   <!-- Holder scale editor -->
   <WR_ScaleRenameTip>Rename this scale (roles referencing it follow).</WR_ScaleRenameTip>
   <WR_ScaleRenameTitle>Rename scale</WR_ScaleRenameTitle>
@@ -558,13 +555,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Editor: collapsible recommendation tuning section -->
   <WR_TuningHeader>Recommendations Tuning</WR_TuningHeader>
-  <WR_TuningHelp>Here you can customize inputs to the recommendation engine. Click to toggle through options.</WR_TuningHelp>
-  <WR_TuningAutoHelp>Uses WorkRoles defaults (scales with colony size)</WR_TuningAutoHelp>
-  <WR_TuningNeverHelp>Exclude this role from being recommended</WR_TuningNeverHelp>
-  <WR_TuningCustomHelp>Set your own limits</WR_TuningCustomHelp>
-  <WR_TuningMinHelp>Total number of colonists that must be covered by this role or its training waivers</WR_TuningMinHelp>
-  <WR_TuningMaxHelp>An optional upper limit on assignments</WR_TuningMaxHelp>
-  <WR_TuningWaiversHelp>How many slots within the required total may be filled by a training role (e.g. Medic instead of Doctor)</WR_TuningWaiversHelp>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>
@@ -604,6 +594,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_HoursActive>Active</WR_HoursActive>
   <WR_HoursInactive>Inactive</WR_HoursInactive>
   <WR_LocationAny>Anywhere</WR_LocationAny>
+  <WR_LocationNowhere>Nowhere</WR_LocationNowhere>
+  <WR_LocationNowhereTip>This role was restricted to locations that no longer exist. It remains disabled until you select another location.</WR_LocationNowhereTip>
   <WR_LocationSettlements>Settlements</WR_LocationSettlements>
   <WR_LocationCaravans>Caravans</WR_LocationCaravans>
   <!-- {0} = location name -->

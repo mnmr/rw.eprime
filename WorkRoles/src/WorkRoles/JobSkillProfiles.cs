@@ -578,30 +578,58 @@ namespace WorkRoles
         {
             var profile = ForGiver(defName);
             if (profile == null) return null;
-            if (profile.TipCache == null)
+            StructuredTip tip = EnsureGiverTip(defName, profile);
+            return profile.TipCache != tip.PlainText
+                ? profile.TipCache
+                : tip.PlainText;
+        }
+
+        internal static StructuredTip GiverStructuredTip(string defName)
+        {
+            var profile = ForGiver(defName);
+            return profile == null ? null : EnsureGiverTip(defName, profile);
+        }
+
+        private static StructuredTip EnsureGiverTip(
+            string defName, GiverProfile profile)
+        {
+            if (profile.StructuredTipCache == null)
             {
                 profile.StructuredTipCache = new StructuredTip(
                     $"job-giver:{defName}", BuildGiverModel(profile));
-                profile.TipCache = profile.StructuredTipCache.PlainText;
+                if (profile.TipCache == null)
+                    profile.TipCache = profile.StructuredTipCache.PlainText;
             }
-            if (profile.TipCache != profile.StructuredTipCache?.PlainText)
-                return profile.TipCache;
-            return profile.StructuredTipCache.Activate();
+            return profile.StructuredTipCache;
         }
 
         public static string WorkTypeTip(string defName)
         {
             var profile = ForWorkType(defName);
             if (profile == null) return null;
-            if (profile.TipCache == null)
+            StructuredTip tip = EnsureWorkTypeTip(defName, profile);
+            return profile.TipCache != tip.PlainText
+                ? profile.TipCache
+                : tip.PlainText;
+        }
+
+        internal static StructuredTip WorkTypeStructuredTip(string defName)
+        {
+            var profile = ForWorkType(defName);
+            return profile == null ? null : EnsureWorkTypeTip(defName, profile);
+        }
+
+        private static StructuredTip EnsureWorkTypeTip(
+            string defName, WorkTypeProfile profile)
+        {
+            if (profile.StructuredTipCache == null)
             {
                 profile.StructuredTipCache = new StructuredTip(
                     $"work-type:{defName}", BuildTypeModel(profile));
-                profile.TipCache = profile.StructuredTipCache.PlainText;
+                if (profile.TipCache == null)
+                    profile.TipCache = profile.StructuredTipCache.PlainText;
             }
-            if (profile.TipCache != profile.StructuredTipCache?.PlainText)
-                return profile.TipCache;
-            return profile.StructuredTipCache.Activate();
+            return profile.StructuredTipCache;
         }
 
         private static TipModel BuildGiverModel(GiverProfile profile)

@@ -8,48 +8,618 @@ public class RecommendationPlanScenarioTests
     public async Task ScaleRequiredTotalIncludesTrainingWaiverAssignments()
     {
         RoleView target = CraftingRole(100, "TargetWork");
-        target.HolderMode = RoleHolderMode.Custom;
+        target.Skills.Add(new RoleSkillView
+        {
+            SkillDefName = "Intellectual",
+            RequiredContent = 1,
+        });
         target.Scale = new HolderScale();
         target.Scale.RequiredTotals[0] = 3;
         target.Scale.TrainingWaivers[0] = 1;
+        target.Scale.Max[0] = 4;
 
-        RoleView trainee = CraftingRole(101, "TraineeWork");
-        trainee.HolderMode = RoleHolderMode.Custom;
+        RoleView craftTrainee = CraftingRole(101, "CraftTraineeWork");
+        RoleView researchTrainee = SkilledRole(
+            102, "ResearchTraineeWork", "Intellectual");
 
         PathView path = RecsTestBed.Path(
-            200, (trainee.Id, 0, 10), (target.Id, 10, 21));
+            200,
+            (craftTrainee.Id, 0, 15),
+            (researchTrainee.Id, 0, 15),
+            (target.Id, 15, 21));
         path.AnchorRoleId = target.Id;
+        PathView lessSuitablePath = RecsTestBed.Path(
+            201,
+            (craftTrainee.Id, 0, 15),
+            (researchTrainee.Id, 0, 15),
+            (target.Id, 18, 21));
+        lessSuitablePath.AnchorRoleId = target.Id;
 
         PawnView firstDirect = CraftingPawn(
             16,
             ("TargetWork", SignalBucket.Neutral),
-            ("TraineeWork", SignalBucket.Neutral));
+            ("CraftTraineeWork", SignalBucket.Neutral),
+            ("ResearchTraineeWork", SignalBucket.Neutral));
+        firstDirect.SkillLevels["Intellectual"] = 16;
+        firstDirect.SignalBuckets["Intellectual"] = SignalBucket.Neutral;
         PawnView secondDirect = CraftingPawn(
             15,
             ("TargetWork", SignalBucket.Neutral),
-            ("TraineeWork", SignalBucket.Neutral));
+            ("CraftTraineeWork", SignalBucket.Neutral),
+            ("ResearchTraineeWork", SignalBucket.Neutral));
+        secondDirect.SkillLevels["Intellectual"] = 15;
+        secondDirect.SignalBuckets["Intellectual"] = SignalBucket.Neutral;
         PawnView trainingWaiver = CraftingPawn(
-            5,
+            10,
             ("TargetWork", SignalBucket.Neutral),
-            ("TraineeWork", SignalBucket.Neutral));
+            ("CraftTraineeWork", SignalBucket.Neutral),
+            ("ResearchTraineeWork", SignalBucket.Neutral));
+        trainingWaiver.SkillLevels["Intellectual"] = 11;
+        trainingWaiver.SignalBuckets["Intellectual"] = SignalBucket.Neutral;
 
         ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView> { target, trainee },
+            new List<RoleView> { target, craftTrainee, researchTrainee },
             firstDirect,
             secondDirect,
             trainingWaiver);
         colony.Paths.Add(path);
+        colony.Paths.Add(lessSuitablePath);
 
         RecommendationPlan plan = RecommendationPlan.Build(colony);
+        var roleNames = new Dictionary<int, string>
+        {
+            [target.Id] = "Target",
+            [craftTrainee.Id] = "Craft trainee",
+            [researchTrainee.Id] = "Research trainee",
+        };
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames)).IsEqualTo("Target");
+        await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Target");
+        await Assert.That(NamesOfRoles(plan, 2, roleNames))
+            .IsEqualTo("Research trainee, Craft trainee");
+        await Assert.That(plan.PathAt(2, 0)).IsEqualTo(path.Id);
+        await Assert.That(plan.PathActivatedAt(2, 0)).IsTrue();
+        await Assert.That(plan.TryGetExplanation(
+            0, target.Id, out RoleRecommendationExplanation first)).IsTrue();
+        await Assert.That(first.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(first.SelectionSlot).IsEqualTo(1);
+        await Assert.That(first.SelectionSlotCount).IsEqualTo(3);
+        await Assert.That(plan.TryGetExplanation(
+            1, target.Id, out RoleRecommendationExplanation second)).IsTrue();
+        await Assert.That(second.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(second.SelectionSlot).IsEqualTo(2);
+        await Assert.That(second.SelectionSlotCount).IsEqualTo(3);
+        await Assert.That(plan.TryGetExplanation(
+            2,
+            craftTrainee.Id,
+            out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.Training);
+        await Assert.That(explanation.RelatedRoleId).IsEqualTo(target.Id);
+        await Assert.That(explanation.RequiredTotal).IsEqualTo(3);
+        await Assert.That(explanation.TrainingWaivers).IsEqualTo(1);
+        await Assert.That(explanation.ConfiguredMaximum).IsEqualTo(4);
+        await Assert.That(explanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.TrainingWaiver);
+        await Assert.That(explanation.CandidateRank).IsEqualTo(3);
+        await Assert.That(explanation.CandidateCount).IsEqualTo(3);
+        await Assert.That(explanation.StageRank).IsEqualTo(1);
+        await Assert.That(explanation.SelectionSlot).IsEqualTo(3);
+        await Assert.That(explanation.SelectionSlotCount).IsEqualTo(3);
+        await Assert.That(explanation.TrainingSkills.Count).IsEqualTo(2);
+        await Assert.That(explanation.TrainingSkills[0].SkillDefName)
+            .IsEqualTo("Crafting");
+        await Assert.That(explanation.TrainingSkills[0].PawnLevel).IsEqualTo(10);
+        await Assert.That(explanation.TrainingSkills[0].TargetMinimum)
+            .IsEqualTo(15);
+        await Assert.That(explanation.TrainingSkills[1].SkillDefName)
+            .IsEqualTo("Intellectual");
+        await Assert.That(explanation.TrainingSkills[1].PawnLevel).IsEqualTo(11);
+        await Assert.That(explanation.TrainingSkills[1].TargetMinimum)
+            .IsEqualTo(15);
+        await Assert.That(plan.TryGetExplanation(
+            2,
+            researchTrainee.Id,
+            out RoleRecommendationExplanation researchExplanation)).IsTrue();
+        await Assert.That(researchExplanation.Decision)
+            .IsEqualTo(RecommendationDecision.Training);
+        await Assert.That(researchExplanation.RelatedRoleId)
+            .IsEqualTo(target.Id);
+        await Assert.That(researchExplanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.TrainingWaiver);
+        await Assert.That(researchExplanation.SelectionSlot).IsEqualTo(3);
+        await Assert.That(researchExplanation.SelectionSlotCount).IsEqualTo(3);
+        await Assert.That(researchExplanation.TrainingSkills.Count).IsEqualTo(2);
+        await Assert.That(researchExplanation.TrainingSkills[0].TargetMinimum)
+            .IsEqualTo(15);
+        await Assert.That(researchExplanation.TrainingSkills[1].TargetMinimum)
+            .IsEqualTo(15);
+    }
+
+    [Test]
+    public async Task UnskilledStrategyAssignsEveryCapablePawnAndNamesAChampion()
+    {
+        // Through the real projection: a skill-less role (Hauling) with the
+        // Unskilled strategy and one required champion per band.
+        RecommendationPlan PlanFor(ScaleMode mode)
+        {
+            var recs = new RecsProjection().WorkType("Hauling", null, 100);
+            recs.RoleByWorkType(
+                1, mode, RecsProjection.Scale(requiredTotal: 1), "Hauling");
+            PawnView Worker() =>
+                new PawnView { CapableWorkTypes = { "Hauling" } };
+            return recs.Plan(Worker(), Worker(), Worker());
+        }
+
+        RecommendationPlan unskilledPlan = PlanFor(ScaleMode.Unskilled);
+        int held = 0;
+        int champions = 0;
+        for (int pawn = 0; pawn < 3; pawn++)
+        {
+            if (RecsProjection.Holds(unskilledPlan, pawn, 1)) held++;
+            if (unskilledPlan.TryGetExplanation(
+                    pawn, 1, out RoleRecommendationExplanation explanation)
+                && explanation.SelectionStage
+                    == RecommendationSelectionStage.Required)
+                champions++;
+        }
+        await Assert.That(held).IsEqualTo(3);
+        await Assert.That(champions).IsEqualTo(1);
+
+        // Without the Unskilled strategy the same skill-less role is a retained
+        // chore: nobody is assigned it who does not already hold it. This is the
+        // gap the Unskilled strategy closes.
+        RecommendationPlan skilledPlan = PlanFor(ScaleMode.Skilled);
+        int skilledHeld = 0;
+        for (int pawn = 0; pawn < 3; pawn++)
+            if (RecsProjection.Holds(skilledPlan, pawn, 1)) skilledHeld++;
+        await Assert.That(skilledHeld).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task UnskilledNoMinScaleAssignsEveryoneThroughTheRealProjection()
+    {
+        // Full recommendation pipeline: role sources -> catalog projection ->
+        // colony -> plan, the same path the game adapter feeds. Grunt is an
+        // Unskilled "NoMin" role: an all-zero scale, including Max. Everyone
+        // capable must still be recommended it.
+        var jobs = new FakeCatalog()
+            .WithWorkType("Hauling", "Haul")
+            .WithWorkType("Cleaning", "Clean");
+        var allZero = new HolderScale();
+        Array.Fill(allZero.Max, 0);
+        var grunt = new RecommendationRoleSource
+        {
+            Id = 1,
+            Mode = ScaleMode.Unskilled,
+            Scale = allZero,
+            Entries =
+            {
+                new JobEntry(JobEntryKind.WorkType, "Hauling"),
+                new JobEntry(JobEntryKind.WorkType, "Cleaning"),
+            },
+        };
+        RecommendationCatalogProjection projection =
+            RecommendationCatalogBuilder.Build(
+                new[] { grunt },
+                Array.Empty<PathView>(),
+                jobs,
+                new Dictionary<string, int>
+                {
+                    ["Hauling"] = 100,
+                    ["Cleaning"] = 50,
+                },
+                UnskilledJobProfiles());
+        PawnView Worker() => new PawnView
+        {
+            CapableWorkTypes = { "Hauling", "Cleaning" },
+        };
+        ColonyView colony = projection.CreateColony(
+            new[] { grunt.Id }, new[] { Worker(), Worker(), Worker() });
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        int held = 0;
+        for (int pawn = 0; pawn < 3; pawn++)
+            if (Holds(plan, pawn, grunt.Id)) held++;
+        await Assert.That(held).IsEqualTo(3);
+    }
+
+    private static JobProfileIndex UnskilledJobProfiles()
+    {
+        var builder = new JobProfileIndexBuilder();
+        var none = Array.Empty<JobProfileSkillSource>();
+        builder.AddWorkType(1, "Hauling", none, new[] { "Haul" });
+        builder.AddWorkType(2, "Cleaning", none, new[] { "Clean" });
+        builder.AddGiver("Haul", 1, none,
+            hasCuratedXp: true, curatedXpSkillDefNames: Array.Empty<string>());
+        builder.AddGiver("Clean", 2, none,
+            hasCuratedXp: true, curatedXpSkillDefNames: Array.Empty<string>());
+        return builder.Build();
+    }
+
+    [Test]
+    public async Task SurplusMedicPawnGetsNeverTraineeRoleViaPath()
+    {
+        // Through the real projection: Medic is a Never training role
+        // controlled by Doctor; a surplus medical pawn in the Medic band should
+        // still receive it via the path.
+        var recs = new RecsProjection()
+            .WorkType("Doctoring", "Medicine", 100, "Operate", "Tend");
+        RecommendationRoleSource doctor = recs.RoleByWorkType(
+            1, ScaleMode.Skilled, RecsProjection.Scale(requiredTotal: 1),
+            "Doctoring");
+        RecommendationRoleSource medic = recs.RoleByGiver(
+            2, ScaleMode.Never, null, "Tend");
+        PathView path = RecsTestBed.Path(
+            10, (medic.Id, 5, 15), (doctor.Id, 15, 21));
+        path.AnchorRoleId = doctor.Id;
+        recs.Path(path);
+
+        RecommendationPlan plan = recs.Plan(
+            MedicPawn(18, SignalBucket.Strong),
+            MedicPawn(11, SignalBucket.Strong));
+
+        // Strong doctor fills the required slot; the surplus medical pawn gets
+        // the Never Medic trainee via the path, not nothing.
+        await Assert.That(RecsProjection.Holds(plan, 0, doctor.Id)).IsTrue();
+        await Assert.That(RecsProjection.Holds(plan, 1, medic.Id)).IsTrue();
+    }
+
+    private static PawnView MedicPawn(int medicine, SignalBucket signal)
+    {
+        var pawn = new PawnView { CapableWorkTypes = { "Doctoring" } };
+        pawn.SkillLevels["Medicine"] = medicine;
+        pawn.SignalBuckets["Medicine"] = signal;
+        return pawn;
+    }
+
+    [Test]
+    public async Task NeverTraineeExplainsItsControllingTrainingTarget()
+    {
+        // Medic/Nurse are Never training roles controlled by Doctor. A pawn that
+        // does not receive Medic must not be told the role is "not configured";
+        // its explanation names the Doctor that controls it.
+        var recs = new RecsProjection()
+            .WorkType("Doctoring", "Medicine", 100, "Operate", "Tend", "Feed");
+        RecommendationRoleSource doctor = recs.RoleByGiver(
+            1, ScaleMode.Skilled, RecsProjection.Scale(requiredTotal: 1),
+            "Operate", "Tend", "Feed");
+        RecommendationRoleSource medic = recs.RoleByGiver(
+            2, ScaleMode.Never, null, "Tend", "Feed");
+        PathView path = RecsTestBed.Path(
+            10, (medic.Id, 5, 15), (doctor.Id, 15, 21));
+        path.AnchorRoleId = doctor.Id;
+        recs.Path(path);
+
+        // A strong doctor fills Doctor directly and never becomes a Medic; the
+        // pawn currently holds Medic, so it gets a Medic explanation.
+        PawnView doc = MedicPawn(18, SignalBucket.Strong);
+        doc.Existing.Add(new AssignmentView { RoleId = medic.Id, Enabled = true });
+        RecommendationPlan plan = recs.Plan(doc);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, doctor.Id)).IsTrue();
+        await Assert.That(RecsProjection.Holds(plan, 0, medic.Id)).IsFalse();
+        await Assert.That(plan.TryGetExplanation(
+            0, medic.Id, out RoleRecommendationExplanation medicExplanation))
+            .IsTrue();
+        await Assert.That(medicExplanation.Decision)
+            .IsEqualTo(RecommendationDecision.ControlledByTrainingTarget);
+        await Assert.That(medicExplanation.RelatedRoleId).IsEqualTo(doctor.Id);
+    }
+
+    [Test]
+    public async Task PinnedAssignmentToANeverRoleIsCarriedIntoRecommendations()
+    {
+        // Through the real projection: a pawn pinned to a Never role keeps it.
+        var recs = new RecsProjection().WorkType("Hauling", null, 100);
+        RecommendationRoleSource never = recs.RoleByWorkType(
+            1, ScaleMode.Never, null, "Hauling");
+        var pawn = new PawnView { CapableWorkTypes = { "Hauling" } };
+        pawn.Existing.Add(new AssignmentView
+        {
+            RoleId = never.Id, Enabled = true, Pinned = true,
+        });
+
+        RecommendationPlan plan = recs.Plan(pawn);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, never.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task CoverageKeepsRequiredHoldersOfACoveredSubRole()
+    {
+        // Through the real projection: Grunt covers Hauling + Cleaning; Hauler
+        // is the Hauling subset.
+        var recs = new RecsProjection()
+            .WorkType("Hauling", null, 100)
+            .WorkType("Cleaning", null, 50);
+        RecommendationRoleSource grunt = recs.RoleByWorkType(
+            1, ScaleMode.Unskilled, RecsProjection.Scale(), "Hauling", "Cleaning");
+        RecommendationRoleSource hauler = recs.RoleByWorkType(
+            2, ScaleMode.Unskilled, RecsProjection.Scale(requiredTotal: 2),
+            "Hauling");
+        PawnView Capable() => new PawnView
+        {
+            CapableWorkTypes = { "Hauling", "Cleaning" },
+        };
+
+        RecommendationPlan plan = recs.Plan(
+            Capable(), Capable(), Capable(), Capable());
+
+        int gruntHeld = 0;
+        int haulerHeld = 0;
+        for (int pawn = 0; pawn < 4; pawn++)
+        {
+            if (RecsProjection.Holds(plan, pawn, grunt.Id)) gruntHeld++;
+            if (RecsProjection.Holds(plan, pawn, hauler.Id)) haulerHeld++;
+        }
+        // Grunt covers everyone; Hauler's surplus folds under it, but its two
+        // required holders survive and coexist with Grunt.
+        await Assert.That(gruntHeld).IsEqualTo(4);
+        await Assert.That(haulerHeld).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task AutoAssignRolesFollowTheDefaultOrderNotExistingOrder()
+    {
+        // Auto-assign roles are automatic, not user-placed: they follow the
+        // default recommendation order (front), even if the pawn's existing
+        // order lists a late chore ahead of them.
+        var recs = new RecsProjection()
+            .WorkType("Essential", null, 1000, "Ess")
+            .WorkType("Hauling", null, 50, "Haul");
+        recs.RoleByWorkType(1, ScaleMode.Skilled, RecsProjection.Scale(), "Essential");
+        recs.AutoAssign(1);
+        recs.RoleByWorkType(2, ScaleMode.Unskilled, RecsProjection.Scale(), "Hauling");
+        var pawn = new PawnView { CapableWorkTypes = { "Essential", "Hauling" } };
+        // Existing order puts the late chore before the auto role.
+        pawn.Existing.Add(new AssignmentView { RoleId = 2, Enabled = true });
+        pawn.Existing.Add(new AssignmentView { RoleId = 1, Enabled = true });
+
+        RecommendationPlan plan = recs.Plan(pawn);
+
+        await Assert.That(plan.RoleAt(0, 0)).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task UnskilledSubRolesFoldUnderACoveringUnskilledRole()
+    {
+        // Grunt (Unskilled NoMin) covers Hauling + Cleaning; Hauler and Cleaner
+        // are req-0 Unskilled subsets. Everyone gets Grunt; the covered
+        // sub-roles fold away entirely (no dedicated req to keep).
+        var recs = new RecsProjection()
+            .WorkType("Hauling", null, 100)
+            .WorkType("Cleaning", null, 50);
+        RecommendationRoleSource grunt = recs.RoleByWorkType(
+            1, ScaleMode.Unskilled, RecsProjection.Scale(), "Hauling", "Cleaning");
+        RecommendationRoleSource hauler = recs.RoleByWorkType(
+            2, ScaleMode.Unskilled, RecsProjection.Scale(), "Hauling");
+        RecommendationRoleSource cleaner = recs.RoleByWorkType(
+            3, ScaleMode.Unskilled, RecsProjection.Scale(), "Cleaning");
+        // Pawns already hold all three (as the real colony does): the covered
+        // sub-roles must still fold, not be retained as chores.
+        PawnView Worker()
+        {
+            var pawn = new PawnView
+            {
+                CapableWorkTypes = { "Hauling", "Cleaning" },
+            };
+            pawn.Existing.Add(new AssignmentView { RoleId = 1, Enabled = true });
+            pawn.Existing.Add(new AssignmentView { RoleId = 2, Enabled = true });
+            pawn.Existing.Add(new AssignmentView { RoleId = 3, Enabled = true });
+            return pawn;
+        }
+
+        RecommendationPlan plan = recs.Plan(Worker(), Worker(), Worker());
+
+        int gruntHeld = 0;
+        int subHeld = 0;
+        for (int pawn = 0; pawn < 3; pawn++)
+        {
+            if (RecsProjection.Holds(plan, pawn, grunt.Id)) gruntHeld++;
+            if (RecsProjection.Holds(plan, pawn, hauler.Id)) subHeld++;
+            if (RecsProjection.Holds(plan, pawn, cleaner.Id)) subHeld++;
+        }
+        await Assert.That(gruntHeld).IsEqualTo(3);
+        await Assert.That(subHeld).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task PinnedRoleKeepsItsExistingOrder()
+    {
+        // A pinned role is user-placed: it stays at its existing slot even when
+        // the default order would sort it earlier.
+        var recs = new RecsProjection()
+            .WorkType("Essential", null, 1000, "Ess")
+            .WorkType("Hauling", null, 50, "Haul");
+        recs.RoleByWorkType(1, ScaleMode.Skilled, RecsProjection.Scale(), "Essential");
+        recs.AutoAssign(1);
+        RecommendationRoleSource pinned = recs.RoleByWorkType(
+            2, ScaleMode.Skilled, RecsProjection.Scale(requiredTotal: 1),
+            "Hauling");
+        var pawn = new PawnView { CapableWorkTypes = { "Essential", "Hauling" } };
+        pawn.SkillLevels["Hauling"] = 0;
+        // Pinned to the late chore, listed first; the pin holds it ahead of the
+        // auto role.
+        pawn.Existing.Add(new AssignmentView
+        {
+            RoleId = pinned.Id, Enabled = true, Pinned = true,
+        });
+        pawn.Existing.Add(new AssignmentView { RoleId = 1, Enabled = true });
+
+        RecommendationPlan plan = recs.Plan(pawn);
+
+        await Assert.That(plan.RoleAt(0, 0)).IsEqualTo(pinned.Id);
+    }
+
+    [Test]
+    public async Task WaiverSlotFillsWithTraineeNotAWeakDirectTarget()
+    {
+        // Through the real projection: Artist covers all Art work (Sculpt +
+        // Paint); Painter is the paint subset and Never (no own demand),
+        // mirroring the shipped WS_PathArtist Painter -> Artist path.
+        var recs = new RecsProjection()
+            .WorkType("Art", "Artistic", 100, "Sculpt", "Paint");
+        RecommendationRoleSource artist = recs.RoleByWorkType(
+            1, ScaleMode.Skilled,
+            RecsProjection.Scale(requiredTotal: 2, trainingWaivers: 1), "Art");
+        RecommendationRoleSource painter = recs.RoleByGiver(
+            2, ScaleMode.Never, null, "Paint");
+        PathView path = RecsTestBed.Path(
+            10, (painter.Id, 0, 8), (artist.Id, 8, 21));
+        path.AnchorRoleId = artist.Id;
+        recs.Path(path);
+
+        RecommendationPlan plan = recs.Plan(ArtPawn(12), ArtPawn(5));
+
+        // Slot 1 = strong direct Artist; slot 2 = the Painter trainee, never a
+        // weak direct Artist.
+        await Assert.That(RecsProjection.Holds(plan, 0, artist.Id)).IsTrue();
+        await Assert.That(RecsProjection.Holds(plan, 1, painter.Id)).IsTrue();
+        await Assert.That(RecsProjection.Holds(plan, 1, artist.Id)).IsFalse();
+    }
+
+    private static PawnView ArtPawn(int artistic)
+    {
+        var pawn = new PawnView { CapableWorkTypes = { "Art" } };
+        pawn.SkillLevels["Artistic"] = artistic;
+        pawn.SignalBuckets["Artistic"] = SignalBucket.Neutral;
+        return pawn;
+    }
+
+    private static bool Holds(RecommendationPlan plan, int pawn, int roleId)
+    {
+        for (int index = 0; index < plan.RoleCountAt(pawn); index++)
+            if (plan.RoleAt(pawn, index) == roleId) return true;
+        return false;
+    }
+
+    [Test]
+    public async Task ProtectedAssignmentOffsetsPublishedSelectionSlot()
+    {
+        RoleView role = CraftingRole(105, "TargetWork");
+        RecsTestBed.Require(role, 2);
+        PawnView protectedHolder = CraftingPawn(
+            8, ("TargetWork", SignalBucket.Neutral));
+        protectedHolder.Existing.Add(new AssignmentView
+        {
+            RoleId = role.Id,
+            Enabled = true,
+            Pinned = true,
+        });
+        PawnView selected = CraftingPawn(
+            12, ("TargetWork", SignalBucket.Neutral));
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, protectedHolder, selected);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(plan.RoleAt(0, 0)).IsEqualTo(role.Id);
+        await Assert.That(plan.RoleAt(1, 0)).IsEqualTo(role.Id);
+        await Assert.That(plan.TryGetExplanation(
+            1, role.Id, out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(explanation.SelectionSlot).IsEqualTo(2);
+        await Assert.That(explanation.SelectionSlotCount).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task TargetQualifiedWaiverSlotPublishesDirectTargetSelection()
+    {
+        // Through the real projection: single-skill Crafting target + trainee on
+        // a path; a pawn already in the target band fills the waiver slot as a
+        // direct target.
+        var recs = new RecsProjection()
+            .WorkType("TargetWork", "Crafting", 100)
+            .WorkType("TraineeWork", "Crafting", 90);
+        RecommendationRoleSource target = recs.RoleByWorkType(
+            106, ScaleMode.Skilled,
+            RecsProjection.Scale(requiredTotal: 1, trainingWaivers: 1),
+            "TargetWork");
+        RecommendationRoleSource trainee = recs.RoleByWorkType(
+            107, ScaleMode.Skilled, RecsProjection.Scale(), "TraineeWork");
+        recs.Path(RecsTestBed.Path(
+            206, (trainee.Id, 0, 21), (target.Id, 8, 21)));
+        var qualified = new PawnView
+        {
+            CapableWorkTypes = { "TargetWork", "TraineeWork" },
+        };
+        qualified.SkillLevels["Crafting"] = 20;
+        qualified.SignalBuckets["Crafting"] = SignalBucket.Neutral;
         var roleNames = new Dictionary<int, string>
         {
             [target.Id] = "Target",
             [trainee.Id] = "Trainee",
         };
 
-        await Assert.That(NamesOfRoles(plan, 0, roleNames)).IsEqualTo("Target");
-        await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Target");
-        await Assert.That(NamesOfRoles(plan, 2, roleNames)).IsEqualTo("Trainee");
+        RecommendationPlan plan = recs.Plan(qualified);
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames))
+            .IsEqualTo("Target, Trainee");
+        await Assert.That(plan.TryGetExplanation(
+            0,
+            target.Id,
+            out RoleRecommendationExplanation targetExplanation)).IsTrue();
+        await Assert.That(targetExplanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(targetExplanation.SelectionSlot).IsEqualTo(1);
+        await Assert.That(targetExplanation.SelectionSlotCount).IsEqualTo(1);
+        await Assert.That(plan.TryGetExplanation(
+            0,
+            trainee.Id,
+            out RoleRecommendationExplanation traineeExplanation)).IsTrue();
+        await Assert.That(traineeExplanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.None);
+        await Assert.That(traineeExplanation.Decision)
+            .IsEqualTo(RecommendationDecision.Training);
+        await Assert.That(traineeExplanation.RelatedRoleId)
+            .IsEqualTo(target.Id);
+    }
+
+    [Test]
+    public async Task UnfilledTrainingWaiverPublishesRankedDirectFallback()
+    {
+        RoleView target = CraftingRole(110, "TargetWork");
+        RecsTestBed.Require(target, 2, trainingWaivers: 1);
+        RoleView trainee = CraftingRole(111, "TraineeWork");
+        PathView path = RecsTestBed.Path(
+            210, (trainee.Id, 0, 5), (target.Id, 10, 21));
+
+        PawnView first = CraftingPawn(
+            16,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+        PawnView fallback = CraftingPawn(
+            7,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+        PawnView lowerRankedFallback = CraftingPawn(
+            6,
+            ("TargetWork", SignalBucket.Neutral),
+            ("TraineeWork", SignalBucket.Neutral));
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { target, trainee },
+            first, fallback, lowerRankedFallback);
+        colony.Paths.Add(path);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(plan.TryGetExplanation(
+            1, target.Id, out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.CoverageDrafted);
+        await Assert.That(explanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.DirectFallback);
+        await Assert.That(explanation.CandidateRank).IsEqualTo(2);
+        await Assert.That(explanation.CandidateCount).IsEqualTo(3);
+        await Assert.That(explanation.StageRank).IsEqualTo(1);
+        await Assert.That(explanation.SelectionSlot).IsEqualTo(2);
+        await Assert.That(explanation.SelectionSlotCount).IsEqualTo(2);
+        await Assert.That(plan.RoleCountAt(2)).IsEqualTo(0);
     }
 
     [Test]
@@ -64,17 +634,12 @@ public class RecommendationPlanScenarioTests
          * pawns selected for both roles.
          */
         RoleView doctor = RecsTestBed.Role(1, "Doctor");
-        doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.RequiredTotal = 2;
-        doctor.TrainingWaivers = 1;
+        RecsTestBed.Require(doctor, 2, trainingWaivers: 1);
 
         RoleView cook = RecsTestBed.Role(2, "Cooking");
-        cook.HolderMode = RoleHolderMode.Custom;
-        cook.RequiredTotal = 2;
+        RecsTestBed.Require(cook, 2);
 
         RoleView hauler = RecsTestBed.Unskilled(3, "Hauling");
-        hauler.HolderMode = RoleHolderMode.Custom;
-        hauler.RequiredTotal = 1;
 
         PawnView forcedDoctor = PawnWith(
             medicine: (14, SignalBucket.Neutral),
@@ -123,6 +688,125 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
+    public async Task SkillLevelPromotionMakesMedicASurplusAssignmentWithinItsBand()
+    {
+        RoleView doctor = SkilledRole(
+            4, "Doctor", "Medicine", "Rescue", "Tend", "Operate");
+        RoleView medic = SkilledRole(
+            5, "Doctor", "Medicine", "Rescue", "Tend");
+        RoleView nurse = SkilledRole(
+            6, "Doctor", "Medicine", "Rescue");
+        PathView path = RecsTestBed.Path(
+            7, (nurse.Id, 0, 5), (medic.Id, 5, 15), (doctor.Id, 15, 21));
+
+        PawnView doctorPawn = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)>
+            {
+                ["Medicine"] = (16, SignalBucket.Neutral),
+            },
+            ("Doctor", SignalBucket.Neutral));
+        PawnView medicPawn = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)>
+            {
+                ["Medicine"] = (11, SignalBucket.Neutral),
+            },
+            ("Doctor", SignalBucket.Neutral));
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { doctor, medic, nurse }, doctorPawn, medicPawn);
+        colony.Paths.Add(path);
+        var roleNames = new Dictionary<int, string>
+        {
+            [doctor.Id] = "Doctor",
+            [medic.Id] = "Medic",
+            [nurse.Id] = "Nurse",
+        };
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames)).IsEqualTo("Doctor");
+        await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Medic");
+        await Assert.That(plan.TryGetExplanation(
+            1, medic.Id, out RoleRecommendationExplanation explanation)).IsTrue();
+        await Assert.That(explanation.Decision)
+            .IsEqualTo(RecommendationDecision.SignalQualified);
+        await Assert.That(explanation.SignalBucket).IsEqualTo(SignalBucket.Strong);
+        await Assert.That(explanation.BaseSignalBucket)
+            .IsEqualTo(SignalBucket.Neutral);
+        await Assert.That(explanation.SignalSkillLevel).IsEqualTo(11);
+        await Assert.That(explanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Surplus);
+        await Assert.That(explanation.SelectionSignalBucket)
+            .IsEqualTo(SignalBucket.Strong);
+        await Assert.That(explanation.SurplusMinimumSignalBucket)
+            .IsEqualTo(SignalBucket.Strong);
+        await Assert.That(explanation.SurplusQualifiedBySignal).IsTrue();
+    }
+
+    [Test]
+    public async Task EarlierCoveringPickSuppressesOnlyThatPawnsStrongSurplusRole()
+    {
+        RoleView cook = SkilledRole(
+            8, "CookingAll", "Cooking", "Cook", "Brew");
+        RoleView brewer = SkilledRole(
+            9, "Brewing", "Cooking", "Brew");
+
+        PawnView cookAndBrewer = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)>
+            {
+                ["Cooking"] = (10, SignalBucket.Strong),
+            },
+            ("CookingAll", SignalBucket.Neutral),
+            ("Brewing", SignalBucket.Neutral));
+        PawnView brewerOnly = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)>
+            {
+                ["Cooking"] = (10, SignalBucket.Strong),
+            },
+            ("CookingAll", SignalBucket.Awful),
+            ("Brewing", SignalBucket.Neutral));
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { cook, brewer }, cookAndBrewer, brewerOnly);
+        var roleNames = new Dictionary<int, string>
+        {
+            [cook.Id] = "Cook",
+            [brewer.Id] = "Brewer",
+        };
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames)).IsEqualTo("Cook");
+        await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Brewer");
+    }
+
+    [Test]
+    public async Task LaterCoveringPickDoesNotSuppressEarlierStrongSurplusRole()
+    {
+        RoleView brewer = SkilledRole(
+            10, "Brewing", "Cooking", "Brew");
+        RoleView cook = SkilledRole(
+            11, "CookingAll", "Cooking", "Cook", "Brew");
+        PawnView pawn = MultiSkillPawn(
+            new Dictionary<string, (int, SignalBucket)>
+            {
+                ["Cooking"] = (10, SignalBucket.Strong),
+            },
+            ("Brewing", SignalBucket.Neutral),
+            ("CookingAll", SignalBucket.Neutral));
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { brewer, cook }, pawn);
+        var roleNames = new Dictionary<int, string>
+        {
+            [brewer.Id] = "Brewer",
+            [cook.Id] = "Cook",
+        };
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(NamesOfRoles(plan, 0, roleNames))
+            .IsEqualTo("Brewer, Cook");
+    }
+
+    [Test]
     public async Task Slice02_SubstitutesEachWaiverThroughItsUniqueTargetPath()
     {
         /*
@@ -135,19 +819,12 @@ public class RecommendationPlanScenarioTests
          * training 1; Smith custom training 1; Tailor custom direct 0.
          */
         RoleView fabricator = CraftingRole(10, "Fabrication");
-        fabricator.HolderMode = RoleHolderMode.Custom;
-        fabricator.RequiredTotal = 2;
-        fabricator.TrainingWaivers = 1;
+        RecsTestBed.Require(fabricator, 2, trainingWaivers: 1);
         RoleView drugMaker = CraftingRole(11, "DrugMaking");
-        drugMaker.HolderMode = RoleHolderMode.Custom;
-        drugMaker.RequiredTotal = 1;
-        drugMaker.TrainingWaivers = 1;
+        RecsTestBed.Require(drugMaker, 1, trainingWaivers: 1);
         RoleView smith = CraftingRole(12, "Smithing");
-        smith.HolderMode = RoleHolderMode.Custom;
-        smith.RequiredTotal = 1;
-        smith.TrainingWaivers = 1;
+        RecsTestBed.Require(smith, 1, trainingWaivers: 1);
         RoleView tailor = CraftingRole(13, "Tailoring");
-        tailor.HolderMode = RoleHolderMode.Custom;
 
         PathView fabricatorPath = RecsTestBed.Path(
             20, (tailor.Id, 0, 8), (smith.Id, 8, 15), (fabricator.Id, 15, 21));
@@ -196,7 +873,8 @@ public class RecommendationPlanScenarioTests
             [smithPath.Id] = "Smith",
         };
 
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        RecommendationPlan plan = RecommendationPlan.Build(
+            colony, WithoutLevelPromotions());
 
         string[] expectedPaths = { "Fabricator", "Fabricator, Drug Maker", "Smith" };
         string[] expectedRoles = { "Fabricator", "Smith", "Tailor" };
@@ -221,11 +899,8 @@ public class RecommendationPlanScenarioTests
          * direct 0.
          */
         RoleView specialist = CraftingRole(24, "SpecialistWork");
-        specialist.HolderMode = RoleHolderMode.Custom;
-        specialist.RequiredTotal = 1;
-        specialist.TrainingWaivers = 1;
+        RecsTestBed.Require(specialist, 1, trainingWaivers: 1);
         RoleView trainee = CraftingRole(25, "TraineeWork");
-        trainee.HolderMode = RoleHolderMode.Custom;
         PathView valid = RecsTestBed.Path(
             26, (trainee.Id, 0, 10), (specialist.Id, 10, 21));
         valid.AnchorRoleId = specialist.Id;
@@ -265,33 +940,25 @@ public class RecommendationPlanScenarioTests
          */
         RoleView doctor = SkilledRole(
             30, "Doctoring", "Medicine", "Rescue", "Treat");
-        doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.RequiredTotal = 1;
+        RecsTestBed.Require(doctor, 1);
         RoleView rescuer = SkilledRole(
             31, "Rescuing", "Medicine", "Rescue");
-        rescuer.HolderMode = RoleHolderMode.Custom;
-        rescuer.RequiredTotal = 2;
+        RecsTestBed.Require(rescuer, 2);
         RoleView cook = SkilledRole(
             32, "CookingAll", "Cooking", "Cook", "Butcher", "Brew");
-        cook.HolderMode = RoleHolderMode.Custom;
-        cook.RequiredTotal = 1;
+        RecsTestBed.Require(cook, 1);
         RoleView butcher = SkilledRole(
             33, "Butchering", "Cooking", "Butcher");
-        butcher.HolderMode = RoleHolderMode.Custom;
-        butcher.RequiredTotal = 2;
+        RecsTestBed.Require(butcher, 2);
         RoleView brewer = SkilledRole(
             34, "Brewing", "Cooking", "Brew");
-        brewer.HolderMode = RoleHolderMode.Custom;
-        brewer.RequiredTotal = 1;
+        RecsTestBed.Require(brewer, 1);
         RoleView campCook = SkilledRole(
             35, "CampCooking", "Cooking", "Butcher", "CampMeal");
-        campCook.HolderMode = RoleHolderMode.Custom;
-        campCook.RequiredTotal = 1;
+        RecsTestBed.Require(campCook, 1);
         RoleView chef = SkilledRole(
             36, "Chefing", "Cooking", "Chef");
-        chef.HolderMode = RoleHolderMode.Custom;
-        chef.RequiredTotal = 1;
-        chef.TrainingWaivers = 1;
+        RecsTestBed.Require(chef, 1, trainingWaivers: 1);
 
         PathView chefPath = RecsTestBed.Path(
             40, (butcher.Id, 0, 15), (brewer.Id, 0, 15), (chef.Id, 15, 21));
@@ -355,7 +1022,9 @@ public class RecommendationPlanScenarioTests
         string[] expectedRoles =
         {
             "Doctor, Cook",
-            "Rescuer",
+            // Another pawn's Cook does not erase this pawn's strong Brewer
+            // interest; only an earlier covering pick on this pawn may do so.
+            "Rescuer, Brewer",
             // Repeat-champion spreading hands Brewer's championship to the
             // trainee, so its first-pick bonus leads the trainee's order.
             "Brewer, Camp Cook, Butcher",
@@ -386,32 +1055,20 @@ public class RecommendationPlanScenarioTests
          * the anchored targets form the following training block.
          */
         RoleView warden = SkilledRole(50, "Wardening", "Social");
-        warden.HolderMode = RoleHolderMode.Custom;
-        warden.RequiredTotal = 1;
+        RecsTestBed.Require(warden, 1);
         RoleView artist = SkilledRole(51, "ArtMaking", "Artistic");
-        artist.HolderMode = RoleHolderMode.Custom;
-        artist.RequiredTotal = 1;
+        RecsTestBed.Require(artist, 1);
         RoleView tailor = CraftingRole(52, "Tailoring");
-        tailor.HolderMode = RoleHolderMode.Custom;
         RoleView smith = CraftingRole(53, "Smithing");
-        smith.HolderMode = RoleHolderMode.Custom;
-        smith.RequiredTotal = 1;
-        smith.TrainingWaivers = 1;
+        RecsTestBed.Require(smith, 1, trainingWaivers: 1);
         RoleView researcher = SkilledRole(54, "Researching", "Intellectual");
-        researcher.HolderMode = RoleHolderMode.Custom;
-        researcher.RequiredTotal = 1;
+        RecsTestBed.Require(researcher, 1);
         RoleView fabricator = CraftingRole(55, "Fabrication");
-        fabricator.HolderMode = RoleHolderMode.Custom;
-        fabricator.RequiredTotal = 1;
-        fabricator.TrainingWaivers = 1;
+        RecsTestBed.Require(fabricator, 1, trainingWaivers: 1);
         RoleView drugMaker = CraftingRole(56, "DrugMaking");
-        drugMaker.HolderMode = RoleHolderMode.Custom;
-        drugMaker.RequiredTotal = 1;
-        drugMaker.TrainingWaivers = 1;
+        RecsTestBed.Require(drugMaker, 1, trainingWaivers: 1);
         RoleView crafter = CraftingRole(57, "CraftingWork");
-        crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.RequiredTotal = 1;
-        crafter.TrainingWaivers = 1;
+        RecsTestBed.Require(crafter, 1, trainingWaivers: 1);
 
         PathView fabricatorPath = RecsTestBed.Path(
             60, (tailor.Id, 0, 21), (smith.Id, 0, 21),
@@ -495,7 +1152,8 @@ public class RecommendationPlanScenarioTests
             [smithPath.Id] = "Smith",
         };
 
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        RecommendationPlan plan = RecommendationPlan.Build(
+            colony, WithoutLevelPromotions());
 
         string[] expectedPaths = { "Fabricator, Drug Maker, Crafter", "Smith" };
         string[] expectedRoles =
@@ -523,12 +1181,10 @@ public class RecommendationPlanScenarioTests
          */
         RoleView crafter = SkilledRole(
             70, "CraftingWork", "Crafting", "Fabricate", "Stonecut");
-        crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.RequiredTotal = 1;
+        RecsTestBed.Require(crafter, 1);
         RoleView fabricator = SkilledRole(
             71, "Fabrication", "Crafting", "Fabricate");
-        fabricator.HolderMode = RoleHolderMode.Custom;
-        fabricator.RequiredTotal = 1;
+        RecsTestBed.Require(fabricator, 1);
         PathView path = RecsTestBed.Path(
             72, (crafter.Id, 0, 21), (fabricator.Id, 8, 21));
         path.AnchorRoleId = crafter.Id;
@@ -574,13 +1230,9 @@ public class RecommendationPlanScenarioTests
          * weak fourth pawn remains below Fabricator's target minimum.
          */
         RoleView tailor = CraftingRole(80, "Tailoring");
-        tailor.HolderMode = RoleHolderMode.Custom;
         RoleView smith = CraftingRole(81, "Smithing");
-        smith.HolderMode = RoleHolderMode.Custom;
         RoleView fabricator = CraftingRole(82, "Fabrication");
-        fabricator.HolderMode = RoleHolderMode.Custom;
         RoleView crafter = CraftingRole(83, "CraftingWork");
-        crafter.HolderMode = RoleHolderMode.Custom;
         PathView tailorPath = RecsTestBed.Path(
             90, (crafter.Id, 0, 21), (tailor.Id, 2, 21));
         tailorPath.AnchorRoleId = crafter.Id;
@@ -656,17 +1308,20 @@ public class RecommendationPlanScenarioTests
         RoleView core = RecsTestBed.Unskilled(
             100, "CoreWork", "DoctorJob", "CoreJob");
         core.AutoAssign = true;
+        core.Scale = null;
         RoleView doctor = SkilledRole(
             101, "Doctoring", "Medicine", "DoctorJob");
-        doctor.HolderMode = RoleHolderMode.Custom;
-        doctor.RequiredTotal = 1;
+        RecsTestBed.Require(doctor, 1);
         RoleView basics = RecsTestBed.Unskilled(102, "BasicWorker");
         basics.AutoAssign = true;
+        basics.Scale = null;
         RoleView hunter = SkilledRole(103, "Hunting", "Shooting");
         hunter.Hunting = true;
+        hunter.Scale = null;
         RoleView hauler = RecsTestBed.Unskilled(104, "Hauling");
         RoleView fireBlocker = RecsTestBed.Unskilled(105, "Firefighting");
         fireBlocker.Blocker = true;
+        fireBlocker.Scale = null;
 
         PawnView pawn = MultiSkillPawn(
             new Dictionary<string, (int, SignalBucket)>
@@ -719,6 +1374,14 @@ public class RecommendationPlanScenarioTests
             .IsEqualTo("");
         await Assert.That(NamesOfRoles(plan, 0, roleNames))
             .IsEqualTo("Fire Blocker, Core, Basics, Hunter, Hauler, Doctor");
+        await Assert.That(plan.TryGetExplanation(
+            0, hunter.Id, out RoleRecommendationExplanation hunterExplanation))
+            .IsTrue();
+        await Assert.That(hunterExplanation.HolderScaleApplies).IsFalse();
+        await Assert.That(plan.TryGetExplanation(
+            0, hauler.Id, out RoleRecommendationExplanation haulerExplanation))
+            .IsTrue();
+        await Assert.That(haulerExplanation.HolderScaleApplies).IsTrue();
     }
 
     [Test]
@@ -732,8 +1395,7 @@ public class RecommendationPlanScenarioTests
          */
         RoleView sharpshooter = SkilledRole(
             106, "Sharpshooting", "Shooting", "Hunting", "MarksmanWork");
-        sharpshooter.HolderMode = RoleHolderMode.Custom;
-        sharpshooter.RequiredTotal = 1;
+        RecsTestBed.Require(sharpshooter, 1);
         RoleView hunter = SkilledRole(107, "Hunting", "Shooting", "Hunting");
         hunter.Hunting = true;
         PawnView pawn = MultiSkillPawn(
@@ -859,6 +1521,11 @@ public class RecommendationPlanScenarioTests
             ("Smithing", SignalBucket.Neutral),
             ("Fabrication", SignalBucket.Neutral),
             ("CraftingWork", SignalBucket.Neutral));
+
+    private static RecommendationsTuningOptions WithoutLevelPromotions() =>
+        RecommendationsTuningOptions.Default
+            .With(RecommendationTuningOption.OptionalTargetGreatLevel, 21)
+            .With(RecommendationTuningOption.OptionalTargetStrongLevel, 21);
 
     private static string NamesOfRoles(
         RecommendationPlan plan,

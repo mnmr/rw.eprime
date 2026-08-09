@@ -61,21 +61,25 @@ namespace WorkRoles.UI
 
         // Owner: Colonists window. Key: (Pawn, SkillDef). Value: immutable skill
         // render presentation with stable external texture references.
-        // Dependencies: UiVersion presentation stamp, language, and the current
-        // external pawn snapshot. Refresh: lazy on first presentation read after
+        // Dependencies: UiVersion presentation stamp, language, current RoleStore
+        // identity and RecommendationTuningRevision, and the current external
+        // pawn snapshot. Refresh: lazy on first presentation read after
         // invalidation. Equality: exact key hits preserve presentation identity.
         // Teardown: InvalidatePresentations/ReleaseSnapshots clears the table.
         private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
             presentations =
                 new Dictionary<(Pawn, SkillDef), ColonistSkillPresentation>();
         private int presentationStamp = -1;
+        private RoleStore presentationStore;
+        private int presentationTuningRevision = -1;
 
         // Owner: Colonists window. Key: (UiVersion, selected Pawn identity).
         // Value: immutable selected-pawn stats render projection with a
         // producer-owned presentation buffer. Dependencies: presentation cache,
-        // language, and the published external pawn snapshot. Refresh: immediate
-        // on the next Snapshot read after key change. Equality: exact key hits
-        // preserve snapshot identity. Teardown: InvalidatePresentations clears it.
+        // language, RoleStore identity and RecommendationTuningRevision, and the
+        // published external pawn snapshot. Refresh: immediate on the next
+        // Snapshot read after key change. Equality: exact key hits preserve
+        // snapshot identity. Teardown: InvalidatePresentations clears it.
         private int statsStamp = -1;
         private Pawn statsPawn;
         private ColonistStatsSnapshot stats;
@@ -184,16 +188,31 @@ namespace WorkRoles.UI
             stats = null;
             presentations.Clear();
             presentationStamp = -1;
+            presentationStore = null;
+            presentationTuningRevision = -1;
+        }
+
+        private void EnsurePresentationGeneration()
+        {
+            RoleStore store = RoleStore.Current;
+            int tuningRevision = store?.RecommendationTuningRevision ?? -1;
+            if (presentationStamp == UiVersion.Current
+                && ReferenceEquals(presentationStore, store)
+                && presentationTuningRevision == tuningRevision)
+                return;
+            presentations.Clear();
+            presentationStamp = UiVersion.Current;
+            presentationStore = store;
+            presentationTuningRevision = tuningRevision;
+            statsStamp = -1;
+            statsPawn = null;
+            stats = null;
         }
 
         internal ColonistSkillPresentation PresentationFor(Pawn pawn, SkillLine line)
         {
             PawnSignalSnapshot pawnSnapshot = SignalSnapshot(pawn);
-            if (presentationStamp != UiVersion.Current)
-            {
-                presentations.Clear();
-                presentationStamp = UiVersion.Current;
-            }
+            EnsurePresentationGeneration();
 
             var key = (pawn, line.Def);
             if (presentations.TryGetValue(key, out ColonistSkillPresentation cached))
@@ -205,6 +224,24 @@ namespace WorkRoles.UI
             float labelWidth;
             using (new TextBlock(GameFont.Small))
                 labelWidth = Text.CalcSize(line.Label).x;
+            SignalBucket? baseBucket = pawnSnapshot.SkillBuckets
+                .ForSkill(line.Def?.defName)?.Bucket;
+            SignalBucket? bucket = baseBucket;
+            int promotionThreshold = -1;
+            if (bucket.HasValue)
+            {
+                RecommendationsTuningOptions tuning =
+                    presentationStore?.recommendationTuning
+                    ?? RecommendationsTuningOptions.Default;
+                bucket = tuning.PromoteSkillSignal(line.Level, bucket.Value);
+                if (bucket.Value > baseBucket.Value)
+                    promotionThreshold = line.Level >= tuning.Get(
+                            RecommendationTuningOption.OptionalTargetGreatLevel)
+                        ? tuning.Get(
+                            RecommendationTuningOption.OptionalTargetGreatLevel)
+                        : tuning.Get(
+                            RecommendationTuningOption.OptionalTargetStrongLevel);
+            }
 
             var result = new ColonistSkillPresentation(
                 line,
@@ -218,7 +255,10 @@ namespace WorkRoles.UI
                     line.ValueText,
                     SkillTextColor(line, signalView.PassionTier),
                     signalView,
-                    pawnSnapshot.SkillBuckets.ForSkill(line.Def?.defName)?.Bucket));
+                    bucket,
+                    baseBucket,
+                    line.Level,
+                    promotionThreshold));
             presentations.Add(key, result);
             return result;
         }
@@ -226,6 +266,7 @@ namespace WorkRoles.UI
         internal ColonistStatsSnapshot Snapshot(Pawn pawn)
         {
             SignalSnapshot(pawn);
+            EnsurePresentationGeneration();
             if (statsStamp == UiVersion.Current && statsPawn == pawn) return stats;
             statsStamp = UiVersion.Current;
             statsPawn = pawn;

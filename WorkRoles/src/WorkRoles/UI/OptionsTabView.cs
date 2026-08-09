@@ -171,14 +171,14 @@ namespace WorkRoles.UI
             WrText.HeaderLabel(compatHeader, "WR_CompatSection".Translate());
 
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
-            TooltipHandler.TipRegion(numericRect, state.NumericTip.Activate());
+            StructuredTipPresenter.TipRegion(numericRect, state.NumericTip);
             bool numericNew = numeric;
             Widgets.CheckboxLabeled(numericRect, "WR_OptNumeric".Translate(), ref numericNew);
             if (numericNew != numeric)
                 RoleCommands.SetUseWorkPriorities(numericNew);
 
             bool vanillaRange = store.reportVanillaPriorities;
-            TooltipHandler.TipRegion(rangeRect, state.RangeTip.Activate());
+            StructuredTipPresenter.TipRegion(rangeRect, state.RangeTip);
             bool vanillaNew = vanillaRange;
             Widgets.CheckboxLabeled(rangeRect, "WR_OptVanillaRange".Translate(), ref vanillaNew);
             if (vanillaNew != vanillaRange)
@@ -222,7 +222,7 @@ namespace WorkRoles.UI
             GUI.color = new Color(1f, 1f, 1f, 0.25f);
             WrText.LineHorizontal(x, y + 24f, width);
             GUI.color = Color.white;
-            if (tip != null) TooltipHandler.TipRegion(labelRect, tip.Activate());
+            if (tip != null) StructuredTipPresenter.TipRegion(labelRect, tip);
             return y + 30f;
         }
 
@@ -589,8 +589,8 @@ namespace WorkRoles.UI
                 ? RoleChipUI.WidthFor(anchorRole, showRemove: false)
                 : 110f;
             float x = rect.xMax - (captionW + 4f + 70f + 8f + tailW);
-            TooltipHandler.TipRegion(new Rect(x, rect.y, rect.xMax - x, rect.height),
-                state.AnchorTip.Activate());
+            StructuredTipPresenter.TipRegion(
+                new Rect(x, rect.y, rect.xMax - x, rect.height), state.AnchorTip);
 
             // MiddleLeft over the row height: the caption shares the text
             // baseline with the Before/After button and the chip.

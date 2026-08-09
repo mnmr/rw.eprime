@@ -18,11 +18,7 @@ namespace WorkRoles.Core
         public uint TemplateHash { get; set; }
         public bool AutoAssign { get; set; }
         public bool Blocker { get; set; }
-        public RoleHolderMode HolderMode { get; set; }
-        public bool HolderRangeSet { get; set; }
-        public int RequiredTotal { get; set; }
-        public int MaxHolders { get; set; } = RoleHolderRange.Uncapped;
-        public int TrainingWaivers { get; set; }
+        public string HolderScaleName { get; set; } = "Never";
         public int GroupId { get; set; }
         public int ActiveHours { get; set; }
         public List<string> LocationTokens { get; set; } = new List<string>();
@@ -52,11 +48,7 @@ namespace WorkRoles.Core
                 TemplateHash = 0u,
                 AutoAssign = false,
                 Blocker = Blocker,
-                HolderMode = HolderMode,
-                HolderRangeSet = HolderRangeSet,
-                RequiredTotal = RequiredTotal,
-                MaxHolders = MaxHolders,
-                TrainingWaivers = TrainingWaivers,
+                HolderScaleName = HolderScaleName,
                 GroupId = GroupId,
                 ActiveHours = ActiveHours,
                 LocationTokens = new List<string>(LocationTokens),

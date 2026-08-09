@@ -16,6 +16,8 @@ namespace WorkRoles
         private sealed class MapClassification
         {
             internal Building_GravEngine GravEngine;
+            internal string MapLocationId;
+            internal string ShipLocationId;
             internal Faction OwnerFaction;
             internal bool SpawnedViaGravship;
             internal bool ParentCanBePlayerHome;
@@ -45,7 +47,8 @@ namespace WorkRoles
         // Owner: process, partitioned by the active map set. Key: canonical Map
         // reference identity. Value: a private classification projection; its
         // game-owned references are observed but never mutated. Dependencies:
-        // map spawn/removal, parent kind/ownership, and grav-engine lifecycle.
+        // map spawn/removal, parent kind/ownership, and grav-engine lifecycle;
+        // stable map/engine identity strings are created only while rebuilding.
         // Refresh: event-driven by the exact lifecycle patches below. Equality:
         // a cache hit preserves the private value; rebuilt identity is not
         // published outside ColonyScope. Teardown: ReleaseSnapshot clears all
@@ -58,10 +61,12 @@ namespace WorkRoles
         // reference identity. Value: an immutable published location projection
         // whose producer-owned List is hidden behind indexed read access.
         // Dependencies: map-classification revision, map-set membership, faction,
-        // and language. Refresh: immediate on the next Locations read after an
-        // event invalidation. Equality: the LocationSnapshot wrapper identity is
-        // preserved across rebuilds. Teardown: ReleaseSnapshot/language or map-set
-        // invalidation clears faction entries and their owned buffers.
+        // language, and the sole current landed/traveling Gravship engine identity
+        // and state. Refresh: immediate on the next Locations read after the
+        // existing grav-engine/map transition events invalidate it; no polling.
+        // Equality: the LocationSnapshot wrapper identity is preserved across
+        // rebuilds. Teardown: ReleaseSnapshot/language or map-set invalidation
+        // clears faction entries and their owned buffers.
         private static readonly Dictionary<Faction, LocationSnapshot>
             locationSnapshots = new Dictionary<Faction, LocationSnapshot>(
                 ReferenceIdentityComparer<Faction>.Instance);
@@ -159,21 +164,96 @@ namespace WorkRoles
             var seen = new HashSet<string>();
             foreach (var map in Find.Maps)
             {
-                var place = PlaceOf(map, faction, out var gravEngine);
+                var place = PlaceOf(map, faction, out var gravEngine,
+                    out string shipLocationId);
                 if (!place.IsSettlement && !place.IsShip) continue;
+                if (place.IsShip)
+                {
+                    AddShipLocation(result, seen, gravEngine,
+                        shipLocationId, isActive: true);
+                    continue;
+                }
+
                 // Floor maps canonicalize to their ground map's id: one
                 // location per stack.
                 if (!seen.Add(place.LocationId)) continue;
-                // Unnamed ships fall back to a short label — the map parent's
-                // ("Gravship landing site") overflows every dropdown.
-                string label = place.IsShip
-                    ? (!gravEngine.nameHidden
-                        ? gravEngine.RenamableLabel
-                        : "WR_ShipFallback".Translate().ToString())
-                    : map.Parent?.LabelCap.ToString() ?? "?";
-                result.Add(new LocationInfo(place.LocationId, label, place.IsShip));
+                result.Add(new LocationInfo(place.LocationId,
+                    map.Parent?.LabelCap.ToString() ?? "?", isShip: false));
+                // A ship parked at a settlement is inactive there, but remains
+                // visible and removable in the role picker under its own stable
+                // identity.
+                if (gravEngine != null)
+                    AddShipLocation(result, seen, gravEngine,
+                        shipLocationId, isActive: false);
             }
+
+            // During flight the landing map is gone, but the same engine remains
+            // attached to the game's singular Gravship world object.
+            RimWorld.Planet.Gravship travelingShip = Current.Game?.Gravship;
+            Building_GravEngine travelingEngine = travelingShip?.Engine;
+            if (travelingEngine != null && travelingShip.Faction == faction)
+                AddShipLocation(result, seen, travelingEngine,
+                    travelingEngine.ThingID, isActive: false);
             return result;
+        }
+
+        private static void AddShipLocation(List<LocationInfo> result,
+            HashSet<string> seen, Building_GravEngine engine,
+            string shipLocationId, bool isActive)
+        {
+            if (engine == null || shipLocationId.NullOrEmpty()
+                || !seen.Add(shipLocationId))
+                return;
+            // Unnamed ships fall back to a short label — the map parent's
+            // ("Gravship landing site") overflows every dropdown.
+            string label = !engine.nameHidden
+                ? engine.RenamableLabel
+                : "WR_ShipFallback".Translate().ToString();
+            result.Add(new LocationInfo(
+                shipLocationId, label, isShip: true, isActive: isActive));
+        }
+
+        /// Authoritative load migration must not depend on ViewFaction (which
+        /// is client-local in multifaction Multiplayer). Collect every
+        /// player-owned settlement plus the game's singular player Gravship
+        /// from cached invariant classifications instead.
+        internal static string CollectLocationMigrationFacts(
+            ISet<string> liveSettlementTokens)
+        {
+            string stableShipToken = null;
+            foreach (var sourceMap in Find.Maps)
+            {
+                Map map = FloorMaps.Canonical(sourceMap);
+                if (map == null) continue;
+                MapClassification classification = mapClassifications.Get(map);
+                if (classification.OwnerFaction?.IsPlayer != true) continue;
+                PawnPlace place = FactionLocationClassifier.Classify(
+                    classification.MapLocationId,
+                    classification.ShipLocationId,
+                    ownedByFaction: true,
+                    spawnedViaGravship: classification.SpawnedViaGravship,
+                    parentCanBePlayerHome: classification.ParentCanBePlayerHome,
+                    parentIsSettlement: classification.ParentIsSettlement,
+                    hasGravEngine: classification.GravEngine != null);
+                if (place.IsSettlement
+                    && !classification.MapLocationId.NullOrEmpty())
+                    liveSettlementTokens?.Add(
+                        LocationRules.SettlementPrefix
+                        + classification.MapLocationId);
+                if (stableShipToken == null
+                    && classification.GravEngine != null
+                    && !classification.ShipLocationId.NullOrEmpty())
+                    stableShipToken = LocationRules.ShipPrefix
+                        + classification.ShipLocationId;
+            }
+
+            RimWorld.Planet.Gravship travelingShip = Current.Game?.Gravship;
+            Building_GravEngine travelingEngine = travelingShip?.Engine;
+            if (stableShipToken == null
+                && travelingShip?.Faction?.IsPlayer == true)
+                stableShipToken = LocationRules.ShipPrefix
+                    + travelingEngine.ThingID;
+            return stableShipToken;
         }
 
         /// A gravship map that isn't parked at a settlement — a ship landed at
@@ -193,6 +273,11 @@ namespace WorkRoles
 
         private static PawnPlace PlaceOf(
             Map map, Faction faction, out Building_GravEngine gravEngine)
+            => PlaceOf(map, faction, out gravEngine, out _);
+
+        private static PawnPlace PlaceOf(
+            Map map, Faction faction, out Building_GravEngine gravEngine,
+            out string shipLocationId)
         {
             // Floor maps classify as their ground map: grav machinery must sit
             // in the ground substructure footprint, so the engine search stays
@@ -201,12 +286,15 @@ namespace WorkRoles
             if (map == null)
             {
                 gravEngine = null;
+                shipLocationId = null;
                 return new PawnPlace();
             }
             MapClassification classification = mapClassifications.Get(map);
             gravEngine = classification.GravEngine;
+            shipLocationId = classification.ShipLocationId;
             return FactionLocationClassifier.Classify(
-                LocationId(map),
+                classification.MapLocationId,
+                classification.ShipLocationId,
                 faction != null && classification.OwnerFaction == faction,
                 classification.SpawnedViaGravship,
                 classification.ParentCanBePlayerHome,
@@ -220,6 +308,8 @@ namespace WorkRoles
             return new MapClassification
             {
                 GravEngine = gravEngine,
+                MapLocationId = map?.uniqueID.ToStringCached(),
+                ShipLocationId = gravEngine?.ThingID,
                 OwnerFaction = map?.Parent?.Faction ?? gravEngine?.Faction,
                 SpawnedViaGravship = map?.wasSpawnedViaGravShipLanding == true,
                 ParentCanBePlayerHome = map?.Parent?.def.canBePlayerHome == true,
@@ -306,7 +396,7 @@ namespace WorkRoles
         }
 
         internal static string LocationId(Map map) =>
-            FloorMaps.Canonical(map)?.uniqueID.ToStringCached();
+            PlaceOf(map, ViewFaction).LocationId;
 
         /// Off-map pawns (caravans) report the location they departed from.
         internal static string LocationIdOf(Pawn pawn) =>

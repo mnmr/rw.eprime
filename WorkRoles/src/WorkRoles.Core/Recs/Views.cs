@@ -40,8 +40,8 @@ namespace WorkRoles.Core.Recs
         public int RequiredContent;
     }
 
-    /// One catalog role as the rules see it. Auto required total arrives resolved
-    /// through the RoleDef; Custom carries the stored inclusive range.
+    /// One catalog role as the rules see it. Ordinary recommendation roles use
+    /// a holder scale; a missing or Never scale excludes the role.
     public class RoleView
     {
         public int Id;
@@ -63,28 +63,34 @@ namespace WorkRoles.Core.Recs
         public bool UsesOccasionalRepeatChampionPenalty;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
-        public RoleHolderMode HolderMode;
-        /// Banded holder demand; when set it overrides the scalar fields and
-        /// scaling formulas with direct band lookups.
+        /// Banded holder demand; null for Never.
         public HolderScale Scale;
+        /// Fill mode from the role's assignment strategy. Unskilled assigns
+        /// every capable pawn; Never assigns none.
+        public ScaleMode Mode = ScaleMode.Skilled;
+
+        public bool IsNever => Mode == ScaleMode.Never || Scale == null;
+        public bool UsesHolderScale => !AutoAssign && !HasRules && !Blocker
+            && !Hunting;
 
         public int RequiredTotalAt(int colonySize) =>
-            Scale != null ? Scale.RequiredTotalAt(colonySize) : RequiredTotal;
+            Scale?.RequiredTotalAt(colonySize) ?? 0;
 
         public int MaxHoldersAt(int colonySize) =>
-            Scale != null ? Scale.MaxAt(colonySize) : MaxHolders;
+            Scale?.MaxAt(colonySize) ?? 0;
 
         public int TrainingWaiversAt(int colonySize) =>
-            Scale != null ? Scale.TrainingWaiversAt(colonySize) : TrainingWaivers;
-        public HolderRequirement RequirementAt(int colonySize) =>
-            new HolderRequirement(
-                RequiredTotalAt(colonySize),
+            Scale?.TrainingWaiversAt(colonySize) ?? 0;
+        public HolderRequirement RequirementAt(int colonySize)
+        {
+            int capacity = System.Math.Max(0, colonySize);
+            int maximum = MaxHoldersAt(colonySize);
+            if (maximum < RoleHolderRange.Uncapped)
+                capacity = System.Math.Min(capacity, System.Math.Max(0, maximum));
+            return new HolderRequirement(
+                System.Math.Min(capacity, RequiredTotalAt(colonySize)),
                 TrainingWaiversAt(colonySize));
-        /// -2 never, -1 auto-coverage (one scaled unit), 0 interest-only,
-        /// N needed slots.
-        public int RequiredTotal;
-        public int MaxHolders = RoleHolderRange.Uncapped;
-        public int TrainingWaivers;
+        }
         public List<RoleSkillView> Skills = new List<RoleSkillView>();
         /// Measured skill for band gating (most XP-frequent across the role's
         /// jobs); null = unskilled entry, never gates.

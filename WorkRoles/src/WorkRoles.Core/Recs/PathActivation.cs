@@ -67,10 +67,12 @@ namespace WorkRoles.Core.Recs
             for (int entry = 0; entry < count; entry++)
             {
                 RoleView role = facts.RoleOf(path.RoleIds[entry]);
+                // A training role is Never by design (no own demand); it is
+                // still a valid path step to assign as the target's substitute,
+                // so Never does not exclude it here.
                 if (role == null
                     || !role.Available
                     || !role.Enabled
-                    || role.HolderMode == RoleHolderMode.Never
                     || !facts.Capable(pawnIndex, role)
                     || facts.BestSignal(pawnIndex, role, out _, out _)
                         < formulas.PathMinimumSignal
@@ -247,12 +249,7 @@ namespace WorkRoles.Core.Recs
                     : SignalBucket.Neutral;
                 if (signal < formulas.OptionalTargetMinimumSignal)
                     return false;
-                if (level >= formulas.OptionalTargetGreatLevel
-                    && signal < formulas.OptionalTargetGreatPromotedSignal)
-                    signal = formulas.OptionalTargetGreatPromotedSignal;
-                else if (level >= formulas.OptionalTargetStrongLevel
-                    && signal < formulas.OptionalTargetStrongPromotedSignal)
-                    signal = formulas.OptionalTargetStrongPromotedSignal;
+                signal = formulas.PromoteSkillSignal(level, signal);
                 points += signal - formulas.OptionalTargetMinimumSignal;
             }
             qualifiedByMultiSkillAptitude = points >=

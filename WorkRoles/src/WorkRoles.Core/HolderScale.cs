@@ -2,21 +2,18 @@ using System;
 
 namespace WorkRoles.Core
 {
-    /// Banded holder demand for one named, shareable scale: 12 colony-size
-    /// bands of 3 colonists (1-3 .. 34+), each holding a required total,
-    /// training-waiver count, and maximum.
-    /// Values are direct lookups — no formulas, and bands are independent
-    /// (no cross-band coupling). Max is stored banded for format
-    /// future-proofing but is not player-editable (uncapped in practice).
+    /// Banded holder demand for one shareable scale: 12 colony-size bands of 3
+    /// colonists (1-3 .. 34+), each holding a required total, training-waiver
+    /// count, and maximum. Values are direct lookups — no formulas, and bands
+    /// are independent (no cross-band coupling). Max is stored banded for
+    /// format future-proofing but is not player-editable (uncapped in
+    /// practice). Naming, preset status, and fill mode live on
+    /// RoleAssignmentStrategy, which wraps this.
     public sealed class HolderScale
     {
         public const int Bands = 12;
         public const int BandSize = 3;
 
-        public string Name;
-        /// Shipped/seeded scales are immutable in the editor: the first edit
-        /// forks them into a uniquely named user scale.
-        public bool Preset;
         /// Total required holders, including slots that training roles may fill.
         public int[] RequiredTotals = new int[Bands];
         /// Required-total slots that training roles may fill.
@@ -30,10 +27,6 @@ namespace WorkRoles.Core
             RequiredTotals[BandOf(colonists)];
         public int TrainingWaiversAt(int colonists) =>
             TrainingWaivers[BandOf(colonists)];
-        public HolderRequirement RequirementAt(int colonists) =>
-            new HolderRequirement(
-                RequiredTotalAt(colonists),
-                TrainingWaiversAt(colonists));
         public int MaxAt(int colonists) => Max[BandOf(colonists)];
 
         /// Enforces the per-band invariants: training waivers never exceed the
@@ -53,24 +46,14 @@ namespace WorkRoles.Core
 
         public HolderScale Copy() => new HolderScale
         {
-            Name = Name,
-            Preset = Preset,
             RequiredTotals = (int[])RequiredTotals.Clone(),
             TrainingWaivers = (int[])TrainingWaivers.Clone(),
             Max = (int[])Max.Clone(),
         };
 
-        /// The all-zero scale: max 0 in every band means the role is never
-        /// recommended (required totals and training waivers are zero too).
-        public static HolderScale Never(string name)
-        {
-            var scale = new HolderScale { Name = name, Preset = true };
-            for (int i = 0; i < Bands; i++) scale.Max[i] = 0;
-            return scale;
-        }
-
-        /// True when max 0 suppresses every band: the Never semantics.
-        public bool IsNever
+        /// True when max 0 suppresses every band (legacy all-zero encoding of
+        /// Never, used only when migrating pre-mode saves).
+        public bool AllZeroMax
         {
             get
             {
@@ -80,8 +63,8 @@ namespace WorkRoles.Core
             }
         }
 
-        /// Value-level equality (name excluded): import uses this to flag
-        /// which same-named scales actually change.
+        /// Value-level equality: import uses this to flag which same-named
+        /// scales actually change.
         public bool SameValuesAs(HolderScale other)
         {
             if (other == null) return false;

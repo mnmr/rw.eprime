@@ -166,7 +166,7 @@ public class RecommendationCatalogProjectionTests
     {
         var jobs = new FakeCatalog()
             .WithWorkType("Crafting", "MakeDrug");
-        var scale = new HolderScale { Name = "Input" };
+        var scale = new HolderScale();
         Array.Fill(scale.RequiredTotals, 2);
         Array.Fill(scale.TrainingWaivers, 1);
         Array.Fill(scale.Max, RoleHolderRange.Uncapped);

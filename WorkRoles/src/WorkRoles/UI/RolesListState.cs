@@ -66,7 +66,7 @@ namespace WorkRoles.UI
         }
 
         internal RoleListSnapshot Snapshot(RoleStore store, int selectedRoleId,
-            bool revealSelected, System.Func<Role, string> roleTooltip)
+            bool revealSelected, System.Func<Role, StructuredTip> roleTooltip)
         {
             bool filtered = FiltersActive;
             bool nested = (WorkRolesMod.Settings?.nestedRoleTree ?? true) && !filtered;
@@ -126,7 +126,7 @@ namespace WorkRoles.UI
         private static RoleListRowSnapshot PublishRoleRow(
             RoleListSectionSnapshot section, Role role, RoleStore store,
             int depth, bool virtualRow, ISet<string> liveLocationIds,
-            System.Func<Role, string> roleTooltip)
+            System.Func<Role, StructuredTip> roleTooltip)
         {
             string originGroupLabel = null;
             if (virtualRow)
@@ -374,7 +374,7 @@ namespace WorkRoles.UI
     {
         internal RoleListRowSnapshot(RoleListSectionSnapshot section, int roleId,
             int depth, bool virtualRow, bool invalid, string label,
-            string tooltip, bool enabled, bool hasCustomColor, Color color,
+            StructuredTip tooltip, bool enabled, bool hasCustomColor, Color color,
             bool blocker, bool hasTimeRule, bool hasLocationRule,
             string virtualOriginGroupLabel)
         {
@@ -405,7 +405,7 @@ namespace WorkRoles.UI
         internal bool VirtualRow { get; }
         internal bool Invalid { get; }
         internal string Label { get; }
-        internal string Tooltip { get; }
+        internal StructuredTip Tooltip { get; }
         internal bool Enabled { get; }
         internal bool HasCustomColor { get; }
         internal Color Color { get; }

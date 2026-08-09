@@ -38,15 +38,47 @@ public class HolderScaleTests
     }
 
     [Test]
-    public async Task CopyIsIndependentAndSameValuesIgnoresName()
+    public async Task CopyIsIndependentAndSameValuesComparesBands()
     {
-        var scale = new HolderScale { Name = "Doctors" };
+        var scale = new HolderScale();
         scale.RequiredTotals[3] = 4;
         HolderScale copy = scale.Copy();
-        copy.Name = "Renamed";
         await Assert.That(copy.SameValuesAs(scale)).IsTrue();
         copy.RequiredTotals[3] = 5;
         await Assert.That(copy.SameValuesAs(scale)).IsFalse();
         await Assert.That(scale.RequiredTotals[3]).IsEqualTo(4);
+    }
+
+    [Test]
+    public async Task StrategyValueEqualityIgnoresNameAndComparesMode()
+    {
+        var skilled = new RoleAssignmentStrategy
+        {
+            Name = "Doctors", Mode = ScaleMode.Skilled, Scale = new HolderScale(),
+        };
+        RoleAssignmentStrategy copy = skilled.Copy();
+        copy.Name = "Renamed";
+        await Assert.That(copy.SameValuesAs(skilled)).IsTrue();
+        copy.Mode = ScaleMode.Unskilled;
+        await Assert.That(copy.SameValuesAs(skilled)).IsFalse();
+    }
+
+    [Test]
+    public async Task ImportedStrategyCannotReplaceInvariantPreset()
+    {
+        RoleAssignmentStrategy never = RoleAssignmentStrategy.Never("Never");
+        var scales = new List<RoleAssignmentStrategy> { never };
+        var imported = new RoleAssignmentStrategy
+        {
+            Name = "never", Mode = ScaleMode.Skilled, Scale = new HolderScale(),
+        };
+        Array.Fill(imported.Scale.RequiredTotals, 3);
+
+        bool changed = HolderScaleImport.Merge(scales, imported);
+
+        await Assert.That(changed).IsFalse();
+        await Assert.That(scales[0]).IsSameReferenceAs(never);
+        await Assert.That(scales[0].IsNever).IsTrue();
+        await Assert.That(scales[0].Scale == null).IsTrue();
     }
 }

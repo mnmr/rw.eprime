@@ -10,7 +10,8 @@ namespace WorkRoles.Core
             IReadOnlyList<LocationInfo> locations)
         {
             if (fileToken == LocationRules.Settlements
-                || fileToken == LocationRules.Caravans)
+                || fileToken == LocationRules.Caravans
+                || fileToken == LocationRules.Nowhere)
                 return fileToken;
             if (string.IsNullOrEmpty(fileToken) || locations == null) return null;
 
@@ -60,7 +61,8 @@ namespace WorkRoles.Core
             IReadOnlyDictionary<string, string> resolved)
         {
             if (fileToken == LocationRules.Settlements
-                || fileToken == LocationRules.Caravans)
+                || fileToken == LocationRules.Caravans
+                || fileToken == LocationRules.Nowhere)
                 return fileToken;
             return resolved != null
                 && resolved.TryGetValue(fileToken, out string runtimeToken)

@@ -7,13 +7,17 @@ public class RoleFileScaleTests
     [Test]
     public async Task ScalesAndRoleScaleReferencesRoundTripThroughTheFileFormat()
     {
-        var scale = new HolderScale { Name = "Gentle" };
+        var bands = new HolderScale();
         for (int i = 0; i < HolderScale.Bands; i++)
         {
-            scale.RequiredTotals[i] = 1 + i / 2;
-            scale.TrainingWaivers[i] = i / 3;
-            scale.Max[i] = 6;
+            bands.RequiredTotals[i] = 1 + i / 2;
+            bands.TrainingWaivers[i] = i / 3;
+            bands.Max[i] = 6;
         }
+        var scale = new RoleAssignmentStrategy
+        {
+            Name = "Gentle", Mode = ScaleMode.Skilled, Scale = bands,
+        };
         scale.Normalize();
         var doc = new RoleFileDocument();
         doc.scales.Add(scale);
@@ -31,6 +35,26 @@ public class RoleFileScaleTests
         await Assert.That(parsed.scales[0].Name).IsEqualTo("Gentle");
         await Assert.That(parsed.scales[0].SameValuesAs(scale)).IsTrue();
         await Assert.That(parsed.roles[0].holderScale).IsEqualTo("Gentle");
+    }
+
+    [Test]
+    public async Task BehavioralModesRoundTripAndNeverDropsNumerics()
+    {
+        var doc = new RoleFileDocument();
+        doc.scales.Add(RoleAssignmentStrategy.Never("Never"));
+        doc.scales.Add(RoleAssignmentStrategy.Unskilled("Unskilled"));
+
+        RoleFileDocument parsed = RoleFile.Parse(RoleFile.Build(doc));
+
+        RoleAssignmentStrategy never = parsed.scales
+            .Single(s => s.Name == "Never");
+        RoleAssignmentStrategy unskilled = parsed.scales
+            .Single(s => s.Name == "Unskilled");
+        await Assert.That(never.Mode).IsEqualTo(ScaleMode.Never);
+        await Assert.That(never.Scale == null).IsTrue();
+        await Assert.That(unskilled.Mode).IsEqualTo(ScaleMode.Unskilled);
+        await Assert.That(unskilled.Scale.RequiredTotalAt(12)).IsEqualTo(1);
+        await Assert.That(unskilled.Scale.RequiredTotalAt(9)).IsEqualTo(0);
     }
 
     [Test]

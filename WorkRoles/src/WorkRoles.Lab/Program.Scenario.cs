@@ -74,10 +74,9 @@ internal static partial class Program
         int colonySize,
         int requiredTotalCap)
     {
-        var scaling = new RecommendationScaling(Tuning);
         foreach (RoleView role in catalog.Roles)
         {
-            HolderRequirement requirement = scaling.Requirement(role, colonySize);
+            HolderRequirement requirement = role.RequirementAt(colonySize);
             int directMinimum = Math.Min(
                 requiredTotalCap,
                 requirement.DirectMinimum);
@@ -86,10 +85,7 @@ internal static partial class Program
                 Math.Max(0, requiredTotalCap - directMinimum));
             int requiredTotal = directMinimum + trainingWaivers;
             int maximum = role.MaxHoldersAt(colonySize);
-            var scale = new HolderScale
-            {
-                Name = $"WorkRoles.Lab cap {requiredTotalCap}",
-            };
+            var scale = new HolderScale();
             Array.Fill(scale.RequiredTotals, requiredTotal);
             Array.Fill(scale.TrainingWaivers, trainingWaivers);
             Array.Fill(scale.Max, maximum);

@@ -10,7 +10,7 @@ namespace WorkRoles.Core.Recs
                 EngineContext facts,
                 PawnDraft[] drafts,
                 RecommendationFormulaEngine formulas,
-                IScalingAlgorithm scaling)
+                RecommendationTargetAssignment[] targetAssignments)
         {
             var coveredTotals = new Dictionary<int, int>();
             for (int roleIndex = 0;
@@ -43,40 +43,90 @@ namespace WorkRoles.Core.Recs
                     RoleView role = facts.RoleOf(roleId);
                     if (role == null) continue;
                     bool recommended = drafts[pawnIndex].ContainsRole(roleId);
-                    SignalBucket signal = facts.BestSignal(
+                    SignalBucket rawSignal = facts.BestSignal(
                         pawnIndex,
                         role,
                         out string signalSkill,
                         out _);
-                    HolderRequirement requirement = scaling.Requirement(
-                        role, facts.Colony.Pawns.Count);
-                    int capacity = facts.Colony.Pawns.Count;
-                    int maximum = role.MaxHoldersAt(capacity);
-                    if (maximum < RoleHolderRange.Uncapped)
-                        capacity = System.Math.Min(
-                            capacity, System.Math.Max(0, maximum));
-                    int requiredTotal = System.Math.Min(
-                        capacity, requirement.RequiredTotal);
+                    int signalSkillLevel = facts.SkillLevel(
+                        pawnIndex, signalSkill);
+                    SignalBucket surplusSignal = RolePlan.SurplusSignal(
+                        facts,
+                        pawnIndex,
+                        role,
+                        rawSignal,
+                        signalSkillLevel,
+                        formulas);
+                    int trainingTargetRoleId = drafts[pawnIndex]
+                        .TrainingTargetFor(role.Id);
+                    RoleView requirementRole = trainingTargetRoleId >= 0
+                        ? facts.RoleOf(trainingTargetRoleId) ?? role
+                        : role;
+                    HolderRequirement requirement = requirementRole.RequirementAt(
+                        facts.Colony.Pawns.Count);
+                    int requiredTotal = requirement.RequiredTotal;
                     var explanation = new RoleRecommendationExplanation
                     {
                         RoleId = roleId,
                         Recommended = recommended,
                         RequiredTotal = requiredTotal,
+                        TrainingWaivers = System.Math.Min(
+                            requiredTotal, requirement.TrainingWaivers),
                         CoveredTotal = coveredTotals.TryGetValue(
-                            roleId, out int covered) ? covered : 0,
-                        ConfiguredMaximum = role.MaxHoldersAt(
+                            requirementRole.Id, out int covered) ? covered : 0,
+                        ConfiguredMaximum = requirementRole.MaxHoldersAt(
                             facts.Colony.Pawns.Count),
+                        HolderScaleApplies = requirementRole.UsesHolderScale
+                            && requirementRole.Scale != null,
                         RequiredSkills = RequiredSkillNames(facts, role),
-                        SignalBucket = signal,
+                        SignalBucket = surplusSignal,
+                        BaseSignalBucket = rawSignal,
+                        SignalSkillLevel = signalSkillLevel,
                         SignalSkillDefName = signalSkill,
                     };
+                    RecommendationTargetAssignment selection =
+                        FindTargetAssignment(
+                            targetAssignments,
+                            pawnIndex,
+                            roleId,
+                            trainingTargetRoleId);
+                    if (selection != null)
+                    {
+                        RecommendationSelectionStage stage = selection.Stage;
+                        if (stage ==
+                                RecommendationSelectionStage.TrainingWaiver
+                            && selection.AssignsTargetRole)
+                            stage = roleId == selection.TargetRoleId
+                                ? RecommendationSelectionStage.Required
+                                : RecommendationSelectionStage.None;
+                        explanation.SelectionStage = stage;
+                        explanation.CandidateRank = selection.CandidateRank;
+                        explanation.CandidateCount = selection.CandidateCount;
+                        explanation.StageRank = selection.StageRank;
+                        explanation.SelectionSlot = selection.SelectionSlot;
+                        explanation.SelectionSlotCount =
+                            selection.SelectionSlotCount;
+                        explanation.SelectionSignalBucket =
+                            selection.SignalBucket;
+                        explanation.SurplusMinimumSignalBucket =
+                            selection.SurplusMinimumSignalBucket;
+                        explanation.SurplusQualifiedBySignal =
+                            selection.SurplusQualifiedBySignal;
+                        if (stage ==
+                            RecommendationSelectionStage.TrainingWaiver)
+                            explanation.TrainingSkills = TrainingSkills(
+                                facts,
+                                pawnIndex,
+                                requirementRole,
+                                selection.PathId);
+                    }
                     if (recommended)
                         IncludedDecision(
                             facts,
                             drafts[pawnIndex],
                             pawnIndex,
                             role,
-                            signal,
+                            surplusSignal,
                             formulas,
                             explanation);
                     else
@@ -85,7 +135,8 @@ namespace WorkRoles.Core.Recs
                             drafts[pawnIndex],
                             pawnIndex,
                             role,
-                            signal,
+                            rawSignal,
+                            surplusSignal,
                             requiredTotal,
                             formulas,
                             explanation);
@@ -93,6 +144,65 @@ namespace WorkRoles.Core.Recs
                 }
             }
             return result;
+        }
+
+        private static RecommendationTargetAssignment FindTargetAssignment(
+            RecommendationTargetAssignment[] assignments,
+            int pawnIndex,
+            int roleId,
+            int trainingTargetRoleId)
+        {
+            int targetRoleId = trainingTargetRoleId >= 0
+                ? trainingTargetRoleId
+                : roleId;
+            for (int index = 0; index < assignments.Length; index++)
+            {
+                RecommendationTargetAssignment assignment = assignments[index];
+                if (assignment.PawnIndex != pawnIndex
+                    || assignment.TargetRoleId != targetRoleId)
+                    continue;
+                for (int roleIndex = 0;
+                     roleIndex < assignment.RoleCount;
+                     roleIndex++)
+                    if (assignment.RoleAt(roleIndex) == roleId)
+                        return assignment;
+            }
+            return null;
+        }
+
+        private static IReadOnlyList<RecommendationTrainingSkill>
+            TrainingSkills(
+                EngineContext facts,
+                int pawnIndex,
+                RoleView target,
+                int pathId)
+        {
+            if (target == null
+                || !facts.PathsById.TryGetValue(pathId, out PathView path))
+                return Array.Empty<RecommendationTrainingSkill>();
+            int targetAt = path.RoleIds.IndexOf(target.Id);
+            if (targetAt < 0 || targetAt >= path.BandMins.Count)
+                return Array.Empty<RecommendationTrainingSkill>();
+
+            IReadOnlyList<RoleSkillView> required =
+                facts.RequiredSkills(target);
+            var result = new List<RecommendationTrainingSkill>(
+                required.Count);
+            int targetMinimum = path.BandMins[targetAt];
+            for (int index = 0; index < required.Count; index++)
+            {
+                RoleSkillView skill = required[index];
+                if (!PathActivation.IsQualifyingTargetSkill(
+                        facts, target, path, skill))
+                    continue;
+                result.Add(new RecommendationTrainingSkill(
+                    skill.SkillDefName,
+                    facts.SkillLevel(pawnIndex, skill.SkillDefName),
+                    targetMinimum));
+            }
+            return result.Count == 0
+                ? Array.Empty<RecommendationTrainingSkill>()
+                : result.ToArray();
         }
 
         private static IReadOnlyList<string> RequiredSkillNames(
@@ -115,7 +225,7 @@ namespace WorkRoles.Core.Recs
             PawnDraft draft,
             int pawnIndex,
             RoleView role,
-            SignalBucket signal,
+            SignalBucket surplusSignal,
             RecommendationFormulaEngine formulas,
             RoleRecommendationExplanation explanation)
         {
@@ -155,7 +265,7 @@ namespace WorkRoles.Core.Recs
             }
             explanation.Decision = draft.IsMinimumRole(role.Id)
                 ? RecommendationDecision.CoverageDrafted
-                : signal >= formulas.SurplusMinimumSignal
+                : surplusSignal >= formulas.SurplusMinimumSignal
                     ? RecommendationDecision.SignalQualified
                     : RecommendationDecision.Recommended;
         }
@@ -165,14 +275,28 @@ namespace WorkRoles.Core.Recs
             PawnDraft draft,
             int pawnIndex,
             RoleView role,
-            SignalBucket signal,
+            SignalBucket rawSignal,
+            SignalBucket surplusSignal,
             int requiredTotal,
             RecommendationFormulaEngine formulas,
             RoleRecommendationExplanation explanation)
         {
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            if (role.HolderMode == RoleHolderMode.Never)
-                explanation.Decision = RecommendationDecision.HolderModeNever;
+            if (role.UsesHolderScale && role.IsNever)
+            {
+                // A Never role that is a training-path trainee is controlled by
+                // its target (e.g. Medic by Doctor), not "not configured".
+                int controllingTarget = ControllingTrainingTarget(
+                    facts, role.Id);
+                if (controllingTarget >= 0)
+                {
+                    explanation.Decision =
+                        RecommendationDecision.ControlledByTrainingTarget;
+                    explanation.RelatedRoleId = controllingTarget;
+                }
+                else
+                    explanation.Decision = RecommendationDecision.ScaleNever;
+            }
             else if (!role.Enabled)
                 explanation.Decision = RecommendationDecision.RoleDisabled;
             else if (!role.Available)
@@ -184,8 +308,8 @@ namespace WorkRoles.Core.Recs
             else if (role.Hunting && !pawn.HasRangedWeapon)
                 explanation.Decision =
                     RecommendationDecision.HunterRequirementsNotMet;
-            else if (signal < formulas.CandidateMinimumSignal)
-                explanation.Decision = signal == SignalBucket.Awful
+            else if (rawSignal < formulas.CandidateMinimumSignal)
+                explanation.Decision = rawSignal == SignalBucket.Awful
                     ? RecommendationDecision.AwfulSignal
                     : RecommendationDecision.SignalBelowThreshold;
             else
@@ -202,12 +326,27 @@ namespace WorkRoles.Core.Recs
                     && requiredTotal > 0)
                     explanation.Decision =
                         RecommendationDecision.RequiredCoverageFilled;
-                else if (signal < formulas.SurplusMinimumSignal)
+                else if (surplusSignal < formulas.SurplusMinimumSignal)
                     explanation.Decision =
                         RecommendationDecision.SignalBelowThreshold;
                 else
                     explanation.Decision = RecommendationDecision.NotSelected;
             }
+        }
+
+        /// The training-path target that controls this role (the role is a
+        /// non-target member of a path), or -1 when the role stands alone.
+        private static int ControllingTrainingTarget(
+            EngineContext facts, int roleId)
+        {
+            for (int index = 0; index < facts.Colony.Paths.Count; index++)
+            {
+                PathView path = facts.Colony.Paths[index];
+                if (!path.RoleIds.Contains(roleId)) continue;
+                int target = PathActivation.UniqueTargetRoleId(path);
+                if (target >= 0 && target != roleId) return target;
+            }
+            return -1;
         }
 
         private static int CoveringRole(

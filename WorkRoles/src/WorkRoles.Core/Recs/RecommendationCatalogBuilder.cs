@@ -23,11 +23,8 @@ namespace WorkRoles.Core.Recs
         public bool Blocker;
         public bool PreserveRecommendationOrder;
         public bool UsesOccasionalRepeatChampionPenalty;
-        public RoleHolderMode HolderMode;
         public HolderScale Scale;
-        public int RequiredTotal;
-        public int MaxHolders = RoleHolderRange.Uncapped;
-        public int TrainingWaivers;
+        public ScaleMode Mode = ScaleMode.Skilled;
         public bool Available = true;
         public bool Enabled = true;
         public RecommendationSpecialRoleKind SpecialRole;
@@ -221,11 +218,8 @@ namespace WorkRoles.Core.Recs
                     source.UsesOccasionalRepeatChampionPenalty,
                 NaturalPriority = projection.MaxNaturalPriority,
                 WorkTypes = projection.CopyWorkTypes(),
-                HolderMode = source.HolderMode,
                 Scale = source.Scale?.Copy(),
-                RequiredTotal = source.RequiredTotal,
-                MaxHolders = source.MaxHolders,
-                TrainingWaivers = source.TrainingWaivers,
+                Mode = source.Mode,
                 Skills = projection.CopySkillViews(),
                 PrimarySkill = projection.PrimarySkill,
                 Unskilled = !source.AutoAssign

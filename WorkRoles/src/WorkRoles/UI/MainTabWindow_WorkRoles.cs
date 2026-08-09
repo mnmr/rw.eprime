@@ -15,7 +15,6 @@ namespace WorkRoles.UI
         private readonly ColonistsTabView colonistsTab = new ColonistsTabView(ColonistsViewProfile.Colonists());
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
-        private readonly object structuredTipOwner = new object();
         private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
@@ -30,7 +29,8 @@ namespace WorkRoles.UI
             // The Roles tab's holder list mirrors whatever the colonist table lists.
             rolesTab.listedPawns = () => colonistsTab.ListedPawns();
             rolesTab.pawnListRevision = () => colonistsTab.PawnListRevision;
-            rolesTab.roleTip = role => colonistsTab.RoleTipText(role, RoleTipContext.TreeRow);
+            rolesTab.roleTip = role => colonistsTab.RoleTip(
+                role, RoleTipContext.TreeRow);
         }
 
         public override Vector2 RequestedTabSize => TargetSize();
@@ -238,7 +238,7 @@ namespace WorkRoles.UI
             optionsTab.ReleaseWindowData();
             WindowDataLifecycle.ReleaseShared();
             tabs = null;
-            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+            StructuredTipPresenter.Reset();
         }
 
         // Owner: window. Key: LanguageChangeCoordinator.Revision. Value:
@@ -264,17 +264,7 @@ namespace WorkRoles.UI
             // drawing; an event stamp check, never a scan for external changes.
             if (repaint)
                 colonistsTab.RefreshExternalSnapshotIfNeeded();
-            if (repaint)
-                Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
-            try
-            {
-                DrawContents(inRect);
-            }
-            finally
-            {
-                if (repaint)
-                    Patches.Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner);
-            }
+            DrawContents(inRect);
         }
 
         private void DrawContents(Rect inRect)

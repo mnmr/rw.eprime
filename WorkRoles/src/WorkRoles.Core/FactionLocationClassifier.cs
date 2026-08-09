@@ -10,6 +10,17 @@ namespace WorkRoles.Core
             bool spawnedViaGravship,
             bool parentCanBePlayerHome,
             bool parentIsSettlement,
+            bool hasGravEngine) => Classify(locationId, locationId,
+                ownedByFaction, spawnedViaGravship, parentCanBePlayerHome,
+                parentIsSettlement, hasGravEngine);
+
+        public static PawnPlace Classify(
+            string mapLocationId,
+            string shipLocationId,
+            bool ownedByFaction,
+            bool spawnedViaGravship,
+            bool parentCanBePlayerHome,
+            bool parentIsSettlement,
             bool hasGravEngine)
         {
             bool ship = ownedByFaction && hasGravEngine && !parentIsSettlement;
@@ -17,7 +28,7 @@ namespace WorkRoles.Core
                 && (spawnedViaGravship || parentCanBePlayerHome || hasGravEngine);
             return new PawnPlace
             {
-                LocationId = locationId,
+                LocationId = ship ? shipLocationId : mapLocationId,
                 IsSettlement = home && !ship,
                 IsShip = ship,
             };

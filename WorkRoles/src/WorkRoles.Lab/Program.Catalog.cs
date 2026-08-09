@@ -49,18 +49,20 @@ internal static partial class Program
             if (!AvailableInAllDlc(def)) continue;
             string defName = RequiredText(def, "defName");
             List<JobEntry> entries = LoadEntries(def, defName);
-            XElement minHoldersElement = def.Element("minHolders");
-            int requiredTotal = OptionalInt(
-                minHoldersElement?.Value, fallback: 0, defName, "minHolders");
-            int trainingWaivers = OptionalInt(
-                minHoldersElement?.Attribute("waivers")?.Value,
-                fallback: 0,
-                defName,
-                "minHolders waivers");
             string scaleName = def.Element("holderScale")?.Value.Trim();
             HolderScale scale = null;
-            if (!string.IsNullOrEmpty(scaleName)
-                && !scales.TryGetValue(scaleName, out scale))
+            // Mirror the seeded behavioral presets: a missing or "Never"
+            // reference assigns no one; "Unskilled" fills every capable pawn.
+            ScaleMode scaleMode = ScaleMode.Skilled;
+            if (string.IsNullOrEmpty(scaleName)
+                || scaleName == "Never")
+                scaleMode = ScaleMode.Never;
+            else if (scaleName == "Unskilled")
+            {
+                scaleMode = ScaleMode.Unskilled;
+                scale = RoleAssignmentStrategy.Unskilled("Unskilled").Scale;
+            }
+            else if (!scales.TryGetValue(scaleName, out scale))
                 throw new InvalidDataException(
                     $"RoleDef {defName}: unknown holderScale '{scaleName}'.");
             RecommendationSpecialRoleKind specialRole =
@@ -82,16 +84,8 @@ internal static partial class Program
                     def, "preserveRecommendationOrder"),
                 UsesOccasionalRepeatChampionPenalty = OptionalBool(
                     def, "usesOccasionalRepeatChampionPenalty"),
-                HolderMode = RoleHolderMode.Auto,
                 Scale = scale,
-                RequiredTotal = requiredTotal,
-                MaxHolders = OptionalInt(
-                    def.Element("maxHolders")?.Value,
-                    RoleHolderRange.Uncapped,
-                    defName,
-                    "maxHolders"),
-                TrainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                    requiredTotal, trainingWaivers),
+                Mode = scaleMode,
                 Available = true,
                 Enabled = true,
                 SpecialRole = specialRole,
@@ -242,8 +236,6 @@ internal static partial class Program
                     $"ScaleDef {RequiredText(def, "defName")}: missing label.");
             var scale = new HolderScale
             {
-                Name = label,
-                Preset = true,
                 RequiredTotals = HolderScaleCodec.DecodeRow(
                     def.Element("min")?.Value, fallback: 0),
                 TrainingWaivers = HolderScaleCodec.DecodeRow(

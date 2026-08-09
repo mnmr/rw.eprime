@@ -16,7 +16,7 @@ namespace WorkRoles.Core.Signals
         public IReadOnlyList<Signal> ActiveSignals { get; }
         public IReadOnlyList<Signal> PassiveSignals { get; }
         public bool HasGlobalSignals => GlobalSignals.Count > 0;
-        public bool HasTooltip => SkillSignals.Count > 0 || HasGlobalSignals;
+        public bool HasTooltip => true;
 
         internal SkillSignalView(
             IReadOnlyList<Signal> skillSignals,

@@ -5,14 +5,14 @@ using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
-    /// Renders TipModels inside vanilla tooltip rects (see Patch_ActiveTip):
+    /// Renders TipModels inside this mod's owned tooltip windows:
     /// title + right-aligned badge, dim section headers, per-section aligned
     /// fact/action columns, unwrapped signal tables, wrapped prose spans,
     /// pixel-snapped separators. All text measurement happens once per model
     /// (cached on it); Draw only replays positioned primitives.
     public static class WrTipUI
     {
-        private const float Pad = 4f;          // vanilla DrawInner contract
+        private const float Pad = 4f;          // tooltip frame inset
         private const float ColGap = 10f;      // label column -> value column
         private const float BadgeGap = 12f;    // title -> right-aligned badge
         private const float TitleGap = 4f;     // title line -> first section
@@ -45,7 +45,7 @@ namespace WorkRoles.UI
             public readonly List<Cmd> Cmds = new List<Cmd>();
         }
 
-        /// Full tip rect size (content + vanilla 4f padding all around).
+        /// Full tip rect size (content plus the complete frame inset).
         public static Vector2 Measure(TipModel model, float maxWidth) =>
             Ensure(model, maxWidth).Size;
 
@@ -93,7 +93,7 @@ namespace WorkRoles.UI
             var oldFont = Text.Font;
             Text.Font = GameFont.Small;
             float frame = Pad + model.Padding;
-            float contentMax = Mathf.Min(maxWidth, MaxContentWidth) - frame * 2f;
+            float contentMax = Mathf.Min(maxWidth, MaxContentWidth);
             float contentW = Mathf.Min(NaturalWidth(model), contentMax);
             float contentH = Compose(model, contentW, geo);
             // Shape balance: wide-and-short tips narrow toward the √-area

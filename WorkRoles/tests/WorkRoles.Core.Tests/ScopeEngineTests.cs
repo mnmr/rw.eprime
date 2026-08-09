@@ -44,6 +44,20 @@ public class ScopeEngineTests
     }
 
     [Test]
+    public async Task InactiveCatalogLocationsDoNotBecomePawnScopeOptions()
+    {
+        var options = ScopeEngine.BuildOptions(new[]
+        {
+            new LocationInfo("4", "Rimosa", isShip: false),
+            new LocationInfo("GravEngine42", "The Wanderer",
+                isShip: true, isActive: false),
+        });
+
+        await Assert.That(options.Skip(2).Select(option => option.Label))
+            .IsEquivalentTo(new[] { "Rimosa" });
+    }
+
+    [Test]
     public async Task MatchesRespectsKind_AndCaravansOnlyAppearUnderAll()
     {
         var all = new ScopeOption { Kind = ScopeKind.All };

@@ -48,15 +48,8 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        public RoleHolderMode holderMode;
         /// Named holder scale reference (document <Scales> or an existing scale).
         public string holderScale;
-        public bool holderRangeSet;
-        /// Persisted XML name retained for compatibility. Semantically this is
-        /// the required total, including training waivers.
-        public int minHolders;
-        public int maxHolders = RoleHolderRange.Uncapped;
-        public int trainingWaivers;
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -137,8 +130,9 @@ namespace WorkRoles.Core
         public List<FileGroup> groupsWithIds = new List<FileGroup>();
         public List<FileRole> roles = new List<FileRole>();
         public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
-        /// Named holder scales (banded min/train/max).
-        public List<HolderScale> scales = new List<HolderScale>();
+        /// Named assignment strategies (fill mode + optional banded scale).
+        public List<RoleAssignmentStrategy> scales =
+            new List<RoleAssignmentStrategy>();
         /// The stored recommendation-order template as role names; empty = the
         /// derived default (never exported).
         public List<string> recommendationOrder = new List<string>();
@@ -160,10 +154,12 @@ namespace WorkRoles.Core
         /// v6 adds the Custom training-waiver count; v7 adds document-local
         /// role/group ids and id-backed references while retaining labels;
         /// v8 adds named <Scales> (banded holder demand) and the Holders
-        /// scale attribute referencing them.
+        /// scale attribute referencing them; v9 adds the internal <Nowhere/>
+        /// location used to preserve disabled migrated roles; v10 removes the
+        /// obsolete scalar holder mode/range attributes.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "8";
+        public const string FormatVersion = "10";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -173,16 +169,13 @@ namespace WorkRoles.Core
   - A Role's <Options> only lists non-defaults. ActiveHours is a 24-character
     bitstring, hour 0 leftmost, 1 = active. <Locations> holds any of:
     <Settlements/> (any settlement), <Caravans/> (caravans and away maps),
+    <Nowhere/> (an intentionally disabled migrated location rule),
     <Settlement name=""...""/> and <Ship name=""...""/> (matched by name).
   - The order of <Jobs> IS the priority order. <WorkType> covers every job of
     that work type, including jobs mods add later; <WorkGiver> is one job.
   - <Groups> lists role-list groups in display order; a Role joins one via its
     groupId reference (the group label remains for display and legacy fallback;
     no reference = Default). fileId values are local to this document only.
-  - <Holders mode=""custom"" min=""2"" max=""4"" train=""1""/> sets an inclusive
-    holder range and permits one minimum holder to use matching training-path
-    roles instead. mode may be auto, never, or custom. Auto is the default when
-    the element is absent. A max of 256 is displayed in-game as Uncapped.
   - A <TrainingPaths> <Path> lists <Role roleId=""..."" min=""0"" max=""8"">name</Role> skill bands
     on the 0..21 axis (21 = open top, spans at least 4 levels). Assignment order
     uses band minimum descending, then the pawn's weakest role skill; entry order
@@ -272,13 +265,16 @@ namespace WorkRoles.Core
                 {
                     if (scale == null) continue;
                     var el = new XElement("Scale",
-                        new XAttribute("name", scale.Name ?? ""));
+                        new XAttribute("name", scale.Name ?? ""),
+                        new XAttribute("mode", ((int)scale.Mode).ToString()));
                     if (scale.Preset) el.Add(new XAttribute("preset", "true"));
-                    el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(
-                            scale.RequiredTotals)),
-                        new XElement("Train", HolderScaleCodec.EncodeRow(
-                            scale.TrainingWaivers)),
-                        new XElement("Max", HolderScaleCodec.EncodeRow(scale.Max)));
+                    if (scale.Scale != null)
+                        el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(
+                                scale.Scale.RequiredTotals)),
+                            new XElement("Train", HolderScaleCodec.EncodeRow(
+                                scale.Scale.TrainingWaivers)),
+                            new XElement("Max", HolderScaleCodec.EncodeRow(
+                                scale.Scale.Max)));
                     scales.Add(el);
                 }
                 root.Add(scales);
@@ -324,25 +320,9 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Enabled", "false"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
-            if (role.holderMode != RoleHolderMode.Auto || role.holderRangeSet
-                || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped
-                || role.trainingWaivers != 0 || !string.IsNullOrEmpty(role.holderScale))
-            {
-                var holders = new XElement("Holders",
-                    new XAttribute("mode", role.holderMode.ToString().ToLowerInvariant()));
-                if (!string.IsNullOrEmpty(role.holderScale))
-                    holders.Add(new XAttribute("scale", role.holderScale));
-                if (role.holderMode == RoleHolderMode.Custom || role.holderRangeSet
-                    || role.minHolders != 0 || role.maxHolders != RoleHolderRange.Uncapped)
-                {
-                    holders.Add(new XAttribute("min", role.minHolders));
-                    holders.Add(new XAttribute("max", role.maxHolders));
-                    if (role.trainingWaivers > 0)
-                        holders.Add(new XAttribute("train", RoleHolderPolicy.WithTrainingWaivers(
-                            role.minHolders, role.trainingWaivers)));
-                }
-                options.Add(holders);
-            }
+            if (!string.IsNullOrEmpty(role.holderScale))
+                options.Add(new XElement("Holders",
+                    new XAttribute("scale", role.holderScale)));
             if (role.locations.Count > 0)
             {
                 // Structured elements so names (XLinq-escaped) survive any
@@ -354,6 +334,8 @@ namespace WorkRoles.Core
                         locations.Add(new XElement("Settlements"));
                     else if (token == LocationRules.Caravans)
                         locations.Add(new XElement("Caravans"));
+                    else if (token == LocationRules.Nowhere)
+                        locations.Add(new XElement("Nowhere"));
                     else if (token.StartsWith(LocationRules.SettlementPrefix))
                         locations.Add(new XElement("Settlement",
                             new XAttribute("name", token.Substring(LocationRules.SettlementPrefix.Length))));
@@ -387,7 +369,6 @@ namespace WorkRoles.Core
                 doc.error = e.Message;
                 return doc;
             }
-            bool parsedVersion = int.TryParse(root.Attribute("version")?.Value, out int version);
             foreach (var colorEl in root.Element("Palette")?.Elements("Color")
                      ?? Enumerable.Empty<XElement>())
             {
@@ -411,12 +392,10 @@ namespace WorkRoles.Core
                         { fileId = EmptyToNull(fileId), name = name });
                 }
             }
-            bool v5Holders = parsedVersion && version >= 5;
-            bool v6Training = version >= 6;
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
             {
-                var role = ParseRole(roleEl, v5Holders, v6Training);
+                var role = ParseRole(roleEl);
                 if (role != null) doc.roles.Add(role);
             }
             foreach (var scaleEl in root.Element("Scales")?.Elements("Scale")
@@ -424,11 +403,10 @@ namespace WorkRoles.Core
             {
                 string name = scaleEl.Attribute("name")?.Value?.Trim();
                 if (string.IsNullOrEmpty(name)) continue;
-                var scale = new HolderScale
+                bool preset = string.Equals(scaleEl.Attribute("preset")?.Value,
+                    "true", StringComparison.OrdinalIgnoreCase);
+                var bands = new HolderScale
                 {
-                    Name = name,
-                    Preset = string.Equals(scaleEl.Attribute("preset")?.Value,
-                        "true", StringComparison.OrdinalIgnoreCase),
                     RequiredTotals = HolderScaleCodec.DecodeRow(
                         scaleEl.Element("Min")?.Value, 0),
                     TrainingWaivers = HolderScaleCodec.DecodeRow(
@@ -436,8 +414,8 @@ namespace WorkRoles.Core
                     Max = HolderScaleCodec.DecodeRow(
                         scaleEl.Element("Max")?.Value, RoleHolderRange.Uncapped),
                 };
-                scale.Normalize();
-                doc.scales.Add(scale);
+                doc.scales.Add(RoleAssignmentStrategy.FromRows(
+                    name, preset, scaleEl.Attribute("mode")?.Value, bands));
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
                      ?? Enumerable.Empty<XElement>())
@@ -660,7 +638,7 @@ namespace WorkRoles.Core
         private static string EmptyToNull(string value) =>
             string.IsNullOrEmpty(value) ? null : value;
 
-        private static FileRole ParseRole(XElement el, bool v5Holders, bool v6Training)
+        private static FileRole ParseRole(XElement el)
         {
             string label = el.Attribute("name")?.Value?.Trim();
             if (string.IsNullOrEmpty(label)) return null;
@@ -686,6 +664,7 @@ namespace WorkRoles.Core
                     string name = loc.Attribute("name")?.Value;
                     if (loc.Name == "Settlements") role.locations.Add(LocationRules.Settlements);
                     else if (loc.Name == "Caravans") role.locations.Add(LocationRules.Caravans);
+                    else if (loc.Name == "Nowhere") role.locations.Add(LocationRules.Nowhere);
                     else if (loc.Name == "Settlement" && !string.IsNullOrEmpty(name))
                         role.locations.Add(LocationRules.SettlementPrefix + name);
                     else if (loc.Name == "Ship" && !string.IsNullOrEmpty(name))
@@ -696,27 +675,14 @@ namespace WorkRoles.Core
                     role.activeHours = BitsToHours(bits);
                 // <Training> (v2/v3) is retired: skipped, never read.
                 var holders = options.Element("Holders");
-                if (holders != null && v5Holders)
+                if (holders != null)
                 {
                     string scaleName = holders.Attribute("scale")?.Value?.Trim();
                     if (!string.IsNullOrEmpty(scaleName)) role.holderScale = scaleName;
-                    string mode = holders.Attribute("mode")?.Value?.Trim();
-                    if (string.Equals(mode, "never", StringComparison.OrdinalIgnoreCase))
-                        role.holderMode = RoleHolderMode.Never;
-                    else if (string.Equals(mode, "custom", StringComparison.OrdinalIgnoreCase))
-                        role.holderMode = RoleHolderMode.Custom;
-                    if (int.TryParse(holders.Attribute("min")?.Value, out int min))
-                        role.minHolders = RoleHolderRange.Clamp(min);
-                    if (int.TryParse(holders.Attribute("max")?.Value, out int max))
-                        role.maxHolders = RoleHolderRange.Clamp(max);
-                    role.holderRangeSet = holders.Attribute("min") != null
-                        && holders.Attribute("max") != null;
-                    if (role.minHolders > role.maxHolders)
-                        role.maxHolders = role.minHolders;
-                    if (v6Training
-                        && int.TryParse(holders.Attribute("train")?.Value, out int train))
-                        role.trainingWaivers = RoleHolderPolicy.WithTrainingWaivers(
-                            role.minHolders, train);
+                    else if (string.Equals(
+                        holders.Attribute("mode")?.Value?.Trim(), "never",
+                        StringComparison.OrdinalIgnoreCase))
+                        role.holderScale = "Never";
                 }
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())

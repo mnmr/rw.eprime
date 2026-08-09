@@ -49,30 +49,42 @@ namespace WorkRoles
         public List<string> customSwatchNames = new List<string>();
         /// Per-bill role restrictions (see BillRoles). Mutate via RoleCommands.
         public Dictionary<Bill, int> billRoles = NewBillRoleDictionary();
-        /// Last canonical location (map uniqueID) each pawn spawned on; off-map
+        /// Last canonical opaque location identity each pawn spawned on; off-map
         /// pawns (caravans) keep the location they departed from. Maintained by
         /// PawnLocationTracker from sim-side spawn patches.
-        public Dictionary<Pawn, int> lastLocationMapIds = new Dictionary<Pawn, int>();
+        public Dictionary<Pawn, string> lastLocationIds =
+            new Dictionary<Pawn, string>();
         /// Role-list groups in display order. Mutate via RoleCommands.
         public List<RoleGroup> groups = new List<RoleGroup>();
         /// Named training paths (Options tab). Mutate via RoleCommands.
         public List<TrainingPath> trainingPaths = new List<TrainingPath>();
-        /// Named holder scales (banded min/train/max); roles reference them by
-        /// name via Role.holderScaleName.
-        public List<HolderScale> holderScales = new List<HolderScale>();
+        /// Named assignment strategies (fill mode + optional banded scale);
+        /// roles reference them by name via Role.holderScaleName.
+        public List<RoleAssignmentStrategy> holderScales =
+            new List<RoleAssignmentStrategy>();
         /// ScaleDefs already seeded into holderScales, by defName: each def
         /// seeds once per save so renaming or deleting its scale sticks.
         public List<string> knownScaleDefs = new List<string>();
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
         private int nextPathId = 1;
+        internal const int CurrentLocationTokenSchemaVersion = 1;
+        private int locationTokenSchemaVersion;
+        internal int LocationTokenSchemaVersion
+        {
+            get => locationTokenSchemaVersion;
+            set => locationTokenSchemaVersion = value;
+        }
 
         private List<Pawn> pawnKeysWorkingList;
         private List<PawnRoleSet> setValuesWorkingList;
         private List<Bill> billKeysWorkingList;
         private List<int> billValuesWorkingList;
         private List<Pawn> locationKeysWorkingList;
-        private List<int> locationValuesWorkingList;
+        private List<string> locationValuesWorkingList;
+        private Dictionary<Pawn, int> legacyLastLocationMapIds;
+        private List<Pawn> legacyLocationKeysWorkingList;
+        private List<int> legacyLocationValuesWorkingList;
 
         private static RoleStore cached;
 
@@ -130,15 +142,14 @@ namespace WorkRoles
         public TrainingPath PathById(int id) =>
             trainingPaths.FirstOrDefault(p => p.id == id);
 
-        public HolderScale ScaleByName(string name) =>
+        public RoleAssignmentStrategy ScaleByName(string name) =>
             name.NullOrEmpty() ? null : holderScales.FirstOrDefault(c =>
                 string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
 
-        /// The scale driving a role's banded holder demand; null for Never
-        /// mode, unset references, and dangling names (legacy scalars apply).
-        internal HolderScale ScaleFor(Role role) =>
-            role == null || role.holderMode == RoleHolderMode.Never
-                ? null : ScaleByName(role.holderScaleName);
+        /// The assignment strategy for a role. Missing and dangling references
+        /// resolve to Never in the recommendation model.
+        internal RoleAssignmentStrategy ScaleFor(Role role) =>
+            role == null ? null : ScaleByName(role.holderScaleName);
 
         /// The Default group (id 0), materialized on demand: pinned first,
         /// swept like any user group when it empties. The stored label is
@@ -441,9 +452,18 @@ namespace WorkRoles
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
-            Scribe_Collections.Look(ref lastLocationMapIds, "lastLocationMapIds",
+            Scribe_Values.Look(ref locationTokenSchemaVersion,
+                "locationTokenSchemaVersion", 0);
+            Scribe_Collections.Look(ref lastLocationIds, "lastLocationIds",
                 LookMode.Reference, LookMode.Value,
                 ref locationKeysWorkingList, ref locationValuesWorkingList);
+            // Versions before stable ship identity stored numeric map ids.
+            // Read that node only while loading; new saves write the opaque map.
+            if (Scribe.mode != LoadSaveMode.Saving)
+                Scribe_Collections.Look(ref legacyLastLocationMapIds,
+                    "lastLocationMapIds", LookMode.Reference, LookMode.Value,
+                    ref legacyLocationKeysWorkingList,
+                    ref legacyLocationValuesWorkingList);
             // Scribe replaces dictionaries with its default comparer in LoadingVars
             // and fills reference-keyed maps only in ResolvingCrossRefs. Replace the
             // still-empty shell now; the working lists remain owned by Scribe.
@@ -451,37 +471,42 @@ namespace WorkRoles
                 billRoles = NewBillRoleDictionary();
             Scribe_Values.Look(ref nextPathId, "nextPathId", 1);
             Scribe_Collections.Look(ref trainingPaths, "trainingPaths", LookMode.Deep);
-            // Scales scribe as compact strings (name + three codec rows,
-            // newline-separated) — HolderScale is a Verse-free Core type.
+            // Strategies scribe as compact strings (name + three codec rows +
+            // preset + mode, newline-separated) — the types are Verse-free
+            // Core types. Pre-mode saves omit the mode field and are inferred.
             List<string> scribeScales = null;
             if (Scribe.mode == LoadSaveMode.Saving && holderScales.Count > 0)
                 scribeScales = holderScales.Select(c => string.Join("\n",
                     c.Name ?? "",
-                    HolderScaleCodec.EncodeRow(c.RequiredTotals),
-                    HolderScaleCodec.EncodeRow(c.TrainingWaivers),
-                    HolderScaleCodec.EncodeRow(c.Max),
-                    c.Preset ? "1" : "0")).ToList();
+                    HolderScaleCodec.EncodeRow(
+                        c.Scale?.RequiredTotals ?? new int[HolderScale.Bands]),
+                    HolderScaleCodec.EncodeRow(
+                        c.Scale?.TrainingWaivers ?? new int[HolderScale.Bands]),
+                    HolderScaleCodec.EncodeRow(
+                        c.Scale?.Max ?? new int[HolderScale.Bands]),
+                    c.Preset ? "1" : "0",
+                    ((int)c.Mode).ToString())).ToList();
             Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                holderScales = new List<HolderScale>();
+                holderScales = new List<RoleAssignmentStrategy>();
                 if (scribeScales != null)
                     foreach (var raw in scribeScales)
                     {
                         string[] parts = raw?.Split('\n');
                         if (parts == null || parts.Length < 4
                             || parts[0].Trim().Length == 0) continue;
-                        var scale = new HolderScale
+                        var bands = new HolderScale
                         {
-                            Name = parts[0].Trim(),
                             RequiredTotals = HolderScaleCodec.DecodeRow(parts[1], 0),
                             TrainingWaivers = HolderScaleCodec.DecodeRow(parts[2], 0),
                             Max = HolderScaleCodec.DecodeRow(
                                 parts[3], RoleHolderRange.Uncapped),
-                            Preset = parts.Length > 4 && parts[4].Trim() == "1",
                         };
-                        scale.Normalize();
-                        holderScales.Add(scale);
+                        bool preset = parts.Length > 4 && parts[4].Trim() == "1";
+                        string modeToken = parts.Length > 5 ? parts[5] : null;
+                        holderScales.Add(RoleAssignmentStrategy.FromRows(
+                            parts[0].Trim(), preset, modeToken, bands));
                     }
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
@@ -497,14 +522,23 @@ namespace WorkRoles
                 RoleCommands.EnforcePaletteCoverage(this);
                 pawnSets ??= new Dictionary<Pawn, PawnRoleSet>();
                 pawnSets.RemoveAll(kv => kv.Key == null || kv.Value == null);
-                lastLocationMapIds ??= new Dictionary<Pawn, int>();
-                lastLocationMapIds.RemoveAll(kv => kv.Key == null);
+                lastLocationIds ??= new Dictionary<Pawn, string>();
+                if (legacyLastLocationMapIds != null)
+                    foreach (var kv in legacyLastLocationMapIds)
+                        if (kv.Key != null && kv.Value >= 0
+                            && !lastLocationIds.ContainsKey(kv.Key))
+                            lastLocationIds[kv.Key] = kv.Value.ToStringCached();
+                legacyLastLocationMapIds = null;
+                legacyLocationKeysWorkingList = null;
+                legacyLocationValuesWorkingList = null;
+                lastLocationIds.RemoveAll(kv =>
+                    kv.Key == null || kv.Value.NullOrEmpty());
                 EnsureBillRoleIdentityComparer();
                 // Bill.DeletedOrDereferenced dereferences billStack without a null
                 // guard in 1.6. Remove only definitely dead bill references here;
                 // role-id sanitation waits until legacy allRole has migrated.
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.deleted);
-                holderScales ??= new List<HolderScale>();
+                holderScales ??= new List<RoleAssignmentStrategy>();
                 knownScaleDefs ??= new List<string>();
                 trainingPaths ??= new List<TrainingPath>();
                 // Empty paths survive (named containers); only non-empty corrupt geometry drops.
@@ -550,7 +584,7 @@ namespace WorkRoles
                 foreach (var set in pawnSets.Values)
                     set.assignments?.RemoveAll(a => RoleById(a.roleId) == null);
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
-                lastLocationMapIds.RemoveAll(kv => !IsManaged(kv.Key));
+                lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
                 CompiledJobOrders.InvalidateAll();
             }
         }

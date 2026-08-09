@@ -103,7 +103,6 @@ namespace WorkRoles.UI
         private readonly List<PawnPreview> entries;
         private readonly Action<HashSet<Pawn>> onApply;
         private readonly Func<List<PawnPreview>> rebuild;
-        private readonly object structuredTipOwner = new object();
         private EntryLayout[] rowDescriptors = Array.Empty<EntryLayout>();
         private VariableViewportLayout rowLayout;
         private float rowLayoutWidth = -1f;
@@ -142,9 +141,7 @@ namespace WorkRoles.UI
             if (observedLanguageRevision == current) return;
             observedLanguageRevision = current;
 
-            // Old active handles must disappear before replacement models can
-            // activate during this draw's new generation.
-            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+            StructuredTipPresenter.Reset();
             if (titleFactory != null) title = titleFactory();
             Dictionary<Pawn, bool> selections = IdentitySelectionPreserver.Capture(
                 entries,
@@ -203,7 +200,10 @@ namespace WorkRoles.UI
             if (tip != null && Mouse.IsOver(rect))
             {
                 StructuredTip structuredTip = sourceLine?.StructuredTipAt(sourceIndex);
-                TooltipHandler.TipRegion(rect, structuredTip?.Activate() ?? tip);
+                if (structuredTip != null)
+                    StructuredTipPresenter.TipRegion(rect, structuredTip);
+                else
+                    TooltipHandler.TipRegion(rect, tip);
             }
         }
 
@@ -267,75 +267,64 @@ namespace WorkRoles.UI
         public override void DoWindowContents(Rect inRect)
         {
             RefreshLanguageIfNeeded();
-            bool repaint = Event.current.type == EventType.Repaint;
-            if (repaint)
-                Patches.Patch_ActiveTip_TipRect.BeginGeneration(structuredTipOwner);
-            try
+            float listTop = DrawCachedPreviewTitle(inRect, title);
+            if (entries.Count > 0)
             {
-                float listTop = DrawCachedPreviewTitle(inRect, title);
-                if (entries.Count > 0)
+                // Select-all toggle above the list.
+                bool all = includedCount == entries.Count;
+                bool toggled = DrawCachedPreviewSelectAll(inRect, listTop, all);
+                if (toggled != all)
                 {
-                    // Select-all toggle above the list.
-                    bool all = includedCount == entries.Count;
-                    bool toggled = DrawCachedPreviewSelectAll(inRect, listTop, all);
-                    if (toggled != all)
-                    {
-                        for (int i = 0; i < entries.Count; i++)
-                            entries[i].included = toggled;
-                        includedCount = toggled ? entries.Count : 0;
-                    }
-                    listTop += PreviewSelectRowHeight;
+                    for (int i = 0; i < entries.Count; i++)
+                        entries[i].included = toggled;
+                    includedCount = toggled ? entries.Count : 0;
                 }
+                listTop += PreviewSelectRowHeight;
+            }
 
-                var listRect = PreviewBodyRect(inRect, listTop);
-                float rowW = listRect.width - 16f;
-                EnsureRowLayout(rowW);
-                float contentH = entries.Count == 0 ? PawnRowH : rowLayout.ContentExtent;
+            var listRect = PreviewBodyRect(inRect, listTop);
+            float rowW = listRect.width - 16f;
+            EnsureRowLayout(rowW);
+            float contentH = entries.Count == 0 ? PawnRowH : rowLayout.ContentExtent;
 
-                Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
-                var visibleRows = rowLayout.Calculate(scroll.y, listRect.height);
-                if (entries.Count == 0)
+            Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, contentH));
+            var visibleRows = rowLayout.Calculate(scroll.y, listRect.height);
+            if (entries.Count == 0)
+            {
+                if (Event.current.type == EventType.Repaint)
                 {
-                    if (Event.current.type == EventType.Repaint)
-                    {
-                        GUI.color = WrStyle.DimText;
-                        Widgets.Label(new Rect(0f, 0f, rowW, PawnRowH), noChangesText);
-                        GUI.color = Color.white;
-                    }
-                }
-                else
-                {
-                    DrawVisibleEntries(visibleRows, rowW);
-                }
-                Widgets.EndScrollView();
-
-                bool canApply = includedCount > 0;
-                if (DrawPreviewFooter(inRect, canApply))
-                {
-                    if (SamePlan(entries, rebuild()))
-                    {
-                        var selected = new HashSet<Pawn>();
-                        for (int i = 0; i < entries.Count; i++)
-                            if (entries[i].included)
-                                selected.Add(entries[i].pawn);
-                        onApply?.Invoke(selected);
-                    }
-                    else
-                        WrToast.Show("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput);
-                    Close();
+                    GUI.color = WrStyle.DimText;
+                    Widgets.Label(new Rect(0f, 0f, rowW, PawnRowH), noChangesText);
+                    GUI.color = Color.white;
                 }
             }
-            finally
+            else
             {
-                if (repaint)
-                    Patches.Patch_ActiveTip_TipRect.EndGeneration(structuredTipOwner);
+                DrawVisibleEntries(visibleRows, rowW);
+            }
+            Widgets.EndScrollView();
+
+            bool canApply = includedCount > 0;
+            if (DrawPreviewFooter(inRect, canApply))
+            {
+                if (SamePlan(entries, rebuild()))
+                {
+                    var selected = new HashSet<Pawn>();
+                    for (int i = 0; i < entries.Count; i++)
+                        if (entries[i].included)
+                            selected.Add(entries[i].pawn);
+                    onApply?.Invoke(selected);
+                }
+                else
+                    WrToast.Show("WR_PreviewStale".Translate(), MessageTypeDefOf.RejectInput);
+                Close();
             }
         }
 
         public override void PostClose()
         {
             base.PostClose();
-            Patches.Patch_ActiveTip_TipRect.ReleaseOwner(structuredTipOwner);
+            StructuredTipPresenter.Reset();
         }
 
         private void DrawVisibleEntries(VariableViewportRange visibleRows, float width)

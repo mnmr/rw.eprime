@@ -142,7 +142,7 @@ namespace WorkRoles.Patches
             FloorMaps.ReleaseForTeardown();
             PawnLocationTracker.ReleaseForTeardown();
             RoleStore.ClearCached();
-            Patch_ActiveTip_TipRect.Clear();
+            UI.StructuredTipPresenter.Reset();
         }
     }
 }

@@ -37,17 +37,18 @@ namespace WorkRoles
         {
             if (pawn == null) return;
             departures.StopTracking(pawn);
-            RoleStore.Current?.lastLocationMapIds.Remove(pawn);
+            RoleStore.Current?.lastLocationIds.Remove(pawn);
         }
 
         private static void RecordCurrentLocation(RoleStore store, Pawn pawn,
             bool invalidateOnChange)
         {
-            int id = FloorMaps.Canonical(pawn.Map)?.uniqueID ?? -1;
-            if (store.lastLocationMapIds.TryGetValue(pawn, out int previous)
+            string id = ColonyScope.PlaceOf(pawn).LocationId;
+            if (store.lastLocationIds.TryGetValue(pawn, out string previous)
                 && previous == id)
                 return;
-            store.lastLocationMapIds[pawn] = id;
+            if (id == null) store.lastLocationIds.Remove(pawn);
+            else store.lastLocationIds[pawn] = id;
             if (!invalidateOnChange) return;
             if (ExternalPawnFacts.IsRelevant(pawn))
                 ExternalPawnFacts.Invalidate(pawn);
@@ -84,7 +85,7 @@ namespace WorkRoles
         {
             if (pawn == null) return;
             departures.StopTracking(pawn);
-            RoleStore.Current?.lastLocationMapIds.Remove(pawn);
+            RoleStore.Current?.lastLocationIds.Remove(pawn);
         }
 
         internal static void ReleaseForTeardown() => departures.Clear();
@@ -95,13 +96,23 @@ namespace WorkRoles
         {
             if (pawn == null) return null;
             var held = pawn.MapHeld;
-            if (held != null) return ColonyScope.LocationId(held);
+            if (held != null) return ColonyScope.PlaceOf(pawn).LocationId;
             var store = RoleStore.Current;
             return store != null
-                && store.lastLocationMapIds.TryGetValue(pawn, out int id)
-                && id >= 0
-                ? id.ToStringCached()
-                : null;
+                && store.lastLocationIds.TryGetValue(pawn, out string id)
+                ? id : null;
+        }
+
+        /// One-time load normalization refreshes spawned managed pawns after
+        /// legacy numeric departure ids have been read.
+        internal static void RefreshManagedLocations()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            foreach (var pawn in store.pawnSets.Keys)
+                if (pawn?.MapHeld != null)
+                    RecordCurrentLocation(store, pawn,
+                        invalidateOnChange: false);
         }
     }
 }

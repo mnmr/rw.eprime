@@ -13,6 +13,7 @@ public class ImportLocationResolverTests
     [Test]
     [Arguments("settlements", "settlements")]
     [Arguments("caravans", "caravans")]
+    [Arguments("nowhere", "nowhere")]
     [Arguments("settlement:RIMOSA", "settlement:4")]
     [Arguments("ship:The Wanderer", "ship:9")]
     [Arguments("settlement:Missing", null)]
@@ -36,5 +37,7 @@ public class ImportLocationResolverTests
             "settlement:Missing", resolved)).IsNull();
         await Assert.That(ImportLocationResolver.FromMap(
             "ship:Localized Elsewhere", resolved)).IsNull();
+        await Assert.That(ImportLocationResolver.FromMap(
+            "nowhere", resolved)).IsEqualTo("nowhere");
     }
 }

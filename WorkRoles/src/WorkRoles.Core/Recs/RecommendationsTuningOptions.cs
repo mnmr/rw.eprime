@@ -51,9 +51,6 @@ namespace WorkRoles.Core.Recs
         HunterSecondTierMaximum,
         HunterThirdTierMaximum,
 
-        FallbackColonistsPerUnit,
-        FallbackMinimumUnits,
-
         RepeatChampionOverlapPenalty,
         RepeatChampionDistinctPenalty,
         RepeatChampionOccasionalPenalty,
@@ -121,7 +118,6 @@ namespace WorkRoles.Core.Recs
         private const string OptionalSection = "WR_RecTuneOptionalSection";
         private const string LeadSection = "WR_RecTuneLeadSection";
         private const string HunterSection = "WR_RecTuneHunterSection";
-        private const string ScalingSection = "WR_RecTuneScalingSection";
 
         private static readonly RecommendationTuningDescriptor[] descriptorArray =
         {
@@ -227,12 +223,6 @@ namespace WorkRoles.Core.Recs
             Level(RecommendationTuningOption.HunterThirdTierMaximum,
                 "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 18),
 
-            Integer(RecommendationTuningOption.FallbackColonistsPerUnit,
-                "fallbackColonistsPerUnit", ScalingSection,
-                "FallbackColonistsPerUnit", 6, 1, 100),
-            Integer(RecommendationTuningOption.FallbackMinimumUnits,
-                "fallbackMinimumUnits", ScalingSection, "FallbackMinimumUnits", 1, 0, 100),
-
             Percent(RecommendationTuningOption.RepeatChampionOverlapPenalty,
                 "repeatChampionOverlapPenalty", ChampionSection,
                 "RepeatChampionOverlapPenalty", 60),
@@ -278,6 +268,25 @@ namespace WorkRoles.Core.Recs
             if (index < 0 || index >= values.Length)
                 throw new ArgumentOutOfRangeException(nameof(option));
             return values[index];
+        }
+
+        public SignalBucket PromoteSkillSignal(
+            int skillLevel,
+            SignalBucket signal)
+        {
+            if (signal < (SignalBucket)Get(
+                    RecommendationTuningOption.OptionalTargetMinimumSignal))
+                return signal;
+            SignalBucket promoted = skillLevel >= Get(
+                    RecommendationTuningOption.OptionalTargetGreatLevel)
+                ? (SignalBucket)Get(
+                    RecommendationTuningOption.OptionalTargetGreatPromotedSignal)
+                : skillLevel >= Get(
+                    RecommendationTuningOption.OptionalTargetStrongLevel)
+                    ? (SignalBucket)Get(
+                        RecommendationTuningOption.OptionalTargetStrongPromotedSignal)
+                    : signal;
+            return promoted > signal ? promoted : signal;
         }
 
         public RecommendationsTuningOptions With(
@@ -545,15 +554,15 @@ namespace WorkRoles.Core.Recs
             RecommendationTuningOption.OptionalTargetGreatPromotedSignal);
         internal int OptionalTargetMinimumPoints => Value(
             RecommendationTuningOption.OptionalTargetMinimumPoints);
+
+        internal SignalBucket PromoteSkillSignal(
+            int skillLevel,
+            SignalBucket signal) =>
+            options.PromoteSkillSignal(skillLevel, signal);
         internal int LeadMinimumConnectedTargets => Value(
             RecommendationTuningOption.LeadMinimumConnectedTargets);
         internal SignalBucket LeadMinimumSignal => Signal(
             RecommendationTuningOption.LeadMinimumSignal);
-        internal int FallbackColonistsPerUnit => Value(
-            RecommendationTuningOption.FallbackColonistsPerUnit);
-        internal int FallbackMinimumUnits => Value(
-            RecommendationTuningOption.FallbackMinimumUnits);
-
         internal byte MinimumBonus(int pickIndex)
         {
             RecommendationTuningOption option = pickIndex == 0

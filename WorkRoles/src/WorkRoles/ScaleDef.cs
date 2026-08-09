@@ -16,18 +16,24 @@ namespace WorkRoles
         public string train;
         public string max;
 
-        public HolderScale ToScale()
+        public RoleAssignmentStrategy ToScale()
         {
             var scale = new HolderScale
             {
-                Name = SeededDefIdentity.ScaleName(this),
                 RequiredTotals = HolderScaleCodec.DecodeRow(min, 0),
                 TrainingWaivers = HolderScaleCodec.DecodeRow(train, 0),
             };
             if (!max.NullOrEmpty())
                 scale.Max = HolderScaleCodec.DecodeRow(max, RoleHolderRange.Uncapped);
             scale.Normalize();
-            return scale;
+            // Shipped ScaleDefs are numeric skilled scales, seeded editable.
+            return new RoleAssignmentStrategy
+            {
+                Name = SeededDefIdentity.ScaleName(this),
+                Preset = false,
+                Mode = ScaleMode.Skilled,
+                Scale = scale,
+            };
         }
 
         public override IEnumerable<string> ConfigErrors()

@@ -5,11 +5,45 @@ namespace WorkRoles.Core.Tests;
 public class RecommendationTuningScenarioTests
 {
     [Test]
+    public async Task CoverageRepairPublishesItsStageAndSlots()
+    {
+        // Coverage repair is a defensive post-draft transition. A final-plan
+        // fixture cannot reliably request that transient state without
+        // duplicating the overlap resolver, so this tests the published facts
+        // at the transition that owns them.
+        RoleView role = RecsTestBed.Role(1, "Crafting");
+        RecsTestBed.Require(role, 2, trainingWaivers: 2);
+        PawnView first = RecsTestBed.Pawn();
+        first.SkillLevels["Crafting"] = 8;
+        first.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        PawnView second = RecsTestBed.Pawn();
+        second.SkillLevels["Crafting"] = 7;
+        second.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+        var formulas = new RecommendationFormulaEngine(
+            RecommendationsTuningOptions.Default);
+        RolePlan plan = RolePlan.Build(
+            new EngineContext(RecsTestBed.Colony(
+                new List<RoleView> { role }, first, second)),
+            role,
+            formulas);
+
+        plan.SelectForCoverage(0, 1);
+        plan.SelectForCoverage(1, 2);
+
+        await Assert.That(plan.SelectionStageAt(0))
+            .IsEqualTo(RecommendationSelectionStage.CoverageRepair);
+        await Assert.That(plan.SelectionSlotAt(0)).IsEqualTo(1);
+        await Assert.That(plan.SelectionStageAt(1))
+            .IsEqualTo(RecommendationSelectionStage.CoverageRepair);
+        await Assert.That(plan.SelectionSlotAt(1)).IsEqualTo(2);
+        await Assert.That(plan.SelectionSlotCount).IsEqualTo(2);
+    }
+
+    [Test]
     public async Task ChampionMultipliersChangeThePublishedMinimumHolder()
     {
         RoleView crafter = RecsTestBed.Role(1, "Crafting");
-        crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.RequiredTotal = 1;
+        RecsTestBed.Require(crafter, 1);
 
         PawnView greatTen = RecsTestBed.Pawn();
         greatTen.SkillLevels["Crafting"] = 10;
@@ -57,9 +91,7 @@ public class RecommendationTuningScenarioTests
     public async Task OrderingSignalPointsChangeThePublishedRoleOrder()
     {
         RoleView doctor = RecsTestBed.Role(1, "Doctor");
-        doctor.HolderMode = RoleHolderMode.Custom;
         RoleView cook = RecsTestBed.Role(2, "Cooking");
-        cook.HolderMode = RoleHolderMode.Custom;
 
         PawnView pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Medicine"] = 10;
@@ -120,10 +152,12 @@ public class RecommendationTuningScenarioTests
     }
 
     [Test]
-    public async Task FallbackScaleChangesThePublishedHolderCount()
+    public async Task RoleWithoutScalePublishesNoAssignments()
     {
         RoleView crafter = RecsTestBed.Role(1, "Crafting");
-        crafter.RequiredTotal = -1;
+        crafter.Scale = null;
+        RoleView obsoleteChore = RecsTestBed.Unskilled(2, "Hauling");
+        obsoleteChore.Scale = null;
         PawnView[] pawns = Enumerable.Range(0, 7)
             .Select(index =>
             {
@@ -133,30 +167,32 @@ public class RecommendationTuningScenarioTests
                 return pawn;
             })
             .ToArray();
+        pawns[0].Existing.Add(new AssignmentView
+        {
+            RoleId = obsoleteChore.Id,
+            Enabled = true,
+        });
         ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView> { crafter }, pawns);
+            new List<RoleView> { crafter, obsoleteChore }, pawns);
 
-        RecommendationPlan defaults = RecommendationPlan.Build(
-            colony, RecommendationsTuningOptions.Default);
-        RecommendationPlan tenPerHolder = RecommendationPlan.Build(
-            colony,
-            RecommendationsTuningOptions.Default.With(
-                RecommendationTuningOption.FallbackColonistsPerUnit,
-                10));
+        RecommendationsTuningOptions noLevelPromotions =
+            RecommendationsTuningOptions.Default
+                .With(RecommendationTuningOption.OptionalTargetGreatLevel, 21)
+                .With(RecommendationTuningOption.OptionalTargetStrongLevel, 21);
+        RecommendationPlan plan = RecommendationPlan.Build(
+            colony, noLevelPromotions);
 
-        await Assert.That(HolderCount(defaults, crafter.Id)).IsEqualTo(2);
-        await Assert.That(HolderCount(tenPerHolder, crafter.Id)).IsEqualTo(1);
+        await Assert.That(HolderCount(plan, crafter.Id)).IsEqualTo(0);
+        await Assert.That(HolderCount(plan, obsoleteChore.Id)).IsEqualTo(0);
     }
 
     [Test]
     public async Task MinimumPickBonusesChangeThePublishedRoleOrder()
     {
         RoleView crafter = RecsTestBed.Role(1, "Crafting", "CraftingWork");
-        crafter.HolderMode = RoleHolderMode.Custom;
-        crafter.RequiredTotal = 2;
+        RecsTestBed.Require(crafter, 2);
         RoleView cook = RecsTestBed.Role(2, "Cooking", "CookingWork");
-        cook.HolderMode = RoleHolderMode.Custom;
-        cook.RequiredTotal = 1;
+        RecsTestBed.Require(cook, 1);
 
         PawnView first = RecsTestBed.Pawn();
         first.SkillLevels["Crafting"] = 12;
@@ -187,11 +223,9 @@ public class RecommendationTuningScenarioTests
     public async Task OptionalTargetPointsChangeThePublishedTrainingRole()
     {
         RoleView target = RecsTestBed.Role(1, "Crafting", "TargetWork");
-        target.HolderMode = RoleHolderMode.Custom;
         target.Skills = TwoSkillProfile();
         target.PrimarySkill = "Crafting";
         RoleView trainee = RecsTestBed.Role(2, "Crafting", "TrainingWork");
-        trainee.HolderMode = RoleHolderMode.Custom;
         trainee.Skills = TwoSkillProfile();
         trainee.PrimarySkill = "Crafting";
         PathView path = RecsTestBed.Path(
@@ -213,14 +247,23 @@ public class RecommendationTuningScenarioTests
             RecommendationsTuningOptions.Default.With(
                 RecommendationTuningOption.OptionalTargetMinimumPoints,
                 3));
+        RecommendationPlan higherSkillCountThreshold = RecommendationPlan.Build(
+            colony,
+            RecommendationsTuningOptions.Default.With(
+                RecommendationTuningOption.OptionalTargetMinimumSkillCount,
+                3));
 
         await Assert.That(RoleIds(defaults, 0)).IsEqualTo("2");
         await Assert.That(RoleIds(higherMinimum, 0)).IsEqualTo("");
+        await Assert.That(RoleIds(higherSkillCountThreshold, 0)).IsEqualTo("");
         await Assert.That(defaults.TryGetExplanation(
             0, trainee.Id, out RoleRecommendationExplanation training)).IsTrue();
         await Assert.That(training.Decision)
             .IsEqualTo(RecommendationDecision.Training);
         await Assert.That(training.RelatedRoleId).IsEqualTo(target.Id);
+        await Assert.That(training.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Surplus);
+        await Assert.That(training.SurplusQualifiedBySignal).IsFalse();
     }
 
     [Test]
@@ -259,8 +302,7 @@ public class RecommendationTuningScenarioTests
     public async Task ZeroMinimumBonusStillPublishesCoverageDraftExplanation()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.HolderMode = RoleHolderMode.Custom;
-        role.RequiredTotal = 1;
+        RecsTestBed.Require(role, 1);
         PawnView pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Crafting"] = 10;
         pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
@@ -280,14 +322,18 @@ public class RecommendationTuningScenarioTests
             out RoleRecommendationExplanation explanation)).IsTrue();
         await Assert.That(explanation.Decision)
             .IsEqualTo(RecommendationDecision.CoverageDrafted);
+        await Assert.That(explanation.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
+        await Assert.That(explanation.CandidateRank).IsEqualTo(1);
+        await Assert.That(explanation.CandidateCount).IsEqualTo(1);
+        await Assert.That(explanation.StageRank).IsEqualTo(1);
     }
 
     [Test]
     public async Task RaisedCandidateFloorDoesNotMislabelNeutralAsAwful()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.HolderMode = RoleHolderMode.Custom;
-        role.RequiredTotal = 1;
+        RecsTestBed.Require(role, 1);
         PawnView pawn = RecsTestBed.Pawn();
         pawn.SkillLevels["Crafting"] = 10;
         pawn.SignalBuckets["Crafting"] = SignalBucket.Neutral;
@@ -318,8 +364,7 @@ public class RecommendationTuningScenarioTests
     public async Task AwfulChampionMultiplierIsAnEditableFormulaInput()
     {
         RoleView role = RecsTestBed.Role(1, "Crafting");
-        role.HolderMode = RoleHolderMode.Custom;
-        role.RequiredTotal = 1;
+        RecsTestBed.Require(role, 1);
         PawnView first = RecsTestBed.Pawn();
         first.SkillLevels["Crafting"] = 1;
         first.SignalBuckets["Crafting"] = SignalBucket.Awful;
