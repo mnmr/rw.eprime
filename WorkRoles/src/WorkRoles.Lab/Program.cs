@@ -17,6 +17,7 @@ internal static partial class Program
     {
         Console.OutputEncoding = Encoding.UTF8;
         if (args.Length > 0 && args[0] == "order") { PrintDefaultOrder(); return; }
+        if (args.Length > 0 && args[0] == "tuning") { PrintTuning(); return; }
         bool baseline = args.Length > 0 && args[0] == "baseline";
         int offset = baseline ? 1 : 0;
         int seed = args.Length > offset ? int.Parse(args[offset]) : 23;

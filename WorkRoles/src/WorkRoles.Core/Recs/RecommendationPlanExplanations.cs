@@ -230,44 +230,39 @@ namespace WorkRoles.Core.Recs
             RoleRecommendationExplanation explanation)
         {
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            if (role.AutoAssign)
+            // A role assigned outside the scored pass has no stage yet; it takes
+            // the Special stage and the reason the assigning logic used. A role
+            // the pass picked already carries its stage and score stats.
+            if (explanation.SelectionStage == RecommendationSelectionStage.None)
             {
-                explanation.Decision = RecommendationDecision.AutoAssigned;
-                return;
+                SpecialPickReason special = SpecialReasonFor(facts, pawn, role);
+                if (special != SpecialPickReason.None)
+                {
+                    explanation.SelectionStage =
+                        RecommendationSelectionStage.Special;
+                    explanation.SpecialPickReason = special;
+                    return;
+                }
             }
-            if (role.Id == facts.Colony.HunterRoleId)
-            {
-                explanation.Decision = RecommendationDecision.Hunter;
-                return;
-            }
-            if (role.Id == facts.Colony.FireBlockerRoleId && pawn.FireFear)
-            {
-                explanation.Decision = RecommendationDecision.FireSafety;
-                return;
-            }
-            if (IsProtectedExisting(pawn, role))
-            {
-                explanation.Decision =
-                    RecommendationDecision.ProtectedAssignment;
-                return;
-            }
-            if (role.Unskilled && HasExisting(pawn, role.Id))
-            {
-                explanation.Decision = RecommendationDecision.Retained;
-                return;
-            }
+            // A downgraded waiver or surplus records the target it fell from so
+            // the tooltip can name it; the stage and score stats carry the rest.
             int targetRoleId = draft.TrainingTargetFor(role.Id);
-            if (targetRoleId >= 0)
-            {
-                explanation.Decision = RecommendationDecision.Training;
-                explanation.RelatedRoleId = targetRoleId;
-                return;
-            }
-            explanation.Decision = draft.IsMinimumRole(role.Id)
-                ? RecommendationDecision.CoverageDrafted
-                : surplusSignal >= formulas.SurplusMinimumSignal
-                    ? RecommendationDecision.SignalQualified
-                    : RecommendationDecision.Recommended;
+            if (targetRoleId >= 0) explanation.RelatedRoleId = targetRoleId;
+        }
+
+        private static SpecialPickReason SpecialReasonFor(
+            EngineContext facts, PawnView pawn, RoleView role)
+        {
+            if (role.AutoAssign) return SpecialPickReason.AutoAssigned;
+            if (role.Id == facts.Colony.HunterRoleId)
+                return SpecialPickReason.Hunter;
+            if (role.Id == facts.Colony.FireBlockerRoleId && pawn.FireFear)
+                return SpecialPickReason.FireSafety;
+            if (IsProtectedExisting(pawn, role))
+                return SpecialPickReason.Protected;
+            if (role.Unskilled && HasExisting(pawn, role.Id))
+                return SpecialPickReason.Retained;
+            return SpecialPickReason.None;
         }
 
         private static void RemovedDecision(
@@ -285,53 +280,69 @@ namespace WorkRoles.Core.Recs
             if (role.UsesHolderScale && role.IsNever)
             {
                 // A Never role that is a training-path trainee is controlled by
-                // its target (e.g. Medic by Doctor), not "not configured".
+                // its target (e.g. Medic by Doctor); a standalone Never role is
+                // simply configured off. Resolved once here, never re-stamped.
                 int controllingTarget = ControllingTrainingTarget(
                     facts, role.Id);
                 if (controllingTarget >= 0)
                 {
-                    explanation.Decision =
-                        RecommendationDecision.ControlledByTrainingTarget;
+                    explanation.RejectReason =
+                        PickRejectReason.ControlledByTarget;
                     explanation.RelatedRoleId = controllingTarget;
                 }
                 else
-                    explanation.Decision = RecommendationDecision.ScaleNever;
+                    explanation.RejectReason = PickRejectReason.ScaleNever;
+                return;
             }
-            else if (!role.Enabled)
-                explanation.Decision = RecommendationDecision.RoleDisabled;
-            else if (!role.Available)
-                explanation.Decision = RecommendationDecision.RoleUnavailable;
-            else if (role.HasRules || role.Blocker)
-                explanation.Decision = RecommendationDecision.RoleExcluded;
-            else if (!facts.Capable(pawnIndex, role))
-                explanation.Decision = RecommendationDecision.PawnIncapable;
-            else if (role.Hunting && !pawn.HasRangedWeapon)
-                explanation.Decision =
-                    RecommendationDecision.HunterRequirementsNotMet;
-            else if (rawSignal < formulas.CandidateMinimumSignal)
-                explanation.Decision = rawSignal == SignalBucket.Awful
-                    ? RecommendationDecision.AwfulSignal
-                    : RecommendationDecision.SignalBelowThreshold;
-            else
+            // Role on/off state (disabled, unavailable, rule-driven, blocker) is
+            // not a recommendation decision and carries no reject reason.
+            if (!role.Enabled || !role.Available
+                || role.HasRules || role.Blocker)
+                return;
+            if (!facts.Capable(pawnIndex, role))
             {
-                int coveringRoleId = CoveringRole(
-                    facts, draft, pawnIndex, role);
-                if (coveringRoleId >= 0)
-                {
-                    explanation.Decision =
-                        RecommendationDecision.CoveredByRecommendedRole;
-                    explanation.RelatedRoleId = coveringRoleId;
-                }
-                else if (explanation.CoveredTotal >= requiredTotal
-                    && requiredTotal > 0)
-                    explanation.Decision =
-                        RecommendationDecision.RequiredCoverageFilled;
-                else if (surplusSignal < formulas.SurplusMinimumSignal)
-                    explanation.Decision =
-                        RecommendationDecision.SignalBelowThreshold;
-                else
-                    explanation.Decision = RecommendationDecision.NotSelected;
+                explanation.RejectReason = PickRejectReason.Incapable;
+                return;
             }
+            if (role.Hunting && !pawn.HasRangedWeapon)
+            {
+                explanation.RejectReason =
+                    PickRejectReason.HunterRequirementsNotMet;
+                return;
+            }
+            if (rawSignal < formulas.CandidateMinimumSignal)
+            {
+                explanation.RejectReason = rawSignal == SignalBucket.Awful
+                    ? PickRejectReason.AwfulSignal
+                    : PickRejectReason.WeakSignal;
+                return;
+            }
+            if (PathActivation.BelongsToHigherBand(facts, pawnIndex, role))
+            {
+                explanation.RejectReason = PickRejectReason.OutOfBand;
+                return;
+            }
+            int coveringRoleId = CoveringRole(facts, draft, pawnIndex, role);
+            if (coveringRoleId >= 0)
+            {
+                explanation.RejectReason = PickRejectReason.Covered;
+                explanation.RelatedRoleId = coveringRoleId;
+                return;
+            }
+            if (explanation.CoveredTotal >= requiredTotal && requiredTotal > 0)
+            {
+                explanation.RejectReason =
+                    PickRejectReason.RequiredCoverageFilled;
+                return;
+            }
+            if (surplusSignal < formulas.SurplusMinimumSignal)
+            {
+                explanation.RejectReason = PickRejectReason.WeakSignal;
+                return;
+            }
+            // Capable, adequate, uncovered, in-band: it simply lost the slots to
+            // better-scored candidates.
+            explanation.RejectReason = PickRejectReason.Outqualified;
         }
 
         /// The training-path target that controls this role (the role is a

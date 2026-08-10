@@ -50,6 +50,10 @@ namespace WorkRoles.Core.Recs
         private readonly int[] stageRanks;
         private readonly int[] selectionSlots;
         private readonly SignalBucket[] selectionSignals;
+        // The training-path activation each downgraded pick publishes (null for
+        // direct picks and for picks with no path activation). Computed once
+        // here so publish does not re-run path resolution.
+        private readonly PathActivation[] resolvedActivations;
         private readonly RecommendationFormulaEngine formulas;
         private int minimumPickCount;
         private int coverageRepairCount;
@@ -64,6 +68,7 @@ namespace WorkRoles.Core.Recs
             int[] stageRanks,
             int[] selectionSlots,
             SignalBucket[] selectionSignals,
+            PathActivation[] resolvedActivations,
             int selectionSlotCount,
             int minimumPickCount,
             RecommendationFormulaEngine formulas,
@@ -78,6 +83,7 @@ namespace WorkRoles.Core.Recs
             this.stageRanks = stageRanks;
             this.selectionSlots = selectionSlots;
             this.selectionSignals = selectionSignals;
+            this.resolvedActivations = resolvedActivations;
             this.minimumPickCount = minimumPickCount;
             this.formulas = formulas;
             SelectionSlotCount = selectionSlotCount;
@@ -108,6 +114,8 @@ namespace WorkRoles.Core.Recs
         internal int SelectionSlotCount { get; }
         internal SignalBucket SelectionSignalAt(int index) =>
             selectionSignals[index];
+        internal PathActivation ResolvedActivationAt(int index) =>
+            resolvedActivations[index];
         internal RecommendationTargetAssignmentKind AssignmentKindAt(
             int index)
         {
@@ -150,6 +158,7 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             RoleView role,
             RecommendationFormulaEngine formulas,
+            PawnDraft[] drafts = null,
             List<int>[] priorChampionsByPawn = null)
         {
             int colonySize = facts.Colony.Pawns.Count;
@@ -192,6 +201,10 @@ namespace WorkRoles.Core.Recs
                 if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id))
                     continue;
                 if (!facts.FullyCapable(pawnIndex, role)) continue;
+                // The path keeps roles at the colonist's skill level: a pawn in
+                // a higher band does not also hold this lower trainee role.
+                if (PathActivation.BelongsToHigherBand(facts, pawnIndex, role))
+                    continue;
                 SignalBucket verdict = facts.BestSignal(
                     pawnIndex, role, out string skillDefName, out _);
                 if (verdict < formulas.CandidateMinimumSignal) continue;
@@ -240,115 +253,125 @@ namespace WorkRoles.Core.Recs
             var selectionSlots = new int[candidates.Length];
             var selectionSignals = new SignalBucket[candidates.Length];
             int minimumPickCount = 0;
-            int requiredPickCount = 0;
             int requiredStageCount = 0;
-
-            for (int index = 0;
-                 index < candidates.Length
-                 && requiredPickCount < directPicks;
-                 index++)
-            {
-                flags[index] = Selected
-                    | CoverageMinimum
-                    | DirectAssignment;
-                stages[index] = RecommendationSelectionStage.Required;
-                stageRanks[index] = ++requiredStageCount;
-                bonuses[index] = formulas.MinimumBonus(minimumPickCount);
-                minimumPickCount++;
-                requiredPickCount++;
-                selectionSlots[index] =
-                    protectedDirectHolders + requiredPickCount;
-            }
-
-            int remainingTrainingWaivers = trainingWaivers;
             int trainingWaiverStageCount = 0;
-            int directFallbackStageCount = 0;
-            for (int index = 0;
-                 index < candidates.Length
-                 && requiredPickCount < requiredTotal
-                 && remainingTrainingWaivers > 0;
-                 index++)
-            {
-                if ((flags[index] & Selected) != 0) continue;
-                CandidateFact candidate = candidates[index];
-                if (!PathActivation.QualifiesOptionalTarget(
-                        facts,
-                        candidate.PawnIndex,
-                        role,
-                        formulas,
-                        out _))
-                    continue;
-                flags[index] = Selected
-                    | TrainingWaiver
-                    | CoverageMinimum
-                    | RequiredWaiver;
-                stages[index] = RecommendationSelectionStage.TrainingWaiver;
-                stageRanks[index] = ++trainingWaiverStageCount;
-                requiredPickCount++;
-                selectionSlots[index] =
-                    protectedDirectHolders + requiredPickCount;
-                remainingTrainingWaivers--;
-            }
-
-            for (int index = 0;
-                 index < candidates.Length
-                 && requiredPickCount < requiredTotal;
-                 index++)
-            {
-                if ((flags[index] & Selected) != 0) continue;
-                flags[index] = Selected
-                    | CoverageMinimum
-                    | RequiredWaiver;
-                stages[index] = RecommendationSelectionStage.DirectFallback;
-                stageRanks[index] = ++directFallbackStageCount;
-                requiredPickCount++;
-                selectionSlots[index] =
-                    protectedDirectHolders + requiredPickCount;
-            }
-
-            int selectedCount = requiredPickCount;
             int surplusStageCount = 0;
-            // Unskilled fills every remaining capable pawn: hard vetoes (Awful)
-            // were already dropped by the candidate floor above, so no surplus
-            // signal or target qualification applies.
+            int selectedCount = 0;
+            // Unskilled fills every remaining capable pawn (Awful was already
+            // dropped by the candidate floor); Skilled surplus stops once three
+            // ranked candidates in a row fail the signal criteria.
             bool unskilledFill = role.Mode == ScaleMode.Unskilled;
+            // A pick folds under a broader covering role assigned by an
+            // earlier-processed role, except a minimum pick of an Unskilled or
+            // training-path role, whose own holders survive coverage.
+            bool exemptMinimum = unskilledFill || championPath != null;
+            const int SurplusMissLimit = 3;
+            int consecutiveSurplusMisses = 0;
+            // Single pass over the best-first candidate list: the first
+            // directPicks take the target directly; the next up to requiredTotal
+            // are training picks (downgraded to the band role at publish, or the
+            // target if already at its band); the rest are signal-gated surplus.
+            // A covered pick folds under a broader role assigned earlier; a
+            // covered required slot is satisfied by that coverer and not refilled.
+            int directFilled = 0;
+            int requiredFilled = 0;
             for (int index = 0;
-                 index < candidates.Length
-                 && selectedCount < selectionCapacity;
+                 index < candidates.Length && selectedCount < selectionCapacity;
                  index++)
             {
-                if ((flags[index] & Selected) != 0) continue;
                 CandidateFact candidate = candidates[index];
-                bool qualifiedByMultiSkillAptitude = false;
-                bool qualifiesForTarget = unskilledFill
-                    || PathActivation.QualifiesOptionalTarget(
+                bool inDirectPhase = directFilled < directPicks;
+                bool inRequiredPhase = requiredFilled < requiredTotal;
+                bool covered = drafts != null
+                    && RecommendationPlan.PawnHasCoverer(
+                        facts, drafts[candidate.PawnIndex],
+                        candidate.PawnIndex, role);
+                if (covered && !(inRequiredPhase && exemptMinimum))
+                {
+                    if (inRequiredPhase)
+                    {
+                        requiredFilled++;
+                        if (inDirectPhase) directFilled++;
+                    }
+                    continue;
+                }
+                if (inDirectPhase)
+                {
+                    flags[index] = Selected | CoverageMinimum | DirectAssignment;
+                    stages[index] = RecommendationSelectionStage.Required;
+                    stageRanks[index] = ++requiredStageCount;
+                    bonuses[index] = formulas.MinimumBonus(minimumPickCount);
+                    minimumPickCount++;
+                    selectionSlots[index] =
+                        protectedDirectHolders + selectedCount + 1;
+                    selectedCount++;
+                    directFilled++;
+                    requiredFilled++;
+                }
+                else if (inRequiredPhase)
+                {
+                    flags[index] = Selected
+                        | TrainingWaiver
+                        | CoverageMinimum
+                        | RequiredWaiver;
+                    stages[index] = RecommendationSelectionStage.TrainingWaiver;
+                    stageRanks[index] = ++trainingWaiverStageCount;
+                    selectionSlots[index] =
+                        protectedDirectHolders + selectedCount + 1;
+                    selectedCount++;
+                    requiredFilled++;
+                }
+                else
+                {
+                    bool qualifiedByMultiSkillAptitude = false;
+                    bool qualifiesForTarget = unskilledFill
+                        || PathActivation.QualifiesOptionalTarget(
+                            facts,
+                            candidate.PawnIndex,
+                            role,
+                            formulas,
+                            out qualifiedByMultiSkillAptitude);
+                    SignalBucket surplusSignal = SurplusSignal(
                         facts,
                         candidate.PawnIndex,
                         role,
-                        formulas,
-                        out qualifiedByMultiSkillAptitude);
-                SignalBucket surplusSignal = SurplusSignal(
-                    facts,
-                    candidate.PawnIndex,
-                    role,
-                    candidate.Verdict,
-                    candidate.SkillLevel,
-                    formulas);
-                if (qualifiesForTarget
-                    && (unskilledFill
-                        || surplusSignal >= formulas.SurplusMinimumSignal
-                        || qualifiedByMultiSkillAptitude))
-                {
-                    flags[index] = (byte)(Selected
-                        | Surplus
-                        | (surplusSignal >= formulas.SurplusMinimumSignal
-                            ? SignalQualifiedSurplus
-                            : 0));
-                    stages[index] = RecommendationSelectionStage.Surplus;
-                    stageRanks[index] = ++surplusStageCount;
-                    selectionSignals[index] = surplusSignal;
-                    selectedCount++;
+                        candidate.Verdict,
+                        candidate.SkillLevel,
+                        formulas);
+                    if (qualifiesForTarget
+                        && (unskilledFill
+                            || surplusSignal >= formulas.SurplusMinimumSignal
+                            || qualifiedByMultiSkillAptitude))
+                    {
+                        flags[index] = (byte)(Selected
+                            | Surplus
+                            | (surplusSignal >= formulas.SurplusMinimumSignal
+                                ? SignalQualifiedSurplus
+                                : 0));
+                        stages[index] = RecommendationSelectionStage.Surplus;
+                        stageRanks[index] = ++surplusStageCount;
+                        selectionSignals[index] = surplusSignal;
+                        selectedCount++;
+                        consecutiveSurplusMisses = 0;
+                    }
+                    else if (!unskilledFill
+                        && ++consecutiveSurplusMisses >= SurplusMissLimit)
+                    {
+                        break;
+                    }
                 }
+            }
+            // Resolve the training-path activation each downgraded pick will
+            // publish, once, so publish never re-runs path resolution. Direct
+            // picks always take the target and carry no activation.
+            var resolvedActivations = new PathActivation[candidates.Length];
+            for (int index = 0; index < candidates.Length; index++)
+            {
+                if ((flags[index] & Selected) == 0
+                    || (flags[index] & DirectAssignment) != 0)
+                    continue;
+                resolvedActivations[index] = PathActivation.Find(
+                    facts, candidates[index].PawnIndex, role, formulas);
             }
             return new RolePlan(
                 role.Id,
@@ -360,6 +383,7 @@ namespace WorkRoles.Core.Recs
                 stageRanks,
                 selectionSlots,
                 selectionSignals,
+                resolvedActivations,
                 configuredRequiredTotal,
                 minimumPickCount,
                 formulas,

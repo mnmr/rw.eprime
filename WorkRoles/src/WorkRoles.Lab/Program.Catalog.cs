@@ -49,7 +49,10 @@ internal static partial class Program
             if (!AvailableInAllDlc(def)) continue;
             string defName = RequiredText(def, "defName");
             List<JobEntry> entries = LoadEntries(def, defName);
-            string scaleName = def.Element("holderScale")?.Value.Trim();
+            XElement tuning = def.Element("tuning");
+            // Legacy elements remain readable, mirroring RoleDef.PostLoad.
+            string scaleName = tuning?.Element("scale")?.Value.Trim()
+                ?? def.Element("holderScale")?.Value.Trim();
             HolderScale scale = null;
             // Mirror the seeded behavioral presets: a missing or "Never"
             // reference assigns no one; "Unskilled" fills every capable pawn.
@@ -64,13 +67,16 @@ internal static partial class Program
             }
             else if (!scales.TryGetValue(scaleName, out scale))
                 throw new InvalidDataException(
-                    $"RoleDef {defName}: unknown holderScale '{scaleName}'.");
+                    $"RoleDef {defName}: unknown scale '{scaleName}'.");
             RecommendationSpecialRoleKind specialRole =
                 OptionalEnum(
                     def.Element("recommendationSpecialRole")?.Value,
                     RecommendationSpecialRoleKind.None,
                     defName,
                     "recommendationSpecialRole");
+            bool championPenalty = tuning == null
+                ? !OptionalBool(def, "usesOccasionalRepeatChampionPenalty")
+                : tuning.Element("championPenalty")?.Value.Trim() != "false";
             var source = new RecommendationRoleSource
             {
                 Id = id,
@@ -82,8 +88,17 @@ internal static partial class Program
                 Blocker = def.Element("blocker")?.Value.Trim() == "true",
                 PreserveRecommendationOrder = OptionalBool(
                     def, "preserveRecommendationOrder"),
-                UsesOccasionalRepeatChampionPenalty = OptionalBool(
-                    def, "usesOccasionalRepeatChampionPenalty"),
+                ChampionPenalty = championPenalty,
+                Category = OptionalEnum(
+                    tuning?.Element("category")?.Value,
+                    RoleCategory.None, defName, "category"),
+                Time = OptionalEnum(
+                    tuning?.Element("time")?.Value,
+                    RoleTime.None, defName, "time"),
+                DeclaredRequiredSkills = SkillList(
+                    tuning?.Element("skills")?.Element("required")),
+                DeclaredOptionalSkills = SkillList(
+                    tuning?.Element("skills")?.Element("optional")),
                 Scale = scale,
                 Mode = scaleMode,
                 Available = true,
@@ -152,6 +167,9 @@ internal static partial class Program
         ApplyNewTemplateDefault(catalog);
         return catalog;
     }
+
+    private static List<string> SkillList(XElement listElement) =>
+        listElement?.Elements("li").Select(li => li.Value.Trim()).ToList();
 
     private static bool AvailableInAllDlc(XElement element)
     {

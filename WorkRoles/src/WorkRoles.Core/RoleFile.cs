@@ -50,6 +50,14 @@ namespace WorkRoles.Core
         public List<string> locations = new List<string>();
         /// Named holder scale reference (document <Scales> or an existing scale).
         public string holderScale;
+        /// Recommendation tuning; hasTuning=false marks a pre-tuning file whose
+        /// roles derive their skill classification on import.
+        public bool hasTuning;
+        public RoleCategory category;
+        public RoleTime time;
+        public bool championPenalty = true;
+        public List<string> requiredSkills = new List<string>();
+        public List<string> optionalSkills = new List<string>();
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -323,6 +331,24 @@ namespace WorkRoles.Core
             if (!string.IsNullOrEmpty(role.holderScale))
                 options.Add(new XElement("Holders",
                     new XAttribute("scale", role.holderScale)));
+            if (role.hasTuning)
+            {
+                // Present-but-empty still matters: it marks authored tuning.
+                var tuning = new XElement("Tuning");
+                if (role.category != RoleCategory.None)
+                    tuning.Add(new XAttribute("category", role.category));
+                if (role.time != RoleTime.None)
+                    tuning.Add(new XAttribute("time", role.time));
+                if (!role.championPenalty)
+                    tuning.Add(new XAttribute("championPenalty", "false"));
+                if (role.requiredSkills.Count > 0)
+                    tuning.Add(new XElement("RequiredSkills",
+                        string.Join(",", role.requiredSkills)));
+                if (role.optionalSkills.Count > 0)
+                    tuning.Add(new XElement("OptionalSkills",
+                        string.Join(",", role.optionalSkills)));
+                options.Add(tuning);
+            }
             if (role.locations.Count > 0)
             {
                 // Structured elements so names (XLinq-escaped) survive any
@@ -674,6 +700,24 @@ namespace WorkRoles.Core
                 if (bits != null && bits.Length == 24)
                     role.activeHours = BitsToHours(bits);
                 // <Training> (v2/v3) is retired: skipped, never read.
+                var tuningEl = options.Element("Tuning");
+                if (tuningEl != null)
+                {
+                    role.hasTuning = true;
+                    if (Enum.TryParse(tuningEl.Attribute("category")?.Value,
+                            true, out RoleCategory category))
+                        role.category = category;
+                    if (Enum.TryParse(tuningEl.Attribute("time")?.Value,
+                            true, out RoleTime time))
+                        role.time = time;
+                    role.championPenalty = !string.Equals(
+                        tuningEl.Attribute("championPenalty")?.Value?.Trim(),
+                        "false", StringComparison.OrdinalIgnoreCase);
+                    role.requiredSkills = SplitSkills(
+                        tuningEl.Element("RequiredSkills")?.Value);
+                    role.optionalSkills = SplitSkills(
+                        tuningEl.Element("OptionalSkills")?.Value);
+                }
                 var holders = options.Element("Holders");
                 if (holders != null)
                 {
@@ -694,6 +738,12 @@ namespace WorkRoles.Core
             }
             return role;
         }
+
+        private static List<string> SplitSkills(string joined) =>
+            string.IsNullOrWhiteSpace(joined)
+                ? new List<string>()
+                : joined.Split(',').Select(s => s.Trim())
+                    .Where(s => s.Length > 0).ToList();
 
         /// 24-char bitstring, hour 0 leftmost; '1' = active during that hour.
         public static string HoursToBits(int mask)

@@ -88,33 +88,28 @@ namespace WorkRoles.UI
                 store, role, explanation);
             if (selection != null) return selection;
 
-            switch (explanation.Decision)
+            if (explanation.Recommended)
             {
-                case RecommendationDecision.AutoAssigned:
-                    return "WR_RecDecisionAuto".Translate();
-                case RecommendationDecision.SignalQualified:
-                    return "WR_RecDecisionSignals".Translate();
-                case RecommendationDecision.CoverageDrafted:
-                    return "WR_RecDecisionCoverageDraft".Translate();
-                case RecommendationDecision.Training:
+                switch (explanation.SpecialPickReason)
                 {
-                    Role target = store?.RoleById(explanation.RelatedRoleId);
-                    return target == null
-                        ? "WR_RecDecisionTrainingUnknown".Translate().ToString()
-                        : "WR_RecDecisionTraining".Translate(
-                            target.label).ToString();
+                    case SpecialPickReason.AutoAssigned:
+                        return "WR_RecDecisionAuto".Translate();
+                    case SpecialPickReason.Hunter:
+                        return "WR_RecDecisionHunter".Translate();
+                    case SpecialPickReason.FireSafety:
+                        return "WR_RecDecisionFire".Translate();
+                    case SpecialPickReason.Retained:
+                        return "WR_RecDecisionRetained".Translate();
+                    case SpecialPickReason.Protected:
+                        return "WR_RecDecisionProtected".Translate();
+                    default:
+                        return "WR_RecDecisionRecommended".Translate();
                 }
-                case RecommendationDecision.Hunter:
-                    return "WR_RecDecisionHunter".Translate();
-                case RecommendationDecision.FireSafety:
-                    return "WR_RecDecisionFire".Translate();
-                case RecommendationDecision.Retained:
-                    return "WR_RecDecisionRetained".Translate();
-                case RecommendationDecision.ProtectedAssignment:
-                    return "WR_RecDecisionProtected".Translate();
-                case RecommendationDecision.ScaleNever:
-                    return "WR_RecDecisionNever".Translate();
-                case RecommendationDecision.ControlledByTrainingTarget:
+            }
+
+            switch (explanation.RejectReason)
+            {
+                case PickRejectReason.ControlledByTarget:
                 {
                     Role controller = store?.RoleById(explanation.RelatedRoleId);
                     return controller == null
@@ -122,19 +117,19 @@ namespace WorkRoles.UI
                         : "WR_RecDecisionControlledByTraining".Translate(
                             controller.label).ToString();
                 }
-                case RecommendationDecision.RoleDisabled:
-                    return "WR_RecDecisionDisabled".Translate();
-                case RecommendationDecision.RoleUnavailable:
-                    return "WR_RecDecisionUnavailable".Translate();
-                case RecommendationDecision.RoleExcluded:
-                    return "WR_RecDecisionExcluded".Translate();
-                case RecommendationDecision.PawnIncapable:
+                case PickRejectReason.ScaleNever:
+                    return "WR_RecDecisionNever".Translate();
+                case PickRejectReason.Incapable:
                     return "WR_RecDecisionIncapable".Translate();
-                case RecommendationDecision.HunterRequirementsNotMet:
+                case PickRejectReason.HunterRequirementsNotMet:
                     return "WR_RecDecisionHunterRequirements".Translate();
-                case RecommendationDecision.AwfulSignal:
+                case PickRejectReason.AwfulSignal:
                     return "WR_RecDecisionAwful".Translate();
-                case RecommendationDecision.CoveredByRecommendedRole:
+                case PickRejectReason.WeakSignal:
+                    return "WR_RecDecisionWeakSignal".Translate();
+                case PickRejectReason.OutOfBand:
+                    return "WR_RecDecisionOutOfBand".Translate();
+                case PickRejectReason.Covered:
                 {
                     Role covering = store?.RoleById(explanation.RelatedRoleId);
                     return covering == null
@@ -142,16 +137,12 @@ namespace WorkRoles.UI
                         : "WR_RecDecisionCovered".Translate(
                             covering.label).ToString();
                 }
-                case RecommendationDecision.RequiredCoverageFilled:
+                case PickRejectReason.RequiredCoverageFilled:
                     return "WR_RecDecisionCoverageFilled".Translate();
-                case RecommendationDecision.SignalBelowThreshold:
-                    return "WR_RecDecisionWeakSignal".Translate();
-                case RecommendationDecision.NotSelected:
-                    return "WR_RecDecisionNotSelected".Translate();
+                case PickRejectReason.Outqualified:
+                    return "WR_RecDecisionOutqualified".Translate();
                 default:
-                    return explanation.Recommended
-                        ? "WR_RecDecisionRecommended".Translate()
-                        : "WR_RecDecisionNotSelected".Translate();
+                    return "WR_RecDecisionNotSelected".Translate();
             }
         }
 
@@ -216,13 +207,6 @@ namespace WorkRoles.UI
                         skills,
                         explanation.TrainingSkills[0].TargetMinimum).ToString();
                 }
-                case RecommendationSelectionStage.DirectFallback:
-                    return HasSelectionSlot(explanation)
-                        ? "WR_RecDecisionDirectFallbackSlot".Translate(
-                            explanation.SelectionSlot,
-                            explanation.SelectionSlotCount,
-                            role.label).ToString()
-                        : null;
                 case RecommendationSelectionStage.CoverageRepair:
                     return HasSelectionSlot(explanation)
                         ? "WR_RecDecisionCoverageRepairSlot".Translate(

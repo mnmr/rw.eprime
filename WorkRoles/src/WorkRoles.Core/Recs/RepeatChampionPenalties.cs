@@ -21,7 +21,7 @@ namespace WorkRoles.Core.Recs
                 RoleView prior = facts.RoleOf(priorChampionRoleIds[index]);
                 if (prior == null) continue;
                 total += formulas.RepeatChampionPenalty(
-                    prior.UsesOccasionalRepeatChampionPenalty,
+                    !prior.ChampionPenalty,
                     SharesRequiredSkill(facts, role, prior),
                     colonistCount);
             }

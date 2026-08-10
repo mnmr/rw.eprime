@@ -15,9 +15,9 @@ public class RepeatChampionPenaltyTests
         RoleView priorOverlap = SkilledRole(2, "Plants");
         RoleView priorDistinct = SkilledRole(3, "Mining");
         RoleView priorOccasional = SkilledRole(4, "Medicine");
-        priorOccasional.UsesOccasionalRepeatChampionPenalty = true;
+        priorOccasional.ChampionPenalty = false;
         RoleView priorOccasionalOverlap = SkilledRole(5, "Plants");
-        priorOccasionalOverlap.UsesOccasionalRepeatChampionPenalty = true;
+        priorOccasionalOverlap.ChampionPenalty = false;
         ColonyView colony = RecsTestBed.Colony(
             new List<RoleView>
             {

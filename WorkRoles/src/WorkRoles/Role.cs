@@ -28,6 +28,17 @@ namespace WorkRoles
         /// Named holder scale (RoleStore.holderScales) driving banded
         /// required/train/max lookups. Missing or dangling references are Never.
         public string holderScaleName = "Never";
+        /// Recommendation tuning: copied from the template def at seeding or
+        /// filled by load-time migration; authoritative once set.
+        public List<string> requiredSkills = new List<string>();
+        public List<string> optionalSkills = new List<string>();
+        public RoleCategory category;
+        public RoleTime time;
+        /// False = repeat championships use the occasional-work penalty.
+        public bool championPenalty = true;
+        /// False only on roles from saves that predate tuning; RoleStore
+        /// migrates those at load and sets this.
+        public bool tuningSeeded;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
         /// rule-carrying roles DISPLAY under Auto-Roles.
         public int groupId = RoleGroup.DefaultId;
@@ -44,6 +55,8 @@ namespace WorkRoles
         private List<string> scribeEntries;
         private Dictionary<string, string> scribeSnapshots;
         private string scribeLocations;
+        private string scribeRequiredSkills;
+        private string scribeOptionalSkills;
         private HashSet<string> coverageCache;
         // Cached XP-frequency primary skill (null is a valid value, hence the
         // flag); derived from coverage, so it invalidates with it.
@@ -111,6 +124,27 @@ namespace WorkRoles
             bool legacyManaged = false;
             Scribe_Values.Look(ref legacyManaged, "managed");
             Scribe_Values.Look(ref holderScaleName, "holderScale", "Never");
+            Scribe_Values.Look(ref category, "category", RoleCategory.None);
+            Scribe_Values.Look(ref time, "time", RoleTime.None);
+            Scribe_Values.Look(ref championPenalty, "championPenalty", true);
+            Scribe_Values.Look(ref tuningSeeded, "tuningSeeded");
+            // Skill lists scribe comma-joined (skill defNames cannot contain commas).
+            if (Scribe.mode == LoadSaveMode.Saving)
+            {
+                if (requiredSkills.Count > 0)
+                    scribeRequiredSkills = string.Join(",", requiredSkills);
+                if (optionalSkills.Count > 0)
+                    scribeOptionalSkills = string.Join(",", optionalSkills);
+            }
+            Scribe_Values.Look(ref scribeRequiredSkills, "requiredSkills");
+            Scribe_Values.Look(ref scribeOptionalSkills, "optionalSkills");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                requiredSkills = scribeRequiredSkills.NullOrEmpty()
+                    ? new List<string>() : scribeRequiredSkills.Split(',').ToList();
+                optionalSkills = scribeOptionalSkills.NullOrEmpty()
+                    ? new List<string>() : scribeOptionalSkills.Split(',').ToList();
+            }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
             // Location tokens scribe comma-joined (category words and game
@@ -161,6 +195,8 @@ namespace WorkRoles
                 scribeEntries = null;
                 scribeSnapshots = null;
                 scribeLocations = null;
+                scribeRequiredSkills = null;
+                scribeOptionalSkills = null;
             }
         }
     }

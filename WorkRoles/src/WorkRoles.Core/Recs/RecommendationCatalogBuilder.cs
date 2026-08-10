@@ -22,7 +22,13 @@ namespace WorkRoles.Core.Recs
         public bool HasRules;
         public bool Blocker;
         public bool PreserveRecommendationOrder;
-        public bool UsesOccasionalRepeatChampionPenalty;
+        /// False = repeat championships use the occasional-work penalty.
+        public bool ChampionPenalty = true;
+        public RoleCategory Category;
+        public RoleTime Time;
+        /// Authored skill classification; null = no authored data.
+        public List<string> DeclaredRequiredSkills;
+        public List<string> DeclaredOptionalSkills;
         public HolderScale Scale;
         public ScaleMode Mode = ScaleMode.Skilled;
         public bool Available = true;
@@ -214,8 +220,13 @@ namespace WorkRoles.Core.Recs
                 Hunting = projection.Hunting,
                 PreserveRecommendationOrder =
                     source.PreserveRecommendationOrder,
-                UsesOccasionalRepeatChampionPenalty =
-                    source.UsesOccasionalRepeatChampionPenalty,
+                ChampionPenalty = source.ChampionPenalty,
+                Category = source.Category,
+                Time = source.Time,
+                DeclaredRequiredSkills = source.DeclaredRequiredSkills == null
+                    ? null : new List<string>(source.DeclaredRequiredSkills),
+                DeclaredOptionalSkills = source.DeclaredOptionalSkills == null
+                    ? null : new List<string>(source.DeclaredOptionalSkills),
                 NaturalPriority = projection.MaxNaturalPriority,
                 WorkTypes = projection.CopyWorkTypes(),
                 Scale = source.Scale?.Copy(),

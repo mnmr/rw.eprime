@@ -38,15 +38,15 @@ namespace WorkRoles
         internal static string ScaleName(RoleDef def)
         {
             var scaleDef = ScaleDef(def);
-            return scaleDef == null ? def?.holderScale?.Trim() : ScaleName(scaleDef);
+            return scaleDef == null ? def?.tuning?.scale?.Trim() : ScaleName(scaleDef);
         }
 
         internal static string ScaleIdentity(RoleDef def) =>
-            ScaleDef(def)?.defName ?? def?.holderScale?.Trim();
+            ScaleDef(def)?.defName ?? def?.tuning?.scale?.Trim();
 
         internal static ScaleDef ScaleDef(RoleDef roleDef)
         {
-            string name = roleDef?.holderScale?.Trim();
+            string name = roleDef?.tuning?.scale?.Trim();
             if (name.NullOrEmpty()) return null;
             return DefDatabase<ScaleDef>.AllDefsListForReading.FirstOrDefault(def =>
                 string.Equals(ScaleName(def), name, StringComparison.OrdinalIgnoreCase)

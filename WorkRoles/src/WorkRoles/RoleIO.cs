@@ -77,6 +77,12 @@ namespace WorkRoles
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
                     holderScale = role.holderScaleName,
+                    hasTuning = role.tuningSeeded,
+                    category = role.category,
+                    time = role.time,
+                    championPenalty = role.championPenalty,
+                    requiredSkills = role.requiredSkills.ToList(),
+                    optionalSkills = role.optionalSkills.ToList(),
                     entries = role.entries.ToList(),
                 });
             }
@@ -553,6 +559,14 @@ namespace WorkRoles
                             token, resolvedLocations))
                         .Where(token => token != null).ToList();
                     target.holderScaleName = row.role.holderScale ?? "Never";
+                    target.category = row.role.category;
+                    target.time = row.role.time;
+                    target.championPenalty = row.role.championPenalty;
+                    target.requiredSkills = row.role.requiredSkills.ToList();
+                    target.optionalSkills = row.role.optionalSkills.ToList();
+                    // Pre-tuning files leave this false; the migration below
+                    // derives their classification like a pre-tuning save.
+                    target.tuningSeeded = row.role.hasTuning;
                     target.groupId = GroupIdFor(
                         row.role.groupId, row.role.group, doc, runtimeGroups, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
@@ -564,6 +578,7 @@ namespace WorkRoles
                 RoleCommands.SweepEmptyGroups();
                 CompiledJobOrders.InvalidateAll();
                 Seeding.RefreshWorkTypeSnapshots();
+                store.MigrateRoleTuning();
             }
 
             // Paths and the order resolve names AFTER roles landed (they may

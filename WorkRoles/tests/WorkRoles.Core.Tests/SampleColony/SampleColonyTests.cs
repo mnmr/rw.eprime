@@ -52,6 +52,10 @@ public class SampleColonyTests
             r => r.Id == SampleColony.RoleId("Doctor"));
         await Assert.That(doctor.Mode).IsEqualTo(ScaleMode.Skilled);
         await Assert.That(doctor.RequiredTotalAt(25)).IsEqualTo(6);
+        // Doctor's template shipped the occasional repeat-champion flag; the
+        // fixture maps it to championPenalty=false and the polarity must
+        // survive the projection.
+        await Assert.That(doctor.ChampionPenalty).IsFalse();
 
         RoleView hauler = catalog.Roles.First(
             r => r.Id == SampleColony.RoleId("Hauler"));

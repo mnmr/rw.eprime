@@ -126,8 +126,12 @@ namespace WorkRoles.Core.Recs
             IReadOnlyDictionary<int, long> positions,
             RecommendationFormulaEngine formulas,
             out int[] pathIds,
-            out int activatedPathCount)
+            out int activatedPathCount,
+            RoleOrderingStrategy ordering = RoleOrderingStrategy.Current)
         {
+            if (ordering == RoleOrderingStrategy.Experimental)
+                return PublishRolesExperimental(
+                    facts, pawnIndex, positions, formulas, out pathIds, out activatedPathCount);
             List<PathView> placements = OrderingPaths(facts);
             activatedPathCount = activations.Count;
             pathIds = new int[placements.Count];
@@ -206,7 +210,54 @@ namespace WorkRoles.Core.Recs
                 facts, pawnIndex, result);
             OrderByScore(
                 facts, pawnIndex, positions, edges, incoming, ordered);
+            SlideHunterPastAutoRoles(facts, ordered);
             return ordered;
+        }
+
+        // Placeholder for the redesigned role ordering, wired in parallel to the current path so tests can build both and diff.
+        // For now it reuses the current path placement and emits roles by base recommendation position; the real algorithm is designed next.
+        private int[] PublishRolesExperimental(
+            EngineContext facts,
+            int pawnIndex,
+            IReadOnlyDictionary<int, long> positions,
+            RecommendationFormulaEngine formulas,
+            out int[] pathIds,
+            out int activatedPathCount)
+        {
+            List<PathView> placements = OrderingPaths(facts);
+            activatedPathCount = activations.Count;
+            pathIds = new int[placements.Count];
+            for (int index = 0; index < placements.Count; index++)
+                pathIds[index] = placements[index].Id;
+
+            int[] ordered = roleIds.ToArray();
+            System.Array.Sort(ordered, (left, right) => positions[left].CompareTo(positions[right]));
+            return ordered;
+        }
+
+        // Hunter must never sit immediately left of an auto/rule-driven role; slide it right past any contiguous run of them.
+        private static void SlideHunterPastAutoRoles(EngineContext facts, int[] ordered)
+        {
+            int hunterRoleId = facts.Colony.HunterRoleId;
+            if (hunterRoleId < 0) return;
+            int at = -1;
+            for (int index = 0; index < ordered.Length; index++)
+                if (ordered[index] == hunterRoleId) { at = index; break; }
+            if (at < 0) return;
+            while (at + 1 < ordered.Length && IsAutoOrRuleDriven(facts, ordered[at + 1]))
+            {
+                int moved = ordered[at];
+                ordered[at] = ordered[at + 1];
+                ordered[at + 1] = moved;
+                at++;
+            }
+        }
+
+        // Auto-assign, rule-driven, and blocker roles - the automatically-placed roles that carry no holder scale (Hunter itself excepted).
+        private static bool IsAutoOrRuleDriven(EngineContext facts, int roleId)
+        {
+            RoleView role = facts.RoleOf(roleId);
+            return role != null && !role.UsesHolderScale && !role.Hunting;
         }
 
         private void OrderByScore(
@@ -630,8 +681,13 @@ namespace WorkRoles.Core.Recs
             => Build(colony, RecommendationsTuningOptions.Default);
 
         public static RecommendationPlan Build(
+            ColonyView colony, RoleOrderingStrategy ordering)
+            => Build(colony, RecommendationsTuningOptions.Default, ordering);
+
+        public static RecommendationPlan Build(
             ColonyView colony,
-            RecommendationsTuningOptions options)
+            RecommendationsTuningOptions options,
+            RoleOrderingStrategy ordering = RoleOrderingStrategy.Current)
         {
             var formulas = new RecommendationFormulaEngine(options);
             var facts = new EngineContext(colony);
@@ -642,16 +698,16 @@ namespace WorkRoles.Core.Recs
             AddSpecialRoles(facts, drafts);
 
             IReadOnlyDictionary<int, long> positions = facts.BasePositions();
-            var roles = new List<RoleView>(colony.Roles);
-            roles.Sort((left, right) =>
-            {
-                int position = positions[left.Id].CompareTo(positions[right.Id]);
-                return position != 0 ? position : left.Id.CompareTo(right.Id);
-            });
+            List<RoleView> roles = OrderRolesForProcessing(facts, colony.Roles);
             var rolePlans = new List<RolePlan>();
-            // Roles arrive position-sorted, so championships resolve in
-            // recommended order and each grant penalizes later repeat picks.
+            // Roles are processed skilled-first, targets before their trainees,
+            // and coverers before covered, so each plan's assignments are visible
+            // before the roles they cover or train are selected.
             var priorChampionsByPawn = new List<int>[pawnCount];
+            // Build and publish each role in recommended order so every plan's
+            // assignments are visible in the drafts before the next role is
+            // selected. The surplus eligibility check reads those drafts to fold
+            // a pick under a broader covering role assigned earlier.
             for (int roleIndex = 0; roleIndex < roles.Count; roleIndex++)
             {
                 RoleView role = roles[roleIndex];
@@ -665,20 +721,8 @@ namespace WorkRoles.Core.Recs
                     || role.Id == colony.HunterRoleId)
                     continue;
                 RolePlan rolePlan = RolePlan.Build(
-                    facts, role, formulas, priorChampionsByPawn);
+                    facts, role, formulas, drafts, priorChampionsByPawn);
                 rolePlans.Add(rolePlan);
-                if (rolePlan.ChampionPawnIndex < 0) continue;
-                List<int> championed =
-                    priorChampionsByPawn[rolePlan.ChampionPawnIndex]
-                    ?? (priorChampionsByPawn[rolePlan.ChampionPawnIndex] =
-                        new List<int>());
-                championed.Add(role.Id);
-            }
-
-            for (int planIndex = 0; planIndex < rolePlans.Count; planIndex++)
-            {
-                RolePlan rolePlan = rolePlans[planIndex];
-                RoleView role = facts.RoleOf(rolePlan.RoleId);
                 for (int candidateIndex = 0;
                      candidateIndex < rolePlan.CandidateCount;
                      candidateIndex++)
@@ -690,42 +734,43 @@ namespace WorkRoles.Core.Recs
                         rolePlan.MinimumBonusAt(candidateIndex);
                     bool minimumPick =
                         rolePlan.IsMinimumPick(candidateIndex);
+                    // RolePlan already resolved each downgraded pick's path
+                    // activation; publish never re-runs path resolution.
+                    PathActivation activation =
+                        rolePlan.ResolvedActivationAt(candidateIndex);
                     if (surplus
                         && !PathActivation.TargetBandContains(
                             facts, pawnIndex, role))
                     {
-                        PathActivation activation = PathActivation.Find(
-                            facts,
-                            pawnIndex,
-                            role,
-                            formulas);
                         if (activation != null)
                             drafts[pawnIndex].AddActivation(
                                 activation, minimumBonus, minimumPick);
                         continue;
                     }
-                    if (rolePlan.IsTrainingWaiver(candidateIndex))
+                    if (rolePlan.IsTrainingWaiver(candidateIndex)
+                        && activation != null)
                     {
-                        PathActivation activation = PathActivation.Find(
-                            facts,
-                            pawnIndex,
-                            role,
-                            formulas);
-                        if (activation != null)
-                        {
-                            drafts[pawnIndex].AddActivation(
-                                activation, minimumBonus, minimumPick);
-                            continue;
-                        }
+                        drafts[pawnIndex].AddActivation(
+                            activation, minimumBonus, minimumPick);
+                        continue;
                     }
                     drafts[pawnIndex].AddRole(
                         role.Id,
                         minimumBonus: minimumBonus,
                         minimumPick: minimumPick);
                 }
+                if (rolePlan.ChampionPawnIndex < 0) continue;
+                List<int> championed =
+                    priorChampionsByPawn[rolePlan.ChampionPawnIndex]
+                    ?? (priorChampionsByPawn[rolePlan.ChampionPawnIndex] =
+                        new List<int>());
+                championed.Add(role.Id);
             }
 
-            ResolveCoverage(facts, rolePlans, drafts);
+            // Coverage is now resolved during selection (single-pass RolePlan
+            // plus champion selection) and general redundancy is a surplus
+            // eligibility check; ResolveCoverage is retained but inactive.
+            // ResolveCoverage(facts, rolePlans, drafts);
             // Lead diversification is intentionally disabled while its
             // interaction with champion and minimum-pick ordering is evaluated.
             AddLateSpecialRoles(facts, drafts, formulas);
@@ -741,7 +786,8 @@ namespace WorkRoles.Core.Recs
                     positions,
                     formulas,
                     out pathsByPawn[pawnIndex],
-                    out activatedPathCountsByPawn[pawnIndex]);
+                    out activatedPathCountsByPawn[pawnIndex],
+                    ordering);
             }
             RecommendationTargetAssignment[] targetAssignments =
                 BuildTargetAssignments(
@@ -923,7 +969,7 @@ namespace WorkRoles.Core.Recs
             => draft.ContainsRole(role.Id)
             || PawnHasCoverer(facts, draft, pawnIndex, role);
 
-        private static bool PawnHasCoverer(
+        internal static bool PawnHasCoverer(
             EngineContext facts,
             PawnDraft draft,
             int pawnIndex,
@@ -984,6 +1030,88 @@ namespace WorkRoles.Core.Recs
                     return true;
             }
             return false;
+        }
+
+        /// The one role processing order. Selection order is skilled roles
+        /// before skill-less ones, then higher natural priority, then id. Layered
+        /// on top as hard "must precede" constraints: a covering role before what
+        /// it covers, and a higher training-path band before its lower trainees.
+        /// Built as a single constraint-respecting selection because those two
+        /// relations are partial orders; a plain comparator over them would be
+        /// intransitive and List.Sort could throw.
+        private static List<RoleView> OrderRolesForProcessing(
+            EngineContext facts, IReadOnlyList<RoleView> catalog)
+        {
+            int count = catalog.Count;
+            var predecessors = new int[count];
+            var successors = new List<int>[count];
+            for (int i = 0; i < count; i++) successors[i] = new List<int>();
+            IReadOnlyList<PathView> paths = facts.Colony.Paths;
+            for (int i = 0; i < count; i++)
+                for (int j = 0; j < count; j++)
+                    if (i != j
+                        && MustPrecede(facts, paths, catalog[i], catalog[j]))
+                    {
+                        successors[i].Add(j);
+                        predecessors[j]++;
+                    }
+            var ordered = new List<RoleView>(count);
+            var used = new bool[count];
+            for (int placed = 0; placed < count; placed++)
+            {
+                int next = BestAvailable(catalog, used, predecessors, true);
+                // A constraint cycle would strand roles; take the best remaining.
+                if (next < 0)
+                    next = BestAvailable(catalog, used, predecessors, false);
+                used[next] = true;
+                ordered.Add(catalog[next]);
+                for (int k = 0; k < successors[next].Count; k++)
+                    predecessors[successors[next][k]]--;
+            }
+            return ordered;
+        }
+
+        private static int BestAvailable(
+            IReadOnlyList<RoleView> catalog,
+            bool[] used,
+            int[] predecessors,
+            bool requireNoPredecessor)
+        {
+            int best = -1;
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                if (used[i]) continue;
+                if (requireNoPredecessor && predecessors[i] != 0) continue;
+                if (best < 0 || CompareSelection(catalog[i], catalog[best]) < 0)
+                    best = i;
+            }
+            return best;
+        }
+
+        /// Selection order among roles with no remaining unmet constraint:
+        /// skilled before skill-less, then higher natural priority, then id.
+        private static int CompareSelection(RoleView left, RoleView right)
+        {
+            if (left.Unskilled != right.Unskilled)
+                return left.Unskilled ? 1 : -1;
+            int priority = right.NaturalPriority.CompareTo(left.NaturalPriority);
+            if (priority != 0) return priority;
+            return left.Id.CompareTo(right.Id);
+        }
+
+        /// A role must precede another when it covers it (and is not covered by
+        /// it) or occupies a higher band of a shared training path. An unskilled
+        /// role never precedes a skilled one.
+        private static bool MustPrecede(
+            EngineContext facts,
+            IReadOnlyList<PathView> paths,
+            RoleView left,
+            RoleView right)
+        {
+            if (left.Unskilled && !right.Unskilled) return false;
+            if (HigherInSharedPath(paths, left.Id, right.Id)) return true;
+            return facts.Redundant(left.Id, right.Id)
+                && !facts.Redundant(right.Id, left.Id);
         }
     }
 }

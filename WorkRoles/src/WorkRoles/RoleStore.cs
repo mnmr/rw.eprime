@@ -585,7 +585,45 @@ namespace WorkRoles
                     set.assignments?.RemoveAll(a => RoleById(a.roleId) == null);
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
                 lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
+                MigrateRoleTuning();
                 CompiledJobOrders.InvalidateAll();
+            }
+        }
+
+        /// Fills tuning on roles that predate it (old saves at load, pre-tuning
+        /// role files after import): template defs supply their authored
+        /// tuning; def-less roles derive skills from the same catalog
+        /// projection recommendations use. Deterministic (runs identically on
+        /// every client), persisted on next save.
+        internal void MigrateRoleTuning()
+        {
+            if (roles.All(role => role.tuningSeeded)) return;
+            Dictionary<int, WorkRoles.Core.Recs.RoleView> viewById = null;
+            foreach (Role role in roles)
+            {
+                if (role.tuningSeeded) continue;
+                role.tuningSeeded = true;
+                RoleDef def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def?.tuning != null)
+                {
+                    role.category = def.tuning.category;
+                    role.time = def.tuning.time;
+                    role.championPenalty = def.tuning.championPenalty;
+                    role.requiredSkills = new List<string>(def.tuning.skills.required);
+                    role.optionalSkills = new List<string>(def.tuning.skills.optional);
+                    continue;
+                }
+                if (viewById == null)
+                    viewById = RecsAdapter.RoleViewsOf(this)
+                        .ToDictionary(view => view.Id);
+                if (!viewById.TryGetValue(role.id, out var view)) continue;
+                role.requiredSkills = view.Skills
+                    .Where(skill => skill.Required)
+                    .Select(skill => skill.SkillDefName).ToList();
+                role.optionalSkills = view.Skills
+                    .Where(skill => !skill.Required)
+                    .Select(skill => skill.SkillDefName).ToList();
             }
         }
     }

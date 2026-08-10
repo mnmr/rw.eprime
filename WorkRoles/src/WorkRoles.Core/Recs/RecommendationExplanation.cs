@@ -3,29 +3,14 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
-    public enum RecommendationDecision
+    /// Selects the per-pawn role display-ordering implementation. Current is the
+    /// production ordering (keys + score + path anchors). Experimental is the
+    /// redesigned path, wired in parallel for comparison and never used by
+    /// production until it replaces Current.
+    public enum RoleOrderingStrategy
     {
-        Recommended,
-        AutoAssigned,
-        SignalQualified,
-        CoverageDrafted,
-        Training,
-        Hunter,
-        FireSafety,
-        Retained,
-        ProtectedAssignment,
-        ScaleNever,
-        ControlledByTrainingTarget,
-        RoleDisabled,
-        RoleUnavailable,
-        RoleExcluded,
-        PawnIncapable,
-        HunterRequirementsNotMet,
-        AwfulSignal,
-        CoveredByRecommendedRole,
-        RequiredCoverageFilled,
-        SignalBelowThreshold,
-        NotSelected,
+        Current,
+        Experimental,
     }
 
     public enum RecommendationSelectionStage
@@ -33,9 +18,38 @@ namespace WorkRoles.Core.Recs
         None,
         Required,
         TrainingWaiver,
-        DirectFallback,
         CoverageRepair,
         Surplus,
+        Special,
+    }
+
+    /// Why a role was assigned outside the scored single pass (stage Special).
+    public enum SpecialPickReason
+    {
+        None,
+        AutoAssigned,
+        Hunter,
+        FireSafety,
+        Retained,
+        Protected,
+    }
+
+    /// Why a role a pawn holds was not recommended. Pick-outcome reasons are
+    /// stamped by the single pass; the path-controlled reasons are derived from
+    /// role and path structure.
+    public enum PickRejectReason
+    {
+        None,
+        Incapable,
+        HunterRequirementsNotMet,
+        AwfulSignal,
+        WeakSignal,
+        OutOfBand,
+        Covered,
+        RequiredCoverageFilled,
+        Outqualified,
+        ControlledByTarget,
+        ScaleNever,
     }
 
     public sealed class RecommendationTrainingSkill
@@ -61,7 +75,8 @@ namespace WorkRoles.Core.Recs
     {
         public int RoleId;
         public bool Recommended;
-        public RecommendationDecision Decision;
+        public SpecialPickReason SpecialPickReason;
+        public PickRejectReason RejectReason;
         public int RelatedRoleId = -1;
         public int RequiredTotal;
         public int TrainingWaivers;

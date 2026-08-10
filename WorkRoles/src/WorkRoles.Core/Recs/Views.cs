@@ -57,10 +57,18 @@ namespace WorkRoles.Core.Recs
         /// order slot. When unlisted, Ordering provides a conservative tail
         /// fallback ahead of trailing unskilled work.
         public bool PreserveRecommendationOrder;
-        /// Repeat championships following this role use the configured
-        /// occasional-work penalty instead of the full-time overlap/distinct
-        /// tiers.
-        public bool UsesOccasionalRepeatChampionPenalty;
+        /// False routes repeat championships after this role through the
+        /// occasional-work penalty instead of the full overlap/distinct tiers.
+        public bool ChampionPenalty = true;
+        /// How important holding the role is for a colony; None = unclassified.
+        public RoleCategory Category;
+        /// How time-consuming the role's work is; None = unclassified.
+        public RoleTime Time;
+        /// Authored skill classification (def tuning or per-save role data).
+        /// Carried for future gating and validation; rules still consume the
+        /// derived Skills profile today. Null = no authored data.
+        public List<string> DeclaredRequiredSkills;
+        public List<string> DeclaredOptionalSkills;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
         /// Banded holder demand; null for Never.

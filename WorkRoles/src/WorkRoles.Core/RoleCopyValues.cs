@@ -19,6 +19,11 @@ namespace WorkRoles.Core
         public bool AutoAssign { get; set; }
         public bool Blocker { get; set; }
         public string HolderScaleName { get; set; } = "Never";
+        public RoleCategory Category { get; set; }
+        public RoleTime Time { get; set; }
+        public bool ChampionPenalty { get; set; } = true;
+        public List<string> RequiredSkills { get; set; } = new List<string>();
+        public List<string> OptionalSkills { get; set; } = new List<string>();
         public int GroupId { get; set; }
         public int ActiveHours { get; set; }
         public List<string> LocationTokens { get; set; } = new List<string>();
@@ -49,6 +54,11 @@ namespace WorkRoles.Core
                 AutoAssign = false,
                 Blocker = Blocker,
                 HolderScaleName = HolderScaleName,
+                Category = Category,
+                Time = Time,
+                ChampionPenalty = ChampionPenalty,
+                RequiredSkills = new List<string>(RequiredSkills),
+                OptionalSkills = new List<string>(OptionalSkills),
                 GroupId = GroupId,
                 ActiveHours = ActiveHours,
                 LocationTokens = new List<string>(LocationTokens),

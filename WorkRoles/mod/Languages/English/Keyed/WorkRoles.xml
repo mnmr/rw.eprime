@@ -367,6 +367,8 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecDecisionCoverageFilled>Required coverage was filled by higher-ranked candidates.</WR_RecDecisionCoverageFilled>
   <WR_RecDecisionWeakSignal>The signal verdict is below the configured threshold and required coverage did not select this pawn.</WR_RecDecisionWeakSignal>
   <WR_RecDecisionNotSelected>This pawn was not selected by any recommendation rule.</WR_RecDecisionNotSelected>
+  <WR_RecDecisionOutOfBand>This pawn's skill places it in a different band of the training path.</WR_RecDecisionOutOfBand>
+  <WR_RecDecisionOutqualified>Other, more qualified candidates were picked for the available slots.</WR_RecDecisionOutqualified>
   <WR_RecDecisionRecommended>Selected by the recommendation engine.</WR_RecDecisionRecommended>
   <WR_MakeItSo>Make It So</WR_MakeItSo>
 

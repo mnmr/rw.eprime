@@ -63,8 +63,7 @@ public static class SampleColony
                 HasRules = role.HasRules,
                 Blocker = role.Blocker,
                 PreserveRecommendationOrder = role.PreserveRecommendationOrder,
-                UsesOccasionalRepeatChampionPenalty =
-                    role.UsesOccasionalRepeatChampionPenalty,
+                ChampionPenalty = !role.UsesOccasionalRepeatChampionPenalty,
                 Scale = strategy?.Scale,
                 Mode = strategy?.Mode ?? ScaleMode.Never,
                 Available = true,

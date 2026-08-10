@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using RimWorld;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -7,6 +8,25 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
+    /// Recommendation tuning: skill classification, importance, time profile,
+    /// holder scale and champion-penalty policy.
+    public class RoleTuning
+    {
+        public RoleTuningSkills skills;
+        public RoleCategory category;
+        public RoleTime time;
+        /// Holder scale name (invariant name derived from a ScaleDef); empty = Never.
+        public string scale;
+        /// False = repeat championships use the occasional-work penalty.
+        public bool championPenalty = true;
+    }
+
+    public class RoleTuningSkills
+    {
+        public List<string> required = new List<string>();
+        public List<string> optional = new List<string>();
+    }
+
     public class RoleDef : Def
     {
         /// Optional invariant persisted name when it intentionally differs from
@@ -22,9 +42,14 @@ namespace WorkRoles
         public bool hasCustomColor;
         public string iconPath;
 
-        /// Holder scale name (the invariant name derived from a ScaleDef)
-        /// driving banded recommendation demand. Empty means Never.
+        /// Recommendation tuning block. Always non-null after PostLoad; defs
+        /// without one get theirs built from the legacy fields below.
+        public RoleTuning tuning;
+
+        /// Legacy pre-tuning elements, consumed by PostLoad only when no
+        /// tuning block is present (third-party defs on the old schema).
         public string holderScale;
+        public bool usesOccasionalRepeatChampionPenalty;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
@@ -32,8 +57,21 @@ namespace WorkRoles
         /// Recommendation-only template policy. These values are read through
         /// templateDefName and are not persisted into saves.
         public bool preserveRecommendationOrder;
-        public bool usesOccasionalRepeatChampionPenalty;
         public RecommendationSpecialRoleKind recommendationSpecialRole;
+
+        public override void PostLoad()
+        {
+            base.PostLoad();
+            if (tuning == null)
+            {
+                tuning = new RoleTuning();
+                if (!holderScale.NullOrEmpty()) tuning.scale = holderScale.Trim();
+                if (usesOccasionalRepeatChampionPenalty) tuning.championPenalty = false;
+            }
+            tuning.skills ??= new RoleTuningSkills();
+            tuning.skills.required ??= new List<string>();
+            tuning.skills.optional ??= new List<string>();
+        }
 
         /// Role-list group name (resolved to a RoleGroupDef invariant name); empty = Default.
         public string group;
@@ -64,6 +102,11 @@ namespace WorkRoles
                 defName, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 SeededDefIdentity.GroupIdentity(this), activeHours, string.Join("|", locations),
                 SeededDefIdentity.ScaleIdentity(this),
+                ((int)(tuning?.category ?? RoleCategory.None)).ToString(),
+                ((int)(tuning?.time ?? RoleTime.None)).ToString(),
+                tuning?.championPenalty == false ? "0" : "1",
+                string.Join("|", tuning?.skills?.required ?? new List<string>()),
+                string.Join("|", tuning?.skills?.optional ?? new List<string>()),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -87,12 +130,17 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
-            if (!holderScale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
-                    .Any(d => string.Equals(SeededDefIdentity.ScaleName(d), holderScale,
+            string scale = tuning?.scale;
+            if (!scale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
+                    .Any(d => string.Equals(SeededDefIdentity.ScaleName(d), scale,
                             System.StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(d.label, holderScale,
+                        || string.Equals(d.label, scale,
                             System.StringComparison.OrdinalIgnoreCase)))
-                yield return $"holderScale '{holderScale}' matches no ScaleDef label";
+                yield return $"tuning scale '{scale}' matches no ScaleDef label";
+            foreach (var skill in (tuning?.skills?.required ?? new List<string>())
+                     .Concat(tuning?.skills?.optional ?? new List<string>()))
+                if (DefDatabase<SkillDef>.GetNamedSilentFail(skill) == null)
+                    yield return $"tuning skill '{skill}' matches no SkillDef";
         }
     }
 }

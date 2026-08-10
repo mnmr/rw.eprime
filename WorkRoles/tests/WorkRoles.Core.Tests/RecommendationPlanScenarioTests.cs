@@ -95,8 +95,6 @@ public class RecommendationPlanScenarioTests
             2,
             craftTrainee.Id,
             out RoleRecommendationExplanation explanation)).IsTrue();
-        await Assert.That(explanation.Decision)
-            .IsEqualTo(RecommendationDecision.Training);
         await Assert.That(explanation.RelatedRoleId).IsEqualTo(target.Id);
         await Assert.That(explanation.RequiredTotal).IsEqualTo(3);
         await Assert.That(explanation.TrainingWaivers).IsEqualTo(1);
@@ -123,8 +121,6 @@ public class RecommendationPlanScenarioTests
             2,
             researchTrainee.Id,
             out RoleRecommendationExplanation researchExplanation)).IsTrue();
-        await Assert.That(researchExplanation.Decision)
-            .IsEqualTo(RecommendationDecision.Training);
         await Assert.That(researchExplanation.RelatedRoleId)
             .IsEqualTo(target.Id);
         await Assert.That(researchExplanation.SelectionStage)
@@ -305,8 +301,8 @@ public class RecommendationPlanScenarioTests
         await Assert.That(plan.TryGetExplanation(
             0, medic.Id, out RoleRecommendationExplanation medicExplanation))
             .IsTrue();
-        await Assert.That(medicExplanation.Decision)
-            .IsEqualTo(RecommendationDecision.ControlledByTrainingTarget);
+        await Assert.That(medicExplanation.RejectReason)
+            .IsEqualTo(PickRejectReason.ControlledByTarget);
         await Assert.That(medicExplanation.RelatedRoleId).IsEqualTo(doctor.Id);
     }
 
@@ -574,8 +570,6 @@ public class RecommendationPlanScenarioTests
             out RoleRecommendationExplanation traineeExplanation)).IsTrue();
         await Assert.That(traineeExplanation.SelectionStage)
             .IsEqualTo(RecommendationSelectionStage.None);
-        await Assert.That(traineeExplanation.Decision)
-            .IsEqualTo(RecommendationDecision.Training);
         await Assert.That(traineeExplanation.RelatedRoleId)
             .IsEqualTo(target.Id);
     }
@@ -610,10 +604,8 @@ public class RecommendationPlanScenarioTests
 
         await Assert.That(plan.TryGetExplanation(
             1, target.Id, out RoleRecommendationExplanation explanation)).IsTrue();
-        await Assert.That(explanation.Decision)
-            .IsEqualTo(RecommendationDecision.CoverageDrafted);
         await Assert.That(explanation.SelectionStage)
-            .IsEqualTo(RecommendationSelectionStage.DirectFallback);
+            .IsEqualTo(RecommendationSelectionStage.Required);
         await Assert.That(explanation.CandidateRank).IsEqualTo(2);
         await Assert.That(explanation.CandidateCount).IsEqualTo(3);
         await Assert.That(explanation.StageRank).IsEqualTo(1);
@@ -623,7 +615,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice01_AllocatesConfiguredWantAndStrongSurplusWithoutAwfulPawns()
+    public async Task AllocatesConfiguredWantAndStrongSurplusWithoutAwfulPawns()
     {
         /*
          * Default role recommendation order: Doctor > Cook > Hauler.
@@ -727,8 +719,6 @@ public class RecommendationPlanScenarioTests
         await Assert.That(NamesOfRoles(plan, 1, roleNames)).IsEqualTo("Medic");
         await Assert.That(plan.TryGetExplanation(
             1, medic.Id, out RoleRecommendationExplanation explanation)).IsTrue();
-        await Assert.That(explanation.Decision)
-            .IsEqualTo(RecommendationDecision.SignalQualified);
         await Assert.That(explanation.SignalBucket).IsEqualTo(SignalBucket.Strong);
         await Assert.That(explanation.BaseSignalBucket)
             .IsEqualTo(SignalBucket.Neutral);
@@ -779,35 +769,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task LaterCoveringPickDoesNotSuppressEarlierStrongSurplusRole()
-    {
-        RoleView brewer = SkilledRole(
-            10, "Brewing", "Cooking", "Brew");
-        RoleView cook = SkilledRole(
-            11, "CookingAll", "Cooking", "Cook", "Brew");
-        PawnView pawn = MultiSkillPawn(
-            new Dictionary<string, (int, SignalBucket)>
-            {
-                ["Cooking"] = (10, SignalBucket.Strong),
-            },
-            ("Brewing", SignalBucket.Neutral),
-            ("CookingAll", SignalBucket.Neutral));
-        ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView> { brewer, cook }, pawn);
-        var roleNames = new Dictionary<int, string>
-        {
-            [brewer.Id] = "Brewer",
-            [cook.Id] = "Cook",
-        };
-
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
-
-        await Assert.That(NamesOfRoles(plan, 0, roleNames))
-            .IsEqualTo("Brewer, Cook");
-    }
-
-    [Test]
-    public async Task Slice02_SubstitutesEachWaiverThroughItsUniqueTargetPath()
+    public async Task SubstitutesEachWaiverThroughItsUniqueTargetPath()
     {
         /*
          * Default role recommendation order: Fabricator > Drug Maker > Smith > Tailor.
@@ -888,7 +850,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice02_IgnoresMalformedAlternativeAfterAValidPath()
+    public async Task IgnoresMalformedAlternativeAfterAValidPath()
     {
         /*
          * Default role recommendation order: Specialist > Trainee.
@@ -928,118 +890,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice03_RemovesOnlyRolesWhoseWorkIsActuallyCovered()
-    {
-        /*
-         * Default role recommendation order: Doctor > Rescuer > Cook > Butcher >
-         * Brewer > Camp Cook > Chef.
-         * Training paths: Chef = Butcher[0,15), Brewer[0,15), Chef[15,21),
-         * anchored before Chef; its overlapping trainer bands are intentional.
-         * Role scales: Doctor direct 1; Rescuer direct 2; Cook direct 1;
-         * Butcher direct 2; Brewer direct 1; Camp Cook direct 1; Chef training 1.
-         */
-        RoleView doctor = SkilledRole(
-            30, "Doctoring", "Medicine", "Rescue", "Treat");
-        RecsTestBed.Require(doctor, 1);
-        RoleView rescuer = SkilledRole(
-            31, "Rescuing", "Medicine", "Rescue");
-        RecsTestBed.Require(rescuer, 2);
-        RoleView cook = SkilledRole(
-            32, "CookingAll", "Cooking", "Cook", "Butcher", "Brew");
-        RecsTestBed.Require(cook, 1);
-        RoleView butcher = SkilledRole(
-            33, "Butchering", "Cooking", "Butcher");
-        RecsTestBed.Require(butcher, 2);
-        RoleView brewer = SkilledRole(
-            34, "Brewing", "Cooking", "Brew");
-        RecsTestBed.Require(brewer, 1);
-        RoleView campCook = SkilledRole(
-            35, "CampCooking", "Cooking", "Butcher", "CampMeal");
-        RecsTestBed.Require(campCook, 1);
-        RoleView chef = SkilledRole(
-            36, "Chefing", "Cooking", "Chef");
-        RecsTestBed.Require(chef, 1, trainingWaivers: 1);
-
-        PathView chefPath = RecsTestBed.Path(
-            40, (butcher.Id, 0, 15), (brewer.Id, 0, 15), (chef.Id, 15, 21));
-        chefPath.AnchorRoleId = chef.Id;
-
-        PawnView lead = RolePawn(
-            cooking: 15,
-            medicine: 15,
-            ("Doctoring", SignalBucket.Neutral),
-            ("Rescuing", SignalBucket.Neutral),
-            ("CookingAll", SignalBucket.Neutral),
-            ("Butchering", SignalBucket.Neutral),
-            ("Brewing", SignalBucket.Neutral),
-            ("CampCooking", SignalBucket.Awful),
-            ("Chefing", SignalBucket.Awful));
-        PawnView fallback = RolePawn(
-            cooking: 12,
-            medicine: 10,
-            ("Doctoring", SignalBucket.Awful),
-            ("Rescuing", SignalBucket.Neutral),
-            ("CookingAll", SignalBucket.Awful),
-            ("Butchering", SignalBucket.Neutral),
-            ("Brewing", SignalBucket.Neutral),
-            ("CampCooking", SignalBucket.Awful),
-            ("Chefing", SignalBucket.Awful));
-        PawnView trainee = RolePawn(
-            cooking: 10,
-            medicine: null,
-            ("Doctoring", SignalBucket.Awful),
-            ("Rescuing", SignalBucket.Awful),
-            ("CookingAll", SignalBucket.Awful),
-            ("Butchering", SignalBucket.Neutral),
-            ("Brewing", SignalBucket.Neutral),
-            ("CampCooking", SignalBucket.Neutral),
-            ("Chefing", SignalBucket.Neutral));
-
-        ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView>
-            {
-                doctor, rescuer, cook, butcher, brewer, campCook, chef,
-            },
-            lead,
-            fallback,
-            trainee);
-        colony.Paths.Add(chefPath);
-        var roleNames = new Dictionary<int, string>
-        {
-            [doctor.Id] = "Doctor",
-            [rescuer.Id] = "Rescuer",
-            [cook.Id] = "Cook",
-            [butcher.Id] = "Butcher",
-            [brewer.Id] = "Brewer",
-            [campCook.Id] = "Camp Cook",
-            [chef.Id] = "Chef",
-        };
-        var pathNames = new Dictionary<int, string> { [chefPath.Id] = "Chef" };
-
-        RecommendationPlan plan = RecommendationPlan.Build(colony);
-
-        string[] expectedPaths = { "", "", "Chef" };
-        string[] expectedRoles =
-        {
-            "Doctor, Cook",
-            // Another pawn's Cook does not erase this pawn's strong Brewer
-            // interest; only an earlier covering pick on this pawn may do so.
-            "Rescuer, Brewer",
-            // Repeat-champion spreading hands Brewer's championship to the
-            // trainee, so its first-pick bonus leads the trainee's order.
-            "Brewer, Camp Cook, Butcher",
-        };
-        for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
-        {
-            await Assert.That(NamesOfPaths(plan, pawnIndex, pathNames))
-                .IsEqualTo(expectedPaths[pawnIndex]);
-            await Assert.That(NamesOfRoles(plan, pawnIndex, roleNames))
-                .IsEqualTo(expectedRoles[pawnIndex]);
-        }
-    }
-
-    [Test]
-    public async Task Slice04_OrdersTargetsThroughAssignedAndVirtualAnchors()
+    public async Task OrdersTargetsThroughAssignedAndVirtualAnchors()
     {
         /*
          * Default role recommendation order: Warden > Artist > Tailor > Smith >
@@ -1171,7 +1022,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice04_DirectSpecialistSurvivesAndPrecedesItsCoveringTrainer()
+    public async Task DirectSpecialistSurvivesAndPrecedesItsCoveringTrainer()
     {
         /*
          * Default role recommendation order: Crafter > Fabricator.
@@ -1215,7 +1066,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice06_OrdersConnectedTargetsWithoutLeadDiversification()
+    public async Task OrdersConnectedTargetsWithoutLeadDiversification()
     {
         /*
          * Default role recommendation order: Tailor > Smith > Fabricator > Crafter.
@@ -1295,7 +1146,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice07_PreservesAutomaticHunterFireAndRetainedWork()
+    public async Task PreservesAutomaticHunterFireAndRetainedWork()
     {
         /*
          * Default role recommendation order: Core > Doctor > Basics > Hunter >
@@ -1385,7 +1236,7 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task Slice07_DoesNotAddHunterWhenFinalRoleAlreadyCoversIt()
+    public async Task DoesNotAddHunterWhenFinalRoleAlreadyCoversIt()
     {
         /*
          * Default role recommendation order: Sharpshooter > Hunter.

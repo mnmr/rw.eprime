@@ -174,6 +174,45 @@ namespace WorkRoles.Core.Recs
             return best;
         }
 
+        /// True when the pawn sits in a higher band than this role on a shared
+        /// path and is not in this role's own band: the path places the pawn at
+        /// the higher role, so it should not also hold this lower trainee role.
+        /// Overlapping bands (pawn in both) keep the role; a below-band pawn is
+        /// left eligible so a forced or downgraded target still resolves.
+        internal static bool BelongsToHigherBand(
+            EngineContext facts,
+            int pawnIndex,
+            RoleView role)
+        {
+            IReadOnlyList<PathView> paths = facts.Colony.Paths;
+            bool higher = false;
+            for (int pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+            {
+                PathView path = paths[pathIndex];
+                int count = path.RoleIds.Count;
+                if (count == 0
+                    || path.BandMins.Count != count
+                    || path.BandMaxes.Count != count)
+                    continue;
+                int entry = path.RoleIds.IndexOf(role.Id);
+                if (entry < 0) continue;
+                if (facts.InsideBand(pawnIndex, role, path, entry))
+                    return false;
+                int ownMin = path.BandMins[entry];
+                for (int higherEntry = 0; higherEntry < count; higherEntry++)
+                {
+                    if (path.BandMins[higherEntry] <= ownMin) continue;
+                    RoleView higherRole =
+                        facts.RoleOf(path.RoleIds[higherEntry]);
+                    if (higherRole != null
+                        && facts.InsideBand(
+                            pawnIndex, higherRole, path, higherEntry))
+                        higher = true;
+                }
+            }
+            return higher;
+        }
+
         internal static bool TargetBandContains(
             EngineContext facts,
             int pawnIndex,

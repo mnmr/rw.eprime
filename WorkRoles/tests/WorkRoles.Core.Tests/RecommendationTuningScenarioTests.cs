@@ -78,13 +78,13 @@ public class RecommendationTuningScenarioTests
         await Assert.That(defaults.TryGetExplanation(
             0, crafter.Id, out RoleRecommendationExplanation selected)).IsTrue();
         await Assert.That(selected.Recommended).IsTrue();
-        await Assert.That(selected.Decision)
-            .IsEqualTo(RecommendationDecision.CoverageDrafted);
+        await Assert.That(selected.SelectionStage)
+            .IsEqualTo(RecommendationSelectionStage.Required);
         await Assert.That(defaults.TryGetExplanation(
             1, crafter.Id, out RoleRecommendationExplanation removed)).IsTrue();
         await Assert.That(removed.Recommended).IsFalse();
-        await Assert.That(removed.Decision)
-            .IsEqualTo(RecommendationDecision.RequiredCoverageFilled);
+        await Assert.That(removed.RejectReason)
+            .IsEqualTo(PickRejectReason.RequiredCoverageFilled);
     }
 
     [Test]
@@ -258,8 +258,6 @@ public class RecommendationTuningScenarioTests
         await Assert.That(RoleIds(higherSkillCountThreshold, 0)).IsEqualTo("");
         await Assert.That(defaults.TryGetExplanation(
             0, trainee.Id, out RoleRecommendationExplanation training)).IsTrue();
-        await Assert.That(training.Decision)
-            .IsEqualTo(RecommendationDecision.Training);
         await Assert.That(training.RelatedRoleId).IsEqualTo(target.Id);
         await Assert.That(training.SelectionStage)
             .IsEqualTo(RecommendationSelectionStage.Surplus);
@@ -320,8 +318,6 @@ public class RecommendationTuningScenarioTests
             0,
             role.Id,
             out RoleRecommendationExplanation explanation)).IsTrue();
-        await Assert.That(explanation.Decision)
-            .IsEqualTo(RecommendationDecision.CoverageDrafted);
         await Assert.That(explanation.SelectionStage)
             .IsEqualTo(RecommendationSelectionStage.Required);
         await Assert.That(explanation.CandidateRank).IsEqualTo(1);
@@ -356,8 +352,8 @@ public class RecommendationTuningScenarioTests
             0,
             role.Id,
             out RoleRecommendationExplanation explanation)).IsTrue();
-        await Assert.That(explanation.Decision)
-            .IsEqualTo(RecommendationDecision.SignalBelowThreshold);
+        await Assert.That(explanation.RejectReason)
+            .IsEqualTo(PickRejectReason.WeakSignal);
     }
 
     [Test]
@@ -397,8 +393,8 @@ public class RecommendationTuningScenarioTests
             1,
             role.Id,
             out RoleRecommendationExplanation removed)).IsTrue();
-        await Assert.That(removed.Decision)
-            .IsEqualTo(RecommendationDecision.RequiredCoverageFilled);
+        await Assert.That(removed.RejectReason)
+            .IsEqualTo(PickRejectReason.RequiredCoverageFilled);
         await Assert.That(RoleIds(skillMultiplier, 0)).IsEqualTo("");
         await Assert.That(RoleIds(skillMultiplier, 1)).IsEqualTo("1");
     }

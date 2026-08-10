@@ -1,6 +1,6 @@
 ﻿# Changelog
 
-## 1.3.6 — 2026-08-08
+## 1.4.0 — 2026-08-11
 
 - Changed: Recommendations fine-tuning. Surplus candidates are no longer filtered, so colonists may get extra role recommendations.
 - Changed: Improved tooltip explanations on recommended role chips.

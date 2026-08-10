@@ -27,7 +27,8 @@ namespace WorkRoles
             label = label?.Trim();
             if (Store == null || !CatalogNameRules.IsAvailable(
                     label, Store.roles, role => role.label)) return;
-            Store.roles.Add(new Role { id = Store.NextId(), label = label });
+            // A blank role has no entries yet, so empty derived skills are correct.
+            Store.roles.Add(new Role { id = Store.NextId(), label = label, tuningSeeded = true });
             Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
@@ -53,7 +54,13 @@ namespace WorkRoles
                 hasCustomColor = hasColor,
                 color = color,
                 iconPath = def.iconPath,
-                entries = def.ParsedEntries()
+                entries = def.ParsedEntries(),
+                category = def.tuning.category,
+                time = def.tuning.time,
+                championPenalty = def.tuning.championPenalty,
+                requiredSkills = new List<string>(def.tuning.skills.required),
+                optionalSkills = new List<string>(def.tuning.skills.optional),
+                tuningSeeded = true,
             };
             string scaleName = SeededDefIdentity.ScaleName(def);
             role.holderScaleName = scaleName.NullOrEmpty()
@@ -712,6 +719,11 @@ namespace WorkRoles
                 AutoAssign = source.autoAssign,
                 Blocker = source.blocker,
                 HolderScaleName = source.holderScaleName,
+                Category = source.category,
+                Time = source.time,
+                ChampionPenalty = source.championPenalty,
+                RequiredSkills = source.requiredSkills,
+                OptionalSkills = source.optionalSkills,
                 GroupId = source.groupId,
                 ActiveHours = source.activeHours,
                 LocationTokens = source.locationTokens,
@@ -733,6 +745,12 @@ namespace WorkRoles
                 autoAssign = values.AutoAssign,
                 blocker = values.Blocker,
                 holderScaleName = values.HolderScaleName,
+                category = values.Category,
+                time = values.Time,
+                championPenalty = values.ChampionPenalty,
+                requiredSkills = values.RequiredSkills,
+                optionalSkills = values.OptionalSkills,
+                tuningSeeded = true,
                 groupId = values.GroupId,
                 activeHours = values.ActiveHours,
                 locationTokens = values.LocationTokens,

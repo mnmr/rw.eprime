@@ -17,8 +17,7 @@ public class SampleColonyRecommendationTests
         string current = string.Join(", ",
             noin.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
         await Assert.That(current).IsEqualTo(
-            "Core, Basics, Cleaner, Hauler, Farmer Away, Butcher, Brewer, "
-            + "Miner, Artist, Grunt, Hunter, Gene Maker");
+            "Core, Basics, Cleaner, Hauler, Farmer Away, Butcher, Brewer, Miner, Artist, Grunt, Hunter, Gene Maker");
 
         RecommendationPlan plan = RecommendationPlan.Build(
             SampleColony.BuildColonyView());
@@ -31,8 +30,7 @@ public class SampleColonyRecommendationTests
             recommended.Add(plan.RoleAt(pawnIndex, i));
         await Assert.That(string.Join(", ",
                 recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Farmer Away, Miner, Artist, Butcher, "
-                + "Brewer, Grunt, Hunter");
+            .IsEqualTo("Core, Basics, Farmer Away, Miner, Artist, Butcher, Brewer, Grunt, Hunter");
 
         string removed = string.Join(", ", noin.Assignments
             .Where(a => !recommended.Contains(a.RoleId))
@@ -97,5 +95,95 @@ public class SampleColonyRecommendationTests
             .IsEqualTo("Core, Medic, Basics, Builder, Farmer Away, Hunter, "
                 + "Herder, Miner Away, Farmer, Miner, Fisher, Grunt, "
                 + "Researcher, Childcare");
+    }
+
+    /// Pheanox (Fey "Pheanox" Nickel): crafting/intellectual specialist via
+    /// xenogerm aptitudes (Crafting 13, Intellectual 15), burning Animals.
+    [Test]
+    public async Task PheanoxKeepsCraftingTrackAndDropsPainterAndGeneMaker()
+    {
+        SamplePawn pheanox = SampleColony.Pawn("Pheanox");
+        string current = string.Join(", ",
+            pheanox.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
+        await Assert.That(current).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Tailor, Smith, Hunter, Herder, Plant Cutter, Painter, Crafter, Fisher, Grunt, Researcher, Gene Maker");
+
+        RecommendationPlan plan = RecommendationPlan.Build(
+            SampleColony.BuildColonyView());
+        int pawnIndex = -1;
+        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
+            if (SampleColony.CurrentMapPawns[i] == pheanox) pawnIndex = i;
+
+        var recommended = new List<int>();
+        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
+            recommended.Add(plan.RoleAt(pawnIndex, i));
+        await Assert.That(string.Join(", ",
+                recommended.Select(SampleColony.RoleLabel)))
+            .IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Hunter, Smith, Tailor, Crafter, Herder, Plant Cutter, Fisher, Grunt, Researcher");
+    }
+
+    [Test]
+    public async Task QuinnRecommendations()
+    {
+        SamplePawn quinn = SampleColony.Pawn("Quinn");
+        string current = string.Join(", ",
+            quinn.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
+        await Assert.That(current).IsEqualTo("Core, Basics, Farmer Away, Fabricator, Tailor, Smith, Childcare, Warden, Hunter, Crafter, Grunt, Gene Maker");
+
+        RecommendationPlan plan = RecommendationPlan.Build(
+            SampleColony.BuildColonyView());
+        int pawnIndex = -1;
+        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
+            if (SampleColony.CurrentMapPawns[i] == quinn) pawnIndex = i;
+
+        var recommended = new List<int>();
+        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
+            recommended.Add(plan.RoleAt(pawnIndex, i));
+        await Assert.That(string.Join(", ",
+                recommended.Select(SampleColony.RoleLabel)))
+            .IsEqualTo("Core, Basics, Farmer Away, Fabricator, Childcare, Warden, Smith, Tailor, Hunter, Crafter, Grunt");
+    }
+
+    [Test]
+    public async Task KoenRecommendations()
+    {
+        SamplePawn koen = SampleColony.Pawn("Koen");
+        string current = string.Join(", ",
+            koen.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
+        await Assert.That(current).IsEqualTo("Core, Medic, Basics, Handler, Crafter, Fabricator, Tailor, Smith, Hunter, Farmer, Miner, Fisher, Hauler, Cleaner, Gene Maker");
+
+        RecommendationPlan plan = RecommendationPlan.Build(
+            SampleColony.BuildColonyView());
+        int pawnIndex = -1;
+        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
+            if (SampleColony.CurrentMapPawns[i] == koen) pawnIndex = i;
+
+        var recommended = new List<int>();
+        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
+            recommended.Add(plan.RoleAt(pawnIndex, i));
+        await Assert.That(string.Join(", ",
+                recommended.Select(SampleColony.RoleLabel)))
+            .IsEqualTo("Core, Basics, Handler, Drug Maker, Fabricator, Farmer, Smith, Tailor, Hunter, Crafter, Fisher, Grunt, Researcher");
+    }
+
+    [Test]
+    public async Task MorgRecommendations()
+    {
+        SamplePawn morg = SampleColony.Pawn("Morg");
+        string current = string.Join(", ",
+            morg.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
+        await Assert.That(current).IsEqualTo("Core, Basics, Miner, Handyman, Grunt");
+
+        RecommendationPlan plan = RecommendationPlan.Build(
+            SampleColony.BuildColonyView());
+        int pawnIndex = -1;
+        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
+            if (SampleColony.CurrentMapPawns[i] == morg) pawnIndex = i;
+
+        var recommended = new List<int>();
+        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
+            recommended.Add(plan.RoleAt(pawnIndex, i));
+        await Assert.That(string.Join(", ",
+                recommended.Select(SampleColony.RoleLabel)))
+            .IsEqualTo("Core, Basics, Hunter, Miner, Builder, Grunt");
     }
 }

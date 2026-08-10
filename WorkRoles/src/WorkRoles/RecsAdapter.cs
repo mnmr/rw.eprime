@@ -77,6 +77,13 @@ namespace WorkRoles
         internal static List<RoleView> RoleViewsOf(IReadOnlyList<Role> roles)
             => BuildRoleCatalog(roles).Roles.ToList();
 
+        /// Views with the store's training paths applied, so path-target skill
+        /// promotions land exactly as they do in the live recommendation run.
+        internal static List<RoleView> RoleViewsOf(RoleStore store)
+            => BuildRoleCatalog(store.roles,
+                store.trainingPaths.Select(PathViewOf).ToList(), store)
+                .Roles.ToList();
+
         private static RecommendationCatalogProjection BuildRoleCatalog(
             IReadOnlyList<Role> roles,
             IReadOnlyList<PathView> paths = null,
@@ -101,8 +108,15 @@ namespace WorkRoles
                     Blocker = role.blocker,
                     PreserveRecommendationOrder =
                         template?.preserveRecommendationOrder == true,
-                    UsesOccasionalRepeatChampionPenalty = template?
-                        .usesOccasionalRepeatChampionPenalty == true,
+                    // Tuning lives on the role (seeded from the def, migrated
+                    // on load); unmigrated roles fall back to defaults.
+                    ChampionPenalty = role.championPenalty,
+                    Category = role.category,
+                    Time = role.time,
+                    DeclaredRequiredSkills = role.tuningSeeded
+                        ? role.requiredSkills : null,
+                    DeclaredOptionalSkills = role.tuningSeeded
+                        ? role.optionalSkills : null,
                     Scale = strategy?.Scale,
                     Mode = strategy?.Mode ?? ScaleMode.Never,
                     Available = RoleAvailable(role),

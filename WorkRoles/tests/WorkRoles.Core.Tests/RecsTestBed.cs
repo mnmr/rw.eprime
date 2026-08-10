@@ -73,7 +73,8 @@ internal static class RecsTestBed
             Roles = roles,
             Pawns = pawns.ToList(),
             WorkTypeSkills = Skills,
-            OrderTemplate = roles.Select(r => r.Id).ToList(),
+            OrderTemplate = WorkRoles.Core.Recs.OrderTemplate.ResolveTemplate(
+                null, roles),
         };
         foreach (var pawn in pawns)
             foreach (var kv in pawn.SkillLevels)
