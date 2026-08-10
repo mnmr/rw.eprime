@@ -12,6 +12,10 @@ namespace QualityJobs
         private static readonly List<CandidateFacts> candidateBuffer = new List<CandidateFacts>(32);
         private static readonly List<Pawn> pawnBuffer = new List<Pawn>(32);
 
+        // Eligible-set scratch for CollectEligibleFinishers; same static-buffer
+        // pattern as above: cleared before every return, never roots pawns.
+        private static readonly List<CandidateFacts> eligibleBuffer = new List<CandidateFacts>(32);
+
         // Auto-best colony pool buffers (auto spec §2.2). Same static-buffer
         // pattern as candidateBuffer/pawnBuffer: cleared before every return so
         // the statics never root a previous world's pawns.
@@ -442,6 +446,57 @@ namespace QualityJobs
             pawnBuffer.Clear();
             ClearAutoPool();
             return result;
+        }
+
+        /// <summary>Fills results with every pawn TryDispatch would accept right
+        /// now, best first (status display, spec §11). Mirrors SelectFinisher /
+        /// SelectAutoFinisher candidate construction exactly so the display can
+        /// never disagree with dispatch; recipe == null builds construction
+        /// facts, like SelectAutoFinisher. Call only from tick-throttled dialog
+        /// caches, never per frame — iterates map colonists. Clears results;
+        /// static buffers are cleared before returning so they never root a
+        /// previous world's pawns.</summary>
+        public static void CollectEligibleFinishers(Map map, RecipeDef? recipe,
+            ResumeCondition condition, bool autoBest, List<Pawn> results)
+        {
+            results.Clear();
+            candidateBuffer.Clear();
+            pawnBuffer.Clear();
+            eligibleBuffer.Clear();
+            WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
+            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
+            for (int i = 0; i < colonists.Count; i++)
+            {
+                Pawn p = colonists[i];
+                if (p.Dead || p.Downed || p.InMentalState) continue;
+                pawnBuffer.Add(p);
+                candidateBuffer.Add(recipe != null
+                    ? FactsFor(p, recipe, workType) : ConstructionFactsFor(p));
+            }
+            if (autoBest)
+            {
+                BuildAutoPool(recipe, workType);
+                FinisherSelector.CollectAutoEligible(candidateBuffer, poolBuffer,
+                    condition, eligibleBuffer);
+                ClearAutoPool();
+            }
+            else
+            {
+                FinisherSelector.CollectEligible(candidateBuffer, condition, eligibleBuffer);
+            }
+            for (int i = 0; i < eligibleBuffer.Count; i++)
+            {
+                int id = eligibleBuffer[i].Id;
+                for (int j = 0; j < pawnBuffer.Count; j++)
+                    if (pawnBuffer[j].thingIDNumber == id)
+                    {
+                        results.Add(pawnBuffer[j]);
+                        break;
+                    }
+            }
+            candidateBuffer.Clear();
+            pawnBuffer.Clear();
+            eligibleBuffer.Clear();
         }
 
         /// <summary>Current auto-best pawn for dialog display (auto spec §5).

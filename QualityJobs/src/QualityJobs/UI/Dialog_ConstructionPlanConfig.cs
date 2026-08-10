@@ -35,30 +35,25 @@ namespace QualityJobs.UI
     /// So inRect.height = windowRect.height - 2*Margin. InitialSize.y is computed
     /// from content height + 2*Margin so no pixel is wasted.
     ///
-    /// Layout (bottom-anchored — the window rises from the gizmo button):
+    /// Layout (the window itself still rises from the gizmo button; content is
+    /// TOP-anchored inside it). The title is lifted by TitleLift so its visual
+    /// top margin matches the 18f side margin (Medium glyphs carry internal top
+    /// bearing). The RIGHT column starts at the lifted title y so the odds
+    /// mini-header aligns with the title, leaving room for the Status block
+    /// below the odds rows:
     ///
-    ///   inRect
+    ///   inRect (title drawn TitleLift above inRect.y)
     ///   ┌─────────────────────────────────────────────────────────┐
-    ///   │  Title "Quality Job"  (GameFont.Medium)                  │
-    ///   │  ───────────────────────────────────────────────────     │
-    ///   │  bodyRect (inRect minus title+gap)                       │
-    ///   │  ┌──────────────────────┐  ┌──────────────────────────┐ │
-    ///   │  │ LEFT panel           │  │ RIGHT panel (no frame)   │ │
-    ///   │  │ [DrawMenuSection]    │  │ ← MiniHeader (30f)       │ │
-    ///   │  │                      │  │   Legendary   xx.x%      │ │
-    ///   │  │  [Clear]   ← TOP     │  │   ...  7 rows × 22f      │ │
-    ///   │  │  ↕ flexible space    │  │   Awful       xx.x%      │ │
-    ///   │  │  ── options block ── │  │                          │ │
-    ///   │  │  Require inspired    │  │                          │ │
-    ///   │  │  [Require specialist]│  │                          │ │
-    ///   │  │  Auto-adjust to best │  │                          │ │
-    ///   │  │  Finisher skill: 0   │  │  (or current-best label) │ │
-    ///   │  │  Target quality [btn]│  │                          │ │
-    ///   │  └──────────────────────┘  └──────────────────────────┘ │
+    ///   │  Title "Quality Job"       │ ← Quality odds (MiniHeader) │
+    ///   │  ┌──────────────────────┐  │   Legendary   xx.x%         │
+    ///   │  │ LEFT panel           │  │   ...  7 rows × 20f         │
+    ///   │  │ [DrawMenuSection]    │  │   Awful       xx.x%         │
+    ///   │  │  [Clear]   ← TOP     │  │ ← Status (MiniHeader)       │
+    ///   │  │  ↕ flexible space    │  │   Eligible finishers: N     │
+    ///   │  │  ── options block ── │  │   names / stall line        │
+    ///   │  │  ... controls ...    │  │                             │
+    ///   │  └──────────────────────┘  └─────────────────────────────┘
     ///   └─────────────────────────────────────────────────────────┘
-    ///
-    /// Both columns have their BOTTOM EDGE at inRect.yMax, so content
-    /// hugs the bottom (the window rises from the gizmo).
     public class Dialog_ConstructionPlanConfig : Window
     {
         // Primary thing (first in list) — used for plan lookup and display values.
@@ -79,12 +74,46 @@ namespace QualityJobs.UI
         private const float SmallLineH  = 22f; // Text.LineHeight at GameFont.Small
         private const float SliderH     = 30f; // SliderLabeled GetRect height
         private const float GapH        =  2f; // verticalSpacing
-        private const float MiniHeaderH = 30f; // QjUi.MiniHeader consumed height
+        private const float MiniHeaderH = 27f; // QjUi.MiniHeader consumed height (label 22f, rule at y+21f, returns y+27f)
         private const float WinMargin   = 18f; // Window.Margin
 
+        // Compact data rows for the odds/status blocks (QjUi.TightRowH); the
+        // 22f SmallLineH stays for control rows (checkboxes, labels).
+        private const float TightRowH = QjUi.TightRowH; // 20f
+
         // Right column content height:
-        //   MiniHeader (30f) + 7 quality rows × 22f = 184f.
-        private const float RightContentH = MiniHeaderH + 7f * SmallLineH; // 30 + 154 = 184
+        //   MiniHeader (27f) + 5 odds rows × 20f = 127f (Legendary..Good plus
+        //   the collapsed "Normal or worse" row — OddsRows.RowCount).
+        private const float RightContentH = MiniHeaderH + OddsRows.RowCount * TightRowH; // 27 + 100 = 127
+
+        // Title lift: GameFont.Medium glyphs render with ~4px internal top
+        // bearing, so the label rect is raised above inRect.y by this amount to
+        // make the VISUAL top margin equal the 18f side margin (owner request).
+        private const float TitleLift = 4f;
+        // Gap between the title line box and the body below it.
+        private const float TitleGap = 2f;
+
+        // Status block below the odds rows (right column):
+        //   gap (8f — a header with content above it gets 4f extra padding,
+        //   owner request; the odds header is first and gets none)
+        //   + MiniHeader (27f) + finishers row + names/stall row.
+        private const float StatusGapH = 8f;
+        private const float StatusContentH = MiniHeaderH + 2f * TightRowH; // 27 + 40 = 67
+
+        // Left panel frame height: pad + [Clear] row + gap + the tallest
+        // options block (manual mode slider; Ideology adds a row). Sized for
+        // the tallest variant so toggling auto-best never resizes the frame.
+        // No longer tied to the odds column height — the collapsed odds table
+        // (5 rows) is shorter than the options block.
+        private static float LeftPanelH()
+        {
+            float options = SmallLineH + GapH   // inspired
+                + SmallLineH + GapH             // auto-best
+                + SliderH + GapH                // manual skill slider (tallest)
+                + SmallLineH;                   // target-quality row
+            if (ModsConfig.IdeologyActive) options += SmallLineH + GapH;
+            return 2f * PanelPad + ClearRowH + GapH + options;
+        }
 
         // Left options block heights (no trailing gap on the last element):
         //   inspired(22) + gap + [specialist(22) + gap] + auto(22) + gap
@@ -144,9 +173,14 @@ namespace QualityJobs.UI
         private string? minSkillLabel;
         private int minSkillLabelValue = -1;
 
-        // Quality name cache: built once per dialog open. 7 entries (Awful..Legendary).
+        // Quality name cache: built once per dialog open. 7 entries (Awful..Legendary)
+        // for the target-quality picker.
         // Owner: dialog instance. Teardown: dies with the window.
         private string[]? qualityLabels;
+
+        // Odds table row labels (Legendary..Good, then "Normal or worse").
+        // Owner: dialog instance. Teardown: dies with the window.
+        private string[]? oddsRowLabels;
 
         // Odds rows — keyed (minSkill, inspired, roleOffset); rebuilt on mismatch.
         // Owner: dialog (transient). Dependencies: condition fields only.
@@ -169,19 +203,41 @@ namespace QualityJobs.UI
         private bool cachedAutoValid;
         private string? autoBestCurrentLabel;
 
+        // Status cache (spec §11 status display) — same contract as the bill
+        // dialog's: owner dialog (transient); key none; value = the
+        // eligible-finisher id list, built labels, and the stall flag;
+        // dependencies = map colonist pool, the dialog's condition/autoBest
+        // edit fields, and the plan state; refresh tick-throttled at
+        // AutoBestInterval and forced on Push edits that affect eligibility;
+        // equality — element-wise id compare preserves label identity;
+        // teardown — dies with the window (scratch cleared each refresh).
+        private int lastStatusTick = -AutoBestInterval;
+        private bool statusValid; // false = target off-map; status block hidden
+        private bool statusStalled;
+        private int statusEligibleCount = -1;
+        private readonly List<int> statusEligibleIds = new List<int>(8);
+        private readonly List<Pawn> statusPawnScratch = new List<Pawn>(16);
+        private string? statusHeaderLabel;
+        private string? statusFinishersLabel;
+        private string? statusNamesLabel;
+        private string? statusStalledLabel;
+
         // InitialSize.y computed from content + 2×Margin so the window fits exactly.
         // Text.LineHeightOf is a static array lookup initialized at startup — safe to
         // call from a property getter (before any rendering has started).
-        // Body height = header + body = (medLineH + 4f) + RightContentH.
-        // Full window height = body + 2×Margin.
+        // Left column height:  header (medLineH - TitleLift + TitleGap) + panel.
+        // Right column height: odds + status, starting TitleLift ABOVE inRect.y
+        //   (aligned with the lifted title), so TitleLift is subtracted.
+        // Full window height = max(left, right) + 2×Margin.
         public override Vector2 InitialSize
         {
             get
             {
                 float medLineH = Text.LineHeightOf(GameFont.Medium);
-                float headerH  = medLineH + 4f;
-                float bodyH    = RightContentH;
-                return new Vector2(520f, headerH + bodyH + 2f * WinMargin);
+                float headerH  = medLineH - TitleLift + TitleGap;
+                float leftH    = headerH + LeftPanelH();
+                float rightH   = RightContentH + StatusGapH + StatusContentH - TitleLift;
+                return new Vector2(520f, Mathf.Max(leftH, rightH) + 2f * WinMargin);
             }
         }
 
@@ -237,24 +293,29 @@ namespace QualityJobs.UI
             // so the odds mirror reads a fresh auto cache in the same pass
             // (DrawRightPanel runs before DrawLeftPanel below).
             if (autoBest) EnsureAutoBest();
+            EnsureStatus(plan);
 
             GameFont prevFont = Text.Font;
             TextAnchor prevAnchor = Text.Anchor;
             try
             {
-                // Header: title in medium font.
+                // Header: title in medium font, lifted so the visual top margin
+                // matches the side margin (see TitleLift).
                 Text.Font = GameFont.Medium;
                 float medLineH = Text.LineHeight;
-                Widgets.Label(new Rect(inRect.x, inRect.y, inRect.width, medLineH), title!);
+                float titleY = inRect.y - TitleLift;
+                Widgets.Label(new Rect(inRect.x, titleY, inRect.width, medLineH), title!);
                 Text.Font = GameFont.Small;
 
-                float headerH = medLineH + 4f;
-                Rect bodyRect = new Rect(inRect.x, inRect.y + headerH, inRect.width, inRect.height - headerH);
-
-                // Split into LEFT and RIGHT halves (4f gap between them).
-                float halfW = (bodyRect.width - 4f) / 2f;
-                Rect leftRect  = new Rect(bodyRect.x,              bodyRect.y, halfW, bodyRect.height);
-                Rect rightRect = new Rect(bodyRect.x + halfW + 4f, bodyRect.y, halfW, bodyRect.height);
+                // Columns, separated by the window's side padding (18f, owner
+                // request): LEFT holds the options panel below the title; RIGHT
+                // starts at the lifted title y so the odds header aligns with
+                // the title, with the status block below the odds.
+                float halfW = (inRect.width - WinMargin) / 2f;
+                Rect leftRect = new Rect(inRect.x, titleY + medLineH + TitleGap,
+                    halfW, LeftPanelH());
+                Rect rightRect = new Rect(inRect.x + halfW + WinMargin, titleY,
+                    halfW, inRect.yMax - titleY);
 
                 DrawRightPanel(rightRect, plan);
                 DrawLeftPanel(leftRect, plan);
@@ -266,17 +327,21 @@ namespace QualityJobs.UI
             }
         }
 
-        /// Right panel: odds table, bottom-anchored, no frame.
-        /// Layout: MiniHeader (30f) then 7 rows of 22f, bottom edge at rect.yMax.
+        /// Right panel: odds table then the status block, top-anchored, no frame.
+        /// Layout: MiniHeader (30f), 7 rows of 22f, gap, status MiniHeader + rows.
         private void DrawRightPanel(Rect rect, ConstructionPlan? plan)
         {
             TextAnchor prevAnchor = Text.Anchor;
             Color prevColor = GUI.color;
             try
             {
-                // Bottom-anchor: top of content block = rect.yMax - RightContentH.
-                float contentTop = rect.yMax - RightContentH;
-                float rowH = SmallLineH;
+                // Top-anchor: rect.y is the lifted title y (odds header aligns
+                // with the window title). Rows ADVANCE by TightRowH; labels
+                // DRAW in TightRowDrawH rects so descenders are not clipped
+                // (see QjUi).
+                float contentTop = rect.y;
+                float rowH = TightRowH;
+                float drawH = QjUi.TightRowDrawH;
 
                 // MiniHeader: group-relative x=0 means the left edge of rect.
                 // We draw with GUI absolute coords here (no BeginGroup), so x = rect.x.
@@ -298,16 +363,43 @@ namespace QualityJobs.UI
                 if (odds == null || !odds.Matches(oddsSkill, oddsInspired, roleOffset))
                     odds = OddsRows.Build(oddsSkill, oddsInspired, roleOffset);
 
-                // 7 quality rows, Legendary (6) down to Awful (0).
+                // Odds rows: Legendary down to Good, then "Normal or worse"
+                // (bottom three qualities collapsed — OddsRows display order).
                 float rowY = afterHeader;
-                for (int q = 6; q >= 0; q--)
+                for (int r = 0; r < OddsRows.RowCount; r++)
                 {
-                    Rect row = new Rect(rect.x, rowY, rect.width, rowH);
-                    Widgets.Label(row.LeftHalf(), qualityLabels![q]);
+                    Rect row = new Rect(rect.x, rowY, rect.width, drawH);
+                    Widgets.Label(row.LeftHalf(), oddsRowLabels![r]);
                     Text.Anchor = TextAnchor.MiddleRight;
-                    Widgets.Label(row.RightHalf(), odds.Percents[q]);
+                    Widgets.Label(row.RightHalf(), odds.Percents[r]);
                     Text.Anchor = prevAnchor;
                     rowY += rowH;
+                }
+
+                // Status block (spec §11), below the odds rows: drawn only from
+                // strings EnsureStatus (tick-throttled) cached before the pass.
+                if (statusValid)
+                {
+                    float afterStatusHeader = QjUi.MiniHeader(rect.x, rowY + StatusGapH,
+                        rect.width, statusHeaderLabel!);
+                    Rect finRow = new Rect(rect.x, afterStatusHeader, rect.width, drawH);
+                    Widgets.Label(finRow, statusFinishersLabel!);
+                    WrTips.Key("QJ_StatusFinishersTip").Region(finRow);
+
+                    Rect infoRow = new Rect(rect.x, afterStatusHeader + rowH, rect.width, drawH);
+                    if (statusEligibleCount > 0 && statusNamesLabel != null)
+                    {
+                        GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                        Widgets.Label(infoRow, statusNamesLabel);
+                        GUI.color = prevColor;
+                    }
+                    else if (statusStalled)
+                    {
+                        GUI.color = QjUi.WarnColor;
+                        Widgets.Label(infoRow, statusStalledLabel!);
+                        GUI.color = prevColor;
+                        WrTips.Key("QJ_StatusStalledConstructionTip").Region(infoRow);
+                    }
                 }
             }
             finally
@@ -317,8 +409,8 @@ namespace QualityJobs.UI
             }
         }
 
-        /// Left panel: framed (DrawMenuSection), bottom edge at rect.yMax.
-        /// Height = RightContentH (so top aligns with the odds header).
+        /// Left panel: framed (DrawMenuSection), top-anchored below the title
+        /// (rect IS the panel rect, height LeftPanelH()).
         /// Inside: [Clear] row at the TOP (reserved unconditionally), flexible
         /// space, then options block anchored at the BOTTOM.
         private void DrawLeftPanel(Rect rect, ConstructionPlan? plan)
@@ -327,8 +419,7 @@ namespace QualityJobs.UI
             TextAnchor prevAnchor = Text.Anchor;
             try
             {
-                // Frame: same height as the right column content, bottom-anchored.
-                Rect panelRect = new Rect(rect.x, rect.yMax - RightContentH, rect.width, RightContentH);
+                Rect panelRect = rect;
                 Widgets.DrawMenuSection(panelRect);
 
                 Rect inner = panelRect.ContractedBy(PanelPad);
@@ -545,10 +636,16 @@ namespace QualityJobs.UI
             anyQualityLabel      = "QJ_AnyQuality".Translate();
             autoBestLabel        = "QJ_AutoBest".Translate();
             autoBestNoneLabel    = "QJ_AutoBestNone".Translate();
+            statusHeaderLabel    = "QJ_StatusHeader".Translate();
+            statusStalledLabel   = "QJ_StatusStalledConstruction".Translate();
 
             qualityLabels = new string[7];
             for (int q = 0; q <= 6; q++)
                 qualityLabels[q] = ((QualityCategory)q).GetLabel().CapitalizeFirst();
+            oddsRowLabels = new string[OddsRows.RowCount];
+            for (int r = 0; r < 4; r++)
+                oddsRowLabels[r] = qualityLabels[6 - r];
+            oddsRowLabels[4] = "QJ_NormalOrWorse".Translate();
         }
 
         /// Pushes minQuality to all selected things (Fix 5).
@@ -596,6 +693,61 @@ namespace QualityJobs.UI
             cachedAutoValid = true;
         }
 
+        /// <summary>Tick-throttled status refresh (spec §11): the eligible
+        /// construction-finisher set and the stall flag, rebuilt at most once
+        /// per AutoBestInterval and immediately after a Push edit. Never runs
+        /// colony scans per frame (AGENTS.md render-path rule).</summary>
+        private void EnsureStatus(ConstructionPlan? plan)
+        {
+            int now = Find.TickManager.TicksGame;
+            if (now - lastStatusTick < AutoBestInterval && lastStatusTick >= 0) return;
+            lastStatusTick = now;
+
+            Map? map = _primaryThing.MapHeld;
+            if (map == null)
+            {
+                statusValid = false;
+                return;
+            }
+            statusValid = true;
+
+            // Eligibility mirrors construction dispatch: recipe == null ranks
+            // by Construction skill; auto mode replaces MinSkill with the
+            // dynamic threshold, so only the filters travel with it.
+            ResumeCondition condition = autoBest
+                ? new ResumeCondition(0, requireInspired, requireSpecialist)
+                : new ResumeCondition(minSkill, requireInspired, requireSpecialist);
+            Dispatcher.CollectEligibleFinishers(map, null, condition, autoBest,
+                statusPawnScratch);
+
+            bool sameIds = statusPawnScratch.Count == statusEligibleIds.Count;
+            if (sameIds)
+                for (int i = 0; i < statusPawnScratch.Count; i++)
+                    if (statusPawnScratch[i].thingIDNumber != statusEligibleIds[i])
+                    {
+                        sameIds = false;
+                        break;
+                    }
+            if (!sameIds)
+            {
+                statusEligibleIds.Clear();
+                for (int i = 0; i < statusPawnScratch.Count; i++)
+                    statusEligibleIds.Add(statusPawnScratch[i].thingIDNumber);
+                int n = statusPawnScratch.Count;
+                statusFinishersLabel = n == 0
+                    ? "QJ_StatusFinishersNone".Translate()
+                    : "QJ_StatusFinishers".Translate(n);
+                statusNamesLabel = n == 0 ? null : QjUi.NamesLine(statusPawnScratch);
+            }
+            statusEligibleCount = statusPawnScratch.Count;
+            statusPawnScratch.Clear();
+
+            // Paused plan with nobody eligible = the silent stall the status
+            // block exists to surface.
+            statusStalled = plan != null && plan.state == ConstructionPlanState.Paused
+                && statusEligibleCount == 0;
+        }
+
         /// Pushes per-field changes to all selected things (Fix 5).
         /// Plain per-field setters; each auto-creates the plan when needed
         /// and auto-removes it if all fields become neutral.
@@ -612,6 +764,8 @@ namespace QualityJobs.UI
             if (autoChanged)     autoBest          = newAutoBest;
             if (inspiredChanged || specChanged || autoChanged)
                 lastAutoBestTick = -AutoBestInterval; // filter/mode edit: re-evaluate now
+            if (skillChanged || inspiredChanged || specChanged || autoChanged)
+                lastStatusTick = -AutoBestInterval;   // eligibility edit: refresh status now
 
             if (!skillChanged && !inspiredChanged && !specChanged && !autoChanged) return;
 

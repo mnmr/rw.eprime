@@ -12,10 +12,15 @@ namespace QualityJobs.UI
     /// array. Teardown: dies with the window.
     public sealed class OddsRows
     {
+        /// Display rows: Legendary, Masterwork, Excellent, Good, then Normal or
+        /// worse (Normal + Poor + Awful collapsed into one row).
+        public const int RowCount = 5;
+
         public readonly int MinSkill;
         public readonly bool Inspired;
         public readonly int RoleOffset;
-        /// Percent per QualityCategory, formatted once ("12.3%"), index 0..6.
+        /// Percent per display row, formatted once ("12.3%"), index 0..4
+        /// top-down: 0 = Legendary .. 3 = Good, 4 = Normal or worse.
         public readonly string[] Percents;
 
         private OddsRows(int minSkill, bool inspired, int roleOffset, string[] percents)
@@ -32,10 +37,13 @@ namespace QualityJobs.UI
         public static OddsRows Build(int minSkill, bool inspired, int roleOffset)
         {
             double[] d = QualityOdds.Distribution(minSkill, inspired, roleOffset);
-            var percents = new string[7];
-            for (int i = 0; i < 7; i++)
-                percents[i] = (d[i] * 100.0).ToString("0.0") + "%";
+            var percents = new string[RowCount];
+            for (int r = 0; r < 4; r++)
+                percents[r] = Format(d[6 - r]);
+            percents[4] = Format(d[0] + d[1] + d[2]);
             return new OddsRows(minSkill, inspired, roleOffset, percents);
         }
+
+        private static string Format(double p) => (p * 100.0).ToString("0.0") + "%";
     }
 }

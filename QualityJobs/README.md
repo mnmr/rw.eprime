@@ -18,7 +18,7 @@ master crafter do the final touch — this mod automates the entire loop.
   require production specialist (Ideology) — with a live quality-odds table
   comparing your configuration against your current best crafter.
 - Automatic dispatch: the best qualifying pawn gets a one-shot pawn-restricted
-  "Finish …" bill and a notification letter; the bill cleans itself up. If the
+  "Finish …" bill; the bill cleans itself up. If the
   working crafter already qualifies, they finish directly with no interruption.
 - Shared unfinished work: idle unfinished items no longer lock their bill to
   the original crafter — anyone can continue them (also rescues items whose
@@ -30,22 +30,34 @@ master crafter do the final touch — this mod automates the entire loop.
 **Construction**
 
 - Per-building opt-in via the "Quality Job" button on quality blueprints and
-  frames. Enablement is implicit: set any option and the build is managed; the
+  frames, or globally for all quality buildings from mod settings. Enablement
+  is implicit: set any option and the build is managed; the
   Clear button resets it. Managed builds are marked with a sparkle overlay.
+- Per-build finisher conditions — minimum skill, require Inspired Creativity,
+  require production specialist — with a live quality-odds preview for your
+  configuration and current best builder.
 - Managed frames pause at 100% work until a builder meets your conditions,
   then the chosen finisher completes them.
 - Target quality with retries: builds that roll below your chosen quality are
-  deconstructed and rebuilt automatically until the target is met (each cycle
-  costs part of the materials; cancelling the deconstruct designation opts
-  out).
+  automatically marked for deconstruction and rebuilt until you get the
+  desired quality (or you clear the build from being a Quality Job).
 
 **General**
 
+- Inspired Creativity is consumed on the finishing touch, exactly as vanilla
+  intends.
+- Paused items show "Author: reserved (Quality Jobs)" and cannot be resumed
+  until a qualifying pawn exists.
 - RimWorld Multiplayer compatible: all mutations are synced commands or
   deterministic simulation; UI scans are read-only.
 - Safe to add mid-game. Clean uninstall: disable in mod settings — items are
   restored to vanilla ownership and subsequent saves carry zero trace of the
-  mod.
+  mod. Removing without disabling first leaves unfinished items without an
+  owner (they must be cancelled).
+- No defs are patched and unmanaged bills/builds behave exactly as vanilla;
+  integration is a handful of targeted Harmony patches at job boundaries.
+- Designed for performance: cached rendering, no per-frame work, event- and
+  interval-driven logic.
 - Requires Harmony. No DLC required (Ideology enriches, never gates).
 
 ## Repository layout

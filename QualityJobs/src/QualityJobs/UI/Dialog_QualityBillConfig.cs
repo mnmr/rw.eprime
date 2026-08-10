@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using QualityJobs.Core;
 using RimWorld;
 using UnityEngine;
@@ -68,6 +69,12 @@ namespace QualityJobs.UI
         private bool cachedAutoValid;
         private string? _autoBestCurrentLabel;
 
+        // Odds table row labels (Legendary..Good, then "Normal or worse"),
+        // built once per dialog open in LoadFromStore alongside _qualityLabels
+        // (which stays full 7-entry for the target-quality picker).
+        // Owner: dialog instance. Teardown: dies with the window.
+        private string[]? _oddsRowLabels;
+
         // Quality label cache: built once per dialog open in LoadFromStore.
         // Language changes are not observable while the dialog is open — the dialog
         // is closed and reopened after a language switch, so a reopened dialog always
@@ -99,12 +106,31 @@ namespace QualityJobs.UI
         private string? _capLabel;
         private int _capLabelValue = -1;
 
-        // I1: stock-cap status line cache — rebuilt only when (count, cap) changes.
-        // Drawn only when count >= cap && cap > 0.
-        // Owner: dialog instance. Teardown: dies with the window.
-        private int _cachedStatusCount = -1;
-        private int _cachedStatusCap = -1;
-        private string? _statusLabel;
+        // Status section cache (spec §11 status display).
+        // Owner: dialog (transient). Key: none. Value: pipeline counts
+        // (shared/waiting/finishing), the eligible-finisher id list, and the
+        // built display strings. Dependencies: store entries (rebuilt by the
+        // store's 250-tick scan), the map colonist pool, and the dialog's
+        // condition/autoBest edit fields. Refresh: tick-throttled at
+        // BestCandidateInterval; forced on any PushChanges edit that affects
+        // eligibility (immediate visibility, including while paused).
+        // Equality: each label is rebuilt only when its source values change
+        // (element-wise id compare preserves the names label identity).
+        // Teardown: dies with the window (scratch list cleared each refresh).
+        private int lastStatusTick = -BestCandidateInterval;
+        private bool statusValid; // false = bench has no map or unmanaged recipe; section hidden
+        private int statusWaiting = -1;
+        private int statusFinishing = -1;
+        private int statusShared = -1;
+        private bool statusSharedShown;
+        private int statusEligibleCount = -1;
+        private readonly List<int> statusEligibleIds = new List<int>(8);
+        private readonly List<Pawn> statusPawnScratch = new List<Pawn>(16);
+        private string? _statusHeaderLabel;
+        private string? _statusQueueLabel;
+        private string? _statusFinishersLabel;
+        private string? _statusNamesLabel;
+        private string? _statusStalledLabel;
 
         public Dialog_QualityBillConfig(Bill_ProductionWithUft bill, IntVec3 billGiverPos)
             : base(bill, billGiverPos)
@@ -132,6 +158,7 @@ namespace QualityJobs.UI
             if (store == null) return;
             if (!loaded) LoadFromStore(store);
             if (autoBest) EnsureAutoBest();
+            EnsureStatus(store);
 
             // Hoist odds results before Begin so any early return inside the
             // listing body cannot skip the finally that restores Text.Font.
@@ -287,37 +314,63 @@ namespace QualityJobs.UI
                 // Advance the outer listing past the section box.
                 listing.GetRect(sectionBoxH);
 
-                // I1: stock-cap status line — drawn only when product is at/over cap.
-                // Use the bench map (same resolution as EnsureBestOdds).
-                {
-                    Map? map = (bill.billStack?.billGiver as Thing)?.MapHeld;
-                    if (map != null && cap > 0)
-                    {
-                        string? product = ManagedRecipes.ProductDefName(bill.recipe);
-                        int count = store.SpawnedUftCount(map, product);
-                        if (count >= cap)
-                        {
-                            if (count != _cachedStatusCount || cap != _cachedStatusCap)
-                            {
-                                _statusLabel = "QJ_StockCapStatus".Translate(count, cap);
-                                _cachedStatusCount = count;
-                                _cachedStatusCap = cap;
-                            }
-                            listing.Label(_statusLabel!);
-                        }
-                    }
-                }
-
                 // Odds section: mini-header via QjUi.MiniHeader (group-relative coords —
                 // listing.Begin(rect) opened a GUI group so x=0 is the panel left edge).
                 // listing.CurHeight is the next available y within the group.
-                // MiniHeader returns y + 30f; we advance the listing past that height.
-                float headerY = listing.CurHeight + 4f;
+                // MiniHeader returns y + 27f; we advance the listing past that height.
+                // 8f pre-gap: a header with content above it gets 4f extra
+                // padding (owner request; a first header would get none).
+                float headerY = listing.CurHeight + 8f;
                 QjUi.MiniHeader(0f, headerY, rect.width, _oddsHeaderLabel!);
-                // Advance past header block: 4f pre-gap + 30f header = 34f total.
-                listing.GetRect(34f);
+                // Advance past header block: 8f pre-gap + 27f header = 35f total.
+                listing.GetRect(35f);
 
                 DrawOddsTable(listing, thresholdRows, bestRows);
+
+                // Status section (spec §11), below the odds: mini-header +
+                // fixed-height rows drawn exclusively from strings EnsureStatus
+                // (tick-throttled) cached before Begin. The stall line is the
+                // diagnostic for the silent no-eligible-finisher pipeline stop.
+                if (statusValid)
+                {
+                    // 8f pre-gap: header with content above it (see odds header).
+                    float statusHeaderY = listing.CurHeight + 8f;
+                    QjUi.MiniHeader(0f, statusHeaderY, rect.width, _statusHeaderLabel!);
+                    // 8f pre-gap + 27f header (MiniHeader returns y + 27f).
+                    listing.GetRect(35f);
+
+                    // Rows advance by TightRowH; labels draw in TightRowDrawH
+                    // rects so descenders are not clipped (see QjUi).
+                    const float StatusRowH = QjUi.TightRowH;
+                    const float StatusDrawH = QjUi.TightRowDrawH;
+                    Rect queueRow = listing.GetRect(StatusRowH);
+                    queueRow.height = StatusDrawH;
+                    Widgets.Label(queueRow, _statusQueueLabel!);
+                    WrTips.Key("QJ_StatusQueueTip").Region(queueRow);
+
+                    Rect finRow = listing.GetRect(StatusRowH);
+                    finRow.height = StatusDrawH;
+                    Widgets.Label(finRow, _statusFinishersLabel!);
+                    WrTips.Key("QJ_StatusFinishersTip").Region(finRow);
+
+                    if (statusEligibleCount > 0 && _statusNamesLabel != null)
+                    {
+                        Rect namesRow = listing.GetRect(StatusRowH);
+                        namesRow.height = StatusDrawH;
+                        GUI.color = new Color(1f, 1f, 1f, 0.55f);
+                        Widgets.Label(namesRow, _statusNamesLabel);
+                        GUI.color = prevPanelColor;
+                    }
+                    else if (statusWaiting > 0 && statusEligibleCount == 0)
+                    {
+                        Rect stallRow = listing.GetRect(StatusRowH);
+                        stallRow.height = StatusDrawH;
+                        GUI.color = QjUi.WarnColor;
+                        Widgets.Label(stallRow, _statusStalledLabel!);
+                        GUI.color = prevPanelColor;
+                        WrTips.Key("QJ_StatusStalledTip").Region(stallRow);
+                    }
+                }
             }
             finally
             {
@@ -354,6 +407,10 @@ namespace QualityJobs.UI
             _qualityLabels = new string[7];
             for (int q = 0; q < 7; q++)
                 _qualityLabels[q] = ((QualityCategory)q).GetLabel().CapitalizeFirst();
+            _oddsRowLabels = new string[OddsRows.RowCount];
+            for (int r = 0; r < 4; r++)
+                _oddsRowLabels[r] = _qualityLabels[6 - r];
+            _oddsRowLabels[4] = "QJ_NormalOrWorse".Translate();
             _panelTitleLabel = "QJ_QualityPanelTitle".Translate();
             _manageBillLabel = "QJ_ManageBill".Translate();
             _requireInspiredLabel = "QJ_RequireInspired".Translate();
@@ -365,6 +422,8 @@ namespace QualityJobs.UI
             _autoBestNoneLabel = "QJ_AutoBestNone".Translate();
             _targetQualityLabel = "QJ_MinQualityLabel".Translate();
             _anyQualityLabel = "QJ_AnyQuality".Translate();
+            _statusHeaderLabel = "QJ_StatusHeader".Translate();
+            _statusStalledLabel = "QJ_StatusStalled".Translate();
 
             loaded = true;
         }
@@ -386,12 +445,14 @@ namespace QualityJobs.UI
                 Commands.SetBillAutoBest(BillIds.IdOf(bill), newAutoBest);
                 // Filter/mode edit: re-evaluate the current best immediately.
                 lastAutoBestTick = -BestCandidateInterval;
+                lastStatusTick = -BestCandidateInterval;
             }
 
             if (newMinSkill != minSkill)
             {
                 minSkill = newMinSkill;
                 Commands.SetBillMinSkill(BillIds.IdOf(bill), newMinSkill);
+                lastStatusTick = -BestCandidateInterval;
             }
 
             if (newInspired != requireInspired)
@@ -399,6 +460,7 @@ namespace QualityJobs.UI
                 requireInspired = newInspired;
                 Commands.SetBillRequireInspired(BillIds.IdOf(bill), newInspired);
                 lastAutoBestTick = -BestCandidateInterval;
+                lastStatusTick = -BestCandidateInterval;
             }
 
             if (newSpecialist != requireSpecialist)
@@ -406,6 +468,7 @@ namespace QualityJobs.UI
                 requireSpecialist = newSpecialist;
                 Commands.SetBillRequireSpecialist(BillIds.IdOf(bill), newSpecialist);
                 lastAutoBestTick = -BestCandidateInterval;
+                lastStatusTick = -BestCandidateInterval;
             }
 
             if (newCap != cap)
@@ -539,6 +602,72 @@ namespace QualityJobs.UI
             cachedAutoValid = true;
         }
 
+        /// <summary>Tick-throttled status refresh (spec §11): pipeline counts and
+        /// the eligible-finisher set, rebuilt at most once per
+        /// BestCandidateInterval and immediately after a PushChanges edit.
+        /// Never runs scans per frame (AGENTS.md render-path rule).</summary>
+        private void EnsureStatus(QualityJobsStore store)
+        {
+            int now = Find.TickManager.TicksGame;
+            if (now - lastStatusTick < BestCandidateInterval && lastStatusTick >= 0) return;
+            lastStatusTick = now;
+
+            Map? map = (bill.billStack?.billGiver as Thing)?.MapHeld;
+            string? product = ManagedRecipes.ProductDefName(bill.recipe);
+            if (map == null || product == null)
+            {
+                statusValid = false;
+                return;
+            }
+            statusValid = true;
+
+            store.CountEntriesFor(map, product,
+                out int waiting, out int finishing, out int shared);
+            bool showShared = store.shareUnfinishedWork;
+            if (waiting != statusWaiting || finishing != statusFinishing
+                || shared != statusShared || showShared != statusSharedShown)
+            {
+                statusWaiting = waiting;
+                statusFinishing = finishing;
+                statusShared = shared;
+                statusSharedShown = showShared;
+                // Shared pool items lead the line as "Unfinished" (owner request).
+                _statusQueueLabel = showShared
+                    ? "QJ_StatusQueueShared".Translate(shared, waiting, finishing)
+                    : "QJ_StatusQueue".Translate(waiting, finishing);
+            }
+
+            // Eligibility mirrors TryDispatch: the auto path replaces MinSkill
+            // with the dynamic threshold, so only the filters travel with it.
+            ResumeCondition condition = autoBest
+                ? new ResumeCondition(0, requireInspired, requireSpecialist)
+                : new ResumeCondition(minSkill, requireInspired, requireSpecialist);
+            Dispatcher.CollectEligibleFinishers(map, bill.recipe, condition, autoBest,
+                statusPawnScratch);
+
+            bool sameIds = statusPawnScratch.Count == statusEligibleIds.Count;
+            if (sameIds)
+                for (int i = 0; i < statusPawnScratch.Count; i++)
+                    if (statusPawnScratch[i].thingIDNumber != statusEligibleIds[i])
+                    {
+                        sameIds = false;
+                        break;
+                    }
+            if (!sameIds)
+            {
+                statusEligibleIds.Clear();
+                for (int i = 0; i < statusPawnScratch.Count; i++)
+                    statusEligibleIds.Add(statusPawnScratch[i].thingIDNumber);
+                int n = statusPawnScratch.Count;
+                _statusFinishersLabel = n == 0
+                    ? "QJ_StatusFinishersNone".Translate()
+                    : "QJ_StatusFinishers".Translate(n);
+                _statusNamesLabel = n == 0 ? null : QjUi.NamesLine(statusPawnScratch);
+            }
+            statusEligibleCount = statusPawnScratch.Count;
+            statusPawnScratch.Clear();
+        }
+
         private void DrawOddsTable(Listing_Standard listing, OddsRows config, OddsRows? best)
         {
             // _qualityLabels, _oddsColConfigLabel, _oddsColBestLabel are built in
@@ -561,7 +690,11 @@ namespace QualityJobs.UI
             TextAnchor prevAnchor = Text.Anchor;
             try
             {
-                float rowHeight = Text.LineHeight;
+                // Compact rows (owner request): rows ADVANCE by TightRowH but
+                // every label DRAWS in a TightRowDrawH rect so small-font
+                // descenders are not clipped (see QjUi).
+                float rowHeight = QjUi.TightRowH;
+                float drawH = QjUi.TightRowDrawH;
                 float colWidth = listing.ColumnWidth;
                 float col1w = colWidth * 0.50f;
                 float col2w = colWidth * 0.25f;
@@ -572,7 +705,7 @@ namespace QualityJobs.UI
                     Rect headerRow = listing.GetRect(rowHeight);
                     // Column 1: blank (quality-name column).
                     // Column 2: Best header (dimmed, right-aligned).
-                    Rect hCol2 = new Rect(headerRow.x + col1w, headerRow.y, col2w, rowHeight);
+                    Rect hCol2 = new Rect(headerRow.x + col1w, headerRow.y, col2w, drawH);
                     if (best != null)
                     {
                         GUI.color = new Color(1f, 1f, 1f, 0.55f);
@@ -583,34 +716,35 @@ namespace QualityJobs.UI
                     }
                     // Column 3: Config header (full brightness, right-aligned).
                     Rect hCol3 = new Rect(headerRow.x + col1w + col2w, headerRow.y,
-                        headerRow.width - col1w - col2w, rowHeight);
+                        headerRow.width - col1w - col2w, drawH);
                     Text.Anchor = TextAnchor.MiddleRight;
                     Widgets.Label(hCol3, _oddsColConfigLabel!);
                     Text.Anchor = prevAnchor;
                 }
 
-                // Data rows: Legendary (6) down to Awful (0).
-                for (int q = 6; q >= 0; q--)
+                // Data rows: Legendary down to Good, then "Normal or worse"
+                // (bottom three qualities collapsed — OddsRows display order).
+                for (int r = 0; r < OddsRows.RowCount; r++)
                 {
                     Rect dataRow = listing.GetRect(rowHeight);
-                    Rect dCol1 = new Rect(dataRow.x, dataRow.y, col1w, rowHeight);
-                    Rect dCol2 = new Rect(dataRow.x + col1w, dataRow.y, col2w, rowHeight);
+                    Rect dCol1 = new Rect(dataRow.x, dataRow.y, col1w, drawH);
+                    Rect dCol2 = new Rect(dataRow.x + col1w, dataRow.y, col2w, drawH);
                     Rect dCol3 = new Rect(dataRow.x + col1w + col2w, dataRow.y,
-                        dataRow.width - col1w - col2w, rowHeight);
-                    // Quality name (left-aligned, default anchor).
-                    Widgets.Label(dCol1, _qualityLabels![q]);
+                        dataRow.width - col1w - col2w, drawH);
+                    // Row name (left-aligned, default anchor).
+                    Widgets.Label(dCol1, _oddsRowLabels![r]);
                     // Best column (dimmed, right-aligned).
                     if (best != null)
                     {
                         GUI.color = new Color(1f, 1f, 1f, 0.55f);
                         Text.Anchor = TextAnchor.MiddleRight;
-                        Widgets.Label(dCol2, best.Percents[q]);
+                        Widgets.Label(dCol2, best.Percents[r]);
                         GUI.color = prevColor;
                         Text.Anchor = prevAnchor;
                     }
                     // Config column (full brightness, right-aligned).
                     Text.Anchor = TextAnchor.MiddleRight;
-                    Widgets.Label(dCol3, config.Percents[q]);
+                    Widgets.Label(dCol3, config.Percents[r]);
                     Text.Anchor = prevAnchor;
                 }
             }

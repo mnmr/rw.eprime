@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.0.4 — 2026-08-10
+
+- Added: Status panel showing item stats (unfinished, waiting, finishing) and eligible finishers for a selected bill or buildable.
+
 ## 1.0.3 — 2026-08-08
 
 - Added: Migration dialog to allow users to enable Quality Jobs on existing bills.

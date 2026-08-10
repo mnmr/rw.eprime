@@ -19,8 +19,19 @@
   <QJ_RequireSpecialist>Require production specialist</QJ_RequireSpecialist>
   <QJ_StockCapLabel>Stock cap: {0}</QJ_StockCapLabel>
   <QJ_StockCapTooltip>The maximum number of unfinished items of this product. The cap is shared per product, so every bill producing this item counts against it.\n\n0 means unlimited.</QJ_StockCapTooltip>
-  <QJ_StockCapStatus>At stock cap ({0}/{1} unfinished)</QJ_StockCapStatus>
+  <QJ_StatusHeader>Status</QJ_StatusHeader>
+  <QJ_StatusQueue>Waiting: {0} · Finishing: {1}</QJ_StatusQueue>
+  <QJ_StatusQueueShared>Unfinished: {0} · Waiting: {1} · Finishing: {2}</QJ_StatusQueueShared>
+  <QJ_StatusQueueTip>Unfinished: items in the sharing pool that any allowed crafter may continue. Waiting: paused items that need a qualifying finisher. Finishing: items assigned to a finisher.</QJ_StatusQueueTip>
+  <QJ_StatusFinishers>Eligible finishers: {0}</QJ_StatusFinishers>
+  <QJ_StatusFinishersNone>Eligible finishers: none</QJ_StatusFinishersNone>
+  <QJ_StatusFinishersTip>Colonists on this map who currently qualify to perform the finishing touch, best candidate first. A colonist qualifies when the required work type is enabled and the finisher requirements above are met.\n\nDowned colonists, colonists in a mental state, and colonists away from this map do not count.</QJ_StatusFinishersTip>
+  <QJ_StatusStalled>Waiting items have no eligible finisher</QJ_StatusStalled>
+  <QJ_StatusStalledTip>Unfinished items are waiting, but no colonist currently qualifies to finish them, so no finish jobs are being created.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended finisher has the work type enabled and is on this map. While stalled, the stock cap may also block new items from being started.</QJ_StatusStalledTip>
+  <QJ_StatusStalledConstruction>No eligible finisher — build is stalled</QJ_StatusStalledConstruction>
+  <QJ_StatusStalledConstructionTip>This building is paused waiting for a finishing touch, but no colonist currently qualifies, so it will not complete.\n\nCheck the finisher skill requirement, the inspiration and specialist requirements, and whether the intended builder has Construction enabled and is on this map.</QJ_StatusStalledConstructionTip>
   <QJ_OddsHeader>Quality odds</QJ_OddsHeader>
+  <QJ_NormalOrWorse>Normal or worse</QJ_NormalOrWorse>
   <QJ_OddsColConfig>Config</QJ_OddsColConfig>
   <QJ_OddsColBest>Best</QJ_OddsColBest>
   <QJ_SettingsBillDefaults>Default bill options</QJ_SettingsBillDefaults>

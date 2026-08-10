@@ -105,4 +105,85 @@ public class FinisherSelectorTests
             new[] { F(1, 15, xpMilli: 100), F(9, 15, xpMilli: 900) }, AnySkilled);
         await Assert.That(best).IsEqualTo(9);
     }
+
+    // ---- eligible-set collection (status display) --------------------------
+
+    [Test]
+    public async Task CollectEligibleReturnsAllSatisfyingBestFirst()
+    {
+        // Same ordering as SelectBest: rank (skill 15 ties), then XP (equal),
+        // then lowest id — so 3 before 9, and 14-skill 5 last. 7 fails MinSkill.
+        var results = new List<CandidateFacts>();
+        FinisherSelector.CollectEligible(
+            new[] { F(9, 15), F(5, 14), F(3, 15), F(7, 9) }, AnySkilled, results);
+        await Assert.That(results.Count).IsEqualTo(3);
+        await Assert.That(results[0].Id).IsEqualTo(3);
+        await Assert.That(results[1].Id).IsEqualTo(9);
+        await Assert.That(results[2].Id).IsEqualTo(5);
+    }
+
+    [Test]
+    public async Task CollectEligibleFiltersIncapableAndUnqualified()
+    {
+        // Mirrors IncapableAndUnqualifiedAreFilteredOut: the collection must
+        // agree with SelectBest that nobody qualifies.
+        var results = new List<CandidateFacts>();
+        FinisherSelector.CollectEligible(new[]
+        {
+            F(1, 20, work: false),          // work type disabled
+            F(2, 20, recipeSkill: false),   // fails recipe skill requirements
+            F(3, 9),                        // fails condition (min 10)
+        }, AnySkilled, results);
+        await Assert.That(results.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task CollectEligibleClearsPriorResults()
+    {
+        var results = new List<CandidateFacts> { F(42, 20) };
+        FinisherSelector.CollectEligible(
+            Array.Empty<CandidateFacts>(), AnySkilled, results);
+        await Assert.That(results.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task CollectAutoEligibleAdmitsExactTiesOnly()
+    {
+        // Gate passers are exactly tied on (rank, XP); ordering falls through
+        // to lowest id. The 14-skill pawn is outranked and must not appear.
+        var tied = new[] { F(2, 15, xpMilli: 500), F(1, 15, xpMilli: 500), F(3, 14) };
+        var results = new List<CandidateFacts>();
+        FinisherSelector.CollectAutoEligible(
+            tied, tied, new ResumeCondition(0, false, false), results);
+        await Assert.That(results.Count).IsEqualTo(2);
+        await Assert.That(results[0].Id).IsEqualTo(1);
+        await Assert.That(results[1].Id).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task CollectAutoEligibleRespectsColonyPoolCompetitor()
+    {
+        // The only dispatchable pawn is outranked by an away pool member: the
+        // item waits (auto spec §2.4), so the eligible set is empty.
+        var results = new List<CandidateFacts> { F(42, 20) };
+        FinisherSelector.CollectAutoEligible(
+            new[] { F(1, 10) },
+            new[] { F(1, 10), F(2, 20) },
+            new ResumeCondition(0, false, false), results);
+        await Assert.That(results.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task CollectAutoEligibleFilterExcludesPoolCompetitor()
+    {
+        // The uninspired 20-skill pool member fails the inspired filter, so it
+        // cannot outrank the inspired dispatchable pawn (auto spec §2.2).
+        var results = new List<CandidateFacts>();
+        FinisherSelector.CollectAutoEligible(
+            new[] { F(1, 5, inspired: true) },
+            new[] { F(1, 5, inspired: true), F(2, 20) },
+            new ResumeCondition(0, true, false), results);
+        await Assert.That(results.Count).IsEqualTo(1);
+        await Assert.That(results[0].Id).IsEqualTo(1);
+    }
 }

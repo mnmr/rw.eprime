@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>1.0.3</modVersion>
+  <modVersion>1.0.4</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -18,39 +18,15 @@
     <li>brrainz.harmony</li>
   </loadAfter>
   <description>
-Get high-quality gear and furniture reliably: work on quality items and buildings is set aside at the last moment and finished by your best (or inspired) pawn.
+Quality Jobs lets everyone work on unfinished items, but only qualified colonists are allowed to finish the job. Works for both crafting and construction. 
 
-Crafting:
-- Pauses quality bill work the instant before completion; the item remains unfinished until a qualifying colonist exists to complete the job. If the current crafter already qualifies, their work completion is not interrupted.
-- Shared unfinished work: bills are no longer locked to the pawn who started an item, so anyone can resume work on an unfinished item. This also rescues items whose creator died.
-- Per-bill conditions (minimum skill, require inspiration, require production specialist) with a live quality-odds preview for your configuration and current best crafter.
-- Once a crafter is identified that can complete the work, a bill assigned to that pawn is created automatically (and removed when completed). 
-- Stock caps per product: stop starting new items once enough are waiting for a finisher; in-progress items still get completed.
+You can configure default quality options and override these per bill or buildable. 
 
-Construction:
-- Opt in per building via the "Quality Job" button on any quality blueprint or frame, or globally for all quality buildings from mod settings.
-- Per-build conditions (minimum skill, require inspiration, require production specialist, retry-until quality level reached) with a live quality-odds preview for your configuration and current best builder.
-- Target quality: builds that roll below your chosen quality are automatically marked for deconstruction and will be rebuilt until you get the desired quality (or you clear the build from being a Quality Job).
-- Managed builds pause at 100% and wait for a builder who meets your conditions; a sparkle overlay marks them on the map.
+For crafting, sharing of unfinished works also unblocks bills so they don't become locked to the colonist last working on an item.
 
-Worth Knowing:
-- This mod isn't a cheat that gives you better quality items. Quality is rolled by the pawn who finishes the work, and this mod just helps ensure that is someone with a high success rate.
-- Inspired Creativity is consumed on the finishing touch, exactly as vanilla intends.
-- Paused items show "Author: reserved (Quality Jobs)" and cannot be resumed until a qualifying pawn exists.
-- Ideology's production specialist role is supported but not required; no DLC is needed.
-
-Compatibility:
-- Multiplayer compatible (RimWorld Multiplayer).
-- Safe to add/remove mid-game, but removal without disabling in mod settings will leave unfinished items without an owner (they must be cancelled). Disabling the mod makes items resumable by their (new) owner.
-- No defs are patched and unmanaged bills/builds behave exactly as vanilla; integration is a handful of targeted Harmony patches at job boundaries.
-- Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
-- Requires Harmony.
-
-Check Out My Other Mods:
-- EPrime's Readouts: A modern, compact resource readout with support for custom resource pools.
-- WorkRoles: Easily and intuitively manage work priorities by assigning named roles to colonists.
-
-Disclaimer:
-- Created with the help of Claude Code (see WorkRoles for my longer take on this). The mod is free, made in my spare time, and without AI it likely would not exist.
+Multiplayer compatible. 
+Safe to add/remove mid-save (but when removing you must use the settings option to disable the mod, otherwise unfinished bill items will have to be dismantled).
+Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
+Requires Harmony.
   </description>
 </ModMetaData>

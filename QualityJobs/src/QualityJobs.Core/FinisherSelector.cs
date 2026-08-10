@@ -97,6 +97,48 @@ namespace QualityJobs.Core
             return bestId;
         }
 
+        /// <summary>Collects every candidate SelectBest would accept under the
+        /// condition, ordered best-first by the same (rank, XP, id) ordering.
+        /// Status display support; dispatch itself still uses SelectBest.
+        /// Clears results before filling.</summary>
+        public static void CollectEligible(IReadOnlyList<CandidateFacts> candidates,
+            ResumeCondition condition, List<CandidateFacts> results)
+        {
+            results.Clear();
+            for (int i = 0; i < candidates.Count; i++)
+            {
+                CandidateFacts c = candidates[i];
+                if (!c.WorkTypeEnabled || !c.MeetsRecipeSkillRequirements) continue;
+                if (!condition.IsSatisfiedBy(c)) continue;
+                InsertRanked(results, c);
+            }
+        }
+
+        /// <summary>Collects every dispatchable candidate that passes the auto
+        /// gate against the pool (exact ties all pass, auto spec §2.3), ordered
+        /// by the shared ranking. Clears results before filling.</summary>
+        public static void CollectAutoEligible(IReadOnlyList<CandidateFacts> dispatchable,
+            IReadOnlyList<CandidateFacts> pool, ResumeCondition condition,
+            List<CandidateFacts> results)
+        {
+            results.Clear();
+            for (int i = 0; i < dispatchable.Count; i++)
+            {
+                CandidateFacts c = dispatchable[i];
+                if (!WorkerPassesAutoGate(c, pool, condition)) continue;
+                InsertRanked(results, c);
+            }
+        }
+
+        /// <summary>Insertion into rank order via the shared Better ordering.
+        /// Lists are colony-sized; the quadratic worst case is fine here.</summary>
+        private static void InsertRanked(List<CandidateFacts> results, in CandidateFacts c)
+        {
+            int at = results.Count;
+            while (at > 0 && Better(c, results[at - 1])) at--;
+            results.Insert(at, c);
+        }
+
         /// <summary>Top-ranked eligible pool member regardless of availability
         /// (auto spec §5: current-best display).</summary>
         public static int SelectBestOfPool(IReadOnlyList<CandidateFacts> pool,

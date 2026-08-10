@@ -335,6 +335,33 @@ namespace QualityJobs
             => productDefName != null
                && uftCounts.TryGetValue((map.uniqueID, productDefName), out int n) ? n : 0;
 
+        /// <summary>Pipeline counts for a product on a map (status display,
+        /// spec §11): Paused entries wait for a finisher, Dispatched entries
+        /// are being finished, Shared entries sit in the sharing pool.
+        /// Bounded indexed loop over live entries — call from tick-throttled
+        /// dialog caches, never per frame.</summary>
+        public void CountEntriesFor(Map map, string? productDefName,
+            out int waiting, out int finishing, out int shared)
+        {
+            waiting = 0;
+            finishing = 0;
+            shared = 0;
+            if (productDefName == null) return;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorkItemEntry e = entries[i];
+                UnfinishedThing? uft = e.uft;
+                if (uft == null || !uft.Spawned || uft.Map != map) continue;
+                if (ManagedRecipes.ProductDefName(uft.Recipe) != productDefName) continue;
+                switch (e.state)
+                {
+                    case WorkItemState.Paused: waiting++; break;
+                    case WorkItemState.Dispatched: finishing++; break;
+                    case WorkItemState.Shared: shared++; break;
+                }
+            }
+        }
+
         public void MarkBillRetry(Bill bill)
             => completionRetry.Mark(BillIds.IdOf(bill), Find.TickManager.TicksGame);
 
