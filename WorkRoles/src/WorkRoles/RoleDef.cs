@@ -23,6 +23,9 @@ namespace WorkRoles
         /// Minimum biological age (years) for holding the role; -1 = derive
         /// from the covered work types' lowest vanilla unlock age at seed time.
         public int minAge = -1;
+        /// Maximum biological age (years, inclusive) for holding the role;
+        /// 0 = no gate.
+        public int maxAge;
         /// Assignment scaling inputs (future scale replacement): minimum
         /// assignment count (0-30) and ideal colonist percentage (0-100).
         public int colonyMin;

@@ -23,6 +23,7 @@ namespace WorkRoles.Core
         public RoleTime Time { get; set; }
         public bool ChampionPenalty { get; set; } = true;
         public int MinAge { get; set; }
+        public int MaxAge { get; set; }
         public int ColonyMin { get; set; }
         public int Coverage { get; set; }
         public List<string> RequiredSkills { get; set; } = new List<string>();
@@ -61,6 +62,7 @@ namespace WorkRoles.Core
                 Time = Time,
                 ChampionPenalty = ChampionPenalty,
                 MinAge = MinAge,
+                MaxAge = MaxAge,
                 ColonyMin = ColonyMin,
                 Coverage = Coverage,
                 RequiredSkills = new List<string>(RequiredSkills),

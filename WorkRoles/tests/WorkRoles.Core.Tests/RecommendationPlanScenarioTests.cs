@@ -159,6 +159,33 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
+    public async Task MaximumAgeExcludesOverAgePawnsFromFinalAssignments()
+    {
+        // The adult (default ancient age) has the best skill: without the age
+        // cap it would be picked first. The cap (12) is inclusive, so the pawn
+        // one tick short of turning 13 still counts as 12 and fills a slot
+        // alongside the younger child.
+        RoleView role = CraftingRole(100, "CraftWork");
+        role.MaxAge = 12;
+        RecsTestBed.Require(role, 2);
+
+        PawnView adult = CraftingPawn(12, ("CraftWork", SignalBucket.Neutral));
+        PawnView atCap = CraftingPawn(8, ("CraftWork", SignalBucket.Neutral));
+        atCap.BiologicalAgeTicks = 13L * BiologicalAge.TicksPerYear - 1;
+        PawnView child = CraftingPawn(6, ("CraftWork", SignalBucket.Neutral));
+        child.BiologicalAgeTicks = 9L * BiologicalAge.TicksPerYear;
+
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, adult, atCap, child);
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        var names = new Dictionary<int, string> { [role.Id] = "Craft" };
+
+        await Assert.That(NamesOfRoles(plan, 0, names)).IsEqualTo("");
+        await Assert.That(NamesOfRoles(plan, 1, names)).IsEqualTo("Craft");
+        await Assert.That(NamesOfRoles(plan, 2, names)).IsEqualTo("Craft");
+    }
+
+    [Test]
     public async Task UnskilledStrategyAssignsEveryCapablePawnAndNamesAChampion()
     {
         // Through the real projection: a skill-less role (Hauling) with the
@@ -283,6 +310,44 @@ public class RecommendationPlanScenarioTests
 
         await Assert.That(Holds(plan, 0, grunt.Id)).IsFalse();
         await Assert.That(Holds(plan, 1, grunt.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task MaximumAgeGatesAssignmentThroughTheRealProjection()
+    {
+        // Same all-zero-scale Unskilled shape as above, plus a source MaxAge:
+        // the exactly-at-cap pawn holds it (inclusive), the older pawn does
+        // not, proving the cap survives the catalog projection.
+        var jobs = new FakeCatalog().WithWorkType("Hauling", "Haul");
+        var allZero = new HolderScale();
+        Array.Fill(allZero.Max, 0);
+        var grunt = new RecommendationRoleSource
+        {
+            Id = 1,
+            MaxAge = 3,
+            Mode = ScaleMode.Unskilled,
+            Scale = allZero,
+            Entries = { new JobEntry(JobEntryKind.WorkType, "Hauling") },
+        };
+        RecommendationCatalogProjection projection =
+            RecommendationCatalogBuilder.Build(
+                new[] { grunt },
+                Array.Empty<PathView>(),
+                jobs,
+                new Dictionary<string, int> { ["Hauling"] = 100 },
+                UnskilledJobProfiles());
+        PawnView Worker(int ageYears) => new PawnView
+        {
+            CapableWorkTypes = { "Hauling" },
+            BiologicalAgeTicks = ageYears * BiologicalAge.TicksPerYear,
+        };
+        ColonyView colony = projection.CreateColony(
+            new[] { grunt.Id }, new[] { Worker(3), Worker(4) });
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(Holds(plan, 0, grunt.Id)).IsTrue();
+        await Assert.That(Holds(plan, 1, grunt.Id)).IsFalse();
     }
 
     private static JobProfileIndex UnskilledJobProfiles()

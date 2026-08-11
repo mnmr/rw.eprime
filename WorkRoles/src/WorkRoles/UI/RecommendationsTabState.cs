@@ -85,6 +85,8 @@ namespace WorkRoles.UI
         internal float RecommendationOrderHelpHeight { get; private set; }
         internal IReadOnlyList<RecTuningSection> TuningSections => tuningSections;
         internal string TuningReset { get; private set; }
+        internal string GlobalHelp { get; private set; }
+        internal float GlobalHelpHeight { get; private set; }
         internal IReadOnlyList<RecRolePanel> Panels => panels;
         internal string PanelsHelp { get; private set; }
         internal float PanelsHelpHeight { get; private set; }
@@ -115,6 +117,8 @@ namespace WorkRoles.UI
             tuningWidth = -1f;
             tuningSections.Clear();
             TuningReset = null;
+            GlobalHelp = null;
+            GlobalHelpHeight = 0f;
 
             panelsStamp = -1;
             panelsStore = null;
@@ -192,6 +196,8 @@ namespace WorkRoles.UI
             try
             {
                 Text.Font = GameFont.Small;
+                GlobalHelp = "WR_RecGlobalPanelHelp".Translate();
+                GlobalHelpHeight = Text.CalcHeight(GlobalHelp, width);
                 foreach (RecommendationTuningDescriptor descriptor in
                          RecommendationsTuningOptions.Descriptors)
                 {
@@ -226,6 +232,21 @@ namespace WorkRoles.UI
                             System.Math.Max(80f, width - descriptionWidthReserve));
                         float rowHeight = System.Math.Max(
                             44f, 21f + descriptionHeight);
+                        List<string> enumOptions = null;
+                        List<Color> enumColors = null;
+                        if (descriptor.ValueKind
+                            == RecommendationTuningValueKind.SignalBucket)
+                        {
+                            enumOptions = new List<string>();
+                            enumColors = new List<Color>();
+                            for (int bucket = descriptor.MinimumValue;
+                                 bucket <= descriptor.MaximumValue; bucket++)
+                            {
+                                enumOptions.Add(SignalLetter((SignalBucket)bucket));
+                                enumColors.Add(Signals.SkillSignalPresentation
+                                    .VerdictColor((SignalBucket)bucket));
+                            }
+                        }
                         items.Add(new RecTuningItem(new RecommendationTuningRow(
                             descriptor,
                             value,
@@ -234,7 +255,10 @@ namespace WorkRoles.UI
                             description,
                             valueLabel,
                             sectionRect: default,
-                            new Rect(0f, y, width, rowHeight))));
+                            new Rect(0f, y, width, rowHeight),
+                            "WR_Tune_" + descriptor.StableKey,
+                            enumOptions,
+                            enumColors)));
                         y += rowHeight + rowGap;
                         continue;
                     }
@@ -520,9 +544,6 @@ namespace WorkRoles.UI
             Role role = store.RoleById(roleId);
             if (role == null) return null;
 
-            string categoryValueLabel = CategoryLabel(role.category);
-            string timeValueLabel = TimeLabel(role.time);
-
             // Skill chips flow inside the right half column.
             Text.Font = GameFont.Small;
             float halfWidth = (width - 12f) / 2f;
@@ -548,20 +569,23 @@ namespace WorkRoles.UI
                 "WR_RecSkillsSection".Translate().ToString(),
                 "WR_RecScalingSection".Translate().ToString(),
                 "WR_RoleCategoryLabel".Translate().ToString(),
-                (int)role.category, categoryValueLabel,
-                "WR_RoleCategoryOptional".Translate().ToString(),
-                "WR_RoleCategoryImportant".Translate().ToString(),
+                (int)role.category,
+                new[]
+                {
+                    "WR_RoleCategoryOptional".Translate().ToString(),
+                    "WR_RoleCategoryNormal".Translate().ToString(),
+                    "WR_RoleCategoryImportant".Translate().ToString(),
+                },
                 "WR_RoleTimeLabel".Translate().ToString(),
-                (int)role.time, timeValueLabel,
-                "WR_RoleTimePartTime".Translate().ToString(),
-                "WR_RoleTimeOpportunistic".Translate().ToString(),
+                (int)role.time,
+                new[]
+                {
+                    "WR_RoleTimePartTime".Translate().ToString(),
+                    "WR_RoleTimeFullTime".Translate().ToString(),
+                    "WR_RoleTimeOpportunistic".Translate().ToString(),
+                },
                 "WR_ChampionPenalty".Translate().ToString(),
                 role.championPenalty,
-                "WR_RoleMinAgeLabel".Translate().ToString(),
-                Mathf.Max(0, role.minAge),
-                Mathf.Max(0, role.minAge).ToString(CultureInfo.InvariantCulture),
-                RecsAdapter.FullyUnlocksAtAgeOf(role)
-                    .ToString(CultureInfo.InvariantCulture),
                 "WR_RequiredSkillsLabel".Translate().ToString(),
                 requiredChips, requiredHeight,
                 "WR_OptionalSkillsLabel".Translate().ToString(),
@@ -573,36 +597,15 @@ namespace WorkRoles.UI
                 role.colonyMin.ToString(CultureInfo.InvariantCulture),
                 "WR_RoleCoverageLabel".Translate().ToString(),
                 role.coverage,
-                role.coverage.ToString(CultureInfo.InvariantCulture) + "%",
+                role.coverage.ToString(CultureInfo.InvariantCulture),
                 showTraining,
                 paths);
             return detail;
         }
 
-        private static string CategoryLabel(RoleCategory category)
-        {
-            switch (category)
-            {
-                case RoleCategory.Important: return "WR_RoleCategoryImportant".Translate();
-                case RoleCategory.Normal: return "WR_RoleCategoryNormal".Translate();
-                case RoleCategory.Optional: return "WR_RoleCategoryOptional".Translate();
-                default: return "WR_RoleCategoryNone".Translate();
-            }
-        }
-
-        private static string TimeLabel(RoleTime time)
-        {
-            switch (time)
-            {
-                case RoleTime.PartTime: return "WR_RoleTimePartTime".Translate();
-                case RoleTime.FullTime: return "WR_RoleTimeFullTime".Translate();
-                case RoleTime.Opportunistic: return "WR_RoleTimeOpportunistic".Translate();
-                default: return "WR_RoleTimeNone".Translate();
-            }
-        }
-
-        /// One 26px row per skill plus the trailing Add row; the view lays the
-        /// three columns (caption, skill, buttons) arithmetically.
+        /// One 26px row per skill; the Add button shares the top row, so an
+        /// empty table still spans one row. The view lays the three columns
+        /// (caption, skill + remove, Add button) arithmetically.
         internal const float SkillRowPitch = 26f;
 
         private static float LayoutSkillChips(List<string> skillDefNames,
@@ -614,7 +617,7 @@ namespace WorkRoles.UI
                 present.Add(defName);
                 chips.Add(new RecSkillChip(defName, SkillLabel(defName), default));
             }
-            return (chips.Count + 1) * SkillRowPitch;
+            return Mathf.Max(1, chips.Count) * SkillRowPitch;
         }
 
         private static string SkillLabel(string defName)
@@ -836,13 +839,10 @@ namespace WorkRoles.UI
             string classificationHeader, string skillsHeader,
             string scalingHeader,
             string categoryCaption, int categoryValue,
-            string categoryValueLabel, string categoryLeftLabel,
-            string categoryRightLabel,
-            string timeCaption, int timeValue, string timeValueLabel,
-            string timeLeftLabel, string timeRightLabel,
+            IReadOnlyList<string> categoryOptions,
+            string timeCaption, int timeValue,
+            IReadOnlyList<string> timeOptions,
             string championLabel, bool championPenalty,
-            string minAgeCaption, int minAge, string minAgeLabel,
-            string minAgeTipArg,
             string requiredCaption, List<RecSkillChip> requiredChips,
             float requiredHeight,
             string optionalCaption, List<RecSkillChip> optionalChips,
@@ -858,20 +858,12 @@ namespace WorkRoles.UI
             ScalingHeader = scalingHeader;
             CategoryCaption = categoryCaption;
             CategoryValue = categoryValue;
-            CategoryValueLabel = categoryValueLabel;
-            CategoryLeftLabel = categoryLeftLabel;
-            CategoryRightLabel = categoryRightLabel;
+            CategoryOptions = categoryOptions;
             TimeCaption = timeCaption;
             TimeValue = timeValue;
-            TimeValueLabel = timeValueLabel;
-            TimeLeftLabel = timeLeftLabel;
-            TimeRightLabel = timeRightLabel;
+            TimeOptions = timeOptions;
             ChampionLabel = championLabel;
             ChampionPenalty = championPenalty;
-            MinAgeCaption = minAgeCaption;
-            MinAge = minAge;
-            MinAgeLabel = minAgeLabel;
-            MinAgeTipArg = minAgeTipArg;
             RequiredCaption = requiredCaption;
             this.requiredChips = requiredChips;
             RequiredHeight = requiredHeight;
@@ -896,21 +888,13 @@ namespace WorkRoles.UI
         internal string ScalingHeader { get; }
         internal string CategoryCaption { get; }
         internal int CategoryValue { get; }
-        internal string CategoryValueLabel { get; }
-        internal string CategoryLeftLabel { get; }
-        internal string CategoryRightLabel { get; }
+        /// Segment labels in picker-position order (0 = leftmost).
+        internal IReadOnlyList<string> CategoryOptions { get; }
         internal string TimeCaption { get; }
         internal int TimeValue { get; }
-        internal string TimeValueLabel { get; }
-        internal string TimeLeftLabel { get; }
-        internal string TimeRightLabel { get; }
+        internal IReadOnlyList<string> TimeOptions { get; }
         internal string ChampionLabel { get; }
         internal bool ChampionPenalty { get; }
-        internal string MinAgeCaption { get; }
-        internal int MinAge { get; }
-        internal string MinAgeLabel { get; }
-        /// Fully-unlocks age as the min-age tooltip's translation argument.
-        internal string MinAgeTipArg { get; }
         internal string RequiredCaption { get; }
         internal int RequiredChipCount => requiredChips.Count;
         internal RecSkillChip RequiredChipAt(int index) => requiredChips[index];

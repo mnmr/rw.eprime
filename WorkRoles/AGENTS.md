@@ -106,7 +106,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 
 | Cached artifact | Required invalidation inputs |
 |---|---|
-| Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; mid-operation evictions defer reconciles to the next game-component tick |
+| Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; a member-role edit also invalidates every composite bundling it and that composite's holders (depth-1 reverse scan in `InvalidateRole`); mid-operation evictions defer reconciles to the next game-component tick |
 | Pawn signal snapshot (`PawnSignalSnapshotCache`) | Explicit invalidation via `ExternalPawnFacts`; generation cleared on window open and release; live skill XP intentionally not a dependency |
 | External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded |
 | Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current`, RoleStore identity, and `RecommendationTuningRevision` |

@@ -27,6 +27,7 @@
   <WR_OptVerdictsRecommendationsTip>Recommended role chips (stats panel and change previews) show the suitability verdict for the colonist they are recommended to.</WR_OptVerdictsRecommendationsTip>
   <!-- Recommendations tab (WR_OptRecOrder also labels the import preview section) -->
   <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
+  <WR_RecGlobalPanelHelp>These options modify how the recommendation engine scores/ranks candidates as well as where orders land in the final recommendation list. Use the Reset buttons to restore defaults if you regret your edits.</WR_RecGlobalPanelHelp>
   <WR_RecRolePanel>Role Options</WR_RecRolePanel>
   <WR_RecRolePanelHelp>Lists the roles from the default recommendation order above. If a role is missing here, first add it to the recommendation order.</WR_RecRolePanelHelp>
   <WR_RecOrderHeader>Recommended Roles</WR_RecOrderHeader>
@@ -143,6 +144,8 @@
   <WR_ChampionPenaltyTip>When enabled, a colonist who already champions other roles is penalized when competing to champion this one. Disable it for roles where repeat championships are fine, such as occasional work.</WR_ChampionPenaltyTip>
   <WR_RoleMinAgeLabel>Minimum age:</WR_RoleMinAgeLabel>
   <WR_RoleMinAgeTip>Colonists younger than this are never assigned or recommended this role. The default is the age at which some of the role's work becomes possible; every job in this role is possible from age {0}.</WR_RoleMinAgeTip>
+  <WR_RoleMaxAgeLabel>Maximum age:</WR_RoleMaxAgeLabel>
+  <WR_RoleMaxAgeTip>Colonists older than this are never assigned or recommended this role. The limit is inclusive: a colonist of exactly this age still qualifies. Set to 0 for no limit. Use 12 to restrict a role to children.</WR_RoleMaxAgeTip>
   <WR_RequiredSkillsLabel>Required</WR_RequiredSkillsLabel>
   <WR_RequiredSkillsTip>Skills a colonist must be good at for this role to be recommended.</WR_RequiredSkillsTip>
   <WR_OptionalSkillsLabel>Optional</WR_OptionalSkillsLabel>
@@ -199,6 +202,7 @@
   <WR_RoleJobNoRangedWeapon>no ranged weapon</WR_RoleJobNoRangedWeapon>
   <WR_RoleJobTooYoung>too young, possible from age {0}</WR_RoleJobTooYoung>
   <WR_RoleTooYoung>{0} is too young for this role (minimum age {1}).</WR_RoleTooYoung>
+  <WR_RoleTooOld>{0} is too old for this role (maximum age {1}).</WR_RoleTooOld>
   <WR_MtcHatedWorkSignalLabel>Hates {0}</WR_MtcHatedWorkSignalLabel>
   <WR_MtcHatedWorkSignalDescription>More Than Capable permits this work, but it causes severe and escalating penalties.</WR_MtcHatedWorkSignalDescription>
   <WR_RoleAwfulSignal>{0} has an Awful signal for this role: {1}.</WR_RoleAwfulSignal>
@@ -529,6 +533,18 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Tooltip for a dead entry (dimmed): claims nothing the entries above don't already cover -->
   <WR_DeadEntryTip>No effect: everything this entry covers is already covered by the entries above it. Move it up to prioritize it, or remove it.</WR_DeadEntryTip>
 
+  <!-- Composite role editor (member roles instead of jobs) -->
+  <WR_CompositeRole>Composite role</WR_CompositeRole>
+  <WR_CompositeRoleTip>Composite roles bundle other roles: holders do the member roles' jobs in the member order. A composite role has no job list of its own.</WR_CompositeRoleTip>
+  <!-- {0} = role label -->
+  <WR_CompositeConfirm>Turn '{0}' into a composite role? Its selected jobs will be removed.</WR_CompositeConfirm>
+  <WR_CompositeRevertConfirm>Turn '{0}' back into a regular role? Its member roles will be removed.</WR_CompositeRevertConfirm>
+  <WR_MemberRoles>Member Roles (ordered)</WR_MemberRoles>
+  <WR_AvailableRoles>Available Roles</WR_AvailableRoles>
+  <WR_NoMembersHint>Add roles from the list on the left. Holders of this role do the member roles' jobs in the order shown here.</WR_NoMembersHint>
+  <WR_NoCandidatesHint>No roles can be added. Members must be regular roles without hour or location rules, and a composite cannot contain another composite.</WR_NoCandidatesHint>
+  <WR_MemberLockTip>Locked: this role is a member of a composite role. Remove it from every composite to change this setting.</WR_MemberLockTip>
+
   <!-- Holder scale editor -->
   <WR_ScaleRenameTip>Rename this scale (roles referencing it follow).</WR_ScaleRenameTip>
   <WR_ScaleRenameTitle>Rename scale</WR_ScaleRenameTitle>
@@ -607,6 +623,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Role-list groups -->
   <WR_GroupDefault>Default</WR_GroupDefault>
   <WR_GroupAutoRules>Auto-Roles</WR_GroupAutoRules>
+  <WR_GroupComposites>Composite Roles</WR_GroupComposites>
   <WR_GroupLabel>Group</WR_GroupLabel>
   <!-- {0} = the role's current group name -->
   <WR_GroupButton>Group: {0}</WR_GroupButton>
@@ -615,6 +632,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RenameGroup>Rename group</WR_RenameGroup>
   <WR_RenameGroupTitle>Rename group</WR_RenameGroupTitle>
   <WR_GroupOverlayTip>Roles with rules display under Auto-Roles. The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
+  <WR_GroupCompositeTip>Composite roles display under Composite Roles.</WR_GroupCompositeTip>
   <WR_TreeNested>Nested</WR_TreeNested>
   <WR_TreeFlat>Flat</WR_TreeFlat>
   <WR_TreeToggleTip>Toggle nesting of covered roles under their combo role.</WR_TreeToggleTip>

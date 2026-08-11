@@ -103,22 +103,49 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
         }
 
+        // Shared chip metrics: markers sit MarkerEdgePad from the left border
+        // with MarkerGap between slots; the label follows the band (or the
+        // border) by LabelGap, and ends LabelGap before the remove slot. The
+        // verdict star pair gets a narrow slot so the stars hug the border
+        // like icon markers do.
+        private const float MarkerEdgePad = 3f;
+        private const float MarkerGap = 2f;
+        private const float VerdictSlotW = 12f;
+
+        private static float LabelGap(ChipDisplay display) =>
+            display == ChipDisplay.Compact ? 2f : 4f;
+
         /// Prefix markers: suitability verdict, cached pawn capability, blocker,
         /// time rule, location rule, the forced-on flag, and — on plain manual
         /// roles only — the assignment pin. Blockers and rule-carrying roles are
-        /// already plan-protected, so a pin there would be redundant. Every
-        /// visible marker owns a full slot; this count and the Draw sequence
-        /// must agree.
-        private static int MarkerCount(RoleChipRenderData role, bool pinned,
+        /// already plan-protected, so a pin there would be redundant. Returns
+        /// the band's pixel width (slots plus inner gaps, no edge or label
+        /// gaps); this math and the Draw sequence must agree.
+        private static float MarkerBand(RoleChipRenderData role, bool pinned,
             RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
-            bool verdictSlot) =>
-            (verdictSlot ? 1 : 0)
-            + (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
-            + (role.Blocker ? 1 : 0)
-            + (role.HasTimeRule ? 1 : 0)
-            + (role.HasLocationRule ? 1 : 0)
-            + (forcedOn ? 1 : 0)
-            + (PinShown(role, pinned) ? 1 : 0);
+            bool verdictSlot)
+        {
+            int icons =
+                (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
+                + (role.Blocker ? 1 : 0)
+                + (role.HasTimeRule ? 1 : 0)
+                + (role.HasLocationRule ? 1 : 0)
+                + (forcedOn ? 1 : 0)
+                + (PinShown(role, pinned) ? 1 : 0);
+            float band = verdictSlot ? VerdictSlotW : 0f;
+            if (icons > 0)
+                band += (band > 0f ? MarkerGap : 0f)
+                    + icons * RemoveSize + (icons - 1) * MarkerGap;
+            return band;
+        }
+
+        private static float LeftInset(float markerBand, ChipDisplay display) =>
+            markerBand > 0f ? MarkerEdgePad + markerBand + LabelGap(display)
+            : display == ChipDisplay.Compact ? 4f : PadFor(display);
+
+        private static float RightInset(bool showRemove, ChipDisplay display) =>
+            showRemove ? MarkerEdgePad + RemoveSize + LabelGap(display)
+                : PadFor(display);
 
         private static bool PinShown(Role role, bool pinned) =>
             pinned && !role.blocker && !role.HasRules;
@@ -164,18 +191,17 @@ namespace WorkRoles.UI
             bool forcedOn = false, bool verdictSlot = false)
         {
             Text.Font = GameFont.Small;
-            int markers = MarkerCount(role, pinned, warningSeverity, forcedOn,
+            float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
                 verdictSlot);
             // Minimal chips with markers carry no blank label square; Compact
             // chips share one width (the widest initials) so columns line up.
             float labelW = display == ChipDisplay.Minimal
-                ? (markers > 0 ? 0f : 10f)
+                ? (band > 0f ? 0f : 10f)
                 : display == ChipDisplay.Compact && abbrev != null
                     ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
                     : WrText.FitWidth(role.Label);
-            return labelW + PadFor(display) * 2f
-                + (showRemove ? RemoveSize + 2f : 0f)
-                + markers * (RemoveSize + 2f);
+            return labelW + LeftInset(band, display)
+                + RightInset(showRemove, display);
         }
 
         /// Band chip: role colors/label like a normal chip, plus inner grip
@@ -258,10 +284,9 @@ namespace WorkRoles.UI
                     Label = display == ChipDisplay.Minimal ? null
                         : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.Label,
                     ShowRemove = showRemove,
-                    LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
-                        + MarkerCount(role, pinned, warningSeverity, forcedOn,
-                            verdict.Shown) * (RemoveSize + 2f),
-                    LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
+                    LabelInsetLeft = LeftInset(MarkerBand(role, pinned,
+                        warningSeverity, forcedOn, verdict.Shown), display),
+                    LabelInsetRight = RightInset(showRemove, display),
                     StrikeCount = style == ChipStyle.Disabled
                         ? strikes : RoleChipStrikes.None,
                 };
@@ -272,7 +297,7 @@ namespace WorkRoles.UI
                 // Drawn on top of the box; the label inset already reserves the slots.
                 // No tips here: a chip has exactly one tooltip, owned by the caller.
                 {
-                    float markerX = rect.x + 3f;
+                    float markerX = rect.x + MarkerEdgePad;
                     void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
                     {
                         var markerRect = new Rect(markerX + (RemoveSize - size) / 2f,
@@ -280,15 +305,15 @@ namespace WorkRoles.UI
                         GUI.color = tinted ? RuleMarkerColor : Color.white;
                         GUI.DrawTexture(markerRect, tex);
                         GUI.color = Color.white;
-                        markerX += RemoveSize + 2f;
+                        markerX += RemoveSize + MarkerGap;
                     }
                     if (verdict.Shown)
                     {
-                        // Full chip height: the star stack needs the vertical
-                        // room; the slot width stays one marker wide.
+                        // Full chip height (the star pair needs the vertical
+                        // room) in the narrow star slot.
                         DrawVerdictBadge(new Rect(markerX, rect.y,
-                            RemoveSize, rect.height), verdict);
-                        markerX += RemoveSize + 2f;
+                            VerdictSlotW, rect.height), verdict);
+                        markerX += VerdictSlotW + MarkerGap;
                     }
                     if (warningSeverity != RoleAssignmentWarningSeverity.None)
                         Marker(warningSeverity == RoleAssignmentWarningSeverity.Caution

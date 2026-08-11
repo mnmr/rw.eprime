@@ -9,7 +9,25 @@ namespace WorkRoles
     internal static class RoleSkillProfiles
     {
         internal static List<RoleSkillView> ForRole(Role role)
-            => role == null ? new List<RoleSkillView>() : ForCoverage(role.Coverage());
+        {
+            if (role == null) return new List<RoleSkillView>();
+            if (!role.composite) return ForCoverage(role.Coverage());
+            // A composite unions its members' own profiles (the per-role share
+            // filter runs within each member), so a bundle of specialist roles
+            // shows every specialist skill. Blocker members contribute nothing
+            // unless the composite itself is a blocker, mirroring Coverage().
+            var store = RoleStore.Current;
+            var profiles = new List<IReadOnlyList<RoleSkillView>>();
+            if (store != null)
+                foreach (int memberId in role.memberRoleIds)
+                {
+                    Role member = store.RoleById(memberId);
+                    if (member == null || member.composite) continue;
+                    if (member.blocker && !role.blocker) continue;
+                    profiles.Add(ForCoverage(member.Coverage()));
+                }
+            return RoleSkillProfile.Merge(profiles);
+        }
 
         internal static List<RoleSkillView> ForCoverage(IEnumerable<string> giverNames)
         {

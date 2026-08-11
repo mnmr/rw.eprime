@@ -59,6 +59,8 @@ namespace WorkRoles.Core
         public bool championPenalty = true;
         /// Minimum holding age in years; -1 = absent (pre-minAge file).
         public int minAge = -1;
+        /// Maximum holding age in years, inclusive; 0 = no gate.
+        public int maxAge;
         /// Assignment scaling inputs (v11): minimum assignment count and
         /// ideal colonist percentage.
         public int colonyMin;
@@ -70,6 +72,9 @@ namespace WorkRoles.Core
         public List<FileTrainingPathEntry> training =
             new List<FileTrainingPathEntry>();
         public List<JobEntry> entries = new List<JobEntry>();
+        /// Composite role (v12): ordered member role references instead of jobs.
+        public bool composite;
+        public List<FileRoleReference> members = new List<FileRoleReference>();
 
         public const int AllHours = 0xFFFFFF;
     }
@@ -178,10 +183,12 @@ namespace WorkRoles.Core
         /// location used to preserve disabled migrated roles; v10 removes the
         /// obsolete scalar holder mode/range attributes; v11 moves training
         /// onto the owning role (<Tuning><Training>) and retires the
-        /// stand-alone <TrainingPaths> section (still parsed for import).
+        /// stand-alone <TrainingPaths> section (still parsed for import);
+        /// v12 adds composite roles (a Role's composite attribute and its
+        /// ordered <Members> role references, replacing <Jobs>).
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "11";
+        public const string FormatVersion = "12";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -210,6 +217,9 @@ namespace WorkRoles.Core
     demand: the minimum assignment count and the ideal colonist percentage.
     Legacy <Scales> sections and <Holders scale=""name""/> references still
     import and convert to these numbers.
+  - A Role with composite=""true"" holds <Members> instead of <Jobs>: ordered
+    <Role roleId=""..."">name</Role> references. Holders do the member roles'
+    jobs in that order. Members must be regular roles without rules.
 ";
         private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
 
@@ -300,6 +310,8 @@ namespace WorkRoles.Core
         private static XElement Encode(FileRole role)
         {
             var element = new XElement("Role", new XAttribute("name", role.label ?? ""));
+            if (role.composite)
+                element.Add(new XAttribute("composite", "true"));
             if (!string.IsNullOrEmpty(role.fileId))
                 element.Add(new XAttribute("fileId", role.fileId));
             if (!string.IsNullOrEmpty(role.templateDef))
@@ -332,6 +344,8 @@ namespace WorkRoles.Core
                     tuning.Add(new XAttribute("championPenalty", "false"));
                 if (role.minAge >= 0)
                     tuning.Add(new XAttribute("minAge", role.minAge));
+                if (role.maxAge > 0)
+                    tuning.Add(new XAttribute("maxAge", role.maxAge));
                 if (role.colonyMin != 0)
                     tuning.Add(new XAttribute("colonyMin", role.colonyMin));
                 if (role.coverage != 0)
@@ -384,6 +398,21 @@ namespace WorkRoles.Core
             }
             if (options.HasElements)
                 element.Add(options);
+
+            if (role.composite)
+            {
+                // Composite roles hold ordered member references instead of jobs.
+                var members = new XElement("Members");
+                foreach (var member in role.members)
+                {
+                    var memberEl = new XElement("Role", member?.label ?? "");
+                    if (!string.IsNullOrEmpty(member?.fileId))
+                        memberEl.Add(new XAttribute("roleId", member.fileId));
+                    members.Add(memberEl);
+                }
+                element.Add(members);
+                return element;
+            }
 
             // One ordered list; the element name carries the entry kind (order IS
             // priority, so types and givers must not be split into separate lists).
@@ -726,6 +755,9 @@ namespace WorkRoles.Core
                     if (int.TryParse(tuningEl.Attribute("minAge")?.Value,
                             out int minAge))
                         role.minAge = minAge;
+                    if (int.TryParse(tuningEl.Attribute("maxAge")?.Value,
+                            out int maxAge))
+                        role.maxAge = maxAge;
                     if (int.TryParse(tuningEl.Attribute("colonyMin")?.Value,
                             out int colonyMin))
                         role.colonyMin = colonyMin;
@@ -761,6 +793,23 @@ namespace WorkRoles.Core
                         StringComparison.OrdinalIgnoreCase))
                         role.holderScale = "Never";
                 }
+            }
+            role.composite = string.Equals(el.Attribute("composite")?.Value?.Trim(),
+                "true", StringComparison.OrdinalIgnoreCase);
+            if (role.composite)
+            {
+                // A hand-edited composite carrying <Jobs> loses them: composites
+                // hold members only.
+                foreach (var memberEl in el.Element("Members")?.Elements("Role")
+                         ?? Enumerable.Empty<XElement>())
+                {
+                    string memberLabel = memberEl.Value?.Trim();
+                    if (string.IsNullOrEmpty(memberLabel)) continue;
+                    role.members.Add(new FileRoleReference(
+                        EmptyToNull(memberEl.Attribute("roleId")?.Value?.Trim()),
+                        memberLabel));
+                }
+                return role;
             }
             foreach (var job in el.Element("Jobs")?.Elements() ?? Enumerable.Empty<XElement>())
             {

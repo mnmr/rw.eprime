@@ -91,12 +91,28 @@ namespace WorkRoles.UI
             whenCaptionWidth = -1f;
         }
 
-        // WHEN caption: translate + Truncate measurement per pass are
+        // WHEN caption: translate + wrap measurement per pass are
         // render-forbidden. Owner: view. Key: caption width (single slot).
-        // Value: truncated caption. Dependencies: width, language.
-        // Refresh: on width change. Teardown: language invalidation resets.
+        // Value: wrapped caption text and height. Dependencies: width,
+        // language. Refresh: on width change. Teardown: language invalidation
+        // resets.
         private float whenCaptionWidth = -1f;
-        private string whenCaptionShown;
+        private string whenCaptionText;
+        private float whenCaptionHeight;
+
+        private float WhenCaptionHeight(float width)
+        {
+            if (whenCaptionWidth != width)
+            {
+                whenCaptionWidth = width;
+                GameFont previousFont = Text.Font;
+                Text.Font = GameFont.Tiny;
+                whenCaptionText = "WR_WhenPanelCaption".Translate();
+                whenCaptionHeight = Text.CalcHeight(whenCaptionText, width);
+                Text.Font = previousFont;
+            }
+            return whenCaptionHeight;
+        }
 
         private void ClearBandDrag()
         {
@@ -156,7 +172,7 @@ namespace WorkRoles.UI
             // header like every other section.
             float y = 12f;
             float recHeaderY = y;
-            y += 30f;
+            y += 26f;
             var recOrderHelpRect = new Rect(flowX, y, orderW,
                 state.RecommendationOrderHelpHeight);
             y = recOrderHelpRect.yMax + 6f;
@@ -167,13 +183,14 @@ namespace WorkRoles.UI
             // LEFT column: the role panels.
             y = columnsTop;
             var leftHeader = new Rect(flowX, y, flowW, 28f);
-            y += 32f;
+            y += 26f;
             var panelsHelpRect = new Rect(flowX, y, flowW,
                 state.PanelsHelpHeight);
             y = panelsHelpRect.yMax + 8f;
             float panelsStartY = y;
             IReadOnlyList<RecRolePanel> panels = state.Panels;
-            float bodyHeight = detail == null ? 0f : BodyHeight(detail);
+            float bodyHeight = detail == null
+                ? 0f : BodyHeight(detail, flowW - PanelPad * 2f);
             for (int i = 0; i < panels.Count; i++)
             {
                 y += PanelHeaderH;
@@ -187,7 +204,9 @@ namespace WorkRoles.UI
             float gx = sideBySide ? rightX : flowX;
             float gy = sideBySide ? columnsTop : y;
             var rightHeader = new Rect(gx, gy, gw, 28f);
-            gy += 32f;
+            gy += 26f;
+            var globalHelpRect = new Rect(gx, gy, gw, state.GlobalHelpHeight);
+            gy = globalHelpRect.yMax + 8f;
             float tuningStartY = gy;
             IReadOnlyList<RecTuningSection> tuningSections = state.TuningSections;
             for (int i = 0; i < tuningSections.Count; i++)
@@ -213,6 +232,7 @@ namespace WorkRoles.UI
                 detail, bodyHeight);
 
             WrText.HeaderLabel(rightHeader, "WR_RecGlobalPanel".Translate());
+            DrawHelpParagraph(globalHelpRect, state.GlobalHelp);
             float ty = tuningStartY;
             for (int i = 0; i < tuningSections.Count; i++)
             {
@@ -318,10 +338,11 @@ namespace WorkRoles.UI
         }
 
         /// Expanded panel content height. MUST mirror DrawExpandedBody's flow.
-        private float BodyHeight(RecRoleDetailSnapshot detail)
+        private float BodyHeight(RecRoleDetailSnapshot detail, float width)
         {
+            float halfW = (width - ColumnGap) / 2f;
             float left = MiniHeaderH + OptionBlockH + 4f + OptionBlockH + 4f
-                + CheckRowH + 2f + ScalingRowH + 8f
+                + CheckRowH + 8f
                 + MiniHeaderH + ScalingRowH + 2f + ScalingRowH;
             float right = MiniHeaderH
                 + detail.RequiredHeight + 6f + detail.OptionalHeight;
@@ -329,16 +350,16 @@ namespace WorkRoles.UI
             {
                 right += 8f + MiniHeaderH;
                 for (int i = 0; i < detail.PathCount; i++)
-                    right += PathBlockHeight(detail.PathAt(i)) + 8f;
+                    right += PathBlockHeight(detail.PathAt(i), halfW) + 8f;
             }
             return Mathf.Max(left, right);
         }
 
-        // The trailing 5px row gap is trimmed so bottom padding matches the
-        // panel's side padding.
-        private static float PathBlockHeight(RecPathView view) =>
-            PanelCaptionH + PanelCaptionGap
-                + WhenPanelPad * 2f + RowsStartY + view.DisplayRows * BandRowH - 5f;
+        // The trailing 5px row gap is trimmed; the WHEN area is frameless and
+        // spans the full block width.
+        private float PathBlockHeight(RecPathView view, float width) =>
+            WhenCaptionHeight(width) + PanelCaptionGap
+                + RowsStartY + view.DisplayRows * BandRowH - 5f;
 
         private void DrawExpandedBody(Rect inner, RoleStore store,
             RecRoleDetailSnapshot detail)
@@ -356,18 +377,16 @@ namespace WorkRoles.UI
             float ly = MiniHeader(x, y, halfW, detail.ClassificationHeader, null);
             int categoryPosition = detail.CategoryValue == 0
                 ? 1 : 3 - detail.CategoryValue;
-            int pickedCategory = DrawOptionSlider(x, ly, halfW,
+            int pickedCategory = DrawOptionSegments(x, ly, halfW,
                 detail.CategoryCaption, "WR_RoleCategoryTip", categoryPosition,
-                detail.CategoryValueLabel, detail.CategoryLeftLabel,
-                detail.CategoryRightLabel);
+                detail.CategoryOptions);
             if (pickedCategory != categoryPosition)
                 RoleCommands.SetRoleCategory(roleId, 3 - pickedCategory);
             ly += OptionBlockH + 4f;
             int timePosition = detail.TimeValue == 0 ? 1 : detail.TimeValue - 1;
-            int pickedTime = DrawOptionSlider(x, ly, halfW,
+            int pickedTime = DrawOptionSegments(x, ly, halfW,
                 detail.TimeCaption, "WR_RoleTimeTip", timePosition,
-                detail.TimeValueLabel, detail.TimeLeftLabel,
-                detail.TimeRightLabel);
+                detail.TimeOptions);
             if (pickedTime != timePosition)
                 RoleCommands.SetRoleTime(roleId, pickedTime + 1);
             ly += OptionBlockH + 4f;
@@ -379,23 +398,19 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             if (champion != detail.ChampionPenalty)
                 RoleCommands.SetRoleChampionPenalty(roleId, champion);
-            ly += CheckRowH + 2f;
-            DrawScalingRow(new Rect(x, ly, halfW, ScalingRowH),
-                detail.MinAgeCaption, "WR_RoleMinAgeTip", detail.MinAgeTipArg,
-                detail.MinAgeLabel, detail.MinAge, 1,
-                roleId, ScalingField.MinAge);
-            ly += ScalingRowH + 8f;
+            ly += CheckRowH + 8f;
 
             ly = MiniHeader(x, ly, halfW, detail.ScalingHeader, null);
             DrawScalingRow(new Rect(x, ly, halfW, ScalingRowH),
                 detail.ColonyMinCaption, "WR_RoleColonyMinTip", null,
-                detail.ColonyMinLabel, detail.ColonyMin, 1,
-                roleId, ScalingField.ColonyMin);
+                detail.ColonyMinLabel, detail.ColonyMin,
+                roleId, ScalingField.ColonyMin, "WR_ScaleColonyMin");
             ly += ScalingRowH + 2f;
             DrawScalingRow(new Rect(x, ly, halfW, ScalingRowH),
                 detail.CoverageCaption, "WR_RoleCoverageTip", null,
-                detail.CoverageLabel, detail.Coverage, 5,
-                roleId, ScalingField.Coverage);
+                detail.CoverageLabel, detail.Coverage,
+                roleId, ScalingField.Coverage, "WR_ScaleCoverage",
+                unitSuffix: "%");
 
             // RIGHT: Skills, then the training path below them.
             float ry = MiniHeader(rightX, y, halfW, detail.SkillsHeader, null);
@@ -413,80 +428,75 @@ namespace WorkRoles.UI
                     detail.PathAt(i)) + 8f;
         }
 
-        /// One classification option: caption and current value on the top
-        /// row, the full-width rail below, dim end labels under the rail
-        /// ends. Click sets the nearest of the three positions; dragging
-        /// works as usual. Returns the picked position.
-        private static int DrawOptionSlider(float x, float y, float width,
+        /// One classification option: dim caption on the top row, a segmented
+        /// single-click selector below. Every choice is visible; the active
+        /// segment gets the accent outline and full-brightness label.
+        /// Returns the picked position.
+        private static int DrawOptionSegments(float x, float y, float width,
             string caption, string tipKey, int position,
-            string valueLabel, string leftLabel, string rightLabel)
+            IReadOnlyList<string> options)
         {
             var block = new Rect(x, y, width, OptionBlockH);
             WrTips.Key(tipKey).Region(block);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(x, y, width - 90f, 18f), caption);
+            // 19 tall, not 18: descenders need the extra pixel to render, and
+            // the row below only starts at y+20 so no layout space is added.
+            Widgets.Label(new Rect(x, y, width, 19f), caption);
             GUI.color = Color.white;
-            Text.Anchor = TextAnchor.MiddleRight;
-            Widgets.Label(new Rect(x + width - 90f, y, 90f, 18f), valueLabel);
-            Text.Anchor = TextAnchor.UpperLeft;
 
-            var railRect = new Rect(x, y + 18f, width, 14f);
-            // Vanilla sliders only react to drags; a plain click should also
-            // set the nearest fixed position.
-            Event e = Event.current;
-            if (e.type == EventType.MouseDown && e.button == 0
-                && railRect.Contains(e.mousePosition))
+            const float SegmentH = 24f;
+            const float SegmentGap = 2f;
+            int picked = position;
+            float segmentW = (width - (options.Count - 1) * SegmentGap)
+                / options.Count;
+            float segmentY = y + 20f;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            bool wrap = Text.WordWrap;
+            Text.WordWrap = false;
+            for (int i = 0; i < options.Count; i++)
             {
-                float clicked = (e.mousePosition.x - (railRect.x + 6f))
-                    / Mathf.Max(1f, railRect.width - 12f) * 2f;
-                position = Mathf.Clamp(Mathf.RoundToInt(clicked), 0, 2);
+                var cell = new Rect(x + i * (segmentW + SegmentGap), segmentY,
+                    segmentW, SegmentH);
+                bool active = i == position;
+                Widgets.DrawBoxSolid(cell, CellPanel);
+                if (active)
+                {
+                    GUI.color = SegmentActiveOutline;
+                    Widgets.DrawBox(cell);
+                    GUI.color = Color.white;
+                }
+                else
+                {
+                    GUI.color = WrStyle.DimText;
+                    Widgets.DrawHighlightIfMouseover(cell);
+                }
+                Widgets.Label(cell, options[i]);
+                GUI.color = Color.white;
+                if (Widgets.ButtonInvisible(cell)) picked = i;
             }
-            float picked = Widgets.HorizontalSlider(railRect,
-                position, 0f, 2f, middleAlignment: false, label: null,
-                leftAlignedLabel: null, rightAlignedLabel: null, roundTo: 1f);
-
-            Text.Font = GameFont.Tiny;
-            GUI.color = WrStyle.CaptionText;
-            var endLabels = new Rect(x, y + 32f, width, 14f);
-            Widgets.Label(endLabels, leftLabel);
-            Text.Anchor = TextAnchor.UpperRight;
-            Widgets.Label(endLabels, rightLabel);
+            Text.WordWrap = wrap;
             Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
-            return Mathf.RoundToInt(picked);
+            return picked;
         }
 
-        private enum ScalingField { ColonyMin, Coverage, MinAge }
+        private enum ScalingField { ColonyMin, Coverage }
 
-        /// One assignment-scaling input row: dim caption left, [-] value [+]
-        /// right; the commands clamp and no-op at the bounds.
+        /// One assignment-scaling input row: the shared stepper row plus this
+        /// panel's tip and command routing. The commands clamp and no-op at
+        /// the bounds.
         private static void DrawScalingRow(Rect rect, string caption,
-            string tipKey, string tipArg, string valueLabel, int value, int step,
-            int roleId, ScalingField field)
+            string tipKey, string tipArg, string valueLabel, int value,
+            int roleId, ScalingField field, string controlName,
+            string unitSuffix = null)
         {
             (tipArg == null ? WrTips.Key(tipKey) : WrTips.Key(tipKey, tipArg))
                 .Region(rect);
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(rect.x, rect.y, rect.width - 116f,
-                rect.height), caption);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            float controlsX = rect.xMax - 108f;
-            if (Widgets.ButtonText(
-                    new Rect(controlsX, rect.y + 1f, 26f, 26f), "−"))
-                CommitScaling(roleId, field, value - step);
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(
-                new Rect(controlsX + 26f, rect.y + 1f, 56f, 26f), valueLabel);
-            Text.Anchor = TextAnchor.UpperLeft;
-            if (Widgets.ButtonText(
-                    new Rect(controlsX + 82f, rect.y + 1f, 26f, 26f), "+"))
-                CommitScaling(roleId, field, value + step);
+            int? requested = NumericStepperUI.DrawRow(rect, caption,
+                valueLabel, value, controlName, roleId, unitSuffix);
+            if (requested.HasValue)
+                CommitScaling(roleId, field, requested.Value);
         }
 
         private static void CommitScaling(int roleId, ScalingField field, int value)
@@ -495,16 +505,14 @@ namespace WorkRoles.UI
             {
                 case ScalingField.ColonyMin:
                     RoleCommands.SetRoleColonyMinimum(roleId, value); break;
-                case ScalingField.Coverage:
-                    RoleCommands.SetRoleCoverage(roleId, value); break;
                 default:
-                    RoleCommands.SetRoleMinimumAge(roleId, value); break;
+                    RoleCommands.SetRoleCoverage(roleId, value); break;
             }
         }
 
         /// One skill table block, three columns: the strip caption, one
-        /// selected skill per row, and the buttons (remove X per skill, the
-        /// Add button on the trailing row).
+        /// selected skill per row with its remove X right-aligned inside the
+        /// skill column, and the Add button on the top row.
         private static float DrawSkillTable(float x, float y, float width,
             string caption, string tipKey, int roleId,
             RecRoleDetailSnapshot detail, bool optional)
@@ -517,6 +525,7 @@ namespace WorkRoles.UI
                 WrText.FitWidth(detail.OptionalCaption)) + 8f;
             float skillX = x + captionW;
             float buttonX = x + width - addW;
+            float removeX = buttonX - 8f - 24f;
 
             var captionRect = new Rect(x, y, captionW, pitch);
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -532,17 +541,16 @@ namespace WorkRoles.UI
                     ? detail.OptionalChipAt(i) : detail.RequiredChipAt(i);
                 float rowY = y + i * pitch;
                 Widgets.Label(new Rect(skillX, rowY,
-                    buttonX - skillX - 8f, pitch), chip.Label);
-                if (Widgets.ButtonImage(new Rect(buttonX + addW - 24f,
+                    removeX - skillX - 4f, pitch), chip.Label);
+                if (Widgets.ButtonImage(new Rect(removeX,
                         rowY + (pitch - 24f) / 2f, 24f, 24f), TexButton.Delete))
                     RoleCommands.RemoveRoleSkill(roleId, chip.DefName, optional);
             }
             Text.Anchor = TextAnchor.UpperLeft;
-            float addY = y + count * pitch;
-            if (Widgets.ButtonText(new Rect(buttonX, addY + 1f, addW,
+            if (Widgets.ButtonText(new Rect(buttonX, y + 1f, addW,
                     pitch - 4f), detail.AddSkillLabel))
                 OpenSkillMenu(roleId, detail, optional);
-            return y + (count + 1) * pitch;
+            return y + Mathf.Max(1, count) * pitch;
         }
 
         /// Menu-click-only def resolution, like the order panel's Add Role.
@@ -568,59 +576,51 @@ namespace WorkRoles.UI
 
         // ----- Per-role training path editor -----
 
-        /// The role's own path block: caption and the WHEN band panel. The
-        /// owner role always stays in its path (its band chip carries no X).
+        /// The role's own path block: wrapped caption and the frameless WHEN
+        /// band area spanning the full block width. The owner role always
+        /// stays in its path (its band chip carries no X).
         private float DrawPathBlock(float x, float y, float width,
             RoleStore store, RecPathView view)
         {
-            // Caption above the WHEN panel (single line, truncated; full text
-            // as tooltip).
-            var whenCaptionRect = new Rect(x, y, width, PanelCaptionH);
+            float captionHeight = WhenCaptionHeight(width);
+            var whenCaptionRect = new Rect(x, y, width, captionHeight);
             Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
-            if (whenCaptionWidth != whenCaptionRect.width)
-            {
-                whenCaptionWidth = whenCaptionRect.width;
-                whenCaptionShown = "WR_WhenPanelCaption".Translate().ToString()
-                    .Truncate(whenCaptionRect.width);
-            }
-            Widgets.Label(whenCaptionRect, whenCaptionShown);
-            WrTips.Key("WR_WhenPanelCaption").Region(whenCaptionRect);
+            Widgets.Label(whenCaptionRect, whenCaptionText);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            y += PanelCaptionH + PanelCaptionGap;
+            y += captionHeight + PanelCaptionGap;
 
-            var whenPanel = new Rect(x, y, width, WhenPanelPad * 2f
-                + RowsStartY + view.DisplayRows * BandRowH - 5f);
+            var whenPanel = new Rect(x, y, width,
+                RowsStartY + view.DisplayRows * BandRowH - 5f);
             DrawWhenPanel(whenPanel, store, view);
             return whenPanel.yMax;
         }
 
-        /// The WHEN editor panel: the 0..21 axis on top (readout headroom above
-        /// it), the packed band rows, then Add Role on the trailing empty row.
+        /// The WHEN editor area: the 0..21 axis on top, the packed band rows,
+        /// then Add Role on the trailing empty row. Frameless: bands span the
+        /// full block width.
         private void DrawWhenPanel(Rect panel, RoleStore store, RecPathView view)
         {
-            float bandW = panel.width - WhenPanelPad * 2f;
+            float bandW = panel.width;
             // Below this, a min-span chip can't hold its grips + X.
             if (bandW < 150f) return;
 
-            Widgets.DrawBoxSolidWithOutline(
-                panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
-            var inner = panel.ContractedBy(WhenPanelPad);
-            DrawAxis(new Rect(inner.x, inner.y, bandW, AxisH));
-            DrawBandRows(store, view, inner.x, inner.y, bandW);
+            DrawAxis(new Rect(panel.x, panel.y, bandW, AxisH));
+            DrawBandRows(store, view, panel.x, panel.y, bandW);
         }
 
-        /// Level numbers, a 1px tick under each level and the baseline, all on
-        /// the exact band span. Labels center on their ticks; 0 and 21 would
-        /// overhang the panel edge, so only their ticks render.
+        /// Level numbers (even levels only, for breathing room), a 1px tick
+        /// under each level and the baseline, all on the exact band span.
+        /// Labels center on their ticks; 0 and 21 would overhang the edge, so
+        /// only their ticks render.
         private static void DrawAxis(Rect rect)
         {
             Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.LowerCenter;
             GUI.color = WrStyle.DimText;
             float scale = rect.width / SkillProgressionMath.MaxLevel;
-            for (int lvl = 1; lvl < SkillProgressionMath.MaxLevel; lvl++)
+            for (int lvl = 2; lvl < SkillProgressionMath.MaxLevel; lvl += 2)
                 Widgets.Label(new Rect(rect.x + lvl * scale - 9f, rect.y, 18f, rect.height - 6f),
                     lvl.ToStringCached());
             GUI.color = Color.white;
@@ -940,6 +940,9 @@ namespace WorkRoles.UI
                 + section.Height + RecPanelPad * 2f + 8f;
 
         private static readonly Color CellPanel = new Color(1f, 1f, 1f, 0.06f);
+        // Accent at half strength: marks the active segment without glowing.
+        private static readonly Color SegmentActiveOutline = new Color(
+            WrStyle.MinorAccent.r, WrStyle.MinorAccent.g, WrStyle.MinorAccent.b, 0.5f);
 
         private static void DrawTuningSection(Rect panel, RecTuningSection section)
         {
@@ -984,21 +987,77 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
 
             float controlsX = rect.xMax - 108f;
+            if (row.EnumOptions != null)
+            {
+                DrawTuningEnumSegments(
+                    new Rect(controlsX, rect.y + 6f, 108f, 26f), row);
+                return;
+            }
             if (Widgets.ButtonText(
                     new Rect(controlsX, rect.y + 6f, 26f, 26f), "−"))
                 RoleCommands.SetRecommendationTuningOption(
                     (int)row.Descriptor.Option,
-                    row.Value - row.Descriptor.Step);
-            Text.Anchor = TextAnchor.MiddleCenter;
-            Widgets.Label(
-                new Rect(controlsX + 26f, rect.y + 6f, 56f, 26f),
-                row.ValueLabel);
-            Text.Anchor = TextAnchor.UpperLeft;
+                    row.Value - NumericStepperUI.StepSize(row.Descriptor.Step));
+            if (row.Descriptor.ValueKind == RecommendationTuningValueKind.Integer)
+            {
+                int? committed = NumericStepperUI.DrawNumericField(
+                    new Rect(controlsX + 30f, rect.y + 6f, 48f, 26f),
+                    row.ControlName, 0, row.ValueLabel);
+                if (committed.HasValue)
+                    RoleCommands.SetRecommendationTuningOption(
+                        (int)row.Descriptor.Option, committed.Value);
+            }
+            else
+            {
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(
+                    new Rect(controlsX + 26f, rect.y + 6f, 56f, 26f),
+                    row.ValueLabel);
+                Text.Anchor = TextAnchor.UpperLeft;
+            }
             if (Widgets.ButtonText(
                     new Rect(controlsX + 82f, rect.y + 6f, 26f, 26f), "+"))
                 RoleCommands.SetRecommendationTuningOption(
                     (int)row.Descriptor.Option,
-                    row.Value + row.Descriptor.Step);
+                    row.Value + NumericStepperUI.StepSize(row.Descriptor.Step));
+        }
+
+        /// Enum-valued option rows: one single-click cell per value (signal
+        /// letters in their verdict colors); the active cell gets the accent
+        /// outline and full-strength letter, inactive letters render dimmed.
+        private static void DrawTuningEnumSegments(Rect area,
+            RecommendationTuningRow row)
+        {
+            int count = row.EnumOptions.Count;
+            const float gap = 2f;
+            float cellW = (area.width - (count - 1) * gap) / count;
+            int active = row.Value - row.Descriptor.MinimumValue;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            for (int i = 0; i < count; i++)
+            {
+                var cell = new Rect(area.x + i * (cellW + gap), area.y,
+                    cellW, area.height);
+                Widgets.DrawBoxSolid(cell, CellPanel);
+                if (i == active)
+                {
+                    GUI.color = SegmentActiveOutline;
+                    Widgets.DrawBox(cell);
+                }
+                else
+                {
+                    Widgets.DrawHighlightIfMouseover(cell);
+                }
+                Color letter = row.EnumColors[i];
+                GUI.color = new Color(letter.r, letter.g, letter.b,
+                    i == active ? 1f : 0.45f);
+                Widgets.Label(cell, row.EnumOptions[i]);
+                GUI.color = Color.white;
+                if (i != active && Widgets.ButtonInvisible(cell))
+                    RoleCommands.SetRecommendationTuningOption(
+                        (int)row.Descriptor.Option,
+                        row.Descriptor.MinimumValue + i);
+            }
+            Text.Anchor = TextAnchor.UpperLeft;
         }
 
         /// A grouped table row: label and caption on the left, colored column
@@ -1039,7 +1098,8 @@ namespace WorkRoles.UI
                     && (e.button == 0 || e.button == 1)
                     && cellRect.Contains(e.mousePosition))
                 {
-                    int step = cell.Descriptor.Step * (e.button == 0 ? 1 : -1);
+                    int step = NumericStepperUI.StepSize(cell.Descriptor.Step)
+                        * (e.button == 0 ? 1 : -1);
                     RoleCommands.SetRecommendationTuningOption(
                         (int)cell.Descriptor.Option, cell.Value + step);
                     e.Use();

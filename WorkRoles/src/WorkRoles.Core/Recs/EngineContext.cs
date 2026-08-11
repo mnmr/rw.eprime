@@ -64,6 +64,7 @@ namespace WorkRoles.Core.Recs
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
             if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
+            if (role.MaxAge > 0 && pawn.BiologicalAgeTicks >= role.MaxAgeTicks) return false;
             foreach (string workType in role.WorkTypes)
                 if (pawn.CapableWorkTypes.Contains(workType)) return true;
             return false;
@@ -73,6 +74,7 @@ namespace WorkRoles.Core.Recs
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
             if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
+            if (role.MaxAge > 0 && pawn.BiologicalAgeTicks >= role.MaxAgeTicks) return false;
             foreach (string workType in role.WorkTypes)
                 if (!pawn.CapableWorkTypes.Contains(workType)) return false;
             return true;

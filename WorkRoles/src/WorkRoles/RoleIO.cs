@@ -86,12 +86,20 @@ namespace WorkRoles
                     time = role.time,
                     championPenalty = role.championPenalty,
                     minAge = role.minAge,
+                    maxAge = role.maxAge,
                     colonyMin = role.colonyMin,
                     coverage = role.coverage,
                     requiredSkills = role.requiredSkills.ToList(),
                     optionalSkills = role.optionalSkills.ToList(),
                     training = training,
                     entries = role.entries.ToList(),
+                    composite = role.composite,
+                    members = role.memberRoleIds
+                        .Select(id => store.RoleById(id))
+                        .Where(member => member != null)
+                        .Select(member => new FileRoleReference(
+                            RoleFileId(member.id), member.label))
+                        .ToList(),
                 });
             }
             // Only the stored template travels (empty = the derived default).
@@ -533,6 +541,7 @@ namespace WorkRoles
                     // Pre-minAge files carry -1; the migration below derives it.
                     target.minAge = row.role.minAge < 0
                         ? -1 : Mathf.Clamp(row.role.minAge, 0, 18);
+                    target.maxAge = Mathf.Clamp(row.role.maxAge, 0, 18);
                     target.colonyMin = Mathf.Clamp(row.role.colonyMin, 0, 30);
                     target.coverage = Mathf.Clamp(row.role.coverage, 0, 100);
                     // Legacy files carry named scale references instead of the
@@ -556,7 +565,10 @@ namespace WorkRoles
                     target.groupId = GroupIdFor(
                         row.role.groupId, row.role.group, doc, runtimeGroups, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
-                    target.entries = row.role.entries.Distinct().ToList();
+                    target.composite = row.role.composite;
+                    target.entries = row.role.composite
+                        ? new List<JobEntry>()
+                        : row.role.entries.Distinct().ToList();
                     target.workTypeSnapshots.Clear();
                     row.existing = target;
                     runtimeRoles[row.role] = target;
@@ -582,6 +594,28 @@ namespace WorkRoles
                     row.existing.trainingMaxes = maxes;
                     store.SanitizeRoleTraining(row.existing);
                 }
+                // Composite members resolve AFTER every role landed, like
+                // training: references may point at roles this import added.
+                foreach (RoleIO.RoleRow row in appliedRows)
+                {
+                    if (!row.existing.composite)
+                    {
+                        row.existing.memberRoleIds.Clear();
+                        continue;
+                    }
+                    var memberIds = new List<int>();
+                    foreach (var reference in row.role.members)
+                    {
+                        Role member = RuntimeRole(doc, runtimeRoles, reference);
+                        if (member == null || memberIds.Contains(member.id)) continue;
+                        memberIds.Add(member.id);
+                    }
+                    row.existing.memberRoleIds = memberIds;
+                }
+                // An import can flip a role composite or hand it rules; every
+                // member list re-validates against the final imported state.
+                foreach (var role in store.roles)
+                    store.SanitizeCompositeMembers(role);
                 RoleCommands.SweepEmptyGroups();
                 CompiledJobOrders.InvalidateAll();
                 Seeding.RefreshWorkTypeSnapshots();

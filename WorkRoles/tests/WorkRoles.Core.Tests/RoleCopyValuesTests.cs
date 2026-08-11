@@ -18,6 +18,7 @@ public class RoleCopyValuesTests
         await Assert.That(copy.Blocker).IsEqualTo(source.Blocker);
         await Assert.That(copy.HolderScaleName).IsEqualTo(source.HolderScaleName);
         await Assert.That(copy.MinAge).IsEqualTo(source.MinAge);
+        await Assert.That(copy.MaxAge).IsEqualTo(source.MaxAge);
         await Assert.That(copy.ColonyMin).IsEqualTo(source.ColonyMin);
         await Assert.That(copy.Coverage).IsEqualTo(source.Coverage);
         await Assert.That(copy.GroupId).IsEqualTo(source.GroupId);
@@ -97,6 +98,7 @@ public class RoleCopyValuesTests
         Blocker = true,
         HolderScaleName = "Building",
         MinAge = 13,
+        MaxAge = 17,
         ColonyMin = 2,
         Coverage = 19,
         GroupId = 42,

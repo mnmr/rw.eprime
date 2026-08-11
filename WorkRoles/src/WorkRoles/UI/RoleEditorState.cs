@@ -99,6 +99,10 @@ namespace WorkRoles.UI
         private string treeNodesFilter;
         private int treeRevision;
         private readonly HashSet<string> expandedWorkTypes = new HashSet<string>();
+        // Available Roles sections collapsed in the composite editor
+        // (session-local, keyed like the role list's sections).
+        private readonly HashSet<string> collapsedCandidateSections =
+            new HashSet<string>(StringComparer.Ordinal);
 
         // Owner: Roles window builder. Key: (UiVersion, selected role id). Value:
         // private work-type/work-giver membership indexes. Dependencies: selected
@@ -126,6 +130,8 @@ namespace WorkRoles.UI
         private float editorSnapshotWidth = -1f;
         private bool editorSnapshotRulesRevealed;
         private string editorSnapshotFilter;
+        // The composite candidate list mirrors the role list's nested/flat mode.
+        private bool editorSnapshotNested;
 
         internal string Filter { get; set; } = "";
 
@@ -134,6 +140,7 @@ namespace WorkRoles.UI
             float width, bool rulesRevealed,
             bool revealTreeSelection)
         {
+            bool sectionsNested = WorkRolesMod.Settings?.nestedRoleTree ?? true;
             if (!revealTreeSelection && editorSnapshotStamp == UiVersion.Current
                 && editorSnapshotRoleId == roleId
                 && editorSnapshotLocationRevision == ColonyScope.LocationRevision
@@ -141,7 +148,8 @@ namespace WorkRoles.UI
                 && editorSnapshotTreeRevision == treeRevision
                 && editorSnapshotWidth == width
                 && editorSnapshotRulesRevealed == rulesRevealed
-                && editorSnapshotFilter == Filter)
+                && editorSnapshotFilter == Filter
+                && editorSnapshotNested == sectionsNested)
                 return editorSnapshot;
 
             editorSnapshotStamp = UiVersion.Current;
@@ -151,6 +159,7 @@ namespace WorkRoles.UI
             editorSnapshotWidth = width;
             editorSnapshotRulesRevealed = rulesRevealed;
             editorSnapshotFilter = Filter;
+            editorSnapshotNested = sectionsNested;
 
             Role role = store?.RoleById(roleId);
             if (role == null)
@@ -158,6 +167,7 @@ namespace WorkRoles.UI
                 editorSnapshotTreeRevision = treeRevision;
                 return editorSnapshot = null;
             }
+            bool memberLocked = store.IsCompositeMember(role.id);
 
             const float TopBoxPadding = 8f;
             const float PencilSize = 26f;
@@ -165,11 +175,13 @@ namespace WorkRoles.UI
             string autoAssignLabel = "WR_AutoAssign".Translate().ToString();
             string blockerLabel = "WR_BlockerRole".Translate().ToString();
             string autoRoleLabel = "WR_AutoRole".Translate().ToString();
+            string compositeLabel = "WR_CompositeRole".Translate().ToString();
             Text.Font = GameFont.Small;
             float checksWidth = Mathf.Max(
                 Mathf.Max(WrText.FitWidth(autoAssignLabel),
                     WrText.FitWidth(blockerLabel)),
-                WrText.FitWidth(autoRoleLabel)) + 30f;
+                Mathf.Max(WrText.FitWidth(autoRoleLabel),
+                    WrText.FitWidth(compositeLabel))) + 30f;
             float checksX = width / 2f - checksWidth;
             float titleMaxWidth = checksX - 8f - TopBoxPadding
                 - PencilSize - 6f;
@@ -211,9 +223,10 @@ namespace WorkRoles.UI
                 holderOverflowLabels.Add(
                     "WR_PlusOthers".Translate(i).ToString());
 
-            bool overlay = role.HasRules;
             string defaultGroupLabel = "WR_GroupDefault".Translate().ToString();
-            string currentGroup = overlay
+            // Rules move any role (composite or not) to Auto-Roles; otherwise
+            // the stored group shows, composites included.
+            string currentGroup = role.HasRules
                 ? "WR_GroupAutoRules".Translate().ToString()
                 : role.groupId == RoleGroup.DefaultId
                     ? defaultGroupLabel
@@ -237,16 +250,29 @@ namespace WorkRoles.UI
             var header = new RoleEditorHeaderSnapshot(role.id, role.label,
                 shownRoleLabel, roleLabelWidth, role.hasCustomColor, role.color,
                 role.autoAssign, role.blocker, role.HasRules,
-                role.HasRules || rulesRevealed, customSwatches, customRows,
+                role.HasRules || rulesRevealed, memberLocked, role.composite,
+                customSwatches, customRows,
                 checksWidth, autoAssignLabel, blockerLabel, autoRoleLabel,
-                BlockerTip,
+                compositeLabel, BlockerTip,
                 "WR_ClearRulesConfirm".Translate(role.label).ToString(),
+                "WR_CompositeConfirm".Translate(role.label).ToString(),
+                "WR_CompositeRevertConfirm".Translate(role.label).ToString(),
                 assignedLabel, assignedLabelWidth,
                 holders, holderOverflowLabels,
                 "WR_Nobody".Translate().ToString(),
                 groupButtonFull, groupButtonShown, groups, defaultGroupLabel,
                 "WR_GroupNewOption".Translate().ToString(),
                 "WR_NewGroupTitle".Translate().ToString(),
+                "WR_RoleMinAgeLabel".Translate().ToString(),
+                Mathf.Max(0, role.minAge),
+                Mathf.Max(0, role.minAge).ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                RecsAdapter.FullyUnlocksAtAgeOf(role).ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
+                "WR_RoleMaxAgeLabel".Translate().ToString(),
+                role.maxAge,
+                role.maxAge.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture),
                 skills, "WR_SkillsUsedLabel".Translate().ToString());
 
             var locations = BuildLocationOptions(role);
@@ -254,6 +280,14 @@ namespace WorkRoles.UI
                 "WR_HoursActive".Translate().ToString(),
                 "WR_HoursInactive".Translate().ToString(),
                 LocationSummary(role), locations);
+
+            if (role.composite)
+            {
+                editorSnapshotTreeRevision = treeRevision;
+                return editorSnapshot = new RoleEditorSnapshot(
+                    header, rules, null, null,
+                    BuildComposite(role, store, sectionsNested));
+            }
 
             float halfWidth = (width - 6f) / 2f;
             float removeWidth = (24f + 4f) * 3f;
@@ -312,7 +346,60 @@ namespace WorkRoles.UI
 
             editorSnapshotTreeRevision = treeRevision;
             return editorSnapshot = new RoleEditorSnapshot(
-                header, rules, entries, tree);
+                header, rules, entries, tree, null);
+        }
+
+        /// Member and candidate projections for the composite editor. Both lists
+        /// re-snapshot with the editor (UiVersion covers membership, labels,
+        /// colors, and enabled/blocker state; commands bump it on every edit;
+        /// section collapse toggles bump treeRevision). Candidates come from
+        /// the shared role-list section snapshot so their grouping, nesting,
+        /// and order match the role tree exactly; sections whose members are
+        /// all ineligible (Auto-Roles, composite roles, everything already a
+        /// member) drop out with their headers, and collapsed sections keep
+        /// only their header.
+        private RoleCompositeSnapshot BuildComposite(Role role,
+            RoleStore store, bool nested)
+        {
+            var members = new List<CompositeMemberRow>(role.memberRoleIds.Count);
+            foreach (int memberId in role.memberRoleIds)
+            {
+                Role member = store.RoleById(memberId);
+                if (member == null) continue;
+                members.Add(new CompositeMemberRow(member.id, member.label,
+                    member.hasCustomColor, member.color, member.blocker,
+                    member.enabled));
+            }
+            var candidates = new List<CompositeCandidateRow>();
+            foreach (RoleSection section in RolesListState.BuildSections(store, nested))
+            {
+                bool collapsed = collapsedCandidateSections.Contains(section.key);
+                int headerAt = candidates.Count;
+                candidates.Add(CompositeCandidateRow.ForHeader(
+                    section.title, section.key, collapsed));
+                bool anyEligible = false;
+                foreach (var (candidate, _, depth, virtualRow) in section.rows)
+                {
+                    if (virtualRow) continue;
+                    if (role.memberRoleIds.Contains(candidate.id)) continue;
+                    if (!CompositeRoles.IsEligibleMember(role.id, candidate.id,
+                            new CompositeMemberFacts(true, candidate.composite,
+                                candidate.HasRules))) continue;
+                    anyEligible = true;
+                    if (collapsed) continue;
+                    candidates.Add(new CompositeCandidateRow(
+                        new CompositeMemberRow(candidate.id, candidate.label,
+                            candidate.hasCustomColor, candidate.color,
+                            candidate.blocker, candidate.enabled), depth));
+                }
+                if (!anyEligible) candidates.RemoveAt(headerAt);
+            }
+            return new RoleCompositeSnapshot(role.id,
+                "WR_MemberRoles".Translate().ToString(),
+                "WR_AvailableRoles".Translate().ToString(),
+                "WR_NoMembersHint".Translate().ToString(),
+                "WR_NoCandidatesHint".Translate().ToString(),
+                members, candidates);
         }
 
         private static List<RoleLocationOptionSnapshot> BuildLocationOptions(
@@ -389,6 +476,7 @@ namespace WorkRoles.UI
         {
             Filter = "";
             expandedWorkTypes.Clear();
+            collapsedCandidateSections.Clear();
             treeRevision++;
             treeNodesFilter = null;
             treeNodesRevision = -1;
@@ -699,6 +787,13 @@ namespace WorkRoles.UI
             treeRevision++;
         }
 
+        internal void ToggleCandidateSection(string key)
+        {
+            if (!collapsedCandidateSections.Add(key))
+                collapsedCandidateSections.Remove(key);
+            treeRevision++;
+        }
+
         internal static (string typeDefName, string giverDefName)?
             FirstEntryTreeTarget(Role role)
         {
@@ -760,20 +855,102 @@ namespace WorkRoles.UI
     {
         internal RoleEditorSnapshot(RoleEditorHeaderSnapshot header,
             RoleRulesSnapshot rules, RoleEntriesSnapshot entries,
-            RoleJobTreeSnapshot jobTree)
+            RoleJobTreeSnapshot jobTree, RoleCompositeSnapshot composite)
         {
             Header = header;
             Rules = rules;
             Entries = entries;
             JobTree = jobTree;
+            Composite = composite;
         }
 
         internal RoleEditorHeaderSnapshot Header { get; }
         internal RoleRulesSnapshot Rules { get; }
         internal RoleEntriesSnapshot Entries { get; }
         internal RoleJobTreeSnapshot JobTree { get; }
+        /// Non-null for composite roles; Entries and JobTree are null then.
+        internal RoleCompositeSnapshot Composite { get; }
         internal int RoleId => Header.RoleId;
         internal string RoleLabel => Header.RoleLabel;
+    }
+
+    internal sealed class RoleCompositeSnapshot
+    {
+        private readonly List<CompositeMemberRow> members;
+        private readonly List<CompositeCandidateRow> candidates;
+
+        internal RoleCompositeSnapshot(int roleId, string membersTitle,
+            string candidatesTitle, string noMembersHint, string noCandidatesHint,
+            List<CompositeMemberRow> members, List<CompositeCandidateRow> candidates)
+        {
+            RoleId = roleId;
+            MembersTitle = membersTitle;
+            CandidatesTitle = candidatesTitle;
+            NoMembersHint = noMembersHint;
+            NoCandidatesHint = noCandidatesHint;
+            this.members = members;
+            this.candidates = candidates;
+        }
+
+        internal int RoleId { get; }
+        internal string MembersTitle { get; }
+        internal string CandidatesTitle { get; }
+        internal string NoMembersHint { get; }
+        internal string NoCandidatesHint { get; }
+        internal int MemberCount => members.Count;
+        internal CompositeMemberRow MemberAt(int index) => members[index];
+        internal int CandidateCount => candidates.Count;
+        internal CompositeCandidateRow CandidateAt(int index) => candidates[index];
+    }
+
+    /// One Available Roles row: a collapsible section header or an addable
+    /// role at a depth.
+    internal readonly struct CompositeCandidateRow
+    {
+        private CompositeCandidateRow(string headerTitle, string headerKey,
+            bool headerCollapsed, CompositeMemberRow role, int depth)
+        {
+            HeaderTitle = headerTitle;
+            HeaderKey = headerKey;
+            HeaderCollapsed = headerCollapsed;
+            Role = role;
+            Depth = depth;
+        }
+
+        internal CompositeCandidateRow(CompositeMemberRow role, int depth)
+            : this(null, null, false, role, depth) { }
+
+        internal static CompositeCandidateRow ForHeader(string title,
+            string key, bool collapsed)
+            => new CompositeCandidateRow(title, key, collapsed, default, 0);
+
+        internal bool IsHeader => HeaderTitle != null;
+        internal string HeaderTitle { get; }
+        internal string HeaderKey { get; }
+        internal bool HeaderCollapsed { get; }
+        internal CompositeMemberRow Role { get; }
+        internal int Depth { get; }
+    }
+
+    internal readonly struct CompositeMemberRow
+    {
+        internal CompositeMemberRow(int roleId, string label, bool hasCustomColor,
+            Color color, bool blocker, bool enabled)
+        {
+            RoleId = roleId;
+            Label = label;
+            HasCustomColor = hasCustomColor;
+            Color = color;
+            Blocker = blocker;
+            Enabled = enabled;
+        }
+
+        internal int RoleId { get; }
+        internal string Label { get; }
+        internal bool HasCustomColor { get; }
+        internal Color Color { get; }
+        internal bool Blocker { get; }
+        internal bool Enabled { get; }
     }
 
     internal sealed class RoleEditorHeaderSnapshot
@@ -787,17 +964,24 @@ namespace WorkRoles.UI
         internal RoleEditorHeaderSnapshot(int roleId, string roleLabel,
             string shownRoleLabel, float roleLabelWidth,
             bool hasCustomColor, Color roleColor, bool autoAssign,
-            bool blocker, bool hasRules, bool rulesShown,
+            bool blocker, bool hasRules, bool rulesShown, bool memberLocked,
+            bool composite,
             List<Color> customSwatches, int customRows, float checksWidth,
             string autoAssignLabel, string blockerLabel, string autoRoleLabel,
-            StructuredTip blockerTip, string clearRulesConfirmation,
+            string compositeLabel, StructuredTip blockerTip,
+            string clearRulesConfirmation, string compositeConfirmation,
+            string compositeRevertConfirmation,
             string assignedLabel, float assignedLabelWidth,
             IReadOnlyList<RoleHolderPresentation> holders,
             List<string> holderOverflowLabels, string nobodyLabel,
             string groupButtonFull, string groupButtonShown,
             List<RoleGroupOptionSnapshot> groups,
             string defaultGroupLabel, string newGroupLabel,
-            string newGroupTitle, IReadOnlyList<RoleSkillPresentation> skills,
+            string newGroupTitle,
+            string minAgeCaption, int minAge, string minAgeLabel,
+            string minAgeTipArg,
+            string maxAgeCaption, int maxAge, string maxAgeLabel,
+            IReadOnlyList<RoleSkillPresentation> skills,
             string skillsCaption)
         {
             RoleId = roleId;
@@ -810,14 +994,19 @@ namespace WorkRoles.UI
             Blocker = blocker;
             HasRules = hasRules;
             RulesShown = rulesShown;
+            MemberLocked = memberLocked;
+            Composite = composite;
             this.customSwatches = customSwatches;
             CustomRows = customRows;
             ChecksWidth = checksWidth;
             AutoAssignLabel = autoAssignLabel;
             BlockerLabel = blockerLabel;
             AutoRoleLabel = autoRoleLabel;
+            CompositeLabel = compositeLabel;
             BlockerTip = blockerTip;
             ClearRulesConfirmation = clearRulesConfirmation;
+            CompositeConfirmation = compositeConfirmation;
+            CompositeRevertConfirmation = compositeRevertConfirmation;
             AssignedLabel = assignedLabel;
             AssignedLabelWidth = assignedLabelWidth;
             this.holders = holders;
@@ -829,6 +1018,13 @@ namespace WorkRoles.UI
             DefaultGroupLabel = defaultGroupLabel;
             NewGroupLabel = newGroupLabel;
             NewGroupTitle = newGroupTitle;
+            MinAgeCaption = minAgeCaption;
+            MinAge = minAge;
+            MinAgeLabel = minAgeLabel;
+            MinAgeTipArg = minAgeTipArg;
+            MaxAgeCaption = maxAgeCaption;
+            MaxAge = maxAge;
+            MaxAgeLabel = maxAgeLabel;
             this.skills = skills;
             SkillsCaption = skillsCaption;
         }
@@ -843,6 +1039,9 @@ namespace WorkRoles.UI
         internal bool Blocker { get; }
         internal bool HasRules { get; }
         internal bool RulesShown { get; }
+        /// The role belongs to a composite: blocker and rule edits are locked.
+        internal bool MemberLocked { get; }
+        internal bool Composite { get; }
         internal int CustomSwatchCount => customSwatches.Count;
         internal Color CustomSwatchAt(int index) => customSwatches[index];
         internal int CustomRows { get; }
@@ -850,8 +1049,11 @@ namespace WorkRoles.UI
         internal string AutoAssignLabel { get; }
         internal string BlockerLabel { get; }
         internal string AutoRoleLabel { get; }
+        internal string CompositeLabel { get; }
         internal StructuredTip BlockerTip { get; }
         internal string ClearRulesConfirmation { get; }
+        internal string CompositeConfirmation { get; }
+        internal string CompositeRevertConfirmation { get; }
         internal string AssignedLabel { get; }
         internal float AssignedLabelWidth { get; }
         internal int HolderCount => holders.Count;
@@ -866,6 +1068,14 @@ namespace WorkRoles.UI
         internal string DefaultGroupLabel { get; }
         internal string NewGroupLabel { get; }
         internal string NewGroupTitle { get; }
+        internal string MinAgeCaption { get; }
+        internal int MinAge { get; }
+        internal string MinAgeLabel { get; }
+        /// Fully-unlocks age as the min-age tooltip's translation argument.
+        internal string MinAgeTipArg { get; }
+        internal string MaxAgeCaption { get; }
+        internal int MaxAge { get; }
+        internal string MaxAgeLabel { get; }
         internal int SkillCount => skills.Count;
         internal RoleSkillPresentation SkillAt(int index) => skills[index];
         internal string SkillsCaption { get; }

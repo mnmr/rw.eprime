@@ -153,6 +153,15 @@ namespace WorkRoles
             role?.InvalidateCoverage();
             foreach (var pawn in store.PawnsWithRole(roleId).ToList())
                 cache.Remove(pawn);
+            // A member edit changes every composite bundling the role: their
+            // coverage union and their holders' compiled orders (depth 1 by
+            // policy, so one scan is complete).
+            foreach (var composited in store.CompositesContaining(roleId))
+            {
+                composited.InvalidateCoverage();
+                foreach (var pawn in store.PawnsWithRole(composited.id).ToList())
+                    cache.Remove(pawn);
+            }
         }
 
         private static bool IsBasicsRole(int roleId, Role role) =>
@@ -161,6 +170,12 @@ namespace WorkRoles
         private static void InvalidateBasics(Role role, Action invalidateUi)
         {
             role?.InvalidateCoverage();
+            // The full cache clear below covers compiled orders; composites
+            // bundling Basics still need their coverage union refreshed.
+            var store = RoleStore.Current;
+            if (role != null && store != null)
+                foreach (var composited in store.CompositesContaining(role.id))
+                    composited.InvalidateCoverage();
             InvalidateProjectionMetadata();
             cache.Clear();
             invalidateUi();
@@ -577,6 +592,8 @@ namespace WorkRoles
                 && !pawn.WorkTagIsDisabled(def.workTags);
         }
 
+        private static readonly List<JobEntry> EmptyEntries = new List<JobEntry>();
+
         private static Entry Build(Pawn pawn)
         {
             var store = RoleStore.Current;
@@ -587,14 +604,40 @@ namespace WorkRoles
                 foreach (var assignment in set.assignments)
                 {
                     var role = store.RoleById(assignment.roleId);
-                    if (role != null
-                        && RoleActivation.IsActive(role.enabled, assignment.state)
-                        && RoleRules.Pass(role, pawn))
+                    if (role == null
+                        || !RoleActivation.IsActive(role.enabled, assignment.state)
+                        || !RoleRules.Pass(role, pawn)) continue;
+                    activeRoleIds ??= new List<int>();
+                    if (!role.composite)
                     {
-                        if (activeRoleIds == null) activeRoleIds = new List<int>();
                         activeRoleIds.Add(role.id);
                         roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
                             role.entries, role.workTypeSnapshots, GameJobCatalog.Instance), role.blocker));
+                        continue;
+                    }
+                    // Composite: one slice per live member, member order, all
+                    // attributed to the composite (activeRoleIds stays in
+                    // lockstep with the slices for GiverRoleIds). Member
+                    // blocker and enabled flags keep their own semantics, so
+                    // holding the composite equals holding the members.
+                    int slicesBefore = roleEntries.Count;
+                    for (int m = 0; m < role.memberRoleIds.Count; m++)
+                    {
+                        var member = store.RoleById(role.memberRoleIds[m]);
+                        if (member == null || member.composite) continue;
+                        if (!CompositeRoles.TryGetMemberSlice(role.blocker,
+                                member.enabled, member.blocker, out bool sliceBlocker))
+                            continue;
+                        activeRoleIds.Add(role.id);
+                        roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
+                            member.entries, member.workTypeSnapshots, GameJobCatalog.Instance), sliceBlocker));
+                    }
+                    // No live member: an empty slice keeps the composite in
+                    // ActiveRoleIds, matching an empty normal role's behavior.
+                    if (roleEntries.Count == slicesBefore)
+                    {
+                        activeRoleIds.Add(role.id);
+                        roleEntries.Add((EmptyEntries, role.blocker));
                     }
                 }
             }

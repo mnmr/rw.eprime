@@ -133,14 +133,15 @@ namespace WorkRoles.UI
                 originGroupLabel = store.GroupById(role.groupId)?.label
                     ?? "WR_GroupDefault".Translate().ToString();
             return new RoleListRowSnapshot(section, role.id, depth, virtualRow,
-                RoleLocationValidity.IsInvalid(role.entries.Count,
+                RoleLocationValidity.IsInvalid(
+                    role.composite ? role.memberRoleIds.Count : role.entries.Count,
                     role.locationTokens, liveLocationIds),
                 role.enabled
                     ? role.label
                     : "WR_RoleLabelOff".Translate(role.label).ToString(),
                 roleTooltip?.Invoke(role), role.enabled, role.hasCustomColor,
                 role.color, role.blocker, role.activeHours != Role.AllHours,
-                role.locationTokens.Count > 0, originGroupLabel);
+                role.locationTokens.Count > 0, role.composite, originGroupLabel);
         }
 
         private static RoleListSectionSnapshot PublishSection(RoleSection section,
@@ -173,6 +174,9 @@ namespace WorkRoles.UI
             if (JobFilterDefName == null) return true;
 
             WorkGiverDef giver = DefDatabase<WorkGiverDef>.GetNamedSilentFail(JobFilterDefName);
+            // A composite spells nothing itself; its coverage is the members'
+            // expanded giver union, which is what the filter asks about.
+            if (role.composite) return role.Coverage().Contains(JobFilterDefName);
             string parentType = giver?.workType?.defName;
             return role.entries.Any(entry => entry.Kind == JobEntryKind.WorkGiver
                 ? entry.DefName == JobFilterDefName
@@ -229,9 +233,15 @@ namespace WorkRoles.UI
         }
 
         /// Blockers nest under blockers, normal roles under normal roles;
-        /// rule-carrying roles stay flat (they display under Auto-Roles).
+        /// rule-carrying roles stay flat (they display under Auto-Roles) and
+        /// composites never join coverage nesting (their coverage is the
+        /// members' union, so it would show every covered role twice). A
+        /// composite's member rows are a pure convenience display: always
+        /// virtual, direct members only, and members keep their normal place
+        /// in their own section.
         internal static bool CanNest(Role parent, Role child)
-            => parent.blocker == child.blocker && !parent.HasRules && !child.HasRules;
+            => parent.blocker == child.blocker && !parent.HasRules && !child.HasRules
+               && !parent.composite && !child.composite;
 
         private static (List<Role> roots,
             List<(Role role, Role parent, int depth, bool virtualRow)> rows)
@@ -254,6 +264,19 @@ namespace WorkRoles.UI
 
             void AddChildren(Role parent, int depth)
             {
+                if (parent.composite)
+                {
+                    // Direct members in list order, no recursion into their
+                    // own subtrees: the rows only spell out the bundle.
+                    foreach (int memberId in parent.memberRoleIds)
+                    {
+                        Role child = allRoles.FirstOrDefault(
+                            candidate => candidate.id == memberId);
+                        if (child != null)
+                            rows.Add((child, parent, depth, true));
+                    }
+                    return;
+                }
                 var covered = allRoles
                     .Where(role => CanNest(parent, role) && parent.Covers(role))
                     .ToList();
@@ -312,10 +335,15 @@ namespace WorkRoles.UI
             };
             foreach (Role role in store.roles)
             {
+                // Composites live in their stored group like any other role;
+                // carrying rules moves any role (composite or not) to
+                // Auto-Roles until the rules clear.
                 if (role.HasRules) auto.members.Add(role);
                 else SectionOf(role.groupId).members.Add(role);
             }
 
+            // Auto-Roles leads the list; player groups follow.
+            if (auto.members.Count > 0) sections.Add(auto);
             if (defaultSection != null && defaultSection.members.Count > 0)
                 sections.Add(defaultSection);
             foreach (RoleGroup group in store.groups)
@@ -325,12 +353,28 @@ namespace WorkRoles.UI
                     && section.members.Count > 0 && !sections.Contains(section))
                     sections.Add(section);
             }
-            if (auto.members.Count > 0) sections.Add(auto);
 
             foreach (RoleSection section in sections)
             {
-                if (nested && section != auto)
+                if (section != auto)
+                {
                     (section.roots, section.rows) = BuildRoleTree(section.members, store.roles);
+                    if (!nested)
+                    {
+                        // Flat mode keeps the tree's depth-first visual order (a
+                        // parent directly before its children) without
+                        // indentation or virtual rows; a role covered by two
+                        // parents keeps only its first occurrence.
+                        var seen = new HashSet<Role>();
+                        var flat = new List<(Role role, Role parent, int depth,
+                            bool virtualRow)>(section.members.Count);
+                        foreach (var row in section.rows)
+                            if (!row.virtualRow && seen.Add(row.role))
+                                flat.Add((row.role, null, 0, false));
+                        section.rows = flat;
+                        section.roots = flat.Select(row => row.role).ToList();
+                    }
+                }
                 else
                 {
                     section.roots = section.members;
@@ -376,7 +420,7 @@ namespace WorkRoles.UI
             int depth, bool virtualRow, bool invalid, string label,
             StructuredTip tooltip, bool enabled, bool hasCustomColor, Color color,
             bool blocker, bool hasTimeRule, bool hasLocationRule,
-            string virtualOriginGroupLabel)
+            bool composite, string virtualOriginGroupLabel)
         {
             Section = section;
             RoleId = roleId;
@@ -391,13 +435,14 @@ namespace WorkRoles.UI
             Blocker = blocker;
             HasTimeRule = hasTimeRule;
             HasLocationRule = hasLocationRule;
+            Composite = composite;
             VirtualOriginGroupLabel = virtualOriginGroupLabel;
         }
 
         internal static RoleListRowSnapshot ForHeader(
             RoleListSectionSnapshot section) =>
             new RoleListRowSnapshot(section, -1, 0, false, false, null,
-                null, true, false, default, false, false, false, null);
+                null, true, false, default, false, false, false, false, null);
 
         internal RoleListSectionSnapshot Section { get; }
         internal int RoleId { get; }
@@ -412,6 +457,7 @@ namespace WorkRoles.UI
         internal bool Blocker { get; }
         internal bool HasTimeRule { get; }
         internal bool HasLocationRule { get; }
+        internal bool Composite { get; }
         internal string VirtualOriginGroupLabel { get; }
     }
 

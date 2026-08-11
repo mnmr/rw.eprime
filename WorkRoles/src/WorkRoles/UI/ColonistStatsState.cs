@@ -24,7 +24,9 @@ namespace WorkRoles.UI
         private const float SkillValueWidth = 48f;
         // Horizontal verdict star pair after the (left-shifted) skill value.
         internal const float VerdictStarSize = 10f;
-        internal const float VerdictStarGap = 2f;
+        // 0: the star polygon is inset ~1px inside its own rect, so touching
+        // rects still show a visible seam.
+        internal const float VerdictStarGap = 0f;
         internal const float VerdictStarsReserve =
             4f + 2f * VerdictStarSize + VerdictStarGap;
         // Roster cell layout (DrawSkillCell): value slot, then 16px icons at

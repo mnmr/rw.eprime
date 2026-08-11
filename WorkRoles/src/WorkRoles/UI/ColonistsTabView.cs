@@ -94,7 +94,7 @@ namespace WorkRoles.UI
         private const float ClusterGapX = 20f;
         private const float ClusterGapY = 4f;
         private const float FilterRowH = 28f;
-        private const float RowHeight = 36f;
+        private const float RowHeight = 35f;
         private const float PortraitSize = 30f;
         private const float NameWidth = 150f;
         private const float IconButton = 24f;
@@ -120,7 +120,7 @@ namespace WorkRoles.UI
         private const float CellH = 20f;
         private const float StatsPadding = 12f;     // top+bottom padding inside box
         private const float ColSepWidth = 2f;       // separator width
-        private const float ColSepMargin = 16f;     // space on each side of separator
+        private const float ColSepMargin = 12f;     // space on each side of separator
         private const float SkillDecoratorSize = 16f;
         private const float SkillDecoratorGap = 2f;
         private const float SkillLabelDecoratorGap = 4f;
@@ -132,6 +132,10 @@ namespace WorkRoles.UI
             paletteScroll = Vector2.zero;
             tableScroll = Vector2.zero;
             selectedPawn = null;
+            // Opening adopts the player's in-game pawn selection (when listed)
+            // and scrolls the selection into view centered.
+            pendingSelectFromGame = true;
+            pendingCenterSelected = true;
             rosterState.Reset();
             activityState.Release();
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
@@ -364,7 +368,7 @@ namespace WorkRoles.UI
             float skillColumnWidth = SkillColWidth;
             if (selectedPawn != null)
                 skillColumnWidth = statsState.Snapshot(selectedPawn).SkillColumnWidth;
-            float statsWidth = StatsPadding * 2f + PortraitDisplaySize + 16f
+            float statsWidth = StatsPadding * 2f + PortraitDisplaySize + 12f
                 + SkillCols * skillColumnWidth
                 + SkillCols * (ColSepMargin * 2f + ColSepWidth);
             return Mathf.Max(tableWidth, statsWidth);
@@ -393,7 +397,7 @@ namespace WorkRoles.UI
                 var assignments = set?.assignments ?? new List<RoleAssignment>();
                 float stripW = TableStripWidth(desiredWidthCache);
                 float stripH = LayoutChips(stripW, assignments, store, pawn, result: null);
-                tableContent += Mathf.Max(RowHeight, stripH + 8f);
+                tableContent += Mathf.Max(RowHeight, stripH + 7f);
             }
             return chrome + paletteSection + tableContent + statsPanel;
         }
@@ -478,6 +482,17 @@ namespace WorkRoles.UI
             RoleDrag.Update();
 
             var pawns = ListedPawns();
+            if (pendingSelectFromGame)
+            {
+                pendingSelectFromGame = false;
+                List<Pawn> gameSelection = Find.Selector.SelectedPawns;
+                for (int i = 0; i < gameSelection.Count; i++)
+                    if (pawns.Contains(gameSelection[i]))
+                    {
+                        selectedPawn = gameSelection[i];
+                        break;
+                    }
+            }
             if (selectedPawn == null || !pawns.Contains(selectedPawn))
                 selectedPawn = pawns.Count > 0 ? pawns[0] : null;
 
@@ -542,7 +557,9 @@ namespace WorkRoles.UI
 
             // Tree rows repeat a child under every covering parent (including
             // virtual cross-group rows); the palette shows each role once,
-            // clustered under the root of its first real appearance.
+            // clustered under the root of its first real appearance. Composite
+            // member rows are always virtual, so bundles never claim their
+            // members' cluster placement.
             var seen = new HashSet<int>();
             Role root = null;
             foreach (var (role, _, depth, virtualRow) in RolesListState.BuildRoleTree(store).rows)
@@ -1298,11 +1315,29 @@ namespace WorkRoles.UI
         private static readonly Color RoleStateDisabled = new Color(0.9f, 0.35f, 0.3f);
 
         /// Whole work types as "X (all jobs)", single jobs by display name;
-        /// one line: capped so mega-roles don't flood the tooltip.
+        /// one line: capped so mega-roles don't flood the tooltip. Composites
+        /// list their member roles instead of jobs.
         private static string JobSummary(Role role)
         {
             const int Cap = 3;
             var parts = new List<string>();
+            if (role.composite)
+            {
+                var store = RoleStore.Current;
+                foreach (int memberId in role.memberRoleIds)
+                {
+                    Role member = store?.RoleById(memberId);
+                    if (member == null) continue;
+                    if (parts.Count == Cap)
+                    {
+                        parts.Add("WR_TipMore".Translate(
+                            role.memberRoleIds.Count - Cap).ToString());
+                        break;
+                    }
+                    parts.Add(member.label);
+                }
+                return parts.ToCommaList();
+            }
             foreach (var entry in role.entries)
             {
                 if (parts.Count == Cap)
@@ -1425,6 +1460,11 @@ namespace WorkRoles.UI
             lastTableViewH = outRect.height;
             float viewW = outRect.width - 16f;
             EnsureTableLayout(sections, grouped, EstimatedStripWidth);
+            if (pendingCenterSelected)
+            {
+                pendingCenterSelected = false;
+                CenterSelectedRow();
+            }
 
             if (tableListedCount == 0 && rosterState.FiltersActive)
             {
@@ -1768,8 +1808,10 @@ namespace WorkRoles.UI
             return true;
         }
 
+        // Strip slack is 7 (4 above, 3 below via the ceil'd top pad): the
+        // bottom pixel is deliberately trimmed.
         private float RowHeightOf(Pawn pawn) =>
-            Mathf.Max(RowHeight, Mathf.CeilToInt(StripHeightFor(pawn) + 8f));
+            Mathf.Max(RowHeight, Mathf.CeilToInt(StripHeightFor(pawn) + 7f));
 
         private void Select(Pawn pawn)
         {
@@ -1783,6 +1825,28 @@ namespace WorkRoles.UI
         /// bound needs guarding here.
         internal void ScrollTable(float wheelDelta) =>
             tableScroll.y = Mathf.Max(0f, tableScroll.y + wheelDelta * 20f);
+
+        // Open-time behavior consumed on the first table draw (Reset arms both).
+        private bool pendingSelectFromGame;
+        private bool pendingCenterSelected;
+
+        /// Scrolls the selected colonist's row as close to the viewport's
+        /// vertical center as the top clamp allows; the scroll view clamps
+        /// the bottom on the next draw. No-op while the row is hidden
+        /// (collapsed group) or the layout is not built yet.
+        private void CenterSelectedRow()
+        {
+            if (tableRowLayout == null || selectedPawn == null) return;
+            for (int i = 0; i < tableLayoutRows.Count; i++)
+            {
+                if (tableLayoutRows[i].Pawn != selectedPawn) continue;
+                float top = tableRowLayout.OffsetOf(i);
+                float height = tableRowLayout.ExtentOf(i);
+                tableScroll.y = Mathf.Max(0f,
+                    top - (lastTableViewH - height) / 2f);
+                return;
+            }
+        }
 
         /// Scrolls the selection into view; y offsets mirror the renderer
         /// (collapsed sections contribute their header only).
@@ -2143,9 +2207,8 @@ namespace WorkRoles.UI
 
         private const int CaptionMaxSkills = 4;
         private const float CaptionRowH = 14f;
-        /// A third of a small-font line: the name rides this high so the
-        /// caption fits beneath it.
-        private const float NameCaptionLift = 7f;
+        /// The name rides this high so the caption fits beneath it.
+        private const float NameCaptionLift = 5f;
 
         /// The pawn's best skills at Strong or better, ordered by the engine's
         /// champion score (level and verdict together): abbreviation in the
@@ -2222,6 +2285,9 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
+            // Skill cells select like the name cell: the whole row should act
+            // as one click target outside interactive chips/buttons.
+            if (Widgets.ButtonInvisible(cell)) selectedPawn = pawn;
             SkillLine line = statsState.SkillLineSnapshot(pawn, skill);
             if (line.Disabled)
             {
@@ -2338,8 +2404,10 @@ namespace WorkRoles.UI
         internal void DrawChipStrip(Rect stripRect, ColonistRowSnapshot row,
             float stripWidth)
         {
+            // Ceil: odd slack keeps its extra pixel on top (the bottom is the
+            // deliberately trimmed side).
             float yOffset = stripRect.y
-                + (stripRect.height - row.StripHeight) / 2f;
+                + Mathf.Ceil((stripRect.height - row.StripHeight) / 2f);
 
             for (int chipIndex = 0; chipIndex < row.ChipCount; chipIndex++)
             {
@@ -2526,6 +2594,9 @@ namespace WorkRoles.UI
             Widgets.DrawBoxSolidWithOutline(portraitFrameRect,
                 new Color(0.05f, 0.05f, 0.05f, 1f),
                 new Color(1f, 1f, 1f, 0.25f));
+            // Clicking the portrait recenters the table on the selection.
+            if (Widgets.ButtonInvisible(portraitFrameRect))
+                CenterSelectedRow();
             // Portrait centered in the taller frame, nudged 8px below center.
             GUI.DrawTexture(
                 new Rect(rect.x,
@@ -2583,7 +2654,7 @@ namespace WorkRoles.UI
 
             // Two equally sized skill columns after the portrait, separators
             // between them and before Recommended Roles.
-            float col1X = rect.x + portraitBoxSize + 16f;
+            float col1X = rect.x + portraitBoxSize + 12f;
             float col2X = col1X + skillColWidth + ColSepMargin + ColSepWidth + ColSepMargin;
 
             float sep12X = col1X + skillColWidth + ColSepMargin;

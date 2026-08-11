@@ -1,8 +1,11 @@
 ﻿# Changelog
 
-## 1.4.0 — 2026-08-11
+## 1.4.0 — 2026-08-12
 
+- Added: Role verdicts on role chips (colored stars that indicate role suitability). Display can be customized in Options.
+- Added: You can now compose roles from other roles to create composite roles. The composite role automatically stays in sync with the definition of the references roles.
 - Added: Consolidated all recommendations tuning options in its own tab and added editors for a lot of the internal scoring mechanisms.
+- Added: Added skill verdicts to the colonist stats panel and "best colonist stats" as caption in the colonist table.
 - Changed: Optimized and fine-tuned recommendations.
 - Changed: Improved tooltip explanations on recommended role chips.
 - Fixed: Surplus candidates are no longer filtered, so colonists should get extra role recommendations.

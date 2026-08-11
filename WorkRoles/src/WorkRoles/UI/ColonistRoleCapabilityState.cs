@@ -88,6 +88,10 @@ namespace WorkRoles.UI
             bool tooYoungForRole = role.minAge > 0
                 && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
                     < role.minAge * BiologicalAge.TicksPerYear;
+            // The cap is inclusive: over-age starts one year past it.
+            bool tooOldForRole = role.maxAge > 0
+                && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
+                    >= (role.maxAge + 1L) * BiologicalAge.TicksPerYear;
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;
             string primarySkill = RecsAdapter.PrimarySkillOf(role);
             bool awfulPrimarySkill = false;
@@ -160,7 +164,7 @@ namespace WorkRoles.UI
                 totalJobs, blocked.Count);
 
             bool hasAwfulSignal = awfulWorkTypes?.Count > 0 || awfulSkills?.Count > 0;
-            if (!tooYoungForRole
+            if (!tooYoungForRole && !tooOldForRole
                 && availability == RoleJobAvailability.Available && !hasAwfulSignal)
                 return RoleCapabilityPresentation.Available;
 
@@ -173,6 +177,9 @@ namespace WorkRoles.UI
             if (tooYoungForRole)
                 warnings.Add("WR_RoleTooYoung".Translate(
                     pawn.LabelShortCap, role.minAge).ToString());
+            if (tooOldForRole)
+                warnings.Add("WR_RoleTooOld".Translate(
+                    pawn.LabelShortCap, role.maxAge).ToString());
 
             if (availability != RoleJobAvailability.Available)
             {
@@ -219,9 +226,9 @@ namespace WorkRoles.UI
                 RoleAssignmentWarningSummary.From(availability,
                     hasVetoSignal: awfulWorkTypes?.Count > 0 || awfulPrimarySkill,
                     hasDampenedSignal: awfulSkills?.Count > 0);
-            // Below the role's age floor the assignment makes no sense at all,
-            // whatever the per-job availability worked out to.
-            if (tooYoungForRole)
+            // Outside the role's age gates the assignment makes no sense at
+            // all, whatever the per-job availability worked out to.
+            if (tooYoungForRole || tooOldForRole)
                 severity = RoleAssignmentWarningSeverity.Critical;
             return new RoleCapabilityPresentation(
                 severity, string.Join("\n", warnings));

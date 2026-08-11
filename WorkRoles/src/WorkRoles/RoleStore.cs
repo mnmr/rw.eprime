@@ -166,6 +166,64 @@ namespace WorkRoles
             }
         }
 
+        /// Drops composite member ids that are dead, duplicated, self,
+        /// composite, or rule-carrying (CompositeRoles policy); a composite's
+        /// entries stay empty, and non-composite roles clear any member list.
+        internal bool SanitizeCompositeMembers(Role role)
+        {
+            bool changed = false;
+            if (!role.composite)
+            {
+                if (role.memberRoleIds.Count == 0) return false;
+                role.memberRoleIds.Clear();
+                return true;
+            }
+            if (role.entries.Count > 0)
+            {
+                role.entries.Clear();
+                changed = true;
+            }
+            return CompositeRoles.SanitizeMembers(
+                role.memberRoleIds, role.id, CompositeMemberFactsOf) || changed;
+        }
+
+        internal CompositeMemberFacts CompositeMemberFactsOf(int roleId)
+        {
+            Role member = RoleById(roleId);
+            return member == null
+                ? default
+                : new CompositeMemberFacts(true, member.composite, member.HasRules);
+        }
+
+        /// Composites whose member list contains the role. Depth is 1 by policy
+        /// (composites cannot nest), so one linear scan is complete.
+        internal List<Role> CompositesContaining(int roleId)
+        {
+            List<Role> result = null;
+            for (int i = 0; i < roles.Count; i++)
+            {
+                Role candidate = roles[i];
+                if (candidate == null || !candidate.composite) continue;
+                if (candidate.memberRoleIds.Contains(roleId))
+                    (result ??= new List<Role>()).Add(candidate);
+            }
+            return result ?? emptyRoleList;
+        }
+
+        private static readonly List<Role> emptyRoleList = new List<Role>();
+
+        internal bool IsCompositeMember(int roleId)
+        {
+            for (int i = 0; i < roles.Count; i++)
+            {
+                Role candidate = roles[i];
+                if (candidate != null && candidate.composite
+                    && candidate.memberRoleIds.Contains(roleId))
+                    return true;
+            }
+            return false;
+        }
+
         /// The legacy path's unique highest-band-minimum role; -1 when tied.
         private static int LegacyTargetOf(TrainingPath path)
         {
@@ -568,8 +626,12 @@ namespace WorkRoles
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.deleted);
                 // Role-owned training sanitize: dangling roles drop (bands
                 // ride along); ownerless, corrupt or trivial lists clear.
+                // Composite member lists sanitize under the same pass.
                 foreach (var role in roles)
+                {
                     SanitizeRoleTraining(role);
+                    SanitizeCompositeMembers(role);
+                }
                 // Migration: legacy stand-alone paths fold into their unique
                 // target role; names, colors and anchors retire. First path per
                 // target wins; targetless or already-owned paths drop.

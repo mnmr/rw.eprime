@@ -44,4 +44,40 @@ public class RoleSkillProfileTests
 
         await Assert.That(byName.Single(s => s.Primary).SkillDefName).IsEqualTo("Cooking");
     }
+
+    /// A composite's displayed skills union its members' own profiles. Running
+    /// the per-role share filter over the merged coverage instead would keep
+    /// only the dominant member's skill, which is exactly the bug this pins.
+    [Test]
+    public async Task MergeKeepsEverySpecialistSkillTheShareFilterWouldCollapse()
+    {
+        // XP-training jobs weigh 4x in production; the weights and per-role
+        // totals here mirror that.
+        var doctorEvidence = new[]
+        {
+            new RoleSkillEvidence("Medicine", usedJobs: 6, trainedJobs: 6,
+                requiredContent: 0, weightedJobs: 24),
+        };
+        var growerEvidence = new[]
+        {
+            new RoleSkillEvidence("Plants", usedJobs: 4, trainedJobs: 4,
+                requiredContent: 0, weightedJobs: 16),
+        };
+
+        // Filtered over the union, Plants falls under the half-share bar.
+        List<RoleSkillView> collapsed = RoleSkillProfile.Build(
+            doctorEvidence.Concat(growerEvidence), roleWeight: 24 + 16);
+        await Assert.That(collapsed.Select(s => s.SkillDefName))
+            .IsEquivalentTo(new[] { "Medicine" });
+
+        List<RoleSkillView> merged = RoleSkillProfile.Merge(new[]
+        {
+            RoleSkillProfile.Build(doctorEvidence, roleWeight: 24),
+            RoleSkillProfile.Build(growerEvidence, roleWeight: 16),
+        });
+        await Assert.That(string.Join(",", merged.Select(s => s.SkillDefName)))
+            .IsEqualTo("Medicine,Plants");
+        await Assert.That(merged.Single(s => s.Primary).SkillDefName)
+            .IsEqualTo("Medicine");
+    }
 }

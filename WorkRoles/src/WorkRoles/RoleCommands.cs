@@ -33,6 +33,24 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
+        /// Flips a role between regular and composite. The replaced content is
+        /// dropped (entries and snapshots one way, members the other); the UI
+        /// confirms first when content would be lost. Refused for composite
+        /// members: a member cannot itself become a composite (depth 1).
+        [SyncMethod]
+        public static void SetRoleComposite(int roleId, bool value)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.composite == value
+                || Store.IsCompositeMember(roleId)) return;
+            role.composite = value;
+            role.entries.Clear();
+            role.memberRoleIds.Clear();
+            role.workTypeSnapshots.Clear();
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
         /// Engine-initiated (load-time seeding): runs inside the synced simulation
         /// on every client, so it must NOT be a synced command.
         internal static Role CreateRoleFromDef(RoleDef def)
@@ -66,6 +84,7 @@ namespace WorkRoles
             };
             role.minAge = def.tuning.minAge >= 0
                 ? def.tuning.minAge : RecsAdapter.MinUnlockAgeOf(role);
+            role.maxAge = UnityEngine.Mathf.Clamp(def.tuning.maxAge, 0, 18);
             if (!def.group.NullOrEmpty())
                 role.groupId = ResolveOrCreateGroup(SeededDefIdentity.GroupLabel(def)).id;
             if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
@@ -236,6 +255,16 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
+        [SyncMethod]
+        public static void SetRoleMaximumAge(int roleId, int value)
+        {
+            var role = FindRole(roleId);
+            value = UnityEngine.Mathf.Clamp(value, 0, 18);
+            if (role == null || role.maxAge == value) return;
+            role.maxAge = value;
+            UiVersion.Bump();
+        }
+
         /// Assignment scaling inputs (future scale replacement).
         [SyncMethod]
         public static void SetRoleColonyMinimum(int roleId, int value)
@@ -329,11 +358,14 @@ namespace WorkRoles
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
+        /// Refused for composite members: flipping a member's veto silently
+        /// changes every bundle carrying it, so it must leave the bundles first.
         [SyncMethod]
         public static void SetRoleBlocker(int roleId, bool value)
         {
             var role = FindRole(roleId);
-            if (role == null || role.blocker == value) return;
+            if (role == null || role.blocker == value
+                || Store.IsCompositeMember(roleId)) return;
             role.blocker = value;
             CompiledJobOrders.InvalidateRole(roleId);
             ReconcileHolders(roleId);
@@ -352,8 +384,13 @@ namespace WorkRoles
                 .ToList();
             // Holders that keep other roles lose this role's work; unmanaged
             // pawns keep vanilla authority by design (mirrored fallback).
+            // Composite holders lose the member's slice, so they reconcile too.
             var keepers = Store.PawnsWithRole(roleId)
                 .Except(losingLastAssignment).ToList();
+            foreach (var composited in Store.CompositesContaining(roleId))
+                foreach (var pawn in Store.PawnsWithRole(composited.id))
+                    if (!keepers.Contains(pawn) && !losingLastAssignment.Contains(pawn))
+                        keepers.Add(pawn);
             foreach (var pawn in losingLastAssignment)
                 Store.UnmanagePawn(pawn, uiBatch.Request);
             CompiledJobOrders.InvalidateRole(roleId, uiBatch.Request);
@@ -365,6 +402,11 @@ namespace WorkRoles
             Store.RemoveBillRolesForRole(roleId);
             Store.roles.Remove(role);
             Store.InvalidateRoleIndex();
+            // The deleted role leaves every composite's member list (coverage
+            // and compiled orders were invalidated above, while membership was
+            // still visible to the reverse scan).
+            foreach (var other in Store.roles)
+                if (other.composite) other.memberRoleIds.Remove(roleId);
             // The deleted role leaves every other role's training path; a path
             // reduced to the trivial self-only shape clears via sanitize.
             foreach (var other in Store.roles)
@@ -613,8 +655,14 @@ namespace WorkRoles
 
         /// Role-level mutations can revoke or demote work the holders are
         /// already doing; reconcile every holder after the invalidation.
-        private static void ReconcileHolders(int roleId) =>
+        /// Composites bundle the role's jobs, so their holders reconcile too.
+        private static void ReconcileHolders(int roleId)
+        {
             CompiledJobOrders.EnqueueReconciles(Store.PawnsWithRole(roleId));
+            foreach (var composited in Store.CompositesContaining(roleId))
+                CompiledJobOrders.EnqueueReconciles(
+                    Store.PawnsWithRole(composited.id));
+        }
 
         [SyncMethod]
         public static void ToggleRoleGlobal(int roleId)
@@ -661,6 +709,7 @@ namespace WorkRoles
                 Time = source.time,
                 ChampionPenalty = source.championPenalty,
                 MinAge = source.minAge,
+                MaxAge = source.maxAge,
                 ColonyMin = source.colonyMin,
                 Coverage = source.coverage,
                 RequiredSkills = source.requiredSkills,
@@ -690,6 +739,7 @@ namespace WorkRoles
                 time = values.Time,
                 championPenalty = values.ChampionPenalty,
                 minAge = values.MinAge,
+                maxAge = values.MaxAge,
                 colonyMin = values.ColonyMin,
                 coverage = values.Coverage,
                 requiredSkills = values.RequiredSkills,
@@ -700,6 +750,8 @@ namespace WorkRoles
                 locationTokens = values.LocationTokens,
                 entries = values.Entries,
                 workTypeSnapshots = values.WorkTypeSnapshots,
+                composite = source.composite,
+                memberRoleIds = new List<int>(source.memberRoleIds),
             };
         }
 
@@ -775,23 +827,28 @@ namespace WorkRoles
             return true;
         }
 
+        /// Refused for composite members: rules on a member would silently gate
+        /// every bundle carrying it (the composite's own rules do that instead).
         [SyncMethod]
         public static void SetRoleActiveHours(int roleId, int hoursMask)
         {
             var role = FindRole(roleId);
-            if (role == null || role.activeHours == hoursMask) return;
+            if (role == null || role.activeHours == hoursMask
+                || Store.IsCompositeMember(roleId)) return;
             role.activeHours = hoursMask;
             CompiledJobOrders.InvalidateRole(roleId);
             ReconcileHolders(roleId);
         }
 
         /// Adds/removes one location token; the role is active wherever any of
-        /// its tokens match (none = anywhere).
+        /// its tokens match (none = anywhere). Refused for composite members,
+        /// like SetRoleActiveHours.
         [SyncMethod]
         public static void ToggleRoleLocation(int roleId, string token)
         {
             var role = FindRole(roleId);
-            if (role == null || token.NullOrEmpty()) return;
+            if (role == null || token.NullOrEmpty()
+                || Store.IsCompositeMember(roleId)) return;
             if (!LocationTokenSelection.Toggle(role.locationTokens, token))
                 return;
             CompiledJobOrders.InvalidateRole(roleId);
@@ -836,7 +893,7 @@ namespace WorkRoles
         public static void AddEntry(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
-            if (role == null) return;
+            if (role == null || role.composite) return;
             // UI checks run before the synced command lands, so duplicates can
             // still race in (two MP clients adding the same entry).
             if (role.entries.Contains(entry)) return;
@@ -891,6 +948,50 @@ namespace WorkRoles
             ReconcileHolders(roleId);
         }
 
+        // ----- Composite members -----
+
+        /// Membership follows the CompositeRoles policy. UI checks run before
+        /// the synced command lands, so stale adds re-validate here.
+        [SyncMethod]
+        public static void AddCompositeMember(int roleId, int memberId, int index = -1)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.composite
+                || role.memberRoleIds.Contains(memberId)
+                || !CompositeRoles.IsEligibleMember(roleId, memberId,
+                    Store.CompositeMemberFactsOf(memberId))) return;
+            if (index < 0 || index > role.memberRoleIds.Count)
+                index = role.memberRoleIds.Count;
+            role.memberRoleIds.Insert(index, memberId);
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
+        [SyncMethod]
+        public static void RemoveCompositeMember(int roleId, int index)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.composite
+                || index < 0 || index >= role.memberRoleIds.Count) return;
+            role.memberRoleIds.RemoveAt(index);
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
+        [SyncMethod]
+        public static void MoveCompositeMember(int roleId, int from, int to)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.composite
+                || from < 0 || from >= role.memberRoleIds.Count
+                || to < 0 || to >= role.memberRoleIds.Count || from == to) return;
+            int memberId = role.memberRoleIds[from];
+            role.memberRoleIds.RemoveAt(from);
+            role.memberRoleIds.Insert(to, memberId);
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
         // ----- Pawn assignments -----
 
         [SyncMethod]
@@ -918,7 +1019,7 @@ namespace WorkRoles
         internal static void AddEntryDirect(int roleId, JobEntry entry, int index = -1)
         {
             var role = FindRole(roleId);
-            if (role == null || role.entries.Contains(entry)) return;
+            if (role == null || role.composite || role.entries.Contains(entry)) return;
             if (index < 0 || index > role.entries.Count) index = role.entries.Count;
             role.entries.Insert(index, entry);
             CompiledJobOrders.InvalidateRole(roleId);

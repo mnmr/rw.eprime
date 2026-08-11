@@ -72,6 +72,10 @@ namespace WorkRoles.Core.Recs
         /// Minimum biological age (years) for holding the role; 0 = no gate.
         public int MinAge;
         public long MinAgeTicks => MinAge * BiologicalAge.TicksPerYear;
+        /// Maximum biological age (years, inclusive) for holding the role;
+        /// 0 = no gate. The exclusive tick bound is one year past the cap.
+        public int MaxAge;
+        public long MaxAgeTicks => (MaxAge + 1L) * BiologicalAge.TicksPerYear;
         /// Authored skill classification (def tuning or per-save role data).
         /// Carried for future gating and validation; rules still consume the
         /// derived Skills profile today. Null = no authored data.

@@ -114,7 +114,9 @@ namespace WorkRoles
                 sources.Add(new RecommendationRoleSource
                 {
                     Id = role.id,
-                    Entries = new List<JobEntry>(role.entries),
+                    Entries = role.composite
+                        ? CompositeEntriesOf(role)
+                        : new List<JobEntry>(role.entries),
                     AutoAssign = role.autoAssign,
                     HasRules = role.HasRules,
                     Blocker = role.blocker,
@@ -126,6 +128,7 @@ namespace WorkRoles
                     Category = role.category,
                     Time = role.time,
                     MinAge = role.minAge < 0 ? 0 : role.minAge,
+                    MaxAge = role.maxAge,
                     DeclaredRequiredSkills = role.tuningSeeded
                         ? role.requiredSkills : null,
                     DeclaredOptionalSkills = role.tuningSeeded
@@ -257,12 +260,34 @@ namespace WorkRoles
             return primary;
         }
 
+        /// The entries a composite projects for recommendations and derived
+        /// tuning: its live members' entries in member order. A blocker member
+        /// contributes nothing (its jobs are vetoes) unless the composite is
+        /// itself a blocker, in which case the whole bundle is the veto.
+        internal static List<JobEntry> CompositeEntriesOf(Role role)
+        {
+            var entries = new List<JobEntry>();
+            var store = RoleStore.Current;
+            if (store == null) return entries;
+            foreach (int memberId in role.memberRoleIds)
+            {
+                Role member = store.RoleById(memberId);
+                if (member == null || member.composite) continue;
+                if (member.blocker && !role.blocker) continue;
+                entries.AddRange(member.entries);
+            }
+            return entries;
+        }
+
         /// Work types a role touches: WorkType entries directly, WorkGiver
-        /// entries through their parent work type.
+        /// entries through their parent work type; composites through their
+        /// members' entries.
         internal static HashSet<WorkTypeDef> WorkTypesOf(Role role)
         {
             var workTypes = new HashSet<WorkTypeDef>();
-            foreach (var entry in role.entries)
+            IReadOnlyList<JobEntry> entries = role.composite
+                ? CompositeEntriesOf(role) : role.entries;
+            foreach (var entry in entries)
             {
                 if (entry.Kind == JobEntryKind.WorkType)
                 {

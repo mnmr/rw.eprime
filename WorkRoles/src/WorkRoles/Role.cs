@@ -40,6 +40,9 @@ namespace WorkRoles
         /// -1 = not yet derived (pre-minAge saves and role files); load
         /// migration derives it from the covered work types' unlock ages.
         public int minAge = -1;
+        /// Maximum biological age (years, inclusive) for holding the role;
+        /// 0 = no gate. Nothing to derive, so pre-maxAge saves load as 0.
+        public int maxAge;
         /// Assignment scaling inputs: the minimum assignment count (0-30) and
         /// the ideal percentage of colonists holding the role (0-100). The
         /// engine's banded demand derives from these (RoleDemand).
@@ -61,6 +64,11 @@ namespace WorkRoles
         /// LocationRules tokens; empty = active anywhere.
         public List<string> locationTokens = new List<string>();
         public List<JobEntry> entries = new List<JobEntry>();
+        /// Composite role: holds an ordered list of member roles instead of job
+        /// entries (entries stays empty). Members are existing, non-composite,
+        /// rule-free roles; CompositeRoles owns the policy.
+        public bool composite;
+        public List<int> memberRoleIds = new List<int>();
         /// Engine-maintained, per work-type entry: every giver defName ever seen
         /// under that type (union-only, refreshed each load). Lets the role keep
         /// jobs that mods later move to another work type — see
@@ -108,9 +116,28 @@ namespace WorkRoles
 
         /// Expanded job coverage — the nesting/redundancy identity, independent of
         /// how the entries spell it. Cached; entry edits invalidate through
-        /// CompiledJobOrders.InvalidateRole/InvalidateAll.
+        /// CompiledJobOrders.InvalidateRole/InvalidateAll (member edits reach a
+        /// composite via that command's composite reverse scan). A composite's
+        /// coverage is the union of its members' coverage; a blocker member
+        /// contributes nothing (its jobs are vetoes) unless the composite itself
+        /// is a blocker, in which case every member job is part of the veto.
         public HashSet<string> Coverage()
-            => coverageCache ?? (coverageCache = CoverageMath.CoverageOf(entries, GameJobCatalog.Instance));
+        {
+            if (coverageCache != null) return coverageCache;
+            if (!composite)
+                return coverageCache = CoverageMath.CoverageOf(entries, GameJobCatalog.Instance);
+            var union = new HashSet<string>();
+            var store = RoleStore.Current;
+            if (store == null) return union; // no world: nothing to cache
+            for (int i = 0; i < memberRoleIds.Count; i++)
+            {
+                Role member = store.RoleById(memberRoleIds[i]);
+                if (member == null || member.composite) continue;
+                if (member.blocker && !blocker) continue;
+                union.UnionWith(member.Coverage());
+            }
+            return coverageCache = union;
+        }
 
         public void InvalidateCoverage()
         {
@@ -158,17 +185,21 @@ namespace WorkRoles
             Scribe_Values.Look(ref time, "time", RoleTime.None);
             Scribe_Values.Look(ref championPenalty, "championPenalty", true);
             Scribe_Values.Look(ref minAge, "minAge", -1);
+            Scribe_Values.Look(ref maxAge, "maxAge");
             Scribe_Values.Look(ref colonyMin, "colonyMin");
             Scribe_Values.Look(ref coverage, "coverage");
             Scribe_Values.Look(ref tuningSeeded, "tuningSeeded");
             Scribe_Collections.Look(ref trainingRoleIds, "trainingRoleIds", LookMode.Value);
             Scribe_Collections.Look(ref trainingMins, "trainingMins", LookMode.Value);
             Scribe_Collections.Look(ref trainingMaxes, "trainingMaxes", LookMode.Value);
+            Scribe_Values.Look(ref composite, "composite");
+            Scribe_Collections.Look(ref memberRoleIds, "memberRoleIds", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
                 trainingRoleIds ??= new List<int>();
                 trainingMins ??= new List<int>();
                 trainingMaxes ??= new List<int>();
+                memberRoleIds ??= new List<int>();
             }
             // Skill lists scribe comma-joined (skill defNames cannot contain commas).
             if (Scribe.mode == LoadSaveMode.Saving)

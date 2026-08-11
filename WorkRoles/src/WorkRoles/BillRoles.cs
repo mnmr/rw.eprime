@@ -34,20 +34,33 @@ namespace WorkRoles
             {
                 if (role.blocker) continue; // vetoes can't work a bill
                 bool matches = false;
-                foreach (var entry in role.entries)
+                if (role.composite)
                 {
+                    // Coverage is the members' expanded giver union, so it is
+                    // exactly the jobs the composite provides.
+                    var coverage = role.Coverage();
                     foreach (var giver in givers)
-                    {
-                        if (entry.Kind == JobEntryKind.WorkGiver
-                            ? entry.DefName == giver.defName
-                            : giver.workType != null && entry.DefName == giver.workType.defName)
+                        if (coverage.Contains(giver.defName))
                         {
                             matches = true;
                             break;
                         }
-                    }
-                    if (matches) break;
                 }
+                else
+                    foreach (var entry in role.entries)
+                    {
+                        foreach (var giver in givers)
+                        {
+                            if (entry.Kind == JobEntryKind.WorkGiver
+                                ? entry.DefName == giver.defName
+                                : giver.workType != null && entry.DefName == giver.workType.defName)
+                            {
+                                matches = true;
+                                break;
+                            }
+                        }
+                        if (matches) break;
+                    }
                 if (matches) result.Add(role);
             }
             return result;

@@ -22,6 +22,9 @@ namespace WorkRoles.UI
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
+
+        // Slightly yellow composite labels in the role tree.
+        private static readonly Color CompositeLabelColor = new Color(1f, 0.93f, 0.72f);
         // Owner: Roles window. Key: role id. Value: cached stable reorder
         // callback whose closure captures only that primitive id. Dependencies:
         // RoleCommands behavior; no render or model state is captured. Refresh:
@@ -30,11 +33,15 @@ namespace WorkRoles.UI
         // callbacks before the window and its role catalog are released.
         private readonly MemoizedFactory<int, System.Action<int, int>>
             entryReorderCallbacks;
+        // Same contract as entryReorderCallbacks, for composite member rows.
+        private readonly MemoizedFactory<int, System.Action<int, int>>
+            memberReorderCallbacks;
         private Vector2 listScroll;
         private Vector2 entriesScroll;
         private Vector2 treeScroll;
         private int selectedRoleId = -1;
         private int entriesReorderableGroupId = -1;
+        private int membersReorderableGroupId = -1;
 
         private const float ListWidth = 260f;
         private const float RowHeight = 28f;
@@ -73,6 +80,13 @@ namespace WorkRoles.UI
                     {
                         if (to > from) to--;
                         RoleCommands.MoveEntry(roleId, from, to);
+                    });
+            memberReorderCallbacks =
+                new MemoizedFactory<int, System.Action<int, int>>(roleId =>
+                    (from, to) =>
+                    {
+                        if (to > from) to--;
+                        RoleCommands.MoveCompositeMember(roleId, from, to);
                     });
         }
 
@@ -124,7 +138,9 @@ namespace WorkRoles.UI
             pendingHoursMask = 0;
             paintRoleId = -1;
             entriesReorderableGroupId = -1;
+            membersReorderableGroupId = -1;
             entryReorderCallbacks.Clear();
+            memberReorderCallbacks.Clear();
             pendingSelectLabel = null;
             scrollToSelected = false;
             scrollJobTreeToSelection = false;
@@ -373,10 +389,12 @@ namespace WorkRoles.UI
 
                 var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
                 // Invalid roles (no jobs, or every named location gone) render
-                // subdued grey — they can never act until fixed.
+                // subdued grey — they can never act until fixed. Composites
+                // read slightly yellow so bundles stand out from plain roles.
                 Text.Anchor = TextAnchor.MiddleLeft;
                 if (!publishedRow.Enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
                 else if (publishedRow.Invalid) GUI.color = new Color(0.55f, 0.55f, 0.55f);
+                else if (publishedRow.Composite) GUI.color = CompositeLabelColor;
                 // Italics = virtual row: the role belongs to another group and
                 // appears here only because this parent covers it.
                 if (publishedRow.VirtualRow) Text.CurFontStyle.fontStyle = FontStyle.Italic;
@@ -655,13 +673,15 @@ namespace WorkRoles.UI
             const float AssignedRowH = 22f;
             const float GroupRowH = 26f;
             const float SkillsRowH = 22f;
+            const float AgeRowH = 28f;
             const float CheckRowH = 24f;
             const float RulesRowGap = 6f;
             int customRows = header.CustomRows;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
-                TitleH + AssignedRowH + 2f + GroupRowH + SkillsRowH,
-                CheckRowH * 3f);
+                TitleH + AssignedRowH + 2f + GroupRowH + SkillsRowH
+                    + 2f + AgeRowH + 2f + AgeRowH,
+                CheckRowH * 4f);
             bool rulesShown = header.RulesShown;
             float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
@@ -773,7 +793,7 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
             float checksW = header.ChecksWidth;
             float checksX = leftContainerW + topBox.x - checksW;
-            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 3f),
+            DrawEditorChecks(new Rect(checksX, rowsStartY, checksW, CheckRowH * 4f),
                 model, rulesShown, CheckRowH);
 
             // Title with the rename pencil directly AFTER the name (the right
@@ -813,6 +833,27 @@ namespace WorkRoles.UI
             DrawSkillsUsedRow(new Rect(leftX, row4Y,
                 checksX - 8f - leftX, SkillsRowH), model);
 
+            // Rows 5-6: the role's age gates (min and inclusive max), stepper
+            // rows; the commands clamp to 0-18 and no-op at the bounds.
+            float ageW = checksX - 8f - leftX;
+            var minAgeRect = new Rect(leftX, row4Y + SkillsRowH + 2f,
+                ageW, AgeRowH);
+            WrTips.Key("WR_RoleMinAgeTip", header.MinAgeTipArg)
+                .Region(minAgeRect);
+            int? requestedMin = NumericStepperUI.DrawRow(minAgeRect,
+                header.MinAgeCaption, header.MinAgeLabel, header.MinAge,
+                "WR_EditorMinAge", model.RoleId);
+            if (requestedMin.HasValue)
+                RoleCommands.SetRoleMinimumAge(model.RoleId, requestedMin.Value);
+            var maxAgeRect = new Rect(leftX, minAgeRect.yMax + 2f,
+                ageW, AgeRowH);
+            WrTips.Key("WR_RoleMaxAgeTip").Region(maxAgeRect);
+            int? requestedMax = NumericStepperUI.DrawRow(maxAgeRect,
+                header.MaxAgeCaption, header.MaxAgeLabel, header.MaxAge,
+                "WR_EditorMaxAge", model.RoleId);
+            if (requestedMax.HasValue)
+                RoleCommands.SetRoleMaximumAge(model.RoleId, requestedMax.Value);
+
             // Expanding section (full box width): rules while the auto-role
             // opt-in is on.
             float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH)
@@ -833,8 +874,16 @@ namespace WorkRoles.UI
             WrText.LineVertical(rect.x + halfW + 3f, bottomY, bottomH);
             GUI.color = Color.white;
 
-            DrawJobTree(treeRect, model);
-            DrawEntries(entriesRect, model);
+            if (model.Composite != null)
+            {
+                DrawCompositeCandidates(treeRect, model);
+                DrawCompositeMembers(entriesRect, model);
+            }
+            else
+            {
+                DrawJobTree(treeRect, model);
+                DrawEntries(entriesRect, model);
+            }
         }
 
         /// The role's group as a "Group: <name>" button: a dropdown of the
@@ -847,14 +896,13 @@ namespace WorkRoles.UI
         {
             RoleEditorHeaderSnapshot header = model.Header;
             Text.Font = GameFont.Small;
-            bool overlay = header.HasRules;
             var pickRect = new Rect(rect.x, rect.y, Mathf.Min(rect.width, 180f), rect.height);
             string full = header.GroupButtonFull;
             string shown = header.GroupButtonShown;
             if (shown != full)
                 TooltipHandler.TipRegion(pickRect, full);
 
-            if (overlay)
+            if (header.HasRules)
             {
                 Widgets.ButtonText(pickRect, shown,
                     drawBackground: true, doMouseoverSound: false, active: false);
@@ -889,7 +937,7 @@ namespace WorkRoles.UI
         // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
 
         /// The editor's checkbox column: Auto-assign, Blocker role, the Auto
-        /// role opt-in and Allow training substitutions.
+        /// role opt-in and the Composite role toggle.
         /// Auto role opt-in derives from HasRules — unchecking clears the rules
         /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
         private void DrawEditorChecks(Rect rect, RoleEditorSnapshot model,
@@ -908,44 +956,93 @@ namespace WorkRoles.UI
                 RoleCommands.SetRoleAutoAssign(model.RoleId, autoAssign);
             y += rowH;
 
-            // Blocker: the role's jobs become vetoes.
+            // Blocker: the role's jobs become vetoes. Locked for composite
+            // members, where flipping the veto would silently change every
+            // bundle carrying the role.
             var blockRect = new Rect(rect.x, y, rect.width, rowH);
-            StructuredTipPresenter.TipRegion(blockRect, header.BlockerTip);
             bool blocker = header.Blocker;
-            Widgets.CheckboxLabeled(blockRect, header.BlockerLabel, ref blocker);
-            if (blocker != header.Blocker)
-                RoleCommands.SetRoleBlocker(model.RoleId, blocker);
+            if (header.MemberLocked)
+            {
+                WrTips.Key("WR_MemberLockTip").Region(blockRect);
+                Widgets.CheckboxLabeled(blockRect, header.BlockerLabel,
+                    ref blocker, disabled: true);
+            }
+            else
+            {
+                StructuredTipPresenter.TipRegion(blockRect, header.BlockerTip);
+                Widgets.CheckboxLabeled(blockRect, header.BlockerLabel, ref blocker);
+                if (blocker != header.Blocker)
+                    RoleCommands.SetRoleBlocker(model.RoleId, blocker);
+            }
             y += rowH;
 
             var autoRect = new Rect(rect.x, y, rect.width, rowH);
-            WrTips.Key("WR_AutoRoleTip").Region(autoRect);
             bool rulesWanted = rulesShown;
-            Widgets.CheckboxLabeled(autoRect, header.AutoRoleLabel,
-                ref rulesWanted);
-            y += rowH;
-            if (rulesWanted != rulesShown)
+            if (header.MemberLocked)
             {
-                if (rulesWanted)
+                WrTips.Key("WR_MemberLockTip").Region(autoRect);
+                Widgets.CheckboxLabeled(autoRect, header.AutoRoleLabel,
+                    ref rulesWanted, disabled: true);
+            }
+            else
+            {
+                WrTips.Key("WR_AutoRoleTip").Region(autoRect);
+                Widgets.CheckboxLabeled(autoRect, header.AutoRoleLabel,
+                    ref rulesWanted);
+                if (rulesWanted != rulesShown)
                 {
-                    rulesRevealed.Add(model.RoleId);
-                }
-                else if (header.HasRules)
-                {
-                    // The checkbox derives from HasRules, so unchecking means clearing the rules.
-                    Find.WindowStack.Add(new Dialog_SmallConfirm(
-                        header.ClearRulesConfirmation,
-                        () =>
-                        {
-                            RoleCommands.ClearRoleRules(model.RoleId);
-                            rulesRevealed.Remove(model.RoleId);
-                        }));
-                }
-                else
-                {
-                    rulesRevealed.Remove(model.RoleId);
+                    if (rulesWanted)
+                    {
+                        rulesRevealed.Add(model.RoleId);
+                    }
+                    else if (header.HasRules)
+                    {
+                        // The checkbox derives from HasRules, so unchecking means clearing the rules.
+                        Find.WindowStack.Add(new Dialog_SmallConfirm(
+                            header.ClearRulesConfirmation,
+                            () =>
+                            {
+                                RoleCommands.ClearRoleRules(model.RoleId);
+                                rulesRevealed.Remove(model.RoleId);
+                            }));
+                    }
+                    else
+                    {
+                        rulesRevealed.Remove(model.RoleId);
+                    }
                 }
             }
+            y += rowH;
 
+            // Composite: the role bundles other roles instead of jobs. Flipping
+            // it drops the replaced content, so a non-empty side confirms first.
+            var compositeRect = new Rect(rect.x, y, rect.width, rowH);
+            bool compositeWanted = header.Composite;
+            if (header.MemberLocked)
+            {
+                WrTips.Key("WR_MemberLockTip").Region(compositeRect);
+                Widgets.CheckboxLabeled(compositeRect, header.CompositeLabel,
+                    ref compositeWanted, disabled: true);
+                return;
+            }
+            WrTips.Key("WR_CompositeRoleTip").Region(compositeRect);
+            Widgets.CheckboxLabeled(compositeRect, header.CompositeLabel,
+                ref compositeWanted);
+            if (compositeWanted != header.Composite)
+            {
+                int roleId = model.RoleId;
+                bool losesContent = header.Composite
+                    ? model.Composite != null && model.Composite.MemberCount > 0
+                    : model.Entries != null && model.Entries.Count > 0;
+                if (losesContent)
+                    Find.WindowStack.Add(new Dialog_SmallConfirm(
+                        header.Composite
+                            ? header.CompositeRevertConfirmation
+                            : header.CompositeConfirmation,
+                        () => RoleCommands.SetRoleComposite(roleId, compositeWanted)));
+                else
+                    RoleCommands.SetRoleComposite(roleId, compositeWanted);
+            }
         }
 
         /// "Skills used:" with the primary (most frequent) skill white and the
@@ -1635,6 +1732,157 @@ namespace WorkRoles.UI
                         node.MissingGiverAt(i)), insertAt);
                 insertAt++;
             }
+        }
+
+        // ----- Composite editor: candidate roles (left) + member list (right) -----
+
+        /// One role row shared by both composite lists: swatch, label, and the
+        /// blocker marker; disabled roles render dimmed like the roles list.
+        private static void DrawCompositeRoleRow(Rect row, CompositeMemberRow role,
+            float reserveRight, float indent = 0f)
+        {
+            var swatch = new Rect(Mathf.Round(row.x) + 4f + indent, Mathf.Round(row.y) + 6f, 16f, 16f);
+            Widgets.DrawBoxSolid(swatch, role.HasCustomColor
+                ? role.Color : RoleChipUI.DefaultChipColor);
+            GUI.color = WrStyle.PanelBackground;
+            Widgets.DrawBox(swatch.ExpandedBy(1f));
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            if (!role.Enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
+            var labelRect = new Rect(swatch.xMax + 6f, row.y,
+                row.xMax - reserveRight - (swatch.xMax + 6f), RowHeight);
+            Widgets.Label(labelRect, role.Label);
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+            if (role.Blocker)
+            {
+                var markerRect = new Rect(
+                    labelRect.x + WrText.FitWidth(role.Label) + 4f,
+                    row.y + (RowHeight - 16f) / 2f, 16f, 16f);
+                if (markerRect.xMax <= labelRect.xMax)
+                {
+                    if (!role.Enabled) GUI.color = new Color(1f, 1f, 1f, 0.5f);
+                    GUI.DrawTexture(markerRect, WorkRolesTex.BlockerMarker);
+                    GUI.color = Color.white;
+                }
+            }
+        }
+
+        private void DrawCompositeCandidates(Rect rect, RoleEditorSnapshot model)
+        {
+            RoleCompositeSnapshot composite = model.Composite;
+            WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrText.MediumTopBearing,
+                rect.width - 4f, 28f), composite.CandidatesTitle);
+            float topY = rect.y + 28f + 4f;
+            var scrollRect = new Rect(rect.x, topY, rect.width, rect.yMax - topY);
+            if (composite.CandidateCount == 0)
+            {
+                GUI.color = WrStyle.DimText;
+                Widgets.Label(scrollRect.ContractedBy(4f), composite.NoCandidatesHint);
+                GUI.color = Color.white;
+                return;
+            }
+            Widgets.BeginScrollView(scrollRect, ref treeScroll,
+                new Rect(0f, 0f, scrollRect.width - 16f,
+                    composite.CandidateCount * RowHeight));
+            int firstRow = Mathf.Max(0, (int)(treeScroll.y / RowHeight));
+            int lastRow = Mathf.Min(composite.CandidateCount - 1,
+                (int)((treeScroll.y + scrollRect.height) / RowHeight));
+            for (int i = firstRow; i <= lastRow; i++)
+            {
+                CompositeCandidateRow candidate = composite.CandidateAt(i);
+                var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
+                if (candidate.IsHeader)
+                {
+                    // Same look and interaction as the role list's group
+                    // headers: click collapses/expands the section.
+                    Widgets.DrawBoxSolid(row, new Color(1f, 1f, 1f, 0.06f));
+                    var arrowRect = new Rect(row.x + 6f,
+                        row.y + (row.height - 18f) / 2f, 18f, 18f);
+                    GUI.DrawTexture(arrowRect, candidate.HeaderCollapsed
+                        ? TexButton.Reveal : TexButton.Collapse);
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    GUI.color = new Color(0.85f, 0.85f, 0.85f);
+                    Widgets.Label(new Rect(arrowRect.xMax + 6f, row.y,
+                        row.xMax - arrowRect.xMax - 10f, row.height),
+                        candidate.HeaderTitle);
+                    GUI.color = Color.white;
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    Widgets.DrawHighlightIfMouseover(row);
+                    if (Widgets.ButtonInvisible(row))
+                        editorState.ToggleCandidateSection(candidate.HeaderKey);
+                    continue;
+                }
+                if (Mouse.IsOver(row)) Widgets.DrawHighlight(row);
+                DrawCompositeRoleRow(row, candidate.Role,
+                    reserveRight: IconButton + 4f, indent: candidate.Depth * 18f);
+                var addRect = new Rect(row.xMax - IconButton - 2f,
+                    row.y + (RowHeight - IconButton) / 2f, IconButton, IconButton);
+                GUI.DrawTexture(addRect, TexButton.Plus);
+                if (Widgets.ButtonInvisible(row))
+                    RoleCommands.AddCompositeMember(model.RoleId, candidate.Role.RoleId);
+            }
+            Widgets.EndScrollView();
+        }
+
+        private void DrawCompositeMembers(Rect rect, RoleEditorSnapshot model)
+        {
+            RoleCompositeSnapshot composite = model.Composite;
+            WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing,
+                rect.width - 8f, 28f), composite.MembersTitle);
+            var scrollRect = new Rect(rect.x + 8f, rect.y + 28f + 4f,
+                rect.width - 8f, rect.height - 28f - 4f);
+            if (composite.MemberCount == 0)
+            {
+                GUI.color = WrStyle.DimText;
+                Widgets.Label(scrollRect.ContractedBy(4f), composite.NoMembersHint);
+                GUI.color = Color.white;
+                return;
+            }
+            float contentHeight = composite.MemberCount * RowHeight;
+            if (Event.current.type == EventType.Repaint)
+            {
+                membersReorderableGroupId = ReorderableWidget.NewGroup(
+                    memberReorderCallbacks.For(model.RoleId),
+                    ReorderableDirection.Vertical,
+                    scrollRect);
+            }
+            Widgets.BeginScrollView(scrollRect, ref entriesScroll,
+                new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
+            // Rows outside the viewport still register with ReorderableWidget
+            // (drag bookkeeping needs every row rect) but skip the text work.
+            float cullTop = entriesScroll.y - RowHeight;
+            float cullBottom = entriesScroll.y + scrollRect.height;
+            float buttonsReserve = (IconButton + 2f) * 3f + 2f;
+            for (int i = 0; i < composite.MemberCount; i++)
+            {
+                CompositeMemberRow memberRow = composite.MemberAt(i);
+                var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
+                bool dragging = ReorderableWidget.Reorderable(
+                    membersReorderableGroupId, row, useRightButton: false,
+                    highlightDragged: true);
+                if (row.y > cullBottom || row.y < cullTop) continue;
+                if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
+                DrawCompositeRoleRow(row, memberRow, buttonsReserve);
+
+                float btnY = row.y + (RowHeight - IconButton) / 2f;
+                float removeX = row.xMax - IconButton - 2f;
+                float downX = removeX - IconButton - 2f;
+                float upX = downX - IconButton - 2f;
+                int capturedI = i;
+                int capturedRoleId = model.RoleId;
+                if (i > 0 && Widgets.ButtonImage(
+                        new Rect(upX, btnY, IconButton, IconButton), TexButton.ReorderUp))
+                    RoleCommands.MoveCompositeMember(capturedRoleId, capturedI, capturedI - 1);
+                if (i < composite.MemberCount - 1 && Widgets.ButtonImage(
+                        new Rect(downX, btnY, IconButton, IconButton), TexButton.ReorderDown))
+                    RoleCommands.MoveCompositeMember(capturedRoleId, capturedI, capturedI + 1);
+                if (Widgets.ButtonImage(
+                        new Rect(removeX, btnY, IconButton, IconButton), TexButton.Delete))
+                    RoleCommands.RemoveCompositeMember(capturedRoleId, capturedI);
+            }
+            Widgets.EndScrollView();
         }
     }
 }

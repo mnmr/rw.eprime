@@ -47,6 +47,42 @@ namespace WorkRoles.Core.Recs
             foreach (var skill in result)
                 skill.Importance = skill.UsedJobs + skill.TrainedJobs * 2
                     + skill.RequiredContent;
+            return Finish(result);
+        }
+
+        /// Merges member-role profiles into a composite's profile: skills union
+        /// with evidence summed, primary and ordering recomputed. Each member
+        /// profile was share-filtered within its own role, so bundling several
+        /// specialist roles keeps every specialist skill instead of letting the
+        /// per-role share filter collapse the union to its dominant skill.
+        public static List<RoleSkillView> Merge(
+            IEnumerable<IReadOnlyList<RoleSkillView>> memberProfiles)
+        {
+            var byName = new Dictionary<string, RoleSkillView>();
+            var merged = new List<RoleSkillView>();
+            foreach (var profile in memberProfiles)
+                foreach (RoleSkillView skill in profile)
+                {
+                    if (skill?.SkillDefName == null) continue;
+                    if (!byName.TryGetValue(skill.SkillDefName, out RoleSkillView target))
+                    {
+                        target = new RoleSkillView { SkillDefName = skill.SkillDefName };
+                        byName[skill.SkillDefName] = target;
+                        merged.Add(target);
+                    }
+                    target.UsedJobs += System.Math.Max(0, skill.UsedJobs);
+                    target.TrainedJobs += System.Math.Max(0, skill.TrainedJobs);
+                    target.RequiredContent += System.Math.Max(0, skill.RequiredContent);
+                }
+            foreach (var skill in merged)
+                skill.Importance = skill.UsedJobs + skill.TrainedJobs * 2
+                    + skill.RequiredContent;
+            return Finish(merged);
+        }
+
+        /// Shared tail: flags the primary, derives Required, and orders the list.
+        private static List<RoleSkillView> Finish(List<RoleSkillView> result)
+        {
             var primary = result
                 .OrderByDescending(s => s.Importance)
                 .ThenByDescending(s => s.TrainedJobs)

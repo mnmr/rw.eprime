@@ -28,6 +28,8 @@ namespace WorkRoles.Core.Recs
         public RoleTime Time;
         /// Minimum biological age (years) for holding the role; 0 = no gate.
         public int MinAge;
+        /// Maximum biological age (years, inclusive) for holding the role; 0 = no gate.
+        public int MaxAge;
         /// Authored skill classification; null = no authored data.
         public List<string> DeclaredRequiredSkills;
         public List<string> DeclaredOptionalSkills;
@@ -226,6 +228,7 @@ namespace WorkRoles.Core.Recs
                 Category = source.Category,
                 Time = source.Time,
                 MinAge = source.MinAge,
+                MaxAge = source.MaxAge,
                 DeclaredRequiredSkills = source.DeclaredRequiredSkills == null
                     ? null : new List<string>(source.DeclaredRequiredSkills),
                 DeclaredOptionalSkills = source.DeclaredOptionalSkills == null
