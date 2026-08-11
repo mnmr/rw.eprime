@@ -27,13 +27,11 @@ public class RecommendationPlanScenarioTests
             (craftTrainee.Id, 0, 15),
             (researchTrainee.Id, 0, 15),
             (target.Id, 15, 21));
-        path.AnchorRoleId = target.Id;
         PathView lessSuitablePath = RecsTestBed.Path(
             201,
             (craftTrainee.Id, 0, 15),
             (researchTrainee.Id, 0, 15),
             (target.Id, 18, 21));
-        lessSuitablePath.AnchorRoleId = target.Id;
 
         PawnView firstDirect = CraftingPawn(
             16,
@@ -135,6 +133,32 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
+    public async Task MinimumAgeExcludesUnderAgePawnsFromFinalAssignments()
+    {
+        // The under-age pawn has the best skill: without the age gate it would
+        // be picked first. At the gate (13) inclusive, so the exactly-13 teen
+        // and the adult (default ancient age) fill the two required slots.
+        RoleView role = CraftingRole(100, "CraftWork");
+        role.MinAge = 13;
+        RecsTestBed.Require(role, 2);
+
+        PawnView child = CraftingPawn(12, ("CraftWork", SignalBucket.Neutral));
+        child.BiologicalAgeTicks = 10L * BiologicalAge.TicksPerYear;
+        PawnView teen = CraftingPawn(8, ("CraftWork", SignalBucket.Neutral));
+        teen.BiologicalAgeTicks = 13L * BiologicalAge.TicksPerYear;
+        PawnView adult = CraftingPawn(6, ("CraftWork", SignalBucket.Neutral));
+
+        ColonyView colony = RecsTestBed.Colony(
+            new List<RoleView> { role }, child, teen, adult);
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        var names = new Dictionary<int, string> { [role.Id] = "Craft" };
+
+        await Assert.That(NamesOfRoles(plan, 0, names)).IsEqualTo("");
+        await Assert.That(NamesOfRoles(plan, 1, names)).IsEqualTo("Craft");
+        await Assert.That(NamesOfRoles(plan, 2, names)).IsEqualTo("Craft");
+    }
+
+    [Test]
     public async Task UnskilledStrategyAssignsEveryCapablePawnAndNamesAChampion()
     {
         // Through the real projection: a skill-less role (Hauling) with the
@@ -223,6 +247,44 @@ public class RecommendationPlanScenarioTests
         await Assert.That(held).IsEqualTo(3);
     }
 
+    [Test]
+    public async Task MinimumAgeGatesAssignmentThroughTheRealProjection()
+    {
+        // Same all-zero-scale Unskilled shape as above (everyone capable gets
+        // the role), plus a source MinAge: only the pawn past the floor holds
+        // it, proving the age gate survives the catalog projection.
+        var jobs = new FakeCatalog().WithWorkType("Hauling", "Haul");
+        var allZero = new HolderScale();
+        Array.Fill(allZero.Max, 0);
+        var grunt = new RecommendationRoleSource
+        {
+            Id = 1,
+            MinAge = 3,
+            Mode = ScaleMode.Unskilled,
+            Scale = allZero,
+            Entries = { new JobEntry(JobEntryKind.WorkType, "Hauling") },
+        };
+        RecommendationCatalogProjection projection =
+            RecommendationCatalogBuilder.Build(
+                new[] { grunt },
+                Array.Empty<PathView>(),
+                jobs,
+                new Dictionary<string, int> { ["Hauling"] = 100 },
+                UnskilledJobProfiles());
+        PawnView Worker(int ageYears) => new PawnView
+        {
+            CapableWorkTypes = { "Hauling" },
+            BiologicalAgeTicks = ageYears * BiologicalAge.TicksPerYear,
+        };
+        ColonyView colony = projection.CreateColony(
+            new[] { grunt.Id }, new[] { Worker(1), Worker(5) });
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        await Assert.That(Holds(plan, 0, grunt.Id)).IsFalse();
+        await Assert.That(Holds(plan, 1, grunt.Id)).IsTrue();
+    }
+
     private static JobProfileIndex UnskilledJobProfiles()
     {
         var builder = new JobProfileIndexBuilder();
@@ -251,7 +313,6 @@ public class RecommendationPlanScenarioTests
             2, ScaleMode.Never, null, "Tend");
         PathView path = RecsTestBed.Path(
             10, (medic.Id, 5, 15), (doctor.Id, 15, 21));
-        path.AnchorRoleId = doctor.Id;
         recs.Path(path);
 
         RecommendationPlan plan = recs.Plan(
@@ -287,7 +348,6 @@ public class RecommendationPlanScenarioTests
             2, ScaleMode.Never, null, "Tend", "Feed");
         PathView path = RecsTestBed.Path(
             10, (medic.Id, 5, 15), (doctor.Id, 15, 21));
-        path.AnchorRoleId = doctor.Id;
         recs.Path(path);
 
         // A strong doctor fills Doctor directly and never becomes a Medic; the
@@ -466,7 +526,6 @@ public class RecommendationPlanScenarioTests
             2, ScaleMode.Never, null, "Paint");
         PathView path = RecsTestBed.Path(
             10, (painter.Id, 0, 8), (artist.Id, 8, 21));
-        path.AnchorRoleId = artist.Id;
         recs.Path(path);
 
         RecommendationPlan plan = recs.Plan(ArtPawn(12), ArtPawn(5));
@@ -773,10 +832,9 @@ public class RecommendationPlanScenarioTests
     {
         /*
          * Default role recommendation order: Fabricator > Drug Maker > Smith > Tailor.
-         * Training paths: Fabricator = Tailor[0,8), Smith[8,15), Fabricator[15,21),
-         * anchored before Fabricator; Drug Maker = Tailor[0,8), Smith[8,15),
-         * Drug Maker[15,21), anchored before Drug Maker; Smith = Tailor[0,8),
-         * Smith[8,21), anchored before Fabricator.
+         * Training paths: Fabricator = Tailor[0,8), Smith[8,15), Fabricator[15,21);
+         * Drug Maker = Tailor[0,8), Smith[8,15), Drug Maker[15,21);
+         * Smith = Tailor[0,8), Smith[8,21).
          * Role scales: Fabricator custom direct 1 + training 1; Drug Maker custom
          * training 1; Smith custom training 1; Tailor custom direct 0.
          */
@@ -790,13 +848,10 @@ public class RecommendationPlanScenarioTests
 
         PathView fabricatorPath = RecsTestBed.Path(
             20, (tailor.Id, 0, 8), (smith.Id, 8, 15), (fabricator.Id, 15, 21));
-        fabricatorPath.AnchorRoleId = fabricator.Id;
         PathView drugMakerPath = RecsTestBed.Path(
             21, (tailor.Id, 0, 8), (smith.Id, 8, 15), (drugMaker.Id, 15, 21));
-        drugMakerPath.AnchorRoleId = drugMaker.Id;
         PathView smithPath = RecsTestBed.Path(
             22, (tailor.Id, 0, 8), (smith.Id, 8, 21));
-        smithPath.AnchorRoleId = fabricator.Id;
 
         PawnView directUnderBand = CraftingPawn(
             14, ("Fabrication", SignalBucket.Neutral),
@@ -854,9 +909,9 @@ public class RecommendationPlanScenarioTests
     {
         /*
          * Default role recommendation order: Specialist > Trainee.
-         * Training paths: Valid = Trainee[0,10), Specialist[10,21), anchored
-         * before Specialist; Malformed has a Specialist member but no matching
-         * band ranges and is therefore unavailable.
+         * Training paths: Valid = Trainee[0,10), Specialist[10,21); Malformed
+         * has a Specialist member but no matching band ranges and is therefore
+         * unavailable.
          * Role scales: Specialist custom direct 0 + training 1; Trainee custom
          * direct 0.
          */
@@ -865,7 +920,6 @@ public class RecommendationPlanScenarioTests
         RoleView trainee = CraftingRole(25, "TraineeWork");
         PathView valid = RecsTestBed.Path(
             26, (trainee.Id, 0, 10), (specialist.Id, 10, 21));
-        valid.AnchorRoleId = specialist.Id;
         var malformed = new PathView { Id = 27 };
         malformed.RoleIds.Add(specialist.Id);
         PawnView pawn = CraftingPawn(
@@ -890,144 +944,11 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
-    public async Task OrdersTargetsThroughAssignedAndVirtualAnchors()
-    {
-        /*
-         * Default role recommendation order: Warden > Artist > Tailor > Smith >
-         * Researcher > Fabricator > Drug Maker > Crafter.
-         * Training paths: Fabricator = Tailor[0,21), Smith[0,21),
-         * Fabricator[15,21), anchored after Warden; Drug Maker = Tailor[0,21),
-         * Smith[0,21), Drug Maker[15,21), anchored after Warden; Crafter =
-         * Tailor[0,21), Smith[0,21), Crafter[15,21), anchored after Drug Maker;
-         * Smith = Tailor[0,8), Smith[8,21), anchored before Fabricator.
-         * Role scales: Warden and Artist direct 1; Tailor interest-only; Smith,
-         * Fabricator, Drug Maker, and Crafter training 1; Researcher direct 1.
-         * Final per-pawn scores retain Artist immediately after Warden, while
-         * the anchored targets form the following training block.
-         */
-        RoleView warden = SkilledRole(50, "Wardening", "Social");
-        RecsTestBed.Require(warden, 1);
-        RoleView artist = SkilledRole(51, "ArtMaking", "Artistic");
-        RecsTestBed.Require(artist, 1);
-        RoleView tailor = CraftingRole(52, "Tailoring");
-        RoleView smith = CraftingRole(53, "Smithing");
-        RecsTestBed.Require(smith, 1, trainingWaivers: 1);
-        RoleView researcher = SkilledRole(54, "Researching", "Intellectual");
-        RecsTestBed.Require(researcher, 1);
-        RoleView fabricator = CraftingRole(55, "Fabrication");
-        RecsTestBed.Require(fabricator, 1, trainingWaivers: 1);
-        RoleView drugMaker = CraftingRole(56, "DrugMaking");
-        RecsTestBed.Require(drugMaker, 1, trainingWaivers: 1);
-        RoleView crafter = CraftingRole(57, "CraftingWork");
-        RecsTestBed.Require(crafter, 1, trainingWaivers: 1);
-
-        PathView fabricatorPath = RecsTestBed.Path(
-            60, (tailor.Id, 0, 21), (smith.Id, 0, 21),
-            (fabricator.Id, 15, 21));
-        fabricatorPath.AnchorRoleId = warden.Id;
-        fabricatorPath.AnchorBefore = false;
-        PathView drugMakerPath = RecsTestBed.Path(
-            61, (tailor.Id, 0, 21), (smith.Id, 0, 21),
-            (drugMaker.Id, 15, 21));
-        drugMakerPath.AnchorRoleId = warden.Id;
-        drugMakerPath.AnchorBefore = false;
-        PathView crafterPath = RecsTestBed.Path(
-            63, (tailor.Id, 0, 21), (smith.Id, 0, 21),
-            (crafter.Id, 15, 21));
-        crafterPath.AnchorRoleId = drugMaker.Id;
-        crafterPath.AnchorBefore = false;
-        PathView smithPath = RecsTestBed.Path(
-            62, (tailor.Id, 0, 8), (smith.Id, 8, 21));
-        smithPath.AnchorRoleId = fabricator.Id;
-        smithPath.AnchorBefore = true;
-
-        PawnView lateGameCrafter = MultiSkillPawn(
-            new Dictionary<string, (int, SignalBucket)>
-            {
-                ["Crafting"] = (16, SignalBucket.Neutral),
-                ["Social"] = (10, SignalBucket.Neutral),
-                ["Artistic"] = (10, SignalBucket.Neutral),
-                ["Intellectual"] = (4, SignalBucket.Neutral),
-            },
-            ("Wardening", SignalBucket.Neutral),
-            ("ArtMaking", SignalBucket.Neutral),
-            ("Tailoring", SignalBucket.Neutral),
-            ("Smithing", SignalBucket.Neutral),
-            ("Researching", SignalBucket.Awful),
-            ("Fabrication", SignalBucket.Neutral),
-            ("DrugMaking", SignalBucket.Neutral),
-            ("CraftingWork", SignalBucket.Neutral));
-        PawnView earlyCrafter = MultiSkillPawn(
-            new Dictionary<string, (int, SignalBucket)>
-            {
-                ["Crafting"] = (4, SignalBucket.Strong),
-                ["Intellectual"] = (10, SignalBucket.Neutral),
-            },
-            ("Wardening", SignalBucket.Awful),
-            ("ArtMaking", SignalBucket.Awful),
-            ("Tailoring", SignalBucket.Neutral),
-            ("Smithing", SignalBucket.Neutral),
-            ("Researching", SignalBucket.Neutral),
-            ("Fabrication", SignalBucket.Awful),
-            ("DrugMaking", SignalBucket.Awful),
-            ("CraftingWork", SignalBucket.Awful));
-
-        ColonyView colony = RecsTestBed.Colony(
-            new List<RoleView>
-            {
-                warden, artist, tailor, smith, researcher, fabricator, drugMaker,
-                crafter,
-            },
-            lateGameCrafter,
-            earlyCrafter);
-        colony.Paths.AddRange(new[]
-        {
-            fabricatorPath, drugMakerPath, crafterPath, smithPath,
-        });
-        var roleNames = new Dictionary<int, string>
-        {
-            [warden.Id] = "Warden",
-            [artist.Id] = "Artist",
-            [tailor.Id] = "Tailor",
-            [smith.Id] = "Smith",
-            [researcher.Id] = "Researcher",
-            [fabricator.Id] = "Fabricator",
-            [drugMaker.Id] = "Drug Maker",
-            [crafter.Id] = "Crafter",
-        };
-        var pathNames = new Dictionary<int, string>
-        {
-            [fabricatorPath.Id] = "Fabricator",
-            [drugMakerPath.Id] = "Drug Maker",
-            [crafterPath.Id] = "Crafter",
-            [smithPath.Id] = "Smith",
-        };
-
-        RecommendationPlan plan = RecommendationPlan.Build(
-            colony, WithoutLevelPromotions());
-
-        string[] expectedPaths = { "Fabricator, Drug Maker, Crafter", "Smith" };
-        string[] expectedRoles =
-        {
-            "Warden, Artist, Fabricator, Drug Maker, Crafter, Smith, Tailor",
-            "Researcher, Tailor",
-        };
-        for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
-        {
-            await Assert.That(NamesOfPaths(plan, pawnIndex, pathNames))
-                .IsEqualTo(expectedPaths[pawnIndex]);
-            await Assert.That(NamesOfRoles(plan, pawnIndex, roleNames))
-                .IsEqualTo(expectedRoles[pawnIndex]);
-        }
-    }
-
-    [Test]
     public async Task DirectSpecialistSurvivesAndPrecedesItsCoveringTrainer()
     {
         /*
          * Default role recommendation order: Crafter > Fabricator.
-         * Training paths: Fabricator = Crafter[0,21), Fabricator[8,21),
-         * anchored before Crafter.
+         * Training paths: Fabricator = Crafter[0,21), Fabricator[8,21).
          * Role scales: Crafter direct 1; Fabricator direct 1.
          */
         RoleView crafter = SkilledRole(
@@ -1038,7 +959,6 @@ public class RecommendationPlanScenarioTests
         RecsTestBed.Require(fabricator, 1);
         PathView path = RecsTestBed.Path(
             72, (crafter.Id, 0, 21), (fabricator.Id, 8, 21));
-        path.AnchorRoleId = crafter.Id;
 
         PawnView pawn = MultiSkillPawn(
             new Dictionary<string, (int, SignalBucket)>
@@ -1070,10 +990,9 @@ public class RecommendationPlanScenarioTests
     {
         /*
          * Default role recommendation order: Tailor > Smith > Fabricator > Crafter.
-         * Training paths: Tailor = Crafter[0,21), Tailor[2,21), anchored before
-         * Crafter; Smith = Crafter[0,21), Smith[4,21), anchored before Crafter;
-         * Fabricator = Crafter[0,21), Smith[4,21), Fabricator[8,21), anchored
-         * before Crafter.
+         * Training paths: Tailor = Crafter[0,21), Tailor[2,21); Smith =
+         * Crafter[0,21), Smith[4,21); Fabricator = Crafter[0,21), Smith[4,21),
+         * Fabricator[8,21).
          * Role scales: all four roles are interest-only; Strong signal supplies
          * their surplus memberships.
          * With lead diversification disabled, ordinary target minima and
@@ -1086,14 +1005,11 @@ public class RecommendationPlanScenarioTests
         RoleView crafter = CraftingRole(83, "CraftingWork");
         PathView tailorPath = RecsTestBed.Path(
             90, (crafter.Id, 0, 21), (tailor.Id, 2, 21));
-        tailorPath.AnchorRoleId = crafter.Id;
         PathView smithPath = RecsTestBed.Path(
             91, (crafter.Id, 0, 21), (smith.Id, 4, 21));
-        smithPath.AnchorRoleId = crafter.Id;
         PathView fabricatorPath = RecsTestBed.Path(
             92, (crafter.Id, 0, 21), (smith.Id, 4, 21),
             (fabricator.Id, 8, 21));
-        fabricatorPath.AnchorRoleId = crafter.Id;
 
         PawnView best = QualifiedCrafter(15);
         PawnView second = QualifiedCrafter(14);
@@ -1233,6 +1149,105 @@ public class RecommendationPlanScenarioTests
             0, hauler.Id, out RoleRecommendationExplanation haulerExplanation))
             .IsTrue();
         await Assert.That(haulerExplanation.HolderScaleApplies).IsTrue();
+    }
+
+    [Test]
+    public async Task FourHunterTiersSpreadPlacementAcrossTheWorkRoles()
+    {
+        /*
+         * Default role recommendation order: Basics > Crafter > Cook > Miner >
+         * Doctor. Hunter is unlisted, so its dynamic slot follows the shooting
+         * tier cutoffs (defaults 5/9/13/17): tier 2 lands after the middle
+         * work role, tier 3 after the last work role but before trailing
+         * non-work roles, and shooting above tier 4 places Hunter last.
+         */
+        RecommendationPlan PlanFor(int shooting)
+        {
+            RoleView basics = RecsTestBed.Unskilled(200, "BasicWorker");
+            basics.AutoAssign = true;
+            basics.Scale = null;
+            RoleView crafter = SkilledRole(201, "Crafting", "Crafting");
+            RecsTestBed.Require(crafter, 1);
+            RoleView cook = SkilledRole(202, "Cooking", "Cooking");
+            RecsTestBed.Require(cook, 1);
+            RoleView miner = SkilledRole(203, "Mining", "Mining");
+            RecsTestBed.Require(miner, 1);
+            RoleView doctor = SkilledRole(204, "Doctoring", "Medicine");
+            RecsTestBed.Require(doctor, 1);
+            RoleView hunter = SkilledRole(205, "Hunting", "Shooting");
+            hunter.Hunting = true;
+            hunter.Scale = null;
+
+            PawnView pawn = MultiSkillPawn(
+                new Dictionary<string, (int, SignalBucket)>
+                {
+                    ["Crafting"] = (10, SignalBucket.Neutral),
+                    ["Cooking"] = (10, SignalBucket.Neutral),
+                    ["Mining"] = (10, SignalBucket.Neutral),
+                    ["Medicine"] = (10, SignalBucket.Neutral),
+                    ["Shooting"] = (shooting, SignalBucket.Neutral),
+                },
+                ("BasicWorker", SignalBucket.Neutral),
+                ("Crafting", SignalBucket.Neutral),
+                ("Cooking", SignalBucket.Neutral),
+                ("Mining", SignalBucket.Neutral),
+                ("Doctoring", SignalBucket.Neutral),
+                ("Hunting", SignalBucket.Neutral));
+            pawn.HasRangedWeapon = true;
+            pawn.ShootingLevel = shooting;
+
+            // A low shooter owns tier zero, so the main pawn's tier is not
+            // promoted (the engine promotes the lowest shooter when no pawn
+            // lands in tier zero naturally).
+            PawnView lowShooter = MultiSkillPawn(
+                new Dictionary<string, (int, SignalBucket)>
+                {
+                    ["Shooting"] = (5, SignalBucket.Neutral),
+                },
+                ("BasicWorker", SignalBucket.Neutral),
+                ("Hunting", SignalBucket.Neutral));
+            lowShooter.HasRangedWeapon = true;
+            lowShooter.ShootingLevel = 5;
+            // Test-bed pawns default to broad capability; this pawn must not
+            // compete for the skilled roles.
+            lowShooter.CapableWorkTypes.Clear();
+            lowShooter.CapableWorkTypes.Add("BasicWorker");
+            lowShooter.CapableWorkTypes.Add("Hunting");
+
+            ColonyView colony = RecsTestBed.Colony(
+                new List<RoleView>
+                {
+                    basics, crafter, cook, miner, doctor, hunter,
+                },
+                pawn, lowShooter);
+            colony.HunterRoleId = hunter.Id;
+            colony.OrderTemplate = new List<int>
+            {
+                basics.Id, crafter.Id, cook.Id, miner.Id, doctor.Id,
+            };
+            return RecommendationPlan.Build(colony);
+        }
+
+        var roleNames = new Dictionary<int, string>
+        {
+            [200] = "Basics",
+            [201] = "Crafter",
+            [202] = "Cook",
+            [203] = "Miner",
+            [204] = "Doctor",
+            [205] = "Hunter",
+        };
+
+        await Assert.That(NamesOfRoles(PlanFor(12), 0))
+            .IsEqualTo("Basics, Crafter, Cook, Hunter, Miner, Doctor");
+        await Assert.That(NamesOfRoles(PlanFor(16), 0))
+            .IsEqualTo("Basics, Crafter, Cook, Miner, Hunter, Doctor");
+        await Assert.That(NamesOfRoles(PlanFor(19), 0))
+            .IsEqualTo("Basics, Crafter, Cook, Miner, Doctor, Hunter");
+
+        string NamesOfRoles(RecommendationPlan plan, int pawnIndex)
+            => RecommendationPlanScenarioTests.NamesOfRoles(
+                plan, pawnIndex, roleNames);
     }
 
     [Test]

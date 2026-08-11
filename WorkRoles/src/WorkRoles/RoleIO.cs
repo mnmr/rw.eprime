@@ -41,12 +41,6 @@ namespace WorkRoles
                     int slot = CustomSlotOf(role.color, store);
                     if (slot >= 0) usedSlots.Add(slot);
                 }
-            foreach (var path in store.trainingPaths)
-                if (path.hasCustomColor)
-                {
-                    int slot = CustomSlotOf(path.color, store);
-                    if (slot >= 0) usedSlots.Add(slot);
-                }
             foreach (int slot in usedSlots)
                 doc.palette.Add((store.customSwatchNames[slot], ToRgb(store.customSwatches[slot])));
             foreach (var group in store.groups)
@@ -61,6 +55,17 @@ namespace WorkRoles
                 }
             foreach (var role in store.roles)
             {
+                // Runtime ids become document-local ids and are resolved only
+                // through this document on import; labels remain fallbacks.
+                var training = new List<FileTrainingPathEntry>();
+                for (int i = 0; i < role.trainingRoleIds.Count; i++)
+                {
+                    string memberLabel = store.RoleById(role.trainingRoleIds[i])?.label;
+                    if (memberLabel != null)
+                        training.Add(new FileTrainingPathEntry(
+                            RoleFileId(role.trainingRoleIds[i]), memberLabel,
+                            role.trainingMins[i], role.trainingMaxes[i]));
+                }
                 doc.roles.Add(new FileRole
                 {
                     fileId = RoleFileId(role.id),
@@ -76,49 +81,19 @@ namespace WorkRoles
                     enabled = role.enabled,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
-                    holderScale = role.holderScaleName,
                     hasTuning = role.tuningSeeded,
                     category = role.category,
                     time = role.time,
                     championPenalty = role.championPenalty,
+                    minAge = role.minAge,
+                    colonyMin = role.colonyMin,
+                    coverage = role.coverage,
                     requiredSkills = role.requiredSkills.ToList(),
                     optionalSkills = role.optionalSkills.ToList(),
+                    training = training,
                     entries = role.entries.ToList(),
                 });
             }
-            foreach (var path in store.trainingPaths)
-            {
-                // Runtime ids become document-local ids and are resolved only
-                // through this document on import; labels remain fallbacks.
-                var filePath = new FileTrainingPath
-                {
-                    name = path.name,
-                    colorRef = path.hasCustomColor ? EncodeColorRef(path.color, store, doc) : null,
-                    anchorRole = store.RoleById(path.anchorRoleId)?.label,
-                    anchorRoleId = path.anchorRoleId < 0 ? null : RoleFileId(path.anchorRoleId),
-                    anchorBefore = path.anchorBefore,
-                };
-                if (filePath.anchorRole != null)
-                    filePath.anchorWithId = new FileRoleReference(
-                        filePath.anchorRoleId, filePath.anchorRole);
-                for (int i = 0; i < path.roleIds.Count; i++)
-                {
-                    string label = store.RoleById(path.roleIds[i])?.label;
-                    if (label != null)
-                    {
-                        filePath.entries.Add((label, path.bandMins[i], path.bandMaxes[i]));
-                        filePath.entriesWithIds.Add(new FileTrainingPathEntry(
-                            RoleFileId(path.roleIds[i]), label,
-                            path.bandMins[i], path.bandMaxes[i]));
-                    }
-                }
-                doc.trainingPaths.Add(filePath);
-            }
-            // Scales export as independent named entities; roles carry a
-            // reference by name (Holders scale attribute).
-            foreach (var scale in store.holderScales)
-                if (scale != null && !scale.Name.NullOrEmpty())
-                    doc.scales.Add(scale.Copy());
             // Only the stored template travels (empty = the derived default).
             doc.recommendationOrderWithIds = store.recommendationOrder
                 .Select(id => store.RoleById(id))
@@ -393,13 +368,6 @@ namespace WorkRoles
             Dictionary<FileRole, Role> runtimeRoles = null;
             store.SyncSwatchNames();
 
-            // Scales ride the roles section: same-name user scales overwrite,
-            // presets keep their invariant values, and new names append.
-            // Imported role references then resolve against the updated list.
-            if (rolesInclude && doc.scales != null)
-                foreach (var scale in doc.scales)
-                    HolderScaleImport.Merge(store.holderScales, scale);
-
             if (paletteInclude && paletteOverwrite)
             {
                 var oldColors = store.customSwatches.ToList();
@@ -505,6 +473,7 @@ namespace WorkRoles
                 }
 
                 var rows = plannedRoles;
+                var appliedRows = new List<RoleIO.RoleRow>();
                 var selected = rolesOverwrite
                     ? Enumerable.Range(0, rows.Count).ToList()
                     : (roleRows ?? new List<int>());
@@ -558,10 +527,27 @@ namespace WorkRoles
                         .Select(token => ImportLocationResolver.FromMap(
                             token, resolvedLocations))
                         .Where(token => token != null).ToList();
-                    target.holderScaleName = row.role.holderScale ?? "Never";
                     target.category = row.role.category;
                     target.time = row.role.time;
                     target.championPenalty = row.role.championPenalty;
+                    // Pre-minAge files carry -1; the migration below derives it.
+                    target.minAge = row.role.minAge < 0
+                        ? -1 : Mathf.Clamp(row.role.minAge, 0, 18);
+                    target.colonyMin = Mathf.Clamp(row.role.colonyMin, 0, 30);
+                    target.coverage = Mathf.Clamp(row.role.coverage, 0, 100);
+                    // Legacy files carry named scale references instead of the
+                    // two demand numbers: convert like the save migration.
+                    if (target.colonyMin == 0 && target.coverage == 0
+                        && !row.role.holderScale.NullOrEmpty()
+                        && RoleDemand.TryFromLegacyStrategy(
+                            doc.scales?.FirstOrDefault(scale => string.Equals(
+                                scale?.Name, row.role.holderScale,
+                                System.StringComparison.OrdinalIgnoreCase)),
+                            out int legacyMin, out int legacyCoverage))
+                    {
+                        target.colonyMin = Mathf.Clamp(legacyMin, 0, 30);
+                        target.coverage = Mathf.Clamp(legacyCoverage, 0, 100);
+                    }
                     target.requiredSkills = row.role.requiredSkills.ToList();
                     target.optionalSkills = row.role.optionalSkills.ToList();
                     // Pre-tuning files leave this false; the migration below
@@ -574,6 +560,27 @@ namespace WorkRoles
                     target.workTypeSnapshots.Clear();
                     row.existing = target;
                     runtimeRoles[row.role] = target;
+                    appliedRows.Add(row);
+                }
+                // Training resolves AFTER every role landed: entries may
+                // reference roles this same import just added.
+                foreach (RoleIO.RoleRow row in appliedRows)
+                {
+                    var ids = new List<int>();
+                    var mins = new List<int>();
+                    var maxes = new List<int>();
+                    foreach (var entry in row.role.training)
+                    {
+                        Role member = RuntimeRole(doc, runtimeRoles, entry.role);
+                        if (member == null || ids.Contains(member.id)) continue;
+                        ids.Add(member.id);
+                        mins.Add(entry.min);
+                        maxes.Add(entry.max);
+                    }
+                    row.existing.trainingRoleIds = ids;
+                    row.existing.trainingMins = mins;
+                    row.existing.trainingMaxes = maxes;
+                    store.SanitizeRoleTraining(row.existing);
                 }
                 RoleCommands.SweepEmptyGroups();
                 CompiledJobOrders.InvalidateAll();
@@ -581,11 +588,19 @@ namespace WorkRoles
                 store.MigrateRoleTuning();
             }
 
-            // Paths and the order resolve names AFTER roles landed (they may
-            // reference roles this same import just added).
+            // Legacy stand-alone <TrainingPaths> (v10 and older) resolve AFTER
+            // roles landed and fold into their unique target role; names,
+            // colors and anchors retire. A target that already owns training
+            // keeps it (importing the same file twice must not churn).
             if (pathsInclude)
             {
-                if (pathsOverwrite) store.trainingPaths.Clear();
+                if (pathsOverwrite)
+                    foreach (var role in store.roles)
+                    {
+                        role.trainingRoleIds.Clear();
+                        role.trainingMins.Clear();
+                        role.trainingMaxes.Clear();
+                    }
                 var selectedPaths = pathsOverwrite
                     ? Enumerable.Range(0, doc.trainingPaths.Count).ToList()
                     : (pathRows ?? new List<int>());
@@ -596,27 +611,15 @@ namespace WorkRoles
                     var (ids, mins, maxes) = RoleFile.ResolvePathEntries(filePath, doc,
                         fileRole => runtimeRoles.TryGetValue(fileRole, out var runtime)
                             ? runtime.id : (int?)null);
-                    var (hasPathColor, pathColor) = RoleIO.ResolveColor(filePath.colorRef, store, doc);
-                    // A NEW path (names are not identities); unknown names
-                    // dropped already, an unknown anchor means no anchor. A
-                    // full-value duplicate of an existing path skips: importing
-                    // the same file twice must not double the paths.
-                    var path = new TrainingPath
-                    {
-                        id = store.NextPathId(),
-                        name = filePath.name,
-                        roleIds = ids,
-                        bandMins = mins,
-                        bandMaxes = maxes,
-                        anchorRoleId = RuntimeRole(doc, runtimeRoles,
-                            RoleFile.AnchorWithStableId(filePath))?.id ?? -1,
-                        anchorBefore = filePath.anchorBefore,
-                        hasCustomColor = hasPathColor,
-                        color = hasPathColor ? pathColor : Color.white,
-                    };
-                    if (store.trainingPaths.Any(existing => existing.DuplicateOf(path)))
+                    if (ids.Count < 2
+                        || !SkillProgressionMath.Validate(ids.Count, mins, maxes))
                         continue;
-                    store.trainingPaths.Add(path);
+                    Role owner = store.RoleById(UniqueTargetOf(ids, mins));
+                    if (owner == null || owner.trainingRoleIds.Count > 0) continue;
+                    owner.trainingRoleIds = ids;
+                    owner.trainingMins = mins;
+                    owner.trainingMaxes = maxes;
+                    store.SanitizeRoleTraining(owner);
                     pathsAdded++;
                 }
             }
@@ -635,6 +638,26 @@ namespace WorkRoles
             EnforcePaletteCoverage(store);
 
             return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges, pathsAdded);
+        }
+
+        /// The unique highest-band-minimum entry of a legacy path; -1 on ties.
+        private static int UniqueTargetOf(List<int> ids, List<int> mins)
+        {
+            int highest = int.MinValue;
+            int at = -1;
+            bool unique = true;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (mins[i] > highest)
+                {
+                    highest = mins[i];
+                    at = i;
+                    unique = true;
+                }
+                else if (mins[i] == highest)
+                    unique = false;
+            }
+            return unique && at >= 0 ? ids[at] : -1;
         }
 
         /// Orphan role colors claim free custom slots; past capacity they snap

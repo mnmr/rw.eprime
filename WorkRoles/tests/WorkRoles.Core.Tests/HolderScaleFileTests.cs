@@ -6,7 +6,7 @@ namespace WorkRoles.Core.Tests;
 public class HolderScaleFileTests
 {
     [Test]
-    public async Task RoleScaleRoundTripsWithoutLegacyHolderAttributes()
+    public async Task BuildOmitsHoldersAndLegacyReferencesStillParse()
     {
         var document = new RoleFileDocument
         {
@@ -25,17 +25,22 @@ public class HolderScaleFileTests
         };
 
         string xml = RoleFile.Build(document);
-        XElement holders = XElement.Parse(xml)
-            .Element("Roles")!.Element("Role")!
-            .Element("Options")!.Element("Holders")!;
+        XElement role = XElement.Parse(xml)
+            .Element("Roles")!.Element("Role")!;
 
-        await Assert.That(holders.Attribute("scale")!.Value)
-            .IsEqualTo("Doctoring");
-        await Assert.That(holders.Attribute("mode") == null).IsTrue();
-        await Assert.That(holders.Attribute("min") == null).IsTrue();
-        await Assert.That(holders.Attribute("max") == null).IsTrue();
-        await Assert.That(holders.Attribute("train") == null).IsTrue();
-        await Assert.That(RoleFile.Parse(xml).roles[0].holderScale)
-            .IsEqualTo("Doctoring");
+        await Assert.That(role.Element("Options")?.Element("Holders") == null)
+            .IsTrue();
+
+        // Legacy files still parse both the scale reference and the older
+        // mode="never" attribute form.
+        RoleFileDocument legacy = RoleFile.Parse(
+            "<WorkRoles version=\"10\"><Roles>" +
+            "<Role name=\"Doctor\"><Options><Holders scale=\"Doctoring\"/></Options>" +
+            "<Jobs><WorkType>Doctor</WorkType></Jobs></Role>" +
+            "<Role name=\"Idle\"><Options><Holders mode=\"never\"/></Options>" +
+            "<Jobs><WorkType>Hauling</WorkType></Jobs></Role>" +
+            "</Roles></WorkRoles>");
+        await Assert.That(legacy.roles[0].holderScale).IsEqualTo("Doctoring");
+        await Assert.That(legacy.roles[1].holderScale).IsEqualTo("Never");
     }
 }

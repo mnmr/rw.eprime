@@ -2,6 +2,11 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
+    public static class BiologicalAge
+    {
+        public const long TicksPerYear = 3_600_000L;
+    }
+
     /// One pawn as the rules see it. Skill dictionaries key by skill defName;
     /// an absent skill is totally disabled. Signal buckets are precomputed
     /// from the pawn signal snapshot before the recommendation engine runs.
@@ -64,6 +69,9 @@ namespace WorkRoles.Core.Recs
         public RoleCategory Category;
         /// How time-consuming the role's work is; None = unclassified.
         public RoleTime Time;
+        /// Minimum biological age (years) for holding the role; 0 = no gate.
+        public int MinAge;
+        public long MinAgeTicks => MinAge * BiologicalAge.TicksPerYear;
         /// Authored skill classification (def tuning or per-save role data).
         /// Carried for future gating and validation; rules still consume the
         /// derived Skills profile today. Null = no authored data.
@@ -108,16 +116,15 @@ namespace WorkRoles.Core.Recs
         public bool Enabled = true;
     }
 
-    /// One training path: bands are [min, max) with 21 = open top; the anchor
-    /// places the whole block into the recommendation order.
+    /// One training path: bands are [min, max) with 21 = open top. Paths are
+    /// role-owned (Id = the owning target role); the recommendation order
+    /// places the block.
     public class PathView
     {
         public int Id;
         public List<int> RoleIds = new List<int>();
         public List<int> BandMins = new List<int>();
         public List<int> BandMaxes = new List<int>();
-        public int AnchorRoleId = -1;
-        public bool AnchorBefore = true;
     }
 
     public class ColonyView

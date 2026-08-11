@@ -9,16 +9,37 @@ using WorkRoles.Core.Recs;
 namespace WorkRoles
 {
     /// Recommendation tuning: skill classification, importance, time profile,
-    /// holder scale and champion-penalty policy.
+    /// holder scale, champion-penalty policy and the role's training path.
     public class RoleTuning
     {
         public RoleTuningSkills skills;
         public RoleCategory category;
         public RoleTime time;
-        /// Holder scale name (invariant name derived from a ScaleDef); empty = Never.
+        /// Legacy-ignored: named scales retired in favor of colonyMin/coverage.
+        /// Kept so third-party defs still declaring it load without errors.
         public string scale;
         /// False = repeat championships use the occasional-work penalty.
         public bool championPenalty = true;
+        /// Minimum biological age (years) for holding the role; -1 = derive
+        /// from the covered work types' lowest vanilla unlock age at seed time.
+        public int minAge = -1;
+        /// Assignment scaling inputs (future scale replacement): minimum
+        /// assignment count (0-30) and ideal colonist percentage (0-100).
+        public int colonyMin;
+        public int coverage;
+        /// The role's own training path: this role plus its training roles
+        /// with skill bands. Entries whose role is absent (DLC/mod gated) are
+        /// skipped at seed time. Empty = the implicit self-only path.
+        public List<RoleTrainingEntry> training = new List<RoleTrainingEntry>();
+    }
+
+    public class RoleTrainingEntry
+    {
+        /// RoleDef defName; entry order is the final stable tie-breaker.
+        public string role;
+        /// [min, max) skill band on the 0..21 axis (21 = open top).
+        public int min;
+        public int max = SkillProgressionMath.MaxLevel;
     }
 
     public class RoleTuningSkills
@@ -46,8 +67,9 @@ namespace WorkRoles
         /// without one get theirs built from the legacy fields below.
         public RoleTuning tuning;
 
-        /// Legacy pre-tuning elements, consumed by PostLoad only when no
-        /// tuning block is present (third-party defs on the old schema).
+        /// Legacy pre-tuning elements (third-party defs on the old schema).
+        /// holderScale is legacy-ignored like tuning.scale; the penalty flag
+        /// still migrates in PostLoad.
         public string holderScale;
         public bool usesOccasionalRepeatChampionPenalty;
 
@@ -65,12 +87,12 @@ namespace WorkRoles
             if (tuning == null)
             {
                 tuning = new RoleTuning();
-                if (!holderScale.NullOrEmpty()) tuning.scale = holderScale.Trim();
                 if (usesOccasionalRepeatChampionPenalty) tuning.championPenalty = false;
             }
             tuning.skills ??= new RoleTuningSkills();
             tuning.skills.required ??= new List<string>();
             tuning.skills.optional ??= new List<string>();
+            tuning.training ??= new List<RoleTrainingEntry>();
         }
 
         /// Role-list group name (resolved to a RoleGroupDef invariant name); empty = Default.
@@ -101,12 +123,15 @@ namespace WorkRoles
             var text = string.Join("\n",
                 defName, autoAssign ? "1" : "0", blocker ? "1" : "0", iconPath,
                 SeededDefIdentity.GroupIdentity(this), activeHours, string.Join("|", locations),
-                SeededDefIdentity.ScaleIdentity(this),
                 ((int)(tuning?.category ?? RoleCategory.None)).ToString(),
                 ((int)(tuning?.time ?? RoleTime.None)).ToString(),
                 tuning?.championPenalty == false ? "0" : "1",
+                (tuning?.colonyMin ?? 0).ToString(),
+                (tuning?.coverage ?? 0).ToString(),
                 string.Join("|", tuning?.skills?.required ?? new List<string>()),
                 string.Join("|", tuning?.skills?.optional ?? new List<string>()),
+                string.Join("|", (tuning?.training ?? new List<RoleTrainingEntry>())
+                    .Select(entry => entry.role + ":" + entry.min + ":" + entry.max)),
                 string.Join("|", entries));
             return Seeding.Fnv1a(text);
         }
@@ -130,17 +155,13 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
-            string scale = tuning?.scale;
-            if (!scale.NullOrEmpty() && !DefDatabase<ScaleDef>.AllDefsListForReading
-                    .Any(d => string.Equals(SeededDefIdentity.ScaleName(d), scale,
-                            System.StringComparison.OrdinalIgnoreCase)
-                        || string.Equals(d.label, scale,
-                            System.StringComparison.OrdinalIgnoreCase)))
-                yield return $"tuning scale '{scale}' matches no ScaleDef label";
             foreach (var skill in (tuning?.skills?.required ?? new List<string>())
                      .Concat(tuning?.skills?.optional ?? new List<string>()))
                 if (DefDatabase<SkillDef>.GetNamedSilentFail(skill) == null)
                     yield return $"tuning skill '{skill}' matches no SkillDef";
+            foreach (var entry in tuning?.training ?? new List<RoleTrainingEntry>())
+                if (entry.role.NullOrEmpty())
+                    yield return "training entry without a role";
         }
     }
 }

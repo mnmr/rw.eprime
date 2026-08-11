@@ -56,18 +56,14 @@ namespace WorkRoles
             new Dictionary<Pawn, string>();
         /// Role-list groups in display order. Mutate via RoleCommands.
         public List<RoleGroup> groups = new List<RoleGroup>();
-        /// Named training paths (Options tab). Mutate via RoleCommands.
-        public List<TrainingPath> trainingPaths = new List<TrainingPath>();
-        /// Named assignment strategies (fill mode + optional banded scale);
-        /// roles reference them by name via Role.holderScaleName.
-        public List<RoleAssignmentStrategy> holderScales =
-            new List<RoleAssignmentStrategy>();
-        /// ScaleDefs already seeded into holderScales, by defName: each def
-        /// seeds once per save so renaming or deleting its scale sticks.
-        public List<string> knownScaleDefs = new List<string>();
+        /// Legacy stand-alone training paths: read from old saves only and
+        /// folded into their target role at load (roles own training now).
+        private List<TrainingPath> legacyTrainingPaths;
+        /// Legacy named assignment strategies: read from old saves only and
+        /// folded into role colonyMin/coverage at load, never written.
+        private List<RoleAssignmentStrategy> legacyHolderScales;
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
-        private int nextPathId = 1;
         internal const int CurrentLocationTokenSchemaVersion = 1;
         private int locationTokenSchemaVersion;
         internal int LocationTokenSchemaVersion
@@ -132,24 +128,63 @@ namespace WorkRoles
 
         public int NextGroupId() => nextGroupId++;
 
-        public int NextPathId() => nextPathId++;
-
         public RoleGroup GroupById(int id) => groups.FirstOrDefault(g => g.id == id);
 
         public RoleGroup GroupByName(string name) => groups.FirstOrDefault(g =>
             string.Equals(g.label, name?.Trim(), System.StringComparison.OrdinalIgnoreCase));
 
-        public TrainingPath PathById(int id) =>
-            trainingPaths.FirstOrDefault(p => p.id == id);
+        /// Drops training entries whose role is gone (bands ride along) and
+        /// clears lists that lost their owner or hold corrupt geometry.
+        internal void SanitizeRoleTraining(Role role)
+        {
+            if (role.trainingRoleIds.Count == 0)
+            {
+                role.trainingMins.Clear();
+                role.trainingMaxes.Clear();
+                return;
+            }
+            for (int i = role.trainingRoleIds.Count - 1; i >= 0; i--)
+                if (RoleById(role.trainingRoleIds[i]) == null
+                    || role.trainingRoleIds.IndexOf(role.trainingRoleIds[i]) != i)
+                {
+                    role.trainingRoleIds.RemoveAt(i);
+                    if (i < role.trainingMins.Count) role.trainingMins.RemoveAt(i);
+                    if (i < role.trainingMaxes.Count) role.trainingMaxes.RemoveAt(i);
+                }
+            // A list without its owner or with corrupt geometry clears; the
+            // trivial self-only full-axis path normalizes to empty storage.
+            if (!role.trainingRoleIds.Contains(role.id)
+                || !SkillProgressionMath.Validate(
+                    role.trainingRoleIds.Count, role.trainingMins, role.trainingMaxes)
+                || role.trainingRoleIds.Count == 1
+                    && role.trainingMins[0] == 0
+                    && role.trainingMaxes[0] == SkillProgressionMath.MaxLevel)
+            {
+                role.trainingRoleIds.Clear();
+                role.trainingMins.Clear();
+                role.trainingMaxes.Clear();
+            }
+        }
 
-        public RoleAssignmentStrategy ScaleByName(string name) =>
-            name.NullOrEmpty() ? null : holderScales.FirstOrDefault(c =>
-                string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase));
-
-        /// The assignment strategy for a role. Missing and dangling references
-        /// resolve to Never in the recommendation model.
-        internal RoleAssignmentStrategy ScaleFor(Role role) =>
-            role == null ? null : ScaleByName(role.holderScaleName);
+        /// The legacy path's unique highest-band-minimum role; -1 when tied.
+        private static int LegacyTargetOf(TrainingPath path)
+        {
+            int highest = int.MinValue;
+            int at = -1;
+            bool unique = true;
+            for (int i = 0; i < path.roleIds.Count; i++)
+            {
+                if (path.bandMins[i] > highest)
+                {
+                    highest = path.bandMins[i];
+                    at = i;
+                    unique = true;
+                }
+                else if (path.bandMins[i] == highest)
+                    unique = false;
+            }
+            return unique && at >= 0 ? path.roleIds[at] : -1;
+        }
 
         /// The Default group (id 0), materialized on demand: pinned first,
         /// swept like any user group when it empties. The stored label is
@@ -445,7 +480,6 @@ namespace WorkRoles
             Scribe_Values.Look(ref nextGroupId, "nextGroupId", 1);
             Scribe_Collections.Look(ref groups, "groups", LookMode.Deep);
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
-            Scribe_Collections.Look(ref knownScaleDefs, "knownScaleDefs", LookMode.Value);
             Scribe_Collections.Look(ref customSwatches, "customSwatches", LookMode.Value);
             Scribe_Collections.Look(ref customSwatchNames, "customSwatchNames", LookMode.Value);
             Scribe_Collections.Look(ref pawnSets, "pawnSets", LookMode.Reference, LookMode.Deep,
@@ -469,45 +503,39 @@ namespace WorkRoles
             // still-empty shell now; the working lists remain owned by Scribe.
             if (Scribe.mode == LoadSaveMode.LoadingVars)
                 billRoles = NewBillRoleDictionary();
-            Scribe_Values.Look(ref nextPathId, "nextPathId", 1);
-            Scribe_Collections.Look(ref trainingPaths, "trainingPaths", LookMode.Deep);
-            // Strategies scribe as compact strings (name + three codec rows +
-            // preset + mode, newline-separated) — the types are Verse-free
-            // Core types. Pre-mode saves omit the mode field and are inferred.
-            List<string> scribeScales = null;
-            if (Scribe.mode == LoadSaveMode.Saving && holderScales.Count > 0)
-                scribeScales = holderScales.Select(c => string.Join("\n",
-                    c.Name ?? "",
-                    HolderScaleCodec.EncodeRow(
-                        c.Scale?.RequiredTotals ?? new int[HolderScale.Bands]),
-                    HolderScaleCodec.EncodeRow(
-                        c.Scale?.TrainingWaivers ?? new int[HolderScale.Bands]),
-                    HolderScaleCodec.EncodeRow(
-                        c.Scale?.Max ?? new int[HolderScale.Bands]),
-                    c.Preset ? "1" : "0",
-                    ((int)c.Mode).ToString())).ToList();
-            Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
-            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            // Legacy stand-alone paths: read for the fold-in migration below,
+            // never written (roles own training now).
+            if (Scribe.mode != LoadSaveMode.Saving)
+                Scribe_Collections.Look(ref legacyTrainingPaths, "trainingPaths", LookMode.Deep);
+            // Legacy named strategies (compact strings: name + three codec rows
+            // + preset + mode): read from old saves for the colonyMin/coverage
+            // migration below, never written.
+            if (Scribe.mode != LoadSaveMode.Saving)
             {
-                holderScales = new List<RoleAssignmentStrategy>();
-                if (scribeScales != null)
-                    foreach (var raw in scribeScales)
-                    {
-                        string[] parts = raw?.Split('\n');
-                        if (parts == null || parts.Length < 4
-                            || parts[0].Trim().Length == 0) continue;
-                        var bands = new HolderScale
+                List<string> scribeScales = null;
+                Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
+                if (Scribe.mode == LoadSaveMode.LoadingVars)
+                {
+                    legacyHolderScales = new List<RoleAssignmentStrategy>();
+                    if (scribeScales != null)
+                        foreach (var raw in scribeScales)
                         {
-                            RequiredTotals = HolderScaleCodec.DecodeRow(parts[1], 0),
-                            TrainingWaivers = HolderScaleCodec.DecodeRow(parts[2], 0),
-                            Max = HolderScaleCodec.DecodeRow(
-                                parts[3], RoleHolderRange.Uncapped),
-                        };
-                        bool preset = parts.Length > 4 && parts[4].Trim() == "1";
-                        string modeToken = parts.Length > 5 ? parts[5] : null;
-                        holderScales.Add(RoleAssignmentStrategy.FromRows(
-                            parts[0].Trim(), preset, modeToken, bands));
-                    }
+                            string[] parts = raw?.Split('\n');
+                            if (parts == null || parts.Length < 4
+                                || parts[0].Trim().Length == 0) continue;
+                            var bands = new HolderScale
+                            {
+                                RequiredTotals = HolderScaleCodec.DecodeRow(parts[1], 0),
+                                TrainingWaivers = HolderScaleCodec.DecodeRow(parts[2], 0),
+                                Max = HolderScaleCodec.DecodeRow(
+                                    parts[3], RoleHolderRange.Uncapped),
+                            };
+                            bool preset = parts.Length > 4 && parts[4].Trim() == "1";
+                            string modeToken = parts.Length > 5 ? parts[5] : null;
+                            legacyHolderScales.Add(RoleAssignmentStrategy.FromRows(
+                                parts[0].Trim(), preset, modeToken, bands));
+                        }
+                }
             }
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
@@ -538,29 +566,31 @@ namespace WorkRoles
                 // guard in 1.6. Remove only definitely dead bill references here;
                 // role-id sanitation waits until legacy allRole has migrated.
                 billRoles.RemoveAll(kv => kv.Key == null || kv.Key.deleted);
-                holderScales ??= new List<RoleAssignmentStrategy>();
-                knownScaleDefs ??= new List<string>();
-                trainingPaths ??= new List<TrainingPath>();
-                // Empty paths survive (named containers); only non-empty corrupt geometry drops.
-                trainingPaths.RemoveAll(p =>
-                    p == null
-                    || (p.roleIds.Count > 0 && !SkillProgressionMath.Validate(p.roleIds.Count, p.bandMins, p.bandMaxes)));
-                foreach (var path in trainingPaths)
-                    if (path.roleIds.Count == 0 && (path.bandMins.Count > 0 || path.bandMaxes.Count > 0))
+                // Role-owned training sanitize: dangling roles drop (bands
+                // ride along); ownerless, corrupt or trivial lists clear.
+                foreach (var role in roles)
+                    SanitizeRoleTraining(role);
+                // Migration: legacy stand-alone paths fold into their unique
+                // target role; names, colors and anchors retire. First path per
+                // target wins; targetless or already-owned paths drop.
+                if (legacyTrainingPaths != null)
+                {
+                    foreach (var path in legacyTrainingPaths)
                     {
-                        path.bandMins.Clear();
-                        path.bandMaxes.Clear();
+                        if (path == null || path.roleIds.Count < 2
+                            || !SkillProgressionMath.Validate(
+                                path.roleIds.Count, path.bandMins, path.bandMaxes))
+                            continue;
+                        Role owner = RoleById(LegacyTargetOf(path));
+                        if (owner == null || owner.trainingRoleIds.Count > 0)
+                            continue;
+                        owner.trainingRoleIds = new List<int>(path.roleIds);
+                        owner.trainingMins = new List<int>(path.bandMins);
+                        owner.trainingMaxes = new List<int>(path.bandMaxes);
+                        SanitizeRoleTraining(owner);
                     }
-                // Sweep full-value duplicate paths (an old import bug appended
-                // identical paths instead of skipping); the first stays.
-                for (int i = trainingPaths.Count - 1; i >= 0; i--)
-                    for (int j = 0; j < i; j++)
-                        if (trainingPaths[i].DuplicateOf(trainingPaths[j]))
-                        {
-                            Log.Message($"[WorkRoles] removed duplicate training path '{trainingPaths[i].name}'");
-                            trainingPaths.RemoveAt(i);
-                            break;
-                        }
+                    legacyTrainingPaths = null;
+                }
                 // Migration: the once-hidden All role becomes an ordinary catalog
                 // role, assigned to every managed pawn at the last position (its
                 // old implicit spot).
@@ -586,8 +616,37 @@ namespace WorkRoles
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
                 lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
                 MigrateRoleTuning();
+                MigrateLegacyHolderScales();
                 CompiledJobOrders.InvalidateAll();
             }
+        }
+
+        /// Migration: roles that still reference a retired named scale and
+        /// carry no colonyMin/coverage adopt the equivalent numbers derived
+        /// from the save's legacy strategy list. The reference field then
+        /// resets to its scribe default so saves stop carrying it.
+        private void MigrateLegacyHolderScales()
+        {
+            foreach (Role role in roles)
+            {
+                if (role.colonyMin == 0 && role.coverage == 0
+                    && !role.holderScaleName.NullOrEmpty()
+                    && !string.Equals(role.holderScaleName, "Never",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    RoleAssignmentStrategy legacy = legacyHolderScales?.FirstOrDefault(
+                        strategy => string.Equals(strategy.Name, role.holderScaleName,
+                            StringComparison.OrdinalIgnoreCase));
+                    if (RoleDemand.TryFromLegacyStrategy(
+                            legacy, out int colonyMin, out int coverage))
+                    {
+                        role.colonyMin = colonyMin;
+                        role.coverage = coverage;
+                    }
+                }
+                role.holderScaleName = "Never";
+            }
+            legacyHolderScales = null;
         }
 
         /// Fills tuning on roles that predate it (old saves at load, pre-tuning
@@ -597,6 +656,18 @@ namespace WorkRoles
         /// every client), persisted on next save.
         internal void MigrateRoleTuning()
         {
+            // Roles from pre-minAge saves and files derive their age floor:
+            // the def's authored value when present, else the lowest unlock
+            // age across the covered work types.
+            foreach (Role role in roles)
+            {
+                if (role.minAge >= 0) continue;
+                RoleDef template = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                role.minAge = template?.tuning != null && template.tuning.minAge >= 0
+                    ? template.tuning.minAge
+                    : RecsAdapter.MinUnlockAgeOf(role);
+            }
             if (roles.All(role => role.tuningSeeded)) return;
             Dictionary<int, WorkRoles.Core.Recs.RoleView> viewById = null;
             foreach (Role role in roles)
@@ -610,6 +681,8 @@ namespace WorkRoles
                     role.category = def.tuning.category;
                     role.time = def.tuning.time;
                     role.championPenalty = def.tuning.championPenalty;
+                    role.colonyMin = def.tuning.colonyMin;
+                    role.coverage = def.tuning.coverage;
                     role.requiredSkills = new List<string>(def.tuning.skills.required);
                     role.optionalSkills = new List<string>(def.tuning.skills.optional);
                     continue;

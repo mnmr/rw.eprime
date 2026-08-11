@@ -106,17 +106,6 @@ namespace WorkRoles
         }
 
         [SyncWorker(shouldConstruct = true)]
-        private static void SyncScaleEdit(SyncWorker sync, ref ScaleEdit edit)
-        {
-            sync.Bind(ref edit.roleId);
-            sync.Bind(ref edit.sourceName);
-            sync.Bind(ref edit.targetName);
-            sync.Bind(ref edit.requiredTotals);
-            sync.Bind(ref edit.trainingWaivers);
-            sync.Bind(ref edit.max);
-        }
-
-        [SyncWorker(shouldConstruct = true)]
         private static void SyncRestoreSelection(SyncWorker sync, ref RestoreSelection selection)
         {
             BindList(sync, ref selection.templateDefs);

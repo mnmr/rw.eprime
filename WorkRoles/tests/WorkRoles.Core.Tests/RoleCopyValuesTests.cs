@@ -17,6 +17,9 @@ public class RoleCopyValuesTests
         await Assert.That(copy.IconPath).IsEqualTo(source.IconPath);
         await Assert.That(copy.Blocker).IsEqualTo(source.Blocker);
         await Assert.That(copy.HolderScaleName).IsEqualTo(source.HolderScaleName);
+        await Assert.That(copy.MinAge).IsEqualTo(source.MinAge);
+        await Assert.That(copy.ColonyMin).IsEqualTo(source.ColonyMin);
+        await Assert.That(copy.Coverage).IsEqualTo(source.Coverage);
         await Assert.That(copy.GroupId).IsEqualTo(source.GroupId);
         await Assert.That(copy.ActiveHours).IsEqualTo(source.ActiveHours);
         await Assert.That(copy.TemplateDefName).IsNull();
@@ -93,6 +96,9 @@ public class RoleCopyValuesTests
         AutoAssign = true,
         Blocker = true,
         HolderScaleName = "Building",
+        MinAge = 13,
+        ColonyMin = 2,
+        Coverage = 19,
         GroupId = 42,
         ActiveHours = 0x00F0F0,
         LocationTokens = new List<string> { "Settlements", "settlement:17" },

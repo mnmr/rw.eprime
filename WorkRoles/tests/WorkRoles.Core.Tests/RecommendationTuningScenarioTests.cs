@@ -68,7 +68,7 @@ public class RecommendationTuningScenarioTests
         RecommendationPlan reducedGreatMultiplier = RecommendationPlan.Build(
             colony,
             noSurplus.With(
-                RecommendationTuningOption.ChampionGreatMultiplierHalfUnits,
+                RecommendationTuningOption.ChampionGreatMultiplierQuarterUnits,
                 1));
 
         await Assert.That(RoleIds(defaults, 0)).IsEqualTo("1");
@@ -384,7 +384,7 @@ public class RecommendationTuningScenarioTests
         RecommendationPlan skillMultiplier = RecommendationPlan.Build(
             colony,
             admitsAwful.With(
-                RecommendationTuningOption.ChampionAwfulMultiplierHalfUnits,
+                RecommendationTuningOption.ChampionAwfulMultiplierQuarterUnits,
                 2));
 
         await Assert.That(RoleIds(zeroMultiplier, 0)).IsEqualTo("1");

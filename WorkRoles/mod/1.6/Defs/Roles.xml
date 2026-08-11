@@ -89,7 +89,6 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkGiver:DoctorRescue</li>
@@ -110,8 +109,14 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Doctoring</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>19</coverage>
       <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Nurse</role><max>5</max></li>
+        <li><role>WS_Medic</role><min>5</min><max>15</max></li>
+        <li><role>WS_Doctor</role><min>15</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Doctor</li>
@@ -132,7 +137,6 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -162,7 +166,6 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:BasicWorker</li>
@@ -185,8 +188,14 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Caretaking</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
       <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Jailor</role><max>4</max></li>
+        <li><role>WS_Warden</role><min>4</min></li>
+        <li><role>WS_Childminder</role><min>6</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Childcare</li>
@@ -202,7 +211,6 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:Firefighter</li>
@@ -218,7 +226,6 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:Patient</li>
@@ -234,7 +241,6 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:PatientBedRest</li>
@@ -258,7 +264,6 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
@@ -300,7 +305,8 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Wardening</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -334,7 +340,6 @@
     <tuning>
       <category>Optional</category>
       <time>Opportunistic</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:Hauling</li>
@@ -350,7 +355,6 @@
     <tuning>
       <category>Optional</category>
       <time>Opportunistic</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:Cleaning</li>
@@ -371,8 +375,13 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Handling</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
       <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Herder</role><max>8</max></li>
+        <li><role>WS_Handler</role><min>8</min></li>
+      </training>
     </tuning>
     <entries>
       <!-- Finish-off (Allow Tool, Keyz' Allow Utilities) is handler's work too:
@@ -397,7 +406,13 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Cooking</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
+      <training>
+        <li><role>WS_Butcher</role><max>8</max></li>
+        <li><role>WS_Brewer</role><max>8</max></li>
+        <li><role>WS_Cook</role><min>8</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Cooking</li>
@@ -418,7 +433,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -440,7 +454,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -490,7 +503,8 @@
       </skills>
       <category>Optional</category>
       <time>FullTime</time>
-      <scale>Fishing</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>19</coverage>
     </tuning>
     <entries>
       <li>WorkType:Fishing</li>
@@ -511,7 +525,12 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Building</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>19</coverage>
+      <training>
+        <li><role>WS_Repairer</role><max>8</max></li>
+        <li><role>WS_Builder</role><min>8</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Construction</li>
@@ -533,7 +552,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkGiver:Repair</li>
@@ -567,7 +585,13 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Farming</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>19</coverage>
+      <training>
+        <li><role>WS_PlantCutter</role><max>12</max></li>
+        <li><role>WS_Grower</role><min>4</min></li>
+        <li><role>WS_Farmer</role><min>12</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Growing</li>
@@ -589,7 +613,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:Growing</li>
@@ -610,7 +633,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkType:PlantCutting</li>
@@ -631,7 +653,8 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Mining</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
     </tuning>
     <entries>
       <li>WorkType:Mining</li>
@@ -652,7 +675,12 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Tailoring</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
+      <training>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_Tailor</role><min>2</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Tailoring</li>
@@ -673,7 +701,12 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Smithing</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
+      <training>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_Smith</role><min>4</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Smithing</li>
@@ -694,7 +727,13 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Fabrication</scale>
+      <colonyMin>1</colonyMin>
+      <coverage>17</coverage>
+      <training>
+        <li><role>WS_Fabricator</role><min>8</min></li>
+        <li><role>WS_Smith</role><min>4</min></li>
+        <li><role>WS_Crafter</role></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkGiver:DoBillsFabricationBench</li>
@@ -718,7 +757,8 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Crafting</scale>
+      <colonyMin>2</colonyMin>
+      <coverage>14</coverage>
     </tuning>
     <entries>
       <li>WorkType:Crafting</li>
@@ -739,7 +779,8 @@
       </skills>
       <category>Optional</category>
       <time>Opportunistic</time>
-      <scale>Research</scale>
+      <colonyMin>3</colonyMin>
+      <coverage>11</coverage>
     </tuning>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <entries>
@@ -763,7 +804,7 @@
       </skills>
       <category>Optional</category>
       <time>PartTime</time>
-      <scale>Dark Study</scale>
+      <colonyMin>1</colonyMin>
       <championPenalty>false</championPenalty>
     </tuning>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
@@ -786,7 +827,11 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Artistry</scale>
+      <coverage>6</coverage>
+      <training>
+        <li><role>WS_Painter</role><max>8</max></li>
+        <li><role>WS_Artist</role><min>8</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkType:Art</li>
@@ -807,7 +852,6 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -841,7 +885,13 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Drug Fabrication</scale>
+      <colonyMin>1</colonyMin>
+      <coverage>11</coverage>
+      <training>
+        <li><role>WS_Researcher</role></li>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_DrugMaker</role><min>12</min></li>
+      </training>
     </tuning>
     <entries>
       <li>WorkGiver:DoBillsProduceDrugs</li>
@@ -863,7 +913,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
     </tuning>
     <entries>
       <li>WorkGiver:RemovePaintBuilding</li>
@@ -890,7 +939,6 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <scale>Surplus</scale>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>

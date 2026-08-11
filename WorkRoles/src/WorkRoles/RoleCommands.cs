@@ -6,7 +6,6 @@ using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
-using ScaleMode = WorkRoles.Core.ScaleMode;
 
 namespace WorkRoles
 {
@@ -27,8 +26,9 @@ namespace WorkRoles
             label = label?.Trim();
             if (Store == null || !CatalogNameRules.IsAvailable(
                     label, Store.roles, role => role.label)) return;
-            // A blank role has no entries yet, so empty derived skills are correct.
-            Store.roles.Add(new Role { id = Store.NextId(), label = label, tuningSeeded = true });
+            // A blank role has no entries yet, so empty derived skills and a
+            // zero age floor are correct.
+            Store.roles.Add(new Role { id = Store.NextId(), label = label, tuningSeeded = true, minAge = 0 });
             Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
@@ -58,13 +58,14 @@ namespace WorkRoles
                 category = def.tuning.category,
                 time = def.tuning.time,
                 championPenalty = def.tuning.championPenalty,
+                colonyMin = def.tuning.colonyMin,
+                coverage = def.tuning.coverage,
                 requiredSkills = new List<string>(def.tuning.skills.required),
                 optionalSkills = new List<string>(def.tuning.skills.optional),
                 tuningSeeded = true,
             };
-            string scaleName = SeededDefIdentity.ScaleName(def);
-            role.holderScaleName = scaleName.NullOrEmpty()
-                ? "Never" : scaleName;
+            role.minAge = def.tuning.minAge >= 0
+                ? def.tuning.minAge : RecsAdapter.MinUnlockAgeOf(role);
             if (!def.group.NullOrEmpty())
                 role.groupId = ResolveOrCreateGroup(SeededDefIdentity.GroupLabel(def)).id;
             if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
@@ -175,217 +176,156 @@ namespace WorkRoles
             Store.RecommendationTuningRevision++;
         }
 
-        /// Atomic reset of every shared recommendation formula input.
+        /// Atomic reset of one section of the shared formula inputs. The key
+        /// is the section's language key: stable and language-independent.
         [SyncMethod]
-        public static void ResetRecommendationTuning()
+        public static void ResetRecommendationTuningSection(string sectionKey)
         {
-            if (Store == null) return;
+            if (Store == null || sectionKey.NullOrEmpty()) return;
             RecommendationsTuningOptions current = Store.recommendationTuning
                 ?? RecommendationsTuningOptions.Default;
-            if (ReferenceEquals(
-                    current, RecommendationsTuningOptions.Default))
-                return;
-            Store.recommendationTuning = RecommendationsTuningOptions.Default;
+            RecommendationsTuningOptions changed = current;
+            foreach (RecommendationTuningDescriptor descriptor in
+                     RecommendationsTuningOptions.Descriptors)
+                if (descriptor.SectionLabelKey == sectionKey)
+                    changed = changed.With(descriptor.Option,
+                        RecommendationsTuningOptions.Default.Get(descriptor.Option));
+            if (ReferenceEquals(current, changed)) return;
+            Store.recommendationTuning = changed;
             Store.RecommendationTuningRevision++;
         }
 
-        /// One atomic scale mutation: ensure the target scale exists (cloning
-        /// sourceName when new), apply row values when provided, and point the
-        /// role at it. Preset scales never mutate — the editor forks them into
-        /// a fresh target name client-side before committing.
+        /// Per-role recommendation tuning. Enums travel as primitive ints for
+        /// sync safety; UiVersion is the domain.
         [SyncMethod]
-        public static void CommitScaleEdit(ScaleEdit edit)
-        {
-            if (Store == null || edit == null || edit.targetName.NullOrEmpty()) return;
-            string targetName = edit.targetName.Trim();
-            var target = Store.ScaleByName(targetName);
-            bool changed = false;
-            if (target == null)
-            {
-                var source = Store.ScaleByName(edit.sourceName);
-                target = source?.Copy()
-                    ?? new RoleAssignmentStrategy { Mode = ScaleMode.Skilled };
-                target.Name = targetName;
-                target.Preset = false;
-                // A fork must be editable: a Never fork becomes a fresh
-                // uncapped Skilled scale (new HolderScale defaults to uncapped).
-                if (target.Scale == null)
-                {
-                    target.Scale = new HolderScale();
-                    if (target.Mode == ScaleMode.Never)
-                        target.Mode = ScaleMode.Skilled;
-                }
-                Store.holderScales.Add(target);
-                changed = true;
-            }
-            if (!target.Preset && target.Scale != null
-                && (edit.requiredTotals != null
-                    || edit.trainingWaivers != null
-                    || edit.max != null))
-            {
-                HolderScale candidate = target.Scale.Copy();
-                if (edit.requiredTotals != null)
-                    candidate.RequiredTotals = HolderScaleCodec.DecodeRow(
-                        edit.requiredTotals, 0);
-                if (edit.trainingWaivers != null)
-                    candidate.TrainingWaivers = HolderScaleCodec.DecodeRow(
-                        edit.trainingWaivers, 0);
-                if (edit.max != null)
-                    candidate.Max = HolderScaleCodec.DecodeRow(
-                        edit.max, RoleHolderRange.Uncapped);
-                candidate.Normalize();
-                if (!target.Scale.SameValuesAs(candidate))
-                {
-                    target.Scale.RequiredTotals = candidate.RequiredTotals;
-                    target.Scale.TrainingWaivers = candidate.TrainingWaivers;
-                    target.Scale.Max = candidate.Max;
-                    changed = true;
-                }
-            }
-            if (edit.roleId >= 0 && FindRole(edit.roleId) is Role role)
-            {
-                if (!string.Equals(role.holderScaleName, target.Name,
-                        System.StringComparison.OrdinalIgnoreCase))
-                {
-                    role.holderScaleName = target.Name;
-                    changed = true;
-                }
-            }
-            if (!changed) return;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleScale(int roleId, string scaleName)
+        public static void SetRoleCategory(int roleId, int category)
         {
             var role = FindRole(roleId);
-            if (role == null || Store.ScaleByName(scaleName) == null
-                || string.Equals(role.holderScaleName, scaleName,
-                    System.StringComparison.OrdinalIgnoreCase)) return;
-            role.holderScaleName = scaleName;
-            UiVersion.Bump();
-        }
-
-        /// User scales only; roles referencing it fall back to Never.
-        [SyncMethod]
-        public static void DeleteScale(string name)
-        {
-            if (Store == null) return;
-            var scale = Store.ScaleByName(name);
-            if (scale == null || scale.Preset) return;
-            Store.holderScales.Remove(scale);
-            foreach (var role in Store.roles)
-                if (string.Equals(role.holderScaleName, scale.Name,
-                        System.StringComparison.OrdinalIgnoreCase))
-                    role.holderScaleName = "Never";
-            UiVersion.Bump();
-        }
-
-        /// User scales only; every role referencing the old name follows.
-        [SyncMethod]
-        public static void RenameScale(string oldName, string newName)
-        {
-            if (Store == null) return;
-            newName = newName?.Trim();
-            var scale = Store.ScaleByName(oldName);
-            if (scale == null || scale.Preset || newName.NullOrEmpty()
-                || Store.ScaleByName(newName) != null) return;
-            string previous = scale.Name;
-            scale.Name = newName;
-            foreach (var role in Store.roles)
-                if (string.Equals(role.holderScaleName, previous,
-                        System.StringComparison.OrdinalIgnoreCase))
-                    role.holderScaleName = newName;
-            UiVersion.Bump();
-        }
-
-        // Void + name-watch selection, same reason as CreateRole.
-        [SyncMethod]
-        public static void CreateTrainingPath(string name)
-        {
-            if (Store == null || name.NullOrEmpty()) return;
-            Store.trainingPaths.Add(new TrainingPath { id = Store.NextPathId(), name = name });
+            if (role == null || !System.Enum.IsDefined(typeof(RoleCategory), category)
+                || role.category == (RoleCategory)category) return;
+            role.category = (RoleCategory)category;
             UiVersion.Bump();
         }
 
         [SyncMethod]
-        public static void RenameTrainingPath(int pathId, string name)
+        public static void SetRoleTime(int roleId, int time)
         {
-            var path = Store?.PathById(pathId);
-            name = name?.Trim();
-            if (path == null || name.NullOrEmpty()
-                || string.Equals(path.name, name,
-                    System.StringComparison.Ordinal)) return;
-            path.name = name;
+            var role = FindRole(roleId);
+            if (role == null || !System.Enum.IsDefined(typeof(RoleTime), time)
+                || role.time == (RoleTime)time) return;
+            role.time = (RoleTime)time;
             UiVersion.Bump();
         }
 
-        /// One command both sets and clears the path's display color override.
         [SyncMethod]
-        public static void SetTrainingPathColor(int pathId, bool hasColor, UnityEngine.Color color)
+        public static void SetRoleChampionPenalty(int roleId, bool value)
         {
-            var path = Store?.PathById(pathId);
-            if (path == null) return;
-            if (TrainingPathMutationPolicy.ColorEqual(
-                    path.hasCustomColor,
-                    path.color.r, path.color.g, path.color.b, path.color.a,
-                    hasColor, color.r, color.g, color.b, color.a)) return;
-            path.hasCustomColor = hasColor;
-            path.color = hasColor ? color : UnityEngine.Color.white;
+            var role = FindRole(roleId);
+            if (role == null || role.championPenalty == value) return;
+            role.championPenalty = value;
             UiVersion.Bump();
         }
 
-        /// Whole-path band upsert. Hard validation: a synced command from a
-        /// stale snapshot must never land corrupt geometry.
         [SyncMethod]
-        public static void SetTrainingPathBands(int pathId,
-            List<int> roleIds, List<int> bandMins, List<int> bandMaxes)
+        public static void SetRoleMinimumAge(int roleId, int value)
         {
-            var path = Store?.PathById(pathId);
-            if (path == null) return;
-            roleIds = roleIds ?? new List<int>();
+            var role = FindRole(roleId);
+            value = UnityEngine.Mathf.Clamp(value, 0, 18);
+            if (role == null || role.minAge == value) return;
+            role.minAge = value;
+            UiVersion.Bump();
+        }
+
+        /// Assignment scaling inputs (future scale replacement).
+        [SyncMethod]
+        public static void SetRoleColonyMinimum(int roleId, int value)
+        {
+            var role = FindRole(roleId);
+            value = UnityEngine.Mathf.Clamp(value, 0, 30);
+            if (role == null || role.colonyMin == value) return;
+            role.colonyMin = value;
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void SetRoleCoverage(int roleId, int value)
+        {
+            var role = FindRole(roleId);
+            value = UnityEngine.Mathf.Clamp(value, 0, 100);
+            if (role == null || role.coverage == value) return;
+            role.coverage = value;
+            UiVersion.Bump();
+        }
+
+        /// Within one role a skill is either required or optional: adding to
+        /// one list removes it from the other in the same command.
+        [SyncMethod]
+        public static void AddRoleSkill(int roleId, string skillDefName, bool optional)
+        {
+            var role = FindRole(roleId);
+            if (role == null || skillDefName.NullOrEmpty()
+                || DefDatabase<SkillDef>.GetNamedSilentFail(skillDefName) == null) return;
+            var target = optional ? role.optionalSkills : role.requiredSkills;
+            if (target.Contains(skillDefName)) return;
+            (optional ? role.requiredSkills : role.optionalSkills).Remove(skillDefName);
+            target.Add(skillDefName);
+            UiVersion.Bump();
+        }
+
+        [SyncMethod]
+        public static void RemoveRoleSkill(int roleId, string skillDefName, bool optional)
+        {
+            var role = FindRole(roleId);
+            if (role == null || skillDefName.NullOrEmpty()) return;
+            if (!(optional ? role.optionalSkills : role.requiredSkills)
+                    .Remove(skillDefName)) return;
+            UiVersion.Bump();
+        }
+
+        /// Whole-list upsert of a role's own training path. Hard validation: a
+        /// synced command from a stale snapshot must never land corrupt
+        /// geometry, and the owner role must stay in its own path. The trivial
+        /// self-only full-axis path normalizes to empty storage.
+        [SyncMethod]
+        public static void SetRoleTraining(int roleId,
+            List<int> trainingRoleIds, List<int> bandMins, List<int> bandMaxes)
+        {
+            var role = FindRole(roleId);
+            if (role == null) return;
+            trainingRoleIds = (trainingRoleIds ?? new List<int>()).ToList();
             bandMins = (bandMins ?? new List<int>()).ToList();
             bandMaxes = (bandMaxes ?? new List<int>()).ToList();
             // Bands ride along when a stale id drops out, so filter as tuples.
-            for (int i = roleIds.Count - 1; i >= 0; i--)
-                if (Store.RoleById(roleIds[i]) == null
-                    || roleIds.IndexOf(roleIds[i]) != i)
+            for (int i = trainingRoleIds.Count - 1; i >= 0; i--)
+                if (Store.RoleById(trainingRoleIds[i]) == null
+                    || trainingRoleIds.IndexOf(trainingRoleIds[i]) != i)
                 {
-                    roleIds.RemoveAt(i);
+                    trainingRoleIds.RemoveAt(i);
                     if (i < bandMins.Count) bandMins.RemoveAt(i);
                     if (i < bandMaxes.Count) bandMaxes.RemoveAt(i);
                 }
-            if (roleIds.Count > 0
-                && !SkillProgressionMath.Validate(roleIds.Count, bandMins, bandMaxes)) return;
-            IReadOnlyList<int> normalizedMins = roleIds.Count == 0 ? null : bandMins;
-            IReadOnlyList<int> normalizedMaxes = roleIds.Count == 0 ? null : bandMaxes;
+            if (trainingRoleIds.Count > 0
+                && (!trainingRoleIds.Contains(roleId)
+                    || !SkillProgressionMath.Validate(
+                        trainingRoleIds.Count, bandMins, bandMaxes)))
+                return;
+            if (trainingRoleIds.Count == 1
+                && bandMins[0] == 0
+                && bandMaxes[0] == SkillProgressionMath.MaxLevel)
+            {
+                trainingRoleIds.Clear();
+                bandMins.Clear();
+                bandMaxes.Clear();
+            }
+            IReadOnlyList<int> normalizedMins = trainingRoleIds.Count == 0 ? null : bandMins;
+            IReadOnlyList<int> normalizedMaxes = trainingRoleIds.Count == 0 ? null : bandMaxes;
             if (TrainingPathMutationPolicy.BandsEqual(
-                    path.roleIds, path.bandMins, path.bandMaxes,
-                    roleIds, normalizedMins, normalizedMaxes)) return;
-            path.roleIds = roleIds;
-            path.bandMins = roleIds.Count == 0 ? new List<int>() : bandMins;
-            path.bandMaxes = roleIds.Count == 0 ? new List<int>() : bandMaxes;
+                    role.trainingRoleIds, role.trainingMins, role.trainingMaxes,
+                    trainingRoleIds, normalizedMins, normalizedMaxes)) return;
+            role.trainingRoleIds = trainingRoleIds;
+            role.trainingMins = trainingRoleIds.Count == 0 ? new List<int>() : bandMins;
+            role.trainingMaxes = trainingRoleIds.Count == 0 ? new List<int>() : bandMaxes;
             UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetTrainingPathAnchor(int pathId, int anchorRoleId, bool before)
-        {
-            var path = Store?.PathById(pathId);
-            if (path == null) return;
-            if (anchorRoleId != -1 && Store.RoleById(anchorRoleId) == null) return;
-            if (path.anchorRoleId == anchorRoleId && path.anchorBefore == before) return;
-            path.anchorRoleId = anchorRoleId;
-            path.anchorBefore = before;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void DeleteTrainingPath(int pathId)
-        {
-            if (Store == null) return;
-            if (Store.trainingPaths.RemoveAll(p => p.id == pathId) > 0)
-                UiVersion.Bump();
         }
 
         /// Toggles blocker semantics: the role's jobs become vetoes (or stop being).
@@ -423,23 +363,21 @@ namespace WorkRoles
             // empty set would shadow its vanilla priorities (see RoleStore save sync).
             Store.pawnSets.RemoveAll(kv => kv.Value.assignments.Count == 0);
             Store.RemoveBillRolesForRole(roleId);
-            // Training paths: drop the deleted role's (id, min, max) entry;
-            // emptied paths survive — they are named containers, not ephemeral.
-            foreach (var path in Store.trainingPaths)
-            {
-                int at = path.roleIds.IndexOf(roleId);
-                if (at >= 0)
-                {
-                    // Parallel-list alignment is guaranteed by load sanitize +
-                    // validated commands; raw RemoveAt is safe here.
-                    path.roleIds.RemoveAt(at);
-                    path.bandMins.RemoveAt(at);
-                    path.bandMaxes.RemoveAt(at);
-                }
-                if (path.anchorRoleId == roleId) path.anchorRoleId = -1;
-            }
             Store.roles.Remove(role);
             Store.InvalidateRoleIndex();
+            // The deleted role leaves every other role's training path; a path
+            // reduced to the trivial self-only shape clears via sanitize.
+            foreach (var other in Store.roles)
+            {
+                int at = other.trainingRoleIds.IndexOf(roleId);
+                if (at < 0) continue;
+                // Parallel-list alignment is guaranteed by load sanitize +
+                // validated commands; raw RemoveAt is safe here.
+                other.trainingRoleIds.RemoveAt(at);
+                other.trainingMins.RemoveAt(at);
+                other.trainingMaxes.RemoveAt(at);
+                Store.SanitizeRoleTraining(other);
+            }
             SweepEmptyGroups();
             CompiledJobOrders.EnqueueReconciles(keepers);
         }
@@ -722,6 +660,9 @@ namespace WorkRoles
                 Category = source.category,
                 Time = source.time,
                 ChampionPenalty = source.championPenalty,
+                MinAge = source.minAge,
+                ColonyMin = source.colonyMin,
+                Coverage = source.coverage,
                 RequiredSkills = source.requiredSkills,
                 OptionalSkills = source.optionalSkills,
                 GroupId = source.groupId,
@@ -748,6 +689,9 @@ namespace WorkRoles
                 category = values.Category,
                 time = values.Time,
                 championPenalty = values.ChampionPenalty,
+                minAge = values.MinAge,
+                colonyMin = values.ColonyMin,
+                coverage = values.Coverage,
                 requiredSkills = values.RequiredSkills,
                 optionalSkills = values.OptionalSkills,
                 tuningSeeded = true,

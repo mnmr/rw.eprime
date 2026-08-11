@@ -16,20 +16,28 @@ namespace WorkRoles
     /// made inside the window can rebuild from this external snapshot.
     internal sealed class PawnExternalSnapshot
     {
+        private static readonly Dictionary<string, int> NoAgeBlocks =
+            new Dictionary<string, int>();
+
         internal static readonly PawnExternalSnapshot Empty = new PawnExternalSnapshot(
-            PawnSignalSnapshot.Empty, new PawnView(), WorkTags.None);
+            PawnSignalSnapshot.Empty, new PawnView(), WorkTags.None, null);
 
         internal PawnExternalSnapshot(PawnSignalSnapshot signals,
-            PawnView recommendationFacts, WorkTags disabledWorkTags)
+            PawnView recommendationFacts, WorkTags disabledWorkTags,
+            Dictionary<string, int> ageBlockedWorkTypes)
         {
             Signals = signals ?? PawnSignalSnapshot.Empty;
             RecommendationFacts = recommendationFacts ?? new PawnView();
             DisabledWorkTags = disabledWorkTags;
+            AgeBlockedWorkTypes = ageBlockedWorkTypes ?? NoAgeBlocks;
         }
 
         internal PawnSignalSnapshot Signals { get; }
         internal PawnView RecommendationFacts { get; }
         internal WorkTags DisabledWorkTags { get; }
+        /// Work types this pawn is currently too young for, with the age
+        /// (years) each one unlocks at.
+        internal IReadOnlyDictionary<string, int> AgeBlockedWorkTypes { get; }
         internal bool HasRangedWeapon => RecommendationFacts.HasRangedWeapon;
         internal bool CanDo(WorkGiverDef giver) => giver != null
             && (giver.workType == null || RecommendationFacts.CapableWorkTypes
@@ -57,11 +65,8 @@ namespace WorkRoles
             Func<Pawn, PawnExternalSnapshot> snapshotFor)
         {
             if (snapshotFor == null) throw new ArgumentNullException(nameof(snapshotFor));
-            List<PathView> paths = store.trainingPaths
-                .Select(PathViewOf)
-                .ToList();
             RecommendationCatalogProjection catalog = BuildRoleCatalog(
-                store.roles, paths, store);
+                store.roles, PathViewsOf(store));
             var pawnViews = new List<PawnView>(pawns.Count);
             foreach (var pawn in pawns)
                 pawnViews.Add(PawnViewOf(
@@ -80,14 +85,12 @@ namespace WorkRoles
         /// Views with the store's training paths applied, so path-target skill
         /// promotions land exactly as they do in the live recommendation run.
         internal static List<RoleView> RoleViewsOf(RoleStore store)
-            => BuildRoleCatalog(store.roles,
-                store.trainingPaths.Select(PathViewOf).ToList(), store)
+            => BuildRoleCatalog(store.roles, PathViewsOf(store))
                 .Roles.ToList();
 
         private static RecommendationCatalogProjection BuildRoleCatalog(
             IReadOnlyList<Role> roles,
-            IReadOnlyList<PathView> paths = null,
-            RoleStore store = null)
+            IReadOnlyList<PathView> paths = null)
         {
             var sources = new List<RecommendationRoleSource>(roles.Count);
             for (int index = 0; index < roles.Count; index++)
@@ -97,8 +100,17 @@ namespace WorkRoles
                     ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(
                         role.templateDefName);
-                RoleAssignmentStrategy strategy =
-                    (store ?? RoleStore.Current)?.ScaleFor(role);
+                // Banded demand derives from the role's two tuning numbers.
+                // Skilled roles without demand keep an all-zero scale so they
+                // stay surplus-stage eligible; demandless unskilled roles are
+                // Never (nothing would ever assign them).
+                bool hasDemand = role.colonyMin > 0 || role.coverage > 0;
+                bool unskilled = IsUnskilledRole(role);
+                ScaleMode mode = unskilled
+                    ? hasDemand ? ScaleMode.Unskilled : ScaleMode.Never
+                    : ScaleMode.Skilled;
+                HolderScale scale = mode == ScaleMode.Never
+                    ? null : RoleDemand.DeriveScale(role.colonyMin, role.coverage);
                 sources.Add(new RecommendationRoleSource
                 {
                     Id = role.id,
@@ -113,12 +125,13 @@ namespace WorkRoles
                     ChampionPenalty = role.championPenalty,
                     Category = role.category,
                     Time = role.time,
+                    MinAge = role.minAge < 0 ? 0 : role.minAge,
                     DeclaredRequiredSkills = role.tuningSeeded
                         ? role.requiredSkills : null,
                     DeclaredOptionalSkills = role.tuningSeeded
                         ? role.optionalSkills : null,
-                    Scale = strategy?.Scale,
-                    Mode = strategy?.Mode ?? ScaleMode.Never,
+                    Scale = scale,
+                    Mode = mode,
                     Available = RoleAvailable(role),
                     Enabled = role.enabled,
                     SpecialRole = template?.recommendationSpecialRole
@@ -137,15 +150,25 @@ namespace WorkRoles
                 JobSkillProfiles.RecommendationIndex());
         }
 
-        internal static PathView PathViewOf(TrainingPath path) => new PathView
+        /// The role's own training path; PathView.Id is the owning role id.
+        internal static PathView PathViewOf(Role role) => new PathView
         {
-            Id = path.id,
-            RoleIds = path.roleIds.ToList(),
-            BandMins = path.bandMins.ToList(),
-            BandMaxes = path.bandMaxes.ToList(),
-            AnchorRoleId = path.anchorRoleId,
-            AnchorBefore = path.anchorBefore,
+            Id = role.id,
+            RoleIds = role.trainingRoleIds.ToList(),
+            BandMins = role.trainingMins.ToList(),
+            BandMaxes = role.trainingMaxes.ToList(),
         };
+
+        /// Every non-empty role-owned training path (empty = the implicit
+        /// self-only path, which the engine treats as no path).
+        internal static List<PathView> PathViewsOf(RoleStore store)
+        {
+            var paths = new List<PathView>();
+            foreach (Role role in store.roles)
+                if (role.trainingRoleIds.Count > 0)
+                    paths.Add(PathViewOf(role));
+            return paths;
+        }
 
         internal static PawnView PawnViewOf(Pawn pawn, RoleStore store)
             => PawnViewOf(pawn, store, CapturePawnSnapshot(
@@ -202,12 +225,18 @@ namespace WorkRoles
                     if (skill.TotallyDisabled) continue;
                     facts.SkillLevels[skill.def.defName] = skill.Level;
                 }
+            Dictionary<string, int> ageBlocked = null;
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
                 if (!pawn.WorkTypeIsDisabled(workType))
                     facts.CapableWorkTypes.Add(workType.defName);
+                else if (pawn.IsWorkTypeDisabledByAge(workType, out int minAgeRequired))
+                    (ageBlocked ??= new Dictionary<string, int>())
+                        [workType.defName] = minAgeRequired;
+            }
 
             return new PawnExternalSnapshot(
-                signalSnapshot, facts, pawn.CombinedDisabledWorkTags);
+                signalSnapshot, facts, pawn.CombinedDisabledWorkTags, ageBlocked);
         }
 
         /// The recommendation order template resolved over the live catalog.
@@ -247,6 +276,48 @@ namespace WorkRoles
                 }
             }
             return workTypes;
+        }
+
+        /// Lowest vanilla unlock age (years) across the role's covered work
+        /// types: the age at which any of the role's work becomes possible.
+        /// 0 when nothing is age-gated (always without Biotech). The derived
+        /// default for Role.minAge.
+        internal static int MinUnlockAgeOf(Role role)
+        {
+            int min = int.MaxValue;
+            foreach (var workType in WorkTypesOf(role))
+            {
+                int age = WorkTypeUnlockAge(workType);
+                if (age < min) min = age;
+            }
+            return min == int.MaxValue ? 0 : min;
+        }
+
+        /// Age (years) at which every covered work type is unlocked. Cached on
+        /// the role; entry edits invalidate with coverage.
+        internal static int FullyUnlocksAtAgeOf(Role role)
+        {
+            if (role.TryGetFullyUnlocksAtAgeCache(out int cached)) return cached;
+            int max = 0;
+            foreach (var workType in WorkTypesOf(role))
+            {
+                int age = WorkTypeUnlockAge(workType);
+                if (age > max) max = age;
+            }
+            role.SetFullyUnlocksAtAgeCache(max);
+            return max;
+        }
+
+        /// Vanilla per-work-type unlock age from the Human race (Biotech's
+        /// lifeStageWorkSettings); 0 when unlisted or Biotech is absent.
+        private static int WorkTypeUnlockAge(WorkTypeDef workType)
+        {
+            List<LifeStageWorkSettings> settings =
+                ThingDefOf.Human.race.lifeStageWorkSettings;
+            for (int index = 0; index < settings.Count; index++)
+                if (settings[index].workType == workType)
+                    return settings[index].minAge;
+            return 0;
         }
 
         /// Distinct relevant skills across a role's member work types.

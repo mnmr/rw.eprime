@@ -38,8 +38,6 @@ namespace WorkRoles
         public override void FinalizeInit()
         {
             Seeding.SweepEmptyRoleSets();
-            // Scales first: role seeding copies def scale references by name.
-            Seeding.EnsurePresetScales();
             Seeding.SeedIfNeeded();
             Seeding.RefreshWorkTypeSnapshots();
             var generated = Seeding.EnsureWorkTypeCoverage();

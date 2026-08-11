@@ -236,6 +236,46 @@ namespace WorkRoles.Signals
             }
         }
 
+        // Star stack tints: on chips, unearned stars are a semi-transparent
+        // black overlay, rendering as a darkened patch of the chip's own
+        // color; on the dark stats panel they need a fixed solid grey
+        // brighter than the background instead. Gold echoes the vanilla
+        // Excellent work box outline; red marks the bad verdicts.
+        private static readonly Color StarGrey = new Color(0f, 0f, 0f, 0.4f);
+        private static readonly Color PanelStarGrey = new Color(0.35f, 0.35f, 0.35f);
+        private static readonly Color StarWhite = new Color(0.95f, 0.95f, 0.95f);
+        private static readonly Color StarGold = new Color(1f, 210f / 255f, 0f);
+        private static readonly Color StarRed = new Color(0.9f, 0.35f, 0.3f);
+
+        /// Verdict badge for role chips, earned bottom-up: Awful two red,
+        /// Poor one red, Neutral all grey, Strong one white, Great two white,
+        /// Exceptional two gold.
+        internal static UI.RoleChipVerdict VerdictBadge(SignalBucket bucket) =>
+            Badge(bucket, StarGrey);
+
+        /// The same regime for the stats panel's per-skill star pair.
+        internal static UI.RoleChipVerdict VerdictBadgePanel(SignalBucket bucket) =>
+            Badge(bucket, PanelStarGrey);
+
+        private static UI.RoleChipVerdict Badge(SignalBucket bucket, Color unearned)
+        {
+            switch (bucket)
+            {
+                case SignalBucket.Exceptional:
+                    return new UI.RoleChipVerdict(StarGold, StarGold);
+                case SignalBucket.Great:
+                    return new UI.RoleChipVerdict(StarWhite, StarWhite);
+                case SignalBucket.Strong:
+                    return new UI.RoleChipVerdict(StarWhite, unearned);
+                case SignalBucket.Poor:
+                    return new UI.RoleChipVerdict(StarRed, unearned);
+                case SignalBucket.Awful:
+                    return new UI.RoleChipVerdict(StarRed, StarRed);
+                default:
+                    return new UI.RoleChipVerdict(unearned, unearned);
+            }
+        }
+
         internal static Color VerdictColor(SignalBucket bucket)
         {
             switch (bucket)

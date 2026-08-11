@@ -22,6 +22,9 @@ namespace WorkRoles.Core
         public RoleCategory Category { get; set; }
         public RoleTime Time { get; set; }
         public bool ChampionPenalty { get; set; } = true;
+        public int MinAge { get; set; }
+        public int ColonyMin { get; set; }
+        public int Coverage { get; set; }
         public List<string> RequiredSkills { get; set; } = new List<string>();
         public List<string> OptionalSkills { get; set; } = new List<string>();
         public int GroupId { get; set; }
@@ -57,6 +60,9 @@ namespace WorkRoles.Core
                 Category = Category,
                 Time = Time,
                 ChampionPenalty = ChampionPenalty,
+                MinAge = MinAge,
+                ColonyMin = ColonyMin,
+                Coverage = Coverage,
                 RequiredSkills = new List<string>(RequiredSkills),
                 OptionalSkills = new List<string>(OptionalSkills),
                 GroupId = GroupId,

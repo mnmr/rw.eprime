@@ -62,17 +62,19 @@ namespace WorkRoles.Core.Recs
 
         public bool Capable(int pawnIndex, RoleView role)
         {
-            HashSet<string> capable = Colony.Pawns[pawnIndex].CapableWorkTypes;
+            PawnView pawn = Colony.Pawns[pawnIndex];
+            if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
             foreach (string workType in role.WorkTypes)
-                if (capable.Contains(workType)) return true;
+                if (pawn.CapableWorkTypes.Contains(workType)) return true;
             return false;
         }
 
         public bool FullyCapable(int pawnIndex, RoleView role)
         {
-            HashSet<string> capable = Colony.Pawns[pawnIndex].CapableWorkTypes;
+            PawnView pawn = Colony.Pawns[pawnIndex];
+            if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
             foreach (string workType in role.WorkTypes)
-                if (!capable.Contains(workType)) return false;
+                if (!pawn.CapableWorkTypes.Contains(workType)) return false;
             return true;
         }
 

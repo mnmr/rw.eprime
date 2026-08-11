@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using WorkRoles.Core;
 
 namespace WorkRoles.Core.Signals
@@ -34,6 +35,42 @@ namespace WorkRoles.Core.Signals
     /// only to break equal-verdict ties. Input order is the final stable tie.
     public static class SkillBucketRanking
     {
+        /// The pawn's best skills at or above the minimum verdict, ordered by
+        /// the engine's champion skill score (level and verdict weighed
+        /// together), then verdict, then level; input order is the stable
+        /// tie. Capped at max entries.
+        public static List<SkillBucketChoice> Top(
+            SkillBucketSnapshot snapshot,
+            IEnumerable<SkillBucketCandidate> candidates,
+            SignalBucket minimum,
+            int max,
+            Recs.RecommendationsTuningOptions tuning)
+        {
+            if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
+            if (candidates == null) throw new ArgumentNullException(nameof(candidates));
+            if (tuning == null) throw new ArgumentNullException(nameof(tuning));
+
+            var qualified = new List<SkillBucketChoice>();
+            foreach (SkillBucketCandidate candidate in candidates)
+            {
+                SignalBucket bucket = snapshot.ForSkill(candidate.SkillDefName)?.Bucket
+                    ?? SignalBucket.Neutral;
+                if (bucket < minimum) continue;
+                qualified.Add(new SkillBucketChoice(
+                    candidate.SkillDefName, bucket, candidate.SkillLevel));
+            }
+            var engine = new Recs.RecommendationFormulaEngine(tuning);
+            // Stable sort keeps candidate order for fully tied entries.
+            var ordered = qualified
+                .OrderByDescending(choice =>
+                    engine.ChampionSkillScore(choice.SkillLevel, choice.Bucket))
+                .ThenByDescending(choice => choice.Bucket)
+                .ThenByDescending(choice => choice.SkillLevel)
+                .ToList();
+            if (ordered.Count > max) ordered.RemoveRange(max, ordered.Count - max);
+            return ordered;
+        }
+
         public static SkillBucketChoice Best(
             SkillBucketSnapshot snapshot,
             IEnumerable<SkillBucketCandidate> candidates)

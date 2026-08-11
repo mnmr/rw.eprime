@@ -5,12 +5,12 @@ namespace WorkRoles.Core.Tests;
 public class SourceArchitectureTests
 {
     [Test]
-    public async Task OptionsHelpParagraphRestoresGuiStateInFinally()
+    public async Task RecommendationsHelpParagraphRestoresGuiStateInFinally()
     {
         string source = File.ReadAllText(RepositoryFile(
-            "src/WorkRoles/UI/OptionsTabView.cs"));
+            "src/WorkRoles/UI/RecommendationsTabView.cs"));
         Match method = Regex.Match(source,
-            @"private static void DrawHelpParagraph\(Rect rect, string text\)(.*?)private static Rect Offset",
+            @"private static void DrawHelpParagraph\(Rect rect, string text\)(.*?)private static void DrawTuningSection",
             RegexOptions.Singleline);
 
         await Assert.That(method.Success).IsTrue();
@@ -212,10 +212,6 @@ public class SourceArchitectureTests
 
         await Assert.That(Method(source, "RestoreSelected")).Contains(
             "restored.Count == 0");
-        await Assert.That(Method(source, "CommitScaleEdit")).Contains(
-            "bool changed");
-        await Assert.That(Method(source, "SetRoleScale")).Contains(
-            "holderScaleName");
         await Assert.That(Method(source, "SetRoleGroup")).Contains(
             "bool changed");
         await Assert.That(Method(source, "RenameGroup")).Contains(

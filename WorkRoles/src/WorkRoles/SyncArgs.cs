@@ -23,18 +23,6 @@ namespace WorkRoles
         public List<string> locationRuntimeTokens = new List<string>();
     }
 
-    /// Single synced arg for CommitScaleEdit: scale rows travel as codec
-    /// strings; null rows keep the target's existing values.
-    public class ScaleEdit
-    {
-        public int roleId = -1;   // role to point at the target scale; -1 = none
-        public string sourceName; // fork/clone source when the target is new
-        public string targetName; // scale receiving the values
-        public string requiredTotals;
-        public string trainingWaivers;
-        public string max;
-    }
-
     /// Single synced arg for RestoreSelected: MP's invoker breaks on wide
     /// signatures, and a class with a SyncWorker stays extensible.
     public class RestoreSelection

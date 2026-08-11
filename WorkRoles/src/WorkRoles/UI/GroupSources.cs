@@ -58,6 +58,18 @@ namespace WorkRoles.UI
                     string name = pawn.gender.GetLabel().CapitalizeFirst();
                     return ("gender|" + pawn.gender, name);
                 }),
+                // Vanilla life stages (baby/child/pre-teen/teenager/adult for
+                // humans) rather than raw years: the stages carry the game's
+                // capability brackets, and modded races bring their own.
+                // Classified sources section A-Z by key, so the life-stage
+                // index prefix orders sections youngest first.
+                Classified("age", "WR_GroupAge".Translate(), pawn =>
+                {
+                    Pawn_AgeTracker tracker = pawn.ageTracker;
+                    int stage = tracker?.CurLifeStageIndex ?? 0;
+                    string name = tracker?.CurLifeStage?.LabelCap.ToString() ?? "?";
+                    return ("age|" + stage.ToString("D2") + "|" + name, name);
+                }),
             };
             if (ModsConfig.BiotechActive)
                 list.Add(Classified("xenotype", "WR_GroupXenotype".Translate(), pawn =>

@@ -81,6 +81,8 @@ public static class SampleColony
             VanillaJobSkillBaseline.Index);
     }
 
+    // Captured anchors are intentionally dropped: role-owned paths place
+    // through the recommendation order, mirroring the live migration.
     public static List<PathView> BuildPaths() =>
         SampleColonyData.Paths.Select(p => new PathView
         {
@@ -88,8 +90,6 @@ public static class SampleColony
             RoleIds = p.RoleIds.ToList(),
             BandMins = p.BandMins.ToList(),
             BandMaxes = p.BandMaxes.ToList(),
-            AnchorRoleId = p.AnchorRoleId,
-            AnchorBefore = p.AnchorBefore,
         }).ToList();
 
     /// Decoded via the same production codec RoleStore uses on load.

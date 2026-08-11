@@ -22,6 +22,11 @@ namespace WorkRoles.UI
         private const float LabelDecoratorGap = 4f;
         private const float SkillValueGap = 8f;
         private const float SkillValueWidth = 48f;
+        // Horizontal verdict star pair after the (left-shifted) skill value.
+        internal const float VerdictStarSize = 10f;
+        internal const float VerdictStarGap = 2f;
+        internal const float VerdictStarsReserve =
+            4f + 2f * VerdictStarSize + VerdictStarGap;
         // Roster cell layout (DrawSkillCell): value slot, then 16px icons at
         // an 18px stride from x+48. Floor keeps room for two decorators.
         private const float RosterIconStartX = 48f;
@@ -248,6 +253,10 @@ namespace WorkRoles.UI
                 labelWidth,
                 signalView,
                 icons,
+                line.Disabled
+                    ? default(RoleChipVerdict)
+                    : SkillSignalPresentation.VerdictBadgePanel(
+                        bucket ?? SignalBucket.Neutral),
                 SkillSignalPresentation.CreateTooltip(
                     pawn,
                     line.Def?.defName,
@@ -287,7 +296,7 @@ namespace WorkRoles.UI
                         : LabelDecoratorGap + item.SignalIcons.Count * DecoratorSize
                             + (item.SignalIcons.Count - 1) * DecoratorGap;
                     float required = item.LabelWidth + iconWidth
-                        + SkillValueGap + SkillValueWidth;
+                        + SkillValueGap + SkillValueWidth + VerdictStarsReserve;
                     columnWidth = Mathf.Max(columnWidth, Mathf.Ceil(required));
                 }
             }
@@ -309,12 +318,13 @@ namespace WorkRoles.UI
     {
         internal ColonistSkillPresentation(SkillLine line, float labelWidth,
             SkillSignalView signalView, IReadOnlyList<Texture2D> signalIcons,
-            StructuredTip tooltip)
+            RoleChipVerdict verdictStars, StructuredTip tooltip)
         {
             Line = line;
             LabelWidth = labelWidth;
             SignalView = signalView;
             SignalIcons = signalIcons;
+            VerdictStars = verdictStars;
             Tooltip = tooltip;
         }
 
@@ -322,6 +332,9 @@ namespace WorkRoles.UI
         internal float LabelWidth { get; }
         internal SkillSignalView SignalView { get; }
         internal IReadOnlyList<Texture2D> SignalIcons { get; }
+        /// The tooltip's (promoted) skill verdict as a star pair; default for
+        /// disabled skills.
+        internal RoleChipVerdict VerdictStars { get; }
         internal StructuredTip Tooltip { get; }
     }
 

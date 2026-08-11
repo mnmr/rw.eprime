@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 using WorkRoles.Core.Signals;
 
 namespace WorkRoles.UI
@@ -83,6 +84,10 @@ namespace WorkRoles.UI
             SortedSet<string> awfulDescriptions = null;
             string incapableReason = null;
             string noRangedWeaponReason = null;
+            SortedDictionary<int, string> tooYoungReasons = null;
+            bool tooYoungForRole = role.minAge > 0
+                && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
+                    < role.minAge * BiologicalAge.TicksPerYear;
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;
             string primarySkill = RecsAdapter.PrimarySkillOf(role);
             bool awfulPrimarySkill = false;
@@ -132,11 +137,22 @@ namespace WorkRoles.UI
                     && !hasRangedWeapon;
                 if (!incapable && !lacksHuntingWeapon) continue;
 
-                string reason = incapable
-                    ? incapableReason ?? (incapableReason =
-                        "WR_RoleJobIncapable".Translate().ToString())
-                    : noRangedWeaponReason ?? (noRangedWeaponReason =
-                        "WR_RoleJobNoRangedWeapon".Translate().ToString());
+                string reason;
+                if (incapable && def.workType != null
+                    && externalSnapshot.AgeBlockedWorkTypes.TryGetValue(
+                        def.workType.defName, out int unlockAge))
+                {
+                    tooYoungReasons ??= new SortedDictionary<int, string>();
+                    if (!tooYoungReasons.TryGetValue(unlockAge, out reason))
+                        tooYoungReasons[unlockAge] = reason =
+                            "WR_RoleJobTooYoung".Translate(unlockAge).ToString();
+                }
+                else
+                    reason = incapable
+                        ? incapableReason ?? (incapableReason =
+                            "WR_RoleJobIncapable".Translate().ToString())
+                        : noRangedWeaponReason ?? (noRangedWeaponReason =
+                            "WR_RoleJobNoRangedWeapon".Translate().ToString());
                 blocked.Add((WorkJobLabels.GiverDisplayName(def), reason));
             }
 
@@ -144,13 +160,19 @@ namespace WorkRoles.UI
                 totalJobs, blocked.Count);
 
             bool hasAwfulSignal = awfulWorkTypes?.Count > 0 || awfulSkills?.Count > 0;
-            if (availability == RoleJobAvailability.Available && !hasAwfulSignal)
+            if (!tooYoungForRole
+                && availability == RoleJobAvailability.Available && !hasAwfulSignal)
                 return RoleCapabilityPresentation.Available;
 
-            var warnings = new List<string>(2);
+            var warnings = new List<string>(3);
             var reasons = new List<string>(2);
             if (incapableReason != null) reasons.Add(incapableReason);
             if (noRangedWeaponReason != null) reasons.Add(noRangedWeaponReason);
+            if (tooYoungReasons != null) reasons.AddRange(tooYoungReasons.Values);
+
+            if (tooYoungForRole)
+                warnings.Add("WR_RoleTooYoung".Translate(
+                    pawn.LabelShortCap, role.minAge).ToString());
 
             if (availability != RoleJobAvailability.Available)
             {
@@ -197,6 +219,10 @@ namespace WorkRoles.UI
                 RoleAssignmentWarningSummary.From(availability,
                     hasVetoSignal: awfulWorkTypes?.Count > 0 || awfulPrimarySkill,
                     hasDampenedSignal: awfulSkills?.Count > 0);
+            // Below the role's age floor the assignment makes no sense at all,
+            // whatever the per-job availability worked out to.
+            if (tooYoungForRole)
+                severity = RoleAssignmentWarningSeverity.Critical;
             return new RoleCapabilityPresentation(
                 severity, string.Join("\n", warnings));
         }

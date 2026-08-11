@@ -3,6 +3,7 @@
 
   <!-- ===== Main tabs ===== -->
   <WR_ColonistsTab>Colonists</WR_ColonistsTab>
+  <WR_RecommendationsTab>Recommendations</WR_RecommendationsTab>
   <WR_OptionsTab>Options</WR_OptionsTab>
   <WR_CompatSection>Compatibility Settings</WR_CompatSection>
   <WR_OptNumeric>Show numeric priorities in grids</WR_OptNumeric>
@@ -17,10 +18,19 @@
   <WR_OptVanillaRangeTipWhat>WorkRoles orders work by unique priorities (sequential numbers starting with 1).</WR_OptVanillaRangeTipWhat>
   <WR_OptVanillaRangeTipOff>Other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
   <WR_OptVanillaRangeTipOn>Priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
-  <!-- Options: Recommendations Tuning (WR_OptRecOrder also labels the import preview section) -->
-  <WR_TuningSection>Recommendations Tuning</WR_TuningSection>
-  <WR_RecOrderHeader>Default Role Recommendation Order</WR_RecOrderHeader>
-  <WR_RecOrderHelp>Here you can define the order in which roles are suggested. Training paths (defined below) can override, except for research roles (which always use the default order).</WR_RecOrderHelp>
+  <WR_DisplaySection>Display Settings</WR_DisplaySection>
+  <WR_OptVerdictsColonists>Show verdicts on colonist role chips</WR_OptVerdictsColonists>
+  <WR_OptVerdictsColonistsTip>Each role chip in the colonist table shows a suitability star pair for the colonist holding it, matching the recommendation engine's judgment: white stars for good verdicts (one strong, two great, gold exceptional), red stars for bad ones (one poor, two awful), grey for neutral.</WR_OptVerdictsColonistsTip>
+  <WR_OptVerdictsPalette>Show verdicts for the selected colonist in the role palette</WR_OptVerdictsPalette>
+  <WR_OptVerdictsPaletteTip>Palette chips show how well suited each role is for the currently selected colonist.</WR_OptVerdictsPaletteTip>
+  <WR_OptVerdictsRecommendations>Show verdicts on recommended role chips</WR_OptVerdictsRecommendations>
+  <WR_OptVerdictsRecommendationsTip>Recommended role chips (stats panel and change previews) show the suitability verdict for the colonist they are recommended to.</WR_OptVerdictsRecommendationsTip>
+  <!-- Recommendations tab (WR_OptRecOrder also labels the import preview section) -->
+  <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
+  <WR_RecRolePanel>Role Options</WR_RecRolePanel>
+  <WR_RecRolePanelHelp>Lists the roles from the default recommendation order above. If a role is missing here, first add it to the recommendation order.</WR_RecRolePanelHelp>
+  <WR_RecOrderHeader>Recommended Roles</WR_RecOrderHeader>
+  <WR_RecOrderHelp>This list defines the set of roles that the recommendation engine will consider. Training roles are included through training path membership (configured per role below). The order of roles in this list is used as a tie-breaker when determining the final recommendation order for a colonist.</WR_RecOrderHelp>
   <WR_OptRecOrder>Recommendation order</WR_OptRecOrder>
   <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid (auto-assigned roles included).</WR_OptRecOrderTipWhat>
   <WR_ActRecDrag>Reorder the chips</WR_ActRecDrag>
@@ -29,13 +39,25 @@
   <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
 
   <!-- Shared, save-authoritative recommendation formula inputs -->
-  <WR_RecTuneFormulaHeader>Recommendation Formula Options</WR_RecTuneFormulaHeader>
-  <WR_RecTuneResetAll>Reset all</WR_RecTuneResetAll>
+  <WR_RecTuneReset>Reset</WR_RecTuneReset>
+  <WR_RecTuneCellHint>Click a value to raise it, right-click to lower it.</WR_RecTuneCellHint>
+  <!-- Single-letter table column headers, one per signal strength -->
+  <WR_SignalLetterAwful>A</WR_SignalLetterAwful>
+  <WR_SignalLetterPoor>P</WR_SignalLetterPoor>
+  <WR_SignalLetterNeutral>N</WR_SignalLetterNeutral>
+  <WR_SignalLetterStrong>S</WR_SignalLetterStrong>
+  <WR_SignalLetterGreat>G</WR_SignalLetterGreat>
+  <WR_SignalLetterExceptional>E</WR_SignalLetterExceptional>
   <WR_RecTuneChampionSection>Champion selection options</WR_RecTuneChampionSection>
+  <WR_RecTuneChampionSectionIntro>Each role first gets a champion: the colonist best suited to anchor it. These options decide who qualifies and how skill and signal strength are weighed against each other.</WR_RecTuneChampionSectionIntro>
   <WR_RecTuneOrderingSection>Final role ordering options</WR_RecTuneOrderingSection>
+  <WR_RecTuneOrderingSectionIntro>Once a colonist's roles are chosen, these options decide the order they are listed in, which is also their work priority order.</WR_RecTuneOrderingSectionIntro>
   <WR_RecTuneOptionalSection>Training path and optional target options</WR_RecTuneOptionalSection>
+  <WR_RecTuneOptionalSectionIntro>These options decide when a training path activates for a colonist and when an optional multi-skill role is worth recommending at all.</WR_RecTuneOptionalSectionIntro>
   <WR_RecTuneLeadSection>Lead diversification options</WR_RecTuneLeadSection>
+  <WR_RecTuneLeadSectionIntro>When several training paths share a target, these options spread the lead roles across different colonists instead of stacking them on one.</WR_RecTuneLeadSectionIntro>
   <WR_RecTuneHunterSection>Hunter placement options</WR_RecTuneHunterSection>
+  <WR_RecTuneHunterSectionIntro>An unpinned Hunter role slots in dynamically based on shooting skill: better shooters hunt later in the priority order because their time is worth more elsewhere.</WR_RecTuneHunterSectionIntro>
 
   <WR_RecTuneCandidateMinimumSignal>Candidate minimum signal</WR_RecTuneCandidateMinimumSignal>
   <WR_RecTuneCandidateMinimumSignalDesc>Lowest signal admitted to ordinary role selection. Raising it removes weaker candidates before champion and minimum-holder selection.</WR_RecTuneCandidateMinimumSignalDesc>
@@ -43,30 +65,11 @@
   <WR_RecTuneChampionSkillDivisorDesc>Champion skill contribution is ceil(skill level ÷ this value). Raising it reduces the influence of raw skill.</WR_RecTuneChampionSkillDivisorDesc>
   <WR_RecTuneChampionMultiSkillMinimumCount>Combined-skill threshold</WR_RecTuneChampionMultiSkillMinimumCount>
   <WR_RecTuneChampionMultiSkillMinimumCountDesc>Minimum number of qualifying target skills needed to sum champion scores. Below this count, only the role's best skill is scored.</WR_RecTuneChampionMultiSkillMinimumCountDesc>
-  <WR_RecTuneChampionAwfulMultiplier>Awful signal multiplier</WR_RecTuneChampionAwfulMultiplier>
-  <WR_RecTuneChampionAwfulMultiplierDesc>Multiplies the rounded skill contribution of an Awful signal during champion selection. This matters only when the candidate minimum signal admits Awful candidates.</WR_RecTuneChampionAwfulMultiplierDesc>
-  <WR_RecTuneChampionPoorMultiplier>Poor signal multiplier</WR_RecTuneChampionPoorMultiplier>
-  <WR_RecTuneChampionPoorMultiplierDesc>Multiplies the rounded skill contribution of a Poor signal during champion selection.</WR_RecTuneChampionPoorMultiplierDesc>
-  <WR_RecTuneChampionNeutralMultiplier>Neutral signal multiplier</WR_RecTuneChampionNeutralMultiplier>
-  <WR_RecTuneChampionNeutralMultiplierDesc>Multiplies the rounded skill contribution of a Neutral signal during champion selection.</WR_RecTuneChampionNeutralMultiplierDesc>
-  <WR_RecTuneChampionStrongMultiplier>Strong signal multiplier</WR_RecTuneChampionStrongMultiplier>
-  <WR_RecTuneChampionStrongMultiplierDesc>Multiplies the rounded skill contribution of a Strong signal during champion selection.</WR_RecTuneChampionStrongMultiplierDesc>
-  <WR_RecTuneChampionGreatMultiplier>Great signal multiplier</WR_RecTuneChampionGreatMultiplier>
-  <WR_RecTuneChampionGreatMultiplierDesc>Multiplies the rounded skill contribution of a Great signal during champion selection.</WR_RecTuneChampionGreatMultiplierDesc>
-  <WR_RecTuneChampionExceptionalMultiplier>Exceptional signal multiplier</WR_RecTuneChampionExceptionalMultiplier>
-  <WR_RecTuneChampionExceptionalMultiplierDesc>Multiplies the rounded skill contribution of an Exceptional signal during champion selection.</WR_RecTuneChampionExceptionalMultiplierDesc>
-  <WR_RecTuneChampionAwfulTieBreakPoints>Awful tie-break points</WR_RecTuneChampionAwfulTieBreakPoints>
-  <WR_RecTuneChampionAwfulTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Awful signals.</WR_RecTuneChampionAwfulTieBreakPointsDesc>
-  <WR_RecTuneChampionPoorTieBreakPoints>Poor tie-break points</WR_RecTuneChampionPoorTieBreakPoints>
-  <WR_RecTuneChampionPoorTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Poor signals.</WR_RecTuneChampionPoorTieBreakPointsDesc>
-  <WR_RecTuneChampionNeutralTieBreakPoints>Neutral tie-break points</WR_RecTuneChampionNeutralTieBreakPoints>
-  <WR_RecTuneChampionNeutralTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Neutral signals.</WR_RecTuneChampionNeutralTieBreakPointsDesc>
-  <WR_RecTuneChampionStrongTieBreakPoints>Strong tie-break points</WR_RecTuneChampionStrongTieBreakPoints>
-  <WR_RecTuneChampionStrongTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Strong signals.</WR_RecTuneChampionStrongTieBreakPointsDesc>
-  <WR_RecTuneChampionGreatTieBreakPoints>Great tie-break points</WR_RecTuneChampionGreatTieBreakPoints>
-  <WR_RecTuneChampionGreatTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Great signals.</WR_RecTuneChampionGreatTieBreakPointsDesc>
-  <WR_RecTuneChampionExceptionalTieBreakPoints>Exceptional tie-break points</WR_RecTuneChampionExceptionalTieBreakPoints>
-  <WR_RecTuneChampionExceptionalTieBreakPointsDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying Exceptional signals.</WR_RecTuneChampionExceptionalTieBreakPointsDesc>
+  <WR_RecTuneChampionMultiplierRow>Signal multiplier</WR_RecTuneChampionMultiplierRow>
+  <WR_RecTuneChampionMultiplierRowDesc>Multiplies the rounded skill contribution of each signal strength during champion selection.</WR_RecTuneChampionMultiplierRowDesc>
+  <WR_RecTuneMultiplierAwfulTip>Awful. This column matters only when the candidate minimum signal admits Awful candidates.</WR_RecTuneMultiplierAwfulTip>
+  <WR_RecTuneChampionTieBreakRow>Tie-break points</WR_RecTuneChampionTieBreakRow>
+  <WR_RecTuneChampionTieBreakRowDesc>Signal points compared when champion scores tie. For multi-skill roles, points are summed across qualifying signals.</WR_RecTuneChampionTieBreakRowDesc>
   <WR_RecTuneRankedCandidatePrioritySignal>Ranked-candidate priority signal</WR_RecTuneRankedCandidatePrioritySignal>
   <WR_RecTuneRankedCandidatePrioritySignalDesc>Non-champion candidates at or above this signal are ranked ahead of weaker candidates before minimum slots are filled.</WR_RecTuneRankedCandidatePrioritySignalDesc>
   <WR_RecTuneSurplusMinimumSignal>Surplus minimum signal</WR_RecTuneSurplusMinimumSignal>
@@ -74,26 +77,10 @@
 
   <WR_RecTuneOrderingSkillDivisor>Ordering skill divisor</WR_RecTuneOrderingSkillDivisor>
   <WR_RecTuneOrderingSkillDivisorDesc>Final-order skill points are ceil(skill level ÷ this value). Raising it reduces the effect of skill on role order.</WR_RecTuneOrderingSkillDivisorDesc>
-  <WR_RecTuneOrderingAwfulSignalPoints>Awful ordering points</WR_RecTuneOrderingAwfulSignalPoints>
-  <WR_RecTuneOrderingAwfulSignalPointsDesc>Points an Awful signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingAwfulSignalPointsDesc>
-  <WR_RecTuneOrderingPoorSignalPoints>Poor ordering points</WR_RecTuneOrderingPoorSignalPoints>
-  <WR_RecTuneOrderingPoorSignalPointsDesc>Points a Poor signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingPoorSignalPointsDesc>
-  <WR_RecTuneOrderingNeutralSignalPoints>Neutral ordering points</WR_RecTuneOrderingNeutralSignalPoints>
-  <WR_RecTuneOrderingNeutralSignalPointsDesc>Points a Neutral signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingNeutralSignalPointsDesc>
-  <WR_RecTuneOrderingStrongSignalPoints>Strong ordering points</WR_RecTuneOrderingStrongSignalPoints>
-  <WR_RecTuneOrderingStrongSignalPointsDesc>Points a Strong signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingStrongSignalPointsDesc>
-  <WR_RecTuneOrderingGreatSignalPoints>Great ordering points</WR_RecTuneOrderingGreatSignalPoints>
-  <WR_RecTuneOrderingGreatSignalPointsDesc>Points a Great signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingGreatSignalPointsDesc>
-  <WR_RecTuneOrderingExceptionalSignalPoints>Exceptional ordering points</WR_RecTuneOrderingExceptionalSignalPoints>
-  <WR_RecTuneOrderingExceptionalSignalPointsDesc>Points an Exceptional signal contributes when final recommended roles are ordered.</WR_RecTuneOrderingExceptionalSignalPointsDesc>
-  <WR_RecTuneFirstMinimumPickBonus>First minimum-pick bonus</WR_RecTuneFirstMinimumPickBonus>
-  <WR_RecTuneFirstMinimumPickBonusDesc>Ordering points granted to the first pawn selected to satisfy a role's required holder minimum.</WR_RecTuneFirstMinimumPickBonusDesc>
-  <WR_RecTuneSecondMinimumPickBonus>Second minimum-pick bonus</WR_RecTuneSecondMinimumPickBonus>
-  <WR_RecTuneSecondMinimumPickBonusDesc>Ordering points granted to the second pawn selected to satisfy a role's required holder minimum.</WR_RecTuneSecondMinimumPickBonusDesc>
-  <WR_RecTuneThirdMinimumPickBonus>Third minimum-pick bonus</WR_RecTuneThirdMinimumPickBonus>
-  <WR_RecTuneThirdMinimumPickBonusDesc>Ordering points granted to the third pawn selected to satisfy a role's required holder minimum.</WR_RecTuneThirdMinimumPickBonusDesc>
-  <WR_RecTuneLaterMinimumPickBonus>Later minimum-pick bonus</WR_RecTuneLaterMinimumPickBonus>
-  <WR_RecTuneLaterMinimumPickBonusDesc>Ordering points granted to every subsequent pawn selected to satisfy the same role's minimum.</WR_RecTuneLaterMinimumPickBonusDesc>
+  <WR_RecTuneOrderingPointsRow>Signal points</WR_RecTuneOrderingPointsRow>
+  <WR_RecTuneOrderingPointsRowDesc>Points each signal strength contributes when final recommended roles are ordered.</WR_RecTuneOrderingPointsRowDesc>
+  <WR_RecTuneMinimumPickRow>Minimum-pick bonus</WR_RecTuneMinimumPickRow>
+  <WR_RecTuneMinimumPickRowDesc>Ordering points granted to the first, second, third and every later pawn selected to satisfy a role's required holder minimum.</WR_RecTuneMinimumPickRowDesc>
 
   <WR_RecTunePathMinimumSignal>Training-role minimum signal</WR_RecTunePathMinimumSignal>
   <WR_RecTunePathMinimumSignalDesc>Lowest signal a role may have while participating in an activated training path.</WR_RecTunePathMinimumSignalDesc>
@@ -117,41 +104,50 @@
   <WR_RecTuneLeadMinimumSignal>Lead minimum signal</WR_RecTuneLeadMinimumSignal>
   <WR_RecTuneLeadMinimumSignalDesc>Lowest role signal allowed for a pawn chosen as a diversified training-path lead.</WR_RecTuneLeadMinimumSignalDesc>
 
-  <WR_RecTuneHunterFirstTierMaximum>Hunter first-tier maximum</WR_RecTuneHunterFirstTierMaximum>
-  <WR_RecTuneHunterFirstTierMaximumDesc>Shooting levels at or below this value place an unpinned Hunter in the earliest dynamic Hunter slot.</WR_RecTuneHunterFirstTierMaximumDesc>
-  <WR_RecTuneHunterSecondTierMaximum>Hunter second-tier maximum</WR_RecTuneHunterSecondTierMaximum>
-  <WR_RecTuneHunterSecondTierMaximumDesc>Shooting levels above the first cutoff and at or below this value use the second dynamic Hunter slot.</WR_RecTuneHunterSecondTierMaximumDesc>
-  <WR_RecTuneHunterThirdTierMaximum>Hunter third-tier maximum</WR_RecTuneHunterThirdTierMaximum>
-  <WR_RecTuneHunterThirdTierMaximumDesc>Shooting levels above the second cutoff and at or below this value use the third dynamic Hunter slot; higher levels place Hunter last.</WR_RecTuneHunterThirdTierMaximumDesc>
+  <WR_RecTuneHunterTiersRow>Tier maximum shooting level</WR_RecTuneHunterTiersRow>
+  <WR_RecTuneHunterTiersRowDesc>Shooting-level cutoffs for the dynamic Hunter slot. Tier 1 places Hunter right after basic work, tiers 2 and 3 after the middle and last work roles, and levels above tier 4 place Hunter last.</WR_RecTuneHunterTiersRowDesc>
 
 
-  <!-- Options: Training Paths -->
-  <WR_TrainingSection>Training Paths</WR_TrainingSection>
-  <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress through roles. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
-  <WR_TrainingTipWhat>Named role progressions: each role carries a skill band where it is recommended.</WR_TrainingTipWhat>
+  <!-- Role-owned training paths -->
+  <WR_TrainingSection>Training Path</WR_TrainingSection>
+  <WR_TrainingHelp>Here you can define how colonists acquire new skills and progress toward this role. A training path can have multiple bands, so that roles can overlap. Colonists will be recommended all roles at their current skill level if the training path is recommended for them.</WR_TrainingHelp>
+  <WR_TrainingTipWhat>The role's own progression: each member role carries a skill band where it is recommended. The role itself always stays in its path.</WR_TrainingTipWhat>
   <WR_TrainingTipBands>Overlapping bands coexist; where bands do not overlap the later role replaces the earlier.</WR_TrainingTipBands>
   <WR_TrainingTipOrder>Assignments prioritize higher band minimums. Equal bands prioritize the pawn's weakest role skill, then the stored path order.</WR_TrainingTipOrder>
   <WR_AddNew>Add New</WR_AddNew>
-  <WR_NewPathTitle>New training path</WR_NewPathTitle>
-  <WR_PathsPanelCaption>Training Paths (click to edit an existing path)</WR_PathsPanelCaption>
   <WR_WhenPanelCaption>Role progression: Here you can define at what skill the displayed roles are recommended. Overlapping roles complement.</WR_WhenPanelCaption>
-  <WR_PathEditorHeader>Training Path Editor</WR_PathEditorHeader>
-  <WR_PathNameLabel>Name:</WR_PathNameLabel>
-  <WR_RenamePathTitle>Rename training path</WR_RenamePathTitle>
-  <!-- {0} = path name -->
-  <WR_DeletePathConfirm>Delete the training path "{0}"?</WR_DeletePathConfirm>
   <WR_AddRole>Add Role</WR_AddRole>
   <WR_NoXpRoleTip>No known XP-giving jobs. Mods can change what grants XP, so you may add it anyway.</WR_NoXpRoleTip>
-  <WR_CustomizeAssignment>Customize assignment order</WR_CustomizeAssignment>
-  <WR_AnchorLabel>Assign</WR_AnchorLabel>
-  <WR_AnchorBefore>Before</WR_AnchorBefore>
-  <WR_AnchorAfter>After</WR_AnchorAfter>
-  <WR_PickRole>Pick role</WR_PickRole>
-  <WR_AnchorTipWhat>Where unlocked roles land in a colonist's assignment list: in path order, before or after the anchor role.</WR_AnchorTipWhat>
-  <WR_AnchorTipWhy>Unlock timing comes from the skill bands; this controls placement.</WR_AnchorTipWhy>
-  <WR_PathColorTitle>Path color</WR_PathColorTitle>
-  <WR_PathColorDefault>Default (highest role)</WR_PathColorDefault>
-  <WR_PathColorTip>Click to pick this path's color. By default it follows the role with the highest skill band.</WR_PathColorTip>
+
+  <!-- Recommendations tab: per-role tuning editors -->
+  <WR_RecClassificationSection>Classification</WR_RecClassificationSection>
+  <WR_RecSkillsSection>Skills</WR_RecSkillsSection>
+  <WR_RecScalingSection>Assignment Scaling</WR_RecScalingSection>
+  <WR_RoleColonyMinLabel>Colony minimum:</WR_RoleColonyMinLabel>
+  <WR_RoleColonyMinTip>The minimum assignment count for this role.</WR_RoleColonyMinTip>
+  <WR_RoleCoverageLabel>Coverage:</WR_RoleCoverageLabel>
+  <WR_RoleCoverageTip>What percentage of colonists should ideally get this role.</WR_RoleCoverageTip>
+  <WR_RoleCategoryLabel>Colony importance:</WR_RoleCategoryLabel>
+  <WR_RoleCategoryTip>How important holding this role is when planning the colony. "Not set" leaves the role unclassified.</WR_RoleCategoryTip>
+  <WR_RoleCategoryNone>Not set</WR_RoleCategoryNone>
+  <WR_RoleCategoryImportant>Important</WR_RoleCategoryImportant>
+  <WR_RoleCategoryNormal>Normal</WR_RoleCategoryNormal>
+  <WR_RoleCategoryOptional>Optional</WR_RoleCategoryOptional>
+  <WR_RoleTimeLabel>Time demand:</WR_RoleTimeLabel>
+  <WR_RoleTimeTip>How much of a colonist's day this role's work tends to consume.</WR_RoleTimeTip>
+  <WR_RoleTimeNone>Not set</WR_RoleTimeNone>
+  <WR_RoleTimePartTime>Part-time</WR_RoleTimePartTime>
+  <WR_RoleTimeFullTime>Full-time</WR_RoleTimeFullTime>
+  <WR_RoleTimeOpportunistic>Opportunistic</WR_RoleTimeOpportunistic>
+  <WR_ChampionPenalty>Repeat champion penalty</WR_ChampionPenalty>
+  <WR_ChampionPenaltyTip>When enabled, a colonist who already champions other roles is penalized when competing to champion this one. Disable it for roles where repeat championships are fine, such as occasional work.</WR_ChampionPenaltyTip>
+  <WR_RoleMinAgeLabel>Minimum age:</WR_RoleMinAgeLabel>
+  <WR_RoleMinAgeTip>Colonists younger than this are never assigned or recommended this role. The default is the age at which some of the role's work becomes possible; every job in this role is possible from age {0}.</WR_RoleMinAgeTip>
+  <WR_RequiredSkillsLabel>Required</WR_RequiredSkillsLabel>
+  <WR_RequiredSkillsTip>Skills a colonist must be good at for this role to be recommended.</WR_RequiredSkillsTip>
+  <WR_OptionalSkillsLabel>Optional</WR_OptionalSkillsLabel>
+  <WR_OptionalSkillsTip>Skills that improve a colonist's fit for this role but are not required.</WR_OptionalSkillsTip>
+  <WR_AddSkill>Add Skill</WR_AddSkill>
   <WR_PriorityGridTitle>Priority Grid</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Show the priority grid for all listed colonists, respecting the active role and location filters (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>WorkRoles priorities</WR_GridModeRaw>
@@ -201,6 +197,8 @@
   <WR_RoleCapSomeJobs>{0} of the {1} jobs in this role</WR_RoleCapSomeJobs>
   <WR_RoleJobIncapable>incapable of this work</WR_RoleJobIncapable>
   <WR_RoleJobNoRangedWeapon>no ranged weapon</WR_RoleJobNoRangedWeapon>
+  <WR_RoleJobTooYoung>too young, possible from age {0}</WR_RoleJobTooYoung>
+  <WR_RoleTooYoung>{0} is too young for this role (minimum age {1}).</WR_RoleTooYoung>
   <WR_MtcHatedWorkSignalLabel>Hates {0}</WR_MtcHatedWorkSignalLabel>
   <WR_MtcHatedWorkSignalDescription>More Than Capable permits this work, but it causes severe and escalating penalties.</WR_MtcHatedWorkSignalDescription>
   <WR_RoleAwfulSignal>{0} has an Awful signal for this role: {1}.</WR_RoleAwfulSignal>
@@ -234,6 +232,7 @@
   <WR_GroupFaction>Faction</WR_GroupFaction>
   <WR_GroupRace>Race</WR_GroupRace>
   <WR_GroupGender>Gender</WR_GroupGender>
+  <WR_GroupAge>Age</WR_GroupAge>
   <WR_GroupXenotype>Xenotype</WR_GroupXenotype>
   <WR_GroupIdeo>Ideoligion</WR_GroupIdeo>
   <WR_GroupSlaves>Slavery</WR_GroupSlaves>
@@ -554,9 +553,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ScaleInAutoRole>In auto-assigned role {0}</WR_ScaleInAutoRole>
   <WR_ScaleTotalTip>Required total for this band, training waivers included. Raising it creates training-waiver slots; lowering it consumes them before lowering the direct minimum. Click +1, right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
-
-  <!-- Editor: collapsible recommendation tuning section -->
-  <WR_TuningHeader>Recommendations Tuning</WR_TuningHeader>
 
   <!-- Tooltip for a virtual role-tree row (dashed swatch); {0} = the role's own group -->
   <WR_VirtualRoleTip>Shown here because this role's jobs are covered by the parent role. It belongs to the "{0}" group.</WR_VirtualRoleTip>

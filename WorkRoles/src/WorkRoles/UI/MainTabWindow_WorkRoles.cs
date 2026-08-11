@@ -9,16 +9,19 @@ namespace WorkRoles.UI
 {
     public class MainTabWindow_WorkRoles : MainTabWindow
     {
-        private enum Tab { Colonists, Roles, Options }
+        private enum Tab { Colonists, Roles, Recommendations, Options }
 
         private Tab curTab = Tab.Colonists;
         private readonly ColonistsTabView colonistsTab = new ColonistsTabView(ColonistsViewProfile.Colonists());
         private readonly RolesTabView rolesTab = new RolesTabView();
+        private readonly RecommendationsTabView recommendationsTab = new RecommendationsTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
         private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
         private const float TabHeight = 32f;
+        // Between TabRecord's normal white and its hover yellow.
+        private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
 
         public MainTabWindow_WorkRoles()
         {
@@ -49,7 +52,13 @@ namespace WorkRoles.UI
             return new Vector2(w, h);
         }
 
-        /// Re-applies the persisted size each open, clamped between the content
+        /// Player-sized floor: well below the content-fit TargetSize so the
+        /// grip can shrink the window (tab contents scroll internally). Width
+        /// keeps the design floor — fixed chrome overlaps below it.
+        private static Vector2 MinManualSize =>
+            new Vector2(ColonistsTabView.DefaultWidth, 480f);
+
+        /// Re-applies the persisted size each open, clamped between the manual
         /// minimums and the screen; bottom-left anchor holds.
         protected override void SetInitialSizeAndPosition()
         {
@@ -59,7 +68,7 @@ namespace WorkRoles.UI
             var settings = WorkRolesMod.Settings;
             if (settings == null || (settings.windowWidth <= 0f && settings.windowHeight <= 0f))
                 return;
-            var min = TargetSize();
+            var min = MinManualSize;
             if (settings.windowWidth > 0f)
                 windowRect.width = Mathf.Clamp(settings.windowWidth, min.x, Verse.UI.screenWidth);
             if (settings.windowHeight > 0f)
@@ -137,7 +146,7 @@ namespace WorkRoles.UI
                 var gamePx = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y);
                 var mouseUI = gamePx / Prefs.UIScale;
 
-                var min = TargetSize();
+                var min = MinManualSize;
                 float width = Mathf.Clamp(mouseUI.x + resizeGrab.x, min.x, Verse.UI.screenWidth);
                 float top = mouseUI.y - resizeGrab.y;
                 float height = Mathf.Clamp(resizeBottom - top, min.y, Verse.UI.screenHeight - 35f);
@@ -191,6 +200,11 @@ namespace WorkRoles.UI
                 }, () => curTab == Tab.Colonists),
                 new TabRecord("WR_RolesTab".Translate(),
                     () => curTab = Tab.Roles, () => curTab == Tab.Roles),
+                new TabRecord("WR_RecommendationsTab".Translate(), () =>
+                {
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
+                    curTab = Tab.Recommendations;
+                }, () => curTab == Tab.Recommendations),
                 new TabRecord("WR_OptionsTab".Translate(), () =>
                 {
                     if (curTab == Tab.Roles) rolesTab.CommitEdits();
@@ -204,6 +218,7 @@ namespace WorkRoles.UI
             importLabel = "WR_Import".Translate().ToString();
             colonistsTab.InvalidateLanguageCaches();
             rolesTab.InvalidateLanguageCaches();
+            recommendationsTab.InvalidateLanguageCaches();
             optionsTab.InvalidateLanguageCaches();
         }
 
@@ -216,6 +231,7 @@ namespace WorkRoles.UI
             RoleDrag.Cancel();
             colonistsTab.Reset();
             rolesTab.Reset();
+            recommendationsTab.Reset();
             optionsTab.Reset();
             KeyOverride.Apply();
         }
@@ -232,9 +248,9 @@ namespace WorkRoles.UI
             // Producer snapshots regrow on reopen (Reset forces every stamp
             // stale); dropping them here releases pawns from unloaded saves.
             RoleClipboard.Clear();
-            ScaleEditorUI.ReleaseState();
             colonistsTab.ReleaseSnapshots();
             rolesTab.ReleaseWindowData();
+            recommendationsTab.ReleaseWindowData();
             optionsTab.ReleaseWindowData();
             WindowDataLifecycle.ReleaseShared();
             tabs = null;
@@ -276,19 +292,24 @@ namespace WorkRoles.UI
                 && GUIUtility.keyboardControl == 0 && colonistsTab.HandleKey(Event.current))
                 Event.current.Use();
 
-            // Grow-only mid-session resize; manual geometry wins while dragging
-            // and if both kinds of update are waiting for WindowUpdate.
+            // Grow-only mid-session resize; manual geometry wins while
+            // dragging, if both kinds of update are waiting for WindowUpdate,
+            // and per axis the player has explicitly sized (auto-grow would
+            // otherwise undo every shrink each frame).
             if (!resizing)
             {
+                var sizeSettings = WorkRolesMod.Settings;
                 var target = TargetSize();
                 var nextWindowRect = windowRect;
                 bool grew = false;
-                if (target.x > nextWindowRect.width + 1f)
+                if (target.x > nextWindowRect.width + 1f
+                    && !(sizeSettings != null && sizeSettings.windowWidth > 0f))
                 {
                     nextWindowRect.width = target.x;
                     grew = true;
                 }
-                if (target.y > nextWindowRect.height + 1f)
+                if (target.y > nextWindowRect.height + 1f
+                    && !(sizeSettings != null && sizeSettings.windowHeight > 0f))
                 {
                     nextWindowRect.height = target.y;
                     grew = true;
@@ -303,7 +324,21 @@ namespace WorkRoles.UI
 
             Rect content = new Rect(inRect.x, inRect.y + TabHeight, inRect.width, inRect.height - TabHeight);
             Widgets.DrawMenuSection(content);
+            // Active-tab emphasis: TabRecord reads labelColor per pass, so a
+            // per-frame field write is how selection tints the label (between
+            // the normal white and the hover yellow).
+            for (int i = 0; i < tabs.Count; i++)
+                tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
             TabDrawer.DrawTabs(content, tabs);
+            // Vanilla leaves the menu-section top border visible under the
+            // active tab. Overpaint its span with the section fill so the
+            // active tab connects seamlessly to the content (geometry mirrors
+            // TabDrawer: tabWidth capped at 200, 10px horizontal overlap).
+            float tabWidth = Mathf.Min(200f,
+                (content.width + (tabs.Count - 1) * 10f) / tabs.Count);
+            float activeTabX = content.x + (int)curTab * (tabWidth - 10f);
+            Widgets.DrawBoxSolid(new Rect(activeTabX + 1f, content.y, tabWidth - 2f, 2f),
+                Widgets.MenuSectionBGFillColor);
 
             // Per-tab action button in the window's top-right corner, beside the tab
             // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
@@ -351,6 +386,7 @@ namespace WorkRoles.UI
             content = content.ContractedBy(8f);
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);
             else if (curTab == Tab.Roles) rolesTab.Draw(content);
+            else if (curTab == Tab.Recommendations) recommendationsTab.Draw(content);
             else optionsTab.Draw(content);
 
             // A wheel event that survives the draw wasn't over any inner

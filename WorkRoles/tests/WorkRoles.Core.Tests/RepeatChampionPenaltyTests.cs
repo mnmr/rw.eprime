@@ -30,23 +30,23 @@ public class RepeatChampionPenaltyTests
         var formulas = new RecommendationFormulaEngine(
             RecommendationsTuningOptions.Default);
 
-        // 4 colonists, doubled fixed-point: percent defaults 60/40/20
-        // become 4/3/1.
+        // 4 colonists, quadrupled fixed-point (quarter-unit multipliers):
+        // percent defaults 60/40/20 become 9/6/3.
         await Assert.That(Penalty(facts, grower, formulas, priorOverlap.Id))
-            .IsEqualTo(4);
+            .IsEqualTo(9);
         await Assert.That(Penalty(facts, grower, formulas, priorDistinct.Id))
-            .IsEqualTo(3);
+            .IsEqualTo(6);
         await Assert.That(Penalty(facts, grower, formulas, priorOccasional.Id))
-            .IsEqualTo(1);
+            .IsEqualTo(3);
         // An occasional prior stays cheap even when its skills overlap.
         await Assert.That(
                 Penalty(facts, grower, formulas, priorOccasionalOverlap.Id))
-            .IsEqualTo(1);
+            .IsEqualTo(3);
         // Multiple championships accumulate per prior role.
         await Assert.That(Penalty(
                 facts, grower, formulas,
                 priorOverlap.Id, priorDistinct.Id, priorOccasional.Id))
-            .IsEqualTo(8);
+            .IsEqualTo(18);
         await Assert.That(RepeatChampionPenalties.PenaltyFor(
                 facts, grower, null, formulas))
             .IsEqualTo(0);

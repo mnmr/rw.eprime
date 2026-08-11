@@ -3,17 +3,19 @@ using System.Collections.Generic;
 
 namespace WorkRoles.Core.Recs
 {
+    /// Enum order is display order (sections read in order of application);
+    /// persistence uses descriptor stable keys, so reordering is save-safe.
     public enum RecommendationTuningOption
     {
         CandidateMinimumSignal,
         ChampionSkillDivisor,
         ChampionMultiSkillMinimumCount,
-        ChampionAwfulMultiplierHalfUnits,
-        ChampionPoorMultiplierHalfUnits,
-        ChampionNeutralMultiplierHalfUnits,
-        ChampionStrongMultiplierHalfUnits,
-        ChampionGreatMultiplierHalfUnits,
-        ChampionExceptionalMultiplierHalfUnits,
+        ChampionAwfulMultiplierQuarterUnits,
+        ChampionPoorMultiplierQuarterUnits,
+        ChampionNeutralMultiplierQuarterUnits,
+        ChampionStrongMultiplierQuarterUnits,
+        ChampionGreatMultiplierQuarterUnits,
+        ChampionExceptionalMultiplierQuarterUnits,
         ChampionAwfulTieBreakPoints,
         ChampionPoorTieBreakPoints,
         ChampionNeutralTieBreakPoints,
@@ -22,18 +24,6 @@ namespace WorkRoles.Core.Recs
         ChampionExceptionalTieBreakPoints,
         RankedCandidatePrioritySignal,
         SurplusMinimumSignal,
-
-        OrderingSkillDivisor,
-        OrderingAwfulSignalPoints,
-        OrderingPoorSignalPoints,
-        OrderingNeutralSignalPoints,
-        OrderingStrongSignalPoints,
-        OrderingGreatSignalPoints,
-        OrderingExceptionalSignalPoints,
-        FirstMinimumPickBonus,
-        SecondMinimumPickBonus,
-        ThirdMinimumPickBonus,
-        LaterMinimumPickBonus,
 
         PathMinimumSignal,
         OptionalTargetMinimumSkillCount,
@@ -47,9 +37,22 @@ namespace WorkRoles.Core.Recs
         LeadMinimumConnectedTargets,
         LeadMinimumSignal,
 
+        OrderingSkillDivisor,
+        OrderingAwfulSignalPoints,
+        OrderingPoorSignalPoints,
+        OrderingNeutralSignalPoints,
+        OrderingStrongSignalPoints,
+        OrderingGreatSignalPoints,
+        OrderingExceptionalSignalPoints,
+        FirstMinimumPickBonus,
+        SecondMinimumPickBonus,
+        ThirdMinimumPickBonus,
+        LaterMinimumPickBonus,
+
         HunterFirstTierMaximum,
         HunterSecondTierMaximum,
         HunterThirdTierMaximum,
+        HunterFourthTierMaximum,
 
         RepeatChampionOverlapPenalty,
         RepeatChampionDistinctPenalty,
@@ -59,7 +62,7 @@ namespace WorkRoles.Core.Recs
     public enum RecommendationTuningValueKind
     {
         Integer,
-        HalfMultiplier,
+        QuarterMultiplier,
         SignalBucket,
     }
 
@@ -128,19 +131,19 @@ namespace WorkRoles.Core.Recs
             Integer(RecommendationTuningOption.ChampionMultiSkillMinimumCount,
                 "championMultiSkillMinimumCount", ChampionSection,
                 "ChampionMultiSkillMinimumCount", 2, 1, 20),
-            Half(RecommendationTuningOption.ChampionAwfulMultiplierHalfUnits,
+            Quarter(RecommendationTuningOption.ChampionAwfulMultiplierQuarterUnits,
                 "championAwfulMultiplier", ChampionSection, "ChampionAwfulMultiplier", 0),
-            Half(RecommendationTuningOption.ChampionPoorMultiplierHalfUnits,
-                "championPoorMultiplier", ChampionSection, "ChampionPoorMultiplier", 1),
-            Half(RecommendationTuningOption.ChampionNeutralMultiplierHalfUnits,
-                "championNeutralMultiplier", ChampionSection, "ChampionNeutralMultiplier", 2),
-            Half(RecommendationTuningOption.ChampionStrongMultiplierHalfUnits,
-                "championStrongMultiplier", ChampionSection, "ChampionStrongMultiplier", 3),
-            Half(RecommendationTuningOption.ChampionGreatMultiplierHalfUnits,
-                "championGreatMultiplier", ChampionSection, "ChampionGreatMultiplier", 4),
-            Half(RecommendationTuningOption.ChampionExceptionalMultiplierHalfUnits,
+            Quarter(RecommendationTuningOption.ChampionPoorMultiplierQuarterUnits,
+                "championPoorMultiplier", ChampionSection, "ChampionPoorMultiplier", 2),
+            Quarter(RecommendationTuningOption.ChampionNeutralMultiplierQuarterUnits,
+                "championNeutralMultiplier", ChampionSection, "ChampionNeutralMultiplier", 4),
+            Quarter(RecommendationTuningOption.ChampionStrongMultiplierQuarterUnits,
+                "championStrongMultiplier", ChampionSection, "ChampionStrongMultiplier", 6),
+            Quarter(RecommendationTuningOption.ChampionGreatMultiplierQuarterUnits,
+                "championGreatMultiplier", ChampionSection, "ChampionGreatMultiplier", 8),
+            Quarter(RecommendationTuningOption.ChampionExceptionalMultiplierQuarterUnits,
                 "championExceptionalMultiplier", ChampionSection,
-                "ChampionExceptionalMultiplier", 5),
+                "ChampionExceptionalMultiplier", 10),
             Points(RecommendationTuningOption.ChampionAwfulTieBreakPoints,
                 "championAwfulTieBreakPoints", ChampionSection,
                 "ChampionAwfulTieBreakPoints", -5),
@@ -162,31 +165,6 @@ namespace WorkRoles.Core.Recs
                 "RankedCandidatePrioritySignal", 3),
             Signal(RecommendationTuningOption.SurplusMinimumSignal,
                 "surplusMinimumSignal", ChampionSection, "SurplusMinimumSignal", 3),
-
-            Integer(RecommendationTuningOption.OrderingSkillDivisor,
-                "orderingSkillDivisor", OrderingSection, "OrderingSkillDivisor", 5, 1, 20),
-            Points(RecommendationTuningOption.OrderingAwfulSignalPoints,
-                "orderingAwfulSignalPoints", OrderingSection, "OrderingAwfulSignalPoints", -5),
-            Points(RecommendationTuningOption.OrderingPoorSignalPoints,
-                "orderingPoorSignalPoints", OrderingSection, "OrderingPoorSignalPoints", -5),
-            Points(RecommendationTuningOption.OrderingNeutralSignalPoints,
-                "orderingNeutralSignalPoints", OrderingSection,
-                "OrderingNeutralSignalPoints", -3),
-            Points(RecommendationTuningOption.OrderingStrongSignalPoints,
-                "orderingStrongSignalPoints", OrderingSection, "OrderingStrongSignalPoints", 1),
-            Points(RecommendationTuningOption.OrderingGreatSignalPoints,
-                "orderingGreatSignalPoints", OrderingSection, "OrderingGreatSignalPoints", 3),
-            Points(RecommendationTuningOption.OrderingExceptionalSignalPoints,
-                "orderingExceptionalSignalPoints", OrderingSection,
-                "OrderingExceptionalSignalPoints", 5),
-            Bonus(RecommendationTuningOption.FirstMinimumPickBonus,
-                "firstMinimumPickBonus", OrderingSection, "FirstMinimumPickBonus", 10),
-            Bonus(RecommendationTuningOption.SecondMinimumPickBonus,
-                "secondMinimumPickBonus", OrderingSection, "SecondMinimumPickBonus", 5),
-            Bonus(RecommendationTuningOption.ThirdMinimumPickBonus,
-                "thirdMinimumPickBonus", OrderingSection, "ThirdMinimumPickBonus", 2),
-            Bonus(RecommendationTuningOption.LaterMinimumPickBonus,
-                "laterMinimumPickBonus", OrderingSection, "LaterMinimumPickBonus", 1),
 
             Signal(RecommendationTuningOption.PathMinimumSignal,
                 "pathMinimumSignal", OptionalSection, "PathMinimumSignal", 1),
@@ -216,12 +194,39 @@ namespace WorkRoles.Core.Recs
             Signal(RecommendationTuningOption.LeadMinimumSignal,
                 "leadMinimumSignal", LeadSection, "LeadMinimumSignal", 3),
 
+            Integer(RecommendationTuningOption.OrderingSkillDivisor,
+                "orderingSkillDivisor", OrderingSection, "OrderingSkillDivisor", 5, 1, 20),
+            Points(RecommendationTuningOption.OrderingAwfulSignalPoints,
+                "orderingAwfulSignalPoints", OrderingSection, "OrderingAwfulSignalPoints", -5),
+            Points(RecommendationTuningOption.OrderingPoorSignalPoints,
+                "orderingPoorSignalPoints", OrderingSection, "OrderingPoorSignalPoints", -5),
+            Points(RecommendationTuningOption.OrderingNeutralSignalPoints,
+                "orderingNeutralSignalPoints", OrderingSection,
+                "OrderingNeutralSignalPoints", -3),
+            Points(RecommendationTuningOption.OrderingStrongSignalPoints,
+                "orderingStrongSignalPoints", OrderingSection, "OrderingStrongSignalPoints", 1),
+            Points(RecommendationTuningOption.OrderingGreatSignalPoints,
+                "orderingGreatSignalPoints", OrderingSection, "OrderingGreatSignalPoints", 3),
+            Points(RecommendationTuningOption.OrderingExceptionalSignalPoints,
+                "orderingExceptionalSignalPoints", OrderingSection,
+                "OrderingExceptionalSignalPoints", 5),
+            Bonus(RecommendationTuningOption.FirstMinimumPickBonus,
+                "firstMinimumPickBonus", OrderingSection, "FirstMinimumPickBonus", 10),
+            Bonus(RecommendationTuningOption.SecondMinimumPickBonus,
+                "secondMinimumPickBonus", OrderingSection, "SecondMinimumPickBonus", 5),
+            Bonus(RecommendationTuningOption.ThirdMinimumPickBonus,
+                "thirdMinimumPickBonus", OrderingSection, "ThirdMinimumPickBonus", 2),
+            Bonus(RecommendationTuningOption.LaterMinimumPickBonus,
+                "laterMinimumPickBonus", OrderingSection, "LaterMinimumPickBonus", 1),
+
             Level(RecommendationTuningOption.HunterFirstTierMaximum,
-                "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 10),
+                "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 5),
             Level(RecommendationTuningOption.HunterSecondTierMaximum,
-                "hunterSecondTierMaximum", HunterSection, "HunterSecondTierMaximum", 15),
+                "hunterSecondTierMaximum", HunterSection, "HunterSecondTierMaximum", 9),
             Level(RecommendationTuningOption.HunterThirdTierMaximum,
-                "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 18),
+                "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 13),
+            Level(RecommendationTuningOption.HunterFourthTierMaximum,
+                "hunterFourthTierMaximum", HunterSection, "HunterFourthTierMaximum", 17),
 
             Percent(RecommendationTuningOption.RepeatChampionOverlapPenalty,
                 "repeatChampionOverlapPenalty", ChampionSection,
@@ -374,8 +379,13 @@ namespace WorkRoles.Core.Recs
                         Math.Min(value, Get(
                             RecommendationTuningOption.HunterThirdTierMaximum)));
                 case RecommendationTuningOption.HunterThirdTierMaximum:
+                    return Math.Max(
+                        Get(RecommendationTuningOption.HunterSecondTierMaximum),
+                        Math.Min(value, Get(
+                            RecommendationTuningOption.HunterFourthTierMaximum)));
+                case RecommendationTuningOption.HunterFourthTierMaximum:
                     return Math.Max(value, Get(
-                        RecommendationTuningOption.HunterSecondTierMaximum));
+                        RecommendationTuningOption.HunterThirdTierMaximum));
                 default:
                     return value;
             }
@@ -411,10 +421,14 @@ namespace WorkRoles.Core.Recs
                 .HunterSecondTierMaximum;
             int thirdTier = (int)RecommendationTuningOption
                 .HunterThirdTierMaximum;
+            int fourthTier = (int)RecommendationTuningOption
+                .HunterFourthTierMaximum;
             if (loaded[firstTier] > loaded[secondTier])
                 loaded[firstTier] = loaded[secondTier];
             if (loaded[secondTier] > loaded[thirdTier])
                 loaded[thirdTier] = loaded[secondTier];
+            if (loaded[thirdTier] > loaded[fourthTier])
+                loaded[fourthTier] = loaded[thirdTier];
         }
 
         private static bool SameValues(int[] left, int[] right)
@@ -444,14 +458,17 @@ namespace WorkRoles.Core.Recs
             int defaultValue) => Integer(
                 option, stableKey, section, name, defaultValue, 0, 20);
 
-        private static RecommendationTuningDescriptor Half(
+        /// Multipliers persist in quarter-units (value 4 = 1×). Saved values
+        /// predate the visible tuning UI only as defaults, which are never
+        /// scribed, so the unit change needs no migration.
+        private static RecommendationTuningDescriptor Quarter(
             RecommendationTuningOption option,
             string stableKey,
             string section,
             string name,
             int defaultValue) => Descriptor(
                 option, stableKey, section, name, defaultValue,
-                0, 20, RecommendationTuningValueKind.HalfMultiplier);
+                0, 40, RecommendationTuningValueKind.QuarterMultiplier);
 
         /// Percent of colonist count; hidden pending the automatic
         /// occasional-role derivation.
@@ -584,30 +601,30 @@ namespace WorkRoles.Core.Recs
             {
                 case SignalBucket.Exceptional:
                     multiplier = RecommendationTuningOption
-                        .ChampionExceptionalMultiplierHalfUnits;
+                        .ChampionExceptionalMultiplierQuarterUnits;
                     break;
                 case SignalBucket.Great:
                     multiplier = RecommendationTuningOption
-                        .ChampionGreatMultiplierHalfUnits;
+                        .ChampionGreatMultiplierQuarterUnits;
                     break;
                 case SignalBucket.Strong:
                     multiplier = RecommendationTuningOption
-                        .ChampionStrongMultiplierHalfUnits;
+                        .ChampionStrongMultiplierQuarterUnits;
                     break;
                 case SignalBucket.Neutral:
                     multiplier = RecommendationTuningOption
-                        .ChampionNeutralMultiplierHalfUnits;
+                        .ChampionNeutralMultiplierQuarterUnits;
                     break;
                 case SignalBucket.Poor:
                     multiplier = RecommendationTuningOption
-                        .ChampionPoorMultiplierHalfUnits;
+                        .ChampionPoorMultiplierQuarterUnits;
                     break;
                 default:
                     multiplier = RecommendationTuningOption
-                        .ChampionAwfulMultiplierHalfUnits;
+                        .ChampionAwfulMultiplierQuarterUnits;
                     break;
             }
-            // Multipliers are stored in half-units. Keeping the doubled
+            // Multipliers are stored in quarter-units. Keeping the quadrupled
             // fixed-point score avoids rounding while preserving comparisons.
             return roundedSkill * Value(multiplier);
         }
@@ -637,8 +654,9 @@ namespace WorkRoles.Core.Recs
             }
         }
 
-        /// Penalty for one prior championship, in the champion score's doubled
-        /// fixed-point units: percent-of-colonist-count, so /50 instead of /100.
+        /// Penalty for one prior championship, in the champion score's
+        /// quadrupled fixed-point units: percent-of-colonist-count, so /25
+        /// instead of /100.
         internal int RepeatChampionPenalty(
             bool priorUsesOccasionalRepeatChampionPenalty,
             bool skillsOverlap,
@@ -650,7 +668,7 @@ namespace WorkRoles.Core.Recs
                 : skillsOverlap
                     ? RecommendationTuningOption.RepeatChampionOverlapPenalty
                     : RecommendationTuningOption.RepeatChampionDistinctPenalty;
-            return colonistCount * Value(option) / 50;
+            return colonistCount * Value(option) / 25;
         }
 
         internal int OrderingScore(
@@ -694,8 +712,11 @@ namespace WorkRoles.Core.Recs
             if (shootingLevel <= Value(
                     RecommendationTuningOption.HunterSecondTierMaximum))
                 return 1;
+            if (shootingLevel <= Value(
+                    RecommendationTuningOption.HunterThirdTierMaximum))
+                return 2;
             return shootingLevel <= Value(
-                RecommendationTuningOption.HunterThirdTierMaximum) ? 2 : 3;
+                RecommendationTuningOption.HunterFourthTierMaximum) ? 3 : 4;
         }
 
         private int Value(RecommendationTuningOption option) =>

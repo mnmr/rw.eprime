@@ -113,7 +113,7 @@ namespace WorkRoles.UI
         // Owner: window. Key: selected role identity. Value: immutable editor
         // render projection with producer-owned buffers hidden behind indexed
         // accessors. Dependencies: UiVersion, location and pawn-scope revisions,
-        // editor width, language, filter/expansion state, and local rules/tuning
+        // editor width, language, filter/expansion state, and local rules
         // disclosure. Refresh: immediate when any dependency changes. Equality:
         // unchanged dependencies preserve the snapshot identity. Teardown:
         // Reset/language invalidation releases the complete projection.
@@ -125,14 +125,13 @@ namespace WorkRoles.UI
         private int editorSnapshotTreeRevision = -1;
         private float editorSnapshotWidth = -1f;
         private bool editorSnapshotRulesRevealed;
-        private bool editorSnapshotTuningExpanded;
         private string editorSnapshotFilter;
 
         internal string Filter { get; set; } = "";
 
         internal RoleEditorSnapshot Snapshot(RoleStore store, int roleId,
             Func<IReadOnlyList<Pawn>> listedPawns, int pawnRevision,
-            float width, bool rulesRevealed, bool tuningExpanded,
+            float width, bool rulesRevealed,
             bool revealTreeSelection)
         {
             if (!revealTreeSelection && editorSnapshotStamp == UiVersion.Current
@@ -142,7 +141,6 @@ namespace WorkRoles.UI
                 && editorSnapshotTreeRevision == treeRevision
                 && editorSnapshotWidth == width
                 && editorSnapshotRulesRevealed == rulesRevealed
-                && editorSnapshotTuningExpanded == tuningExpanded
                 && editorSnapshotFilter == Filter)
                 return editorSnapshot;
 
@@ -152,7 +150,6 @@ namespace WorkRoles.UI
             editorSnapshotPawnRevision = pawnRevision;
             editorSnapshotWidth = width;
             editorSnapshotRulesRevealed = rulesRevealed;
-            editorSnapshotTuningExpanded = tuningExpanded;
             editorSnapshotFilter = Filter;
 
             Role role = store?.RoleById(roleId);
@@ -236,13 +233,6 @@ namespace WorkRoles.UI
             }
 
             IReadOnlyList<RoleSkillPresentation> skills = SkillsUsed(role);
-            bool tuningShown = TuningShown(role);
-            float tuningWidth = width / 2f - TopBoxPadding;
-            ScaleEditorSnapshot scale = tuningShown
-                ? ScaleEditorUI.BuildSnapshot(store, role, tuningWidth)
-                : null;
-            float tuningHeight = !tuningShown ? 0f : 4f + 24f
-                + (tuningExpanded ? 4f + (scale?.Height ?? 0f) : 0f);
 
             var header = new RoleEditorHeaderSnapshot(role.id, role.label,
                 shownRoleLabel, roleLabelWidth, role.hasCustomColor, role.color,
@@ -257,10 +247,7 @@ namespace WorkRoles.UI
                 groupButtonFull, groupButtonShown, groups, defaultGroupLabel,
                 "WR_GroupNewOption".Translate().ToString(),
                 "WR_NewGroupTitle".Translate().ToString(),
-                skills, "WR_SkillsUsedLabel".Translate().ToString(),
-                tuningShown, tuningExpanded, tuningHeight,
-                "WR_TuningHeader".Translate().ToString(),
-                tuningShown ? HolderSummary(store, role) : null, scale);
+                skills, "WR_SkillsUsedLabel".Translate().ToString());
 
             var locations = BuildLocationOptions(role);
             var rules = new RoleRulesSnapshot(role.id, role.activeHours,
@@ -326,44 +313,6 @@ namespace WorkRoles.UI
             editorSnapshotTreeRevision = treeRevision;
             return editorSnapshot = new RoleEditorSnapshot(
                 header, rules, entries, tree);
-        }
-
-        private static bool TuningShown(Role role) =>
-            !role.autoAssign && !role.blocker && !role.HasRules
-                && !RecsAdapter.ProvidesHunting(role);
-
-        private static string HolderSummary(RoleStore store, Role role)
-        {
-            RoleAssignmentStrategy scale =
-                store?.ScaleFor(role) ?? store?.ScaleByName("Never");
-            if (scale == null) return "";
-            int lo = int.MaxValue;
-            int hi = int.MinValue;
-            int[] totals = scale.Scale?.RequiredTotals;
-            if (totals != null)
-                for (int i = 0; i < totals.Length; i++)
-                {
-                    lo = Mathf.Min(lo, totals[i]);
-                    hi = Mathf.Max(hi, totals[i]);
-                }
-            string range = totals == null ? "" : " (" + lo + "-" + hi + ")";
-            Role target = ScaleEditorUI.ControllingTarget(store, role.id);
-            if (target != null)
-            {
-                string label = "WR_ScaleControlledBy".Translate(
-                    target.label).ToString();
-                return scale.IsNever ? label : label + range;
-            }
-            Role autoParent = store.roles.FirstOrDefault(candidate =>
-                candidate.autoAssign && candidate.enabled
-                && candidate.CoversOrMatches(role));
-            if (autoParent != null)
-            {
-                string label = "WR_ScaleInAutoRole".Translate(
-                    autoParent.label).ToString();
-                return scale.IsNever ? label : label + range;
-            }
-            return scale.Name + range;
         }
 
         private static List<RoleLocationOptionSnapshot> BuildLocationOptions(
@@ -849,9 +798,7 @@ namespace WorkRoles.UI
             List<RoleGroupOptionSnapshot> groups,
             string defaultGroupLabel, string newGroupLabel,
             string newGroupTitle, IReadOnlyList<RoleSkillPresentation> skills,
-            string skillsCaption, bool tuningShown, bool tuningExpanded,
-            float tuningHeight, string tuningHeader, string holderSummary,
-            ScaleEditorSnapshot scale)
+            string skillsCaption)
         {
             RoleId = roleId;
             RoleLabel = roleLabel;
@@ -884,12 +831,6 @@ namespace WorkRoles.UI
             NewGroupTitle = newGroupTitle;
             this.skills = skills;
             SkillsCaption = skillsCaption;
-            TuningShown = tuningShown;
-            TuningExpanded = tuningExpanded;
-            TuningHeight = tuningHeight;
-            TuningHeader = tuningHeader;
-            HolderSummary = holderSummary;
-            Scale = scale;
         }
 
         internal int RoleId { get; }
@@ -928,12 +869,6 @@ namespace WorkRoles.UI
         internal int SkillCount => skills.Count;
         internal RoleSkillPresentation SkillAt(int index) => skills[index];
         internal string SkillsCaption { get; }
-        internal bool TuningShown { get; }
-        internal bool TuningExpanded { get; }
-        internal float TuningHeight { get; }
-        internal string TuningHeader { get; }
-        internal string HolderSummary { get; }
-        internal ScaleEditorSnapshot Scale { get; }
     }
 
     internal readonly struct RoleGroupOptionSnapshot

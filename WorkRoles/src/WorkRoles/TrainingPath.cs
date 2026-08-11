@@ -5,10 +5,9 @@ using Verse;
 
 namespace WorkRoles
 {
-    /// Named progression container. Path eligibility derives from each role's
-    /// skill profile. Assignments order by band minimum descending; stored
-    /// role order only breaks equal-band, equal-readiness ties.
-    /// Mutate via RoleCommands.
+    /// LEGACY load-only type: roles own their training now (Role.training*).
+    /// RoleStore reads old saves' stand-alone paths through this shape and
+    /// folds them into their target role at load; nothing writes it.
     public class TrainingPath : IExposable
     {
         public int id;

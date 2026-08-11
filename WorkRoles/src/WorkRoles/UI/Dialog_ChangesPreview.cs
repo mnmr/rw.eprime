@@ -22,27 +22,36 @@ namespace WorkRoles.UI
             Removed   // dropped: normal chip struck corner-to-corner
         }
 
-        /// One preview line: chips with per-chip states and reason tooltips.
+        /// One preview line: chips with per-chip states, reason tooltips, and
+        /// suitability verdicts (default = no badge).
         public class Line
         {
             public List<(Role role, ChipState state, string tip)> chips =
                 new List<(Role role, ChipState state, string tip)>();
+            private readonly List<RoleChipVerdict> verdicts = new List<RoleChipVerdict>();
             private readonly ParallelIndexGuard<Role, ChipState, string, StructuredTip>
                 structuredTips = new ParallelIndexGuard<Role, ChipState, string, StructuredTip>();
 
-            internal void AddChip(Role role, ChipState state, StructuredTip tip)
+            internal void AddChip(Role role, ChipState state, StructuredTip tip,
+                RoleChipVerdict verdict = default)
             {
                 string text = tip?.PlainText;
                 chips.Add((role, state, text));
+                verdicts.Add(verdict);
                 structuredTips.Add(role, state, text, tip);
             }
 
-            internal void InsertChip(int index, Role role, ChipState state, StructuredTip tip)
+            internal void InsertChip(int index, Role role, ChipState state, StructuredTip tip,
+                RoleChipVerdict verdict = default)
             {
                 string text = tip?.PlainText;
                 chips.Insert(index, (role, state, text));
+                verdicts.Insert(index, verdict);
                 structuredTips.Insert(index, role, state, text, tip);
             }
+
+            internal RoleChipVerdict VerdictAt(int index) =>
+                index >= 0 && index < verdicts.Count ? verdicts[index] : default;
 
             internal StructuredTip StructuredTipAt(int index)
             {
@@ -63,7 +72,7 @@ namespace WorkRoles.UI
         private readonly struct ChipLayout
         {
             public ChipLayout(Role role, ChipState state, string tip,
-                Line sourceLine, int sourceIndex, Rect rect)
+                Line sourceLine, int sourceIndex, Rect rect, RoleChipVerdict verdict)
             {
                 Role = role;
                 State = state;
@@ -71,6 +80,7 @@ namespace WorkRoles.UI
                 SourceLine = sourceLine;
                 SourceIndex = sourceIndex;
                 Rect = rect;
+                Verdict = verdict;
             }
 
             public Role Role { get; }
@@ -79,6 +89,7 @@ namespace WorkRoles.UI
             public Line SourceLine { get; }
             public int SourceIndex { get; }
             public Rect Rect { get; }
+            public RoleChipVerdict Verdict { get; }
         }
 
         private readonly struct EntryLayout
@@ -190,11 +201,11 @@ namespace WorkRoles.UI
         }
 
         private static void DrawStateChip(Rect rect, Role role, ChipState state,
-            string tip, Line sourceLine, int sourceIndex)
+            string tip, Line sourceLine, int sourceIndex, RoleChipVerdict verdict)
         {
             var style = state == ChipState.Kept ? ChipStyle.Subtle : ChipStyle.Normal;
             RoleChipUI.Draw(rect, role, style, showRemove: false, dragSource: null, onClick: null,
-                interactive: false);
+                interactive: false, verdict: verdict);
             if (state == ChipState.Removed)
                 RoleChipUI.DrawRemovedOutline(rect);
             if (tip != null && Mouse.IsOver(rect))
@@ -237,7 +248,9 @@ namespace WorkRoles.UI
                     for (int chipIndex = 0; chipIndex < line.chips.Count; chipIndex++)
                     {
                         var chip = line.chips[chipIndex];
-                        float chipWidth = RoleChipUI.WidthFor(chip.role, showRemove: false);
+                        RoleChipVerdict verdict = line.VerdictAt(chipIndex);
+                        float chipWidth = RoleChipUI.WidthFor(chip.role, showRemove: false,
+                            verdictSlot: verdict.Shown);
                         // Preserve the old trailing-gap wrap math exactly: x is
                         // advanced by ChipGap after every chip, including the last.
                         if (x + chipWidth > xMax && x > 26f)
@@ -247,7 +260,7 @@ namespace WorkRoles.UI
                         }
                         chips[nextChip++] = new ChipLayout(chip.role, chip.state, chip.tip,
                             line, chipIndex,
-                            new Rect(x, curY, chipWidth, RoleChipUI.Height));
+                            new Rect(x, curY, chipWidth, RoleChipUI.Height), verdict);
                         x += chipWidth + ChipGap;
                     }
                     localY = curY + RoleChipUI.Height + LineGap;
@@ -349,7 +362,7 @@ namespace WorkRoles.UI
                     Rect rect = chip.Rect;
                     rect.y += top;
                     DrawStateChip(rect, chip.Role, chip.State, chip.Tip,
-                        chip.SourceLine, chip.SourceIndex);
+                        chip.SourceLine, chip.SourceIndex, chip.Verdict);
                 }
                 if (!entry.included)
                     Widgets.DrawBoxSolid(new Rect(24f, top, width - 24f,

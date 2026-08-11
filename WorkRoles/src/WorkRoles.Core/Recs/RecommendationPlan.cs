@@ -145,19 +145,15 @@ namespace WorkRoles.Core.Recs
                 keys[index] = positions[roleIds[index]];
             ApplySpecialKeys(facts, keys);
 
+            // Path targets sit at their own resolved recommendation-order
+            // position: the order template is the single placement authority
+            // (the retired per-path anchor used to override this).
             var targetKeys = new long[placements.Count];
-            var targetStates = new byte[placements.Count];
             for (int placementIndex = 0;
                  placementIndex < placements.Count;
                  placementIndex++)
-                ResolveTargetKey(
-                    placementIndex,
-                    placements,
-                    facts,
-                    pawnIndex,
-                    positions,
-                    targetKeys,
-                    targetStates);
+                targetKeys[placementIndex] = positions[
+                    PathActivation.UniqueTargetRoleId(placements[placementIndex])];
 
             for (int placementIndex = 0;
                  placementIndex < placements.Count;
@@ -431,62 +427,6 @@ namespace WorkRoles.Core.Recs
             return result;
         }
 
-        private long ResolveTargetKey(
-            int placementIndex,
-            List<PathView> placements,
-            EngineContext facts,
-            int pawnIndex,
-            IReadOnlyDictionary<int, long> positions,
-            long[] targetKeys,
-            byte[] states)
-        {
-            PathView path = placements[placementIndex];
-            int targetRoleId = PathActivation.UniqueTargetRoleId(path);
-            if (states[placementIndex] == 2) return targetKeys[placementIndex];
-            if (states[placementIndex] == 1)
-                return positions[targetRoleId];
-            states[placementIndex] = 1;
-            if (!positions.TryGetValue(path.AnchorRoleId, out long anchorKey))
-            {
-                targetKeys[placementIndex] = positions[targetRoleId];
-                states[placementIndex] = 2;
-                return targetKeys[placementIndex];
-            }
-            int anchorPlacement = PlacementTargeting(placements, path.AnchorRoleId);
-            if (anchorPlacement >= 0 && anchorPlacement != placementIndex)
-                anchorKey = ResolveTargetKey(
-                    anchorPlacement,
-                    placements,
-                    facts,
-                    pawnIndex,
-                    positions,
-                    targetKeys,
-                    states);
-
-            int rank = 0;
-            int groupCount = 0;
-            for (int otherIndex = 0; otherIndex < placements.Count; otherIndex++)
-            {
-                PathView otherPath = placements[otherIndex];
-                if (otherPath.AnchorRoleId != path.AnchorRoleId
-                    || otherPath.AnchorBefore != path.AnchorBefore)
-                    continue;
-                groupCount++;
-                if (ComparePaths(
-                        otherPath,
-                        path,
-                        facts,
-                        pawnIndex,
-                        positions) < 0)
-                    rank++;
-            }
-            targetKeys[placementIndex] = path.AnchorBefore
-                ? anchorKey - (groupCount - rank) * 1000L
-                : anchorKey + (rank + 1) * 1000L;
-            states[placementIndex] = 2;
-            return targetKeys[placementIndex];
-        }
-
         private static int PlacementTargeting(
             List<PathView> placements,
             int roleId)
@@ -544,34 +484,6 @@ namespace WorkRoles.Core.Recs
             return best;
         }
 
-        private static int ComparePaths(
-            PathView left,
-            PathView right,
-            EngineContext facts,
-            int pawnIndex,
-            IReadOnlyDictionary<int, long> positions)
-        {
-            int leftTargetRoleId = PathActivation.UniqueTargetRoleId(left);
-            int rightTargetRoleId = PathActivation.UniqueTargetRoleId(right);
-            RoleView leftTarget = facts.RoleOf(leftTargetRoleId);
-            RoleView rightTarget = facts.RoleOf(rightTargetRoleId);
-            SignalBucket leftVerdict = facts.BestSignal(
-                pawnIndex, leftTarget, out string leftSkill, out _);
-            SignalBucket rightVerdict = facts.BestSignal(
-                pawnIndex, rightTarget, out string rightSkill, out _);
-            int verdict = rightVerdict.CompareTo(leftVerdict);
-            if (verdict != 0) return verdict;
-            int skill = facts.SkillLevel(pawnIndex, rightSkill)
-                .CompareTo(facts.SkillLevel(pawnIndex, leftSkill));
-            if (skill != 0) return skill;
-            int position = positions[leftTargetRoleId]
-                .CompareTo(positions[rightTargetRoleId]);
-            if (position != 0) return position;
-            int structure = PathActivation.CompareStructure(left, right);
-            return structure != 0
-                ? structure
-                : left.Id.CompareTo(right.Id);
-        }
     }
 
     /// Immutable diagnostic projection of one target-role selection. It is

@@ -48,7 +48,8 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        /// Named holder scale reference (document <Scales> or an existing scale).
+        /// Legacy named scale reference: parsed from old files for the
+        /// colonyMin/coverage migration, never emitted.
         public string holderScale;
         /// Recommendation tuning; hasTuning=false marks a pre-tuning file whose
         /// roles derive their skill classification on import.
@@ -56,8 +57,18 @@ namespace WorkRoles.Core
         public RoleCategory category;
         public RoleTime time;
         public bool championPenalty = true;
+        /// Minimum holding age in years; -1 = absent (pre-minAge file).
+        public int minAge = -1;
+        /// Assignment scaling inputs (v11): minimum assignment count and
+        /// ideal colonist percentage.
+        public int colonyMin;
+        public int coverage;
         public List<string> requiredSkills = new List<string>();
         public List<string> optionalSkills = new List<string>();
+        /// Role-owned training path (v11): the role itself plus its training
+        /// roles with skill bands. Empty = the implicit self-only path.
+        public List<FileTrainingPathEntry> training =
+            new List<FileTrainingPathEntry>();
         public List<JobEntry> entries = new List<JobEntry>();
 
         public const int AllHours = 0xFFFFFF;
@@ -138,7 +149,8 @@ namespace WorkRoles.Core
         public List<FileGroup> groupsWithIds = new List<FileGroup>();
         public List<FileRole> roles = new List<FileRole>();
         public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
-        /// Named assignment strategies (fill mode + optional banded scale).
+        /// Legacy named strategies: parsed from old files so role references
+        /// can convert to colonyMin/coverage on import, never emitted.
         public List<RoleAssignmentStrategy> scales =
             new List<RoleAssignmentStrategy>();
         /// The stored recommendation-order template as role names; empty = the
@@ -164,10 +176,12 @@ namespace WorkRoles.Core
         /// v8 adds named <Scales> (banded holder demand) and the Holders
         /// scale attribute referencing them; v9 adds the internal <Nowhere/>
         /// location used to preserve disabled migrated roles; v10 removes the
-        /// obsolete scalar holder mode/range attributes.
+        /// obsolete scalar holder mode/range attributes; v11 moves training
+        /// onto the owning role (<Tuning><Training>) and retires the
+        /// stand-alone <TrainingPaths> section (still parsed for import).
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "10";
+        public const string FormatVersion = "11";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -184,18 +198,18 @@ namespace WorkRoles.Core
   - <Groups> lists role-list groups in display order; a Role joins one via its
     groupId reference (the group label remains for display and legacy fallback;
     no reference = Default). fileId values are local to this document only.
-  - A <TrainingPaths> <Path> lists <Role roleId=""..."" min=""0"" max=""8"">name</Role> skill bands
-    on the 0..21 axis (21 = open top, spans at least 4 levels). Assignment order
-    uses band minimum descending, then the pawn's weakest role skill; entry order
-    is the final tie-breaker. An optional color=""name"" attribute colors the
-    path's chip (same color names as roles). <Anchor>name</Anchor> is where
-    members slot into a colonist's list — before that role unless before=""false"".
+  - A Role's <Tuning> may hold <Training> with <Role roleId=""..."" min=""0"" max=""8"">name</Role>
+    skill bands on the 0..21 axis (21 = open top, spans at least 4 levels): the
+    role's own training path (the role itself plus its training roles).
+    Assignment order uses band minimum descending, then the pawn's weakest role
+    skill; entry order is the final tie-breaker. Legacy <TrainingPaths>
+    sections still import and fold into their target role.
   - <RecommendationOrder> lists roleId references with labels: importing it
     replaces the stored recommendation order (unlisted roles place dynamically).
-  - A <Scales> <Scale name=""...""> holds banded holder demand: <Min>, <Train>
-    and <Max> are comma lists with one value per colony-size band (12 bands of
-    3 colonists: 1-3, 4-6, ... 34+; short lists extend flat, -1 max = uncapped).
-    A Role references a scale via <Holders scale=""name""/>.
+  - A Role's <Tuning> colonyMin and coverage attributes hold its assignment
+    demand: the minimum assignment count and the ideal colonist percentage.
+    Legacy <Scales> sections and <Holders scale=""name""/> references still
+    import and convert to these numbers.
 ";
         private const string PaletteSample = @" <Color name=""ocean"">#0e7490</Color> ";
 
@@ -266,28 +280,6 @@ namespace WorkRoles.Core
                 root.Add(paths);
             }
 
-            if (doc.scales?.Count > 0)
-            {
-                var scales = new XElement("Scales");
-                foreach (var scale in doc.scales)
-                {
-                    if (scale == null) continue;
-                    var el = new XElement("Scale",
-                        new XAttribute("name", scale.Name ?? ""),
-                        new XAttribute("mode", ((int)scale.Mode).ToString()));
-                    if (scale.Preset) el.Add(new XAttribute("preset", "true"));
-                    if (scale.Scale != null)
-                        el.Add(new XElement("Min", HolderScaleCodec.EncodeRow(
-                                scale.Scale.RequiredTotals)),
-                            new XElement("Train", HolderScaleCodec.EncodeRow(
-                                scale.Scale.TrainingWaivers)),
-                            new XElement("Max", HolderScaleCodec.EncodeRow(
-                                scale.Scale.Max)));
-                    scales.Add(el);
-                }
-                root.Add(scales);
-            }
-
             IReadOnlyList<FileRoleReference> effectiveOrder =
                 RecommendationOrderWithStableIds(doc);
             if (effectiveOrder.Count > 0)
@@ -328,9 +320,6 @@ namespace WorkRoles.Core
                 options.Add(new XElement("Enabled", "false"));
             if (role.activeHours != FileRole.AllHours)
                 options.Add(new XElement("ActiveHours", HoursToBits(role.activeHours)));
-            if (!string.IsNullOrEmpty(role.holderScale))
-                options.Add(new XElement("Holders",
-                    new XAttribute("scale", role.holderScale)));
             if (role.hasTuning)
             {
                 // Present-but-empty still matters: it marks authored tuning.
@@ -341,12 +330,33 @@ namespace WorkRoles.Core
                     tuning.Add(new XAttribute("time", role.time));
                 if (!role.championPenalty)
                     tuning.Add(new XAttribute("championPenalty", "false"));
+                if (role.minAge >= 0)
+                    tuning.Add(new XAttribute("minAge", role.minAge));
+                if (role.colonyMin != 0)
+                    tuning.Add(new XAttribute("colonyMin", role.colonyMin));
+                if (role.coverage != 0)
+                    tuning.Add(new XAttribute("coverage", role.coverage));
                 if (role.requiredSkills.Count > 0)
                     tuning.Add(new XElement("RequiredSkills",
                         string.Join(",", role.requiredSkills)));
                 if (role.optionalSkills.Count > 0)
                     tuning.Add(new XElement("OptionalSkills",
                         string.Join(",", role.optionalSkills)));
+                if (role.training.Count > 0)
+                {
+                    var training = new XElement("Training");
+                    foreach (var entry in role.training)
+                    {
+                        var entryEl = new XElement("Role",
+                            new XAttribute("min", entry.min),
+                            new XAttribute("max", entry.max),
+                            entry.role?.label ?? "");
+                        if (!string.IsNullOrEmpty(entry.role?.fileId))
+                            entryEl.Add(new XAttribute("roleId", entry.role.fileId));
+                        training.Add(entryEl);
+                    }
+                    tuning.Add(training);
+                }
                 options.Add(tuning);
             }
             if (role.locations.Count > 0)
@@ -713,10 +723,33 @@ namespace WorkRoles.Core
                     role.championPenalty = !string.Equals(
                         tuningEl.Attribute("championPenalty")?.Value?.Trim(),
                         "false", StringComparison.OrdinalIgnoreCase);
+                    if (int.TryParse(tuningEl.Attribute("minAge")?.Value,
+                            out int minAge))
+                        role.minAge = minAge;
+                    if (int.TryParse(tuningEl.Attribute("colonyMin")?.Value,
+                            out int colonyMin))
+                        role.colonyMin = colonyMin;
+                    if (int.TryParse(tuningEl.Attribute("coverage")?.Value,
+                            out int coverage))
+                        role.coverage = coverage;
                     role.requiredSkills = SplitSkills(
                         tuningEl.Element("RequiredSkills")?.Value);
                     role.optionalSkills = SplitSkills(
                         tuningEl.Element("OptionalSkills")?.Value);
+                    foreach (var entryEl in tuningEl.Element("Training")?.Elements("Role")
+                             ?? Enumerable.Empty<XElement>())
+                    {
+                        string entryLabel = entryEl.Value?.Trim();
+                        int.TryParse(entryEl.Attribute("min")?.Value, out int min);
+                        int.TryParse(entryEl.Attribute("max")?.Value, out int max);
+                        // Bands the geometry rules reject are skipped, not fatal.
+                        if (string.IsNullOrEmpty(entryLabel)
+                            || min < 0 || max > SkillProgressionMath.MaxLevel
+                            || max - min < SkillProgressionMath.MinSpan) continue;
+                        role.training.Add(new FileTrainingPathEntry(
+                            EmptyToNull(entryEl.Attribute("roleId")?.Value?.Trim()),
+                            entryLabel, min, max));
+                    }
                 }
                 var holders = options.Element("Holders");
                 if (holders != null)

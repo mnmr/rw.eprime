@@ -25,8 +25,8 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        /// Named holder scale (RoleStore.holderScales) driving banded
-        /// required/train/max lookups. Missing or dangling references are Never.
+        /// Legacy-scribed only: named scales retired in favor of
+        /// colonyMin/coverage; load migration folds it in and resets to "Never".
         public string holderScaleName = "Never";
         /// Recommendation tuning: copied from the template def at seeding or
         /// filled by load-time migration; authoritative once set.
@@ -36,6 +36,21 @@ namespace WorkRoles
         public RoleTime time;
         /// False = repeat championships use the occasional-work penalty.
         public bool championPenalty = true;
+        /// Minimum biological age (years) for holding the role; 0 = no gate.
+        /// -1 = not yet derived (pre-minAge saves and role files); load
+        /// migration derives it from the covered work types' unlock ages.
+        public int minAge = -1;
+        /// Assignment scaling inputs: the minimum assignment count (0-30) and
+        /// the ideal percentage of colonists holding the role (0-100). The
+        /// engine's banded demand derives from these (RoleDemand).
+        public int colonyMin;
+        public int coverage;
+        /// The role's own training path: this role plus its training roles
+        /// with [min, max) skill bands. Empty = the implicit self-only path
+        /// (full axis), which the engine treats as no path at all.
+        public List<int> trainingRoleIds = new List<int>();
+        public List<int> trainingMins = new List<int>();
+        public List<int> trainingMaxes = new List<int>();
         /// False only on roles from saves that predate tuning; RoleStore
         /// migrates those at load and sets this.
         public bool tuningSeeded;
@@ -62,6 +77,9 @@ namespace WorkRoles
         // flag); derived from coverage, so it invalidates with it.
         private string primarySkillCache;
         private bool primarySkillCached;
+        // Cached age (years) at which every covered work type is unlocked;
+        // derived from coverage, so it invalidates with it. -1 = not computed.
+        private int fullyUnlocksAtAgeCache = -1;
 
         internal bool TryGetPrimarySkillCache(out string skill)
         {
@@ -73,6 +91,17 @@ namespace WorkRoles
         {
             primarySkillCache = skill;
             primarySkillCached = true;
+        }
+
+        internal bool TryGetFullyUnlocksAtAgeCache(out int age)
+        {
+            age = fullyUnlocksAtAgeCache;
+            return fullyUnlocksAtAgeCache >= 0;
+        }
+
+        internal void SetFullyUnlocksAtAgeCache(int age)
+        {
+            fullyUnlocksAtAgeCache = age;
         }
 
         public bool HasRules => activeHours != AllHours || locationTokens.Count > 0;
@@ -88,6 +117,7 @@ namespace WorkRoles
             coverageCache = null;
             primarySkillCache = null;
             primarySkillCached = false;
+            fullyUnlocksAtAgeCache = -1;
         }
 
         /// True when this role's coverage strictly includes other's (equal
@@ -127,7 +157,19 @@ namespace WorkRoles
             Scribe_Values.Look(ref category, "category", RoleCategory.None);
             Scribe_Values.Look(ref time, "time", RoleTime.None);
             Scribe_Values.Look(ref championPenalty, "championPenalty", true);
+            Scribe_Values.Look(ref minAge, "minAge", -1);
+            Scribe_Values.Look(ref colonyMin, "colonyMin");
+            Scribe_Values.Look(ref coverage, "coverage");
             Scribe_Values.Look(ref tuningSeeded, "tuningSeeded");
+            Scribe_Collections.Look(ref trainingRoleIds, "trainingRoleIds", LookMode.Value);
+            Scribe_Collections.Look(ref trainingMins, "trainingMins", LookMode.Value);
+            Scribe_Collections.Look(ref trainingMaxes, "trainingMaxes", LookMode.Value);
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+            {
+                trainingRoleIds ??= new List<int>();
+                trainingMins ??= new List<int>();
+                trainingMaxes ??= new List<int>();
+            }
             // Skill lists scribe comma-joined (skill defNames cannot contain commas).
             if (Scribe.mode == LoadSaveMode.Saving)
             {

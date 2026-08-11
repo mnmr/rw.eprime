@@ -17,12 +17,6 @@ namespace WorkRoles
         internal static string GroupLabel(RoleGroupDef def) =>
             def == null ? null : InvariantDefName.Humanize(def.defName, "WS_Group");
 
-        internal static string ScaleName(ScaleDef def) =>
-            def == null ? null : InvariantDefName.Humanize(def.defName, "WS_Scale");
-
-        internal static string PathName(TrainingPathDef def) =>
-            def == null ? null : InvariantDefName.Humanize(def.defName, "WS_Path");
-
         internal static string WorkTypeRoleLabel(WorkTypeDef def) =>
             def == null ? null : InvariantDefName.Humanize(def.defName);
 
@@ -34,24 +28,6 @@ namespace WorkRoles
 
         internal static string GroupIdentity(RoleDef def) =>
             GroupDef(def)?.defName ?? def?.group?.Trim();
-
-        internal static string ScaleName(RoleDef def)
-        {
-            var scaleDef = ScaleDef(def);
-            return scaleDef == null ? def?.tuning?.scale?.Trim() : ScaleName(scaleDef);
-        }
-
-        internal static string ScaleIdentity(RoleDef def) =>
-            ScaleDef(def)?.defName ?? def?.tuning?.scale?.Trim();
-
-        internal static ScaleDef ScaleDef(RoleDef roleDef)
-        {
-            string name = roleDef?.tuning?.scale?.Trim();
-            if (name.NullOrEmpty()) return null;
-            return DefDatabase<ScaleDef>.AllDefsListForReading.FirstOrDefault(def =>
-                string.Equals(ScaleName(def), name, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(def.label, name, StringComparison.OrdinalIgnoreCase));
-        }
 
         private static RoleGroupDef GroupDef(RoleDef roleDef)
         {

@@ -6,6 +6,7 @@ using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Recs;
 using WorkRoles.Core.Signals;
+using WorkRoles.Signals;
 
 namespace WorkRoles.UI
 {
@@ -20,24 +21,30 @@ namespace WorkRoles.UI
 
         // Cache contract — Owner: Colonists window. Key: ScopeCacheStamp, map
         // identity, and RoleStore.RecommendationTuningRevision. Value: the
-        // window-owned colony fix-plan snapshot, never mutated after publish.
-        // Dependencies: projected colony facts, role/path/order state, roster,
-        // location scope, and normalized tuning. Refresh: immediately when a
-        // key changes. Equality: a matching key preserves list identity.
-        // Teardown: Reset/ReleaseSnapshots drops plans and all previews.
+        // window-owned colony fix-plan snapshot plus per-pawn role suitability
+        // buckets (language-free; badges are resolved at preview build), never
+        // mutated after publish. Dependencies: projected colony facts,
+        // role/path/order state, roster, location scope, and normalized tuning.
+        // Refresh: immediately when a key changes. Equality: a matching key
+        // preserves list identity. Teardown: Reset/ReleaseSnapshots drops
+        // plans, suitability, and all previews.
         private List<PawnFixPlan> plans;
+        private readonly Dictionary<Pawn, Dictionary<int, SignalBucket>> planSuitability =
+            new Dictionary<Pawn, Dictionary<int, SignalBucket>>();
         private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
         private int planTuningRevision = -1;
 
         private ScopeCacheStamp previewStamp = ScopeCacheStamp.Invalid;
         private Pawn previewPawn;
+        private bool previewVerdictsShown;
         private IReadOnlyList<PawnFixPlan> previewSource;
         private ColonistRecommendationPreview preview;
 
         internal void Reset()
         {
             plans = null;
+            planSuitability.Clear();
             planStamp = ScopeCacheStamp.Invalid;
             planMapId = -1;
             planTuningRevision = -1;
@@ -47,6 +54,7 @@ namespace WorkRoles.UI
         internal void InvalidatePlan()
         {
             plans = null;
+            planSuitability.Clear();
             ClearPreview();
         }
 
@@ -96,13 +104,16 @@ namespace WorkRoles.UI
             externalSnapshot(pawn);
             IReadOnlyList<PawnFixPlan> source = Plans(
                 pawn, stamp, externalSnapshot);
+            bool verdictsShown = VerdictsShown;
             if (preview != null && previewStamp == stamp
-                && previewPawn == pawn && previewSource == source)
+                && previewPawn == pawn && previewSource == source
+                && previewVerdictsShown == verdictsShown)
                 return preview;
 
             previewStamp = stamp;
             previewPawn = pawn;
             previewSource = source;
+            previewVerdictsShown = verdictsShown;
             PawnFixPlan plan = source.FirstOrDefault(candidate => candidate.Pawn == pawn);
             if (plan == null)
                 preview = new ColonistRecommendationPreview(null, NoChips, null);
@@ -143,7 +154,20 @@ namespace WorkRoles.UI
             return result;
         }
 
-        private static Dialog_ChangesPreview.PawnPreview BuildPreviewEntry(
+        /// Recommendation chips carry the verdict badge for the pawn they are
+        /// recommended to; the setting is read here so toggling it rebuilds
+        /// previews without touching the plan cache.
+        private static bool VerdictsShown =>
+            WorkRolesMod.Settings?.verdictsOnRecommendationChips ?? true;
+
+        private RoleChipVerdict VerdictFor(Pawn pawn, int roleId) =>
+            planSuitability.TryGetValue(
+                pawn, out Dictionary<int, SignalBucket> buckets)
+            && buckets.TryGetValue(roleId, out SignalBucket bucket)
+                ? SkillSignalPresentation.VerdictBadge(bucket)
+                : default;
+
+        private Dialog_ChangesPreview.PawnPreview BuildPreviewEntry(
             RoleStore store, PawnFixPlan plan,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
@@ -153,6 +177,7 @@ namespace WorkRoles.UI
             var targetIds = new HashSet<int>(plan.Target.Select(a => a.roleId));
             SkillBucketSnapshot skillBuckets = externalSnapshot(plan.Pawn)
                 .Signals.SkillBuckets;
+            bool verdictsShown = VerdictsShown;
 
             var line = new Dialog_ChangesPreview.Line();
             foreach (RoleAssignment assignment in plan.Target)
@@ -165,7 +190,9 @@ namespace WorkRoles.UI
                     : Dialog_ChangesPreview.ChipState.Added;
                 plan.Explanations.TryGetValue(role.id, out var explanation);
                 line.AddChip(role, state, RecommendationPresentation.CreateTooltip(
-                    store, plan.Pawn, role, state, explanation, skillBuckets));
+                    store, plan.Pawn, role, state, explanation, skillBuckets),
+                    verdictsShown && !role.blocker
+                        ? VerdictFor(plan.Pawn, role.id) : default);
             }
             for (int i = 0; i < existing.Count; i++)
             {
@@ -176,7 +203,9 @@ namespace WorkRoles.UI
                 plan.Explanations.TryGetValue(role.id, out var explanation);
                 line.InsertChip(Math.Min(i, line.chips.Count), role, state,
                     RecommendationPresentation.CreateTooltip(
-                        store, plan.Pawn, role, state, explanation, skillBuckets));
+                        store, plan.Pawn, role, state, explanation, skillBuckets),
+                    verdictsShown && !role.blocker
+                        ? VerdictFor(plan.Pawn, role.id) : default);
             }
 
             var entry = new Dialog_ChangesPreview.PawnPreview { pawn = plan.Pawn };
@@ -184,17 +213,24 @@ namespace WorkRoles.UI
             return entry;
         }
 
-        private static List<PawnFixPlan> BuildColonyFixPlan(Map map,
+        private List<PawnFixPlan> BuildColonyFixPlan(Map map,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             var result = new List<PawnFixPlan>();
+            planSuitability.Clear();
             RoleStore store = RoleStore.Current;
             if (store == null) return result;
             List<Pawn> pawns = MapColonists(map);
+            ColonyView colony = RecsAdapter.BuildColonyView(
+                store, pawns, externalSnapshot);
             RecommendationPlan recommendations = RecommendationPlan.Build(
-                RecsAdapter.BuildColonyView(store, pawns, externalSnapshot),
+                colony,
                 store.recommendationTuning
                     ?? RecommendationsTuningOptions.Default);
+            List<Dictionary<int, SignalBucket>> suitability =
+                RoleSuitability.Verdicts(colony);
+            for (int i = 0; i < pawns.Count; i++)
+                planSuitability[pawns[i]] = suitability[i];
 
             for (int i = 0; i < pawns.Count; i++)
             {

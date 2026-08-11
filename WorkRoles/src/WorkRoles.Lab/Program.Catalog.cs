@@ -38,36 +38,32 @@ internal static partial class Program
     internal static Catalog Shipped()
     {
         var defsDir = Path.Combine(RepoRoot(), "mod", "1.6", "Defs");
-        var scales = LoadScales(defsDir);
         var catalog = new Catalog();
         var idByDef = new Dictionary<string, int>();
         var sources = new List<RecommendationRoleSource>();
         int id = 1;
-        foreach (var def in XElement.Load(Path.Combine(defsDir, "Roles.xml"))
-                     .Elements("WorkRoles.RoleDef"))
+        var roleDefs = XElement.Load(Path.Combine(defsDir, "Roles.xml"))
+            .Elements("WorkRoles.RoleDef").ToList();
+        foreach (var def in roleDefs)
         {
             if (!AvailableInAllDlc(def)) continue;
             string defName = RequiredText(def, "defName");
             List<JobEntry> entries = LoadEntries(def, defName);
             XElement tuning = def.Element("tuning");
-            // Legacy elements remain readable, mirroring RoleDef.PostLoad.
-            string scaleName = tuning?.Element("scale")?.Value.Trim()
-                ?? def.Element("holderScale")?.Value.Trim();
-            HolderScale scale = null;
-            // Mirror the seeded behavioral presets: a missing or "Never"
-            // reference assigns no one; "Unskilled" fills every capable pawn.
-            ScaleMode scaleMode = ScaleMode.Skilled;
-            if (string.IsNullOrEmpty(scaleName)
-                || scaleName == "Never")
-                scaleMode = ScaleMode.Never;
-            else if (scaleName == "Unskilled")
-            {
-                scaleMode = ScaleMode.Unskilled;
-                scale = RoleAssignmentStrategy.Unskilled("Unskilled").Scale;
-            }
-            else if (!scales.TryGetValue(scaleName, out scale))
-                throw new InvalidDataException(
-                    $"RoleDef {defName}: unknown scale '{scaleName}'.");
+            // Demand derives from the def's two tuning numbers, mirroring
+            // RecsAdapter: skill-less roles are Unskilled when demanded and
+            // Never when not; skilled roles always carry a derived scale.
+            int colonyMin = OptionalInt(
+                tuning?.Element("colonyMin")?.Value, 0, defName, "colonyMin");
+            int demandCoverage = OptionalInt(
+                tuning?.Element("coverage")?.Value, 0, defName, "coverage");
+            bool hasRequiredSkills =
+                tuning?.Element("skills")?.Element("required")?.Elements("li").Any() == true;
+            ScaleMode scaleMode = hasRequiredSkills ? ScaleMode.Skilled
+                : colonyMin > 0 || demandCoverage > 0
+                    ? ScaleMode.Unskilled : ScaleMode.Never;
+            HolderScale scale = scaleMode == ScaleMode.Never
+                ? null : RoleDemand.DeriveScale(colonyMin, demandCoverage);
             RecommendationSpecialRoleKind specialRole =
                 OptionalEnum(
                     def.Element("recommendationSpecialRole")?.Value,
@@ -111,51 +107,44 @@ internal static partial class Program
             idByDef[defName] = id;
             id++;
         }
-        int pathId = 1;
-        foreach (var def in XElement.Load(Path.Combine(defsDir, "TrainingPaths.xml"))
-                     .Elements("WorkRoles.TrainingPathDef"))
+        // Second pass: role-owned training paths resolve after every role id
+        // is known (entries may reference roles declared later in the file).
+        foreach (var def in roleDefs)
         {
             if (!AvailableInAllDlc(def)) continue;
-            string pathDefName = RequiredText(def, "defName");
-            var path = new PathView { Id = pathId++ };
-            foreach (var li in def.Element("entries")?.Elements("li") ?? Enumerable.Empty<XElement>())
+            string defName = RequiredText(def, "defName");
+            XElement training = def.Element("tuning")?.Element("training");
+            if (training == null || !idByDef.TryGetValue(defName, out int ownerId))
+                continue;
+            var path = new PathView { Id = ownerId };
+            foreach (var li in training.Elements("li"))
             {
                 string roleDef = li.Element("role")?.Value.Trim();
                 if (roleDef == null || !idByDef.TryGetValue(roleDef, out int roleId))
                     throw new InvalidDataException(
-                        $"TrainingPathDef {pathDefName}: unknown role '{roleDef}'.");
+                        $"RoleDef {defName}: unknown training role '{roleDef}'.");
                 path.RoleIds.Add(roleId);
                 path.BandMins.Add(OptionalInt(
                     li.Element("min")?.Value,
                     0,
-                    pathDefName,
+                    defName,
                     $"{roleDef} min"));
                 path.BandMaxes.Add(OptionalInt(
                     li.Element("max")?.Value,
                     SkillProgressionMath.MaxLevel,
-                    pathDefName,
+                    defName,
                     $"{roleDef} max"));
             }
-            string anchor = def.Element("anchorRole")?.Value.Trim();
-            if (anchor != null)
-            {
-                if (!idByDef.TryGetValue(anchor, out int anchorId))
-                    throw new InvalidDataException(
-                        $"TrainingPathDef {pathDefName}: unknown anchorRole '{anchor}'.");
-                path.AnchorRoleId = anchorId;
-            }
-            path.AnchorBefore = def.Element("anchorBefore")?.Value.Trim() != "false";
             if (path.RoleIds.Count < 2
+                || !path.RoleIds.Contains(ownerId)
                 || !SkillProgressionMath.Validate(
                     path.RoleIds.Count, path.BandMins, path.BandMaxes))
                 throw new InvalidDataException(
-                    $"TrainingPathDef {pathDefName}: invalid path geometry.");
+                    $"RoleDef {defName}: invalid training geometry.");
             catalog.Paths.Add(path);
-            catalog.PathNames[path.Id] =
-                def.Element("label")?.Value.Trim() ?? $"Path{path.Id}";
+            catalog.PathNames[path.Id] = catalog.Labels[ownerId];
         }
 
-        ApplyNewPathDefaults(catalog);
         catalog.Projection = RecommendationCatalogBuilder.Build(
             sources,
             catalog.Paths,
@@ -238,54 +227,6 @@ internal static partial class Program
             return parsed;
         throw new InvalidDataException(
             $"{owner}: invalid {field} '{value}'.");
-    }
-
-    private static Dictionary<string, HolderScale> LoadScales(string defsDir)
-    {
-        var result = new Dictionary<string, HolderScale>(
-            StringComparer.Ordinal);
-        foreach (var def in XElement.Load(Path.Combine(defsDir, "Scales.xml"))
-                     .Elements("WorkRoles.ScaleDef"))
-        {
-            if (!AvailableInAllDlc(def)) continue;
-            string label = def.Element("label")?.Value.Trim();
-            if (string.IsNullOrEmpty(label))
-                throw new InvalidDataException(
-                    $"ScaleDef {RequiredText(def, "defName")}: missing label.");
-            var scale = new HolderScale
-            {
-                RequiredTotals = HolderScaleCodec.DecodeRow(
-                    def.Element("min")?.Value, fallback: 0),
-                TrainingWaivers = HolderScaleCodec.DecodeRow(
-                    def.Element("train")?.Value, fallback: 0),
-                Max = HolderScaleCodec.DecodeRow(
-                    def.Element("max")?.Value,
-                    fallback: RoleHolderRange.Uncapped),
-            };
-            scale.Normalize();
-            result[label] = scale;
-        }
-        return result;
-    }
-
-    /// New defaults (owner, 2026-08-01), not yet productized: re-anchored paths.
-    /// These are inputs to the shared catalog builder, which owns its snapshot.
-    private static void ApplyNewPathDefaults(Catalog catalog)
-    {
-        int IdOfLabel(string label) => catalog.Labels.First(kv => kv.Value == label).Key;
-
-        void Anchor(string pathName, string roleLabel, bool before)
-        {
-            var path = catalog.Paths.First(p => catalog.PathNames[p.Id] == pathName);
-            path.AnchorRoleId = IdOfLabel(roleLabel);
-            path.AnchorBefore = before;
-        }
-        Anchor("Drug Maker", "Warden", false);
-        Anchor("Fabricator", "Warden", false);
-        Anchor("Builder", "Warden", false);
-        Anchor("Cook", "Handler", false);
-        Anchor("Socialist", "Basics", false);
-        Anchor("Handler", "Warden", false);
     }
 
     /// New defaults (owner, 2026-08-01), not yet productized: reordered

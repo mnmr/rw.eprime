@@ -189,7 +189,6 @@ public class RecommendationCatalogProjectionTests
         };
         PathView path = RecsTestBed.Path(
             1, (training.Id, 0, 12), (target.Id, 12, 21));
-        path.AnchorRoleId = training.Id;
 
         RecommendationCatalogProjection projection =
             RecommendationCatalogBuilder.Build(
@@ -198,14 +197,14 @@ public class RecommendationCatalogProjectionTests
                 jobs,
                 new Dictionary<string, int> { ["Crafting"] = 400 },
                 Profiles());
-        path.AnchorRoleId = 99;
         path.RoleIds[0] = 99;
+        path.BandMins[1] = 99;
         scale.RequiredTotals[0] = 99;
 
-        await Assert.That(projection.Paths[0].AnchorRoleId)
-            .IsEqualTo(training.Id);
         await Assert.That(projection.Paths[0].RoleIds[0])
             .IsEqualTo(training.Id);
+        await Assert.That(projection.Paths[0].BandMins[1])
+            .IsEqualTo(12);
         await Assert.That(projection.Roles.Single(
                 role => role.Id == training.Id).Scale.RequiredTotalAt(1))
             .IsEqualTo(2);

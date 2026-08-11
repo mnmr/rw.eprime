@@ -2,8 +2,10 @@
 
 ## 1.4.0 — 2026-08-11
 
-- Changed: Recommendations fine-tuning. Surplus candidates are no longer filtered, so colonists may get extra role recommendations.
+- Added: Consolidated all recommendations tuning options in its own tab and added editors for a lot of the internal scoring mechanisms.
+- Changed: Optimized and fine-tuned recommendations.
 - Changed: Improved tooltip explanations on recommended role chips.
+- Fixed: Surplus candidates are no longer filtered, so colonists should get extra role recommendations.
 - Fixed: Skill tooltip was only being displayed for skills with a signal (trait, passion, etc). Tooltip now shows for all skills.
 - Fixed: Auto-roles tied to a Gravship lost their location assignment when the ship travelled.
 

@@ -65,10 +65,6 @@ namespace WorkRoles.UI
         // inputs for roles that don't have any yet (never scribed, never synced).
         private readonly HashSet<int> rulesRevealed = new HashSet<int>();
 
-        // Recommendations Tuning disclosure per role: collapsed by default,
-        // session-local UI state like rulesRevealed.
-        private readonly HashSet<int> tuningExpanded = new HashSet<int>();
-
         public RolesTabView()
         {
             entryReorderCallbacks =
@@ -133,7 +129,6 @@ namespace WorkRoles.UI
             scrollToSelected = false;
             scrollJobTreeToSelection = false;
             rulesRevealed.Clear();
-            tuningExpanded.Clear();
             // Opening re-snapshots everything on this tab.
             RolesListState.ReleaseSectionsSnapshot();
         }
@@ -185,7 +180,6 @@ namespace WorkRoles.UI
             RoleEditorSnapshot editor = editorState.Snapshot(store,
                 selectedRoleId, listedPawns, pawnListRevision?.Invoke() ?? 0,
                 editorRect.width, rulesRevealed.Contains(selectedRoleId),
-                tuningExpanded.Contains(selectedRoleId),
                 scrollJobTreeToSelection);
             if (editor != null) DrawEditor(editorRect, editor);
             else Widgets.Label(editorRect, "WR_SelectOrCreateRole".Translate());
@@ -668,12 +662,8 @@ namespace WorkRoles.UI
             float leftContentH = Mathf.Max(
                 TitleH + AssignedRowH + 2f + GroupRowH + SkillsRowH,
                 CheckRowH * 3f);
-            // Tuning is a block below the two halves, capped at the box centre
-            // (the alignment edge of the role-option checkboxes); rules follow.
-            float tuningW = rect.width / 2f - TopBoxPadding;
-            float tuningH = header.TuningHeight;
             bool rulesShown = header.RulesShown;
-            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH) + tuningH
+            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
                 + TopBoxPadding * 2f;
 
@@ -822,14 +812,11 @@ namespace WorkRoles.UI
             float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
             DrawSkillsUsedRow(new Rect(leftX, row4Y,
                 checksX - 8f - leftX, SkillsRowH), model);
-            DrawTuningSection(leftX,
-                topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH),
-                tuningW, model);
 
             // Expanding section (full box width): rules while the auto-role
             // opt-in is on.
             float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH)
-                + tuningH + RulesRowGap;
+                + RulesRowGap;
             if (rulesShown)
                 DrawRulesSection(new Rect(leftX, sectionY,
                     topBox.width - TopBoxPadding * 2f, RulesSectionH), model);
@@ -959,49 +946,6 @@ namespace WorkRoles.UI
                 }
             }
 
-        }
-
-        private const float TuningHeaderRowH = 24f;
-
-        /// "Recommendations Tuning": group header (colonist-tab style, arrow on
-        /// the left and the current scale summary right-aligned while collapsed).
-        private void DrawTuningSection(float x, float y, float width,
-            RoleEditorSnapshot model)
-        {
-            RoleEditorHeaderSnapshot header = model.Header;
-            if (!header.TuningShown) return;
-            y += 4f;
-            bool expanded = header.TuningExpanded;
-
-            var headerRect = new Rect(x, y, width, TuningHeaderRowH);
-            Widgets.DrawBoxSolid(headerRect, new Color(1f, 1f, 1f, 0.06f));
-            var arrowRect = new Rect(x + 6f, y + (TuningHeaderRowH - 18f) / 2f, 18f, 18f);
-            GUI.DrawTexture(arrowRect, expanded ? TexButton.Collapse : TexButton.Reveal);
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(arrowRect.xMax + 6f, y,
-                width - (arrowRect.xMax - x) - 10f, TuningHeaderRowH),
-                header.TuningHeader);
-            if (!expanded)
-            {
-                Text.Anchor = TextAnchor.MiddleRight;
-                GUI.color = WrStyle.MinorAccent;
-                Widgets.Label(new Rect(x, y, width - 14f, TuningHeaderRowH),
-                    header.HolderSummary);
-                GUI.color = Color.white;
-            }
-            Text.Anchor = TextAnchor.UpperLeft;
-            Widgets.DrawHighlightIfMouseover(headerRect);
-            if (Widgets.ButtonInvisible(headerRect))
-            {
-                if (!tuningExpanded.Add(model.RoleId))
-                    tuningExpanded.Remove(model.RoleId);
-            }
-            y += TuningHeaderRowH;
-            if (!expanded) return;
-            y += 4f;
-            ScaleEditorUI.Draw(new Rect(x, y, width,
-                header.Scale?.Height ?? 0f), header.Scale);
         }
 
         /// "Skills used:" with the primary (most frequent) skill white and the

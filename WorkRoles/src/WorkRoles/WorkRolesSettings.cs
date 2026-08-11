@@ -27,6 +27,12 @@ namespace WorkRoles
         /// Palette arrangement: skill clusters, role groups in player order, or
         /// collapsed entirely (only the mode button remains).
         public PaletteMode paletteMode = PaletteMode.Skills;
+        /// Suitability verdict badges on role chips, per surface: colonist
+        /// table rows (each row's own pawn), the role palette (the selected
+        /// colonist), and recommendation previews (the pawn recommended to).
+        public bool verdictsOnColonistChips = true;
+        public bool verdictsInPalette = true;
+        public bool verdictsOnRecommendationChips = true;
         /// Player-chosen window size (0 = automatic, content-driven). Content
         /// minimums still apply: the stored size only ever enlarges the window.
         public float windowWidth;
@@ -47,6 +53,9 @@ namespace WorkRoles
             Scribe_Collections.Look(ref collapsedRoleGroups, "collapsedRoleGroups", LookMode.Value);
             Scribe_Values.Look(ref nestedRoleTree, "nestedRoleTree", true);
             Scribe_Values.Look(ref paletteMode, "paletteMode", PaletteMode.Skills);
+            Scribe_Values.Look(ref verdictsOnColonistChips, "verdictsOnColonistChips", true);
+            Scribe_Values.Look(ref verdictsInPalette, "verdictsInPalette", true);
+            Scribe_Values.Look(ref verdictsOnRecommendationChips, "verdictsOnRecommendationChips", true);
             Scribe_Values.Look(ref windowWidth, "windowWidth", 0f);
             Scribe_Values.Look(ref windowHeight, "windowHeight", 0f);
             Scribe_Collections.Look(ref warnedPriorityMods, "warnedPriorityMods", LookMode.Value);

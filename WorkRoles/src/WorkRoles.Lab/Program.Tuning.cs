@@ -7,8 +7,8 @@ internal static partial class Program
 {
     /// Prints a ready-to-paste <tuning> block per shipped RoleDef: skills from
     /// the same derivation the engine uses, category/time from the owner's
-    /// defaults with coverage inheritance, scale and championPenalty migrated
-    /// from the legacy elements.
+    /// defaults with coverage inheritance, demand numbers and championPenalty
+    /// carried over from the current defs.
     private static void PrintTuning()
     {
         var catalog = Shipped();
@@ -17,19 +17,23 @@ internal static partial class Program
         string[] partTimes = { "Core", "Basics", "Doctor", "Warden", "Caretaker", "Anomalist" };
         string[] opportunistics = { "Grunt", "Researcher" };
 
-        var legacyScale = new Dictionary<string, string>();
+        var demand = new Dictionary<string, (int colonyMin, int coverage)>();
         var legacyOccasional = new HashSet<string>();
         var defsDir = Path.Combine(RepoRoot(), "mod", "1.6", "Defs");
         foreach (var def in XElement.Load(Path.Combine(defsDir, "Roles.xml"))
                      .Elements("WorkRoles.RoleDef"))
         {
             string defName = def.Element("defName")!.Value.Trim();
-            string scale = def.Element("tuning")?.Element("scale")?.Value.Trim()
-                ?? def.Element("holderScale")?.Value.Trim();
-            if (!string.IsNullOrEmpty(scale)) legacyScale[defName] = scale;
-            bool occasional = def.Element("tuning") == null
+            XElement tuningEl = def.Element("tuning");
+            int colonyMin = OptionalInt(
+                tuningEl?.Element("colonyMin")?.Value, 0, defName, "colonyMin");
+            int coverage = OptionalInt(
+                tuningEl?.Element("coverage")?.Value, 0, defName, "coverage");
+            if (colonyMin != 0 || coverage != 0)
+                demand[defName] = (colonyMin, coverage);
+            bool occasional = tuningEl == null
                 ? def.Element("usesOccasionalRepeatChampionPenalty")?.Value.Trim() == "true"
-                : def.Element("tuning")?.Element("championPenalty")?.Value.Trim() == "false";
+                : tuningEl.Element("championPenalty")?.Value.Trim() == "false";
             if (occasional) legacyOccasional.Add(defName);
         }
 
@@ -86,8 +90,13 @@ internal static partial class Program
             }
             Console.WriteLine($"      <category>{category}</category>");
             Console.WriteLine($"      <time>{time}</time>");
-            if (legacyScale.TryGetValue(defName, out string scale))
-                Console.WriteLine($"      <scale>{scale}</scale>");
+            if (demand.TryGetValue(defName, out var numbers))
+            {
+                if (numbers.colonyMin != 0)
+                    Console.WriteLine($"      <colonyMin>{numbers.colonyMin}</colonyMin>");
+                if (numbers.coverage != 0)
+                    Console.WriteLine($"      <coverage>{numbers.coverage}</coverage>");
+            }
             if (legacyOccasional.Contains(defName))
                 Console.WriteLine("      <championPenalty>false</championPenalty>");
             Console.WriteLine("    </tuning>");

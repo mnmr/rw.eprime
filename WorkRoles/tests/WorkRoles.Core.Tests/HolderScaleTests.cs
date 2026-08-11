@@ -63,22 +63,4 @@ public class HolderScaleTests
         await Assert.That(copy.SameValuesAs(skilled)).IsFalse();
     }
 
-    [Test]
-    public async Task ImportedStrategyCannotReplaceInvariantPreset()
-    {
-        RoleAssignmentStrategy never = RoleAssignmentStrategy.Never("Never");
-        var scales = new List<RoleAssignmentStrategy> { never };
-        var imported = new RoleAssignmentStrategy
-        {
-            Name = "never", Mode = ScaleMode.Skilled, Scale = new HolderScale(),
-        };
-        Array.Fill(imported.Scale.RequiredTotals, 3);
-
-        bool changed = HolderScaleImport.Merge(scales, imported);
-
-        await Assert.That(changed).IsFalse();
-        await Assert.That(scales[0]).IsSameReferenceAs(never);
-        await Assert.That(scales[0].IsNever).IsTrue();
-        await Assert.That(scales[0].Scale == null).IsTrue();
-    }
 }

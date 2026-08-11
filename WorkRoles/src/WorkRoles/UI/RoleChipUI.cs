@@ -15,6 +15,24 @@ namespace WorkRoles.UI
         AutoOff     // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
     }
 
+    /// Suitability badge shown as a chip's first marker: a vertical pair of
+    /// 5-pointed stars, colored bottom-up by verdict strength (red for bad
+    /// verdicts). Colors are resolved in cache builders; default (not shown)
+    /// draws nothing.
+    public readonly struct RoleChipVerdict
+    {
+        public RoleChipVerdict(Color bottom, Color top)
+        {
+            Bottom = bottom;
+            Top = top;
+            Shown = true;
+        }
+
+        public Color Bottom { get; }
+        public Color Top { get; }
+        public bool Shown { get; }
+    }
+
     internal readonly struct RoleChipRenderData
     {
         internal RoleChipRenderData(int roleId, string label, Color baseColor,
@@ -59,6 +77,24 @@ namespace WorkRoles.UI
         public static readonly Color RuleMarkerColor = new Color(232f / 255f, 230f / 255f, 224f / 255f, 0.85f);
         private static readonly Color RemovedColor = new Color(1f, 0f, 0f, 1f); // #ff0000
 
+        private const float VerdictStarSize = 10f;
+
+        /// Vertical two-star verdict stack: equal gaps above, between, and
+        /// below the stars across the chip height, then each star nudged 1px
+        /// toward the middle so the pair reads as one marker.
+        internal static void DrawVerdictBadge(Rect rect, RoleChipVerdict verdict)
+        {
+            float x = rect.x + (rect.width - VerdictStarSize) / 2f;
+            float gap = (rect.height - 2f * VerdictStarSize) / 3f;
+            GUI.color = verdict.Top;
+            GUI.DrawTexture(new Rect(x, rect.y + gap + 1f, VerdictStarSize,
+                VerdictStarSize), WorkRolesTex.Star);
+            GUI.color = verdict.Bottom;
+            GUI.DrawTexture(new Rect(x, rect.y + gap * 2f + VerdictStarSize - 1f,
+                VerdictStarSize, VerdictStarSize), WorkRolesTex.Star);
+            GUI.color = Color.white;
+        }
+
         /// Red border marking a chip whose role is about to be removed.
         public static void DrawRemovedOutline(Rect rect)
         {
@@ -67,19 +103,17 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
         }
 
-        /// Prefix markers: cached pawn capability, blocker, time rule, location
-        /// rule, the forced-on flag, and — on plain manual roles only — the
-        /// assignment pin. Blockers and rule-carrying roles are already
-        /// plan-protected, so a pin there would be redundant. Every visible
-        /// marker owns a full slot; this count and the Draw sequence must agree.
-        private static int MarkerCount(Role role, bool pinned,
-            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn) =>
-            MarkerCount(RoleChipRenderData.From(role), pinned, warningSeverity,
-                forcedOn);
-
+        /// Prefix markers: suitability verdict, cached pawn capability, blocker,
+        /// time rule, location rule, the forced-on flag, and — on plain manual
+        /// roles only — the assignment pin. Blockers and rule-carrying roles are
+        /// already plan-protected, so a pin there would be redundant. Every
+        /// visible marker owns a full slot; this count and the Draw sequence
+        /// must agree.
         private static int MarkerCount(RoleChipRenderData role, bool pinned,
-            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn) =>
-            (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
+            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
+            bool verdictSlot) =>
+            (verdictSlot ? 1 : 0)
+            + (warningSeverity != RoleAssignmentWarningSeverity.None ? 1 : 0)
             + (role.Blocker ? 1 : 0)
             + (role.HasTimeRule ? 1 : 0)
             + (role.HasLocationRule ? 1 : 0)
@@ -119,18 +153,19 @@ namespace WorkRoles.UI
         public static float WidthFor(Role role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool forcedOn = false)
+            bool forcedOn = false, bool verdictSlot = false)
             => WidthFor(RoleChipRenderData.From(role), showRemove, display,
-                abbrev, pinned, warningSeverity, forcedOn);
+                abbrev, pinned, warningSeverity, forcedOn, verdictSlot);
 
         internal static float WidthFor(RoleChipRenderData role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string abbrev = null,
             bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool forcedOn = false)
+            bool forcedOn = false, bool verdictSlot = false)
         {
             Text.Font = GameFont.Small;
-            int markers = MarkerCount(role, pinned, warningSeverity, forcedOn);
+            int markers = MarkerCount(role, pinned, warningSeverity, forcedOn,
+                verdictSlot);
             // Minimal chips with markers carry no blank label square; Compact
             // chips share one width (the widest initials) so columns line up.
             float labelW = display == ChipDisplay.Minimal
@@ -145,7 +180,8 @@ namespace WorkRoles.UI
 
         /// Band chip: role colors/label like a normal chip, plus inner grip
         /// bars at both ends and the X inset past the right grip. Display-only.
-        public static void DrawBandChip(Rect rect, Role role)
+        /// showRemove: false hides the X (a path's owner role cannot leave it).
+        public static void DrawBandChip(Rect rect, Role role, bool showRemove = true)
         {
             var spec = new ChipSpec
             {
@@ -153,11 +189,12 @@ namespace WorkRoles.UI
                 Outline = OutlineColor,
                 LabelColor = LabelColor,
                 Label = role.label,
-                ShowRemove = true,
+                ShowRemove = showRemove,
                 Grips = true,
                 LabelInsetLeft = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f,
                 // Right grip zone + the X slot (2px to the grip, 4px to the label).
-                LabelInsetRight = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f + RemoveSize + 4f,
+                LabelInsetRight = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f
+                    + (showRemove ? RemoveSize + 4f : 2f),
             };
             ChipUI.Draw(rect, in spec);
         }
@@ -173,10 +210,11 @@ namespace WorkRoles.UI
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
-            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false)
+            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
+            RoleChipVerdict verdict = default)
             => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
                 dragSource, onClick, interactive, display, abbrev, pinned,
-                warningSeverity, paint, activeOutline, strikes, forcedOn);
+                warningSeverity, paint, activeOutline, strikes, forcedOn, verdict);
 
         internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
             ChipStyle style, bool showRemove, Pawn dragSource, Action onClick,
@@ -184,7 +222,8 @@ namespace WorkRoles.UI
             string abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
-            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false)
+            int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
+            RoleChipVerdict verdict = default)
         {
             if (paint)
             {
@@ -220,8 +259,8 @@ namespace WorkRoles.UI
                         : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.Label,
                     ShowRemove = showRemove,
                     LabelInsetLeft = (display == ChipDisplay.Compact ? 4f : PadFor(display))
-                        + MarkerCount(role, pinned, warningSeverity, forcedOn)
-                            * (RemoveSize + 2f),
+                        + MarkerCount(role, pinned, warningSeverity, forcedOn,
+                            verdict.Shown) * (RemoveSize + 2f),
                     LabelInsetRight = PadFor(display) + (showRemove ? RemoveSize + 2f : 0f),
                     StrikeCount = style == ChipStyle.Disabled
                         ? strikes : RoleChipStrikes.None,
@@ -241,6 +280,14 @@ namespace WorkRoles.UI
                         GUI.color = tinted ? RuleMarkerColor : Color.white;
                         GUI.DrawTexture(markerRect, tex);
                         GUI.color = Color.white;
+                        markerX += RemoveSize + 2f;
+                    }
+                    if (verdict.Shown)
+                    {
+                        // Full chip height: the star stack needs the vertical
+                        // room; the slot width stays one marker wide.
+                        DrawVerdictBadge(new Rect(markerX, rect.y,
+                            RemoveSize, rect.height), verdict);
                         markerX += RemoveSize + 2f;
                     }
                     if (warningSeverity != RoleAssignmentWarningSeverity.None)

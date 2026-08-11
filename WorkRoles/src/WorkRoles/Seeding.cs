@@ -113,39 +113,15 @@ namespace WorkRoles
             ShowSeedReport(store.roles.Count, assigned, generated, failures);
         }
 
-        /// The invariant behavioral presets (Never, Unskilled) return on every
-        /// load; ScaleDefs seed as ordinary editable scales, once per save
-        /// (knownScaleDefs), so renaming or deleting them sticks. A same-name
-        /// player scale wins — the def is only marked known.
-        internal static void EnsurePresetScales()
-        {
-            var store = RoleStore.Current;
-            if (store == null) return;
-            if (store.ScaleByName("Never") == null)
-                store.holderScales.Add(RoleAssignmentStrategy.Never("Never"));
-            if (store.ScaleByName("Unskilled") == null)
-                store.holderScales.Add(
-                    RoleAssignmentStrategy.Unskilled("Unskilled"));
-            foreach (var def in DefDatabase<ScaleDef>.AllDefsListForReading)
-            {
-                string name = SeededDefIdentity.ScaleName(def);
-                if (name.NullOrEmpty()
-                    || store.knownScaleDefs.Contains(def.defName)) continue;
-                store.knownScaleDefs.Add(def.defName);
-                if (store.ScaleByName(name) == null)
-                    store.holderScales.Add(def.ToScale());
-            }
-        }
-
         /// Runs only alongside role seeding (members resolve by RoleDef template):
-        /// older saves adopt the paths via Restore Defaults — auto-seeding there
-        /// could duplicate player-made paths.
+        /// older saves adopt training via Restore Defaults — auto-seeding there
+        /// could overwrite player-made training.
         private static void SeedTrainingPaths(RoleStore store)
         {
             if (store.pathsSeeded) return;
-            foreach (var def in DefDatabase<TrainingPathDef>.AllDefsListForReading
-                         .OrderBy(d => d.order))
-                CreatePathFromDef(store, def);
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+                if (def.tuning?.training?.Count > 0)
+                    CreateTrainingFromDef(store, def);
             store.pathsSeeded = true;
         }
 
@@ -169,16 +145,19 @@ namespace WorkRoles
             return match;
         }
 
-        /// Builds one path from its def, skipping entries whose role is missing
-        /// (DLC/mod gated); null when fewer than 2 entries resolve (a 0-1 role
-        /// path is a no-op) or bands are invalid.
-        internal static TrainingPath CreatePathFromDef(RoleStore store, TrainingPathDef def)
+        /// Writes a def's training onto its live role, skipping entries whose
+        /// role is missing (DLC/mod gated). False when the owner is missing or
+        /// already owns training, fewer than 2 entries resolve (a 0-1 role
+        /// path is a no-op), the owner is not among them, or bands are invalid.
+        internal static bool CreateTrainingFromDef(RoleStore store, RoleDef def)
         {
+            Role owner = ResolvePathRole(store, def.defName);
+            if (owner == null || owner.trainingRoleIds.Count > 0) return false;
             var roleIds = new List<int>();
             var mins = new List<int>();
             var maxes = new List<int>();
             var unresolved = new List<string>();
-            foreach (var entry in def.entries)
+            foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
             {
                 if (entry.role.NullOrEmpty()) continue;
                 var role = ResolvePathRole(store, entry.role);
@@ -190,37 +169,21 @@ namespace WorkRoles
             }
             if (roleIds.Count < 2)
             {
-                Log.Message($"[WorkRoles] training path '{SeededDefIdentity.PathName(def)}' not created: "
+                Log.Message($"[WorkRoles] training for '{owner.label}' not seeded: "
                     + $"only {roleIds.Count} role(s) resolved (unresolved: {unresolved.ToCommaList()})");
-                return null;
+                return false;
             }
-            if (!SkillProgressionMath.Validate(roleIds.Count, mins, maxes))
+            if (!roleIds.Contains(owner.id)
+                || !SkillProgressionMath.Validate(roleIds.Count, mins, maxes))
             {
                 // Load sanitize would silently drop it next session — refuse loudly.
-                Log.Warning($"[WorkRoles] TrainingPathDef {def.defName}: invalid bands; skipped");
-                return null;
+                Log.Warning($"[WorkRoles] RoleDef {def.defName}: invalid training; skipped");
+                return false;
             }
-            var path = new TrainingPath
-            {
-                id = store.NextPathId(),
-                name = SeededDefIdentity.PathName(def),
-                roleIds = roleIds,
-                bandMins = mins,
-                bandMaxes = maxes,
-                anchorRoleId = ResolvePathRole(store, def.anchorRole)?.id ?? -1,
-                anchorBefore = def.anchorBefore,
-            };
-            if (!def.colorRef.NullOrEmpty())
-            {
-                var palette = DefDatabase<PaletteDef>.GetNamedSilentFail(def.colorRef);
-                if (palette != null)
-                {
-                    path.hasCustomColor = true;
-                    path.color = palette.color;
-                }
-            }
-            store.trainingPaths.Add(path);
-            return path;
+            owner.trainingRoleIds = roleIds;
+            owner.trainingMins = mins;
+            owner.trainingMaxes = maxes;
+            return true;
         }
 
         /// Once-per-save seeding summary. Adding the mod to an existing save
@@ -322,6 +285,7 @@ namespace WorkRoles
             ApplyGeneratedColor(role, workType.defName);
             RoleCommands.AddEntryDirect(role.id,
                 new JobEntry(JobEntryKind.WorkType, workType.defName));
+            role.minAge = RecsAdapter.MinUnlockAgeOf(role);
             return role;
         }
 
@@ -487,6 +451,7 @@ namespace WorkRoles
                     {
                         ApplyGeneratedColor(role, workType.defName);
                         RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                        role.minAge = RecsAdapter.MinUnlockAgeOf(role);
                         result.Add(role.label);
                     }
                 }
@@ -683,14 +648,10 @@ namespace WorkRoles
             return true;
         }
 
-        /// The stored holder-scale reference differs from the template.
-        private static bool HoldersDrifted(Role role, RoleDef def)
-        {
-            string expected = SeededDefIdentity.ScaleName(def);
-            if (expected.NullOrEmpty()) expected = "Never";
-            return !string.Equals(role.holderScaleName, expected,
-                System.StringComparison.OrdinalIgnoreCase);
-        }
+        /// The role's assignment demand differs from its template's tuning.
+        private static bool HoldersDrifted(Role role, RoleDef def) =>
+            role.colonyMin != (def.tuning?.colonyMin ?? 0)
+            || role.coverage != (def.tuning?.coverage ?? 0);
 
         /// Everything Restore Defaults could do right now: recreate missing
         /// template roles and default training paths, regenerate coverage for work
@@ -808,23 +769,24 @@ namespace WorkRoles
                     holderRoleId = role.id,
                 });
             }
-            // Default paths missing by NAME (deleted or pre-paths save); existing
-            // same-name paths are the player's and stay untouched. Paths that
-            // would resolve < 2 entries even after the missing-role items apply
-            // are suppressed — they could never be created (perpetual no-ops).
-            foreach (var def in DefDatabase<TrainingPathDef>.AllDefsListForReading
-                         .OrderBy(d => d.order))
-                if (!store.trainingPaths.Any(p => string.Equals(p.name,
-                        SeededDefIdentity.PathName(def),
-                        System.StringComparison.OrdinalIgnoreCase))
+            // Default role training missing (deleted or pre-training save); a
+            // role that owns any training keeps it — the player's edits stay
+            // untouched. Training that would resolve < 2 entries even after
+            // the missing-role items apply is suppressed — it could never be
+            // created (perpetual no-ops).
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                if (!(def.tuning?.training?.Count > 0)) continue;
+                var owner = ResolvePathRole(store, def.defName);
+                if (owner != null && owner.trainingRoleIds.Count == 0
                     && RestorablePathEntryCount(store, def) >= 2)
                     result.Add(new RestoreItem
                     {
-                        label = "WR_RestorePathItem".Translate(
-                            SeededDefIdentity.PathName(def)),
+                        label = "WR_RestorePathItem".Translate(owner.label),
                         explanation = "WR_RestoreExplainPath".Translate(),
                         pathDef = def.defName,
                     });
+            }
             if (store.recommendationOrder.Count > 0)
                 result.Add(new RestoreItem
                 {
@@ -835,14 +797,14 @@ namespace WorkRoles
             return result;
         }
 
-        /// Entries a Restore Defaults pass could resolve for this path def:
-        /// live-resolvable roles plus missing seeded defs (offered as their own
-        /// restore items, which apply before paths).
-        private static int RestorablePathEntryCount(RoleStore store, TrainingPathDef def)
+        /// Entries a Restore Defaults pass could resolve for this def's
+        /// training: live-resolvable roles plus missing seeded defs (offered
+        /// as their own restore items, which apply before training).
+        private static int RestorablePathEntryCount(RoleStore store, RoleDef def)
         {
             var counted = new HashSet<string>();
             int count = 0;
-            foreach (var entry in def.entries)
+            foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
             {
                 if (entry.role.NullOrEmpty() || !counted.Add(entry.role)) continue;
                 if (ResolvePathRole(store, entry.role) != null
@@ -1065,32 +1027,20 @@ namespace WorkRoles
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                     if (def == null || !HoldersDrifted(role, def)) continue;
-                    string scaleName = SeededDefIdentity.ScaleName(def);
-                    role.holderScaleName = scaleName.NullOrEmpty()
-                        ? "Never" : scaleName;
-                    // A renamed or deleted seed scale returns from its def so
-                    // the restored reference resolves.
-                    if (!scaleName.NullOrEmpty()
-                        && store.ScaleByName(scaleName) == null)
-                    {
-                        var scaleDef = SeededDefIdentity.ScaleDef(def);
-                        if (scaleDef != null)
-                            store.holderScales.Add(scaleDef.ToScale());
-                    }
+                    role.colonyMin = def.tuning?.colonyMin ?? 0;
+                    role.coverage = def.tuning?.coverage ?? 0;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));
                 }
 
-            // After the roles: a path's members may have been restored just above.
+            // After the roles: training members may have been restored just above.
             if (pathDefs != null)
                 foreach (var defName in pathDefs)
                 {
-                    var def = DefDatabase<TrainingPathDef>.GetNamedSilentFail(defName);
+                    var def = DefDatabase<RoleDef>.GetNamedSilentFail(defName);
                     if (def == null) continue;
-                    if (store.trainingPaths.Any(p => string.Equals(p.name,
-                            SeededDefIdentity.PathName(def),
-                            System.StringComparison.OrdinalIgnoreCase))) continue;
-                    var path = CreatePathFromDef(store, def);
-                    if (path != null) result.Add(path.name);
+                    if (CreateTrainingFromDef(store, def))
+                        result.Add("WR_RestorePathItem".Translate(
+                            ResolvePathRole(store, def.defName)?.label ?? def.defName));
                 }
 
             if (selection.recommendationOrder && store.recommendationOrder.Count > 0)

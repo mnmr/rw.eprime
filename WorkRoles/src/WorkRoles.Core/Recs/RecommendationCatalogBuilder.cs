@@ -26,6 +26,8 @@ namespace WorkRoles.Core.Recs
         public bool ChampionPenalty = true;
         public RoleCategory Category;
         public RoleTime Time;
+        /// Minimum biological age (years) for holding the role; 0 = no gate.
+        public int MinAge;
         /// Authored skill classification; null = no authored data.
         public List<string> DeclaredRequiredSkills;
         public List<string> DeclaredOptionalSkills;
@@ -223,6 +225,7 @@ namespace WorkRoles.Core.Recs
                 ChampionPenalty = source.ChampionPenalty,
                 Category = source.Category,
                 Time = source.Time,
+                MinAge = source.MinAge,
                 DeclaredRequiredSkills = source.DeclaredRequiredSkills == null
                     ? null : new List<string>(source.DeclaredRequiredSkills),
                 DeclaredOptionalSkills = source.DeclaredOptionalSkills == null
@@ -253,8 +256,6 @@ namespace WorkRoles.Core.Recs
                 RoleIds = new List<int>(path.RoleIds),
                 BandMins = new List<int>(path.BandMins),
                 BandMaxes = new List<int>(path.BandMaxes),
-                AnchorRoleId = path.AnchorRoleId,
-                AnchorBefore = path.AnchorBefore,
             };
         }
 

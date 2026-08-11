@@ -147,12 +147,15 @@ namespace WorkRoles.Core.Recs
             return -1;
         }
 
+        /// Tier 0 follows the basic-work anchor; tiers 1..3 land after the
+        /// first, middle, and last work role; shooting above the fourth tier
+        /// cutoff (tier 4) places Hunter last.
         internal static long HunterPosition(
             ColonyView colony,
             Dictionary<int, RoleView> byId,
             int tier)
         {
-            if (tier >= 3) return long.MaxValue;
+            if (tier >= 4) return long.MaxValue;
             int lowAnchor = LowHunterAnchor(colony, byId);
             if (tier == 0) return AfterTemplateIndex(lowAnchor);
 
@@ -163,9 +166,10 @@ namespace WorkRoles.Core.Recs
                 .ToList();
             if (workIndices.Count == 0)
                 return AfterTemplateIndex(lowAnchor);
-            return AfterTemplateIndex(tier == 1
-                ? workIndices[0]
-                : workIndices[workIndices.Count - 1]);
+            int at = tier == 1 ? 0
+                : tier == 2 ? (workIndices.Count - 1) / 2
+                : workIndices.Count - 1;
+            return AfterTemplateIndex(workIndices[at]);
         }
 
         private static int LowHunterAnchor(

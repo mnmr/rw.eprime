@@ -18,6 +18,7 @@ public class RoleFileTuningTests
             category = RoleCategory.Important,
             time = RoleTime.PartTime,
             championPenalty = false,
+            minAge = 10,
             requiredSkills = new List<string> { "Medicine" },
             optionalSkills = new List<string> { "Social" },
             entries = new List<JobEntry> { new JobEntry(JobEntryKind.WorkType, "Doctor") },
@@ -36,6 +37,7 @@ public class RoleFileTuningTests
         await Assert.That(doctor.category).IsEqualTo(RoleCategory.Important);
         await Assert.That(doctor.time).IsEqualTo(RoleTime.PartTime);
         await Assert.That(doctor.championPenalty).IsFalse();
+        await Assert.That(doctor.minAge).IsEqualTo(10);
         await Assert.That(string.Join(",", doctor.requiredSkills)).IsEqualTo("Medicine");
         await Assert.That(string.Join(",", doctor.optionalSkills)).IsEqualTo("Social");
 
@@ -43,6 +45,8 @@ public class RoleFileTuningTests
         FileRole chores = parsed.roles.First(r => r.label == "Chores");
         await Assert.That(chores.hasTuning).IsTrue();
         await Assert.That(chores.championPenalty).IsTrue();
+        // An unset age floor stays absent, so imports derive it.
+        await Assert.That(chores.minAge).IsEqualTo(-1);
         await Assert.That(chores.category).IsEqualTo(RoleCategory.None);
         await Assert.That(chores.time).IsEqualTo(RoleTime.None);
         await Assert.That(chores.requiredSkills.Count).IsEqualTo(0);
