@@ -51,8 +51,9 @@ namespace WorkRoles.Core.Recs
             RoleWeight = 0;
         }
 
-        /// Declares the current source's weight (4 = long/XP-training job);
-        /// call right after a successful BeginSource, before adding skills.
+        /// Declares the current source's weight (4 = long/XP-training job,
+        /// 0 = skill-less work excluded from the share denominator); call
+        /// right after a successful BeginSource, before adding skills.
         public void SetSourceWeight(int weight)
         {
             if (!sourceActive) return;

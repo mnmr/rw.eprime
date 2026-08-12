@@ -14,6 +14,12 @@ namespace WorkRoles.UI
         private static string editControl;
         private static string editBuffer;
         private static int editOwner;
+        // When another field steals focus mid-edit (it can draw and claim the
+        // shared slot before the edited field's commit branch runs), the
+        // in-flight edit parks here and commits on the owner's next draw.
+        private static string pendingControl;
+        private static string pendingBuffer;
+        private static int pendingOwner;
 
         /// Modifier-accelerated stepping: plain click = 1 step, Shift ×5,
         /// Ctrl ×10, Ctrl+Shift jumps to the bound (every commit path clamps,
@@ -45,13 +51,15 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
             float controlsX = rect.xMax - 108f;
-            if (Widgets.ButtonText(
-                    new Rect(controlsX, rect.y + 1f, 26f, 26f), "−"))
+            var minusRect = new Rect(controlsX, rect.y + 1f, 26f, 26f);
+            WrTips.Key("WR_StepModifiersTip").Region(minusRect);
+            if (Widgets.ButtonText(minusRect, "−"))
                 requested = value - StepSize(1);
             float fieldW = unitSuffix == null ? 48f : 36f;
+            var fieldRect = new Rect(controlsX + 30f, rect.y + 1f, fieldW, 26f);
+            WrTips.Key("WR_StepModifiersTip").Region(fieldRect);
             int? committed = DrawNumericField(
-                new Rect(controlsX + 30f, rect.y + 1f, fieldW, 26f),
-                controlName, owner, valueLabel);
+                fieldRect, controlName, owner, valueLabel);
             if (committed.HasValue) requested = committed;
             if (unitSuffix != null)
             {
@@ -62,8 +70,9 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
             }
-            if (Widgets.ButtonText(
-                    new Rect(controlsX + 82f, rect.y + 1f, 26f, 26f), "+"))
+            var plusRect = new Rect(controlsX + 82f, rect.y + 1f, 26f, 26f);
+            WrTips.Key("WR_StepModifiersTip").Region(plusRect);
+            if (Widgets.ButtonText(plusRect, "+"))
                 requested = value + StepSize(1);
             return requested;
         }
@@ -74,12 +83,22 @@ namespace WorkRoles.UI
         internal static int? DrawNumericField(Rect rect, string controlName,
             int owner, string shownValue)
         {
-            bool editing = editControl == controlName && editOwner == owner;
             int? committed = null;
+            // An edit parked by another field stealing focus commits here.
+            if (pendingControl == controlName && pendingOwner == owner)
+            {
+                committed = Parse(pendingBuffer);
+                pendingControl = null;
+                pendingBuffer = null;
+            }
+            bool editing = editControl == controlName && editOwner == owner;
             Event e = Event.current;
+            // Enter commits and unfocuses. Checked on the edit state alone:
+            // the focused-control name registry fills only as controls draw,
+            // so it is empty at the start of a KeyDown pass, and an unconsumed
+            // Return would fall through to the window's close-on-accept.
             if (editing && e.type == EventType.KeyDown
-                && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter)
-                && GUI.GetNameOfFocusedControl() == controlName)
+                && (e.keyCode == KeyCode.Return || e.keyCode == KeyCode.KeypadEnter))
             {
                 committed = TakeNumericEdit();
                 GUIUtility.keyboardControl = 0;
@@ -93,9 +112,18 @@ namespace WorkRoles.UI
             {
                 if (!editing)
                 {
+                    // Park a different field's in-flight edit for its own
+                    // next draw instead of clobbering it.
+                    if (editControl != null)
+                    {
+                        pendingControl = editControl;
+                        pendingOwner = editOwner;
+                        pendingBuffer = editBuffer;
+                    }
                     editControl = controlName;
                     editOwner = owner;
                     editBuffer = shownValue;
+                    editing = true;
                 }
                 if (typed != text) editBuffer = typed;
             }
@@ -111,7 +139,10 @@ namespace WorkRoles.UI
             string buffer = editBuffer;
             editControl = null;
             editBuffer = null;
-            return int.TryParse(buffer, out int value) ? value : (int?)null;
+            return Parse(buffer);
         }
+
+        private static int? Parse(string buffer) =>
+            int.TryParse(buffer, out int value) ? value : (int?)null;
     }
 }

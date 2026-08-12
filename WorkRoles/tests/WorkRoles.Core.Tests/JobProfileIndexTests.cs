@@ -66,6 +66,16 @@ public class JobProfileIndexTests
         await Assert.That(index.Givers["CuratedUnknown"].GivesXp).IsTrue();
         await Assert.That(index.Givers["Fallback"].TrainedSkillDefNames[0])
             .IsEqualTo("Crafting");
+
+        // Curated non-bill work also owns its USED skills: the parent work
+        // type's skills must not bleed in (rescue/feed under Doctor use no
+        // Medicine). Uncurated givers keep the work-type fallback.
+        await Assert.That(index.Givers["CuratedEmpty"].UsedSkillDefNames.Count)
+            .IsEqualTo(0);
+        await Assert.That(string.Join(",", index.Givers["CuratedUnknown"].UsedSkillDefNames))
+            .IsEqualTo("MissingSkill");
+        await Assert.That(string.Join(",", index.Givers["Fallback"].UsedSkillDefNames))
+            .IsEqualTo("Crafting");
     }
 
     [Test]

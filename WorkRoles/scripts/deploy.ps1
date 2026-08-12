@@ -18,6 +18,12 @@ if (-not (Test-Path -LiteralPath $RimWorldMods -PathType Container)) {
 $modsRoot = (Resolve-Path -LiteralPath $RimWorldMods).Path
 $destination = Join-Path $modsRoot "WorkRoles"
 
+# A running game holds the mod dll open; the mirror would fail mid-copy.
+if (Get-Process -Name "RimWorldWin64" -ErrorAction SilentlyContinue) {
+    Write-Host "RimWorld is running. Close the game and rerun the deploy."
+    exit 1
+}
+
 # Mirror removes stale mod files. Excluded files are neither copied nor purged,
 # so Steam's destination-owned PublishedFileId.txt survives the deployment.
 robocopy $source $destination /MIR /XF PublishedFileId.txt *.pdb /R:2 /W:1 | Out-Null

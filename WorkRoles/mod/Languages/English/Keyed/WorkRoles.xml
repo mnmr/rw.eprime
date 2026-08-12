@@ -36,12 +36,16 @@
   <WR_OptRecOrderTipWhat>The order recommendations list roles in, derived from the vanilla priority grid (auto-assigned roles included).</WR_OptRecOrderTipWhat>
   <WR_ActRecDrag>Reorder the chips</WR_ActRecDrag>
   <WR_ActRecX>Unpin the role so it places dynamically again</WR_ActRecX>
+  <WR_RecOrderChipTip>Drag to reorder (this is only a hint, not a fixed recommendation order). Unlisted roles may still be recommended.</WR_RecOrderChipTip>
+  <WR_RecOrderAddTip>Add a role to provide a placement hint or to enable the role options below.</WR_RecOrderAddTip>
   <WR_OptRecOrderTipAuto>Unlisted roles slot in automatically: training roles after their target, sub-roles after the role covering them, Hunter after the warden/childcare roles.</WR_OptRecOrderTipAuto>
   <WR_OptLockedTip>Hunter is now using a fixed recommendation slot. Remove this chip to revert to dynamic positioning based on shooting skill.</WR_OptLockedTip>
 
   <!-- Shared, save-authoritative recommendation formula inputs -->
   <WR_RecTuneReset>Reset</WR_RecTuneReset>
+  <WR_RecTuneResetTip>Restores this section's options to their default values.</WR_RecTuneResetTip>
   <WR_RecTuneCellHint>Click a value to raise it, right-click to lower it.</WR_RecTuneCellHint>
+  <WR_StepModifiersTip>Click: 1 step.\nShift: 5 steps.\nCtrl: 10 steps.\nCtrl+Shift: jump to the limit.</WR_StepModifiersTip>
   <!-- Single-letter table column headers, one per signal strength -->
   <WR_SignalLetterAwful>A</WR_SignalLetterAwful>
   <WR_SignalLetterPoor>P</WR_SignalLetterPoor>
@@ -142,15 +146,17 @@
   <WR_RoleTimeOpportunistic>Opportunistic</WR_RoleTimeOpportunistic>
   <WR_ChampionPenalty>Repeat champion penalty</WR_ChampionPenalty>
   <WR_ChampionPenaltyTip>When enabled, a colonist who already champions other roles is penalized when competing to champion this one. Disable it for roles where repeat championships are fine, such as occasional work.</WR_ChampionPenaltyTip>
-  <WR_RoleMinAgeLabel>Minimum age:</WR_RoleMinAgeLabel>
-  <WR_RoleMinAgeTip>Colonists younger than this are never assigned or recommended this role. The default is the age at which some of the role's work becomes possible; every job in this role is possible from age {0}.</WR_RoleMinAgeTip>
-  <WR_RoleMaxAgeLabel>Maximum age:</WR_RoleMaxAgeLabel>
-  <WR_RoleMaxAgeTip>Colonists older than this are never assigned or recommended this role. The limit is inclusive: a colonist of exactly this age still qualifies. Set to 0 for no limit. Use 12 to restrict a role to children.</WR_RoleMaxAgeTip>
+  <WR_RoleAgeBandsLabel>Age groups that may be assigned this role:</WR_RoleAgeBandsLabel>
+  <WR_RoleAgeBandsTip>Colonists outside the selected age bands are never assigned or recommended this role. Click a band outside the selection to include everything up to it, click the first or last selected band to remove it, and click a middle band to select only that band. Band edges follow the ages at which the game unlocks work. Every job in this role is possible from age {0}.</WR_RoleAgeBandsTip>
   <WR_RequiredSkillsLabel>Required</WR_RequiredSkillsLabel>
   <WR_RequiredSkillsTip>Skills a colonist must be good at for this role to be recommended.</WR_RequiredSkillsTip>
   <WR_OptionalSkillsLabel>Optional</WR_OptionalSkillsLabel>
   <WR_OptionalSkillsTip>Skills that improve a colonist's fit for this role but are not required.</WR_OptionalSkillsTip>
   <WR_AddSkill>Add Skill</WR_AddSkill>
+  <WR_AddSkillTip>Required skills gate the role: only colonists with a decent verdict in them are considered, and the first required skill drives the candidate verdict. Optional skills sharpen the ranking of multi-skill roles without excluding anyone. Skills listed here override the skills derived from the role's jobs.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>The engine stops weighing this skill for the role, widening who qualifies. A role left without required skills falls back to the primary skill implied by its jobs.</WR_RemoveSkillTip>
+  <WR_PathAddRoleTip>Adds a role to this path.</WR_PathAddRoleTip>
+  <WR_BandChipTip>Drag an end to resize the skill band, drag the middle to move it.</WR_BandChipTip>
   <WR_PriorityGridTitle>Priority Grid</WR_PriorityGridTitle>
   <WR_ShowPriorityGridTip>Show the priority grid for all listed colonists, respecting the active role and location filters (raw ranks or vanilla 0-4, switchable in the dialog).</WR_ShowPriorityGridTip>
   <WR_GridModeRaw>WorkRoles priorities</WR_GridModeRaw>
@@ -585,6 +591,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_TipXpLabel>Gives XP</WR_TipXpLabel>
   <!-- {0} = XP-giving jobs, {1} = total jobs -->
   <WR_TipXpValue>{0} of {1} jobs</WR_TipXpValue>
+  <WR_TipUnlockAgeLabel>Minimum age</WR_TipUnlockAgeLabel>
+  <!-- {0} = years -->
+  <WR_TipUnlockAgeValue>{0} (younger colonists cannot do this work)</WR_TipUnlockAgeValue>
   <!-- Identity footer: {0} = defName, {1} = source mod name -->
   <WR_SkillTipGiverSource>Work giver: {0} ({1})</WR_SkillTipGiverSource>
   <WR_SkillTipTypeSource>Work type: {0} ({1})</WR_SkillTipTypeSource>

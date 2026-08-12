@@ -263,16 +263,11 @@ namespace WorkRoles.UI
                 groupButtonFull, groupButtonShown, groups, defaultGroupLabel,
                 "WR_GroupNewOption".Translate().ToString(),
                 "WR_NewGroupTitle".Translate().ToString(),
-                "WR_RoleMinAgeLabel".Translate().ToString(),
-                Mathf.Max(0, role.minAge),
-                Mathf.Max(0, role.minAge).ToString(
-                    System.Globalization.CultureInfo.InvariantCulture),
+                "WR_RoleAgeBandsLabel".Translate().ToString(),
+                AgeBands.SelectionFor(Mathf.Max(0, role.minAge), role.maxAge),
                 RecsAdapter.FullyUnlocksAtAgeOf(role).ToString(
                     System.Globalization.CultureInfo.InvariantCulture),
-                "WR_RoleMaxAgeLabel".Translate().ToString(),
-                role.maxAge,
-                role.maxAge.ToString(
-                    System.Globalization.CultureInfo.InvariantCulture),
+                RecsAdapter.MinUnlockAgeOf(role),
                 skills, "WR_SkillsUsedLabel".Translate().ToString());
 
             var locations = BuildLocationOptions(role);
@@ -300,12 +295,19 @@ namespace WorkRoles.UI
                 JobEntry entry = role.entries[i];
                 RoleEntryPresentation presentation = EntryPresentation(
                     entry, typeWidth - 4f, jobWidth - 4f);
+                bool dead = !presentation.Missing && deadEntries.Contains(i);
+                // One tip per row: dead entries fold the hint into the skill
+                // tip instead of registering a second region.
                 StructuredTip skillTip = presentation.Missing ? null
                     : entry.Kind == JobEntryKind.WorkType
-                        ? JobSkillProfiles.WorkTypeStructuredTip(entry.DefName)
-                        : JobSkillProfiles.GiverStructuredTip(entry.DefName);
+                        ? dead
+                            ? JobSkillProfiles.WorkTypeDeadStructuredTip(entry.DefName)
+                            : JobSkillProfiles.WorkTypeStructuredTip(entry.DefName)
+                        : dead
+                            ? JobSkillProfiles.GiverDeadStructuredTip(entry.DefName)
+                            : JobSkillProfiles.GiverStructuredTip(entry.DefName);
                 entryRows.Add(new RoleEntryRowSnapshot(entry, presentation,
-                    !presentation.Missing && deadEntries.Contains(i), skillTip));
+                    dead, skillTip));
             }
             var entries = new RoleEntriesSnapshot(role.id,
                 "WR_SelectedJobs".Translate().ToString(),
@@ -757,12 +759,20 @@ namespace WorkRoles.UI
                     int giverEntryIndex = role.entries.FindIndex(entry =>
                         entry.Kind == JobEntryKind.WorkGiver
                         && entry.DefName == giver.defName);
+                    MultiCheckboxState giverState = GiverState(role, type, giver);
+                    // One tip per row: the covered-via-type hint rides the
+                    // skill tip (a second region on the same rect would keep
+                    // resetting the shared hover gate).
+                    StructuredTip giverTip =
+                        giverState == MultiCheckboxState.Partial
+                            ? JobSkillProfiles.GiverCoveredStructuredTip(giver.defName)
+                            : JobSkillProfiles.GiverStructuredTip(giver.defName);
                     treeNodes.Add(new RoleJobTreeNode(
                         type.defName, giver.defName,
                         WorkJobLabels.GiverDisplayName(giver),
-                        GiverState(role, type, giver), expanded: true,
+                        giverState, expanded: true,
                         coverage.Givers.Contains(giver.defName),
-                        JobSkillProfiles.GiverStructuredTip(giver.defName),
+                        giverTip,
                         giverEntryIndex, typeEntryIndex, role.entries.Count,
                         missingGivers: null));
                 }
@@ -978,9 +988,8 @@ namespace WorkRoles.UI
             List<RoleGroupOptionSnapshot> groups,
             string defaultGroupLabel, string newGroupLabel,
             string newGroupTitle,
-            string minAgeCaption, int minAge, string minAgeLabel,
-            string minAgeTipArg,
-            string maxAgeCaption, int maxAge, string maxAgeLabel,
+            string ageBandsCaption, (int Lo, int Hi) ageSelection,
+            string ageTipArg, int ageMinUnlock,
             IReadOnlyList<RoleSkillPresentation> skills,
             string skillsCaption)
         {
@@ -1018,13 +1027,10 @@ namespace WorkRoles.UI
             DefaultGroupLabel = defaultGroupLabel;
             NewGroupLabel = newGroupLabel;
             NewGroupTitle = newGroupTitle;
-            MinAgeCaption = minAgeCaption;
-            MinAge = minAge;
-            MinAgeLabel = minAgeLabel;
-            MinAgeTipArg = minAgeTipArg;
-            MaxAgeCaption = maxAgeCaption;
-            MaxAge = maxAge;
-            MaxAgeLabel = maxAgeLabel;
+            AgeBandsCaption = ageBandsCaption;
+            AgeSelection = ageSelection;
+            AgeTipArg = ageTipArg;
+            AgeMinUnlock = ageMinUnlock;
             this.skills = skills;
             SkillsCaption = skillsCaption;
         }
@@ -1068,14 +1074,14 @@ namespace WorkRoles.UI
         internal string DefaultGroupLabel { get; }
         internal string NewGroupLabel { get; }
         internal string NewGroupTitle { get; }
-        internal string MinAgeCaption { get; }
-        internal int MinAge { get; }
-        internal string MinAgeLabel { get; }
-        /// Fully-unlocks age as the min-age tooltip's translation argument.
-        internal string MinAgeTipArg { get; }
-        internal string MaxAgeCaption { get; }
-        internal int MaxAge { get; }
-        internal string MaxAgeLabel { get; }
+        internal string AgeBandsCaption { get; }
+        /// Selected band range from the stored age gates (AgeBands indices).
+        internal (int Lo, int Hi) AgeSelection { get; }
+        /// Fully-unlocks age as the age tooltip's translation argument.
+        internal string AgeTipArg { get; }
+        /// Earliest unlock age across the role's coverage, for flagging
+        /// selected bands that have no performable work.
+        internal int AgeMinUnlock { get; }
         internal int SkillCount => skills.Count;
         internal RoleSkillPresentation SkillAt(int index) => skills[index];
         internal string SkillsCaption { get; }

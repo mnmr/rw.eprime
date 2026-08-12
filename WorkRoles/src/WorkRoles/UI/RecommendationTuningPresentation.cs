@@ -17,7 +17,8 @@ namespace WorkRoles.UI
             Rect rowRect,
             string controlName,
             IReadOnlyList<string> enumOptions,
-            IReadOnlyList<Color> enumColors)
+            IReadOnlyList<Color> enumColors,
+            IReadOnlyList<string> enumTipKeys)
         {
             Descriptor = descriptor;
             Value = value;
@@ -30,6 +31,7 @@ namespace WorkRoles.UI
             ControlName = controlName;
             EnumOptions = enumOptions;
             EnumColors = enumColors;
+            EnumTipKeys = enumTipKeys;
         }
 
         internal RecommendationTuningDescriptor Descriptor { get; }
@@ -46,6 +48,8 @@ namespace WorkRoles.UI
         /// null for numeric rows, which render steppers instead.
         internal IReadOnlyList<string> EnumOptions { get; }
         internal IReadOnlyList<Color> EnumColors { get; }
+        /// Keyed tooltip per segment (the bucket names).
+        internal IReadOnlyList<string> EnumTipKeys { get; }
         internal bool StartsSection => SectionLabel != null;
     }
 }

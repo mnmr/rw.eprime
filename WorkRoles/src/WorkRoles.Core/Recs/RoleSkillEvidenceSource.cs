@@ -23,7 +23,20 @@ namespace WorkRoles.Core.Recs
             {
                 if (!scratch.BeginSource(giverName)) continue;
                 if (!givers.TryGetValue(giverName, out JobProfileGiverFacts facts))
+                {
+                    scratch.SetSourceWeight(0);
                     continue;
+                }
+                // Skill-less work (rescue, feeding, hauling-style chores) does
+                // not dilute the share denominator: a skill's share is measured
+                // against the role's skilled work only.
+                if (facts.UsedSkillDefNames.Count == 0
+                    && facts.TrainedSkillDefNames.Count == 0
+                    && facts.Requirements.Count == 0)
+                {
+                    scratch.SetSourceWeight(0);
+                    continue;
+                }
                 if (facts.TrainedSkillDefNames.Count > 0)
                     scratch.SetSourceWeight(4);
                 for (int i = 0; i < facts.UsedSkillDefNames.Count; i++)

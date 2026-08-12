@@ -210,6 +210,86 @@ public class RecommendationCatalogProjectionTests
             .IsEqualTo(2);
     }
 
+    [Test]
+    public async Task CuratedNoXpWorkDoesNotInheritTheParentWorkTypeSkill()
+    {
+        // Rescue-shaped: a curated no-XP giver under a skilled work type. A
+        // role covering only that giver is unskilled work; the tend-shaped
+        // giver keeps its skill through the curated XP facts.
+        var jobs = new FakeCatalog().WithWorkType("Doctor", "Tend", "Rescue");
+        var builder = new JobProfileIndexBuilder();
+        var medicine = new[] { new JobProfileSkillSource(30, "Medicine") };
+        builder.AddWorkType(1, "Doctor", medicine, new[] { "Tend", "Rescue" });
+        builder.AddGiver("Tend", 1, medicine,
+            hasCuratedXp: true, curatedXpSkillDefNames: new[] { "Medicine" });
+        builder.AddGiver("Rescue", 1, medicine,
+            hasCuratedXp: true, curatedXpSkillDefNames: Array.Empty<string>());
+        var rescuer = new RecommendationRoleSource
+        {
+            Id = 1,
+            Entries = { new JobEntry(JobEntryKind.WorkGiver, "Rescue") },
+        };
+        var medic = new RecommendationRoleSource
+        {
+            Id = 2,
+            Entries = { new JobEntry(JobEntryKind.WorkGiver, "Tend") },
+        };
+
+        RecommendationCatalogProjection projection =
+            RecommendationCatalogBuilder.Build(
+                new[] { rescuer, medic },
+                Array.Empty<PathView>(),
+                jobs,
+                new Dictionary<string, int> { ["Doctor"] = 1300 },
+                builder.Build());
+
+        RoleView projectedRescuer = projection.Roles.Single(
+            role => role.Id == rescuer.Id);
+        await Assert.That(projectedRescuer.Skills.Count).IsEqualTo(0);
+        await Assert.That(projectedRescuer.Unskilled).IsTrue();
+        RoleView projectedMedic = projection.Roles.Single(
+            role => role.Id == medic.Id);
+        await Assert.That(projectedMedic.PrimarySkill).IsEqualTo("Medicine");
+    }
+
+    [Test]
+    public async Task ChoreHeavyRoleKeepsItsOnlyTrainingSkill()
+    {
+        // Jailor-shaped: one Social-training giver among many curated no-XP
+        // chores. Skill-less work must not dilute the share denominator and
+        // erase the skill that defines the role's training purpose.
+        var jobs = new FakeCatalog().WithWorkType("Warden",
+            "Chat", "Feed", "Deliver", "Escort", "Release", "Execute");
+        var builder = new JobProfileIndexBuilder();
+        var social = new[] { new JobProfileSkillSource(40, "Social") };
+        builder.AddWorkType(1, "Warden", social,
+            new[] { "Chat", "Feed", "Deliver", "Escort", "Release", "Execute" });
+        builder.AddGiver("Chat", 1, social,
+            hasCuratedXp: true, curatedXpSkillDefNames: new[] { "Social" });
+        foreach (string chore in new[]
+                 { "Feed", "Deliver", "Escort", "Release", "Execute" })
+            builder.AddGiver(chore, 1, social,
+                hasCuratedXp: true,
+                curatedXpSkillDefNames: Array.Empty<string>());
+        var jailor = new RecommendationRoleSource
+        {
+            Id = 1,
+            Entries = { new JobEntry(JobEntryKind.WorkType, "Warden") },
+        };
+
+        RecommendationCatalogProjection projection =
+            RecommendationCatalogBuilder.Build(
+                new[] { jailor },
+                Array.Empty<PathView>(),
+                jobs,
+                new Dictionary<string, int> { ["Warden"] = 590 },
+                builder.Build());
+
+        RoleView projected = projection.Roles.Single();
+        await Assert.That(projected.PrimarySkill).IsEqualTo("Social");
+        await Assert.That(projected.Unskilled).IsFalse();
+    }
+
     private static JobProfileIndex Profiles()
     {
         var builder = new JobProfileIndexBuilder();

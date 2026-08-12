@@ -42,12 +42,19 @@ namespace WorkRoles
             /// XP inside vs outside the giver's own discipline).
             public List<string> RelevantSkillDefNames = new List<string>();
             public bool GivesXp;
+            /// Vanilla unlock age (years) of the parent work type; 0 = no gate.
+            public int UnlockAge;
             public List<SkillRange> Requirements = new List<SkillRange>();
             public string CurveHeader; // stat label, or null when no curve
             public List<(string label, string value)> CurveRows;
             public string SourceLine;  // "Work giver: defName (mod)" footer
             public string TipCache;
             internal StructuredTip StructuredTipCache;
+            // Hint-composed variants: one region registers one tooltip, so
+            // contextual hints ride the same tip instead of a second region
+            // (two stable keys on one rect keep resetting the hover gate).
+            internal StructuredTip CoveredTipCache;
+            internal StructuredTip DeadTipCache;
         }
 
         public sealed class WorkTypeProfile
@@ -57,10 +64,13 @@ namespace WorkRoles
             public string Description;
             public List<string> TrainedSkills = new List<string>();
             public int XpGivers, TotalGivers;
+            /// Vanilla unlock age (years); 0 = no gate.
+            public int UnlockAge;
             public List<SkillRange> Requirements = new List<SkillRange>();
             public string SourceLine; // "Work type: defName (mod)" footer
             public string TipCache;
             internal StructuredTip StructuredTipCache;
+            internal StructuredTip DeadTipCache;
         }
 
         private sealed class ReferenceIdentity<T> where T : class
@@ -472,6 +482,7 @@ namespace WorkRoles
                 TrainedSkillDefNames = new List<string>(facts.TrainedSkillDefNames),
                 RelevantSkillDefNames = new List<string>(facts.RelevantSkillDefNames),
                 GivesXp = facts.GivesXp,
+                UnlockAge = RecsAdapter.WorkTypeUnlockAge(giver.workType),
             };
             if (facts.HasCuratedXp && !facts.UsesRecipes)
             {
@@ -487,6 +498,9 @@ namespace WorkRoles
                 if (unknown.Count > 0)
                     Log.Warning($"[WorkRoles] XP table for {giver.defName} names unknown skill(s): "
                         + unknown.ToCommaList());
+                // Curated facts carry names without identities, and used ==
+                // trained for curated non-bill work.
+                profile.UsedSkills = new List<string>(profile.TrainedSkills);
             }
             else
                 profile.TrainedSkills = SkillLabels(
@@ -510,6 +524,7 @@ namespace WorkRoles
                 TrainedSkills = SkillLabels(snapshot, facts.RelevantSkillIdentities, false),
                 TotalGivers = facts.TotalGivers,
                 XpGivers = facts.XpGivers,
+                UnlockAge = RecsAdapter.WorkTypeUnlockAge(workType),
                 Description = StripSelfAttribution(workType.description, workType.modContentPack),
                 SourceLine = SourceLineFor(workType, "WR_SkillTipTypeSource"),
             };
@@ -590,6 +605,28 @@ namespace WorkRoles
             return profile == null ? null : EnsureGiverTip(defName, profile);
         }
 
+        /// Giver tip with the covered-via-work-type hint folded in.
+        internal static StructuredTip GiverCoveredStructuredTip(string defName)
+        {
+            var profile = ForGiver(defName);
+            if (profile == null) return null;
+            return profile.CoveredTipCache ??= new StructuredTip(
+                $"job-giver:{defName}:covered",
+                BuildGiverModel(profile,
+                    "WR_CoveredByTypeTip".Translate().ToString()));
+        }
+
+        /// Giver tip with the dead-entry hint folded in.
+        internal static StructuredTip GiverDeadStructuredTip(string defName)
+        {
+            var profile = ForGiver(defName);
+            if (profile == null) return null;
+            return profile.DeadTipCache ??= new StructuredTip(
+                $"job-giver:{defName}:dead",
+                BuildGiverModel(profile,
+                    "WR_DeadEntryTip".Translate().ToString()));
+        }
+
         private static StructuredTip EnsureGiverTip(
             string defName, GiverProfile profile)
         {
@@ -619,6 +656,17 @@ namespace WorkRoles
             return profile == null ? null : EnsureWorkTypeTip(defName, profile);
         }
 
+        /// Work-type tip with the dead-entry hint folded in.
+        internal static StructuredTip WorkTypeDeadStructuredTip(string defName)
+        {
+            var profile = ForWorkType(defName);
+            if (profile == null) return null;
+            return profile.DeadTipCache ??= new StructuredTip(
+                $"work-type:{defName}:dead",
+                BuildTypeModel(profile,
+                    "WR_DeadEntryTip".Translate().ToString()));
+        }
+
         private static StructuredTip EnsureWorkTypeTip(
             string defName, WorkTypeProfile profile)
         {
@@ -632,7 +680,8 @@ namespace WorkRoles
             return profile.StructuredTipCache;
         }
 
-        private static TipModel BuildGiverModel(GiverProfile profile)
+        private static TipModel BuildGiverModel(GiverProfile profile,
+            string hint = null)
         {
             var model = new TipModel { Title = profile.Title };
             var facts = model.AddSection();
@@ -641,6 +690,9 @@ namespace WorkRoles
             facts.Fact("WR_TipTrainsLabel".Translate(), profile.TrainedSkills.Count == 0
                 ? "WR_TipTrainsNothing".Translate().ToString()
                 : profile.TrainedSkills.ToCommaList());
+            if (profile.UnlockAge > 0)
+                facts.Fact("WR_TipUnlockAgeLabel".Translate(),
+                    "WR_TipUnlockAgeValue".Translate(profile.UnlockAge));
             foreach (var range in profile.Requirements)
                 facts.Fact("WR_TipRequiresLabel".Translate(), range.Total > 0
                     ? "WR_TipReqBills".Translate(
@@ -653,12 +705,15 @@ namespace WorkRoles
                 foreach (var (label, value) in profile.CurveRows)
                     curve.Fact(label, value);
             }
+            if (hint != null)
+                model.AddSection().Text(hint);
             if (profile.SourceLine != null)
                 model.AddSection().Text(profile.SourceLine, dim: true);
             return model;
         }
 
-        private static TipModel BuildTypeModel(WorkTypeProfile profile)
+        private static TipModel BuildTypeModel(WorkTypeProfile profile,
+            string hint = null)
         {
             var model = new TipModel { Title = profile.Title };
             if (!profile.Description.NullOrEmpty())
@@ -668,10 +723,15 @@ namespace WorkRoles
                 facts.Fact("WR_TipSkillsLabel".Translate(), profile.TrainedSkills.ToCommaList());
             facts.Fact("WR_TipXpLabel".Translate(),
                 "WR_TipXpValue".Translate(profile.XpGivers, profile.TotalGivers));
+            if (profile.UnlockAge > 0)
+                facts.Fact("WR_TipUnlockAgeLabel".Translate(),
+                    "WR_TipUnlockAgeValue".Translate(profile.UnlockAge));
             foreach (var range in profile.Requirements)
                 facts.Fact("WR_TipRequiresLabel".Translate(),
                     "WR_TipReqItems".Translate(
                         range.SkillLabel, LevelRange(range), range.Gated).ToString());
+            if (hint != null)
+                model.AddSection().Text(hint);
             if (profile.SourceLine != null)
                 model.AddSection().Text(profile.SourceLine, dim: true);
             return model;

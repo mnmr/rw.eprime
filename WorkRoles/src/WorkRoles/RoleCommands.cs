@@ -245,23 +245,17 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
+        /// Both age gates in one synced command: a band click can move both.
         [SyncMethod]
-        public static void SetRoleMinimumAge(int roleId, int value)
+        public static void SetRoleAgeRange(int roleId, int minValue, int maxValue)
         {
             var role = FindRole(roleId);
-            value = UnityEngine.Mathf.Clamp(value, 0, 18);
-            if (role == null || role.minAge == value) return;
-            role.minAge = value;
-            UiVersion.Bump();
-        }
-
-        [SyncMethod]
-        public static void SetRoleMaximumAge(int roleId, int value)
-        {
-            var role = FindRole(roleId);
-            value = UnityEngine.Mathf.Clamp(value, 0, 18);
-            if (role == null || role.maxAge == value) return;
-            role.maxAge = value;
+            minValue = UnityEngine.Mathf.Clamp(minValue, 0, 18);
+            maxValue = UnityEngine.Mathf.Clamp(maxValue, 0, 18);
+            if (role == null
+                || (role.minAge == minValue && role.maxAge == maxValue)) return;
+            role.minAge = minValue;
+            role.maxAge = maxValue;
             UiVersion.Bump();
         }
 

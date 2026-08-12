@@ -234,17 +234,20 @@ namespace WorkRoles.UI
                             44f, 21f + descriptionHeight);
                         List<string> enumOptions = null;
                         List<Color> enumColors = null;
+                        List<string> enumTipKeys = null;
                         if (descriptor.ValueKind
                             == RecommendationTuningValueKind.SignalBucket)
                         {
                             enumOptions = new List<string>();
                             enumColors = new List<Color>();
+                            enumTipKeys = new List<string>();
                             for (int bucket = descriptor.MinimumValue;
                                  bucket <= descriptor.MaximumValue; bucket++)
                             {
                                 enumOptions.Add(SignalLetter((SignalBucket)bucket));
                                 enumColors.Add(Signals.SkillSignalPresentation
                                     .VerdictColor((SignalBucket)bucket));
+                                enumTipKeys.Add(VerdictKey((SignalBucket)bucket));
                             }
                         }
                         items.Add(new RecTuningItem(new RecommendationTuningRow(
@@ -258,7 +261,8 @@ namespace WorkRoles.UI
                             new Rect(0f, y, width, rowHeight),
                             "WR_Tune_" + descriptor.StableKey,
                             enumOptions,
-                            enumColors)));
+                            enumColors,
+                            enumTipKeys)));
                         y += rowHeight + rowGap;
                         continue;
                     }

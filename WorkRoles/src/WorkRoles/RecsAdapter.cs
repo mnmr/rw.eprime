@@ -333,15 +333,33 @@ namespace WorkRoles
             return max;
         }
 
+        /// Known work types missing from vanilla's lifeStageWorkSettings.
+        /// Deliberate deviation: these match the vanilla age of the equivalent
+        /// listed work (fishing and finish-off like Hunting, urgent hauling
+        /// like Hauling) instead of vanilla's effective "no gate".
+        private static readonly Dictionary<string, int> CuratedUnlockAges =
+            new Dictionary<string, int>(System.StringComparer.Ordinal)
+            {
+                ["Fishing"] = 7,
+                ["FinishingOff"] = 7,
+                ["KAU_FinishingOff"] = 7,
+                ["HaulingUrgent"] = 3,
+                ["KAU_UrgentHaul"] = 3,
+            };
+
         /// Vanilla per-work-type unlock age from the Human race (Biotech's
-        /// lifeStageWorkSettings); 0 when unlisted or Biotech is absent.
-        private static int WorkTypeUnlockAge(WorkTypeDef workType)
+        /// lifeStageWorkSettings), then the curated table; 0 when unknown or
+        /// Biotech is absent.
+        internal static int WorkTypeUnlockAge(WorkTypeDef workType)
         {
             List<LifeStageWorkSettings> settings =
                 ThingDefOf.Human.race.lifeStageWorkSettings;
             for (int index = 0; index < settings.Count; index++)
                 if (settings[index].workType == workType)
                     return settings[index].minAge;
+            if (settings.Count > 0
+                && CuratedUnlockAges.TryGetValue(workType.defName, out int curated))
+                return curated;
             return 0;
         }
 

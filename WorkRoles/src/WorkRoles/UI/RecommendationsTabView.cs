@@ -260,8 +260,9 @@ namespace WorkRoles.UI
                 if (expanded)
                 {
                     // Reset shares the expanded area's top row with the intro.
-                    if (Widgets.ButtonText(new Rect(gx + gw - 70f, ty + 4f,
-                            70f, 24f), state.TuningReset))
+                    var resetRect = new Rect(gx + gw - 70f, ty + 4f, 70f, 24f);
+                    WrTips.Key("WR_RecTuneResetTip").Region(resetRect);
+                    if (Widgets.ButtonText(resetRect, state.TuningReset))
                         RoleCommands.ResetRecommendationTuningSection(section.Key);
                     DrawHelpParagraph(new Rect(gx, ty + 4f, gw - 82f,
                         section.IntroHeight), section.Intro);
@@ -542,13 +543,16 @@ namespace WorkRoles.UI
                 float rowY = y + i * pitch;
                 Widgets.Label(new Rect(skillX, rowY,
                     removeX - skillX - 4f, pitch), chip.Label);
-                if (Widgets.ButtonImage(new Rect(removeX,
-                        rowY + (pitch - 24f) / 2f, 24f, 24f), TexButton.Delete))
+                var removeRect = new Rect(removeX,
+                    rowY + (pitch - 24f) / 2f, 24f, 24f);
+                WrTips.Key("WR_RemoveSkillTip").Region(removeRect);
+                if (Widgets.ButtonImage(removeRect, TexButton.Delete))
                     RoleCommands.RemoveRoleSkill(roleId, chip.DefName, optional);
             }
             Text.Anchor = TextAnchor.UpperLeft;
-            if (Widgets.ButtonText(new Rect(buttonX, y + 1f, addW,
-                    pitch - 4f), detail.AddSkillLabel))
+            var addRect = new Rect(buttonX, y + 1f, addW, pitch - 4f);
+            WrTips.Key("WR_AddSkillTip").Region(addRect);
+            if (Widgets.ButtonText(addRect, detail.AddSkillLabel))
                 OpenSkillMenu(roleId, detail, optional);
             return y + Mathf.Max(1, count) * pitch;
         }
@@ -728,11 +732,13 @@ namespace WorkRoles.UI
                 WrText.LineHorizontal(bandX, rowsY + r * BandRowH - 3f, bandW);
             GUI.color = Color.white;
 
-            // Add Role lives on the empty affordance row, left-aligned; a chip
+            // Add Role lives on the empty affordance row, right-aligned; a chip
             // slid onto that row draws over it (chips render later).
-            if (Widgets.ButtonText(new Rect(bandX,
-                    rowsY + (view.DisplayRows - 1) * BandRowH,
-                    110f, RoleChipUI.Height), "WR_AddRole".Translate()))
+            var pathAddRect = new Rect(bandX + bandW - 110f,
+                rowsY + (view.DisplayRows - 1) * BandRowH,
+                110f, RoleChipUI.Height);
+            WrTips.Key("WR_PathAddRoleTip").Region(pathAddRect);
+            if (Widgets.ButtonText(pathAddRect, "WR_AddRole".Translate()))
                 OpenAddRoleMenu(store, view);
 
             for (int i = 0; i < view.RoleIds.Count; i++)
@@ -752,6 +758,8 @@ namespace WorkRoles.UI
                 bool ownerEntry = view.RoleIds[i] == view.PathId;
                 RoleChipUI.DrawBandChip(chipRect, view.Roles[i],
                     showRemove: !ownerEntry);
+                if (dragPathId == -1)
+                    WrTips.Key("WR_BandChipTip").Region(chipRect);
 
                 if (i == dragEntry)
                 {
@@ -993,16 +1001,18 @@ namespace WorkRoles.UI
                     new Rect(controlsX, rect.y + 6f, 108f, 26f), row);
                 return;
             }
-            if (Widgets.ButtonText(
-                    new Rect(controlsX, rect.y + 6f, 26f, 26f), "−"))
+            var minusRect = new Rect(controlsX, rect.y + 6f, 26f, 26f);
+            WrTips.Key("WR_StepModifiersTip").Region(minusRect);
+            if (Widgets.ButtonText(minusRect, "−"))
                 RoleCommands.SetRecommendationTuningOption(
                     (int)row.Descriptor.Option,
                     row.Value - NumericStepperUI.StepSize(row.Descriptor.Step));
             if (row.Descriptor.ValueKind == RecommendationTuningValueKind.Integer)
             {
+                var fieldRect = new Rect(controlsX + 30f, rect.y + 6f, 48f, 26f);
+                WrTips.Key("WR_StepModifiersTip").Region(fieldRect);
                 int? committed = NumericStepperUI.DrawNumericField(
-                    new Rect(controlsX + 30f, rect.y + 6f, 48f, 26f),
-                    row.ControlName, 0, row.ValueLabel);
+                    fieldRect, row.ControlName, 0, row.ValueLabel);
                 if (committed.HasValue)
                     RoleCommands.SetRecommendationTuningOption(
                         (int)row.Descriptor.Option, committed.Value);
@@ -1015,8 +1025,9 @@ namespace WorkRoles.UI
                     row.ValueLabel);
                 Text.Anchor = TextAnchor.UpperLeft;
             }
-            if (Widgets.ButtonText(
-                    new Rect(controlsX + 82f, rect.y + 6f, 26f, 26f), "+"))
+            var plusRect = new Rect(controlsX + 82f, rect.y + 6f, 26f, 26f);
+            WrTips.Key("WR_StepModifiersTip").Region(plusRect);
+            if (Widgets.ButtonText(plusRect, "+"))
                 RoleCommands.SetRecommendationTuningOption(
                     (int)row.Descriptor.Option,
                     row.Value + NumericStepperUI.StepSize(row.Descriptor.Step));
@@ -1052,6 +1063,7 @@ namespace WorkRoles.UI
                     i == active ? 1f : 0.45f);
                 Widgets.Label(cell, row.EnumOptions[i]);
                 GUI.color = Color.white;
+                WrTips.Key(row.EnumTipKeys[i]).Region(cell);
                 if (i != active && Widgets.ButtonInvisible(cell))
                     RoleCommands.SetRecommendationTuningOption(
                         (int)row.Descriptor.Option,
@@ -1094,6 +1106,7 @@ namespace WorkRoles.UI
                 Widgets.DrawBoxSolid(cellRect, CellPanel);
                 Widgets.Label(cellRect, cell.ValueLabel);
                 Widgets.DrawHighlightIfMouseover(cellRect);
+                WrTips.Key("WR_StepModifiersTip").Region(cellRect);
                 if (e.type == EventType.MouseDown
                     && (e.button == 0 || e.button == 1)
                     && cellRect.Contains(e.mousePosition))
@@ -1129,6 +1142,7 @@ namespace WorkRoles.UI
             {
                 var role = roles[i];
                 var chipRect = Offset(layout[i], origin);
+                WrTips.Key("WR_RecOrderChipTip").Region(chipRect);
                 var click = RoleChipUI.Draw(chipRect, role, ChipStyle.Normal,
                     showRemove: true, dragSource: null, onClick: null);
                 if (click == ChipClick.Remove)
@@ -1147,7 +1161,9 @@ namespace WorkRoles.UI
                 }
             }
 
-            if (Widgets.ButtonText(Offset(state.OrderAddRect, origin), "WR_AddRole".Translate()))
+            Rect orderAddRect = Offset(state.OrderAddRect, origin);
+            WrTips.Key("WR_RecOrderAddTip").Region(orderAddRect);
+            if (Widgets.ButtonText(orderAddRect, "WR_AddRole".Translate()))
                 OpenAddMenu(store, order, byId);
 
             if (RoleDrag.Active && order.Contains(RoleDrag.RoleId) && Mouse.IsOver(panel))

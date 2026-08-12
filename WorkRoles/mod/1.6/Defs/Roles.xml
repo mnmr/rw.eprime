@@ -36,11 +36,6 @@
     <colorRef>slate-700</colorRef>
     <group>Essentials</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Medicine</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
     </tuning>
@@ -82,11 +77,6 @@
     <colorRef>slate-800</colorRef>
     <group>Medical</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Medicine</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
     </tuning>

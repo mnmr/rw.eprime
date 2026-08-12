@@ -673,14 +673,14 @@ namespace WorkRoles.UI
             const float AssignedRowH = 22f;
             const float GroupRowH = 26f;
             const float SkillsRowH = 22f;
-            const float AgeRowH = 28f;
+            const float AgeBlockH = 44f;
             const float CheckRowH = 24f;
             const float RulesRowGap = 6f;
             int customRows = header.CustomRows;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
-                TitleH + AssignedRowH + 2f + GroupRowH + SkillsRowH
-                    + 2f + AgeRowH + 2f + AgeRowH,
+                TitleH + AssignedRowH + 2f + GroupRowH - 4f + 8f + AgeBlockH
+                    + 2f + SkillsRowH,
                 CheckRowH * 4f);
             bool rulesShown = header.RulesShown;
             float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
@@ -826,33 +826,18 @@ namespace WorkRoles.UI
                 checksX - 8f - namesX, AssignedRowH), model);
 
             // Row 3: group picker button ("Group: <name>") + "New...".
-            DrawGroupPickerRow(new Rect(leftX, row2Y + AssignedRowH + 2f,
+            float groupY = row2Y + AssignedRowH + 2f;
+            DrawGroupPickerRow(new Rect(leftX, groupY,
                 checksX - 8f - leftX, GroupRowH - 4f), model);
 
-            float row4Y = row2Y + AssignedRowH + 2f + GroupRowH;
-            DrawSkillsUsedRow(new Rect(leftX, row4Y,
-                checksX - 8f - leftX, SkillsRowH), model);
+            // Row 4: the role's age gates as one row of toggleable bands,
+            // 8px below the group picker.
+            float ageY = groupY + GroupRowH - 4f + 8f;
+            DrawAgeBandsRow(new Rect(leftX, ageY,
+                checksX - 8f - leftX, AgeBlockH), model);
 
-            // Rows 5-6: the role's age gates (min and inclusive max), stepper
-            // rows; the commands clamp to 0-18 and no-op at the bounds.
-            float ageW = checksX - 8f - leftX;
-            var minAgeRect = new Rect(leftX, row4Y + SkillsRowH + 2f,
-                ageW, AgeRowH);
-            WrTips.Key("WR_RoleMinAgeTip", header.MinAgeTipArg)
-                .Region(minAgeRect);
-            int? requestedMin = NumericStepperUI.DrawRow(minAgeRect,
-                header.MinAgeCaption, header.MinAgeLabel, header.MinAge,
-                "WR_EditorMinAge", model.RoleId);
-            if (requestedMin.HasValue)
-                RoleCommands.SetRoleMinimumAge(model.RoleId, requestedMin.Value);
-            var maxAgeRect = new Rect(leftX, minAgeRect.yMax + 2f,
-                ageW, AgeRowH);
-            WrTips.Key("WR_RoleMaxAgeTip").Region(maxAgeRect);
-            int? requestedMax = NumericStepperUI.DrawRow(maxAgeRect,
-                header.MaxAgeCaption, header.MaxAgeLabel, header.MaxAge,
-                "WR_EditorMaxAge", model.RoleId);
-            if (requestedMax.HasValue)
-                RoleCommands.SetRoleMaximumAge(model.RoleId, requestedMax.Value);
+            DrawSkillsUsedRow(new Rect(leftX, ageY + AgeBlockH + 2f,
+                checksX - 8f - leftX, SkillsRowH), model);
 
             // Expanding section (full box width): rules while the auto-role
             // opt-in is on.
@@ -932,6 +917,78 @@ namespace WorkRoles.UI
                         name => RoleCommands.SetRoleGroup(roleId, name, withChildren: true)))));
                 Find.WindowStack.Add(new FloatMenu(options));
             }
+        }
+
+        // Age band segments: numeric ranges, language-independent.
+        private static readonly string[] AgeBandLabels =
+            { "3-6", "7-9", "10-12", "13-17", "18+" };
+        private static readonly Color AgeCellPanel = new Color(1f, 1f, 1f, 0.06f);
+        private static readonly Color AgeSelectedOutline = new Color(
+            WrStyle.MinorAccent.r, WrStyle.MinorAccent.g, WrStyle.MinorAccent.b, 0.5f);
+        // Selected band with no performable work in the role's coverage.
+        private static readonly Color AgeLacksJobsOutline =
+            new Color(0.85f, 0.3f, 0.25f, 0.7f);
+
+        /// The role's age gates as one row of toggleable bands: dim caption on
+        /// top, one segment per AgeBands entry. Clicking outside the selection
+        /// extends it, an end band trims off, an interior band collapses to
+        /// itself (AgeBands.Click), so the selection stays contiguous and
+        /// never empties.
+        private static void DrawAgeBandsRow(Rect rect, RoleEditorSnapshot model)
+        {
+            RoleEditorHeaderSnapshot header = model.Header;
+            WrTips.Key("WR_RoleAgeBandsTip", header.AgeTipArg).Region(rect);
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            GUI.color = WrStyle.DimText;
+            Widgets.Label(new Rect(rect.x, rect.y, rect.width, 19f),
+                header.AgeBandsCaption);
+            GUI.color = Color.white;
+
+            const float SegmentH = 24f;
+            const float SegmentGap = 2f;
+            (int lo, int hi) = header.AgeSelection;
+            float segmentW = (rect.width - (AgeBands.Count - 1) * SegmentGap)
+                / AgeBands.Count;
+            float segmentY = rect.y + 20f;
+            Text.Anchor = TextAnchor.MiddleCenter;
+            bool wrap = Text.WordWrap;
+            Text.WordWrap = false;
+            for (int band = 0; band < AgeBands.Count; band++)
+            {
+                var cell = new Rect(rect.x + band * (segmentW + SegmentGap),
+                    segmentY, segmentW, SegmentH);
+                bool selected = band >= lo && band <= hi;
+                Widgets.DrawBoxSolid(cell, AgeCellPanel);
+                if (selected)
+                {
+                    GUI.color = AgeBands.BandLacksJobs(band, header.AgeMinUnlock)
+                        ? AgeLacksJobsOutline
+                        : AgeSelectedOutline;
+                    Widgets.DrawBox(cell);
+                    GUI.color = Color.white;
+                }
+                else
+                {
+                    GUI.color = WrStyle.DimText;
+                    Widgets.DrawHighlightIfMouseover(cell);
+                }
+                Widgets.Label(cell, AgeBandLabels[band]);
+                GUI.color = Color.white;
+                if (Widgets.ButtonInvisible(cell))
+                {
+                    (int newLo, int newHi) = AgeBands.Click(lo, hi, band);
+                    if (newLo != lo || newHi != hi)
+                    {
+                        (int minAge, int maxAge) =
+                            AgeBands.StoredFor(newLo, newHi);
+                        RoleCommands.SetRoleAgeRange(
+                            model.RoleId, minAge, maxAge);
+                    }
+                }
+            }
+            Text.WordWrap = wrap;
+            Text.Anchor = TextAnchor.UpperLeft;
         }
 
         // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
@@ -1396,8 +1453,6 @@ namespace WorkRoles.UI
 
                 if (missing)
                     WrTips.Warning("WR_MissingDef", entry.DefName).Region(row);
-                else if (dead)
-                    WrTips.Key("WR_DeadEntryTip").Region(row);
                 if (!missing && Mouse.IsOver(row))
                 {
                     StructuredTip skillTip = publishedRow.SkillTip;
@@ -1562,13 +1617,10 @@ namespace WorkRoles.UI
                 }
                 else
                 {
-                    // Job giver child row
+                    // Job giver child row. ~ = covered via the work type; the
+                    // promote-click hint rides the node's composed skill tip.
                     var checkboxRect = new Rect(row.x + 42f, row.y + (row.height - 24f) / 2f, 24f, 24f);
                     var currentState = node.State;
-                    // ~ = covered via the work type; a click promotes to an own
-                    // (reorderable) entry.
-                    if (currentState == MultiCheckboxState.Partial)
-                        WrTips.Key("WR_CoveredByTypeTip").Region(row);
                     GUI.color = Mouse.IsOver(checkboxRect) ? GenUI.MouseoverColor : Color.white;
                     GUI.DrawTexture(checkboxRect, StateTex(currentState));
                     GUI.color = Color.white;

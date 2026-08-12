@@ -491,16 +491,23 @@ namespace WorkRoles.Core
             }
             else
             {
-                usedIds = relevantIds;
-                usedNames = relevantNames;
                 requirements = new List<JobProfileRequirementFacts>();
                 if (source.HasCuratedXp)
                 {
+                    // The curated XP table is ground truth for the skills the
+                    // job actually exercises, used AND trained: the parent
+                    // work type's skills must not bleed in (rescue and feed
+                    // under Doctor involve no Medicine). Identities are
+                    // unknown for curated names; consumers resolve by name.
+                    usedIds = new List<int>();
+                    usedNames = new List<string>(source.CuratedXpSkillDefNames);
                     trainedIds = new List<int>();
                     trainedNames = new List<string>(source.CuratedXpSkillDefNames);
                 }
                 else
                 {
+                    usedIds = relevantIds;
+                    usedNames = relevantNames;
                     trainedIds = new List<int>(relevantIds);
                     trainedNames = new List<string>(relevantNames);
                 }
