@@ -2,44 +2,37 @@ using System;
 
 namespace WorkRoles.Core
 {
-    /// Derives the engine's banded holder demand from a role's two tuning
-    /// numbers. Per band: RequiredTotal = max(colonyMin, coverage*colonySize/100)
-    /// (rounded half up at the band's top size); DirectMinimum = min(1, colonyMin),
-    /// the rest of the total is waivable to training roles.
+    /// Holder demand from a role's two tuning numbers: RequiredTotal =
+    /// max(colonyMin, coverage percent of the colony size, rounded half up);
+    /// the direct minimum is min(1, colonyMin) and the rest of the total is
+    /// waivable to training roles. Consumers clamp the total to their capacity
+    /// so the direct minimum survives small colonies.
     public static class RoleDemand
     {
-        public static HolderScale DeriveScale(int colonyMin, int coverage)
+        public static HolderRequirement RequirementFor(
+            int colonyMin, int coverage, int colonySize)
         {
-            var scale = new HolderScale();
-            for (int band = 0; band < HolderScale.Bands; band++)
-            {
-                int size = (band + 1) * HolderScale.BandSize;
-                int total = Math.Max(colonyMin, (coverage * size + 50) / 100);
-                scale.RequiredTotals[band] = total;
-                scale.TrainingWaivers[band] = Math.Max(0, total - Math.Min(1, colonyMin));
-            }
-            return scale;
+            int total = Math.Max(colonyMin,
+                (coverage * Math.Max(0, colonySize) + 50) / 100);
+            return new HolderRequirement(
+                total, Math.Max(0, total - Math.Min(1, colonyMin)));
+        }
+    }
+
+    /// A holder requirement in the same terms used by configuration and UI.
+    /// Training waivers are part of the required total; the direct minimum is
+    /// therefore derived once here rather than reinterpreted by each consumer.
+    public readonly struct HolderRequirement
+    {
+        public HolderRequirement(int requiredTotal, int trainingWaivers)
+        {
+            RequiredTotal = Math.Max(0, requiredTotal);
+            TrainingWaivers = Math.Max(
+                0, Math.Min(trainingWaivers, RequiredTotal));
         }
 
-        /// Save/import migration: the two numbers a retired named strategy maps
-        /// to. False when the strategy carries no demand (Never or no scale).
-        public static bool TryFromLegacyStrategy(
-            RoleAssignmentStrategy strategy, out int colonyMin, out int coverage)
-        {
-            colonyMin = 0;
-            coverage = 0;
-            if (strategy == null || strategy.Mode == ScaleMode.Never) return false;
-            if (strategy.Mode == ScaleMode.Unskilled)
-            {
-                colonyMin = 1;
-                coverage = 100;
-                return true;
-            }
-            if (strategy.Scale == null) return false;
-            colonyMin = strategy.Scale.RequiredTotals[0];
-            // Round half up over the top band's size of 36 colonists.
-            coverage = (strategy.Scale.RequiredTotals[HolderScale.Bands - 1] * 100 + 18) / 36;
-            return true;
-        }
+        public int RequiredTotal { get; }
+        public int TrainingWaivers { get; }
+        public int DirectMinimum => RequiredTotal - TrainingWaivers;
     }
 }

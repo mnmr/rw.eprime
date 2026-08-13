@@ -69,6 +69,8 @@ internal static partial class Program
         return colonists;
     }
 
+    /// Caps each role's required total by rewriting its demand to a flat
+    /// colonyMin at the capped total (coverage 0), keeping one direct slot.
     private static void ApplyRequiredTotalCap(
         Catalog catalog,
         int colonySize,
@@ -76,21 +78,11 @@ internal static partial class Program
     {
         foreach (RoleView role in catalog.Roles)
         {
-            HolderRequirement requirement = role.RequirementAt(colonySize);
-            int directMinimum = Math.Min(
-                requiredTotalCap,
-                requirement.DirectMinimum);
-            int trainingWaivers = Math.Min(
-                requirement.TrainingWaivers,
-                Math.Max(0, requiredTotalCap - directMinimum));
-            int requiredTotal = directMinimum + trainingWaivers;
-            int maximum = role.MaxHoldersAt(colonySize);
-            var scale = new HolderScale();
-            Array.Fill(scale.RequiredTotals, requiredTotal);
-            Array.Fill(scale.TrainingWaivers, trainingWaivers);
-            Array.Fill(scale.Max, maximum);
-            scale.Normalize();
-            role.Scale = scale;
+            HolderRequirement requirement = RoleDemand.RequirementFor(
+                role.ColonyMin, role.CoveragePercent, colonySize);
+            role.ColonyMin = Math.Min(
+                requiredTotalCap, requirement.RequiredTotal);
+            role.CoveragePercent = 0;
         }
     }
 }

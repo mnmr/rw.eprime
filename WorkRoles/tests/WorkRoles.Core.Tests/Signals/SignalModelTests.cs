@@ -1,0 +1,153 @@
+using WorkRoles.Core.Signals;
+
+namespace WorkRoles.Core.Tests.Signals;
+
+public class SignalModelTests
+{
+    [Test]
+    public async Task SourceAndUiRetainSemanticAndDisplayOriginsSeparately()
+    {
+        var source = new SignalSource(SignalSourceKind.Passion, "AS_DedicatedPassion", "sarg.alphaskills", requiredPackageIds: ["vanillaexpanded.skills"]);
+        var ui = new SignalUi("dedicated", "A steady interest.", "Passions/AS_DedicatedPassion", "Minor", "Minor", "Alpha Skills");
+
+        await Assert.That(source.PackageId).IsEqualTo("sarg.alphaskills");
+        await Assert.That(source.RequiredPackageIds).IsEquivalentTo(["vanillaexpanded.skills"]);
+        await Assert.That(ui.SourceDisplayName).IsEqualTo("Alpha Skills");
+    }
+
+    [Test]
+    public async Task SignalSourceRejectsMissingPackageIdentity()
+    {
+        await Assert.That(() => new SignalSource(SignalSourceKind.Gene, "Gene", " ")).Throws<ArgumentException>();
+    }
+
+    [Test]
+    public async Task SignalSourceRejectsMissingDefinitionIdentity()
+    {
+        await Assert.That(() => new SignalSource(SignalSourceKind.Gene, "", "Ludeon.RimWorld.Biotech")).Throws<ArgumentException>();
+    }
+
+    [Test]
+    public async Task SignalUiRejectsMissingDisplayOrigin()
+    {
+        await Assert.That(() => new SignalUi(null, null, null, null, null, "")).Throws<ArgumentException>();
+    }
+
+    [Test]
+    public async Task TargetedSignalEffectRejectsMissingTarget()
+    {
+        await Assert.That(() => new SignalEffect(SignalEffectKind.StatModifier, SignalOperation.Add, 1f, SignalValueUnit.StatValue)).Throws<ArgumentException>();
+    }
+
+    [Test]
+    public async Task CollectionsAreCopiedAndExposedReadOnly()
+    {
+        List<string> dependencies = ["vanillaexpanded.skills"];
+        List<SignalCondition> conditions = [new("night", "At night")];
+        var effect = new SignalEffect(SignalEffectKind.LearningRate, SignalOperation.Multiply, 2.5f, SignalValueUnit.Factor, conditions: conditions);
+        List<SignalEffect> effects = [effect];
+        var source = new SignalSource(SignalSourceKind.Passion, "AS_NightPassion_Active", "sarg.alphaskills", requiredPackageIds: dependencies);
+        var signal = new Signal(SignalType.Passive, source, "Shooting", effects, new SignalUi("night", null, null, "Major", "Major", "Alpha Skills"));
+
+        dependencies.Add("Ludeon.RimWorld.Royalty");
+        conditions.Add(new SignalCondition("outdoors", "Outdoors"));
+        effects.Clear();
+
+        await Assert.That(source.RequiredPackageIds.Count).IsEqualTo(1);
+        await Assert.That(effect.Conditions.Count).IsEqualTo(1);
+        await Assert.That(signal.Effects.Count).IsEqualTo(1);
+        await Assert.That(source.RequiredPackageIds is IList<string> list && list.IsReadOnly).IsTrue();
+    }
+
+    [Test]
+    public async Task ExpertiseScaleResolvesWithoutChangingSourceMagnitude()
+    {
+        var effect = new SignalEffect(
+            SignalEffectKind.WorkSpeed,
+            SignalOperation.Add,
+            0.05f,
+            SignalValueUnit.StatValue,
+            "ConstructionSpeed",
+            scaleKind: SignalScaleKind.ExpertiseLevel,
+            currentScale: 12f,
+            scaleMultiplier: 1.5f
+        );
+
+        await Assert.That(effect.Magnitude).IsEqualTo(0.05f);
+        await Assert.That(effect.CurrentScale).IsEqualTo(12f);
+        await Assert.That(effect.ScaleMultiplier).IsEqualTo(1.5f);
+        await Assert.That(effect.ResolvedMagnitude.HasValue).IsTrue();
+        await Assert.That(Math.Abs(effect.ResolvedMagnitude.Value - 0.9f) < 0.0001f).IsTrue();
+    }
+
+    [Test]
+    public async Task DescriptiveEffectHasNoResolvedMagnitude()
+    {
+        var effect = new SignalEffect(
+            SignalEffectKind.WorkPreference,
+            SignalOperation.Descriptive,
+            null,
+            SignalValueUnit.None,
+            conditions: [new SignalCondition("ranged-weapon", "When carrying a ranged weapon")]
+        );
+
+        await Assert.That(effect.ResolvedMagnitude.HasValue).IsFalse();
+    }
+
+    [Test]
+    public async Task EquivalentSignalsHaveValueEqualityAndHashCodes()
+    {
+        Signal Make() =>
+            new(
+                SignalType.Active,
+                new SignalSource(SignalSourceKind.Gene, "Learning_Fast", "Ludeon.RimWorld.Biotech"),
+                null,
+                [new SignalEffect(SignalEffectKind.LearningRate, SignalOperation.Add, 0.5f, SignalValueUnit.Factor, "GlobalLearningFactor")],
+                new SignalUi("quick study", "Learns faster.", "UI/Icons/Genes/Gene_FastLearning", null, null, "Biotech")
+            );
+
+        var first = Make();
+        var second = Make();
+
+        await Assert.That(first.Equals(second)).IsTrue();
+        await Assert.That(first.GetHashCode()).IsEqualTo(second.GetHashCode());
+    }
+
+    [Test]
+    public async Task RuntimeSignalsRetainSourceDegreeAndSkillRelation()
+    {
+        var definition = VanillaSignalDefinitions.All.Single(x => x.Source.Kind == SignalSourceKind.Trait && x.Source.DefName == "ShootingAccuracy" && x.Degree == -1);
+
+        Signal primary = SignalFactory.Instantiate(definition);
+        var spillover = new Signal(primary.Type, primary.Source, "Cooking", primary.Effects, primary.Ui, originSkillDefName: "Shooting", relation: SignalRelation.Spillover);
+
+        await Assert.That(primary.Source.Degree).IsEqualTo(-1);
+        await Assert.That(primary.Relation).IsEqualTo(SignalRelation.Primary);
+        await Assert.That(primary.OriginSkillDefName == null).IsTrue();
+        await Assert.That(spillover.SkillDefName).IsEqualTo("Cooking");
+        await Assert.That(spillover.OriginSkillDefName).IsEqualTo("Shooting");
+        await Assert.That(spillover.Relation).IsEqualTo(SignalRelation.Spillover);
+        await Assert.That(primary.Equals(spillover)).IsFalse();
+    }
+
+    [Test]
+    public async Task WorkTypeTargetIsRetainedWithoutASkillTarget()
+    {
+        var source = new SignalSource(SignalSourceKind.WorkAversion, "HatedWork", "void.MoreThanCapable");
+        var ui = new SignalUi("hated cooking", "The pawn hates this work.", null, null, null, "More Than Capable");
+
+        var signal = new Signal(SignalType.Active, source, skillDefName: null, effects: [], ui, workTypeDefName: "Cooking");
+
+        await Assert.That(signal.WorkTypeDefName).IsEqualTo("Cooking");
+        await Assert.That(signal.SkillDefName == null).IsTrue();
+    }
+
+    [Test]
+    public async Task WorkTypeAndSkillTargetsAreMutuallyExclusive()
+    {
+        var source = new SignalSource(SignalSourceKind.WorkAversion, "HatedWork", "void.MoreThanCapable");
+        var ui = new SignalUi("hated cooking", "The pawn hates this work.", null, null, null, "More Than Capable");
+
+        await Assert.That(() => new Signal(SignalType.Active, source, "Cooking", [], ui, workTypeDefName: "Cooking")).Throws<ArgumentException>();
+    }
+}

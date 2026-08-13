@@ -14,6 +14,8 @@ namespace WorkRoles.Core.Recs
         public readonly Dictionary<int, PathView> PathsById;
 
         private readonly Dictionary<int, HashSet<int>> redundantBy;
+        /// Per-role holder requirement, precomputed once for this colony size.
+        private readonly Dictionary<int, HolderRequirement> requirementByRoleId;
         private readonly Dictionary<int, IReadOnlyList<RoleSkillView>>
             requiredSkillsByRole =
                 new Dictionary<int, IReadOnlyList<RoleSkillView>>();
@@ -28,6 +30,11 @@ namespace WorkRoles.Core.Recs
             Colony = colony;
             RolesById = colony.Roles.ToDictionary(role => role.Id);
             PathsById = colony.Paths.ToDictionary(path => path.Id);
+            requirementByRoleId = new Dictionary<int, HolderRequirement>(
+                colony.Roles.Count);
+            foreach (RoleView role in colony.Roles)
+                requirementByRoleId[role.Id] = RoleDemand.RequirementFor(
+                    role.ColonyMin, role.CoveragePercent, colony.Pawns.Count);
             redundantBy = new Dictionary<int, HashSet<int>>(
                 colony.Roles.Count);
             foreach (RoleView role in colony.Roles)
@@ -45,6 +52,12 @@ namespace WorkRoles.Core.Recs
 
         public RoleView RoleOf(int id) =>
             RolesById.TryGetValue(id, out RoleView role) ? role : null;
+
+        public HolderRequirement RequirementOf(int roleId) =>
+            requirementByRoleId.TryGetValue(
+                roleId, out HolderRequirement requirement)
+                ? requirement
+                : default;
 
         public bool Redundant(int coveringRoleId, int coveredRoleId) =>
             redundantBy.TryGetValue(

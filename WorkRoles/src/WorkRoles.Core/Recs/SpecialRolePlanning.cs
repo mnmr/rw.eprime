@@ -22,7 +22,7 @@ namespace WorkRoles.Core.Recs
             hunterTier = tier;
         }
 
-        internal void PromoteHunterToTierZero() => hunterTier = 0;
+        internal void PromoteHunterToFirstTier() => hunterTier = 1;
 
         internal void AddFireBlocker(int roleId)
         {
@@ -32,16 +32,6 @@ namespace WorkRoles.Core.Recs
 
         private void ApplySpecialKeys(EngineContext facts, long[] keys)
         {
-            if (hunterTier >= 0
-                && facts.Colony.HunterRoleId >= 0
-                && !facts.Colony.OrderTemplate.Contains(
-                    facts.Colony.HunterRoleId))
-            {
-                int hunterAt = roleIds.IndexOf(facts.Colony.HunterRoleId);
-                if (hunterAt >= 0)
-                    keys[hunterAt] = Ordering.HunterPosition(
-                        facts.Colony, facts.RolesById, hunterTier);
-            }
             if (fireBlockerRoleId >= 0)
             {
                 int fireAt = roleIds.IndexOf(fireBlockerRoleId);
@@ -49,6 +39,117 @@ namespace WorkRoles.Core.Recs
             }
         }
 
+        private bool TierPlacesHunter(EngineContext facts, int pawnIndex)
+        {
+            int hunterRoleId = facts.Colony.HunterRoleId;
+            return hunterTier >= 1
+                && hunterRoleId >= 0
+                && !facts.Colony.OrderTemplate.Contains(hunterRoleId)
+                && !facts.HasProtectedDirectAssignment(pawnIndex, hunterRoleId);
+        }
+
+        /// A tier-placed Hunter is withheld from keyed ordering, protected
+        /// anchoring, and score bubbling so it cannot shift other roles;
+        /// PlaceHunter inserts it afterwards.
+        private int[] WithoutPlacedHunter(
+            EngineContext facts, int pawnIndex, int[] roles)
+        {
+            if (!TierPlacesHunter(facts, pawnIndex)) return roles;
+            int at = System.Array.IndexOf(roles, facts.Colony.HunterRoleId);
+            if (at < 0) return roles;
+            var trimmed = new int[roles.Length - 1];
+            for (int index = 0, target = 0; index < roles.Length; index++)
+                if (index != at) trimmed[target++] = roles[index];
+            return trimmed;
+        }
+
+        /// Places Hunter by shooting tier inside the pawn's published role
+        /// order: tier 1 follows the leading block of non-normal roles, tier 2
+        /// additionally the pawn's minimum and champion picks, tiers 3 and 4
+        /// follow the first and third full-time normal role (capped at the
+        /// first unskilled chore), and tier 5 goes last, ahead of trailing
+        /// preserve-order roles. A Hunter pinned in the order template or
+        /// pinned on the pawn keeps that slot instead.
+        internal int[] PlaceHunter(
+            EngineContext facts, int pawnIndex, int[] ordered)
+        {
+            int at = HunterInsertionIndex(facts, pawnIndex, ordered);
+            var placed = new int[ordered.Length + 1];
+            for (int index = 0; index < at; index++)
+                placed[index] = ordered[index];
+            placed[at] = facts.Colony.HunterRoleId;
+            for (int index = at; index < ordered.Length; index++)
+                placed[index + 1] = ordered[index];
+            return placed;
+        }
+
+        private int HunterInsertionIndex(
+            EngineContext facts,
+            int pawnIndex,
+            int[] roles)
+        {
+            int afterLeadingBlock = 0;
+            while (afterLeadingBlock < roles.Length
+                && !IsNormalRole(facts, pawnIndex, roles[afterLeadingBlock]))
+                afterLeadingBlock++;
+            if (hunterTier == 1) return afterLeadingBlock;
+            if (hunterTier == 2)
+            {
+                // Past the pawn's minimum/champion picks and any interleaved
+                // non-normal roles: the slot is before the first plain normal
+                // role, and never past an unskilled chore.
+                int at = afterLeadingBlock;
+                while (at < roles.Length)
+                {
+                    RoleView role = facts.RoleOf(roles[at]);
+                    if (role != null && role.Unskilled) break;
+                    if (IsNormalRole(facts, pawnIndex, roles[at])
+                        && !IsMinimumRole(roles[at])
+                        && !IsChampionPick(roles[at]))
+                        break;
+                    at++;
+                }
+                return at;
+            }
+
+            // The last slot still precedes trailing preserve-order roles; the
+            // full-time scan for tiers 3 and 4 falls back to it as well.
+            int last = roles.Length;
+            while (last > 0 && PreservesOrder(facts, roles[last - 1])) last--;
+            if (hunterTier == 5) return last;
+
+            int needed = hunterTier == 3 ? 1 : 3;
+            int seen = 0;
+            for (int index = afterLeadingBlock; index < last; index++)
+            {
+                RoleView role = facts.RoleOf(roles[index]);
+                if (role == null) continue;
+                if (role.Unskilled) return index;
+                if (role.Category == RoleCategory.Normal
+                    && role.Time == RoleTime.FullTime
+                    && ++seen == needed)
+                    return index + 1;
+            }
+            return last;
+        }
+
+        private static bool IsNormalRole(
+            EngineContext facts, int pawnIndex, int roleId)
+        {
+            RoleView role = facts.RoleOf(roleId);
+            return role != null
+                && !role.AutoAssign
+                && !role.HasRules
+                && !role.Blocker
+                && role.Category != RoleCategory.Important
+                && !facts.HasProtectedDirectAssignment(pawnIndex, roleId);
+        }
+
+        private static bool PreservesOrder(EngineContext facts, int roleId)
+        {
+            RoleView role = facts.RoleOf(roleId);
+            return role != null && role.PreserveRecommendationOrder;
+        }
     }
 
     public sealed partial class RecommendationPlan
@@ -65,6 +166,7 @@ namespace WorkRoles.Core.Recs
                 if (!role.AutoAssign
                     || role.HasRules
                     || role.Blocker
+                    || role.MemberRoleIds != null
                     || !role.Enabled
                     || !role.Available)
                     continue;
@@ -82,27 +184,12 @@ namespace WorkRoles.Core.Recs
                 {
                     AssignmentView assignment = pawn.Existing[assignmentIndex];
                     RoleView role = facts.RoleOf(assignment.RoleId);
-                    if (role == null)
+                    if (role == null || role.MemberRoleIds != null)
                         continue;
-                    bool protectedRole = assignment.Pinned
-                        || role.HasRules
-                        || role.Blocker;
-                    // A role on the Unskilled strategy is planned and coverage-
-                    // folded like any other; only pure skill-less chores (not on
-                    // the Unskilled strategy) are retained as special roles.
-                    // A role on the Unskilled strategy is planned and coverage-
-                    // folded like any other; only pure skill-less chores (not on
-                    // the Unskilled strategy) are retained as special roles.
-                    bool retainedChore = role.Unskilled
-                        && role.Mode != ScaleMode.Unskilled
-                        && !role.AutoAssign
-                        && role.Enabled
-                        && role.Available;
-                    // Never suppresses only the retained-chore carry-over; an
-                    // explicit pin/rule/blocker is always kept.
-                    if (!protectedRole && role.UsesHolderScale && role.IsNever)
-                        continue;
-                    if (protectedRole || retainedChore)
+                    // Unskilled roles with demand are planned like any other and
+                    // demand-less ones drop out; only an explicit pin, rule, or
+                    // blocker carries an existing assignment over.
+                    if (assignment.Pinned || role.HasRules || role.Blocker)
                         drafts[pawnIndex].AddSpecialRole(role.Id);
                 }
             }
@@ -134,7 +221,7 @@ namespace WorkRoles.Core.Recs
                 || !hunter.Enabled
                 || !hunter.Available)
                 return;
-            int tierZero = -1;
+            int firstTier = -1;
             int lowest = -1;
             int lowestShooting = int.MaxValue;
             for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
@@ -148,7 +235,7 @@ namespace WorkRoles.Core.Recs
                     continue;
                 int tier = formulas.HunterTier(pawn.ShootingLevel);
                 drafts[pawnIndex].AddHunter(hunter.Id, tier);
-                if (tier == 0) tierZero = pawnIndex;
+                if (tier == 1) firstTier = pawnIndex;
                 if (pawn.ShootingLevel < lowestShooting
                     || pawn.ShootingLevel == lowestShooting
                         && pawnIndex < lowest)
@@ -157,8 +244,8 @@ namespace WorkRoles.Core.Recs
                     lowestShooting = pawn.ShootingLevel;
                 }
             }
-            if (tierZero < 0 && lowest >= 0)
-                drafts[lowest].PromoteHunterToTierZero();
+            if (firstTier < 0 && lowest >= 0)
+                drafts[lowest].PromoteHunterToFirstTier();
         }
     }
 }

@@ -17,12 +17,19 @@ namespace WorkRoles.UI
     {
         internal const float FlowGap = 8f;
 
-        private int orderStamp = -1;
+        // Cache contract — Owner: Recommendations tab. Key: RoleStore identity,
+        // UiVersion.Current, available width, and language generation through
+        // explicit invalidation. Value: one immutable recommendation-order
+        // snapshot containing detached chip data, layout, catalog lookup, and
+        // add-menu projections. Dependencies: role catalog/order, labels,
+        // colors, role rules, hunting identity, width, font, and language.
+        // Refresh: immediate on a key change. Equality: key hits preserve
+        // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
+        private RoleStore orderStore;
+        private int orderUiVersion = -1;
+        private int orderGeneration;
         private float orderWidth = -1f;
-        private List<int> order;
-        private Dictionary<int, RoleView> orderById;
-        private List<Role> orderRoles;
-        private readonly List<Rect> orderLayout = new List<Rect>();
+        private RecOrderSnapshot orderSnapshot;
 
         private int tipsStamp = -1;
 
@@ -38,58 +45,43 @@ namespace WorkRoles.UI
         private RoleStore tuningStore;
         private int tuningRevision = -1;
         private float tuningWidth = -1f;
-        private readonly List<RecTuningSection> tuningSections =
-            new List<RecTuningSection>();
+        private RecTuningSnapshot tuningSnapshot;
 
-        // Cache contract — Owner: Recommendations tab. Key: (UiVersion.Current,
-        // RoleStore identity, available width, language generation via explicit
-        // invalidation). Value: immutable-by-publication list of the resolved
-        // recommendation-order roles with measured header chip widths, plus
-        // the measured help paragraph. Dependencies: the resolved
-        // recommendation order (EnsureOrder must run first), role labels and
-        // colors, chip label widths, width, language. Refresh: immediate on
-        // key change. Equality: matching key preserves list identity.
-        // Teardown: Reset/InvalidateLanguageCaches clears the list and help.
-        private int panelsStamp = -1;
-        private RoleStore panelsStore;
+        // Cache contract — Owner: Recommendations tab. Key: published order
+        // snapshot identity and available width. Value: one immutable panel
+        // snapshot with detached chip render data and measured help geometry.
+        // Dependencies: resolved order chip projections, width, font, and
+        // language (the order snapshot is replaced on language invalidation).
+        // Refresh: immediate on a key change. Equality: matching key preserves
+        // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
+        private RecOrderSnapshot panelsOrder;
         private float panelsWidth = -1f;
-        private readonly List<RecRolePanel> panels = new List<RecRolePanel>();
+        private RecRolePanelsSnapshot panelsSnapshot;
 
         // Cache contract — Owner: Recommendations tab. Key: (UiVersion.Current,
         // RoleStore identity, expanded role id, available width, language
         // generation via explicit invalidation). Value: one immutable
         // RecRoleDetailSnapshot (single slot: the accordion expands one panel).
         // Dependencies: the role's category/time/championPenalty/skill lists,
-        // holder scales and training paths (embedded scale editor snapshot,
-        // holder summary, path views), skill/enum labels, language, font,
-        // width. Refresh: immediate on key change. Equality: matching key
-        // preserves snapshot identity. Teardown: Reset/InvalidateLanguageCaches
-        // releases the snapshot.
+        // holder scales and training paths, detached role-chip and add-menu
+        // projections, skill/enum labels, language, font, and width. Refresh:
+        // immediate on key change. Equality: matching key preserves snapshot
+        // identity. Teardown: Reset/InvalidateLanguageCaches releases it.
         private int detailStamp = -1;
         private RoleStore detailStore;
         private int detailRoleId = -1;
         private float detailWidth = -1f;
         private RecRoleDetailSnapshot detail;
 
-        internal int OrderStamp => orderStamp;
-        internal IReadOnlyList<int> Order => order;
-        internal IReadOnlyDictionary<int, RoleView> OrderById => orderById;
-        internal IReadOnlyList<Role> OrderRoles => orderRoles;
-        internal IReadOnlyList<Rect> OrderLayout => orderLayout;
-        internal Rect OrderAddRect { get; private set; }
-        internal float OrderLayoutHeight { get; private set; }
+        internal int OrderStamp => orderGeneration;
+        internal RecOrderSnapshot Order => orderSnapshot;
 
         internal StructuredTip RecommendationOrderTip { get; private set; }
         internal StructuredTip TrainingTip { get; private set; }
         internal string RecommendationOrderHelp { get; private set; }
         internal float RecommendationOrderHelpHeight { get; private set; }
-        internal IReadOnlyList<RecTuningSection> TuningSections => tuningSections;
-        internal string TuningReset { get; private set; }
-        internal string GlobalHelp { get; private set; }
-        internal float GlobalHelpHeight { get; private set; }
-        internal IReadOnlyList<RecRolePanel> Panels => panels;
-        internal string PanelsHelp { get; private set; }
-        internal float PanelsHelpHeight { get; private set; }
+        internal RecTuningSnapshot Tuning => tuningSnapshot;
+        internal RecRolePanelsSnapshot Panels => panelsSnapshot;
 
         internal void Reset()
         {
@@ -98,11 +90,10 @@ namespace WorkRoles.UI
 
         internal void InvalidateLanguageCaches()
         {
-            orderStamp = -1;
-            order = null;
-            orderById = null;
-            orderRoles = null;
-            orderLayout.Clear();
+            orderStore = null;
+            orderUiVersion = -1;
+            orderWidth = -1f;
+            orderSnapshot = null;
 
             tipsStamp = -1;
             RecommendationOrderTip = null;
@@ -115,17 +106,11 @@ namespace WorkRoles.UI
             tuningStore = null;
             tuningRevision = -1;
             tuningWidth = -1f;
-            tuningSections.Clear();
-            TuningReset = null;
-            GlobalHelp = null;
-            GlobalHelpHeight = 0f;
+            tuningSnapshot = null;
 
-            panelsStamp = -1;
-            panelsStore = null;
+            panelsOrder = null;
             panelsWidth = -1f;
-            panels.Clear();
-            PanelsHelp = null;
-            PanelsHelpHeight = 0f;
+            panelsSnapshot = null;
 
             detailStamp = -1;
             detailStore = null;
@@ -136,26 +121,47 @@ namespace WorkRoles.UI
 
         internal void EnsureOrder(RoleStore store, float width)
         {
-            if (orderStamp == UiVersion.Current && orderWidth == width) return;
-            orderStamp = UiVersion.Current;
-            orderWidth = width;
-
+            if (ReferenceEquals(orderStore, store)
+                && orderUiVersion == UiVersion.Current
+                && orderWidth == width) return;
             List<RoleView> views = RecsAdapter.RoleViewsOf(store.roles);
-            order = OrderTemplate.ResolveTemplate(store.recommendationOrder, views);
-            orderById = views.ToDictionary(role => role.Id);
-            orderRoles = order.Select(store.RoleById).Where(role => role != null).ToList();
-            orderLayout.Clear();
-            OrderLayoutHeight = LayoutOrderChips(
-                width, orderRoles, orderLayout, out Rect addRect);
-            OrderAddRect = addRect;
-        }
+            List<int> resolved = OrderTemplate.ResolveTemplate(
+                store.recommendationOrder, views);
+            var viewsById = views.ToDictionary(role => role.Id);
+            var chipsById = new Dictionary<int, RoleChipRenderData>(
+                store.roles.Count);
+            for (int i = 0; i < store.roles.Count; i++)
+            {
+                Role role = store.roles[i];
+                chipsById[role.id] = RoleChipRenderData.From(role);
+            }
 
-        internal int OrderIndexOf(int roleId)
-        {
-            if (order == null) return -1;
-            for (int i = 0; i < order.Count; i++)
-                if (order[i] == roleId) return i;
-            return -1;
+            List<RecOrderChip> chips = LayoutOrderChips(width, resolved,
+                chipsById, viewsById, out Rect addRect, out float layoutHeight,
+                out string addLabel);
+            var addOptions = new List<RecRoleMenuOption>();
+            List<int> candidateIds = OrderTemplate.AddCandidates(views, resolved);
+            for (int i = 0; i < candidateIds.Count; i++)
+            {
+                if (!chipsById.TryGetValue(candidateIds[i], out var chip))
+                    continue;
+                addOptions.Add(new RecRoleMenuOption(
+                    chip.RoleId, chip.Label, null));
+            }
+            addOptions.Sort(RecRoleMenuOption.CompareByLabel);
+
+            var rebuilt = new RecOrderSnapshot(
+                chips, chipsById, addOptions, addRect, layoutHeight, addLabel);
+            if (!ReferenceEquals(orderStore, store)
+                || orderSnapshot == null
+                || !orderSnapshot.ContentEquals(rebuilt))
+            {
+                orderSnapshot = rebuilt;
+                unchecked { orderGeneration++; }
+            }
+            orderStore = store;
+            orderUiVersion = UiVersion.Current;
+            orderWidth = width;
         }
 
         internal void EnsureTuning(RoleStore store, float width)
@@ -164,40 +170,55 @@ namespace WorkRoles.UI
                 && tuningRevision == store.RecommendationTuningRevision
                 && tuningWidth == width)
                 return;
-            tuningStore = store;
-            tuningRevision = store.RecommendationTuningRevision;
-            tuningWidth = width;
-            tuningSections.Clear();
-            TuningReset = "WR_RecTuneReset".Translate();
+            var rebuiltSections = new List<RecTuningSection>();
+            string tuningReset = "WR_RecTuneReset".Translate();
+            string globalHelp = null;
+            float globalHelpHeight = 0f;
 
             RecommendationsTuningOptions options = store.recommendationTuning
                 ?? RecommendationsTuningOptions.Default;
             const float rowGap = 6f;
-            const float descriptionWidthReserve = 116f;
+            // Controls occupy 108px at the right edge; captions keep 20px clear.
+            const float descriptionWidthReserve = 128f;
             string cellHint = "WR_RecTuneCellHint".Translate();
             string sectionKey = null;
             string sectionLabel = null;
             string sectionIntro = null;
             float sectionIntroHeight = 0f;
             List<RecTuningItem> items = null;
-            RecTuningTable table = null;
+            RecTuningTableBuilder table = null;
             RecTuningTableGroup tableGroup = RecTuningTableGroup.None;
             float tableCellsX = 0f;
             float tableCellsY = 0f;
+            float tableCellW = RecTuningTable.CellW;
             float y = 0f;
+            void CloseTable()
+            {
+                if (table != null)
+                {
+                    items.Add(new RecTuningItem(table.Publish()));
+                    table = null;
+                }
+                tableGroup = RecTuningTableGroup.None;
+            }
             void CloseSection()
             {
+                CloseTable();
                 if (items != null)
-                    tuningSections.Add(new RecTuningSection(
+                    rebuiltSections.Add(new RecTuningSection(
                         sectionKey, sectionLabel, sectionIntro,
                         sectionIntroHeight, items, y - rowGap));
             }
             GameFont previousFont = Text.Font;
             try
             {
+                // The right-aligned cell hint under a table block can be wider
+                // than the cells; captions must clear both (drawn Tiny).
+                Text.Font = GameFont.Tiny;
+                float cellHintWidth = WrText.FitWidth(cellHint);
                 Text.Font = GameFont.Small;
-                GlobalHelp = "WR_RecGlobalPanelHelp".Translate();
-                GlobalHelpHeight = Text.CalcHeight(GlobalHelp, width);
+                globalHelp = "WR_RecGlobalPanelHelp".Translate();
+                globalHelpHeight = Text.CalcHeight(globalHelp, width);
                 foreach (RecommendationTuningDescriptor descriptor in
                          RecommendationsTuningOptions.Descriptors)
                 {
@@ -223,8 +244,7 @@ namespace WorkRoles.UI
                     RecTuningTableGroup group = GroupOf(descriptor.Option);
                     if (group == RecTuningTableGroup.None)
                     {
-                        table = null;
-                        tableGroup = RecTuningTableGroup.None;
+                        CloseTable();
                         string label = descriptor.LabelKey.Translate();
                         string description = descriptor.DescriptionKey.Translate();
                         float descriptionHeight = Text.CalcHeight(
@@ -269,14 +289,23 @@ namespace WorkRoles.UI
 
                     if (group != tableGroup)
                     {
+                        CloseTable();
                         tableGroup = group;
                         (string labelKey, string descKey) = GroupKeys(group);
                         // Cells right-align like the single-row controls; the
                         // caption wraps in the space left of them.
                         int columns = GroupColumns(group);
-                        float cellsWidth = columns * RecTuningTable.CellW
-                            + (columns - 1) * RecTuningTable.CellGap;
-                        float textWidth = width - cellsWidth - 12f;
+                        // Every block spans at least the four-column min-pick
+                        // footprint; fewer columns (category/time) divide the
+                        // same block into wider word-header cells, keeping the
+                        // grids aligned.
+                        int footprintColumns = System.Math.Max(columns, 4);
+                        float cellsWidth = footprintColumns * RecTuningTable.CellW
+                            + (footprintColumns - 1) * RecTuningTable.CellGap;
+                        tableCellW = (cellsWidth
+                            - (columns - 1) * RecTuningTable.CellGap) / columns;
+                        float textWidth = width
+                            - System.Math.Max(cellsWidth, cellHintWidth) - 20f;
                         string description = descKey.Translate();
                         float descriptionHeight = Text.CalcHeight(
                             description, textWidth);
@@ -284,7 +313,7 @@ namespace WorkRoles.UI
                             + RecTuningTable.CellH + 2f + RecTuningTable.HintH;
                         tableCellsX = width - cellsWidth;
                         tableCellsY = y;
-                        table = new RecTuningTable(
+                        table = new RecTuningTableBuilder(
                             labelKey.Translate(),
                             description,
                             cellHint,
@@ -293,22 +322,21 @@ namespace WorkRoles.UI
                             new Rect(0f, y + RecTuningTable.HeaderH
                                 + RecTuningTable.CellH + 2f,
                                 width, RecTuningTable.HintH));
-                        items.Add(new RecTuningItem(table));
                         y += System.Math.Max(
                             21f + descriptionHeight, cellsHeight) + rowGap;
                     }
                     int column = table.CellCount;
                     float cellX = tableCellsX + column
-                        * (RecTuningTable.CellW + RecTuningTable.CellGap);
+                        * (tableCellW + RecTuningTable.CellGap);
                     (string header, Color headerColor, string headerTipKey) =
                         HeaderFor(group, column);
                     table.AddCell(new RecTuningTableCell(
                         descriptor, value, valueLabel,
                         header, headerColor, headerTipKey,
                         new Rect(cellX, tableCellsY,
-                            RecTuningTable.CellW, RecTuningTable.HeaderH),
+                            tableCellW, RecTuningTable.HeaderH),
                         new Rect(cellX, tableCellsY + RecTuningTable.HeaderH,
-                            RecTuningTable.CellW, RecTuningTable.CellH)));
+                            tableCellW, RecTuningTable.CellH)));
                 }
                 CloseSection();
             }
@@ -316,6 +344,42 @@ namespace WorkRoles.UI
             {
                 Text.Font = previousFont;
             }
+            tuningSnapshot = new RecTuningSnapshot(rebuiltSections,
+                tuningReset, globalHelp, globalHelpHeight);
+            tuningStore = store;
+            tuningRevision = store.RecommendationTuningRevision;
+            tuningWidth = width;
+        }
+
+        private sealed class RecTuningTableBuilder
+        {
+            private readonly string label;
+            private readonly string description;
+            private readonly string hint;
+            private readonly Rect labelRect;
+            private readonly Rect descriptionRect;
+            private readonly Rect hintRect;
+            private readonly List<RecTuningTableCell> cells =
+                new List<RecTuningTableCell>();
+
+            internal RecTuningTableBuilder(string label, string description,
+                string hint, Rect labelRect, Rect descriptionRect,
+                Rect hintRect)
+            {
+                this.label = label;
+                this.description = description;
+                this.hint = hint;
+                this.labelRect = labelRect;
+                this.descriptionRect = descriptionRect;
+                this.hintRect = hintRect;
+            }
+
+            internal int CellCount => cells.Count;
+            internal void AddCell(RecTuningTableCell cell) => cells.Add(cell);
+
+            internal RecTuningTable Publish() => new RecTuningTable(
+                label, description, hint, labelRect, descriptionRect,
+                hintRect, cells);
         }
 
         /// Consecutive descriptor runs rendered as one table row of compact
@@ -327,6 +391,8 @@ namespace WorkRoles.UI
             ChampionTieBreak,
             OrderingPoints,
             MinimumPick,
+            CategoryPoints,
+            TimePoints,
             HunterTiers,
         }
 
@@ -361,6 +427,12 @@ namespace WorkRoles.UI
                 case RecommendationTuningOption.ThirdMinimumPickBonus:
                 case RecommendationTuningOption.LaterMinimumPickBonus:
                     return RecTuningTableGroup.MinimumPick;
+                case RecommendationTuningOption.OrderingImportantCategoryPoints:
+                case RecommendationTuningOption.OrderingOptionalCategoryPoints:
+                    return RecTuningTableGroup.CategoryPoints;
+                case RecommendationTuningOption.OrderingPartTimePoints:
+                case RecommendationTuningOption.OrderingOpportunisticPoints:
+                    return RecTuningTableGroup.TimePoints;
                 case RecommendationTuningOption.HunterFirstTierMaximum:
                 case RecommendationTuningOption.HunterSecondTierMaximum:
                 case RecommendationTuningOption.HunterThirdTierMaximum:
@@ -388,6 +460,12 @@ namespace WorkRoles.UI
                 case RecTuningTableGroup.MinimumPick:
                     return ("WR_RecTuneMinimumPickRow",
                         "WR_RecTuneMinimumPickRowDesc");
+                case RecTuningTableGroup.CategoryPoints:
+                    return ("WR_RecTuneCategoryPointsRow",
+                        "WR_RecTuneCategoryPointsRowDesc");
+                case RecTuningTableGroup.TimePoints:
+                    return ("WR_RecTuneTimePointsRow",
+                        "WR_RecTuneTimePointsRowDesc");
                 default:
                     return ("WR_RecTuneHunterTiersRow",
                         "WR_RecTuneHunterTiersRowDesc");
@@ -395,13 +473,15 @@ namespace WorkRoles.UI
         }
 
         private static int GroupColumns(RecTuningTableGroup group) =>
-            group == RecTuningTableGroup.MinimumPick
+            group == RecTuningTableGroup.CategoryPoints || group == RecTuningTableGroup.TimePoints ? 2
+            : group == RecTuningTableGroup.MinimumPick
             || group == RecTuningTableGroup.HunterTiers ? 4 : 6;
 
         /// Signal columns carry the skill-tooltip verdict colors and a
         /// keyed tooltip (rendered through WrTip); pick and tier columns are
-        /// plain ordinals. The multiplier row's Awful column carries the
-        /// admits-Awful caveat in its tooltip.
+        /// plain ordinals, category and time columns their full editor labels.
+        /// The multiplier row's Awful column carries the admits-Awful caveat
+        /// in its tooltip.
         private static (string text, Color color, string tipKey) HeaderFor(
             RecTuningTableGroup group, int column)
         {
@@ -421,6 +501,10 @@ namespace WorkRoles.UI
                 case RecTuningTableGroup.MinimumPick:
                     return (column == 3 ? "4+" : (column + 1).ToString(),
                         WrStyle.CaptionText, null);
+                case RecTuningTableGroup.CategoryPoints:
+                    return ((column == 0 ? "WR_RoleCategoryImportant" : "WR_RoleCategoryOptional").Translate(), WrStyle.CaptionText, null);
+                case RecTuningTableGroup.TimePoints:
+                    return ((column == 0 ? "WR_RoleTimePartTime" : "WR_RoleTimeOpportunistic").Translate(), WrStyle.CaptionText, null);
                 default:
                     return ((column + 1).ToString(), WrStyle.CaptionText, null);
             }
@@ -508,26 +592,35 @@ namespace WorkRoles.UI
 
         }
 
-        internal void EnsurePanels(RoleStore store, float width)
+        internal void EnsurePanels(float width)
         {
-            if (panelsStamp == UiVersion.Current
-                && ReferenceEquals(panelsStore, store)
+            if (ReferenceEquals(panelsOrder, orderSnapshot)
                 && panelsWidth == width) return;
-            panelsStamp = UiVersion.Current;
-            panelsStore = store;
-            panelsWidth = width;
-            panels.Clear();
-            Text.Font = GameFont.Small;
-            PanelsHelp = "WR_RecRolePanelHelp".Translate();
-            PanelsHelpHeight = Text.CalcHeight(PanelsHelp, width);
-            if (order == null) return;
-            for (int i = 0; i < order.Count; i++)
+            var rebuilt = new List<RecRolePanel>();
+            string help;
+            float helpHeight;
+            GameFont previousFont = Text.Font;
+            try
             {
-                Role role = store.RoleById(order[i]);
-                if (role == null) continue;
-                panels.Add(new RecRolePanel(role,
-                    RoleChipUI.WidthFor(role, showRemove: false)));
+                Text.Font = GameFont.Small;
+                help = "WR_RecRolePanelHelp".Translate();
+                helpHeight = Text.CalcHeight(help, width);
+                if (orderSnapshot != null)
+                    for (int i = 0; i < orderSnapshot.Count; i++)
+                    {
+                        RoleChipRenderData chip = orderSnapshot.ChipAt(i).Chip;
+                        rebuilt.Add(new RecRolePanel(chip,
+                            RoleChipUI.WidthFor(chip, showRemove: false)));
+                    }
             }
+            finally
+            {
+                Text.Font = previousFont;
+            }
+            panelsSnapshot = new RecRolePanelsSnapshot(
+                rebuilt, help, helpHeight);
+            panelsOrder = orderSnapshot;
+            panelsWidth = width;
         }
 
         /// Null when the role is gone: the view must collapse the accordion
@@ -638,7 +731,7 @@ namespace WorkRoles.UI
             var roleIds = new List<int>();
             var mins = new List<int>();
             var maxes = new List<int>();
-            var roles = new List<Role>();
+            var chips = new List<RoleChipRenderData>();
             for (int i = 0; i < owner.trainingRoleIds.Count; i++)
             {
                 Role role = store.RoleById(owner.trainingRoleIds[i]);
@@ -646,33 +739,68 @@ namespace WorkRoles.UI
                 roleIds.Add(owner.trainingRoleIds[i]);
                 mins.Add(owner.trainingMins[i]);
                 maxes.Add(owner.trainingMaxes[i]);
-                roles.Add(role);
+                chips.Add(RoleChipRenderData.From(role));
             }
             if (roleIds.Count == 0)
             {
                 roleIds.Add(owner.id);
                 mins.Add(0);
                 maxes.Add(SkillProgressionMath.MaxLevel);
-                roles.Add(owner);
+                chips.Add(RoleChipRenderData.From(owner));
             }
 
             List<int> rows = SkillProgressionMath.PackRows(
                 mins.Select((min, i) => (min, maxes[i])).ToList());
             int rowCount = rows.Count == 0 ? 1 : rows.Max() + 1;
             int displayRows = rowCount + 1;
+            var presentRoleIds = new HashSet<int>(roleIds);
+            var addOptions = new List<RecRoleMenuOption>();
+            string noXpTip = "WR_NoXpRoleTip".Translate();
+            for (int i = 0; i < store.roles.Count; i++)
+            {
+                Role role = store.roles[i];
+                if (!IsNormalTrainingRole(role)
+                    || presentRoleIds.Contains(role.id)) continue;
+                bool hasXp = HasXpJobs(role);
+                string label = hasXp ? role.label
+                    : role.label.Colorize(new Color(0.62f, 0.62f, 0.62f));
+                addOptions.Add(new RecRoleMenuOption(
+                    role.id, label, hasXp ? null : noXpTip,
+                    hasXp ? 0 : 1, role.label));
+            }
+            addOptions.Sort(RecRoleMenuOption.CompareByLabel);
             return new RecPathView(
                 owner.id,
                 roleIds,
                 mins,
                 maxes,
                 rows,
-                roles,
+                chips,
+                addOptions,
                 displayRows);
         }
 
-        private static float LayoutOrderChips(float width, IReadOnlyList<Role> roles,
-            List<Rect> result, out Rect addRect)
+        private static bool HasXpJobs(Role role)
         {
+            foreach (string giverName in role.Coverage())
+            {
+                JobSkillProfiles.GiverProfile profile =
+                    JobSkillProfiles.ForGiver(giverName);
+                if (profile != null && profile.GivesXp) return true;
+            }
+            return false;
+        }
+
+        private static bool IsNormalTrainingRole(Role role) =>
+            !role.blocker && !role.HasRules;
+
+        private static List<RecOrderChip> LayoutOrderChips(float width,
+            IReadOnlyList<int> roleIds,
+            IReadOnlyDictionary<int, RoleChipRenderData> chipsById,
+            IReadOnlyDictionary<int, RoleView> viewsById,
+            out Rect addRect, out float height, out string addLabel)
+        {
+            var result = new List<RecOrderChip>(roleIds.Count);
             float x = 0f;
             float y = 0f;
             Rect Place(float itemWidth)
@@ -687,17 +815,204 @@ namespace WorkRoles.UI
                 return rect;
             }
 
-            for (int i = 0; i < roles.Count; i++)
-                result.Add(Place(RoleChipUI.WidthFor(roles[i], showRemove: true)));
+            for (int i = 0; i < roleIds.Count; i++)
+            {
+                int roleId = roleIds[i];
+                if (!chipsById.TryGetValue(roleId, out var chip)) continue;
+                viewsById.TryGetValue(roleId, out RoleView roleView);
+                result.Add(new RecOrderChip(chip,
+                    Place(RoleChipUI.WidthFor(chip, showRemove: true)),
+                    roleView?.Hunting == true));
+            }
             // Add Role pins to the panel's bottom-right corner, on a fresh row
             // when the last chip row has no room for it.
             Text.Font = GameFont.Small;
-            float addWidth = WrText.FitWidth("WR_AddRole".Translate()) + 16f;
+            addLabel = "WR_AddRole".Translate();
+            float addWidth = WrText.FitWidth(addLabel) + 16f;
             if (x + addWidth > width && x > 0f)
                 y += RoleChipUI.Height + FlowGap;
             addRect = new Rect(width - addWidth, y, addWidth, RoleChipUI.Height);
-            return y + RoleChipUI.Height;
+            height = y + RoleChipUI.Height;
+            return result;
         }
+    }
+
+    internal readonly struct RecRoleMenuOption
+    {
+        internal RecRoleMenuOption(int roleId, string label, string tooltip,
+            int sortTier = 0, string sortLabel = null)
+        {
+            RoleId = roleId;
+            Label = label;
+            Tooltip = tooltip;
+            SortTier = sortTier;
+            SortLabel = sortLabel ?? label;
+        }
+
+        internal int RoleId { get; }
+        internal string Label { get; }
+        internal string Tooltip { get; }
+        private int SortTier { get; }
+        private string SortLabel { get; }
+
+        internal bool ContentEquals(RecRoleMenuOption other) =>
+            RoleId == other.RoleId
+            && string.Equals(Label, other.Label,
+                System.StringComparison.Ordinal)
+            && string.Equals(Tooltip, other.Tooltip,
+                System.StringComparison.Ordinal)
+            && SortTier == other.SortTier
+            && string.Equals(SortLabel, other.SortLabel,
+                System.StringComparison.Ordinal);
+
+        internal static int CompareByLabel(
+            RecRoleMenuOption left, RecRoleMenuOption right)
+        {
+            int tier = left.SortTier.CompareTo(right.SortTier);
+            return tier != 0 ? tier
+                : System.StringComparer.OrdinalIgnoreCase.Compare(
+                    left.SortLabel, right.SortLabel);
+        }
+    }
+
+    internal readonly struct RecOrderChip
+    {
+        internal RecOrderChip(RoleChipRenderData chip, Rect rect, bool locked)
+        {
+            Chip = chip;
+            Rect = rect;
+            Locked = locked;
+        }
+
+        internal RoleChipRenderData Chip { get; }
+        internal Rect Rect { get; }
+        internal bool Locked { get; }
+
+        internal bool ContentEquals(RecOrderChip other) =>
+            Chip.ContentEquals(other.Chip)
+            && Rect.x == other.Rect.x
+            && Rect.y == other.Rect.y
+            && Rect.width == other.Rect.width
+            && Rect.height == other.Rect.height
+            && Locked == other.Locked;
+    }
+
+    internal sealed class RecOrderSnapshot
+    {
+        private static readonly System.Func<RecOrderChip, Rect> ChipRect =
+            chip => chip.Rect;
+        private readonly List<RecOrderChip> chips;
+        private readonly Dictionary<int, RoleChipRenderData> catalogChips;
+        private readonly List<RecRoleMenuOption> addOptions;
+
+        internal RecOrderSnapshot(List<RecOrderChip> chips,
+            Dictionary<int, RoleChipRenderData> catalogChips,
+            List<RecRoleMenuOption> addOptions, Rect addRect,
+            float layoutHeight, string addLabel)
+        {
+            this.chips = chips;
+            this.catalogChips = catalogChips;
+            this.addOptions = addOptions;
+            AddRect = addRect;
+            LayoutHeight = layoutHeight;
+            AddLabel = addLabel;
+        }
+
+        internal int Count => chips.Count;
+        internal RecOrderChip ChipAt(int index) => chips[index];
+        internal Rect AddRect { get; }
+        internal float LayoutHeight { get; }
+        internal string AddLabel { get; }
+        internal int AddOptionCount => addOptions.Count;
+        internal RecRoleMenuOption AddOptionAt(int index) => addOptions[index];
+
+        internal bool ContainsRole(int roleId) => IndexOfRole(roleId) >= 0;
+
+        internal int IndexOfRole(int roleId)
+        {
+            for (int i = 0; i < chips.Count; i++)
+                if (chips[i].Chip.RoleId == roleId) return i;
+            return -1;
+        }
+
+        internal int ChipInsertIndex(Vector2 point) =>
+            RoleDrag.ChipInsertIndex(point, chips, ChipRect);
+
+        internal List<int> CopyRoleIds()
+        {
+            var result = new List<int>(chips.Count);
+            for (int i = 0; i < chips.Count; i++)
+                result.Add(chips[i].Chip.RoleId);
+            return result;
+        }
+
+        internal bool TryGetCatalogChip(int roleId,
+            out RoleChipRenderData chip) =>
+            catalogChips.TryGetValue(roleId, out chip);
+
+        internal bool ContentEquals(RecOrderSnapshot other)
+        {
+            if (other == null || chips.Count != other.chips.Count
+                || catalogChips.Count != other.catalogChips.Count
+                || addOptions.Count != other.addOptions.Count
+                || AddRect.x != other.AddRect.x
+                || AddRect.y != other.AddRect.y
+                || AddRect.width != other.AddRect.width
+                || AddRect.height != other.AddRect.height
+                || LayoutHeight != other.LayoutHeight
+                || !string.Equals(AddLabel, other.AddLabel,
+                    System.StringComparison.Ordinal))
+                return false;
+            for (int i = 0; i < chips.Count; i++)
+                if (!chips[i].ContentEquals(other.chips[i]))
+                    return false;
+            for (int i = 0; i < addOptions.Count; i++)
+                if (!addOptions[i].ContentEquals(other.addOptions[i]))
+                    return false;
+            foreach (KeyValuePair<int, RoleChipRenderData> pair in catalogChips)
+                if (!other.catalogChips.TryGetValue(pair.Key, out var otherChip)
+                    || !pair.Value.ContentEquals(otherChip))
+                    return false;
+            return true;
+        }
+    }
+
+    internal sealed class RecTuningSnapshot
+    {
+        private readonly List<RecTuningSection> sections;
+
+        internal RecTuningSnapshot(List<RecTuningSection> sections,
+            string resetLabel, string globalHelp, float globalHelpHeight)
+        {
+            this.sections = sections;
+            ResetLabel = resetLabel;
+            GlobalHelp = globalHelp;
+            GlobalHelpHeight = globalHelpHeight;
+        }
+
+        internal int Count => sections.Count;
+        internal RecTuningSection SectionAt(int index) => sections[index];
+        internal string ResetLabel { get; }
+        internal string GlobalHelp { get; }
+        internal float GlobalHelpHeight { get; }
+    }
+
+    internal sealed class RecRolePanelsSnapshot
+    {
+        private readonly List<RecRolePanel> panels;
+
+        internal RecRolePanelsSnapshot(List<RecRolePanel> panels,
+            string help, float helpHeight)
+        {
+            this.panels = panels;
+            Help = help;
+            HelpHeight = helpHeight;
+        }
+
+        internal int Count => panels.Count;
+        internal RecRolePanel PanelAt(int index) => panels[index];
+        internal string Help { get; }
+        internal float HelpHeight { get; }
     }
 
     internal sealed class RecTuningSection
@@ -754,11 +1069,11 @@ namespace WorkRoles.UI
         internal const float CellH = 26f;
         internal const float HintH = 14f;
 
-        private readonly List<RecTuningTableCell> cells =
-            new List<RecTuningTableCell>();
+        private readonly List<RecTuningTableCell> cells;
 
         internal RecTuningTable(string label, string description, string hint,
-            Rect labelRect, Rect descriptionRect, Rect hintRect)
+            Rect labelRect, Rect descriptionRect, Rect hintRect,
+            List<RecTuningTableCell> cells)
         {
             Label = label;
             Description = description;
@@ -766,6 +1081,7 @@ namespace WorkRoles.UI
             LabelRect = labelRect;
             DescriptionRect = descriptionRect;
             HintRect = hintRect;
+            this.cells = cells;
         }
 
         internal string Label { get; }
@@ -776,8 +1092,6 @@ namespace WorkRoles.UI
         internal Rect HintRect { get; }
         internal int CellCount => cells.Count;
         internal RecTuningTableCell CellAt(int index) => cells[index];
-
-        internal void AddCell(RecTuningTableCell cell) => cells.Add(cell);
     }
 
     internal readonly struct RecTuningTableCell
@@ -808,13 +1122,13 @@ namespace WorkRoles.UI
 
     internal readonly struct RecRolePanel
     {
-        internal RecRolePanel(Role role, float chipWidth)
+        internal RecRolePanel(RoleChipRenderData chip, float chipWidth)
         {
-            Role = role;
+            Chip = chip;
             ChipWidth = chipWidth;
         }
 
-        internal Role Role { get; }
+        internal RoleChipRenderData Chip { get; }
         internal float ChipWidth { get; }
     }
 
@@ -923,31 +1237,49 @@ namespace WorkRoles.UI
     /// One role-owned training path projection; PathId is the owner role id.
     internal sealed class RecPathView
     {
-        internal RecPathView(int pathId, IReadOnlyList<int> roleIds,
-            IReadOnlyList<int> mins, IReadOnlyList<int> maxes, IReadOnlyList<int> rows,
-            IReadOnlyList<Role> roles, int displayRows)
+        private readonly List<int> roleIds;
+        private readonly List<int> mins;
+        private readonly List<int> maxes;
+        private readonly List<int> rows;
+        private readonly List<RoleChipRenderData> chips;
+        private readonly List<RecRoleMenuOption> addOptions;
+
+        internal RecPathView(int pathId, List<int> roleIds,
+            List<int> mins, List<int> maxes, List<int> rows,
+            List<RoleChipRenderData> chips,
+            List<RecRoleMenuOption> addOptions, int displayRows)
         {
             PathId = pathId;
-            RoleIds = roleIds;
-            Mins = mins;
-            Maxes = maxes;
-            Rows = rows;
-            Roles = roles;
+            this.roleIds = roleIds;
+            this.mins = mins;
+            this.maxes = maxes;
+            this.rows = rows;
+            this.chips = chips;
+            this.addOptions = addOptions;
             DisplayRows = displayRows;
         }
 
         internal int PathId { get; }
-        internal IReadOnlyList<int> RoleIds { get; }
-        internal IReadOnlyList<int> Mins { get; }
-        internal IReadOnlyList<int> Maxes { get; }
-        internal IReadOnlyList<int> Rows { get; }
-        internal IReadOnlyList<Role> Roles { get; }
+        internal int Count => roleIds.Count;
         internal int DisplayRows { get; }
+        internal int RoleIdAt(int index) => roleIds[index];
+        internal int MinAt(int index) => mins[index];
+        internal int MaxAt(int index) => maxes[index];
+        internal int RowAt(int index) => rows[index];
+        internal RoleChipRenderData ChipAt(int index) => chips[index];
+        internal int AddOptionCount => addOptions.Count;
+        internal RecRoleMenuOption AddOptionAt(int index) => addOptions[index];
+
+        internal bool ContainsRole(int roleId) => IndexOfRole(roleId) >= 0;
+
+        internal List<int> CopyRoleIds() => new List<int>(roleIds);
+        internal List<int> CopyMins() => new List<int>(mins);
+        internal List<int> CopyMaxes() => new List<int>(maxes);
 
         internal int IndexOfRole(int roleId)
         {
-            for (int i = 0; i < RoleIds.Count; i++)
-                if (RoleIds[i] == roleId) return i;
+            for (int i = 0; i < roleIds.Count; i++)
+                if (roleIds[i] == roleId) return i;
             return -1;
         }
     }

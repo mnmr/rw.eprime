@@ -22,6 +22,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Firefighter</li>
@@ -38,6 +41,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Firefighter</li>
@@ -61,6 +67,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:PatientBedRest</li>
@@ -79,6 +88,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkGiver:DoctorRescue</li>
@@ -100,7 +112,7 @@
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>19</coverage>
+      <coverage>25</coverage>
       <championPenalty>false</championPenalty>
       <training>
         <li><role>WS_Nurse</role><max>5</max></li>
@@ -127,6 +139,8 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -156,6 +170,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:BasicWorker</li>
@@ -178,8 +195,8 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
-      <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <colonyMin>1</colonyMin>
+      <coverage>10</coverage>
       <championPenalty>false</championPenalty>
       <training>
         <li><role>WS_Jailor</role><max>4</max></li>
@@ -201,6 +218,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Firefighter</li>
@@ -216,6 +236,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Patient</li>
@@ -231,6 +254,9 @@
     <tuning>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:PatientBedRest</li>
@@ -254,6 +280,8 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
@@ -296,7 +324,7 @@
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -314,6 +342,9 @@
     <tuning>
       <category>Optional</category>
       <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Hauling</li>
@@ -330,6 +361,9 @@
     <tuning>
       <category>Optional</category>
       <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Hauling</li>
@@ -345,6 +379,9 @@
     <tuning>
       <category>Optional</category>
       <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Cleaning</li>
@@ -364,9 +401,9 @@
         </required>
       </skills>
       <category>Normal</category>
-      <time>FullTime</time>
+      <time>PartTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
       <championPenalty>false</championPenalty>
       <training>
         <li><role>WS_Herder</role><max>8</max></li>
@@ -397,7 +434,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Butcher</role><max>8</max></li>
         <li><role>WS_Brewer</role><max>8</max></li>
@@ -423,6 +461,8 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -444,6 +484,8 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -469,6 +511,9 @@
       </skills>
       <category>Optional</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <!-- Finish-off jobs (Allow Tool, Keyz' Allow Utilities) are hunter's work:
@@ -493,8 +538,9 @@
       </skills>
       <category>Optional</category>
       <time>FullTime</time>
-      <colonyMin>2</colonyMin>
-      <coverage>19</coverage>
+      <colonyMin>0</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Fishing</li>
@@ -516,7 +562,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>19</coverage>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Repairer</role><max>8</max></li>
         <li><role>WS_Builder</role><min>8</min></li>
@@ -542,6 +589,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkGiver:Repair</li>
@@ -576,10 +626,11 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>19</coverage>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_PlantCutter</role><max>12</max></li>
-        <li><role>WS_Grower</role><min>4</min></li>
+        <li><role>WS_Grower</role><min>4</min><max>12</max></li>
         <li><role>WS_Farmer</role><min>12</min></li>
       </training>
     </tuning>
@@ -603,6 +654,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Growing</li>
@@ -623,6 +677,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:PlantCutting</li>
@@ -644,7 +701,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Mining</li>
@@ -666,7 +724,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Crafter</role></li>
         <li><role>WS_Tailor</role><min>2</min></li>
@@ -692,7 +751,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Crafter</role></li>
         <li><role>WS_Smith</role><min>4</min></li>
@@ -717,8 +777,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <colonyMin>1</colonyMin>
-      <coverage>17</coverage>
+      <colonyMin>0</colonyMin>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Fabricator</role><min>8</min></li>
         <li><role>WS_Smith</role><min>4</min></li>
@@ -748,7 +809,8 @@
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
-      <coverage>14</coverage>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkType:Crafting</li>
@@ -770,7 +832,8 @@
       <category>Optional</category>
       <time>Opportunistic</time>
       <colonyMin>3</colonyMin>
-      <coverage>11</coverage>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <entries>
@@ -795,6 +858,7 @@
       <category>Optional</category>
       <time>PartTime</time>
       <colonyMin>1</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <preserveRecommendationOrder>true</preserveRecommendationOrder>
@@ -815,9 +879,11 @@
           <li>Artistic</li>
         </required>
       </skills>
-      <category>Normal</category>
+      <category>Optional</category>
       <time>FullTime</time>
-      <coverage>6</coverage>
+      <colonyMin>0</colonyMin>
+      <coverage>5</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Painter</role><max>8</max></li>
         <li><role>WS_Artist</role><min>8</min></li>
@@ -842,6 +908,8 @@
       </skills>
       <category>Important</category>
       <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>
@@ -875,8 +943,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
-      <colonyMin>1</colonyMin>
-      <coverage>11</coverage>
+      <colonyMin>0</colonyMin>
+      <coverage>10</coverage>
+      <championPenalty>true</championPenalty>
       <training>
         <li><role>WS_Researcher</role></li>
         <li><role>WS_Crafter</role></li>
@@ -903,6 +972,9 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
     </tuning>
     <entries>
       <li>WorkGiver:RemovePaintBuilding</li>
@@ -929,6 +1001,8 @@
       </skills>
       <category>Normal</category>
       <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
       <championPenalty>false</championPenalty>
     </tuning>
     <entries>

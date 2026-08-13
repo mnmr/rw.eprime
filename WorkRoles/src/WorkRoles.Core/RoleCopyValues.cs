@@ -18,7 +18,6 @@ namespace WorkRoles.Core
         public uint TemplateHash { get; set; }
         public bool AutoAssign { get; set; }
         public bool Blocker { get; set; }
-        public string HolderScaleName { get; set; } = "Never";
         public RoleCategory Category { get; set; }
         public RoleTime Time { get; set; }
         public bool ChampionPenalty { get; set; } = true;
@@ -57,7 +56,6 @@ namespace WorkRoles.Core
                 TemplateHash = 0u,
                 AutoAssign = false,
                 Blocker = Blocker,
-                HolderScaleName = HolderScaleName,
                 Category = Category,
                 Time = Time,
                 ChampionPenalty = ChampionPenalty,

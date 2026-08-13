@@ -53,6 +53,19 @@ namespace WorkRoles.UI
                 role.blocker, role.activeHours != Role.AllHours,
                 role.locationTokens.Count > 0, role.HasRules);
 
+        internal bool ContentEquals(RoleChipRenderData other) =>
+            RoleId == other.RoleId
+            && string.Equals(Label, other.Label,
+                StringComparison.Ordinal)
+            && BaseColor.r == other.BaseColor.r
+            && BaseColor.g == other.BaseColor.g
+            && BaseColor.b == other.BaseColor.b
+            && BaseColor.a == other.BaseColor.a
+            && Blocker == other.Blocker
+            && HasTimeRule == other.HasTimeRule
+            && HasLocationRule == other.HasLocationRule
+            && HasRules == other.HasRules;
+
         internal int RoleId { get; }
         internal string Label { get; }
         internal Color BaseColor { get; }
@@ -161,6 +174,13 @@ namespace WorkRoles.UI
             if (!RoleDrag.Active || RoleDrag.GroupId >= 0 || store == null) return;
             Role role = store.RoleById(RoleDrag.RoleId);
             if (role == null) return;
+            DrawDragGhost(RoleChipRenderData.From(role));
+        }
+
+        internal static void DrawDragGhost(RoleChipRenderData role)
+        {
+            if (!RoleDrag.Active || RoleDrag.GroupId >= 0
+                || role.RoleId != RoleDrag.RoleId) return;
             Vector2 mouse = Event.current.mousePosition;
             float width = WidthFor(role, showRemove: false);
             var rect = new Rect(mouse.x + 10f, mouse.y + 6f, width, Height);
@@ -208,13 +228,17 @@ namespace WorkRoles.UI
         /// bars at both ends and the X inset past the right grip. Display-only.
         /// showRemove: false hides the X (a path's owner role cannot leave it).
         public static void DrawBandChip(Rect rect, Role role, bool showRemove = true)
+            => DrawBandChip(rect, RoleChipRenderData.From(role), showRemove);
+
+        internal static void DrawBandChip(Rect rect, RoleChipRenderData role,
+            bool showRemove = true)
         {
             var spec = new ChipSpec
             {
-                Bg = role.hasCustomColor ? role.color : DefaultChipColor,
+                Bg = role.BaseColor,
                 Outline = OutlineColor,
                 LabelColor = LabelColor,
-                Label = role.label,
+                Label = role.Label,
                 ShowRemove = showRemove,
                 Grips = true,
                 LabelInsetLeft = ChipUI.BandOuterPad + ChipUI.BandHandleW + 2f,

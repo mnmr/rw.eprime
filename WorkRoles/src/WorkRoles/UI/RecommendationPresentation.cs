@@ -29,8 +29,42 @@ namespace WorkRoles.UI
                     $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
             }
 
-            TipSection facts = model.AddSection();
-            if (explanation.HolderScaleApplies)
+            // A substituted composite has no reasoning of its own; render each
+            // folded-in member's full explanation under its own header.
+            if (explanation.BundledMembers.Count > 0)
+            {
+                foreach (RoleRecommendationExplanation member in
+                         explanation.BundledMembers)
+                {
+                    Role memberRole = store?.RoleById(member.RoleId);
+                    if (memberRole == null) continue;
+                    PopulateFacts(
+                        model.AddSection(memberRole.label),
+                        store, memberRole, member, skillBuckets);
+                }
+            }
+            else
+                PopulateFacts(
+                    model.AddSection(), store, role, explanation, skillBuckets);
+            return new StructuredTip(
+                $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
+        }
+
+        private static void PopulateFacts(
+            TipSection facts,
+            RoleStore store,
+            Role role,
+            RoleRecommendationExplanation explanation,
+            SkillBucketSnapshot skillBuckets)
+        {
+            // Full-coverage demand has no slot count and no selection story:
+            // everyone capable is assigned.
+            bool everyoneCapable = explanation.DemandApplies
+                && explanation.EveryoneCapable;
+            if (everyoneCapable)
+                facts.Fact("WR_RecTipColonyNeed".Translate(),
+                    "WR_RecTipEveryoneCapable".Translate());
+            else if (explanation.DemandApplies)
                 facts.Fact("WR_RecTipColonyNeed".Translate(),
                     ColonyNeedText(explanation));
 
@@ -43,10 +77,9 @@ namespace WorkRoles.UI
                     SignalVerdict(skillBuckets, explanation),
                     SkillSignalPresentation.VerdictColor(explanation.SignalBucket));
 
-            facts.Fact("WR_RecTipSelection".Translate(),
-                RecommendationDecisionText(store, role, explanation));
-            return new StructuredTip(
-                $"recommendation:{pawn.thingIDNumber}:{role.id}", model);
+            if (!everyoneCapable)
+                facts.Fact("WR_RecTipSelection".Translate(),
+                    RecommendationDecisionText(store, role, explanation));
         }
 
         private static string SignalVerdict(
@@ -158,9 +191,6 @@ namespace WorkRoles.UI
             else if (explanation.TrainingWaivers > 1)
                 result = "WR_RecTipWithWaiversMany"
                     .Translate(result, explanation.TrainingWaivers).ToString();
-            if (explanation.ConfiguredMaximum < RoleHolderRange.Uncapped)
-                result = "WR_RecTipWithCap"
-                    .Translate(result, explanation.ConfiguredMaximum).ToString();
             return result;
         }
 

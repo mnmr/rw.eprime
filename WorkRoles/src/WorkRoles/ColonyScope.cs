@@ -26,19 +26,43 @@ namespace WorkRoles
 
         private sealed class LocationSnapshot : IReadOnlyList<LocationInfo>
         {
-            private List<LocationInfo> locations;
-            internal int Stamp = -1;
+            private readonly List<LocationInfo> locations;
 
-            internal bool IsPublished => locations != null;
-            internal void Publish(List<LocationInfo> value) => locations = value;
-            public int Count => locations?.Count ?? 0;
+            internal LocationSnapshot(List<LocationInfo> locations)
+            {
+                this.locations = locations;
+            }
+
+            internal bool ContentEquals(List<LocationInfo> other)
+            {
+                if (other == null || locations.Count != other.Count)
+                    return false;
+                for (int i = 0; i < locations.Count; i++)
+                {
+                    LocationInfo left = locations[i];
+                    LocationInfo right = other[i];
+                    if (!string.Equals(left.Id, right.Id,
+                            System.StringComparison.Ordinal)
+                        || !string.Equals(left.Label, right.Label,
+                            System.StringComparison.Ordinal)
+                        || left.IsShip != right.IsShip
+                        || left.IsActive != right.IsActive)
+                        return false;
+                }
+                return true;
+            }
+
+            public int Count => locations.Count;
             public LocationInfo this[int index] => locations[index];
             public IEnumerator<LocationInfo> GetEnumerator() =>
-                (locations ?? Empty).GetEnumerator();
+                locations.GetEnumerator();
             IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        }
 
-            private static readonly List<LocationInfo> Empty =
-                new List<LocationInfo>(0);
+        private sealed class LocationSnapshotEntry
+        {
+            internal int Stamp = -1;
+            internal LocationSnapshot Snapshot;
         }
 
         private static readonly IReadOnlyList<LocationInfo> NoLocations =
@@ -58,17 +82,19 @@ namespace WorkRoles
                 BuildMapClassification);
 
         // Owner: process, partitioned by the current map set. Key: Faction
-        // reference identity. Value: an immutable published location projection
-        // whose producer-owned List is hidden behind indexed read access.
+        // reference identity. Value: an immutable published location projection;
+        // its producer-owned List is transferred without copying and never
+        // mutated after publication. Mutable dependency stamps stay private in
+        // the unpublished cache entry.
         // Dependencies: map-classification revision, map-set membership, faction,
         // language, and the sole current landed/traveling Gravship engine identity
         // and state. Refresh: immediate on the next Locations read after the
         // existing grav-engine/map transition events invalidate it; no polling.
-        // Equality: the LocationSnapshot wrapper identity is preserved across
-        // rebuilds. Teardown: ReleaseSnapshot/language or map-set invalidation
-        // clears faction entries and their owned buffers.
-        private static readonly Dictionary<Faction, LocationSnapshot>
-            locationSnapshots = new Dictionary<Faction, LocationSnapshot>(
+        // Equality: an exact equal rebuild preserves snapshot identity; changed
+        // contents publish a new snapshot. Teardown: ReleaseSnapshot/language or
+        // map-set invalidation clears faction entries and their owned buffers.
+        private static readonly Dictionary<Faction, LocationSnapshotEntry>
+            locationSnapshots = new Dictionary<Faction, LocationSnapshotEntry>(
                 ReferenceIdentityComparer<Faction>.Instance);
         private static int locationsMapCount = -1;
         [System.ThreadStatic] private static List<Thing> gravEngineSearch;
@@ -143,19 +169,22 @@ namespace WorkRoles
             if (locationsMapCount != maps.Count)
                 InvalidateMapSet();
             if (faction == null) return NoLocations;
-            if (!locationSnapshots.TryGetValue(faction, out var snapshot))
+            if (!locationSnapshots.TryGetValue(faction, out var entry))
             {
-                snapshot = new LocationSnapshot();
-                locationSnapshots.Add(faction, snapshot);
+                entry = new LocationSnapshotEntry();
+                locationSnapshots.Add(faction, entry);
             }
-            if (!snapshot.IsPublished
-                || snapshot.Stamp != mapClassifications.Revision)
+            if (entry.Snapshot == null
+                || entry.Stamp != mapClassifications.Revision)
             {
-                snapshot.Stamp = mapClassifications.Revision;
+                entry.Stamp = mapClassifications.Revision;
                 locationsMapCount = maps.Count;
-                snapshot.Publish(BuildLocations(faction));
+                List<LocationInfo> rebuilt = BuildLocations(faction);
+                if (entry.Snapshot == null
+                    || !entry.Snapshot.ContentEquals(rebuilt))
+                    entry.Snapshot = new LocationSnapshot(rebuilt);
             }
-            return snapshot;
+            return entry.Snapshot;
         }
 
         private static List<LocationInfo> BuildLocations(Faction faction)

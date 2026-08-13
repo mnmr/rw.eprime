@@ -45,11 +45,18 @@ namespace WorkRoles.Core.Recs
         public int RequiredContent;
     }
 
-    /// One catalog role as the rules see it. Ordinary recommendation roles use
-    /// a holder scale; a missing or Never scale excludes the role.
+    /// One catalog role as the rules see it. Ordinary recommendation roles
+    /// carry colonyMin/coverage demand; an unskilled role without demand is
+    /// never assigned.
     public class RoleView
     {
         public int Id;
+        /// Template def the role was seeded from; null for player-made roles.
+        public string TemplateDefName;
+        /// Live non-composite members of a composite role; null for ordinary
+        /// roles. Band gates read these: a bundle cannot downgrade to a lower
+        /// path rung the way a path target can.
+        public List<int> MemberRoleIds;
         public HashSet<string> Coverage = new HashSet<string>();
         /// Coverage in the role's own job order; null = no order data
         /// (redundancy folding stays permissive).
@@ -83,34 +90,19 @@ namespace WorkRoles.Core.Recs
         public List<string> DeclaredOptionalSkills;
         public float NaturalPriority;
         public List<string> WorkTypes = new List<string>();
-        /// Banded holder demand; null for Never.
-        public HolderScale Scale;
-        /// Fill mode from the role's assignment strategy. Unskilled assigns
-        /// every capable pawn; Never assigns none.
-        public ScaleMode Mode = ScaleMode.Skilled;
+        /// Authored demand: minimum assignment count and ideal colonist
+        /// percentage. EngineContext precomputes the resulting requirement
+        /// per plan build (RoleDemand.RequirementFor).
+        public int ColonyMin;
+        public int CoveragePercent;
 
-        public bool IsNever => Mode == ScaleMode.Never || Scale == null;
-        public bool UsesHolderScale => !AutoAssign && !HasRules && !Blocker
+        public bool HasDemand => ColonyMin > 0 || CoveragePercent > 0;
+        /// Unskilled role the player opted into demand: assigns every capable pawn.
+        public bool UnskilledFill => Unskilled && HasDemand;
+        /// Unskilled role without demand: the planner never assigns it.
+        public bool IsNever => Unskilled && !HasDemand;
+        public bool PlannedByDemand => !AutoAssign && !HasRules && !Blocker
             && !Hunting;
-
-        public int RequiredTotalAt(int colonySize) =>
-            Scale?.RequiredTotalAt(colonySize) ?? 0;
-
-        public int MaxHoldersAt(int colonySize) =>
-            Scale?.MaxAt(colonySize) ?? 0;
-
-        public int TrainingWaiversAt(int colonySize) =>
-            Scale?.TrainingWaiversAt(colonySize) ?? 0;
-        public HolderRequirement RequirementAt(int colonySize)
-        {
-            int capacity = System.Math.Max(0, colonySize);
-            int maximum = MaxHoldersAt(colonySize);
-            if (maximum < RoleHolderRange.Uncapped)
-                capacity = System.Math.Min(capacity, System.Math.Max(0, maximum));
-            return new HolderRequirement(
-                System.Math.Min(capacity, RequiredTotalAt(colonySize)),
-                TrainingWaiversAt(colonySize));
-        }
         public List<RoleSkillView> Skills = new List<RoleSkillView>();
         /// Measured skill for band gating (most XP-frequent across the role's
         /// jobs); null = unskilled entry, never gates.

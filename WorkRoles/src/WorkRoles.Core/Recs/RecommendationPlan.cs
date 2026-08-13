@@ -11,6 +11,7 @@ namespace WorkRoles.Core.Recs
         private readonly List<byte> roleSources = new List<byte>();
         private readonly List<byte> roleMinimumBonuses = new List<byte>();
         private readonly List<bool> roleMinimumPicks = new List<bool>();
+        private readonly List<bool> roleChampionPicks = new List<bool>();
         private readonly List<PathActivation> activations =
             new List<PathActivation>();
 
@@ -33,6 +34,7 @@ namespace WorkRoles.Core.Recs
             roleSources.Add(source);
             roleMinimumBonuses.Add(minimumBonus);
             roleMinimumPicks.Add(minimumPick);
+            roleChampionPicks.Add(false);
         }
 
         internal bool ContainsRole(int roleId) => roleIds.Contains(roleId);
@@ -45,6 +47,19 @@ namespace WorkRoles.Core.Recs
             roleSources.RemoveAt(index);
             roleMinimumBonuses.RemoveAt(index);
             roleMinimumPicks.RemoveAt(index);
+            roleChampionPicks.RemoveAt(index);
+        }
+
+        internal void MarkChampionPick(int roleId)
+        {
+            int index = roleIds.IndexOf(roleId);
+            if (index >= 0) roleChampionPicks[index] = true;
+        }
+
+        internal bool IsChampionPick(int roleId)
+        {
+            int index = roleIds.IndexOf(roleId);
+            return index >= 0 && roleChampionPicks[index];
         }
 
         internal bool IsPathRole(int roleId)
@@ -202,10 +217,13 @@ namespace WorkRoles.Core.Recs
             for (int roleAt = 0; roleAt < count; roleAt++)
                 incoming[roleAt] = OrderingScore(
                     facts, pawnIndex, roleIds[roleAt], formulas);
+            int[] trimmed = WithoutPlacedHunter(facts, pawnIndex, result);
             int[] ordered = Ordering.PreserveProtectedOrder(
-                facts, pawnIndex, result);
+                facts, pawnIndex, trimmed);
             OrderByScore(
                 facts, pawnIndex, positions, edges, incoming, ordered);
+            if (!ReferenceEquals(trimmed, result))
+                ordered = PlaceHunter(facts, pawnIndex, ordered);
             SlideHunterPastAutoRoles(facts, ordered);
             return ordered;
         }
@@ -231,7 +249,7 @@ namespace WorkRoles.Core.Recs
             return ordered;
         }
 
-        // Hunter must never sit immediately left of an auto/rule-driven role; slide it right past any contiguous run of them.
+        // Hunter must never sit immediately left of an auto (rule-based) or blocker role; slide it right past any contiguous run of them.
         private static void SlideHunterPastAutoRoles(EngineContext facts, int[] ordered)
         {
             int hunterRoleId = facts.Colony.HunterRoleId;
@@ -240,7 +258,7 @@ namespace WorkRoles.Core.Recs
             for (int index = 0; index < ordered.Length; index++)
                 if (ordered[index] == hunterRoleId) { at = index; break; }
             if (at < 0) return;
-            while (at + 1 < ordered.Length && IsAutoOrRuleDriven(facts, ordered[at + 1]))
+            while (at + 1 < ordered.Length && PreferRoleBeforeHunter(facts, ordered[at + 1]))
             {
                 int moved = ordered[at];
                 ordered[at] = ordered[at + 1];
@@ -249,11 +267,10 @@ namespace WorkRoles.Core.Recs
             }
         }
 
-        // Auto-assign, rule-driven, and blocker roles - the automatically-placed roles that carry no holder scale (Hunter itself excepted).
-        private static bool IsAutoOrRuleDriven(EngineContext facts, int roleId)
+        private static bool PreferRoleBeforeHunter(EngineContext facts, int roleId)
         {
             RoleView role = facts.RoleOf(roleId);
-            return role != null && !role.UsesHolderScale && !role.Hunting;
+            return role != null && (role.HasRules || role.Blocker);
         }
 
         private void OrderByScore(
@@ -367,15 +384,18 @@ namespace WorkRoles.Core.Recs
             int roleId,
             RecommendationFormulaEngine formulas)
         {
+            RoleView role = facts.RoleOf(roleId);
             SignalBucket verdict = facts.BestSignal(
                 pawnIndex,
-                facts.RoleOf(roleId),
+                role,
                 out string skillDefName,
                 out _);
             return formulas.OrderingScore(
                 verdict,
                 facts.SkillLevel(pawnIndex, skillDefName),
-                MinimumBonusOf(roleId));
+                MinimumBonusOf(roleId),
+                role.Category,
+                role.Time);
         }
 
         private static int EligibleTargetMinimum(
@@ -625,11 +645,14 @@ namespace WorkRoles.Core.Recs
                 RoleView role = roles[roleIndex];
                 if (!role.Available
                     || !role.Enabled
-                    || !role.UsesHolderScale
+                    || !role.PlannedByDemand
+                    // Skill-less roles without demand are retained chores; with
+                    // demand they fill every capable pawn (UnskilledFill).
                     || role.IsNever
-                    // Skill-less roles are retained chores unless the player
-                    // opted them into the Unskilled strategy (assign all capable).
-                    || (role.Unskilled && role.Mode != ScaleMode.Unskilled)
+                    // Composites never join the run: their members are planned
+                    // individually and a composite is substituted back in only
+                    // when a member run reproduces its exact job priorities.
+                    || role.MemberRoleIds != null
                     || role.Id == colony.HunterRoleId)
                     continue;
                 RolePlan rolePlan = RolePlan.Build(
@@ -677,6 +700,7 @@ namespace WorkRoles.Core.Recs
                     ?? (priorChampionsByPawn[rolePlan.ChampionPawnIndex] =
                         new List<int>());
                 championed.Add(role.Id);
+                drafts[rolePlan.ChampionPawnIndex].MarkChampionPick(role.Id);
             }
 
             // Coverage is now resolved during selection (single-pass RolePlan
@@ -707,6 +731,7 @@ namespace WorkRoles.Core.Recs
             Dictionary<int, RoleRecommendationExplanation>[] explanations =
                 BuildExplanations(
                     facts, drafts, formulas, targetAssignments);
+            SubstituteComposites(facts, rolesByPawn, explanations);
             return new RecommendationPlan(
                 rolesByPawn,
                 pathsByPawn,
@@ -788,6 +813,117 @@ namespace WorkRoles.Core.Recs
             return false;
         }
 
+        private sealed class CompositeSpec
+        {
+            internal int Id;
+            internal int[] MemberIds;
+        }
+
+        /// Post-planning pass: collapse a consecutive, in-member-order run of a
+        /// composite's members into the composite. This is job-priority-neutral —
+        /// a composite emits exactly its members' givers in member order and the
+        /// surrounding roles are unchanged, so the compiled order is identical —
+        /// which is why the match is a plain role-id window compare, never a
+        /// giver recompute. The composite's explanation carries the folded
+        /// members' explanations so nothing is lost.
+        private static void SubstituteComposites(
+            EngineContext facts,
+            int[][] rolesByPawn,
+            Dictionary<int, RoleRecommendationExplanation>[] explanationsByPawn)
+        {
+            var byFirstMember = new Dictionary<int, List<CompositeSpec>>();
+            IReadOnlyList<RoleView> roles = facts.Colony.Roles;
+            for (int index = 0; index < roles.Count; index++)
+            {
+                RoleView role = roles[index];
+                if (role.MemberRoleIds == null || role.MemberRoleIds.Count == 0)
+                    continue;
+                var members = new int[role.MemberRoleIds.Count];
+                for (int m = 0; m < members.Length; m++)
+                    members[m] = role.MemberRoleIds[m];
+                var spec = new CompositeSpec { Id = role.Id, MemberIds = members };
+                if (!byFirstMember.TryGetValue(members[0], out List<CompositeSpec> list))
+                    byFirstMember[members[0]] = list = new List<CompositeSpec>();
+                list.Add(spec);
+            }
+            if (byFirstMember.Count == 0) return;
+
+            var scratch = new List<int>();
+            for (int pawnIndex = 0; pawnIndex < rolesByPawn.Length; pawnIndex++)
+            {
+                int[] published = rolesByPawn[pawnIndex];
+                scratch.Clear();
+                bool changed = false;
+                for (int i = 0; i < published.Length;)
+                {
+                    CompositeSpec match = LongestCompositeMatch(
+                        byFirstMember, published, i);
+                    if (match == null)
+                    {
+                        scratch.Add(published[i]);
+                        i++;
+                        continue;
+                    }
+                    scratch.Add(match.Id);
+                    AddBundledExplanation(explanationsByPawn[pawnIndex], match);
+                    i += match.MemberIds.Length;
+                    changed = true;
+                }
+                if (changed) rolesByPawn[pawnIndex] = scratch.ToArray();
+            }
+        }
+
+        /// The longest composite whose member ids equal published[start..] in
+        /// order; ties broken by smallest composite id. Member roles are unique
+        /// per pawn, so a composite matches at most one window.
+        private static CompositeSpec LongestCompositeMatch(
+            Dictionary<int, List<CompositeSpec>> byFirstMember,
+            int[] published,
+            int start)
+        {
+            if (!byFirstMember.TryGetValue(
+                    published[start], out List<CompositeSpec> candidates))
+                return null;
+            CompositeSpec best = null;
+            for (int c = 0; c < candidates.Count; c++)
+            {
+                int[] members = candidates[c].MemberIds;
+                if (start + members.Length > published.Length) continue;
+                bool match = true;
+                for (int m = 1; m < members.Length; m++)
+                    if (published[start + m] != members[m]) { match = false; break; }
+                if (!match) continue;
+                if (best == null
+                    || members.Length > best.MemberIds.Length
+                    || members.Length == best.MemberIds.Length
+                        && candidates[c].Id < best.Id)
+                    best = candidates[c];
+            }
+            return best;
+        }
+
+        private static void AddBundledExplanation(
+            Dictionary<int, RoleRecommendationExplanation> explanations,
+            CompositeSpec spec)
+        {
+            if (explanations == null) return;
+            var members = new List<RoleRecommendationExplanation>(
+                spec.MemberIds.Length);
+            for (int m = 0; m < spec.MemberIds.Length; m++)
+                if (explanations.TryGetValue(
+                        spec.MemberIds[m],
+                        out RoleRecommendationExplanation memberExplanation))
+                    members.Add(memberExplanation);
+            explanations[spec.Id] = new RoleRecommendationExplanation
+            {
+                RoleId = spec.Id,
+                Recommended = true,
+                SelectionStage = RecommendationSelectionStage.Special,
+                SpecialPickReason = SpecialPickReason.Bundled,
+                BundledMembers = members,
+            };
+        }
+
         private static void ResolveCoverage(
             EngineContext facts,
             List<RolePlan> rolePlans,
@@ -818,7 +954,7 @@ namespace WorkRoles.Core.Recs
                             // coexist with a broader coverer like Grunt and are
                             // never folded; path targets keep their exact minimum.
                             || ((exactMinimumRequired
-                                    || role.Mode == ScaleMode.Unskilled)
+                                    || role.UnskilledFill)
                                 && draft.IsMinimumRole(role.Id))
                             || draft.IsSpecialRole(role.Id))
                             continue;

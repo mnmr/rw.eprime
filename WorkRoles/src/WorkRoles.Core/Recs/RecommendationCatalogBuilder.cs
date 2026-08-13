@@ -17,6 +17,10 @@ namespace WorkRoles.Core.Recs
     public sealed class RecommendationRoleSource
     {
         public int Id;
+        /// Template def the role was seeded from; null for player-made roles.
+        public string TemplateDefName;
+        /// Live non-composite members of a composite role; null for ordinary roles.
+        public List<int> MemberRoleIds;
         public List<JobEntry> Entries = new List<JobEntry>();
         public bool AutoAssign;
         public bool HasRules;
@@ -33,8 +37,9 @@ namespace WorkRoles.Core.Recs
         /// Authored skill classification; null = no authored data.
         public List<string> DeclaredRequiredSkills;
         public List<string> DeclaredOptionalSkills;
-        public HolderScale Scale;
-        public ScaleMode Mode = ScaleMode.Skilled;
+        /// Authored demand: minimum assignment count and ideal colonist percentage.
+        public int ColonyMin;
+        public int Coverage;
         public bool Available = true;
         public bool Enabled = true;
         public RecommendationSpecialRoleKind SpecialRole;
@@ -215,6 +220,9 @@ namespace WorkRoles.Core.Recs
             var view = new RoleView
             {
                 Id = source.Id,
+                TemplateDefName = source.TemplateDefName,
+                MemberRoleIds = source.MemberRoleIds == null
+                    ? null : new List<int>(source.MemberRoleIds),
                 Coverage = CoverageMath.CoverageOf(source.Entries, jobs),
                 OrderedCoverage = CoverageMath.OrderedCoverageOf(
                     source.Entries, jobs),
@@ -235,8 +243,8 @@ namespace WorkRoles.Core.Recs
                     ? null : new List<string>(source.DeclaredOptionalSkills),
                 NaturalPriority = projection.MaxNaturalPriority,
                 WorkTypes = projection.CopyWorkTypes(),
-                Scale = source.Scale?.Copy(),
-                Mode = source.Mode,
+                ColonyMin = source.ColonyMin,
+                CoveragePercent = source.Coverage,
                 Skills = projection.CopySkillViews(),
                 PrimarySkill = projection.PrimarySkill,
                 Unskilled = !source.AutoAssign

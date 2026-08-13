@@ -23,6 +23,7 @@ namespace WorkRoles.UI
         private const float RuleGapAbove = 2f; // table rule hugs the row above
         private const float RuleGapBelow = 3f;
         private const float RowTighten = 4f;   // tight rows pull toward their parent
+        private const float InlineIconSize = 10f; // star pairs match the chip draw size
         internal const float MaxContentWidth = 800f;
 
         private static readonly Color SeparatorColor = new Color(1f, 1f, 1f, 0.2f);
@@ -139,6 +140,10 @@ namespace WorkRoles.UI
                         case TipActionRow action:
                             w = Mathf.Max(w, factCol + ColGap + WrText.FitWidth(action.Description));
                             break;
+                        case TipInlineRow inline:
+                            w = Mathf.Max(w, InlineWidth(inline)
+                                + (inline.Label != null ? factCol + ColGap : 0f));
+                            break;
                     }
                 float[] cols = ColumnWidths(section);
                 if (cols != null)
@@ -174,6 +179,24 @@ namespace WorkRoles.UI
                     foreach (float col in cols) tableW += col;
                     w = Mathf.Max(w, tableW);
                 }
+                foreach (var row in section.Rows)
+                    if (row is TipInlineRow inline)
+                        w = Mathf.Max(w, InlineWidth(inline)
+                            + (inline.Label != null ? factCol + ColGap : 0f));
+            }
+            return w;
+        }
+
+        /// The unwrappable inline row's natural width (current font: Small).
+        private static float InlineWidth(TipInlineRow inline)
+        {
+            float w = 0f;
+            for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
+            {
+                TipInlineSegment segment = inline.Segments[i];
+                w += segment.Gap + (segment.Text != null
+                    ? WrText.FitWidth(segment.Text)
+                    : InlineIconSize);
             }
             return w;
         }
@@ -216,6 +239,9 @@ namespace WorkRoles.UI
                             break;
                         case TipActionRow action:
                             w = Mathf.Max(w, WrText.FitWidth(action.InputToken));
+                            break;
+                        case TipInlineRow inline when !inline.Label.NullOrEmpty():
+                            w = Mathf.Max(w, WrText.FitWidth(inline.Label));
                             break;
                     }
             return w;
@@ -378,6 +404,51 @@ namespace WorkRoles.UI
                                     });
                                 }
                                 cx += tableCols[i] + TableColGap;
+                            }
+                            y += lineH;
+                            break;
+                        }
+                        case TipInlineRow inline:
+                        {
+                            float cx = 0f;
+                            if (inline.Label != null)
+                            {
+                                if (!inline.Label.NullOrEmpty())
+                                    geo.Cmds.Add(new Cmd
+                                    {
+                                        Rect = new Rect(0f, y, labelCol, lineH),
+                                        Color = TipText.DimColor,
+                                        Text = inline.Label,
+                                    });
+                                cx = valueX;
+                            }
+                            for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
+                            {
+                                TipInlineSegment segment = inline.Segments[i];
+                                cx += segment.Gap;
+                                if (segment.Text != null)
+                                {
+                                    float textW = WrText.FitWidth(segment.Text);
+                                    geo.Cmds.Add(new Cmd
+                                    {
+                                        Rect = new Rect(cx, y, textW, lineH),
+                                        Color = segment.Color,
+                                        Text = segment.Text,
+                                        NoWrap = true,
+                                    });
+                                    cx += textW;
+                                }
+                                else if (segment.Icon != null)
+                                {
+                                    geo.Cmds.Add(new Cmd
+                                    {
+                                        Rect = new Rect(cx, y + (lineH - InlineIconSize) / 2f,
+                                            InlineIconSize, InlineIconSize),
+                                        Color = segment.Color,
+                                        Icon = segment.Icon,
+                                    });
+                                    cx += InlineIconSize;
+                                }
                             }
                             y += lineH;
                             break;

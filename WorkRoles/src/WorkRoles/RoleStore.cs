@@ -24,7 +24,7 @@ namespace WorkRoles
         /// sim-relevant code, so MP clients must agree.
         public bool reportVanillaPriorities = true;
         /// The user's recommendation order template (role ids); empty = the
-        /// vanilla-grid-derived default. A pure override: unlisted roles are
+        /// shipped default template. A pure override: unlisted roles are
         /// not merged in — they place dynamically (RecommendationOrder).
         public List<int> recommendationOrder = new List<int>();
         /// Shared, save-authoritative recommendation formula inputs. Mutate
@@ -59,9 +59,6 @@ namespace WorkRoles
         /// Legacy stand-alone training paths: read from old saves only and
         /// folded into their target role at load (roles own training now).
         private List<TrainingPath> legacyTrainingPaths;
-        /// Legacy named assignment strategies: read from old saves only and
-        /// folded into role colonyMin/coverage at load, never written.
-        private List<RoleAssignmentStrategy> legacyHolderScales;
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
         internal const int CurrentLocationTokenSchemaVersion = 1;
@@ -565,36 +562,6 @@ namespace WorkRoles
             // never written (roles own training now).
             if (Scribe.mode != LoadSaveMode.Saving)
                 Scribe_Collections.Look(ref legacyTrainingPaths, "trainingPaths", LookMode.Deep);
-            // Legacy named strategies (compact strings: name + three codec rows
-            // + preset + mode): read from old saves for the colonyMin/coverage
-            // migration below, never written.
-            if (Scribe.mode != LoadSaveMode.Saving)
-            {
-                List<string> scribeScales = null;
-                Scribe_Collections.Look(ref scribeScales, "holderScales", LookMode.Value);
-                if (Scribe.mode == LoadSaveMode.LoadingVars)
-                {
-                    legacyHolderScales = new List<RoleAssignmentStrategy>();
-                    if (scribeScales != null)
-                        foreach (var raw in scribeScales)
-                        {
-                            string[] parts = raw?.Split('\n');
-                            if (parts == null || parts.Length < 4
-                                || parts[0].Trim().Length == 0) continue;
-                            var bands = new HolderScale
-                            {
-                                RequiredTotals = HolderScaleCodec.DecodeRow(parts[1], 0),
-                                TrainingWaivers = HolderScaleCodec.DecodeRow(parts[2], 0),
-                                Max = HolderScaleCodec.DecodeRow(
-                                    parts[3], RoleHolderRange.Uncapped),
-                            };
-                            bool preset = parts.Length > 4 && parts[4].Trim() == "1";
-                            string modeToken = parts.Length > 5 ? parts[5] : null;
-                            legacyHolderScales.Add(RoleAssignmentStrategy.FromRows(
-                                parts[0].Trim(), preset, modeToken, bands));
-                        }
-                }
-            }
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 roles ??= new List<Role>();
@@ -678,37 +645,16 @@ namespace WorkRoles
                 pawnSets.RemoveAll(kv => kv.Value.assignments == null || kv.Value.assignments.Count == 0);
                 lastLocationIds.RemoveAll(kv => !IsManaged(kv.Key));
                 MigrateRoleTuning();
-                MigrateLegacyHolderScales();
+                // A stored order identical to the retired priority-derived
+                // seed was never really edited: clear it so those saves adopt
+                // the shipped default template. Deterministic load code; any
+                // actual player ordering stays untouched.
+                if (recommendationOrder.Count > 0
+                    && WorkRoles.Core.Recs.OrderTemplate.MatchesPriorityDerivedTemplate(
+                        recommendationOrder, RecsAdapter.RoleViewsOf(this)))
+                    recommendationOrder = new List<int>();
                 CompiledJobOrders.InvalidateAll();
             }
-        }
-
-        /// Migration: roles that still reference a retired named scale and
-        /// carry no colonyMin/coverage adopt the equivalent numbers derived
-        /// from the save's legacy strategy list. The reference field then
-        /// resets to its scribe default so saves stop carrying it.
-        private void MigrateLegacyHolderScales()
-        {
-            foreach (Role role in roles)
-            {
-                if (role.colonyMin == 0 && role.coverage == 0
-                    && !role.holderScaleName.NullOrEmpty()
-                    && !string.Equals(role.holderScaleName, "Never",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    RoleAssignmentStrategy legacy = legacyHolderScales?.FirstOrDefault(
-                        strategy => string.Equals(strategy.Name, role.holderScaleName,
-                            StringComparison.OrdinalIgnoreCase));
-                    if (RoleDemand.TryFromLegacyStrategy(
-                            legacy, out int colonyMin, out int coverage))
-                    {
-                        role.colonyMin = colonyMin;
-                        role.coverage = coverage;
-                    }
-                }
-                role.holderScaleName = "Never";
-            }
-            legacyHolderScales = null;
         }
 
         /// Fills tuning on roles that predate it (old saves at load, pre-tuning

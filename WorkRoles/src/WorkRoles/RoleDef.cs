@@ -9,15 +9,12 @@ using WorkRoles.Core.Recs;
 namespace WorkRoles
 {
     /// Recommendation tuning: skill classification, importance, time profile,
-    /// holder scale, champion-penalty policy and the role's training path.
+    /// demand, champion-penalty policy and the role's training path.
     public class RoleTuning
     {
         public RoleTuningSkills skills;
         public RoleCategory category;
         public RoleTime time;
-        /// Legacy-ignored: named scales retired in favor of colonyMin/coverage.
-        /// Kept so third-party defs still declaring it load without errors.
-        public string scale;
         /// False = repeat championships use the occasional-work penalty.
         public bool championPenalty = true;
         /// Minimum biological age (years) for holding the role; -1 = derive

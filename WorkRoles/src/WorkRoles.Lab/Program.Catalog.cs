@@ -50,20 +50,10 @@ internal static partial class Program
             string defName = RequiredText(def, "defName");
             List<JobEntry> entries = LoadEntries(def, defName);
             XElement tuning = def.Element("tuning");
-            // Demand derives from the def's two tuning numbers, mirroring
-            // RecsAdapter: skill-less roles are Unskilled when demanded and
-            // Never when not; skilled roles always carry a derived scale.
             int colonyMin = OptionalInt(
                 tuning?.Element("colonyMin")?.Value, 0, defName, "colonyMin");
             int demandCoverage = OptionalInt(
                 tuning?.Element("coverage")?.Value, 0, defName, "coverage");
-            bool hasRequiredSkills =
-                tuning?.Element("skills")?.Element("required")?.Elements("li").Any() == true;
-            ScaleMode scaleMode = hasRequiredSkills ? ScaleMode.Skilled
-                : colonyMin > 0 || demandCoverage > 0
-                    ? ScaleMode.Unskilled : ScaleMode.Never;
-            HolderScale scale = scaleMode == ScaleMode.Never
-                ? null : RoleDemand.DeriveScale(colonyMin, demandCoverage);
             RecommendationSpecialRoleKind specialRole =
                 OptionalEnum(
                     def.Element("recommendationSpecialRole")?.Value,
@@ -76,6 +66,7 @@ internal static partial class Program
             var source = new RecommendationRoleSource
             {
                 Id = id,
+                TemplateDefName = defName,
                 Entries = entries,
                 AutoAssign = OptionalBool(def, "autoAssign"),
                 HasRules = !string.IsNullOrEmpty(
@@ -95,8 +86,8 @@ internal static partial class Program
                     tuning?.Element("skills")?.Element("required")),
                 DeclaredOptionalSkills = SkillList(
                     tuning?.Element("skills")?.Element("optional")),
-                Scale = scale,
-                Mode = scaleMode,
+                ColonyMin = colonyMin,
+                Coverage = demandCoverage,
                 Available = true,
                 Enabled = true,
                 SpecialRole = specialRole,

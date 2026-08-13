@@ -48,9 +48,6 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        /// Legacy named scale reference: parsed from old files for the
-        /// colonyMin/coverage migration, never emitted.
-        public string holderScale;
         /// Recommendation tuning; hasTuning=false marks a pre-tuning file whose
         /// roles derive their skill classification on import.
         public bool hasTuning;
@@ -154,10 +151,6 @@ namespace WorkRoles.Core
         public List<FileGroup> groupsWithIds = new List<FileGroup>();
         public List<FileRole> roles = new List<FileRole>();
         public List<FileTrainingPath> trainingPaths = new List<FileTrainingPath>();
-        /// Legacy named strategies: parsed from old files so role references
-        /// can convert to colonyMin/coverage on import, never emitted.
-        public List<RoleAssignmentStrategy> scales =
-            new List<RoleAssignmentStrategy>();
         /// The stored recommendation-order template as role names; empty = the
         /// derived default (never exported).
         public List<string> recommendationOrder = new List<string>();
@@ -215,8 +208,6 @@ namespace WorkRoles.Core
     replaces the stored recommendation order (unlisted roles place dynamically).
   - A Role's <Tuning> colonyMin and coverage attributes hold its assignment
     demand: the minimum assignment count and the ideal colonist percentage.
-    Legacy <Scales> sections and <Holders scale=""name""/> references still
-    import and convert to these numbers.
   - A Role with composite=""true"" holds <Members> instead of <Jobs>: ordered
     <Role roleId=""..."">name</Role> references. Holders do the member roles'
     jobs in that order. Members must be regular roles without rules.
@@ -462,25 +453,6 @@ namespace WorkRoles.Core
             {
                 var role = ParseRole(roleEl);
                 if (role != null) doc.roles.Add(role);
-            }
-            foreach (var scaleEl in root.Element("Scales")?.Elements("Scale")
-                     ?? Enumerable.Empty<XElement>())
-            {
-                string name = scaleEl.Attribute("name")?.Value?.Trim();
-                if (string.IsNullOrEmpty(name)) continue;
-                bool preset = string.Equals(scaleEl.Attribute("preset")?.Value,
-                    "true", StringComparison.OrdinalIgnoreCase);
-                var bands = new HolderScale
-                {
-                    RequiredTotals = HolderScaleCodec.DecodeRow(
-                        scaleEl.Element("Min")?.Value, 0),
-                    TrainingWaivers = HolderScaleCodec.DecodeRow(
-                        scaleEl.Element("Train")?.Value, 0),
-                    Max = HolderScaleCodec.DecodeRow(
-                        scaleEl.Element("Max")?.Value, RoleHolderRange.Uncapped),
-                };
-                doc.scales.Add(RoleAssignmentStrategy.FromRows(
-                    name, preset, scaleEl.Attribute("mode")?.Value, bands));
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
                      ?? Enumerable.Empty<XElement>())
@@ -782,16 +754,6 @@ namespace WorkRoles.Core
                             EmptyToNull(entryEl.Attribute("roleId")?.Value?.Trim()),
                             entryLabel, min, max));
                     }
-                }
-                var holders = options.Element("Holders");
-                if (holders != null)
-                {
-                    string scaleName = holders.Attribute("scale")?.Value?.Trim();
-                    if (!string.IsNullOrEmpty(scaleName)) role.holderScale = scaleName;
-                    else if (string.Equals(
-                        holders.Attribute("mode")?.Value?.Trim(), "never",
-                        StringComparison.OrdinalIgnoreCase))
-                        role.holderScale = "Never";
                 }
             }
             role.composite = string.Equals(el.Attribute("composite")?.Value?.Trim(),

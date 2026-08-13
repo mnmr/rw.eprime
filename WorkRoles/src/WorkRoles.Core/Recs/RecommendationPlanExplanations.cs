@@ -62,9 +62,10 @@ namespace WorkRoles.Core.Recs
                     RoleView requirementRole = trainingTargetRoleId >= 0
                         ? facts.RoleOf(trainingTargetRoleId) ?? role
                         : role;
-                    HolderRequirement requirement = requirementRole.RequirementAt(
-                        facts.Colony.Pawns.Count);
-                    int requiredTotal = requirement.RequiredTotal;
+                    HolderRequirement requirement = facts.RequirementOf(
+                        requirementRole.Id);
+                    int requiredTotal = System.Math.Min(
+                        facts.Colony.Pawns.Count, requirement.RequiredTotal);
                     var explanation = new RoleRecommendationExplanation
                     {
                         RoleId = roleId,
@@ -74,10 +75,10 @@ namespace WorkRoles.Core.Recs
                             requiredTotal, requirement.TrainingWaivers),
                         CoveredTotal = coveredTotals.TryGetValue(
                             requirementRole.Id, out int covered) ? covered : 0,
-                        ConfiguredMaximum = requirementRole.MaxHoldersAt(
-                            facts.Colony.Pawns.Count),
-                        HolderScaleApplies = requirementRole.UsesHolderScale
-                            && requirementRole.Scale != null,
+                        DemandApplies = requirementRole.PlannedByDemand
+                            && !requirementRole.IsNever,
+                        EveryoneCapable =
+                            requirementRole.CoveragePercent >= 100,
                         RequiredSkills = RequiredSkillNames(facts, role),
                         SignalBucket = surplusSignal,
                         BaseSignalBucket = rawSignal,
@@ -277,11 +278,13 @@ namespace WorkRoles.Core.Recs
             RoleRecommendationExplanation explanation)
         {
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            if (role.UsesHolderScale && role.IsNever)
+            if (role.PlannedByDemand && !role.HasDemand)
             {
-                // A Never role that is a training-path trainee is controlled by
-                // its target (e.g. Medic by Doctor); a standalone Never role is
-                // simply configured off. Resolved once here, never re-stamped.
+                // A no-demand role that is a training-path trainee is controlled
+                // by its target (e.g. Medic by Doctor); an unskilled no-demand
+                // role is simply configured off. Standalone skilled no-demand
+                // roles stay surplus-eligible and fall through to the ordinary
+                // reject reasons.
                 int controllingTarget = ControllingTrainingTarget(
                     facts, role.Id);
                 if (controllingTarget >= 0)
@@ -289,10 +292,13 @@ namespace WorkRoles.Core.Recs
                     explanation.RejectReason =
                         PickRejectReason.ControlledByTarget;
                     explanation.RelatedRoleId = controllingTarget;
+                    return;
                 }
-                else
+                if (role.IsNever)
+                {
                     explanation.RejectReason = PickRejectReason.ScaleNever;
-                return;
+                    return;
+                }
             }
             // Role on/off state (disabled, unavailable, rule-driven, blocker) is
             // not a recommendation decision and carries no reject reason.

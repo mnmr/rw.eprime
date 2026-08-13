@@ -48,6 +48,10 @@ namespace WorkRoles.Core.Recs
         SecondMinimumPickBonus,
         ThirdMinimumPickBonus,
         LaterMinimumPickBonus,
+        OrderingImportantCategoryPoints,
+        OrderingOptionalCategoryPoints,
+        OrderingPartTimePoints,
+        OrderingOpportunisticPoints,
 
         HunterFirstTierMaximum,
         HunterSecondTierMaximum,
@@ -218,15 +222,23 @@ namespace WorkRoles.Core.Recs
                 "thirdMinimumPickBonus", OrderingSection, "ThirdMinimumPickBonus", 2),
             Bonus(RecommendationTuningOption.LaterMinimumPickBonus,
                 "laterMinimumPickBonus", OrderingSection, "LaterMinimumPickBonus", 1),
+            Points(RecommendationTuningOption.OrderingImportantCategoryPoints,
+                "orderingImportantCategoryPoints", OrderingSection, "OrderingImportantCategoryPoints", 4),
+            Points(RecommendationTuningOption.OrderingOptionalCategoryPoints,
+                "orderingOptionalCategoryPoints", OrderingSection, "OrderingOptionalCategoryPoints", -4),
+            Points(RecommendationTuningOption.OrderingPartTimePoints,
+                "orderingPartTimePoints", OrderingSection, "OrderingPartTimePoints", 2),
+            Points(RecommendationTuningOption.OrderingOpportunisticPoints,
+                "orderingOpportunisticPoints", OrderingSection, "OrderingOpportunisticPoints", -2),
 
             Level(RecommendationTuningOption.HunterFirstTierMaximum,
-                "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 5),
+                "hunterFirstTierMaximum", HunterSection, "HunterFirstTierMaximum", 4),
             Level(RecommendationTuningOption.HunterSecondTierMaximum,
-                "hunterSecondTierMaximum", HunterSection, "HunterSecondTierMaximum", 9),
+                "hunterSecondTierMaximum", HunterSection, "HunterSecondTierMaximum", 8),
             Level(RecommendationTuningOption.HunterThirdTierMaximum,
-                "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 13),
+                "hunterThirdTierMaximum", HunterSection, "HunterThirdTierMaximum", 12),
             Level(RecommendationTuningOption.HunterFourthTierMaximum,
-                "hunterFourthTierMaximum", HunterSection, "HunterFourthTierMaximum", 17),
+                "hunterFourthTierMaximum", HunterSection, "HunterFourthTierMaximum", 16),
 
             Percent(RecommendationTuningOption.RepeatChampionOverlapPenalty,
                 "repeatChampionOverlapPenalty", ChampionSection,
@@ -674,7 +686,9 @@ namespace WorkRoles.Core.Recs
         internal int OrderingScore(
             SignalBucket verdict,
             int skillLevel,
-            byte minimumBonus)
+            byte minimumBonus,
+            RoleCategory category,
+            RoleTime time)
         {
             RecommendationTuningOption points;
             switch (verdict)
@@ -701,22 +715,33 @@ namespace WorkRoles.Core.Recs
             }
             int divisor = Value(RecommendationTuningOption.OrderingSkillDivisor);
             int skill = (Math.Max(0, skillLevel) + divisor - 1) / divisor;
-            return Value(points) + skill + minimumBonus;
+            // Unclassified category/time count as Normal/FullTime: no modifier.
+            int categoryPoints = category == RoleCategory.Important
+                ? Value(RecommendationTuningOption.OrderingImportantCategoryPoints)
+                : category == RoleCategory.Optional
+                    ? Value(RecommendationTuningOption.OrderingOptionalCategoryPoints)
+                    : 0;
+            int timePoints = time == RoleTime.PartTime
+                ? Value(RecommendationTuningOption.OrderingPartTimePoints)
+                : time == RoleTime.Opportunistic
+                    ? Value(RecommendationTuningOption.OrderingOpportunisticPoints)
+                    : 0;
+            return Value(points) + skill + minimumBonus + categoryPoints + timePoints;
         }
 
         internal int HunterTier(int shootingLevel)
         {
             if (shootingLevel <= Value(
                     RecommendationTuningOption.HunterFirstTierMaximum))
-                return 0;
-            if (shootingLevel <= Value(
-                    RecommendationTuningOption.HunterSecondTierMaximum))
                 return 1;
             if (shootingLevel <= Value(
-                    RecommendationTuningOption.HunterThirdTierMaximum))
+                    RecommendationTuningOption.HunterSecondTierMaximum))
                 return 2;
+            if (shootingLevel <= Value(
+                    RecommendationTuningOption.HunterThirdTierMaximum))
+                return 3;
             return shootingLevel <= Value(
-                RecommendationTuningOption.HunterFourthTierMaximum) ? 3 : 4;
+                RecommendationTuningOption.HunterFourthTierMaximum) ? 4 : 5;
         }
 
         private int Value(RecommendationTuningOption option) =>

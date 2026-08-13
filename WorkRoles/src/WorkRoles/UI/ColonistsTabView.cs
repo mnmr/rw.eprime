@@ -430,7 +430,7 @@ namespace WorkRoles.UI
             int line = 0;
             // Widths reserve the verdict slot uniformly, so measure-only calls
             // (result: null) never need the badge lookups.
-            Dictionary<int, RoleChipVerdict> verdicts =
+            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts =
                 result != null && ColonistVerdicts ? VerdictsFor(pawn) : null;
             foreach (var a in assignments)
             {
@@ -760,7 +760,7 @@ namespace WorkRoles.UI
                 && paletteVerdicts.Count == paletteChips.Count)
                 return;
             paletteVerdicts.Clear();
-            Dictionary<int, RoleChipVerdict> verdicts = VerdictsFor(selectedPawn);
+            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts = VerdictsFor(selectedPawn);
             for (int i = 0; i < paletteChips.Count; i++)
                 paletteVerdicts.Add(paletteChips[i].role.blocker
                     ? default : VerdictFrom(verdicts, paletteChips[i].role.id));
@@ -1163,6 +1163,7 @@ namespace WorkRoles.UI
         private readonly Dictionary<(int roleId, RoleTipContext context, Pawn pawn, int activityRevision), StructuredTip> roleTipCache
             = new Dictionary<(int, RoleTipContext, Pawn, int), StructuredTip>();
         private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
+        private int roleTipTuningRevision = -1;
 
         /// The one role tooltip: palette chips, tree rows and assignment chips
         /// share the content; context varies the actions and pawn facts.
@@ -1173,8 +1174,12 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return null;
             ScopeCacheStamp stamp = PawnListStamp;
-            if (roleTipStamp != stamp)
+            // The chip tip embeds verdict buckets and promotion thresholds,
+            // both functions of the shared recommendation tuning.
+            if (roleTipStamp != stamp
+                || roleTipTuningRevision != store.RecommendationTuningRevision)
                 roleTipCache.Clear();
+            roleTipTuningRevision = store.RecommendationTuningRevision;
             // The assignment tip embeds the pawn's current activity, so a job
             // transition (revision bump) must produce a fresh tip.
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
@@ -1233,41 +1238,96 @@ namespace WorkRoles.UI
 
             var facts = model.AddSection();
             var skills = RecsAdapter.RelevantSkillsOf(role);
-            if (skills.Count > 0)
+            // The chip context replaces the plain skill list with the per-skill
+            // suitability sections below.
+            if (context != RoleTipContext.AssignmentChip && skills.Count > 0)
                 facts.Fact("WR_TipSkillsLabel".Translate(),
                     skills.Select(s => s.skillLabel.CapitalizeFirst()).ToCommaList());
             facts.Fact("WR_TipJobsLabel".Translate(), JobSummary(role));
+            // Paths sharing this role at the same skill gate merge onto one
+            // line (Crafter sits in several paths at an identical band).
+            string ownBand = null;
+            var trainingBands = new List<(string Band, List<string> Owners)>();
             foreach (var owner in store.roles)
             {
                 int idx = owner.trainingRoleIds.IndexOf(role.id);
                 if (idx < 0) continue;
                 int lo = owner.trainingMins[idx], hi = owner.trainingMaxes[idx];
                 string band = hi >= SkillProgressionMath.MaxLevel ? lo + "+" : lo + "-" + hi;
-                string recommend = "WR_TipTrainingRecommend".Translate(band);
-                if (owner.id != role.id)
-                    recommend += " " + "WR_TipTrainingPath".Translate(
-                        owner.label.Colorize(WrStyle.MinorAccent));
-                facts.Fact("WR_TipTrainingHeader".Translate(), recommend);
+                if (owner.id == role.id)
+                {
+                    ownBand = band;
+                    continue;
+                }
+                int at = trainingBands.FindIndex(entry => entry.Band == band);
+                if (at < 0)
+                    trainingBands.Add((band, new List<string> { owner.label }));
+                else
+                    trainingBands[at].Owners.Add(owner.label);
             }
+            if (ownBand != null)
+                facts.Fact("WR_TipTrainingHeader".Translate(),
+                    "WR_TipTrainingRecommend".Translate(ownBand));
+            foreach ((string band, List<string> owners) in trainingBands)
+                facts.Fact("WR_TipTrainingHeader".Translate(),
+                    "WR_TipTrainingRecommend".Translate(band) + " "
+                    + "WR_TipTrainingPath".Translate(owners
+                        .Select(label => label.Colorize(WrStyle.MinorAccent))
+                        .ToCommaList()));
 
-            List<string> fits = BestFits(skills);
-            if (fits != null && fits.Count > 0)
+            if (context != RoleTipContext.AssignmentChip)
             {
-                // Tier lines share the value column; only the first row carries
-                // the "Best fits" label.
-                var fitsSection = model.AddSection();
-                for (int i = 0; i < fits.Count; i++)
-                    fitsSection.Fact(
-                        i == 0 ? "WR_TipBestFitsLabel".Translate().ToString() : "",
-                        fits[i]);
+                List<string> fits = BestFits(skills);
+                if (fits != null && fits.Count > 0)
+                {
+                    // Tier lines share the value column; only the first row
+                    // carries the "Best fits" label.
+                    var fitsSection = model.AddSection();
+                    for (int i = 0; i < fits.Count; i++)
+                        fitsSection.Fact(
+                            i == 0 ? "WR_TipBestFitsLabel".Translate().ToString() : "",
+                            fits[i]);
+                }
             }
 
             if (context == RoleTipContext.AssignmentChip && pawn != null)
             {
-                // The colonist this chip belongs to, with their live activity.
-                model.AddSection().Fact("WR_TipActivityLabel".Translate(),
-                    "WR_TipActivityValue".Translate(pawn.LabelShortCap,
-                        ActivityState.ActivityPhrase(pawn, store)));
+                // The colonist below a separator: their live activity, the
+                // role's skills one per line with level and star pair colored
+                // as in the skills panel, then the pawn's verdict for the role
+                // (the chip badge's bucket).
+                TipSection colonist = model.AddSection();
+                colonist.Fact(pawn.LabelShortCap,
+                    ActivityState.ActivityPhrase(pawn, store),
+                    labelColor: WrStyle.MinorAccent);
+                for (int i = 0; i < skills.Count; i++)
+                {
+                    ColonistSkillPresentation skillFacts = statsState.PresentationFor(
+                        pawn, statsState.SkillLineSnapshot(pawn, skills[i]));
+                    var segments = new List<TipInlineSegment>
+                    {
+                        new TipInlineSegment(
+                            skillFacts.Line.Label + " ", Color.white),
+                        new TipInlineSegment(
+                            skillFacts.Line.ValueText,
+                            ColonistStatsState.SkillTextColor(
+                                skillFacts.Line, skillFacts.SignalView.PassionTier)),
+                    };
+                    if (skillFacts.VerdictStars.Shown)
+                    {
+                        segments.Add(new TipInlineSegment(
+                            WorkRolesTex.Star, skillFacts.VerdictStars.Bottom, gap: 4f));
+                        segments.Add(new TipInlineSegment(
+                            WorkRolesTex.Star, skillFacts.VerdictStars.Top, gap: 1f));
+                    }
+                    colonist.Inline(segments,
+                        i == 0 ? "WR_TipSkillsLabel".Translate().ToString() : "");
+                }
+                if (skills.Count > 0
+                    && TryVerdictBucket(pawn, role.id, out SignalBucket roleBucket))
+                    colonist.Fact("WR_SignalVerdict".Translate(),
+                        SkillSignalPresentation.BucketLabel(roleBucket),
+                        SkillSignalPresentation.VerdictColor(roleBucket));
                 TipSection state = null;
                 // Same stamp and shared invalidation as the tip cache, so the
                 // embedded capability sentence can never outlive its inputs.
@@ -2096,8 +2156,8 @@ namespace WorkRoles.UI
         // on the next read after invalidation. Equality: a matching stamp reuses
         // map identity. Teardown: Reset/ReleaseSnapshots, language invalidation,
         // and external-snapshot refresh clear the table.
-        private readonly Dictionary<Pawn, Dictionary<int, RoleChipVerdict>> roleVerdicts =
-            new Dictionary<Pawn, Dictionary<int, RoleChipVerdict>>();
+        private readonly Dictionary<Pawn, Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)>> roleVerdicts =
+            new Dictionary<Pawn, Dictionary<int, (RoleChipVerdict, SignalBucket)>>();
         private ScopeCacheStamp roleVerdictStamp = ScopeCacheStamp.Invalid;
 
         private void InvalidateRoleVerdicts()
@@ -2109,7 +2169,7 @@ namespace WorkRoles.UI
             paletteVerdictLayoutRevision = -1;
         }
 
-        private Dictionary<int, RoleChipVerdict> VerdictsFor(Pawn pawn)
+        private Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> VerdictsFor(Pawn pawn)
         {
             ScopeCacheStamp stamp = PawnListStamp;
             if (roleVerdictStamp != stamp)
@@ -2125,11 +2185,12 @@ namespace WorkRoles.UI
                             store, pawns, ExternalSnapshotFor));
                     for (int i = 0; i < pawns.Count; i++)
                     {
-                        var map = new Dictionary<int, RoleChipVerdict>(
+                        var map = new Dictionary<int, (RoleChipVerdict, SignalBucket)>(
                             suitability[i].Count);
                         foreach (var pair in suitability[i])
-                            map[pair.Key] =
-                                SkillSignalPresentation.VerdictBadge(pair.Value);
+                            map[pair.Key] = (
+                                SkillSignalPresentation.VerdictBadge(pair.Value),
+                                pair.Value);
                         roleVerdicts[pawns[i]] = map;
                     }
                 }
@@ -2138,9 +2199,21 @@ namespace WorkRoles.UI
         }
 
         private static RoleChipVerdict VerdictFrom(
-            Dictionary<int, RoleChipVerdict> verdicts, int roleId) =>
-            verdicts != null && verdicts.TryGetValue(roleId, out RoleChipVerdict verdict)
-                ? verdict : default;
+            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts, int roleId) =>
+            verdicts != null && verdicts.TryGetValue(roleId, out (RoleChipVerdict Badge, SignalBucket Bucket) verdict)
+                ? verdict.Badge : default;
+
+        private bool TryVerdictBucket(Pawn pawn, int roleId, out SignalBucket bucket)
+        {
+            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts = VerdictsFor(pawn);
+            if (verdicts != null && verdicts.TryGetValue(roleId, out (RoleChipVerdict Badge, SignalBucket Bucket) verdict))
+            {
+                bucket = verdict.Bucket;
+                return true;
+            }
+            bucket = SignalBucket.Neutral;
+            return false;
+        }
 
         // Owner: Colonists window. Key: Pawn reference identity inside the
         // pawn-scope stamp, floored strip width, chip-display mode, tuning

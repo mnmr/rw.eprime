@@ -25,9 +25,6 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        /// Legacy-scribed only: named scales retired in favor of
-        /// colonyMin/coverage; load migration folds it in and resets to "Never".
-        public string holderScaleName = "Never";
         /// Recommendation tuning: copied from the template def at seeding or
         /// filled by load-time migration; authoritative once set.
         public List<string> requiredSkills = new List<string>();
@@ -45,7 +42,7 @@ namespace WorkRoles
         public int maxAge;
         /// Assignment scaling inputs: the minimum assignment count (0-30) and
         /// the ideal percentage of colonists holding the role (0-100). The
-        /// engine's banded demand derives from these (RoleDemand).
+        /// engine's holder requirement derives from these (RoleDemand).
         public int colonyMin;
         public int coverage;
         /// The role's own training path: this role plus its training roles
@@ -180,7 +177,6 @@ namespace WorkRoles
             // the role as an ordinary player role, keeping entries and holders.
             bool legacyManaged = false;
             Scribe_Values.Look(ref legacyManaged, "managed");
-            Scribe_Values.Look(ref holderScaleName, "holderScale", "Never");
             Scribe_Values.Look(ref category, "category", RoleCategory.None);
             Scribe_Values.Look(ref time, "time", RoleTime.None);
             Scribe_Values.Look(ref championPenalty, "championPenalty", true);

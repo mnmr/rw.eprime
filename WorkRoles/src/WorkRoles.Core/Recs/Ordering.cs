@@ -117,126 +117,30 @@ namespace WorkRoles.Core.Recs
             {
                 int roleId = existing[existingIndex].RoleId;
                 if (!anchored.Contains(roleId)) continue;
-                int previous = FindSurvivingNeighbor(
-                    existing, existingIndex - 1, -1, ordered);
-                int next = FindSurvivingNeighbor(
-                    existing, existingIndex + 1, 1, ordered);
-                int insertion = previous >= 0 && next >= 0
-                    ? previous < next ? next : previous + 1
-                    : previous >= 0 ? previous + 1
-                    : next >= 0 ? next
+                // Bound by ALL surviving assignments, not adjacent neighbors only: a removed
+                // or engine-reordered neighbor must not drag the pin away from the rest.
+                int lower = -1;
+                for (int index = 0; index < existingIndex; index++)
+                {
+                    int at = ordered.IndexOf(existing[index].RoleId);
+                    if (at > lower) lower = at;
+                }
+                int upper = int.MaxValue;
+                for (int index = existingIndex + 1; index < existing.Count; index++)
+                {
+                    int at = ordered.IndexOf(existing[index].RoleId);
+                    if (at >= 0 && at < upper) upper = at;
+                }
+                // On an inverted window the upper bound wins: the pin never lands
+                // below a role it was explicitly placed ahead of.
+                int insertion = lower >= 0 && upper != int.MaxValue
+                    ? (lower + 1 <= upper ? lower + 1 : upper)
+                    : lower >= 0 ? lower + 1
+                    : upper != int.MaxValue ? upper
                     : System.Math.Min(existingIndex, ordered.Count);
                 ordered.Insert(insertion, roleId);
             }
             return ordered.ToArray();
         }
-
-        private static int FindSurvivingNeighbor(
-            IReadOnlyList<AssignmentView> existing,
-            int start,
-            int step,
-            List<int> ordered)
-        {
-            for (int index = start;
-                 index >= 0 && index < existing.Count;
-                 index += step)
-            {
-                int found = ordered.IndexOf(existing[index].RoleId);
-                if (found >= 0) return found;
-            }
-            return -1;
-        }
-
-        /// Tier 0 follows the basic-work anchor; tiers 1..3 land after the
-        /// first, middle, and last work role; shooting above the fourth tier
-        /// cutoff (tier 4) places Hunter last.
-        internal static long HunterPosition(
-            ColonyView colony,
-            Dictionary<int, RoleView> byId,
-            int tier)
-        {
-            if (tier >= 4) return long.MaxValue;
-            int lowAnchor = LowHunterAnchor(colony, byId);
-            if (tier == 0) return AfterTemplateIndex(lowAnchor);
-
-            List<int> workIndices = Enumerable.Range(
-                    0, colony.OrderTemplate.Count)
-                .Where(index => IsWorkRole(
-                    byId, colony.OrderTemplate[index]))
-                .ToList();
-            if (workIndices.Count == 0)
-                return AfterTemplateIndex(lowAnchor);
-            int at = tier == 1 ? 0
-                : tier == 2 ? (workIndices.Count - 1) / 2
-                : workIndices.Count - 1;
-            return AfterTemplateIndex(workIndices[at]);
-        }
-
-        private static int LowHunterAnchor(
-            ColonyView colony,
-            Dictionary<int, RoleView> byId)
-        {
-            int basics = -1;
-            for (int i = 0; i < colony.OrderTemplate.Count; i++)
-            {
-                RoleView role = RoleAt(colony, byId, i);
-                if (role != null
-                    && role.WorkTypes.Contains("BasicWorker"))
-                {
-                    basics = i;
-                    break;
-                }
-            }
-            if (basics >= 0)
-            {
-                int anchor = basics;
-                while (anchor + 1 < colony.OrderTemplate.Count)
-                {
-                    RoleView next = RoleAt(
-                        colony, byId, anchor + 1);
-                    if (next == null
-                        || !next.WorkTypes.Contains("Childcare")
-                        && !next.WorkTypes.Contains("Warden"))
-                        break;
-                    anchor++;
-                }
-                return anchor;
-            }
-
-            int lastLeadingAuto = -1;
-            while (lastLeadingAuto + 1 < colony.OrderTemplate.Count)
-            {
-                RoleView next = RoleAt(
-                    colony, byId, lastLeadingAuto + 1);
-                if (next == null || !next.AutoAssign) break;
-                lastLeadingAuto++;
-            }
-            return lastLeadingAuto;
-        }
-
-        private static bool IsWorkRole(
-            Dictionary<int, RoleView> byId,
-            int roleId) =>
-            byId.TryGetValue(roleId, out RoleView role)
-            && !role.AutoAssign
-            && role.PrimarySkill != null
-            && role.PrimarySkill != "Medicine"
-            && role.PrimarySkill != "Social";
-
-        private static RoleView RoleAt(
-            ColonyView colony,
-            Dictionary<int, RoleView> byId,
-            int templateIndex)
-        {
-            int roleId = colony.OrderTemplate[templateIndex];
-            return byId.TryGetValue(roleId, out RoleView role)
-                ? role
-                : null;
-        }
-
-        private static long AfterTemplateIndex(int templateIndex) =>
-            templateIndex < 0
-                ? -Slot / 2
-                : templateIndex * Slot + Slot / 2;
     }
 }

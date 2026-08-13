@@ -32,6 +32,9 @@ namespace WorkRoles.Core.Recs
         FireSafety,
         Retained,
         Protected,
+        /// A composite substituted in for a consecutive in-order run of its
+        /// members after planning; BundledMembers carries their explanations.
+        Bundled,
     }
 
     /// Why a role a pawn holds was not recommended. Pick-outcome reasons are
@@ -81,8 +84,10 @@ namespace WorkRoles.Core.Recs
         public int RequiredTotal;
         public int TrainingWaivers;
         public int CoveredTotal;
-        public int ConfiguredMaximum = RoleHolderRange.Uncapped;
-        public bool HolderScaleApplies;
+        public bool DemandApplies;
+        /// The requirement owner's coverage spans the whole colony: the need
+        /// is "everyone capable", not a slot count.
+        public bool EveryoneCapable;
         public RecommendationSelectionStage SelectionStage;
         public int CandidateRank;
         public int CandidateCount;
@@ -99,5 +104,9 @@ namespace WorkRoles.Core.Recs
         public SignalBucket BaseSignalBucket = SignalBucket.Neutral;
         public int SignalSkillLevel = -1;
         public string SignalSkillDefName;
+        /// For a substituted composite: the folded-in members' explanations in
+        /// member order, so the tooltip shows each member's full reasoning.
+        public IReadOnlyList<RoleRecommendationExplanation> BundledMembers =
+            Array.Empty<RoleRecommendationExplanation>();
     }
 }

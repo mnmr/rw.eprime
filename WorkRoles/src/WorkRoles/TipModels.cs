@@ -97,6 +97,15 @@ namespace WorkRoles
                         case TipSpanRow span:
                             sb.Append(span.Text);
                             break;
+                        case TipInlineRow inline:
+                        {
+                            if (!inline.Label.NullOrEmpty())
+                                sb.Append(inline.Label).Append(": ");
+                            for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
+                                if (inline.Segments[i].Text != null)
+                                    sb.Append(inline.Segments[i].Text);
+                            break;
+                        }
                     }
                 }
             }
@@ -138,6 +147,12 @@ namespace WorkRoles
         public TipSection Span(string text, float indent = 0f, bool dim = true, int alignColumn = -1)
         {
             Rows.Add(new TipSpanRow(text, indent, dim, alignColumn));
+            return this;
+        }
+
+        public TipSection Inline(IReadOnlyList<TipInlineSegment> segments, string label = null)
+        {
+            Rows.Add(new TipInlineRow(segments, label));
             return this;
         }
 
@@ -219,6 +234,48 @@ namespace WorkRoles
             Color = color;
             Icon = icon;
             Tight = tight;
+        }
+    }
+
+    /// One unwrapped line of inline segments: colored text runs and small
+    /// tinted icons (e.g. the role tip's per-skill star pairs). A non-null
+    /// Label renders like a fact row's label and aligns the segments to the
+    /// shared value column ("" = aligned continuation line).
+    public sealed class TipInlineRow : TipRow
+    {
+        public readonly IReadOnlyList<TipInlineSegment> Segments;
+        public readonly string Label;
+
+        public TipInlineRow(IReadOnlyList<TipInlineSegment> segments, string label = null)
+        {
+            Segments = segments;
+            Label = label;
+        }
+    }
+
+    /// Text (Icon null) or icon (Text null) segment; Gap is the leading space
+    /// before the segment.
+    public readonly struct TipInlineSegment
+    {
+        public readonly string Text;
+        public readonly Texture2D Icon;
+        public readonly Color Color;
+        public readonly float Gap;
+
+        public TipInlineSegment(string text, Color color, float gap = 0f)
+        {
+            Text = text;
+            Icon = null;
+            Color = color;
+            Gap = gap;
+        }
+
+        public TipInlineSegment(Texture2D icon, Color color, float gap = 0f)
+        {
+            Text = null;
+            Icon = icon;
+            Color = color;
+            Gap = gap;
         }
     }
 

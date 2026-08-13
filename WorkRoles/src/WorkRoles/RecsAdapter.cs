@@ -100,20 +100,12 @@ namespace WorkRoles
                     ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(
                         role.templateDefName);
-                // Banded demand derives from the role's two tuning numbers.
-                // Skilled roles without demand keep an all-zero scale so they
-                // stay surplus-stage eligible; demandless unskilled roles are
-                // Never (nothing would ever assign them).
-                bool hasDemand = role.colonyMin > 0 || role.coverage > 0;
-                bool unskilled = IsUnskilledRole(role);
-                ScaleMode mode = unskilled
-                    ? hasDemand ? ScaleMode.Unskilled : ScaleMode.Never
-                    : ScaleMode.Skilled;
-                HolderScale scale = mode == ScaleMode.Never
-                    ? null : RoleDemand.DeriveScale(role.colonyMin, role.coverage);
                 sources.Add(new RecommendationRoleSource
                 {
                     Id = role.id,
+                    TemplateDefName = role.templateDefName,
+                    MemberRoleIds = role.composite
+                        ? LiveMemberIdsOf(role) : null,
                     Entries = role.composite
                         ? CompositeEntriesOf(role)
                         : new List<JobEntry>(role.entries),
@@ -133,8 +125,8 @@ namespace WorkRoles
                         ? role.requiredSkills : null,
                     DeclaredOptionalSkills = role.tuningSeeded
                         ? role.optionalSkills : null,
-                    Scale = scale,
-                    Mode = mode,
+                    ColonyMin = role.colonyMin,
+                    Coverage = role.coverage,
                     Available = RoleAvailable(role),
                     Enabled = role.enabled,
                     SpecialRole = template?.recommendationSpecialRole
@@ -277,6 +269,23 @@ namespace WorkRoles
                 entries.AddRange(member.entries);
             }
             return entries;
+        }
+
+        /// The members whose entries CompositeEntriesOf projects, as ids, so
+        /// Core band gates can hold the bundle to each member's path band.
+        private static List<int> LiveMemberIdsOf(Role role)
+        {
+            var members = new List<int>();
+            var store = RoleStore.Current;
+            if (store == null) return members;
+            foreach (int memberId in role.memberRoleIds)
+            {
+                Role member = store.RoleById(memberId);
+                if (member == null || member.composite) continue;
+                if (member.blocker && !role.blocker) continue;
+                members.Add(memberId);
+            }
+            return members;
         }
 
         /// Work types a role touches: WorkType entries directly, WorkGiver

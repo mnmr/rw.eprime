@@ -544,19 +544,6 @@ namespace WorkRoles
                     target.maxAge = Mathf.Clamp(row.role.maxAge, 0, 18);
                     target.colonyMin = Mathf.Clamp(row.role.colonyMin, 0, 30);
                     target.coverage = Mathf.Clamp(row.role.coverage, 0, 100);
-                    // Legacy files carry named scale references instead of the
-                    // two demand numbers: convert like the save migration.
-                    if (target.colonyMin == 0 && target.coverage == 0
-                        && !row.role.holderScale.NullOrEmpty()
-                        && RoleDemand.TryFromLegacyStrategy(
-                            doc.scales?.FirstOrDefault(scale => string.Equals(
-                                scale?.Name, row.role.holderScale,
-                                System.StringComparison.OrdinalIgnoreCase)),
-                            out int legacyMin, out int legacyCoverage))
-                    {
-                        target.colonyMin = Mathf.Clamp(legacyMin, 0, 30);
-                        target.coverage = Mathf.Clamp(legacyCoverage, 0, 100);
-                    }
                     target.requiredSkills = row.role.requiredSkills.ToList();
                     target.optionalSkills = row.role.optionalSkills.ToList();
                     // Pre-tuning files leave this false; the migration below

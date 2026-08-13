@@ -26,8 +26,8 @@ internal static partial class Program
             RoleView role = targetRoles[roleIndex];
             if (!HasTargetPath(colony, role.Id)) continue;
 
-            HolderRequirement requirement = role.RequirementAt(
-                colony.Pawns.Count);
+            HolderRequirement requirement = RoleDemand.RequirementFor(
+                role.ColonyMin, role.CoveragePercent, colony.Pawns.Count);
             int requiredTotal = requirement.RequiredTotal;
             int trainingWaivers = requirement.TrainingWaivers;
             int directMinimum = requirement.DirectMinimum;

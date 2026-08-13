@@ -1,6 +1,6 @@
 using WorkRoles.Core.Recs;
 
-namespace WorkRoles.Core.Tests;
+namespace WorkRoles.Core.Tests.SampleColony;
 
 /// Recommendation regressions pinned to the sample colony's published outcome:
 /// the ordered per-pawn role list and the removals implied by it.
@@ -13,29 +13,25 @@ public class SampleColonyRecommendationTests
     [Test]
     public async Task NoinKeepsSkilledRolesAndShedsUnskilledExtras()
     {
-        SamplePawn noin = SampleColony.Pawn("Noin");
-        string current = string.Join(", ",
-            noin.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo(
-            "Core, Basics, Cleaner, Hauler, Farmer Away, Butcher, Brewer, Miner, Artist, Grunt, Hunter, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Noin");
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == noin) pawnIndex = i;
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Basics", "Cleaner", "Hauler", "Farmer Away", "Butcher", "Brewer", "Miner", "Artist", "Grunt", "Hunter", "Gene Maker"], "Noin's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments, ["Core", "Basics", "Farmer Away", "Miner", "Artist", "Butcher", "Brewer", "Grunt", "Hunter"], "Noin's recommended assignments");
+        await AssertSameRoles(scenario.RemovedAssignments, ["Cleaner", "Hauler", "Gene Maker"], "Noin's removed assignments");
+    }
 
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Farmer Away, Miner, Artist, Butcher, Brewer, Grunt, Hunter");
+    [Test]
+    public async Task NoinAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Noin");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+        string actualRemovedOrder = string.Join(", ", scenario.RemovedAssignments);
 
-        string removed = string.Join(", ", noin.Assignments
-            .Where(a => !recommended.Contains(a.RoleId))
-            .Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(removed).IsEqualTo("Cleaner, Hauler, Gene Maker");
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Cleaner, Hauler, Farmer Away, Butcher, Brewer, Miner, Artist, Grunt, Hunter, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Miner, Artist, Butcher, Brewer, Hunter, Grunt");
+        await Assert.That(actualRemovedOrder).IsEqualTo("Cleaner, Hauler, Gene Maker");
     }
 
     /// Barbor (Barborbar "Barbor" Bico): the colony's medic-track pawn
@@ -44,26 +40,22 @@ public class SampleColonyRecommendationTests
     [Test]
     public async Task BarborKeepsMedicTrackAndGainsPainterGruntResearcher()
     {
-        SamplePawn barbor = SampleColony.Pawn("Barbor");
-        string current = string.Join(", ",
-            barbor.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo(
-            "Core, Medic, Basics, Handler, Childcare, Warden, Fisher, "
-            + "Hauler, Cleaner, Hunter, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Barbor");
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == barbor) pawnIndex = i;
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Medic", "Basics", "Handler", "Childcare", "Warden", "Fisher", "Hauler", "Cleaner", "Hunter", "Gene Maker"], "Barbor's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments, ["Core", "Medic", "Basics", "Handler", "Fisher", "Grunt", "Hunter", "Researcher"], "Barbor's recommended assignments");
+    }
 
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Medic, Basics, Handler, Fisher, Painter, "
-                + "Grunt, Researcher, Hunter");
+    [Test]
+    public async Task BarborAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Barbor");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Medic, Basics, Handler, Childcare, Warden, Fisher, Hauler, Cleaner, Hunter, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Medic, Basics, Handler, Fisher, Grunt, Hunter, Researcher");
     }
 
     /// Takeo Mahoney: broad generalist (burning Construction, minor Plants,
@@ -73,28 +65,25 @@ public class SampleColonyRecommendationTests
     [Test]
     public async Task TakeoTradesJointMakerForMinerAndKeepsHisSpread()
     {
-        SamplePawn takeo = SampleColony.Pawn("Takeo");
-        string current = string.Join(", ",
-            takeo.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo(
-            "Core, Medic, Basics, Builder, Farmer Away, Herder, Hunter, "
-            + "Miner Away, Farmer, Joint Maker, Fisher, Grunt, Researcher, "
-            + "Childcare, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Takeo");
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == takeo) pawnIndex = i;
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Medic", "Basics", "Builder", "Farmer Away", "Herder", "Hunter", "Miner Away", "Farmer", "Joint Maker", "Fisher", "Grunt", "Researcher", "Childcare", "Gene Maker"],
+            "Takeo's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments,
+            ["Core", "Medic", "Basics", "Builder", "Farmer Away", "Hunter", "Herder", "Miner Away", "Farmer", "Miner", "Joint Maker", "Fisher", "Grunt", "Researcher", "Childcare"],
+            "Takeo's recommended assignments");
+    }
 
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Medic, Basics, Builder, Farmer Away, Hunter, "
-                + "Herder, Miner Away, Farmer, Miner, Fisher, Grunt, "
-                + "Researcher, Childcare");
+    [Test]
+    public async Task TakeoAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Takeo");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Medic, Basics, Builder, Farmer Away, Herder, Hunter, Miner Away, Farmer, Joint Maker, Fisher, Grunt, Researcher, Childcare, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Medic, Basics, Farmer Away, Builder, Herder, Miner Away, Farmer, Hunter, Joint Maker, Miner, Fisher, Grunt, Researcher, Childcare");
     }
 
     /// Pheanox (Fey "Pheanox" Nickel): crafting/intellectual specialist via
@@ -102,88 +91,136 @@ public class SampleColonyRecommendationTests
     [Test]
     public async Task PheanoxKeepsCraftingTrackAndDropsPainterAndGeneMaker()
     {
-        SamplePawn pheanox = SampleColony.Pawn("Pheanox");
-        string current = string.Join(", ",
-            pheanox.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Tailor, Smith, Hunter, Herder, Plant Cutter, Painter, Crafter, Fisher, Grunt, Researcher, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Pheanox");
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == pheanox) pawnIndex = i;
-
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Hunter, Smith, Tailor, Crafter, Herder, Plant Cutter, Fisher, Grunt, Researcher");
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Basics", "Farmer Away", "Drug Maker", "Fabricator", "Tailor", "Smith", "Hunter", "Herder", "Plant Cutter", "Painter", "Crafter", "Fisher", "Grunt", "Researcher", "Gene Maker"],
+            "Pheanox's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments,
+            ["Core", "Basics", "Farmer Away", "Drug Maker", "Fabricator", "Hunter", "Herder", "Smith", "Tailor", "Crafter", "Plant Cutter", "Fisher", "Grunt", "Researcher"],
+            "Pheanox's recommended assignments");
     }
 
     [Test]
-    public async Task QuinnRecommendations()
+    public async Task PheanoxAssignmentsRemainInPublishedOrder()
     {
-        SamplePawn quinn = SampleColony.Pawn("Quinn");
-        string current = string.Join(", ",
-            quinn.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo("Core, Basics, Farmer Away, Fabricator, Tailor, Smith, Childcare, Warden, Hunter, Crafter, Grunt, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Pheanox");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == quinn) pawnIndex = i;
-
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Farmer Away, Fabricator, Childcare, Warden, Smith, Tailor, Hunter, Crafter, Grunt");
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Fabricator, Tailor, Smith, Hunter, Herder, Plant Cutter, Painter, Crafter, Fisher, Grunt, Researcher, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Drug Maker, Hunter, Fabricator, Smith, Tailor, Crafter, Herder, Plant Cutter, Fisher, Grunt, Researcher");
     }
 
     [Test]
-    public async Task KoenRecommendations()
+    public async Task QuinnDropsGeneMakerAndKeepsOtherAssignments()
     {
-        SamplePawn koen = SampleColony.Pawn("Koen");
-        string current = string.Join(", ",
-            koen.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo("Core, Medic, Basics, Handler, Crafter, Fabricator, Tailor, Smith, Hunter, Farmer, Miner, Fisher, Hauler, Cleaner, Gene Maker");
+        RecommendationScenario scenario = BuildScenario("Quinn");
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == koen) pawnIndex = i;
-
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Handler, Drug Maker, Fabricator, Farmer, Smith, Tailor, Hunter, Crafter, Fisher, Grunt, Researcher");
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Basics", "Farmer Away", "Fabricator", "Tailor", "Smith", "Childcare", "Warden", "Hunter", "Crafter", "Grunt", "Gene Maker"], "Quinn's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments,
+            ["Core", "Basics", "Childcare", "Warden", "Farmer Away", "Fabricator", "Smith", "Tailor", "Crafter", "Hunter", "Grunt"], "Quinn's recommended assignments");
     }
 
     [Test]
-    public async Task MorgRecommendations()
+    public async Task QuinnAssignmentsRemainInPublishedOrder()
     {
-        SamplePawn morg = SampleColony.Pawn("Morg");
-        string current = string.Join(", ",
-            morg.Assignments.Select(a => SampleColony.RoleLabel(a.RoleId)));
-        await Assert.That(current).IsEqualTo("Core, Basics, Miner, Handyman, Grunt");
+        RecommendationScenario scenario = BuildScenario("Quinn");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
 
-        RecommendationPlan plan = RecommendationPlan.Build(
-            SampleColony.BuildColonyView());
-        int pawnIndex = -1;
-        for (int i = 0; i < SampleColony.CurrentMapPawns.Count; i++)
-            if (SampleColony.CurrentMapPawns[i] == morg) pawnIndex = i;
-
-        var recommended = new List<int>();
-        for (int i = 0; i < plan.RoleCountAt(pawnIndex); i++)
-            recommended.Add(plan.RoleAt(pawnIndex, i));
-        await Assert.That(string.Join(", ",
-                recommended.Select(SampleColony.RoleLabel)))
-            .IsEqualTo("Core, Basics, Hunter, Miner, Builder, Grunt");
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Farmer Away, Fabricator, Tailor, Smith, Childcare, Warden, Hunter, Crafter, Grunt, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Childcare, Warden, Fabricator, Smith, Tailor, Hunter, Crafter, Grunt");
     }
+
+    [Test]
+    public async Task KoenTradesObsoleteChoresForGruntAndResearch()
+    {
+        RecommendationScenario scenario = BuildScenario("Koen");
+
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Medic", "Basics", "Handler", "Crafter", "Fabricator", "Tailor", "Smith", "Hunter", "Farmer", "Miner", "Fisher", "Hauler", "Cleaner", "Gene Maker"],
+            "Koen's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments,
+            ["Core", "Basics", "Handler", "Fabricator", "Smith", "Tailor", "Farmer", "Crafter", "Hunter", "Fisher", "Grunt", "Researcher"], "Koen's recommended assignments");
+    }
+
+    [Test]
+    public async Task KoenAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Koen");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Medic, Basics, Handler, Crafter, Fabricator, Tailor, Smith, Hunter, Farmer, Miner, Fisher, Hauler, Cleaner, Gene Maker");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Handler, Fabricator, Smith, Tailor, Hunter, Crafter, Farmer, Fisher, Grunt, Researcher");
+    }
+
+    [Test]
+    public async Task BlackwellReplacesHaulingAndCleaningWithGrunt()
+    {
+        RecommendationScenario scenario = BuildScenario("Blackwell");
+
+        await AssertSameRoles(scenario.CurrentAssignments,
+            ["Core", "Basics", "Farmer Away", "Cook", "Childcare", "Warden", "Smith Mech", "Hauler", "Hunter", "Farmer", "Crafter", "Cleaner"], "Blackwell's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments,
+            ["Core", "Basics", "Farmer Away", "Childcare", "Warden", "Cook", "Smith Mech", "Hunter", "Farmer", "Tailor", "Crafter", "Grunt"], "Blackwell's recommended assignments");
+    }
+
+    [Test]
+    public async Task BlackwellAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Blackwell");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Farmer Away, Cook, Childcare, Warden, Smith Mech, Hauler, Hunter, Farmer, Crafter, Cleaner");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Farmer Away, Childcare, Warden, Cook, Smith Mech, Farmer, Tailor, Crafter, Grunt, Hunter");
+    }
+
+    [Test]
+    public async Task MorgAddsHuntingAndBuildingToExistingAssignments()
+    {
+        RecommendationScenario scenario = BuildScenario("Morg");
+
+        await AssertSameRoles(scenario.CurrentAssignments, ["Core", "Basics", "Miner", "Handyman", "Grunt"], "Morg's current assignments");
+        await AssertSameRoles(scenario.RecommendedAssignments, ["Core", "Basics", "Hunter", "Miner", "Builder", "Grunt"], "Morg's recommended assignments");
+    }
+
+    [Test]
+    public async Task MorgAssignmentsRemainInPublishedOrder()
+    {
+        RecommendationScenario scenario = BuildScenario("Morg");
+        string actualCurrentOrder = string.Join(", ", scenario.CurrentAssignments);
+        string actualRecommendedOrder = string.Join(", ", scenario.RecommendedAssignments);
+
+        await Assert.That(actualCurrentOrder).IsEqualTo("Core, Basics, Miner, Handyman, Grunt");
+        await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Hunter, Miner, Builder, Grunt");
+    }
+
+    /// Set equality with a readable diff on failure: the roles the expectation
+    /// lists but the actual set lacks, and the roles it carries beyond it.
+    private static async Task AssertSameRoles(string[] actual, string[] expected, string label)
+    {
+        HashSet<string> actualSet = [.. actual];
+        string missing = string.Join(", ", expected.Where(role => !actualSet.Contains(role)));
+        string extra = string.Join(", ", actualSet.Except(expected));
+        await Assert.That(actualSet.SetEquals(expected)).IsTrue().Because($"{label} differ from the expected set: missing [{missing}], extra [{extra}]");
+    }
+
+    private static RecommendationScenario BuildScenario(string pawnName)
+    {
+        SamplePawn pawn = SampleColony.Pawn(pawnName);
+        RecommendationPlan plan = RecommendationPlan.Build(SampleColony.BuildColonyView());
+        int pawnIndex = Enumerable.Range(0, SampleColony.CurrentMapPawns.Count).Single(index => SampleColony.CurrentMapPawns[index] == pawn);
+        int[] recommendedRoleIds = [.. Enumerable.Range(0, plan.RoleCountAt(pawnIndex)).Select(index => plan.RoleAt(pawnIndex, index))];
+        HashSet<int> recommendedRoleMembership = [.. recommendedRoleIds];
+        string[] currentAssignments = [.. pawn.Assignments.Select(assignment => SampleColony.RoleLabel(assignment.RoleId))];
+        string[] recommendedAssignments = [.. recommendedRoleIds.Select(SampleColony.RoleLabel)];
+        string[] removedAssignments = [.. pawn.Assignments.Where(assignment => !recommendedRoleMembership.Contains(assignment.RoleId)).Select(assignment => SampleColony.RoleLabel(assignment.RoleId))];
+        return new RecommendationScenario(currentAssignments, recommendedAssignments, removedAssignments);
+    }
+
+    private sealed record RecommendationScenario(string[] CurrentAssignments, string[] RecommendedAssignments, string[] RemovedAssignments);
 }

@@ -162,26 +162,14 @@ namespace WorkRoles.Core.Recs
             List<int>[] priorChampionsByPawn = null)
         {
             int colonySize = facts.Colony.Pawns.Count;
-            // Unskilled means "everyone capable": Max never caps it, so an
-            // all-zero (NoMin) scale still fills the whole colony.
-            bool unskilled = role.Mode == ScaleMode.Unskilled;
-            int maximum = unskilled
-                ? RoleHolderRange.Uncapped
-                : role.MaxHoldersAt(colonySize);
             int capacity = System.Math.Max(0, colonySize);
-            if (maximum < RoleHolderRange.Uncapped)
-                capacity = System.Math.Min(capacity, System.Math.Max(0, maximum));
             int protectedDirectHolders = 0;
             for (int pawnIndex = 0; pawnIndex < colonySize; pawnIndex++)
                 if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id))
                     protectedDirectHolders++;
             int selectionCapacity = System.Math.Max(
                 0, capacity - protectedDirectHolders);
-            HolderRequirement requirement = unskilled
-                ? new HolderRequirement(
-                    role.RequiredTotalAt(colonySize),
-                    role.TrainingWaiversAt(colonySize))
-                : role.RequirementAt(colonySize);
+            HolderRequirement requirement = facts.RequirementOf(role.Id);
             int configuredRequiredTotal = System.Math.Min(
                 capacity, requirement.RequiredTotal);
             int directMinimum = System.Math.Min(
@@ -196,6 +184,7 @@ namespace WorkRoles.Core.Recs
                 facts.Colony.Paths, role.Id);
 
             var eligible = new List<CandidateFact>(colonySize);
+            bool anyCoveredEligible = false;
             for (int pawnIndex = 0; pawnIndex < colonySize; pawnIndex++)
             {
                 if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id))
@@ -208,6 +197,9 @@ namespace WorkRoles.Core.Recs
                 SignalBucket verdict = facts.BestSignal(
                     pawnIndex, role, out string skillDefName, out _);
                 if (verdict < formulas.CandidateMinimumSignal) continue;
+                if (drafts != null && RecommendationPlan.PawnHasCoverer(
+                        facts, drafts[pawnIndex], pawnIndex, role))
+                    anyCoveredEligible = true;
                 int skillLevel = facts.SkillLevel(pawnIndex, skillDefName);
                 int championScore = ChampionScore(
                     facts,
@@ -233,7 +225,10 @@ namespace WorkRoles.Core.Recs
                     championSignalScore));
             }
 
-            CandidateFact? champion = directPicks > 0
+            // A champion is only forced when no eligible candidate already
+            // covers the role's work through a broader role: the coverer
+            // satisfies the dedicated-holder minimum.
+            CandidateFact? champion = directPicks > 0 && !anyCoveredEligible
                 ? BestChampion(eligible)
                 : (CandidateFact?)null;
             var ordered = new List<CandidateFact>(eligible.Count);
@@ -260,11 +255,7 @@ namespace WorkRoles.Core.Recs
             // Unskilled fills every remaining capable pawn (Awful was already
             // dropped by the candidate floor); Skilled surplus stops once three
             // ranked candidates in a row fail the signal criteria.
-            bool unskilledFill = role.Mode == ScaleMode.Unskilled;
-            // A pick folds under a broader covering role assigned by an
-            // earlier-processed role, except a minimum pick of an Unskilled or
-            // training-path role, whose own holders survive coverage.
-            bool exemptMinimum = unskilledFill || championPath != null;
+            bool unskilledFill = role.UnskilledFill;
             const int SurplusMissLimit = 3;
             int consecutiveSurplusMisses = 0;
             // Single pass over the best-first candidate list: the first
@@ -286,7 +277,7 @@ namespace WorkRoles.Core.Recs
                     && RecommendationPlan.PawnHasCoverer(
                         facts, drafts[candidate.PawnIndex],
                         candidate.PawnIndex, role);
-                if (covered && !(inRequiredPhase && exemptMinimum))
+                if (covered)
                 {
                     if (inRequiredPhase)
                     {

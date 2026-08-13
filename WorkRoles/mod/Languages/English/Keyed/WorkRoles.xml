@@ -86,6 +86,10 @@
   <WR_RecTuneOrderingPointsRowDesc>Points each signal strength contributes when final recommended roles are ordered.</WR_RecTuneOrderingPointsRowDesc>
   <WR_RecTuneMinimumPickRow>Minimum-pick bonus</WR_RecTuneMinimumPickRow>
   <WR_RecTuneMinimumPickRowDesc>Ordering points granted to the first, second, third and every later pawn selected to satisfy a role's required holder minimum.</WR_RecTuneMinimumPickRowDesc>
+  <WR_RecTuneCategoryPointsRow>Category points</WR_RecTuneCategoryPointsRow>
+  <WR_RecTuneCategoryPointsRowDesc>Ordering points added by colony importance: Important promotes duty roles above same-signal production work, Optional pushes roles toward the end of the list.</WR_RecTuneCategoryPointsRowDesc>
+  <WR_RecTuneTimePointsRow>Time demand points</WR_RecTuneTimePointsRow>
+  <WR_RecTuneTimePointsRowDesc>Ordering points added by time demand: part-time lets quick duties sit above full-time work of equal signal, opportunistic pushes filler work toward the end.</WR_RecTuneTimePointsRowDesc>
 
   <WR_RecTunePathMinimumSignal>Training-role minimum signal</WR_RecTunePathMinimumSignal>
   <WR_RecTunePathMinimumSignalDesc>Lowest signal a role may have while participating in an activated training path.</WR_RecTunePathMinimumSignalDesc>
@@ -343,7 +347,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_RecTipAssignmentsMany>{0} assignments requested</WR_RecTipAssignmentsMany>
   <WR_RecTipWithWaiverOne>{0} (1 training waiver)</WR_RecTipWithWaiverOne>
   <WR_RecTipWithWaiversMany>{0} ({1} training waivers)</WR_RecTipWithWaiversMany>
-  <WR_RecTipWithCap>{0}, capped at {1}</WR_RecTipWithCap>
+  <WR_RecTipEveryoneCapable>Assigned to everyone capable</WR_RecTipEveryoneCapable>
   <WR_RecDecisionAuto>Assigned automatically to every capable pawn.</WR_RecDecisionAuto>
   <WR_RecDecisionSignals>The configured signal threshold qualifies this pawn.</WR_RecDecisionSignals>
   <WR_RecDecisionCoverageDraft>Best remaining candidate selected to meet required coverage.</WR_RecDecisionCoverageDraft>
