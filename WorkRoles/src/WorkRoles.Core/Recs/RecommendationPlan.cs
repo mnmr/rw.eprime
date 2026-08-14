@@ -224,7 +224,7 @@ namespace WorkRoles.Core.Recs
                 facts, pawnIndex, positions, edges, incoming, ordered);
             if (!ReferenceEquals(trimmed, result))
                 ordered = PlaceHunter(facts, pawnIndex, ordered);
-            SlideHunterPastAutoRoles(facts, ordered);
+            SlideHunterPastConditionalRoles(facts, ordered);
             return ordered;
         }
 
@@ -249,8 +249,8 @@ namespace WorkRoles.Core.Recs
             return ordered;
         }
 
-        // Hunter must never sit immediately left of an auto (rule-based) or blocker role; slide it right past any contiguous run of them.
-        private static void SlideHunterPastAutoRoles(EngineContext facts, int[] ordered)
+        // Hunter must never sit immediately left of a conditional (rule-based) or blocker role; slide it right past any contiguous run of them.
+        private static void SlideHunterPastConditionalRoles(EngineContext facts, int[] ordered)
         {
             int hunterRoleId = facts.Colony.HunterRoleId;
             if (hunterRoleId < 0) return;

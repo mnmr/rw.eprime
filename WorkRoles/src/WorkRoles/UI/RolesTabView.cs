@@ -47,14 +47,13 @@ namespace WorkRoles.UI
         private const float RowHeight = 28f;
         private const float IconButton = 20f;
 
-        // Rules section (auto-role checkbox + active-hours grid + location dropdown).
+        // Rules section (conditional-role checkbox + active-hours grid + location dropdown).
         // Integer-pixel grid geometry: fixed cell width, even gaps.
         private const int HourCellW = 16;
         private const int HourCellH = 20;
         private const int HourCellGap = 2;
         private const int HourGridW = 24 * (HourCellW + HourCellGap) - HourCellGap;
         private const int HourLabelH = 18;
-        private const float AutoRowH = 24f;
         // Legend row + hour-number row + cell row.
         private const float RulesSectionH = HourLabelH + 2f + HourLabelH + 2f + HourCellH;
         // Vanilla-schedule look: paint a color over a grey base.
@@ -552,7 +551,7 @@ namespace WorkRoles.UI
             }
 
             // Group reorder drop: above/below this header (user groups only;
-            // Default, Auto-Roles and Locked are pinned).
+            // Default, Conditional Roles and Locked are pinned).
             if (groupDrag && Mouse.IsOver(row) && section.GroupId >= 0
                 && section.GroupId != RoleDrag.GroupId)
             {
@@ -788,7 +787,7 @@ namespace WorkRoles.UI
             float rowsStartY = topBox.y + TopBoxPadding;
 
             // Checkbox column: right-aligned in the left container, from the TOP —
-            // Auto-assign, Blocker, Auto role stacked (3 rows).
+            // Auto-assign, Blocker, Conditional role stacked (3 rows).
             // Measured first so the title and pencil know their room.
             Text.Font = GameFont.Small;
             float checksW = header.ChecksWidth;
@@ -839,7 +838,7 @@ namespace WorkRoles.UI
             DrawSkillsUsedRow(new Rect(leftX, ageY + AgeBlockH + 2f,
                 checksX - 8f - leftX, SkillsRowH), model);
 
-            // Expanding section (full box width): rules while the auto-role
+            // Expanding section (full box width): rules while the conditional-role
             // opt-in is on.
             float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH)
                 + RulesRowGap;
@@ -875,8 +874,8 @@ namespace WorkRoles.UI
         /// existing groups plus "New..." (a name dialog; the role moves in, so
         /// no empty group ever exists). A parent moves WITH its nested roles —
         /// a combo role separated from its children would un-nest both. Overlay
-        /// members (Auto-Roles) show a disabled "Group: Auto-Roles" instead —
-        /// the stored group resumes when rules clear.
+        /// members (Conditional Roles) show a disabled "Group: Conditional Roles"
+        /// instead — the stored group resumes when rules clear.
         private void DrawGroupPickerRow(Rect rect, RoleEditorSnapshot model)
         {
             RoleEditorHeaderSnapshot header = model.Header;
@@ -991,11 +990,11 @@ namespace WorkRoles.UI
             Text.Anchor = TextAnchor.UpperLeft;
         }
 
-        // ----- Rules section: auto-role opt-in, active-hours grid, location dropdown -----
+        // ----- Rules section: conditional-role opt-in, active-hours grid, location dropdown -----
 
-        /// The editor's checkbox column: Auto-assign, Blocker role, the Auto
-        /// role opt-in and the Composite role toggle.
-        /// Auto role opt-in derives from HasRules — unchecking clears the rules
+        /// The editor's checkbox column: Auto-assign, Blocker role, the
+        /// Conditional role opt-in and the Composite role toggle.
+        /// Conditional role opt-in derives from HasRules — unchecking clears the rules
         /// (confirmed). CheckboxLabeled pins boxes to the right edge for alignment.
         private void DrawEditorChecks(Rect rect, RoleEditorSnapshot model,
             bool rulesShown, float rowH)
@@ -1038,13 +1037,13 @@ namespace WorkRoles.UI
             if (header.MemberLocked)
             {
                 WrTips.Key("WR_MemberLockTip").Region(autoRect);
-                Widgets.CheckboxLabeled(autoRect, header.AutoRoleLabel,
+                Widgets.CheckboxLabeled(autoRect, header.ConditionalRoleLabel,
                     ref rulesWanted, disabled: true);
             }
             else
             {
-                WrTips.Key("WR_AutoRoleTip").Region(autoRect);
-                Widgets.CheckboxLabeled(autoRect, header.AutoRoleLabel,
+                WrTips.Key("WR_ConditionalRoleTip").Region(autoRect);
+                Widgets.CheckboxLabeled(autoRect, header.ConditionalRoleLabel,
                     ref rulesWanted);
                 if (rulesWanted != rulesShown)
                 {

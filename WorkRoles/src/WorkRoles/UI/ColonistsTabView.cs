@@ -24,6 +24,10 @@ namespace WorkRoles.UI
         private readonly ColonistRecommendationState recommendationState;
         private readonly ColonistStatsState statsState;
         private readonly ColonistRoleCapabilityState roleCapabilityState;
+        private readonly ActivityState activityState;
+        private readonly ColonistSelectedPanelState selectedPanelState;
+        private readonly System.Func<Pawn, PawnExternalSnapshot>
+            externalSnapshotProvider;
 
         public ColonistsTabView(ColonistsViewProfile profile)
         {
@@ -33,9 +37,9 @@ namespace WorkRoles.UI
             rosterState = new ColonistsRosterState(profile, statsState.SkillSortValue);
             roleCapabilityState = new ColonistRoleCapabilityState();
             activityState = new ActivityState();
+            selectedPanelState = new ColonistSelectedPanelState(activityState);
+            externalSnapshotProvider = ExternalSnapshotFor;
         }
-
-        private readonly ActivityState activityState;
 
         private Vector2 paletteScroll;
         private Pawn selectedPawn;
@@ -53,30 +57,36 @@ namespace WorkRoles.UI
         // instead of rescanning the complete colony to recover y positions.
         private readonly struct TableLayoutRow
         {
-            internal TableLayoutRow(GroupSection<Pawn> section, Pawn pawn)
+            internal TableLayoutRow(ColonistSectionSnapshot section,
+                Pawn pawn, bool collapsed)
             {
                 Section = section;
                 Pawn = pawn;
+                Collapsed = collapsed;
             }
 
-            internal GroupSection<Pawn> Section { get; }
+            internal ColonistSectionSnapshot Section { get; }
             internal Pawn Pawn { get; }
+            internal bool Collapsed { get; }
         }
 
         // Owner: Colonists window. Key: section snapshot identity, pawn-scope
-        // stamp, strip width, and chip-display mode. Value: view-owned flattened
-        // row geometry; Pawn references are stable external identities and the
-        // mutable builder buffers never escape this view. Dependencies: section
-        // grouping/collapse, per-pawn chip heights, and every key component.
+        // stamp, strip width, chip-display mode, and the skill-caption toggle
+        // (row minimum height). Value: view-owned flattened
+        // row geometry and group-collapse presentation; Pawn references are
+        // stable external identities and the mutable builder buffers never
+        // escape this view. Dependencies: section grouping/collapse, per-pawn
+        // chip heights, and every key component.
         // Refresh: immediate on the next table draw after invalidation. Equality:
         // exact keys reuse row/layout identity. Teardown: InvalidateTableLayout
         // and ReleaseSnapshots release rows, heights, and source references.
-        private IReadOnlyList<GroupSection<Pawn>> tableLayoutSections;
+        private ColonistSectionsSnapshot tableLayoutSections;
         private readonly List<TableLayoutRow> tableLayoutRows = new List<TableLayoutRow>();
         private VariableViewportLayout tableRowLayout;
         private ScopeCacheStamp tableLayoutStamp = ScopeCacheStamp.Invalid;
         private float tableLayoutStripWidth = -1f;
         private int tableLayoutDisplay = -1;
+        private bool tableLayoutCaptions;
         private int tableListedCount;
 
         /// One view-owned revision for every cache whose contents depend on the
@@ -95,6 +105,11 @@ namespace WorkRoles.UI
         private const float ClusterGapY = 4f;
         private const float FilterRowH = 28f;
         private const float RowHeight = 35f;
+        /// Stacked name and caption line boxes may overlap by this much: glyph
+        /// ink stops short of a line box's edges (ascender and descender
+        /// leading), so the pair reads tighter than the sum of its line
+        /// heights. Past it the row grows instead.
+        private const float LineBoxOverlap = 4f;
         private const float PortraitSize = 30f;
         private const float NameWidth = 150f;
         private const float IconButton = 24f;
@@ -138,6 +153,7 @@ namespace WorkRoles.UI
             pendingCenterSelected = true;
             rosterState.Reset();
             activityState.Release();
+            selectedPanelState.Release();
             ColonyGroupsDataSource.InvalidateSnapshot(); // fresh membership per window open
             roleCapabilityState.Invalidate();
             recommendationState.Reset();
@@ -148,45 +164,54 @@ namespace WorkRoles.UI
             // across a reopen when nothing bumped the version in between).
             sizeStamp = chipLayoutStamp = roleTipStamp = rulesPassStamp
                 = ScopeCacheStamp.Invalid;
-            paletteStamp = -1;
+            skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
+            chipSequenceStamp = ScopeCacheStamp.Invalid;
+            paletteSnapshot = null;
+            paletteCatalog = null;
+            paletteLayoutTips = null;
+            paletteTips = null;
+            paletteTipOwner = null;
+            paletteTipScopeStamp = ScopeCacheStamp.Invalid;
+            paletteTipLanguageRevision = -1;
+            paletteTipDefinitionRevision = -1;
+            paletteTipExternalGeneration = 0;
+            paletteTipBuiltExternalGeneration = -1;
+            paletteVerdictSnapshot = null;
+            ReleaseTableHeaderSnapshot();
+            InvalidateChromeSnapshot();
             InvalidateTableLayout();
         }
 
         /// Language-only invalidation. User selection, filters, scroll positions,
         /// scope and disclosure state remain untouched.
-        // Job filter button label: def resolution + Truncate measurement are
-        // render-forbidden, so both cache per selected filter.
-        // Owner: view. Key: JobFilterDefName (single slot, fixed width).
-        // Value: label + truncated label (immutable strings). Dependencies:
-        // filter selection, language. Refresh: on selection change.
-        // Equality: ordinally equal selection keys reuse both strings.
-        // Teardown: language invalidation resets; strings hold no game state.
-        private string jobFilterCachedFor = "\0";
-        private string jobFilterLabel;
-        private string jobFilterShown;
-
         internal void InvalidateLanguageCaches()
         {
-            colonistHeaderCache = null;
-            jobFilterCachedFor = "\0";
+            InvalidateChromeSnapshot();
             sizeStamp = ScopeCacheStamp.Invalid;
+            sizeOwner = null;
+            skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
 
-            paletteStamp = -1;
-            paletteChips.Clear();
-            paletteLabels.Clear();
+            paletteSnapshot = null;
+            paletteCatalog = null;
+            paletteLayoutTips = null;
+            paletteTipLanguageRevision = -1;
+            paletteVerdictSnapshot = null;
 
             statsState.InvalidateLanguageCaches();
             roleCapabilityState.Invalidate();
             activityState.Release();
+            selectedPanelState.Release();
             InvalidateRoleVerdicts();
             chipLayouts.Clear();
             chipLayoutStamp = ScopeCacheStamp.Invalid;
+            chipSequenceStamp = ScopeCacheStamp.Invalid;
 
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
             recommendationState.InvalidateLanguageCaches();
 
             rosterState.InvalidateLanguageCaches();
+            rowTextMetricsStamp = -1;
             InvalidateTableLayout();
         }
 
@@ -225,10 +250,14 @@ namespace WorkRoles.UI
             rosterState.InvalidateSnapshotConsumers();
             InvalidateRoleVerdicts();
             sizeStamp = ScopeCacheStamp.Invalid;
+            skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
             chipLayouts.Clear();
             chipLayoutStamp = ScopeCacheStamp.Invalid;
+            chipSequenceStamp = ScopeCacheStamp.Invalid;
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
+            unchecked { paletteTipExternalGeneration++; }
+            unchecked { tableHeaderExternalGeneration++; }
             rulesPassCache.Clear();
             rulesPassStamp = ScopeCacheStamp.Invalid;
             InvalidateTableLayout();
@@ -241,6 +270,7 @@ namespace WorkRoles.UI
             statsState.ReleaseSnapshots();
             roleCapabilityState.Invalidate();
             activityState.Release();
+            selectedPanelState.Release();
 
             selectedPawn = null;
             recommendationState.ReleaseSnapshots();
@@ -249,26 +279,40 @@ namespace WorkRoles.UI
             roleTipCache.Clear();
             roleTipStamp = ScopeCacheStamp.Invalid;
             pawnTips.Clear();
-            activityTips.Clear();
-            traitTips.Clear();
             rosterState.ReleaseSnapshots();
             chipLayouts.Clear();
+            chipLayoutOwner = null;
             chipLayoutStamp = ScopeCacheStamp.Invalid;
+            chipSequences.Clear();
+            chipSequenceOwner = null;
+            chipSequenceCatalog = null;
+            chipSequenceStamp = ScopeCacheStamp.Invalid;
+            chipSequenceDisplay = -1;
+            chipSequenceTuningRevision = -1;
             rulesPassCache.Clear();
             rulesPassStamp = ScopeCacheStamp.Invalid;
             InvalidateTableLayout();
 
             ColonyGroupsDataSource.InvalidateSnapshot();
-            paletteChips.Clear();
-            paletteLabels.Clear();
-            paletteStamp = -1;
-            colonistHeaderCache = null;
+            paletteSnapshot = null;
+            paletteCatalog = null;
+            paletteLayoutTips = null;
+            paletteLayoutW = -1f;
+            paletteLayoutMode = -1;
+            paletteTips = null;
+            paletteTipOwner = null;
+            paletteTipScopeStamp = ScopeCacheStamp.Invalid;
+            paletteTipLanguageRevision = -1;
+            paletteTipDefinitionRevision = -1;
+            paletteTipExternalGeneration = 0;
+            paletteTipBuiltExternalGeneration = -1;
+            paletteVerdictSnapshot = null;
+            ReleaseTableHeaderSnapshot();
+            InvalidateChromeSnapshot();
             sizeStamp = ScopeCacheStamp.Invalid;
+            sizeOwner = null;
+            skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
 
-            // Role labels are save-owned even though this cache is shared by
-            // the table instances.
-            abbrevCache = null;
-            abbrevStamp = -1;
         }
 
         private void InvalidateTableLayout()
@@ -297,13 +341,15 @@ namespace WorkRoles.UI
             return contentH + StatsPadding * 2f;
         }
 
-        // Owner: Colonists window. Key: pawn-scope stamp, current-map identity,
-        // chip display, palette mode, selected pawn, and ordered skill columns.
+        // Owner: Colonists window. Key: RoleStore/current-map identity,
+        // pawn-scope stamp, chip display, palette mode, selected pawn, verdict
+        // preference, and ordered skill-column revision.
         // Value: desired width and height scalars. Dependencies: every key plus
         // cached chip/text measurements. Refresh: immediate on the next size read
         // after key change. Equality: exact keys reuse both scalars. Teardown:
         // ReleaseSnapshots/language invalidation resets the stamp and values.
         private ScopeCacheStamp sizeStamp = ScopeCacheStamp.Invalid;
+        private RoleStore sizeOwner;
         private int sizeMapId = -1;
         private int sizeKey = -1;
         private float desiredWidthCache;
@@ -311,22 +357,27 @@ namespace WorkRoles.UI
 
         private void EnsureSizes()
         {
-            IReadOnlyList<SkillDef> columns = rosterState.SkillColumns;
+            RoleStore store = RoleStore.Current;
+            if (store == null) return;
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
-            // Column IDENTITY, not count: swapping a column at the cap keeps the
-            // count identical and must still invalidate.
             PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode ?? PaletteMode.Skills;
-            int key = ((TableDisplayKey * 31 + (int)paletteMode) * 31 + columns.Count) * 31
+            int key = ((TableDisplayKey * 31 + (int)paletteMode) * 31
+                    + rosterState.SkillColumnsRevision) * 31
                 + (selectedPawn?.thingIDNumber ?? -1);
-            key = key * 31 + (PaletteVerdicts ? 1 : 0);
-            foreach (var column in columns)
-                key = key * 31 + (column?.shortHash ?? 0);
+            // Captions decide the minimum row height, so they change the
+            // content-driven window height.
+            key = (key * 31 + (PaletteVerdicts ? 1 : 0)) * 31
+                + (SkillCaptions ? 1 : 0);
             ScopeCacheStamp stamp = PawnListStamp;
-            if (sizeStamp == stamp && sizeMapId == mapId && sizeKey == key) return;
+            if (ReferenceEquals(sizeOwner, store) && sizeStamp == stamp
+                && sizeMapId == mapId && sizeKey == key) return;
+            sizeOwner = store;
             sizeMapId = mapId;
             sizeKey = key;
-            desiredWidthCache = ComputeDesiredWidth();
-            desiredHeightCache = ComputeDesiredHeight();
+            EnsureChipSequences(store);
+            IReadOnlyList<Pawn> pawns = ListedPawns();
+            desiredWidthCache = ComputeDesiredWidth(store, pawns);
+            desiredHeightCache = ComputeDesiredHeight(store, pawns);
             sizeStamp = PawnListStamp;
         }
 
@@ -337,31 +388,15 @@ namespace WorkRoles.UI
             return desiredWidthCache;
         }
 
-        private float ComputeDesiredWidth()
+        private float ComputeDesiredWidth(RoleStore store,
+            IReadOnlyList<Pawn> pawns)
         {
-            var store = RoleStore.Current;
-            if (store == null || Find.CurrentMap == null) return DefaultWidth;
-
             // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | [+] | gap | trailing
             float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f + 16f;
             float widestStrip = 0f;
-            var pawns = ListedPawns();
-            foreach (var pawn in pawns)
+            for (int i = 0; i < pawns.Count; i++)
             {
-                store.pawnSets.TryGetValue(pawn, out var set);
-                var assignments = set?.assignments ?? new List<RoleAssignment>();
-                // Measure all chips on a single line (desired width = single-line run)
-                float w = 0f;
-                foreach (var a in assignments)
-                {
-                    var role = store.RoleById(a.roleId);
-                    if (role == null) continue;
-                    RoleCapabilityPresentation capability =
-                        roleCapabilityState.PresentationFor(
-                            pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
-                    w += TableChipWidth(store, role, a.pinned,
-                        a.state == AssignmentState.ForceOn, capability) + ChipGap;
-                }
+                float w = chipSequences[pawns[i]].UnwrappedWidth;
                 if (w > widestStrip) widestStrip = w;
             }
             float tableWidth = fixedLeft + SkillColumnsWidth() + widestStrip;
@@ -381,33 +416,24 @@ namespace WorkRoles.UI
             return desiredHeightCache;
         }
 
-        private float ComputeDesiredHeight()
+        private float ComputeDesiredHeight(RoleStore store,
+            IReadOnlyList<Pawn> pawns)
         {
-            var store = RoleStore.Current;
-            if (store == null || Find.CurrentMap == null) return DefaultHeight;
-
             float chrome = 80f;
             float paletteSection = PaletteHeight(store, desiredWidthCache - 16f - PaletteModeW) + 8f + FilterRowH + 4f;
             float statsPanel = StatsPanelHeight() + StatsPanelMargin;
             float tableContent = 0f;
-            var pawns = ListedPawns();
-            foreach (var pawn in pawns)
+            float stripW = TableStripWidth(desiredWidthCache);
+            for (int i = 0; i < pawns.Count; i++)
             {
-                store.pawnSets.TryGetValue(pawn, out var set);
-                var assignments = set?.assignments ?? new List<RoleAssignment>();
-                float stripW = TableStripWidth(desiredWidthCache);
-                float stripH = LayoutChips(stripW, assignments, store, pawn, result: null);
-                tableContent += Mathf.Max(RowHeight, stripH + 7f);
+                Pawn pawn = pawns[i];
+                float stripH = LayoutChips(stripW, chipSequences[pawn], pawn,
+                    result: null);
+                tableContent += Mathf.Max(TextMetrics().MinRowHeight,
+                    stripH + 7f);
             }
             return chrome + paletteSection + tableContent + statsPanel;
         }
-
-        /// The one width formula for a table chip — measurement and layout must
-        /// never disagree.
-        private float TableChipWidth(RoleStore store, Role role, bool pinned,
-            bool forcedOn, RoleCapabilityPresentation capability) =>
-            TableChipWidth(RoleChipRenderData.From(role),
-                AbbrevIfCompact(store, role), pinned, forcedOn, capability);
 
         private float TableChipWidth(RoleChipRenderData role,
             string abbreviation, bool pinned, bool forcedOn,
@@ -422,27 +448,16 @@ namespace WorkRoles.UI
         private float TableStripWidth(float tableWidth) => Mathf.Max(300f,
             tableWidth - 16f - 264f - SkillColumnsWidth() - 28f);
 
-        private float LayoutChips(float stripWidth, List<RoleAssignment> assignments,
-            RoleStore store, Pawn pawn, List<RoleChipLayout> result,
-            List<RoleAssignment> assignmentSnapshots = null)
+        private float LayoutChips(float stripWidth,
+            ColonistChipSequenceSnapshot sequence, Pawn pawn,
+            List<RoleChipLayout> result)
         {
             float x = 0f, y = 0f;
             int line = 0;
-            // Widths reserve the verdict slot uniformly, so measure-only calls
-            // (result: null) never need the badge lookups.
-            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts =
-                result != null && ColonistVerdicts ? VerdictsFor(pawn) : null;
-            foreach (var a in assignments)
+            for (int i = 0; i < sequence.Count; i++)
             {
-                var role = store.RoleById(a.roleId);
-                if (role == null) continue;
-                RoleCapabilityPresentation capability =
-                    roleCapabilityState.PresentationFor(
-                        pawn, role, PawnListStamp, ExternalSnapshotFor(pawn));
-                RoleChipRenderData renderData = RoleChipRenderData.From(role);
-                string abbreviation = AbbrevIfCompact(store, role);
-                float w = TableChipWidth(renderData, abbreviation,
-                    a.pinned, a.state == AssignmentState.ForceOn, capability);
+                ColonistChipSourceSnapshot source = sequence.ChipAt(i);
+                float w = source.Width;
                 if (x + w > stripWidth && x > 0f)
                 {
                     line++;
@@ -451,23 +466,14 @@ namespace WorkRoles.UI
                 }
                 if (result != null)
                 {
-                    bool chipEnabled = RoleActivation.IsActive(role.enabled, a.state);
-                    bool suppressed = chipEnabled && !RulesPass(role, pawn);
-                    result.Add(new RoleChipLayout(renderData,
-                        new Rect(x, y, w, RoleChipUI.Height), line, capability,
-                        role.enabled, a.state, a.pinned, suppressed,
-                        abbreviation,
-                        RoleTip(role, RoleTipContext.AssignmentChip, pawn),
-                        (a.pinned ? "WR_UnpinAssignment" : "WR_PinAssignment")
-                            .Translate().ToString(),
-                        role.blocker ? default(RoleChipVerdict)
-                            : VerdictFrom(verdicts, a.roleId)));
-                    assignmentSnapshots?.Add(new RoleAssignment
-                    {
-                        roleId = a.roleId,
-                        state = a.state,
-                        pinned = a.pinned,
-                    });
+                    result.Add(new RoleChipLayout(source.RenderData,
+                        new Rect(x, y, w, RoleChipUI.Height), line,
+                        source.Capability, source.GlobalEnabled, source.State,
+                        source.Pinned, source.Suppressed,
+                        source.Abbreviation,
+                        RoleTip(source.RenderData.RoleId,
+                            RoleTipContext.AssignmentChip, pawn),
+                        source.PinToggleLabel, source.Verdict));
                 }
                 x += w + ChipGap;
             }
@@ -481,19 +487,20 @@ namespace WorkRoles.UI
             if (store == null) return;
             RoleDrag.Update();
 
-            var pawns = ListedPawns();
+            IReadOnlyList<Pawn> pawns = ListedPawns();
             if (pendingSelectFromGame)
             {
                 pendingSelectFromGame = false;
                 List<Pawn> gameSelection = Find.Selector.SelectedPawns;
                 for (int i = 0; i < gameSelection.Count; i++)
-                    if (pawns.Contains(gameSelection[i]))
+                    if (ContainsPawn(pawns, gameSelection[i]))
                     {
                         selectedPawn = gameSelection[i];
                         break;
                     }
             }
-            if (selectedPawn == null || !pawns.Contains(selectedPawn))
+            if (selectedPawn == null
+                || !ContainsPawn(pawns, selectedPawn))
                 selectedPawn = pawns.Count > 0 ? pawns[0] : null;
 
             float statsPanelH = StatsPanelHeight(selectedPawn);
@@ -511,88 +518,557 @@ namespace WorkRoles.UI
             DrawPawnTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store);
             DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
 
-            RoleChipUI.DrawDragGhost(store);
+            if (RoleDrag.Active && paletteSnapshot != null
+                && paletteSnapshot.TryGetCatalogChip(RoleDrag.RoleId,
+                    out RoleChipRenderData dragChip))
+                RoleChipUI.DrawDragGhost(dragChip);
             RoleDrag.ResolveMouseUp();
+        }
+
+        private static bool ContainsPawn(IReadOnlyList<Pawn> pawns,
+            Pawn target)
+        {
+            for (int i = 0; i < pawns.Count; i++)
+                if (ReferenceEquals(pawns[i], target)) return true;
+            return false;
         }
 
         // ----- Palette -----
 
-        private sealed class PaletteCluster
+        private readonly struct ColonistsScopeMenuOption
         {
-            public string label;
-            public List<Role> roles = new List<Role>();
+            internal ColonistsScopeMenuOption(ScopeKind kind,
+                string locationId, string label, bool isShip,
+                string tooltip)
+            {
+                Kind = kind;
+                LocationId = locationId;
+                Label = label;
+                IsShip = isShip;
+                Tooltip = tooltip;
+            }
+
+            internal ScopeKind Kind { get; }
+            internal string LocationId { get; }
+            internal string Label { get; }
+            internal bool IsShip { get; }
+            internal string Tooltip { get; }
+
+            internal ScopeOption ToScopeOption() => new ScopeOption
+            {
+                Kind = Kind,
+                LocationId = LocationId,
+                Label = Label,
+                IsShip = IsShip,
+            };
+
+            internal bool ContentEquals(ColonistsScopeMenuOption other) =>
+                Kind == other.Kind && IsShip == other.IsShip
+                && string.Equals(LocationId, other.LocationId,
+                    System.StringComparison.Ordinal)
+                && string.Equals(Label, other.Label,
+                    System.StringComparison.Ordinal)
+                && string.Equals(Tooltip, other.Tooltip,
+                    System.StringComparison.Ordinal);
         }
 
-        /// Clusters for the palette, keyed by the tree root's first relevant skill;
-        /// children always cluster with their displayed parent, and rule-carrying
-        /// (auto) roles cluster by skill like any other — the chip marker identifies
-        /// them. Exceptions: autoAssign roots form "Everyone" (pinned first),
-        /// skill-less roots form "Unskilled" (pinned last). Skill clusters keep
-        /// catalog (first-appearance) order.
-        private static List<PaletteCluster> BuildPaletteClusters(RoleStore store)
+        private sealed class ColonistsChromeSnapshot
         {
-            var skillClusters = new List<PaletteCluster>();
-            PaletteCluster everyone = null, unskilled = null;
+            private readonly List<ColonistsScopeMenuOption> scopeOptions;
 
-            PaletteCluster ClusterFor(Role root)
+            internal ColonistsChromeSnapshot(
+                ColonistsRosterCatalogSnapshot catalog,
+                PaletteMode paletteMode, string paletteModeLabel,
+                string searchLabel, string noFilterMatchesLabel,
+                string allRolesLabel,
+                string roleFilterLabel, string anyJobLabel,
+                string jobFilterLabel, string jobFilterShown,
+                string scopeLabel, float scopeWidth,
+                List<ColonistsScopeMenuOption> scopeOptions,
+                bool hasSettings, string displayLabel,
+                string normalChipsLabel, string compactChipsLabel,
+                string minimalChipsLabel, string skillsLabel,
+                string groupKey, string groupLabel)
             {
-                if (root.autoAssign)
-                    return everyone ??= new PaletteCluster { label = "WR_ClusterEveryone".Translate() };
-                // The XP-frequency primary skill, not the first entry's work
-                // type: an auxiliary lead entry (Hunter's finish-off) must not
-                // relabel the cluster.
-                var primary = DefDatabase<SkillDef>.GetNamedSilentFail(
-                    RecsAdapter.PrimarySkillOf(root) ?? "");
-                if (primary == null)
-                    return unskilled ??= new PaletteCluster { label = "WR_ClusterUnskilled".Translate() };
-                string label = primary.LabelCap;
-                var cluster = skillClusters.FirstOrDefault(c => c.label == label);
-                if (cluster == null)
+                Catalog = catalog;
+                PaletteMode = paletteMode;
+                PaletteModeLabel = paletteModeLabel;
+                SearchLabel = searchLabel;
+                NoFilterMatchesLabel = noFilterMatchesLabel;
+                AllRolesLabel = allRolesLabel;
+                RoleFilterLabel = roleFilterLabel;
+                AnyJobLabel = anyJobLabel;
+                JobFilterLabel = jobFilterLabel;
+                JobFilterShown = jobFilterShown;
+                ScopeLabel = scopeLabel;
+                ScopeWidth = scopeWidth;
+                this.scopeOptions = scopeOptions;
+                HasSettings = hasSettings;
+                DisplayLabel = displayLabel;
+                NormalChipsLabel = normalChipsLabel;
+                CompactChipsLabel = compactChipsLabel;
+                MinimalChipsLabel = minimalChipsLabel;
+                SkillsLabel = skillsLabel;
+                GroupKey = groupKey;
+                GroupLabel = groupLabel;
+            }
+
+            internal ColonistsRosterCatalogSnapshot Catalog { get; }
+            internal PaletteMode PaletteMode { get; }
+            internal string PaletteModeLabel { get; }
+            internal string SearchLabel { get; }
+            internal string NoFilterMatchesLabel { get; }
+            internal string AllRolesLabel { get; }
+            internal string RoleFilterLabel { get; }
+            internal string AnyJobLabel { get; }
+            internal string JobFilterLabel { get; }
+            internal string JobFilterShown { get; }
+            internal string ScopeLabel { get; }
+            internal float ScopeWidth { get; }
+            internal int ScopeOptionCount => scopeOptions.Count;
+            internal ColonistsScopeMenuOption ScopeOptionAt(int index) =>
+                scopeOptions[index];
+            internal bool HasSettings { get; }
+            internal string DisplayLabel { get; }
+            internal string NormalChipsLabel { get; }
+            internal string CompactChipsLabel { get; }
+            internal string MinimalChipsLabel { get; }
+            internal string SkillsLabel { get; }
+            internal string GroupKey { get; }
+            internal string GroupLabel { get; }
+
+            internal bool ContentEquals(ColonistsChromeSnapshot other)
+            {
+                if (other == null
+                    || !ReferenceEquals(Catalog, other.Catalog)
+                    || PaletteMode != other.PaletteMode
+                    || ScopeWidth != other.ScopeWidth
+                    || HasSettings != other.HasSettings
+                    || scopeOptions.Count != other.scopeOptions.Count
+                    || !Same(PaletteModeLabel, other.PaletteModeLabel)
+                    || !Same(SearchLabel, other.SearchLabel)
+                    || !Same(NoFilterMatchesLabel,
+                        other.NoFilterMatchesLabel)
+                    || !Same(AllRolesLabel, other.AllRolesLabel)
+                    || !Same(RoleFilterLabel, other.RoleFilterLabel)
+                    || !Same(AnyJobLabel, other.AnyJobLabel)
+                    || !Same(JobFilterLabel, other.JobFilterLabel)
+                    || !Same(JobFilterShown, other.JobFilterShown)
+                    || !Same(ScopeLabel, other.ScopeLabel)
+                    || !Same(DisplayLabel, other.DisplayLabel)
+                    || !Same(NormalChipsLabel, other.NormalChipsLabel)
+                    || !Same(CompactChipsLabel, other.CompactChipsLabel)
+                    || !Same(MinimalChipsLabel, other.MinimalChipsLabel)
+                    || !Same(SkillsLabel, other.SkillsLabel)
+                    || !Same(GroupKey, other.GroupKey)
+                    || !Same(GroupLabel, other.GroupLabel)) return false;
+                for (int i = 0; i < scopeOptions.Count; i++)
+                    if (!scopeOptions[i].ContentEquals(
+                            other.scopeOptions[i])) return false;
+                return true;
+            }
+
+            private static bool Same(string left, string right) =>
+                string.Equals(left, right,
+                    System.StringComparison.Ordinal);
+        }
+
+        // Owner: Colonists window. Key: RoleStore/catalog identity, selected
+        // role/job/scope, pawn-scope/location/map revisions, palette mode,
+        // skill-column revision, chip-display/group preferences,
+        // language/definition revisions, and settings availability. Value:
+        // immutable detached palette/filter/table chrome labels, measurements,
+        // and scope-menu command data. Dependencies: exactly the key plus
+        // translated fixed labels and detached catalog labels. Refresh:
+        // immediate on the next chrome read after a key change. Equality: an
+        // exact equal rebuild preserves snapshot identity. Teardown: Reset,
+        // language invalidation, and ReleaseSnapshots drop all source refs.
+        private ColonistsChromeSnapshot chromeSnapshot;
+        private RoleStore chromeOwner;
+        private ColonistsRosterCatalogSnapshot chromeCatalog;
+        private int chromeRoleFilterId = int.MinValue;
+        private string chromeJobFilter;
+        private ScopeKind chromeScopeKind;
+        private string chromeScopeLocationId;
+        private int chromePawnListRevision = -1;
+        private int chromeLocationRevision = -1;
+        private int chromeMapId = -1;
+        private PaletteMode chromePaletteMode;
+        private int chromeSkillColumnsRevision = -1;
+        private ChipDisplay chromeChipDisplay;
+        private string chromeGroupKey;
+        private int chromeLanguageRevision = -1;
+        private int chromeDefinitionRevision = -1;
+        private bool chromeHasSettings;
+
+        private void InvalidateChromeSnapshot()
+        {
+            chromeSnapshot = null;
+            chromeOwner = null;
+            chromeCatalog = null;
+            chromeRoleFilterId = int.MinValue;
+            chromeJobFilter = null;
+            chromeScopeLocationId = null;
+            chromePawnListRevision = -1;
+            chromeLocationRevision = -1;
+            chromeMapId = -1;
+            chromeSkillColumnsRevision = -1;
+            chromeGroupKey = null;
+            chromeLanguageRevision = -1;
+            chromeDefinitionRevision = -1;
+            chromeHasSettings = false;
+        }
+
+        private ColonistsChromeSnapshot ChromeSnapshot(RoleStore store)
+        {
+            ColonistsRosterCatalogSnapshot catalog = rosterState.Catalog(store);
+            int roleFilterId = rosterState.RoleFilterId;
+            string jobFilter = rosterState.JobFilterDefName;
+            ScopeOption scope = rosterState.Scope;
+            ScopeKind scopeKind = scope?.Kind ?? ScopeKind.CurrentLocation;
+            string scopeLocationId = scope?.LocationId;
+            int pawnListRevision = PawnListRevision;
+            int locationRevision = ColonyScope.LocationRevision;
+            int mapId = Find.CurrentMap?.uniqueID ?? -1;
+            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode
+                ?? PaletteMode.Skills;
+            int skillColumnsRevision = rosterState.SkillColumnsRevision;
+            ChipDisplay chipDisplay = TableChips;
+            string groupKey = profile.GetGroupBy();
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            bool hasSettings = WorkRolesMod.Settings != null;
+            if (chromeSnapshot != null
+                && ReferenceEquals(chromeOwner, store)
+                && ReferenceEquals(chromeCatalog, catalog)
+                && chromeRoleFilterId == roleFilterId
+                && string.Equals(chromeJobFilter, jobFilter,
+                    System.StringComparison.Ordinal)
+                && chromeScopeKind == scopeKind
+                && string.Equals(chromeScopeLocationId, scopeLocationId,
+                    System.StringComparison.Ordinal)
+                && chromePawnListRevision == pawnListRevision
+                && chromeLocationRevision == locationRevision
+                && chromeMapId == mapId
+                && chromePaletteMode == paletteMode
+                && chromeSkillColumnsRevision == skillColumnsRevision
+                && chromeChipDisplay == chipDisplay
+                && string.Equals(chromeGroupKey, groupKey,
+                    System.StringComparison.Ordinal)
+                && chromeLanguageRevision == languageRevision
+                && chromeDefinitionRevision == definitionRevision
+                && chromeHasSettings == hasSettings)
+                return chromeSnapshot;
+
+            rosterState.ValidateRoleFilter(catalog);
+            roleFilterId = rosterState.RoleFilterId;
+            GameFont oldFont = Text.Font;
+            ColonistsChromeSnapshot rebuilt;
+            try
+            {
+                Text.Font = GameFont.Small;
+                string allRoles = "WR_FilterAllRoles".Translate().ToString();
+                string anyJob = "WR_FilterAnyJob".Translate().ToString();
+                string roleLabel = roleFilterId == -1
+                    ? allRoles
+                    : catalog.RoleLabelOrNull(roleFilterId) ?? allRoles;
+                string fullJobLabel = jobFilter == null
+                    ? anyJob : catalog.JobLabelOrNull(jobFilter) ?? anyJob;
+                string shownJobLabel = fullJobLabel.Truncate(115f);
+
+                IReadOnlyList<ScopeOption> liveScopeOptions =
+                    rosterState.ScopeOptions;
+                scope = rosterState.Scope;
+                string currentLocationId = ColonyScope.CurrentLocationId();
+                string scopeLabel = ColonyScope.LabelOf(scope);
+                float scopeWidth = Mathf.Max(135f,
+                    WrText.FitWidth(scopeLabel) + 20f);
+                string shipTip = null;
+                var scopeOptions = new List<ColonistsScopeMenuOption>(
+                    liveScopeOptions.Count);
+                for (int i = 0; i < liveScopeOptions.Count; i++)
                 {
-                    cluster = new PaletteCluster { label = label };
-                    skillClusters.Add(cluster);
+                    ScopeOption option = liveScopeOptions[i];
+                    if (option.Kind == ScopeKind.Location
+                        && option.LocationId == currentLocationId)
+                        continue;
+                    if (option.IsShip && shipTip == null)
+                        shipTip = "WR_ShipTip".Translate().ToString();
+                    scopeOptions.Add(new ColonistsScopeMenuOption(
+                        option.Kind, option.LocationId,
+                        ColonyScope.LabelOf(option), option.IsShip,
+                        option.IsShip ? shipTip : null));
                 }
-                return cluster;
-            }
 
-            // Tree rows repeat a child under every covering parent (including
-            // virtual cross-group rows); the palette shows each role once,
-            // clustered under the root of its first real appearance. Composite
-            // member rows are always virtual, so bundles never claim their
-            // members' cluster placement.
-            var seen = new HashSet<int>();
-            Role root = null;
-            foreach (var (role, _, depth, virtualRow) in RolesListState.BuildRoleTree(store).rows)
+                string checkNormal = (chipDisplay == ChipDisplay.Normal
+                    ? "✓ " : "") + "WR_ChipsNormal".Translate();
+                string checkCompact = (chipDisplay == ChipDisplay.Compact
+                    ? "✓ " : "") + "WR_ChipsCompact".Translate();
+                string checkMinimal = (chipDisplay == ChipDisplay.Minimal
+                    ? "✓ " : "") + "WR_ChipsMinimal".Translate();
+                int skillCount = rosterState.SkillColumns.Count;
+                string skillsLabel = skillCount == 0
+                    ? "WR_SkillsButton".Translate().ToString()
+                    : "WR_SkillsButtonCount".Translate(skillCount,
+                        ColonistsRosterState.MaxSkillColumns).ToString();
+                string groupLabel = catalog.GroupLabelOrNull(groupKey)
+                    ?? groupKey;
+                rebuilt = new ColonistsChromeSnapshot(catalog,
+                    paletteMode,
+                    (paletteMode == PaletteMode.Groups
+                        ? "WR_PaletteByGroups"
+                        : paletteMode == PaletteMode.Hidden
+                            ? "WR_PaletteHidden"
+                            : "WR_PaletteBySkills").Translate().ToString(),
+                    "WR_Search".Translate().ToString(),
+                    "WR_NoFilterMatches".Translate().ToString(), allRoles,
+                    roleLabel, anyJob, fullJobLabel, shownJobLabel,
+                    scopeLabel, scopeWidth, scopeOptions,
+                    hasSettings,
+                    "WR_DisplayButton".Translate().ToString(),
+                    checkNormal, checkCompact, checkMinimal, skillsLabel,
+                    groupKey, groupLabel);
+            }
+            finally
             {
-                if (depth == 0) root = role;
-                if (!virtualRow && seen.Add(role.id))
-                    ClusterFor(depth == 0 ? role : root).roles.Add(role);
+                Text.Font = oldFont;
             }
 
-            var result = new List<PaletteCluster>();
-            if (everyone != null) result.Add(everyone);
-            result.AddRange(skillClusters);
-            if (unskilled != null) result.Add(unskilled);
-            return result;
+            if (!ReferenceEquals(chromeOwner, store)
+                || chromeSnapshot == null
+                || !chromeSnapshot.ContentEquals(rebuilt))
+                chromeSnapshot = rebuilt;
+            chromeOwner = store;
+            chromeCatalog = catalog;
+            chromeRoleFilterId = roleFilterId;
+            chromeJobFilter = jobFilter;
+            scope = rosterState.Scope;
+            chromeScopeKind = scope?.Kind ?? ScopeKind.CurrentLocation;
+            chromeScopeLocationId = scope?.LocationId;
+            chromePawnListRevision = PawnListRevision;
+            chromeLocationRevision = ColonyScope.LocationRevision;
+            chromeMapId = Find.CurrentMap?.uniqueID ?? -1;
+            chromePaletteMode = paletteMode;
+            chromeSkillColumnsRevision = rosterState.SkillColumnsRevision;
+            chromeChipDisplay = chipDisplay;
+            chromeGroupKey = groupKey;
+            chromeLanguageRevision = languageRevision;
+            chromeDefinitionRevision = definitionRevision;
+            chromeHasSettings = hasSettings;
+            return chromeSnapshot;
         }
 
-        /// Palette arrangement: skill clusters (default) or the role list's
-        /// groups in player order (same sections the Roles tab shows).
-        private static List<PaletteCluster> PaletteClusters(RoleStore store)
+        private readonly struct PaletteChipSnapshot
         {
-            if (WorkRolesMod.Settings?.paletteMode != PaletteMode.Groups)
-                return BuildPaletteClusters(store);
-            return RolesListState.BuildSections(store, nested: true)
-                .Where(section => section.rows.Count > 0)
-                .Select(section => new PaletteCluster
+            internal PaletteChipSnapshot(RoleChipRenderData chip, bool enabled,
+                Rect rect, StructuredTip tooltip)
+            {
+                Chip = chip;
+                Enabled = enabled;
+                Rect = rect;
+                Tooltip = tooltip;
+            }
+
+            internal RoleChipRenderData Chip { get; }
+            internal bool Enabled { get; }
+            internal Rect Rect { get; }
+            internal StructuredTip Tooltip { get; }
+
+            internal bool ContentEquals(PaletteChipSnapshot other) =>
+                Enabled == other.Enabled && Chip.ContentEquals(other.Chip)
+                && Rect.x == other.Rect.x && Rect.y == other.Rect.y
+                && Rect.width == other.Rect.width
+                && Rect.height == other.Rect.height
+                && (ReferenceEquals(Tooltip, other.Tooltip)
+                    || (Tooltip != null
+                        && Tooltip.ContentEquals(other.Tooltip)));
+        }
+
+        private readonly struct PaletteLabelSnapshot
+        {
+            internal PaletteLabelSnapshot(string label, Rect rect)
+            {
+                Label = label;
+                Rect = rect;
+            }
+
+            internal string Label { get; }
+            internal Rect Rect { get; }
+
+            internal bool ContentEquals(PaletteLabelSnapshot other) =>
+                string.Equals(Label, other.Label,
+                    System.StringComparison.Ordinal)
+                && Rect.x == other.Rect.x && Rect.y == other.Rect.y
+                && Rect.width == other.Rect.width
+                && Rect.height == other.Rect.height;
+        }
+
+        private sealed class PaletteLayoutSnapshot
+        {
+            private readonly List<PaletteChipSnapshot> chips;
+            private readonly List<PaletteLabelSnapshot> labels;
+
+            internal PaletteLayoutSnapshot(
+                ColonistsRosterCatalogSnapshot catalog,
+                List<PaletteChipSnapshot> chips,
+                List<PaletteLabelSnapshot> labels, float contentHeight)
+            {
+                Catalog = catalog.ChipCatalog;
+                this.chips = chips;
+                this.labels = labels;
+                ContentHeight = contentHeight;
+            }
+
+            internal ColonistChipCatalogSnapshot Catalog { get; }
+            internal float ContentHeight { get; }
+            internal int ChipCount => chips.Count;
+            internal int LabelCount => labels.Count;
+            internal PaletteChipSnapshot ChipAt(int index) => chips[index];
+            internal PaletteLabelSnapshot LabelAt(int index) => labels[index];
+
+            internal bool TryGetCatalogChip(int roleId,
+                out RoleChipRenderData chip) =>
+                Catalog.TryGet(roleId, out chip);
+
+            internal bool ContentEquals(PaletteLayoutSnapshot other)
+            {
+                if (other == null
+                    || !ReferenceEquals(Catalog, other.Catalog)
+                    || ContentHeight != other.ContentHeight
+                    || chips.Count != other.chips.Count
+                    || labels.Count != other.labels.Count) return false;
+                for (int i = 0; i < chips.Count; i++)
+                    if (!chips[i].ContentEquals(other.chips[i])) return false;
+                for (int i = 0; i < labels.Count; i++)
+                    if (!labels[i].ContentEquals(other.labels[i])) return false;
+                return true;
+            }
+        }
+
+        private sealed class PaletteVerdictSnapshot
+        {
+            private readonly List<RoleChipVerdict> verdicts;
+
+            internal PaletteVerdictSnapshot(List<RoleChipVerdict> verdicts)
+            {
+                this.verdicts = verdicts;
+            }
+
+            internal int Count => verdicts.Count;
+            internal RoleChipVerdict VerdictAt(int index) => verdicts[index];
+
+            internal bool ContentEquals(PaletteVerdictSnapshot other)
+            {
+                if (other == null || verdicts.Count != other.verdicts.Count)
+                    return false;
+                for (int i = 0; i < verdicts.Count; i++)
                 {
-                    label = section.title,
-                    // Real rows only, once each: virtual cross-group rows and
-                    // same-group duplicates stay a role-tree display device.
-                    roles = section.rows.Where(t => !t.virtualRow)
-                        .Select(t => t.role).Distinct().ToList(),
-                })
-                .ToList();
+                    RoleChipVerdict left = verdicts[i];
+                    RoleChipVerdict right = other.verdicts[i];
+                    if (left.Shown != right.Shown
+                        || left.Bottom.r != right.Bottom.r
+                        || left.Bottom.g != right.Bottom.g
+                        || left.Bottom.b != right.Bottom.b
+                        || left.Bottom.a != right.Bottom.a
+                        || left.Top.r != right.Top.r
+                        || left.Top.g != right.Top.g
+                        || left.Top.b != right.Top.b
+                        || left.Top.a != right.Top.a) return false;
+                }
+                return true;
+            }
+        }
+
+        private sealed class PaletteTipSnapshot
+        {
+            internal static readonly PaletteTipSnapshot Empty =
+                new PaletteTipSnapshot(
+                    new Dictionary<int, StructuredTip>());
+
+            private readonly Dictionary<int, StructuredTip> tips;
+
+            internal PaletteTipSnapshot(Dictionary<int, StructuredTip> tips)
+            {
+                this.tips = tips;
+            }
+
+            internal StructuredTip TipFor(int roleId) =>
+                tips.TryGetValue(roleId, out StructuredTip tip) ? tip : null;
+
+            internal bool ContentEquals(PaletteTipSnapshot other)
+            {
+                if (other == null || tips.Count != other.tips.Count)
+                    return false;
+                foreach (KeyValuePair<int, StructuredTip> pair in tips)
+                    if (!other.tips.TryGetValue(pair.Key,
+                            out StructuredTip otherTip)
+                        || !pair.Value.ContentEquals(otherTip)) return false;
+                return true;
+            }
+        }
+
+        // Owner: Colonists window. Key: RoleStore identity, pawn-scope stamp,
+        // language/definition revisions, and the installed external-pawn
+        // generation revision. Value: immutable
+        // producer-owned role-id to detached StructuredTip snapshot.
+        // Dependencies: role configuration/training paths, enabled state,
+        // translated labels and def descriptions, listed-pawn skill/signal
+        // snapshots, and action labels. Refresh: immediate on the next palette
+        // read after a key change or external generation installation. Equality:
+        // exact equal tooltip contents preserve snapshot identity. Teardown:
+        // Reset/ReleaseSnapshots drops the snapshot and all remembered keys.
+        private PaletteTipSnapshot paletteTips;
+        private RoleStore paletteTipOwner;
+        private ScopeCacheStamp paletteTipScopeStamp = ScopeCacheStamp.Invalid;
+        private int paletteTipLanguageRevision = -1;
+        private int paletteTipDefinitionRevision = -1;
+        private int paletteTipExternalGeneration;
+        private int paletteTipBuiltExternalGeneration = -1;
+
+        private PaletteTipSnapshot EnsurePaletteTips(RoleStore store)
+        {
+            ScopeCacheStamp stamp = PawnListStamp;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (paletteTips != null
+                && ReferenceEquals(paletteTipOwner, store)
+                && paletteTipScopeStamp == stamp
+                && paletteTipLanguageRevision == languageRevision
+                && paletteTipDefinitionRevision == definitionRevision
+                && paletteTipBuiltExternalGeneration
+                    == paletteTipExternalGeneration)
+                return paletteTips;
+
+            GameFont oldFont = Text.Font;
+            PaletteTipSnapshot rebuilt;
+            try
+            {
+                var rebuiltTips = new Dictionary<int, StructuredTip>(
+                    store.roles.Count);
+                for (int roleIndex = 0; roleIndex < store.roles.Count;
+                        roleIndex++)
+                {
+                    Role role = store.roles[roleIndex];
+                    rebuiltTips[role.id] = new StructuredTip(
+                        $"role:{role.id}:{RoleTipContext.Palette}:-1:0",
+                        BuildRoleTip(store, role,
+                            RoleTipContext.Palette, null));
+                }
+                rebuilt = new PaletteTipSnapshot(rebuiltTips);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
+            if (!ReferenceEquals(paletteTipOwner, store)
+                || paletteTips == null || !paletteTips.ContentEquals(rebuilt))
+                paletteTips = rebuilt;
+            paletteTipOwner = store;
+            paletteTipScopeStamp = PawnListStamp;
+            paletteTipLanguageRevision = languageRevision;
+            paletteTipDefinitionRevision = definitionRevision;
+            paletteTipBuiltExternalGeneration = paletteTipExternalGeneration;
+            return paletteTips;
         }
 
         /// Lays out the palette line by line: each cluster stays WHOLE on one
@@ -602,27 +1078,35 @@ namespace WorkRoles.UI
         /// full line by itself; a split cluster repeats its Tiny label on every
         /// line and leaves its last partial line open for back-fill. Returns
         /// content height; pass null lists to measure only.
-        private static float LayoutPalette(RoleStore store, float rowWidth,
-            List<(Role role, Rect rect)> chips, List<(string label, Rect rect)> labels,
-            bool verdictSlots)
+        private static float LayoutPalette(
+            ColonistsRosterCatalogSnapshot catalog, PaletteMode mode,
+            float rowWidth, List<PaletteChipSnapshot> chips,
+            List<PaletteLabelSnapshot> labels, bool verdictSlots,
+            PaletteTipSnapshot tips)
         {
             float lineH = ClusterLabelH + 2f + RoleChipUI.Height;
             var cursors = new List<float>();   // per-line x cursor; index gives y
             float YOf(int line) => line * (lineH + ClusterGapY);
 
-            foreach (var cluster in PaletteClusters(store))
+            int clusterCount = catalog.PaletteClusterCount(mode);
+            for (int clusterIndex = 0; clusterIndex < clusterCount;
+                    clusterIndex++)
             {
-                if (cluster.roles.Count == 0) continue;
+                ColonistPaletteClusterSnapshot cluster =
+                    catalog.PaletteClusterAt(mode, clusterIndex);
+                if (cluster.Count == 0) continue;
                 Text.Font = GameFont.Tiny;
-                float labelW = WrText.FitWidth(cluster.label);
+                float labelW = WrText.FitWidth(cluster.Label);
                 Text.Font = GameFont.Small;
 
-                var widths = new List<float>(cluster.roles.Count);
+                var widths = new List<float>(cluster.Count);
                 float chipsW = 0f;
-                foreach (var role in cluster.roles)
+                for (int roleIndex = 0; roleIndex < cluster.Count; roleIndex++)
                 {
-                    float chipW = RoleChipUI.WidthFor(role, showRemove: false,
-                        verdictSlot: verdictSlots && !role.blocker);
+                    ColonistPaletteRole role = cluster.RoleAt(roleIndex);
+                    float chipW = RoleChipUI.WidthFor(role.Chip,
+                        showRemove: false,
+                        verdictSlot: verdictSlots && !role.Chip.Blocker);
                     widths.Add(chipW);
                     chipsW += (chipsW > 0f ? ChipGap : 0f) + chipW;
                 }
@@ -643,12 +1127,17 @@ namespace WorkRoles.UI
                     }
                     float x = cursors[line] + (cursors[line] > 0f ? ClusterGapX : 0f);
                     float y = YOf(line);
-                    labels?.Add((cluster.label, new Rect(x, y, labelW, ClusterLabelH)));
+                    labels.Add(new PaletteLabelSnapshot(cluster.Label,
+                        new Rect(x, y, labelW, ClusterLabelH)));
                     float cx = x;
                     for (int i = 0; i < widths.Count; i++)
                     {
-                        chips?.Add((cluster.roles[i],
-                            new Rect(cx, y + ClusterLabelH + 2f, widths[i], RoleChipUI.Height)));
+                        ColonistPaletteRole role = cluster.RoleAt(i);
+                        chips.Add(new PaletteChipSnapshot(role.Chip,
+                            role.Enabled, new Rect(cx,
+                                y + ClusterLabelH + 2f, widths[i],
+                                RoleChipUI.Height),
+                            tips.TipFor(role.Chip.RoleId)));
                         cx += widths[i] + ChipGap;
                     }
                     cursors[line] = x + clusterW;
@@ -679,13 +1168,19 @@ namespace WorkRoles.UI
                         }
                         if (!segmentOpen)
                         {
-                            labels?.Add((cluster.label,
-                                new Rect(x, YOf(line), Mathf.Min(labelW, rowWidth - x), ClusterLabelH)));
+                            labels.Add(new PaletteLabelSnapshot(cluster.Label,
+                                new Rect(x, YOf(line),
+                                    Mathf.Min(labelW, rowWidth - x),
+                                    ClusterLabelH)));
                             segStart = x;
                             segmentOpen = true;
                         }
-                        chips?.Add((cluster.roles[i],
-                            new Rect(x, YOf(line) + ClusterLabelH + 2f, widths[i], RoleChipUI.Height)));
+                        ColonistPaletteRole role = cluster.RoleAt(i);
+                        chips.Add(new PaletteChipSnapshot(role.Chip,
+                            role.Enabled, new Rect(x,
+                                YOf(line) + ClusterLabelH + 2f, widths[i],
+                                RoleChipUI.Height),
+                            tips.TipFor(role.Chip.RoleId)));
                         x += widths[i] + ChipGap;
                     }
                     cursors[line] = Mathf.Max(x - ChipGap, segStart + labelW);
@@ -695,84 +1190,126 @@ namespace WorkRoles.UI
                 : cursors.Count * lineH + (cursors.Count - 1) * ClusterGapY;
         }
 
-        // Owner: Colonists window. Key: UiVersion, row width, and palette mode.
-        // Value: view-owned role/label geometry buffers; their mutable storage is
-        // private, and retained role identities are never mutated by this cache.
-        // Dependencies: role catalog/grouping, language, text measurements, width,
-        // and mode. Refresh: immediate on the next PaletteLayout key miss.
-        // Equality: exact keys reuse height and buffer identity. Teardown:
-        // ReleaseSnapshots/language invalidation clears all palette storage.
-        private int paletteStamp = -1;
+        // Owner: Colonists window. Key: detached roster-catalog and palette-tip
+        // snapshot identities, row width, palette mode, and verdict-slot
+        // presence. Value: an immutable one-shot snapshot of detached
+        // chip/label/tooltip render data. Dependencies: the shared catalog and
+        // tooltip producer, cached text measurements, width, mode, and slot policy.
+        // Refresh: immediate on the next PaletteLayout key miss. Equality: exact
+        // contents preserve snapshot identity. Teardown: ReleaseSnapshots and
+        // language invalidation release the snapshot and source reference.
         private float paletteLayoutW = -1f;
         private int paletteLayoutMode = -1;
-        private float paletteContentH;
         private int paletteLayoutRevision;
-        private readonly List<(Role role, Rect rect)> paletteChips = new List<(Role, Rect)>();
-        private readonly List<(string label, Rect rect)> paletteLabels = new List<(string, Rect)>();
+        private ColonistsRosterCatalogSnapshot paletteCatalog;
+        private PaletteTipSnapshot paletteLayoutTips;
+        private PaletteLayoutSnapshot paletteSnapshot;
 
         /// The verdict slot is reserved only while a colonist is selected, so
         /// an empty scope keeps chip labels flush like the toggle-off state.
         private bool PaletteVerdictSlots => PaletteVerdicts && selectedPawn != null;
 
-        private float PaletteLayout(RoleStore store, float rowWidth)
+        private PaletteLayoutSnapshot PaletteLayout(RoleStore store,
+            float rowWidth)
         {
+            ColonistsRosterCatalogSnapshot catalog = rosterState.Catalog(store);
+            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode
+                ?? PaletteMode.Skills;
+            PaletteTipSnapshot tips = paletteMode == PaletteMode.Hidden
+                ? PaletteTipSnapshot.Empty : EnsurePaletteTips(store);
             // Verdict slots ride the mode key: they widen every palette chip.
-            int mode = (int)(WorkRolesMod.Settings?.paletteMode ?? PaletteMode.Skills) * 2
+            int mode = (int)paletteMode * 2
                 + (PaletteVerdictSlots ? 1 : 0);
-            if (paletteStamp != UiVersion.Current || paletteLayoutW != rowWidth || paletteLayoutMode != mode)
+            if (paletteSnapshot == null
+                || !ReferenceEquals(paletteCatalog, catalog)
+                || !ReferenceEquals(paletteLayoutTips, tips)
+                || paletteLayoutW != rowWidth || paletteLayoutMode != mode)
             {
-                paletteStamp = UiVersion.Current;
+                var chips = new List<PaletteChipSnapshot>();
+                var labels = new List<PaletteLabelSnapshot>();
+                GameFont oldFont = Text.Font;
+                float height;
+                try
+                {
+                    height = paletteMode == PaletteMode.Hidden ? 0f
+                        : LayoutPalette(catalog, paletteMode, rowWidth, chips,
+                            labels, PaletteVerdictSlots, tips);
+                }
+                finally
+                {
+                    Text.Font = oldFont;
+                }
+                var rebuilt = new PaletteLayoutSnapshot(catalog, chips,
+                    labels, height);
+                if (paletteSnapshot == null
+                    || !paletteSnapshot.ContentEquals(rebuilt))
+                {
+                    paletteSnapshot = rebuilt;
+                    paletteLayoutRevision++;
+                }
+                paletteCatalog = catalog;
+                paletteLayoutTips = tips;
                 paletteLayoutW = rowWidth;
                 paletteLayoutMode = mode;
-                paletteLayoutRevision++;
-                paletteChips.Clear();
-                paletteLabels.Clear();
-                paletteContentH = LayoutPalette(store, rowWidth, paletteChips,
-                    paletteLabels, PaletteVerdictSlots);
             }
-            return paletteContentH;
+            return paletteSnapshot;
         }
 
         // Owner: Colonists window. Key: palette layout revision, selected pawn,
         // and the verdict cache stamp. Value: badges parallel to paletteChips
         // (immutable structs). Dependencies: palette geometry, selection, the
         // verdict cache, and the palette toggle. Refresh: immediate on the next
-        // palette draw after a key changes. Equality: matching keys reuse the
-        // buffer. Teardown: InvalidateRoleVerdicts and ReleaseSnapshots clear it.
-        private readonly List<RoleChipVerdict> paletteVerdicts = new List<RoleChipVerdict>();
+        // palette draw after a key changes. Equality: equal verdict contents
+        // preserve snapshot identity. Teardown: InvalidateRoleVerdicts and
+        // ReleaseSnapshots release it.
+        private PaletteVerdictSnapshot paletteVerdictSnapshot;
         private Pawn paletteVerdictPawn;
         private int paletteVerdictLayoutRevision = -1;
         private ScopeCacheStamp paletteVerdictScopeStamp = ScopeCacheStamp.Invalid;
 
-        private void EnsurePaletteVerdicts()
+        private PaletteVerdictSnapshot EnsurePaletteVerdicts(
+            PaletteLayoutSnapshot layout)
         {
             if (!PaletteVerdictSlots)
             {
-                paletteVerdicts.Clear();
+                paletteVerdictSnapshot = null;
                 paletteVerdictPawn = null;
                 paletteVerdictLayoutRevision = -1;
-                return;
+                return null;
             }
             ScopeCacheStamp stamp = PawnListStamp;
             if (paletteVerdictLayoutRevision == paletteLayoutRevision
                 && paletteVerdictPawn == selectedPawn
                 && paletteVerdictScopeStamp == stamp
-                && paletteVerdicts.Count == paletteChips.Count)
-                return;
-            paletteVerdicts.Clear();
+                && paletteVerdictSnapshot != null
+                && paletteVerdictSnapshot.Count == layout.ChipCount)
+                return paletteVerdictSnapshot;
+            var verdictList = new List<RoleChipVerdict>(layout.ChipCount);
             Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts = VerdictsFor(selectedPawn);
-            for (int i = 0; i < paletteChips.Count; i++)
-                paletteVerdicts.Add(paletteChips[i].role.blocker
-                    ? default : VerdictFrom(verdicts, paletteChips[i].role.id));
+            for (int i = 0; i < layout.ChipCount; i++)
+            {
+                PaletteChipSnapshot chip = layout.ChipAt(i);
+                verdictList.Add(chip.Chip.Blocker
+                    ? default : VerdictFrom(verdicts, chip.Chip.RoleId));
+            }
+            var rebuilt = new PaletteVerdictSnapshot(verdictList);
+            if (paletteVerdictSnapshot == null
+                || !paletteVerdictSnapshot.ContentEquals(rebuilt))
+                paletteVerdictSnapshot = rebuilt;
             paletteVerdictLayoutRevision = paletteLayoutRevision;
             paletteVerdictPawn = selectedPawn;
             paletteVerdictScopeStamp = stamp;
+            return paletteVerdictSnapshot;
         }
 
         private float PaletteHeight(RoleStore store, float rowWidth)
-            => WorkRolesMod.Settings?.paletteMode == PaletteMode.Hidden
+        {
+            PaletteLayoutSnapshot layout = PaletteLayout(store, rowWidth);
+            return WorkRolesMod.Settings?.paletteMode == PaletteMode.Hidden
                 ? 26f // just the mode button, so the palette can come back
-                : Mathf.Min(PaletteLayout(store, rowWidth) + PalettePadding, PaletteMaxHeight);
+                : Mathf.Min(layout.ContentHeight + PalettePadding,
+                    PaletteMaxHeight);
+        }
 
         /// Width the palette mode button reserves in the panel's top-right.
         private const float PaletteModeW = 76f;
@@ -782,13 +1319,11 @@ namespace WorkRoles.UI
             // Arrangement button, cycling Skills -> Groups -> Hidden. Hidden
             // collapses the palette to just this button.
             var modeRect = new Rect(rect.xMax - PaletteModeW + 6f, rect.y, PaletteModeW - 12f, 22f);
+            ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
             var settings = WorkRolesMod.Settings;
-            var mode = settings?.paletteMode ?? PaletteMode.Skills;
+            PaletteMode mode = chrome.PaletteMode;
             WrTips.Key("WR_PaletteModeTip").Region(modeRect);
-            if (Widgets.ButtonText(modeRect,
-                    (mode == PaletteMode.Groups ? "WR_PaletteByGroups"
-                    : mode == PaletteMode.Hidden ? "WR_PaletteHidden"
-                    : "WR_PaletteBySkills").Translate())
+            if (Widgets.ButtonText(modeRect, chrome.PaletteModeLabel)
                 && settings != null)
             {
                 settings.paletteMode = (PaletteMode)(((int)mode + 1) % 3);
@@ -797,10 +1332,10 @@ namespace WorkRoles.UI
             if (mode == PaletteMode.Hidden) return;
 
             float rowWidth = rect.width - 16f - PaletteModeW;
-            float contentHeight = PaletteLayout(store, rowWidth);
-            EnsurePaletteVerdicts();
-            var chips = paletteChips;
-            var labels = paletteLabels;
+            PaletteLayoutSnapshot layout = PaletteLayout(store, rowWidth);
+            PaletteVerdictSnapshot verdictSnapshot =
+                EnsurePaletteVerdicts(layout);
+            float contentHeight = layout.ContentHeight;
 
             var scrollRect = new Rect(rect.x, rect.y, rect.width - PaletteModeW, rect.height);
             Widgets.BeginScrollView(scrollRect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
@@ -810,15 +1345,21 @@ namespace WorkRoles.UI
 
             Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
-            foreach (var (label, labelRect) in labels)
+            for (int labelIndex = 0; labelIndex < layout.LabelCount;
+                    labelIndex++)
+            {
+                PaletteLabelSnapshot label = layout.LabelAt(labelIndex);
+                Rect labelRect = label.Rect;
                 if (repaint && labelRect.yMax >= visibleTop && labelRect.y <= visibleBottom)
-                    Widgets.Label(labelRect, label);
+                    Widgets.Label(labelRect, label.Label);
+            }
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
 
-            for (int chipIndex = 0; chipIndex < chips.Count; chipIndex++)
+            for (int chipIndex = 0; chipIndex < layout.ChipCount; chipIndex++)
             {
-                var (role, chipRect) = chips[chipIndex];
+                PaletteChipSnapshot role = layout.ChipAt(chipIndex);
+                Rect chipRect = role.Rect;
                 bool visible = chipRect.yMax >= visibleTop && chipRect.y <= visibleBottom;
                 // The click closure allocates: create it only on the one pass
                 // that can consume it (left mouse-down inside this chip).
@@ -827,7 +1368,7 @@ namespace WorkRoles.UI
                 if (visible && pressEvent.type == EventType.MouseDown && pressEvent.button == 0
                     && chipRect.Contains(pressEvent.mousePosition))
                 {
-                    int capturedId = role.id;
+                    int capturedId = role.Chip.RoleId;
                     // Shift-click appends the role to the selected colonist; plain
                     // click keeps toggling the role globally.
                     onClick = () =>
@@ -852,15 +1393,17 @@ namespace WorkRoles.UI
                         }
                     };
                 }
-                var click = RoleChipUI.Draw(chipRect, role, role.enabled ? ChipStyle.Normal : ChipStyle.Disabled,
+                var click = RoleChipUI.Draw(chipRect, role.Chip,
+                    role.Enabled ? ChipStyle.Normal : ChipStyle.Disabled,
                     showRemove: false, dragSource: null, onClick: onClick,
                     paint: repaint && visible,
                     strikes: RoleChipStrikes.GlobalOff,
-                    verdict: chipIndex < paletteVerdicts.Count
-                        ? paletteVerdicts[chipIndex] : default);
+                    verdict: verdictSnapshot != null
+                        && chipIndex < verdictSnapshot.Count
+                        ? verdictSnapshot.VerdictAt(chipIndex) : default);
                 if (visible && Mouse.IsOver(chipRect))
                     StructuredTipPresenter.TipRegion(
-                        chipRect, RoleTip(role, RoleTipContext.Palette));
+                        chipRect, role.Tooltip);
             }
             Widgets.EndScrollView();
         }
@@ -869,6 +1412,7 @@ namespace WorkRoles.UI
 
         private void DrawFilterRow(Rect rect, RoleStore store)
         {
+            ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
             // Slimmed so the added job filter still fits the design width
             // (left cluster 619px + right cluster 354px inside ~990px).
             const float SearchLabelW = 46f;
@@ -878,7 +1422,8 @@ namespace WorkRoles.UI
             float y = rect.y + (rect.height - SearchH) / 2f;
 
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rect.x, y, SearchLabelW, SearchH), "WR_Search".Translate());
+            Widgets.Label(new Rect(rect.x, y, SearchLabelW, SearchH),
+                chrome.SearchLabel);
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.SetNextControlName(SearchControlName);
             rosterState.Search = Widgets.TextField(
@@ -902,93 +1447,28 @@ namespace WorkRoles.UI
                 }
             }
 
-            // Deleted roles drop the filter rather than filtering everyone out.
-            rosterState.ValidateRoleFilter(store);
-
             float btnX = rect.x + SearchLabelW + 4f + SearchW + 12f;
-            string btnLabel = rosterState.RoleFilterId == -1
-                ? "WR_FilterAllRoles".Translate()
-                : store.RoleById(rosterState.RoleFilterId).label;
-            if (Widgets.ButtonText(new Rect(btnX, y, RoleBtnW, SearchH), btnLabel))
-            {
-                var options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("WR_FilterAllRoles".Translate(),
-                        () => rosterState.RoleFilterId = -1)
-                };
-                foreach (var role in store.roles.OrderBy(r => r.label, System.StringComparer.OrdinalIgnoreCase))
-                {
-                    int id = role.id;
-                    options.Add(new FloatMenuOption(role.label,
-                        () => rosterState.RoleFilterId = id));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
+            if (Widgets.ButtonText(new Rect(btnX, y, RoleBtnW, SearchH),
+                    chrome.RoleFilterLabel))
+                OpenRoleFilterMenu(chrome);
 
             // Job filter: pawns whose assigned roles cover the selected job.
             float jobX = btnX + RoleBtnW + 8f;
             var jobBtnRect = new Rect(jobX, y, RoleBtnW, SearchH);
-            if (jobFilterCachedFor != rosterState.JobFilterDefName)
-            {
-                jobFilterCachedFor = rosterState.JobFilterDefName;
-                var jobGiver = jobFilterCachedFor == null ? null
-                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterCachedFor);
-                jobFilterLabel = jobGiver != null
-                    ? WorkJobLabels.GiverDisplayName(jobGiver)
-                    : "WR_FilterAnyJob".Translate().ToString();
-                jobFilterShown = jobFilterLabel.Truncate(jobBtnRect.width - 20f);
-            }
-            string jobLabel = jobFilterLabel;
-            string jobShown = jobFilterShown;
-            if (jobShown != jobLabel)
-                TooltipHandler.TipRegion(jobBtnRect, jobLabel);
-            if (Widgets.ButtonText(jobBtnRect, jobShown))
-            {
-                var options = new List<FloatMenuOption>
-                {
-                    new FloatMenuOption("WR_FilterAnyJob".Translate(),
-                        () => rosterState.JobFilterDefName = null),
-                };
-                foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading
-                    .Where(d => d.workType != null)
-                    .OrderBy(WorkJobLabels.GiverDisplayName,
-                        System.StringComparer.OrdinalIgnoreCase))
-                {
-                    var captured = def.defName;
-                    options.Add(new FloatMenuOption(WorkJobLabels.GiverDisplayName(def),
-                        () => rosterState.JobFilterDefName = captured));
-                }
-                Find.WindowStack.Add(new FloatMenu(options));
-            }
+            if (!string.Equals(chrome.JobFilterShown,
+                    chrome.JobFilterLabel, System.StringComparison.Ordinal))
+                TooltipHandler.TipRegion(jobBtnRect, chrome.JobFilterLabel);
+            if (Widgets.ButtonText(jobBtnRect, chrome.JobFilterShown))
+                OpenJobFilterMenu(chrome);
 
             // Scope dropdown: which locations' pawns the table lists (options
-            // come from the pawn snapshot — ListedPawns keeps them fresh).
+            // and labels come from the chrome snapshot).
             // Long location names widen the button; RoleBtnW is only the minimum.
             float scopeX = jobX + RoleBtnW + 8f;
-            IReadOnlyList<ScopeOption> scopeOptions = rosterState.ScopeOptions;
-            string scopeLabel = ColonyScope.LabelOf(rosterState.Scope);
-            float scopeW = Mathf.Max(RoleBtnW, WrText.FitWidth(scopeLabel) + 20f);
-            if (Widgets.ButtonText(new Rect(scopeX, y, scopeW, SearchH), scopeLabel))
-            {
-                var menu = new List<FloatMenuOption>();
-                string currentLocationId = ColonyScope.CurrentLocationId();
-                foreach (var option in scopeOptions)
-                {
-                    // The current location's named entry folds into the
-                    // "(current location)" item instead of listing twice.
-                    if (option.Kind == ScopeKind.Location
-                        && option.LocationId == currentLocationId)
-                        continue;
-                    var captured = option;
-                    var item = new FloatMenuOption(ColonyScope.LabelOf(option), () =>
-                    {
-                        rosterState.SelectScope(captured);
-                    });
-                    if (option.IsShip) item.tooltip = "WR_ShipTip".Translate();
-                    menu.Add(item);
-                }
-                Find.WindowStack.Add(new FloatMenu(menu));
-            }
+            float scopeW = chrome.ScopeWidth;
+            if (Widgets.ButtonText(new Rect(scopeX, y, scopeW, SearchH),
+                    chrome.ScopeLabel))
+                OpenScopeMenu(chrome);
 
             if (rosterState.FiltersActive)
             {
@@ -1005,52 +1485,21 @@ namespace WorkRoles.UI
             // Right cluster: grouping, Skills column picker, and the Display
             // options button. Display prefs are per-player ModSettings, never
             // world state.
-            if (WorkRolesMod.Settings != null)
+            if (chrome.HasSettings)
             {
                 const float DisplayBtnW = 90f;
                 var displayRect = new Rect(rect.xMax - DisplayBtnW, y, DisplayBtnW, SearchH);
                 WrTips.Key("WR_DisplayOptions").Region(displayRect);
-                if (Widgets.ButtonText(displayRect, "WR_DisplayButton".Translate()))
-                {
-                    string ChipsLabel(ChipDisplay d) =>
-                        (TableChips == d ? "✓ " : "") +
-                        (d == ChipDisplay.Compact ? "WR_ChipsCompact".Translate()
-                        : d == ChipDisplay.Minimal ? "WR_ChipsMinimal".Translate()
-                        : "WR_ChipsNormal".Translate());
-                    void SetChips(ChipDisplay d) => profile.SetTableChips(d);
-                    Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
-                    {
-                        new FloatMenuOption(ChipsLabel(ChipDisplay.Normal), () => SetChips(ChipDisplay.Normal)),
-                        new FloatMenuOption(ChipsLabel(ChipDisplay.Compact), () => SetChips(ChipDisplay.Compact)),
-                        new FloatMenuOption(ChipsLabel(ChipDisplay.Minimal), () => SetChips(ChipDisplay.Minimal)),
-                    }));
-                }
+                if (Widgets.ButtonText(displayRect, chrome.DisplayLabel))
+                    OpenDisplayMenu(chrome);
 
                 float groupRight = displayRect.x; // group button abuts Display when the skills UI is off
                 if (profile.ShowSkills)
                 {
                     const float SkillsBtnW = 110f;
                     var skillsRect = new Rect(displayRect.x - 8f - SkillsBtnW, y, SkillsBtnW, SearchH);
-                    IReadOnlyList<SkillDef> columns = rosterState.SkillColumns;
-                    string skillsLabel = columns.Count == 0
-                        ? "WR_SkillsButton".Translate().ToString()
-                        : "WR_SkillsButtonCount".Translate(columns.Count,
-                            ColonistsRosterState.MaxSkillColumns).ToString();
-                    if (Widgets.ButtonText(skillsRect, skillsLabel))
-                    {
-                        var options = new List<FloatMenuOption>();
-                        foreach (var skill in DefDatabase<SkillDef>.AllDefsListForReading)
-                        {
-                            var captured = skill;
-                            bool added = columns.Contains(skill);
-                            string label = (added ? "✓ " : "") + skill.skillLabel.CapitalizeFirst();
-                            options.Add(new FloatMenuOption(label, () =>
-                            {
-                                rosterState.ToggleSkillColumn(captured);
-                            }));
-                        }
-                        Find.WindowStack.Add(new FloatMenu(options));
-                    }
+                    if (Widgets.ButtonText(skillsRect, chrome.SkillsLabel))
+                        OpenSkillColumnsMenu(chrome);
                     groupRight = skillsRect.x;
                 }
 
@@ -1058,22 +1507,119 @@ namespace WorkRoles.UI
                 // table renders, not which pawns it lists.
                 const float GroupBtnW = 130f;
                 var groupRect = new Rect(groupRight - 8f - GroupBtnW, y, GroupBtnW, SearchH);
-                if (Widgets.ButtonText(groupRect, rosterState.CurrentGroupSource.Label))
-                {
-                    var menu = new List<FloatMenuOption>();
-                    foreach (var source in GroupSources.All())
-                    {
-                        var captured = source;
-                        menu.Add(new FloatMenuOption(
-                            (profile.GetGroupBy() == captured.Key ? "✓ " : "") + captured.Label, () =>
-                            {
-                                profile.SetGroupBy(captured.Key);
-                                ColonyGroupsDataSource.InvalidateSnapshot();
-                            }));
-                    }
-                    Find.WindowStack.Add(new FloatMenu(menu));
-                }
+                if (Widgets.ButtonText(groupRect, chrome.GroupLabel))
+                    OpenGroupMenu(chrome);
             }
+        }
+
+        private void OpenRoleFilterMenu(ColonistsChromeSnapshot chrome)
+        {
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption(chrome.AllRolesLabel,
+                    () => rosterState.RoleFilterId = -1)
+            };
+            ColonistsRosterCatalogSnapshot catalog = chrome.Catalog;
+            for (int optionIndex = 0;
+                    optionIndex < catalog.RoleOptionCount; optionIndex++)
+            {
+                ColonistRoleFilterOption option =
+                    catalog.RoleOptionAt(optionIndex);
+                int id = option.RoleId;
+                options.Add(new FloatMenuOption(option.Label,
+                    () => rosterState.RoleFilterId = id));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void OpenJobFilterMenu(ColonistsChromeSnapshot chrome)
+        {
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption(chrome.AnyJobLabel,
+                    () => rosterState.JobFilterDefName = null),
+            };
+            ColonistsRosterCatalogSnapshot catalog = chrome.Catalog;
+            for (int optionIndex = 0;
+                    optionIndex < catalog.JobOptionCount; optionIndex++)
+            {
+                ColonistJobFilterOption option =
+                    catalog.JobOptionAt(optionIndex);
+                string defName = option.DefName;
+                options.Add(new FloatMenuOption(option.Label,
+                    () => rosterState.JobFilterDefName = defName));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void OpenScopeMenu(ColonistsChromeSnapshot chrome)
+        {
+            var options = new List<FloatMenuOption>(chrome.ScopeOptionCount);
+            for (int optionIndex = 0;
+                    optionIndex < chrome.ScopeOptionCount; optionIndex++)
+            {
+                ColonistsScopeMenuOption option =
+                    chrome.ScopeOptionAt(optionIndex);
+                var item = new FloatMenuOption(option.Label,
+                    () => rosterState.SelectScope(option.ToScopeOption()));
+                item.tooltip = option.Tooltip;
+                options.Add(item);
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void OpenDisplayMenu(ColonistsChromeSnapshot chrome)
+        {
+            Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+            {
+                new FloatMenuOption(chrome.NormalChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.Normal)),
+                new FloatMenuOption(chrome.CompactChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.Compact)),
+                new FloatMenuOption(chrome.MinimalChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.Minimal)),
+            }));
+        }
+
+        private void OpenSkillColumnsMenu(ColonistsChromeSnapshot chrome)
+        {
+            ColonistsRosterCatalogSnapshot catalog = chrome.Catalog;
+            ColonistSkillColumnsSnapshot columns = rosterState.SkillColumns;
+            var options = new List<FloatMenuOption>();
+            for (int optionIndex = 0;
+                    optionIndex < catalog.SkillOptionCount; optionIndex++)
+            {
+                ColonistSkillFilterOption option =
+                    catalog.SkillOptionAt(optionIndex);
+                SkillDef skill = option.Skill;
+                string label = (columns.Contains(skill) ? "✓ " : "")
+                    + option.Label;
+                options.Add(new FloatMenuOption(label,
+                    () => rosterState.ToggleSkillColumn(skill)));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
+        }
+
+        private void OpenGroupMenu(ColonistsChromeSnapshot chrome)
+        {
+            ColonistsRosterCatalogSnapshot catalog = chrome.Catalog;
+            var options = new List<FloatMenuOption>();
+            for (int optionIndex = 0;
+                    optionIndex < catalog.GroupOptionCount; optionIndex++)
+            {
+                ColonistGroupOption option =
+                    catalog.GroupOptionAt(optionIndex);
+                string groupKey = option.Key;
+                options.Add(new FloatMenuOption(
+                    (string.Equals(chrome.GroupKey, groupKey,
+                        System.StringComparison.Ordinal) ? "✓ " : "")
+                        + option.Label, () =>
+                    {
+                        profile.SetGroupBy(groupKey);
+                        ColonyGroupsDataSource.InvalidateSnapshot();
+                    }));
+            }
+            Find.WindowStack.Add(new FloatMenu(options));
         }
 
         private ChipDisplay TableChips => profile.GetTableChips();
@@ -1082,33 +1628,6 @@ namespace WorkRoles.UI
         /// the verdict slot changes every table chip's width.
         private int TableDisplayKey =>
             ((int)TableChips << 1) | (ColonistVerdicts ? 1 : 0);
-
-        private string AbbrevIfCompact(RoleStore store, Role role) =>
-            TableChips == ChipDisplay.Compact ? AbbrevFor(store, role) : null;
-
-        // Owner: process role catalog. Key: role id within UiVersion. Value:
-        // immutable abbreviation strings in a private dictionary. Dependencies:
-        // role ids/labels and language through UiVersion. Refresh: lazy on the
-        // first compact-label read after revision change. Equality: matching
-        // revision reuses dictionary/string identity. Teardown: the last window's
-        // ReleaseSnapshots clears the shared reference.
-        private static Dictionary<int, string> abbrevCache;
-        private static int abbrevStamp;
-
-        private static string AbbrevFor(RoleStore store, Role role)
-        {
-            // Renames and role changes bump UiVersion, so the stamp replaces
-            // the old per-call label-hash signature.
-            if (abbrevCache == null || abbrevStamp != UiVersion.Current)
-            {
-                abbrevStamp = UiVersion.Current;
-                abbrevCache = RoleAbbreviations.Build(
-                    store.roles.Select(r => (r.id, r.label)).ToList());
-            }
-            return abbrevCache.TryGetValue(role.id, out var abbrev) ? abbrev : role.label;
-        }
-
-        // Abbreviation building lives in Core (RoleAbbreviations) with tests.
 
         // Trailing air so the last decorator never sits flush against the
         // neighbouring column or the chip strip.
@@ -1143,12 +1662,32 @@ namespace WorkRoles.UI
                 WrText.FitWidth(SkillHeaderLabel(skill)) + 18f) + SkillColumnPad;
         }
 
+        // Owner: Colonists window. Key: pawn-scope stamp and skill-column
+        // revision. Value: the aggregate cached column width scalar.
+        // Dependencies: selected definitions, language/text measurements, and
+        // roster cell-width snapshots. Refresh: immediate on the next width read.
+        // Equality: exact key hits reuse the scalar without enumerating columns.
+        // Teardown: reset/language/external/release invalidation resets the stamp.
+        private ScopeCacheStamp skillColumnsWidthStamp =
+            ScopeCacheStamp.Invalid;
+        private int skillColumnsWidthRevision = -1;
+        private float skillColumnsWidthCache;
+
         private float SkillColumnsWidth()
         {
+            ScopeCacheStamp stamp = PawnListStamp;
+            int revision = rosterState.SkillColumnsRevision;
+            if (skillColumnsWidthStamp == stamp
+                && skillColumnsWidthRevision == revision)
+                return skillColumnsWidthCache;
             float w = 0f;
-            foreach (SkillDef skill in rosterState.SkillColumns)
-                w += SkillColumnWidth(skill);
-            return w;
+            ColonistSkillColumnsSnapshot columns = rosterState.SkillColumns;
+            for (int i = 0; i < columns.Count; i++)
+                w += SkillColumnWidth(columns.At(i));
+            skillColumnsWidthStamp = stamp;
+            skillColumnsWidthRevision = revision;
+            skillColumnsWidthCache = w;
+            return skillColumnsWidthCache;
         }
 
         // Owner: Colonists window. Key: role id, context, optional Pawn identity,
@@ -1170,6 +1709,10 @@ namespace WorkRoles.UI
         /// Callers must re-Activate on every hovered pass (the registry retires
         /// models not touched in the latest repaint generation).
         internal StructuredTip RoleTip(Role role, RoleTipContext context, Pawn pawn = null)
+            => role == null ? null : RoleTip(role.id, context, pawn);
+
+        private StructuredTip RoleTip(int roleId, RoleTipContext context,
+            Pawn pawn = null)
         {
             var store = RoleStore.Current;
             if (store == null) return null;
@@ -1184,12 +1727,14 @@ namespace WorkRoles.UI
             // transition (revision bump) must produce a fresh tip.
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
                 ? ActivityTracker.RevisionOf(pawn) : 0;
-            var key = (role.id, context, pawn, activityRevision);
+            var key = (roleId, context, pawn, activityRevision);
             if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
             {
+                Role role = store.RoleById(roleId);
+                if (role == null) return null;
                 int pawnId = pawn?.thingIDNumber ?? -1;
                 roleTipCache[key] = tip = new StructuredTip(
-                    $"role:{role.id}:{context}:{pawnId}:{activityRevision}",
+                    $"role:{roleId}:{context}:{pawnId}:{activityRevision}",
                     BuildRoleTip(store, role, context, pawn));
             }
             roleTipStamp = PawnListStamp;
@@ -1509,13 +2054,13 @@ namespace WorkRoles.UI
         /// group sections and variable-height pawn rows.
         private void DrawPawnTable(Rect rect, RoleStore store)
         {
-            IReadOnlyList<GroupSection<Pawn>> sections = rosterState.Sections(store);
+            ColonistSectionsSnapshot sections = rosterState.Sections(store);
 
             // Chip strips wrap against the roles column; everything else is
             // fixed-width, so the row-height estimate is exact.
             EstimatedStripWidth = TableStripWidth(rect.width);
 
-            bool grouped = rosterState.Grouped;
+            bool grouped = sections.Grouped;
             var outRect = new Rect(rect.x, rect.y + TableHeaderH, rect.width, rect.height - TableHeaderH);
             lastTableViewH = outRect.height;
             float viewW = outRect.width - 16f;
@@ -1528,11 +2073,20 @@ namespace WorkRoles.UI
 
             if (tableListedCount == 0 && rosterState.FiltersActive)
             {
-                Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color = WrStyle.DimText;
-                Widgets.Label(rect, "WR_NoFilterMatches".Translate());
-                GUI.color = Color.white;
-                Text.Anchor = TextAnchor.UpperLeft;
+                ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
+                TextAnchor oldAnchor = Text.Anchor;
+                Color oldColor = GUI.color;
+                try
+                {
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    GUI.color = WrStyle.DimText;
+                    Widgets.Label(rect, chrome.NoFilterMatchesLabel);
+                }
+                finally
+                {
+                    Text.Anchor = oldAnchor;
+                    GUI.color = oldColor;
+                }
                 return;
             }
 
@@ -1549,7 +2103,7 @@ namespace WorkRoles.UI
                 float y = tableRowLayout.OffsetOf(i);
                 float height = tableRowLayout.ExtentOf(i);
                 var rowRect = new Rect(0f, y, viewW, height);
-                if (row.Pawn == null) DrawGroupHeader(rowRect, row.Section);
+                if (row.Pawn == null) DrawGroupHeader(rowRect, row);
                 else DrawRow(rowRect, row.Pawn, store);
             }
             Widgets.EndScrollView();
@@ -1577,142 +2131,318 @@ namespace WorkRoles.UI
         }
 
         private void EnsureTableLayout(
-            IReadOnlyList<GroupSection<Pawn>> sections,
+            ColonistSectionsSnapshot sections,
             bool grouped,
             float stripWidth)
         {
             ScopeCacheStamp stamp = PawnListStamp;
             int display = TableDisplayKey;
+            // Captions raise the minimum row height whenever the caption line
+            // falls back to the Small font, so row extents depend on them.
+            bool captions = SkillCaptions;
             if (tableRowLayout != null
                 && ReferenceEquals(tableLayoutSections, sections)
                 && tableLayoutStamp == stamp
                 && tableLayoutStripWidth == stripWidth
-                && tableLayoutDisplay == display)
+                && tableLayoutDisplay == display
+                && tableLayoutCaptions == captions)
                 return;
 
             tableLayoutSections = sections;
             tableLayoutStamp = stamp;
             tableLayoutStripWidth = stripWidth;
             tableLayoutDisplay = display;
+            tableLayoutCaptions = captions;
             tableListedCount = 0;
             tableLayoutRows.Clear();
 
             var heights = new List<float>();
-            for (int sectionIndex = 0; sectionIndex < sections.Count; sectionIndex++)
+            for (int sectionIndex = 0; sectionIndex < sections.Count;
+                    sectionIndex++)
             {
-                GroupSection<Pawn> section = sections[sectionIndex];
-                tableListedCount += section.Members.Count;
+                ColonistSectionSnapshot section =
+                    sections.SectionAt(sectionIndex);
+                tableListedCount += section.Count;
                 if (grouped)
                 {
-                    tableLayoutRows.Add(new TableLayoutRow(section, null));
+                    bool collapsed = rosterState.IsCollapsed(section.Key);
+                    tableLayoutRows.Add(new TableLayoutRow(section, null,
+                        collapsed));
                     heights.Add(GroupHeaderH);
-                    if (rosterState.IsCollapsed(section.Key)) continue;
+                    if (collapsed) continue;
                 }
-                for (int pawnIndex = 0; pawnIndex < section.Members.Count; pawnIndex++)
+                for (int pawnIndex = 0; pawnIndex < section.Count;
+                        pawnIndex++)
                 {
-                    Pawn pawn = section.Members[pawnIndex];
-                    tableLayoutRows.Add(new TableLayoutRow(null, pawn));
+                    Pawn pawn = section.PawnAt(pawnIndex);
+                    tableLayoutRows.Add(new TableLayoutRow(null, pawn,
+                        collapsed: false));
                     heights.Add(RowHeightOf(pawn));
                 }
             }
             tableRowLayout = new VariableViewportLayout(heights);
         }
 
+        private readonly struct ColonistTableHeaderColumnSnapshot
+        {
+            internal ColonistTableHeaderColumnSnapshot(string defName,
+                string label, float width, bool sorted)
+            {
+                DefName = defName;
+                Label = label;
+                Width = width;
+                Sorted = sorted;
+            }
+
+            internal string DefName { get; }
+            internal string Label { get; }
+            internal float Width { get; }
+            internal bool Sorted { get; }
+
+            internal bool ContentEquals(
+                ColonistTableHeaderColumnSnapshot other) =>
+                Width == other.Width && Sorted == other.Sorted
+                && string.Equals(DefName, other.DefName,
+                    System.StringComparison.Ordinal)
+                && string.Equals(Label, other.Label,
+                    System.StringComparison.Ordinal);
+        }
+
+        private sealed class ColonistTableHeaderSnapshot
+        {
+            private readonly List<ColonistTableHeaderColumnSnapshot> columns;
+
+            internal ColonistTableHeaderSnapshot(string colonistLabel,
+                ColonistOrder order, bool hasSkillSort,
+                List<ColonistTableHeaderColumnSnapshot> columns)
+            {
+                ColonistLabel = colonistLabel;
+                Order = order;
+                HasSkillSort = hasSkillSort;
+                this.columns = columns;
+            }
+
+            internal string ColonistLabel { get; }
+            internal ColonistOrder Order { get; }
+            internal bool HasSkillSort { get; }
+            internal int ColumnCount => columns.Count;
+            internal ColonistTableHeaderColumnSnapshot ColumnAt(int index) =>
+                columns[index];
+
+            internal bool ContentEquals(ColonistTableHeaderSnapshot other)
+            {
+                if (other == null || Order != other.Order
+                    || HasSkillSort != other.HasSkillSort
+                    || columns.Count != other.columns.Count
+                    || !string.Equals(ColonistLabel, other.ColonistLabel,
+                        System.StringComparison.Ordinal)) return false;
+                for (int i = 0; i < columns.Count; i++)
+                    if (!columns[i].ContentEquals(other.columns[i]))
+                        return false;
+                return true;
+            }
+        }
+
+        // Owner: Colonists window. Key: RoleStore, ordered skill-column identity,
+        // sort/order preferences, language/definition revisions, and the
+        // explicit external-pawn snapshot generation. Value:
+        // immutable colonist/skill header labels, measured widths, sort flags,
+        // and stable def-name command identifiers in a producer-owned buffer.
+        // Dependencies: exactly the key plus translated labels, cached text
+        // metrics, and generation-scoped roster-cell widths. Refresh: immediate
+        // on the next header read after a key change; external refresh is event
+        // driven. Equality: exact equal contents preserve identity; store changes
+        // force republishing for ownership partitioning. Teardown: Reset and
+        // ReleaseSnapshots drop the snapshot and every retained source reference.
+        private ColonistTableHeaderSnapshot tableHeaderSnapshot;
+        private RoleStore tableHeaderOwner;
+        private ColonistSkillColumnsSnapshot tableHeaderColumns;
+        private string tableHeaderSortColumn;
+        private ColonistOrder tableHeaderOrder;
+        private int tableHeaderLanguageRevision = -1;
+        private int tableHeaderDefinitionRevision = -1;
+        private int tableHeaderExternalGeneration;
+        private int tableHeaderBuiltExternalGeneration = -1;
+
+        private void ReleaseTableHeaderSnapshot()
+        {
+            tableHeaderSnapshot = null;
+            tableHeaderOwner = null;
+            tableHeaderColumns = null;
+            tableHeaderSortColumn = null;
+            tableHeaderLanguageRevision = -1;
+            tableHeaderDefinitionRevision = -1;
+            tableHeaderExternalGeneration = 0;
+            tableHeaderBuiltExternalGeneration = -1;
+        }
+
+        private ColonistTableHeaderSnapshot TableHeaderSnapshot(
+            RoleStore store)
+        {
+            ColonistSkillColumnsSnapshot columns = rosterState.SkillColumns;
+            string sortColumn = profile.GetSortColumn();
+            ColonistOrder order = profile.GetColonistOrder();
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            int externalGeneration = tableHeaderExternalGeneration;
+            if (tableHeaderSnapshot != null
+                && ReferenceEquals(tableHeaderOwner, store)
+                && ReferenceEquals(tableHeaderColumns, columns)
+                && string.Equals(tableHeaderSortColumn, sortColumn,
+                    System.StringComparison.Ordinal)
+                && tableHeaderOrder == order
+                && tableHeaderLanguageRevision == languageRevision
+                && tableHeaderDefinitionRevision == definitionRevision
+                && tableHeaderBuiltExternalGeneration == externalGeneration)
+                return tableHeaderSnapshot;
+
+            bool hasSkillSort = columns.IndexOfDefName(sortColumn) >= 0;
+            var rebuiltColumns =
+                new List<ColonistTableHeaderColumnSnapshot>(columns.Count);
+            string colonistLabel;
+            GameFont oldFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                string orderSuffix = order == ColonistOrder.Alphabetical
+                    ? "WR_OrderSuffixAZ".Translate().ToString()
+                    : "WR_OrderSuffixBar".Translate().ToString();
+                colonistLabel = "WR_ColColonist".Translate() + " "
+                    + orderSuffix.Colorize(
+                        new Color(1f, 1f, 1f, 0.45f));
+                for (int i = 0; i < columns.Count; i++)
+                {
+                    SkillDef skill = columns.At(i);
+                    rebuiltColumns.Add(
+                        new ColonistTableHeaderColumnSnapshot(
+                            skill.defName, SkillHeaderLabel(skill),
+                            SkillColumnWidth(skill), hasSkillSort
+                                && string.Equals(sortColumn, skill.defName,
+                                    System.StringComparison.Ordinal)));
+                }
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
+
+            var rebuilt = new ColonistTableHeaderSnapshot(colonistLabel,
+                order, hasSkillSort, rebuiltColumns);
+            if (!ReferenceEquals(tableHeaderOwner, store)
+                || tableHeaderSnapshot == null
+                || !tableHeaderSnapshot.ContentEquals(rebuilt))
+                tableHeaderSnapshot = rebuilt;
+            tableHeaderOwner = store;
+            tableHeaderColumns = columns;
+            tableHeaderSortColumn = sortColumn;
+            tableHeaderOrder = order;
+            tableHeaderLanguageRevision = languageRevision;
+            tableHeaderDefinitionRevision = definitionRevision;
+            tableHeaderBuiltExternalGeneration = externalGeneration;
+            return tableHeaderSnapshot;
+        }
+
         /// Fixed header: Colonist (suffix names the default order; clicking
         /// clears a skill sort, or toggles Tab order/A-Z when none is active)
-        // Owner: Colonists window. Key: ColonistOrder within the current language
-        // generation. Value: immutable translated/colorized header string.
-        // Dependencies: order preference and language. Refresh: immediate on the
-        // next header draw after either changes. Equality: matching key reuses the
-        // string. Teardown: ReleaseSnapshots/language invalidation clears it.
-        private string colonistHeaderCache;
-        private ColonistOrder colonistHeaderOrder;
-
         /// and skill columns (click sorts by that skill, highest first — the
         /// sorting column's label renders in the passion yellow; X removes).
         private void DrawTableHeader(Rect rect, RoleStore store)
         {
-            Text.Font = GameFont.Small;
-            SkillDef sortSkill = rosterState.SortSkill;
+            ColonistTableHeaderSnapshot header = TableHeaderSnapshot(store);
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            bool oldWordWrap = Text.WordWrap;
+            Color oldColor = GUI.color;
+            try
+            {
+                Text.Font = GameFont.Small;
 
-            // Priority grid over every listed colonist (the filtered table set).
-            var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
-            WrTips.Key("WR_ShowPriorityGridTip").Region(gridRect);
-            if (Widgets.ButtonImage(gridRect, TexButton.Info))
-            {
-                var listed = new List<Pawn>();
-                foreach (GroupSection<Pawn> section in rosterState.Sections(store))
-                    listed.AddRange(section.Members);
-                Find.WindowStack.Add(new Dialog_PriorityGrid(listed));
-                return;
-            }
-
-            var nameRect = new Rect(rect.x, rect.y, 264f, rect.height);
-            var order = profile.GetColonistOrder();
-            if (colonistHeaderCache == null || colonistHeaderOrder != order)
-            {
-                colonistHeaderOrder = order;
-                string orderSuffix = order == ColonistOrder.Alphabetical
-                    ? "WR_OrderSuffixAZ".Translate() : "WR_OrderSuffixBar".Translate();
-                colonistHeaderCache = "WR_ColColonist".Translate() + " "
-                    + orderSuffix.Colorize(new Color(1f, 1f, 1f, 0.45f));
-            }
-            Text.Anchor = TextAnchor.LowerLeft;
-            // A-Z is an explicit colonist sort: mark the header like a sorting
-            // skill column (bar order is the neutral default and stays white).
-            if (sortSkill == null && order == ColonistOrder.Alphabetical)
-                GUI.color = WrStyle.MinorAccent;
-            Widgets.Label(new Rect(nameRect.x + 4f, nameRect.y, nameRect.width - 8f, nameRect.height - 2f),
-                colonistHeaderCache);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-            Widgets.DrawHighlightIfMouseover(nameRect);
-            if (Widgets.ButtonInvisible(nameRect))
-            {
-                if (sortSkill != null) rosterState.SetSort("");
-                else profile.SetColonistOrder(order == ColonistOrder.Alphabetical
-                    ? ColonistOrder.ColonistBar : ColonistOrder.Alphabetical);
-            }
-
-            float x = rect.x + 264f;
-            IReadOnlyList<SkillDef> columns = rosterState.SkillColumns;
-            for (int i = 0; i < columns.Count; i++)
-            {
-                SkillDef skill = columns[i];
-                float w = SkillColumnWidth(skill);
-                var headerRect = new Rect(x, rect.y, w, rect.height);
-                var closeRect = new Rect(headerRect.xMax - 16f, headerRect.yMax - 20f, 14f, 14f);
-                if (Widgets.ButtonImage(closeRect, TexButton.CloseXSmall))
+                // Priority grid over every listed colonist (the filtered table set).
+                var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
+                WrTips.Key("WR_ShowPriorityGridTip").Region(gridRect);
+                if (Widgets.ButtonImage(gridRect, TexButton.Info))
                 {
-                    RemoveSkillColumn(i);
+                    List<Pawn> listed = rosterState.Sections(store).CopyPawns();
+                    Find.WindowStack.Add(new Dialog_PriorityGrid(listed));
                     return;
                 }
-                bool wrap = Text.WordWrap;
-                Text.WordWrap = false;
+
+                var nameRect = new Rect(rect.x, rect.y, 264f, rect.height);
                 Text.Anchor = TextAnchor.LowerLeft;
-                if (sortSkill == skill) GUI.color = WrStyle.MinorAccent; // marks the sort column
-                Widgets.Label(new Rect(headerRect.x + 2f, headerRect.y, headerRect.width - 24f, headerRect.height - 2f),
-                    SkillHeaderLabel(skill));
+                // A-Z is an explicit colonist sort: mark the header like a sorting
+                // skill column (bar order is the neutral default and stays white).
+                if (!header.HasSkillSort
+                    && header.Order == ColonistOrder.Alphabetical)
+                    GUI.color = WrStyle.MinorAccent;
+                Widgets.Label(new Rect(nameRect.x + 4f, nameRect.y, nameRect.width - 8f, nameRect.height - 2f),
+                    header.ColonistLabel);
                 GUI.color = Color.white;
                 Text.Anchor = TextAnchor.UpperLeft;
-                Text.WordWrap = wrap;
-                var clickRect = new Rect(headerRect.x, headerRect.y, headerRect.width - 18f, headerRect.height);
-                Widgets.DrawHighlightIfMouseover(clickRect);
-                if (Widgets.ButtonInvisible(clickRect)) rosterState.SetSort(skill.defName);
-                x += w;
+                Widgets.DrawHighlightIfMouseover(nameRect);
+                if (Widgets.ButtonInvisible(nameRect))
+                {
+                    if (header.HasSkillSort) rosterState.SetSort("");
+                    else profile.SetColonistOrder(
+                        header.Order == ColonistOrder.Alphabetical
+                            ? ColonistOrder.ColonistBar
+                            : ColonistOrder.Alphabetical);
+                }
+
+                float x = rect.x + 264f;
+                for (int i = 0; i < header.ColumnCount; i++)
+                {
+                    ColonistTableHeaderColumnSnapshot column = header.ColumnAt(i);
+                    float w = column.Width;
+                    var headerRect = new Rect(x, rect.y, w, rect.height);
+                    var closeRect = new Rect(headerRect.xMax - 16f, headerRect.yMax - 20f, 14f, 14f);
+                    if (Widgets.ButtonImage(closeRect, TexButton.CloseXSmall))
+                    {
+                        RemoveSkillColumn(i);
+                        return;
+                    }
+                    bool wrap = Text.WordWrap;
+                    Text.WordWrap = false;
+                    Text.Anchor = TextAnchor.LowerLeft;
+                    if (column.Sorted) GUI.color = WrStyle.MinorAccent;
+                    Widgets.Label(new Rect(headerRect.x + 2f, headerRect.y, headerRect.width - 24f, headerRect.height - 2f),
+                        column.Label);
+                    GUI.color = Color.white;
+                    Text.Anchor = TextAnchor.UpperLeft;
+                    Text.WordWrap = wrap;
+                    var clickRect = new Rect(headerRect.x, headerRect.y, headerRect.width - 18f, headerRect.height);
+                    Widgets.DrawHighlightIfMouseover(clickRect);
+                    if (Widgets.ButtonInvisible(clickRect))
+                        rosterState.SetSort(column.DefName);
+                    x += w;
+                }
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                Text.WordWrap = oldWordWrap;
+                GUI.color = oldColor;
             }
         }
 
-        private void DrawGroupHeader(Rect rect, GroupSection<Pawn> section)
+        private void DrawGroupHeader(Rect rect, TableLayoutRow row)
         {
+            ColonistSectionSnapshot section = row.Section;
             Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.06f));
-            bool collapsed = rosterState.IsCollapsed(section.Key);
             var arrowRect = new Rect(rect.x + 6f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
-            GUI.DrawTexture(arrowRect, collapsed ? TexButton.Reveal : TexButton.Collapse);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(arrowRect.xMax + 6f, rect.y, rect.width - arrowRect.xMax - 10f, rect.height),
-                rosterState.SectionTitle(section.Key));
-            Text.Anchor = TextAnchor.UpperLeft;
+            GUI.DrawTexture(arrowRect, row.Collapsed
+                ? TexButton.Reveal : TexButton.Collapse);
+            TextAnchor oldAnchor = Text.Anchor;
+            try
+            {
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(arrowRect.xMax + 6f, rect.y, rect.width - arrowRect.xMax - 10f, rect.height),
+                    section.Title);
+            }
+            finally
+            {
+                Text.Anchor = oldAnchor;
+            }
             Widgets.DrawHighlightIfMouseover(rect);
             if (Widgets.ButtonInvisible(rect))
             {
@@ -1725,43 +2455,58 @@ namespace WorkRoles.UI
 
         private void DrawRow(Rect rect, Pawn pawn, RoleStore store)
         {
-            GUI.color = new Color(1f, 1f, 1f, 0.2f);
-            WrText.LineHorizontal(rect.x, rect.y, rect.width);
-            GUI.color = Color.white;
-
-            if (pawn == selectedPawn)
-                Widgets.DrawHighlightSelected(rect);
-            else if (Mouse.IsOver(rect))
+            Color oldColor = GUI.color;
+            try
             {
-                Widgets.DrawHighlight(rect);
-                new LookTargets(pawn).Highlight(arrow: true, colonistBar: pawn.IsColonist);
+                GUI.color = new Color(1f, 1f, 1f, 0.2f);
+                WrText.LineHorizontal(rect.x, rect.y, rect.width);
+                GUI.color = oldColor;
+
+                ColonistRowSnapshot publishedRow = RowSnapshotFor(
+                    pawn, store, EstimatedStripWidth);
+
+                if (pawn == selectedPawn)
+                    Widgets.DrawHighlightSelected(rect);
+                else if (Mouse.IsOver(rect))
+                {
+                    Widgets.DrawHighlight(rect);
+                    TargetHighlighter.Highlight(publishedRow.Pawn,
+                        arrow: true, colonistBar: publishedRow.IsColonist);
+                }
+
+                float x = rect.x + 264f;
+                for (int columnIndex = 0;
+                        columnIndex < publishedRow.SkillCount; columnIndex++)
+                {
+                    ColonistSkillCellSnapshot skill =
+                        publishedRow.SkillAt(columnIndex);
+                    DrawSkillCell(new Rect(x, rect.y, skill.Width,
+                        rect.height), publishedRow, skill);
+                    x += skill.Width;
+                }
+                float rolesW = rect.xMax - 28f - x;
+                DrawColonistCell(new Rect(rect.x, rect.y, 264f,
+                    rect.height), publishedRow);
+                DrawChipStrip(new Rect(x, rect.y, rolesW, rect.height),
+                    publishedRow, rolesW);
+                x += rolesW;
+                var plusRect = new Rect(x + 2f,
+                    rect.y + (rect.height - IconButton) / 2f,
+                    IconButton, IconButton);
+                WrTips.Key("WR_AddRoleTip").Region(plusRect);
+                if (Widgets.ButtonImage(plusRect, TexButton.Plus))
+                    OpenAddMenu(pawn, store);
+
+                if (publishedRow.Downed)
+                {
+                    GUI.color = new Color(1f, 0f, 0f, 0.5f);
+                    WrText.LineHorizontal(rect.x, rect.center.y, rect.width);
+                    GUI.color = oldColor;
+                }
             }
-
-            float x = rect.x + 264f;
-            foreach (SkillDef skill in rosterState.SkillColumns)
+            finally
             {
-                float w = SkillColumnWidth(skill);
-                DrawSkillCell(new Rect(x, rect.y, w, rect.height), pawn, skill);
-                x += w;
-            }
-            float rolesW = rect.xMax - 28f - x;
-            ColonistRowSnapshot publishedRow = RowSnapshotFor(
-                pawn, store, rolesW);
-            DrawColonistCell(new Rect(rect.x, rect.y, 264f, rect.height),
-                publishedRow);
-            DrawChipStrip(new Rect(x, rect.y, rolesW, rect.height),
-                publishedRow, rolesW);
-            x += rolesW;
-            var plusRect = new Rect(x + 2f, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
-            WrTips.Key("WR_AddRoleTip").Region(plusRect);
-            if (Widgets.ButtonImage(plusRect, TexButton.Plus))
-                OpenAddMenu(pawn, store);
-
-            if (publishedRow.Downed)
-            {
-                GUI.color = new Color(1f, 0f, 0f, 0.5f);
-                WrText.LineHorizontal(rect.x, rect.center.y, rect.width);
-                GUI.color = Color.white;
+                GUI.color = oldColor;
             }
         }
 
@@ -1806,17 +2551,38 @@ namespace WorkRoles.UI
 
         /// The sections keyboard navigation moves through: collapsed groups
         /// are skipped (their pawns aren't visible).
-        private List<GroupSection<Pawn>> NavSections()
+        private List<ColonistSectionSnapshot> NavSections()
         {
-            IReadOnlyList<GroupSection<Pawn>> sections = rosterState.Sections(RoleStore.Current);
-            return rosterState.Grouped
-                ? sections.Where(section => !rosterState.IsCollapsed(section.Key)).ToList()
-                : sections.ToList();
+            ColonistSectionsSnapshot sections =
+                rosterState.Sections(RoleStore.Current);
+            var result = new List<ColonistSectionSnapshot>(sections.Count);
+            for (int i = 0; i < sections.Count; i++)
+            {
+                ColonistSectionSnapshot section = sections.SectionAt(i);
+                if (!sections.Grouped
+                    || !rosterState.IsCollapsed(section.Key))
+                    result.Add(section);
+            }
+            return result;
+        }
+
+        private static List<Pawn> FlattenSections(
+            List<ColonistSectionSnapshot> sections)
+        {
+            var result = new List<Pawn>();
+            for (int sectionIndex = 0; sectionIndex < sections.Count;
+                    sectionIndex++)
+            {
+                ColonistSectionSnapshot section = sections[sectionIndex];
+                for (int pawnIndex = 0; pawnIndex < section.Count; pawnIndex++)
+                    result.Add(section.PawnAt(pawnIndex));
+            }
+            return result;
         }
 
         private bool MoveSelection(int delta)
         {
-            var order = NavSections().SelectMany(s => s.Members).ToList();
+            List<Pawn> order = FlattenSections(NavSections());
             if (order.Count == 0) return true;
             int idx = selectedPawn != null ? order.IndexOf(selectedPawn) : -1;
             int target = idx < 0
@@ -1831,11 +2597,17 @@ namespace WorkRoles.UI
         private bool SelectEdge(bool first, bool ignoreGroups)
         {
             var sections = NavSections();
-            var order = sections.SelectMany(s => s.Members).ToList();
+            List<Pawn> order = FlattenSections(sections);
             if (order.Count == 0) return true;
             var pool = order;
-            if (!ignoreGroups && rosterState.Grouped)
-                pool = sections.FirstOrDefault(s => s.Members.Contains(selectedPawn))?.Members ?? order;
+            if (!ignoreGroups && rosterState.Sections(
+                    RoleStore.Current).Grouped)
+                for (int i = 0; i < sections.Count; i++)
+                    if (sections[i].Contains(selectedPawn))
+                    {
+                        pool = sections[i].CopyPawns();
+                        break;
+                    }
             Select(first ? pool[0] : pool[pool.Count - 1]);
             return true;
         }
@@ -1845,14 +2617,15 @@ namespace WorkRoles.UI
         private bool PageMove(int dir)
         {
             var sections = NavSections();
-            var order = sections.SelectMany(s => s.Members).ToList();
+            List<Pawn> order = FlattenSections(sections);
             if (order.Count == 0) return true;
-            if (rosterState.Grouped && sections.Count > 1)
+            if (rosterState.Sections(RoleStore.Current).Grouped
+                && sections.Count > 1)
             {
-                int gi = sections.FindIndex(s => s.Members.Contains(selectedPawn));
+                int gi = sections.FindIndex(s => s.Contains(selectedPawn));
                 if (gi < 0) gi = dir > 0 ? -1 : sections.Count;
                 gi = Mathf.Clamp(gi + dir, 0, sections.Count - 1);
-                Select(sections[gi].Members[0]);
+                Select(sections[gi].PawnAt(0));
                 return true;
             }
             int idx = Mathf.Max(0, order.IndexOf(selectedPawn));
@@ -1871,7 +2644,8 @@ namespace WorkRoles.UI
         // Strip slack is 7 (4 above, 3 below via the ceil'd top pad): the
         // bottom pixel is deliberately trimmed.
         private float RowHeightOf(Pawn pawn) =>
-            Mathf.Max(RowHeight, Mathf.CeilToInt(StripHeightFor(pawn) + 7f));
+            Mathf.Max(TextMetrics().MinRowHeight,
+                Mathf.CeilToInt(StripHeightFor(pawn) + 7f));
 
         private void Select(Pawn pawn)
         {
@@ -1912,19 +2686,24 @@ namespace WorkRoles.UI
         /// (collapsed sections contribute their header only).
         private void EnsureSelectedVisible()
         {
-            IReadOnlyList<GroupSection<Pawn>> sections =
+            ColonistSectionsSnapshot sections =
                 rosterState.Sections(RoleStore.Current);
-            bool grouped = rosterState.Grouped;
+            bool grouped = sections.Grouped;
             float y = 0f, top = -1f, bottom = -1f;
-            foreach (var section in sections)
+            for (int sectionIndex = 0; sectionIndex < sections.Count;
+                    sectionIndex++)
             {
+                ColonistSectionSnapshot section =
+                    sections.SectionAt(sectionIndex);
                 if (grouped)
                 {
                     y += GroupHeaderH;
                     if (rosterState.IsCollapsed(section.Key)) continue;
                 }
-                foreach (var pawn in section.Members)
+                for (int pawnIndex = 0; pawnIndex < section.Count;
+                        pawnIndex++)
                 {
+                    Pawn pawn = section.PawnAt(pawnIndex);
                     float rowH = RowHeightOf(pawn);
                     if (pawn == selectedPawn) { top = y; bottom = y + rowH; }
                     y += rowH;
@@ -1955,46 +2734,63 @@ namespace WorkRoles.UI
             var portraitRect = new Rect(rect.x, rect.y + (rect.height - PortraitSize) / 2f, PortraitSize, PortraitSize);
             GUI.DrawTexture(portraitRect, row.Portrait);
 
-            // Name rides a third of a line high; the best-skills caption sits
-            // beneath it, both centered as a pair on the row.
-            var nameRect = new Rect(portraitRect.xMax + 6f, rect.y - NameCaptionLift,
-                NameWidth, rect.height);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            // Slaves get the game's own sandy-yellow name color, as in vanilla lists.
-            GUI.color = row.NameColor;
-            Widgets.Label(nameRect, row.Label);
-            GUI.color = Color.white;
-
-            if (row.CaptionCount > 0)
+            // The name and caption line boxes stack as one block, centered on
+            // whole pixels: each box keeps its full line height (a shorter box
+            // clips glyph rows at unsnapped UI scales) and the two overlap by
+            // the leading their ink never reaches.
+            bool hasCaption = row.CaptionCount > 0;
+            RowTextMetrics boxes = row.LineBoxes;
+            float blockH = hasCaption ? boxes.BlockHeight : boxes.NameBox;
+            float blockTop = rect.y + Mathf.Floor((rect.height - blockH) / 2f);
+            var nameRect = new Rect(portraitRect.xMax + 6f, blockTop,
+                NameWidth, boxes.NameBox);
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            try
             {
-                var oldFont = Text.Font;
-                Text.Font = GameFont.Tiny;
-                float captionX = nameRect.x;
-                float captionY = rect.y + rect.height / 2f + 2f;
-                for (int i = 0; i < row.CaptionCount; i++)
+                Text.Anchor = TextAnchor.MiddleLeft;
+                // Slaves get the game's own sandy-yellow name color, as in
+                // vanilla lists.
+                GUI.color = row.NameColor;
+                Widgets.Label(nameRect, row.Label);
+
+                if (hasCaption)
                 {
-                    RowCaptionSegment segment = row.CaptionAt(i);
-                    GUI.color = segment.AbbrevColor;
-                    Widgets.Label(new Rect(captionX, captionY,
-                        segment.AbbrevWidth + 4f, CaptionRowH), segment.Abbrev);
-                    captionX += segment.AbbrevWidth;
-                    GUI.color = segment.LevelColor;
-                    Widgets.Label(new Rect(captionX, captionY,
-                        segment.LevelWidth + 4f, CaptionRowH), segment.Level);
-                    captionX += segment.LevelWidth;
-                    if (i < row.CaptionCount - 1)
+                    Text.Font = GameFont.Tiny;
+                    float captionX = nameRect.x;
+                    float captionY = nameRect.yMax - LineBoxOverlap;
+                    float captionH = boxes.CaptionBox;
+                    for (int i = 0; i < row.CaptionCount; i++)
                     {
-                        GUI.color = WrStyle.CaptionText;
+                        RowCaptionSegment segment = row.CaptionAt(i);
+                        GUI.color = segment.AbbrevColor;
                         Widgets.Label(new Rect(captionX, captionY,
-                            segment.TrailingWidth + 4f, CaptionRowH),
-                            segment.Trailing);
-                        captionX += segment.TrailingWidth;
+                            segment.AbbrevWidth + 4f, captionH),
+                            segment.Abbrev);
+                        captionX += segment.AbbrevWidth;
+                        GUI.color = segment.LevelColor;
+                        Widgets.Label(new Rect(captionX, captionY,
+                            segment.LevelWidth + 4f, captionH),
+                            segment.Level);
+                        captionX += segment.LevelWidth;
+                        if (i < row.CaptionCount - 1)
+                        {
+                            GUI.color = WrStyle.CaptionText;
+                            Widgets.Label(new Rect(captionX, captionY,
+                                segment.TrailingWidth + 4f, captionH),
+                                segment.Trailing);
+                            captionX += segment.TrailingWidth;
+                        }
                     }
                 }
-                GUI.color = Color.white;
-                Text.Font = oldFont;
             }
-            Text.Anchor = TextAnchor.UpperLeft;
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+            }
 
             var selectRect = new Rect(rect.x, rect.y, portraitRect.width + 6f + NameWidth, rect.height);
             if (Mouse.IsOver(selectRect))
@@ -2016,8 +2812,216 @@ namespace WorkRoles.UI
                 RoleCommands.PasteRoleSet(row.Pawn, RoleClipboard.Content);
         }
 
-        /// Chip-strip height for a pawn against the estimated chip-column width —
-        /// the table row height comes from this.
+        /// Chip-strip height inputs are published separately from width-specific
+        /// row geometry so sizing and drawing share one detached projection.
+        internal readonly struct ColonistChipSourceSnapshot
+        {
+            internal ColonistChipSourceSnapshot(RoleChipRenderData renderData,
+                float width, RoleCapabilityPresentation capability,
+                bool globalEnabled, AssignmentState state, bool pinned,
+                bool suppressed, string abbreviation, string pinToggleLabel,
+                RoleChipVerdict verdict)
+            {
+                RenderData = renderData;
+                Width = width;
+                Capability = capability;
+                GlobalEnabled = globalEnabled;
+                State = state;
+                Pinned = pinned;
+                Suppressed = suppressed;
+                Abbreviation = abbreviation;
+                PinToggleLabel = pinToggleLabel;
+                Verdict = verdict;
+            }
+
+            internal RoleChipRenderData RenderData { get; }
+            internal float Width { get; }
+            internal RoleCapabilityPresentation Capability { get; }
+            internal bool GlobalEnabled { get; }
+            internal AssignmentState State { get; }
+            internal bool Pinned { get; }
+            internal bool Suppressed { get; }
+            internal string Abbreviation { get; }
+            internal string PinToggleLabel { get; }
+            internal RoleChipVerdict Verdict { get; }
+
+            internal bool ContentEquals(ColonistChipSourceSnapshot other)
+            {
+                if (!RenderData.ContentEquals(other.RenderData)
+                    || Width != other.Width
+                    || GlobalEnabled != other.GlobalEnabled
+                    || State != other.State || Pinned != other.Pinned
+                    || Suppressed != other.Suppressed
+                    || !string.Equals(Abbreviation, other.Abbreviation,
+                        System.StringComparison.Ordinal)
+                    || !string.Equals(PinToggleLabel, other.PinToggleLabel,
+                        System.StringComparison.Ordinal)) return false;
+                if (Capability.WarningSeverity
+                        != other.Capability.WarningSeverity
+                    || !string.Equals(Capability.Tooltip,
+                        other.Capability.Tooltip,
+                        System.StringComparison.Ordinal)) return false;
+                return Verdict.Shown == other.Verdict.Shown
+                    && Verdict.Bottom.r == other.Verdict.Bottom.r
+                    && Verdict.Bottom.g == other.Verdict.Bottom.g
+                    && Verdict.Bottom.b == other.Verdict.Bottom.b
+                    && Verdict.Bottom.a == other.Verdict.Bottom.a
+                    && Verdict.Top.r == other.Verdict.Top.r
+                    && Verdict.Top.g == other.Verdict.Top.g
+                    && Verdict.Top.b == other.Verdict.Top.b
+                    && Verdict.Top.a == other.Verdict.Top.a;
+            }
+        }
+
+        internal sealed class ColonistChipSequenceSnapshot
+        {
+            private readonly RoleStore owner;
+            private readonly List<ColonistChipSourceSnapshot> chips;
+            private readonly List<RoleAssignment> assignments;
+
+            internal ColonistChipSequenceSnapshot(RoleStore owner,
+                List<ColonistChipSourceSnapshot> chips,
+                List<RoleAssignment> assignments, float unwrappedWidth)
+            {
+                this.owner = owner;
+                this.chips = chips;
+                this.assignments = assignments;
+                UnwrappedWidth = unwrappedWidth;
+            }
+
+            internal int Count => chips.Count;
+            internal float UnwrappedWidth { get; }
+            internal ColonistChipSourceSnapshot ChipAt(int index) =>
+                chips[index];
+
+            internal void CopyAssignmentsToClipboard() =>
+                RoleClipboard.CopyFromSnapshot(owner, assignments);
+
+            internal bool ContentEquals(ColonistChipSequenceSnapshot other)
+            {
+                if (other == null || UnwrappedWidth != other.UnwrappedWidth
+                    || chips.Count != other.chips.Count
+                    || assignments.Count != other.assignments.Count)
+                    return false;
+                for (int i = 0; i < chips.Count; i++)
+                    if (!chips[i].ContentEquals(other.chips[i])) return false;
+                for (int i = 0; i < assignments.Count; i++)
+                {
+                    RoleAssignment left = assignments[i];
+                    RoleAssignment right = other.assignments[i];
+                    if (left.roleId != right.roleId || left.state != right.state
+                        || left.pinned != right.pinned) return false;
+                }
+                return true;
+            }
+        }
+
+        // Owner: Colonists window. Key: RoleStore/catalog identity, pawn-scope
+        // stamp, chip-display mode, verdict preference, and recommendation tuning.
+        // Value: immutable width-independent detached chip sequences per listed
+        // pawn. Dependencies: assignments, role presentation, capability/rules,
+        // verdicts, external pawn facts, language, and every key component.
+        // Refresh: immediate as one generation on the next sequence read. Equality:
+        // equal per-pawn rebuilds preserve snapshot identity. Teardown:
+        // ReleaseSnapshots/language/external invalidation releases the dictionary.
+        private Dictionary<Pawn, ColonistChipSequenceSnapshot> chipSequences =
+            new Dictionary<Pawn, ColonistChipSequenceSnapshot>();
+        private RoleStore chipSequenceOwner;
+        private ColonistsRosterCatalogSnapshot chipSequenceCatalog;
+        private ScopeCacheStamp chipSequenceStamp = ScopeCacheStamp.Invalid;
+        private int chipSequenceDisplay = -1;
+        private int chipSequenceTuningRevision = -1;
+
+        private void EnsureChipSequences(RoleStore store)
+        {
+            ScopeCacheStamp stamp = PawnListStamp;
+            ColonistsRosterCatalogSnapshot catalog = rosterState.Catalog(store);
+            int display = TableDisplayKey;
+            int tuningRevision = store.RecommendationTuningRevision;
+            if (ReferenceEquals(chipSequenceOwner, store)
+                && ReferenceEquals(chipSequenceCatalog, catalog)
+                && chipSequenceStamp == stamp
+                && chipSequenceDisplay == display
+                && chipSequenceTuningRevision == tuningRevision) return;
+
+            IReadOnlyList<Pawn> pawns = ListedPawns();
+            var rebuilt = new Dictionary<Pawn, ColonistChipSequenceSnapshot>(
+                pawns.Count);
+            for (int i = 0; i < pawns.Count; i++)
+            {
+                Pawn pawn = pawns[i];
+                ColonistChipSequenceSnapshot candidate =
+                    BuildChipSequence(store, catalog, pawn);
+                if (ReferenceEquals(chipSequenceOwner, store)
+                    && chipSequences.TryGetValue(pawn,
+                        out ColonistChipSequenceSnapshot previous)
+                    && previous.ContentEquals(candidate))
+                    candidate = previous;
+                rebuilt[pawn] = candidate;
+            }
+            chipSequences = rebuilt;
+            chipSequenceOwner = store;
+            chipSequenceCatalog = catalog;
+            chipSequenceStamp = stamp;
+            chipSequenceDisplay = display;
+            chipSequenceTuningRevision = tuningRevision;
+        }
+
+        private ColonistChipSequenceSnapshot BuildChipSequence(RoleStore store,
+            ColonistsRosterCatalogSnapshot catalog, Pawn pawn)
+        {
+            store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
+            int capacity = set?.assignments.Count ?? 0;
+            var chips = new List<ColonistChipSourceSnapshot>(capacity);
+            var assignments = new List<RoleAssignment>(capacity);
+            Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)> verdicts =
+                ColonistVerdicts ? VerdictsFor(pawn) : null;
+            string pinLabel = "WR_PinAssignment".Translate().ToString();
+            string unpinLabel = "WR_UnpinAssignment".Translate().ToString();
+            float unwrappedWidth = 0f;
+            for (int i = 0; i < capacity; i++)
+            {
+                RoleAssignment assignment = set.assignments[i];
+                Role role = store.RoleById(assignment.roleId);
+                if (role == null || !catalog.TryGetChip(assignment.roleId,
+                        out RoleChipRenderData renderData)) continue;
+                RoleCapabilityPresentation capability =
+                    roleCapabilityState.PresentationFor(pawn, role,
+                        PawnListStamp, ExternalSnapshotFor(pawn));
+                string abbreviation = TableChips == ChipDisplay.Compact
+                    ? catalog.AbbreviationFor(assignment.roleId) : null;
+                bool forcedOn = assignment.state == AssignmentState.ForceOn;
+                float width = TableChipWidth(renderData, abbreviation,
+                    assignment.pinned, forcedOn, capability);
+                bool chipEnabled = RoleActivation.IsActive(role.enabled,
+                    assignment.state);
+                chips.Add(new ColonistChipSourceSnapshot(renderData, width,
+                    capability, role.enabled, assignment.state,
+                    assignment.pinned,
+                    chipEnabled && !RulesPass(role, pawn), abbreviation,
+                    assignment.pinned ? unpinLabel : pinLabel,
+                    renderData.Blocker ? default(RoleChipVerdict)
+                        : VerdictFrom(verdicts, assignment.roleId)));
+                assignments.Add(new RoleAssignment
+                {
+                    roleId = assignment.roleId,
+                    state = assignment.state,
+                    pinned = assignment.pinned,
+                });
+                unwrappedWidth += width + ChipGap;
+            }
+            return new ColonistChipSequenceSnapshot(store, chips,
+                assignments, unwrappedWidth);
+        }
+
+        private ColonistChipSequenceSnapshot ChipSequenceFor(Pawn pawn,
+            RoleStore store)
+        {
+            EnsureChipSequences(store);
+            return chipSequences[pawn];
+        }
+
+        /// One positioned chip in a width-specific colonist row snapshot.
         internal readonly struct RoleChipLayout
         {
             internal RoleChipLayout(RoleChipRenderData renderData, Rect rect,
@@ -2083,49 +3087,90 @@ namespace WorkRoles.UI
             internal float TrailingWidth { get; }
         }
 
+        /// Detached presentation for one configured skill column in a
+        /// colonist row. The immutable presentation owns the icon buffer; this
+        /// projection exposes it only through bounded indexed reads.
+        internal readonly struct ColonistSkillCellSnapshot
+        {
+            private readonly ColonistSkillPresentation presentation;
+
+            internal ColonistSkillCellSnapshot(float width, bool disabled,
+                string valueText, Color textColor,
+                ColonistSkillPresentation presentation)
+            {
+                Width = width;
+                Disabled = disabled;
+                ValueText = valueText;
+                TextColor = textColor;
+                this.presentation = presentation;
+            }
+
+            internal float Width { get; }
+            internal bool Disabled { get; }
+            internal string ValueText { get; }
+            internal Color TextColor { get; }
+            internal int IconCount => presentation?.SignalIcons.Count ?? 0;
+            internal Texture2D IconAt(int index) =>
+                presentation.SignalIcons[index];
+            internal StructuredTip Tooltip => presentation?.Tooltip;
+        }
+
         internal sealed class ColonistRowSnapshot
         {
             private static readonly System.Func<RoleChipLayout, Rect>
                 ChipRect = chip => chip.Rect;
-            private readonly RoleStore owner;
+            private readonly ColonistChipSequenceSnapshot sequence;
             private readonly List<RoleChipLayout> chips;
-            private readonly List<RoleAssignment> assignments;
             private readonly List<RowCaptionSegment> caption;
+            private readonly ColonistSkillCellSnapshot[] skills;
 
-            internal ColonistRowSnapshot(RoleStore owner, Pawn pawn,
-                Texture portrait, string label, Color nameColor, bool downed,
+            internal ColonistRowSnapshot(Pawn pawn,
+                Texture portrait, string label, Color nameColor,
+                bool isColonist, bool downed, ChipDisplay chipDisplay,
                 string copiedToast, int activityRevision, int activeRoleId,
-                List<RoleChipLayout> chips, List<RoleAssignment> assignments,
-                float stripHeight, List<RowCaptionSegment> caption)
+                ColonistChipSequenceSnapshot sequence,
+                List<RoleChipLayout> chips,
+                float stripHeight, List<RowCaptionSegment> caption,
+                RowTextMetrics lineBoxes, ColonistSkillCellSnapshot[] skills)
             {
-                this.owner = owner;
+                LineBoxes = lineBoxes;
+                this.sequence = sequence;
                 Pawn = pawn;
                 Portrait = portrait;
                 Label = label;
                 NameColor = nameColor;
+                IsColonist = isColonist;
                 Downed = downed;
+                ChipDisplay = chipDisplay;
                 CopiedToast = copiedToast;
                 ActivityRevision = activityRevision;
                 ActiveRoleId = activeRoleId;
                 this.chips = chips;
-                this.assignments = assignments;
                 StripHeight = stripHeight;
                 this.caption = caption;
+                this.skills = skills;
             }
 
             internal Pawn Pawn { get; }
             internal Texture Portrait { get; }
             internal string Label { get; }
             internal Color NameColor { get; }
+            internal bool IsColonist { get; }
             internal bool Downed { get; }
+            internal ChipDisplay ChipDisplay { get; }
             internal string CopiedToast { get; }
             internal int ActivityRevision { get; }
             internal int ActiveRoleId { get; }
             internal float StripHeight { get; }
+            /// Line boxes the name and caption were laid out against.
+            internal RowTextMetrics LineBoxes { get; }
             internal int ChipCount => chips.Count;
             internal RoleChipLayout ChipAt(int index) => chips[index];
             internal int CaptionCount => caption.Count;
             internal RowCaptionSegment CaptionAt(int index) => caption[index];
+            internal int SkillCount => skills.Length;
+            internal ColonistSkillCellSnapshot SkillAt(int index) =>
+                skills[index];
 
             internal bool HasRole(int roleId)
             {
@@ -2138,7 +3183,7 @@ namespace WorkRoles.UI
                 RoleDrag.ChipInsertIndex(point, chips, ChipRect);
 
             internal void CopyAssignmentsToClipboard() =>
-                RoleClipboard.CopyFromSnapshot(owner, assignments);
+                sequence.CopyAssignmentsToClipboard();
         }
 
         // Per-surface verdict badge toggles (client-side display preferences;
@@ -2147,6 +3192,11 @@ namespace WorkRoles.UI
             WorkRolesMod.Settings?.verdictsOnColonistChips ?? true;
         private static bool PaletteVerdicts =>
             WorkRolesMod.Settings?.verdictsInPalette ?? true;
+
+        /// Best-skills caption under the colonist name (client-side; only the
+        /// row snapshots consume it).
+        private static bool SkillCaptions =>
+            WorkRolesMod.Settings?.colonistSkillCaptions ?? true;
 
         // Owner: Colonists window. Key: pawn-scope stamp over the listed pawns.
         // Value: per-pawn roleId-to-badge maps built from the engine's BestSignal
@@ -2164,7 +3214,8 @@ namespace WorkRoles.UI
         {
             roleVerdicts.Clear();
             roleVerdictStamp = ScopeCacheStamp.Invalid;
-            paletteVerdicts.Clear();
+            chipSequenceStamp = ScopeCacheStamp.Invalid;
+            paletteVerdictSnapshot = null;
             paletteVerdictPawn = null;
             paletteVerdictLayoutRevision = -1;
         }
@@ -2215,24 +3266,31 @@ namespace WorkRoles.UI
             return false;
         }
 
-        // Owner: Colonists window. Key: Pawn reference identity inside the
-        // pawn-scope stamp, floored strip width, chip-display mode, tuning
-        // revision (caption ordering), and the pawn's activity revision. Value:
-        // immutable ColonistRowSnapshot projections; producer-owned
-        // assignment/chip buffers are hidden behind indexed access, while
-        // game-owned portraits are stable references never mutated here.
+        // Owner: Colonists window. Key: RoleStore and Pawn reference identity
+        // inside the pawn-scope stamp, floored strip width, chip-display mode,
+        // tuning revision (caption ordering), configured skill-column revision,
+        // the skill-caption toggle, and pawn activity revision. Value:
+        // immutable ColonistRowSnapshot projections, including the resolved
+        // chip display mode; producer-owned assignment/chip/skill buffers are
+        // hidden behind indexed access, while game-owned portraits are stable
+        // references never mutated here.
         // Dependencies: role/assignment UiVersion, pawn scope, external pawn
-        // facts, activity revision, display mode, width, recommendation tuning,
-        // and language. Refresh: immediate on scope/key change and targeted per
-        // pawn on activity change. Equality: exact keys preserve row identity.
+        // facts, activity revision, display mode, width, configured skill
+        // columns, recommendation tuning, the skill-caption toggle, and
+        // language. Refresh: immediate on
+        // scope/key change and targeted per pawn on activity change. Equality:
+        // exact keys preserve row identity.
         // Teardown: ReleaseSnapshots/language or external-snapshot invalidation
         // clears all rows and backing buffers.
         private readonly Dictionary<Pawn, ColonistRowSnapshot> chipLayouts =
             new Dictionary<Pawn, ColonistRowSnapshot>();
+        private RoleStore chipLayoutOwner;
         private ScopeCacheStamp chipLayoutStamp = ScopeCacheStamp.Invalid;
         private float chipLayoutWidth = -1f;
         private int chipLayoutDisplay = -1;
         private int chipLayoutTuningRevision = -1;
+        private int chipLayoutSkillColumnsRevision = -1;
+        private bool chipLayoutCaptions = true;
 
         private ColonistRowSnapshot RowSnapshotFor(Pawn pawn, RoleStore store,
             float stripWidth)
@@ -2240,58 +3298,164 @@ namespace WorkRoles.UI
             stripWidth = Mathf.Max(300f, stripWidth);
             ScopeCacheStamp stamp = PawnListStamp;
             int display = TableDisplayKey;
+            ChipDisplay chipDisplay = (ChipDisplay)(display >> 1);
             int tuningRevision = store.RecommendationTuningRevision;
-            if (chipLayoutStamp != stamp || chipLayoutWidth != stripWidth
+            int skillColumnsRevision = rosterState.SkillColumnsRevision;
+            bool captions = SkillCaptions;
+            if (!ReferenceEquals(chipLayoutOwner, store)
+                || chipLayoutStamp != stamp || chipLayoutWidth != stripWidth
                 || chipLayoutDisplay != display
-                || chipLayoutTuningRevision != tuningRevision)
+                || chipLayoutTuningRevision != tuningRevision
+                || chipLayoutSkillColumnsRevision != skillColumnsRevision
+                || chipLayoutCaptions != captions)
             {
                 chipLayouts.Clear();
+                chipLayoutOwner = store;
                 chipLayoutStamp = stamp;
                 chipLayoutWidth = stripWidth;
                 chipLayoutDisplay = display;
                 chipLayoutTuningRevision = tuningRevision;
+                chipLayoutSkillColumnsRevision = skillColumnsRevision;
+                chipLayoutCaptions = captions;
             }
             int activityRevision = ActivityTracker.RevisionOf(pawn);
             if (chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached)
                 && cached.ActivityRevision == activityRevision)
                 return cached;
-            store.pawnSets.TryGetValue(pawn, out var set);
+            ColonistChipSequenceSnapshot sequence =
+                ChipSequenceFor(pawn, store);
             var layout = new List<RoleChipLayout>();
-            var assignments = new List<RoleAssignment>(
-                set?.assignments.Count ?? 0);
-            float height = set == null || set.assignments.Count == 0
+            float height = sequence.Count == 0
                 ? RoleChipUI.Height
-                : LayoutChips(chipLayoutWidth, set.assignments, store, pawn,
-                    layout, assignments);
+                : LayoutChips(chipLayoutWidth, sequence, pawn, layout);
             ActivitySnapshot activity = activityState.For(pawn);
             string label = pawn.LabelShortCap;
-            var entry = new ColonistRowSnapshot(store, pawn,
+            ColonistStatsSnapshot stats = statsState.Snapshot(pawn);
+            var entry = new ColonistRowSnapshot(pawn,
                 PortraitsCache.Get(pawn,
                     new Vector2(PortraitSize, PortraitSize), Rot4.South),
                 label,
                 pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white,
+                pawn.IsColonist,
                 pawn.Downed,
+                chipDisplay,
                 "WR_CopiedRoles".Translate(label).ToString(),
-                activityRevision, activity.RoleId, layout, assignments, height,
-                BuildRowCaption(pawn, store));
+                activityRevision, activity.RoleId, sequence, layout, height,
+                BuildRowCaption(pawn, store, stats), TextMetrics(),
+                BuildSkillCells(stats));
             chipLayouts[pawn] = entry;
             return entry;
         }
 
+        private ColonistSkillCellSnapshot[] BuildSkillCells(
+            ColonistStatsSnapshot stats)
+        {
+            ColonistSkillColumnsSnapshot columns = rosterState.SkillColumns;
+            var result = new ColonistSkillCellSnapshot[columns.Count];
+            for (int columnIndex = 0; columnIndex < columns.Count;
+                    columnIndex++)
+            {
+                SkillDef skill = columns.At(columnIndex);
+                ColonistSkillPresentation presentation = null;
+                for (int skillIndex = 0; skillIndex < stats.Skills.Count;
+                        skillIndex++)
+                {
+                    ColonistSkillPresentation candidate =
+                        stats.Skills[skillIndex];
+                    if (ReferenceEquals(candidate.Line.Def, skill))
+                    {
+                        presentation = candidate;
+                        break;
+                    }
+                }
+                bool disabled = presentation == null
+                    || presentation.Line.Disabled;
+                result[columnIndex] = new ColonistSkillCellSnapshot(
+                    SkillColumnWidth(skill), disabled,
+                    disabled ? "-" : presentation.Line.ValueText,
+                    disabled ? WrStyle.DisabledText
+                        : ColonistStatsState.SkillTextColor(
+                            presentation.Line,
+                            presentation.SignalView.PassionTier),
+                    disabled ? null : presentation);
+            }
+            return result;
+        }
+
         private const int CaptionMaxSkills = 4;
-        private const float CaptionRowH = 14f;
-        /// The name rides this high so the caption fits beneath it.
-        private const float NameCaptionLift = 5f;
+        private static readonly List<RowCaptionSegment> NoCaption =
+            new List<RowCaptionSegment>();
+
+        /// Whole-pixel line boxes for a colonist row's name and caption, read
+        /// from the live font metrics. A box shorter than its font's line
+        /// height clips glyph rows: vanilla Widgets.Label only snaps rects
+        /// outward at fractional UI scales above 1, so an undersized box
+        /// survives 1.25 and loses pixels at 1x.
+        internal readonly struct RowTextMetrics
+        {
+            private RowTextMetrics(float nameBox, float captionBox, float blockHeight, float minRowHeight)
+            {
+                NameBox = nameBox;
+                CaptionBox = captionBox;
+                BlockHeight = blockHeight;
+                MinRowHeight = minRowHeight;
+            }
+
+            internal float NameBox { get; }
+            internal float CaptionBox { get; }
+            /// Name and caption stacked with the permitted line-box overlap.
+            internal float BlockHeight { get; }
+            internal float MinRowHeight { get; }
+
+            /// Tiny falls back to Small whenever tiny text is unsupported (player
+            /// preference, language, Steam Deck), which is the one case where the
+            /// stacked pair outgrows the standard row.
+            internal static RowTextMetrics Build(bool captions)
+            {
+                float nameBox = Mathf.Ceil(Text.LineHeightOf(GameFont.Small));
+                float captionBox = Mathf.Ceil(Text.TinyFontSupported
+                    ? Text.LineHeightOf(GameFont.Tiny)
+                    : Text.LineHeightOf(GameFont.Small));
+                float block = captions
+                    ? nameBox + captionBox - LineBoxOverlap : nameBox;
+                return new RowTextMetrics(nameBox, captionBox, block,
+                    Mathf.Max(RowHeight, block));
+            }
+        }
+
+        // Owner: Colonists window. Key: UiVersion (language and font reload)
+        // plus the caption toggle. Value: the row's immutable line-box metrics.
+        // Dependencies: font line heights, tiny-font support, the caption
+        // toggle. Refresh: on the next gated read once UiVersion moves; a
+        // mid-session tiny-text preference change lands when the window reopens
+        // or any other UiVersion bump occurs. Equality: value type, rebuilt
+        // only on key change. Teardown: language invalidation resets the stamp.
+        private RowTextMetrics rowTextMetrics;
+        private int rowTextMetricsStamp = -1;
+        private bool rowTextMetricsCaptions;
+
+        private RowTextMetrics TextMetrics()
+        {
+            bool captions = SkillCaptions;
+            if (rowTextMetricsStamp == UiVersion.Current
+                && rowTextMetricsCaptions == captions)
+                return rowTextMetrics;
+            rowTextMetricsStamp = UiVersion.Current;
+            rowTextMetricsCaptions = captions;
+            rowTextMetrics = RowTextMetrics.Build(captions);
+            return rowTextMetrics;
+        }
 
         /// The pawn's best skills at Strong or better, ordered by the engine's
         /// champion score (level and verdict together): abbreviation in the
         /// verdict color, level in the shared skill-value color, truncated to
         /// what fits the name column. Shooting and Melee are combat noise
         /// here, not work skills, and stay out.
-        private List<RowCaptionSegment> BuildRowCaption(Pawn pawn, RoleStore store)
+        private List<RowCaptionSegment> BuildRowCaption(Pawn pawn,
+            RoleStore store, ColonistStatsSnapshot stats)
         {
+            if (!SkillCaptions) return NoCaption;
             var result = new List<RowCaptionSegment>();
-            ColonistStatsSnapshot stats = statsState.Snapshot(pawn);
             var candidates = new List<SkillBucketCandidate>(stats.Skills.Count);
             for (int i = 0; i < stats.Skills.Count; i++)
             {
@@ -2354,46 +3518,51 @@ namespace WorkRoles.UI
 
         /// One skill cell: the same fractional level, signal-derived colour,
         /// decorators and combined structured tooltip as the bottom stats panel.
-        internal void DrawSkillCell(Rect cell, Pawn pawn, SkillDef skill)
+        internal void DrawSkillCell(Rect cell, ColonistRowSnapshot row,
+            ColonistSkillCellSnapshot skill)
         {
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.MiddleLeft;
-            // Skill cells select like the name cell: the whole row should act
-            // as one click target outside interactive chips/buttons.
-            if (Widgets.ButtonInvisible(cell)) selectedPawn = pawn;
-            SkillLine line = statsState.SkillLineSnapshot(pawn, skill);
-            if (line.Disabled)
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            try
             {
-                GUI.color = WrStyle.DisabledText;
-                Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f, cell.height), "-");
-                GUI.color = Color.white;
-                Text.Anchor = TextAnchor.UpperLeft;
-                return;
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                // Skill cells select like the name cell: the whole row should
+                // act as one click target outside interactive chips/buttons.
+                if (Widgets.ButtonInvisible(cell)) selectedPawn = row.Pawn;
+                if (skill.Disabled)
+                {
+                    GUI.color = WrStyle.DisabledText;
+                    Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f,
+                        cell.height), skill.ValueText);
+                    return;
+                }
+
+                GUI.color = skill.TextColor;
+                // Labels paint on Repaint only; layout and input passes only
+                // need the cached presentation and hover region.
+                if (Event.current.type == EventType.Repaint)
+                    Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f,
+                        cell.height), skill.ValueText);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
             }
 
-            ColonistSkillPresentation presentation = statsState.PresentationFor(
-                pawn, line);
-            Color textColor = ColonistStatsState.SkillTextColor(
-                presentation.Line, presentation.SignalView.PassionTier);
-            GUI.color = textColor;
-            // Labels paint on Repaint only; layout and input passes only need
-            // the cached presentation and hover region.
-            if (Event.current.type == EventType.Repaint)
-                Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f, cell.height),
-                    presentation.Line.ValueText);
-            GUI.color = Color.white;
-            Text.Anchor = TextAnchor.UpperLeft;
-
             float ix = cell.x + 48f;
-            foreach (Texture2D texture in presentation.SignalIcons)
+            for (int iconIndex = 0; iconIndex < skill.IconCount; iconIndex++)
             {
                 GUI.DrawTexture(new Rect(ix, cell.y + (cell.height - 16f) / 2f,
-                    16f, 16f), texture);
+                    16f, 16f), skill.IconAt(iconIndex));
                 ix += 18f;
             }
 
-            if (presentation.Tooltip != null && Mouse.IsOver(cell))
-                StructuredTipPresenter.TipRegion(cell, presentation.Tooltip);
+            if (skill.Tooltip != null && Mouse.IsOver(cell))
+                StructuredTipPresenter.TipRegion(cell, skill.Tooltip);
         }
 
         // Owner: Colonists window. Key: (role id, Pawn identity) within the
@@ -2421,19 +3590,18 @@ namespace WorkRoles.UI
             return pass;
         }
 
-        // Lazy per-pawn tips (name column, activity slot, trait list): the
-        // vanilla builders run per call, so WrTip defers them to the first
-        // hovered pass and freezes the text per hover session.
-        // Owner: view (window scope). Key: pawn (traits: trait instance).
+        // Lazy per-pawn tips for the roster name column: the vanilla builder
+        // runs per call, so WrTip defers it to the first hovered pass and
+        // freezes the text per hover session. Selected-panel activity and trait
+        // tips are detached in ColonistSelectedPanelState instead.
+        // Owner: view (window scope). Key: pawn identity.
         // Value: WrTip (stable identity, gather closure built once).
         // Dependencies: none while cached; text gathers at hover time.
         // Refresh: per hover session. Equality: n/a. Teardown:
-        // ReleaseSnapshots clears all three.
+        // ReleaseSnapshots clears it.
         // Creation helpers keep the capturing lambdas out of the lookup
         // methods (display-class-at-entry allocation on hits otherwise).
         private readonly Dictionary<Pawn, WrTip> pawnTips = new Dictionary<Pawn, WrTip>();
-        private readonly Dictionary<Pawn, WrTip> activityTips = new Dictionary<Pawn, WrTip>();
-        private readonly Dictionary<Trait, WrTip> traitTips = new Dictionary<Trait, WrTip>();
 
         private WrTip PawnTip(Pawn pawn)
         {
@@ -2448,31 +3616,6 @@ namespace WorkRoles.UI
             => pawnTips[pawn] = WrTip.PerSession("pawn:" + pawn.thingIDNumber,
                 pawn.thingIDNumber * 152317, () => pawn.GetTooltip().text,
                 TooltipPriority.Pawn);
-
-        private WrTip ActivityTip(Pawn pawn)
-        {
-            if (!activityTips.TryGetValue(pawn, out WrTip tip))
-                tip = CreateActivityTip(pawn);
-            return tip;
-        }
-
-        private WrTip CreateActivityTip(Pawn pawn)
-            => activityTips[pawn] = WrTip.PerSession("activity:" + pawn.thingIDNumber,
-                pawn.thingIDNumber ^ 0x57AC71,
-                () => ActivityState.LiveTip(pawn, RoleStore.Current));
-
-        private WrTip TraitTip(Pawn pawn, Trait trait)
-        {
-            if (!traitTips.TryGetValue(trait, out WrTip tip))
-                tip = CreateTraitTip(pawn, trait);
-            return tip;
-        }
-
-        private WrTip CreateTraitTip(Pawn pawn, Trait trait)
-            => traitTips[trait] = WrTip.PerSession(
-                "trait:" + pawn.thingIDNumber + ":" + trait.def.defName,
-                (pawn.thingIDNumber * 397) ^ trait.def.defName.GetHashCode(),
-                () => trait.TipString(pawn));
 
         internal void DrawChipStrip(Rect stripRect, ColonistRowSnapshot row,
             float stripWidth)
@@ -2492,7 +3635,7 @@ namespace WorkRoles.UI
                 bool chipEnabled = RoleActivation.IsActive(
                     chip.GlobalEnabled, chip.State);
                 ChipStyle style = !chipEnabled ? ChipStyle.Disabled
-                    : chip.Suppressed ? ChipStyle.AutoOff
+                    : chip.Suppressed ? ChipStyle.ConditionalOff
                     : ChipStyle.Normal;
                 // The cycle closure allocates: create it only on the one pass
                 // that can consume it (left mouse-down inside this chip).
@@ -2514,7 +3657,7 @@ namespace WorkRoles.UI
                 var click = RoleChipUI.Draw(chipRect, chip.RenderData, style,
                     showRemove: true, dragSource: row.Pawn,
                     onClick: onClick,
-                    display: TableChips, abbrev: chip.Abbreviation,
+                    display: row.ChipDisplay, abbrev: chip.Abbreviation,
                     pinned: chip.Pinned,
                     warningSeverity: capability.WarningSeverity,
                     activeOutline: style == ChipStyle.Normal
@@ -2615,18 +3758,19 @@ namespace WorkRoles.UI
 
         /// Current activity under the portrait name: the claiming role as a chip
         /// (bright outline, display-only), or a caption-colored label for
-        /// non-role activity. The tooltip composes role and report text live.
-        private void DrawActivitySlot(Rect slotRect, RoleStore store)
+        /// non-role activity. All displayed fields and tooltip content come from
+        /// the activity-revision-gated selected-panel snapshot.
+        private static void DrawActivitySlot(Rect slotRect,
+            ColonistSelectedActivitySnapshot activity)
         {
-            ActivitySnapshot activity = activityState.For(selectedPawn);
-            Role role = activity.RoleId >= 0 ? store.RoleById(activity.RoleId) : null;
-            if (role != null)
+            if (activity.HasRole)
             {
-                float width = Mathf.Min(RoleChipUI.WidthFor(role, showRemove: false), slotRect.width);
-                var chipRect = new Rect(slotRect.x + (slotRect.width - width) / 2f,
-                    slotRect.y, width, slotRect.height);
-                RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
-                    dragSource: null, onClick: null, interactive: false);
+                var chipRect = new Rect(
+                    slotRect.x + (slotRect.width - activity.RoleWidth) / 2f,
+                    slotRect.y, activity.RoleWidth, slotRect.height);
+                RoleChipUI.Draw(chipRect, activity.Role, ChipStyle.Normal,
+                    showRemove: false, dragSource: null, onClick: null,
+                    interactive: false);
             }
             else
             {
@@ -2641,8 +3785,8 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
                 Text.Font = GameFont.Small;
             }
-            if (Mouse.IsOver(slotRect))
-                ActivityTip(selectedPawn).Region(slotRect);
+            if (activity.Tooltip != null && Mouse.IsOver(slotRect))
+                StructuredTipPresenter.TipRegion(slotRect, activity.Tooltip);
         }
 
         private void DrawStatsPanel(Rect rect, RoleStore store)
@@ -2651,6 +3795,13 @@ namespace WorkRoles.UI
                 rect, WrStyle.PanelBackground, WrStyle.PanelOutline);
             rect = rect.ContractedBy(StatsPadding);
             if (selectedPawn == null) return;
+            ColonistsRosterCatalogSnapshot rosterCatalog =
+                rosterState.Catalog(store);
+            ColonistSelectedPanelSnapshot selected = selectedPanelState.Snapshot(
+                store, selectedPawn, rosterCatalog,
+                PortraitDisplaySize, PortraitDisplaySize);
+            if (selected == null) return;
+            ColonistSelectedChromeSnapshot chrome = selected.Chrome;
 
             // Left section: framed portrait with the name in a tag overlaying
             // the frame's top border, then the current-activity slot below.
@@ -2675,46 +3826,49 @@ namespace WorkRoles.UI
                 new Rect(rect.x,
                     portraitFrameRect.y + (PortraitFrameH - portraitBoxSize) / 2f + 8f,
                     portraitBoxSize, portraitBoxSize),
-                PortraitsCache.Get(selectedPawn, new Vector2(portraitBoxSize, portraitBoxSize), Rot4.South));
+                chrome.Portrait);
 
             // Name tag centered on the frame's top border, drawn after the
             // portrait so it overlays both the border and any portrait bleed.
             Text.Font = GameFont.Small;
-            string pawnName = selectedPawn.LabelShortCap;
-            float tagWidth = Mathf.Clamp(WrText.FitWidth(pawnName) + 10f, 40f, portraitBoxSize);
             var nameTagRect = new Rect(
-                portraitFrameRect.x + (portraitFrameRect.width - tagWidth) / 2f,
-                portraitFrameRect.y - PortraitNameH / 2f, tagWidth, PortraitNameH);
+                portraitFrameRect.x
+                    + (portraitFrameRect.width - chrome.NameTagWidth) / 2f,
+                portraitFrameRect.y - PortraitNameH / 2f,
+                chrome.NameTagWidth, PortraitNameH);
             Widgets.DrawBoxSolidWithOutline(nameTagRect,
                 new Color(0.05f, 0.05f, 0.05f, 1f),
                 new Color(1f, 1f, 1f, 0.25f));
             Text.Anchor = TextAnchor.MiddleCenter;
-            GUI.color = selectedPawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(selectedPawn) : Color.white;
-            Widgets.Label(nameTagRect, pawnName);
+            GUI.color = chrome.NameColor;
+            Widgets.Label(nameTagRect, chrome.Label);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
 
             float slotY = portraitFrameRect.yMax + 4f;
-            DrawActivitySlot(new Rect(rect.x, slotY, portraitBoxSize, ActivitySlotH), store);
+            DrawActivitySlot(
+                new Rect(rect.x, slotY, portraitBoxSize, ActivitySlotH),
+                selected.Activity);
 
             // Trait list under the activity slot (saves a trip to the Bio tab);
             // tooltips carry the vanilla trait descriptions.
-            var pawnTraits = selectedPawn.story?.traits?.allTraits;
-            if (pawnTraits != null)
+            ColonistSelectedTraitsSnapshot pawnTraits = selected.Traits;
+            if (pawnTraits.Count > 0)
             {
                 Text.Font = GameFont.Tiny;
                 GUI.color = new Color(0.7f, 0.7f, 0.7f);
                 bool traitWrap = Text.WordWrap;
                 Text.WordWrap = false;
                 float traitY = slotY + ActivitySlotH + 2f;
-                foreach (var trait in pawnTraits)
+                for (int i = 0; i < pawnTraits.Count; i++)
                 {
-                    if (trait.Suppressed) continue;
                     if (traitY + 16f > rect.yMax) break;
+                    ColonistSelectedTraitRowSnapshot trait = pawnTraits.RowAt(i);
                     var traitRect = new Rect(rect.x, traitY, portraitBoxSize, 16f);
-                    Widgets.Label(traitRect, trait.LabelCap);
-                    if (Mouse.IsOver(traitRect))
-                        TraitTip(selectedPawn, trait).Region(traitRect);
+                    Widgets.Label(traitRect, trait.Label);
+                    if (trait.Tooltip != null && Mouse.IsOver(traitRect))
+                        StructuredTipPresenter.TipRegion(traitRect,
+                            trait.Tooltip);
                     traitY += 16f;
                 }
                 Text.WordWrap = traitWrap;
@@ -2722,7 +3876,7 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
             }
 
-            ColonistStatsSnapshot statsSnapshot = statsState.Snapshot(selectedPawn);
+            ColonistStatsSnapshot statsSnapshot = statsState.Snapshot(selected.Pawn);
             float skillColWidth = statsSnapshot.SkillColumnWidth;
 
             // Two equally sized skill columns after the portrait, separators
@@ -2843,68 +3997,38 @@ namespace WorkRoles.UI
             if (profile.ShowRecommendations && recX < rect.xMax)
             {
                 float recW = rect.xMax - recX;
-                ColonistRecommendationPreview preview = recommendationState.Preview(
-                    store, selectedPawn, PawnListStamp, ExternalSnapshotFor);
-                PawnFixPlan pawnPlan = preview.Plan;
+                ColonistRecommendationRenderSnapshot preview =
+                    recommendationState.RenderSnapshot(store, selected.Pawn,
+                        rosterCatalog, PawnListStamp, recW, rect.height,
+                        externalSnapshotProvider);
+                Rect localHeader = preview.HeaderRect;
+                WrText.HeaderLabel(new Rect(recX + localHeader.x,
+                    rect.y + localHeader.y, localHeader.width,
+                    localHeader.height), preview.HeaderLabel);
 
-                WrText.HeaderLabel(new Rect(recX, rect.y, recW, 28f), "WR_RecommendedRoles".Translate());
-
-                // Chips wrapping below header; the bottom 28f is reserved for "Make It So".
-                float chipBottom = rect.yMax - 28f;
-                float chipY = rect.y + 28f;
-                float chipX = recX;
-                var chips = preview.Chips;
-                store.pawnSets.TryGetValue(selectedPawn, out var selectedSet);
-                for (int previewIndex = 0; previewIndex < chips.Count; previewIndex++)
+                for (int previewIndex = 0;
+                        previewIndex < preview.ChipCount; previewIndex++)
                 {
-                    var (role, state, tip) = chips[previewIndex];
-                    bool isAssigned = state != Dialog_ChangesPreview.ChipState.Added;
-                    // Baked at preview build; default when the toggle is off.
-                    RoleChipVerdict verdict = preview.Line?.VerdictAt(previewIndex)
-                        ?? default;
-                    // Assigned chips show the remove icon — reserve that extra width.
-                    float chipW = RoleChipUI.WidthFor(role, showRemove: isAssigned,
-                        verdictSlot: verdict.Shown);
-                    if (chipX + chipW > recX + recW && chipX > recX)
-                    {
-                        chipX = recX;
-                        chipY += RoleChipUI.Height + ChipGap;
-                        if (chipY + RoleChipUI.Height > chipBottom) break;
-                    }
-                    var chipRect = new Rect(chipX, chipY, chipW, RoleChipUI.Height);
-                    int capturedId = role.id;
-                    Pawn capturedPawn = selectedPawn;
-                    if (isAssigned)
+                    ColonistRecommendationRenderChip chip =
+                        preview.ChipAt(previewIndex);
+                    Rect local = chip.Rect;
+                    var chipRect = new Rect(recX + local.x, rect.y + local.y,
+                        local.width, local.height);
+                    if (chip.Assigned)
                     {
                         // Assigned: Subtle style, remove icon, body click inert.
                         // Disabled roles dim WITHOUT the strike (this panel
                         // shows recommendations, not verdicts); the red outline
                         // marks only enabled roles the plan would remove.
-                        var assignment = selectedSet?.assignments
-                            .FirstOrDefault(a => a.roleId == role.id);
-                        bool chipEnabled = RoleActivation.IsActive(role.enabled,
-                            assignment?.state ?? AssignmentState.Enabled);
-                        var click = RoleChipUI.Draw(chipRect, role,
-                            chipEnabled ? ChipStyle.Subtle : ChipStyle.AutoOff,
+                        ChipClick click = RoleChipUI.Draw(chipRect, chip.Chip,
+                            chip.Style,
                             showRemove: true, dragSource: null, onClick: null,
-                            verdict: verdict);
+                            verdict: chip.Verdict);
                         if (click == ChipClick.Remove)
-                            RoleCommands.RemoveRoleFromPawn(capturedPawn, capturedId);
-                        if (chipEnabled && state == Dialog_ChangesPreview.ChipState.Removed)
-                        {
+                            RoleCommands.RemoveRoleFromPawn(preview.Pawn,
+                                chip.Chip.RoleId);
+                        if (chip.RemovedOutline)
                             RoleChipUI.DrawRemovedOutline(chipRect);
-                        }
-                        if (Mouse.IsOver(chipRect))
-                        {
-                            StructuredTip structuredTip = preview.Line?.StructuredTipAt(previewIndex);
-                            if (structuredTip != null)
-                                StructuredTipPresenter.TipRegion(chipRect, structuredTip);
-                            else
-                                TooltipHandler.TipRegion(chipRect, tip
-                                    ?? (state == Dialog_ChangesPreview.ChipState.Removed
-                                        ? "WR_WillBeRemoved".Translate()
-                                        : "WR_AlreadyAssigned".Translate()));
-                        }
                     }
                     else
                     {
@@ -2916,63 +4040,38 @@ namespace WorkRoles.UI
                         if (pressEvent.type == EventType.MouseDown && pressEvent.button == 0
                             && chipRect.Contains(pressEvent.mousePosition))
                         {
-                            Pawn clickPawn = selectedPawn;
-                            int clickId = role.id;
-                            onClick = () => AssignAtRecommendedPosition(clickPawn, clickId);
+                            Pawn clickPawn = preview.Pawn;
+                            int clickId = chip.Chip.RoleId;
+                            int insertIndex = chip.InsertIndex;
+                            onClick = () => RoleCommands.AssignRole(
+                                clickPawn, clickId, insertIndex);
                         }
-                        RoleChipUI.Draw(chipRect, role, ChipStyle.Normal, showRemove: false,
-                            dragSource: null, onClick: onClick, verdict: verdict);
-                        if (tip != null && Mouse.IsOver(chipRect))
-                        {
-                            StructuredTip structuredTip = preview.Line?.StructuredTipAt(previewIndex);
-                            if (structuredTip != null)
-                                StructuredTipPresenter.TipRegion(chipRect, structuredTip);
-                            else
-                                TooltipHandler.TipRegion(chipRect, tip);
-                        }
+                        RoleChipUI.Draw(chipRect, chip.Chip, ChipStyle.Normal,
+                            showRemove: false, dragSource: null,
+                            onClick: onClick, verdict: chip.Verdict);
                     }
-                    chipX += chipW + ChipGap;
-                }
-
-                if (pawnPlan != null && pawnPlan.HasChanges)
-                {
-                    var makeItSoRect = new Rect(rect.xMax - 110f, rect.yMax - 26f, 106f, 24f);
-                    if (Widgets.ButtonText(makeItSoRect, "WR_MakeItSo".Translate()))
-                        ApplyFix(selectedPawn);
-                }
-            }
-        }
-
-        /// The recommendation list is a priority preview: display order IS assignment
-        /// order. Inserts the role before the pawn's first assignment that ranks later
-        /// in the recommendations; assignments outside the list keep their position.
-        private void AssignAtRecommendedPosition(Pawn pawn, int roleId)
-        {
-            var store = RoleStore.Current;
-            if (store == null) return;
-            AssignAtRecommendedPosition(pawn, roleId, store,
-                recommendationState.RecommendedRoles(store, pawn, selectedPawn,
-                    PawnListStamp, ExternalSnapshotFor));
-        }
-
-        private static void AssignAtRecommendedPosition(Pawn pawn, int roleId, RoleStore store, List<Role> recommendations)
-        {
-            int clickedRank = recommendations.FindIndex(r => r.id == roleId);
-            int insertIdx = -1;
-            if (clickedRank >= 0 && store.pawnSets.TryGetValue(pawn, out var set))
-            {
-                for (int i = 0; i < set.assignments.Count; i++)
-                {
-                    int assignmentId = set.assignments[i].roleId;
-                    int rank = recommendations.FindIndex(r => r.id == assignmentId);
-                    if (rank >= 0 && rank > clickedRank)
+                    if (Mouse.IsOver(chipRect))
                     {
-                        insertIdx = i;
-                        break;
+                        if (chip.Tooltip != null)
+                            StructuredTipPresenter.TipRegion(chipRect,
+                                chip.Tooltip);
+                        else if (chip.FallbackTip != null)
+                            TooltipHandler.TipRegion(chipRect,
+                                chip.FallbackTip);
                     }
                 }
+
+                if (preview.HasChanges)
+                {
+                    Rect localApply = preview.ApplyRect;
+                    var makeItSoRect = new Rect(recX + localApply.x,
+                        rect.y + localApply.y, localApply.width,
+                        localApply.height);
+                    if (Widgets.ButtonText(makeItSoRect,
+                            preview.ApplyLabel))
+                        preview.Apply();
+                }
             }
-            RoleCommands.AssignRole(pawn, roleId, insertIdx);
         }
 
         /// Preview entries from the colony plan (all changed pawns, or just one).

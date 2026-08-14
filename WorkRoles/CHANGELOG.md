@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.4.1 — 2026-08-14
+
+- Added: Option to disable skill captions underneath colonist names.
+- Fixed: At UI scale 1.00 the skill caption wasn't displaying correctly.
+- Fixed: Performance improvements.
+
 ## 1.4.0 — 2026-08-13
 
 - Added: Role verdicts on role chips (colored stars that indicate role suitability). Display can be customized in Options.

@@ -36,14 +36,30 @@ namespace WorkRoles.UI
         private List<ScopeOption> scopeOptions;
         private bool spansMultipleLocations;
 
+        // Owner: Colonists window. Key: RoleStore identity, UiVersion, language,
+        // and definition revisions. Value: an immutable detached role/definition
+        // catalog shared by palette, filters, grouping controls, and chip labels.
+        // Dependencies: ordered role catalog/coverage/tree placement, job and skill
+        // definitions, group sources, and translated labels. Refresh: immediate on
+        // the next catalog read after a key change. Equality: an equal rebuild keeps
+        // snapshot identity; a different store always republishes. Teardown:
+        // ReleaseSnapshots drops the snapshot and owner reference.
+        private ColonistsRosterCatalogSnapshot catalog;
+        private RoleStore catalogOwner;
+        private int catalogUiVersion = -1;
+        private int catalogLanguageRevision = -1;
+        private int catalogDefinitionRevision = -1;
+
         // Owner: Colonists window. Key: pawn-scope stamp, map identity, filters,
-        // grouping/sort preferences, and colonist order. Value: producer-owned
-        // grouped display sections and title strings. Dependencies: the complete
-        // key plus role state and language through UiVersion. Refresh: immediate
-        // on the next Sections read after a key change. Equality: an exact key hit
-        // preserves section identity. Teardown: InvalidateSections/ReleaseSnapshots
-        // releases sections, titles, and all remembered keys.
-        private List<GroupSection<Pawn>> sections;
+        // grouping/sort preferences, colonist order, and detached catalog identity.
+        // Value: immutable producer-owned grouped display sections. Dependencies:
+        // the complete key plus projected assignments and pawn presentation facts.
+        // Refresh: immediate on the next Sections read after a key change. Equality:
+        // equal rebuilt contents preserve identity. Teardown: ReleaseSnapshots
+        // releases the snapshot and all remembered keys.
+        private ColonistSectionsSnapshot sections;
+        private RoleStore sectionsOwner;
+        private ColonistsRosterCatalogSnapshot sectionsCatalog;
         private ScopeCacheStamp sectionsStamp = ScopeCacheStamp.Invalid;
         private int sectionsMapId = -1;
         private string sectionsSearch;
@@ -52,18 +68,18 @@ namespace WorkRoles.UI
         private string sectionsGroupBy;
         private string sectionsSort;
         private ColonistOrder sectionsOrder;
-        private readonly Dictionary<string, string> sectionTitles =
-            new Dictionary<string, string>();
 
         // Owner: Colonists window profile. Key: the profile's persisted skill
-        // column names. Value: a bounded resolved SkillDef selection; definitions
-        // are game-owned stable assets and are never mutated. Dependencies:
-        // profile edits, definition availability, and initial profile load.
-        // Refresh: immediate on an explicit column edit; otherwise lazy once.
-        // Equality: unchanged selections retain list identity. Teardown:
-        // ReleaseSnapshots clears the resolved list and resets the load gate.
-        private readonly List<SkillDef> skillColumns = new List<SkillDef>();
+        // column names and definition revision. Value: an immutable bounded
+        // snapshot of stable game-owned SkillDef references. Dependencies:
+        // profile edits, definition availability/reload, and initial profile load.
+        // Refresh: immediate on an explicit column edit; otherwise lazy after a
+        // definition revision. Equality: an equal rebuild preserves snapshot
+        // identity and revision. Teardown: ReleaseSnapshots drops the snapshot.
+        private ColonistSkillColumnsSnapshot skillColumns;
         private bool skillColumnsLoaded;
+        private int skillColumnsDefinitionRevision = -1;
+        private int skillColumnsRevision;
 
         internal ColonistsRosterState(ColonistsViewProfile profile,
             Func<Pawn, SkillDef, float> skillSortValue)
@@ -104,9 +120,13 @@ namespace WorkRoles.UI
         {
             get { ListedPawns(); return spansMultipleLocations; }
         }
-        internal IReadOnlyList<SkillDef> SkillColumns
+        internal ColonistSkillColumnsSnapshot SkillColumns
         {
             get { EnsureSkillColumnsLoaded(); return skillColumns; }
+        }
+        internal int SkillColumnsRevision
+        {
+            get { EnsureSkillColumnsLoaded(); return skillColumnsRevision; }
         }
         internal GroupSourceDef CurrentGroupSource
         {
@@ -120,16 +140,6 @@ namespace WorkRoles.UI
             }
         }
         internal bool Grouped => CurrentGroupSource.Partition != null;
-        internal SkillDef SortSkill
-        {
-            get
-            {
-                string sort = profile.GetSortColumn();
-                return sort.NullOrEmpty()
-                    ? null
-                    : DefDatabase<SkillDef>.GetNamedSilentFail(sort);
-            }
-        }
 
         internal void Reset()
         {
@@ -143,6 +153,7 @@ namespace WorkRoles.UI
         internal void InvalidateLanguageCaches()
         {
             scopeOptions = null;
+            catalogLanguageRevision = -1;
             InvalidatePawnSnapshot();
             InvalidateSections();
         }
@@ -158,6 +169,9 @@ namespace WorkRoles.UI
             pawnsMapId = -1;
             scopeOptions = null;
             spansMultipleLocations = false;
+            sections = null;
+            sectionsOwner = null;
+            sectionsCatalog = null;
             InvalidateSections();
             sectionsMapId = -1;
             sectionsSearch = null;
@@ -165,8 +179,14 @@ namespace WorkRoles.UI
             sectionsJobFilter = null;
             sectionsGroupBy = null;
             sectionsSort = null;
-            skillColumns.Clear();
+            skillColumns = null;
             skillColumnsLoaded = false;
+            skillColumnsDefinitionRevision = -1;
+            catalog = null;
+            catalogOwner = null;
+            catalogUiVersion = -1;
+            catalogLanguageRevision = -1;
+            catalogDefinitionRevision = -1;
             pawnListRevisions.Invalidate();
         }
 
@@ -222,25 +242,57 @@ namespace WorkRoles.UI
         private static bool SameScope(ScopeOption left, ScopeOption right)
             => left.Kind == right.Kind && left.LocationId == right.LocationId;
 
-        internal void ValidateRoleFilter(RoleStore store)
+        internal ColonistsRosterCatalogSnapshot Catalog(RoleStore store)
         {
-            if (RoleFilterId != -1 && store.RoleById(RoleFilterId) == null)
+            int uiVersion = UiVersion.Current;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (catalog != null && ReferenceEquals(catalogOwner, store)
+                && catalogUiVersion == uiVersion
+                && catalogLanguageRevision == languageRevision
+                && catalogDefinitionRevision == definitionRevision)
+                return catalog;
+
+            bool rebuildDefinitions = catalog == null
+                || catalogLanguageRevision != languageRevision
+                || catalogDefinitionRevision != definitionRevision;
+            bool rebuildGroups = catalog == null
+                || catalogLanguageRevision != languageRevision;
+            ColonistsRosterCatalogSnapshot rebuilt =
+                ColonistsRosterCatalogSnapshot.Build(store, catalog,
+                    rebuildDefinitions, rebuildGroups,
+                    !ReferenceEquals(catalogOwner, store));
+            if (!ReferenceEquals(catalogOwner, store) || catalog == null
+                || !catalog.ContentEquals(rebuilt))
+                catalog = rebuilt;
+            catalogOwner = store;
+            catalogUiVersion = uiVersion;
+            catalogLanguageRevision = languageRevision;
+            catalogDefinitionRevision = definitionRevision;
+            return catalog;
+        }
+
+        internal void ValidateRoleFilter(ColonistsRosterCatalogSnapshot current)
+        {
+            if (RoleFilterId != -1 && !current.ContainsRole(RoleFilterId))
             {
                 RoleFilterId = -1;
                 InvalidateSections();
             }
             // A removed mod can take the filtered giver with it.
             if (JobFilterDefName != null
-                && DefDatabase<WorkGiverDef>.GetNamedSilentFail(JobFilterDefName) == null)
+                && !current.ContainsJob(JobFilterDefName))
             {
                 JobFilterDefName = null;
                 InvalidateSections();
             }
         }
 
-        internal IReadOnlyList<GroupSection<Pawn>> Sections(RoleStore store)
+        internal ColonistSectionsSnapshot Sections(RoleStore store)
         {
             IReadOnlyList<Pawn> listed = ListedPawns();
+            ColonistsRosterCatalogSnapshot currentCatalog = Catalog(store);
+            ValidateRoleFilter(currentCatalog);
             ColonistOrder order = profile.GetColonistOrder();
             ScopeCacheStamp stamp = PawnListStamp;
             if (sections == null || sectionsStamp != stamp
@@ -248,33 +300,36 @@ namespace WorkRoles.UI
                 || sectionsRoleFilter != RoleFilterId
                 || sectionsJobFilter != JobFilterDefName
                 || sectionsGroupBy != profile.GetGroupBy()
-                || sectionsSort != profile.GetSortColumn() || sectionsOrder != order)
+                || sectionsSort != profile.GetSortColumn() || sectionsOrder != order
+                || !ReferenceEquals(sectionsOwner, store)
+                || !ReferenceEquals(sectionsCatalog, currentCatalog))
             {
-                sectionsStamp = stamp;
-                sectionsMapId = pawnsMapId;
-                sectionsSearch = Search;
-                sectionsRoleFilter = RoleFilterId;
-                sectionsJobFilter = JobFilterDefName;
-                sectionsGroupBy = profile.GetGroupBy();
-                sectionsSort = profile.GetSortColumn();
-                sectionsOrder = order;
-                sections = GroupedSections(OrderedForDisplay(FilteredPawns(listed, store)));
-                sectionTitles.Clear();
-                foreach (GroupSection<Pawn> section in sections)
-                    sectionTitles[section.Key] = section.Title
-                        + " (" + section.Members.Count + ")";
+                List<GroupSection<Pawn>> grouped = GroupedSections(
+                    OrderedForDisplay(FilteredPawns(listed, store,
+                        currentCatalog), currentCatalog));
+                ColonistSectionsSnapshot rebuilt =
+                    ColonistSectionsSnapshot.Build(grouped,
+                        CurrentGroupSource.Partition != null);
+                if (!ReferenceEquals(sectionsOwner, store) || sections == null
+                    || !sections.ContentEquals(rebuilt))
+                    sections = rebuilt;
             }
+            sectionsOwner = store;
+            sectionsCatalog = currentCatalog;
+            sectionsStamp = stamp;
+            sectionsMapId = pawnsMapId;
+            sectionsSearch = Search;
+            sectionsRoleFilter = RoleFilterId;
+            sectionsJobFilter = JobFilterDefName;
+            sectionsGroupBy = profile.GetGroupBy();
+            sectionsSort = profile.GetSortColumn();
+            sectionsOrder = order;
             return sections;
         }
 
-        internal string SectionTitle(string key)
-            => sectionTitles.TryGetValue(key, out string title) ? title : key;
-
         private void InvalidateSections()
         {
-            sections = null;
             sectionsStamp = ScopeCacheStamp.Invalid;
-            sectionTitles.Clear();
         }
 
         private List<GroupSection<Pawn>> GroupedSections(List<Pawn> listed)
@@ -288,7 +343,8 @@ namespace WorkRoles.UI
             return source.Partition(listed);
         }
 
-        private List<Pawn> FilteredPawns(IReadOnlyList<Pawn> listed, RoleStore store)
+        private List<Pawn> FilteredPawns(IReadOnlyList<Pawn> listed,
+            RoleStore store, ColonistsRosterCatalogSnapshot currentCatalog)
         {
             if (!FiltersActive) return listed as List<Pawn> ?? listed.ToList();
 
@@ -296,16 +352,13 @@ namespace WorkRoles.UI
             if (RoleFilterId != -1)
             {
                 matchingRoles = new HashSet<int> { RoleFilterId };
-                Role selected = store.RoleById(RoleFilterId);
-                if (selected != null)
-                    foreach (Role role in store.roles)
-                        if (!role.blocker && role.CoversOrMatches(selected))
-                            matchingRoles.Add(role.id);
+                currentCatalog.AddRolesCovering(RoleFilterId, matchingRoles);
             }
 
             // Search matches pawn names OR job names: the term expands once to
             // the giver set whose display name (or work-type gerund) contains it.
-            HashSet<string> searchGivers = SearchMatchingGivers(Search);
+            HashSet<string> searchGivers =
+                currentCatalog.SearchMatchingGivers(Search);
 
             var result = new List<Pawn>();
             for (int i = 0; i < listed.Count; i++)
@@ -314,7 +367,8 @@ namespace WorkRoles.UI
                 if (!Search.NullOrEmpty()
                     && pawn.LabelShortCap.IndexOf(
                         Search, StringComparison.OrdinalIgnoreCase) < 0
-                    && !PawnCoverageIntersects(store, pawn, searchGivers))
+                    && !PawnCoverageIntersects(store, pawn, searchGivers,
+                        currentCatalog))
                     continue;
                 if (matchingRoles != null)
                 {
@@ -324,7 +378,8 @@ namespace WorkRoles.UI
                         continue;
                 }
                 if (JobFilterDefName != null
-                    && !PawnCoverageContains(store, pawn, JobFilterDefName))
+                    && !PawnCoverageContains(store, pawn, JobFilterDefName,
+                        currentCatalog))
                     continue;
                 result.Add(pawn);
             }
@@ -333,54 +388,34 @@ namespace WorkRoles.UI
 
         /// Union coverage of the pawn's assigned non-blocker roles contains
         /// the giver (blockers veto the job, so they never count as having it).
-        private static bool PawnCoverageContains(RoleStore store, Pawn pawn, string giverDefName)
+        private static bool PawnCoverageContains(RoleStore store, Pawn pawn,
+            string giverDefName, ColonistsRosterCatalogSnapshot currentCatalog)
         {
             if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
             foreach (var assignment in set.assignments)
-            {
-                Role role = store.RoleById(assignment.roleId);
-                if (role != null && !role.blocker
-                    && role.Coverage().Contains(giverDefName))
+                if (currentCatalog.RoleCoversJob(assignment.roleId,
+                        giverDefName))
                     return true;
-            }
             return false;
         }
 
-        private static bool PawnCoverageIntersects(RoleStore store, Pawn pawn, HashSet<string> givers)
+        private static bool PawnCoverageIntersects(RoleStore store, Pawn pawn,
+            HashSet<string> givers,
+            ColonistsRosterCatalogSnapshot currentCatalog)
         {
             if (givers == null || givers.Count == 0) return false;
             if (!store.pawnSets.TryGetValue(pawn, out PawnRoleSet set)) return false;
             foreach (var assignment in set.assignments)
             {
-                Role role = store.RoleById(assignment.roleId);
-                if (role == null || role.blocker) continue;
-                foreach (string giver in role.Coverage())
-                    if (givers.Contains(giver)) return true;
+                foreach (string giver in givers)
+                    if (currentCatalog.RoleCoversJob(assignment.roleId, giver))
+                        return true;
             }
             return false;
         }
 
-        /// Giver defNames whose display name or work-type gerund contains the
-        /// term; null when the term is empty. Runs once per sections rebuild.
-        private static HashSet<string> SearchMatchingGivers(string term)
-        {
-            if (term.NullOrEmpty()) return null;
-            HashSet<string> result = null;
-            foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading)
-            {
-                if (def.workType == null) continue;
-                bool matches = WorkJobLabels.GiverDisplayName(def)
-                        .IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
-                    || (def.workType.gerundLabel != null
-                        && def.workType.gerundLabel.IndexOf(
-                            term, StringComparison.OrdinalIgnoreCase) >= 0);
-                if (matches)
-                    (result ??= new HashSet<string>(StringComparer.Ordinal)).Add(def.defName);
-            }
-            return result;
-        }
-
-        private List<Pawn> OrderedForDisplay(List<Pawn> listed)
+        private List<Pawn> OrderedForDisplay(List<Pawn> listed,
+            ColonistsRosterCatalogSnapshot currentCatalog)
         {
             List<Pawn> ordered;
             if (profile.GetColonistOrder() == ColonistOrder.Alphabetical)
@@ -400,7 +435,8 @@ namespace WorkRoles.UI
                 }
             }
 
-            SkillDef sortSkill = SortSkill;
+            SkillDef sortSkill = currentCatalog.SkillOrNull(
+                profile.GetSortColumn());
             if (sortSkill != null)
                 ordered = ordered.OrderByDescending(
                     pawn => skillSortValue(pawn, sortSkill)).ToList();
@@ -428,21 +464,25 @@ namespace WorkRoles.UI
         internal void ToggleSkillColumn(SkillDef skill)
         {
             EnsureSkillColumnsLoaded();
-            if (skillColumns.Contains(skill))
+            List<SkillDef> rebuilt = skillColumns.Copy();
+            int existingIndex = skillColumns.IndexOf(skill);
+            if (existingIndex >= 0)
             {
                 if (profile.GetSortColumn() == skill.defName) SetSort("");
-                skillColumns.Remove(skill);
+                rebuilt.RemoveAt(existingIndex);
             }
             else
             {
-                if (skillColumns.Count >= MaxSkillColumns)
+                if (rebuilt.Count >= MaxSkillColumns)
                 {
-                    if (profile.GetSortColumn() == skillColumns[0].defName) SetSort("");
-                    skillColumns.RemoveAt(0);
+                    if (profile.GetSortColumn() == rebuilt[0].defName)
+                        SetSort("");
+                    rebuilt.RemoveAt(0);
                 }
-                skillColumns.Add(skill);
+                rebuilt.Add(skill);
                 SetSort(skill.defName);
             }
+            PublishSkillColumns(rebuilt);
             SaveSkillColumns();
         }
 
@@ -450,32 +490,171 @@ namespace WorkRoles.UI
         {
             EnsureSkillColumnsLoaded();
             if (index < 0 || index >= skillColumns.Count) return;
-            SkillDef removed = skillColumns[index];
-            skillColumns.RemoveAt(index);
+            SkillDef removed = skillColumns.At(index);
+            List<SkillDef> rebuilt = skillColumns.Copy();
+            rebuilt.RemoveAt(index);
+            PublishSkillColumns(rebuilt);
             if (profile.GetSortColumn() == removed.defName) SetSort("");
             SaveSkillColumns();
         }
 
         private void EnsureSkillColumnsLoaded()
         {
-            if (skillColumnsLoaded) return;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (skillColumnsLoaded
+                && skillColumnsDefinitionRevision == definitionRevision) return;
             skillColumnsLoaded = true;
+            skillColumnsDefinitionRevision = definitionRevision;
+            var rebuilt = new List<SkillDef>();
             List<string> saved = profile.GetSkillColumns();
             if (saved != null)
                 foreach (string defName in saved)
                 {
                     SkillDef def = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
-                    if (def != null && !skillColumns.Contains(def)
-                        && skillColumns.Count < MaxSkillColumns)
-                        skillColumns.Add(def);
+                    if (def != null && !rebuilt.Contains(def)
+                        && rebuilt.Count < MaxSkillColumns)
+                        rebuilt.Add(def);
                 }
+            PublishSkillColumns(rebuilt);
             string sort = profile.GetSortColumn();
             if (!sort.NullOrEmpty()
-                && !skillColumns.Any(skill => skill.defName == sort))
+                && skillColumns.IndexOfDefName(sort) < 0)
                 profile.SetSortColumn("");
         }
 
+        private void PublishSkillColumns(List<SkillDef> rebuilt)
+        {
+            if (skillColumns != null && skillColumns.ContentEquals(rebuilt))
+                return;
+            skillColumns = new ColonistSkillColumnsSnapshot(rebuilt);
+            skillColumnsRevision++;
+        }
+
         private void SaveSkillColumns()
-            => profile.SetSkillColumns(skillColumns.Select(skill => skill.defName).ToList());
+        {
+            var saved = new List<string>(skillColumns.Count);
+            for (int i = 0; i < skillColumns.Count; i++)
+                saved.Add(skillColumns.At(i).defName);
+            profile.SetSkillColumns(saved);
+        }
+    }
+
+    internal sealed class ColonistSkillColumnsSnapshot
+    {
+        private readonly List<SkillDef> skills;
+
+        internal ColonistSkillColumnsSnapshot(List<SkillDef> skills)
+        {
+            this.skills = skills;
+        }
+
+        internal int Count => skills.Count;
+        internal SkillDef At(int index) => skills[index];
+        internal bool Contains(SkillDef skill) => skills.Contains(skill);
+        internal int IndexOf(SkillDef skill) => skills.IndexOf(skill);
+        internal List<SkillDef> Copy() => new List<SkillDef>(skills);
+
+        internal int IndexOfDefName(string defName)
+        {
+            for (int i = 0; i < skills.Count; i++)
+                if (string.Equals(skills[i].defName, defName,
+                        StringComparison.Ordinal)) return i;
+            return -1;
+        }
+
+        internal bool ContentEquals(List<SkillDef> other)
+        {
+            if (other == null || skills.Count != other.Count) return false;
+            for (int i = 0; i < skills.Count; i++)
+                if (!ReferenceEquals(skills[i], other[i])) return false;
+            return true;
+        }
+    }
+
+    internal sealed class ColonistSectionSnapshot
+    {
+        private readonly List<Pawn> pawns;
+
+        internal ColonistSectionSnapshot(string key, string title,
+            List<Pawn> pawns)
+        {
+            Key = key;
+            Title = title;
+            this.pawns = pawns;
+        }
+
+        internal string Key { get; }
+        internal string Title { get; }
+        internal int Count => pawns.Count;
+        internal Pawn PawnAt(int index) => pawns[index];
+        internal bool Contains(Pawn pawn) => pawns.Contains(pawn);
+        internal List<Pawn> CopyPawns() => new List<Pawn>(pawns);
+
+        internal bool ContentEquals(ColonistSectionSnapshot other)
+        {
+            if (other == null || !string.Equals(Key, other.Key,
+                    StringComparison.Ordinal)
+                || !string.Equals(Title, other.Title,
+                    StringComparison.Ordinal) || pawns.Count != other.pawns.Count)
+                return false;
+            for (int i = 0; i < pawns.Count; i++)
+                if (!ReferenceEquals(pawns[i], other.pawns[i])) return false;
+            return true;
+        }
+    }
+
+    internal sealed class ColonistSectionsSnapshot
+    {
+        private readonly List<ColonistSectionSnapshot> sections;
+
+        private ColonistSectionsSnapshot(
+            List<ColonistSectionSnapshot> sections, bool grouped)
+        {
+            this.sections = sections;
+            Grouped = grouped;
+        }
+
+        internal bool Grouped { get; }
+        internal int Count => sections.Count;
+        internal ColonistSectionSnapshot SectionAt(int index) =>
+            sections[index];
+
+        internal static ColonistSectionsSnapshot Build(
+            List<GroupSection<Pawn>> source, bool grouped)
+        {
+            var result = new List<ColonistSectionSnapshot>(source.Count);
+            for (int i = 0; i < source.Count; i++)
+            {
+                GroupSection<Pawn> section = source[i];
+                result.Add(new ColonistSectionSnapshot(section.Key,
+                    section.Title + " (" + section.Members.Count + ")",
+                    section.Members));
+            }
+            return new ColonistSectionsSnapshot(result, grouped);
+        }
+
+        internal List<Pawn> CopyPawns()
+        {
+            int count = 0;
+            for (int i = 0; i < sections.Count; i++)
+                count += sections[i].Count;
+            var result = new List<Pawn>(count);
+            for (int i = 0; i < sections.Count; i++)
+            {
+                ColonistSectionSnapshot section = sections[i];
+                for (int pawnIndex = 0; pawnIndex < section.Count; pawnIndex++)
+                    result.Add(section.PawnAt(pawnIndex));
+            }
+            return result;
+        }
+
+        internal bool ContentEquals(ColonistSectionsSnapshot other)
+        {
+            if (other == null || Grouped != other.Grouped
+                || sections.Count != other.sections.Count) return false;
+            for (int i = 0; i < sections.Count; i++)
+                if (!sections[i].ContentEquals(other.sections[i])) return false;
+            return true;
+        }
     }
 }

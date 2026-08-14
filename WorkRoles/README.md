@@ -16,7 +16,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 - **Bill Support:** configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
 - **Combo Roles:** these combine jobs that are often paired at equal priority (e.g. Farmer for Growing and Plant Cutting). Combo roles show as parent of the roles they cover in the role list.
 - **Deep Job Control:** the role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
-- **Role Groups:** organize the role list into named, collapsible groups (drag to move or reorder). Roles with rules gather under Auto-Roles automatically.
+- **Role Groups:** organize the role list into named, collapsible groups (drag to move or reorder). Roles with rules gather under Conditional Roles automatically.
 - **Smart Recommendations:** a per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs. See below for details.
 - **Powerful UI:** grouping, sorting, filtering, drag & drop, key bindings, tooltips, customizable role chip display — whatever you need and it should be there.
 - **Import/Export:** easily share or backup your role setup. Import allows overwrite or merge.
@@ -37,7 +37,7 @@ Set up a role once, hand it to any number of colonists, and adjust everyone by e
 
 Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position. The compiled order is fed to the game through the same lists vanilla's job selection already consumes (`Pawn_WorkSettings`), so pawn AI behaves exactly as it would with a hand-tuned priority grid and needs no changes.
 
-Everything is computed when assignments or roles change, then cached — no per-tick patches. Auto roles (time or location rules) additionally recompute exactly at hour boundaries and whenever a colonist changes location.
+Everything is computed when assignments or roles change, then cached — no per-tick patches. Conditional roles (time or location rules) additionally recompute exactly at hour boundaries and whenever a colonist changes location.
 
 Emergency-flagged jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
 

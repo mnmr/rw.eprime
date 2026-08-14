@@ -56,18 +56,21 @@ namespace WorkRoles.UI
             WrText.HeaderLabel(displayHeader, "WR_DisplaySection".Translate());
             var settings = WorkRolesMod.Settings;
             if (settings == null) return;
-            VerdictToggle(new Rect(flowX, y, flowW, 28f),
+            DisplayToggle(new Rect(flowX, y, flowW, 28f),
+                "WR_OptSkillCaptions", ref settings.colonistSkillCaptions);
+            y += 34f;
+            DisplayToggle(new Rect(flowX, y, flowW, 28f),
                 "WR_OptVerdictsColonists", ref settings.verdictsOnColonistChips);
             y += 34f;
-            VerdictToggle(new Rect(flowX, y, flowW, 28f),
+            DisplayToggle(new Rect(flowX, y, flowW, 28f),
                 "WR_OptVerdictsPalette", ref settings.verdictsInPalette);
             y += 34f;
-            VerdictToggle(new Rect(flowX, y, flowW, 28f),
+            DisplayToggle(new Rect(flowX, y, flowW, 28f),
                 "WR_OptVerdictsRecommendations",
                 ref settings.verdictsOnRecommendationChips);
         }
 
-        private static void VerdictToggle(Rect rect, string key, ref bool value)
+        private static void DisplayToggle(Rect rect, string key, ref bool value)
         {
             WrTips.Key(key + "Tip").Region(rect);
             bool edited = value;

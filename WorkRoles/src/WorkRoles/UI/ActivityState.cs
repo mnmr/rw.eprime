@@ -19,26 +19,53 @@ namespace WorkRoles.UI
         }
     }
 
-    /// Per-pawn activity cache re-resolved only when ActivityTracker's
-    /// job-transition revision moves — independent of the UiVersion snapshot
-    /// generations, which never see activity changes.
+    /// Per-pawn activity cache re-resolved when ActivityTracker's live-activity
+    /// revision moves, UiVersion changes the compiled role claiming the same
+    /// running job, or the owning RoleStore changes.
     internal sealed class ActivityState
     {
-        private readonly Dictionary<Pawn, (int revision, ActivitySnapshot value)> cache =
-            new Dictionary<Pawn, (int, ActivitySnapshot)>();
+        // Owner: Colonists window. Key: RoleStore and Pawn reference identity,
+        // activity revision, and UiVersion. Value: detached ActivitySnapshot.
+        // Dependencies: job/draft/mental transitions plus compiled claiming-role
+        // changes.
+        // Refresh: immediate on the next read after a dependency changes.
+        // Equality: exact key hits reuse the cached value. Teardown: Release on
+        // window reset/close/language change; an owner change clears all entries.
+        private readonly Dictionary<Pawn,
+            (int activityRevision, int uiRevision, ActivitySnapshot value)> cache =
+            new Dictionary<Pawn, (int, int, ActivitySnapshot)>();
+        private RoleStore observedOwner;
 
         internal ActivitySnapshot For(Pawn pawn)
         {
             if (pawn == null) return new ActivitySnapshot(-1, "");
-            int revision = ActivityTracker.RevisionOf(pawn);
-            if (cache.TryGetValue(pawn, out var entry) && entry.revision == revision)
+            return For(pawn, ActivityTracker.RevisionOf(pawn),
+                UiVersion.Current, RoleStore.Current);
+        }
+
+        internal ActivitySnapshot For(Pawn pawn, int activityRevision,
+            int uiRevision, RoleStore owner)
+        {
+            if (pawn == null) return new ActivitySnapshot(-1, "");
+            if (!ReferenceEquals(observedOwner, owner))
+            {
+                cache.Clear();
+                observedOwner = owner;
+            }
+            if (cache.TryGetValue(pawn, out var entry)
+                && entry.activityRevision == activityRevision
+                && entry.uiRevision == uiRevision)
                 return entry.value;
             ActivitySnapshot value = Resolve(pawn);
-            cache[pawn] = (revision, value);
+            cache[pawn] = (activityRevision, uiRevision, value);
             return value;
         }
 
-        internal void Release() => cache.Clear();
+        internal void Release()
+        {
+            cache.Clear();
+            observedOwner = null;
+        }
 
         private static ActivitySnapshot Other(string key) =>
             new ActivitySnapshot(-1, key.Translate());
@@ -87,26 +114,6 @@ namespace WorkRoles.UI
             if (def == JobDefOf.BringBabyToSafetyUnforced) return "Childcare";
             if (ModsConfig.OdysseyActive && def == JobDefOf.Fish) return "Fishing";
             return null;
-        }
-
-        /// Tooltip body, composed live on hover so mid-job report drift (e.g.
-        /// resting becoming sleeping) never shows stale text.
-        internal static string LiveTip(Pawn pawn, RoleStore store)
-        {
-            if (pawn == null) return "";
-            ActivitySnapshot value = Resolve(pawn);
-            string head = value.RoleId >= 0
-                ? store?.RoleById(value.RoleId)?.label ?? value.RoleId.ToString()
-                : value.Label;
-            string report = pawn.jobs?.curDriver?.GetReport();
-            if (report.NullOrEmpty()) return head;
-            string reportCap = report.CapitalizeFirst();
-            // "Sleeping: Sleeping." reads broken; a head the report already
-            // states collapses to the report alone.
-            if (string.Equals(head, reportCap.TrimEnd('.'),
-                    System.StringComparison.OrdinalIgnoreCase))
-                return reportCap;
-            return "WR_NowTip".Translate(head, reportCap);
         }
 
         /// Bare activity phrase for "<name> is <activity>" compositions: the

@@ -865,7 +865,7 @@ namespace WorkRoles
             Store.SetBillRole(bill, roleId);
         }
 
-        /// Turns an auto role back into a manual one (a role is auto iff any rule is set).
+        /// Turns a conditional role back into a manual one (a role is conditional iff any rule is set).
         [SyncMethod]
         public static void ClearRoleRules(int roleId)
         {

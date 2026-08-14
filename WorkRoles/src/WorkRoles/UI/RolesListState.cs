@@ -233,7 +233,7 @@ namespace WorkRoles.UI
         }
 
         /// Blockers nest under blockers, normal roles under normal roles;
-        /// rule-carrying roles stay flat (they display under Auto-Roles) and
+        /// rule-carrying roles stay flat (they display under Conditional Roles) and
         /// composites never join coverage nesting (their coverage is the
         /// members' union, so it would show every covered role twice). A
         /// composite's member rows are a pure convenience display: always
@@ -331,18 +331,18 @@ namespace WorkRoles.UI
             var auto = new RoleSection
             {
                 key = "auto",
-                title = "WR_GroupAutoRules".Translate(),
+                title = "WR_GroupConditionalRoles".Translate(),
             };
             foreach (Role role in store.roles)
             {
                 // Composites live in their stored group like any other role;
                 // carrying rules moves any role (composite or not) to
-                // Auto-Roles until the rules clear.
+                // Conditional Roles until the rules clear.
                 if (role.HasRules) auto.members.Add(role);
                 else SectionOf(role.groupId).members.Add(role);
             }
 
-            // Auto-Roles leads the list; player groups follow.
+            // Conditional Roles leads the list; player groups follow.
             if (auto.members.Count > 0) sections.Add(auto);
             if (defaultSection != null && defaultSection.members.Count > 0)
                 sections.Add(defaultSection);
@@ -501,7 +501,7 @@ namespace WorkRoles.UI
     }
 
     /// One display section of the role list: a user group or the derived
-    /// Auto-Roles overlay. Instances belong to the shared section snapshot.
+    /// Conditional Roles overlay. Instances belong to the shared section snapshot.
     internal sealed class RoleSection
     {
         internal string key;

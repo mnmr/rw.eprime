@@ -19,6 +19,8 @@
   <WR_OptVanillaRangeTipOff>Other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
   <WR_OptVanillaRangeTipOn>Priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
   <WR_DisplaySection>Display Settings</WR_DisplaySection>
+  <WR_OptSkillCaptions>Show top skills under colonist names</WR_OptSkillCaptions>
+  <WR_OptSkillCaptionsTip>Each colonist row in the table carries a small caption under the name listing that colonist's best work skills with their levels, coloured by suitability. Turn this off to render the name on its own line.</WR_OptSkillCaptionsTip>
   <WR_OptVerdictsColonists>Show verdicts on colonist role chips</WR_OptVerdictsColonists>
   <WR_OptVerdictsColonistsTip>Each role chip in the colonist table shows a suitability star pair for the colonist holding it, matching the recommendation engine's judgment: white stars for good verdicts (one strong, two great, gold exceptional), red stars for bad ones (one poor, two awful), grey for neutral.</WR_OptVerdictsColonistsTip>
   <WR_OptVerdictsPalette>Show verdicts for the selected colonist in the role palette</WR_OptVerdictsPalette>
@@ -575,8 +577,6 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ScaleTrainingHelp>This role is a training role for {0} and assignments are therefore controlled by the tuning options for {0} (even when this is set to Never). However, you can still force minimum assignment counts for {1} here.</WR_ScaleTrainingHelp>
   <!-- {0} = target role label -->
   <WR_ScaleControlledBy>Controlled by {0}</WR_ScaleControlledBy>
-  <!-- {0} = the covering auto-assigned role's label -->
-  <WR_ScaleInAutoRole>In auto-assigned role {0}</WR_ScaleInAutoRole>
   <WR_ScaleTotalTip>Required total for this band, training waivers included. Raising it creates training-waiver slots; lowering it consumes them before lowering the direct minimum. Click +1, right-click -1. Left-drag to copy across bands (right-click while dragging nudges the value, following the drag direction). Right-drag to ramp: one step per band, up dragging right, down dragging left.</WR_ScaleTotalTip>
   <WR_SkillsUsedLabel>Skills used:</WR_SkillsUsedLabel>
 
@@ -606,9 +606,9 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Disambiguating suffix appended to identically-named emergency job givers -->
   <WR_EmergencySuffix> (emergency)</WR_EmergencySuffix>
 
-  <!-- Editor: rules section (auto-role opt-in, active hours, location) -->
-  <WR_AutoRole>Auto role</WR_AutoRole>
-  <WR_AutoRoleTip>Auto roles turn themselves on and off based on rules: active hours and location. A role is auto whenever any rule is set.</WR_AutoRoleTip>
+  <!-- Editor: rules section (conditional-role opt-in, active hours, location) -->
+  <WR_ConditionalRole>Conditional role</WR_ConditionalRole>
+  <WR_ConditionalRoleTip>Conditional roles turn themselves on and off based on rules: active hours and location. A role is conditional whenever any rule is set.</WR_ConditionalRoleTip>
   <WR_AutoAssign>Auto-assign</WR_AutoAssign>
   <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role, and recommendations always place auto-assign roles first.</WR_AutoAssignTip>
   <!-- Editor: custom color swatch row -->
@@ -635,7 +635,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- Role-list groups -->
   <WR_GroupDefault>Default</WR_GroupDefault>
-  <WR_GroupAutoRules>Auto-Roles</WR_GroupAutoRules>
+  <WR_GroupConditionalRoles>Conditional Roles</WR_GroupConditionalRoles>
   <WR_GroupComposites>Composite Roles</WR_GroupComposites>
   <WR_GroupLabel>Group</WR_GroupLabel>
   <!-- {0} = the role's current group name -->
@@ -644,7 +644,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_NewGroupTitle>New group</WR_NewGroupTitle>
   <WR_RenameGroup>Rename group</WR_RenameGroup>
   <WR_RenameGroupTitle>Rename group</WR_RenameGroupTitle>
-  <WR_GroupOverlayTip>Roles with rules display under Auto-Roles. The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
+  <WR_GroupOverlayTip>Roles with rules display under Conditional Roles. The stored group returns when the rules are cleared.</WR_GroupOverlayTip>
   <WR_GroupCompositeTip>Composite roles display under Composite Roles.</WR_GroupCompositeTip>
   <WR_TreeNested>Nested</WR_TreeNested>
   <WR_TreeFlat>Flat</WR_TreeFlat>
@@ -663,7 +663,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- ===== Bill dialog: worker role restriction ===== -->
   <!-- {0} = role label; used in the worker dropdown and as its button label -->
   <WR_BillRoleOption>Role: {0}</WR_BillRoleOption>
-  <WR_BillWorkerRoleTip>Only colonists actively holding this role work this bill; a rule-based role applies its rules (e.g. active hours). Selecting a worker clears the role restriction and vice versa.</WR_BillWorkerRoleTip>
+  <WR_BillWorkerRoleTip>Only colonists actively holding this role work this bill; a conditional role applies its rules (e.g. active hours). Selecting a worker clears the role restriction and vice versa.</WR_BillWorkerRoleTip>
 
   <!-- ===== Shared / dialogs ===== -->
 

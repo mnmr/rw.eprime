@@ -33,6 +33,8 @@ namespace WorkRoles
         public bool verdictsOnColonistChips = true;
         public bool verdictsInPalette = true;
         public bool verdictsOnRecommendationChips = true;
+        /// Colonist table: best-skills caption under each name (false = name only).
+        public bool colonistSkillCaptions = true;
         /// Player-chosen window size (0 = automatic, content-driven). Content
         /// minimums still apply: the stored size only ever enlarges the window.
         public float windowWidth;
@@ -56,6 +58,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref verdictsOnColonistChips, "verdictsOnColonistChips", true);
             Scribe_Values.Look(ref verdictsInPalette, "verdictsInPalette", true);
             Scribe_Values.Look(ref verdictsOnRecommendationChips, "verdictsOnRecommendationChips", true);
+            Scribe_Values.Look(ref colonistSkillCaptions, "colonistSkillCaptions", true);
             Scribe_Values.Look(ref windowWidth, "windowWidth", 0f);
             Scribe_Values.Look(ref windowHeight, "windowHeight", 0f);
             Scribe_Collections.Look(ref warnedPriorityMods, "warnedPriorityMods", LookMode.Value);

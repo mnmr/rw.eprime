@@ -21,6 +21,149 @@ namespace WorkRoles
         internal TipModel Model { get; }
         internal string PlainText { get; }
 
+        /// Exact comparison of every published field that can affect
+        /// structured-tip rendering. RenderCache is derived geometry and is
+        /// deliberately excluded.
+        internal bool ContentEquals(StructuredTip other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            return other != null
+                && string.Equals(StableKey, other.StableKey,
+                    StringComparison.Ordinal)
+                && ModelEquals(Model, other.Model);
+        }
+
+        private static bool ModelEquals(TipModel left, TipModel right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null
+                || !string.Equals(left.Title, right.Title,
+                    StringComparison.Ordinal)
+                || !string.Equals(left.Badge, right.Badge,
+                    StringComparison.Ordinal)
+                || !ColorEquals(left.BadgeColor, right.BadgeColor)
+                || left.Padding != right.Padding
+                || left.Sections.Count != right.Sections.Count)
+                return false;
+            for (int sectionIndex = 0;
+                    sectionIndex < left.Sections.Count; sectionIndex++)
+            {
+                TipSection leftSection = left.Sections[sectionIndex];
+                TipSection rightSection = right.Sections[sectionIndex];
+                if (!string.Equals(leftSection.Header, rightSection.Header,
+                        StringComparison.Ordinal)
+                    || leftSection.Rows.Count != rightSection.Rows.Count)
+                    return false;
+                for (int rowIndex = 0;
+                        rowIndex < leftSection.Rows.Count; rowIndex++)
+                    if (!RowEquals(leftSection.Rows[rowIndex],
+                            rightSection.Rows[rowIndex])) return false;
+            }
+            return true;
+        }
+
+        private static bool RowEquals(TipRow left, TipRow right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (left == null || right == null) return false;
+            if (left is TipTextRow leftText)
+            {
+                var rightText = right as TipTextRow;
+                return rightText != null && leftText.Dim == rightText.Dim
+                    && string.Equals(leftText.Text, rightText.Text,
+                        StringComparison.Ordinal);
+            }
+            if (left is TipFactRow leftFact)
+            {
+                var rightFact = right as TipFactRow;
+                return rightFact != null
+                    && string.Equals(leftFact.Label, rightFact.Label,
+                           StringComparison.Ordinal)
+                    && string.Equals(leftFact.Value, rightFact.Value,
+                        StringComparison.Ordinal)
+                    && NullableColorEquals(leftFact.ValueColor,
+                        rightFact.ValueColor)
+                    && NullableColorEquals(leftFact.LabelColor,
+                        rightFact.LabelColor);
+            }
+            if (left is TipActionRow leftAction)
+            {
+                var rightAction = right as TipActionRow;
+                return rightAction != null
+                    && string.Equals(leftAction.InputToken,
+                           rightAction.InputToken, StringComparison.Ordinal)
+                    && string.Equals(leftAction.Description,
+                        rightAction.Description, StringComparison.Ordinal);
+            }
+            if (left is TipColumnsRow leftColumns)
+            {
+                var rightColumns = right as TipColumnsRow;
+                if (rightColumns == null
+                    || !NullableColorEquals(leftColumns.Color,
+                        rightColumns.Color)
+                    || !ReferenceEquals(leftColumns.Icon, rightColumns.Icon)
+                    || leftColumns.Tight != rightColumns.Tight)
+                    return false;
+                int leftCount = leftColumns.Cells?.Count ?? 0;
+                int rightCount = rightColumns.Cells?.Count ?? 0;
+                if (leftCount != rightCount) return false;
+                for (int i = 0; i < leftCount; i++)
+                    if (!string.Equals(leftColumns.Cells[i],
+                            rightColumns.Cells[i], StringComparison.Ordinal))
+                        return false;
+                return true;
+            }
+            if (left is TipSpanRow leftSpan)
+            {
+                var rightSpan = right as TipSpanRow;
+                return rightSpan != null
+                    && string.Equals(leftSpan.Text, rightSpan.Text,
+                           StringComparison.Ordinal)
+                    && leftSpan.Indent == rightSpan.Indent
+                    && leftSpan.Dim == rightSpan.Dim
+                    && leftSpan.AlignColumn == rightSpan.AlignColumn;
+            }
+            if (left is TipInlineRow leftInline)
+            {
+                var rightInline = right as TipInlineRow;
+                if (rightInline == null
+                    || !string.Equals(leftInline.Label, rightInline.Label,
+                        StringComparison.Ordinal)) return false;
+                int leftCount = leftInline.Segments?.Count ?? 0;
+                int rightCount = rightInline.Segments?.Count ?? 0;
+                if (leftCount != rightCount) return false;
+                for (int i = 0; i < leftCount; i++)
+                {
+                    TipInlineSegment leftSegment = leftInline.Segments[i];
+                    TipInlineSegment rightSegment = rightInline.Segments[i];
+                    if (!string.Equals(leftSegment.Text, rightSegment.Text,
+                            StringComparison.Ordinal)
+                        || !ReferenceEquals(leftSegment.Icon,
+                            rightSegment.Icon)
+                        || !ColorEquals(leftSegment.Color,
+                            rightSegment.Color)
+                        || leftSegment.Gap != rightSegment.Gap)
+                        return false;
+                }
+                return true;
+            }
+            if (left is TipGapRow leftGap)
+            {
+                var rightGap = right as TipGapRow;
+                return rightGap != null && leftGap.Height == rightGap.Height;
+            }
+            return left is TipRuleRow && right is TipRuleRow;
+        }
+
+        private static bool NullableColorEquals(Color? left, Color? right)
+        {
+            if (left.HasValue != right.HasValue) return false;
+            return !left.HasValue || ColorEquals(left.Value, right.Value);
+        }
+
+        private static bool ColorEquals(Color left, Color right) =>
+            left.r == right.r && left.g == right.g
+            && left.b == right.b && left.a == right.a;
     }
 
     /// Structured tooltip content: a title/badge line plus sections of rows.

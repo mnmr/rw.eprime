@@ -3,8 +3,9 @@ using Verse;
 
 namespace WorkRoles
 {
-    /// Per-pawn job-transition revisions, bumped by the Pawn_JobTracker patches.
-    /// UI-side only: consumers compare revisions to re-resolve cached activity.
+    /// Per-pawn current-activity revisions, bumped by job, draft, and mental-state
+    /// transition patches. UI-side only: consumers compare revisions to
+    /// re-resolve cached activity.
     /// Gated to an open WorkRoles window so a closed window costs nothing and
     /// retains no pawn references.
     internal static class ActivityTracker
@@ -23,6 +24,9 @@ namespace WorkRoles
         internal static void ReleaseForTeardown() => Disable();
 
         internal static void NotifyJobChanged(Pawn pawn)
+            => NotifyActivityChanged(pawn);
+
+        internal static void NotifyActivityChanged(Pawn pawn)
         {
             if (!enabled || pawn == null) return;
             if (!pawn.IsColonist && !pawn.IsSlaveOfColony) return;

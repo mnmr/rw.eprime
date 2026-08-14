@@ -389,7 +389,7 @@ public class RecommendationPlanScenarioTests
         recs.AutoAssign(essential.Id);
         RecommendationRoleSource hauler = recs.RoleByWorkType(2, 0, 100, "Hauling");
         var pawn = new PawnView { CapableWorkTypes = { "Essential", "Hauling" } };
-        // Existing order puts the late chore before the auto role.
+        // Existing order puts the late chore before the auto-assign role.
         pawn.Existing.Add(new AssignmentView { RoleId = 2, Enabled = true });
         pawn.Existing.Add(new AssignmentView { RoleId = 1, Enabled = true });
 
@@ -442,7 +442,7 @@ public class RecommendationPlanScenarioTests
         var pawn = new PawnView { CapableWorkTypes = { "Essential", "Hauling" } };
         pawn.SkillLevels["Hauling"] = 0;
         // Pinned to the late chore, listed first; the pin holds it ahead of the
-        // auto role.
+        // auto-assign role.
         pawn.Existing.Add(
             new AssignmentView
             {

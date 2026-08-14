@@ -55,7 +55,7 @@ namespace WorkRoles
         /// migrates those at load and sets this.
         public bool tuningSeeded;
         /// Role-list group (RoleGroup id; 0 = Default). Stored membership only —
-        /// rule-carrying roles DISPLAY under Auto-Roles.
+        /// rule-carrying roles DISPLAY under Conditional Roles.
         public int groupId = RoleGroup.DefaultId;
         public int activeHours = AllHours;   // bit h set = active during local hour h
         /// LocationRules tokens; empty = active anywhere.

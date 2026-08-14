@@ -12,7 +12,7 @@ namespace WorkRoles.UI
         Normal,     // standard chip
         Disabled,   // role off: strong dim + strikes (RoleChipStrikes: 1 pawn, 2 global, 3 both)
         Subtle,     // already-assigned recommendation: bg at ~75% brightness, NO strike, full-brightness label
-        AutoOff     // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
+        ConditionalOff // rule-suppressed: dim like Disabled but NO strike (rules, not the player, turned it off)
     }
 
     /// Suitability badge shown as a chip's first marker: a vertical pair of
@@ -86,7 +86,7 @@ namespace WorkRoles.UI
         // pawn is doing right now; matches the path-chip selection idiom.
         private static readonly Color ActiveOutlineColor = new Color(1f, 1f, 1f, 0.85f);
         private static readonly Color LabelColor = new Color(0.95f, 0.95f, 0.95f);
-        // #e8e6e0 at 0.85 alpha — tint for the auto-role marker icon.
+        // #e8e6e0 at 0.85 alpha — tint for the conditional-role marker icon.
         public static readonly Color RuleMarkerColor = new Color(232f / 255f, 230f / 255f, 224f / 255f, 0.85f);
         private static readonly Color RemovedColor = new Color(1f, 0f, 0f, 1f); // #ff0000
 
@@ -282,7 +282,7 @@ namespace WorkRoles.UI
                 switch (style)
                 {
                     case ChipStyle.Disabled:
-                    case ChipStyle.AutoOff:
+                    case ChipStyle.ConditionalOff:
                         bg = new Color(bg.r * 0.4f, bg.g * 0.4f, bg.b * 0.4f);
                         break;
                     case ChipStyle.Subtle:
@@ -292,7 +292,7 @@ namespace WorkRoles.UI
                 }
 
                 Color labelColor =
-                    style == ChipStyle.Disabled || style == ChipStyle.AutoOff
+                    style == ChipStyle.Disabled || style == ChipStyle.ConditionalOff
                         ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.55f)
                     : style == ChipStyle.Subtle
                         ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f)

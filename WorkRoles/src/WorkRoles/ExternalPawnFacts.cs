@@ -5,7 +5,8 @@ using WorkRoles.Signals;
 namespace WorkRoles
 {
     /// <summary>
-    /// Explicit invalidation source for live pawn data captured by the UI.
+    /// Explicit invalidation source for live pawn data captured by the UI,
+    /// including cached portrait/name/trait presentation.
     /// Role and assignment mutations do not belong here: recommendation views
     /// overlay those values after reading the external snapshot.
     /// </summary>

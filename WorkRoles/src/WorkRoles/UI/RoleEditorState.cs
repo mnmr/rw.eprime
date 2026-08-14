@@ -174,13 +174,13 @@ namespace WorkRoles.UI
             const int SwatchCols = 19;
             string autoAssignLabel = "WR_AutoAssign".Translate().ToString();
             string blockerLabel = "WR_BlockerRole".Translate().ToString();
-            string autoRoleLabel = "WR_AutoRole".Translate().ToString();
+            string conditionalRoleLabel = "WR_ConditionalRole".Translate().ToString();
             string compositeLabel = "WR_CompositeRole".Translate().ToString();
             Text.Font = GameFont.Small;
             float checksWidth = Mathf.Max(
                 Mathf.Max(WrText.FitWidth(autoAssignLabel),
                     WrText.FitWidth(blockerLabel)),
-                Mathf.Max(WrText.FitWidth(autoRoleLabel),
+                Mathf.Max(WrText.FitWidth(conditionalRoleLabel),
                     WrText.FitWidth(compositeLabel))) + 30f;
             float checksX = width / 2f - checksWidth;
             float titleMaxWidth = checksX - 8f - TopBoxPadding
@@ -224,10 +224,10 @@ namespace WorkRoles.UI
                     "WR_PlusOthers".Translate(i).ToString());
 
             string defaultGroupLabel = "WR_GroupDefault".Translate().ToString();
-            // Rules move any role (composite or not) to Auto-Roles; otherwise
-            // the stored group shows, composites included.
+            // Rules move any role (composite or not) to Conditional Roles;
+            // otherwise the stored group shows, composites included.
             string currentGroup = role.HasRules
-                ? "WR_GroupAutoRules".Translate().ToString()
+                ? "WR_GroupConditionalRoles".Translate().ToString()
                 : role.groupId == RoleGroup.DefaultId
                     ? defaultGroupLabel
                     : store.GroupById(role.groupId)?.label ?? defaultGroupLabel;
@@ -252,7 +252,7 @@ namespace WorkRoles.UI
                 role.autoAssign, role.blocker, role.HasRules,
                 role.HasRules || rulesRevealed, memberLocked, role.composite,
                 customSwatches, customRows,
-                checksWidth, autoAssignLabel, blockerLabel, autoRoleLabel,
+                checksWidth, autoAssignLabel, blockerLabel, conditionalRoleLabel,
                 compositeLabel, BlockerTip,
                 "WR_ClearRulesConfirm".Translate(role.label).ToString(),
                 "WR_CompositeConfirm".Translate(role.label).ToString(),
@@ -357,7 +357,7 @@ namespace WorkRoles.UI
         /// section collapse toggles bump treeRevision). Candidates come from
         /// the shared role-list section snapshot so their grouping, nesting,
         /// and order match the role tree exactly; sections whose members are
-        /// all ineligible (Auto-Roles, composite roles, everything already a
+        /// all ineligible (Conditional Roles, composite roles, everything already a
         /// member) drop out with their headers, and collapsed sections keep
         /// only their header.
         private RoleCompositeSnapshot BuildComposite(Role role,
@@ -977,7 +977,7 @@ namespace WorkRoles.UI
             bool blocker, bool hasRules, bool rulesShown, bool memberLocked,
             bool composite,
             List<Color> customSwatches, int customRows, float checksWidth,
-            string autoAssignLabel, string blockerLabel, string autoRoleLabel,
+            string autoAssignLabel, string blockerLabel, string conditionalRoleLabel,
             string compositeLabel, StructuredTip blockerTip,
             string clearRulesConfirmation, string compositeConfirmation,
             string compositeRevertConfirmation,
@@ -1010,7 +1010,7 @@ namespace WorkRoles.UI
             ChecksWidth = checksWidth;
             AutoAssignLabel = autoAssignLabel;
             BlockerLabel = blockerLabel;
-            AutoRoleLabel = autoRoleLabel;
+            ConditionalRoleLabel = conditionalRoleLabel;
             CompositeLabel = compositeLabel;
             BlockerTip = blockerTip;
             ClearRulesConfirmation = clearRulesConfirmation;
@@ -1054,7 +1054,7 @@ namespace WorkRoles.UI
         internal float ChecksWidth { get; }
         internal string AutoAssignLabel { get; }
         internal string BlockerLabel { get; }
-        internal string AutoRoleLabel { get; }
+        internal string ConditionalRoleLabel { get; }
         internal string CompositeLabel { get; }
         internal StructuredTip BlockerTip { get; }
         internal string ClearRulesConfirmation { get; }
