@@ -1,8 +1,3 @@
-using System.Collections.Generic;
-using QualityJobs.Core;
-using RimWorld;
-using Verse;
-
 namespace QualityJobs
 {
     /// Non-synced core of plan application (Fix 2). Extracted from
@@ -28,80 +23,8 @@ namespace QualityJobs
         public static void Apply(QualityJobsStore store, int thingId, int minSkill,
             bool requireInspired, bool requireSpecialist, int minQuality, bool autoBest)
         {
-            // Clamp/coerce exactly as the individual setters do.
-            minSkill = System.Math.Clamp(minSkill, 0, 20);
-            minQuality = System.Math.Clamp(minQuality, 0, 6);
-            requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
-
-            ConstructionPlan? plan = store.FindPlanById(thingId);
-
-            bool incomingNeutral = minSkill == 0 && !requireInspired
-                && !requireSpecialist && minQuality == 0 && !autoBest;
-            if (incomingNeutral)
-            {
-                if (plan != null)
-                {
-                    Dispatcher.RemoveOurDeconstructDesignation(plan);
-                    store.RemovePlan(plan);
-                }
-                return;
-            }
-
-            if (plan == null)
-            {
-                plan = CreateNeutralPlan(store, thingId);
-                if (plan == null) return;
-            }
-
-            plan.minSkill = minSkill;
-            plan.requireInspired = requireInspired;
-            plan.requireSpecialist = requireSpecialist;
-            plan.minQuality = minQuality;
-            plan.autoBest = autoBest;
-
-            // Covers the edge case where clamping/coercion turned all values
-            // neutral after the check above (e.g. Ideology deactivated).
-            RemoveIfNeutral(store, plan);
-        }
-
-        private static bool IsNeutral(ConstructionPlan plan)
-            => plan.minSkill == 0 && !plan.requireInspired
-               && !plan.requireSpecialist && plan.minQuality == 0 && !plan.autoBest;
-
-        private static void RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
-        {
-            if (!IsNeutral(plan)) return;
-            Dispatcher.RemoveOurDeconstructDesignation(plan);
-            store.RemovePlan(plan);
-        }
-
-        /// Resolves or creates a neutral plan for the given thingId.
-        /// Returns null if the thing cannot be found or is not a
-        /// Blueprint_Build/Frame (the only gate-manageable thing types).
-        private static ConstructionPlan? CreateNeutralPlan(QualityJobsStore store, int thingId)
-        {
-            Thing? target = FindSpawnedThing(thingId);
-            if (target == null) return null;
-            if (!(target is Blueprint_Build) && !(target is Frame)) return null;
-            var plan = new ConstructionPlan
-            {
-                target = target,
-                state = ConstructionPlanState.Active,
-            };
-            store.AddPlan(plan);
-            return plan;
-        }
-
-        private static Thing? FindSpawnedThing(int thingId)
-        {
-            List<Map> maps = Find.Maps;
-            for (int m = 0; m < maps.Count; m++)
-            {
-                List<Thing> things = maps[m].listerThings.AllThings;
-                for (int i = 0; i < things.Count; i++)
-                    if (things[i].thingIDNumber == thingId) return things[i];
-            }
-            return null;
+            store.ApplyPlanSettings(thingId, minSkill, requireInspired,
+                requireSpecialist, minQuality, autoBest);
         }
     }
 }

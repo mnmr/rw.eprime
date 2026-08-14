@@ -30,6 +30,8 @@ namespace QualityJobs.Patches
         // Static readonly — never re-allocated on hot paths.
         private static readonly System.Comparison<WorkTypeDef> ByDefName =
             (a, b) => string.CompareOrdinal(a.defName, b.defName);
+        private static readonly System.Action InvalidateDefinitionCaches =
+            ManagedRecipes.Invalidate;
 
         public static void Postfix(bool hotReload)
         {
@@ -128,6 +130,12 @@ namespace QualityJobs.Patches
 
                 DefGenerator.AddImpliedDef(def, hotReload);
             }
+
+            // Rebuild after the long-event finishes, when hot-reloaded defs and
+            // their second cross-reference pass are fully published. The cached
+            // delegate keeps this reload hook allocation-free at the call site.
+            if (hotReload)
+                LongEventHandler.ExecuteWhenFinished(InvalidateDefinitionCaches);
         }
 
         /// Returns the maximum priorityInType among existing WorkGiverDefs for

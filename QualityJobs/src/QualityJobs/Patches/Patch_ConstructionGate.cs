@@ -59,8 +59,7 @@ namespace QualityJobs.Patches
             // repeatedly, growing the overshoot without this clamp.
             if (__instance.workDone > __instance.WorkToBuild)
                 __instance.workDone = __instance.WorkToBuild;
-            plan.state = ConstructionPlanState.Paused;
-            plan.finisher = null;
+            store.PausePlan(plan);
             __state.plan = null; // postfix must not run retry logic on a pause
             return false;
         }
@@ -97,9 +96,7 @@ namespace QualityJobs.Patches
 
             // Retry (spec §10): vanilla Deconstruct designation; the rebuild
             // hook re-places the blueprint when deconstruction finishes.
-            plan.target = built;
-            plan.state = ConstructionPlanState.AwaitingRebuild;
-            plan.finisher = null;
+            store.RetargetPlan(plan, built, ConstructionPlanState.AwaitingRebuild);
             __state.map.designationManager.AddDesignation(
                 new Designation(built, DesignationDefOf.Deconstruct));
         }

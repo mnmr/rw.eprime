@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>1.0.4</modVersion>
+  <modVersion>1.0.5</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>

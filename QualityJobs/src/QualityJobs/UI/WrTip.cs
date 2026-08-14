@@ -122,5 +122,13 @@ namespace QualityJobs.UI
             plain.Clear();
             withArg.Clear();
         }
+
+        internal static void Reset()
+        {
+            observedUiVersion = -1;
+            StructuredTipPresenter.Reset();
+            plain.Clear();
+            withArg.Clear();
+        }
     }
 }

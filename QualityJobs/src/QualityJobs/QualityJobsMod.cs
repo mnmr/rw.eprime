@@ -52,6 +52,12 @@ namespace QualityJobs
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
+            using (GuiStateScope.Capture())
+                DrawSettingsWindowContents(inRect);
+        }
+
+        private void DrawSettingsWindowContents(Rect inRect)
+        {
             SettingsLabels.Ensure();
 
             // ── Header panel ─────────────────────────────────────────────────────────
@@ -120,6 +126,7 @@ namespace QualityJobs
             // grid reads from/writes to the store via synced commands. Otherwise
             // reads/writes global Settings directly (new-save seeds).
             QualityJobsStore? activeStore = (Current.Game != null) ? QualityJobsStore.Active : null;
+            StoreSettingsSnapshot? activeSettings = activeStore?.SettingsPresentation;
 
             // ── Two-column defaults grid ──────────────────────────────────────────
             // Left column: bill defaults.  Right column: construction defaults.
@@ -155,9 +162,9 @@ namespace QualityJobs
                 // Left: manage new bills (dual-pattern).
                 if (activeStore != null)
                 {
-                    bool manageNew = activeStore.manageNewBillsDefault;
+                    bool manageNew = activeSettings!.ManageNewBills;
                     Widgets.CheckboxLabeled(leftRow, SettingsLabels.ManageNewBills!, ref manageNew);
-                    if (manageNew != activeStore.manageNewBillsDefault)
+                    if (manageNew != activeSettings.ManageNewBills)
                         Commands.SetManageNewBillsDefault(manageNew);
                 }
                 else
@@ -169,9 +176,9 @@ namespace QualityJobs
                 // Right: manage new construction (dual-pattern).
                 if (activeStore != null)
                 {
-                    bool manageNewC = activeStore.manageNewConstructionDefault;
+                    bool manageNewC = activeSettings!.ManageNewConstruction;
                     Widgets.CheckboxLabeled(rightRow, SettingsLabels.ManageNewConstruction!, ref manageNewC);
-                    if (manageNewC != activeStore.manageNewConstructionDefault)
+                    if (manageNewC != activeSettings.ManageNewConstruction)
                         Commands.SetManageNewConstructionDefault(manageNewC);
                 }
                 else
@@ -191,9 +198,9 @@ namespace QualityJobs
                 // Left: bill require inspired.
                 if (activeStore != null)
                 {
-                    bool inspired = activeStore.requireInspiredDefault;
+                    bool inspired = activeSettings!.RequireInspired;
                     Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireInspired!, ref inspired);
-                    if (inspired != activeStore.requireInspiredDefault)
+                    if (inspired != activeSettings.RequireInspired)
                         Commands.SetRequireInspiredDefault(inspired);
                 }
                 else
@@ -205,9 +212,9 @@ namespace QualityJobs
                 // Right: construction require inspired.
                 if (activeStore != null)
                 {
-                    bool inspired = activeStore.constructionRequireInspiredDefault;
+                    bool inspired = activeSettings!.ConstructionRequireInspired;
                     Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireInspired!, ref inspired);
-                    if (inspired != activeStore.constructionRequireInspiredDefault)
+                    if (inspired != activeSettings.ConstructionRequireInspired)
                         Commands.SetConstructionRequireInspiredDefault(inspired);
                 }
                 else
@@ -229,9 +236,9 @@ namespace QualityJobs
                     // Left: bill require specialist.
                     if (activeStore != null)
                     {
-                        bool specialist = activeStore.requireSpecialistDefault;
+                        bool specialist = activeSettings!.RequireSpecialist;
                         Widgets.CheckboxLabeled(leftRow, SettingsLabels.RequireSpecialist!, ref specialist);
-                        if (specialist != activeStore.requireSpecialistDefault)
+                        if (specialist != activeSettings.RequireSpecialist)
                             Commands.SetRequireSpecialistDefault(specialist);
                     }
                     else
@@ -243,9 +250,9 @@ namespace QualityJobs
                     // Right: construction require specialist.
                     if (activeStore != null)
                     {
-                        bool specialist = activeStore.constructionRequireSpecialistDefault;
+                        bool specialist = activeSettings!.ConstructionRequireSpecialist;
                         Widgets.CheckboxLabeled(rightRow, SettingsLabels.RequireSpecialist!, ref specialist);
-                        if (specialist != activeStore.constructionRequireSpecialistDefault)
+                        if (specialist != activeSettings.ConstructionRequireSpecialist)
                             Commands.SetConstructionRequireSpecialistDefault(specialist);
                     }
                     else
@@ -269,9 +276,9 @@ namespace QualityJobs
                 // Left: bill auto-best default.
                 if (activeStore != null)
                 {
-                    bool auto = activeStore.autoBestDefault;
+                    bool auto = activeSettings!.AutoBest;
                     Widgets.CheckboxLabeled(leftRow, SettingsLabels.AutoBest!, ref auto);
-                    if (auto != activeStore.autoBestDefault)
+                    if (auto != activeSettings.AutoBest)
                         Commands.SetAutoBestDefault(auto);
                 }
                 else
@@ -283,9 +290,9 @@ namespace QualityJobs
                 // Right: construction auto-best default.
                 if (activeStore != null)
                 {
-                    bool autoC = activeStore.constructionAutoBestDefault;
+                    bool autoC = activeSettings!.ConstructionAutoBest;
                     Widgets.CheckboxLabeled(rightRow, SettingsLabels.AutoBest!, ref autoC);
-                    if (autoC != activeStore.constructionAutoBestDefault)
+                    if (autoC != activeSettings.ConstructionAutoBest)
                         Commands.SetConstructionAutoBestDefault(autoC);
                 }
                 else
@@ -303,13 +310,13 @@ namespace QualityJobs
             // mode does not read it, and full brightness would suggest it does.
             {
                 bool leftAuto = activeStore != null
-                    ? activeStore.autoBestDefault : Settings.defaultAutoBest;
+                    ? activeSettings!.AutoBest : Settings.defaultAutoBest;
                 bool rightAuto = activeStore != null
-                    ? activeStore.constructionAutoBestDefault : Settings.defaultConstructionAutoBest;
+                    ? activeSettings!.ConstructionAutoBest : Settings.defaultConstructionAutoBest;
                 Color rowColor = GUI.color;
 
                 // Left: bill finisher skill.
-                int leftSkill = activeStore != null ? activeStore.minSkillDefault : Settings.defaultMinSkill;
+                int leftSkill = activeStore != null ? activeSettings!.MinSkill : Settings.defaultMinSkill;
                 if (leftSkill != SettingsLabels.MinSkillValue)
                 {
                     SettingsLabels.MinSkillLabel = "QJ_FinisherSkill".Translate(leftSkill);
@@ -331,7 +338,7 @@ namespace QualityJobs
                 }
 
                 // Right: construction finisher skill.
-                int rightSkill = activeStore != null ? activeStore.constructionMinSkillDefault : Settings.defaultConstructionMinSkill;
+                int rightSkill = activeStore != null ? activeSettings!.ConstructionMinSkill : Settings.defaultConstructionMinSkill;
                 if (rightSkill != SettingsLabels.ConstructionMinSkillValue)
                 {
                     SettingsLabels.ConstructionMinSkillLabel = "QJ_FinisherSkill".Translate(rightSkill);
@@ -366,7 +373,7 @@ namespace QualityJobs
 
             // Row 7: Stock cap (left) / blank (right).
             {
-                int capVal = activeStore != null ? activeStore.productCapDefault : Settings.defaultProductCap;
+                int capVal = activeStore != null ? activeSettings!.ProductCap : Settings.defaultProductCap;
                 // I4: rebuild interpolated cap label only when the displayed value changes.
                 if (capVal != SettingsLabels.DefaultCapValue)
                 {
@@ -427,10 +434,11 @@ namespace QualityJobs
                 {
                     // Per-save share toggle (synced).
                     Rect shareRow = new Rect(bodyX, y, colW, CheckboxH);
-                    bool share = store.shareUnfinishedWork;
+                    StoreSettingsSnapshot snapshot = store.SettingsPresentation;
+                    bool share = snapshot.ShareUnfinishedWork;
                     Widgets.CheckboxLabeled(shareRow, SettingsLabels.ShareWork!, ref share);
                     WrTips.Key("QJ_SettingsShareWorkTip").Region(shareRow);
-                    if (share != store.shareUnfinishedWork)
+                    if (share != snapshot.ShareUnfinishedWork)
                         Commands.SetShareUnfinishedWork(share);
                 }
                 // If store is null the mod is disabled for this save;
@@ -453,6 +461,8 @@ namespace QualityJobs
                 Widgets.Label(noGameRow, SettingsLabels.NoGameLoaded!);
             }
         }
+
+        internal static void ResetPresentationCaches() => SettingsLabels.Reset();
 
         /// Draws a manual slider row (label left 50%, slider right 50%) without
         /// Listing_Standard. Mirrors SliderLabeled's default labelPct = 0.5f.
@@ -488,7 +498,7 @@ namespace QualityJobs
             WrTips.Key("QJ_RetriedUntilTip").Region(row);
 
             int curQ = activeStore != null
-                ? activeStore.constructionTargetQualityDefault
+                ? activeStore.SettingsPresentation.ConstructionTargetQuality
                 : Settings.defaultConstructionTargetQuality;
 
             string btnCaption = curQ <= 0
@@ -540,7 +550,7 @@ namespace QualityJobs
             WrTips.Key("QJ_BillTargetQualityTip").Region(row);
 
             int curQ = activeStore != null
-                ? activeStore.targetQualityDefault
+                ? activeStore.SettingsPresentation.TargetQuality
                 : Settings.defaultTargetQuality;
 
             string btnCaption = curQ <= 0
@@ -583,7 +593,7 @@ namespace QualityJobs
         ///   value integer (interpolated labels).
         /// Dependencies: language change; value change.
         /// Equality policy: identity not required (strings are value-typed).
-        /// Teardown: none (process-static; safe across language reloads).
+        /// Teardown: Reset on game disposal.
         private static class SettingsLabels
         {
             private static LoadedLanguage? _builtForLanguage;
@@ -657,6 +667,15 @@ namespace QualityJobs
                 MinSkillValue             = -1;
                 ConstructionMinSkillValue = -1;
                 DefaultCapValue           = -1;
+            }
+
+            public static void Reset()
+            {
+                _builtForLanguage = null;
+                QualityLabels = null;
+                MinSkillValue = -1;
+                ConstructionMinSkillValue = -1;
+                DefaultCapValue = -1;
             }
         }
     }

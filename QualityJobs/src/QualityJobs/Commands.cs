@@ -20,17 +20,20 @@ namespace QualityJobs
                 ? current : store.manageNewBillsDefault;
             if (effective == value) return;
             store.billManaged[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
         }
 
         [SyncMethod]
         public static void SetBillMinSkill(string billId, int value)
         {
+            value = ConfigurationLimits.Skill(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             int effective = store.billMinSkill.TryGetValue(billId, out int current)
                 ? current : store.minSkillDefault;
             if (effective == value) return;
             store.billMinSkill[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
         }
 
         [SyncMethod]
@@ -42,17 +45,20 @@ namespace QualityJobs
                 ? current : store.requireInspiredDefault;
             if (effective == value) return;
             store.billRequireInspired[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
         }
 
         [SyncMethod]
         public static void SetBillRequireSpecialist(string billId, bool value)
         {
+            value = value && ModsConfig.IdeologyActive;
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             bool effective = store.billRequireSpecialist.TryGetValue(billId, out bool current)
                 ? current : store.requireSpecialistDefault;
             if (effective == value) return;
             store.billRequireSpecialist[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
         }
 
         [SyncMethod]
@@ -64,27 +70,31 @@ namespace QualityJobs
                 ? current : store.autoBestDefault;
             if (effective == value) return;
             store.billAutoBest[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
         }
 
         [SyncMethod]
         public static void SetBillTargetQuality(string billId, int value)
         {
-            value = System.Math.Clamp(value, 0, 6);
+            value = ConfigurationLimits.Quality(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             int effective = store.billTargetQuality.TryGetValue(billId, out int current)
                 ? current : store.targetQualityDefault;
             if (effective == value) return;
             store.billTargetQuality[billId] = value;
+            store.NotifyBillConfigurationChanged(billId, affectsEligibility: false);
         }
 
         [SyncMethod]
         public static void SetProductCap(string productDefName, int cap)
         {
+            cap = ConfigurationLimits.StockCap(cap);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || productDefName == null) return;
             if (store.CapFor(productDefName) == cap) return;
             store.productCaps[productDefName] = cap;
+            store.NotifyProductCapChanged(productDefName, isDefault: false);
         }
 
         [SyncMethod]
@@ -93,6 +103,7 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.shareUnfinishedWork == value) return;
             store.shareUnfinishedWork = value;
+            store.NotifyShareChanged();
         }
 
         /// Resolves the first-install migration for bills that were explicitly
@@ -111,11 +122,29 @@ namespace QualityJobs
             for (int i = 0; i < pending.Count; i++)
             {
                 string id = pending[i];
+                bool effectiveManaged = store.billManaged.TryGetValue(id,
+                    out bool managed) ? managed : store.manageNewBillsDefault;
+                bool effectiveAutoBest = store.billAutoBest.TryGetValue(id,
+                    out bool autoBest) ? autoBest : store.autoBestDefault;
+                bool effectiveInspired = store.billRequireInspired.TryGetValue(id,
+                    out bool inspired) ? inspired : store.requireInspiredDefault;
+                bool effectiveSpecialist = store.billRequireSpecialist.TryGetValue(id,
+                    out bool specialist) ? specialist : store.requireSpecialistDefault;
+                int effectiveTarget = store.billTargetQuality.TryGetValue(id,
+                    out int target) ? target : store.targetQualityDefault;
+                bool eligibilityChanged = effectiveManaged != config.Managed
+                    || effectiveAutoBest != config.AutoBest
+                    || effectiveInspired != config.RequireInspired
+                    || effectiveSpecialist != config.RequireSpecialist;
+                bool presentationChanged = eligibilityChanged
+                    || effectiveTarget != config.TargetQuality;
                 store.billManaged[id] = config.Managed;
                 store.billAutoBest[id] = config.AutoBest;
                 store.billRequireInspired[id] = config.RequireInspired;
                 store.billRequireSpecialist[id] = config.RequireSpecialist;
                 store.billTargetQuality[id] = config.TargetQuality;
+                if (presentationChanged)
+                    store.NotifyBillConfigurationChanged(id, eligibilityChanged);
             }
 
             pending.Clear();
@@ -131,15 +160,19 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.manageNewBillsDefault == value) return;
             store.manageNewBillsDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.Managed, affectsEligibility: true);
         }
 
         [SyncMethod]
         public static void SetMinSkillDefault(int value)
         {
-            value = System.Math.Clamp(value, 0, 20);
+            value = ConfigurationLimits.Skill(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.minSkillDefault == value) return;
             store.minSkillDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.MinSkill, affectsEligibility: true);
         }
 
         [SyncMethod]
@@ -148,6 +181,8 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.requireInspiredDefault == value) return;
             store.requireInspiredDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.RequireInspired, affectsEligibility: true);
         }
 
         [SyncMethod]
@@ -157,6 +192,8 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.requireSpecialistDefault == value) return;
             store.requireSpecialistDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.RequireSpecialist, affectsEligibility: true);
         }
 
         [SyncMethod]
@@ -165,24 +202,29 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.autoBestDefault == value) return;
             store.autoBestDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.AutoBest, affectsEligibility: true);
         }
 
         [SyncMethod]
         public static void SetTargetQualityDefault(int value)
         {
-            value = System.Math.Clamp(value, 0, 6);
+            value = ConfigurationLimits.Quality(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.targetQualityDefault == value) return;
             store.targetQualityDefault = value;
+            store.NotifyBillDefaultsChanged(
+                BillDefaultField.TargetQuality, affectsEligibility: false);
         }
 
         [SyncMethod]
         public static void SetProductCapDefault(int value)
         {
-            value = System.Math.Clamp(value, 0, 50);
+            value = ConfigurationLimits.StockCap(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.productCapDefault == value) return;
             store.productCapDefault = value;
+            store.NotifyProductCapChanged(null, isDefault: true);
         }
 
         // ---- Per-save construction default setters (dual-pattern) ---------------
@@ -193,15 +235,17 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.manageNewConstructionDefault == value) return;
             store.manageNewConstructionDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         [SyncMethod]
         public static void SetConstructionMinSkillDefault(int value)
         {
-            value = System.Math.Clamp(value, 0, 20);
+            value = ConfigurationLimits.Skill(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionMinSkillDefault == value) return;
             store.constructionMinSkillDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         [SyncMethod]
@@ -210,6 +254,7 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionRequireInspiredDefault == value) return;
             store.constructionRequireInspiredDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         [SyncMethod]
@@ -219,6 +264,7 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionRequireSpecialistDefault == value) return;
             store.constructionRequireSpecialistDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         [SyncMethod]
@@ -227,15 +273,17 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionAutoBestDefault == value) return;
             store.constructionAutoBestDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         [SyncMethod]
         public static void SetConstructionTargetQualityDefault(int value)
         {
-            value = System.Math.Clamp(value, 0, 6);
+            value = ConfigurationLimits.Quality(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null || store.constructionTargetQualityDefault == value) return;
             store.constructionTargetQualityDefault = value;
+            store.NotifyConstructionDefaultsChanged();
         }
 
         /// Spec §12: enable adds a fresh component seeded from the ISSUING
@@ -261,6 +309,8 @@ namespace QualityJobs
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             Dispatcher.RestoreAllToVanilla(store);
+            store.ReleasePresentation();
+            QualityJobsApi.ReleaseMemoOwner(store);
             Current.Game.components.Remove(store);
             // Clear the static fast-path flag so the draw patch sees zero plans
             // immediately after the component is removed.
@@ -280,6 +330,9 @@ namespace QualityJobs
         public static void SetPendingCopy(int minSkill, bool inspired, bool specialist,
             int quality, bool autoBest)
         {
+            minSkill = ConfigurationLimits.Skill(minSkill);
+            specialist = specialist && ModsConfig.IdeologyActive;
+            quality = ConfigurationLimits.Quality(quality);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             store.pendingCopyMinSkill   = minSkill;
@@ -319,6 +372,7 @@ namespace QualityJobs
         [SyncMethod]
         public static void SetPlanMinSkill(int thingId, int value)
         {
+            value = ConfigurationLimits.Skill(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             ConstructionPlan? plan = store.FindPlanById(thingId);
@@ -330,7 +384,8 @@ namespace QualityJobs
             }
             if (plan.minSkill == value) return;
             plan.minSkill = value;
-            RemoveIfNeutral(store, plan);
+            if (!RemoveIfNeutral(store, plan))
+                store.NotifyPlanConfigurationChanged();
         }
 
         /// Sets the require-inspired flag for the plan identified by thingId.
@@ -349,7 +404,8 @@ namespace QualityJobs
             }
             if (plan.requireInspired == value) return;
             plan.requireInspired = value;
-            RemoveIfNeutral(store, plan);
+            if (!RemoveIfNeutral(store, plan))
+                store.NotifyPlanConfigurationChanged();
         }
 
         /// Sets the require-specialist flag for the plan identified by thingId.
@@ -357,6 +413,7 @@ namespace QualityJobs
         [SyncMethod]
         public static void SetPlanRequireSpecialist(int thingId, bool value)
         {
+            value = value && ModsConfig.IdeologyActive;
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             ConstructionPlan? plan = store.FindPlanById(thingId);
@@ -368,7 +425,8 @@ namespace QualityJobs
             }
             if (plan.requireSpecialist == value) return;
             plan.requireSpecialist = value;
-            RemoveIfNeutral(store, plan);
+            if (!RemoveIfNeutral(store, plan))
+                store.NotifyPlanConfigurationChanged();
         }
 
         /// Sets the auto-best flag for the plan identified by thingId.
@@ -387,7 +445,8 @@ namespace QualityJobs
             }
             if (plan.autoBest == value) return;
             plan.autoBest = value;
-            RemoveIfNeutral(store, plan);
+            if (!RemoveIfNeutral(store, plan))
+                store.NotifyPlanConfigurationChanged();
         }
 
         /// Sets the minimum acceptable quality for the plan identified by thingId.
@@ -397,7 +456,7 @@ namespace QualityJobs
         {
             // Clamp incoming value to [0, 6]: a minQuality > 6 would retry
             // forever because no quality level (even Legendary = 6) can meet it.
-            value = System.Math.Clamp(value, 0, 6);
+            value = ConfigurationLimits.Quality(value);
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             ConstructionPlan? plan = store.FindPlanById(thingId);
@@ -409,7 +468,8 @@ namespace QualityJobs
             }
             if (plan.minQuality == value) return;
             plan.minQuality = value;
-            RemoveIfNeutral(store, plan);
+            if (!RemoveIfNeutral(store, plan))
+                store.NotifyPlanConfigurationChanged();
         }
 
         /// Returns true when the plan has all-neutral values (no active options).
@@ -418,11 +478,12 @@ namespace QualityJobs
                && plan.minQuality == 0 && !plan.autoBest;
 
         /// Removes the plan and its Deconstruct designation if it is fully neutral.
-        private static void RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
+        private static bool RemoveIfNeutral(QualityJobsStore store, ConstructionPlan plan)
         {
-            if (!IsNeutral(plan)) return;
+            if (!IsNeutral(plan)) return false;
             Dispatcher.RemoveOurDeconstructDesignation(plan);
             store.RemovePlan(plan);
+            return true;
         }
 
         /// Resolves or creates a neutral plan for the given thingId.

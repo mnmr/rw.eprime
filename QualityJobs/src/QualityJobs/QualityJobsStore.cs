@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using QualityJobs.Core;
 using QualityJobs.UI;
 using RimWorld;
@@ -6,20 +8,68 @@ using Verse;
 
 namespace QualityJobs
 {
+    internal enum BillDefaultField
+    {
+        Managed,
+        MinSkill,
+        RequireInspired,
+        RequireSpecialist,
+        AutoBest,
+        TargetQuality,
+    }
+
     /// Per-save authoritative store (spec §4). Presence in Game.components IS
     /// the enabled flag (spec §12): absent component = mod inert.
     ///
     /// Cache/store contract — Owner: Game (per save). Key: entries by UFT
     /// reference; construction plans by target Thing reference; configs by
     /// bill loadID string; caps by product defName. Value:
-    /// mutable authoritative state, mutated only in ticking or synced commands.
-    /// Dependencies: game state consumed during the 250-tick scan. Refresh:
-    /// ScanInterval game ticks. Equality: command setters compare before
-    /// writing (no-op edits change nothing). Teardown: component dies with the
-    /// Game; Active property re-resolves per call so no static leaks worlds.
+    /// mutable authoritative state, mutated only in lifecycle code or synced
+    /// commands. Dependencies: game state consumed by the named audit and
+    /// responsiveness boundaries. Refresh: explicit invalidation plus fixed
+    /// game-tick boundaries. Equality: command setters compare before
+    /// writing (no-op edits change nothing). Teardown: ReleaseMap and
+    /// ReleasePresentation clear owned indices/snapshots before the component
+    /// dies; Active re-resolves per call so no static leaks worlds.
     public class QualityJobsStore : GameComponent
     {
-        public const int ScanInterval = 250;
+        private readonly struct MapProductKey : IEquatable<MapProductKey>
+        {
+            internal readonly Map Map;
+            private readonly string product;
+
+            internal MapProductKey(Map map, string product)
+            {
+                Map = map;
+                this.product = product;
+            }
+
+            public bool Equals(MapProductKey other) =>
+                ReferenceEquals(Map, other.Map)
+                && string.Equals(product, other.product,
+                    StringComparison.Ordinal);
+
+            public override bool Equals(object? obj) =>
+                obj is MapProductKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (RuntimeHelpers.GetHashCode(Map) * 397)
+                        ^ StringComparer.Ordinal.GetHashCode(product);
+                }
+            }
+        }
+
+        /// Full world audit: one in-game hour. This is the canonical fallback
+        /// for stock counts, stale references, and external state drift.
+        public const int PeriodicAuditInterval = 2500;
+
+        /// Narrow responsiveness fallback for idle-UFT pooling, dispatch health,
+        /// and external pawn facts that do not expose a reliable event. Critical
+        /// pause/configuration changes separately request next-tick reconcile.
+        public const int ResponsivenessInterval = 250;
 
         public List<WorkItemEntry> entries = new List<WorkItemEntry>();
         public List<ConstructionPlan> plans = new List<ConstructionPlan>();
@@ -65,8 +115,128 @@ namespace QualityJobs
         public int pendingCopyQuality;
         public bool pendingCopyAutoBest;
 
-        // Rebuilt every scan; keyed (map.uniqueID, productDefName).
-        private readonly Dictionary<(int, string), int> uftCounts = new Dictionary<(int, string), int>();
+        // Cache contract — Owner: this per-save store. Key: map identity plus
+        // product defName. Value: spawned unfinished-item count. Dependencies:
+        // UFT spawn/despawn and managed-recipe definition reload. Refresh:
+        // event-driven, with an exact 2500-tick recovery audit. Equality: an
+        // equal audit preserves the published dictionary and BillStatusRevision.
+        // Teardown: map removal drops its keys; store lifetime owns both buffers.
+        private Dictionary<MapProductKey, int> uftCounts =
+            new Dictionary<MapProductKey, int>();
+        private Dictionary<MapProductKey, int> rebuiltUftCounts =
+            new Dictionary<MapProductKey, int>();
+
+        // Cache contract — Owner: this per-save store. Key: Map identity. Value:
+        // mod-owned lists of spawned UFT references. Dependencies: UFT spawn/
+        // despawn and managed-recipe definition reload. Refresh: event-driven,
+        // with an in-place 2500-tick recovery rebuild. Equality: retained maps
+        // keep their list identity across rebuilds. Teardown: map removal and
+        // ReleasePresentation remove all references. The 250-tick responsiveness
+        // path indexes these lists instead of traversing every map/ThingDef.
+        private readonly Dictionary<Map, List<UnfinishedThing>> spawnedUftsByMap =
+            new Dictionary<Map, List<UnfinishedThing>>();
+
+        // Cache contract — Owner: this per-save store. Key: UFT identity. Value:
+        // its authoritative WorkItemEntry. Dependencies: entry add/remove and
+        // load normalization. Refresh: event-driven, with a 2500-tick recovery
+        // rebuild. Equality: the dictionary identity is retained and values are
+        // the authoritative entry identities. Teardown: map removal, disable,
+        // and ReleasePresentation clear all strong UFT references.
+        private readonly Dictionary<UnfinishedThing, WorkItemEntry> entriesByUft =
+            new Dictionary<UnfinishedThing, WorkItemEntry>();
+
+        private readonly FixedTickBoundaryGate periodicAuditGate =
+            new FixedTickBoundaryGate(PeriodicAuditInterval);
+        private readonly FixedTickBoundaryGate responsivenessGate =
+            new FixedTickBoundaryGate(ResponsivenessInterval);
+        private bool reconcileRequested;
+
+        // Presentation revisions are exact consumer domains, not a catch-all.
+        // They advance only after a mutation that changes the named result.
+        internal int ExternalPawnFactsRevision;
+        internal int BillStatusRevision;
+        internal int PlanStatusRevision;
+
+        // Cache contract — Owner: this per-save store. Key: singleton defaults
+        // snapshot. Value: immutable StoreSettingsSnapshot. Dependencies: the
+        // fourteen per-save default fields. Refresh: immediate after a successful
+        // command and during load/seed. Equality: no-op commands do not republish.
+        // Teardown: ReleasePresentation clears the published store-owned state.
+        private StoreSettingsSnapshot settingsPresentation = null!;
+        internal StoreSettingsSnapshot SettingsPresentation => settingsPresentation;
+
+        // Cache contract — Owner: this per-save store. Key: target thing ID.
+        // Value: immutable PlanPresentationSnapshot. Dependencies: plan target,
+        // configuration, state, and target map. Refresh: immediate at every plan
+        // lifecycle/configuration mutation. Equality: unchanged entries preserve
+        // snapshot identity. Teardown: ReleasePresentation clears the dictionary.
+        private Dictionary<int, PlanPresentationSnapshot> planPresentations =
+            new Dictionary<int, PlanPresentationSnapshot>();
+
+        private sealed class BillPresentationEntry
+        {
+            internal BillPresentationSnapshot Snapshot;
+            internal int BillRevision;
+            internal int SpecificCapRevision;
+            internal int DefinitionsRevision;
+
+            internal BillPresentationEntry(BillPresentationSnapshot snapshot)
+            {
+                Snapshot = snapshot;
+            }
+        }
+
+        // Cache contract — Owner: this per-save store. Key: stable bill load ID.
+        // Value: immutable bill configuration/status inputs; snapshots never hold
+        // the Bill or bill giver. Dependencies: bill/default config, product cap,
+        // recipe, giver map, and product def. Refresh: lazy after that bill's
+        // configuration revision, that product's cap revision, an applicable
+        // default-field invalidation, or the definition revision moves. Equality:
+        // equal rebuilds preserve the snapshot reference. Teardown: save pruning,
+        // map release, or store release.
+        private readonly Dictionary<string, BillPresentationEntry> billPresentations =
+            new Dictionary<string, BillPresentationEntry>();
+        // Per-bill presentation revision: configuration commands and bill-giver
+        // location lifecycle events advance only the affected bill IDs.
+        private readonly Dictionary<string, int> billConfigRevisions =
+            new Dictionary<string, int>();
+        private readonly Dictionary<string, int> productCapRevisions =
+            new Dictionary<string, int>();
+        private int definitionsRevision;
+
+        // Cache contract — Owner: this per-save store. Key: Map identity. Value:
+        // immutable MapSnapshot containing resolved matrices/materials only.
+        // Dependencies: plan membership, target identity, target map/position/
+        // rotation/footprint, and sparkle texture lifetime. Refresh: immediate on
+        // plan structure/retarget events; periodic audit is a fallback. Equality:
+        // equal rebuilt models/maps preserve reference identity. Teardown:
+        // ReleasePresentation drops all maps so removed worlds cannot be rooted.
+        private Dictionary<Map, SparkleOverlay.MapSnapshot> overlayPresentations =
+            new Dictionary<Map, SparkleOverlay.MapSnapshot>();
+
+        // Cache contract — Owner: this per-save store. Key: primary target thing
+        // ID. Value: reusable Command_QualityJob with no Thing reference plus
+        // last-seen audit generation.
+        // Dependencies: plan presence (icon) and language revision (labels).
+        // Refresh: fields updated on access; object allocation only on first key.
+        // Equality: the command identity is retained. Teardown: unused entries
+        // retire after an audit generation and ReleasePresentation clears all.
+        private sealed class ConstructionCommandEntry
+        {
+            internal readonly Command_QualityJob Command;
+            internal int Generation;
+
+            internal ConstructionCommandEntry(Command_QualityJob command, int generation)
+            {
+                Command = command;
+                Generation = generation;
+            }
+        }
+
+        private readonly Dictionary<int, ConstructionCommandEntry> constructionCommands =
+            new Dictionary<int, ConstructionCommandEntry>();
+        private readonly List<int> staleConstructionCommandIds = new List<int>();
+        private int constructionCommandGeneration;
 
         // Completion-retry signal — Owner: Game/store. Key: executing bill load
         // ID + current game tick. Value: one transient below-target marker.
@@ -90,15 +260,10 @@ namespace QualityJobs
         // ---- overlay flag (NOT scribed) ----------------------------------------
         //
         // AnyOverlays is a process-static fast-path pre-check: one bool read per
-        // draw call in the 99% case (no managed construction on map). It is set to
-        // (plans.Count > 0) at every plan mutation site and in FinalizeInit/PostLoadInit.
-        // Cleared by Commands.Disable after component removal.
-        // Stale-true risk on world change: FinalizeInit runs before the first draw
-        // after load and resets AnyOverlays correctly — no stale reads possible.
+        // draw call in the common case. It reflects published overlay snapshots,
+        // not the authoritative plans list, and ReleasePresentation clears it.
 
-        /// True when at least one plan exists (i.e. plans.Count > 0). Checked first
-        /// in the per-frame draw patch to skip the Active component lookup in the
-        /// common case. Updated at every plan mutation site.
+        /// True when at least one published map overlay contains draw models.
         public static bool AnyOverlays;
 
         // ---- plan mutation helpers ---------------------------------------------
@@ -108,26 +273,575 @@ namespace QualityJobs
         public void AddPlan(ConstructionPlan plan)
         {
             plans.Add(plan);
-            AnyOverlays = true;
+            NotifyPlanStructureChanged();
         }
 
         /// Removes a plan by reference and updates AnyOverlays.
         public void RemovePlan(ConstructionPlan plan)
         {
-            plans.Remove(plan);
-            AnyOverlays = plans.Count > 0;
+            if (!plans.Remove(plan)) return;
+            NotifyPlanStructureChanged();
         }
 
         /// Removes a plan by index (for sweep loops iterating backwards).
         public void RemovePlanAt(int index)
         {
             plans.RemoveAt(index);
-            AnyOverlays = plans.Count > 0;
+            NotifyPlanStructureChanged();
         }
 
         public QualityJobsStore(Game game) { }
 
         public static QualityJobsStore? Active => Current.Game?.GetComponent<QualityJobsStore>();
+
+        internal bool TryGetPlanPresentation(int thingId,
+            out PlanPresentationSnapshot? snapshot)
+            => planPresentations.TryGetValue(thingId, out snapshot);
+
+        internal bool TryGetOverlayPresentation(Map map,
+            out SparkleOverlay.MapSnapshot? snapshot)
+            => overlayPresentations.TryGetValue(map, out snapshot);
+
+        internal BillPresentationSnapshot BillPresentationFor(Bill bill)
+        {
+            string billId = BillIds.IdOf(bill);
+            billPresentations.TryGetValue(billId, out BillPresentationEntry? entry);
+            int billRevision = RevisionFor(billConfigRevisions, billId);
+            string? cachedProduct = entry != null
+                && entry.DefinitionsRevision == definitionsRevision
+                    ? entry.Snapshot.ProductDefName : null;
+            int specificCap = cachedProduct != null
+                ? RevisionFor(productCapRevisions, cachedProduct) : 0;
+            if (entry != null
+                && entry.BillRevision == billRevision
+                && entry.SpecificCapRevision == specificCap
+                && entry.DefinitionsRevision == definitionsRevision)
+                return entry.Snapshot;
+
+            RecipeDef recipe = bill.recipe;
+            string? product = ManagedRecipes.ProductDefName(recipe);
+            var candidate = new BillPresentationSnapshot(
+                billId, ConfigFor(bill), TargetQualityFor(bill), CapFor(product),
+                product, recipe,
+                (bill.billStack?.billGiver as Thing)?.MapHeld);
+            if (entry == null)
+            {
+                entry = new BillPresentationEntry(candidate);
+                billPresentations.Add(billId, entry);
+            }
+            else
+            {
+                if (!entry.Snapshot.HasSameContent(candidate))
+                    entry.Snapshot = candidate;
+            }
+            entry.BillRevision = billRevision;
+            entry.SpecificCapRevision = product != null
+                ? RevisionFor(productCapRevisions, product) : 0;
+            entry.DefinitionsRevision = definitionsRevision;
+            return entry.Snapshot;
+        }
+
+        private static int RevisionFor(Dictionary<string, int> revisions, string key)
+            => revisions.TryGetValue(key, out int revision) ? revision : 0;
+
+        private static void BumpRevisionFor(Dictionary<string, int> revisions,
+            string key)
+        {
+            revisions.TryGetValue(key, out int revision);
+            revisions[key] = unchecked(revision + 1);
+        }
+
+        internal Command_QualityJob ConstructionCommandFor(int thingId, bool enabled)
+        {
+            if (!constructionCommands.TryGetValue(thingId,
+                    out ConstructionCommandEntry? entry))
+            {
+                entry = new ConstructionCommandEntry(
+                    new Command_QualityJob(thingId), constructionCommandGeneration);
+                constructionCommands.Add(thingId, entry);
+            }
+            entry.Generation = constructionCommandGeneration;
+            Command_QualityJob command = entry.Command;
+            command.RefreshPresentation(enabled);
+            return command;
+        }
+
+        internal void NotifyBillConfigurationChanged(string billId,
+            bool affectsEligibility)
+        {
+            BumpRevisionFor(billConfigRevisions, billId);
+            if (affectsEligibility)
+            {
+                Bump(ref BillStatusRevision);
+                RequestReconcile();
+            }
+        }
+
+        internal void NotifyBillDefaultsChanged(BillDefaultField field,
+            bool affectsEligibility)
+        {
+            PublishSettingsPresentation();
+            InvalidateBillPresentationsUsingDefault(field);
+            if (affectsEligibility)
+            {
+                Bump(ref BillStatusRevision);
+                RequestReconcile();
+            }
+        }
+
+        internal void NotifyConstructionDefaultsChanged()
+        {
+            PublishSettingsPresentation();
+        }
+
+        internal void NotifyProductCapChanged(string? productDefName, bool isDefault)
+        {
+            if (isDefault)
+            {
+                PublishSettingsPresentation();
+                foreach (BillPresentationEntry entry in billPresentations.Values)
+                {
+                    string? product = entry.Snapshot.ProductDefName;
+                    if (product == null || !productCaps.ContainsKey(product))
+                        entry.SpecificCapRevision = int.MinValue;
+                }
+            }
+            else if (productDefName != null)
+                BumpRevisionFor(productCapRevisions, productDefName);
+        }
+
+        internal void NotifyDefinitionsChanged()
+        {
+            Bump(ref definitionsRevision);
+            // A definition reload is an explicit, rare event. Rebuild its derived
+            // artifacts immediately so a paused game cannot display stale recipe,
+            // stock, overlay, eligibility, or expected-attempt data.
+            RecountAndPool(publishStatusRevision: false);
+            PublishOverlayPresentations();
+            NotifyExternalPawnFactsChanged();
+        }
+
+        private void InvalidateBillPresentationsUsingDefault(BillDefaultField field)
+        {
+            foreach (KeyValuePair<string, BillPresentationEntry> pair in billPresentations)
+            {
+                bool usesDefault;
+                switch (field)
+                {
+                    case BillDefaultField.Managed:
+                        usesDefault = !billManaged.ContainsKey(pair.Key);
+                        break;
+                    case BillDefaultField.MinSkill:
+                        usesDefault = !billMinSkill.ContainsKey(pair.Key);
+                        break;
+                    case BillDefaultField.RequireInspired:
+                        usesDefault = !billRequireInspired.ContainsKey(pair.Key);
+                        break;
+                    case BillDefaultField.RequireSpecialist:
+                        usesDefault = !billRequireSpecialist.ContainsKey(pair.Key);
+                        break;
+                    case BillDefaultField.AutoBest:
+                        usesDefault = !billAutoBest.ContainsKey(pair.Key);
+                        break;
+                    default:
+                        usesDefault = !billTargetQuality.ContainsKey(pair.Key);
+                        break;
+                }
+                if (usesDefault) pair.Value.BillRevision = int.MinValue;
+            }
+        }
+
+        internal void NotifyShareChanged()
+        {
+            PublishSettingsPresentation();
+            if (shareUnfinishedWork)
+                PoolIdleUnfinishedWork();
+            else
+                RemoveSharedEntries();
+            Bump(ref BillStatusRevision);
+            RequestReconcile();
+        }
+
+        internal void NotifyPlanConfigurationChanged()
+        {
+            PublishPlanPresentations(rebuildOverlays: false);
+            Bump(ref PlanStatusRevision);
+            RequestReconcile();
+        }
+
+        internal void NotifyPlanStateChanged()
+        {
+            PublishPlanPresentations(rebuildOverlays: false);
+            Bump(ref PlanStatusRevision);
+        }
+
+        internal void NotifyPlanStructureChanged()
+        {
+            PublishPlanPresentations(rebuildOverlays: true);
+            Bump(ref PlanStatusRevision);
+        }
+
+        internal void NotifyEntriesChanged()
+        {
+            Bump(ref BillStatusRevision);
+        }
+
+        internal void NotifyExternalPawnFactsChanged(bool requestReconcile = true)
+        {
+            Bump(ref ExternalPawnFactsRevision);
+            Bump(ref BillStatusRevision);
+            Bump(ref PlanStatusRevision);
+            if (requestReconcile) RequestReconcile();
+        }
+
+        internal void RequestReconcile() => reconcileRequested = true;
+
+        internal void NotifyUftSpawned(UnfinishedThing uft, Map map)
+        {
+            if (!spawnedUftsByMap.TryGetValue(map,
+                    out List<UnfinishedThing>? spawned))
+            {
+                spawned = new List<UnfinishedThing>();
+                spawnedUftsByMap.Add(map, spawned);
+            }
+            if (!spawned.Contains(uft)) spawned.Add(uft);
+
+            string? product = ManagedRecipes.ProductDefName(uft.Recipe);
+            if (product == null) return;
+            var key = new MapProductKey(map, product);
+            uftCounts.TryGetValue(key, out int count);
+            uftCounts[key] = count + 1;
+            Bump(ref BillStatusRevision);
+        }
+
+        internal void NotifyUftDespawned(UnfinishedThing uft, Map map)
+        {
+            if (spawnedUftsByMap.TryGetValue(map,
+                    out List<UnfinishedThing>? spawned))
+                spawned.Remove(uft);
+
+            string? product = ManagedRecipes.ProductDefName(uft.Recipe);
+            if (product == null) return;
+            var key = new MapProductKey(map, product);
+            if (!uftCounts.TryGetValue(key, out int count)) return;
+            if (count <= 1) uftCounts.Remove(key);
+            else uftCounts[key] = count - 1;
+            Bump(ref BillStatusRevision);
+        }
+
+        internal void NotifyBillGiverLocationChanged(IBillGiver giver)
+        {
+            List<Bill> bills = giver.BillStack.Bills;
+            bool changed = false;
+            for (int i = 0; i < bills.Count; i++)
+            {
+                if (bills[i] is not Bill_ProductionWithUft bill) continue;
+                BumpRevisionFor(billConfigRevisions, BillIds.IdOf(bill));
+                changed = true;
+            }
+            if (!changed) return;
+            Bump(ref BillStatusRevision);
+            RequestReconcile();
+        }
+
+        internal void NotifyPlanTargetLocationChanged(Thing thing)
+        {
+            if (!planPresentations.ContainsKey(thing.thingIDNumber)) return;
+            NotifyPlanStructureChanged();
+        }
+
+        internal void RetargetPlan(ConstructionPlan plan, Thing target,
+            ConstructionPlanState state)
+        {
+            if (ReferenceEquals(plan.target, target) && plan.state == state) return;
+            plan.target = target;
+            plan.state = state;
+            plan.finisher = null;
+            NotifyPlanStructureChanged();
+        }
+
+        internal void ApplyPlanSettings(int thingId, int minSkill,
+            bool requireInspired, bool requireSpecialist, int minQuality,
+            bool autoBest)
+        {
+            minSkill = ConfigurationLimits.Skill(minSkill);
+            minQuality = ConfigurationLimits.Quality(minQuality);
+            requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
+
+            ConstructionPlan? plan = FindPlanById(thingId);
+            bool neutral = minSkill == 0 && !requireInspired
+                && !requireSpecialist && minQuality == 0 && !autoBest;
+            if (neutral)
+            {
+                if (plan != null)
+                {
+                    Dispatcher.RemoveOurDeconstructDesignation(plan);
+                    RemovePlan(plan);
+                }
+                return;
+            }
+
+            if (plan == null)
+            {
+                Thing? target = FindSpawnedThing(thingId);
+                if (!(target is Blueprint_Build) && !(target is Frame)) return;
+                plan = new ConstructionPlan
+                {
+                    target = target,
+                    state = ConstructionPlanState.Active,
+                };
+                AddPlan(plan);
+            }
+
+            if (plan.minSkill == minSkill
+                && plan.requireInspired == requireInspired
+                && plan.requireSpecialist == requireSpecialist
+                && plan.minQuality == minQuality
+                && plan.autoBest == autoBest)
+                return;
+
+            plan.minSkill = minSkill;
+            plan.requireInspired = requireInspired;
+            plan.requireSpecialist = requireSpecialist;
+            plan.minQuality = minQuality;
+            plan.autoBest = autoBest;
+            NotifyPlanConfigurationChanged();
+        }
+
+        private static Thing? FindSpawnedThing(int thingId)
+        {
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Thing> things = maps[m].listerThings.AllThings;
+                for (int i = 0; i < things.Count; i++)
+                    if (things[i].thingIDNumber == thingId) return things[i];
+            }
+            return null;
+        }
+
+        internal void PausePlan(ConstructionPlan plan)
+        {
+            if (plan.state == ConstructionPlanState.Paused && plan.finisher == null)
+                return;
+            plan.state = ConstructionPlanState.Paused;
+            plan.finisher = null;
+            NotifyPlanStateChanged();
+            RequestReconcile();
+        }
+
+        internal void DispatchPlan(ConstructionPlan plan, Pawn finisher)
+        {
+            plan.finisher = finisher;
+            plan.state = ConstructionPlanState.Dispatched;
+            NotifyPlanStateChanged();
+        }
+
+        internal void DispatchEntry(WorkItemEntry entry, Pawn finisher,
+            Bill_ProductionWithUft finishBill)
+        {
+            entry.state = WorkItemState.Dispatched;
+            entry.finisher = finisher;
+            entry.finishBill = finishBill;
+            NotifyEntriesChanged();
+        }
+
+        internal void PauseEntry(WorkItemEntry entry)
+        {
+            entry.state = WorkItemState.Paused;
+            entry.finisher = null;
+            entry.finishBill = null;
+            NotifyEntriesChanged();
+        }
+
+        internal void RegisterFinishBillConfig(string billId, in BillConfig config)
+        {
+            billManaged[billId] = true;
+            billMinSkill[billId] = config.Condition.MinSkill;
+            billRequireInspired[billId] = config.Condition.RequireInspired;
+            billRequireSpecialist[billId] = config.Condition.RequireSpecialist;
+            billAutoBest[billId] = config.AutoBest;
+            BumpRevisionFor(billConfigRevisions, billId);
+        }
+
+        internal void RemoveFinishBillConfig(string billId)
+        {
+            billManaged.Remove(billId);
+            billMinSkill.Remove(billId);
+            billRequireInspired.Remove(billId);
+            billRequireSpecialist.Remove(billId);
+            billAutoBest.Remove(billId);
+            billPresentations.Remove(billId);
+            billConfigRevisions.Remove(billId);
+        }
+
+        internal void ClearAuthoritativeCollectionsForDisable()
+        {
+            entries.Clear();
+            entriesByUft.Clear();
+            plans.Clear();
+            NotifyEntriesChanged();
+            NotifyPlanStructureChanged();
+        }
+
+        internal void PublishAllPresentation()
+        {
+            PublishSettingsPresentation();
+            PublishPlanPresentations(rebuildOverlays: true);
+        }
+
+        internal void ReleasePresentation()
+        {
+            settingsPresentation = null!;
+            planPresentations.Clear();
+            billPresentations.Clear();
+            overlayPresentations.Clear();
+            constructionCommands.Clear();
+            staleConstructionCommandIds.Clear();
+            constructionCommandGeneration = 0;
+            billConfigRevisions.Clear();
+            productCapRevisions.Clear();
+            definitionsRevision = 0;
+            uftCounts.Clear();
+            rebuiltUftCounts.Clear();
+            spawnedUftsByMap.Clear();
+            entriesByUft.Clear();
+            AnyOverlays = false;
+        }
+
+        private void PruneConstructionCommands()
+        {
+            constructionCommandGeneration = unchecked(constructionCommandGeneration + 1);
+            int oldestRetainedGeneration = constructionCommandGeneration - 1;
+            staleConstructionCommandIds.Clear();
+            foreach (KeyValuePair<int, ConstructionCommandEntry> pair in constructionCommands)
+                if (pair.Value.Generation < oldestRetainedGeneration)
+                    staleConstructionCommandIds.Add(pair.Key);
+            for (int i = 0; i < staleConstructionCommandIds.Count; i++)
+                constructionCommands.Remove(staleConstructionCommandIds[i]);
+            staleConstructionCommandIds.Clear();
+        }
+
+        internal void ReleaseMap(Map map)
+        {
+            bool entriesChanged = false;
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                WorkItemEntry entry = entries[i];
+                if (entry.uft?.MapHeld != map) continue;
+                Dispatcher.DeleteFinishBill(this, entry);
+                if (entry.uft != null) entriesByUft.Remove(entry.uft);
+                entries.RemoveAt(i);
+                entriesChanged = true;
+            }
+            if (entriesChanged) NotifyEntriesChanged();
+
+            bool plansChanged = false;
+            for (int i = plans.Count - 1; i >= 0; i--)
+            {
+                if (plans[i].target?.MapHeld != map) continue;
+                plans.RemoveAt(i);
+                plansChanged = true;
+            }
+            if (plansChanged) NotifyPlanStructureChanged();
+            else
+            {
+                overlayPresentations.Remove(map);
+                AnyOverlays = overlayPresentations.Count != 0;
+            }
+
+            if (billPresentations.Count != 0)
+            {
+                var deadBills = new List<string>();
+                foreach (KeyValuePair<string, BillPresentationEntry> pair in billPresentations)
+                    if (ReferenceEquals(pair.Value.Snapshot.Map, map))
+                        deadBills.Add(pair.Key);
+                for (int i = 0; i < deadBills.Count; i++)
+                {
+                    billPresentations.Remove(deadBills[i]);
+                    billConfigRevisions.Remove(deadBills[i]);
+                }
+            }
+
+            var deadCountKeys = new List<MapProductKey>();
+            foreach (KeyValuePair<MapProductKey, int> pair in uftCounts)
+                if (ReferenceEquals(pair.Key.Map, map)) deadCountKeys.Add(pair.Key);
+            for (int i = 0; i < deadCountKeys.Count; i++)
+                uftCounts.Remove(deadCountKeys[i]);
+            spawnedUftsByMap.Remove(map);
+        }
+
+        private static void Bump(ref int revision) => revision = unchecked(revision + 1);
+
+        private void PublishSettingsPresentation()
+        {
+            if (settingsPresentation != null && settingsPresentation.Matches(this))
+                return;
+            settingsPresentation = new StoreSettingsSnapshot(this);
+        }
+
+        private void PublishPlanPresentations(bool rebuildOverlays)
+        {
+            var next = new Dictionary<int, PlanPresentationSnapshot>(plans.Count);
+            for (int i = 0; i < plans.Count; i++)
+            {
+                ConstructionPlan plan = plans[i];
+                Thing? target = plan.target;
+                if (target == null) continue;
+                int thingId = target.thingIDNumber;
+                var candidate = new PlanPresentationSnapshot(plan);
+                if (planPresentations.TryGetValue(thingId,
+                        out PlanPresentationSnapshot? current)
+                    && current.MinSkill == candidate.MinSkill
+                    && current.RequireInspired == candidate.RequireInspired
+                    && current.RequireSpecialist == candidate.RequireSpecialist
+                    && current.MinQuality == candidate.MinQuality
+                    && current.AutoBest == candidate.AutoBest
+                    && current.State == candidate.State
+                    && ReferenceEquals(current.Map, candidate.Map))
+                    candidate = current;
+                next[thingId] = candidate;
+            }
+            planPresentations = next;
+            if (rebuildOverlays) PublishOverlayPresentations();
+        }
+
+        private void PublishOverlayPresentations()
+        {
+            var grouped = new Dictionary<Map, List<SparkleOverlay.Model>>();
+            for (int i = 0; i < plans.Count; i++)
+            {
+                Thing? target = plans[i].target;
+                if (target == null || target.Destroyed || !target.Spawned
+                    || (!(target is Blueprint_Build) && !(target is Frame)))
+                    continue;
+                Map map = target.Map;
+                overlayPresentations.TryGetValue(map,
+                    out SparkleOverlay.MapSnapshot? oldMap);
+                SparkleOverlay.Model? oldModel = oldMap?.Find(target.thingIDNumber);
+                SparkleOverlay.Model model = SparkleOverlay.Model.Build(target, oldModel);
+                if (!grouped.TryGetValue(map, out List<SparkleOverlay.Model>? list))
+                {
+                    list = new List<SparkleOverlay.Model>();
+                    grouped.Add(map, list);
+                }
+                list.Add(model);
+            }
+
+            var next = new Dictionary<Map, SparkleOverlay.MapSnapshot>(grouped.Count);
+            foreach (KeyValuePair<Map, List<SparkleOverlay.Model>> pair in grouped)
+            {
+                if (overlayPresentations.TryGetValue(pair.Key,
+                        out SparkleOverlay.MapSnapshot? current)
+                    && current.HasSameModels(pair.Value))
+                    next.Add(pair.Key, current);
+                else
+                    next.Add(pair.Key,
+                        new SparkleOverlay.MapSnapshot(pair.Value.ToArray()));
+            }
+            overlayPresentations = next;
+            AnyOverlays = next.Count != 0;
+        }
 
         public override void FinalizeInit()
         {
@@ -155,16 +869,18 @@ namespace QualityJobs
             // distinguishes adding the mod to an existing save from starting a
             // new game and from loading a save Quality Jobs already initialized.
             initializeExistingBillsOnLoad = firstInitialization;
-            // Ensure AnyOverlays is correct before the first draw call on the new save.
-            AnyOverlays = plans.Count > 0;
+            PublishAllPresentation();
         }
 
         public override void LoadedGame()
         {
+            int tick = Find.TickManager.TicksGame;
+            periodicAuditGate.Observe(tick);
+            responsivenessGate.Observe(tick);
             // Sharing is independent from bill management. Adopt existing idle
-            // unfinished items immediately so paused-on-load games do not wait
-            // for the next 250-tick sweep.
+            // unfinished items immediately so paused-on-load games do not wait.
             RecountAndPool();
+            PublishAllPresentation();
             InitializeExistingBillMigration();
         }
 
@@ -263,6 +979,7 @@ namespace QualityJobs
             constructionTargetQualityDefault = v.constructionTargetQuality;
             constructionAutoBestDefault = v.constructionAutoBest;
             seeded = true;
+            PublishAllPresentation();
         }
 
         // ---- config resolution -------------------------------------------------
@@ -298,9 +1015,8 @@ namespace QualityJobs
 
         public WorkItemEntry? FindByUft(UnfinishedThing uft)
         {
-            for (int i = 0; i < entries.Count; i++)
-                if (entries[i].uft == uft) return entries[i];
-            return null;
+            entriesByUft.TryGetValue(uft, out WorkItemEntry? entry);
+            return entry;
         }
 
         public ConstructionPlan? FindPlan(Thing target)
@@ -333,13 +1049,14 @@ namespace QualityJobs
 
         public int SpawnedUftCount(Map map, string? productDefName)
             => productDefName != null
-               && uftCounts.TryGetValue((map.uniqueID, productDefName), out int n) ? n : 0;
+               && uftCounts.TryGetValue(
+                   new MapProductKey(map, productDefName), out int n) ? n : 0;
 
         /// <summary>Pipeline counts for a product on a map (status display,
         /// spec §11): Paused entries wait for a finisher, Dispatched entries
         /// are being finished, Shared entries sit in the sharing pool.
-        /// Bounded indexed loop over live entries — call from tick-throttled
-        /// dialog caches, never per frame.</summary>
+        /// Bounded indexed loop over live entries — call from revision-gated
+        /// dialog cache builders, never on a steady render pass.</summary>
         public void CountEntriesFor(Map map, string? productDefName,
             out int waiting, out int finishing, out int shared)
         {
@@ -376,6 +1093,7 @@ namespace QualityJobs
             {
                 entry = new WorkItemEntry { uft = uft };
                 entries.Add(entry);
+                entriesByUft.Add(uft, entry);
             }
             // Fix C1/I4: if a finish bill was already dispatched and the gate
             // re-pauses this item, remove the orphaned one-shot bill from the bench.
@@ -390,24 +1108,57 @@ namespace QualityJobs
             entry.finishBill = null;
             if (sourceBill != null) entry.sourceBill = sourceBill;
             if (snapshot != null) entry.snapshot = snapshot;
+            NotifyEntriesChanged();
+            RequestReconcile();
         }
 
-        public void RemoveEntry(WorkItemEntry entry) => entries.Remove(entry);
+        public void RemoveEntry(WorkItemEntry entry)
+        {
+            if (!entries.Remove(entry)) return;
+            if (entry.uft != null) entriesByUft.Remove(entry.uft);
+            NotifyEntriesChanged();
+        }
 
         // ---- scan (spec §6, §8, §9) -------------------------------------------
 
         public override void GameComponentTick()
         {
-            if (Find.TickManager.TicksGame % ScanInterval != 0) return;
-            RecountAndPool();
+            int tick = Find.TickManager.TicksGame;
+            bool audit = periodicAuditGate.Observe(tick);
+            bool responsiveness = responsivenessGate.Observe(tick);
+            if (!audit && !responsiveness && !reconcileRequested) return;
+
+            reconcileRequested = false;
+            bool statusChanged = false;
+            if (audit)
+                statusChanged = RecountAndPool(publishStatusRevision: false);
+            else if (responsiveness)
+                statusChanged = PoolIdleUnfinishedWork();
+
+            // The responsiveness invalidation already advances BillStatus;
+            // publish a separate status revision only for a standalone audit.
+            if (responsiveness)
+                NotifyExternalPawnFactsChanged(requestReconcile: false);
+            else if (statusChanged)
+                Bump(ref BillStatusRevision);
+
             SweepEntries();
             DispatchPaused();
             SweepAndDispatchPlans();
+            if (audit)
+            {
+                PublishOverlayPresentations();
+                PruneConstructionCommands();
+            }
         }
 
-        private void RecountAndPool()
+        private bool RecountAndPool(bool publishStatusRevision = true)
         {
-            uftCounts.Clear();
+            RebuildEntryIndex();
+            rebuiltUftCounts.Clear();
+            bool entriesChanged = !shareUnfinishedWork && RemoveSharedEntries();
+            foreach (List<UnfinishedThing> spawned in spawnedUftsByMap.Values)
+                spawned.Clear();
             List<Map> maps = Find.Maps;
             for (int m = 0; m < maps.Count; m++)
             {
@@ -419,27 +1170,78 @@ namespace QualityJobs
                     for (int i = 0; i < things.Count; i++)
                     {
                         var uft = (UnfinishedThing)things[i];
+                        if (!spawnedUftsByMap.TryGetValue(map,
+                                out List<UnfinishedThing>? spawned))
+                        {
+                            spawned = new List<UnfinishedThing>();
+                            spawnedUftsByMap.Add(map, spawned);
+                        }
+                        spawned.Add(uft);
                         string? product = ManagedRecipes.ProductDefName(uft.Recipe);
                         if (product != null)
                         {
-                            var key = (map.uniqueID, product);
-                            uftCounts.TryGetValue(key, out int n);
-                            uftCounts[key] = n + 1;
+                            var key = new MapProductKey(map, product);
+                            rebuiltUftCounts.TryGetValue(key, out int n);
+                            rebuiltUftCounts[key] = n + 1;
                         }
-                        TryPool(map, uft);
+                        if (TryPool(map, uft)) entriesChanged = true;
                     }
                 }
             }
+            bool countsChanged = !SameCounts(uftCounts, rebuiltUftCounts);
+            if (countsChanged)
+            {
+                Dictionary<MapProductKey, int> previous = uftCounts;
+                uftCounts = rebuiltUftCounts;
+                rebuiltUftCounts = previous;
+            }
+            rebuiltUftCounts.Clear();
+            bool changed = countsChanged || entriesChanged;
+            if (changed && publishStatusRevision) Bump(ref BillStatusRevision);
+            return changed;
+        }
+
+        private static bool SameCounts(
+            Dictionary<MapProductKey, int> left,
+            Dictionary<MapProductKey, int> right)
+        {
+            if (left.Count != right.Count) return false;
+            foreach (KeyValuePair<MapProductKey, int> pair in left)
+                if (!right.TryGetValue(pair.Key, out int count)
+                    || count != pair.Value)
+                    return false;
+            return true;
+        }
+
+        private bool PoolIdleUnfinishedWork()
+        {
+            bool changed = false;
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                Map map = maps[m];
+                if (!spawnedUftsByMap.TryGetValue(map,
+                        out List<UnfinishedThing>? spawned))
+                    continue;
+                for (int i = 0; i < spawned.Count; i++)
+                {
+                    UnfinishedThing uft = spawned[i];
+                    if (uft.Spawned && ReferenceEquals(uft.Map, map))
+                        if (TryPool(map, uft)) changed = true;
+                }
+            }
+            return changed;
         }
 
         /// Sharing pool (spec §8): idle in-progress UFTs get unbound so bills
         /// unlock; creator untouched. Adopts pre-existing UFTs mid-save.
-        private void TryPool(Map map, UnfinishedThing uft)
+        private bool TryPool(Map map, UnfinishedThing uft)
         {
-            if (!shareUnfinishedWork) return;
-            if (uft.workLeft <= 0f || !uft.Initialized) return;
-            if (FindByUft(uft) != null) return;
-            if (map.reservationManager.IsReservedByAnyoneOf(uft, Faction.OfPlayer)) return;
+            if (!shareUnfinishedWork) return false;
+            if (uft.workLeft <= 0f || !uft.Initialized) return false;
+            if (FindByUft(uft) != null) return false;
+            if (map.reservationManager.IsReservedByAnyoneOf(uft, Faction.OfPlayer))
+                return false;
 
             StyleSnapshot? snapshot = uft.BoundBill != null ? StyleSnapshot.From(uft.BoundBill) : null;
             var entry = new WorkItemEntry
@@ -451,7 +1253,23 @@ namespace QualityJobs
                 snapshot = snapshot,
             };
             entries.Add(entry);
+            entriesByUft.Add(uft, entry);
             uft.BoundBill = null;
+            return true;
+        }
+
+        private bool RemoveSharedEntries()
+        {
+            bool changed = false;
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                WorkItemEntry entry = entries[i];
+                if (entry.state != WorkItemState.Shared) continue;
+                if (entry.uft != null) entriesByUft.Remove(entry.uft);
+                entries.RemoveAt(i);
+                changed = true;
+            }
+            return changed;
         }
 
         private void SweepEntries()
@@ -463,7 +1281,9 @@ namespace QualityJobs
                 {
                     // Fix C1/I4: destroy any orphaned finish bill before forgetting the entry.
                     Dispatcher.DeleteFinishBill(this, e);
+                    if (e.uft != null) entriesByUft.Remove(e.uft);
                     entries.RemoveAt(i);
+                    NotifyEntriesChanged();
                     continue;
                 }
                 if (e.state == WorkItemState.Dispatched && Dispatcher.DispatchInvalid(this, e))
@@ -472,7 +1292,9 @@ namespace QualityJobs
                 {
                     // M4: sharing toggled off — drop Shared entries unconditionally
                     // so the pool clears immediately (creator intact, not rebound).
+                    if (e.uft != null) entriesByUft.Remove(e.uft);
                     entries.RemoveAt(i);
+                    NotifyEntriesChanged();
                 }
             }
         }
@@ -516,8 +1338,7 @@ namespace QualityJobs
                 if (p.state == ConstructionPlanState.Dispatched
                     && Dispatcher.ConstructionDispatchInvalid(p))
                 {
-                    p.state = ConstructionPlanState.Paused;
-                    p.finisher = null;
+                    PausePlan(p);
                 }
                 if (p.state == ConstructionPlanState.Paused)
                 {
@@ -527,7 +1348,7 @@ namespace QualityJobs
                     // outside the footprint past 100% (Frame.cs:487).
                     if (t is Frame pausedFrame && pausedFrame.workDone > pausedFrame.WorkToBuild)
                         pausedFrame.workDone = pausedFrame.WorkToBuild;
-                    Dispatcher.TryDispatchConstruction(p);
+                    Dispatcher.TryDispatchConstruction(this, p);
                 }
             }
             // AnyOverlays is maintained incrementally by RemovePlanAt; no rebuild needed.
@@ -549,8 +1370,8 @@ namespace QualityJobs
 
             // Also drop plans whose target died just before save: a dangling
             // reference would log a resolve warning on every later load.
-            plans.RemoveAll(p => p.target == null || p.target.Destroyed);
-            AnyOverlays = plans.Count > 0;
+            int removedPlans = plans.RemoveAll(p => p.target == null || p.target.Destroyed);
+            if (removedPlans != 0) NotifyPlanStructureChanged();
 
             var liveBillIds = new HashSet<string>();
             for (int m = 0; m < maps.Count; m++)
@@ -600,6 +1421,90 @@ namespace QualityJobs
             foreach (string key in billTargetQuality.Keys)
                 if (!liveBillIds.Contains(key)) deadKeys.Add(key);
             for (int i = 0; i < deadKeys.Count; i++) billTargetQuality.Remove(deadKeys[i]);
+
+            deadKeys.Clear();
+            foreach (string key in billPresentations.Keys)
+                if (!liveBillIds.Contains(key)) deadKeys.Add(key);
+            for (int i = 0; i < deadKeys.Count; i++) billPresentations.Remove(deadKeys[i]);
+
+            deadKeys.Clear();
+            foreach (string key in billConfigRevisions.Keys)
+                if (!liveBillIds.Contains(key)) deadKeys.Add(key);
+            for (int i = 0; i < deadKeys.Count; i++) billConfigRevisions.Remove(deadKeys[i]);
+        }
+
+        private void NormalizeLoadedState()
+        {
+            minSkillDefault = ConfigurationLimits.Skill(minSkillDefault);
+            targetQualityDefault = ConfigurationLimits.Quality(targetQualityDefault);
+            productCapDefault = ConfigurationLimits.StockCap(productCapDefault);
+            constructionMinSkillDefault =
+                ConfigurationLimits.Skill(constructionMinSkillDefault);
+            constructionTargetQualityDefault =
+                ConfigurationLimits.Quality(constructionTargetQualityDefault);
+            if (!ModsConfig.IdeologyActive)
+            {
+                requireSpecialistDefault = false;
+                constructionRequireSpecialistDefault = false;
+            }
+
+            var billIds = new List<string>(billMinSkill.Keys);
+            for (int i = 0; i < billIds.Count; i++)
+            {
+                string id = billIds[i];
+                billMinSkill[id] = ConfigurationLimits.Skill(billMinSkill[id]);
+            }
+            billIds.Clear();
+            billIds.AddRange(billTargetQuality.Keys);
+            for (int i = 0; i < billIds.Count; i++)
+            {
+                string id = billIds[i];
+                billTargetQuality[id] =
+                    ConfigurationLimits.Quality(billTargetQuality[id]);
+            }
+            if (!ModsConfig.IdeologyActive)
+            {
+                billIds.Clear();
+                billIds.AddRange(billRequireSpecialist.Keys);
+                for (int i = 0; i < billIds.Count; i++)
+                    billRequireSpecialist[billIds[i]] = false;
+            }
+
+            var products = new List<string>(productCaps.Keys);
+            for (int i = 0; i < products.Count; i++)
+            {
+                string product = products[i];
+                productCaps[product] = ConfigurationLimits.StockCap(productCaps[product]);
+            }
+
+            for (int i = plans.Count - 1; i >= 0; i--)
+            {
+                ConstructionPlan plan = plans[i];
+                plan.minSkill = ConfigurationLimits.Skill(plan.minSkill);
+                plan.minQuality = ConfigurationLimits.Quality(plan.minQuality);
+                if (!ModsConfig.IdeologyActive) plan.requireSpecialist = false;
+                if (plan.minSkill == 0 && !plan.requireInspired
+                    && !plan.requireSpecialist && plan.minQuality == 0
+                    && !plan.autoBest)
+                {
+                    Dispatcher.RemoveOurDeconstructDesignation(plan);
+                    plans.RemoveAt(i);
+                }
+            }
+            pendingCopyActive = false;
+            RebuildEntryIndex();
+        }
+
+        private void RebuildEntryIndex()
+        {
+            entriesByUft.Clear();
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorkItemEntry entry = entries[i];
+                UnfinishedThing? uft = entry.uft;
+                if (uft != null && !entriesByUft.ContainsKey(uft))
+                    entriesByUft.Add(uft, entry);
+            }
         }
 
         public override void ExposeData()
@@ -642,7 +1547,6 @@ namespace QualityJobs
                 entries ??= new List<WorkItemEntry>();
                 plans ??= new List<ConstructionPlan>();
                 plans.RemoveAll(p => p?.target == null);
-                AnyOverlays = plans.Count > 0;
                 billManaged ??= new Dictionary<string, bool>();
                 billMinSkill ??= new Dictionary<string, int>();
                 billRequireInspired ??= new Dictionary<string, bool>();
@@ -658,6 +1562,8 @@ namespace QualityJobs
                     if (entry?.uft == null)
                         Dispatcher.DeleteFinishBill(this, entry!);
                 entries.RemoveAll(e => e?.uft == null);
+                NormalizeLoadedState();
+                PublishAllPresentation();
             }
         }
     }

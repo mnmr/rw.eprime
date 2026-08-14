@@ -22,12 +22,9 @@ namespace QualityJobs.Patches
     ///   them. Frames use RealtimeOnly and ARE on the dynamic path, but anchoring both
     ///   to one per-frame hook avoids the fragility of separate type patches.
     ///
-    /// Hot-path design: QualityJobsStore.AnyOverlays is a static bool (true only when
-    /// at least one plan exists). The postfix reads it first — one bool comparison —
-    /// and returns immediately in the 99% case. Only when AnyOverlays is true does
-    /// the patch resolve QualityJobsStore.Active, walk the plans list (indexed loop,
-    /// no allocation), and call SparkleOverlay.Draw for matching spawned targets on
-    /// the current map.
+    /// Hot-path design: QualityJobsStore publishes immutable per-map draw snapshots
+    /// at plan invalidation time. The postfix performs a static fast-path check,
+    /// resolves one cached map snapshot, and submits its precomputed draw models.
     ///
     /// Gravship guard: WorldComponent_GravshipController.CutsceneInProgress and
     /// GravshipRenderInProgess verified at Decompiled\Verse\WorldComponent_GravshipController.cs:85,87.
@@ -59,15 +56,10 @@ namespace QualityJobs.Patches
             Map map = MapRef(__instance);
             if (map == null) return;
 
-            // Indexed loop over plans — no LINQ, no allocation, no dictionary lookup.
-            System.Collections.Generic.List<ConstructionPlan> plans = store.plans;
-            for (int i = 0; i < plans.Count; i++)
-            {
-                Thing? t = plans[i].target;
-                if (t == null || t.Destroyed || !t.Spawned || t.Map != map) continue;
-                if (t is Blueprint_Build || t is Frame)
-                    SparkleOverlay.Draw(t);
-            }
+            if (store.TryGetOverlayPresentation(map,
+                    out SparkleOverlay.MapSnapshot? snapshot)
+                && snapshot != null)
+                SparkleOverlay.Draw(snapshot);
         }
     }
 }

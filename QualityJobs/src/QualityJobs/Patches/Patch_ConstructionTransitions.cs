@@ -18,7 +18,7 @@ namespace QualityJobs.Patches
             ConstructionPlan? plan = store.FindPlan(__instance);
             if (plan == null) return;
             if (createdThing is Frame)
-                plan.target = createdThing;
+                store.RetargetPlan(plan, createdThing, plan.state);
             else
                 store.RemovePlan(plan); // non-frame solid thing: nothing to gate
         }
@@ -61,9 +61,7 @@ namespace QualityJobs.Patches
                 : null;
             if (blueprint != null)
             {
-                plan.target = blueprint;
-                plan.state = ConstructionPlanState.Active;
-                plan.finisher = null;
+                store.RetargetPlan(plan, blueprint, ConstructionPlanState.Active);
             }
             else
             {
@@ -155,9 +153,7 @@ namespace QualityJobs.Patches
             {
                 Patch_BlueprintSpawn.SuppressForRebuild = false;
             }
-            plan.target = blueprint;
-            plan.state = ConstructionPlanState.Active;
-            plan.finisher = null;
+            store.RetargetPlan(plan, blueprint, ConstructionPlanState.Active);
         }
     }
 }

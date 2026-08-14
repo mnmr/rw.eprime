@@ -13,7 +13,7 @@ namespace QualityJobs
     /// Refresh: eager at startup ([StaticConstructorOnStartup]); Invalidate()
     /// also clears Dispatcher.s_workTypeCache (same dependency set) so both
     /// caches stay coherent after a definition reload.
-    /// Equality: n/a. Teardown: none needed (no world data).
+    /// Equality: n/a. Teardown/reset: Invalidate replaces all def-derived sets.
     [StaticConstructorOnStartup]
     public static class ManagedRecipes
     {
@@ -33,6 +33,7 @@ namespace QualityJobs
             // The recipe→workType memo in Dispatcher shares the same def-database
             // dependency. Clear it so WorkTypeForRecipe re-resolves after a reload.
             Dispatcher.InvalidateWorkTypeCache();
+            QualityJobsStore.Active?.NotifyDefinitionsChanged();
         }
 
         private static void Build()

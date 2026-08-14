@@ -1,5 +1,6 @@
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 using Verse;
 
 namespace QualityJobs.Patches
@@ -8,8 +9,8 @@ namespace QualityJobs.Patches
     /// thing, placed copies receive the same plan settings.
     ///
     /// The actual apply happens at blueprint spawn (Patch_BlueprintSpawn), reading
-    /// the synced pending-copy state on the store. This helper only wraps the
-    /// vanilla copy command so that clicking it ARMS that synced state via the
+    /// the synced pending-copy state on the store. The input patch identifies the
+    /// vanilla copy command and ARMS that synced state via the
     /// Commands.SetPendingCopy [SyncMethod]. There is no longer any client-local
     /// copy static and no DesignateSingleCell postfix: both would diverge across
     /// clients during synced designator replay.
@@ -20,35 +21,36 @@ namespace QualityJobs.Patches
     ///   type == Command_Action AND hotKey == Misc11 — stable and locale-independent.
     public static class CopyPlanPending
     {
-        /// Wraps the vanilla copy command's action for a given source thing's plan.
-        /// Returns the same gizmo with a wrapped action if it is the copy command,
-        /// or the original gizmo unchanged.
-        ///
-        /// The wrapped action, after invoking the original (which selects the
-        /// build designator on the initiator), issues the synced SetPendingCopy
-        /// command carrying the SOURCE plan's settings. The command replicates to
-        /// all clients so the spawn hook applies identical settings everywhere.
-        public static Gizmo WrapIfCopyCommand(Gizmo g, ConstructionPlan plan)
+        internal static void ArmFromSelection()
         {
-            if (g is not Command_Action ca) return g;
-            if (ca.hotKey != KeyBindingDefOf.Misc11) return g;
-
-            // Capture the source plan's settings by value now: the plan object may
-            // change before the action fires, and the synced command needs the
-            // exact values that were on-screen when the player chose to copy.
-            int minSkill = plan.minSkill;
-            bool inspired = plan.requireInspired;
-            bool specialist = plan.requireSpecialist;
-            int quality = plan.minQuality;
-            bool autoBest = plan.autoBest;
-
-            System.Action? originalAction = ca.action;
-            ca.action = () =>
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || Find.Selector == null) return;
+            System.Collections.Generic.List<object> selected =
+                Find.Selector.SelectedObjects;
+            for (int i = 0; i < selected.Count; i++)
             {
-                originalAction?.Invoke();
-                Commands.SetPendingCopy(minSkill, inspired, specialist, quality, autoBest);
-            };
-            return g;
+                if (!(selected[i] is Thing thing)
+                    || !store.TryGetPlanPresentation(thing.thingIDNumber,
+                        out PlanPresentationSnapshot? plan)
+                    || plan == null)
+                    continue;
+                Commands.SetPendingCopy(plan.MinSkill, plan.RequireInspired,
+                    plan.RequireSpecialist, plan.MinQuality, plan.AutoBest);
+                return;
+            }
+        }
+    }
+
+    /// Arms copy settings only when the user invokes the vanilla copy command.
+    /// ProcessInput is an input-event path, so selection traversal happens once
+    /// per action rather than during every GetGizmos/render pass.
+    [HarmonyPatch(typeof(Command_Action), nameof(Command_Action.ProcessInput))]
+    public static class Patch_CopyPlanPending_ProcessInput
+    {
+        public static void Prefix(Command_Action __instance, Event ev)
+        {
+            if (__instance.hotKey != KeyBindingDefOf.Misc11) return;
+            CopyPlanPending.ArmFromSelection();
         }
     }
 

@@ -1,4 +1,7 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using QualityJobs.Patches;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -11,8 +14,9 @@ namespace QualityJobs.UI
     /// GizmoOnGUI to capture the drawn button rect, then opens
     /// Dialog_ConstructionPlanConfig anchored to the gizmo's bottom edge.
     ///
-    /// Accepts a list of Things for multi-select support (Fix 5). When multiple
-    /// quality buildables are selected, GroupsWith merges gizmos with matching
+    /// Holds only the primary thing ID. Selection traversal and ID-list creation
+    /// happen on click for multi-select support. When multiple quality buildables
+    /// are selected, GroupsWith merges gizmos with matching
     /// label+icon (verified Command.GroupsWith at Decompiled\Verse\Command.cs line 275:
     ///   hotKey == command.hotKey && Label == command.Label && icon == command.icon
     ///   && groupKey == command.groupKey).
@@ -37,9 +41,14 @@ namespace QualityJobs.UI
     /// a right-click on a gizmo with no RightClickFloatMenuOptions as an ordinary
     /// Interacted event, so ProcessInput receives ev.button == 1. We override
     /// ProcessInput to route on ev.button.
-    public class Command_QualityJob : Command_Action
+    public class Command_QualityJob : Command_Action,
+        IEnumerable<Gizmo>, IEnumerator<Gizmo>
     {
-        private readonly List<Thing> _things;
+        private readonly int primaryThingId;
+        private IEnumerable<Gizmo>? source;
+        private IEnumerator<Gizmo>? sourceEnumerator;
+        private Gizmo? current;
+        private bool extraEmitted;
 
         // Captured on every draw pass. ProcessInput runs AFTER the gizmo grid
         // finishes drawing (GizmoGridDrawer), so a temporary action swap inside
@@ -48,13 +57,70 @@ namespace QualityJobs.UI
         // ordering that works.
         private Rect lastGizmoRect;
 
-        public Command_QualityJob(List<Thing> things)
+        public Command_QualityJob(int primaryThingId)
         {
-            _things = things;
+            this.primaryThingId = primaryThingId;
             // action is not used by our ProcessInput override, but keeping it
             // set lets base-class code paths (e.g. tooltip rendering) behave
             // normally.
             action = OpenDialog;
+        }
+
+        internal void RefreshPresentation(bool enabled)
+        {
+            ConstructionGizmoLabels.Ensure();
+            defaultLabel = ConstructionGizmoLabels.Label!;
+            defaultDesc = ConstructionGizmoLabels.Description!;
+            icon = enabled ? QualityJobsTex.GizmoEnabled : QualityJobsTex.GizmoDisabled;
+        }
+
+        internal static void ResetPresentationCache() =>
+            ConstructionGizmoLabels.Reset();
+
+        internal IEnumerable<Gizmo> AppendTo(IEnumerable<Gizmo> source)
+        {
+            this.source = source;
+            return this;
+        }
+
+        public IEnumerator<Gizmo> GetEnumerator()
+        {
+            sourceEnumerator?.Dispose();
+            sourceEnumerator = source?.GetEnumerator();
+            source = null;
+            current = null;
+            extraEmitted = false;
+            return this;
+        }
+
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        public Gizmo Current => current!;
+
+        object IEnumerator.Current => Current;
+
+        public bool MoveNext()
+        {
+            if (sourceEnumerator != null && sourceEnumerator.MoveNext())
+            {
+                current = sourceEnumerator.Current;
+                return true;
+            }
+            sourceEnumerator?.Dispose();
+            sourceEnumerator = null;
+            if (extraEmitted) return false;
+            extraEmitted = true;
+            current = this;
+            return true;
+        }
+
+        public void Reset() => throw new NotSupportedException();
+
+        public void Dispose()
+        {
+            sourceEnumerator?.Dispose();
+            sourceEnumerator = null;
+            current = null;
         }
 
         public override GizmoResult GizmoOnGUI(Vector2 topLeft, float maxWidth, GizmoRenderParms parms)
@@ -80,8 +146,9 @@ namespace QualityJobs.UI
             if (CurrentlyEnabled())
             {
                 SoundDefOf.Checkbox_TurnedOff.PlayOneShotOnCamera();
-                foreach (Thing t in _things)
-                    Commands.RemovePlan(t.thingIDNumber);
+                List<int> thingIds = ConstructionGizmos.CollectSelectedIds(primaryThingId);
+                for (int i = 0; i < thingIds.Count; i++)
+                    Commands.RemovePlan(thingIds[i]);
             }
             else
             {
@@ -94,15 +161,18 @@ namespace QualityJobs.UI
         /// Enabled/Disabled icon set in ConstructionGizmos.Append.
         private bool CurrentlyEnabled()
         {
-            if (_things.Count == 0) return false;
-            return QualityJobsStore.Active?.FindPlanById(_things[0].thingIDNumber) != null;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            return store != null
+                && store.TryGetPlanPresentation(primaryThingId, out _);
         }
 
         private void OpenDialog()
         {
             // A gizmo cannot be clicked without having been drawn, so
             // lastGizmoRect is always populated here (Rect.zero would center).
-            Find.WindowStack.Add(new Dialog_ConstructionPlanConfig(_things, lastGizmoRect));
+            Find.WindowStack.Add(new Dialog_ConstructionPlanConfig(
+                ConstructionGizmos.CollectSelectedIds(primaryThingId),
+                ConstructionGizmos.SelectedMapFor(primaryThingId), lastGizmoRect));
         }
 
         /// Applies the user's construction default options to all eligible
@@ -119,11 +189,12 @@ namespace QualityJobs.UI
             bool autoBest;
             if (store != null)
             {
-                minSkill      = store.constructionMinSkillDefault;
-                reqInspired   = store.constructionRequireInspiredDefault;
-                reqSpecialist = store.constructionRequireSpecialistDefault;
-                targetQuality = store.constructionTargetQualityDefault;
-                autoBest      = store.constructionAutoBestDefault;
+                StoreSettingsSnapshot snapshot = store.SettingsPresentation;
+                minSkill      = snapshot.ConstructionMinSkill;
+                reqInspired   = snapshot.ConstructionRequireInspired;
+                reqSpecialist = snapshot.ConstructionRequireSpecialist;
+                targetQuality = snapshot.ConstructionTargetQuality;
+                autoBest      = snapshot.ConstructionAutoBest;
             }
             else
             {
@@ -134,11 +205,39 @@ namespace QualityJobs.UI
                 targetQuality = s.defaultConstructionTargetQuality;
                 autoBest      = s.defaultConstructionAutoBest;
             }
-            foreach (Thing t in _things)
+            List<int> thingIds = ConstructionGizmos.CollectSelectedIds(primaryThingId);
+            for (int i = 0; i < thingIds.Count; i++)
             {
                 Commands.ApplyPlanSettings(
-                    t.thingIDNumber,
+                    thingIds[i],
                     minSkill, reqInspired, reqSpecialist, targetQuality, autoBest);
+            }
+        }
+
+        private static class ConstructionGizmoLabels
+        {
+            // Cache contract — Owner: process. Key: active language identity.
+            // Value: two translated immutable labels. Dependencies: language.
+            // Refresh: lazy on language identity change. Equality: cache hits
+            // preserve both strings. Teardown: Reset on game disposal.
+            private static LoadedLanguage? language;
+            internal static string? Label;
+            internal static string? Description;
+
+            internal static void Ensure()
+            {
+                LoadedLanguage? current = LanguageDatabase.activeLanguage;
+                if (object.ReferenceEquals(current, language)) return;
+                language = current;
+                Label = "QJ_GizmoQualityJobLabel".Translate();
+                Description = "QJ_GizmoManageDesc".Translate();
+            }
+
+            internal static void Reset()
+            {
+                language = null;
+                Label = null;
+                Description = null;
             }
         }
     }

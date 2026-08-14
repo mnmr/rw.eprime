@@ -26,7 +26,7 @@ namespace QualityJobs.UI
     /// (verified field at Decompiled\Verse\FloatMenu.cs line 14) to prevent the
     /// menu from instantly self-closing when spawned near the screen edge.
     ///
-    /// Fix 5: Operates on a List<Thing> captured at dialog open, so editing one
+    /// Fix 5: Operates on thing IDs captured at dialog open, so editing one
     /// field pushes the synced command for every eligible selected thing.
     ///
     /// SetInitialSizeAndPosition verified against Decompiled\Verse\Window.cs line 249:
@@ -56,10 +56,9 @@ namespace QualityJobs.UI
     ///   └─────────────────────────────────────────────────────────┘
     public class Dialog_ConstructionPlanConfig : Window
     {
-        // Primary thing (first in list) — used for plan lookup and display values.
-        private readonly Thing _primaryThing;
-        // All eligible selected things — commands are pushed to each of them.
-        private readonly List<Thing> _things;
+        private readonly int primaryThingId;
+        private readonly List<int> thingIds;
+        private readonly Map? primaryMap;
         private readonly Rect _anchor;
 
         // Layout constants derived from verified Listing metrics:
@@ -152,7 +151,6 @@ namespace QualityJobs.UI
         private bool requireSpecialist;
         private int minQuality;
         private bool autoBest;
-        private bool labelsLoaded; // true after first draw
 
         // Constant translated strings cached as instance fields built on first draw.
         // Reopening the dialog always constructs a fresh instance (AGENTS.md tooltip-session note).
@@ -190,12 +188,11 @@ namespace QualityJobs.UI
         // Auto current-best cache (auto spec §5) — same contract as the bill
         // dialog's: owner dialog (transient), key none, value resolved best
         // (id, skill, inspired, roleOffset) + built label string; dependencies
-        // colony pool contents + the dialog's filter fields; refresh at open
-        // (LoadLabels), on filter edits (Push), and tick-throttled at the
-        // store ScanInterval (250 game ticks); equality — same resolved
+        // colony pool contents + the dialog's filter fields; refresh at open,
+        // on filter edits, and when ExternalPawnFactsRevision advances;
+        // equality — same resolved
         // pawn+stats reuses the label; teardown — dies with the window.
-        private const int AutoBestInterval = QualityJobsStore.ScanInterval; // 250
-        private int lastAutoBestTick = -AutoBestInterval;
+        private int autoBestFactsRevision = int.MinValue;
         private int cachedAutoBestId = -1;
         private int cachedAutoSkill;
         private bool cachedAutoInspired;
@@ -207,11 +204,11 @@ namespace QualityJobs.UI
         // dialog's: owner dialog (transient); key none; value = the
         // eligible-finisher id list, built labels, and the stall flag;
         // dependencies = map colonist pool, the dialog's condition/autoBest
-        // edit fields, and the plan state; refresh tick-throttled at
-        // AutoBestInterval and forced on Push edits that affect eligibility;
+        // edit fields, and the plan state; refresh gated by PlanStatusRevision
+        // and forced on Push edits that affect eligibility;
         // equality — element-wise id compare preserves label identity;
         // teardown — dies with the window (scratch cleared each refresh).
-        private int lastStatusTick = -AutoBestInterval;
+        private int statusRevision = int.MinValue;
         private bool statusValid; // false = target off-map; status block hidden
         private bool statusStalled;
         private int statusEligibleCount = -1;
@@ -241,19 +238,37 @@ namespace QualityJobs.UI
             }
         }
 
-        /// Constructor takes the list of target Things and the anchor Rect (the
+        /// Constructor takes target thing IDs, the primary map identity, and the anchor Rect (the
         /// gizmo button rect from GizmoOnGUI). The first thing in the list is the
         /// primary (values displayed come from its plan). When anchor == Rect.zero
         /// the window falls back to centered positioning.
-        public Dialog_ConstructionPlanConfig(List<Thing> things, Rect anchor)
+        public Dialog_ConstructionPlanConfig(List<int> thingIds, Map? primaryMap,
+            Rect anchor)
         {
-            _things = things;
-            _primaryThing = things[0];
+            this.thingIds = thingIds;
+            primaryThingId = thingIds[0];
+            this.primaryMap = primaryMap;
             _anchor = anchor;
             doCloseX = false;
             closeOnClickedOutside = true;
             absorbInputAroundWindow = false;
             draggable = false;
+
+            QualityJobsStore? store = QualityJobsStore.Active;
+            PlanPresentationSnapshot? plan = null;
+            store?.TryGetPlanPresentation(primaryThingId, out plan);
+            int planMinSkill = plan?.MinSkill ?? 0;
+            bool planInspired = plan?.RequireInspired ?? false;
+            bool planSpecialist = plan?.RequireSpecialist ?? false;
+            int planQuality = plan?.MinQuality ?? 0;
+            bool planAutoBest = plan?.AutoBest ?? false;
+            if (minSkill != planMinSkill) minSkill = planMinSkill;
+            if (requireInspired != planInspired) requireInspired = planInspired;
+            if (requireSpecialist != planSpecialist)
+                requireSpecialist = planSpecialist;
+            if (minQuality != planQuality) minQuality = planQuality;
+            if (autoBest != planAutoBest) autoBest = planAutoBest;
+            LoadLabels(plan);
         }
 
         protected override void SetInitialSizeAndPosition()
@@ -284,10 +299,19 @@ namespace QualityJobs.UI
         public override void DoWindowContents(Rect inRect)
         {
             QualityJobsStore? store = QualityJobsStore.Active;
-            ConstructionPlan? plan = store?.FindPlanById(_primaryThing.thingIDNumber);
-
-            // Initialise label caches once per dialog open (on first draw).
-            if (!labelsLoaded) LoadLabels(plan);
+            PlanPresentationSnapshot? plan = null;
+            store?.TryGetPlanPresentation(primaryThingId, out plan);
+            int currentMinSkill = plan?.MinSkill ?? 0;
+            bool currentInspired = plan?.RequireInspired ?? false;
+            bool currentSpecialist = plan?.RequireSpecialist ?? false;
+            int currentQuality = plan?.MinQuality ?? 0;
+            bool currentAutoBest = plan?.AutoBest ?? false;
+            if (minSkill != currentMinSkill) minSkill = currentMinSkill;
+            if (requireInspired != currentInspired) requireInspired = currentInspired;
+            if (requireSpecialist != currentSpecialist)
+                requireSpecialist = currentSpecialist;
+            if (minQuality != currentQuality) minQuality = currentQuality;
+            if (autoBest != currentAutoBest) autoBest = currentAutoBest;
 
             // Single EnsureAutoBest call site per pass, BEFORE DrawRightPanel,
             // so the odds mirror reads a fresh auto cache in the same pass
@@ -329,7 +353,7 @@ namespace QualityJobs.UI
 
         /// Right panel: odds table then the status block, top-anchored, no frame.
         /// Layout: MiniHeader (30f), 7 rows of 22f, gap, status MiniHeader + rows.
-        private void DrawRightPanel(Rect rect, ConstructionPlan? plan)
+        private void DrawRightPanel(Rect rect, PlanPresentationSnapshot? plan)
         {
             TextAnchor prevAnchor = Text.Anchor;
             Color prevColor = GUI.color;
@@ -377,7 +401,7 @@ namespace QualityJobs.UI
                 }
 
                 // Status block (spec §11), below the odds rows: drawn only from
-                // strings EnsureStatus (tick-throttled) cached before the pass.
+                // strings EnsureStatus (revision-gated) cached before the pass.
                 if (statusValid)
                 {
                     float afterStatusHeader = QjUi.MiniHeader(rect.x, rowY + StatusGapH,
@@ -413,7 +437,7 @@ namespace QualityJobs.UI
         /// (rect IS the panel rect, height LeftPanelH()).
         /// Inside: [Clear] row at the TOP (reserved unconditionally), flexible
         /// space, then options block anchored at the BOTTOM.
-        private void DrawLeftPanel(Rect rect, ConstructionPlan? plan)
+        private void DrawLeftPanel(Rect rect, PlanPresentationSnapshot? plan)
         {
             Color prevColor = GUI.color;
             TextAnchor prevAnchor = Text.Anchor;
@@ -435,11 +459,12 @@ namespace QualityJobs.UI
                     if (Widgets.ButtonText(clearRowRect, clearLabel!))
                     {
                         // Fix 5: Clear for every selected thing that has a plan.
-                        foreach (Thing t in _things)
+                        for (int i = 0; i < thingIds.Count; i++)
                         {
                             QualityJobsStore? s = QualityJobsStore.Active;
-                            if (s?.FindPlanById(t.thingIDNumber) != null)
-                                Commands.RemovePlan(t.thingIDNumber);
+                            int thingId = thingIds[i];
+                            if (s != null && s.TryGetPlanPresentation(thingId, out _))
+                                Commands.RemovePlan(thingId);
                         }
                     }
                 }
@@ -461,8 +486,8 @@ namespace QualityJobs.UI
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return false;
-            foreach (Thing t in _things)
-                if (store.FindPlanById(t.thingIDNumber) != null) return true;
+            for (int i = 0; i < thingIds.Count; i++)
+                if (store.TryGetPlanPresentation(thingIds[i], out _)) return true;
             return false;
         }
 
@@ -481,18 +506,19 @@ namespace QualityJobs.UI
         ///   at least 30f (SliderH) below the slider's top. No overlap.
         ///   In auto mode the slider is replaced by a 22f label row; the
         ///   target-quality row then starts at y+SmallLineH+GapH = y+24f.
-        private void DrawOptionsBlock(float x, float startY, float width, ConstructionPlan? plan)
+        private void DrawOptionsBlock(float x, float startY, float width,
+            PlanPresentationSnapshot? plan)
         {
             Color prevColor = GUI.color;
             TextAnchor prevAnchor = Text.Anchor;
             try
             {
                 // Read current values from plan; sync local copies when plan changes identity.
-                int curMinSkill    = plan?.minSkill       ?? 0;
-                bool curInspired   = plan?.requireInspired  ?? false;
-                bool curSpecialist = plan?.requireSpecialist ?? false;
-                int curMinQuality  = plan?.minQuality       ?? 0;
-                bool curAutoBest   = plan?.autoBest         ?? false;
+                int curMinSkill    = plan?.MinSkill       ?? 0;
+                bool curInspired   = plan?.RequireInspired  ?? false;
+                bool curSpecialist = plan?.RequireSpecialist ?? false;
+                int curMinQuality  = plan?.MinQuality       ?? 0;
+                bool curAutoBest   = plan?.AutoBest         ?? false;
 
                 if (minSkill       != curMinSkill)    minSkill       = curMinSkill;
                 if (requireInspired  != curInspired)  requireInspired  = curInspired;
@@ -600,18 +626,16 @@ namespace QualityJobs.UI
             }
         }
 
-        private void LoadLabels(ConstructionPlan? plan)
+        private void LoadLabels(PlanPresentationSnapshot? plan)
         {
-            labelsLoaded = true;
-
             // Sync local edit copies from plan (if exists).
             if (plan != null)
             {
-                minSkill       = plan.minSkill;
-                requireInspired  = plan.requireInspired;
-                requireSpecialist = plan.requireSpecialist;
-                minQuality     = plan.minQuality;
-                autoBest       = plan.autoBest;
+                minSkill       = plan.MinSkill;
+                requireInspired  = plan.RequireInspired;
+                requireSpecialist = plan.RequireSpecialist;
+                minQuality     = plan.MinQuality;
+                autoBest       = plan.AutoBest;
             }
             // else: local copies stay at neutral defaults (0/false/false/0).
 
@@ -619,7 +643,7 @@ namespace QualityJobs.UI
             // dialog's LoadFromStore reset; the field initializer covers the
             // very first pass — this keeps the contract's "refresh at open"
             // true by mechanism as well).
-            lastAutoBestTick = -AutoBestInterval;
+            autoBestFactsRevision = int.MinValue;
             cachedAutoValid = false;
             cachedAutoBestId = -1;
             autoBestCurrentLabel = null;
@@ -654,18 +678,19 @@ namespace QualityJobs.UI
         private void PushMinQuality(int value)
         {
             minQuality = value;
-            foreach (Thing t in _things)
-                Commands.SetPlanMinQuality(t.thingIDNumber, value);
+            for (int i = 0; i < thingIds.Count; i++)
+                Commands.SetPlanMinQuality(thingIds[i], value);
         }
 
-        /// <summary>Tick-throttled auto current-best evaluation (auto spec §5):
-        /// at most one colony scan per store ScanInterval; recipe null ranks by
-        /// Construction skill (AGENTS.md render-path rule).</summary>
+        /// <summary>Revision-gated auto current-best evaluation (auto spec §5).
+        /// The store observes unpatched external pawn facts at its explicitly
+        /// named responsiveness boundary; steady render passes compare one int.</summary>
         private void EnsureAutoBest()
         {
-            int now = Find.TickManager.TicksGame;
-            if (now - lastAutoBestTick < AutoBestInterval && lastAutoBestTick >= 0) return;
-            lastAutoBestTick = now;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            int revision = store?.ExternalPawnFactsRevision ?? 0;
+            if (autoBestFactsRevision == revision) return;
+            autoBestFactsRevision = revision;
             // MinSkill is ignored in auto mode, so pass 0.
             var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
             Pawn? best = Dispatcher.AutoBestForDisplay(null, condition);
@@ -693,17 +718,17 @@ namespace QualityJobs.UI
             cachedAutoValid = true;
         }
 
-        /// <summary>Tick-throttled status refresh (spec §11): the eligible
-        /// construction-finisher set and the stall flag, rebuilt at most once
-        /// per AutoBestInterval and immediately after a Push edit. Never runs
-        /// colony scans per frame (AGENTS.md render-path rule).</summary>
-        private void EnsureStatus(ConstructionPlan? plan)
+        /// <summary>Revision-gated status refresh (spec §11). Steady render
+        /// passes compare PlanStatusRevision and reuse the immutable presentation
+        /// strings/IDs built on the last invalidation.</summary>
+        private void EnsureStatus(PlanPresentationSnapshot? plan)
         {
-            int now = Find.TickManager.TicksGame;
-            if (now - lastStatusTick < AutoBestInterval && lastStatusTick >= 0) return;
-            lastStatusTick = now;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            int revision = store?.PlanStatusRevision ?? 0;
+            if (statusRevision == revision) return;
+            statusRevision = revision;
 
-            Map? map = _primaryThing.MapHeld;
+            Map? map = plan?.Map ?? primaryMap;
             if (map == null)
             {
                 statusValid = false;
@@ -744,7 +769,7 @@ namespace QualityJobs.UI
 
             // Paused plan with nobody eligible = the silent stall the status
             // block exists to surface.
-            statusStalled = plan != null && plan.state == ConstructionPlanState.Paused
+            statusStalled = plan != null && plan.State == ConstructionPlanState.Paused
                 && statusEligibleCount == 0;
         }
 
@@ -763,15 +788,15 @@ namespace QualityJobs.UI
             if (specChanged)     requireSpecialist = newSpecialist;
             if (autoChanged)     autoBest          = newAutoBest;
             if (inspiredChanged || specChanged || autoChanged)
-                lastAutoBestTick = -AutoBestInterval; // filter/mode edit: re-evaluate now
+                autoBestFactsRevision = int.MinValue;
             if (skillChanged || inspiredChanged || specChanged || autoChanged)
-                lastStatusTick = -AutoBestInterval;   // eligibility edit: refresh status now
+                statusRevision = int.MinValue;
 
             if (!skillChanged && !inspiredChanged && !specChanged && !autoChanged) return;
 
-            foreach (Thing t in _things)
+            for (int i = 0; i < thingIds.Count; i++)
             {
-                int thingId = t.thingIDNumber;
+                int thingId = thingIds[i];
                 if (skillChanged)    Commands.SetPlanMinSkill(thingId, newMinSkill);
                 if (inspiredChanged) Commands.SetPlanRequireInspired(thingId, newInspired);
                 if (specChanged)     Commands.SetPlanRequireSpecialist(thingId, newSpecialist);

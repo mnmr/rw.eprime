@@ -33,6 +33,8 @@ namespace QualityJobs.UI
         private int targetQuality;
         private int cap;
         private bool loaded;
+        private readonly Listing_Standard listing = new Listing_Standard();
+        private BillPresentationSnapshot? presentation;
 
         // Odds caches — keyed (minSkill, inspired, roleOffset); rebuilt on mismatch.
         // Owner: dialog (transient). Dependencies: condition fields only.
@@ -42,11 +44,10 @@ namespace QualityJobs.UI
 
         // Best-candidate throttle cache.
         // Owner: dialog (transient). Key: none (single pawn). Value: pawn + odds.
-        // Dependencies: best-candidate selection, re-evaluated every BestCandidateInterval ticks.
-        // Refresh: tick-throttled at BestCandidateInterval; also reset on LoadFromStore.
+        // Dependencies: external pawn facts. Refresh: revision-gated and reset
+        // on LoadFromStore.
         // Teardown: dies with the window.
-        private const int BestCandidateInterval = QualityJobsStore.ScanInterval; // 250
-        private int lastBestTick = -BestCandidateInterval; // force first evaluation
+        private int bestFactsRevision = int.MinValue;
         private int cachedBestSkill;
         private bool cachedBestInspired;
         private int cachedBestRoleOffset;
@@ -57,11 +58,10 @@ namespace QualityJobs.UI
         // best (id, skill, inspired, roleOffset) + built label string.
         // Dependencies: colony pool contents and the dialog's condition filter
         // fields. Refresh: rebuilt at window open (LoadFromStore), when a filter
-        // field is edited (PushChanges), and tick-throttled at
-        // BestCandidateInterval (= ScanInterval, 250 game ticks; spec §5).
+        // field is edited (PushChanges), and when ExternalPawnFactsRevision moves.
         // Equality: same (pawnId, skill, inspired, roleOffset) reuses the label.
         // Teardown: dies with the window.
-        private int lastAutoBestTick = -BestCandidateInterval;
+        private int autoBestFactsRevision = int.MinValue;
         private int cachedAutoBestId = -1;
         private int cachedAutoSkill;
         private bool cachedAutoInspired;
@@ -109,15 +109,15 @@ namespace QualityJobs.UI
         // Status section cache (spec §11 status display).
         // Owner: dialog (transient). Key: none. Value: pipeline counts
         // (shared/waiting/finishing), the eligible-finisher id list, and the
-        // built display strings. Dependencies: store entries (rebuilt by the
-        // store's 250-tick scan), the map colonist pool, and the dialog's
-        // condition/autoBest edit fields. Refresh: tick-throttled at
-        // BestCandidateInterval; forced on any PushChanges edit that affects
+        // built display strings. Dependencies: store entries (updated by lifecycle
+        // events and reconciliation boundaries), the map colonist pool, and the dialog's
+        // condition/autoBest edit fields. Refresh: BillStatusRevision-gated;
+        // forced on any PushChanges edit that affects
         // eligibility (immediate visibility, including while paused).
         // Equality: each label is rebuilt only when its source values change
         // (element-wise id compare preserves the names label identity).
         // Teardown: dies with the window (scratch list cleared each refresh).
-        private int lastStatusTick = -BestCandidateInterval;
+        private int statusRevision = int.MinValue;
         private bool statusValid; // false = bench has no map or unmanaged recipe; section hidden
         private int statusWaiting = -1;
         private int statusFinishing = -1;
@@ -135,6 +135,8 @@ namespace QualityJobs.UI
         public Dialog_QualityBillConfig(Bill_ProductionWithUft bill, IntVec3 billGiverPos)
             : base(bill, billGiverPos)
         {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store != null) LoadFromStore(store);
         }
 
         public override Vector2 InitialSize
@@ -157,6 +159,12 @@ namespace QualityJobs.UI
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
             if (!loaded) LoadFromStore(store);
+            else
+            {
+                BillPresentationSnapshot current = store.BillPresentationFor(bill);
+                if (!ReferenceEquals(presentation, current))
+                    AdoptPresentation(current);
+            }
             if (autoBest) EnsureAutoBest();
             EnsureStatus(store);
 
@@ -165,7 +173,6 @@ namespace QualityJobs.UI
             OddsRows thresholdRows = EnsureThresholdOdds();
             OddsRows? bestRows = EnsureBestOdds();
 
-            var listing = new Listing_Standard();
             listing.Begin(rect);
             GameFont prevFont = Text.Font;
             TextAnchor prevAnchor = Text.Anchor;
@@ -329,7 +336,7 @@ namespace QualityJobs.UI
 
                 // Status section (spec §11), below the odds: mini-header +
                 // fixed-height rows drawn exclusively from strings EnsureStatus
-                // (tick-throttled) cached before Begin. The stall line is the
+                // (revision-gated) cached before Begin. The stall line is the
                 // diagnostic for the silent no-eligible-finisher pipeline stop.
                 if (statusValid)
                 {
@@ -383,23 +390,7 @@ namespace QualityJobs.UI
 
         private void LoadFromStore(QualityJobsStore store)
         {
-            BillConfig config = store.ConfigFor(bill);
-            managed = config.Managed;
-            minSkill = config.Condition.MinSkill;
-            requireInspired = config.Condition.RequireInspired;
-            // ConfigFor already coerces specialist via the Ideology gate; mirror here
-            // so the local copy is clean and PushChanges never sends true without Ideology.
-            requireSpecialist = config.Condition.RequireSpecialist && ModsConfig.IdeologyActive;
-            autoBest = config.AutoBest;
-            targetQuality = store.TargetQualityFor(bill);
-            cap = store.CapFor(ManagedRecipes.ProductDefName(bill.recipe));
-            // Force re-evaluation of best-candidate on next draw pass.
-            lastBestTick = -BestCandidateInterval;
-            cachedBestValid = false;
-            lastAutoBestTick = -BestCandidateInterval;
-            cachedAutoValid = false;
-            cachedAutoBestId = -1;
-            _autoBestCurrentLabel = null;
+            AdoptPresentation(store.BillPresentationFor(bill));
 
             // Build all instance-scoped label caches once per dialog open.
             // Reopening the dialog always constructs a fresh instance, so these
@@ -428,6 +419,42 @@ namespace QualityJobs.UI
             loaded = true;
         }
 
+        private void AdoptPresentation(BillPresentationSnapshot current)
+        {
+            bool sourceChanged = presentation == null
+                || !ReferenceEquals(presentation.Recipe, current.Recipe)
+                || !ReferenceEquals(presentation.Map, current.Map)
+                || !string.Equals(presentation.ProductDefName,
+                    current.ProductDefName, System.StringComparison.Ordinal);
+            BillConfig config = current.Config;
+            bool eligibilityChanged = minSkill != config.Condition.MinSkill
+                || requireInspired != config.Condition.RequireInspired
+                || requireSpecialist != config.Condition.RequireSpecialist
+                || autoBest != config.AutoBest;
+
+            presentation = current;
+            managed = config.Managed;
+            minSkill = config.Condition.MinSkill;
+            requireInspired = config.Condition.RequireInspired;
+            // ConfigFor already coerces specialist via the Ideology gate; mirror here
+            // so the local copy is clean and PushChanges never sends true without Ideology.
+            requireSpecialist = config.Condition.RequireSpecialist && ModsConfig.IdeologyActive;
+            autoBest = config.AutoBest;
+            targetQuality = presentation.TargetQuality;
+            cap = presentation.ProductCap;
+            if (!sourceChanged && !eligibilityChanged) return;
+
+            // Force re-evaluation only when inputs consumed by these builders
+            // changed. Cap/target/managed-only updates retain the derived rows.
+            bestFactsRevision = int.MinValue;
+            autoBestFactsRevision = int.MinValue;
+            statusRevision = int.MinValue;
+            cachedBestValid = false;
+            cachedAutoValid = false;
+            cachedAutoBestId = -1;
+            _autoBestCurrentLabel = null;
+        }
+
         private void PushChanges(bool newManaged, bool newAutoBest, int newMinSkill,
             bool newInspired, bool newSpecialist, int newCap)
         {
@@ -436,45 +463,45 @@ namespace QualityJobs.UI
             if (newManaged != managed)
             {
                 managed = newManaged;
-                Commands.SetBillManaged(BillIds.IdOf(bill), newManaged);
+                Commands.SetBillManaged(presentation!.BillId, newManaged);
             }
 
             if (newAutoBest != autoBest)
             {
                 autoBest = newAutoBest;
-                Commands.SetBillAutoBest(BillIds.IdOf(bill), newAutoBest);
+                Commands.SetBillAutoBest(presentation!.BillId, newAutoBest);
                 // Filter/mode edit: re-evaluate the current best immediately.
-                lastAutoBestTick = -BestCandidateInterval;
-                lastStatusTick = -BestCandidateInterval;
+                autoBestFactsRevision = int.MinValue;
+                statusRevision = int.MinValue;
             }
 
             if (newMinSkill != minSkill)
             {
                 minSkill = newMinSkill;
-                Commands.SetBillMinSkill(BillIds.IdOf(bill), newMinSkill);
-                lastStatusTick = -BestCandidateInterval;
+                Commands.SetBillMinSkill(presentation!.BillId, newMinSkill);
+                statusRevision = int.MinValue;
             }
 
             if (newInspired != requireInspired)
             {
                 requireInspired = newInspired;
-                Commands.SetBillRequireInspired(BillIds.IdOf(bill), newInspired);
-                lastAutoBestTick = -BestCandidateInterval;
-                lastStatusTick = -BestCandidateInterval;
+                Commands.SetBillRequireInspired(presentation!.BillId, newInspired);
+                autoBestFactsRevision = int.MinValue;
+                statusRevision = int.MinValue;
             }
 
             if (newSpecialist != requireSpecialist)
             {
                 requireSpecialist = newSpecialist;
-                Commands.SetBillRequireSpecialist(BillIds.IdOf(bill), newSpecialist);
-                lastAutoBestTick = -BestCandidateInterval;
-                lastStatusTick = -BestCandidateInterval;
+                Commands.SetBillRequireSpecialist(presentation!.BillId, newSpecialist);
+                autoBestFactsRevision = int.MinValue;
+                statusRevision = int.MinValue;
             }
 
             if (newCap != cap)
             {
                 cap = newCap;
-                string? product = ManagedRecipes.ProductDefName(bill.recipe);
+                string? product = presentation!.ProductDefName;
                 if (product != null) Commands.SetProductCap(product, newCap);
             }
         }
@@ -485,7 +512,7 @@ namespace QualityJobs.UI
         {
             if (value == targetQuality) return;
             targetQuality = value;
-            Commands.SetBillTargetQuality(BillIds.IdOf(bill), value);
+            Commands.SetBillTargetQuality(presentation!.BillId, value);
         }
 
         private OddsRows EnsureThresholdOdds()
@@ -512,29 +539,27 @@ namespace QualityJobs.UI
 
         private OddsRows? EnsureBestOdds()
         {
-            // Throttle: re-evaluate SelectFinisher at most once per BestCandidateInterval
-            // ticks, not per frame. SelectFinisher iterates all free colonists — doing
-            // it in the render path every frame violates AGENTS.md §render-path-rule
-            // (traversal and aggregation in a steady render pass).
+            // Revision gate: SelectFinisher iterates colonists only after the
+            // store's external pawn-facts revision moves.
             //
             // Cache contract — Owner: dialog (transient). Key: none.
             // Value: cached pawn stats (skill, inspired, roleOffset) + valid flag.
-            // Dependencies: current colonist pool; re-evaluated every
-            // BestCandidateInterval game ticks. Refresh: tick-throttled.
+            // Dependencies: current colonist pool. Refresh: revision-gated.
             // Equality: Matches() on new stats preserves bestOdds identity.
             // Teardown: dies with the window.
-            int now = Find.TickManager.TicksGame;
-            if (now - lastBestTick < BestCandidateInterval && lastBestTick >= 0)
+            QualityJobsStore? store = QualityJobsStore.Active;
+            int revision = store?.ExternalPawnFactsRevision ?? 0;
+            if (bestFactsRevision == revision)
             {
                 // Return cached result.
                 return cachedBestValid ? EnsureBestOddsFromCache() : null;
             }
 
-            lastBestTick = now;
+            bestFactsRevision = revision;
 
             // Use the bench's map: it is the semantically correct candidate scope
             // (the pawn must be on the same map as the workbench, not the camera map).
-            Map? map = (bill.billStack?.billGiver as Thing)?.MapHeld;
+            Map? map = presentation?.Map;
             if (map == null)
             {
                 cachedBestValid = false;
@@ -542,7 +567,8 @@ namespace QualityJobs.UI
                 return null;
             }
 
-            Pawn? best = Dispatcher.SelectFinisher(map, bill.recipe, default, relaxed: true);
+            Pawn? best = Dispatcher.SelectFinisher(
+                map, presentation!.Recipe, default, relaxed: true);
             if (best == null)
             {
                 cachedBestValid = false;
@@ -550,7 +576,7 @@ namespace QualityJobs.UI
                 return null;
             }
 
-            cachedBestSkill = Dispatcher.SkillOf(best, bill.recipe);
+            cachedBestSkill = Dispatcher.SkillOf(best, presentation!.Recipe);
             cachedBestInspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
             cachedBestRoleOffset = Dispatcher.RoleOffsetOf(best);
             cachedBestValid = true;
@@ -565,19 +591,19 @@ namespace QualityJobs.UI
             return bestOdds;
         }
 
-        /// <summary>Tick-throttled auto current-best evaluation (auto spec §5):
-        /// refreshed at most once per store ScanInterval (250 game ticks); never
-        /// runs the colony scan per frame (AGENTS.md render-path rule).</summary>
+        /// <summary>Revision-gated auto current-best evaluation (auto spec §5).
+        /// Steady render passes compare one external-facts revision.</summary>
         private void EnsureAutoBest()
         {
-            int now = Find.TickManager.TicksGame;
-            if (now - lastAutoBestTick < BestCandidateInterval && lastAutoBestTick >= 0) return;
-            lastAutoBestTick = now;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            int revision = store?.ExternalPawnFactsRevision ?? 0;
+            if (autoBestFactsRevision == revision) return;
+            autoBestFactsRevision = revision;
 
             // The auto pool honors the same filters the gate will apply; MinSkill
             // is ignored in auto mode, so pass 0.
             var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
-            Pawn? best = Dispatcher.AutoBestForDisplay(bill.recipe, condition);
+            Pawn? best = Dispatcher.AutoBestForDisplay(presentation!.Recipe, condition);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -585,7 +611,7 @@ namespace QualityJobs.UI
                 _autoBestCurrentLabel = null;
                 return;
             }
-            int skill = Dispatcher.SkillOf(best, bill.recipe);
+            int skill = Dispatcher.SkillOf(best, presentation!.Recipe);
             bool inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
             int roleOffset = Dispatcher.RoleOffsetOf(best);
             // Equality: same resolved identity + stats keeps the label instance.
@@ -602,18 +628,16 @@ namespace QualityJobs.UI
             cachedAutoValid = true;
         }
 
-        /// <summary>Tick-throttled status refresh (spec §11): pipeline counts and
-        /// the eligible-finisher set, rebuilt at most once per
-        /// BestCandidateInterval and immediately after a PushChanges edit.
-        /// Never runs scans per frame (AGENTS.md render-path rule).</summary>
+        /// <summary>Revision-gated status refresh (spec §11): pipeline counts and
+        /// eligible finishers rebuild only after their exact store domain moves.</summary>
         private void EnsureStatus(QualityJobsStore store)
         {
-            int now = Find.TickManager.TicksGame;
-            if (now - lastStatusTick < BestCandidateInterval && lastStatusTick >= 0) return;
-            lastStatusTick = now;
+            int revision = store.BillStatusRevision;
+            if (statusRevision == revision) return;
+            statusRevision = revision;
 
-            Map? map = (bill.billStack?.billGiver as Thing)?.MapHeld;
-            string? product = ManagedRecipes.ProductDefName(bill.recipe);
+            Map? map = presentation?.Map;
+            string? product = presentation?.ProductDefName;
             if (map == null || product == null)
             {
                 statusValid = false;
@@ -623,7 +647,7 @@ namespace QualityJobs.UI
 
             store.CountEntriesFor(map, product,
                 out int waiting, out int finishing, out int shared);
-            bool showShared = store.shareUnfinishedWork;
+            bool showShared = store.SettingsPresentation.ShareUnfinishedWork;
             if (waiting != statusWaiting || finishing != statusFinishing
                 || shared != statusShared || showShared != statusSharedShown)
             {
@@ -642,7 +666,8 @@ namespace QualityJobs.UI
             ResumeCondition condition = autoBest
                 ? new ResumeCondition(0, requireInspired, requireSpecialist)
                 : new ResumeCondition(minSkill, requireInspired, requireSpecialist);
-            Dispatcher.CollectEligibleFinishers(map, bill.recipe, condition, autoBest,
+            Dispatcher.CollectEligibleFinishers(map, presentation!.Recipe,
+                condition, autoBest,
                 statusPawnScratch);
 
             bool sameIds = statusPawnScratch.Count == statusEligibleIds.Count;

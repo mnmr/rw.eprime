@@ -1,3 +1,4 @@
+using QualityJobs.Core;
 using Verse;
 
 namespace QualityJobs
@@ -48,6 +49,16 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultConstructionRequireSpecialist, "defaultConstructionRequireSpecialist", false);
             Scribe_Values.Look(ref defaultConstructionTargetQuality, "defaultConstructionTargetQuality", 0);
             Scribe_Values.Look(ref defaultConstructionAutoBest, "defaultConstructionAutoBest", false);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                defaultMinSkill = ConfigurationLimits.Skill(defaultMinSkill);
+                defaultProductCap = ConfigurationLimits.StockCap(defaultProductCap);
+                defaultTargetQuality = ConfigurationLimits.Quality(defaultTargetQuality);
+                defaultConstructionMinSkill =
+                    ConfigurationLimits.Skill(defaultConstructionMinSkill);
+                defaultConstructionTargetQuality =
+                    ConfigurationLimits.Quality(defaultConstructionTargetQuality);
+            }
         }
     }
 }

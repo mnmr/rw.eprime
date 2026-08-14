@@ -80,9 +80,7 @@ namespace QualityJobs
             UftAuthor.Assign(uft, finisher);
             uft.BoundBill = bill;
 
-            entry.state = WorkItemState.Dispatched;
-            entry.finisher = finisher;
-            entry.finishBill = bill;
+            store.DispatchEntry(entry, finisher, bill);
 
             // Fix I3: register inherited config so any lookup by finish bill id
             // returns the same condition as the source bill.
@@ -90,11 +88,7 @@ namespace QualityJobs
             BillConfig inherited = entry.sourceBill != null && !entry.sourceBill.DeletedOrDereferenced
                 ? store.ConfigFor(entry.sourceBill)
                 : new BillConfig(true, autoBest, ConditionFor(store, entry));
-            store.billManaged[finishId] = true; // finish bills are always gate-managed
-            store.billMinSkill[finishId] = inherited.Condition.MinSkill;
-            store.billRequireInspired[finishId] = inherited.Condition.RequireInspired;
-            store.billRequireSpecialist[finishId] = inherited.Condition.RequireSpecialist;
-            store.billAutoBest[finishId] = inherited.AutoBest;
+            store.RegisterFinishBillConfig(finishId, inherited);
         }
 
         /// Spec §7 construction table.
@@ -248,15 +242,15 @@ namespace QualityJobs
 
         /// Paused frame -> Dispatched (spec §10: no one-shot bill; the lock
         /// admits only the recorded finisher).
-        public static void TryDispatchConstruction(ConstructionPlan plan)
+        public static void TryDispatchConstruction(QualityJobsStore store,
+            ConstructionPlan plan)
         {
             if (!(plan.target is Frame frame) || !frame.Spawned) return;
             Pawn? finisher = plan.autoBest
                 ? SelectAutoFinisher(frame.Map, null, plan.Condition)
                 : SelectConstructionFinisher(frame.Map, plan.Condition);
             if (finisher == null) return;
-            plan.finisher = finisher;
-            plan.state = ConstructionPlanState.Dispatched;
+            store.DispatchPlan(plan, finisher);
         }
 
         /// Spec §10 revert triggers for construction dispatches.
@@ -335,8 +329,8 @@ namespace QualityJobs
         /// calls InvalidateWorkTypeCache() to clear this when a definition reload
         /// occurs). Refresh: lazy on first call per recipe; cleared by
         /// InvalidateWorkTypeCache(). Equality: n/a (single value per key).
-        /// Teardown: none needed (no world data). Cache hits are plain Dictionary
-        /// lookups — no allocation.
+        /// Teardown/reset: InvalidateWorkTypeCache clears all def references.
+        /// Cache hits are plain Dictionary lookups — no allocation.
         private static readonly Dictionary<RecipeDef, WorkTypeDef?> s_workTypeCache =
             new Dictionary<RecipeDef, WorkTypeDef?>();
 
@@ -452,10 +446,11 @@ namespace QualityJobs
         /// now, best first (status display, spec §11). Mirrors SelectFinisher /
         /// SelectAutoFinisher candidate construction exactly so the display can
         /// never disagree with dispatch; recipe == null builds construction
-        /// facts, like SelectAutoFinisher. Call only from tick-throttled dialog
+        /// facts, like SelectAutoFinisher. Call only from revision-gated dialog
         /// caches, never per frame — iterates map colonists. Clears results;
         /// static buffers are cleared before returning so they never root a
-        /// previous world's pawns.</summary>
+        /// previous world's pawns. Call only from revision-gated dialog cache
+        /// builders, never on a steady render pass.</summary>
         public static void CollectEligibleFinishers(Map map, RecipeDef? recipe,
             ResumeCondition condition, bool autoBest, List<Pawn> results)
         {
@@ -502,7 +497,7 @@ namespace QualityJobs
         /// <summary>Current auto-best pawn for dialog display (auto spec §5).
         /// Ranks the full colony pool, availability ignored — shows who the gate
         /// demands. recipe == null ranks by Construction skill. Call only from
-        /// tick-throttled dialog caches, never per frame.</summary>
+        /// revision-gated dialog caches, never on a steady render pass.</summary>
         public static Pawn? AutoBestForDisplay(RecipeDef? recipe, ResumeCondition condition)
         {
             WorkTypeDef? workType = recipe != null ? WorkTypeForRecipe(recipe) : null;
@@ -551,9 +546,7 @@ namespace QualityJobs
             DeleteFinishBill(store, entry);
             if (entry.uft != null) entry.uft.BoundBill = null;
             if (entry.uft != null) UftAuthor.Clear(entry.uft);
-            entry.state = WorkItemState.Paused;
-            entry.finisher = null;
-            entry.finishBill = null;
+            store.PauseEntry(entry);
         }
 
         public static void CompleteDispatch(QualityJobsStore store, WorkItemEntry entry,
@@ -595,11 +588,7 @@ namespace QualityJobs
             string id = BillIds.IdOf(bill);
             if (!bill.DeletedOrDereferenced)
                 bill.billStack?.Delete(bill);
-            store.billManaged.Remove(id);
-            store.billMinSkill.Remove(id);
-            store.billRequireInspired.Remove(id);
-            store.billRequireSpecialist.Remove(id);
-            store.billAutoBest.Remove(id);
+            store.RemoveFinishBillConfig(id);
         }
 
         /// Removes the Deconstruct designation this mod placed on an
@@ -640,17 +629,12 @@ namespace QualityJobs
                     else UftAuthor.ClearLabelIfReserved(e.uft);
                 }
             }
-            store.entries.Clear();
             // Construction plan cleanup (spec §10): remove our Deconstruct
             // designations before clearing plans, so frames complete vanilla-style
             // after disable.
             for (int i = store.plans.Count - 1; i >= 0; i--)
                 RemoveOurDeconstructDesignation(store.plans[i]);
-            store.plans.Clear();
-            // AnyOverlays is cleared by Commands.Disable after component removal;
-            // set it here too so it is correct if RestoreAllToVanilla is called
-            // independently of Disable (defensive: currently only called by Disable).
-            QualityJobsStore.AnyOverlays = false;
+            store.ClearAuthoritativeCollectionsForDisable();
         }
     }
 }

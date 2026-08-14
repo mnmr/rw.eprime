@@ -20,7 +20,7 @@ namespace QualityJobs.Patches
         // Tooltip cache — Owner: process. Key: active language. Value: the
         // translated tip string. Dependencies: language change, observed per
         // draw. Refresh: rebuilt when the language object changes. Equality:
-        // n/a (single value). Teardown: none (process-static string).
+        // cache hits preserve the string. Teardown: ResetPresentation on game disposal.
         private static LoadedLanguage? tipLanguage;
         private static string? tip;
 
@@ -29,6 +29,13 @@ namespace QualityJobs.Patches
         // mods may relocate it, so predicting the rect up front is unreliable.
         // One frame of hover lag is imperceptible.
         private static Rect lastIconRect;
+
+        internal static void ResetPresentation()
+        {
+            tipLanguage = null;
+            tip = null;
+            lastIconRect = default;
+        }
 
         public static void Postfix(WidgetRow row, bool worldView)
         {

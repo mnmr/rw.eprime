@@ -45,13 +45,19 @@ namespace QualityJobs.UI
         public static float MiniHeader(float x, float y, float width, string label)
         {
             Color prev = GUI.color;
-            var labelRect = new Rect(x, y, width, 22f);
-            GUI.color = new Color(0.85f, 0.85f, 0.85f);
-            Widgets.Label(labelRect, label);
-            GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            Widgets.DrawLineHorizontal(x, y + 21f, width);
-            GUI.color = prev;
-            return y + 27f;
+            try
+            {
+                var labelRect = new Rect(x, y, width, 22f);
+                GUI.color = new Color(0.85f, 0.85f, 0.85f);
+                Widgets.Label(labelRect, label);
+                GUI.color = new Color(1f, 1f, 1f, 0.25f);
+                Widgets.DrawLineHorizontal(x, y + 21f, width);
+                return y + 27f;
+            }
+            finally
+            {
+                GUI.color = prev;
+            }
         }
     }
 }

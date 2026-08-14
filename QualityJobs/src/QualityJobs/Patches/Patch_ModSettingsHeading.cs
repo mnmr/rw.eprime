@@ -41,10 +41,18 @@ namespace QualityJobs.Patches
             // zeroed. Vanilla then further offsets by (0, 40) for the heading —
             // we skip that, so we use (0, 0) to keep the top margin equal to
             // the 18f side margins baked in by Window.
-            Text.Font = GameFont.Small;
-            Rect inRect2 = new Rect(0f, 0f, inRect.width,
-                inRect.height - Window.CloseButSize.y);
-            ourMod.DoSettingsWindowContents(inRect2);
+            GameFont previousFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                Rect inRect2 = new Rect(0f, 0f, inRect.width,
+                    inRect.height - Window.CloseButSize.y);
+                ourMod.DoSettingsWindowContents(inRect2);
+            }
+            finally
+            {
+                Text.Font = previousFont;
+            }
             return false; // skip the original method
         }
     }

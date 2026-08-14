@@ -18,9 +18,37 @@ namespace QualityJobs.Patches
         /// fail reason; never influences sim decisions (MP-safe).
         private static bool blockedThisScan;
 
+        // Cache contract — Owner: process. Key: active language identity. Value:
+        // translated stock-cap failure label. Dependencies: active language.
+        // Refresh: lazy on language identity change. Equality: cache hits retain
+        // the string identity. Teardown: ResetPresentation on game disposal.
+        private static LoadedLanguage? labelLanguage;
+        private static string atStockCap = string.Empty;
+
         internal static void ResetMarker() => blockedThisScan = false;
 
         internal static bool IsBlocked => blockedThisScan;
+
+        internal static void ResetPresentation()
+        {
+            blockedThisScan = false;
+            labelLanguage = null;
+            atStockCap = string.Empty;
+        }
+
+        internal static string AtStockCapLabel
+        {
+            get
+            {
+                LoadedLanguage? language = LanguageDatabase.activeLanguage;
+                if (!object.ReferenceEquals(language, labelLanguage))
+                {
+                    labelLanguage = language;
+                    atStockCap = "QJ_AtStockCap".Translate();
+                }
+                return atStockCap;
+            }
+        }
 
         public static bool Prefix(Bill bill, Pawn pawn, Thing billGiver,
             List<ThingCount> chosen, List<IngredientCount> missingIngredients,
@@ -30,16 +58,17 @@ namespace QualityJobs.Patches
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return true;
             if (!ManagedRecipes.IsManagedRecipe(bill.recipe)) return true;
-            if (!store.ConfigFor(bill).Managed) return true;
+            BillPresentationSnapshot presentation = store.BillPresentationFor(bill);
+            if (!presentation.Config.Managed) return true;
 
-            string? product = ManagedRecipes.ProductDefName(bill.recipe);
+            string? product = presentation.ProductDefName;
             int count = store.SpawnedUftCount(billGiver.Map, product);
-            int cap = store.CapFor(product);
+            int cap = presentation.ProductCap;
             if (StockPolicy.CanStartNewItem(count, cap, store.IsFinishBill(bill)))
                 return true;
 
             blockedThisScan = true;
-            JobFailReason.Is("QJ_AtStockCap".Translate(), bill.Label);
+            JobFailReason.Is(AtStockCapLabel, bill.Label);
             __result = false;
             return false;
         }
@@ -63,7 +92,7 @@ namespace QualityJobs.Patches
             if (__result != null) return;
             if (!Patch_StockGate.IsBlocked) return;
             // Re-assert after vanilla's "MissingMaterials" overwrite.
-            JobFailReason.Is("QJ_AtStockCap".Translate());
+            JobFailReason.Is(Patch_StockGate.AtStockCapLabel);
             Patch_StockGate.ResetMarker();
         }
     }

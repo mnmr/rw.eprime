@@ -9,12 +9,12 @@ namespace QualityJobs.Patches
     /// Per-instance opt-in (spec §10): a single Command_QualityJob gizmo for
     /// player-faction, CompQuality builds that appears always (whether or not a
     /// plan exists). Clicking opens Dialog_ConstructionPlanConfig anchored to the
-    /// bottom of the gizmo button. Gizmo construction allocates per GetGizmos
-    /// call — vanilla behavior for selection-time UI, not a per-frame path.
+    /// bottom of the gizmo button. Commands are cached by thing ID and reuse a
+    /// non-allocating append enumerator around vanilla's gizmo sequence.
     ///
     /// The icon reflects plan presence: GizmoEnabled when a plan exists, GizmoDisabled
-    /// otherwise. Gizmos are rebuilt each selection frame so the state icon follows
-    /// plan existence naturally without any caching.
+    /// otherwise. The cached command's presentation fields refresh from the
+    /// published plan snapshot without rebuilding the command.
     ///
     /// Multi-select (Fix 5): Command.GroupsWith (Command.cs:275) merges commands
     /// with matching hotKey+Label+icon+groupKey. All our commands share label
@@ -34,38 +34,15 @@ namespace QualityJobs.Patches
         public static IEnumerable<Gizmo> Append(IEnumerable<Gizmo> gizmos, Thing thing, ThingDef? buildDef)
         {
             if (!IsEligibleBuildable(thing, buildDef))
-            {
-                foreach (Gizmo g in gizmos) yield return g;
-                yield break;
-            }
+                return gizmos;
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null)
-            {
-                foreach (Gizmo g in gizmos) yield return g;
-                yield break;
-            }
+                return gizmos;
 
-            ConstructionPlan? plan = store.FindPlan(thing);
-
-            // Pass gizmos through, wrapping the vanilla copy command when a plan exists
-            // so that placed copies receive the same plan settings (Fix 4).
-            foreach (Gizmo g in gizmos)
-            {
-                yield return plan != null ? CopyPlanPending.WrapIfCopyCommand(g, plan) : g;
-            }
-
-            // Multi-select: collect all currently selected eligible things of the
-            // same kind (Blueprint_Build or Frame). The dialog will operate on all.
-            // We allocate here at selection time — this is the GetGizmos allocation
-            // budget, not a per-frame path.
-            List<Thing> allSelected = CollectSelected(thing);
-
-            yield return new Command_QualityJob(allSelected)
-            {
-                defaultLabel = "QJ_GizmoQualityJobLabel".Translate(),
-                defaultDesc = "QJ_GizmoManageDesc".Translate(),
-                icon = plan != null ? QualityJobsTex.GizmoEnabled : QualityJobsTex.GizmoDisabled,
-            };
+            bool hasPlan = store.TryGetPlanPresentation(
+                thing.thingIDNumber, out _);
+            return store.ConstructionCommandFor(
+                thing.thingIDNumber, hasPlan).AppendTo(gizmos);
         }
 
         /// Builds the list of all selected eligible things for multi-select.
@@ -73,32 +50,39 @@ namespace QualityJobs.Patches
         /// plus Buildings that already have a plan (AwaitingRebuild).
         /// The primary thing is always first. Falls back to [primary] if Selector
         /// is unavailable (e.g. during tests).
-        public static List<Thing> CollectSelected(Thing primary)
+        public static List<int> CollectSelectedIds(int primaryThingId)
         {
-            var result = new List<Thing>();
+            var result = new List<int> { primaryThingId };
             // Find.Selector may be null outside of play; guard defensively.
-            if (Find.Selector == null)
-            {
-                result.Add(primary);
-                return result;
-            }
+            if (Find.Selector == null) return result;
             QualityJobsStore? store = QualityJobsStore.Active;
             List<object> sel = Find.Selector.SelectedObjects;
             // Primary first so the dialog reads values from the initiating thing.
-            result.Add(primary);
             for (int i = 0; i < sel.Count; i++)
             {
                 object obj = sel[i];
-                if (obj == primary) continue;
+                if (!(obj is Thing thing) || thing.thingIDNumber == primaryThingId)
+                    continue;
                 if (obj is Blueprint_Build bp && IsEligibleBuildable(bp, bp.def.entityDefToBuild as ThingDef))
-                    result.Add(bp);
+                    result.Add(bp.thingIDNumber);
                 else if (obj is Frame fr && IsEligibleBuildable(fr, fr.BuildDef))
-                    result.Add(fr);
+                    result.Add(fr.thingIDNumber);
                 else if (obj is Building bld && !(obj is Frame)
-                    && store != null && store.FindPlan(bld) != null)
-                    result.Add(bld);
+                    && store != null
+                    && store.TryGetPlanPresentation(bld.thingIDNumber, out _))
+                    result.Add(bld.thingIDNumber);
             }
             return result;
+        }
+
+        public static Map? SelectedMapFor(int thingId)
+        {
+            if (Find.Selector == null) return null;
+            List<object> selected = Find.Selector.SelectedObjects;
+            for (int i = 0; i < selected.Count; i++)
+                if (selected[i] is Thing thing && thing.thingIDNumber == thingId)
+                    return thing.MapHeld;
+            return null;
         }
     }
 
@@ -137,42 +121,21 @@ namespace QualityJobs.Patches
         {
             // Skip Frames — they are Buildings but have their own patch above.
             if (__instance is Frame)
-            {
-                foreach (Gizmo g in gizmos) yield return g;
-                yield break;
-            }
+                return gizmos;
 
             // Fast-path: skip the component lookup when there are no plans at all.
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null || store.plans.Count == 0)
-            {
-                foreach (Gizmo g in gizmos) yield return g;
-                yield break;
-            }
+            if (store == null)
+                return gizmos;
 
             // Only offer the gizmo when this specific building already has a plan
             // (AwaitingRebuild state). Never create plans on arbitrary buildings.
-            ConstructionPlan? plan = store.FindPlan(__instance);
-            if (plan == null)
-            {
-                foreach (Gizmo g in gizmos) yield return g;
-                yield break;
-            }
-
-            // Pass gizmos through, wrapping the vanilla copy command for Fix 4.
-            foreach (Gizmo g in gizmos)
-                yield return CopyPlanPending.WrapIfCopyCommand(g, plan);
-
-            // Collect all selected eligible things for multi-select (Fix 5).
-            List<Thing> allSelected = ConstructionGizmos.CollectSelected(__instance);
+            if (!store.TryGetPlanPresentation(__instance.thingIDNumber, out _))
+                return gizmos;
 
             // Reuse the same gizmo shape as Blueprint/Frame patches.
-            yield return new Command_QualityJob(allSelected)
-            {
-                defaultLabel = "QJ_GizmoQualityJobLabel".Translate(),
-                defaultDesc = "QJ_GizmoManageDesc".Translate(),
-                icon = QualityJobsTex.GizmoEnabled,
-            };
+            return store.ConstructionCommandFor(
+                __instance.thingIDNumber, enabled: true).AppendTo(gizmos);
         }
     }
 }

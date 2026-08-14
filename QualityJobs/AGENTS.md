@@ -24,9 +24,9 @@ These rules apply to the entire repository. They are fail-closed.
 
 ## Project boundaries
 
-- `src/WorkRoles.Core` must remain deterministic and independent of RimWorld, Verse, Unity, Harmony, and Multiplayer APIs.
-- `src/WorkRoles` owns game integration, persistence, patches, rendering, and UI.
-- `tests/WorkRoles.Core.Tests` owns executable behavioral and regression tests.
+- `src/QualityJobs.Core` must remain deterministic and independent of RimWorld, Verse, Unity, Harmony, and Multiplayer APIs.
+- `src/QualityJobs` owns game integration, persistence, patches, rendering, and UI.
+- `src/QualityJobs.Core.Tests` owns executable behavioral and regression tests.
 - Pure caching, revision, layout, codec, and state-transition behavior should live in Core so it can be tested without the game runtime.
 
 ## Non-negotiable render-path rule
@@ -106,16 +106,17 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 
 | Cached artifact | Required invalidation inputs |
 |---|---|
-| Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; mid-operation evictions defer reconciles to the next game-component tick |
-| Pawn signal snapshot (`PawnSignalSnapshotCache`) | Explicit invalidation via `ExternalPawnFacts`; generation cleared on window open and release; live skill XP intentionally not a dependency |
-| External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded |
-| Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current` |
-| Roles list display (`RolesListState`) | `UiVersion.Current`, `ColonyScope.LocationRevision`, collapse revision, nested/search/job-filter state, language change |
-| Priority grid column cache (`Dialog_PriorityGrid`) | `LanguageChangeCoordinator.Revision` + `DefinitionReloadCoordinator.Revision` via `RevisionPairGate`; sort state discarded on rebuild; pawn rows fixed at dialog construction |
+| Store settings presentation (`StoreSettingsSnapshot`) | The fourteen per-save bill, construction, cap, and sharing default fields; command and load/seed invalidation |
+| Construction plan presentation (`PlanPresentationSnapshot`) | Plan target identity/map, configuration, and state; immediate command/lifecycle invalidation |
+| Sparkle overlay maps (`SparkleOverlay.MapSnapshot`) | Plan membership and target identity/map/position/rotation/footprint; immediate structural invalidation plus the 2500-tick audit fallback |
+| Bill dialog status | `QualityJobsStore.BillStatusRevision`; entry/count/sharing/configuration changes and external pawn facts |
+| Construction dialog status | `QualityJobsStore.PlanStatusRevision`; plan configuration/state/map changes and external pawn facts |
+| Expected-attempt API memos | Complete configuration in `AttemptsKey`; external pawn-facts revision only for auto-best keys; store identity teardown |
+| External pawn facts | Immediate work-priority, skill-level, inspiration, ideology, and role events; 250-tick `ResponsivenessInterval` fallback for XP progress and unpatched facts |
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
-| Map classification and locations (`ColonyScope`) | Classification invalidation per map and map-set changes; publishes `LocationRevision` |
-| Window scope stamps (roster/recommendation/editor states) | `ScopeCacheStamp` of `UiVersion.Current` and `PawnListRevisionTracker.Revision` (advances on observed-map change or explicit invalidation) |
-| Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy` |
+| Stock-cap counts | UFT spawn/despawn events keyed by map identity; `FixedTickBoundaryGate(2500)` audit fallback |
+| Idle-UFT pooling and dispatch health | Spawn/despawn-maintained UFT index; immediate/next-component-tick reconcile for commands and pause events; explicitly named `ResponsivenessInterval(250)` fallback |
+| Time-driven full audits | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only |
 
 Changes to these dependencies require updated behavioral tests in the same change.
 
@@ -125,15 +126,15 @@ Changes to these dependencies require updated behavioral tests in the same chang
 - A text measurement cache key must include the text, the font, and the available width when wrapping is possible.
 - The shared measurement cache is `WrText.FitWidth`, keyed by `(font, text)` and cleared when `UiVersion.Current` moves or the language changes.
 - Fractional UI-scale glyph drift is absorbed by `FitWidth` padding, not by re-measuring per frame.
-- Definition- or language-dependent measurements (such as priority grid column labels) must sit behind their revision gates (`LanguageChangeCoordinator.Revision`, `DefinitionReloadCoordinator.Revision`).
+- Language-, scale-, or font-dependent measurements must sit behind `UiVersion.Current`; future definition-dependent measurements require an explicit definition revision gate.
 - Two consumers needing the same measurement must share the measurement cache instead of measuring independently.
 - Window resizing may invalidate width-dependent measurements immediately. Unchanged widths must reuse cached measurements.
 - A language or definition reload may rebuild measurement-dependent geometry, but must not invalidate unrelated model snapshots.
 
 ## Authoritative state and commands
 
-- `RoleStore` is authoritative per-save state.
-- Only `RoleCommands` and deterministic store lifecycle code may mutate the shared model.
+- `QualityJobsStore` is authoritative per-save state.
+- Only `Commands` and deterministic `QualityJobsStore` lifecycle code may mutate the shared model.
 - Views, renderers, tooltips, dialogs, and Harmony patches must not mutate the model directly.
 - UI interactions must issue a command and render the resulting published state.
 - Every command must check whether the requested operation changed state before bumping revisions.
@@ -246,7 +247,7 @@ Canonical verification commands:
 
 ```powershell
 dotnet build -c Release --no-restore
-dotnet test tests/WorkRoles.Core.Tests --no-restore
+dotnet test src/QualityJobs.Core.Tests --no-restore
 ```
 
 Building never deploys: in-game verification requires `pwsh scripts/deploy.ps1` and a game restart.

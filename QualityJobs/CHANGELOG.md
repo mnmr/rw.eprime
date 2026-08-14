@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.0.5 — 2026-08-15
+
+- Added: Public API methods allowing other mods access to expected attempts to finish work (used by EPrime's Readouts to estimate resource material needs) .
+- Fixed: Rendering performance improvements.
+ 
 ## 1.0.4 — 2026-08-10
 
 - Added: Status panel showing item stats (unfinished, waiting, finishing) and eligible finishers for a selected bill or buildable.
