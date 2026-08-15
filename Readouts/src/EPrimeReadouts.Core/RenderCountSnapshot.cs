@@ -6,43 +6,117 @@ namespace EPrimeReadouts.Core
 {
     public sealed class RenderCountSnapshot : IEquatable<RenderCountSnapshot>
     {
+        private static readonly IReadOnlyDictionary<string, int> emptyCounts =
+            new ReadOnlyDictionary<string, int>(new Dictionary<string, int>());
         private static readonly IReadOnlyDictionary<string, SearchCount> emptySearchCounts =
             new ReadOnlyDictionary<string, SearchCount>(new Dictionary<string, SearchCount>());
+        private static readonly IReadOnlyDictionary<string, PlannedWorkDebt> emptyDebts =
+            new ReadOnlyDictionary<string, PlannedWorkDebt>(
+                new Dictionary<string, PlannedWorkDebt>());
 
         private readonly IReadOnlyDictionary<string, int> counts;
         private readonly IReadOnlyDictionary<string, SearchCount> searchCounts;
+        private readonly IReadOnlyDictionary<string, PlannedWorkDebt> debts;
 
         public RenderCountSnapshot(
             IReadOnlyDictionary<string, int> counts,
             long fingerprint,
-            IReadOnlyDictionary<string, SearchCount> searchCounts = null)
+            IReadOnlyDictionary<string, SearchCount> searchCounts = null,
+            IReadOnlyDictionary<string, PlannedWorkDebt> debts = null)
         {
             if (counts == null) throw new ArgumentNullException(nameof(counts));
-            var copy = new Dictionary<string, int>(counts.Count);
-            foreach (var pair in counts) copy[pair.Key] = pair.Value;
-            this.counts = new ReadOnlyDictionary<string, int>(copy);
+            this.counts = CopyCounts(counts);
             if (searchCounts == null || searchCounts.Count == 0)
                 this.searchCounts = emptySearchCounts;
             else
-            {
-                var searchCopy = new Dictionary<string, SearchCount>(searchCounts.Count);
-                foreach (var pair in searchCounts) searchCopy[pair.Key] = pair.Value;
-                this.searchCounts = new ReadOnlyDictionary<string, SearchCount>(searchCopy);
-            }
+                this.searchCounts = CopySearchCounts(searchCounts);
+            if (debts == null || debts.Count == 0)
+                this.debts = emptyDebts;
+            else
+                this.debts = CopyDebts(debts);
             Fingerprint = fingerprint;
+        }
+
+        private RenderCountSnapshot(
+            long fingerprint,
+            IReadOnlyDictionary<string, int> counts,
+            IReadOnlyDictionary<string, SearchCount> searchCounts,
+            IReadOnlyDictionary<string, PlannedWorkDebt> debts)
+        {
+            this.counts = counts;
+            this.searchCounts = searchCounts;
+            this.debts = debts;
+            Fingerprint = fingerprint;
+        }
+
+        /// Transfers buffers built exclusively by a one-shot accumulator.
+        /// The accumulator seals itself before the snapshot becomes visible,
+        /// so no mutable access to these dictionaries escapes publication.
+        internal static RenderCountSnapshot FromOwnedBuffers(
+            Dictionary<string, int> counts,
+            long fingerprint,
+            Dictionary<string, SearchCount> searchCounts,
+            Dictionary<string, PlannedWorkDebt> debts)
+        {
+            if (counts == null) throw new ArgumentNullException(nameof(counts));
+            return new RenderCountSnapshot(
+                fingerprint,
+                counts.Count == 0
+                    ? emptyCounts
+                    : new ReadOnlyDictionary<string, int>(counts),
+                searchCounts == null || searchCounts.Count == 0
+                    ? emptySearchCounts
+                    : new ReadOnlyDictionary<string, SearchCount>(searchCounts),
+                debts == null || debts.Count == 0
+                    ? emptyDebts
+                    : new ReadOnlyDictionary<string, PlannedWorkDebt>(debts));
+        }
+
+        private static IReadOnlyDictionary<string, int> CopyCounts(
+            IReadOnlyDictionary<string, int> source)
+        {
+            if (source.Count == 0) return emptyCounts;
+            var copy = new Dictionary<string, int>(source.Count);
+            foreach (var pair in source) copy[pair.Key] = pair.Value;
+            return new ReadOnlyDictionary<string, int>(copy);
+        }
+
+        private static IReadOnlyDictionary<string, SearchCount> CopySearchCounts(
+            IReadOnlyDictionary<string, SearchCount> source)
+        {
+            var copy = new Dictionary<string, SearchCount>(source.Count);
+            foreach (var pair in source) copy[pair.Key] = pair.Value;
+            return new ReadOnlyDictionary<string, SearchCount>(copy);
+        }
+
+        private static IReadOnlyDictionary<string, PlannedWorkDebt> CopyDebts(
+            IReadOnlyDictionary<string, PlannedWorkDebt> source)
+        {
+            var copy = new Dictionary<string, PlannedWorkDebt>(source.Count);
+            foreach (var pair in source) copy[pair.Key] = pair.Value;
+            return new ReadOnlyDictionary<string, PlannedWorkDebt>(copy);
         }
 
         public IReadOnlyDictionary<string, int> Counts => counts;
         /// Per-def search breakdown; defs absent here have nothing countable
         /// on the map. Never null.
         public IReadOnlyDictionary<string, SearchCount> SearchCounts => searchCounts;
+        /// Per-def planned-work debt; defs absent here owe nothing. Empty when
+        /// every reservation option is off. Never null.
+        public IReadOnlyDictionary<string, PlannedWorkDebt> Debts => debts;
         public long Fingerprint { get; }
+
+        /// Debt for one def, defaulting to nothing owed.
+        public PlannedWorkDebt DebtOf(string defName)
+            => debts.TryGetValue(defName, out PlannedWorkDebt debt)
+                ? debt : default;
 
         public bool Equals(RenderCountSnapshot other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other == null || counts.Count != other.counts.Count
-                || searchCounts.Count != other.searchCounts.Count)
+                || searchCounts.Count != other.searchCounts.Count
+                || debts.Count != other.debts.Count)
                 return false;
             foreach (var pair in counts)
                 if (!other.counts.TryGetValue(pair.Key, out int value)
@@ -54,6 +128,10 @@ namespace EPrimeReadouts.Core
                     || value.Stored != pair.Value.Stored
                     || value.Unforbidden != pair.Value.Unforbidden
                     || value.StoredUnforbidden != pair.Value.StoredUnforbidden)
+                    return false;
+            foreach (var pair in debts)
+                if (!other.debts.TryGetValue(pair.Key, out PlannedWorkDebt value)
+                    || !value.Equals(pair.Value))
                     return false;
             return true;
         }

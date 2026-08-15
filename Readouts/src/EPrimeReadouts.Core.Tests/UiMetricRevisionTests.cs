@@ -34,4 +34,22 @@ public class UiMetricRevisionTests
         await Assert.That(unchanged).IsEqualTo(0);
         await Assert.That(revision.Current).IsEqualTo(1);
     }
+
+    [Test]
+    public async Task LanguageRevisionIgnoresMetricOnlyChanges()
+    {
+        var property = typeof(UiMetricRevision).GetProperty("LanguageCurrent");
+        await Assert.That(property).IsNotNull();
+        if (property == null) return;
+
+        var revision = new UiMetricRevision();
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        revision.Observe(1.25f, disableTinyText: false, language: "English");
+        revision.Observe(1.25f, disableTinyText: true, language: "English");
+        int afterMetricChanges = (int)property.GetValue(revision)!;
+        revision.Observe(1.25f, disableTinyText: true, language: "Danish");
+
+        await Assert.That(afterMetricChanges).IsEqualTo(0);
+        await Assert.That((int)property.GetValue(revision)!).IsEqualTo(1);
+    }
 }

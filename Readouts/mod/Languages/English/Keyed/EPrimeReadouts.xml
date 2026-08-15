@@ -41,6 +41,22 @@
   <EPR.CollapseWhenIdle>Collapse when not hovering</EPR.CollapseWhenIdle>
   <EPR.ShowModName>Show mod name</EPR.ShowModName>
   <EPR.CountOptions>Count Options</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Planned Work</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Reserve resources for bill items</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Subtracts the ingredients your outstanding bills still have to consume. A bill only reserves an ingredient it can be satisfied by in exactly one way — "any leather" and similar open choices reserve nothing.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Reserve resources for buildables</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Subtracts the materials your blueprints and part-built frames still need. Materials already hauled into a frame are not counted again, and forbidden blueprints are ignored.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Show overruns as negative numbers</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>When planned work needs more than you have, show how far short you are instead of stopping at zero.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Quality Jobs support</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>For bills and buildables with a quality target, estimate how many attempts the target will take and reserve for all of them. Rebuilt structures give back the share vanilla refunds when they are deconstructed.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Requires EPrime's Quality Jobs, which is not installed.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs is installed but does not offer the integration this needs. Update it to enable this option.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Planned Work</EPR.TipPlannedWork>
+  <EPR.TipOnHand>On hand</EPR.TipOnHand>
+  <EPR.TipReservedBills>Bills</EPR.TipReservedBills>
+  <EPR.TipReservedBuildables>Buildables</EPR.TipReservedBuildables>
+  <EPR.TipAvailable>Available</EPR.TipAvailable>
   <EPR.ClickOptions>Click Options</EPR.ClickOptions>
   <EPR.SearchOptions>Search Options</EPR.SearchOptions>
   <EPR.HoverOptions>Hover Options</EPR.HoverOptions>

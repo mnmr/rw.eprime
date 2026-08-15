@@ -3,14 +3,14 @@ using Verse;
 
 namespace EPrimeReadouts
 {
-    /// Monotonic UI cache stamp. WrText.FitWidth caches measured widths against
-    /// this; bump it if cached text metrics can go stale (e.g. UI scale or font
-    /// changes).
+    /// Monotonic UI cache stamps. Current covers measured text while
+    /// LanguageCurrent lets translation-only caches ignore metric-only changes.
     public static class UiVersion
     {
         private static readonly UiMetricRevision revision = new UiMetricRevision();
 
         public static int Current => revision.Current;
+        public static int LanguageCurrent => revision.LanguageCurrent;
 
         public static void ObserveCurrentMetrics() =>
             revision.Observe(

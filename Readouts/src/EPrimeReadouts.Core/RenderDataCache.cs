@@ -31,6 +31,8 @@ namespace EPrimeReadouts.Core
             public RenderDataSnapshot<TStructure, TCounts> Snapshot;
             public int LastCountRefreshTick;
             public TRevision StructureRevision;
+            /// Set by InvalidateCounts; cleared by the rebuild it forces.
+            public bool CountsDirty;
         }
 
         private readonly Dictionary<TKey, Entry> entries = new Dictionary<TKey, Entry>();
@@ -71,12 +73,14 @@ namespace EPrimeReadouts.Core
                         buildStructure(), existing.Snapshot.Counts);
                     existing.StructureRevision = structureRevision;
                 }
-                if (tick - existing.LastCountRefreshTick >= countRefreshInterval)
+                if (existing.CountsDirty
+                    || tick - existing.LastCountRefreshTick >= countRefreshInterval)
                 {
                     var refreshedCounts = buildCounts();
                     if (!countsComparer.Equals(existing.Snapshot.Counts, refreshedCounts))
                         existing.Snapshot = new RenderDataSnapshot<TStructure, TCounts>(
                             existing.Snapshot.Structure, refreshedCounts);
+                    existing.CountsDirty = false;
                     existing.LastCountRefreshTick = tick;
                 }
                 return existing.Snapshot;
@@ -110,12 +114,14 @@ namespace EPrimeReadouts.Core
                         buildStructure(state), existing.Snapshot.Counts);
                     existing.StructureRevision = structureRevision;
                 }
-                if (tick - existing.LastCountRefreshTick >= countRefreshInterval)
+                if (existing.CountsDirty
+                    || tick - existing.LastCountRefreshTick >= countRefreshInterval)
                 {
                     var refreshedCounts = buildCounts(state, existing.Snapshot.Structure);
                     if (!countsComparer.Equals(existing.Snapshot.Counts, refreshedCounts))
                         existing.Snapshot = new RenderDataSnapshot<TStructure, TCounts>(
                             existing.Snapshot.Structure, refreshedCounts);
+                    existing.CountsDirty = false;
                     existing.LastCountRefreshTick = tick;
                 }
                 return existing.Snapshot;
@@ -131,6 +137,17 @@ namespace EPrimeReadouts.Core
             };
             entries.Add(key, entry);
             return entry.Snapshot;
+        }
+
+        /// Forces the next Get to rebuild counts for every entry, ignoring the
+        /// tick throttle. For count dependencies that are not game state — a
+        /// player option that changes what the count pass gathers — which must
+        /// apply immediately, including while the game is paused and the tick
+        /// never advances. Structure snapshots are untouched, and an equal
+        /// rebuild still preserves snapshot identity.
+        public void InvalidateCounts()
+        {
+            foreach (var entry in entries.Values) entry.CountsDirty = true;
         }
 
         public bool Remove(TKey key) => entries.Remove(key);

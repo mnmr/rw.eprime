@@ -32,6 +32,7 @@ namespace EPrimeReadouts.UI
         private static readonly Action drawWindow = DrawWindow;
         private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;
         private static StructuredTip frozen;
+        private static WrTipUI.PreparedTip frozenGeometry;
         private static Vector2 frozenSize;
 
         internal static void TipRegion(Rect rect, StructuredTip tip)
@@ -50,6 +51,7 @@ namespace EPrimeReadouts.UI
         {
             displayGate.Reset();
             frozen = null;
+            frozenGeometry = default(WrTipUI.PreparedTip);
             frozenSize = default(Vector2);
         }
 
@@ -66,7 +68,9 @@ namespace EPrimeReadouts.UI
             {
                 frozen = ready ?? source.Resolve();
                 if (frozen == null) return;
-                frozenSize = WrTipUI.Measure(frozen.Model, WrTipUI.MaxContentWidth);
+                frozenGeometry = WrTipUI.Prepare(
+                    frozen.Model, WrTipUI.MaxContentWidth);
+                frozenSize = frozenGeometry.Size;
             }
             if (frozen == null || Find.WindowStack == null) return;
 
@@ -99,7 +103,7 @@ namespace EPrimeReadouts.UI
             if (frozen == null || atlas == null) return;
             var rect = new Rect(0f, 0f, frozenSize.x, frozenSize.y);
             Widgets.DrawAtlas(rect, atlas);
-            WrTipUI.Draw(rect, frozen.Model);
+            WrTipUI.Draw(rect, frozenGeometry);
         }
     }
 }

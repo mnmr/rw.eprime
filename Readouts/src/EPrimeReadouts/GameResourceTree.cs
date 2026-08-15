@@ -15,20 +15,21 @@ namespace EPrimeReadouts
         // Owner: process/loaded def set.
         // Key: loaded defs and the current UI language revision.
         // Value: detached resource-tree nodes consumed by both editor trees.
-        // Dependencies: ThingCategoryDef/ThingDef data and UiVersion.Current.
+        // Dependencies: ThingCategoryDef/ThingDef data and UiVersion.LanguageCurrent.
         // Refresh policy: lazy, immediate on UI language revision changes.
         // Equality policy: unchanged dependencies preserve root identity.
         // Teardown: Reset releases all cached nodes on global teardown.
         private static List<ResourceTreeNode> cachedRoots;
-        private static int cachedUiVersion = -1;
+        private static int cachedLanguageVersion = -1;
 
         public static List<ResourceTreeNode> GetRoots()
         {
             UiVersion.ObserveCurrentMetrics();
-            if (cachedRoots != null && cachedUiVersion == UiVersion.Current)
+            if (cachedRoots != null
+                && cachedLanguageVersion == UiVersion.LanguageCurrent)
                 return cachedRoots;
             cachedRoots = new List<ResourceTreeNode>();
-            cachedUiVersion = UiVersion.Current;
+            cachedLanguageVersion = UiVersion.LanguageCurrent;
             foreach (var category in DefDatabase<ThingCategoryDef>.AllDefs)
                 if (category.resourceReadoutRoot)
                     cachedRoots.Add(BuildNode(category));
@@ -55,7 +56,7 @@ namespace EPrimeReadouts
         internal static void Reset()
         {
             cachedRoots = null;
-            cachedUiVersion = -1;
+            cachedLanguageVersion = -1;
         }
     }
 }

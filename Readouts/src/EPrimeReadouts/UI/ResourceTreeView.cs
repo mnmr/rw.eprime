@@ -31,7 +31,7 @@ namespace EPrimeReadouts.UI
         // Cache contract:
         // Owner: this dialog view and one ReadoutStore.
         // Key: store identity, GroupsVersion, expansion/filter stamp, selected
-        // group/token/pool, PoolSnapshot identity, and UiVersion.Current.
+        // group/token/pool, PoolSnapshot identity, and the language revision.
         // Value: immutable flattened rows with resolved defs and selection flags.
         // Dependencies: resource tree labels, group membership, pool membership.
         // Refresh policy: immediate on any dependency change.
@@ -43,7 +43,7 @@ namespace EPrimeReadouts.UI
         private int builtStamp = -1;
         private int builtGroupId = -1;
         private int builtPoolId = -1;
-        private int builtUiVersion = -1;
+        private int builtLanguageVersion = -1;
         private string builtCanonical;
         private PoolSnapshot builtPools;
 
@@ -190,7 +190,7 @@ namespace EPrimeReadouts.UI
                 && string.Equals(owner.selectedCanonical, builtCanonical,
                     StringComparison.Ordinal)
                 && ReferenceEquals(owner.PoolsSnapshot, builtPools)
-                && UiVersion.Current == builtUiVersion)
+                && UiVersion.LanguageCurrent == builtLanguageVersion)
                 return;
 
             var flat = ResourceTreeFlattener.Flatten(
@@ -233,7 +233,7 @@ namespace EPrimeReadouts.UI
             builtPoolId = owner.selectedPoolId;
             builtCanonical = owner.selectedCanonical;
             builtPools = owner.PoolsSnapshot;
-            builtUiVersion = UiVersion.Current;
+            builtLanguageVersion = UiVersion.LanguageCurrent;
         }
 
         private static bool IsResourceTinted(string defName, string canonical)
@@ -268,7 +268,7 @@ namespace EPrimeReadouts.UI
             builtStamp = -1;
             builtGroupId = -1;
             builtPoolId = -1;
-            builtUiVersion = -1;
+            builtLanguageVersion = -1;
             builtCanonical = null;
             builtPools = null;
             expanded.Clear();

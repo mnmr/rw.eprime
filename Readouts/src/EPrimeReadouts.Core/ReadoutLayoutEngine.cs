@@ -22,6 +22,11 @@ namespace EPrimeReadouts.Core
         public bool SearchHideZero;
         public bool SearchStorageOnly;
         public bool SearchHideForbidden;
+        /// Per-def material already owed to planned work; null treated as empty.
+        public IReadOnlyDictionary<string, PlannedWorkDebt> Debts;
+        /// Let a counter whose debt exceeds its stock show the overrun as a
+        /// negative number instead of capping at zero.
+        public bool AllowNegativeCounts;
         public float Width = 140f;
         public IResourceCatalog Catalog;
         public bool EditorMode;
@@ -119,8 +124,8 @@ namespace EPrimeReadouts.Core
             return model;
         }
 
-        /// Displayed count for one def under the storage-only and
-        /// hide-forbidden options. These options narrow every displayed count
+        /// Displayed count for one def under the storage-only, hide-forbidden
+        /// and planned-work options. These options narrow every displayed count
         /// (group slots, pool sums, visibility, thresholds, search results),
         /// not just the search section. A null SearchCounts input falls back
         /// to the raw group-count basis via ResolveSearchCount.
@@ -129,7 +134,24 @@ namespace EPrimeReadouts.Core
             input.Counts.TryGetValue(defName, out int raw);
             SearchCount search = ResolveSearchCount(input, defName, raw);
             return CountBasis.Displayed(search,
-                input.SearchStorageOnly, input.SearchHideForbidden);
+                input.SearchStorageOnly, input.SearchHideForbidden,
+                ResolveDebt(input, defName), input.AllowNegativeCounts);
+        }
+
+        private static Band CounterBand(LayoutInput input, string canonical, int count)
+        {
+            if (count < 0) return Band.Critical;
+            return input.Thresholds.TryGetValue(canonical, out ThresholdSpec spec)
+                ? ThresholdBands.For(count, spec) : Band.Normal;
+        }
+
+        /// Planned-work debt for one def; a null Debts input means nothing is
+        /// owed (every reservation option off).
+        private static int ResolveDebt(LayoutInput input, string defName)
+        {
+            if (input.Debts == null) return 0;
+            return input.Debts.TryGetValue(defName, out PlannedWorkDebt debt)
+                ? debt.Total : 0;
         }
 
         /// Resolves a token to its members list, icon defName, highlight name, and count sum.
@@ -211,9 +233,13 @@ namespace EPrimeReadouts.Core
                         out var members, out var iconDefName, out var highlightName, out int sum))
                         continue;
 
-                    // Visibility check
+                    // Visibility check. A negative sum means planned work has
+                    // overrun the stock — exactly what the player needs to
+                    // see, so hide-when-zero must not swallow it. With
+                    // negatives off the sum is already clamped at zero, so
+                    // this stays equivalent to the original sum > 0 rule.
                     string canonical = SlotToken.Canonical(token);
-                    bool visible = sum > 0
+                    bool visible = sum != 0
                         || SlotToken.ShowWhenZero(token)
                         || input.Thresholds.ContainsKey(canonical);
                     if (!visible) continue;
@@ -393,8 +419,7 @@ namespace EPrimeReadouts.Core
                     Token = slot.Token,
                     Count = slot.Sum,
                     Text = CountFormat.Compact(slot.Sum),
-                    Band = input.Thresholds.TryGetValue(canonical, out var spec)
-                        ? ThresholdBands.For(slot.Sum, spec) : Band.Normal,
+                    Band = CounterBand(input, canonical, slot.Sum),
                     Rect = new RectF(x,
                         y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                         metrics.CellW, metrics.CounterRowH),
@@ -514,8 +539,7 @@ namespace EPrimeReadouts.Core
                     Slot = s,
                     Count = sum,
                     Text = CountFormat.Compact(sum),
-                    Band = input.Thresholds.TryGetValue(canonical, out var spec)
-                        ? ThresholdBands.For(sum, spec) : Band.Normal,
+                    Band = CounterBand(input, canonical, sum),
                     Rect = new RectF(colX,
                         insetY + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                         metrics.CellW, metrics.CounterRowH),
@@ -570,10 +594,15 @@ namespace EPrimeReadouts.Core
                 int basisTotal = input.SearchStorageOnly ? search.Stored : search.Total;
                 int basisUnforbidden = input.SearchStorageOnly
                     ? search.StoredUnforbidden : search.Unforbidden;
-                int count = input.SearchHideForbidden ? basisUnforbidden : basisTotal;
+                // Presence rules read the physical stock; the displayed number
+                // then goes through the shared basis so planned-work debt is
+                // subtracted here exactly as it is on group slots.
                 if (input.SearchStorageOnly && basisTotal == 0) continue;
                 if (input.SearchHideForbidden && basisTotal > 0 && basisUnforbidden == 0)
                     continue;
+                int count = CountBasis.Displayed(search,
+                    input.SearchStorageOnly, input.SearchHideForbidden,
+                    ResolveDebt(input, pair.Key), input.AllowNegativeCounts);
                 if (input.SearchHideZero && count == 0) continue;
                 matches.Add(new ResultEntry { DefName = pair.Key, Count = count });
             }
@@ -671,8 +700,7 @@ namespace EPrimeReadouts.Core
                         DefName = defName,
                         Count = count,
                         Text = CountFormat.Compact(count),
-                        Band = input.Thresholds.TryGetValue(defName, out var spec)
-                            ? ThresholdBands.For(count, spec) : Band.Normal,
+                        Band = CounterBand(input, defName, count),
                         Rect = new RectF(x,
                             y + LayoutMetrics.IconRowH - LayoutMetrics.CounterOverlap,
                             metrics.CellW, metrics.CounterRowH),

@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.0.8 — 2026-08-15
+
+- Added: Options to deduct resources needed to fulfill queued work, including support for EPrime's Quality Jobs.
+- Fixed: Rendering performance improvements.
+
 ## 1.0.7 — 2026-08-08
 
 - Fixed: Resource/pool tooltips were being clipped.

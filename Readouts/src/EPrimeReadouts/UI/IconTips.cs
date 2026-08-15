@@ -20,32 +20,38 @@ namespace EPrimeReadouts.UI
         {
             private readonly RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData;
             private readonly int thresholdsVersion;
-            private readonly int uiVersion;
+            private readonly int languageVersion;
             // Count-basis options narrow the badge and the pool breakdown, so
             // toggling them must rebuild the tip on its next display session.
             private readonly bool storageOnly;
             private readonly bool hideForbidden;
+            // The planned-work debt itself arrives with renderData; only the
+            // negative-display choice is an independent presentation input.
+            private readonly bool showNegative;
 
             public TipRevision(
                 RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData,
                 int thresholdsVersion,
-                int uiVersion,
+                int languageVersion,
                 bool storageOnly,
-                bool hideForbidden)
+                bool hideForbidden,
+                bool showNegative)
             {
                 this.renderData = renderData;
                 this.thresholdsVersion = thresholdsVersion;
-                this.uiVersion = uiVersion;
+                this.languageVersion = languageVersion;
                 this.storageOnly = storageOnly;
                 this.hideForbidden = hideForbidden;
+                this.showNegative = showNegative;
             }
 
             public bool Equals(TipRevision other) =>
                 ReferenceEquals(renderData, other.renderData)
                 && thresholdsVersion == other.thresholdsVersion
-                && uiVersion == other.uiVersion
+                && languageVersion == other.languageVersion
                 && storageOnly == other.storageOnly
-                && hideForbidden == other.hideForbidden;
+                && hideForbidden == other.hideForbidden
+                && showNegative == other.showNegative;
 
             public override bool Equals(object obj) =>
                 obj is TipRevision other && Equals(other);
@@ -53,9 +59,10 @@ namespace EPrimeReadouts.UI
             public override int GetHashCode() =>
                 ((renderData != null ? renderData.GetHashCode() : 0) * 397)
                 ^ thresholdsVersion
-                ^ uiVersion
+                ^ languageVersion
                 ^ (storageOnly ? 1 << 30 : 0)
-                ^ (hideForbidden ? 1 << 29 : 0);
+                ^ (hideForbidden ? 1 << 29 : 0)
+                ^ (showNegative ? 1 << 28 : 0);
         }
 
         private struct BuildState
@@ -72,7 +79,7 @@ namespace EPrimeReadouts.UI
         // Key: canonical token.
         // Value: immutable StructuredTip/TipModel graph.
         // Dependencies: shared render snapshot identity, ThresholdsVersion,
-        // UiVersion, and the storage-only/hide-forbidden count-basis options.
+        // language revision, and the storage-only/hide-forbidden count-basis options.
         // Refresh policy: probed only at display-session start; a dependency
         // change rebuilds on the next display, never mid-display.
         // Equality policy: cache hits preserve StructuredTip identity.
@@ -130,9 +137,10 @@ namespace EPrimeReadouts.UI
                         CacheKey,
                         new TipRevision(RenderData,
                             store != null ? store.ThresholdsVersion : 0,
-                            UiVersion.Current,
+                            UiVersion.LanguageCurrent,
                             settings.searchStorageOnly,
-                            settings.searchHideForbidden),
+                            settings.searchHideForbidden,
+                            settings.showNegativeCounts),
                         state,
                         buildTip)
                     : Build(state);
@@ -232,7 +240,9 @@ namespace EPrimeReadouts.UI
                         else if (counts.SearchCounts.TryGetValue(
                             memberDef.defName, out SearchCount search))
                             memberCount = CountBasis.Displayed(search,
-                                settings.searchStorageOnly, settings.searchHideForbidden);
+                                settings.searchStorageOnly, settings.searchHideForbidden,
+                                counts.DebtOf(memberDef.defName).Total,
+                                settings.showNegativeCounts);
                     }
                     if (memberCount == 0) continue;
                     memberLabels.Add(memberDef.LabelCap);
@@ -243,6 +253,8 @@ namespace EPrimeReadouts.UI
                         memberLabels, memberValues, MaxBreakdownRowsPerColumn);
             }
 
+            AddPlannedWorkSection(state, model, def, poolMembers, count);
+
             var tipStore = state.Store;
             if (tipStore != null && tipStore.Model.Thresholds.TryGetValue(canonical, out var spec))
             {
@@ -251,6 +263,65 @@ namespace EPrimeReadouts.UI
                 levels.Fact(UiText.Get("EPR.Critical"), spec.Critical.ToString());
             }
             return new StructuredTip("EPR.Tip." + canonical, model);
+        }
+
+        /// Explains a badge that sits below the stock actually on the map:
+        /// what is held, what planned work has claimed, and what is left.
+        /// Omitted entirely when nothing is reserved, which is every tooltip
+        /// while the reservation options are off.
+        private static void AddPlannedWorkSection(
+            BuildState state, TipModel model, ThingDef def,
+            System.Collections.Generic.IReadOnlyList<string> poolMembers,
+            int available)
+        {
+            if (state.RenderData == null) return;
+            var counts = state.RenderData.Counts;
+            if (counts.Debts.Count == 0) return;
+
+            var settings = EPrimeReadoutsMod.Settings;
+            int onHand = 0, bills = 0, buildables = 0;
+            if (poolMembers != null)
+            {
+                for (int m = 0; m < poolMembers.Count; m++)
+                    AccumulatePlannedWork(counts, poolMembers[m], settings,
+                        ref onHand, ref bills, ref buildables);
+            }
+            else if (def != null)
+            {
+                AccumulatePlannedWork(counts, def.defName, settings,
+                    ref onHand, ref bills, ref buildables);
+            }
+            if (bills <= 0 && buildables <= 0) return;
+
+            var section = model.AddSection(UiText.Get("EPR.TipPlannedWork"));
+            section.Fact(UiText.Get("EPR.TipOnHand"), onHand.ToString());
+            if (bills > 0)
+                section.Fact(UiText.Get("EPR.TipReservedBills"), "-" + bills.ToString());
+            if (buildables > 0)
+                section.Fact(UiText.Get("EPR.TipReservedBuildables"),
+                    "-" + buildables.ToString());
+            section.Fact(UiText.Get("EPR.TipAvailable"), available.ToString());
+        }
+
+        /// Adds one def's undebted count and its debt to the running totals,
+        /// using the same narrowed basis the badge itself was built from.
+        private static void AccumulatePlannedWork(
+            RenderCountSnapshot counts, string defName, ReadoutSettings settings,
+            ref int onHand, ref int bills, ref int buildables)
+        {
+            if (counts.SearchCounts.Count == 0)
+            {
+                counts.Counts.TryGetValue(defName, out int raw);
+                onHand += raw;
+            }
+            else if (counts.SearchCounts.TryGetValue(defName, out SearchCount search))
+            {
+                onHand += CountBasis.Displayed(search,
+                    settings.searchStorageOnly, settings.searchHideForbidden);
+            }
+            PlannedWorkDebt debt = counts.DebtOf(defName);
+            bills += debt.Bills;
+            buildables += debt.Buildables;
         }
 
         internal static void Reset()

@@ -3,7 +3,7 @@
   <name>EPrime's Readouts</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.eprimereadouts</packageId>
-  <modVersion>1.0.7</modVersion>
+  <modVersion>1.0.8</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -29,6 +29,7 @@ Features:
 - Options: Fully customizable groups, tiers and resource pools in the built-in settings dialog.
 - Tiered: Click to cycle how many tiers are rendered.
 - Ignore Missing: Per-item option to skip rendering if count is 0 (to keep readouts minimal).
+- Planned Work: Options to subtract resources needed for queued work (aka material debt).
 - Warning Thresholds: Per-item option to set thresholds, so counts render in different colors when running low.
 - Search: Quick search and inline result display. Can be configured or turned off in options.
 

@@ -40,8 +40,11 @@ public class LevelStackArchitectureTests
         await Assert.That(build).Contains("LevelStacks.LevelsOf(map)");
         await Assert.That(build).Contains("order.Sort();");
         await Assert.That(build).Contains("sawQueriedMap");
+        // Every level goes through the one per-map pass, so a stack's counts
+        // and its planned-work reservations are gathered the same way.
+        await Assert.That(counts).Contains("private static void AccumulateMap(");
         await Assert.That(counts).Contains(
-            "private static void AccumulateMap(Map map, CountAccumulator accumulator)");
+            "Map map, CountAccumulator accumulator, PlannedWorkOptions plannedWork)");
     }
 
     [Test]

@@ -13,15 +13,15 @@ namespace EPrimeReadouts
         // Owner: process/loaded def set and current presentation revision.
         // Key: ThingCategoryDef defName.
         // Value: read-only member names and translated category labels.
-        // Dependencies: loaded category tree; labels additionally depend on UiVersion.
-        // Refresh policy: members lazy for def lifetime; labels clear on UI revision.
+        // Dependencies: loaded category tree; labels additionally depend on language.
+        // Refresh policy: members lazy for def lifetime; labels clear on language revision.
         // Equality policy: unchanged entries preserve collection/string identity.
         // Teardown: Reset clears both dictionaries.
         private static readonly Dictionary<string, IReadOnlyList<string>> categoryMembersCache =
             new Dictionary<string, IReadOnlyList<string>>();
         private static readonly Dictionary<string, string> categoryLabelCache =
             new Dictionary<string, string>();
-        private static int categoryLabelUiVersion = -1;
+        private static int categoryLabelLanguageVersion = -1;
 
         // Cache contract:
         // Owner: process/loaded def set.
@@ -90,10 +90,10 @@ namespace EPrimeReadouts
         public string CategoryLabelOf(string categoryDefName)
         {
             UiVersion.ObserveCurrentMetrics();
-            if (categoryLabelUiVersion != UiVersion.Current)
+            if (categoryLabelLanguageVersion != UiVersion.LanguageCurrent)
             {
                 categoryLabelCache.Clear();
-                categoryLabelUiVersion = UiVersion.Current;
+                categoryLabelLanguageVersion = UiVersion.LanguageCurrent;
             }
             if (categoryLabelCache.TryGetValue(categoryDefName, out var cached))
                 return cached;
@@ -130,7 +130,7 @@ namespace EPrimeReadouts
         {
             categoryMembersCache.Clear();
             categoryLabelCache.Clear();
-            categoryLabelUiVersion = -1;
+            categoryLabelLanguageVersion = -1;
             extraCountedDefs = null;
             extraCountedDefSet = null;
         }

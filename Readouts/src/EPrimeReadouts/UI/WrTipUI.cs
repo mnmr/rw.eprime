@@ -31,7 +31,7 @@ namespace EPrimeReadouts.UI
 
         // Content-relative primitives; a null Text with a null Icon is a rule
         // line whose Rect carries x/y/length.
-        private struct Cmd
+        internal struct Cmd
         {
             public Rect Rect;
             public Color Color;
@@ -40,27 +40,59 @@ namespace EPrimeReadouts.UI
             public bool NoWrap;
         }
 
-        private sealed class Geometry
+        internal sealed class Geometry
         {
-            public float MaxWidth;
-            public int UiVersion;
-            public Vector2 Size;
-            public readonly List<Cmd> Cmds = new List<Cmd>();
+            internal float MaxWidth;
+            internal int UiVersion;
+            internal float Padding;
+            internal Vector2 Size;
+            internal readonly List<Cmd> Cmds = new List<Cmd>();
+        }
+
+        internal readonly struct PreparedTip
+        {
+            internal readonly Geometry geometry;
+
+            internal PreparedTip(Geometry geometry)
+            {
+                this.geometry = geometry;
+            }
+
+            internal Vector2 Size => geometry != null
+                ? geometry.Size
+                : default(Vector2);
         }
 
         /// Full tip rect size (content plus the complete frame inset).
         public static Vector2 Measure(TipModel model, float maxWidth) =>
             Ensure(model, maxWidth).Size;
 
+        internal static PreparedTip Prepare(TipModel model, float maxWidth) =>
+            new PreparedTip(Ensure(model, maxWidth));
+
         public static void Draw(Rect bgRect, TipModel model)
         {
             using (new GuiStateScope())
             {
-            Geometry geo = Ensure(model, MaxContentWidth);
+                DrawGeometry(bgRect, Ensure(model, MaxContentWidth));
+            }
+        }
+
+        internal static void Draw(Rect bgRect, PreparedTip prepared)
+        {
+            using (new GuiStateScope())
+            {
+                DrawGeometry(bgRect, prepared.geometry);
+            }
+        }
+
+        private static void DrawGeometry(Rect bgRect, Geometry geo)
+        {
+            if (geo == null) return;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
-            float ox = bgRect.x + Pad + model.Padding;
-            float oy = bgRect.y + Pad + model.Padding;
+            float ox = bgRect.x + Pad + geo.Padding;
+            float oy = bgRect.y + Pad + geo.Padding;
             for (int i = 0; i < geo.Cmds.Count; i++)
             {
                 Cmd cmd = geo.Cmds[i];
@@ -81,7 +113,6 @@ namespace EPrimeReadouts.UI
                         cmd.Rect.width, cmd.Rect.height), cmd.Text);
                 }
             }
-            }
         }
 
         private static Geometry Ensure(TipModel model, float maxWidth)
@@ -92,7 +123,12 @@ namespace EPrimeReadouts.UI
                 && cached.MaxWidth == maxWidth
                 && cached.UiVersion == uiVersion)
                 return cached;
-            var geo = new Geometry { MaxWidth = maxWidth, UiVersion = uiVersion };
+            var geo = new Geometry
+            {
+                MaxWidth = maxWidth,
+                UiVersion = uiVersion,
+                Padding = model.Padding,
+            };
             var oldFont = Text.Font;
             bool oldWordWrap = Text.WordWrap;
             Text.Font = GameFont.Small;

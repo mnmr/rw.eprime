@@ -17,12 +17,12 @@ namespace EPrimeReadouts.UI
         // Owner: one import/export dialog window.
         // Key: detached snapshot identity.
         // Value: immutable parallel arrays of translated preview rows.
-        // Dependencies: snapshot identity and UiVersion.Current (language/metrics).
+        // Dependencies: snapshot identity and UiVersion.LanguageCurrent.
         // Refresh policy: immediate when either dependency changes.
         // Equality policy: unchanged dependencies preserve the arrays by identity.
         // Teardown: Reset is called by the owning dialog during PreClose.
         private ReadoutSnapshot lastSnapshot;
-        private int lastUiVersion = -1;
+        private int lastLanguageVersion = -1;
         private string[] lines;
         private bool[] isHeader;
         private float contentHeight;
@@ -60,14 +60,14 @@ namespace EPrimeReadouts.UI
         private void EnsureLines(ReadoutSnapshot snapshot)
         {
             UiVersion.ObserveCurrentMetrics();
-            int uiVersion = UiVersion.Current;
+            int languageVersion = UiVersion.LanguageCurrent;
             if (ReferenceEquals(lastSnapshot, snapshot)
-                && lastUiVersion == uiVersion
+                && lastLanguageVersion == languageVersion
                 && lines != null)
                 return;
 
             lastSnapshot = snapshot;
-            lastUiVersion = uiVersion;
+            lastLanguageVersion = languageVersion;
 
             var builtLines = new List<string>();
             var builtHeaders = new List<bool>();
@@ -147,7 +147,7 @@ namespace EPrimeReadouts.UI
         internal void Reset()
         {
             lastSnapshot = null;
-            lastUiVersion = -1;
+            lastLanguageVersion = -1;
             lines = null;
             isHeader = null;
             contentHeight = 0f;

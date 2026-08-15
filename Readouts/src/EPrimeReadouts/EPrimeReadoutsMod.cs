@@ -9,19 +9,20 @@ namespace EPrimeReadouts
     public class EPrimeReadoutsMod : Mod
     {
         public static ReadoutSettings Settings;
+        private readonly Listing_Standard settingsListing = new Listing_Standard();
 
         /// The mod's content pack — used to locate shipped data files (Seed/).
         public static ModContentPack ContentPack;
 
         // Cache contract:
         // Owner: this Mod/settings-window instance.
-        // Key: UiVersion plus the four displayed integer setting values.
+        // Key: language revision plus the four displayed integer setting values.
         // Value: immutable formatted label strings.
         // Dependencies: active language and displayed slider values only.
         // Refresh policy: immediate when an exact dependency changes.
         // Equality policy: unchanged values preserve string references.
         // Teardown: bounded fields die with the Mod instance; no resources owned.
-        private int settingsTextUiVersion = -1;
+        private int settingsTextLanguageVersion = -1;
         private int textOffsetX = int.MinValue;
         private int textOffsetY = int.MinValue;
         private int textPanelWidth = int.MinValue;
@@ -56,7 +57,7 @@ namespace EPrimeReadouts
             using (new GuiStateScope())
             {
             EnsureSettingsText();
-            var listing = new Listing_Standard();
+            Listing_Standard listing = settingsListing;
             listing.Begin(inRect);
             try
             {
@@ -84,7 +85,7 @@ namespace EPrimeReadouts
             int offsetY = (int)Settings.offsetY;
             int panelWidth = (int)Settings.panelWidth;
             int bottomMargin = (int)Settings.bottomMargin;
-            if (settingsTextUiVersion == UiVersion.Current
+            if (settingsTextLanguageVersion == UiVersion.LanguageCurrent
                 && textOffsetX == offsetX
                 && textOffsetY == offsetY
                 && textPanelWidth == panelWidth
@@ -94,7 +95,7 @@ namespace EPrimeReadouts
             offsetYLabel = UiText.Get("EPR.OffsetY") + ": " + offsetY;
             panelWidthLabel = UiText.Get("EPR.PanelWidth") + ": " + panelWidth;
             bottomMarginLabel = UiText.Get("EPR.BottomMargin") + ": " + bottomMargin;
-            settingsTextUiVersion = UiVersion.Current;
+            settingsTextLanguageVersion = UiVersion.LanguageCurrent;
             textOffsetX = offsetX;
             textOffsetY = offsetY;
             textPanelWidth = panelWidth;

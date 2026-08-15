@@ -115,7 +115,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 |---|---|
 | Per-map render data | Store/world identity and map identity |
 | Pool structure snapshot | `PoolsVersion`, immediately |
-| Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, and 204 elapsed game ticks; replace only when contents differ |
+| Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, `PlannedWorkOptions` immediately (including while paused), and 204 elapsed game ticks; replace only when contents differ |
 | Main readout layout/draw model | Map, width, view state, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Pool list/editor rows | `PoolsVersion` and relevant selection or expansion state |

@@ -116,4 +116,31 @@ public class CountAccumulatorTests
         await Assert.That(second.ToSnapshot().Equals(first.ToSnapshot()))
             .IsFalse();
     }
+
+    [Test]
+    public async Task PublishingDoesNotCopyTheAccumulatorOwnedCountBuffer()
+    {
+        var accumulator = new CountAccumulator();
+        for (int i = 0; i < 4096; i++)
+            accumulator.Add("Resource" + i, defHash: i, count: i);
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        RenderCountSnapshot snapshot = accumulator.ToSnapshot();
+        long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+        GC.KeepAlive(snapshot);
+
+        await Assert.That(allocated).IsLessThan(8192L);
+    }
+
+    [Test]
+    public async Task PublishedAccumulatorCannotMutateTransferredBuffers()
+    {
+        var accumulator = new CountAccumulator();
+        accumulator.Add("Steel", defHash: 11, count: 40);
+        RenderCountSnapshot snapshot = accumulator.ToSnapshot();
+
+        await Assert.That(() => accumulator.Add("Steel", defHash: 11, count: 1))
+            .Throws<InvalidOperationException>();
+        await Assert.That(snapshot.Counts["Steel"]).IsEqualTo(40);
+    }
 }

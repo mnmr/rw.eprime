@@ -28,7 +28,7 @@ namespace EPrimeReadouts.UI
         private Vector2 scroll;
         private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
         private ReadoutSnapshot textSnapshot;
-        private int textUiVersion = -1;
+        private int textLanguageVersion = -1;
         private string summaryText;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
@@ -173,14 +173,14 @@ namespace EPrimeReadouts.UI
         {
             UiVersion.ObserveCurrentMetrics();
             if (ReferenceEquals(textSnapshot, snapshot)
-                && textUiVersion == UiVersion.Current
+                && textLanguageVersion == UiVersion.LanguageCurrent
                 && summaryText != null)
                 return;
             int pools = snapshot?.Pools.Count ?? 0;
             int groups = snapshot?.Groups.Count ?? 0;
             summaryText = "EPR.ContentSummary".Translate(pools, groups);
             textSnapshot = snapshot;
-            textUiVersion = UiVersion.Current;
+            textLanguageVersion = UiVersion.LanguageCurrent;
         }
     }
 }

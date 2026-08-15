@@ -40,6 +40,18 @@ namespace EPrimeReadouts
         /// Sub-option of expandOnHover: idle shows 0 tiers (bands only) and
         /// hover shows the configured tiers, never more.
         public bool collapseWhenIdle;
+        /// Planned-work reservations. All default off: a fresh install shows
+        /// the same numbers it always did until the player opts in.
+        /// Subtract ingredients outstanding bill iterations will consume.
+        public bool reserveForBills;
+        /// Subtract materials undelivered blueprints and frames still need.
+        public bool reserveForBuildables;
+        /// Show an overrun as a negative number instead of capping at zero.
+        /// Pure presentation: never invalidates a count snapshot.
+        public bool showNegativeCounts;
+        /// Scale reservations by the rework a Quality Jobs quality target
+        /// implies. Inert while that mod is absent.
+        public bool qualityJobsRework;
 
         public override void ExposeData()
         {
@@ -64,6 +76,10 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref selectJumpCamera, "selectJumpCamera", true);
             Scribe_Values.Look(ref expandOnHover, "expandOnHover", false);
             Scribe_Values.Look(ref collapseWhenIdle, "collapseWhenIdle", false);
+            Scribe_Values.Look(ref reserveForBills, "reserveForBills", false);
+            Scribe_Values.Look(ref reserveForBuildables, "reserveForBuildables", false);
+            Scribe_Values.Look(ref showNegativeCounts, "showNegativeCounts", false);
+            Scribe_Values.Look(ref qualityJobsRework, "qualityJobsRework", false);
             Scribe_Collections.Look(ref tierDepths, "tierDepths", LookMode.Value, LookMode.Value);
             if (tierDepths == null) tierDepths = new Dictionary<string, int>();
             Scribe_Collections.Look(ref enabledGroups, "enabledGroups", LookMode.Value, LookMode.Value);

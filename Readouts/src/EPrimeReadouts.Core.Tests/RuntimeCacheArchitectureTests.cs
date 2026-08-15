@@ -17,6 +17,45 @@ public class RuntimeCacheArchitectureTests
         await Assert.That(source).DoesNotContain("CollectExtraDefs");
     }
 
+    // The planned-work scan's guards are all statements about RimWorld types
+    // and vanilla contracts; no executable boundary in Core can express them,
+    // and each one is easy to mistake for a redundant check and delete.
+    [Test]
+    public async Task PlannedWorkScanSkipsTheConstructibleThatLogsOnCostQueries()
+    {
+        // Blueprint_Install is IConstructible but its TotalMaterialCost is a
+        // Log.Error stub. The reservation scan runs on the count refresh
+        // cadence, so reaching it would log forever.
+        string scan = Method(Source("PlannedWorkCounts.cs"),
+            "private static void AccumulateConstructibles(");
+
+        await Assert.That(scan).Contains(
+            "if (!(thing is Blueprint_Build) && !(thing is Frame)) continue;");
+    }
+
+    [Test]
+    public async Task PlannedWorkScanIgnoresForbiddenConstruction()
+    {
+        // A forbidden blueprint or frame will not be worked on, so it must not
+        // shrink a counter.
+        string scan = Method(Source("PlannedWorkCounts.cs"),
+            "private static void AccumulateConstructibles(");
+
+        await Assert.That(scan).Contains("if (thing.IsForbidden(player)) continue;");
+    }
+
+    [Test]
+    public async Task TargetCountBillsAreGatedOnVanillasOwnProductCounterCheck()
+    {
+        // CanCountProducts is vanilla's guard that products[0] is the single
+        // meaningful product. Without it a multi- or special-product recipe
+        // returns a count for the wrong thing and the shortfall is nonsense.
+        string iterations = Method(Source("PlannedWorkCounts.cs"),
+            "private static int IterationsOf(");
+
+        await Assert.That(iterations).Contains("CanCountProducts(bill)");
+    }
+
     [Test]
     public async Task MapAndWorldCachesHaveExplicitLifecycleRelease()
     {
@@ -126,6 +165,56 @@ public class RuntimeCacheArchitectureTests
     }
 
     [Test]
+    public async Task ActiveTooltipSessionDrawsItsPreparedGeometry()
+    {
+        string tipUi = Source("UI", "WrTipUI.cs");
+        string presenter = Source("UI", "StructuredTipPresenter.cs");
+        string present = Method(presenter, "private static void Present(");
+        string drawWindow = Method(presenter, "private static void DrawWindow()");
+        string drawPrepared = Method(tipUi,
+            "internal static void Draw(Rect bgRect, PreparedTip prepared)");
+
+        await Assert.That(present).Contains("frozenGeometry = WrTipUI.Prepare(");
+        await Assert.That(drawWindow).Contains("WrTipUI.Draw(rect, frozenGeometry)");
+        await Assert.That(drawWindow).DoesNotContain("frozen.Model");
+        await Assert.That(drawPrepared).DoesNotContain("Ensure(");
+        await Assert.That(drawPrepared).DoesNotContain("UiVersion");
+    }
+
+    [Test]
+    public async Task WindowDrawsReuseTheirListingHelpers()
+    {
+        string settings = Method(Source("EPrimeReadoutsMod.cs"),
+            "public override void DoSettingsWindowContents(Rect inRect)");
+        string options = Method(Source("UI", "Dialog_PanelOptions.cs"),
+            "public override void DoWindowContents(Rect inRect)");
+
+        await Assert.That(settings).DoesNotContain("new Listing_Standard");
+        await Assert.That(options).DoesNotContain("new Listing_Standard");
+    }
+
+    [Test]
+    public async Task LanguageOnlyCachesUseTheLanguageRevision()
+    {
+        string catalog = Method(Source("GameResourceCatalog.cs"),
+            "public string CategoryLabelOf(string categoryDefName)");
+        string tree = Method(Source("GameResourceTree.cs"),
+            "public static List<ResourceTreeNode> GetRoots()");
+        string text = Method(Source("UI", "UiText.cs"),
+            "internal static string Get(string key)");
+        string preview = Method(Source("UI", "ReadoutsPreviewUI.cs"),
+            "private void EnsureLines(ReadoutSnapshot snapshot)");
+        string tip = Method(Source("UI", "IconTips.cs"),
+            "StructuredTip IStructuredTipSource.Resolve()");
+
+        await Assert.That(catalog).Contains("UiVersion.LanguageCurrent");
+        await Assert.That(tree).Contains("UiVersion.LanguageCurrent");
+        await Assert.That(text).Contains("UiVersion.LanguageCurrent");
+        await Assert.That(preview).Contains("UiVersion.LanguageCurrent");
+        await Assert.That(tip).Contains("UiVersion.LanguageCurrent");
+    }
+
+    [Test]
     public async Task DialogDrawsUseCachedPresentationAndFileMetadata()
     {
         string import = Source("UI", "Dialog_ImportReadouts.cs");
@@ -145,7 +234,7 @@ public class RuntimeCacheArchitectureTests
     }
 
     [Test]
-    public async Task TooltipCacheObservesPresentationRevision()
+    public async Task TooltipCacheObservesLanguageRevision()
     {
         string source = Source("UI", "IconTips.cs");
         string revision = source.Substring(
@@ -153,7 +242,7 @@ public class RuntimeCacheArchitectureTests
             source.IndexOf("private struct BuildState", StringComparison.Ordinal)
                 - source.IndexOf("private readonly struct TipRevision", StringComparison.Ordinal));
 
-        await Assert.That(revision).Contains("uiVersion");
+        await Assert.That(revision).Contains("languageVersion");
     }
 
     [Test]

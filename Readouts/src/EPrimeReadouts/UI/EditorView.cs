@@ -38,6 +38,7 @@ namespace EPrimeReadouts.UI
         private PoolSnapshot builtPools;
         private bool builtStorageOnly;
         private bool builtHideForbidden;
+        private bool builtShowNegative;
 
         private ReadoutStore groupOwner;
         private int groupSnapshotVersion = -1;
@@ -71,7 +72,7 @@ namespace EPrimeReadouts.UI
         private string selectionStoredToken;
         private string optionsDisplayName;
         private string optionsHeader;
-        private int optionsUiVersion = -1;
+        private int optionsLanguageVersion = -1;
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
@@ -190,16 +191,16 @@ namespace EPrimeReadouts.UI
                     store,
                     owner.selectedCanonical,
                     store.PoolsVersion,
-                    UiVersion.Current,
+                    UiVersion.LanguageCurrent,
                     SlotToken.IsPoolRef(owner.selectedCanonical),
                     resolveDisplayName);
                 string displayName = selectedDisplayName ?? owner.selectedCanonical;
-                if (optionsUiVersion != UiVersion.Current
+                if (optionsLanguageVersion != UiVersion.LanguageCurrent
                     || !string.Equals(optionsDisplayName, displayName,
                         StringComparison.Ordinal))
                 {
                     optionsDisplayName = displayName;
-                    optionsUiVersion = UiVersion.Current;
+                    optionsLanguageVersion = UiVersion.LanguageCurrent;
                     optionsHeader = "EPR.OptionsFor".Translate(displayName);
                 }
                 bool dummy = false;
@@ -229,6 +230,9 @@ namespace EPrimeReadouts.UI
             var settings = EPrimeReadoutsMod.Settings;
             if (settings.searchStorageOnly != builtStorageOnly) return true;
             if (settings.searchHideForbidden != builtHideForbidden) return true;
+            // Planned-work debt itself arrives with the count snapshot above;
+            // only the negative-display choice is an independent input.
+            if (settings.showNegativeCounts != builtShowNegative) return true;
             return false;
         }
 
@@ -246,6 +250,7 @@ namespace EPrimeReadouts.UI
             builtCounts = owner.RenderData?.Counts;
             builtStorageOnly = basisSettings.searchStorageOnly;
             builtHideForbidden = basisSettings.searchHideForbidden;
+            builtShowNegative = basisSettings.showNegativeCounts;
 
             IReadOnlyDictionary<string, int> counts = builtCounts != null
                 ? builtCounts.Counts
@@ -270,6 +275,8 @@ namespace EPrimeReadouts.UI
                     SearchCounts = builtCounts?.SearchCounts,
                     SearchStorageOnly = builtStorageOnly,
                     SearchHideForbidden = builtHideForbidden,
+                    Debts = builtCounts?.Debts,
+                    AllowNegativeCounts = builtShowNegative,
                     Thresholds = store.Model.Thresholds,
                     Width = width,
                     Catalog = GameResourceCatalog.Instance,
@@ -592,7 +599,7 @@ namespace EPrimeReadouts.UI
             selectedDisplayNames.Reset();
             optionsDisplayName = null;
             optionsHeader = null;
-            optionsUiVersion = -1;
+            optionsLanguageVersion = -1;
             thresholdRow = default;
             thresholdRowUiVersion = -1;
         }

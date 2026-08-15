@@ -447,6 +447,11 @@ namespace EPrimeReadouts.UI
                 SearchHideZero = settings.searchHideZero,
                 SearchStorageOnly = settings.searchStorageOnly,
                 SearchHideForbidden = settings.searchHideForbidden,
+                // Debt is already option-resolved in the snapshot; showing the
+                // overrun as a negative is pure presentation, so it rides the
+                // view stamp instead of invalidating counts.
+                Debts = renderData.Counts.Debts,
+                AllowNegativeCounts = settings.showNegativeCounts,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
                 Pools = renderData.Structure,

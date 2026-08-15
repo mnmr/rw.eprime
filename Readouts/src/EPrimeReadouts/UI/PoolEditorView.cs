@@ -22,12 +22,12 @@ namespace EPrimeReadouts.UI
         private int builtPoolsVersion = -1;
         private int builtPoolId = -1;
         private int builtExpandStamp = -1;
-        private int builtUiVersion = -1;
+        private int builtLanguageVersion = -1;
         private ReadoutStore builtStore;
 
         // Cache contract:
         // Owner: this dialog view and one ReadoutStore.
-        // Key: store identity, pool id, PoolsVersion, expansion stamp, UI revision.
+        // Key: store identity, pool id, PoolsVersion, expansion stamp, language revision.
         // Value: immutable flattened editor rows with resolved ThingDefs/state.
         // Dependencies: selected pool raw members/icon, tree expansion and language.
         // Refresh policy: immediate on any dependency change.
@@ -94,7 +94,7 @@ namespace EPrimeReadouts.UI
             if (store.PoolsVersion != builtPoolsVersion) return true;
             if (poolId != builtPoolId) return true;
             if (expandStamp != builtExpandStamp) return true;
-            if (UiVersion.Current != builtUiVersion) return true;
+            if (UiVersion.LanguageCurrent != builtLanguageVersion) return true;
             return false;
         }
 
@@ -105,7 +105,7 @@ namespace EPrimeReadouts.UI
             builtStore = store;
             builtPoolsVersion = store.PoolsVersion;
             builtPoolId = poolId;
-            builtUiVersion = UiVersion.Current;
+            builtLanguageVersion = UiVersion.LanguageCurrent;
             if (pool == null)
             {
                 cachedRows = System.Array.Empty<EditorRow>();
@@ -289,7 +289,7 @@ namespace EPrimeReadouts.UI
             builtPoolsVersion = -1;
             builtPoolId = -1;
             builtExpandStamp = -1;
-            builtUiVersion = -1;
+            builtLanguageVersion = -1;
             cachedRows = null;
             expanded.Clear();
             expandStamp = 0;

@@ -43,7 +43,7 @@ namespace EPrimeReadouts.UI
         private Vector2 previewScroll;
         private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
         private ReadoutSnapshot previewTextSnapshot;
-        private int previewTextUiVersion = -1;
+        private int previewTextLanguageVersion = -1;
         private string previewSummary;
         private string previewWarning;
 
@@ -320,7 +320,7 @@ namespace EPrimeReadouts.UI
         {
             UiVersion.ObserveCurrentMetrics();
             if (ReferenceEquals(previewTextSnapshot, previewSnapshot)
-                && previewTextUiVersion == UiVersion.Current
+                && previewTextLanguageVersion == UiVersion.LanguageCurrent
                 && previewSummary != null)
                 return;
             int pools = previewSnapshot?.Pools.Count ?? 0;
@@ -328,7 +328,7 @@ namespace EPrimeReadouts.UI
             previewSummary = "EPR.ContentSummary".Translate(pools, groups);
             previewWarning = UiText.Get("EPR.ImportWarning");
             previewTextSnapshot = previewSnapshot;
-            previewTextUiVersion = UiVersion.Current;
+            previewTextLanguageVersion = UiVersion.LanguageCurrent;
         }
     }
 }

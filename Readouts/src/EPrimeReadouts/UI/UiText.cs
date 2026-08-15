@@ -9,21 +9,21 @@ namespace EPrimeReadouts.UI
         // Owner: process/current language.
         // Key: translation key string.
         // Value: immutable translated string.
-        // Dependencies: UiVersion.Current, including active language.
-        // Refresh policy: immediate clear on observed UI revision change.
+        // Dependencies: UiVersion.LanguageCurrent.
+        // Refresh policy: immediate clear on observed language revision change.
         // Equality policy: cache hits preserve the string reference.
         // Teardown: Reset clears every translated string.
         private static readonly Dictionary<string, string> text =
             new Dictionary<string, string>();
-        private static int uiVersion = -1;
+        private static int languageVersion = -1;
 
         internal static string Get(string key)
         {
             UiVersion.ObserveCurrentMetrics();
-            if (uiVersion != UiVersion.Current)
+            if (languageVersion != UiVersion.LanguageCurrent)
             {
                 text.Clear();
-                uiVersion = UiVersion.Current;
+                languageVersion = UiVersion.LanguageCurrent;
             }
             if (!text.TryGetValue(key, out string value))
             {
@@ -36,7 +36,7 @@ namespace EPrimeReadouts.UI
         internal static void Reset()
         {
             text.Clear();
-            uiVersion = -1;
+            languageVersion = -1;
         }
     }
 }

@@ -3,8 +3,8 @@ using System;
 namespace EPrimeReadouts.Core
 {
     /// <summary>
-    /// Monotonic text-metric revision driven by the runtime preferences that
-    /// can change measured UI text without changing its logical width.
+    /// Monotonic UI revisions. Current covers every input that can change
+    /// measured text; LanguageCurrent advances only for translated content.
     /// </summary>
     public sealed class UiMetricRevision
     {
@@ -14,6 +14,7 @@ namespace EPrimeReadouts.Core
         private string language;
 
         public int Current { get; private set; }
+        public int LanguageCurrent { get; private set; }
 
         public void Observe(float scale, bool disableTinyText, string language)
         {
@@ -26,13 +27,16 @@ namespace EPrimeReadouts.Core
                 return;
             }
 
+            bool languageChanged = !string.Equals(
+                this.language, language, StringComparison.Ordinal);
             if (uiScale.Equals(scale) && this.disableTinyText == disableTinyText
-                && string.Equals(this.language, language, StringComparison.Ordinal)) return;
+                && !languageChanged) return;
 
             uiScale = scale;
             this.disableTinyText = disableTinyText;
             this.language = language;
             Current++;
+            if (languageChanged) LanguageCurrent++;
         }
 
         public void Bump() => Current++;

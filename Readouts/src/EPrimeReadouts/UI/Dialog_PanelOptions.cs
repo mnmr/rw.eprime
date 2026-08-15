@@ -8,6 +8,8 @@ namespace EPrimeReadouts.UI
     /// then one section per option domain: counts, clicks, search, hover.
     public class Dialog_PanelOptions : Window
     {
+        private readonly Listing_Standard listing = new Listing_Standard();
+
         public Dialog_PanelOptions()
         {
             doCloseX = true;
@@ -16,14 +18,13 @@ namespace EPrimeReadouts.UI
             forcePause = false;
         }
 
-        public override Vector2 InitialSize => new Vector2(380f, 470f);
+        public override Vector2 InitialSize => new Vector2(380f, 660f);
 
         public override void DoWindowContents(Rect inRect)
         {
             using (new GuiStateScope())
             {
             var settings = EPrimeReadoutsMod.Settings;
-            var listing = new Listing_Standard();
             listing.Begin(inRect);
             try
             {
@@ -51,6 +52,53 @@ namespace EPrimeReadouts.UI
             if (hideForbidden != settings.searchHideForbidden)
             {
                 EPrimeReadoutsMod.Persist(s => s.searchHideForbidden = hideForbidden);
+                ReadoutPanel.BumpView();
+            }
+
+            SectionHeader(listing, "EPR.PlannedWorkOptions");
+
+            // Every reservation narrows the counters the same way the count
+            // options do; the snapshot rebuilds at once so a toggle is visible
+            // even while the game is paused.
+            bool reserveBills = settings.reserveForBills;
+            if (CheckboxRow(listing, "EPR.ReserveForBills",
+                UiText.Get("EPR.ReserveForBillsTip"), ref reserveBills))
+            {
+                EPrimeReadoutsMod.Persist(s => s.reserveForBills = reserveBills);
+                ReadoutPanel.BumpView();
+            }
+
+            bool reserveBuildables = settings.reserveForBuildables;
+            if (CheckboxRow(listing, "EPR.ReserveForBuildables",
+                UiText.Get("EPR.ReserveForBuildablesTip"), ref reserveBuildables))
+            {
+                EPrimeReadoutsMod.Persist(s => s.reserveForBuildables = reserveBuildables);
+                ReadoutPanel.BumpView();
+            }
+
+            bool showNegative = settings.showNegativeCounts;
+            if (CheckboxRow(listing, "EPR.ShowNegativeCounts",
+                UiText.Get("EPR.ShowNegativeCountsTip"), ref showNegative))
+            {
+                EPrimeReadoutsMod.Persist(s => s.showNegativeCounts = showNegative);
+                ReadoutPanel.BumpView();
+            }
+
+            // Without a working Quality Jobs integration there is no quality
+            // target to rework for, so the row is inert and says why on hover
+            // rather than disappearing. The two failure modes read differently:
+            // the mod is absent, or it is present but too old to answer.
+            bool qualityReady = QualityJobsBridge.Available;
+            string qualityTip = qualityReady
+                ? "EPR.QualityJobsReworkTip"
+                : QualityJobsBridge.Installed
+                    ? "EPR.QualityJobsOutdatedTip"
+                    : "EPR.QualityJobsMissingTip";
+            bool qualityRework = settings.qualityJobsRework;
+            if (CheckboxRow(listing, "EPR.QualityJobsRework", UiText.Get(qualityTip),
+                    ref qualityRework, disabled: !qualityReady))
+            {
+                EPrimeReadoutsMod.Persist(s => s.qualityJobsRework = qualityRework);
                 ReadoutPanel.BumpView();
             }
 
@@ -139,6 +187,26 @@ namespace EPrimeReadouts.UI
             listing.Gap(8f);
             var rect = listing.GetRect(28f);
             EprStyle.SectionHeader(rect.x, rect.y, rect.width, UiText.Get(key));
+        }
+
+        /// One always-tooltipped option row. Every row here shares the same
+        /// single-line height so the checkboxes align exactly down the section.
+        /// A disabled row still draws and still explains itself on hover, but
+        /// swallows clicks and greys its label. Returns true when the player
+        /// changed the value.
+        private static bool CheckboxRow(
+            Listing_Standard listing, string labelKey, string tooltip,
+            ref bool value, bool disabled = false)
+        {
+            Rect rect = listing.GetRect(Text.LineHeight);
+            if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
+            TooltipHandler.TipRegion(rect, (TaggedString)tooltip);
+            bool before = value;
+            if (disabled) GUI.color = EprStyle.CaptionText;
+            Widgets.CheckboxLabeled(rect, UiText.Get(labelKey), ref value, disabled);
+            if (disabled) GUI.color = Color.white;
+            listing.Gap(listing.verticalSpacing);
+            return value != before;
         }
     }
 }

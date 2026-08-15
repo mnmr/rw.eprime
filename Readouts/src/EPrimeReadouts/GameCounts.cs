@@ -12,13 +12,14 @@ namespace EPrimeReadouts
     public static class GameCounts
     {
         internal static RenderCountSnapshot BuildSnapshot(
-            Map map)
+            Map map,
+            PlannedWorkOptions plannedWork)
         {
             var accumulator = new CountAccumulator();
             Dictionary<int, Map> levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
-                AccumulateMap(map, accumulator);
+                AccumulateMap(map, accumulator, plannedWork);
                 return accumulator.ToSnapshot();
             }
 
@@ -32,13 +33,14 @@ namespace EPrimeReadouts
                 Map level = levels[order[i]];
                 if (level == null || level.Disposed) continue;
                 if (ReferenceEquals(level, map)) sawQueriedMap = true;
-                AccumulateMap(level, accumulator);
+                AccumulateMap(level, accumulator, plannedWork);
             }
-            if (!sawQueriedMap) AccumulateMap(map, accumulator);
+            if (!sawQueriedMap) AccumulateMap(map, accumulator, plannedWork);
             return accumulator.ToSnapshot();
         }
 
-        private static void AccumulateMap(Map map, CountAccumulator accumulator)
+        private static void AccumulateMap(
+            Map map, CountAccumulator accumulator, PlannedWorkOptions plannedWork)
         {
             foreach (var pair in map.resourceCounter.AllCountedAmounts)
                 accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
@@ -93,6 +95,12 @@ namespace EPrimeReadouts
                     inner.stackCount, stored: false,
                     forbidden: thing.IsForbidden(Faction.OfPlayer));
             }
+
+            // Planned-work reservations share this map walk and this cadence, so
+            // the debt a counter shows always belongs to the same instant as the
+            // stock it was subtracted from. No-op when every option is off.
+            if (plannedWork.Any)
+                PlannedWorkCounts.Accumulate(map, accumulator, plannedWork);
         }
 
         /// Current count for a single def from the shared render snapshot.
