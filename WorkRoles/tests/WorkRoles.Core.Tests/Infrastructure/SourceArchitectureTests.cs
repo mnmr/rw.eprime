@@ -5,6 +5,128 @@ namespace WorkRoles.Core.Tests.Infrastructure;
 public class SourceArchitectureTests
 {
     [Test]
+    public async Task ChangesPreviewPublishesDetachedRowsBeforeDrawing()
+    {
+        // The RimWorld/Unity producer cannot execute at the Core boundary. This
+        // guard protects the published rendering boundary without introducing a
+        // production seam solely for tests; command-time pawn IDs remain live.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_ChangesPreview.cs"));
+        Match producer = Regex.Match(source,
+            @"private void EnsureRenderSnapshot\(.*?public override void DoWindowContents",
+            RegexOptions.Singleline);
+        Match drawChip = Regex.Match(source,
+            @"private static void DrawStateChip\(.*?private void EnsureRenderSnapshot",
+            RegexOptions.Singleline);
+        Match drawRows = Regex.Match(source,
+            @"private void DrawVisibleEntries\(.*?^[ ]{8}\}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(producer.Success).IsTrue();
+        await Assert.That(drawChip.Success).IsTrue();
+        await Assert.That(drawRows.Success).IsTrue();
+        await Assert.That(source)
+            .Contains("private ChangesPreviewRenderSnapshot renderSnapshot;");
+        await Assert.That(source)
+            .Contains("// Owner: changes-preview dialog.");
+        await Assert.That(source)
+            .Contains("internal RoleChipRenderData RenderData { get; }");
+        await Assert.That(source)
+            .Contains("internal string PawnLabel { get; }");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("RoleChipRenderData.From(currentRole)");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("entry.pawn?.LabelShortCap");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("ExternalPawnFacts.Revisions.RevisionOf(entries[i].pawn)");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("UiVersion.Current");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("!renderSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(drawChip.Groups[0].Value)
+            .Contains("RoleChipRenderData role");
+        await Assert.That(drawChip.Groups[0].Value)
+            .Contains("RoleChipUI.Draw(rect, role");
+        await Assert.That(drawChip.Groups[0].Value)
+            .DoesNotContain("Role role");
+        await Assert.That(drawRows.Groups[0].Value)
+            .Contains("descriptor.PawnLabel");
+        await Assert.That(drawRows.Groups[0].Value)
+            .DoesNotContain("entry.pawn.LabelShortCap");
+        await Assert.That(drawRows.Groups[0].Value)
+            .DoesNotContain("chip.Role");
+        await Assert.That(source)
+            .Contains("renderSnapshot = null;");
+    }
+
+    [Test]
+    public async Task PriorityGridPublishesCellsBeforeDrawingAndTracksLiveDependencies()
+    {
+        // The RimWorld/Unity producer cannot execute at the Core boundary. This
+        // guard keeps authoritative pawn/store/skill reads in the gated producer
+        // and verifies the event-driven invalidation/teardown wiring without an
+        // artificial production seam solely for tests.
+        string grid = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_PriorityGrid.cs"));
+        string workSettings = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/Patches/Patch_PawnWorkSettings.cs"));
+        string liveFacts = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/Patches/Patch_PriorityGridFacts.cs"));
+        Match producer = Regex.Match(grid,
+            @"private void EnsureGridSnapshot\(\).*?private void DrawVisibleRows",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(grid,
+            @"private void DrawVisibleRows\(.*?private void ToggleSort",
+            RegexOptions.Singleline);
+        Match sort = Regex.Match(grid,
+            @"private void ToggleSort\(.*?private static void DrawWorkBoxBackground",
+            RegexOptions.Singleline);
+
+        await Assert.That(producer.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(sort.Success).IsTrue();
+        await Assert.That(grid).Contains("private PriorityGridSnapshot gridSnapshot;");
+        await Assert.That(grid).Contains("// Owner: priority-grid dialog.");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("PriorityGridFacts.Revisions.Current");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("PriorityGridFacts.Revisions.RevisionOf(pawns[r])");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("UiVersion.Current");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("DefinitionReloadCoordinator.Revision");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("!gridSnapshot.ContentEquals(rebuilt)");
+        foreach (string liveRead in new[]
+        {
+            "RoleStore.Current", "WorkTypeIsDisabled", "CompiledJobOrders.PriorityFor",
+            "CompiledJobOrders.VanillaPriorityFor", "AverageOfRelevantSkillsFor",
+            "MaxPassionOfRelevantSkillsFor", "workSettings?.GetPriority"
+        })
+            await Assert.That(producer.Groups[0].Value).Contains(liveRead);
+        foreach (string forbidden in new[]
+        {
+            "RoleStore.Current", "WorkTypeIsDisabled", "CompiledJobOrders",
+            ".skills", ".workSettings", "PriorityFor("
+        })
+        {
+            await Assert.That(draw.Groups[0].Value).DoesNotContain(forbidden);
+            await Assert.That(sort.Groups[0].Value).DoesNotContain(forbidden);
+        }
+        await Assert.That(draw.Groups[0].Value).Contains("gridSnapshot.CellAt(");
+        await Assert.That(sort.Groups[0].Value).Contains("CopyPriorities(");
+        await Assert.That(grid).Contains("public override void PostClose()");
+        await Assert.That(grid).Contains("PriorityGridFacts.Acquire(pawns[r]);");
+        await Assert.That(grid).Contains("PriorityGridFacts.ReleaseWatch(pawns[r]);");
+        await Assert.That(grid).Contains("gridSnapshot = null;");
+        await Assert.That(workSettings).Contains("PriorityGridFacts.Invalidate(__instance);");
+        await Assert.That(workSettings).Contains("PriorityGridPriorityTransitionState");
+        await Assert.That(liveFacts).Contains("typeof(SkillRecord), nameof(SkillRecord.Learn)");
+        await Assert.That(liveFacts).Contains("nameof(SkillRecord.Level), MethodType.Setter");
+        await Assert.That(liveFacts).Contains("typeof(ChoiceLetter_GrowthMoment)");
+    }
+
+    [Test]
     public async Task RecommendationsHelpParagraphRestoresGuiStateInFinally()
     {
         string source = File.ReadAllText(RepositoryFile("src/WorkRoles/UI/RecommendationsTabView.cs"));
@@ -78,7 +200,7 @@ public class SourceArchitectureTests
         string roleIo = File.ReadAllText(RepositoryFile("src/WorkRoles/RoleIO.cs"));
 
         await Assert.That(roleIo).DoesNotContain("public static string Apply(RoleStore store");
-        await Assert.That(Regex.IsMatch(roleIo, @"public static partial class RoleCommands.*private static string ApplyImportToStore", RegexOptions.Singleline)).IsTrue();
+        await Assert.That(Regex.IsMatch(roleIo, @"public static partial class RoleCommands.*private static ImportApplyResult ApplyImportToStore", RegexOptions.Singleline)).IsTrue();
     }
 
     [Test]
@@ -247,6 +369,117 @@ public class SourceArchitectureTests
             .DoesNotContain("GUI.color = Color.white");
         await Assert.That(cell.Groups[0].Value)
             .DoesNotContain("Text.Anchor = TextAnchor.UpperLeft");
+    }
+
+    [Test]
+    public async Task ColonistRowCaptionBuilderRestoresCallerFont()
+    {
+        // This builder measures game-font text in the RimWorld/Unity assembly,
+        // outside the Core executable test boundary. The guard protects the
+        // global font contract without adding a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        Match builder = Regex.Match(source,
+            @"private List<RowCaptionSegment> BuildRowCaption\(.*?internal float StripHeightFor",
+            RegexOptions.Singleline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("GameFont oldFont = Text.Font");
+        await Assert.That(builder.Groups[0].Value).Contains("finally");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+    }
+
+    [Test]
+    public async Task SelectedActivitySlotRestoresCallerGuiState()
+    {
+        // The RimWorld/Unity drawing assembly is outside the Core executable
+        // test boundary. This guard protects exact, exception-safe restoration
+        // without adding a production seam solely for GUI-state testing.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        Match slot = Regex.Match(source,
+            @"private static void DrawActivitySlot\(.*?private void DrawStatsPanel",
+            RegexOptions.Singleline);
+
+        await Assert.That(slot.Success).IsTrue();
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("GameFont oldFont = Text.Font");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("TextAnchor oldAnchor = Text.Anchor");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("bool oldWordWrap = Text.WordWrap");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("Color oldColor = GUI.color");
+        await Assert.That(slot.Groups[0].Value).Contains("finally");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("Text.Anchor = oldAnchor");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(slot.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+        await Assert.That(slot.Groups[0].Value)
+            .DoesNotContain("GUI.color = Color.white");
+        await Assert.That(slot.Groups[0].Value)
+            .DoesNotContain("Text.Anchor = TextAnchor.UpperLeft");
+        await Assert.That(slot.Groups[0].Value)
+            .DoesNotContain("Text.Font = GameFont.Small");
+    }
+
+    [Test]
+    public async Task SelectedStatsPanelRestoresCallerGuiState()
+    {
+        // The RimWorld/Unity drawing assembly is outside the Core executable
+        // test boundary. This guard protects the panel's exception-safe outer
+        // GUI-state boundary without adding a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        Match panel = Regex.Match(source,
+            @"private void DrawStatsPanel\(.*?/// Preview entries from the colony plan",
+            RegexOptions.Singleline);
+
+        await Assert.That(panel.Success).IsTrue();
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("GameFont oldFont = Text.Font");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("TextAnchor oldAnchor = Text.Anchor");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("bool oldWordWrap = Text.WordWrap");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("Color oldColor = GUI.color");
+        await Assert.That(panel.Groups[0].Value).Contains("finally");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("Text.Anchor = oldAnchor");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+    }
+
+    [Test]
+    public async Task SelectedStatsPanelIndexesPublishedSignalIcons()
+    {
+        // RimWorld/Unity drawing cannot execute at the Core test boundary.
+        // This focused guard prevents interface enumeration from returning to
+        // the steady render loop without adding a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        Match panel = Regex.Match(source,
+            @"private void DrawStatsPanel\(.*?/// Preview entries from the colony plan",
+            RegexOptions.Singleline);
+
+        await Assert.That(panel.Success).IsTrue();
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("int signalIconCount = signalIcons.Count");
+        await Assert.That(panel.Groups[0].Value)
+            .Contains("signalIcons[signalIconIndex]");
+        await Assert.That(panel.Groups[0].Value)
+            .DoesNotContain("foreach (Texture2D texture in signalIcons)");
     }
 
     [Test]
@@ -883,6 +1116,746 @@ public class SourceArchitectureTests
     }
 
     [Test]
+    public async Task ToastDrawConsumesRevisionGatedPublishedLayout()
+    {
+        // Toast measurement and Unity GUI drawing live outside the executable
+        // Core boundary. This guard protects their scheduling and publication
+        // contract without introducing a game-assembly production seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/WrToast.cs"));
+        string window = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/MainTabWindow_WorkRoles.cs"));
+        Match update = Regex.Match(source,
+            @"internal static void Update\(\)(.*?)internal static void RefreshLayout",
+            RegexOptions.Singleline);
+        Match refresh = Regex.Match(source,
+            @"internal static void RefreshLayout\(.*?public static void Draw",
+            RegexOptions.Singleline);
+        int drawAt = source.IndexOf("public static void Draw(Rect inRect)",
+            StringComparison.Ordinal);
+        string draw = drawAt < 0 ? "" : source.Substring(drawAt);
+
+        await Assert.That(update.Success).IsTrue();
+        await Assert.That(refresh.Success).IsTrue();
+        await Assert.That(draw).IsNotEmpty();
+        await Assert.That(window).Contains("WrToast.Update()");
+        await Assert.That(window)
+            .Contains("WrToast.RefreshLayout(inRect.width)");
+        await Assert.That(update.Groups[1].Value)
+            .Contains("Time.realtimeSinceStartup");
+        await Assert.That(update.Groups[1].Value).Contains("toasts.RemoveAt(i)");
+        await Assert.That(update.Groups[1].Value).DoesNotContain("RemoveAll");
+        await Assert.That(update.Groups[1].Value).DoesNotContain("foreach");
+        await Assert.That(refresh.Groups[0].Value)
+            .Contains("layoutToastRevision == toastRevision");
+        await Assert.That(refresh.Groups[0].Value)
+            .Contains("layoutMaxWidth == maxWidth");
+        await Assert.That(refresh.Groups[0].Value)
+            .Contains("layoutLanguageRevision == languageRevision");
+        await Assert.That(refresh.Groups[0].Value).Contains("Text.CalcSize");
+        await Assert.That(refresh.Groups[0].Value).Contains("Text.CalcHeight");
+        await Assert.That(refresh.Groups[0].Value)
+            .Contains("publishedSnapshot.ContentEquals(rows)");
+        await Assert.That(draw)
+            .Contains("ToastLayoutSnapshot published = publishedSnapshot");
+        await Assert.That(draw).Contains("published.RowAt(i)");
+        await Assert.That(draw).Contains("finally");
+        await Assert.That(draw).Contains("Text.Font = oldFont");
+        await Assert.That(draw).Contains("Text.Anchor = oldAnchor");
+        await Assert.That(draw).Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(draw).Contains("GUI.color = oldColor");
+        await Assert.That(draw).DoesNotContain("toasts.");
+        await Assert.That(draw).DoesNotContain("Time.realtimeSinceStartup");
+        await Assert.That(draw).DoesNotContain("Text.Calc");
+        await Assert.That(draw).DoesNotContain("foreach");
+    }
+
+    [Test]
+    public async Task SmallConfirmConsumesCachedPresentation()
+    {
+        // The RimWorld/Unity dialog cannot execute at the Core boundary. This
+        // guard keeps measurement and translation behind their instance cache
+        // without introducing a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_SmallConfirm.cs"));
+        Match measure = Regex.Match(source,
+            @"private Vector2 MeasureInitialSize\(.*?private void EnsureChrome",
+            RegexOptions.Singleline);
+        Match chrome = Regex.Match(source,
+            @"private void EnsureChrome\(\)(.*?)public override void OnAcceptKeyPressed",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(source,
+            @"public override void DoWindowContents\(.*?^[ ]{8}\}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(measure.Success).IsTrue();
+        await Assert.That(chrome.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(source)
+            .Contains("public override Vector2 InitialSize => initialSize");
+        await Assert.That(measure.Groups[0].Value).Contains("Text.CalcHeight");
+        await Assert.That(measure.Groups[0].Value).Contains("finally");
+        await Assert.That(measure.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(measure.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(chrome.Groups[0].Value)
+            .Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(chrome.Groups[0].Value).Contains(".Translate()");
+        await Assert.That(chrome.Groups[0].Value)
+            .Contains("chromeSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("DialogChromeSnapshot chrome = chromeSnapshot");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain("Text.Calc");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain(".Translate()");
+        await Assert.That(draw.Groups[0].Value).Contains("finally");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("Text.Anchor = oldAnchor");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+    }
+
+    [Test]
+    public async Task RestorePreviewPublishesWarningGeometryBeforeDrawing()
+    {
+        // The RimWorld/Unity dialog cannot execute at the Core boundary. This
+        // guard protects the warning snapshot and exact GUI-state boundary
+        // without introducing a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_RestorePreview.cs"));
+        Match builder = Regex.Match(source,
+            @"private RestoreWarningSnapshot WarningSnapshot\(.*?public override void DoWindowContents",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(source,
+            @"public override void DoWindowContents\(.*?private void DrawVisibleRows",
+            RegexOptions.Singleline);
+        Match rows = Regex.Match(source,
+            @"private void DrawVisibleRows\(.*?^[ ]{8}\}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(rows.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("warningWidth == width");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("warningLanguageRevision == languageRevision");
+        await Assert.That(builder.Groups[0].Value).Contains("GameFont.Small");
+        await Assert.That(builder.Groups[0].Value).Contains("Text.WordWrap = true");
+        await Assert.That(builder.Groups[0].Value).Contains("Text.CalcHeight");
+        await Assert.That(builder.Groups[0].Value).Contains("finally");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("warningSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("RestoreWarningSnapshot warning = WarningSnapshot(inRect.width)");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain("Text.CalcHeight");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("WR_RestoreOverwriteWarning");
+        await Assert.That(draw.Groups[0].Value).Contains("finally");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("GUI.color = Color.white");
+        await Assert.That(rows.Groups[0].Value).Contains("finally");
+        await Assert.That(rows.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+        await Assert.That(rows.Groups[0].Value)
+            .DoesNotContain("GUI.color = Color.white");
+    }
+
+    [Test]
+    public async Task RoleColorPickerPublishesRevisionGatedInitialSize()
+    {
+        // The vanilla color-picker and Unity text APIs cannot execute at the
+        // Core boundary. This guard protects their presentation cache without
+        // introducing a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_RoleColorPicker.cs"));
+        Match property = Regex.Match(source,
+            @"public override Vector2 InitialSize.*?private RoleColorPickerSizeSnapshot SizeSnapshot",
+            RegexOptions.Singleline);
+        Match builder = Regex.Match(source,
+            @"private RoleColorPickerSizeSnapshot SizeSnapshot\(.*?private const int BaseColumns",
+            RegexOptions.Singleline);
+
+        await Assert.That(property.Success).IsTrue();
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(property.Groups[0].Value)
+            .Contains("InitialSize => SizeSnapshot().Size");
+        await Assert.That(property.Groups[0].Value).DoesNotContain("Text.Calc");
+        await Assert.That(property.Groups[0].Value).DoesNotContain(".Translate()");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("sizePickableCount == pickableCount");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("sizeLanguageRevision == languageRevision");
+        await Assert.That(builder.Groups[0].Value).Contains("GameFont.Medium");
+        await Assert.That(builder.Groups[0].Value).Contains("GameFont.Small");
+        await Assert.That(builder.Groups[0].Value).Contains("Text.WordWrap = true");
+        await Assert.That(builder.Groups[0].Value).Contains("Text.CalcHeight");
+        await Assert.That(builder.Groups[0].Value).Contains("finally");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("sizeSnapshot.ContentEquals(rebuilt)");
+    }
+
+    [Test]
+    public async Task ImportPreviewPreservesEqualRenderSnapshotIdentity()
+    {
+        // The game dialog cannot execute at the Core boundary. This guard
+        // protects publication and snapshot-only drawing without adding a
+        // production seam solely for game-assembly cache behavior.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_ImportPreview.cs"));
+        Match snapshot = Regex.Match(source,
+            @"private sealed class ImportRenderSnapshot.*?private const float RowH",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(source,
+            @"public override void DoWindowContents\(.*?private void EnsureUiText",
+            RegexOptions.Singleline);
+        Match builder = Regex.Match(source,
+            @"private void EnsureRenderRows\(.*?private void AddSection",
+            RegexOptions.Singleline);
+
+        await Assert.That(snapshot.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("private readonly RenderRow[] rows");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("private readonly VariableViewportLayout layout");
+        await Assert.That(snapshot.Groups[0].Value).Contains("ContentEquals");
+        await Assert.That(snapshot.Groups[0].Value).Contains("layout.ExtentOf(i)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("ImportRenderSnapshot snapshot = renderSnapshot");
+        await Assert.That(draw.Groups[0].Value).Contains("snapshot.Calculate");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("renderRows[");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("rowLayout.");
+        await Assert.That(source)
+            .Contains("DrawMergeRow(row.Section, row.SourceIndex, row.Text");
+        await Assert.That(source)
+            .Contains("DrawSectionHeader(row.Section, row.Text, width, y)");
+        await Assert.That(source).DoesNotContain("row.label, ref row.included");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("renderSnapshot.ContentEquals(nextRows, heights)");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("new ImportRenderSnapshot");
+        await Assert.That(builder.Groups[0].Value).Contains("GameFont.Small");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.WordWrap = true");
+        await Assert.That(builder.Groups[0].Value).Contains("finally");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.WordWrap = oldWordWrap");
+    }
+
+    [Test]
+    public async Task RenameRoleDrawConsumesPublishedLocalizedChrome()
+    {
+        // The RimWorld/Unity dialog cannot execute at the Core boundary. This
+        // guard keeps localization out of repeated OnGUI drawing without
+        // adding a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_RenameRole.cs"));
+        Match builder = Regex.Match(source,
+            @"private void EnsureChrome\(\).*?private bool IsNameTaken",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(source,
+            @"public override void DoWindowContents\(.*?^[ ]{8}\}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(builder.Groups[0].Value).Contains(".Translate()");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("chromeSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("RenameChromeSnapshot chrome = chromeSnapshot");
+        await Assert.That(draw.Groups[0].Value).Contains("chrome.Title");
+        await Assert.That(draw.Groups[0].Value).Contains("chrome.CopySource");
+        await Assert.That(draw.Groups[0].Value).Contains("chrome.NameTaken");
+        await Assert.That(draw.Groups[0].Value).Contains("chrome.Cancel");
+        await Assert.That(draw.Groups[0].Value).Contains("chrome.Ok");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain(".Translate(");
+        await Assert.That(draw.Groups[0].Value).Contains("finally");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("GUI.color = oldColor");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("GUI.color = Color.white");
+    }
+
+    [Test]
+    public async Task RolesTabSteadyChromeIsPublishedBeforeDrawing()
+    {
+        // The RimWorld/Unity view cannot execute at the Core boundary. This
+        // guard protects its localization/def-resolution cache without adding
+        // a production-only test seam.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        Match builder = Regex.Match(source,
+            @"private RolesTabChromeSnapshot ChromeSnapshot\(\).*?public void Draw",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(source,
+            @"public void Draw\(Rect rect\).*?private static void FilterCaption",
+            RegexOptions.Singleline);
+        Match filters = Regex.Match(source,
+            @"private void DrawListFilterRow\(.*?private string pendingSelectLabel",
+            RegexOptions.Singleline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(filters.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("DefinitionReloadCoordinator.Revision");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("chromeJobFilter");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("GetNamedSilentFail(jobFilter)");
+        await Assert.That(builder.Groups[0].Value).Contains(".Translate()");
+        await Assert.That(builder.Groups[0].Value).Contains(".Truncate(200f)");
+        await Assert.That(builder.Groups[0].Value).Contains("finally");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("Text.Font = oldFont");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("chromeSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("RolesTabChromeSnapshot chrome = ChromeSnapshot()");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("chrome.SelectOrCreateRole");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain(".Translate(");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("chrome.SearchCaption");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("chrome.DisplayModeCaption");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("chrome.JobFilterCaption");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("chrome.JobFilterShown");
+        await Assert.That(filters.Groups[0].Value)
+            .DoesNotContain("GetNamedSilentFail");
+        await Assert.That(filters.Groups[0].Value)
+            .DoesNotContain(".Translate(");
+        await Assert.That(source)
+            .Contains("Widgets.ButtonText(deleteRect, chrome.DeleteLabel");
+    }
+
+    [Test]
+    public async Task RolesTabSelectionUsesPublishedRoleCatalog()
+    {
+        // Role list production depends on game-owned Role objects outside the
+        // Core executable boundary. This guard keeps live catalog traversal in
+        // the gated producer rather than repeated OnGUI drawing.
+        string stateSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesListState.cs"));
+        string viewSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        Match producer = Regex.Match(stateSource,
+            @"internal RoleSelectionSnapshot SelectionSnapshot\(.*?private static RoleListRowSnapshot PublishRoleRow",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(viewSource,
+            @"public void Draw\(Rect rect\).*?private static void FilterCaption",
+            RegexOptions.Singleline);
+        Match list = Regex.Match(viewSource,
+            @"private void DrawRoleList\(.*?// ----- Role-list drag & drop",
+            RegexOptions.Singleline);
+
+        await Assert.That(producer.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(list.Success).IsTrue();
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("UiVersion.Current");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("ReferenceEquals(selectionOwner, store)");
+        await Assert.That(producer.Groups[0].Value).Contains("store.roles[i]");
+        await Assert.That(producer.Groups[0].Value)
+            .Contains("selectionSnapshot.ContentEquals(rebuilt)");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("RoleSelectionSnapshot selection = listState.SelectionSnapshot(store)");
+        await Assert.That(draw.Groups[0].Value).Contains("selection.FirstRoleId");
+        await Assert.That(draw.Groups[0].Value).DoesNotContain("store.roles");
+        await Assert.That(list.Groups[0].Value)
+            .Contains("selection.NewestRoleIdWithLabel");
+        await Assert.That(list.Groups[0].Value).Contains("selection.TryGetRole");
+        await Assert.That(list.Groups[0].Value).DoesNotContain("store.roles");
+        await Assert.That(list.Groups[0].Value).DoesNotContain("RoleById");
+    }
+
+    [Test]
+    public async Task RolesTabDesiredHeightUsesRevisionGatedPublishedGeometry()
+    {
+        // Window sizing and RimWorld defs cannot execute at the Core boundary.
+        // This guard keeps authoritative collection reads behind the existing
+        // producer and the definition revision gate without adding a seam.
+        string viewSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        string windowSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/MainTabWindow_WorkRoles.cs"));
+        Match height = Regex.Match(viewSource,
+            @"public float DesiredHeight\(\).*?/// Set on selection change",
+            RegexOptions.Singleline);
+        Match reset = Regex.Match(viewSource,
+            @"public void Reset\(\).*?internal void ReleaseWindowData",
+            RegexOptions.Singleline);
+
+        await Assert.That(height.Success).IsTrue();
+        await Assert.That(reset.Success).IsTrue();
+        await Assert.That(height.Groups[0].Value)
+            .Contains("listState.SelectionSnapshot(store)");
+        await Assert.That(height.Groups[0].Value).Contains("selection.Count");
+        await Assert.That(height.Groups[0].Value)
+            .Contains("DefinitionReloadCoordinator.Revision");
+        await Assert.That(height.Groups[0].Value)
+            .Contains("ReferenceEquals(desiredHeightOwner, store)");
+        await Assert.That(height.Groups[0].Value)
+            .Contains("desiredHeightRoleCount == roleCount");
+        await Assert.That(height.Groups[0].Value)
+            .Contains("desiredHeightDefinitionRevision == definitionRevision");
+        await Assert.That(height.Groups[0].Value)
+            .DoesNotContain("store.roles");
+        await Assert.That(height.Groups[0].Value.IndexOf(
+                "DefDatabase<WorkTypeDef>.AllDefsListForReading.Count",
+                StringComparison.Ordinal))
+            .IsGreaterThan(height.Groups[0].Value.IndexOf(
+                "ReferenceEquals(desiredHeightOwner, store)",
+                StringComparison.Ordinal));
+        await Assert.That(reset.Groups[0].Value)
+            .Contains("ReleaseDesiredHeightCache()");
+        await Assert.That(windowSource)
+            .Contains("rolesTab.DesiredHeight()");
+        await Assert.That(windowSource)
+            .DoesNotContain("RolesTabView.DesiredHeight()");
+    }
+
+    [Test]
+    public async Task DragGhostsRenderPresentationCapturedAtPress()
+    {
+        // Unity drag rendering cannot execute at the Core boundary. This guard
+        // protects the detached press-to-release session without introducing a
+        // production seam solely for game-assembly UI behavior.
+        string dragSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RoleDrag.cs"));
+        string chipSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RoleChipUI.cs"));
+        string listSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesListState.cs"));
+        string rolesSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        string colonistsSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        string recommendationsSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RecommendationsTabView.cs"));
+        Match press = Regex.Match(dragSource,
+            @"internal static void OnPress\(.*?public static void ObserveSource",
+            RegexOptions.Singleline);
+        Match update = Regex.Match(dragSource,
+            @"public static void Update\(\).*?public static void ResolveMouseUp",
+            RegexOptions.Singleline);
+        Match cancel = Regex.Match(dragSource,
+            @"public static void Cancel\(\).*?^[ ]{8}\}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+        Match roleGhost = Regex.Match(chipSource,
+            @"internal static void DrawDragGhost\(\).*?/// Compact chips",
+            RegexOptions.Singleline);
+        Match groupGhost = Regex.Match(rolesSource,
+            @"private static void DrawGroupDragGhost\(\).*?// ----- Right: editor",
+            RegexOptions.Singleline);
+
+        await Assert.That(press.Success).IsTrue();
+        await Assert.That(update.Success).IsTrue();
+        await Assert.That(cancel.Success).IsTrue();
+        await Assert.That(roleGhost.Success).IsTrue();
+        await Assert.That(groupGhost.Success).IsTrue();
+        await Assert.That(press.Groups[0].Value)
+            .Contains("RoleChipRenderData role");
+        await Assert.That(press.Groups[0].Value)
+            .Contains("pendingRoleGhost = role");
+        await Assert.That(press.Groups[0].Value)
+            .Contains("pendingGroupGhostLabel = ghostLabel");
+        await Assert.That(update.Groups[0].Value)
+            .Contains("roleGhost = pendingRoleGhost");
+        await Assert.That(update.Groups[0].Value)
+            .Contains("groupGhostLabel = pendingGroupGhostLabel");
+        await Assert.That(cancel.Groups[0].Value)
+            .Contains("roleGhost = default(RoleChipRenderData)");
+        await Assert.That(cancel.Groups[0].Value)
+            .Contains("groupGhostLabel = null");
+        await Assert.That(roleGhost.Groups[0].Value)
+            .Contains("RoleDrag.RoleGhost");
+        await Assert.That(roleGhost.Groups[0].Value)
+            .DoesNotContain("RoleStore");
+        await Assert.That(roleGhost.Groups[0].Value)
+            .DoesNotContain("RoleById");
+        await Assert.That(roleGhost.Groups[0].Value)
+            .DoesNotContain("RoleChipRenderData.From");
+        await Assert.That(groupGhost.Groups[0].Value)
+            .Contains("RoleDrag.GroupGhostLabel");
+        await Assert.That(groupGhost.Groups[0].Value)
+            .Contains("RoleDrag.GroupGhostWidth");
+        await Assert.That(groupGhost.Groups[0].Value)
+            .DoesNotContain("RoleStore");
+        await Assert.That(groupGhost.Groups[0].Value)
+            .DoesNotContain("GroupById");
+        await Assert.That(groupGhost.Groups[0].Value)
+            .DoesNotContain("WrText.FitWidth");
+        await Assert.That(listSource)
+            .Contains("RoleChipRenderData.From(role)");
+        await Assert.That(listSource)
+            .Contains("GroupDragWidth = groupDragWidth");
+        await Assert.That(listSource)
+            .Contains("WrText.FitWidth(section.commandName) + 4f");
+        await Assert.That(rolesSource)
+            .Contains("RoleDrag.OnPress(dragControlId, publishedRow.Chip");
+        await Assert.That(rolesSource)
+            .Contains("section.CommandName, section.GroupDragWidth");
+        await Assert.That(colonistsSource)
+            .Contains("RoleChipUI.DrawDragGhost();");
+        await Assert.That(recommendationsSource)
+            .Contains("RoleChipUI.DrawDragGhost();");
+        await Assert.That(colonistsSource)
+            .DoesNotContain("RoleChipUI.DrawDragGhost(dragChip)");
+        await Assert.That(recommendationsSource)
+            .DoesNotContain("RoleChipUI.DrawDragGhost(dragChip)");
+    }
+
+    [Test]
+    public async Task RoleGroupHeadersUsePublishedCollapseState()
+    {
+        // The settings-backed game UI cannot execute at the Core boundary.
+        // This guard keeps collapse polling in the revision-gated producer and
+        // ensures row publication and the header arrow consume one value.
+        string stateSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesListState.cs"));
+        string viewSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        Match builder = Regex.Match(stateSource,
+            @"internal RoleListSnapshot Snapshot\(.*?internal RoleSelectionSnapshot",
+            RegexOptions.Singleline);
+        Match section = Regex.Match(stateSource,
+            @"internal sealed class RoleListSectionSnapshot.*?internal sealed class RoleSection",
+            RegexOptions.Singleline);
+        Match draw = Regex.Match(viewSource,
+            @"private void DrawGroupHeader\(.*?/// Organize-only drop",
+            RegexOptions.Singleline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(section.Success).IsTrue();
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("bool collapsed = IsSectionCollapsed(section.key)");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("PublishSection(section, store, collapsed)");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("if (!publishedSection.Collapsed)");
+        await Assert.That(section.Groups[0].Value)
+            .Contains("Collapsed = collapsed");
+        await Assert.That(section.Groups[0].Value)
+            .Contains("internal bool Collapsed { get; }");
+        await Assert.That(draw.Groups[0].Value)
+            .Contains("section.Collapsed ? TexButton.Reveal : TexButton.Collapse");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("IsSectionCollapsed");
+        await Assert.That(draw.Groups[0].Value)
+            .DoesNotContain("WorkRolesMod.Settings");
+    }
+
+    [Test]
+    public async Task RolesTabDisplayModeUsesPublishedPreference()
+    {
+        // The settings-backed game UI cannot execute at the Core boundary.
+        // This guard keeps the nested/flat preference in the role-list
+        // snapshot used by both the toggle label and the rendered rows.
+        string stateSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesListState.cs"));
+        string viewSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        Match builder = Regex.Match(stateSource,
+            @"internal RoleListSnapshot Snapshot\(.*?internal RoleSelectionSnapshot",
+            RegexOptions.Singleline);
+        Match snapshot = Regex.Match(stateSource,
+            @"internal sealed class RoleListSnapshot.*?internal sealed class RoleListRowSnapshot",
+            RegexOptions.Singleline);
+        Match list = Regex.Match(viewSource,
+            @"private void DrawRoleList\(.*?// ----- Role-list drag & drop",
+            RegexOptions.Singleline);
+        Match filters = Regex.Match(viewSource,
+            @"private void DrawListFilterRow\(.*?private static void ToggleNestedPreference",
+            RegexOptions.Singleline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(snapshot.Success).IsTrue();
+        await Assert.That(list.Success).IsTrue();
+        await Assert.That(filters.Success).IsTrue();
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("bool nestedPreference = WorkRolesMod.Settings?.nestedRoleTree ?? true");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("displayNestedPreference != nestedPreference");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("new RoleListSnapshot(rebuiltRows, filtered,");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("internal bool NestedPreference { get; }");
+        int snapshotIndex = list.Groups[0].Value.IndexOf(
+            "RoleListSnapshot snapshot = listState.Snapshot",
+            StringComparison.Ordinal);
+        int filtersIndex = list.Groups[0].Value.IndexOf(
+            "DrawListFilterRow", StringComparison.Ordinal);
+        await Assert.That(snapshotIndex).IsGreaterThanOrEqualTo(0);
+        await Assert.That(filtersIndex).IsGreaterThan(snapshotIndex);
+        await Assert.That(list.Groups[0].Value)
+            .Contains("chrome, snapshot.NestedPreference");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("nestedPreference ? chrome.TreeNested : chrome.TreeFlat");
+        await Assert.That(filters.Groups[0].Value)
+            .Contains("ToggleNestedPreference(nestedPreference)");
+        await Assert.That(filters.Groups[0].Value)
+            .DoesNotContain("WorkRolesMod.Settings");
+    }
+
+    [Test]
+    public async Task RoleListEqualRefreshPreservesPublishedIdentity()
+    {
+        // The RimWorld/Unity producer cannot execute at the Core boundary.
+        // This guard protects exact equal-content reuse and store partitioning
+        // without introducing a production seam solely for tests.
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesListState.cs"));
+        Match builder = Regex.Match(source,
+            @"internal RoleListSnapshot Snapshot\(.*?internal RoleSelectionSnapshot",
+            RegexOptions.Singleline);
+        Match snapshot = Regex.Match(source,
+            @"internal sealed class RoleListSnapshot.*?internal sealed class RoleListRowSnapshot",
+            RegexOptions.Singleline);
+        Match row = Regex.Match(source,
+            @"internal sealed class RoleListRowSnapshot.*?internal sealed class RoleListSectionSnapshot",
+            RegexOptions.Singleline);
+        Match section = Regex.Match(source,
+            @"internal sealed class RoleListSectionSnapshot.*?internal sealed class RoleSection",
+            RegexOptions.Singleline);
+        Match sharedBuilder = Regex.Match(source,
+            @"internal static IReadOnlyList<RoleSection> BuildSections\(.*?internal static \(IReadOnlyList<Role>",
+            RegexOptions.Singleline);
+
+        await Assert.That(builder.Success).IsTrue();
+        await Assert.That(snapshot.Success).IsTrue();
+        await Assert.That(row.Success).IsTrue();
+        await Assert.That(section.Success).IsTrue();
+        await Assert.That(sharedBuilder.Success).IsTrue();
+        await Assert.That(source).Contains("private RoleStore displayOwner;");
+        await Assert.That(source).Contains("private static RoleStore sectionsCacheOwner;");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("bool ownerChanged = !ReferenceEquals(displayOwner, store)");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("var rebuilt = new RoleListSnapshot(rebuiltRows, filtered,");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("if (ownerChanged || snapshot == null");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("|| !snapshot.ContentEquals(rebuilt))");
+        await Assert.That(builder.Groups[0].Value)
+            .Contains("displayOwner = store;");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("internal bool ContentEquals(RoleListSnapshot other)");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("Filtered != other.Filtered");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("NestedPreference != other.NestedPreference");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("leftRow.Section.ContentEquals(rightRow.Section)");
+        await Assert.That(snapshot.Groups[0].Value)
+            .Contains("leftRow.ContentEqualsExcludingSection(rightRow)");
+        await Assert.That(row.Groups[0].Value)
+            .Contains("internal bool ContentEqualsExcludingSection(");
+        foreach (string field in new[]
+        {
+            "Chip.ContentEquals(other.Chip)", "Depth != other.Depth",
+            "VirtualRow != other.VirtualRow", "Invalid != other.Invalid",
+            "Label", "Tooltip.ContentEquals(other.Tooltip)",
+            "Enabled != other.Enabled", "HasCustomColor != other.HasCustomColor",
+            "ColorEquals(Color, other.Color)", "Blocker != other.Blocker",
+            "HasTimeRule != other.HasTimeRule",
+            "HasLocationRule != other.HasLocationRule",
+            "Composite != other.Composite", "VirtualOriginGroupLabel"
+        })
+            await Assert.That(row.Groups[0].Value).Contains(field);
+        await Assert.That(section.Groups[0].Value)
+            .Contains("internal bool ContentEquals(RoleListSectionSnapshot other)");
+        foreach (string field in new[]
+        {
+            "Key", "DisplayTitle", "CommandName", "GroupId", "GroupIndex",
+            "Collapsed", "Renamable", "Draggable", "DropTarget",
+            "FirstRootRoleId", "GroupDragWidth", "nestedRoleIds"
+        })
+            await Assert.That(section.Groups[0].Value).Contains(field);
+        await Assert.That(sharedBuilder.Groups[0].Value)
+            .Contains("!ReferenceEquals(sectionsCacheOwner, store)");
+        await Assert.That(sharedBuilder.Groups[0].Value)
+            .Contains("ReleaseSectionsSnapshot();");
+        await Assert.That(source)
+            .Contains("sectionsCacheOwner = null;");
+    }
+
+    [Test]
+    public async Task RolesTabCommitUsesPublishedDeadEntryStateOrPrimitiveCommand()
+    {
+        // The multiplayer command boundary lives in the game assembly. This
+        // guard keeps duplicate model/catalog traversal out of the UI input
+        // path without introducing a production seam solely for the test.
+        string stateSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RoleEditorState.cs"));
+        string viewSource = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RolesTabView.cs"));
+        Match publishedState = Regex.Match(stateSource,
+            @"internal bool TryGetPublishedDeadEntryState\(.*?internal RoleEntryPresentation",
+            RegexOptions.Singleline);
+        Match commit = Regex.Match(viewSource,
+            @"public void CommitEdits\(\).*?public void Reset",
+            RegexOptions.Singleline);
+
+        await Assert.That(publishedState.Success).IsTrue();
+        await Assert.That(commit.Success).IsTrue();
+        await Assert.That(publishedState.Groups[0].Value)
+            .Contains("deadEntriesStamp != UiVersion.Current");
+        await Assert.That(publishedState.Groups[0].Value)
+            .Contains("deadEntriesRoleId != roleId");
+        await Assert.That(publishedState.Groups[0].Value)
+            .Contains("deadEntries.Count > 0");
+        await Assert.That(publishedState.Groups[0].Value)
+            .DoesNotContain("JobOrderCompiler.DeadEntryIndexes");
+        await Assert.That(commit.Groups[0].Value)
+            .Contains("editorState.TryGetPublishedDeadEntryState");
+        await Assert.That(commit.Groups[0].Value)
+            .Contains("RoleCommands.ScrubDeadEntries(roleId)");
+        await Assert.That(commit.Groups[0].Value)
+            .DoesNotContain("RoleStore.Current");
+        await Assert.That(commit.Groups[0].Value).DoesNotContain("RoleById");
+        await Assert.That(commit.Groups[0].Value)
+            .DoesNotContain("JobOrderCompiler.DeadEntryIndexes");
+        await Assert.That(commit.Groups[0].Value)
+            .DoesNotContain("GameJobCatalog.Instance");
+    }
+
+    [Test]
     public async Task SpecifiedCachesDocumentTheirRequiredContractInline()
     {
         var caches = new (string file, string anchor)[]
@@ -912,7 +1885,7 @@ public class SourceArchitectureTests
             ("src/WorkRoles/UI/ColonistsTabView.cs", "private Dictionary<Pawn, ColonistChipSequenceSnapshot> chipSequences"),
             ("src/WorkRoles/UI/ColonistsTabView.cs", "private readonly Dictionary<(int roleId, Pawn pawn), bool> rulesPassCache"),
             ("src/WorkRoles/UI/RolesListState.cs", "private static readonly List<RoleSection>[] sectionsCache"),
-            ("src/WorkRoles/UI/RoleEditorState.cs", "private int tipsStamp"),
+            ("src/WorkRoles/UI/RoleEditorState.cs", "private int tipsLanguageRevision"),
             ("src/WorkRoles/UI/RoleEditorState.cs", "private List<RoleSkillPresentation> skillsUsed;"),
             ("src/WorkRoles/UI/RoleEditorState.cs", "private List<RoleHolderPresentation> holders;"),
             ("src/WorkRoles/UI/RoleEditorState.cs", "private HashSet<int> deadEntries;"),
@@ -921,10 +1894,22 @@ public class SourceArchitectureTests
             ("src/WorkRoles/UI/RoleEditorState.cs", "private List<RoleJobTreeNode> treeNodes;"),
             ("src/WorkRoles/UI/RoleEditorState.cs", "private int entrySetsStamp"),
             ("src/WorkRoles/UI/RolesTabView.cs", "private readonly MemoizedFactory<int, System.Action<int, int>>"),
-            ("src/WorkRoles/UI/RolesTabView.cs", "private string jobFilterCachedFor"),
             ("src/WorkRoles/UI/Dialog_RoleFilePicker.cs", "private Location cachedLocation;"),
             ("src/WorkRoles/UI/Dialog_ExportPreview.cs", "private float measuredWidth"),
             ("src/WorkRoles/UI/Dialog_ImportSource.cs", "private string clip;"),
+            ("src/WorkRoles/UI/WrToast.cs", "private static readonly List<Toast> toasts"),
+            ("src/WorkRoles/UI/Dialog_SmallConfirm.cs", "private DialogChromeSnapshot chromeSnapshot;"),
+            ("src/WorkRoles/UI/Dialog_RestorePreview.cs", "private RestoreWarningSnapshot warningSnapshot;"),
+            ("src/WorkRoles/UI/Dialog_RoleColorPicker.cs", "private RoleColorPickerSizeSnapshot sizeSnapshot;"),
+            ("src/WorkRoles/UI/Dialog_ImportPreview.cs", "private ImportRenderSnapshot renderSnapshot;"),
+            ("src/WorkRoles/UI/Dialog_RenameRole.cs", "private RenameChromeSnapshot chromeSnapshot;"),
+            ("src/WorkRoles/UI/RolesTabView.cs", "private RolesTabChromeSnapshot chromeSnapshot;"),
+            ("src/WorkRoles/UI/RolesTabView.cs", "private RoleStore desiredHeightOwner;"),
+            ("src/WorkRoles/UI/RolesListState.cs", "private RoleSelectionSnapshot selectionSnapshot;"),
+            ("src/WorkRoles/UI/RoleDrag.cs", "private static RoleChipRenderData pendingRoleGhost;"),
+            ("src/WorkRoles/UI/Dialog_PriorityGrid.cs", "private PriorityGridSnapshot gridSnapshot;"),
+            ("src/WorkRoles/UI/Dialog_ChangesPreview.cs", "private ChangesPreviewRenderSnapshot renderSnapshot;"),
+            ("src/WorkRoles/UI/OptionsTabState.cs", "private OptionsRenderSnapshot snapshot;"),
         };
 
         foreach ((string file, string anchor) in caches)
@@ -938,6 +1923,286 @@ public class SourceArchitectureTests
             await Assert.That(contract).Contains("Refresh:");
             await Assert.That(contract).Contains("Equality:");
             await Assert.That(contract).Contains("Teardown:");
+        }
+    }
+
+    [Test]
+    public async Task ImportPaletteSelectionsUseStableFileIndicesAndPureStoreProjection()
+    {
+        // The game assembly cannot execute at this test boundary: RoleIO and the
+        // dialog depend on Verse and Unity. Guard the stable synced-selection and
+        // invalidation contract at their production boundary instead of adding an
+        // artificial Core seam solely for this check.
+        string roleIo = File.ReadAllText(RepositoryFile("src/WorkRoles/RoleIO.cs"));
+        string preview = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_ImportPreview.cs"));
+        Match paletteProjection = Regex.Match(roleIo,
+            @"public static List<PaletteRow> PaletteMergeRows\(.*?^\s*}\s*$",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+        Match paletteApply = Regex.Match(roleIo,
+            @"else if \(paletteInclude\)(.*?)^\s*}\s*\r?\n\s*if \(rolesInclude\)",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+        Match mergeGate = Regex.Match(preview,
+            @"private void EnsureMergeRows\(\)(.*?)private void EnsureUiText",
+            RegexOptions.Singleline);
+
+        await Assert.That(paletteProjection.Success).IsTrue();
+        await Assert.That(paletteApply.Success).IsTrue();
+        await Assert.That(mergeGate.Success).IsTrue();
+        await Assert.That(paletteProjection.Value).Contains("sourceIndex = i");
+        await Assert.That(paletteProjection.Value)
+            .DoesNotContain("store.SyncSwatchNames()");
+        await Assert.That(paletteApply.Groups[1].Value)
+            .Contains("doc.palette[sourceIndex]");
+        await Assert.That(paletteApply.Groups[1].Value)
+            .DoesNotContain("PaletteMergeRows");
+        await Assert.That(mergeGate.Groups[1].Value)
+            .Contains("ReferenceEquals(mergeOwner, store)");
+        await Assert.That(mergeGate.Groups[1].Value)
+            .Contains("mergeUiRevision == uiRevision");
+        await Assert.That(preview).Contains("UiVersion.Current");
+        await Assert.That(preview)
+            .Contains("paletteRows = SelectedPaletteSourceIndices()");
+    }
+
+    [Test]
+    public async Task RecommendationsSteadyDrawConsumesPublishedChromeLabels()
+    {
+        // Recommendations UI depends on Verse/Unity and cannot execute in the
+        // Core test assembly. Keep this focused on the steady draw regions
+        // that previously translated their own chrome.
+        string view = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/RecommendationsTabView.cs"));
+        Match tabDraw = Regex.Match(view,
+            @"public void Draw\(Rect rect\)(.*?)private static RecPathView FindPathView",
+            RegexOptions.Singleline);
+        Match expandedBody = Regex.Match(view,
+            @"private void DrawExpandedBody\(.*?private static int DrawOptionSegments",
+            RegexOptions.Singleline);
+        Match pathBlock = Regex.Match(view,
+            @"private float DrawPathBlock\(.*?private static void OpenAddRoleMenu",
+            RegexOptions.Singleline);
+        Match bandRows = Regex.Match(view,
+            @"private void DrawBandRows\(.*?private void CommitBandDrag",
+            RegexOptions.Singleline);
+
+        await Assert.That(tabDraw.Success).IsTrue();
+        await Assert.That(expandedBody.Success).IsTrue();
+        await Assert.That(pathBlock.Success).IsTrue();
+        await Assert.That(bandRows.Success).IsTrue();
+        await Assert.That(tabDraw.Groups[1].Value).DoesNotContain(".Translate(");
+        await Assert.That(expandedBody.Value).DoesNotContain(".Translate(");
+        await Assert.That(pathBlock.Value).DoesNotContain(".Translate(");
+        await Assert.That(bandRows.Value).DoesNotContain(".Translate(");
+        await Assert.That(tabDraw.Groups[1].Value).Contains("order.HeaderLabel");
+        await Assert.That(tabDraw.Groups[1].Value).Contains("panels.HeaderLabel");
+        await Assert.That(tabDraw.Groups[1].Value).Contains("tuning.HeaderLabel");
+        await Assert.That(expandedBody.Value).Contains("detail.TrainingHeader");
+        await Assert.That(bandRows.Value).Contains("state.Order.AddLabel");
+    }
+
+    [Test]
+    public async Task OptionsSteadyDrawConsumesPublishedSnapshot()
+    {
+        // The Options UI depends on Verse/Unity and has no executable Core
+        // boundary. Guard the actual draw method against returning to live model
+        // reads, translation, string construction, or settings persistence.
+        string view = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/OptionsTabView.cs"));
+        string state = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/OptionsTabState.cs"));
+        Match draw = Regex.Match(view,
+            @"public void Draw\(Rect rect\)(.*?)private static bool\? DisplayToggle",
+            RegexOptions.Singleline);
+        Match toggle = Regex.Match(view,
+            @"private static bool\? DisplayToggle\(.*?^\s*}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(draw.Success).IsTrue();
+        await Assert.That(toggle.Success).IsTrue();
+        await Assert.That(draw.Groups[1].Value)
+            .Contains("OptionsRenderSnapshot snapshot = state.Snapshot(store)");
+        foreach (string forbidden in new[]
+        {
+            ".Translate(", "Current.Game", "reportVanillaPriorities",
+            "WorkRolesMod.Settings", ".Write()", " + \"Tip\""
+        })
+        {
+            await Assert.That(draw.Groups[1].Value).DoesNotContain(forbidden);
+            await Assert.That(toggle.Value).DoesNotContain(forbidden);
+        }
+        await Assert.That(state).Contains("sealed class OptionsRenderSnapshot");
+        await Assert.That(state).Contains("ContentEquals(OptionsRenderSnapshot other)");
+        await Assert.That(view).Contains("WorkRolesGameComponent.RequestSettingsWrite()");
+    }
+
+    [Test]
+    public async Task UiSettingsWritesAreDeferredAndCoalescedOutsideOnGui()
+    {
+        // The game UI assembly is unavailable to executable Core tests. Guard
+        // the persistence boundary that previously performed disk I/O in OnGUI.
+        string component = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/WorkRolesGameComponent.cs"));
+        foreach (string relativePath in new[]
+        {
+            "src/WorkRoles/UI/ColonistsTabView.cs",
+            "src/WorkRoles/UI/ColonistsViewProfile.cs",
+            "src/WorkRoles/UI/MainTabWindow_WorkRoles.cs",
+            "src/WorkRoles/UI/OptionsTabView.cs",
+            "src/WorkRoles/UI/RolesListState.cs",
+            "src/WorkRoles/UI/RolesTabView.cs"
+        })
+        {
+            string source = File.ReadAllText(RepositoryFile(relativePath));
+            await Assert.That(source).DoesNotContain("WorkRolesMod.Settings?.Write()");
+            await Assert.That(source).DoesNotContain("WorkRolesMod.Settings.Write()");
+        }
+
+        await Assert.That(component).Contains("public static void RequestSettingsWrite()");
+        await Assert.That(component).Contains("settingsWritePending");
+        await Assert.That(component).Contains("deferredUi.Enqueue(writeSettingsAction)");
+        await Assert.That(component).Contains("settingsWritePending = false");
+        await Assert.That(component).Contains("WorkRolesMod.Settings?.Write()");
+    }
+
+    [Test]
+    public async Task DefinitionDerivedUiCachesObserveDefinitionReloads()
+    {
+        // These builders depend on Verse defs, so the stable test boundary is
+        // the declared invalidation key rather than an artificial Core seam.
+        foreach (string relativePath in new[]
+        {
+            "src/WorkRoles/UI/ActivityState.cs",
+            "src/WorkRoles/UI/ColonistSelectedPanelState.cs",
+            "src/WorkRoles/UI/ColonistsTabView.cs",
+            "src/WorkRoles/UI/RecommendationsTabState.cs",
+            "src/WorkRoles/UI/RoleEditorState.cs",
+            "src/WorkRoles/UI/RolesListState.cs",
+            "src/WorkRoles/UI/Dialog_RestorePreview.cs"
+        })
+        {
+            string source = File.ReadAllText(RepositoryFile(relativePath));
+            await Assert.That(source).Contains("DefinitionReloadCoordinator.Revision");
+        }
+    }
+
+    [Test]
+    public async Task RestorePreviewRefreshesRowsAndPreservesSelectionsByStableKey()
+    {
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/Dialog_RestorePreview.cs"));
+
+        await Assert.That(source).Contains("EnsureRowsCurrent()");
+        await Assert.That(source).Contains("RestoreItemKey");
+        await Assert.That(source).Contains("Dictionary<RestoreItemKey, bool>");
+        await Assert.That(source).Contains("UiVersion.Current");
+        await Assert.That(source).Contains("DefinitionReloadCoordinator.Revision");
+        await Assert.That(source).Contains("LanguageChangeCoordinator.Revision");
+        await Assert.That(source).Contains("public override void PostClose()");
+    }
+
+    [Test]
+    public async Task NoOpImportDoesNotPublishARevisionOrSuccessToast()
+    {
+        string commands = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/RoleCommands.cs"));
+        string import = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/RoleIO.cs"));
+        Match apply = Regex.Match(commands,
+            @"public static void ApplyImport\(.*?^\s*}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+        Match storeApply = Regex.Match(import,
+            @"private static ImportApplyResult ApplyImportToStore\(.*?^\s*}",
+            RegexOptions.Singleline | RegexOptions.Multiline);
+
+        await Assert.That(apply.Success).IsTrue();
+        await Assert.That(storeApply.Success).IsTrue();
+        await Assert.That(import).Contains("readonly struct ImportApplyResult");
+        await Assert.That(apply.Value).Contains("if (!result.Changed)");
+        await Assert.That(apply.Value).Contains("return;");
+        await Assert.That(apply.Value).Contains("UiVersion.Bump()");
+        await Assert.That(apply.Value).Contains("WrToast.Show(result.Summary");
+    }
+
+    [Test]
+    public async Task ColonistRowTextMetricsUseTheirExactRenderingInputs()
+    {
+        string source = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/ColonistsTabView.cs"));
+        Match metrics = Regex.Match(source,
+            @"private RowTextMetrics TextMetrics\(\)(.*?)/// The pawn's best skills",
+            RegexOptions.Singleline);
+
+        await Assert.That(metrics.Success).IsTrue();
+        await Assert.That(metrics.Value).Contains("Text.TinyFontSupported");
+        await Assert.That(metrics.Value).Contains("Text.LineHeightOf(GameFont.Small)");
+        await Assert.That(metrics.Value).Contains("captionLineHeight");
+        await Assert.That(metrics.Value).DoesNotContain("UiVersion.Current");
+        await Assert.That(source).Contains("chipLayoutTextMetrics.ContentEquals(textMetrics)");
+        await Assert.That(source).Contains("tableLayoutTextMetrics.ContentEquals(textMetrics)");
+        await Assert.That(source).Contains("sizeTextMetrics.ContentEquals(textMetrics)");
+    }
+
+    [Test]
+    public async Task LanguageOnlyStructuredTipsUseLanguageRevisionAndReuseEqualContent()
+    {
+        foreach (string relativePath in new[]
+        {
+            "src/WorkRoles/UI/RecommendationsTabState.cs",
+            "src/WorkRoles/UI/RoleEditorState.cs"
+        })
+        {
+            string source = File.ReadAllText(RepositoryFile(relativePath));
+            Match ensure = Regex.Match(source,
+                @"(?:internal|private) void EnsureTips\(\)(.*?)^\s*}",
+                RegexOptions.Singleline | RegexOptions.Multiline);
+            await Assert.That(ensure.Success).IsTrue();
+            await Assert.That(ensure.Value).Contains("LanguageChangeCoordinator.Revision");
+            await Assert.That(ensure.Value).Contains("ContentEquals");
+            await Assert.That(ensure.Value).DoesNotContain("UiVersion.Current");
+        }
+    }
+
+    [Test]
+    public async Task WorkRolesWindowsRestoreGuiAndScrollOwnershipOnExceptions()
+    {
+        // Unity's GUI stack cannot execute in Core. Guard the actual ownership
+        // boundaries: every WorkRoles content pass has a state scope, while
+        // every scroll Begin is paired locally in a finally block.
+        string main = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/MainTabWindow_WorkRoles.cs"));
+        string scope = File.ReadAllText(RepositoryFile(
+            "src/WorkRoles/UI/GuiStateScope.cs"));
+        await Assert.That(main).Contains("new GuiStateScope(capture: true)");
+        await Assert.That(scope).Contains("Text.CurFontStyle.fontStyle");
+        await Assert.That(scope).Contains("GUI.matrix = matrix");
+
+        foreach (string relativePath in new[]
+        {
+            "src/WorkRoles/UI/ColonistsTabView.cs",
+            "src/WorkRoles/UI/Dialog_ChangesPreview.cs",
+            "src/WorkRoles/UI/Dialog_ExportPreview.cs",
+            "src/WorkRoles/UI/Dialog_ImportPreview.cs",
+            "src/WorkRoles/UI/Dialog_PriorityGrid.cs",
+            "src/WorkRoles/UI/Dialog_RestorePreview.cs",
+            "src/WorkRoles/UI/RecommendationsTabView.cs",
+            "src/WorkRoles/UI/RolesTabView.cs"
+        })
+        {
+            string source = File.ReadAllText(RepositoryFile(relativePath));
+            int searchAt = 0;
+            while ((searchAt = source.IndexOf("Widgets.BeginScrollView(", searchAt,
+                       StringComparison.Ordinal)) >= 0)
+            {
+                int end = source.IndexOf("Widgets.EndScrollView()", searchAt,
+                    StringComparison.Ordinal);
+                await Assert.That(end).IsGreaterThan(searchAt);
+                string ownership = source.Substring(searchAt,
+                    end + "Widgets.EndScrollView()".Length - searchAt);
+                await Assert.That(ownership).Contains("try");
+                await Assert.That(ownership).Contains("finally");
+                searchAt = end + 1;
+            }
         }
     }
 

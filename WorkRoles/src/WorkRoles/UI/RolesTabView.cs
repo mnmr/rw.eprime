@@ -11,6 +11,65 @@ namespace WorkRoles.UI
 {
     public class RolesTabView
     {
+        private sealed class RolesTabChromeSnapshot
+        {
+            internal RolesTabChromeSnapshot(
+                string selectOrCreateRole,
+                string searchCaption,
+                string displayModeCaption,
+                string jobFilterCaption,
+                string treeNested,
+                string treeFlat,
+                string anyJob,
+                string jobFilterLabel,
+                string jobFilterShown,
+                string newLabel,
+                string copyLabel,
+                string deleteLabel)
+            {
+                SelectOrCreateRole = selectOrCreateRole;
+                SearchCaption = searchCaption;
+                DisplayModeCaption = displayModeCaption;
+                JobFilterCaption = jobFilterCaption;
+                TreeNested = treeNested;
+                TreeFlat = treeFlat;
+                AnyJob = anyJob;
+                JobFilterLabel = jobFilterLabel;
+                JobFilterShown = jobFilterShown;
+                NewLabel = newLabel;
+                CopyLabel = copyLabel;
+                DeleteLabel = deleteLabel;
+            }
+
+            internal string SelectOrCreateRole { get; }
+            internal string SearchCaption { get; }
+            internal string DisplayModeCaption { get; }
+            internal string JobFilterCaption { get; }
+            internal string TreeNested { get; }
+            internal string TreeFlat { get; }
+            internal string AnyJob { get; }
+            internal string JobFilterLabel { get; }
+            internal string JobFilterShown { get; }
+            internal string NewLabel { get; }
+            internal string CopyLabel { get; }
+            internal string DeleteLabel { get; }
+
+            internal bool ContentEquals(RolesTabChromeSnapshot other) =>
+                other != null
+                && SelectOrCreateRole == other.SelectOrCreateRole
+                && SearchCaption == other.SearchCaption
+                && DisplayModeCaption == other.DisplayModeCaption
+                && JobFilterCaption == other.JobFilterCaption
+                && TreeNested == other.TreeNested
+                && TreeFlat == other.TreeFlat
+                && AnyJob == other.AnyJob
+                && JobFilterLabel == other.JobFilterLabel
+                && JobFilterShown == other.JobFilterShown
+                && NewLabel == other.NewLabel
+                && CopyLabel == other.CopyLabel
+                && DeleteLabel == other.DeleteLabel;
+        }
+
         // Pawn source for the holders row, injected by MainTabWindow (the
         // colonist table owns the scope and its pawn snapshot).
         internal System.Func<IReadOnlyList<Pawn>> listedPawns;
@@ -22,6 +81,37 @@ namespace WorkRoles.UI
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
+
+        // Owner: this Roles-tab view for one open Work Roles window.
+        // Key: selected job-filter def name, LanguageChangeCoordinator.Revision,
+        // and DefinitionReloadCoordinator.Revision.
+        // Value: immutable detached list/editor chrome plus the resolved and
+        // Small-font-truncated job-filter label.
+        // Dependencies: fixed translated labels, selected job-filter def,
+        // localized giver display name, GameFont.Small metrics, and the fixed
+        // 200f job-label width available inside the button.
+        // Refresh: immediately on the next draw after a key change.
+        // Equality: an exact equal rebuild preserves snapshot identity.
+        // Teardown: Reset releases the snapshot; language invalidation retains
+        // it only for equal-content reuse on the required refresh.
+        private RolesTabChromeSnapshot chromeSnapshot;
+        private string chromeJobFilter = "\0";
+        private int chromeLanguageRevision = -1;
+        private int chromeDefinitionRevision = -1;
+
+        // Owner: this Roles-tab view, partitioned by RoleStore identity.
+        // Key: store identity, detached role-selection count, and
+        // DefinitionReloadCoordinator.Revision.
+        // Value: cached scalar desired height (immutable).
+        // Dependencies: role-catalog membership count, work-type definition
+        // membership, and the fixed Roles-tab geometry constants below.
+        // Refresh: immediately on the next size read after a key change.
+        // Equality: exact key hits reuse the scalar without rebuilding.
+        // Teardown: Reset releases the store reference and invalidates stamps.
+        private RoleStore desiredHeightOwner;
+        private int desiredHeightRoleCount = -1;
+        private int desiredHeightDefinitionRevision = -1;
+        private float desiredHeight = DefaultDesiredHeight;
 
         // Slightly yellow composite labels in the role tree.
         private static readonly Color CompositeLabelColor = new Color(1f, 0.93f, 0.72f);
@@ -46,6 +136,7 @@ namespace WorkRoles.UI
         private const float ListWidth = 260f;
         private const float RowHeight = 28f;
         private const float IconButton = 20f;
+        private const float DefaultDesiredHeight = 684f;
 
         // Rules section (conditional-role checkbox + active-hours grid + location dropdown).
         // Integer-pixel grid geometry: fixed cell width, even gaps.
@@ -91,16 +182,28 @@ namespace WorkRoles.UI
 
         /// Content-driven height for window sizing: the role list on the left and
         /// the editor's collapsed job tree on the right are the tall pieces.
-        public static float DesiredHeight()
+        public float DesiredHeight()
         {
             var store = RoleStore.Current;
-            if (store == null) return 684f;
+            if (store == null) return DefaultDesiredHeight;
+            RoleSelectionSnapshot selection = listState.SelectionSnapshot(store);
+            int roleCount = selection.Count;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (ReferenceEquals(desiredHeightOwner, store)
+                && desiredHeightRoleCount == roleCount
+                && desiredHeightDefinitionRevision == definitionRevision)
+                return desiredHeight;
+
             float chrome = 120f; // tabs, margins, editor gaps
-            float list = store.roles.Count * RowHeight + 40f + ListFilterRowsH; // rows + buttons + filter rows
+            float list = roleCount * RowHeight + 40f + ListFilterRowsH; // rows + buttons + filter rows
             // The job tree lists every work type, hidden ones included.
             int workTypes = DefDatabase<WorkTypeDef>.AllDefsListForReading.Count;
             float editor = 190f + 32f + workTypes * 26f; // top box + tree header + collapsed roots
-            return chrome + Mathf.Max(list, editor);
+            desiredHeightOwner = store;
+            desiredHeightRoleCount = roleCount;
+            desiredHeightDefinitionRevision = definitionRevision;
+            desiredHeight = chrome + Mathf.Max(list, editor);
+            return desiredHeight;
         }
 
         /// Set on selection change; the next job-tree draw expands and scrolls
@@ -116,14 +219,16 @@ namespace WorkRoles.UI
         }
 
         /// Editing a role ended (selection change, tab switch, window close):
-        /// scrub its dead entries. Issued as a synced command only when there is
-        /// something to scrub.
+        /// scrub its dead entries. A current published empty result suppresses
+        /// the no-op command; otherwise the synced command validates the role.
         public void CommitEdits()
         {
-            var role = RoleStore.Current?.RoleById(selectedRoleId);
-            if (role != null
-                && JobOrderCompiler.DeadEntryIndexes(role.entries, GameJobCatalog.Instance).Count > 0)
-                RoleCommands.ScrubDeadEntries(role.id);
+            int roleId = selectedRoleId;
+            if (roleId < 0) return;
+            if (editorState.TryGetPublishedDeadEntryState(
+                    roleId, out bool hasDeadEntries)
+                && !hasDeadEntries) return;
+            RoleCommands.ScrubDeadEntries(roleId);
         }
 
         public void Reset()
@@ -144,6 +249,8 @@ namespace WorkRoles.UI
             scrollToSelected = false;
             scrollJobTreeToSelection = false;
             rulesRevealed.Clear();
+            ReleaseChromeSnapshot();
+            ReleaseDesiredHeightCache();
             // Opening re-snapshots everything on this tab.
             RolesListState.ReleaseSectionsSnapshot();
         }
@@ -162,45 +269,110 @@ namespace WorkRoles.UI
         {
             listState.InvalidateLanguageCaches();
             editorState.InvalidateLanguageCaches();
-            jobFilterCachedFor = "\0";
+            chromeLanguageRevision = -1;
         }
 
-        // Job filter button label: def resolution + Truncate measurement are
-        // render-forbidden, so both cache per selected filter.
-        // Owner: view. Key: JobFilterDefName (single slot, fixed width).
-        // Value: label + truncated label (immutable strings). Dependencies:
-        // filter selection, language. Refresh: on selection change.
-        // Equality: ordinally equal selection keys reuse both strings.
-        // Teardown: language invalidation resets; strings hold no game state.
-        private string jobFilterCachedFor = "\0";
-        private string jobFilterLabel;
-        private string jobFilterShown;
+        private void ReleaseChromeSnapshot()
+        {
+            chromeSnapshot = null;
+            chromeJobFilter = "\0";
+            chromeLanguageRevision = -1;
+            chromeDefinitionRevision = -1;
+        }
+
+        private void ReleaseDesiredHeightCache()
+        {
+            desiredHeightOwner = null;
+            desiredHeightRoleCount = -1;
+            desiredHeightDefinitionRevision = -1;
+            desiredHeight = DefaultDesiredHeight;
+        }
+
+        private RolesTabChromeSnapshot ChromeSnapshot()
+        {
+            string jobFilter = listState.JobFilterDefName;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (chromeSnapshot != null
+                && string.Equals(chromeJobFilter, jobFilter,
+                    System.StringComparison.Ordinal)
+                && chromeLanguageRevision == languageRevision
+                && chromeDefinitionRevision == definitionRevision)
+                return chromeSnapshot;
+
+            GameFont oldFont = Text.Font;
+            RolesTabChromeSnapshot rebuilt;
+            try
+            {
+                Text.Font = GameFont.Small;
+                string anyJob = "WR_FilterAnyJob".Translate().ToString();
+                WorkGiverDef giverDef = jobFilter == null
+                    ? null
+                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilter);
+                string jobFilterLabel = giverDef == null
+                    ? anyJob
+                    : WorkJobLabels.GiverDisplayName(giverDef);
+                rebuilt = new RolesTabChromeSnapshot(
+                    "WR_SelectOrCreateRole".Translate().ToString(),
+                    "WR_Search".Translate().ToString(),
+                    "WR_DisplayModeLabel".Translate().ToString(),
+                    "WR_JobFilterLabel".Translate().ToString(),
+                    "WR_TreeNested".Translate().ToString(),
+                    "WR_TreeFlat".Translate().ToString(),
+                    anyJob,
+                    jobFilterLabel,
+                    jobFilterLabel.Truncate(200f),
+                    "WR_New".Translate().ToString(),
+                    "WR_Copy".Translate().ToString(),
+                    "WR_Delete".Translate().ToString());
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
+
+            if (chromeSnapshot == null || !chromeSnapshot.ContentEquals(rebuilt))
+                chromeSnapshot = rebuilt;
+            chromeJobFilter = jobFilter;
+            chromeLanguageRevision = languageRevision;
+            chromeDefinitionRevision = definitionRevision;
+            return chromeSnapshot;
+        }
 
         public void Draw(Rect rect)
         {
             var store = RoleStore.Current;
             if (store == null) return;
+            RolesTabChromeSnapshot chrome = ChromeSnapshot();
+            RoleSelectionSnapshot selection = listState.SelectionSnapshot(store);
             RoleDrag.Update();
-            if (selectedRoleId == -1 && store.roles.Count > 0)
-                SelectRole(store.roles[0].id);
+            if (selectedRoleId == -1 && selection.FirstRoleId >= 0)
+                SelectRole(selection.FirstRoleId);
 
             var listRect = new Rect(rect.x, rect.y, ListWidth, rect.height);
             var editorRect = new Rect(rect.x + ListWidth + 12f, rect.y, rect.width - ListWidth - 12f, rect.height);
-            DrawRoleList(listRect, store);
+            DrawRoleList(listRect, store, chrome, selection);
 
-            GUI.color = new Color(1f, 1f, 1f, 0.25f);
-            WrText.LineVertical(rect.x + ListWidth + 6f, rect.y, rect.height);
-            GUI.color = Color.white;
+            Color oldColor = GUI.color;
+            try
+            {
+                GUI.color = new Color(1f, 1f, 1f, 0.25f);
+                WrText.LineVertical(rect.x + ListWidth + 6f, rect.y, rect.height);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
 
             RoleEditorSnapshot editor = editorState.Snapshot(store,
                 selectedRoleId, listedPawns, pawnListRevision?.Invoke() ?? 0,
                 editorRect.width, rulesRevealed.Contains(selectedRoleId),
                 scrollJobTreeToSelection);
             if (editor != null) DrawEditor(editorRect, editor);
-            else Widgets.Label(editorRect, "WR_SelectOrCreateRole".Translate());
+            else Widgets.Label(editorRect, chrome.SelectOrCreateRole);
 
-            RoleChipUI.DrawDragGhost(store);
-            DrawGroupDragGhost(store);
+            RoleChipUI.DrawDragGhost();
+            DrawGroupDragGhost();
             RoleDrag.ResolveMouseUp();
         }
 
@@ -210,16 +382,25 @@ namespace WorkRoles.UI
         /// Job Filter below with room for long job names, plus the clear X.
         internal const float ListFilterRowsH = 90f;
 
-        private static void FilterCaption(Rect rect, string key)
+        private static void FilterCaption(Rect rect, string text)
         {
-            Text.Font = GameFont.Tiny;
-            GUI.color = WrStyle.CaptionText;
-            Widgets.Label(rect, key.Translate());
-            GUI.color = Color.white;
-            Text.Font = GameFont.Small;
+            GameFont oldFont = Text.Font;
+            Color oldColor = GUI.color;
+            try
+            {
+                Text.Font = GameFont.Tiny;
+                GUI.color = WrStyle.CaptionText;
+                Widgets.Label(rect, text);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+                Text.Font = oldFont;
+            }
         }
 
-        private void DrawListFilterRow(Rect rect)
+        private void DrawListFilterRow(Rect rect, RolesTabChromeSnapshot chrome,
+            bool nestedPreference)
         {
             const float LabelH = 16f; // room for Tiny descenders (Job Filter's y)
             const float InputH = 24f;
@@ -228,7 +409,8 @@ namespace WorkRoles.UI
 
             float y1 = rect.y + LabelH;
             float searchW = rect.width - ToggleW - 8f - 22f;
-            FilterCaption(new Rect(rect.x, rect.y, searchW, LabelH), "WR_Search");
+            FilterCaption(new Rect(rect.x, rect.y, searchW, LabelH),
+                chrome.SearchCaption);
             listState.RoleSearch = Widgets.TextField(
                 new Rect(rect.x, y1, searchW, InputH), listState.RoleSearch);
             if (!listState.RoleSearch.NullOrEmpty()
@@ -241,42 +423,27 @@ namespace WorkRoles.UI
 
             // Nested/flat toggle: auto-nesting of covered roles on or off.
             var toggleRect = new Rect(rect.xMax - ToggleW, y1, ToggleW, InputH);
-            FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, LabelH), "WR_DisplayModeLabel");
-            var treeSettings = WorkRolesMod.Settings;
-            bool nestedNow = treeSettings?.nestedRoleTree ?? true;
+            FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, LabelH),
+                chrome.DisplayModeCaption);
             WrTips.Key("WR_TreeToggleTip").Region(toggleRect);
-            if (Widgets.ButtonText(toggleRect, (nestedNow ? "WR_TreeNested" : "WR_TreeFlat").Translate())
-                && treeSettings != null)
-            {
-                treeSettings.nestedRoleTree = !nestedNow;
-                treeSettings.Write();
-            }
+            if (Widgets.ButtonText(toggleRect,
+                    nestedPreference ? chrome.TreeNested : chrome.TreeFlat))
+                ToggleNestedPreference(nestedPreference);
 
             float y2Label = y1 + InputH + 6f;
             float y2 = y2Label + LabelH;
-            FilterCaption(new Rect(rect.x, y2Label, JobBtnW, LabelH), "WR_JobFilterLabel");
+            FilterCaption(new Rect(rect.x, y2Label, JobBtnW, LabelH),
+                chrome.JobFilterCaption);
             var jobRect = new Rect(rect.x, y2, JobBtnW, InputH);
-            // Long job names truncate to the button (the ButtonText inset eats
-            // ~10px a side); the tooltip carries the full name.
-            if (jobFilterCachedFor != listState.JobFilterDefName)
-            {
-                jobFilterCachedFor = listState.JobFilterDefName;
-                var giverDef = jobFilterCachedFor == null ? null
-                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilterCachedFor);
-                jobFilterLabel = giverDef != null
-                    ? WorkJobLabels.GiverDisplayName(giverDef)
-                    : "WR_FilterAnyJob".Translate().ToString();
-                jobFilterShown = jobFilterLabel.Truncate(jobRect.width - 20f);
-            }
-            string jobLabel = jobFilterLabel;
-            string jobShown = jobFilterShown;
+            string jobLabel = chrome.JobFilterLabel;
+            string jobShown = chrome.JobFilterShown;
             if (jobShown != jobLabel)
                 TooltipHandler.TipRegion(jobRect, jobLabel);
             if (Widgets.ButtonText(jobRect, jobShown))
             {
                 var options = new List<FloatMenuOption>
                 {
-                    new FloatMenuOption("WR_FilterAnyJob".Translate(),
+                    new FloatMenuOption(chrome.AnyJob,
                         () => listState.JobFilterDefName = null),
                 };
                 foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading
@@ -299,6 +466,15 @@ namespace WorkRoles.UI
             }
         }
 
+        private static void ToggleNestedPreference(bool nestedPreference)
+        {
+            var settings = WorkRolesMod.Settings;
+            if (settings == null)
+                return;
+            settings.nestedRoleTree = !nestedPreference;
+            WorkRolesGameComponent.RequestSettingsWrite();
+        }
+
         /// Create/Copy run through synced commands whose execution MP defers,
         /// so selection can't use a return value: the entered name is watched
         /// for instead, and the newest role carrying it gets selected, its
@@ -306,26 +482,31 @@ namespace WorkRoles.UI
         private string pendingSelectLabel;
         private bool scrollToSelected;
 
-        private void DrawRoleList(Rect rect, RoleStore store)
+        private void DrawRoleList(
+            Rect rect,
+            RoleStore store,
+            RolesTabChromeSnapshot chrome,
+            RoleSelectionSnapshot selection)
         {
             float buttonsHeight = 34f;
             if (pendingSelectLabel != null)
             {
-                for (int i = store.roles.Count - 1; i >= 0; i--)
-                    if (store.roles[i].label == pendingSelectLabel)
-                    {
-                        SelectRole(store.roles[i].id);
-                        pendingSelectLabel = null;
-                        scrollToSelected = true;
-                        break;
-                    }
+                int pendingRoleId = selection.NewestRoleIdWithLabel(
+                    pendingSelectLabel);
+                if (pendingRoleId >= 0)
+                {
+                    SelectRole(pendingRoleId);
+                    pendingSelectLabel = null;
+                    scrollToSelected = true;
+                }
             }
-            DrawListFilterRow(new Rect(rect.x, rect.y, rect.width, ListFilterRowsH - 6f));
+            RoleListSnapshot snapshot = listState.Snapshot(
+                store, selectedRoleId, revealSelected: scrollToSelected, roleTip);
+            DrawListFilterRow(new Rect(rect.x, rect.y, rect.width,
+                ListFilterRowsH - 6f), chrome, snapshot.NestedPreference);
             var scrollRect = new Rect(rect.x, rect.y + ListFilterRowsH, rect.width,
                 rect.height - buttonsHeight - 6f - ListFilterRowsH);
 
-            RoleListSnapshot snapshot = listState.Snapshot(
-                store, selectedRoleId, revealSelected: scrollToSelected, roleTip);
             bool filtered = snapshot.Filtered;
             float contentHeight = snapshot.Count * RowHeight;
 
@@ -354,6 +535,8 @@ namespace WorkRoles.UI
 
             Widgets.BeginScrollView(scrollRect, ref listScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
+            try
+            {
             // Fixed row height: only rows inside the viewport draw.
             int firstRow = Mathf.Max(0, (int)(listScroll.y / RowHeight));
             int lastRow = Mathf.Min(snapshot.Count - 1,
@@ -436,7 +619,7 @@ namespace WorkRoles.UI
                 {
                     int capturedId = publishedRow.RoleId;
                     if (publishedRow.VirtualRow) SelectRole(capturedId);
-                    else RoleDrag.OnPress(dragControlId, capturedId, null,
+                    else RoleDrag.OnPress(dragControlId, publishedRow.Chip, null,
                         () => SelectRole(capturedId));
                     e.Use();
                 }
@@ -444,11 +627,18 @@ namespace WorkRoles.UI
                 if (draggedRoleId >= 0 && Mouse.IsOver(row))
                     RegisterRoleDrop(snapshot, i, row, draggedRoleId);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             float bw = (rect.width - 8f) / 3f;
             float by = rect.yMax - buttonsHeight + 4f;
-            if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f), "WR_New".Translate()))
+            bool selectedRoleExists = selection.TryGetRole(
+                selectedRoleId, out string selectedRoleLabel);
+            if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f),
+                chrome.NewLabel))
             {
                 Find.WindowStack.Add(new Dialog_RenameRole("WR_NewRoleTitle".Translate(), null, enteredName =>
                 {
@@ -457,12 +647,14 @@ namespace WorkRoles.UI
                 }));
             }
 
-            if (Widgets.ButtonText(new Rect(rect.x + bw + 4f, by, bw, 30f), "WR_Copy".Translate()))
+            if (Widgets.ButtonText(new Rect(rect.x + bw + 4f, by, bw, 30f),
+                chrome.CopyLabel))
             {
-                var toCopy = RoleStore.Current.RoleById(selectedRoleId);
-                if (toCopy != null)
+                if (selectedRoleExists)
                 {
-                    Find.WindowStack.Add(new Dialog_RenameRole("WR_CopyRoleTitle".Translate(), toCopy.label, enteredName =>
+                    Find.WindowStack.Add(new Dialog_RenameRole(
+                        "WR_CopyRoleTitle".Translate(), selectedRoleLabel,
+                        enteredName =>
                     {
                         RoleCommands.DuplicateRole(selectedRoleId, enteredName);
                         pendingSelectLabel = enteredName;
@@ -471,13 +663,14 @@ namespace WorkRoles.UI
             }
 
             var deleteRect = new Rect(rect.x + (bw + 4f) * 2f, by, bw, 30f);
-            var selectedRole = RoleStore.Current.RoleById(selectedRoleId);
-            if (Widgets.ButtonText(deleteRect, "WR_Delete".Translate(), active: selectedRole != null)
-                && selectedRole != null)
+            if (Widgets.ButtonText(deleteRect, chrome.DeleteLabel,
+                    active: selectedRoleExists)
+                && selectedRoleExists)
             {
+                int roleId = selectedRoleId;
                 Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
-                    "WR_DeleteConfirm".Translate(selectedRole.label),
-                    () => RoleCommands.DeleteRole(selectedRole.id), destructive: true));
+                    "WR_DeleteConfirm".Translate(selectedRoleLabel),
+                    () => RoleCommands.DeleteRole(roleId), destructive: true));
             }
         }
 
@@ -492,9 +685,9 @@ namespace WorkRoles.UI
             int draggedRoleId, bool groupDrag, RoleListSnapshot snapshot)
         {
             Widgets.DrawBoxSolid(row, new Color(1f, 1f, 1f, 0.06f));
-            bool collapsed = RolesListState.IsSectionCollapsed(section.Key);
             var arrowRect = new Rect(row.x + 4f, row.y + (row.height - 18f) / 2f, 18f, 18f);
-            GUI.DrawTexture(arrowRect, collapsed ? TexButton.Reveal : TexButton.Collapse);
+            GUI.DrawTexture(arrowRect,
+                section.Collapsed ? TexButton.Reveal : TexButton.Collapse);
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = new Color(0.85f, 0.85f, 0.85f);
             Widgets.Label(new Rect(arrowRect.xMax + 6f, row.y, row.width - 60f, row.height),
@@ -523,6 +716,7 @@ namespace WorkRoles.UI
                 string key = section.Key;
                 if (section.Draggable)
                     RoleDrag.OnPressGroup(dragControlId, section.GroupId,
+                        section.CommandName, section.GroupDragWidth,
                         () => RolesListState.ToggleSectionCollapsed(key));
                 else
                     RolesListState.ToggleSectionCollapsed(key);
@@ -637,19 +831,29 @@ namespace WorkRoles.UI
                 new Color(1f, 1f, 1f, 0.9f));
 
         /// Group reorder ghost; role drags use RoleChipUI.DrawDragGhost.
-        private static void DrawGroupDragGhost(RoleStore store)
+        private static void DrawGroupDragGhost()
         {
             if (!RoleDrag.Active || RoleDrag.GroupId < 0) return;
-            var group = store.GroupById(RoleDrag.GroupId);
-            if (group == null) return;
+            string label = RoleDrag.GroupGhostLabel;
+            if (label == null) return;
             var mouse = Event.current.mousePosition;
-            Text.Font = GameFont.Small;
-            GUI.color = new Color(1f, 1f, 1f, 0.7f);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(mouse.x + 12f, mouse.y + 2f,
-                WrText.FitWidth(group.label) + 4f, 24f), group.label);
-            Text.Anchor = TextAnchor.UpperLeft;
-            GUI.color = Color.white;
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            try
+            {
+                Text.Font = GameFont.Small;
+                GUI.color = new Color(1f, 1f, 1f, 0.7f);
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(mouse.x + 12f, mouse.y + 2f,
+                    RoleDrag.GroupGhostWidth, 24f), label);
+            }
+            finally
+            {
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+                Text.Font = oldFont;
+            }
         }
 
         // ----- Right: editor for the selected role -----
@@ -1401,6 +1605,8 @@ namespace WorkRoles.UI
 
             Widgets.BeginScrollView(scrollRect, ref entriesScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
+            try
+            {
 
             // Rows outside the viewport still register with ReorderableWidget
             // (drag bookkeeping needs every row rect) but skip all text work.
@@ -1476,7 +1682,11 @@ namespace WorkRoles.UI
                 if (Widgets.ButtonImage(new Rect(removeX, btnY, IconButton, IconButton), TexButton.Delete))
                     RoleCommands.RemoveEntry(capturedRoleId, capturedI);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         // ----- Available Jobs: the work type / giver tree -----
@@ -1560,6 +1770,8 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(scrollRect, ref treeScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f,
                     tree.Count * RowHeight));
+            try
+            {
 
             // Fixed row height: only rows inside the viewport draw.
             int firstNode = Mathf.Max(0, (int)(treeScroll.y / RowHeight));
@@ -1650,7 +1862,11 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.UpperLeft;
             }
             PaintRange(model, tree);
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
             if (paintAnchorRow >= 0)
                 GenUI.DrawMouseAttachment(paintAdds ? Widgets.CheckboxOnTex : Widgets.CheckboxOffTex);
         }
@@ -1837,6 +2053,8 @@ namespace WorkRoles.UI
             Widgets.BeginScrollView(scrollRect, ref treeScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f,
                     composite.CandidateCount * RowHeight));
+            try
+            {
             int firstRow = Mathf.Max(0, (int)(treeScroll.y / RowHeight));
             int lastRow = Mathf.Min(composite.CandidateCount - 1,
                 (int)((treeScroll.y + scrollRect.height) / RowHeight));
@@ -1874,7 +2092,11 @@ namespace WorkRoles.UI
                 if (Widgets.ButtonInvisible(row))
                     RoleCommands.AddCompositeMember(model.RoleId, candidate.Role.RoleId);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         private void DrawCompositeMembers(Rect rect, RoleEditorSnapshot model)
@@ -1901,6 +2123,8 @@ namespace WorkRoles.UI
             }
             Widgets.BeginScrollView(scrollRect, ref entriesScroll,
                 new Rect(0f, 0f, scrollRect.width - 16f, contentHeight));
+            try
+            {
             // Rows outside the viewport still register with ReorderableWidget
             // (drag bookkeeping needs every row rect) but skip the text work.
             float cullTop = entriesScroll.y - RowHeight;
@@ -1933,7 +2157,11 @@ namespace WorkRoles.UI
                         new Rect(removeX, btnY, IconButton, IconButton), TexButton.Delete))
                     RoleCommands.RemoveCompositeMember(capturedRoleId, capturedI);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
     }
 }

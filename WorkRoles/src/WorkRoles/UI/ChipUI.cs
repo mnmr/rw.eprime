@@ -60,6 +60,12 @@ namespace WorkRoles.UI
         /// Display-only; composers own hit-testing and interaction.
         public static void Draw(Rect rect, in ChipSpec spec)
         {
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            bool oldWrap = Text.WordWrap;
+            Color oldColor = GUI.color;
+            try
+            {
             Widgets.DrawBoxSolidWithOutline(rect, spec.Bg, spec.Outline);
 
             if (spec.Grips)
@@ -78,13 +84,12 @@ namespace WorkRoles.UI
             // Never wrap: a rect that comes up a pixel short at fractional UI
             // scales must clip the last glyph, not spill a second line out of
             // the chip.
-            bool wrap = Text.WordWrap;
             Text.WordWrap = false;
             GUI.color = spec.LabelColor;
             if (spec.Label != null)
                 Widgets.Label(labelRect, spec.Label);
             GUI.color = Color.white;
-            Text.WordWrap = wrap;
+            Text.WordWrap = oldWrap;
             Text.Anchor = TextAnchor.UpperLeft;
 
             if (spec.StrikeCount > 0)
@@ -105,6 +110,14 @@ namespace WorkRoles.UI
 
             if (spec.ShowRemove)
                 GUI.DrawTexture(spec.Grips ? BandRemoveRect(rect) : RemoveRect(rect), TexButton.Delete);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                Text.WordWrap = oldWrap;
+                GUI.color = oldColor;
+            }
         }
     }
 }

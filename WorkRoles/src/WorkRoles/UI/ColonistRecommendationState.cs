@@ -211,14 +211,14 @@ namespace WorkRoles.UI
                 try
                 {
                     Text.Font = GameFont.Small;
-                    for (int i = 0; i < line.chips.Count; i++)
+                    for (int i = 0; i < line.ChipCount; i++)
                     {
-                        var source = line.chips[i];
-                        int roleId = source.role.id;
+                        var source = line.ChipAt(i);
+                        int roleId = source.RoleId;
                         if (!catalog.TryGetChip(roleId,
                                 out RoleChipRenderData chip))
                             continue;
-                        bool assigned = source.state
+                        bool assigned = source.State
                             != Dialog_ChangesPreview.ChipState.Added;
                         RoleChipVerdict verdict = line.VerdictAt(i);
                         float chipWidth = RoleChipUI.WidthFor(chip,
@@ -248,9 +248,9 @@ namespace WorkRoles.UI
                                 catalog.IsRoleEnabled(roleId),
                                 assignmentState);
                         StructuredTip tooltip = line.StructuredTipAt(i);
-                        string fallback = source.tip;
+                        string fallback = source.Tip;
                         if (fallback == null && assigned)
-                            fallback = (source.state
+                            fallback = (source.State
                                     == Dialog_ChangesPreview.ChipState.Removed
                                 ? "WR_WillBeRemoved"
                                 : "WR_AlreadyAssigned").Translate().ToString();
@@ -258,7 +258,7 @@ namespace WorkRoles.UI
                             : enabled ? ChipStyle.Subtle : ChipStyle.ConditionalOff;
                         chips.Add(new ColonistRecommendationRenderChip(
                             chip, assigned, style,
-                            enabled && source.state
+                            enabled && source.State
                                 == Dialog_ChangesPreview.ChipState.Removed,
                             new Rect(chipX, chipY, chipWidth,
                                 RoleChipUI.Height), verdict, tooltip,
@@ -363,7 +363,7 @@ namespace WorkRoles.UI
                 if (role == null) continue;
                 var state = Dialog_ChangesPreview.ChipState.Removed;
                 plan.Explanations.TryGetValue(role.id, out var explanation);
-                line.InsertChip(Math.Min(i, line.chips.Count), role, state,
+                line.InsertChip(Math.Min(i, line.ChipCount), role, state,
                     RecommendationPresentation.CreateTooltip(
                         store, plan.Pawn, role, state, explanation, skillBuckets),
                     verdictsShown && !role.blocker

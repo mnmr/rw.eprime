@@ -76,8 +76,7 @@ namespace WorkRoles.Core.Recs
         public bool Capable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
-            if (role.MaxAge > 0 && pawn.BiologicalAgeTicks >= role.MaxAgeTicks) return false;
+            if (!WithinAgeLimits(pawn, role)) return false;
             foreach (string workType in role.WorkTypes)
                 if (pawn.CapableWorkTypes.Contains(workType)) return true;
             return false;
@@ -86,12 +85,17 @@ namespace WorkRoles.Core.Recs
         public bool FullyCapable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (pawn.BiologicalAgeTicks < role.MinAgeTicks) return false;
-            if (role.MaxAge > 0 && pawn.BiologicalAgeTicks >= role.MaxAgeTicks) return false;
+            if (!WithinAgeLimits(pawn, role)) return false;
             foreach (string workType in role.WorkTypes)
                 if (!pawn.CapableWorkTypes.Contains(workType)) return false;
             return true;
         }
+
+        private static bool WithinAgeLimits(PawnView pawn, RoleView role) =>
+            !pawn.AgeLimitsApply
+            || (pawn.BiologicalAgeTicks >= role.MinAgeTicks
+                && (role.MaxAge <= 0
+                    || pawn.BiologicalAgeTicks < role.MaxAgeTicks));
 
         public int SkillLevel(int pawnIndex, string skill) =>
             skill != null

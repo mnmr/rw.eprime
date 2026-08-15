@@ -85,11 +85,13 @@ namespace WorkRoles.UI
             string incapableReason = null;
             string noRangedWeaponReason = null;
             SortedDictionary<int, string> tooYoungReasons = null;
-            bool tooYoungForRole = role.minAge > 0
+            bool ageLimitsApply =
+                externalSnapshot.RecommendationFacts.AgeLimitsApply;
+            bool tooYoungForRole = ageLimitsApply && role.minAge > 0
                 && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
                     < role.minAge * BiologicalAge.TicksPerYear;
             // The cap is inclusive: over-age starts one year past it.
-            bool tooOldForRole = role.maxAge > 0
+            bool tooOldForRole = ageLimitsApply && role.maxAge > 0
                 && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
                     >= (role.maxAge + 1L) * BiologicalAge.TicksPerYear;
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;

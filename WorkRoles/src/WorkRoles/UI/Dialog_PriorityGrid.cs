@@ -15,6 +15,7 @@ namespace WorkRoles.UI
     {
         private readonly List<Pawn> pawns;
         private readonly PriorityGridSortState sortState;
+        private readonly int[] sortPriorities;
         private readonly List<WorkTypeDef> workTypes = new List<WorkTypeDef>();
         private readonly RevisionPairGate columnCacheRevisions = new RevisionPairGate();
         private float headerH;
@@ -36,6 +37,24 @@ namespace WorkRoles.UI
         /// Local view state only — never written back to the synced setting.
         private bool showVanilla;
 
+        // Owner: priority-grid dialog. Key: RoleStore identity, UiVersion,
+        // definition revision, manual-priority display mode, and the exact
+        // PriorityGridFacts revision of every fixed pawn. Value: one flattened,
+        // immutable-by-publication snapshot of every repaint-ready cell plus the
+        // display mode. Dependencies: role/assignment priority projections,
+        // work-type definitions, pawn disabled-work state, whole skill levels,
+        // passions, unmanaged vanilla priorities, and manual-priority mode.
+        // Refresh: immediate on an event-driven key change. Equality: equal
+        // rebuilt contents retain identity within the same RoleStore owner.
+        // Teardown: PostClose drops snapshot/owner references and revision stamps.
+        private PriorityGridSnapshot gridSnapshot;
+        private RoleStore gridStore;
+        private int gridUiRevision = int.MinValue;
+        private int gridDefinitionRevision = int.MinValue;
+        private int gridFactsCurrent = int.MinValue;
+        private readonly int[] gridPawnFactRevisions;
+        private bool gridFactsReleased;
+
         private const float TitleH = 38f;
         private const float NameW = 170f;
         private const float ColW = 26f;   // vanilla work box (25) + gap
@@ -46,10 +65,104 @@ namespace WorkRoles.UI
         private const float MaxScreenHeightFraction = 0.9f;
         private static readonly Color SortedHeaderColor = new Color(1f, 0.82f, 0.25f);
 
+        private readonly struct PriorityGridCellSnapshot
+        {
+            internal PriorityGridCellSnapshot(Texture2D baseTexture,
+                Texture2D blendTexture, float blendAlpha,
+                Texture2D passionTexture, int rawPriority,
+                int vanillaPriority, string rawLabel, string vanillaLabel,
+                Color priorityColor)
+            {
+                Available = true;
+                BaseTexture = baseTexture;
+                BlendTexture = blendTexture;
+                BlendAlpha = blendAlpha;
+                PassionTexture = passionTexture;
+                RawPriority = rawPriority;
+                VanillaPriority = vanillaPriority;
+                RawLabel = rawLabel;
+                VanillaLabel = vanillaLabel;
+                PriorityColor = priorityColor;
+            }
+
+            internal bool Available { get; }
+            internal Texture2D BaseTexture { get; }
+            internal Texture2D BlendTexture { get; }
+            internal float BlendAlpha { get; }
+            internal Texture2D PassionTexture { get; }
+            internal int RawPriority { get; }
+            internal int VanillaPriority { get; }
+            internal string RawLabel { get; }
+            internal string VanillaLabel { get; }
+            internal Color PriorityColor { get; }
+
+            internal int Priority(bool vanilla) => vanilla
+                ? VanillaPriority : RawPriority;
+
+            internal string Label(bool vanilla) => vanilla
+                ? VanillaLabel : RawLabel;
+
+            internal bool ContentEquals(PriorityGridCellSnapshot other) =>
+                Available == other.Available
+                && ReferenceEquals(BaseTexture, other.BaseTexture)
+                && ReferenceEquals(BlendTexture, other.BlendTexture)
+                && BlendAlpha == other.BlendAlpha
+                && ReferenceEquals(PassionTexture, other.PassionTexture)
+                && RawPriority == other.RawPriority
+                && VanillaPriority == other.VanillaPriority
+                && string.Equals(RawLabel, other.RawLabel,
+                    System.StringComparison.Ordinal)
+                && string.Equals(VanillaLabel, other.VanillaLabel,
+                    System.StringComparison.Ordinal)
+                && PriorityColor == other.PriorityColor;
+        }
+
+        private sealed class PriorityGridSnapshot
+        {
+            private readonly PriorityGridCellSnapshot[] cells;
+            private readonly int rowCount;
+            private readonly int columnCount;
+
+            internal PriorityGridSnapshot(PriorityGridCellSnapshot[] cells,
+                int rowCount, int columnCount, bool numeric)
+            {
+                this.cells = cells;
+                this.rowCount = rowCount;
+                this.columnCount = columnCount;
+                Numeric = numeric;
+            }
+
+            internal bool Numeric { get; }
+
+            internal PriorityGridCellSnapshot CellAt(int row, int column) =>
+                cells[row * columnCount + column];
+
+            internal void CopyPriorities(int column, bool vanilla,
+                int[] destination)
+            {
+                for (int row = 0; row < rowCount; row++)
+                    destination[row] = CellAt(row, column).Priority(vanilla);
+            }
+
+            internal bool ContentEquals(PriorityGridSnapshot other)
+            {
+                if (other == null || Numeric != other.Numeric
+                    || rowCount != other.rowCount
+                    || columnCount != other.columnCount
+                    || cells.Length != other.cells.Length)
+                    return false;
+                for (int i = 0; i < cells.Length; i++)
+                    if (!cells[i].ContentEquals(other.cells[i])) return false;
+                return true;
+            }
+        }
+
         public Dialog_PriorityGrid(List<Pawn> pawns)
         {
             this.pawns = pawns;
             sortState = new PriorityGridSortState(pawns.Count);
+            sortPriorities = new int[pawns.Count];
+            gridPawnFactRevisions = new int[pawns.Count];
             showVanilla = RoleStore.Current?.reportVanillaPriorities == true;
             using (new TextBlock(GameFont.Small))
             {
@@ -58,6 +171,8 @@ namespace WorkRoles.UI
                     pawnNames[r] = pawns[r].LabelShortCap.Truncate(NameW - 6f);
             }
             EnsureColumnCache();
+            for (int r = 0; r < pawns.Count; r++)
+                PriorityGridFacts.Acquire(pawns[r]);
             absorbInputAroundWindow = true;
             closeOnClickedOutside = true;
             doCloseX = true;
@@ -86,10 +201,29 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using var guiState = new GuiStateScope(capture: true);
             // Vanilla GUI.DragWindow runs after this returns, so skipping
             // MouseDrag passes here leaves window-move dragging intact.
             if (WrEvent.SkipContentPass()) return;
+            GameFont previousFont = Text.Font;
+            TextAnchor previousAnchor = Text.Anchor;
+            Color previousColor = GUI.color;
+            try
+            {
+                DrawContents(inRect);
+            }
+            finally
+            {
+                Text.Font = previousFont;
+                Text.Anchor = previousAnchor;
+                GUI.color = previousColor;
+            }
+        }
+
+        private void DrawContents(Rect inRect)
+        {
             EnsureColumnCache();
+            EnsureGridSnapshot();
             var titleRect = new Rect(inRect.x, inRect.y, inRect.width, TitleH);
             var headerRect = new Rect(inRect.x, titleRect.yMax, inRect.width, headerH);
             var rowsRect = new Rect(inRect.x, headerRect.yMax, inRect.width,
@@ -102,7 +236,7 @@ namespace WorkRoles.UI
             }
             Text.Font = GameFont.Small;
 
-            bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
+            bool numeric = gridSnapshot.Numeric;
 
             if (numeric)
             {
@@ -120,28 +254,34 @@ namespace WorkRoles.UI
                 pawns.Count * RowH);
 
             Widgets.BeginScrollView(rowsRect, ref scroll, viewRect);
-
-            var scrollViewport = new Rect(scroll.x, scroll.y, rowsRect.width, rowsRect.height);
-            var visibleBodyColumns = UniformViewportRange.Calculate(
-                itemCount: workTypes.Count,
-                itemExtent: ColW,
-                contentStart: NameW,
-                viewportStart: scrollViewport.x,
-                viewportExtent: scrollViewport.width);
-            var visibleRows = UniformViewportRange.Calculate(
-                itemCount: pawns.Count,
-                itemExtent: RowH,
-                contentStart: 0f,
-                viewportStart: scrollViewport.y,
-                viewportExtent: scrollViewport.height);
-
-            if (Event.current.type == EventType.Repaint)
+            try
             {
-                DrawVisibleColumnChrome(visibleBodyColumns, pawns.Count * RowH);
-                DrawVisibleRows(visibleRows, visibleBodyColumns, viewRect.width, numeric,
-                    scrollViewport.x < NameW);
+                var scrollViewport = new Rect(scroll.x, scroll.y,
+                    rowsRect.width, rowsRect.height);
+                var visibleBodyColumns = UniformViewportRange.Calculate(
+                    itemCount: workTypes.Count,
+                    itemExtent: ColW,
+                    contentStart: NameW,
+                    viewportStart: scrollViewport.x,
+                    viewportExtent: scrollViewport.width);
+                var visibleRows = UniformViewportRange.Calculate(
+                    itemCount: pawns.Count,
+                    itemExtent: RowH,
+                    contentStart: 0f,
+                    viewportStart: scrollViewport.y,
+                    viewportExtent: scrollViewport.height);
+
+                if (Event.current.type == EventType.Repaint)
+                {
+                    DrawVisibleColumnChrome(visibleBodyColumns, pawns.Count * RowH);
+                    DrawVisibleRows(visibleRows, visibleBodyColumns,
+                        viewRect.width, scrollViewport.x < NameW);
+                }
             }
-            Widgets.EndScrollView();
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             HandleHeaderInteractions(headerRect);
 
@@ -149,6 +289,22 @@ namespace WorkRoles.UI
             // visual layer even if a future label style reaches the shared edge.
             if (Event.current.type == EventType.Repaint)
                 DrawHeader(headerRect);
+        }
+
+        public override void PostClose()
+        {
+            if (!gridFactsReleased)
+            {
+                for (int r = 0; r < pawns.Count; r++)
+                    PriorityGridFacts.ReleaseWatch(pawns[r]);
+                gridFactsReleased = true;
+            }
+            gridSnapshot = null;
+            gridStore = null;
+            gridUiRevision = int.MinValue;
+            gridDefinitionRevision = int.MinValue;
+            gridFactsCurrent = int.MinValue;
+            base.PostClose();
         }
 
         private void EnsureColumnCache()
@@ -204,6 +360,126 @@ namespace WorkRoles.UI
             float separatorRunOut = headerH * Mathf.Cos(Mathf.Deg2Rad * LabelAngle);
             headerRunOut = Mathf.Max(maxRightRunOut, separatorRunOut)
                 + HeaderRunOutPadding;
+        }
+
+        private void EnsureGridSnapshot()
+        {
+            RoleStore store = RoleStore.Current;
+            int uiRevision = UiVersion.Current;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            int factsCurrent = PriorityGridFacts.Revisions.Current;
+            bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
+            bool ownerChanged = !ReferenceEquals(gridStore, store);
+            bool keyChanged = gridSnapshot == null || ownerChanged
+                || gridUiRevision != uiRevision
+                || gridDefinitionRevision != definitionRevision
+                || gridSnapshot.Numeric != numeric;
+
+            bool pawnFactsChanged = gridSnapshot == null;
+            if (!pawnFactsChanged && gridFactsCurrent != factsCurrent)
+            {
+                for (int r = 0; r < pawns.Count; r++)
+                    if (gridPawnFactRevisions[r]
+                        != PriorityGridFacts.Revisions.RevisionOf(pawns[r]))
+                    {
+                        pawnFactsChanged = true;
+                        break;
+                    }
+            }
+
+            if (!keyChanged && !pawnFactsChanged)
+            {
+                // An unrelated pawn may have moved the global observation
+                // revision. Record it after proving this fixed cohort unchanged.
+                gridFactsCurrent = factsCurrent;
+                return;
+            }
+
+            int columnCount = workTypes.Count;
+            var cells = new PriorityGridCellSnapshot[pawns.Count * columnCount];
+            for (int r = 0; r < pawns.Count; r++)
+            {
+                Pawn pawn = pawns[r];
+                for (int c = 0; c < columnCount; c++)
+                    cells[r * columnCount + c] =
+                        BuildCell(pawn, workTypes[c], store);
+            }
+
+            var rebuilt = new PriorityGridSnapshot(cells, pawns.Count,
+                columnCount, numeric);
+            bool identityChanged = ownerChanged || gridSnapshot == null
+                || !gridSnapshot.ContentEquals(rebuilt);
+            if (identityChanged) gridSnapshot = rebuilt;
+
+            gridStore = store;
+            gridUiRevision = uiRevision;
+            gridDefinitionRevision = definitionRevision;
+            gridFactsCurrent = factsCurrent;
+            for (int r = 0; r < pawns.Count; r++)
+                gridPawnFactRevisions[r] =
+                    PriorityGridFacts.Revisions.RevisionOf(pawns[r]);
+
+            if (identityChanged) RefreshSort();
+        }
+
+        private static PriorityGridCellSnapshot BuildCell(Pawn pawn,
+            WorkTypeDef workType, RoleStore store)
+        {
+            if (pawn.WorkTypeIsDisabled(workType)) return default;
+
+            float skill = pawn.skills != null
+                ? pawn.skills.AverageOfRelevantSkillsFor(workType) : 10f;
+            Texture2D baseTexture;
+            Texture2D blendTexture;
+            float blendAlpha;
+            if (skill < 4f)
+            {
+                baseTexture = WidgetsWork.WorkBoxBGTex_Awful;
+                blendTexture = WidgetsWork.WorkBoxBGTex_Bad;
+                blendAlpha = skill / 4f;
+            }
+            else if (skill <= 14f)
+            {
+                baseTexture = WidgetsWork.WorkBoxBGTex_Bad;
+                blendTexture = WidgetsWork.WorkBoxBGTex_Mid;
+                blendAlpha = (skill - 4f) / 10f;
+            }
+            else
+            {
+                baseTexture = WidgetsWork.WorkBoxBGTex_Mid;
+                blendTexture = WidgetsWork.WorkBoxBGTex_Excellent;
+                blendAlpha = (skill - 14f) / 6f;
+            }
+
+            Passion passion = pawn.skills?.MaxPassionOfRelevantSkillsFor(workType)
+                ?? Passion.None;
+            Texture2D passionTexture = passion == Passion.Major
+                ? WidgetsWork.PassionWorkboxMajorIcon
+                : passion == Passion.Minor
+                    ? WidgetsWork.PassionWorkboxMinorIcon
+                    : null;
+
+            bool managed = store != null && store.IsManaged(pawn);
+            int rawPriority;
+            int vanillaPriority;
+            if (managed)
+            {
+                rawPriority = CompiledJobOrders.PriorityFor(pawn, workType);
+                vanillaPriority = CompiledJobOrders.VanillaPriorityFor(pawn, workType);
+            }
+            else
+            {
+                rawPriority = pawn.workSettings?.GetPriority(workType) ?? 0;
+                vanillaPriority = rawPriority;
+            }
+
+            int colorKey = managed
+                ? vanillaPriority : Mathf.Clamp(rawPriority, 0, 4);
+            return new PriorityGridCellSnapshot(baseTexture, blendTexture,
+                blendAlpha, passionTexture, rawPriority, vanillaPriority,
+                rawPriority > 0 ? rawPriority.ToStringCached() : null,
+                vanillaPriority > 0 ? vanillaPriority.ToStringCached() : null,
+                WidgetsWork.ColorOfPriority(colorKey));
         }
 
         private void HandleHeaderInteractions(Rect headerRect)
@@ -274,14 +550,11 @@ namespace WorkRoles.UI
             UniformViewportRange visibleRows,
             UniformViewportRange visibleBodyColumns,
             float viewWidth,
-            bool numeric,
             bool pawnNamesVisible)
         {
-            var store = RoleStore.Current;
             for (int r = visibleRows.Start; r < visibleRows.EndExclusive; r++)
             {
                 int sourceRow = sortState.RowOrder[r];
-                var pawn = pawns[sourceRow];
                 float y = r * RowH;
                 if (r % 2 == 0)
                     Widgets.DrawBoxSolid(new Rect(0f, y, viewWidth, RowH),
@@ -294,33 +567,26 @@ namespace WorkRoles.UI
                     Text.Anchor = TextAnchor.UpperLeft;
                 }
 
-                bool managed = store != null && store.IsManaged(pawn);
                 for (int c = visibleBodyColumns.Start; c < visibleBodyColumns.EndExclusive; c++)
                 {
-                    var wt = workTypes[c];
-                    if (pawn.WorkTypeIsDisabled(wt)) continue; // vanilla leaves these blank
+                    PriorityGridCellSnapshot cell =
+                        gridSnapshot.CellAt(sourceRow, c);
+                    if (!cell.Available) continue; // vanilla leaves these blank
                     // Floored centering: (ColW - 25) / 2 is 0.5, and a half-pixel
                     // x smears the box textures at every UI scale.
                     var box = new Rect(NameW + c * ColW + Mathf.Floor((ColW - 25f) / 2f), y + (RowH - 25f) / 2f, 25f, 25f);
-                    DrawWorkBoxBackground(box, pawn, wt);
-                    int priority = PriorityFor(pawn, wt, store);
+                    DrawWorkBoxBackground(box, cell);
+                    int priority = cell.Priority(showVanilla);
                     if (priority <= 0) continue;
-                    if (!numeric)
+                    if (!gridSnapshot.Numeric)
                     {
                         GUI.DrawTexture(box, WidgetsWork.WorkBoxCheckTex);
                     }
                     else
                     {
-                        // Vanilla-equivalent value keys the color even when raw
-                        // ranks are shown, so the familiar palette holds.
-                        int colorKey = managed
-                            ? (showVanilla
-                                ? priority
-                                : CompiledJobOrders.VanillaPriorityFor(pawn, wt))
-                            : Mathf.Clamp(priority, 0, 4);
                         Text.Anchor = TextAnchor.MiddleCenter;
-                        GUI.color = WidgetsWork.ColorOfPriority(colorKey);
-                        Widgets.Label(box.ContractedBy(-3f), priority.ToStringCached());
+                        GUI.color = cell.PriorityColor;
+                        Widgets.Label(box.ContractedBy(-3f), cell.Label(showVanilla));
                         GUI.color = Color.white;
                         Text.Anchor = TextAnchor.UpperLeft;
                     }
@@ -330,78 +596,36 @@ namespace WorkRoles.UI
 
         private void ToggleSort(int columnIndex)
         {
-            sortState.Toggle(columnIndex, PrioritiesFor(workTypes[columnIndex]));
+            gridSnapshot.CopyPriorities(columnIndex, showVanilla, sortPriorities);
+            sortState.Toggle(columnIndex, sortPriorities);
         }
 
         private void RefreshSort()
         {
             if (sortState.SortedColumnIndex is int columnIndex)
-                sortState.Refresh(PrioritiesFor(workTypes[columnIndex]));
+            {
+                gridSnapshot.CopyPriorities(columnIndex, showVanilla, sortPriorities);
+                sortState.Refresh(sortPriorities);
+            }
         }
 
-        private int[] PrioritiesFor(WorkTypeDef workType)
+        /// Vanilla's WidgetsWork.DrawWorkBoxBackground is private; this draws
+        /// the equivalent already-resolved textures and blend values.
+        private static void DrawWorkBoxBackground(Rect rect,
+            PriorityGridCellSnapshot cell)
         {
-            var priorities = new int[pawns.Count];
-            var store = RoleStore.Current;
-            for (int r = 0; r < pawns.Count; r++)
-                priorities[r] = pawns[r].WorkTypeIsDisabled(workType)
-                    ? 0
-                    : PriorityFor(pawns[r], workType, store);
-            return priorities;
-        }
-
-        private int PriorityFor(Pawn pawn, WorkTypeDef workType, RoleStore store)
-        {
-            bool managed = store != null && store.IsManaged(pawn);
-            return managed
-                ? (showVanilla
-                    ? CompiledJobOrders.VanillaPriorityFor(pawn, workType)
-                    : CompiledJobOrders.PriorityFor(pawn, workType))
-                : pawn.workSettings?.GetPriority(workType) ?? 0;
-        }
-
-        /// Vanilla's WidgetsWork.DrawWorkBoxBackground is private; this is its
-        /// look-alike (skill-shaded background lerp + passion overlay), minus
-        /// the warning overlays and null-safe on skills.
-        private static void DrawWorkBoxBackground(Rect rect, Pawn pawn, WorkTypeDef workType)
-        {
-            float skill = pawn.skills != null ? pawn.skills.AverageOfRelevantSkillsFor(workType) : 10f;
-            Texture2D baseTex;
-            Texture2D blendTex;
-            float blend;
-            if (skill < 4f)
-            {
-                baseTex = WidgetsWork.WorkBoxBGTex_Awful;
-                blendTex = WidgetsWork.WorkBoxBGTex_Bad;
-                blend = skill / 4f;
-            }
-            else if (skill <= 14f)
-            {
-                baseTex = WidgetsWork.WorkBoxBGTex_Bad;
-                blendTex = WidgetsWork.WorkBoxBGTex_Mid;
-                blend = (skill - 4f) / 10f;
-            }
-            else
-            {
-                baseTex = WidgetsWork.WorkBoxBGTex_Mid;
-                blendTex = WidgetsWork.WorkBoxBGTex_Excellent;
-                blend = (skill - 14f) / 6f;
-            }
-            GUI.DrawTexture(rect, baseTex);
-            GUI.color = new Color(1f, 1f, 1f, blend);
-            GUI.DrawTexture(rect, blendTex);
+            GUI.DrawTexture(rect, cell.BaseTexture);
+            GUI.color = new Color(1f, 1f, 1f, cell.BlendAlpha);
+            GUI.DrawTexture(rect, cell.BlendTexture);
             GUI.color = Color.white;
 
-            var passion = pawn.skills?.MaxPassionOfRelevantSkillsFor(workType) ?? Passion.None;
-            if (passion > Passion.None)
+            if (cell.PassionTexture != null)
             {
                 GUI.color = new Color(1f, 1f, 1f, 0.4f);
                 var half = rect;
                 half.xMin = rect.center.x;
                 half.yMin = rect.center.y;
-                GUI.DrawTexture(half, passion == Passion.Major
-                    ? WidgetsWork.PassionWorkboxMajorIcon
-                    : WidgetsWork.PassionWorkboxMinorIcon);
+                GUI.DrawTexture(half, cell.PassionTexture);
                 GUI.color = Color.white;
             }
         }

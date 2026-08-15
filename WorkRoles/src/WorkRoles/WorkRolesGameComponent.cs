@@ -21,12 +21,33 @@ namespace WorkRoles
         // Update runs before the frame's GUI events, pause included.
         private static readonly System.Collections.Generic.Queue<System.Action> deferredUi
             = new System.Collections.Generic.Queue<System.Action>();
+        private static readonly System.Action writeSettingsAction = WriteSettings;
+        private static bool settingsWritePending;
 
         public static void RunOutsideOnGUI(System.Action action) => deferredUi.Enqueue(action);
 
+        /// Client preferences become authoritative in memory immediately, but
+        /// their disk write is coalesced and performed outside the IMGUI pass.
+        public static void RequestSettingsWrite()
+        {
+            if (settingsWritePending) return;
+            settingsWritePending = true;
+            deferredUi.Enqueue(writeSettingsAction);
+        }
+
+        private static void WriteSettings()
+        {
+            settingsWritePending = false;
+            WorkRolesMod.Settings?.Write();
+        }
+
         /// Returning to the menu must not carry a deferred command into the
         /// next game, even when the queued closure contains only scalar IDs.
-        internal static void ReleaseForTeardown() => deferredUi.Clear();
+        internal static void ReleaseForTeardown()
+        {
+            deferredUi.Clear();
+            settingsWritePending = false;
+        }
 
         public override void GameComponentUpdate()
         {

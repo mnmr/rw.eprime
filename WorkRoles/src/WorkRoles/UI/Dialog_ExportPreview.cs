@@ -53,6 +53,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using var guiState = new GuiStateScope(capture: true);
             EnsureTextCache();
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(
@@ -90,8 +91,14 @@ namespace WorkRoles.UI
             }
             var viewRect = new Rect(0f, 0f, viewWidth, Mathf.Max(textHeight, outRect.height));
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
-            GUI.TextArea(viewRect, xml, style);
-            Widgets.EndScrollView();
+            try
+            {
+                GUI.TextArea(viewRect, xml, style);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             string path = CachedResolvedPath(out string problem, out _);
 

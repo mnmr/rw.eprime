@@ -73,6 +73,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using var guiState = new GuiStateScope(capture: true);
             EnsureTextCache();
             if (Event.current.type == EventType.MouseDown)
                 WorkRolesGameComponent.RunOutsideOnGUI(

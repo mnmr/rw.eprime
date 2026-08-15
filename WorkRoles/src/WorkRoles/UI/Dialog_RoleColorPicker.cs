@@ -11,8 +11,37 @@ namespace WorkRoles.UI
     /// custom role-editor swatch. The palette offers the Tailwind swatches.
     public class Dialog_RoleColorPicker : Dialog_ColorPickerBase
     {
+        private sealed class RoleColorPickerSizeSnapshot
+        {
+            internal RoleColorPickerSizeSnapshot(Vector2 size)
+            {
+                Size = size;
+            }
+
+            internal Vector2 Size { get; }
+
+            internal bool ContentEquals(RoleColorPickerSizeSnapshot other) =>
+                other != null
+                && Size.x == other.Size.x
+                && Size.y == other.Size.y;
+        }
+
         private readonly Action<Color> onSave;
         private readonly List<Color> pickable;
+
+        // Owner: this role-color picker dialog instance.
+        // Key: dialog identity, immutable pickable-color count, and language
+        // revision.
+        // Value: immutable initial-window-size snapshot.
+        // Dependencies: pickable count, BaseColumns, the translated and
+        // capitalized ChooseAColor header, Medium-font wrapped height at 564f,
+        // Small-font line height, and LanguageChangeCoordinator.Revision.
+        // Refresh: immediately on the next size read after a dependency change.
+        // Equality: an equal rebuild preserves snapshot identity.
+        // Teardown: closing the dialog releases the instance-owned snapshot.
+        private RoleColorPickerSizeSnapshot sizeSnapshot;
+        private int sizePickableCount = -1;
+        private int sizeLanguageRevision = -1;
 
         protected override bool ShowDarklight => false;
         protected override Color DefaultColor => oldColor;
@@ -22,21 +51,47 @@ namespace WorkRoles.UI
 
         /// Sized from Dialog_ColorPickerBase's actual row budget — its fixed
         /// 450f height fits ~8 palette rows and RectDivider errors past that.
-        public override Vector2 InitialSize
+        public override Vector2 InitialSize => SizeSnapshot().Size;
+
+        private RoleColorPickerSizeSnapshot SizeSnapshot()
         {
-            get
+            int pickableCount = pickable.Count;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (sizeSnapshot != null
+                && sizePickableCount == pickableCount
+                && sizeLanguageRevision == languageRevision)
+                return sizeSnapshot;
+
+            int rows = Mathf.CeilToInt((float)pickableCount / BaseColumns);
+            float central = Mathf.Max(28f * rows + 26f, 200f);
+            string headerText = "ChooseAColor".Translate().CapitalizeFirst();
+            GameFont oldFont = Text.Font;
+            bool oldWordWrap = Text.WordWrap;
+            float header;
+            float lineHeight;
+            try
             {
-                int rows = Mathf.CeilToInt((float)pickable.Count / BaseColumns);
-                float central = Mathf.Max(28f * rows + 26f, 200f);  // palette vs wheel/textfields
-                float header, lineH;
-                using (new TextBlock(GameFont.Medium))
-                    header = Text.CalcHeight("ChooseAColor".Translate().CapitalizeFirst(), 564f);
-                using (new TextBlock(GameFont.Small))
-                    lineH = Text.LineHeight;
-                // 192 = the base's fixed rows, RectDivider margins, window
-                // margins, and an 8f drift cushion.
-                return new Vector2(600f, header + central + 2f * lineH + 192f);
+                Text.Font = GameFont.Medium;
+                Text.WordWrap = true;
+                header = Text.CalcHeight(headerText, 564f);
+                Text.Font = GameFont.Small;
+                lineHeight = Text.LineHeight;
             }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.WordWrap = oldWordWrap;
+            }
+
+            // 192 = the base's fixed rows, RectDivider margins, window
+            // margins, and an 8f drift cushion.
+            var rebuilt = new RoleColorPickerSizeSnapshot(new Vector2(
+                600f, header + central + 2f * lineHeight + 192f));
+            if (sizeSnapshot == null || !sizeSnapshot.ContentEquals(rebuilt))
+                sizeSnapshot = rebuilt;
+            sizePickableCount = pickableCount;
+            sizeLanguageRevision = languageRevision;
+            return sizeSnapshot;
         }
 
         /// The base palette wraps at 9 fixed columns (250px, private layout),

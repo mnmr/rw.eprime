@@ -43,6 +43,11 @@ namespace WorkRoles.UI
             string unitSuffix = null)
         {
             int? requested = null;
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            try
+            {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
@@ -75,6 +80,13 @@ namespace WorkRoles.UI
             if (Widgets.ButtonText(plusRect, "+"))
                 requested = value + StepSize(1);
             return requested;
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+            }
         }
 
         /// Editable int field for a [-] value [+] row. Shows the snapshot's

@@ -20,8 +20,7 @@ namespace WorkRoles.UI
         {
             var store = RoleStore.Current;
             if (store == null) return;
-
-            state.EnsureTips();
+            OptionsRenderSnapshot snapshot = state.Snapshot(store);
 
             float flowX = rect.x + 16f;
             float flowW = Mathf.Min(rect.width - 32f, 640f);
@@ -35,49 +34,76 @@ namespace WorkRoles.UI
             var displayHeader = new Rect(flowX, y + 8f, flowW, 28f);
             y += 8f + 32f;
 
-            WrText.HeaderLabel(compatHeader, "WR_CompatSection".Translate());
+            WrText.HeaderLabel(compatHeader, snapshot.CompatibilityHeader);
 
-            bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
-            StructuredTipPresenter.TipRegion(numericRect, state.NumericTip);
-            bool numericNew = numeric;
-            Widgets.CheckboxLabeled(numericRect, "WR_OptNumeric".Translate(), ref numericNew);
-            if (numericNew != numeric)
+            StructuredTipPresenter.TipRegion(numericRect, snapshot.NumericTip);
+            bool numericNew = snapshot.Numeric;
+            Widgets.CheckboxLabeled(
+                numericRect, snapshot.NumericLabel, ref numericNew);
+            if (numericNew != snapshot.Numeric)
                 RoleCommands.SetUseWorkPriorities(numericNew);
 
-            bool vanillaRange = store.reportVanillaPriorities;
-            StructuredTipPresenter.TipRegion(rangeRect, state.RangeTip);
-            bool vanillaNew = vanillaRange;
-            Widgets.CheckboxLabeled(rangeRect, "WR_OptVanillaRange".Translate(), ref vanillaNew);
-            if (vanillaNew != vanillaRange)
+            StructuredTipPresenter.TipRegion(rangeRect, snapshot.RangeTip);
+            bool vanillaNew = snapshot.VanillaRange;
+            Widgets.CheckboxLabeled(
+                rangeRect, snapshot.RangeLabel, ref vanillaNew);
+            if (vanillaNew != snapshot.VanillaRange)
                 RoleCommands.SetReportVanillaPriorities(vanillaNew);
 
             // Client-side display preferences: chip caches key on these values
             // directly, so a write here is picked up on the next draw pass.
-            WrText.HeaderLabel(displayHeader, "WR_DisplaySection".Translate());
-            var settings = WorkRolesMod.Settings;
-            if (settings == null) return;
-            DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                "WR_OptSkillCaptions", ref settings.colonistSkillCaptions);
+            WrText.HeaderLabel(displayHeader, snapshot.DisplayHeader);
+            bool? changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
+                snapshot.SkillCaptionsLabel, "WR_OptSkillCaptionsTip",
+                snapshot.SkillCaptions);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.ColonistSkillCaptions,
+                    changed.Value);
             y += 34f;
-            DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                "WR_OptVerdictsColonists", ref settings.verdictsOnColonistChips);
+            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
+                snapshot.ColonistVerdictsLabel, "WR_OptVerdictsColonistsTip",
+                snapshot.ColonistVerdicts);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.VerdictsOnColonistChips,
+                    changed.Value);
             y += 34f;
-            DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                "WR_OptVerdictsPalette", ref settings.verdictsInPalette);
+            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
+                snapshot.PaletteVerdictsLabel, "WR_OptVerdictsPaletteTip",
+                snapshot.PaletteVerdicts);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.VerdictsInPalette,
+                    changed.Value);
             y += 34f;
-            DisplayToggle(new Rect(flowX, y, flowW, 28f),
-                "WR_OptVerdictsRecommendations",
-                ref settings.verdictsOnRecommendationChips);
+            changed = DisplayToggle(new Rect(flowX, y, flowW, 28f),
+                snapshot.RecommendationVerdictsLabel,
+                "WR_OptVerdictsRecommendationsTip",
+                snapshot.RecommendationVerdicts);
+            if (changed.HasValue)
+                SetDisplayPreference(
+                    OptionsDisplayPreference.VerdictsOnRecommendationChips,
+                    changed.Value);
         }
 
-        private static void DisplayToggle(Rect rect, string key, ref bool value)
+        private static bool? DisplayToggle(
+            Rect rect, string label, string tipKey, bool value)
         {
-            WrTips.Key(key + "Tip").Region(rect);
+            WrTips.Key(tipKey).Region(rect);
             bool edited = value;
-            Widgets.CheckboxLabeled(rect, key.Translate(), ref edited);
-            if (edited == value) return;
-            value = edited;
-            WorkRolesMod.Settings.Write();
+            Widgets.CheckboxLabeled(rect, label, ref edited);
+            return edited == value ? (bool?)null : edited;
+        }
+
+        private static void SetDisplayPreference(
+            OptionsDisplayPreference preference, bool value)
+        {
+            WorkRolesSettings settings = WorkRolesMod.Settings;
+            if (settings == null
+                || !settings.SetDisplayPreference(preference, value))
+                return;
+            WorkRolesGameComponent.RequestSettingsWrite();
         }
     }
 }

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using RimWorld;
 using UnityEngine;
@@ -59,16 +58,64 @@ namespace WorkRoles.UI
             public float TextHeight { get; }
         }
 
+        private sealed class ImportRenderSnapshot
+        {
+            private readonly RenderRow[] rows;
+            private readonly VariableViewportLayout layout;
+
+            internal ImportRenderSnapshot(
+                RenderRow[] rows,
+                IReadOnlyList<float> extents)
+            {
+                this.rows = rows;
+                layout = new VariableViewportLayout(extents);
+            }
+
+            internal float ContentExtent => layout.ContentExtent;
+
+            internal VariableViewportRange Calculate(
+                float viewportStart,
+                float viewportExtent) =>
+                layout.Calculate(viewportStart, viewportExtent);
+
+            internal RenderRow RowAt(int index) => rows[index];
+            internal float OffsetOf(int index) => layout.OffsetOf(index);
+
+            internal bool ContentEquals(
+                IReadOnlyList<RenderRow> otherRows,
+                IReadOnlyList<float> otherExtents)
+            {
+                if (otherRows == null || otherExtents == null
+                    || rows.Length != otherRows.Count
+                    || rows.Length != otherExtents.Count)
+                    return false;
+                for (int i = 0; i < rows.Length; i++)
+                {
+                    RenderRow left = rows[i];
+                    RenderRow right = otherRows[i];
+                    if (left.Kind != right.Kind
+                        || left.Section != right.Section
+                        || left.SourceIndex != right.SourceIndex
+                        || left.Text != right.Text
+                        || left.TextHeight != right.TextHeight
+                        || layout.ExtentOf(i) != otherExtents[i])
+                        return false;
+                }
+                return true;
+            }
+        }
+
         private const float RowH = 26f;
         private const float SectionGap = 10f;
         private const float RadioW = 24f;
 
         private readonly string xml;
         private readonly RoleFileDocument doc;
-        private readonly List<RoleIO.PaletteRow> paletteRows;
-        private readonly List<RoleIO.RoleRow> roleRows;
-        private readonly List<Row> paletteMergeUi;
-        private readonly List<Row> roleMergeUi;
+        private List<RoleIO.PaletteRow> paletteRows;
+        private List<RoleIO.RoleRow> roleRows;
+        private List<Row> paletteMergeUi;
+        private List<Row> roleMergeUi;
+        private readonly bool[] paletteSelectionBySource;
         private readonly List<Row> pathMergeUi;
         private readonly List<string> paletteOverwriteInfo = new List<string>();
         private readonly List<string> rolesOverwriteInfo = new List<string>();
@@ -85,13 +132,29 @@ namespace WorkRoles.UI
         private int roleIncludedCount;
         private int pathIncludedCount;
 
-        private RenderRow[] renderRows = Array.Empty<RenderRow>();
-        private VariableViewportLayout rowLayout;
+        // Owner: this import-preview dialog instance.
+        // Key: dialog identity, RoleStore identity, UiVersion.Current, exact row
+        // width, LayoutState(), merge generation, and language revision; explicit
+        // rowLayoutDirty invalidation covers local selection changes.
+        // Value: immutable ImportRenderSnapshot with a private transferred row
+        // array and copy-owned variable-height viewport layout.
+        // Dependencies: imported document section membership, current store
+        // roles/palette through UiVersion, merge/overwrite selections, translated
+        // UI text, Small-font wrapped measurements, constants, and exact width.
+        // Refresh: immediately after a store, selection, language, or width change.
+        // Equality: exact equal rows and extents preserve snapshot identity.
+        // Teardown: closing the dialog releases the instance-owned snapshot.
+        private ImportRenderSnapshot renderSnapshot;
         private float rowLayoutWidth = -1f;
         private int rowLayoutState = -1;
         private int rowLayoutStamp = -1;
+        private int rowLayoutMergeGeneration = -1;
         private bool rowLayoutDirty = true;
         private int uiLanguageRevision = -1;
+        private int uiMergeGeneration = -1;
+        private RoleStore mergeOwner;
+        private int mergeUiRevision = -1;
+        private int mergeGeneration;
 
         private string titleText;
         private string paletteTitle;
@@ -112,19 +175,16 @@ namespace WorkRoles.UI
         {
             this.xml = xml;
             this.doc = doc;
-            var store = RoleStore.Current;
-            paletteRows = RoleIO.PaletteMergeRows(store, doc);
-            roleRows = RoleIO.RoleRows(store, doc);
+            paletteSelectionBySource = new bool[doc.palette.Count];
+            for (int i = 0; i < paletteSelectionBySource.Length; i++)
+                paletteSelectionBySource[i] = true;
+            pathMergeUi = NewRows(doc.trainingPaths.Count);
+            EnsureMergeRows();
             paletteInclude = paletteRows.Count > 0 || doc.palette.Count > 0;
             rolesInclude = roleRows.Count > 0;
             pathsInclude = rolesInclude && doc.trainingPaths.Count > 0;
             orderInclude = rolesInclude && doc.recommendationOrder.Count > 0;
 
-            paletteMergeUi = NewRows(paletteRows.Count);
-            roleMergeUi = NewRows(roleRows.Count);
-            pathMergeUi = NewRows(doc.trainingPaths.Count);
-            paletteIncludedCount = paletteMergeUi.Count;
-            roleIncludedCount = roleMergeUi.Count;
             pathIncludedCount = pathMergeUi.Count;
         }
 
@@ -140,19 +200,29 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            using var guiState = new GuiStateScope(capture: true);
             ObservePreviewLanguageRevision();
+            EnsureMergeRows();
             EnsureUiText();
             EnforceRoleDependencies();
             float listTop = DrawCachedPreviewTitle(inRect, titleText);
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             EnsureRenderRows(rowW);
+            ImportRenderSnapshot snapshot = renderSnapshot;
 
             Widgets.BeginScrollView(listRect, ref scroll,
-                new Rect(0f, 0f, rowW, rowLayout.ContentExtent));
-            VariableViewportRange visibleRows = rowLayout.Calculate(scroll.y, listRect.height);
-            DrawVisibleRows(visibleRows, rowW);
-            Widgets.EndScrollView();
+                new Rect(0f, 0f, rowW, snapshot.ContentExtent));
+            try
+            {
+                VariableViewportRange visibleRows = snapshot.Calculate(
+                    scroll.y, listRect.height);
+                DrawVisibleRows(snapshot, visibleRows, rowW);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             bool canApply = (paletteInclude && (paletteOverwrite || paletteIncludedCount > 0))
                 || (rolesInclude && (rolesOverwrite || roleIncludedCount > 0))
@@ -170,7 +240,7 @@ namespace WorkRoles.UI
                     paths = pathsInclude,
                     pathsOverwrite = pathsOverwrite,
                     order = orderInclude,
-                    paletteRows = SelectedIndices(paletteMergeUi),
+                    paletteRows = SelectedPaletteSourceIndices(),
                     roleRows = SelectedIndices(roleMergeUi),
                     pathRows = SelectedIndices(pathMergeUi),
                 };
@@ -180,11 +250,67 @@ namespace WorkRoles.UI
             }
         }
 
+        private void EnsureMergeRows()
+        {
+            RoleStore store = RoleStore.Current;
+            int uiRevision = UiVersion.Current;
+            if (ReferenceEquals(mergeOwner, store)
+                && mergeUiRevision == uiRevision)
+                return;
+
+            List<Row> previousRoleUi = roleMergeUi;
+            List<RoleIO.PaletteRow> nextPaletteRows = store == null
+                ? new List<RoleIO.PaletteRow>()
+                : RoleIO.PaletteMergeRows(store, doc);
+            List<RoleIO.RoleRow> nextRoleRows = store == null
+                ? new List<RoleIO.RoleRow>()
+                : RoleIO.RoleRows(store, doc);
+            var nextPaletteUi = new List<Row>(nextPaletteRows.Count);
+            for (int i = 0; i < nextPaletteRows.Count; i++)
+            {
+                int sourceIndex = nextPaletteRows[i].sourceIndex;
+                bool included = sourceIndex >= 0
+                    && sourceIndex < paletteSelectionBySource.Length
+                    && paletteSelectionBySource[sourceIndex];
+                nextPaletteUi.Add(new Row { included = included });
+            }
+            var nextRoleUi = new List<Row>(nextRoleRows.Count);
+            for (int i = 0; i < nextRoleRows.Count; i++)
+            {
+                bool included = previousRoleUi == null
+                    || i >= previousRoleUi.Count
+                    || previousRoleUi[i].included;
+                nextRoleUi.Add(new Row { included = included });
+            }
+
+            paletteRows = nextPaletteRows;
+            roleRows = nextRoleRows;
+            paletteMergeUi = nextPaletteUi;
+            roleMergeUi = nextRoleUi;
+            paletteIncludedCount = IncludedCount(paletteMergeUi);
+            roleIncludedCount = IncludedCount(roleMergeUi);
+            mergeOwner = store;
+            mergeUiRevision = uiRevision;
+            mergeGeneration++;
+            rowLayoutDirty = true;
+        }
+
+        private static int IncludedCount(List<Row> rows)
+        {
+            int count = 0;
+            for (int i = 0; i < rows.Count; i++)
+                if (rows[i].included)
+                    count++;
+            return count;
+        }
+
         private void EnsureUiText()
         {
+            EnsureMergeRows();
             int languageRevision = LanguageChangeCoordinator.Revision;
-            if (uiLanguageRevision == languageRevision) return;
-            uiLanguageRevision = languageRevision;
+            if (uiLanguageRevision == languageRevision
+                && uiMergeGeneration == mergeGeneration)
+                return;
 
             using (new TextBlock(GameFont.Small))
             {
@@ -227,7 +353,9 @@ namespace WorkRoles.UI
                 rolesOverwriteInfo.Clear();
                 rolesOverwriteInfo.Add("WR_OverwriteReplaces"
                     .Translate(roleRows.Count).ToString());
-                List<Role> deletes = RoleIO.OverwriteDeletes(RoleStore.Current, doc);
+                List<Role> deletes = mergeOwner == null
+                    ? new List<Role>()
+                    : RoleIO.OverwriteDeletes(mergeOwner, roleRows);
                 if (deletes.Count > 0)
                 {
                     var labels = new List<string>(deletes.Count);
@@ -240,6 +368,8 @@ namespace WorkRoles.UI
                 pathsOverwriteInfo.Add("WR_PathsOverwriteInfo"
                     .Translate(doc.trainingPaths.Count).ToString());
             }
+            uiLanguageRevision = languageRevision;
+            uiMergeGeneration = mergeGeneration;
             rowLayoutDirty = true;
         }
 
@@ -248,38 +378,62 @@ namespace WorkRoles.UI
             EnsureUiText();
             int state = LayoutState();
             int languageRevision = LanguageChangeCoordinator.Revision;
-            if (!rowLayoutDirty && rowLayout != null
+            if (!rowLayoutDirty && renderSnapshot != null
                 && rowLayoutWidth == width
-                && rowLayoutState == state && rowLayoutStamp == languageRevision)
+                && rowLayoutState == state
+                && rowLayoutStamp == languageRevision
+                && rowLayoutMergeGeneration == mergeGeneration)
                 return;
 
             var nextRows = new List<RenderRow>();
             var heights = new List<float>();
-            AddSection(nextRows, heights, width, Section.Palette,
-                paletteInclude, paletteOverwrite, paletteMergeUi, paletteOverwriteInfo);
-            AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
-            AddSection(nextRows, heights, width, Section.Roles,
-                rolesInclude, rolesOverwrite, roleMergeUi, rolesOverwriteInfo);
-            if (pathMergeUi.Count > 0)
+            GameFont oldFont = Text.Font;
+            bool oldWordWrap = Text.WordWrap;
+            try
             {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                AddSection(nextRows, heights, width, Section.Palette,
+                    paletteTitle,
+                    paletteInclude, paletteOverwrite, paletteMergeUi,
+                    paletteOverwriteInfo);
                 AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
-                AddSection(nextRows, heights, width, Section.Paths,
-                    pathsInclude, pathsOverwrite, pathMergeUi, pathsOverwriteInfo);
+                AddSection(nextRows, heights, width, Section.Roles,
+                    rolesTitle,
+                    rolesInclude, rolesOverwrite, roleMergeUi, rolesOverwriteInfo);
+                if (pathMergeUi.Count > 0)
+                {
+                    AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
+                    AddSection(nextRows, heights, width, Section.Paths,
+                        pathsTitle,
+                        pathsInclude, pathsOverwrite, pathMergeUi,
+                        pathsOverwriteInfo);
+                }
+                if (doc.recommendationOrder.Count > 0)
+                {
+                    AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
+                    AddSimpleRow(nextRows, heights, RenderKind.OrderHeader,
+                        RowH, text: orderTitle);
+                    if (orderInclude)
+                        AddInfoRow(nextRows, heights, width, orderInfoText);
+                }
+                // Preserve MeasureContent's trailing breathing room exactly.
+                AddSimpleRow(nextRows, heights, RenderKind.BottomPadding, RowH);
             }
-            if (doc.recommendationOrder.Count > 0)
+            finally
             {
-                AddSimpleRow(nextRows, heights, RenderKind.Gap, SectionGap);
-                AddSimpleRow(nextRows, heights, RenderKind.OrderHeader, RowH);
-                if (orderInclude) AddInfoRow(nextRows, heights, width, orderInfoText);
+                Text.Font = oldFont;
+                Text.WordWrap = oldWordWrap;
             }
-            // Preserve MeasureContent's trailing breathing room exactly.
-            AddSimpleRow(nextRows, heights, RenderKind.BottomPadding, RowH);
 
-            renderRows = nextRows.ToArray();
-            rowLayout = new VariableViewportLayout(heights);
+            if (renderSnapshot == null
+                || !renderSnapshot.ContentEquals(nextRows, heights))
+                renderSnapshot = new ImportRenderSnapshot(
+                    nextRows.ToArray(), heights);
             rowLayoutWidth = width;
             rowLayoutState = state;
             rowLayoutStamp = languageRevision;
+            rowLayoutMergeGeneration = mergeGeneration;
             rowLayoutDirty = false;
         }
 
@@ -288,12 +442,14 @@ namespace WorkRoles.UI
             List<float> heights,
             float width,
             Section section,
+            string title,
             bool include,
             bool overwrite,
             List<Row> mergeRows,
             List<string> overwriteInfo)
         {
-            AddSimpleRow(target, heights, RenderKind.SectionHeader, RowH, section);
+            AddSimpleRow(target, heights, RenderKind.SectionHeader, RowH,
+                section, title);
             if (!include) return;
             if (!overwrite)
             {
@@ -304,7 +460,8 @@ namespace WorkRoles.UI
                 }
                 for (int i = 0; i < mergeRows.Count; i++)
                 {
-                    target.Add(new RenderRow(RenderKind.MergeRow, section, i));
+                    target.Add(new RenderRow(RenderKind.MergeRow, section, i,
+                        mergeRows[i].label));
                     heights.Add(RowH);
                 }
                 return;
@@ -318,9 +475,10 @@ namespace WorkRoles.UI
             List<float> heights,
             RenderKind kind,
             float height,
-            Section section = Section.Palette)
+            Section section = Section.Palette,
+            string text = null)
         {
-            target.Add(new RenderRow(kind, section));
+            target.Add(new RenderRow(kind, section, text: text));
             heights.Add(height);
         }
 
@@ -336,60 +494,84 @@ namespace WorkRoles.UI
             heights.Add(textHeight + 2f);
         }
 
-        private void DrawVisibleRows(VariableViewportRange visibleRows, float width)
+        private void DrawVisibleRows(
+            ImportRenderSnapshot snapshot,
+            VariableViewportRange visibleRows,
+            float width)
         {
-            for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
+            Color oldColor = GUI.color;
+            bool oldEnabled = GUI.enabled;
+            try
             {
-                RenderRow row = renderRows[i];
-                float y = rowLayout.OffsetOf(i);
-                switch (row.Kind)
+                for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
                 {
-                    case RenderKind.SectionHeader:
-                        DrawSectionHeader(row.Section, width, y);
-                        break;
-                    case RenderKind.MergeRow:
-                        DrawMergeRow(row.Section, row.SourceIndex, width, y);
-                        break;
-                    case RenderKind.Info:
-                        if (Event.current.type == EventType.Repaint)
-                        {
-                            GUI.color = new Color(0.7f, 0.7f, 0.7f);
-                            Widgets.Label(new Rect(16f, y, width - 16f, row.TextHeight), row.Text);
-                            GUI.color = Color.white;
-                        }
-                        break;
-                    case RenderKind.OrderHeader:
-                        bool previousEnabled = GUI.enabled;
-                        GUI.enabled = previousEnabled && rolesInclude;
-                        bool before = orderInclude;
-                        Widgets.CheckboxLabeled(new Rect(0f, y, width * 0.4f, RowH - 2f),
-                            orderTitle, ref orderInclude);
-                        GUI.enabled = previousEnabled;
-                        if (before != orderInclude) rowLayoutDirty = true;
-                        break;
+                    RenderRow row = snapshot.RowAt(i);
+                    float y = snapshot.OffsetOf(i);
+                    switch (row.Kind)
+                    {
+                        case RenderKind.SectionHeader:
+                            DrawSectionHeader(row.Section, row.Text, width, y);
+                            break;
+                        case RenderKind.MergeRow:
+                            DrawMergeRow(row.Section, row.SourceIndex, row.Text,
+                                width, y);
+                            break;
+                        case RenderKind.Info:
+                            if (Event.current.type == EventType.Repaint)
+                            {
+                                GUI.color = new Color(0.7f, 0.7f, 0.7f);
+                                Widgets.Label(new Rect(16f, y, width - 16f,
+                                    row.TextHeight), row.Text);
+                                GUI.color = oldColor;
+                            }
+                            break;
+                        case RenderKind.OrderHeader:
+                            GUI.enabled = oldEnabled && rolesInclude;
+                            bool before = orderInclude;
+                            Widgets.CheckboxLabeled(new Rect(0f, y, width * 0.4f,
+                                RowH - 2f), row.Text, ref orderInclude);
+                            GUI.enabled = oldEnabled;
+                            if (before != orderInclude) rowLayoutDirty = true;
+                            break;
+                    }
                 }
+            }
+            finally
+            {
+                GUI.color = oldColor;
+                GUI.enabled = oldEnabled;
             }
         }
 
-        private void DrawSectionHeader(Section section, float width, float y)
+        private void DrawSectionHeader(
+            Section section,
+            string title,
+            float width,
+            float y)
         {
             switch (section)
             {
                 case Section.Palette:
-                    DrawSectionHeader(width, y, paletteTitle,
+                    DrawSectionHeader(width, y, title,
                         ref paletteInclude, ref paletteOverwrite);
                     break;
                 case Section.Roles:
-                    DrawSectionHeader(width, y, rolesTitle,
+                    DrawSectionHeader(width, y, title,
                         ref rolesInclude, ref rolesOverwrite);
                     EnforceRoleDependencies();
                     break;
                 case Section.Paths:
                     bool previousEnabled = GUI.enabled;
-                    GUI.enabled = previousEnabled && rolesInclude;
-                    DrawSectionHeader(width, y, pathsTitle,
-                        ref pathsInclude, ref pathsOverwrite);
-                    GUI.enabled = previousEnabled;
+                    try
+                    {
+                        GUI.enabled = previousEnabled && rolesInclude;
+                        DrawSectionHeader(width, y, title,
+                            ref pathsInclude, ref pathsOverwrite);
+                    }
+                    finally
+                    {
+                        GUI.enabled = previousEnabled;
+                    }
                     break;
             }
         }
@@ -429,19 +611,30 @@ namespace WorkRoles.UI
                 rowLayoutDirty = true;
         }
 
-        private void DrawMergeRow(Section section, int index, float width, float y)
+        private void DrawMergeRow(
+            Section section,
+            int index,
+            string label,
+            float width,
+            float y)
         {
             List<Row> rows = MergeRows(section);
             Row row = rows[index];
             bool before = row.included;
             Widgets.CheckboxLabeled(new Rect(16f, y, width - 16f, RowH - 2f),
-                row.label, ref row.included);
+                label, ref row.included);
             if (before == row.included) return;
             switch (section)
             {
                 case Section.Palette:
-                    paletteIncludedCount += row.included ? 1 : -1;
-                    break;
+                    {
+                        int sourceIndex = paletteRows[index].sourceIndex;
+                        if (sourceIndex >= 0
+                            && sourceIndex < paletteSelectionBySource.Length)
+                            paletteSelectionBySource[sourceIndex] = row.included;
+                        paletteIncludedCount += row.included ? 1 : -1;
+                        break;
+                    }
                 case Section.Roles:
                     roleIncludedCount += row.included ? 1 : -1;
                     break;
@@ -474,6 +667,15 @@ namespace WorkRoles.UI
             return state;
         }
 
+        private List<int> SelectedPaletteSourceIndices()
+        {
+            var result = new List<int>();
+            for (int i = 0; i < paletteMergeUi.Count; i++)
+                if (paletteMergeUi[i].included)
+                    result.Add(paletteRows[i].sourceIndex);
+            return result;
+        }
+
         private static List<int> SelectedIndices(List<Row> rows)
         {
             var result = new List<int>();
@@ -481,6 +683,21 @@ namespace WorkRoles.UI
                 if (rows[i].included)
                     result.Add(i);
             return result;
+        }
+
+        public override void PostClose()
+        {
+            renderSnapshot = null;
+            mergeOwner = null;
+            paletteRows?.Clear();
+            roleRows?.Clear();
+            paletteMergeUi?.Clear();
+            roleMergeUi?.Clear();
+            mergeUiRevision = -1;
+            uiLanguageRevision = -1;
+            uiMergeGeneration = -1;
+            rowLayoutMergeGeneration = -1;
+            base.PostClose();
         }
     }
 }

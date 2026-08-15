@@ -47,7 +47,7 @@ namespace WorkRoles.UI
             float w = Mathf.Clamp(colonistsTab.DesiredWidth() + 200f,
                 ColonistsTabView.DefaultWidth, Verse.UI.screenWidth);
             float h = Mathf.Min(
-                Mathf.Max(colonistsTab.DesiredHeight(), RolesTabView.DesiredHeight()),
+                Mathf.Max(colonistsTab.DesiredHeight(), rolesTab.DesiredHeight()),
                 Verse.UI.screenHeight - 35f);
             return new Vector2(w, h);
         }
@@ -124,7 +124,7 @@ namespace WorkRoles.UI
                 if (e.clickCount == 2 && settings != null)
                 {
                     settings.windowWidth = settings.windowHeight = 0f;
-                    settings.Write();
+                    WorkRolesGameComponent.RequestSettingsWrite();
                     resizing = false;
                     pendingWindowRect.QueueUser(AutoSizeRect());
                 }
@@ -171,7 +171,7 @@ namespace WorkRoles.UI
                         ? pendingUserRect : windowRect;
                     settings.windowWidth = persistedRect.width;
                     settings.windowHeight = persistedRect.height;
-                    settings.Write();
+                    WorkRolesGameComponent.RequestSettingsWrite();
                 }
                 if (e.type == EventType.MouseUp) e.Use();
             }
@@ -182,6 +182,7 @@ namespace WorkRoles.UI
         public override void WindowUpdate()
         {
             base.WindowUpdate();
+            WrToast.Update();
             if (pendingWindowRect.TryConsume(out var nextWindowRect))
                 windowRect = nextWindowRect;
         }
@@ -273,13 +274,17 @@ namespace WorkRoles.UI
         public override void DoWindowContents(Rect inRect)
         {
             if (WrEvent.SkipContentPass()) return;
+            using var guiState = new GuiStateScope(capture: true);
             ObserveLanguageRevision();
             bool repaint = Event.current.type == EventType.Repaint;
             // UiVersion is advanced by WorkRoles mutations and authoritative
             // time-rule events. Refresh at the frame's repaint pass before
             // drawing; an event stamp check, never a scan for external changes.
             if (repaint)
+            {
                 colonistsTab.RefreshExternalSnapshotIfNeeded();
+                WrToast.RefreshLayout(inRect.width);
+            }
             DrawContents(inRect);
         }
 

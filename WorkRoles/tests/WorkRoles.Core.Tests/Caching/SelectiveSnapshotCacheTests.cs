@@ -125,6 +125,17 @@ public class SelectiveSnapshotCacheTests
         await Assert.That(ReferenceEquals(cache.Get(owner), published)).IsTrue();
     }
 
+    [Test]
+    public async Task ReleasingAnUntrackedOwnerIsANoOp()
+    {
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        int before = revisions.Current;
+
+        revisions.Release(new Owner("never tracked"));
+
+        await Assert.That(revisions.Current).IsEqualTo(before);
+    }
+
     private static IEnumerable<Owner> ThrowingOwners()
     {
         throw new Exception("unchanged snapshots must not enumerate owners");

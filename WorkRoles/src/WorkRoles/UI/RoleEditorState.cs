@@ -13,15 +13,25 @@ namespace WorkRoles.UI
     /// the translated labels and domain projections consumed by those passes.
     internal sealed class RoleEditorState
     {
-        // Owner: Roles window. Key: UiVersion/language generation. Value:
+        // Owner: Roles window. Key: language revision. Value:
         // immutable blocker StructuredTip model. Dependencies: role
         // terminology and language. Refresh: lazy on first tip read after a
-        // revision change. Equality: a matching stamp preserves tip identity.
-        // Teardown: Reset/language invalidation releases the tip reference.
-        private int tipsStamp = -1;
+        // revision change. Equality: equal rebuilt contents preserve identity.
+        // Teardown: Reset releases the tip reference.
+        private int tipsLanguageRevision = -1;
         private StructuredTip blockerTip;
 
-        // Owner: Roles window. Key: (UiVersion, selected role id). Value:
+        // Owner: Roles window. Key: definition-reload revision. Value: the
+        // collection of definition-derived editor cache slots below.
+        // Dependencies: RimWorld work type, work giver, and skill definitions.
+        // Refresh: immediate before the next definition-derived read. Equality:
+        // an unchanged revision keeps every slot; individual builders retain
+        // their normal equality policy. Teardown: Reset/language invalidation
+        // already releases every owned slot.
+        private int observedDefinitionRevision = -1;
+
+        // Owner: Roles window. Key: (UiVersion, definition revision, selected
+        // role id). Value:
         // producer-owned immutable skill presentations. Dependencies: role job
         // coverage, definition labels, role revision, and language. Refresh: lazy
         // on first read after key change. Equality: exact keys reuse list/item
@@ -40,7 +50,8 @@ namespace WorkRoles.UI
         private ScopeCacheStamp holdersStamp = ScopeCacheStamp.Invalid;
         private int holdersRoleId = -1;
 
-        // Owner: Roles window. Key: (UiVersion, selected role id). Value: private
+        // Owner: Roles window. Key: (UiVersion, definition revision, selected
+        // role id). Value: private
         // set of selected-entry indexes that compile to no jobs. Dependencies:
         // role entries and the game job catalog represented by UiVersion.
         // Refresh: lazy on first read after key change. Equality: exact keys reuse
@@ -49,8 +60,8 @@ namespace WorkRoles.UI
         private int deadEntriesStamp = -1;
         private int deadEntriesRoleId = -1;
 
-        // Owner: Roles window. Key: (entry kind, defName), with separate available
-        // widths for truncation tables. Value: immutable resolved/full/truncated
+        // Owner: Roles window. Key: (definition revision, entry kind, defName),
+        // with separate available widths for truncation tables. Value: immutable resolved/full/truncated
         // label strings and a missing-def flag. Dependencies: definition catalog,
         // language, font, and type/job column widths. Refresh: lazy on a label miss;
         // width changes immediately clear only the affected truncations. Equality:
@@ -66,7 +77,8 @@ namespace WorkRoles.UI
         private float typeTruncationWidth = -1f;
         private float jobTruncationWidth = -1f;
 
-        // Owner: Roles window. Key: UiVersion. Value: private producer-owned sets
+        // Owner: Roles window. Key: UiVersion and definition revision. Value:
+        // private producer-owned sets
         // and immutable RoleCoveragePresentation/warning string. Dependencies:
         // all non-blocker role coverage, job definitions, and language. Refresh:
         // lazy on first Coverage read after revision change. Equality: matching
@@ -86,8 +98,8 @@ namespace WorkRoles.UI
         private float measuredCoverageWarningWidth = -1f;
         private float measuredCoverageWarningHeight;
 
-        // Owner: Roles window. Key: UiVersion, selected role id, local expansion
-        // revision, and search filter. Value: producer-owned immutable job-tree
+        // Owner: Roles window. Key: UiVersion, definition revision, selected role
+        // id, local expansion revision, and search filter. Value: producer-owned immutable job-tree
         // row projections. Dependencies: role entries, definition/job catalogs,
         // coverage, language, filter, and expansion state. Refresh: immediate on
         // the next TreeNodes read after key change. Equality: exact keys preserve
@@ -118,7 +130,8 @@ namespace WorkRoles.UI
         // render projection with producer-owned buffers hidden behind indexed
         // accessors. Dependencies: UiVersion, location and pawn-scope revisions,
         // editor width, language, filter/expansion state, and local rules
-        // disclosure. Refresh: immediate when any dependency changes. Equality:
+        // disclosure, and definition revision. Refresh: immediate when any
+        // dependency changes. Equality:
         // unchanged dependencies preserve the snapshot identity. Teardown:
         // Reset/language invalidation releases the complete projection.
         private RoleEditorSnapshot editorSnapshot;
@@ -140,6 +153,7 @@ namespace WorkRoles.UI
             float width, bool rulesRevealed,
             bool revealTreeSelection)
         {
+            ObserveDefinitionRevision();
             bool sectionsNested = WorkRolesMod.Settings?.nestedRoleTree ?? true;
             if (!revealTreeSelection && editorSnapshotStamp == UiVersion.Current
                 && editorSnapshotRoleId == roleId
@@ -493,6 +507,7 @@ namespace WorkRoles.UI
             entryTypes.Clear();
             entryGivers.Clear();
             InvalidateLanguageCaches();
+            blockerTip = null;
         }
 
         internal void InvalidateLanguageCaches()
@@ -505,8 +520,7 @@ namespace WorkRoles.UI
             editorSnapshotTreeRevision = -1;
             editorSnapshotWidth = -1f;
             editorSnapshotFilter = null;
-            tipsStamp = -1;
-            blockerTip = null;
+            tipsLanguageRevision = -1;
             skillsUsed = null;
             skillsStamp = -1;
             skillsRoleId = -1;
@@ -524,19 +538,47 @@ namespace WorkRoles.UI
             treeNodesRoleId = -1;
         }
 
+        private void ObserveDefinitionRevision()
+        {
+            int revision = DefinitionReloadCoordinator.Revision;
+            if (observedDefinitionRevision == revision) return;
+            observedDefinitionRevision = revision;
+
+            editorSnapshot = null;
+            editorSnapshotStamp = -1;
+            skillsUsed = null;
+            skillsStamp = -1;
+            deadEntries = null;
+            deadEntriesStamp = -1;
+            ClearEntryLabels();
+            uncoveredGivers = null;
+            uncoveredTypes = null;
+            uncoveredWarning = null;
+            coverage = null;
+            uncoveredStamp = -1;
+            measuredCoverageWarning = null;
+            measuredCoverageWarningWidth = -1f;
+            treeNodes = null;
+            treeNodesStamp = -1;
+        }
+
         private void EnsureTips()
         {
-            if (tipsStamp == UiVersion.Current) return;
-            tipsStamp = UiVersion.Current;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (tipsLanguageRevision == languageRevision) return;
+            tipsLanguageRevision = languageRevision;
 
             var blocker = new TipModel { Title = "WR_BlockerRole".Translate() };
             blocker.AddSection().Text("WR_BlockerRoleTipWhat".Translate());
             blocker.AddSection().Text("WR_BlockerRoleTipWhy".Translate(), dim: true);
-            blockerTip = new StructuredTip("roles:blocker", blocker);
+            var rebuilt = new StructuredTip("roles:blocker", blocker);
+            if (blockerTip == null || !blockerTip.ContentEquals(rebuilt))
+                blockerTip = rebuilt;
         }
 
         internal IReadOnlyList<RoleSkillPresentation> SkillsUsed(Role role)
         {
+            ObserveDefinitionRevision();
             if (skillsUsed == null || skillsStamp != UiVersion.Current
                 || skillsRoleId != role.id)
             {
@@ -582,6 +624,7 @@ namespace WorkRoles.UI
 
         internal IReadOnlyCollection<int> DeadEntryIndexes(Role role)
         {
+            ObserveDefinitionRevision();
             if (deadEntries == null || deadEntriesStamp != UiVersion.Current
                 || deadEntriesRoleId != role.id)
             {
@@ -593,9 +636,25 @@ namespace WorkRoles.UI
             return deadEntries;
         }
 
+        internal bool TryGetPublishedDeadEntryState(int roleId,
+            out bool hasDeadEntries)
+        {
+            ObserveDefinitionRevision();
+            if (deadEntries == null || deadEntriesStamp != UiVersion.Current
+                || deadEntriesRoleId != roleId)
+            {
+                hasDeadEntries = false;
+                return false;
+            }
+
+            hasDeadEntries = deadEntries.Count > 0;
+            return true;
+        }
+
         internal RoleEntryPresentation EntryPresentation(JobEntry entry,
             float typeWidth, float jobWidth)
         {
+            ObserveDefinitionRevision();
             var key = (entry.Kind, entry.DefName);
             if (!entryLabels.TryGetValue(key, out var labels))
             {
@@ -653,6 +712,7 @@ namespace WorkRoles.UI
 
         internal RoleCoveragePresentation Coverage(RoleStore store)
         {
+            ObserveDefinitionRevision();
             if (uncoveredGivers != null && uncoveredStamp == UiVersion.Current)
                 return coverage;
 
@@ -706,6 +766,7 @@ namespace WorkRoles.UI
         internal IReadOnlyList<RoleJobTreeNode> TreeNodes(bool filtering,
             Role role, RoleCoveragePresentation coverage)
         {
+            ObserveDefinitionRevision();
             if (treeNodes != null && treeNodesStamp == UiVersion.Current
                 && treeNodesRoleId == role.id
                 && treeNodesRevision == treeRevision && treeNodesFilter == Filter)

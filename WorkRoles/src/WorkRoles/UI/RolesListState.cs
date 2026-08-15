@@ -13,32 +13,53 @@ namespace WorkRoles.UI
     internal sealed class RolesListState
     {
         // Owner: process role catalog, with explicit window lifecycle release.
-        // Key: nested/flat slot plus UiVersion. Value: private section-builder
-        // projections; their mutable Lists and authoritative Role references are
-        // never published to rendering. Dependencies: role/group structure,
-        // ordering, collapse-independent nesting, and language through UiVersion.
+        // Key: RoleStore identity, nested/flat slot, UiVersion, and definition
+        // revision. Value:
+        // private section-builder projections; their mutable Lists and
+        // authoritative Role references are never published to rendering.
+        // Dependencies: store ownership, role/group structure, ordering,
+        // collapse-independent nesting, game job definitions, and language.
         // Refresh: lazy on the first BuildSections read after revision change.
         // Equality: exact slot/revision hits preserve builder identity. Teardown:
         // ReleaseSectionsSnapshot clears both slots when window data is released.
         private static readonly List<RoleSection>[] sectionsCache = new List<RoleSection>[2];
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
+        private static readonly int[] sectionsCacheDefinitionRevision = { -1, -1 };
+        private static RoleStore sectionsCacheOwner;
         private static int collapseRevision;
 
-        // Owner: window. Key: this RolesListState instance. Value: immutable
-        // role-list render rows; producer-owned buffers are transferred directly
-        // and never exposed for mutation. Dependencies: UiVersion, location and
-        // collapse revisions, nested/search/job-filter state, language.
+        // Owner: window. Key: this RolesListState instance and RoleStore
+        // identity. Value: immutable role-list render rows; producer-owned
+        // buffers are transferred directly and never exposed for mutation.
+        // Dependencies: store ownership, UiVersion, definition, location and
+        // collapse revisions, nested/search/job-filter state, and language.
         // Refresh: immediate at the next Snapshot call after a dependency moves.
-        // Equality: unchanged dependencies preserve snapshot identity. Teardown:
-        // Reset/ReleaseWindowData and language invalidation release the rows.
-        private List<RoleListRowSnapshot> displayRows;
+        // Equality: exact equal contents preserve snapshot identity within one
+        // store; store changes always republish. Teardown: Reset/ReleaseWindowData
+        // release the rows and store reference.
         private RoleListSnapshot snapshot;
+        private RoleStore displayOwner;
         private int displayStamp = -1;
+        private int displayDefinitionRevision = -1;
         private int displayLocationRevision = -1;
         private int displayCollapseRevision = -1;
-        private bool displayNested;
+        private bool displayNestedPreference;
         private string displaySearch;
         private string displayJobFilter;
+
+        // Owner: this Roles-list state for one open Work Roles window.
+        // Key: RoleStore identity and UiVersion.Current.
+        // Value: immutable detached ordered role IDs and labels used only for
+        // presentation selection and command payload lookup.
+        // Dependencies: ordered role-catalog membership, role IDs, and labels.
+        // Refresh: immediately on the next selection-snapshot read after the
+        // store identity or UI revision changes.
+        // Equality: exact equal contents preserve identity within one store;
+        // a store-owner change always republishes for ownership partitioning.
+        // Teardown: Reset releases the snapshot and its store reference.
+        private RoleSelectionSnapshot selectionSnapshot;
+        private RoleStore selectionOwner;
+        private int selectionStamp = -1;
 
         internal string RoleSearch { get; set; } = "";
         internal string JobFilterDefName { get; set; }
@@ -48,28 +69,33 @@ namespace WorkRoles.UI
         {
             RoleSearch = "";
             JobFilterDefName = null;
-            displayRows = null;
             snapshot = null;
+            displayOwner = null;
             displayStamp = -1;
+            displayDefinitionRevision = -1;
             displayLocationRevision = -1;
             displayCollapseRevision = -1;
-            displayNested = false;
+            displayNestedPreference = false;
             displaySearch = null;
             displayJobFilter = null;
+            selectionSnapshot = null;
+            selectionOwner = null;
+            selectionStamp = -1;
         }
 
         internal void InvalidateLanguageCaches()
         {
-            displayRows = null;
-            snapshot = null;
             displayStamp = -1;
+            displayDefinitionRevision = -1;
         }
 
         internal RoleListSnapshot Snapshot(RoleStore store, int selectedRoleId,
             bool revealSelected, System.Func<Role, StructuredTip> roleTooltip)
         {
+            bool ownerChanged = !ReferenceEquals(displayOwner, store);
             bool filtered = FiltersActive;
-            bool nested = (WorkRolesMod.Settings?.nestedRoleTree ?? true) && !filtered;
+            bool nestedPreference = WorkRolesMod.Settings?.nestedRoleTree ?? true;
+            bool nested = nestedPreference && !filtered;
             IReadOnlyList<RoleSection> sections = filtered ? null : BuildSections(store, nested);
 
             if (revealSelected && sections != null)
@@ -78,49 +104,93 @@ namespace WorkRoles.UI
                         && section.rows.Any(row => row.role.id == selectedRoleId))
                         ToggleSectionCollapsed(section.key);
 
-            if (displayRows == null || displayStamp != UiVersion.Current
+            if (ownerChanged || snapshot == null
+                || displayStamp != UiVersion.Current
+                || displayDefinitionRevision != DefinitionReloadCoordinator.Revision
                 || displayLocationRevision != ColonyScope.LocationRevision
-                || displayCollapseRevision != collapseRevision || displayNested != nested
+                || displayCollapseRevision != collapseRevision
+                || displayNestedPreference != nestedPreference
                 || displaySearch != RoleSearch || displayJobFilter != JobFilterDefName)
             {
                 displayStamp = UiVersion.Current;
+                displayDefinitionRevision = DefinitionReloadCoordinator.Revision;
                 displayLocationRevision = ColonyScope.LocationRevision;
                 displayCollapseRevision = collapseRevision;
-                displayNested = nested;
+                displayNestedPreference = nestedPreference;
                 displaySearch = RoleSearch;
                 displayJobFilter = JobFilterDefName;
-                displayRows = new List<RoleListRowSnapshot>();
+                var rebuiltRows = new List<RoleListRowSnapshot>();
                 var liveLocationIds = new HashSet<string>(
                     ColonyScope.Locations().Select(location => location.Id));
                 if (filtered)
                 {
                     foreach (Role role in store.roles.Where(MatchesFilters))
-                        displayRows.Add(PublishRoleRow(null, role, store, 0,
+                        rebuiltRows.Add(PublishRoleRow(null, role, store, 0,
                             virtualRow: false, liveLocationIds, roleTooltip));
                 }
                 else
                 {
                     var publishedSections = new Dictionary<RoleSection,
                         RoleListSectionSnapshot>(sections.Count);
-                    foreach (RoleSection section in sections)
-                        publishedSections.Add(section,
-                            PublishSection(section, store));
+                    GameFont oldFont = Text.Font;
+                    try
+                    {
+                        Text.Font = GameFont.Small;
+                        foreach (RoleSection section in sections)
+                        {
+                            bool collapsed = IsSectionCollapsed(section.key);
+                            publishedSections.Add(section,
+                                PublishSection(section, store, collapsed));
+                        }
+                    }
+                    finally
+                    {
+                        Text.Font = oldFont;
+                    }
                     foreach (RoleSection section in sections)
                     {
                         RoleListSectionSnapshot publishedSection =
                             publishedSections[section];
-                        displayRows.Add(RoleListRowSnapshot.ForHeader(
+                        rebuiltRows.Add(RoleListRowSnapshot.ForHeader(
                             publishedSection));
-                        if (!IsSectionCollapsed(section.key))
+                        if (!publishedSection.Collapsed)
                             foreach (var (member, parent, depth, virtualRow) in section.rows)
-                                displayRows.Add(PublishRoleRow(publishedSection,
+                                rebuiltRows.Add(PublishRoleRow(publishedSection,
                                     member, store, depth, virtualRow,
                                     liveLocationIds, roleTooltip));
                     }
                 }
-                snapshot = new RoleListSnapshot(displayRows, filtered);
+                var rebuilt = new RoleListSnapshot(rebuiltRows, filtered,
+                    nestedPreference);
+                if (ownerChanged || snapshot == null
+                    || !snapshot.ContentEquals(rebuilt))
+                    snapshot = rebuilt;
             }
+            displayOwner = store;
             return snapshot;
+        }
+
+        internal RoleSelectionSnapshot SelectionSnapshot(RoleStore store)
+        {
+            int stamp = UiVersion.Current;
+            bool ownerChanged = !ReferenceEquals(selectionOwner, store);
+            if (!ownerChanged && selectionSnapshot != null
+                && selectionStamp == stamp)
+                return selectionSnapshot;
+
+            var entries = new RoleSelectionEntry[store.roles.Count];
+            for (int i = 0; i < entries.Length; i++)
+            {
+                Role role = store.roles[i];
+                entries[i] = new RoleSelectionEntry(role.id, role.label);
+            }
+            var rebuilt = new RoleSelectionSnapshot(entries);
+            if (ownerChanged || selectionSnapshot == null
+                || !selectionSnapshot.ContentEquals(rebuilt))
+                selectionSnapshot = rebuilt;
+            selectionOwner = store;
+            selectionStamp = stamp;
+            return selectionSnapshot;
         }
 
         private static RoleListRowSnapshot PublishRoleRow(
@@ -132,7 +202,8 @@ namespace WorkRoles.UI
             if (virtualRow)
                 originGroupLabel = store.GroupById(role.groupId)?.label
                     ?? "WR_GroupDefault".Translate().ToString();
-            return new RoleListRowSnapshot(section, role.id, depth, virtualRow,
+            return new RoleListRowSnapshot(section,
+                RoleChipRenderData.From(role), depth, virtualRow,
                 RoleLocationValidity.IsInvalid(
                     role.composite ? role.memberRoleIds.Count : role.entries.Count,
                     role.locationTokens, liveLocationIds),
@@ -145,7 +216,7 @@ namespace WorkRoles.UI
         }
 
         private static RoleListSectionSnapshot PublishSection(RoleSection section,
-            RoleStore store)
+            RoleStore store, bool collapsed)
         {
             var nested = new List<int>();
             if (section.rows != null)
@@ -158,9 +229,12 @@ namespace WorkRoles.UI
             return new RoleListSectionSnapshot(section.key, section.displayTitle,
                 section.commandName, section.group?.id ?? -1,
                 section.group == null ? -1 : store.groups.IndexOf(section.group),
-                section.renamable, section.draggable, section.dropTarget,
+                collapsed, section.renamable, section.draggable,
+                section.dropTarget,
                 section.roots != null && section.roots.Count > 0
                     ? section.roots[0].id : -1,
+                section.draggable
+                    ? WrText.FitWidth(section.commandName) + 4f : 0f,
                 nested);
         }
 
@@ -192,27 +266,41 @@ namespace WorkRoles.UI
             if (settings == null) return;
             if (!settings.collapsedRoleGroups.Remove(key))
                 settings.collapsedRoleGroups.Add(key);
-            settings.Write();
+            WorkRolesGameComponent.RequestSettingsWrite();
             collapseRevision++;
         }
 
         internal static void InvalidateSectionsSnapshot()
-            => sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
+        {
+            sectionsCacheStamp[0] = sectionsCacheStamp[1] = -1;
+            sectionsCacheDefinitionRevision[0] =
+                sectionsCacheDefinitionRevision[1] = -1;
+        }
 
         /// Invalidation alone leaves the old world's roles reachable until the
         /// next build. Close/teardown uses this stronger ownership release.
         internal static void ReleaseSectionsSnapshot()
         {
             sectionsCache[0] = sectionsCache[1] = null;
+            sectionsCacheOwner = null;
             InvalidateSectionsSnapshot();
         }
 
         internal static IReadOnlyList<RoleSection> BuildSections(RoleStore store, bool nested)
         {
+            if (!ReferenceEquals(sectionsCacheOwner, store))
+            {
+                ReleaseSectionsSnapshot();
+                sectionsCacheOwner = store;
+            }
             int slot = nested ? 1 : 0;
-            if (sectionsCache[slot] == null || sectionsCacheStamp[slot] != UiVersion.Current)
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            if (sectionsCache[slot] == null
+                || sectionsCacheStamp[slot] != UiVersion.Current
+                || sectionsCacheDefinitionRevision[slot] != definitionRevision)
             {
                 sectionsCacheStamp[slot] = UiVersion.Current;
+                sectionsCacheDefinitionRevision[slot] = definitionRevision;
                 sectionsCache[slot] = BuildSectionsUncached(store, nested);
             }
             return sectionsCache[slot];
@@ -387,20 +475,109 @@ namespace WorkRoles.UI
         }
     }
 
+    internal readonly struct RoleSelectionEntry
+    {
+        internal RoleSelectionEntry(int roleId, string label)
+        {
+            RoleId = roleId;
+            Label = label;
+        }
+
+        internal int RoleId { get; }
+        internal string Label { get; }
+    }
+
+    internal sealed class RoleSelectionSnapshot
+    {
+        private readonly RoleSelectionEntry[] entries;
+
+        internal RoleSelectionSnapshot(RoleSelectionEntry[] entries)
+        {
+            this.entries = entries;
+        }
+
+        internal int Count => entries.Length;
+        internal int FirstRoleId => entries.Length == 0 ? -1 : entries[0].RoleId;
+
+        internal int NewestRoleIdWithLabel(string label)
+        {
+            for (int i = entries.Length - 1; i >= 0; i--)
+                if (entries[i].Label == label)
+                    return entries[i].RoleId;
+            return -1;
+        }
+
+        internal bool TryGetRole(int roleId, out string label)
+        {
+            for (int i = 0; i < entries.Length; i++)
+                if (entries[i].RoleId == roleId)
+                {
+                    label = entries[i].Label;
+                    return true;
+                }
+            label = null;
+            return false;
+        }
+
+        internal bool ContentEquals(RoleSelectionSnapshot other)
+        {
+            if (other == null || entries.Length != other.entries.Length)
+                return false;
+            for (int i = 0; i < entries.Length; i++)
+                if (entries[i].RoleId != other.entries[i].RoleId
+                    || entries[i].Label != other.entries[i].Label)
+                    return false;
+            return true;
+        }
+    }
+
     internal sealed class RoleListSnapshot
     {
         internal RoleListSnapshot(
             List<RoleListRowSnapshot> rows,
-            bool filtered)
+            bool filtered,
+            bool nestedPreference)
         {
             this.rows = rows;
             Filtered = filtered;
+            NestedPreference = nestedPreference;
         }
 
         private readonly List<RoleListRowSnapshot> rows;
         internal int Count => rows.Count;
         internal RoleListRowSnapshot RowAt(int index) => rows[index];
         internal bool Filtered { get; }
+        internal bool NestedPreference { get; }
+
+        internal bool ContentEquals(RoleListSnapshot other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other == null || Filtered != other.Filtered
+                || NestedPreference != other.NestedPreference
+                || rows.Count != other.rows.Count)
+                return false;
+
+            RoleListSectionSnapshot previousLeftSection = null;
+            RoleListSectionSnapshot previousRightSection = null;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                RoleListRowSnapshot leftRow = rows[i];
+                RoleListRowSnapshot rightRow = other.rows[i];
+                if (!ReferenceEquals(leftRow.Section, previousLeftSection)
+                    || !ReferenceEquals(rightRow.Section, previousRightSection))
+                {
+                    if (!ReferenceEquals(leftRow.Section, rightRow.Section)
+                        && (leftRow.Section == null || rightRow.Section == null
+                            || !leftRow.Section.ContentEquals(rightRow.Section)))
+                        return false;
+                    previousLeftSection = leftRow.Section;
+                    previousRightSection = rightRow.Section;
+                }
+                if (!leftRow.ContentEqualsExcludingSection(rightRow))
+                    return false;
+            }
+            return true;
+        }
 
         internal int GroupIndexOf(int groupId)
         {
@@ -416,14 +593,15 @@ namespace WorkRoles.UI
 
     internal sealed class RoleListRowSnapshot
     {
-        internal RoleListRowSnapshot(RoleListSectionSnapshot section, int roleId,
+        internal RoleListRowSnapshot(RoleListSectionSnapshot section,
+            RoleChipRenderData chip,
             int depth, bool virtualRow, bool invalid, string label,
             StructuredTip tooltip, bool enabled, bool hasCustomColor, Color color,
             bool blocker, bool hasTimeRule, bool hasLocationRule,
             bool composite, string virtualOriginGroupLabel)
         {
             Section = section;
-            RoleId = roleId;
+            Chip = chip;
             Depth = depth;
             VirtualRow = virtualRow;
             Invalid = invalid;
@@ -441,11 +619,15 @@ namespace WorkRoles.UI
 
         internal static RoleListRowSnapshot ForHeader(
             RoleListSectionSnapshot section) =>
-            new RoleListRowSnapshot(section, -1, 0, false, false, null,
+            new RoleListRowSnapshot(section,
+                new RoleChipRenderData(-1, null, default(Color), false,
+                    false, false, false),
+                0, false, false, null,
                 null, true, false, default, false, false, false, false, null);
 
         internal RoleListSectionSnapshot Section { get; }
-        internal int RoleId { get; }
+        internal RoleChipRenderData Chip { get; }
+        internal int RoleId => Chip.RoleId;
         internal int Depth { get; }
         internal bool VirtualRow { get; }
         internal bool Invalid { get; }
@@ -459,6 +641,34 @@ namespace WorkRoles.UI
         internal bool HasLocationRule { get; }
         internal bool Composite { get; }
         internal string VirtualOriginGroupLabel { get; }
+
+        internal bool ContentEqualsExcludingSection(
+            RoleListRowSnapshot other)
+        {
+            if (other == null || !Chip.ContentEquals(other.Chip)
+                || Depth != other.Depth || VirtualRow != other.VirtualRow
+                || Invalid != other.Invalid
+                || !string.Equals(Label, other.Label,
+                    System.StringComparison.Ordinal)
+                || Enabled != other.Enabled
+                || HasCustomColor != other.HasCustomColor
+                || !ColorEquals(Color, other.Color)
+                || Blocker != other.Blocker
+                || HasTimeRule != other.HasTimeRule
+                || HasLocationRule != other.HasLocationRule
+                || Composite != other.Composite
+                || !string.Equals(VirtualOriginGroupLabel,
+                    other.VirtualOriginGroupLabel,
+                    System.StringComparison.Ordinal))
+                return false;
+            if (ReferenceEquals(Tooltip, other.Tooltip)) return true;
+            return Tooltip != null && other.Tooltip != null
+                && Tooltip.ContentEquals(other.Tooltip);
+        }
+
+        private static bool ColorEquals(Color left, Color right) =>
+            left.r == right.r && left.g == right.g
+            && left.b == right.b && left.a == right.a;
     }
 
     internal sealed class RoleListSectionSnapshot
@@ -466,8 +676,9 @@ namespace WorkRoles.UI
         private readonly List<int> nestedRoleIds;
 
         internal RoleListSectionSnapshot(string key, string displayTitle,
-            string commandName, int groupId, int groupIndex, bool renamable,
-            bool draggable, bool dropTarget, int firstRootRoleId,
+            string commandName, int groupId, int groupIndex, bool collapsed,
+            bool renamable, bool draggable, bool dropTarget,
+            int firstRootRoleId, float groupDragWidth,
             List<int> nestedRoleIds)
         {
             Key = key;
@@ -475,10 +686,12 @@ namespace WorkRoles.UI
             CommandName = commandName;
             GroupId = groupId;
             GroupIndex = groupIndex;
+            Collapsed = collapsed;
             Renamable = renamable;
             Draggable = draggable;
             DropTarget = dropTarget;
             FirstRootRoleId = firstRootRoleId;
+            GroupDragWidth = groupDragWidth;
             this.nestedRoleIds = nestedRoleIds;
         }
 
@@ -489,15 +702,40 @@ namespace WorkRoles.UI
             return false;
         }
 
+        internal bool ContentEquals(RoleListSectionSnapshot other)
+        {
+            if (ReferenceEquals(this, other)) return true;
+            if (other == null
+                || !string.Equals(Key, other.Key,
+                    System.StringComparison.Ordinal)
+                || !string.Equals(DisplayTitle, other.DisplayTitle,
+                    System.StringComparison.Ordinal)
+                || !string.Equals(CommandName, other.CommandName,
+                    System.StringComparison.Ordinal)
+                || GroupId != other.GroupId || GroupIndex != other.GroupIndex
+                || Collapsed != other.Collapsed || Renamable != other.Renamable
+                || Draggable != other.Draggable || DropTarget != other.DropTarget
+                || FirstRootRoleId != other.FirstRootRoleId
+                || GroupDragWidth != other.GroupDragWidth
+                || nestedRoleIds.Count != other.nestedRoleIds.Count)
+                return false;
+            for (int i = 0; i < nestedRoleIds.Count; i++)
+                if (nestedRoleIds[i] != other.nestedRoleIds[i])
+                    return false;
+            return true;
+        }
+
         internal string Key { get; }
         internal string DisplayTitle { get; }
         internal string CommandName { get; }
         internal int GroupId { get; }
         internal int GroupIndex { get; }
+        internal bool Collapsed { get; }
         internal bool Renamable { get; }
         internal bool Draggable { get; }
         internal bool DropTarget { get; }
         internal int FirstRootRoleId { get; }
+        internal float GroupDragWidth { get; }
     }
 
     /// One display section of the role list: a user group or the derived

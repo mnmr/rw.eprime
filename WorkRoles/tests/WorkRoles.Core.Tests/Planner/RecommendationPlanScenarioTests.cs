@@ -136,6 +136,47 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
+    public async Task AgeExemptPawnsIgnoreRoleAgeLimitsInFinalAssignments()
+    {
+        // The role accepts ages 13 through 16. The ordinary under- and over-age
+        // pawns stay excluded, while pawns whose race bypasses age work limits
+        // remain eligible on either side of the range.
+        RoleView role = CraftingRole(100, "CraftWork");
+        role.MinAge = 13;
+        role.MaxAge = 16;
+        RecsTestBed.Require(role, 3);
+
+        PawnView ordinaryChild = CraftingPawn(20, ("CraftWork", SignalBucket.Neutral));
+        ordinaryChild.BiologicalAgeTicks = 10L * BiologicalAge.TicksPerYear;
+        PawnView exemptChild = CraftingPawn(16, ("CraftWork", SignalBucket.Neutral));
+        exemptChild.BiologicalAgeTicks = 10L * BiologicalAge.TicksPerYear;
+        exemptChild.AgeLimitsApply = false;
+        PawnView ordinaryTeen = CraftingPawn(12, ("CraftWork", SignalBucket.Neutral));
+        ordinaryTeen.BiologicalAgeTicks = 15L * BiologicalAge.TicksPerYear;
+        PawnView exemptAdult = CraftingPawn(8, ("CraftWork", SignalBucket.Neutral));
+        exemptAdult.BiologicalAgeTicks = 40L * BiologicalAge.TicksPerYear;
+        exemptAdult.AgeLimitsApply = false;
+        PawnView ordinaryAdult = CraftingPawn(4, ("CraftWork", SignalBucket.Neutral));
+        ordinaryAdult.BiologicalAgeTicks = 40L * BiologicalAge.TicksPerYear;
+
+        ColonyView colony = RecsTestBed.Colony(
+            [role], ordinaryChild, exemptChild, ordinaryTeen, exemptAdult, ordinaryAdult);
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+
+        HashSet<int>[] assignments = Enumerable.Range(0, 5)
+            .Select(pawnIndex => Enumerable.Range(0, plan.RoleCountAt(pawnIndex))
+                .Select(roleIndex => plan.RoleAt(pawnIndex, roleIndex))
+                .ToHashSet())
+            .ToArray();
+
+        await Assert.That(assignments[0]).IsEmpty();
+        await Assert.That(assignments[1].SetEquals([100])).IsTrue();
+        await Assert.That(assignments[2].SetEquals([100])).IsTrue();
+        await Assert.That(assignments[3].SetEquals([100])).IsTrue();
+        await Assert.That(assignments[4]).IsEmpty();
+    }
+
+    [Test]
     public async Task UnskilledDemandAssignsEveryCapablePawnAndNamesOneChampion()
     {
         // Through the real projection: a skill-less role (Hauling) with demand

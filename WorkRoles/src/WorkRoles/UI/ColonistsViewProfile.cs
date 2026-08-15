@@ -59,7 +59,7 @@ namespace WorkRoles.UI
             var settings = WorkRolesMod.Settings;
             if (settings == null) return;
             apply(settings);
-            settings.Write();
+            WorkRolesGameComponent.RequestSettingsWrite();
         }
     }
 }

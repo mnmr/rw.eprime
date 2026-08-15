@@ -139,8 +139,9 @@ namespace WorkRoles.UI
         // assets that this cache never mutates or releases. Dependencies: chrome
         // and traits use the pawn's ExternalPawnFacts revision (plus language and
         // portrait dimensions); activity uses ActivityTracker.RevisionOf(pawn),
-        // UiVersion.Current for claiming-role changes, the shared detached role
-        // catalog, language, and slot width. Refresh: immediate on the next panel
+        // UiVersion.Current and definition revision for claiming-role changes,
+        // the shared detached role catalog, language, and slot width. Refresh:
+        // immediate on the next panel
         // read after a dependency changes; an activity-only change rebuilds only
         // the activity component. Equality: equal component rebuilds preserve
         // their identity and therefore the published panel identity. Teardown:
@@ -151,6 +152,7 @@ namespace WorkRoles.UI
         private int externalRevision = -1;
         private int activityRevision = -1;
         private int uiRevision = -1;
+        private int definitionRevision = -1;
         private int languageRevision = -1;
         private float portraitSize = -1f;
         private float activityWidth = -1f;
@@ -179,6 +181,7 @@ namespace WorkRoles.UI
             int nextExternal = ExternalPawnFacts.Revisions.RevisionOf(selected);
             int nextActivity = ActivityTracker.RevisionOf(selected);
             int nextUi = UiVersion.Current;
+            int nextDefinition = DefinitionReloadCoordinator.Revision;
             int nextLanguage = LanguageChangeCoordinator.Revision;
 
             ColonistSelectedChromeSnapshot nextChrome = chrome;
@@ -205,11 +208,12 @@ namespace WorkRoles.UI
             ColonistSelectedActivitySnapshot nextActivitySnapshot = activity;
             if (ownerChanged || pawnChanged || activityRevision != nextActivity
                 || uiRevision != nextUi || languageRevision != nextLanguage
+                || definitionRevision != nextDefinition
                 || !ReferenceEquals(activityCatalog, catalog)
                 || this.activityWidth != activityWidth)
             {
                 nextActivitySnapshot = BuildActivity(store, selected, catalog,
-                    nextActivity, nextUi, activityWidth);
+                    nextActivity, nextUi, nextDefinition, activityWidth);
                 if (!ownerChanged && !pawnChanged && activity != null
                     && activity.ContentEquals(nextActivitySnapshot))
                     nextActivitySnapshot = activity;
@@ -228,6 +232,7 @@ namespace WorkRoles.UI
             externalRevision = nextExternal;
             activityRevision = nextActivity;
             uiRevision = nextUi;
+            definitionRevision = nextDefinition;
             languageRevision = nextLanguage;
             this.portraitSize = portraitSize;
             this.activityWidth = activityWidth;
@@ -245,6 +250,7 @@ namespace WorkRoles.UI
             externalRevision = -1;
             activityRevision = -1;
             uiRevision = -1;
+            definitionRevision = -1;
             languageRevision = -1;
             portraitSize = -1f;
             activityWidth = -1f;
@@ -281,10 +287,11 @@ namespace WorkRoles.UI
 
         private ColonistSelectedActivitySnapshot BuildActivity(RoleStore store,
             Pawn pawn, ColonistsRosterCatalogSnapshot catalog,
-            int activityRevision, int uiRevision, float slotWidth)
+            int activityRevision, int uiRevision, int definitionRevision,
+            float slotWidth)
         {
             ActivitySnapshot resolved = activityState.For(pawn,
-                activityRevision, uiRevision, store);
+                activityRevision, uiRevision, definitionRevision, store);
             RoleChipRenderData role = default;
             bool hasRole = resolved.RoleId >= 0
                 && catalog.TryGetChip(resolved.RoleId,

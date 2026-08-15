@@ -30,6 +30,29 @@ namespace WorkRoles.UI
         private static Action pendingClickAction;
         private static bool pendingReleaseOverSource;
 
+        // Owner: the open Work Roles window's single pending/active drag.
+        // Key: one press-to-release drag session.
+        // Value: immutable detached role-chip presentation, or detached group
+        // label plus its premeasured Small-font width.
+        // Dependencies: the source producer snapshot at mouse-down and the
+        // source group's language/Small-font measurement revision.
+        // Refresh: event-driven when a new press starts; an active drag is
+        // intentionally frozen until release/cancel.
+        // Equality: a session never republishes, so every pass reuses the same
+        // value fields and string identity.
+        // Teardown: Cancel clears pending and active presentation, and is called
+        // on mouse-up, window open/close, and relevant game lifecycle release.
+        private static RoleChipRenderData pendingRoleGhost;
+        private static RoleChipRenderData roleGhost;
+        private static string pendingGroupGhostLabel;
+        private static string groupGhostLabel;
+        private static float pendingGroupGhostWidth;
+        private static float groupGhostWidth;
+
+        internal static RoleChipRenderData RoleGhost => roleGhost;
+        internal static string GroupGhostLabel => groupGhostLabel;
+        internal static float GroupGhostWidth => groupGhostWidth;
+
         // Drop target registered by whichever row the mouse is over this frame.
         public static Pawn HoverPawn;
         public static int HoverInsertIndex = -1;
@@ -43,20 +66,25 @@ namespace WorkRoles.UI
 
         /// Register a press. controlId is the source control's IMGUI identity;
         /// release containment is confirmed by that same control in its own clip.
-        public static void OnPress(int controlId, int roleId, Pawn source, Action clickAction)
+        internal static void OnPress(int controlId, RoleChipRenderData role,
+            Pawn source, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;   // raw screen pixels, GUI-independent
             pendingControlId = controlId;
-            pendingRoleId = roleId;
+            pendingRoleId = role.RoleId;
             pendingGroupId = -1;
             pendingSource = source;
             pendingClickAction = clickAction;
+            pendingRoleGhost = role;
+            pendingGroupGhostLabel = null;
+            pendingGroupGhostWidth = 0f;
         }
 
         /// Press on a role-list group header: short release = clickAction
         /// (collapse toggle), threshold crossed = group reorder drag.
-        public static void OnPressGroup(int controlId, int groupId, Action clickAction)
+        internal static void OnPressGroup(int controlId, int groupId,
+            string ghostLabel, float ghostWidth, Action clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;
@@ -65,6 +93,9 @@ namespace WorkRoles.UI
             pendingGroupId = groupId;
             pendingSource = null;
             pendingClickAction = clickAction;
+            pendingRoleGhost = default(RoleChipRenderData);
+            pendingGroupGhostLabel = ghostLabel;
+            pendingGroupGhostWidth = ghostWidth;
         }
 
         /// Called while the source control's GUI/scroll clip is active. This
@@ -91,6 +122,9 @@ namespace WorkRoles.UI
                 RoleId = pendingRoleId;
                 GroupId = pendingGroupId;
                 SourcePawn = pendingSource;
+                roleGhost = pendingRoleGhost;
+                groupGhostLabel = pendingGroupGhostLabel;
+                groupGhostWidth = pendingGroupGhostWidth;
             }
             HoverPawn = null;
             HoverInsertIndex = -1;
@@ -193,9 +227,15 @@ namespace WorkRoles.UI
             GroupId = -1;
             pendingGroupId = -1;
             pendingSource = null;
+            pendingRoleGhost = default(RoleChipRenderData);
+            pendingGroupGhostLabel = null;
+            pendingGroupGhostWidth = 0f;
             pendingReleaseOverSource = false;
             RoleId = -1;
             SourcePawn = null;
+            roleGhost = default(RoleChipRenderData);
+            groupGhostLabel = null;
+            groupGhostWidth = 0f;
             HoverPawn = null;
             HoverInsertIndex = -1;
             HoverBlocked = false;

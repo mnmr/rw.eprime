@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -13,10 +14,89 @@ namespace WorkRoles.UI
     /// self-guards against staleness per item.
     public class Dialog_RestorePreview : Dialog_PreviewBase
     {
+        private sealed class RestoreWarningSnapshot
+        {
+            internal RestoreWarningSnapshot(string text, float height)
+            {
+                Text = text;
+                Height = height;
+            }
+
+            internal string Text { get; }
+            internal float Height { get; }
+
+            internal bool ContentEquals(RestoreWarningSnapshot other) =>
+                other != null
+                && Text == other.Text
+                && Height == other.Height;
+        }
+
         private class Row
         {
             public Seeding.RestoreItem item;
             public bool included = true;
+            public RestoreItemKey Key => new RestoreItemKey(item);
+        }
+
+        private readonly struct RestoreItemKey : IEquatable<RestoreItemKey>
+        {
+            private readonly string templateDef;
+            private readonly string workType;
+            private readonly int backfillRoleId;
+            private readonly int groupRoleId;
+            private readonly int colorRoleId;
+            private readonly int holderRoleId;
+            private readonly int entriesRoleId;
+            private readonly int paletteSnapRoleId;
+            private readonly string pathDef;
+            private readonly bool recommendationOrder;
+
+            internal RestoreItemKey(Seeding.RestoreItem item)
+            {
+                templateDef = item.templateDef;
+                workType = item.workType;
+                backfillRoleId = item.backfillRoleId;
+                groupRoleId = item.groupRoleId;
+                colorRoleId = item.colorRoleId;
+                holderRoleId = item.holderRoleId;
+                entriesRoleId = item.entriesRoleId;
+                paletteSnapRoleId = item.paletteSnapRoleId;
+                pathDef = item.pathDef;
+                recommendationOrder = item.recommendationOrder;
+            }
+
+            public bool Equals(RestoreItemKey other) =>
+                templateDef == other.templateDef
+                && workType == other.workType
+                && backfillRoleId == other.backfillRoleId
+                && groupRoleId == other.groupRoleId
+                && colorRoleId == other.colorRoleId
+                && holderRoleId == other.holderRoleId
+                && entriesRoleId == other.entriesRoleId
+                && paletteSnapRoleId == other.paletteSnapRoleId
+                && pathDef == other.pathDef
+                && recommendationOrder == other.recommendationOrder;
+
+            public override bool Equals(object obj) =>
+                obj is RestoreItemKey other && Equals(other);
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + (templateDef?.GetHashCode() ?? 0);
+                    hash = hash * 31 + (workType?.GetHashCode() ?? 0);
+                    hash = hash * 31 + backfillRoleId;
+                    hash = hash * 31 + groupRoleId;
+                    hash = hash * 31 + colorRoleId;
+                    hash = hash * 31 + holderRoleId;
+                    hash = hash * 31 + entriesRoleId;
+                    hash = hash * 31 + paletteSnapRoleId;
+                    hash = hash * 31 + (pathDef?.GetHashCode() ?? 0);
+                    return hash * 31 + (recommendationOrder ? 1 : 0);
+                }
+            }
         }
 
         private const float RowH = 26f;
@@ -25,8 +105,18 @@ namespace WorkRoles.UI
         // LockedColor family, darkened for body text).
         private static readonly Color WarnColor = new Color(0.9f, 0.6f, 0.25f);
 
-        private readonly List<Row> rows;
-        private readonly bool anyUndo;
+        // Owner: this dialog. Key: RoleStore identity, UiVersion, definition
+        // revision, and language revision. Value: private detached restore rows.
+        // Dependencies: current store drift, seeded defs, and translated labels.
+        // Refresh: immediate at the next DoWindowContents call. Equality: equal
+        // rows preserve list identity; stable item keys preserve user selections
+        // within the same store. Teardown: PostClose clears rows and owner refs.
+        private List<Row> rows;
+        private bool anyUndo;
+        private RoleStore rowsOwner;
+        private int rowsUiRevision = -1;
+        private int rowsDefinitionRevision = -1;
+        private int rowsLanguageRevision = -1;
         private int includedCount;
         private Vector2 scroll;
 
@@ -34,24 +124,130 @@ namespace WorkRoles.UI
 
         public Dialog_RestorePreview(List<Seeding.RestoreItem> items)
         {
-            rows = items.Select(i => new Row { item = i }).ToList();
-            anyUndo = rows.Any(r => r.item.UndoesUserChange);
-            includedCount = rows.Count;
+            PublishRows(items, preserveSelections: false);
+            rowsOwner = RoleStore.Current;
+            rowsUiRevision = UiVersion.Current;
+            rowsDefinitionRevision = DefinitionReloadCoordinator.Revision;
+            rowsLanguageRevision = LanguageChangeCoordinator.Revision;
+        }
+
+        private void EnsureRowsCurrent()
+        {
+            RoleStore owner = RoleStore.Current;
+            int uiRevision = UiVersion.Current;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (ReferenceEquals(rowsOwner, owner)
+                && rowsUiRevision == uiRevision
+                && rowsDefinitionRevision == definitionRevision
+                && rowsLanguageRevision == languageRevision)
+                return;
+
+            bool sameOwner = ReferenceEquals(rowsOwner, owner);
+            PublishRows(Seeding.ComputeRestoreItems(), sameOwner);
+            rowsOwner = owner;
+            rowsUiRevision = uiRevision;
+            rowsDefinitionRevision = definitionRevision;
+            rowsLanguageRevision = languageRevision;
+        }
+
+        private void PublishRows(List<Seeding.RestoreItem> items,
+            bool preserveSelections)
+        {
+            Dictionary<RestoreItemKey, bool> selections = null;
+            if (preserveSelections && rows != null)
+            {
+                selections = new Dictionary<RestoreItemKey, bool>(rows.Count);
+                for (int i = 0; i < rows.Count; i++)
+                    selections[rows[i].Key] = rows[i].included;
+            }
+
+            var rebuilt = new List<Row>(items.Count);
+            for (int i = 0; i < items.Count; i++)
+            {
+                var row = new Row { item = items[i] };
+                if (selections != null
+                    && selections.TryGetValue(row.Key, out bool included))
+                    row.included = included;
+                rebuilt.Add(row);
+            }
+
+            if (rows == null || !RowsContentEquals(rows, rebuilt))
+                rows = rebuilt;
+            includedCount = 0;
+            anyUndo = false;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                if (rows[i].included) includedCount++;
+                if (rows[i].item.UndoesUserChange) anyUndo = true;
+            }
+        }
+
+        private static bool RowsContentEquals(List<Row> left, List<Row> right)
+        {
+            if (left.Count != right.Count) return false;
+            for (int i = 0; i < left.Count; i++)
+                if (!left[i].Key.Equals(right[i].Key)
+                    || left[i].included != right[i].included
+                    || left[i].item.label != right[i].item.label
+                    || left[i].item.explanation != right[i].item.explanation)
+                    return false;
+            return true;
         }
 
         private string titleText;
-        private string warnText;
-        private float warnH;
-        private float warnMeasuredW = -1f;
+
+        // Owner: this Restore Defaults preview dialog instance.
+        // Key: dialog identity, exact available width, and language revision.
+        // Value: immutable detached warning text and its measured height.
+        // Dependencies: WR_RestoreOverwriteWarning translation,
+        // LanguageChangeCoordinator.Revision, GameFont.Small metrics,
+        // enabled word wrapping, and the exact available width.
+        // Refresh: immediately when the language revision or width changes.
+        // Equality: an equal rebuild preserves snapshot identity.
+        // Teardown: closing the dialog releases the instance-owned snapshot.
+        private RestoreWarningSnapshot warningSnapshot;
+        private float warningWidth = -1f;
+        private int warningLanguageRevision = -1;
+
+        private RestoreWarningSnapshot WarningSnapshot(float width)
+        {
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (warningSnapshot != null
+                && warningWidth == width
+                && warningLanguageRevision == languageRevision)
+                return warningSnapshot;
+
+            string warningText = "WR_RestoreOverwriteWarning".Translate();
+            GameFont oldFont = Text.Font;
+            bool oldWordWrap = Text.WordWrap;
+            float height;
+            try
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                height = Text.CalcHeight(warningText, width);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.WordWrap = oldWordWrap;
+            }
+
+            var rebuilt = new RestoreWarningSnapshot(warningText, height);
+            if (warningSnapshot == null || !warningSnapshot.ContentEquals(rebuilt))
+                warningSnapshot = rebuilt;
+            warningWidth = width;
+            warningLanguageRevision = languageRevision;
+            return warningSnapshot;
+        }
 
         public override void DoWindowContents(Rect inRect)
         {
+            using var guiState = new GuiStateScope(capture: true);
+            EnsureRowsCurrent();
             if (ObservePreviewLanguageRevision())
-            {
                 titleText = "WR_RestoreDefaultsTitle".Translate();
-                warnText = "WR_RestoreOverwriteWarning".Translate();
-                warnMeasuredW = -1f;
-            }
             float listTop = DrawCachedPreviewTitle(inRect, titleText);
             bool all = includedCount == rows.Count;
             bool toggled = DrawCachedPreviewSelectAll(inRect, listTop, all);
@@ -65,32 +261,41 @@ namespace WorkRoles.UI
 
             if (anyUndo)
             {
-                // Height cached by width: CalcHeight is a full layout pass.
-                if (warnMeasuredW != inRect.width)
-                {
-                    warnH = Text.CalcHeight(warnText, inRect.width);
-                    warnMeasuredW = inRect.width;
-                }
+                RestoreWarningSnapshot warning = WarningSnapshot(inRect.width);
                 if (Event.current.type == EventType.Repaint)
                 {
-                    GUI.color = WarnColor;
-                    Widgets.Label(new Rect(inRect.x, listTop, inRect.width, warnH), warnText);
-                    GUI.color = Color.white;
+                    Color oldColor = GUI.color;
+                    try
+                    {
+                        GUI.color = WarnColor;
+                        Widgets.Label(new Rect(inRect.x, listTop, inRect.width,
+                            warning.Height), warning.Text);
+                    }
+                    finally
+                    {
+                        GUI.color = oldColor;
+                    }
                 }
-                listTop += warnH + 4f;
+                listTop += warning.Height + 4f;
             }
 
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             Widgets.BeginScrollView(listRect, ref scroll, new Rect(0f, 0f, rowW, rows.Count * RowH));
-            var visibleRows = UniformViewportRange.Calculate(
-                itemCount: rows.Count,
-                itemExtent: RowH,
-                contentStart: 0f,
-                viewportStart: scroll.y,
-                viewportExtent: listRect.height);
-            DrawVisibleRows(visibleRows, rowW);
-            Widgets.EndScrollView();
+            try
+            {
+                var visibleRows = UniformViewportRange.Calculate(
+                    itemCount: rows.Count,
+                    itemExtent: RowH,
+                    contentStart: 0f,
+                    viewportStart: scroll.y,
+                    viewportExtent: listRect.height);
+                DrawVisibleRows(visibleRows, rowW);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
             bool canApply = includedCount > 0;
             if (DrawPreviewFooter(inRect, canApply))
@@ -113,21 +318,44 @@ namespace WorkRoles.UI
             }
         }
 
+        public override void PostClose()
+        {
+            rows?.Clear();
+            rows = null;
+            rowsOwner = null;
+            rowsUiRevision = -1;
+            rowsDefinitionRevision = -1;
+            rowsLanguageRevision = -1;
+            titleText = null;
+            warningSnapshot = null;
+            warningWidth = -1f;
+            warningLanguageRevision = -1;
+            base.PostClose();
+        }
+
         private void DrawVisibleRows(UniformViewportRange visibleRows, float rowW)
         {
-            for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
+            Color oldColor = GUI.color;
+            try
             {
-                Row row = rows[i];
-                var rowRect = new Rect(0f, i * RowH, rowW, RowH - 2f);
-                if (row.item.UndoesUserChange) GUI.color = WarnColor;
-                bool before = row.included;
-                Widgets.CheckboxLabeled(rowRect, row.item.label, ref row.included);
-                if (before != row.included)
-                    includedCount += row.included ? 1 : -1;
-                GUI.color = Color.white;
-                if (Event.current.type == EventType.Repaint
-                    && !row.item.explanation.NullOrEmpty())
-                    TooltipHandler.TipRegion(rowRect, row.item.explanation);
+                for (int i = visibleRows.Start; i < visibleRows.EndExclusive; i++)
+                {
+                    Row row = rows[i];
+                    var rowRect = new Rect(0f, i * RowH, rowW, RowH - 2f);
+                    GUI.color = row.item.UndoesUserChange ? WarnColor : oldColor;
+                    bool before = row.included;
+                    Widgets.CheckboxLabeled(rowRect, row.item.label, ref row.included);
+                    if (before != row.included)
+                        includedCount += row.included ? 1 : -1;
+                    GUI.color = oldColor;
+                    if (Event.current.type == EventType.Repaint
+                        && !row.item.explanation.NullOrEmpty())
+                        TooltipHandler.TipRegion(rowRect, row.item.explanation);
+                }
+            }
+            finally
+            {
+                GUI.color = oldColor;
             }
         }
     }

@@ -20,31 +20,34 @@ namespace WorkRoles.UI
     }
 
     /// Per-pawn activity cache re-resolved when ActivityTracker's live-activity
-    /// revision moves, UiVersion changes the compiled role claiming the same
-    /// running job, or the owning RoleStore changes.
+    /// revision moves, UiVersion or definition reload changes the compiled role
+    /// claiming the same running job, or the owning RoleStore changes.
     internal sealed class ActivityState
     {
         // Owner: Colonists window. Key: RoleStore and Pawn reference identity,
-        // activity revision, and UiVersion. Value: detached ActivitySnapshot.
+        // activity revision, UiVersion, and definition revision. Value:
+        // detached ActivitySnapshot.
         // Dependencies: job/draft/mental transitions plus compiled claiming-role
         // changes.
         // Refresh: immediate on the next read after a dependency changes.
         // Equality: exact key hits reuse the cached value. Teardown: Release on
         // window reset/close/language change; an owner change clears all entries.
         private readonly Dictionary<Pawn,
-            (int activityRevision, int uiRevision, ActivitySnapshot value)> cache =
-            new Dictionary<Pawn, (int, int, ActivitySnapshot)>();
+            (int activityRevision, int uiRevision, int definitionRevision,
+                ActivitySnapshot value)> cache =
+            new Dictionary<Pawn, (int, int, int, ActivitySnapshot)>();
         private RoleStore observedOwner;
 
         internal ActivitySnapshot For(Pawn pawn)
         {
             if (pawn == null) return new ActivitySnapshot(-1, "");
             return For(pawn, ActivityTracker.RevisionOf(pawn),
-                UiVersion.Current, RoleStore.Current);
+                UiVersion.Current, DefinitionReloadCoordinator.Revision,
+                RoleStore.Current);
         }
 
         internal ActivitySnapshot For(Pawn pawn, int activityRevision,
-            int uiRevision, RoleStore owner)
+            int uiRevision, int definitionRevision, RoleStore owner)
         {
             if (pawn == null) return new ActivitySnapshot(-1, "");
             if (!ReferenceEquals(observedOwner, owner))
@@ -54,10 +57,11 @@ namespace WorkRoles.UI
             }
             if (cache.TryGetValue(pawn, out var entry)
                 && entry.activityRevision == activityRevision
-                && entry.uiRevision == uiRevision)
+                && entry.uiRevision == uiRevision
+                && entry.definitionRevision == definitionRevision)
                 return entry.value;
             ActivitySnapshot value = Resolve(pawn);
-            cache[pawn] = (activityRevision, uiRevision, value);
+            cache[pawn] = (activityRevision, uiRevision, definitionRevision, value);
             return value;
         }
 

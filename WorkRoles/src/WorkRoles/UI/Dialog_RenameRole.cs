@@ -6,8 +6,40 @@ namespace WorkRoles.UI
 {
     public class Dialog_RenameRole : Window
     {
+        private sealed class RenameChromeSnapshot
+        {
+            internal RenameChromeSnapshot(
+                string title,
+                string copySource,
+                string nameTaken,
+                string cancel,
+                string ok)
+            {
+                Title = title;
+                CopySource = copySource;
+                NameTaken = nameTaken;
+                Cancel = cancel;
+                Ok = ok;
+            }
+
+            internal string Title { get; }
+            internal string CopySource { get; }
+            internal string NameTaken { get; }
+            internal string Cancel { get; }
+            internal string Ok { get; }
+
+            internal bool ContentEquals(RenameChromeSnapshot other) =>
+                other != null
+                && Title == other.Title
+                && CopySource == other.CopySource
+                && NameTaken == other.NameTaken
+                && Cancel == other.Cancel
+                && Ok == other.Ok;
+        }
+
         private readonly Action<string> onConfirm;
-        private readonly string title;
+        private readonly string fixedTitle;
+        private readonly string titleKey;
         private readonly string sourceLabel;      // copy mode: the original role's name
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
         private readonly int exceptRoleId = -1;
@@ -20,6 +52,18 @@ namespace WorkRoles.UI
         private bool nameTaken;
         private bool nameValid;
         private bool focusedField;
+
+        // Owner: this rename/create dialog instance.
+        // Key: dialog identity and LanguageChangeCoordinator.Revision.
+        // Value: immutable detached title, source caption, validation status,
+        // and button-label chrome.
+        // Dependencies: fixedTitle or titleKey, sourceLabel, showCancel, and
+        // LanguageChangeCoordinator.Revision.
+        // Refresh: immediately on the first draw after a language revision.
+        // Equality: an equal localized rebuild preserves snapshot identity.
+        // Teardown: closing the dialog releases the instance-owned snapshot.
+        private RenameChromeSnapshot chromeSnapshot;
+        private int chromeLanguageRevision = -1;
 
         public override Vector2 InitialSize => new Vector2(360f, sourceLabel == null ? 160f : 186f);
 
@@ -37,7 +81,7 @@ namespace WorkRoles.UI
             onConfirm = n => RoleCommands.RenameRole(roleId, n);
             exceptRoleId = roleId;
             requireUniqueName = true;
-            title = "WR_RenameRoleTitle".Translate();
+            titleKey = "WR_RenameRoleTitle";
             name = roleLabel;
             doCloseX = true;
             absorbInputAroundWindow = true;
@@ -57,7 +101,7 @@ namespace WorkRoles.UI
             exceptGroupId = groupId;
             requireUniqueName = true;
             showCancel = true;
-            title = "WR_RenameGroupTitle".Translate();
+            titleKey = "WR_RenameGroupTitle";
             name = groupLabel;
             doCloseX = true;
             absorbInputAroundWindow = true;
@@ -70,7 +114,7 @@ namespace WorkRoles.UI
         public Dialog_RenameRole(string title, string sourceLabel, Action<string> onConfirm)
         {
             this.onConfirm = onConfirm;
-            this.title = title;
+            fixedTitle = title;
             this.sourceLabel = sourceLabel;
             requireUniqueName = true;
             name = "";
@@ -85,12 +129,35 @@ namespace WorkRoles.UI
         public Dialog_RenameRole(string title, Action<string> onConfirm, string initialName = "")
         {
             this.onConfirm = onConfirm;
-            this.title = title;
+            fixedTitle = title;
             showCancel = true;
             name = initialName ?? "";
             doCloseX = true;
             absorbInputAroundWindow = true;
             closeOnAccept = true;
+        }
+
+        private void EnsureChrome()
+        {
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (chromeSnapshot != null
+                && chromeLanguageRevision == languageRevision)
+                return;
+
+            string resolvedTitle = titleKey == null
+                ? fixedTitle
+                : titleKey.Translate().ToString();
+            var rebuilt = new RenameChromeSnapshot(
+                resolvedTitle,
+                sourceLabel == null
+                    ? null
+                    : "WR_CopySource".Translate(sourceLabel).ToString(),
+                "WR_NameTaken".Translate().ToString(),
+                showCancel ? "WR_Cancel".Translate().ToString() : null,
+                "WR_OK".Translate().ToString());
+            if (chromeSnapshot == null || !chromeSnapshot.ContentEquals(rebuilt))
+                chromeSnapshot = rebuilt;
+            chromeLanguageRevision = languageRevision;
         }
 
         private bool IsNameTaken(string candidate)
@@ -137,53 +204,71 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            float y = 0f;
-            if (!title.NullOrEmpty())
+            using var guiState = new GuiStateScope(capture: true);
+            EnsureChrome();
+            RenameChromeSnapshot chrome = chromeSnapshot;
+            GameFont oldFont = Text.Font;
+            Color oldColor = GUI.color;
+            try
             {
-                Text.Font = GameFont.Medium;
-                Widgets.Label(new Rect(0f, y, inRect.width, 30f), title);
                 Text.Font = GameFont.Small;
-                y += 34f;
-            }
-            if (sourceLabel != null)
-            {
-                GUI.color = WrStyle.DimText;
-                Widgets.Label(new Rect(0f, y, inRect.width, 22f), "WR_CopySource".Translate(sourceLabel));
-                GUI.color = Color.white;
-                y += 26f;
-            }
-            GUI.SetNextControlName("WR_RenameField");
-            name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
-            // Chips, list rows and dialogs all size to the name; cap it well
-            // above the longest seeded label.
-            const int MaxNameLength = 30;
-            if (name.Length > MaxNameLength) name = name.Substring(0, MaxNameLength);
-            EnsureValidation();
-            y += 32f;
-            if (!focusedField)
-            {
-                Verse.UI.FocusControl("WR_RenameField", this);
-                focusedField = true;
-            }
+                float y = 0f;
+                if (!chrome.Title.NullOrEmpty())
+                {
+                    Text.Font = GameFont.Medium;
+                    Widgets.Label(new Rect(0f, y, inRect.width, 30f), chrome.Title);
+                    Text.Font = GameFont.Small;
+                    y += 34f;
+                }
+                if (chrome.CopySource != null)
+                {
+                    GUI.color = WrStyle.DimText;
+                    Widgets.Label(new Rect(0f, y, inRect.width, 22f),
+                        chrome.CopySource);
+                    GUI.color = oldColor;
+                    y += 26f;
+                }
+                GUI.SetNextControlName("WR_RenameField");
+                name = Widgets.TextField(new Rect(0f, y, inRect.width, 30f), name);
+                // Chips, list rows and dialogs all size to the name; cap it well
+                // above the longest seeded label.
+                const int MaxNameLength = 30;
+                if (name.Length > MaxNameLength)
+                    name = name.Substring(0, MaxNameLength);
+                EnsureValidation();
+                y += 32f;
+                if (!focusedField)
+                {
+                    Verse.UI.FocusControl("WR_RenameField", this);
+                    focusedField = true;
+                }
 
-            if (nameTaken)
-            {
-                GUI.color = new Color(0.9f, 0.4f, 0.4f);
-                Text.Font = GameFont.Tiny;
-                Widgets.Label(new Rect(0f, y, inRect.width, 20f), "WR_NameTaken".Translate());
-                Text.Font = GameFont.Small;
-                GUI.color = Color.white;
-            }
+                if (nameTaken)
+                {
+                    GUI.color = new Color(0.9f, 0.4f, 0.4f);
+                    Text.Font = GameFont.Tiny;
+                    Widgets.Label(new Rect(0f, y, inRect.width, 20f),
+                        chrome.NameTaken);
+                    Text.Font = GameFont.Small;
+                    GUI.color = oldColor;
+                }
 
-            var okRect = showCancel
-                ? new Rect(inRect.width - 120f, inRect.height - 35f, 120f, 30f)
-                : new Rect(inRect.width / 2f - 60f, inRect.height - 35f, 120f, 30f);
-            if (showCancel
-                && Widgets.ButtonText(new Rect(0f, inRect.height - 35f, 120f, 30f), "WR_Cancel".Translate()))
-                Close();
-            if (Widgets.ButtonText(okRect, "WR_OK".Translate(), active: nameValid) && TryApply())
+                var okRect = showCancel
+                    ? new Rect(inRect.width - 120f, inRect.height - 35f, 120f, 30f)
+                    : new Rect(inRect.width / 2f - 60f, inRect.height - 35f,
+                        120f, 30f);
+                if (showCancel
+                    && Widgets.ButtonText(new Rect(0f, inRect.height - 35f,
+                        120f, 30f), chrome.Cancel))
+                    Close();
+                if (Widgets.ButtonText(okRect, chrome.Ok, active: nameValid)
+                    && TryApply())
+                    Close();
+            }
+            finally
             {
-                Close();
+                Text.Font = oldFont;
+                GUI.color = oldColor;
             }
         }
     }

@@ -6,6 +6,33 @@ using Verse.Profile;
 
 namespace WorkRoles.Patches
 {
+    public readonly struct PriorityGridPriorityTransitionState
+    {
+        internal PriorityGridPriorityTransitionState(Pawn pawn, WorkTypeDef workType)
+        {
+            Pawn = workType != null && PriorityGridFacts.IsRelevant(pawn)
+                ? pawn : null;
+            WorkType = workType;
+            Priority = Pawn?.workSettings?.GetPriority(workType) ?? 0;
+            Revision = Pawn == null
+                ? 0 : PriorityGridFacts.Revisions.RevisionOf(Pawn);
+        }
+
+        internal Pawn Pawn { get; }
+        internal WorkTypeDef WorkType { get; }
+        internal int Priority { get; }
+        internal int Revision { get; }
+
+        internal void InvalidateIfChanged()
+        {
+            if (Pawn == null || WorkType == null
+                || (Pawn.workSettings?.GetPriority(WorkType) ?? 0) == Priority
+                || PriorityGridFacts.Revisions.RevisionOf(Pawn) != Revision)
+                return;
+            PriorityGridFacts.Invalidate(Pawn);
+        }
+    }
+
     [HarmonyPatch(typeof(Pawn_WorkSettings))]
     public static class Patch_PawnWorkSettings
     {
@@ -46,15 +73,29 @@ namespace WorkRoles.Patches
         }
 
         [HarmonyPrefix]
+        [HarmonyPriority(Priority.First)]
         [HarmonyPatch(nameof(Pawn_WorkSettings.SetPriority))]
-        public static bool SetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, int priority)
+        public static bool SetPriorityPrefix(Pawn ___pawn, WorkTypeDef w, int priority,
+            out PriorityGridPriorityTransitionState __state)
         {
             // Managed pawns: the role store is the single source of truth (spec §6).
-            if (!IsManaged(___pawn)) return true;
+            if (!IsManaged(___pawn))
+            {
+                __state = new PriorityGridPriorityTransitionState(___pawn, w);
+                return true;
+            }
+            __state = default;
             // The swallowed write came from another mod — tell the player once.
             PrioritySetWatcher.OnBlockedSetPriority(___pawn, w, priority);
             return false;
         }
+
+        [HarmonyPostfix]
+        [HarmonyPriority(Priority.Last)]
+        [HarmonyPatch(nameof(Pawn_WorkSettings.SetPriority))]
+        public static void SetPriorityPostfix(
+            PriorityGridPriorityTransitionState __state)
+            => __state.InvalidateIfChanged();
 
         [HarmonyPrefix]
         [HarmonyPatch(nameof(Pawn_WorkSettings.DisableAll))]
@@ -77,6 +118,7 @@ namespace WorkRoles.Patches
         {
             if (ExternalPawnFacts.IsRelevant(__instance))
                 ExternalPawnFacts.Invalidate(__instance);
+            PriorityGridFacts.Invalidate(__instance);
             CompiledJobOrders.Invalidate(__instance);
         }
     }
@@ -114,6 +156,7 @@ namespace WorkRoles.Patches
             JobRankBaseline.NotifyDestroyed(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
             if (__state) ExternalPawnFacts.Release(__instance);
+            PriorityGridFacts.Release(__instance);
         }
     }
 
@@ -138,6 +181,7 @@ namespace WorkRoles.Patches
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
+            PriorityGridFacts.ReleaseForTeardown();
             JobRankBaseline.ReleaseForTeardown();
             FloorMaps.ReleaseForTeardown();
             PawnLocationTracker.ReleaseForTeardown();

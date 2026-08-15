@@ -18,6 +18,9 @@ namespace WorkRoles.Core.Recs
         public Dictionary<string, SignalBucket> WorkTypeSignalBuckets;
         public HashSet<string> CapableWorkTypes = new HashSet<string>();
         public long BiologicalAgeTicks = long.MaxValue;
+        /// False when the game reports that biological age does not disable
+        /// work for this pawn. Defaults to the ordinary age-gated behavior.
+        public bool AgeLimitsApply = true;
         public bool HasRangedWeapon;
         public int ShootingLevel;
         public bool FireFear;

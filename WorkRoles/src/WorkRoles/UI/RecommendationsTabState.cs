@@ -31,7 +31,12 @@ namespace WorkRoles.UI
         private float orderWidth = -1f;
         private RecOrderSnapshot orderSnapshot;
 
-        private int tipsStamp = -1;
+        // Owner: Recommendations window. Key: language revision. Value: two
+        // immutable StructuredTip models. Dependencies: translated tip text.
+        // Refresh: lazy on the next read after language changes. Equality:
+        // equal rebuilt contents preserve each tip identity. Teardown: Reset
+        // releases both references.
+        private int tipsLanguageRevision = -1;
 
         private float helpWidth = -1f;
 
@@ -65,9 +70,12 @@ namespace WorkRoles.UI
         // Dependencies: the role's category/time/championPenalty/skill lists,
         // holder scales and training paths, detached role-chip and add-menu
         // projections, skill/enum labels, language, font, and width. Refresh:
-        // immediate on key change. Equality: matching key preserves snapshot
-        // identity. Teardown: Reset/InvalidateLanguageCaches releases it.
+        // immediate on key change. DefinitionReloadCoordinator.Revision is part
+        // of the key because skill labels resolve SkillDefs. Equality: matching
+        // key preserves snapshot identity. Teardown: Reset/language invalidation
+        // releases it.
         private int detailStamp = -1;
+        private int detailDefinitionRevision = -1;
         private RoleStore detailStore;
         private int detailRoleId = -1;
         private float detailWidth = -1f;
@@ -86,6 +94,8 @@ namespace WorkRoles.UI
         internal void Reset()
         {
             InvalidateLanguageCaches();
+            RecommendationOrderTip = null;
+            TrainingTip = null;
         }
 
         internal void InvalidateLanguageCaches()
@@ -95,9 +105,7 @@ namespace WorkRoles.UI
             orderWidth = -1f;
             orderSnapshot = null;
 
-            tipsStamp = -1;
-            RecommendationOrderTip = null;
-            TrainingTip = null;
+            tipsLanguageRevision = -1;
 
             helpWidth = -1f;
             RecommendationOrderHelp = null;
@@ -113,6 +121,7 @@ namespace WorkRoles.UI
             panelsSnapshot = null;
 
             detailStamp = -1;
+            detailDefinitionRevision = -1;
             detailStore = null;
             detailRoleId = -1;
             detailWidth = -1f;
@@ -139,6 +148,7 @@ namespace WorkRoles.UI
             List<RecOrderChip> chips = LayoutOrderChips(width, resolved,
                 chipsById, viewsById, out Rect addRect, out float layoutHeight,
                 out string addLabel);
+            string headerLabel = "WR_RecOrderHeader".Translate();
             var addOptions = new List<RecRoleMenuOption>();
             List<int> candidateIds = OrderTemplate.AddCandidates(views, resolved);
             for (int i = 0; i < candidateIds.Count; i++)
@@ -151,7 +161,8 @@ namespace WorkRoles.UI
             addOptions.Sort(RecRoleMenuOption.CompareByLabel);
 
             var rebuilt = new RecOrderSnapshot(
-                chips, chipsById, addOptions, addRect, layoutHeight, addLabel);
+                chips, chipsById, addOptions, addRect, layoutHeight, addLabel,
+                headerLabel);
             if (!ReferenceEquals(orderStore, store)
                 || orderSnapshot == null
                 || !orderSnapshot.ContentEquals(rebuilt))
@@ -172,6 +183,7 @@ namespace WorkRoles.UI
                 return;
             var rebuiltSections = new List<RecTuningSection>();
             string tuningReset = "WR_RecTuneReset".Translate();
+            string headerLabel = "WR_RecGlobalPanel".Translate();
             string globalHelp = null;
             float globalHelpHeight = 0f;
 
@@ -345,7 +357,7 @@ namespace WorkRoles.UI
                 Text.Font = previousFont;
             }
             tuningSnapshot = new RecTuningSnapshot(rebuiltSections,
-                tuningReset, globalHelp, globalHelpHeight);
+                tuningReset, headerLabel, globalHelp, globalHelpHeight);
             tuningStore = store;
             tuningRevision = store.RecommendationTuningRevision;
             tuningWidth = width;
@@ -570,8 +582,9 @@ namespace WorkRoles.UI
 
         internal void EnsureTips()
         {
-            if (tipsStamp == UiVersion.Current) return;
-            tipsStamp = UiVersion.Current;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (tipsLanguageRevision == languageRevision) return;
+            tipsLanguageRevision = languageRevision;
 
             var recommendation = new TipModel { Title = "WR_RecOrderHeader".Translate() };
             recommendation.AddSection().Text("WR_OptRecOrderTipWhat".Translate());
@@ -579,8 +592,11 @@ namespace WorkRoles.UI
                 .Action("WR_ActDrag".Translate(), "WR_ActRecDrag".Translate())
                 .Action("WR_ActX".Translate(), "WR_ActRecX".Translate());
             recommendation.AddSection().Text("WR_OptRecOrderTipAuto".Translate(), dim: true);
-            RecommendationOrderTip =
+            var rebuiltRecommendation =
                 new StructuredTip("options:recommendation-order", recommendation);
+            if (RecommendationOrderTip == null
+                || !RecommendationOrderTip.ContentEquals(rebuiltRecommendation))
+                RecommendationOrderTip = rebuiltRecommendation;
 
             var training = new TipModel { Title = "WR_TrainingSection".Translate() };
             training.AddSection().Text("WR_TrainingTipWhat".Translate());
@@ -588,7 +604,9 @@ namespace WorkRoles.UI
             training.AddSection()
                 .Text("WR_TrainingTipBands".Translate(), dim: true)
                 .Text("WR_TrainingTipOrder".Translate(), dim: true);
-            TrainingTip = new StructuredTip("options:training", training);
+            var rebuiltTraining = new StructuredTip("options:training", training);
+            if (TrainingTip == null || !TrainingTip.ContentEquals(rebuiltTraining))
+                TrainingTip = rebuiltTraining;
 
         }
 
@@ -597,6 +615,7 @@ namespace WorkRoles.UI
             if (ReferenceEquals(panelsOrder, orderSnapshot)
                 && panelsWidth == width) return;
             var rebuilt = new List<RecRolePanel>();
+            string headerLabel = "WR_RecRolePanel".Translate();
             string help;
             float helpHeight;
             GameFont previousFont = Text.Font;
@@ -618,7 +637,7 @@ namespace WorkRoles.UI
                 Text.Font = previousFont;
             }
             panelsSnapshot = new RecRolePanelsSnapshot(
-                rebuilt, help, helpHeight);
+                rebuilt, headerLabel, help, helpHeight);
             panelsOrder = orderSnapshot;
             panelsWidth = width;
         }
@@ -629,10 +648,12 @@ namespace WorkRoles.UI
             RoleStore store, int roleId, float width)
         {
             if (detailStamp == UiVersion.Current
+                && detailDefinitionRevision == DefinitionReloadCoordinator.Revision
                 && ReferenceEquals(detailStore, store)
                 && detailRoleId == roleId && detailWidth == width)
                 return detail;
             detailStamp = UiVersion.Current;
+            detailDefinitionRevision = DefinitionReloadCoordinator.Revision;
             detailStore = store;
             detailRoleId = roleId;
             detailWidth = width;
@@ -695,6 +716,7 @@ namespace WorkRoles.UI
                 "WR_RoleCoverageLabel".Translate().ToString(),
                 role.coverage,
                 role.coverage.ToString(CultureInfo.InvariantCulture),
+                "WR_TrainingSection".Translate().ToString(),
                 showTraining,
                 paths);
             return detail;
@@ -908,7 +930,7 @@ namespace WorkRoles.UI
         internal RecOrderSnapshot(List<RecOrderChip> chips,
             Dictionary<int, RoleChipRenderData> catalogChips,
             List<RecRoleMenuOption> addOptions, Rect addRect,
-            float layoutHeight, string addLabel)
+            float layoutHeight, string addLabel, string headerLabel)
         {
             this.chips = chips;
             this.catalogChips = catalogChips;
@@ -916,6 +938,7 @@ namespace WorkRoles.UI
             AddRect = addRect;
             LayoutHeight = layoutHeight;
             AddLabel = addLabel;
+            HeaderLabel = headerLabel;
         }
 
         internal int Count => chips.Count;
@@ -923,6 +946,7 @@ namespace WorkRoles.UI
         internal Rect AddRect { get; }
         internal float LayoutHeight { get; }
         internal string AddLabel { get; }
+        internal string HeaderLabel { get; }
         internal int AddOptionCount => addOptions.Count;
         internal RecRoleMenuOption AddOptionAt(int index) => addOptions[index];
 
@@ -961,6 +985,8 @@ namespace WorkRoles.UI
                 || AddRect.height != other.AddRect.height
                 || LayoutHeight != other.LayoutHeight
                 || !string.Equals(AddLabel, other.AddLabel,
+                    System.StringComparison.Ordinal)
+                || !string.Equals(HeaderLabel, other.HeaderLabel,
                     System.StringComparison.Ordinal))
                 return false;
             for (int i = 0; i < chips.Count; i++)
@@ -982,10 +1008,12 @@ namespace WorkRoles.UI
         private readonly List<RecTuningSection> sections;
 
         internal RecTuningSnapshot(List<RecTuningSection> sections,
-            string resetLabel, string globalHelp, float globalHelpHeight)
+            string resetLabel, string headerLabel, string globalHelp,
+            float globalHelpHeight)
         {
             this.sections = sections;
             ResetLabel = resetLabel;
+            HeaderLabel = headerLabel;
             GlobalHelp = globalHelp;
             GlobalHelpHeight = globalHelpHeight;
         }
@@ -993,6 +1021,7 @@ namespace WorkRoles.UI
         internal int Count => sections.Count;
         internal RecTuningSection SectionAt(int index) => sections[index];
         internal string ResetLabel { get; }
+        internal string HeaderLabel { get; }
         internal string GlobalHelp { get; }
         internal float GlobalHelpHeight { get; }
     }
@@ -1002,15 +1031,17 @@ namespace WorkRoles.UI
         private readonly List<RecRolePanel> panels;
 
         internal RecRolePanelsSnapshot(List<RecRolePanel> panels,
-            string help, float helpHeight)
+            string headerLabel, string help, float helpHeight)
         {
             this.panels = panels;
+            HeaderLabel = headerLabel;
             Help = help;
             HelpHeight = helpHeight;
         }
 
         internal int Count => panels.Count;
         internal RecRolePanel PanelAt(int index) => panels[index];
+        internal string HeaderLabel { get; }
         internal string Help { get; }
         internal float HelpHeight { get; }
     }
@@ -1168,7 +1199,8 @@ namespace WorkRoles.UI
             HashSet<string> presentSkills, string addSkillLabel,
             string colonyMinCaption, int colonyMin, string colonyMinLabel,
             string coverageCaption, int coverage, string coverageLabel,
-            bool showTrainingSection, List<RecPathView> paths)
+            string trainingHeader, bool showTrainingSection,
+            List<RecPathView> paths)
         {
             RoleId = roleId;
             ClassificationHeader = classificationHeader;
@@ -1196,6 +1228,7 @@ namespace WorkRoles.UI
             CoverageCaption = coverageCaption;
             Coverage = coverage;
             CoverageLabel = coverageLabel;
+            TrainingHeader = trainingHeader;
             ShowTrainingSection = showTrainingSection;
             this.paths = paths;
         }
@@ -1229,6 +1262,7 @@ namespace WorkRoles.UI
         internal string CoverageCaption { get; }
         internal int Coverage { get; }
         internal string CoverageLabel { get; }
+        internal string TrainingHeader { get; }
         internal bool ShowTrainingSection { get; }
         internal int PathCount => paths.Count;
         internal RecPathView PathAt(int index) => paths[index];

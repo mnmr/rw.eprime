@@ -24,45 +24,49 @@ namespace WorkRoles.UI
             Color? labelColor = null)
         {
             var oldFont = Text.Font;
-            Text.Font = GameFont.Small;
-            var rotated = new Rect(0f, 0f, labelSize.x, labelSize.y)
-            {
-                center = new Vector2(
-                    columnRect.xMax + geometry.AnchorToCenterX,
-                    columnRect.yMax + geometry.AnchorToCenterY)
-            };
-
-            float theta = Mathf.Deg2Rad * degrees;
-            if (!TryApplyInclinedTransform(
-                    rotated.center, degrees, out Matrix4x4 originalMatrix))
-            {
-                Text.Font = oldFont;
-                return;
-            }
-
             var oldColor = GUI.color;
             var oldAnchor = Text.Anchor;
             bool oldWrap = Text.WordWrap;
-            GUI.color = labelColor ?? new Color(0.8f, 0.8f, 0.8f);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Text.WordWrap = false;
-            // Text sits 2px SCREEN-right of the line's position so it clears the
-            // preceding column's separator; in the pre-rotation frame a screen
-            // offset needs the inverse rotation applied.
-            var textRect = rotated;
-            textRect.x += 2f * Mathf.Cos(theta);
-            textRect.y += 2f * Mathf.Sin(theta);
-            Widgets.Label(textRect, label);
-            GUI.color = oldColor;
-            Vector2 lineStart = new Vector2(rotated.xMin, rotated.yMax);
-            Widgets.DrawLine(lineStart,
-                new Vector2(lineStart.x + columnRect.height, lineStart.y),
-                new Color(1f, 1f, 1f, 0.2f), 1f);
-            Text.WordWrap = oldWrap;
-            Text.Anchor = oldAnchor;
-            GUI.color = oldColor;
-            GUI.matrix = originalMatrix;
-            Text.Font = oldFont;
+            Matrix4x4 oldMatrix = GUI.matrix;
+            try
+            {
+                Text.Font = GameFont.Small;
+                var rotated = new Rect(0f, 0f, labelSize.x, labelSize.y)
+                {
+                    center = new Vector2(
+                        columnRect.xMax + geometry.AnchorToCenterX,
+                        columnRect.yMax + geometry.AnchorToCenterY)
+                };
+
+                float theta = Mathf.Deg2Rad * degrees;
+                if (!TryApplyInclinedTransform(
+                        rotated.center, degrees, out _))
+                    return;
+
+                GUI.color = labelColor ?? new Color(0.8f, 0.8f, 0.8f);
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = false;
+                // Text sits 2px SCREEN-right of the line's position so it clears the
+                // preceding column's separator; in the pre-rotation frame a screen
+                // offset needs the inverse rotation applied.
+                var textRect = rotated;
+                textRect.x += 2f * Mathf.Cos(theta);
+                textRect.y += 2f * Mathf.Sin(theta);
+                Widgets.Label(textRect, label);
+                GUI.color = oldColor;
+                Vector2 lineStart = new Vector2(rotated.xMin, rotated.yMax);
+                Widgets.DrawLine(lineStart,
+                    new Vector2(lineStart.x + columnRect.height, lineStart.y),
+                    new Color(1f, 1f, 1f, 0.2f), 1f);
+            }
+            finally
+            {
+                Text.WordWrap = oldWrap;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+                GUI.matrix = oldMatrix;
+                Text.Font = oldFont;
+            }
         }
 
         /// Invisible hit target transformed exactly like the inclined label, so
@@ -74,6 +78,7 @@ namespace WorkRoles.UI
             InclinedLabelGeometry geometry,
             float degrees)
         {
+            Matrix4x4 oldMatrix = GUI.matrix;
             var rotated = new Rect(0f, 0f, labelSize.x, labelSize.y)
             {
                 center = new Vector2(
@@ -81,11 +86,16 @@ namespace WorkRoles.UI
                     columnRect.yMax + geometry.AnchorToCenterY)
             };
             if (!TryApplyInclinedTransform(
-                    rotated.center, degrees, out Matrix4x4 originalMatrix))
+                    rotated.center, degrees, out _))
                 return false;
-            bool clicked = Widgets.ButtonInvisible(rotated);
-            GUI.matrix = originalMatrix;
-            return clicked;
+            try
+            {
+                return Widgets.ButtonInvisible(rotated);
+            }
+            finally
+            {
+                GUI.matrix = oldMatrix;
+            }
         }
 
         private static bool TryApplyInclinedTransform(
@@ -161,9 +171,16 @@ namespace WorkRoles.UI
         public static void InclinedLabel(Rect columnRect, string label, float degrees)
         {
             var oldFont = Text.Font;
-            Text.Font = GameFont.Small;
-            Vector2 labelSize = Text.CalcSize(label);
-            Text.Font = oldFont;
+            Vector2 labelSize;
+            try
+            {
+                Text.Font = GameFont.Small;
+                labelSize = Text.CalcSize(label);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
             InclinedLabel(columnRect, label, labelSize,
                 InclinedLabelGeometry.Calculate(labelSize.x, labelSize.y, degrees),
                 degrees);
@@ -221,9 +238,16 @@ namespace WorkRoles.UI
         public static void HeaderLabel(Rect rect, string text)
         {
             var oldFont = Text.Font;
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(rect.x, rect.y - MediumTopBearing, rect.width, rect.height + MediumTopBearing), text);
-            Text.Font = oldFont;
+            try
+            {
+                Text.Font = GameFont.Medium;
+                Widgets.Label(new Rect(rect.x, rect.y - MediumTopBearing,
+                    rect.width, rect.height + MediumTopBearing), text);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
         }
     }
 }

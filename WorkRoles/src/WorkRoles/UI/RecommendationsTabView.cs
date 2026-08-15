@@ -152,6 +152,7 @@ namespace WorkRoles.UI
             state.EnsureHelpLayout(orderW);
 
             state.EnsurePanels(flowW);
+            RecOrderSnapshot order = state.Order;
             RecRoleDetailSnapshot detail = expandedRoleId != -1
                 ? state.EnsureDetail(store, expandedRoleId, flowW - PanelPad * 2f)
                 : null;
@@ -221,18 +222,20 @@ namespace WorkRoles.UI
             float contentH = Mathf.Max(y, gy) + 12f;
             Widgets.BeginScrollView(rect, ref tabScroll,
                 new Rect(0f, 0f, viewW, contentH));
+            try
+            {
 
-            MiniHeader(flowX, recHeaderY, orderW, "WR_RecOrderHeader".Translate(),
+            MiniHeader(flowX, recHeaderY, orderW, order.HeaderLabel,
                 state.RecommendationOrderTip);
             DrawRecommendationOrder(recPanel);
             DrawHelpParagraph(recOrderHelpRect, state.RecommendationOrderHelp);
 
-            WrText.HeaderLabel(leftHeader, "WR_RecRolePanel".Translate());
+            WrText.HeaderLabel(leftHeader, panels.HeaderLabel);
             DrawHelpParagraph(panelsHelpRect, panels.Help);
             DrawRolePanels(flowX, panelsStartY, flowW, panels,
                 detail, bodyHeight);
 
-            WrText.HeaderLabel(rightHeader, "WR_RecGlobalPanel".Translate());
+            WrText.HeaderLabel(rightHeader, tuning.HeaderLabel);
             DrawHelpParagraph(globalHelpRect, tuning.GlobalHelp);
             float ty = tuningStartY;
             for (int i = 0; i < tuning.Count; i++)
@@ -276,11 +279,13 @@ namespace WorkRoles.UI
                 ty += PanelGap;
             }
 
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
 
-            if (RoleDrag.Active && state.Order.TryGetCatalogChip(
-                    RoleDrag.RoleId, out RoleChipRenderData dragChip))
-                RoleChipUI.DrawDragGhost(dragChip);
+            RoleChipUI.DrawDragGhost();
             RoleDrag.ResolveMouseUp();
         }
 
@@ -425,7 +430,7 @@ namespace WorkRoles.UI
 
             if (!detail.ShowTrainingSection) return;
             ry += 8f;
-            ry = MiniHeader(rightX, ry, halfW, "WR_TrainingSection".Translate(),
+            ry = MiniHeader(rightX, ry, halfW, detail.TrainingHeader,
                 state.TrainingTip);
             for (int i = 0; i < detail.PathCount; i++)
                 ry = DrawPathBlock(rightX, ry, halfW,
@@ -722,7 +727,7 @@ namespace WorkRoles.UI
                 rowsY + (view.DisplayRows - 1) * BandRowH,
                 110f, RoleChipUI.Height);
             WrTips.Key("WR_PathAddRoleTip").Region(pathAddRect);
-            if (Widgets.ButtonText(pathAddRect, "WR_AddRole".Translate()))
+            if (Widgets.ButtonText(pathAddRect, state.Order.AddLabel))
                 OpenAddRoleMenu(view);
 
             for (int i = 0; i < view.Count; i++)

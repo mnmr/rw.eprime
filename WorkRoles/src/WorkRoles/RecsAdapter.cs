@@ -55,6 +55,12 @@ namespace WorkRoles
         /// extend here if mods add equivalents).
         internal static readonly HashSet<string> FireFearGenes = new HashSet<string> { "FireTerror" };
 
+        /// Compatibility probe for the game's effective life-stage work rule.
+        /// Its impossible vanilla threshold distinguishes ordinary age-gated
+        /// pawns from races/mods that make LifeStageWorkSettings non-disabling.
+        private static readonly LifeStageWorkSettings AgeApplicabilityProbe =
+            new LifeStageWorkSettings { minAge = int.MaxValue };
+
         public static ColonyView BuildColonyView(RoleStore store, List<Pawn> pawns)
             => BuildColonyView(store, pawns, pawn => CapturePawnSnapshot(
                 pawn, PawnSignalSnapshots.Build(pawn)));
@@ -180,6 +186,7 @@ namespace WorkRoles
             var view = new PawnView
             {
                 BiologicalAgeTicks = facts.BiologicalAgeTicks,
+                AgeLimitsApply = facts.AgeLimitsApply,
                 HasRangedWeapon = facts.HasRangedWeapon,
                 ShootingLevel = facts.ShootingLevel,
                 FireFear = facts.FireFear,
@@ -208,6 +215,7 @@ namespace WorkRoles
             var facts = new PawnView
             {
                 BiologicalAgeTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue,
+                AgeLimitsApply = AgeLimitsApplyTo(pawn),
                 HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
                 ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
                 FireFear = pawn.genes != null
@@ -232,6 +240,14 @@ namespace WorkRoles
 
             return new PawnExternalSnapshot(
                 signalSnapshot, facts, pawn.CombinedDisabledWorkTags, ageBlocked);
+        }
+
+        private static bool AgeLimitsApplyTo(Pawn pawn)
+        {
+            List<LifeStageWorkSettings> settings =
+                pawn.RaceProps.lifeStageWorkSettings;
+            return settings != null && settings.Count > 0
+                && AgeApplicabilityProbe.IsDisabled(pawn);
         }
 
         /// The recommendation order template resolved over the live catalog.

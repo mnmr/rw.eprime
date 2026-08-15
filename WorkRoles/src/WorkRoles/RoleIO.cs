@@ -258,6 +258,7 @@ namespace WorkRoles
 
         public class PaletteRow
         {
+            public int sourceIndex;
             public string name;
             public Color color;
             public bool isNew;                 // false = same-name slot changes color
@@ -288,17 +289,23 @@ namespace WorkRoles
         /// Palette rows for MERGE mode: identical name+color entries are omitted.
         public static List<PaletteRow> PaletteMergeRows(RoleStore store, RoleFileDocument doc)
         {
-            store.SyncSwatchNames();
             var rows = new List<PaletteRow>();
-            foreach (var (name, rgb) in doc.palette)
+            for (int i = 0; i < doc.palette.Count; i++)
             {
+                var (name, rgb) = doc.palette[i];
                 var color = ToUnity(rgb);
-                int slot = store.customSwatchNames.IndexOf(name);
+                int slot = EffectiveCustomSlotOfName(store, name);
                 bool defined = slot >= 0 && slot < store.customSwatches.Count
                     && store.customSwatches[slot].a >= 0.5f;
                 if (defined && store.customSwatches[slot].IndistinguishableFrom(color))
                     continue; // identical: nothing to preview
-                var row = new PaletteRow { name = name, color = color, isNew = !defined };
+                var row = new PaletteRow
+                {
+                    sourceIndex = i,
+                    name = name,
+                    color = color,
+                    isNew = !defined,
+                };
                 if (defined)
                     foreach (var role in store.roles)
                         if (role.hasCustomColor && role.color.IndistinguishableFrom(store.customSwatches[slot]))
@@ -306,6 +313,23 @@ namespace WorkRoles
                 rows.Add(row);
             }
             return rows;
+        }
+
+        /// Pure preview equivalent of SyncSwatchNames + IndexOf. Missing or
+        /// blank persisted names are projected as their deterministic defaults
+        /// without mutating authoritative store state merely to render a dialog.
+        private static int EffectiveCustomSlotOfName(RoleStore store, string name)
+        {
+            for (int i = 0; i < store.customSwatches.Count; i++)
+            {
+                string current = i < store.customSwatchNames.Count
+                    ? store.customSwatchNames[i]
+                    : null;
+                if (current.NullOrEmpty()) current = $"custom-{i + 1}";
+                if (string.Equals(current, name, System.StringComparison.Ordinal))
+                    return i;
+            }
+            return -1;
         }
 
         public static List<RoleRow> RoleRows(RoleStore store, RoleFileDocument doc,
@@ -356,16 +380,210 @@ namespace WorkRoles
 
     public static partial class RoleCommands
     {
-        /// Applies an import. Selections are row indices into PaletteMergeRows /
-        /// RoleRows / doc.trainingPaths; ignored in overwrite modes (wholesale).
-        /// Returns a summary.
-        private static string ApplyImportToStore(RoleStore store, RoleFileDocument doc,
+        private readonly struct ImportApplyResult
+        {
+            internal ImportApplyResult(string summary, bool changed,
+                bool compilationChanged)
+            {
+                Summary = summary;
+                Changed = changed;
+                CompilationChanged = compilationChanged;
+            }
+
+            internal string Summary { get; }
+            internal bool Changed { get; }
+            internal bool CompilationChanged { get; }
+        }
+
+        /// Exact before/after value used only by the explicit import command.
+        /// It prevents a semantically identical import from publishing UI or
+        /// compiled-order invalidations; it is not retained as a render cache.
+        private sealed class ImportStoreState
+        {
+            private readonly List<Color> swatches;
+            private readonly List<string> swatchNames;
+            private readonly List<GroupState> groups;
+            private readonly List<RoleState> roles;
+            private readonly List<int> recommendationOrder;
+
+            internal ImportStoreState(RoleStore store)
+            {
+                swatches = new List<Color>(store.customSwatches);
+                swatchNames = new List<string>(store.customSwatchNames);
+                groups = store.groups.Select(group => new GroupState(group)).ToList();
+                roles = store.roles.Select(role => new RoleState(role)).ToList();
+                recommendationOrder = new List<int>(store.recommendationOrder);
+            }
+
+            internal bool ContentEquals(ImportStoreState other)
+            {
+                if (!swatches.SequenceEqual(other.swatches)
+                    || !swatchNames.SequenceEqual(other.swatchNames)
+                    || !recommendationOrder.SequenceEqual(other.recommendationOrder)
+                    || groups.Count != other.groups.Count
+                    || roles.Count != other.roles.Count)
+                    return false;
+                for (int i = 0; i < groups.Count; i++)
+                    if (!groups[i].ContentEquals(other.groups[i])) return false;
+                for (int i = 0; i < roles.Count; i++)
+                    if (!roles[i].ContentEquals(other.roles[i])) return false;
+                return true;
+            }
+
+            internal bool CompilationEquals(ImportStoreState other)
+            {
+                if (roles.Count != other.roles.Count) return false;
+                for (int i = 0; i < roles.Count; i++)
+                    if (!roles[i].CompilationEquals(other.roles[i])) return false;
+                return true;
+            }
+        }
+
+        private readonly struct GroupState
+        {
+            private readonly int id;
+            private readonly string label;
+
+            internal GroupState(RoleGroup group)
+            {
+                id = group.id;
+                label = group.label;
+            }
+
+            internal bool ContentEquals(GroupState other) =>
+                id == other.id && label == other.label;
+        }
+
+        private sealed class RoleState
+        {
+            private readonly int id;
+            private readonly string label;
+            private readonly bool enabled;
+            private readonly bool hasCustomColor;
+            private readonly Color color;
+            private readonly string templateDefName;
+            private readonly bool autoAssign;
+            private readonly bool blocker;
+            private readonly RoleCategory category;
+            private readonly RoleTime time;
+            private readonly bool championPenalty;
+            private readonly int minAge;
+            private readonly int maxAge;
+            private readonly int colonyMin;
+            private readonly int coverage;
+            private readonly bool tuningSeeded;
+            private readonly int groupId;
+            private readonly int activeHours;
+            private readonly bool composite;
+            private readonly List<string> requiredSkills;
+            private readonly List<string> optionalSkills;
+            private readonly List<string> locationTokens;
+            private readonly List<JobEntry> entries;
+            private readonly List<int> memberRoleIds;
+            private readonly List<int> trainingRoleIds;
+            private readonly List<int> trainingMins;
+            private readonly List<int> trainingMaxes;
+            private readonly Dictionary<string, List<string>> workTypeSnapshots;
+
+            internal RoleState(Role role)
+            {
+                id = role.id;
+                label = role.label;
+                enabled = role.enabled;
+                hasCustomColor = role.hasCustomColor;
+                color = role.color;
+                templateDefName = role.templateDefName;
+                autoAssign = role.autoAssign;
+                blocker = role.blocker;
+                category = role.category;
+                time = role.time;
+                championPenalty = role.championPenalty;
+                minAge = role.minAge;
+                maxAge = role.maxAge;
+                colonyMin = role.colonyMin;
+                coverage = role.coverage;
+                tuningSeeded = role.tuningSeeded;
+                groupId = role.groupId;
+                activeHours = role.activeHours;
+                composite = role.composite;
+                requiredSkills = new List<string>(role.requiredSkills);
+                optionalSkills = new List<string>(role.optionalSkills);
+                locationTokens = new List<string>(role.locationTokens);
+                entries = new List<JobEntry>(role.entries);
+                memberRoleIds = new List<int>(role.memberRoleIds);
+                trainingRoleIds = new List<int>(role.trainingRoleIds);
+                trainingMins = new List<int>(role.trainingMins);
+                trainingMaxes = new List<int>(role.trainingMaxes);
+                workTypeSnapshots = role.workTypeSnapshots.ToDictionary(
+                    pair => pair.Key, pair => new List<string>(pair.Value));
+            }
+
+            internal bool ContentEquals(RoleState other) =>
+                id == other.id
+                && label == other.label
+                && enabled == other.enabled
+                && hasCustomColor == other.hasCustomColor
+                && color.Equals(other.color)
+                && templateDefName == other.templateDefName
+                && autoAssign == other.autoAssign
+                && blocker == other.blocker
+                && category == other.category
+                && time == other.time
+                && championPenalty == other.championPenalty
+                && minAge == other.minAge
+                && maxAge == other.maxAge
+                && colonyMin == other.colonyMin
+                && coverage == other.coverage
+                && tuningSeeded == other.tuningSeeded
+                && groupId == other.groupId
+                && activeHours == other.activeHours
+                && composite == other.composite
+                && requiredSkills.SequenceEqual(other.requiredSkills)
+                && optionalSkills.SequenceEqual(other.optionalSkills)
+                && locationTokens.SequenceEqual(other.locationTokens)
+                && entries.SequenceEqual(other.entries)
+                && memberRoleIds.SequenceEqual(other.memberRoleIds)
+                && trainingRoleIds.SequenceEqual(other.trainingRoleIds)
+                && trainingMins.SequenceEqual(other.trainingMins)
+                && trainingMaxes.SequenceEqual(other.trainingMaxes)
+                && SnapshotContentEquals(other);
+
+            internal bool CompilationEquals(RoleState other) =>
+                id == other.id
+                && enabled == other.enabled
+                && blocker == other.blocker
+                && activeHours == other.activeHours
+                && composite == other.composite
+                && locationTokens.SequenceEqual(other.locationTokens)
+                && entries.SequenceEqual(other.entries)
+                && memberRoleIds.SequenceEqual(other.memberRoleIds)
+                && SnapshotContentEquals(other);
+
+            private bool SnapshotContentEquals(RoleState other)
+            {
+                if (workTypeSnapshots.Count != other.workTypeSnapshots.Count)
+                    return false;
+                foreach (var pair in workTypeSnapshots)
+                    if (!other.workTypeSnapshots.TryGetValue(pair.Key, out var value)
+                        || !pair.Value.SequenceEqual(value))
+                        return false;
+                return true;
+            }
+        }
+
+        /// Applies an import. Palette selections are stable source indices into
+        /// doc.palette; role/path selections are source indices into RoleRows and
+        /// doc.trainingPaths. Selections are ignored in overwrite modes.
+        /// Returns the exact observable change state and summary.
+        private static ImportApplyResult ApplyImportToStore(RoleStore store,
+            RoleFileDocument doc,
             bool paletteInclude, bool paletteOverwrite, List<int> paletteRows,
             bool rolesInclude, bool rolesOverwrite, List<int> roleRows,
             bool pathsInclude, bool pathsOverwrite, List<int> pathRows,
             bool orderInclude,
             IReadOnlyDictionary<string, string> resolvedLocations)
         {
+            var before = new ImportStoreState(store);
             if (!rolesInclude)
             {
                 pathsInclude = false;
@@ -401,17 +619,19 @@ namespace WorkRoles
             }
             else if (paletteInclude)
             {
-                var rows = RoleIO.PaletteMergeRows(store, doc);
-                foreach (int index in paletteRows ?? new List<int>())
+                foreach (int sourceIndex in paletteRows ?? new List<int>())
                 {
-                    if (index < 0 || index >= rows.Count) continue;
-                    var row = rows[index];
-                    int slot = store.customSwatchNames.IndexOf(row.name);
+                    if (sourceIndex < 0 || sourceIndex >= doc.palette.Count) continue;
+                    var (name, rgb) = doc.palette[sourceIndex];
+                    Color color = RoleIO.ToUnity(rgb);
+                    int slot = store.customSwatchNames.IndexOf(name);
                     if (slot >= 0 && slot < store.customSwatches.Count && store.customSwatches[slot].a >= 0.5f)
                     {
+                        if (store.customSwatches[slot].IndistinguishableFrom(color))
+                            continue;
                         var old = store.customSwatches[slot];
-                        store.customSwatches[slot] = row.color;
-                        RecolorRoles(store, old, row.color);
+                        store.customSwatches[slot] = color;
+                        RecolorRoles(store, old, color);
                     }
                     else
                     {
@@ -420,8 +640,8 @@ namespace WorkRoles
                         if (free < 0) continue;
                         while (store.customSwatches.Count <= free) store.customSwatches.Add(Color.clear);
                         store.SyncSwatchNames();
-                        store.customSwatches[free] = row.color;
-                        store.customSwatchNames[free] = row.name;
+                        store.customSwatches[free] = color;
+                        store.customSwatchNames[free] = name;
                     }
                     paletteChanges++;
                 }
@@ -510,7 +730,17 @@ namespace WorkRoles
                             existing => existing.label, row.existing))
                         continue;
                     var (hasColor, color) = RoleIO.ResolveColor(row.role.colorRef, store, doc);
+                    var locationTokens = row.role.locations
+                        .Select(token => ImportLocationResolver.FromMap(
+                            token, resolvedLocations))
+                        .Where(token => token != null).ToList();
+                    var importedEntries = row.role.composite
+                        ? new List<JobEntry>()
+                        : row.role.entries.Distinct().ToList();
                     var target = row.existing;
+                    bool clearWorkSnapshots = target == null
+                        || target.composite != row.role.composite
+                        || !target.entries.SequenceEqual(importedEntries);
                     if (target == null)
                     {
                         target = new Role { id = store.NextId() };
@@ -531,10 +761,7 @@ namespace WorkRoles
                     target.blocker = row.role.blocker;
                     target.enabled = row.role.enabled;
                     target.activeHours = row.role.activeHours;
-                    target.locationTokens = row.role.locations
-                        .Select(token => ImportLocationResolver.FromMap(
-                            token, resolvedLocations))
-                        .Where(token => token != null).ToList();
+                    target.locationTokens = locationTokens;
                     target.category = row.role.category;
                     target.time = row.role.time;
                     target.championPenalty = row.role.championPenalty;
@@ -553,10 +780,9 @@ namespace WorkRoles
                         row.role.groupId, row.role.group, doc, runtimeGroups, store);
                     // Hand-edited files can repeat an entry; first occurrence wins.
                     target.composite = row.role.composite;
-                    target.entries = row.role.composite
-                        ? new List<JobEntry>()
-                        : row.role.entries.Distinct().ToList();
-                    target.workTypeSnapshots.Clear();
+                    target.entries = importedEntries;
+                    if (clearWorkSnapshots)
+                        target.workTypeSnapshots.Clear();
                     row.existing = target;
                     runtimeRoles[row.role] = target;
                     appliedRows.Add(row);
@@ -604,7 +830,6 @@ namespace WorkRoles
                 foreach (var role in store.roles)
                     store.SanitizeCompositeMembers(role);
                 RoleCommands.SweepEmptyGroups();
-                CompiledJobOrders.InvalidateAll();
                 Seeding.RefreshWorkTypeSnapshots();
                 store.MigrateRoleTuning();
             }
@@ -658,7 +883,12 @@ namespace WorkRoles
             // leave a role color outside the palette.
             EnforcePaletteCoverage(store);
 
-            return "WR_ImportSummary".Translate(added, updated, deleted, paletteChanges, pathsAdded);
+            var after = new ImportStoreState(store);
+            return new ImportApplyResult(
+                "WR_ImportSummary".Translate(
+                    added, updated, deleted, paletteChanges, pathsAdded),
+                !before.ContentEquals(after),
+                !before.CompilationEquals(after));
         }
 
         /// The unique highest-band-minimum entry of a legacy path; -1 on ties.

@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.4.2 — 2026-08-15
+
+- Added: Support for detecting whether age limits are relevant for a pawn (no warnings on age-restricted role assignments; recommendations ignore configured age-bands).
+- Fixed: Minor performance improvements.
+
 ## 1.4.1 — 2026-08-14
 
 - Added: Option to disable skill captions underneath colonist names.

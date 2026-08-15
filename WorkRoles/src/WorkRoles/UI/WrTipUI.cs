@@ -57,33 +57,39 @@ namespace WorkRoles.UI
             var oldAnchor = Text.Anchor;
             var oldColor = GUI.color;
             bool oldWrap = Text.WordWrap;
-            Text.Font = GameFont.Small;
-            Text.Anchor = TextAnchor.UpperLeft;
-            float ox = bgRect.x + Pad + model.Padding;
-            float oy = bgRect.y + Pad + model.Padding;
-            foreach (Cmd cmd in geo.Cmds)
+            try
             {
-                GUI.color = cmd.Color;
-                if (cmd.Icon != null)
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.UpperLeft;
+                float ox = bgRect.x + Pad + model.Padding;
+                float oy = bgRect.y + Pad + model.Padding;
+                foreach (Cmd cmd in geo.Cmds)
                 {
-                    GUI.DrawTexture(new Rect(ox + cmd.Rect.x, oy + cmd.Rect.y,
-                        cmd.Rect.width, cmd.Rect.height), cmd.Icon);
-                }
-                else if (cmd.Text == null)
-                {
-                    WrText.LineHorizontal(ox + cmd.Rect.x, oy + cmd.Rect.y, cmd.Rect.width);
-                }
-                else
-                {
-                    Text.WordWrap = !cmd.NoWrap;
-                    Widgets.Label(new Rect(ox + cmd.Rect.x, oy + cmd.Rect.y,
-                        cmd.Rect.width, cmd.Rect.height), cmd.Text);
+                    GUI.color = cmd.Color;
+                    if (cmd.Icon != null)
+                    {
+                        GUI.DrawTexture(new Rect(ox + cmd.Rect.x, oy + cmd.Rect.y,
+                            cmd.Rect.width, cmd.Rect.height), cmd.Icon);
+                    }
+                    else if (cmd.Text == null)
+                    {
+                        WrText.LineHorizontal(ox + cmd.Rect.x, oy + cmd.Rect.y, cmd.Rect.width);
+                    }
+                    else
+                    {
+                        Text.WordWrap = !cmd.NoWrap;
+                        Widgets.Label(new Rect(ox + cmd.Rect.x, oy + cmd.Rect.y,
+                            cmd.Rect.width, cmd.Rect.height), cmd.Text);
+                    }
                 }
             }
-            Text.WordWrap = oldWrap;
-            GUI.color = oldColor;
-            Text.Anchor = oldAnchor;
-            Text.Font = oldFont;
+            finally
+            {
+                Text.WordWrap = oldWrap;
+                GUI.color = oldColor;
+                Text.Anchor = oldAnchor;
+                Text.Font = oldFont;
+            }
         }
 
         private static Geometry Ensure(TipModel model, float maxWidth)
@@ -92,26 +98,33 @@ namespace WorkRoles.UI
                 return cached;
             var geo = new Geometry { MaxWidth = maxWidth };
             var oldFont = Text.Font;
-            Text.Font = GameFont.Small;
-            float frame = Pad + model.Padding;
-            float contentMax = Mathf.Min(maxWidth, MaxContentWidth);
-            float contentW = Mathf.Min(NaturalWidth(model), contentMax);
-            float contentH = Compose(model, contentW, geo);
-            // Shape balance: wide-and-short tips narrow toward the √-area
-            // target and recompose once; both passes sit inside this
-            // cache-gated builder.
-            float balanced = TipBalancePolicy.BalancedWidth(contentW, contentH,
-                Mathf.Min(FloorWidth(model), contentMax));
-            if (balanced < contentW)
+            try
             {
-                geo.Cmds.Clear();
-                contentW = balanced;
-                contentH = Compose(model, contentW, geo);
+                Text.Font = GameFont.Small;
+                float frame = Pad + model.Padding;
+                float contentMax = Mathf.Min(maxWidth, MaxContentWidth);
+                float contentW = Mathf.Min(NaturalWidth(model), contentMax);
+                float contentH = Compose(model, contentW, geo);
+                // Shape balance: wide-and-short tips narrow toward the √-area
+                // target and recompose once; both passes sit inside this
+                // cache-gated builder.
+                float balanced = TipBalancePolicy.BalancedWidth(contentW, contentH,
+                    Mathf.Min(FloorWidth(model), contentMax));
+                if (balanced < contentW)
+                {
+                    geo.Cmds.Clear();
+                    contentW = balanced;
+                    contentH = Compose(model, contentW, geo);
+                }
+                geo.Size = new Vector2(Mathf.Ceil(contentW + frame * 2f),
+                    Mathf.Ceil(contentH + frame * 2f));
+                model.RenderCache = geo;
+                return geo;
             }
-            Text.Font = oldFont;
-            geo.Size = new Vector2(Mathf.Ceil(contentW + frame * 2f), Mathf.Ceil(contentH + frame * 2f));
-            model.RenderCache = geo;
-            return geo;
+            finally
+            {
+                Text.Font = oldFont;
+            }
         }
 
         /// Widest unwrapped row across the model (current font: Small).

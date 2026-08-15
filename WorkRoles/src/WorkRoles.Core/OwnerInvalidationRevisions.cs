@@ -42,9 +42,8 @@ namespace WorkRoles.Core
 
         public void Release(TOwner owner)
         {
-            if (owner == null) return;
+            if (owner == null || !ownerRevisions.Remove(owner)) return;
             Advance();
-            ownerRevisions.Remove(owner);
         }
 
         private void Advance()

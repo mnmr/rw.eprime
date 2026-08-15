@@ -71,8 +71,8 @@ namespace WorkRoles.UI
         }
 
         // Owner: Colonists window. Key: section snapshot identity, pawn-scope
-        // stamp, strip width, chip-display mode, and the skill-caption toggle
-        // (row minimum height). Value: view-owned flattened
+        // stamp, strip width, chip-display mode, skill-caption toggle, and exact
+        // row text metrics (row minimum height). Value: view-owned flattened
         // row geometry and group-collapse presentation; Pawn references are
         // stable external identities and the mutable builder buffers never
         // escape this view. Dependencies: section grouping/collapse, per-pawn
@@ -87,6 +87,7 @@ namespace WorkRoles.UI
         private float tableLayoutStripWidth = -1f;
         private int tableLayoutDisplay = -1;
         private bool tableLayoutCaptions;
+        private RowTextMetrics tableLayoutTextMetrics;
         private int tableListedCount;
 
         /// One view-owned revision for every cache whose contents depend on the
@@ -211,7 +212,8 @@ namespace WorkRoles.UI
             recommendationState.InvalidateLanguageCaches();
 
             rosterState.InvalidateLanguageCaches();
-            rowTextMetricsStamp = -1;
+            rowTextMetricsSmallLineHeight = -1f;
+            rowTextMetricsCaptionLineHeight = -1f;
             InvalidateTableLayout();
         }
 
@@ -343,7 +345,7 @@ namespace WorkRoles.UI
 
         // Owner: Colonists window. Key: RoleStore/current-map identity,
         // pawn-scope stamp, chip display, palette mode, selected pawn, verdict
-        // preference, and ordered skill-column revision.
+        // preference, ordered skill-column revision, and exact row text metrics.
         // Value: desired width and height scalars. Dependencies: every key plus
         // cached chip/text measurements. Refresh: immediate on the next size read
         // after key change. Equality: exact keys reuse both scalars. Teardown:
@@ -352,6 +354,7 @@ namespace WorkRoles.UI
         private RoleStore sizeOwner;
         private int sizeMapId = -1;
         private int sizeKey = -1;
+        private RowTextMetrics sizeTextMetrics;
         private float desiredWidthCache;
         private float desiredHeightCache;
 
@@ -369,11 +372,14 @@ namespace WorkRoles.UI
             key = (key * 31 + (PaletteVerdicts ? 1 : 0)) * 31
                 + (SkillCaptions ? 1 : 0);
             ScopeCacheStamp stamp = PawnListStamp;
+            RowTextMetrics textMetrics = TextMetrics();
             if (ReferenceEquals(sizeOwner, store) && sizeStamp == stamp
-                && sizeMapId == mapId && sizeKey == key) return;
+                && sizeMapId == mapId && sizeKey == key
+                && sizeTextMetrics.ContentEquals(textMetrics)) return;
             sizeOwner = store;
             sizeMapId = mapId;
             sizeKey = key;
+            sizeTextMetrics = textMetrics;
             EnsureChipSequences(store);
             IReadOnlyList<Pawn> pawns = ListedPawns();
             desiredWidthCache = ComputeDesiredWidth(store, pawns);
@@ -518,10 +524,7 @@ namespace WorkRoles.UI
             DrawPawnTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store);
             DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
 
-            if (RoleDrag.Active && paletteSnapshot != null
-                && paletteSnapshot.TryGetCatalogChip(RoleDrag.RoleId,
-                    out RoleChipRenderData dragChip))
-                RoleChipUI.DrawDragGhost(dragChip);
+            RoleChipUI.DrawDragGhost();
             RoleDrag.ResolveMouseUp();
         }
 
@@ -1327,7 +1330,7 @@ namespace WorkRoles.UI
                 && settings != null)
             {
                 settings.paletteMode = (PaletteMode)(((int)mode + 1) % 3);
-                settings.Write();
+                WorkRolesGameComponent.RequestSettingsWrite();
             }
             if (mode == PaletteMode.Hidden) return;
 
@@ -1339,6 +1342,8 @@ namespace WorkRoles.UI
 
             var scrollRect = new Rect(rect.x, rect.y, rect.width - PaletteModeW, rect.height);
             Widgets.BeginScrollView(scrollRect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
+            try
+            {
             float visibleTop = paletteScroll.y;
             float visibleBottom = visibleTop + scrollRect.height;
             bool repaint = Event.current.type == EventType.Repaint;
@@ -1405,7 +1410,11 @@ namespace WorkRoles.UI
                     StructuredTipPresenter.TipRegion(
                         chipRect, role.Tooltip);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         // ----- Filter row -----
@@ -1691,9 +1700,10 @@ namespace WorkRoles.UI
         }
 
         // Owner: Colonists window. Key: role id, context, optional Pawn identity,
-        // and activity revision within the pawn-scope stamp. Value: immutable
+        // and activity plus definition revisions within the pawn-scope stamp.
+        // Value: immutable
         // StructuredTip models. Dependencies: UiVersion, pawn-list revision,
-        // language, role/assignment facts, pawn activity where applicable, and
+        // language, definitions, role/assignment facts, pawn activity where applicable, and
         // the tip registry epoch (a cleared registry ignores older tips, so an
         // epoch-stale hit rebuilds). Refresh: lazy on a key miss; the whole
         // table clears on stamp change. Equality: exact key hits preserve tip
@@ -1703,6 +1713,7 @@ namespace WorkRoles.UI
             = new Dictionary<(int, RoleTipContext, Pawn, int), StructuredTip>();
         private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
         private int roleTipTuningRevision = -1;
+        private int roleTipDefinitionRevision = -1;
 
         /// The one role tooltip: palette chips, tree rows and assignment chips
         /// share the content; context varies the actions and pawn facts.
@@ -1717,12 +1728,15 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return null;
             ScopeCacheStamp stamp = PawnListStamp;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
             // The chip tip embeds verdict buckets and promotion thresholds,
             // both functions of the shared recommendation tuning.
             if (roleTipStamp != stamp
-                || roleTipTuningRevision != store.RecommendationTuningRevision)
+                || roleTipTuningRevision != store.RecommendationTuningRevision
+                || roleTipDefinitionRevision != definitionRevision)
                 roleTipCache.Clear();
             roleTipTuningRevision = store.RecommendationTuningRevision;
+            roleTipDefinitionRevision = definitionRevision;
             // The assignment tip embeds the pawn's current activity, so a job
             // transition (revision bump) must produce a fresh tip.
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
@@ -2095,6 +2109,8 @@ namespace WorkRoles.UI
             float totalH = tableRowLayout?.ContentExtent ?? 0f;
             Widgets.BeginScrollView(outRect, ref tableScroll,
                 new Rect(0f, 0f, viewW, totalH));
+            try
+            {
             VariableViewportRange visible = tableRowLayout.Calculate(
                 tableScroll.y, outRect.height);
             for (int i = visible.Start; i < visible.EndExclusive; i++)
@@ -2106,7 +2122,11 @@ namespace WorkRoles.UI
                 if (row.Pawn == null) DrawGroupHeader(rowRect, row);
                 else DrawRow(rowRect, row.Pawn, store);
             }
-            Widgets.EndScrollView();
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
             DrawScrollEdgeFades(outRect, tableScroll.y, totalH);
         }
 
@@ -2140,12 +2160,14 @@ namespace WorkRoles.UI
             // Captions raise the minimum row height whenever the caption line
             // falls back to the Small font, so row extents depend on them.
             bool captions = SkillCaptions;
+            RowTextMetrics textMetrics = TextMetrics();
             if (tableRowLayout != null
                 && ReferenceEquals(tableLayoutSections, sections)
                 && tableLayoutStamp == stamp
                 && tableLayoutStripWidth == stripWidth
                 && tableLayoutDisplay == display
-                && tableLayoutCaptions == captions)
+                && tableLayoutCaptions == captions
+                && tableLayoutTextMetrics.ContentEquals(textMetrics))
                 return;
 
             tableLayoutSections = sections;
@@ -2153,6 +2175,7 @@ namespace WorkRoles.UI
             tableLayoutStripWidth = stripWidth;
             tableLayoutDisplay = display;
             tableLayoutCaptions = captions;
+            tableLayoutTextMetrics = textMetrics;
             tableListedCount = 0;
             tableLayoutRows.Clear();
 
@@ -3268,15 +3291,17 @@ namespace WorkRoles.UI
 
         // Owner: Colonists window. Key: RoleStore and Pawn reference identity
         // inside the pawn-scope stamp, floored strip width, chip-display mode,
-        // tuning revision (caption ordering), configured skill-column revision,
-        // the skill-caption toggle, and pawn activity revision. Value:
+        // tuning revision (caption ordering), definition revision, configured skill-column revision,
+        // the skill-caption toggle, exact row text metrics, and pawn activity
+        // revision. Value:
         // immutable ColonistRowSnapshot projections, including the resolved
         // chip display mode; producer-owned assignment/chip/skill buffers are
         // hidden behind indexed access, while game-owned portraits are stable
         // references never mutated here.
         // Dependencies: role/assignment UiVersion, pawn scope, external pawn
-        // facts, activity revision, display mode, width, configured skill
-        // columns, recommendation tuning, the skill-caption toggle, and
+        // facts, activity and definition revisions, display mode, width, configured skill
+        // columns, recommendation tuning, the skill-caption toggle, font
+        // line boxes/tiny-font support, and
         // language. Refresh: immediate on
         // scope/key change and targeted per pawn on activity change. Equality:
         // exact keys preserve row identity.
@@ -3289,8 +3314,10 @@ namespace WorkRoles.UI
         private float chipLayoutWidth = -1f;
         private int chipLayoutDisplay = -1;
         private int chipLayoutTuningRevision = -1;
+        private int chipLayoutDefinitionRevision = -1;
         private int chipLayoutSkillColumnsRevision = -1;
         private bool chipLayoutCaptions = true;
+        private RowTextMetrics chipLayoutTextMetrics;
 
         private ColonistRowSnapshot RowSnapshotFor(Pawn pawn, RoleStore store,
             float stripWidth)
@@ -3300,14 +3327,18 @@ namespace WorkRoles.UI
             int display = TableDisplayKey;
             ChipDisplay chipDisplay = (ChipDisplay)(display >> 1);
             int tuningRevision = store.RecommendationTuningRevision;
+            int definitionRevision = DefinitionReloadCoordinator.Revision;
             int skillColumnsRevision = rosterState.SkillColumnsRevision;
             bool captions = SkillCaptions;
+            RowTextMetrics textMetrics = TextMetrics();
             if (!ReferenceEquals(chipLayoutOwner, store)
                 || chipLayoutStamp != stamp || chipLayoutWidth != stripWidth
                 || chipLayoutDisplay != display
                 || chipLayoutTuningRevision != tuningRevision
+                || chipLayoutDefinitionRevision != definitionRevision
                 || chipLayoutSkillColumnsRevision != skillColumnsRevision
-                || chipLayoutCaptions != captions)
+                || chipLayoutCaptions != captions
+                || !chipLayoutTextMetrics.ContentEquals(textMetrics))
             {
                 chipLayouts.Clear();
                 chipLayoutOwner = store;
@@ -3315,8 +3346,10 @@ namespace WorkRoles.UI
                 chipLayoutWidth = stripWidth;
                 chipLayoutDisplay = display;
                 chipLayoutTuningRevision = tuningRevision;
+                chipLayoutDefinitionRevision = definitionRevision;
                 chipLayoutSkillColumnsRevision = skillColumnsRevision;
                 chipLayoutCaptions = captions;
+                chipLayoutTextMetrics = textMetrics;
             }
             int activityRevision = ActivityTracker.RevisionOf(pawn);
             if (chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached)
@@ -3341,7 +3374,7 @@ namespace WorkRoles.UI
                 chipDisplay,
                 "WR_CopiedRoles".Translate(label).ToString(),
                 activityRevision, activity.RoleId, sequence, layout, height,
-                BuildRowCaption(pawn, store, stats), TextMetrics(),
+                BuildRowCaption(pawn, store, stats), textMetrics,
                 BuildSkillCells(stats));
             chipLayouts[pawn] = entry;
             return entry;
@@ -3407,15 +3440,20 @@ namespace WorkRoles.UI
             internal float BlockHeight { get; }
             internal float MinRowHeight { get; }
 
+            internal bool ContentEquals(RowTextMetrics other) =>
+                NameBox == other.NameBox
+                && CaptionBox == other.CaptionBox
+                && BlockHeight == other.BlockHeight
+                && MinRowHeight == other.MinRowHeight;
+
             /// Tiny falls back to Small whenever tiny text is unsupported (player
             /// preference, language, Steam Deck), which is the one case where the
             /// stacked pair outgrows the standard row.
-            internal static RowTextMetrics Build(bool captions)
+            internal static RowTextMetrics Build(bool captions,
+                float smallLineHeight, float captionLineHeight)
             {
-                float nameBox = Mathf.Ceil(Text.LineHeightOf(GameFont.Small));
-                float captionBox = Mathf.Ceil(Text.TinyFontSupported
-                    ? Text.LineHeightOf(GameFont.Tiny)
-                    : Text.LineHeightOf(GameFont.Small));
+                float nameBox = Mathf.Ceil(smallLineHeight);
+                float captionBox = Mathf.Ceil(captionLineHeight);
                 float block = captions
                     ? nameBox + captionBox - LineBoxOverlap : nameBox;
                 return new RowTextMetrics(nameBox, captionBox, block,
@@ -3423,26 +3461,36 @@ namespace WorkRoles.UI
             }
         }
 
-        // Owner: Colonists window. Key: UiVersion (language and font reload)
-        // plus the caption toggle. Value: the row's immutable line-box metrics.
-        // Dependencies: font line heights, tiny-font support, the caption
-        // toggle. Refresh: on the next gated read once UiVersion moves; a
-        // mid-session tiny-text preference change lands when the window reopens
-        // or any other UiVersion bump occurs. Equality: value type, rebuilt
-        // only on key change. Teardown: language invalidation resets the stamp.
+        // Owner: Colonists window. Key: caption toggle, tiny-font support, and
+        // the exact Small/caption line heights. Value: immutable row line-box
+        // metrics. Dependencies: only those consumed font metrics/preferences.
+        // Refresh: immediate on the next read after a key change. Equality:
+        // exact key hits reuse the value. Teardown: language invalidation clears
+        // the remembered line heights.
         private RowTextMetrics rowTextMetrics;
-        private int rowTextMetricsStamp = -1;
         private bool rowTextMetricsCaptions;
+        private bool rowTextMetricsTinySupported;
+        private float rowTextMetricsSmallLineHeight = -1f;
+        private float rowTextMetricsCaptionLineHeight = -1f;
 
         private RowTextMetrics TextMetrics()
         {
             bool captions = SkillCaptions;
-            if (rowTextMetricsStamp == UiVersion.Current
-                && rowTextMetricsCaptions == captions)
+            bool tinySupported = Text.TinyFontSupported;
+            float smallLineHeight = Text.LineHeightOf(GameFont.Small);
+            float captionLineHeight = Text.LineHeightOf(
+                tinySupported ? GameFont.Tiny : GameFont.Small);
+            if (rowTextMetricsCaptions == captions
+                && rowTextMetricsTinySupported == tinySupported
+                && rowTextMetricsSmallLineHeight == smallLineHeight
+                && rowTextMetricsCaptionLineHeight == captionLineHeight)
                 return rowTextMetrics;
-            rowTextMetricsStamp = UiVersion.Current;
             rowTextMetricsCaptions = captions;
-            rowTextMetrics = RowTextMetrics.Build(captions);
+            rowTextMetricsTinySupported = tinySupported;
+            rowTextMetricsSmallLineHeight = smallLineHeight;
+            rowTextMetricsCaptionLineHeight = captionLineHeight;
+            rowTextMetrics = RowTextMetrics.Build(
+                captions, smallLineHeight, captionLineHeight);
             return rowTextMetrics;
         }
 
@@ -3471,42 +3519,53 @@ namespace WorkRoles.UI
                 store.recommendationTuning ?? RecommendationsTuningOptions.Default);
             if (top.Count == 0) return result;
 
-            var oldFont = Text.Font;
-            Text.Font = GameFont.Tiny;
-            float separatorWidth = WrText.FitWidth(", ");
-            float available = NameWidth - 2f;
-            float used = 0f;
-            foreach (SkillBucketChoice choice in top)
+            GameFont oldFont = Text.Font;
+            try
             {
-                ColonistSkillPresentation presentation = null;
-                for (int i = 0; i < stats.Skills.Count; i++)
-                    if (stats.Skills[i].Line.Def?.defName == choice.SkillDefName)
-                    {
-                        presentation = stats.Skills[i];
+                Text.Font = GameFont.Tiny;
+                float separatorWidth = WrText.FitWidth(", ");
+                float available = NameWidth - 2f;
+                float used = 0f;
+                foreach (SkillBucketChoice choice in top)
+                {
+                    ColonistSkillPresentation presentation = null;
+                    for (int i = 0; i < stats.Skills.Count; i++)
+                        if (stats.Skills[i].Line.Def?.defName
+                                == choice.SkillDefName)
+                        {
+                            presentation = stats.Skills[i];
+                            break;
+                        }
+                    string label = presentation?.Line.Label;
+                    if (string.IsNullOrEmpty(label)) continue;
+                    string abbrev = (label.Length > 3
+                        ? label.Substring(0, 3) : label).ToLowerInvariant()
+                        + " ";
+                    string level = choice.SkillLevel.ToString();
+                    float abbrevWidth = WrText.FitWidth(abbrev);
+                    float levelWidth = WrText.FitWidth(level);
+                    // A new segment needs the previous segment's separator too.
+                    float segmentWidth = (result.Count > 0
+                            ? separatorWidth : 0f)
+                        + abbrevWidth + levelWidth;
+                    if (result.Count > 0 && used + segmentWidth > available)
                         break;
-                    }
-                string label = presentation?.Line.Label;
-                if (string.IsNullOrEmpty(label)) continue;
-                string abbrev = (label.Length > 3
-                    ? label.Substring(0, 3) : label).ToLowerInvariant() + " ";
-                string level = choice.SkillLevel.ToString();
-                float abbrevWidth = WrText.FitWidth(abbrev);
-                float levelWidth = WrText.FitWidth(level);
-                // A new segment needs the previous segment's separator too.
-                float segmentWidth = (result.Count > 0 ? separatorWidth : 0f)
-                    + abbrevWidth + levelWidth;
-                if (result.Count > 0 && used + segmentWidth > available) break;
-                result.Add(new RowCaptionSegment(
-                    abbrev, abbrevWidth,
-                    SkillSignalPresentation.VerdictColor(choice.Bucket),
-                    level, levelWidth,
-                    ColonistStatsState.SkillTextColor(
-                        presentation.Line, presentation.SignalView.PassionTier),
-                    ", ", separatorWidth));
-                used += segmentWidth;
+                    result.Add(new RowCaptionSegment(
+                        abbrev, abbrevWidth,
+                        SkillSignalPresentation.VerdictColor(choice.Bucket),
+                        level, levelWidth,
+                        ColonistStatsState.SkillTextColor(
+                            presentation.Line,
+                            presentation.SignalView.PassionTier),
+                        ", ", separatorWidth));
+                    used += segmentWidth;
+                }
+                return result;
             }
-            Text.Font = oldFont;
-            return result;
+            finally
+            {
+                Text.Font = oldFont;
+            }
         }
 
         internal float StripHeightFor(Pawn pawn)
@@ -3774,16 +3833,25 @@ namespace WorkRoles.UI
             }
             else
             {
-                Text.Font = GameFont.Tiny;
-                Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color = WrStyle.CaptionText;
-                bool wrap = Text.WordWrap;
-                Text.WordWrap = false;
-                Widgets.Label(slotRect, activity.Label);
-                Text.WordWrap = wrap;
-                GUI.color = Color.white;
-                Text.Anchor = TextAnchor.UpperLeft;
-                Text.Font = GameFont.Small;
+                GameFont oldFont = Text.Font;
+                TextAnchor oldAnchor = Text.Anchor;
+                bool oldWordWrap = Text.WordWrap;
+                Color oldColor = GUI.color;
+                try
+                {
+                    Text.Font = GameFont.Tiny;
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    Text.WordWrap = false;
+                    GUI.color = WrStyle.CaptionText;
+                    Widgets.Label(slotRect, activity.Label);
+                }
+                finally
+                {
+                    Text.Font = oldFont;
+                    Text.Anchor = oldAnchor;
+                    Text.WordWrap = oldWordWrap;
+                    GUI.color = oldColor;
+                }
             }
             if (activity.Tooltip != null && Mouse.IsOver(slotRect))
                 StructuredTipPresenter.TipRegion(slotRect, activity.Tooltip);
@@ -3791,6 +3859,12 @@ namespace WorkRoles.UI
 
         private void DrawStatsPanel(Rect rect, RoleStore store)
         {
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            bool oldWordWrap = Text.WordWrap;
+            Color oldColor = GUI.color;
+            try
+            {
             Widgets.DrawBoxSolidWithOutline(
                 rect, WrStyle.PanelBackground, WrStyle.PanelOutline);
             rect = rect.ContractedBy(StatsPadding);
@@ -3911,6 +3985,7 @@ namespace WorkRoles.UI
                 SkillLine line = presentation.Line;
                 SkillSignalView signalView = presentation.SignalView;
                 IReadOnlyList<Texture2D> signalIcons = presentation.SignalIcons;
+                int signalIconCount = signalIcons.Count;
 
                 float cellX = (col == 0) ? col1X : col2X;
                 float cellY = rect.y + row * CellH;
@@ -3928,10 +4003,10 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.MiddleLeft;
                 string labelText = line.Label;
                 float labelWidth = presentation.LabelWidth;
-                float iconWidth = signalIcons.Count == 0 ? 0f
+                float iconWidth = signalIconCount == 0 ? 0f
                     : SkillLabelDecoratorGap
-                        + signalIcons.Count * SkillDecoratorSize
-                        + (signalIcons.Count - 1) * SkillDecoratorGap;
+                        + signalIconCount * SkillDecoratorSize
+                        + (signalIconCount - 1) * SkillDecoratorGap;
                 float labelMaxW = Mathf.Max(0f,
                     skillColWidth - iconWidth - SkillValueGap - SkillValueWidth
                     - ColonistStatsState.VerdictStarsReserve);
@@ -3944,11 +4019,14 @@ namespace WorkRoles.UI
                 // deliberately have no individual tooltip; the cell owns one
                 // combined structured tooltip for all skill and global signals.
                 float iconX = xCursor + Mathf.Min(labelWidth, labelMaxW);
-                if (signalIcons.Count > 0)
+                if (signalIconCount > 0)
                 {
                     iconX += SkillLabelDecoratorGap;
-                    foreach (Texture2D texture in signalIcons)
+                    for (int signalIconIndex = 0;
+                            signalIconIndex < signalIconCount;
+                            signalIconIndex++)
                     {
+                        Texture2D texture = signalIcons[signalIconIndex];
                         GUI.color = Color.white;
                         GUI.DrawTexture(new Rect(iconX,
                             cellY + (CellH - SkillDecoratorSize) / 2f,
@@ -4071,6 +4149,14 @@ namespace WorkRoles.UI
                             preview.ApplyLabel))
                         preview.Apply();
                 }
+            }
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                Text.WordWrap = oldWordWrap;
+                GUI.color = oldColor;
             }
         }
 

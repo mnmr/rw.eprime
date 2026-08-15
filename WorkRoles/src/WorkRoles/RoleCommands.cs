@@ -109,8 +109,9 @@ namespace WorkRoles
         internal static RoleGroup EnsureGroup(string label) => ResolveOrCreateGroup(label);
 
         /// Applies an import on every client: the raw XML travels with the command
-        /// and each client rebuilds the same deterministic plan, so the row-index
-        /// selections from the preview stay valid everywhere.
+        /// and each client rebuilds the same deterministic plan. Selections use
+        /// stable file-source indices, so concurrent store changes cannot retarget
+        /// a filtered preview-row position before synced execution.
         [SyncMethod]
         public static void ApplyImport(ImportSelection selection)
         {
@@ -119,13 +120,16 @@ namespace WorkRoles
             if (doc.error != null) return;
             var resolvedLocations = ImportLocationResolver.BuildMap(
                 selection.locationFileTokens, selection.locationRuntimeTokens);
-            string summary = ApplyImportToStore(Store, doc,
+            ImportApplyResult result = ApplyImportToStore(Store, doc,
                 selection.palette, selection.paletteOverwrite, selection.paletteRows,
                 selection.roles, selection.rolesOverwrite, selection.roleRows,
                 selection.paths, selection.pathsOverwrite, selection.pathRows,
                 selection.order, resolvedLocations);
+            if (!result.Changed) return;
+            if (result.CompilationChanged)
+                CompiledJobOrders.InvalidateAll();
             UiVersion.Bump();
-            UI.WrToast.Show(summary, MessageTypeDefOf.PositiveEvent);
+            UI.WrToast.Show(result.Summary, MessageTypeDefOf.PositiveEvent);
         }
 
         /// Applies the restore items selected in the Restore Defaults preview:
@@ -422,9 +426,11 @@ namespace WorkRoles
 
         /// User groups with no stored member disappear; Default (id 0) included —
         /// it re-materializes on demand with the same id and label.
-        internal static void SweepEmptyGroups()
+        internal static bool SweepEmptyGroups()
         {
-            Store?.groups.RemoveAll(g => Store.roles.All(r => r.groupId != g.id));
+            return Store != null
+                && Store.groups.RemoveAll(
+                    g => Store.roles.All(r => r.groupId != g.id)) > 0;
         }
 
         /// Empty/null = the Default group. The sentinel is language-independent

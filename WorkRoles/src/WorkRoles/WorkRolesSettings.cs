@@ -6,6 +6,14 @@ namespace WorkRoles
     public enum ColonistOrder { ColonistBar, Alphabetical }
     public enum PaletteMode { Skills, Groups, Hidden }
 
+    internal enum OptionsDisplayPreference
+    {
+        ColonistSkillCaptions,
+        VerdictsOnColonistChips,
+        VerdictsInPalette,
+        VerdictsOnRecommendationChips,
+    }
+
     /// Per-player display preferences: persisted across saves via ModSettings and
     /// deliberately NOT world state (each MP player keeps their own view).
     public class WorkRolesSettings : ModSettings
@@ -43,6 +51,34 @@ namespace WorkRoles
         /// "<worldKey>|<packageId>" (per savegame, but player-side: world state
         /// writes from client-local calls would desync MP).
         public System.Collections.Generic.List<string> warnedPriorityMods = new System.Collections.Generic.List<string>();
+
+        /// Per-player presentation command used by the Options UI. Returning
+        /// false for a no-op keeps persistence and snapshot refresh exact.
+        internal bool SetDisplayPreference(
+            OptionsDisplayPreference preference, bool value)
+        {
+            switch (preference)
+            {
+                case OptionsDisplayPreference.ColonistSkillCaptions:
+                    if (colonistSkillCaptions == value) return false;
+                    colonistSkillCaptions = value;
+                    return true;
+                case OptionsDisplayPreference.VerdictsOnColonistChips:
+                    if (verdictsOnColonistChips == value) return false;
+                    verdictsOnColonistChips = value;
+                    return true;
+                case OptionsDisplayPreference.VerdictsInPalette:
+                    if (verdictsInPalette == value) return false;
+                    verdictsInPalette = value;
+                    return true;
+                case OptionsDisplayPreference.VerdictsOnRecommendationChips:
+                    if (verdictsOnRecommendationChips == value) return false;
+                    verdictsOnRecommendationChips = value;
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         public override void ExposeData()
         {

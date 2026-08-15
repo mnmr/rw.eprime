@@ -97,23 +97,37 @@ namespace WorkRoles.UI
         /// toward the middle so the pair reads as one marker.
         internal static void DrawVerdictBadge(Rect rect, RoleChipVerdict verdict)
         {
-            float x = rect.x + (rect.width - VerdictStarSize) / 2f;
-            float gap = (rect.height - 2f * VerdictStarSize) / 3f;
-            GUI.color = verdict.Top;
-            GUI.DrawTexture(new Rect(x, rect.y + gap + 1f, VerdictStarSize,
-                VerdictStarSize), WorkRolesTex.Star);
-            GUI.color = verdict.Bottom;
-            GUI.DrawTexture(new Rect(x, rect.y + gap * 2f + VerdictStarSize - 1f,
-                VerdictStarSize, VerdictStarSize), WorkRolesTex.Star);
-            GUI.color = Color.white;
+            Color oldColor = GUI.color;
+            try
+            {
+                float x = rect.x + (rect.width - VerdictStarSize) / 2f;
+                float gap = (rect.height - 2f * VerdictStarSize) / 3f;
+                GUI.color = verdict.Top;
+                GUI.DrawTexture(new Rect(x, rect.y + gap + 1f, VerdictStarSize,
+                    VerdictStarSize), WorkRolesTex.Star);
+                GUI.color = verdict.Bottom;
+                GUI.DrawTexture(new Rect(x, rect.y + gap * 2f + VerdictStarSize - 1f,
+                    VerdictStarSize, VerdictStarSize), WorkRolesTex.Star);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
         }
 
         /// Red border marking a chip whose role is about to be removed.
         public static void DrawRemovedOutline(Rect rect)
         {
-            GUI.color = RemovedColor;
-            Widgets.DrawBox(rect);
-            GUI.color = Color.white;
+            Color oldColor = GUI.color;
+            try
+            {
+                GUI.color = RemovedColor;
+                Widgets.DrawBox(rect);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
         }
 
         // Shared chip metrics: markers sit MarkerEdgePad from the left border
@@ -169,16 +183,9 @@ namespace WorkRoles.UI
         /// One role drag ghost for every tab. It uses the normal chip renderer
         /// and adds a red veil and outline only when the current target rejects
         /// the drop. Group drags remain a Roles-tab-specific label ghost.
-        public static void DrawDragGhost(RoleStore store)
+        internal static void DrawDragGhost()
         {
-            if (!RoleDrag.Active || RoleDrag.GroupId >= 0 || store == null) return;
-            Role role = store.RoleById(RoleDrag.RoleId);
-            if (role == null) return;
-            DrawDragGhost(RoleChipRenderData.From(role));
-        }
-
-        internal static void DrawDragGhost(RoleChipRenderData role)
-        {
+            RoleChipRenderData role = RoleDrag.RoleGhost;
             if (!RoleDrag.Active || RoleDrag.GroupId >= 0
                 || role.RoleId != RoleDrag.RoleId) return;
             Vector2 mouse = Event.current.mousePosition;
@@ -188,9 +195,16 @@ namespace WorkRoles.UI
                 dragSource: null, onClick: null, interactive: false);
             if (!RoleDrag.HoverBlocked) return;
             Widgets.DrawBoxSolid(rect, new Color(0.65f, 0.05f, 0.05f, 0.3f));
-            GUI.color = new Color(1f, 0.3f, 0.3f, 0.9f);
-            Widgets.DrawBox(rect, 2);
-            GUI.color = Color.white;
+            Color oldColor = GUI.color;
+            try
+            {
+                GUI.color = new Color(1f, 0.3f, 0.3f, 0.9f);
+                Widgets.DrawBox(rect, 2);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
         }
 
         /// Compact chips run tight: exact-measured initials need no breathing room.
@@ -210,18 +224,26 @@ namespace WorkRoles.UI
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool forcedOn = false, bool verdictSlot = false)
         {
-            Text.Font = GameFont.Small;
-            float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
-                verdictSlot);
-            // Minimal chips with markers carry no blank label square; Compact
-            // chips share one width (the widest initials) so columns line up.
-            float labelW = display == ChipDisplay.Minimal
-                ? (band > 0f ? 0f : 10f)
-                : display == ChipDisplay.Compact && abbrev != null
-                    ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
-                    : WrText.FitWidth(role.Label);
-            return labelW + LeftInset(band, display)
-                + RightInset(showRemove, display);
+            GameFont oldFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
+                    verdictSlot);
+                // Minimal chips with markers carry no blank label square; Compact
+                // chips share one width (the widest initials) so columns line up.
+                float labelW = display == ChipDisplay.Minimal
+                    ? (band > 0f ? 0f : 10f)
+                    : display == ChipDisplay.Compact && abbrev != null
+                        ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
+                        : WrText.FitWidth(role.Label);
+                return labelW + LeftInset(band, display)
+                    + RightInset(showRemove, display);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
         }
 
         /// Band chip: role colors/label like a normal chip, plus inner grip
@@ -320,6 +342,8 @@ namespace WorkRoles.UI
                 // capability, blocker veto, time rule, location rule, pin.
                 // Drawn on top of the box; the label inset already reserves the slots.
                 // No tips here: a chip has exactly one tooltip, owned by the caller.
+                Color oldMarkerColor = GUI.color;
+                try
                 {
                     float markerX = rect.x + MarkerEdgePad;
                     void Marker(Texture2D tex, bool tinted, float size = RemoveSize)
@@ -354,6 +378,10 @@ namespace WorkRoles.UI
                     if (PinShown(role, pinned)) Marker(WorkRolesTex.PinMarker,
                         tinted: true, size: 13f);
                 }
+                finally
+                {
+                    GUI.color = oldMarkerColor;
+                }
             }
 
             if (!interactive) return ChipClick.None;
@@ -380,7 +408,7 @@ namespace WorkRoles.UI
                     return ChipClick.Remove;
                 }
                 // Register press; click fires in ResolveMouseUp if no drag threshold reached.
-                RoleDrag.OnPress(dragControlId, role.RoleId, dragSource, onClick);
+                RoleDrag.OnPress(dragControlId, role, dragSource, onClick);
                 e.Use();
             }
             return ChipClick.None;
