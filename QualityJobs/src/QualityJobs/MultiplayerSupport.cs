@@ -39,5 +39,25 @@ namespace QualityJobs
             sync.Bind(ref v.constructionAutoBest);
             sync.Bind(ref v.targetQuality);
         }
+
+        /// Field-by-field worker for the API bill-creation payload. Do not move
+        /// these values back onto the SyncMethod signature: Harmony's generated
+        /// invoker can exceed RimWorld Mono's ILGenerator buffer and fail with
+        /// ILGenerator.make_room during Multiplayer registration (see AGENTS.md).
+        [SyncWorker(shouldConstruct = true)]
+        private static void SyncCreateQualityBillValues(
+            SyncWorker sync, ref CreateQualityBillValues v)
+        {
+            sync.Bind(ref v.billGiverThingId);
+            sync.Bind(ref v.mapUniqueId);
+            sync.Bind(ref v.productDefName);
+            sync.Bind(ref v.recipeDefName);
+            sync.Bind(ref v.explicitOptions);
+            sync.Bind(ref v.skillGate);
+            sync.Bind(ref v.requireInspired);
+            sync.Bind(ref v.requireSpecialist);
+            sync.Bind(ref v.autoBest);
+            sync.Bind(ref v.targetQuality);
+        }
     }
 }

@@ -50,6 +50,29 @@ public class GateOddsTests
     }
 
     [Test]
+    public async Task NoQualityTargetAlwaysSucceeds()
+    {
+        await Assert.That(GateOdds.SuccessChanceFor(Gate(0), 0)).IsEqualTo(1.0);
+    }
+
+    [Test]
+    public async Task UninspiredGateCannotProduceLegendary()
+    {
+        await Assert.That(GateOdds.SuccessChanceFor(
+            Gate(20), (int)QualityLevel.Legendary)).IsEqualTo(0.0);
+    }
+
+    [Test]
+    public async Task ReachableTargetHasAProperProbability()
+    {
+        double chance = GateOdds.SuccessChanceFor(
+            Gate(15, inspired: true), (int)QualityLevel.Masterwork);
+
+        await Assert.That(chance).IsGreaterThan(0.0);
+        await Assert.That(chance).IsLessThanOrEqualTo(1.0);
+    }
+
+    [Test]
     public async Task AnEasyTargetAtAHighGateCostsAboutOneAttempt()
     {
         float attempts = GateOdds.AttemptsFor(Gate(20), (int)QualityLevel.Normal);

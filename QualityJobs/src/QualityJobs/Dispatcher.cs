@@ -511,6 +511,34 @@ namespace QualityJobs
             return result;
         }
 
+        /// <summary>Resolved gate facts of the colony-wide auto-best finisher
+        /// (auto spec §5): the pawn the gate demands plus the skill, inspiration
+        /// and role offset the gate will see. MinSkill is ignored in auto mode,
+        /// so the pool condition carries only the inspired/specialist filters.
+        /// recipe == null resolves by Construction skill. Shared by the bill and
+        /// plan dialogs and the public API so the three consumers can never
+        /// diverge. Returns null (facts zeroed) when no colonist resolves. Call
+        /// only from revision-gated cache builders, never on a steady render
+        /// pass.</summary>
+        public static Pawn? ResolveAutoBestFacts(RecipeDef? recipe,
+            bool requireInspired, bool requireSpecialist,
+            out int skill, out bool inspired, out int roleOffset)
+        {
+            var poolCondition = new ResumeCondition(0, requireInspired, requireSpecialist);
+            Pawn? best = AutoBestForDisplay(recipe, poolCondition);
+            if (best == null)
+            {
+                skill = 0;
+                inspired = false;
+                roleOffset = 0;
+                return null;
+            }
+            skill = recipe != null ? SkillOf(best, recipe) : ConstructionSkillOf(best);
+            inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
+            roleOffset = RoleOffsetOf(best);
+            return best;
+        }
+
         public static bool DispatchInvalid(QualityJobsStore store, WorkItemEntry e)
         {
             if (e.uft == null || !e.uft.Spawned) return true;

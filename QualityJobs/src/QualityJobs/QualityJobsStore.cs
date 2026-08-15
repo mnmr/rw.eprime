@@ -157,6 +157,13 @@ namespace QualityJobs
         internal int BillStatusRevision;
         internal int PlanStatusRevision;
 
+        // Transient lifecycle notification — Owner: this per-save store.
+        // Subscribers: open construction dialogs only. Value: the replaced and
+        // replacement Thing IDs for a plan target. Refresh: immediate after the
+        // replacement presentation is published. Teardown: dialogs unsubscribe
+        // on close and ReleasePresentation clears any remaining subscribers.
+        internal event Action<int, int>? PlanRetargeted;
+
         // Cache contract — Owner: this per-save store. Key: singleton defaults
         // snapshot. Value: immutable StoreSettingsSnapshot. Dependencies: the
         // fourteen per-save default fields. Refresh: immediate after a successful
@@ -164,6 +171,34 @@ namespace QualityJobs
         // Teardown: ReleasePresentation clears the published store-owned state.
         private StoreSettingsSnapshot settingsPresentation = null!;
         internal StoreSettingsSnapshot SettingsPresentation => settingsPresentation;
+
+        // Cache contract — Owner: this per-save store. Key: singleton API feed.
+        // Value: immutable ManagedQualityJobsSnapshot; its QJ-owned models and
+        // collections never mutate after publication, while RimWorld objects are
+        // exposed only as live identity/convenience handles. Dependencies: live
+        // production-bill membership, management/configuration, suspension/pause,
+        // repeat counters and target-count products; tracked UFT membership; plan
+        // membership, target/map/build def/stuff/forbidden state and configuration;
+        // definition reloads; external pawn facts consumed by auto-best skill
+        // gates. Refresh: event invalidation publishes on the next
+        // GameComponentUpdate (including while paused), with the named 250-tick
+        // responsiveness and 2500-tick audit fallbacks. Equality: an equal rebuild
+        // preserves snapshot identity. Teardown: ReleaseMap clears all published
+        // handles before map disposal; ReleasePresentation publishes Empty.
+        private ManagedQualityJobsSnapshot managedJobsPresentation =
+            ManagedQualityJobsSnapshot.Empty;
+        private bool managedJobsDirty = true;
+        // Cache contract — Owner: this per-save store. Key: map/product,
+        // target-count bill, ingredient filter, and included slot-group identity.
+        // Value: private mutable event-routing index; it never escapes. Dependencies:
+        // the target-count bills and CountProducts inputs consumed by the API feed.
+        // Refresh: replaced atomically after each successful snapshot build.
+        // Equality: not observable; the published snapshot has the identity policy.
+        // Teardown: ReleaseMap and ReleasePresentation replace the complete index.
+        private ManagedTargetCountDependencies managedTargetCountDependencies =
+            new ManagedTargetCountDependencies();
+        internal ManagedQualityJobsSnapshot ManagedJobsPresentation =>
+            managedJobsPresentation;
 
         // Cache contract — Owner: this per-save store. Key: target thing ID.
         // Value: immutable PlanPresentationSnapshot. Dependencies: plan target,
@@ -370,6 +405,7 @@ namespace QualityJobs
             bool affectsEligibility)
         {
             BumpRevisionFor(billConfigRevisions, billId);
+            InvalidateManagedJobs();
             if (affectsEligibility)
             {
                 Bump(ref BillStatusRevision);
@@ -382,6 +418,7 @@ namespace QualityJobs
         {
             PublishSettingsPresentation();
             InvalidateBillPresentationsUsingDefault(field);
+            InvalidateManagedJobs();
             if (affectsEligibility)
             {
                 Bump(ref BillStatusRevision);
@@ -413,6 +450,7 @@ namespace QualityJobs
         internal void NotifyDefinitionsChanged()
         {
             Bump(ref definitionsRevision);
+            InvalidateManagedJobs();
             // A definition reload is an explicit, rare event. Rebuild its derived
             // artifacts immediately so a paused game cannot display stale recipe,
             // stock, overlay, eligibility, or expected-attempt data.
@@ -465,6 +503,7 @@ namespace QualityJobs
         internal void NotifyPlanConfigurationChanged()
         {
             PublishPlanPresentations(rebuildOverlays: false);
+            InvalidateManagedJobs();
             Bump(ref PlanStatusRevision);
             RequestReconcile();
         }
@@ -478,6 +517,7 @@ namespace QualityJobs
         internal void NotifyPlanStructureChanged()
         {
             PublishPlanPresentations(rebuildOverlays: true);
+            InvalidateManagedJobs();
             Bump(ref PlanStatusRevision);
         }
 
@@ -491,6 +531,7 @@ namespace QualityJobs
             Bump(ref ExternalPawnFactsRevision);
             Bump(ref BillStatusRevision);
             Bump(ref PlanStatusRevision);
+            InvalidateManagedJobs();
             if (requestReconcile) RequestReconcile();
         }
 
@@ -540,6 +581,7 @@ namespace QualityJobs
                 changed = true;
             }
             if (!changed) return;
+            InvalidateManagedJobs();
             Bump(ref BillStatusRevision);
             RequestReconcile();
         }
@@ -554,10 +596,13 @@ namespace QualityJobs
             ConstructionPlanState state)
         {
             if (ReferenceEquals(plan.target, target) && plan.state == state) return;
+            int previousThingId = plan.target?.thingIDNumber ?? -1;
             plan.target = target;
             plan.state = state;
             plan.finisher = null;
             NotifyPlanStructureChanged();
+            if (previousThingId >= 0 && previousThingId != target.thingIDNumber)
+                PlanRetargeted?.Invoke(previousThingId, target.thingIDNumber);
         }
 
         internal void ApplyPlanSettings(int thingId, int minSkill,
@@ -680,18 +725,21 @@ namespace QualityJobs
             entries.Clear();
             entriesByUft.Clear();
             plans.Clear();
+            InvalidateManagedJobs();
             NotifyEntriesChanged();
             NotifyPlanStructureChanged();
         }
 
-        internal void PublishAllPresentation()
+        internal void PublishAllPresentation(bool publishManagedJobs = true)
         {
             PublishSettingsPresentation();
             PublishPlanPresentations(rebuildOverlays: true);
+            if (publishManagedJobs) PublishManagedJobsPresentation();
         }
 
         internal void ReleasePresentation()
         {
+            PlanRetargeted = null;
             settingsPresentation = null!;
             planPresentations.Clear();
             billPresentations.Clear();
@@ -706,6 +754,10 @@ namespace QualityJobs
             rebuiltUftCounts.Clear();
             spawnedUftsByMap.Clear();
             entriesByUft.Clear();
+            managedJobsPresentation = ManagedQualityJobsSnapshot.Empty;
+            managedTargetCountDependencies =
+                new ManagedTargetCountDependencies();
+            managedJobsDirty = false;
             AnyOverlays = false;
         }
 
@@ -724,6 +776,12 @@ namespace QualityJobs
 
         internal void ReleaseMap(Map map)
         {
+            // Do not retain any handle from the map while Game removes it. The
+            // next update republishes the remaining maps from authoritative data.
+            managedJobsPresentation = ManagedQualityJobsSnapshot.Empty;
+            managedTargetCountDependencies =
+                new ManagedTargetCountDependencies();
+            managedJobsDirty = true;
             bool entriesChanged = false;
             for (int i = entries.Count - 1; i >= 0; i--)
             {
@@ -734,7 +792,11 @@ namespace QualityJobs
                 entries.RemoveAt(i);
                 entriesChanged = true;
             }
-            if (entriesChanged) NotifyEntriesChanged();
+            if (entriesChanged)
+            {
+                InvalidateManagedJobs();
+                NotifyEntriesChanged();
+            }
 
             bool plansChanged = false;
             for (int i = plans.Count - 1; i >= 0; i--)
@@ -771,6 +833,50 @@ namespace QualityJobs
             spawnedUftsByMap.Remove(map);
         }
 
+        internal void InvalidateManagedJobs() => managedJobsDirty = true;
+
+        internal void NotifyTargetCountThingChanged(Thing thing, Map? map)
+        {
+            if (map == null) return;
+            ThingDef product = thing.def;
+            if (thing is MinifiedThing minified && minified.InnerThing != null)
+                product = minified.InnerThing.def;
+            if (managedTargetCountDependencies.Watches(map, product))
+                InvalidateManagedJobs();
+        }
+
+        internal void NotifyTargetCountProductChanged(ThingDef product, Map? map)
+        {
+            if (map != null
+                && managedTargetCountDependencies.Watches(map, product))
+                InvalidateManagedJobs();
+        }
+
+        internal void NotifyTargetCountPawnRegistryChanged(Map? map)
+        {
+            if (map != null
+                && managedTargetCountDependencies.WatchesEquipped(map))
+                InvalidateManagedJobs();
+        }
+
+        internal void NotifyTargetCountBillInputChanged(Bill_Production bill)
+        {
+            if (managedTargetCountDependencies.Watches(bill))
+                InvalidateManagedJobs();
+        }
+
+        internal void NotifyTargetCountFilterChanged(ThingFilter filter)
+        {
+            if (managedTargetCountDependencies.Watches(filter))
+                InvalidateManagedJobs();
+        }
+
+        internal void NotifyTargetCountSlotGroupChanged(ISlotGroup group)
+        {
+            if (managedTargetCountDependencies.Watches(group))
+                InvalidateManagedJobs();
+        }
+
         private static void Bump(ref int revision) => revision = unchecked(revision + 1);
 
         private void PublishSettingsPresentation()
@@ -778,6 +884,316 @@ namespace QualityJobs
             if (settingsPresentation != null && settingsPresentation.Matches(this))
                 return;
             settingsPresentation = new StoreSettingsSnapshot(this);
+        }
+
+        private sealed class ConstructionApiGroup
+        {
+            internal readonly Map Map;
+            internal readonly ThingDef BuildableDef;
+            internal readonly ThingDef? Stuff;
+            internal readonly QualityJobSettings Settings;
+            internal readonly double Probability;
+            internal readonly List<Thing> Targets = new List<Thing>();
+
+            internal ConstructionApiGroup(Map map, ThingDef buildableDef,
+                ThingDef? stuff, in QualityJobSettings settings,
+                double probability)
+            {
+                Map = map;
+                BuildableDef = buildableDef;
+                Stuff = stuff;
+                Settings = settings;
+                Probability = probability;
+            }
+
+            internal bool Matches(Map map, ThingDef buildableDef,
+                ThingDef? stuff, in QualityJobSettings settings,
+                double probability)
+                => ReferenceEquals(Map, map)
+                   && ReferenceEquals(BuildableDef, buildableDef)
+                   && ReferenceEquals(Stuff, stuff)
+                   && Settings.HasSameContent(settings)
+                   && Probability.Equals(probability);
+        }
+
+        /// <summary>
+        /// Event-routing index for the live inputs consumed by target-count
+        /// RecipeWorkerCounter implementations. Owned by this store, rebuilt
+        /// with the API snapshot, and never exposed. Exact vanilla counters are
+        /// keyed by map/product; custom counters use a conservative map key.
+        /// </summary>
+        private sealed class ManagedTargetCountDependencies
+        {
+            private readonly Dictionary<Map, HashSet<ThingDef>> productsByMap =
+                new Dictionary<Map, HashSet<ThingDef>>();
+            private readonly HashSet<Map> opaqueCounterMaps = new HashSet<Map>();
+            private readonly HashSet<Map> equippedMaps = new HashSet<Map>();
+            private readonly HashSet<Bill_Production> bills =
+                new HashSet<Bill_Production>();
+            private readonly HashSet<ThingFilter> filters =
+                new HashSet<ThingFilter>();
+            private readonly HashSet<ISlotGroup> slotGroups =
+                new HashSet<ISlotGroup>();
+
+            internal void Add(Map map, Bill_Production bill,
+                RecipeDef recipe, ThingDef product)
+            {
+                bills.Add(bill);
+                if (!productsByMap.TryGetValue(map,
+                        out HashSet<ThingDef>? products))
+                {
+                    products = new HashSet<ThingDef>();
+                    productsByMap.Add(map, products);
+                }
+                products.Add(product);
+                RecipeWorkerCounter? counter = recipe.WorkerCounter;
+                if (counter == null
+                    || counter.GetType() != typeof(RecipeWorkerCounter))
+                    opaqueCounterMaps.Add(map);
+                if (bill.includeEquipped) equippedMaps.Add(map);
+                if (bill.limitToAllowedStuff) filters.Add(bill.ingredientFilter);
+                ISlotGroup? group = bill.GetIncludeSlotGroup();
+                if (group != null)
+                {
+                    slotGroups.Add(group);
+                    StorageGroup? storageGroup = group.StorageGroup;
+                    if (storageGroup != null) slotGroups.Add(storageGroup);
+                }
+            }
+
+            internal bool Watches(Map map, ThingDef product)
+                => opaqueCounterMaps.Contains(map)
+                   || productsByMap.TryGetValue(map,
+                       out HashSet<ThingDef>? products)
+                   && products.Contains(product);
+
+            internal bool WatchesEquipped(Map map)
+                => equippedMaps.Contains(map) || opaqueCounterMaps.Contains(map);
+
+            internal bool Watches(Bill_Production bill) => bills.Contains(bill);
+
+            internal bool Watches(ThingFilter filter) => filters.Contains(filter);
+
+            internal bool Watches(ISlotGroup group)
+            {
+                if (slotGroups.Contains(group)) return true;
+                StorageGroup? storageGroup = group.StorageGroup;
+                return storageGroup != null && slotGroups.Contains(storageGroup);
+            }
+        }
+
+        private void PublishManagedJobsPresentation()
+        {
+            var jobs = new List<ManagedQualityJob>();
+            var targetCountDependencies =
+                new ManagedTargetCountDependencies();
+            PublishManagedBillJobs(jobs, targetCountDependencies);
+            PublishManagedConstructionJobs(jobs);
+
+            ManagedQualityJobsSnapshot candidate = jobs.Count == 0
+                ? ManagedQualityJobsSnapshot.Empty
+                : new ManagedQualityJobsSnapshot(jobs.ToArray());
+            managedJobsPresentation = SnapshotPublication.Publish(
+                managedJobsPresentation, candidate);
+            managedTargetCountDependencies = targetCountDependencies;
+            managedJobsDirty = false;
+        }
+
+        private void PublishManagedBillJobs(List<ManagedQualityJob> jobs,
+            ManagedTargetCountDependencies targetCountDependencies)
+        {
+            List<Map> maps = Find.Maps;
+            for (int mapIndex = 0; mapIndex < maps.Count; mapIndex++)
+            {
+                Map map = maps[mapIndex];
+                List<Thing> givers = map.listerThings.ThingsInGroup(
+                    ThingRequestGroup.PotentialBillGiver);
+                for (int giverIndex = 0; giverIndex < givers.Count; giverIndex++)
+                {
+                    Thing giverThing = givers[giverIndex];
+                    if (giverThing is not IBillGiver giver
+                        || !giverThing.Spawned
+                        || !ReferenceEquals(giver.Map, map))
+                        continue;
+                    List<Bill> bills = giver.BillStack.Bills;
+                    for (int billIndex = 0; billIndex < bills.Count; billIndex++)
+                    {
+                        if (bills[billIndex] is not Bill_ProductionWithUft bill
+                            || !ManagedRecipes.IsManagedRecipe(bill.recipe))
+                            continue;
+                        BillPresentationSnapshot presentation =
+                            BillPresentationFor(bill);
+                        if (!ManagedJobPolicy.IncludeBill(
+                                presentation.Config.Managed,
+                                bill.suspended, bill.paused,
+                                bill.DeletedOrDereferenced,
+                                IsFinishBill(bill)))
+                            continue;
+
+                        ThingDef? product = presentation.Recipe.ProducedThingDef;
+                        if (product == null) continue;
+                        if (!TryCounterFor(bill, presentation.Recipe,
+                                out ManagedBillCounter counter))
+                            continue;
+                        if (counter.Mode == ManagedBillRepeat.TargetCount)
+                            targetCountDependencies.Add(map, bill,
+                                presentation.Recipe, product);
+
+                        QualityJobSettings settings = SettingsForApi(
+                            presentation.Config.Condition,
+                            presentation.Config.AutoBest,
+                            presentation.TargetQuality,
+                            presentation.Recipe,
+                            out double probability);
+                        UnfinishedThing[] unfinished = UnfinishedItemsFor(bill);
+                        jobs.Add(new ManagedBillJob(
+                            map, bill, presentation.Recipe, product, counter,
+                            unfinished, settings, probability));
+                    }
+                }
+            }
+        }
+
+        private void PublishManagedConstructionJobs(List<ManagedQualityJob> jobs)
+        {
+            var groups = new List<ConstructionApiGroup>();
+            Faction? player = Faction.OfPlayer;
+            for (int i = 0; i < plans.Count; i++)
+            {
+                ConstructionPlan plan = plans[i];
+                Thing? target = plan.target;
+                if (target == null || !target.Spawned || target.MapHeld == null)
+                    continue;
+                bool forbidden = player != null && target.IsForbidden(player);
+                if (!ManagedJobPolicy.IncludeConstruction(
+                        forbidden, target.Destroyed))
+                    continue;
+
+                bool isBlueprintOrFrame = target is Blueprint_Build
+                    || target is Frame;
+                ThingDef? buildableDef = isBlueprintOrFrame
+                    ? target.def.entityDefToBuild as ThingDef
+                    : target is Building ? target.def : null;
+                if (buildableDef == null) continue;
+                ThingDef? stuff = isBlueprintOrFrame
+                    ? ((IConstructible)target).EntityToBuildStuff()
+                    : target.Stuff;
+                Map map = target.MapHeld;
+                QualityJobSettings settings = SettingsForApi(
+                    plan.Condition, plan.autoBest, plan.minQuality,
+                    recipe: null, out double probability);
+
+                ConstructionApiGroup? group = null;
+                for (int g = 0; g < groups.Count; g++)
+                    if (groups[g].Matches(map, buildableDef, stuff,
+                            settings, probability))
+                    {
+                        group = groups[g];
+                        break;
+                    }
+                if (group == null)
+                {
+                    group = new ConstructionApiGroup(map, buildableDef,
+                        stuff, settings, probability);
+                    groups.Add(group);
+                }
+                group.Targets.Add(target);
+            }
+
+            for (int i = 0; i < groups.Count; i++)
+            {
+                ConstructionApiGroup group = groups[i];
+                jobs.Add(new ManagedConstructionJob(
+                    group.Map, group.BuildableDef, group.Stuff,
+                    group.Targets.ToArray(), group.Settings,
+                    group.Probability));
+            }
+        }
+
+        private QualityJobSettings SettingsForApi(in ResumeCondition condition,
+            bool autoBest, int targetQuality, RecipeDef? recipe,
+            out double probability)
+        {
+            int skillGate = condition.MinSkill;
+            if (autoBest
+                && Dispatcher.ResolveAutoBestFacts(recipe,
+                    condition.RequireInspired, condition.RequireSpecialist,
+                    out int resolvedSkill, out _, out _) != null)
+                skillGate = resolvedSkill;
+            var gate = new ResumeCondition(
+                skillGate, condition.RequireInspired,
+                condition.RequireSpecialist);
+            targetQuality = ConfigurationLimits.Quality(targetQuality);
+            probability = GateOdds.SuccessChanceFor(
+                gate, targetQuality);
+            return new QualityJobSettings(
+                skillGate, gate.RequireInspired,
+                gate.RequireSpecialist, autoBest,
+                (QualityCategory)targetQuality);
+        }
+
+        private UnfinishedThing[] UnfinishedItemsFor(Bill_ProductionWithUft bill)
+        {
+            List<UnfinishedThing>? found = null;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorkItemEntry entry = entries[i];
+                UnfinishedThing? uft = entry.uft;
+                if (!ReferenceEquals(entry.sourceBill, bill)
+                    || uft == null || uft.Destroyed)
+                    continue;
+                if (found == null) found = new List<UnfinishedThing>();
+                found.Add(uft);
+            }
+            return found?.ToArray() ?? Array.Empty<UnfinishedThing>();
+        }
+
+        private static bool TryCounterFor(Bill_Production bill,
+            RecipeDef recipe, out ManagedBillCounter counterValue)
+        {
+            ManagedBillRepeat mode;
+            int currentCount = 0;
+            int yield = 1;
+            if (bill.repeatMode == BillRepeatModeDefOf.Forever)
+                mode = ManagedBillRepeat.Forever;
+            else if (bill.repeatMode == BillRepeatModeDefOf.RepeatCount)
+                mode = ManagedBillRepeat.RepeatCount;
+            else if (bill.repeatMode == BillRepeatModeDefOf.TargetCount)
+            {
+                mode = ManagedBillRepeat.TargetCount;
+                RecipeWorkerCounter counter = recipe.WorkerCounter;
+                if (counter == null || !counter.CanCountProducts(bill)
+                    || bill.billStack?.billGiver is not Thing giver
+                    || !giver.Spawned)
+                {
+                    counterValue = default;
+                    return false;
+                }
+                currentCount = counter.CountProducts(bill);
+                yield = YieldPerIteration(recipe);
+            }
+            else
+            {
+                counterValue = default;
+                return false;
+            }
+
+            int iterations = ManagedBillWorkload.Iterations(
+                mode, bill.repeatCount, bill.targetCount,
+                currentCount, yield);
+            counterValue = new ManagedBillCounter(mode, iterations);
+            return true;
+        }
+
+        private static int YieldPerIteration(RecipeDef recipe)
+        {
+            ThingDef? product = recipe.ProducedThingDef;
+            if (product == null || recipe.products == null) return 1;
+            for (int i = 0; i < recipe.products.Count; i++)
+                if (ReferenceEquals(recipe.products[i].thingDef, product))
+                    return recipe.products[i].count > 0
+                        ? recipe.products[i].count : 1;
+            return 1;
         }
 
         private void PublishPlanPresentations(bool rebuildOverlays)
@@ -869,7 +1285,9 @@ namespace QualityJobs
             // distinguishes adding the mod to an existing save from starting a
             // new game and from loading a save Quality Jobs already initialized.
             initializeExistingBillsOnLoad = firstInitialization;
-            PublishAllPresentation();
+            // LoadedGame must quarantine pre-existing bills before the first API
+            // feed is published. Other presentation caches are safe to seed now.
+            PublishAllPresentation(publishManagedJobs: false);
         }
 
         public override void LoadedGame()
@@ -880,8 +1298,8 @@ namespace QualityJobs
             // Sharing is independent from bill management. Adopt existing idle
             // unfinished items immediately so paused-on-load games do not wait.
             RecountAndPool();
-            PublishAllPresentation();
             InitializeExistingBillMigration();
+            PublishAllPresentation();
         }
 
         private void InitializeExistingBillMigration()
@@ -954,6 +1372,9 @@ namespace QualityJobs
                         billRequireInspired[id] = config.RequireInspired;
                         billRequireSpecialist[id] = config.RequireSpecialist;
                         billTargetQuality[id] = config.TargetQuality;
+                        BumpRevisionFor(billConfigRevisions, id);
+                        billPresentations.Remove(id);
+                        InvalidateManagedJobs();
                         pendingExistingBillMigrationIds.Add(id);
                     }
                 }
@@ -1089,6 +1510,8 @@ namespace QualityJobs
             Bill_ProductionWithUft? sourceBill, StyleSnapshot? snapshot)
         {
             WorkItemEntry? entry = FindByUft(uft);
+            Bill_ProductionWithUft? previousSource = entry?.sourceBill;
+            bool added = entry == null;
             if (entry == null)
             {
                 entry = new WorkItemEntry { uft = uft };
@@ -1108,6 +1531,8 @@ namespace QualityJobs
             entry.finishBill = null;
             if (sourceBill != null) entry.sourceBill = sourceBill;
             if (snapshot != null) entry.snapshot = snapshot;
+            if (added || !ReferenceEquals(previousSource, entry.sourceBill))
+                InvalidateManagedJobs();
             NotifyEntriesChanged();
             RequestReconcile();
         }
@@ -1116,10 +1541,16 @@ namespace QualityJobs
         {
             if (!entries.Remove(entry)) return;
             if (entry.uft != null) entriesByUft.Remove(entry.uft);
+            InvalidateManagedJobs();
             NotifyEntriesChanged();
         }
 
         // ---- scan (spec §6, §8, §9) -------------------------------------------
+
+        public override void GameComponentUpdate()
+        {
+            if (managedJobsDirty) PublishManagedJobsPresentation();
+        }
 
         public override void GameComponentTick()
         {
@@ -1147,6 +1578,7 @@ namespace QualityJobs
             SweepAndDispatchPlans();
             if (audit)
             {
+                InvalidateManagedJobs();
                 PublishOverlayPresentations();
                 PruneConstructionCommands();
             }
@@ -1255,6 +1687,7 @@ namespace QualityJobs
             entries.Add(entry);
             entriesByUft.Add(uft, entry);
             uft.BoundBill = null;
+            InvalidateManagedJobs();
             return true;
         }
 
@@ -1269,6 +1702,7 @@ namespace QualityJobs
                 entries.RemoveAt(i);
                 changed = true;
             }
+            if (changed) InvalidateManagedJobs();
             return changed;
         }
 
@@ -1283,6 +1717,7 @@ namespace QualityJobs
                     Dispatcher.DeleteFinishBill(this, e);
                     if (e.uft != null) entriesByUft.Remove(e.uft);
                     entries.RemoveAt(i);
+                    InvalidateManagedJobs();
                     NotifyEntriesChanged();
                     continue;
                 }
@@ -1294,6 +1729,7 @@ namespace QualityJobs
                     // so the pool clears immediately (creator intact, not rebound).
                     if (e.uft != null) entriesByUft.Remove(e.uft);
                     entries.RemoveAt(i);
+                    InvalidateManagedJobs();
                     NotifyEntriesChanged();
                 }
             }
@@ -1563,7 +1999,9 @@ namespace QualityJobs
                         Dispatcher.DeleteFinishBill(this, entry!);
                 entries.RemoveAll(e => e?.uft == null);
                 NormalizeLoadedState();
-                PublishAllPresentation();
+                // LoadedGame completes legacy-bill quarantine before the API
+                // feed is allowed to publish live bill handles.
+                PublishAllPresentation(publishManagedJobs: false);
             }
         }
     }

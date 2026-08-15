@@ -20,14 +20,15 @@ namespace QualityJobs.UI
     ///
     /// Fix 2: The "Retried until" caption is removed entirely. The target-quality
     /// row now shows: label on the left portion, button flush to the RIGHT edge
-    /// of the row. The whole-row tooltip (QJ_RetriedUntilTip) is kept.
+    /// of the row. Its tooltip is restricted to the non-interactive label area.
     ///
     /// FloatMenu for quality picker uses vanishIfMouseDistant = false
     /// (verified field at Decompiled\Verse\FloatMenu.cs line 14) to prevent the
     /// menu from instantly self-closing when spawned near the screen edge.
     ///
-    /// Fix 5: Operates on thing IDs captured at dialog open, so editing one
-    /// field pushes the synced command for every eligible selected thing.
+    /// Fix 5: Operates on thing IDs captured at dialog open and follows their
+    /// deterministic replacement IDs, so editing one field pushes the synced
+    /// command for every eligible selected thing throughout construction.
     ///
     /// SetInitialSizeAndPosition verified against Decompiled\Verse\Window.cs line 249:
     ///   Rect rect3 = rect.ContractedBy(Margin);   // Margin = 18f
@@ -56,10 +57,11 @@ namespace QualityJobs.UI
     ///   └─────────────────────────────────────────────────────────┘
     public class Dialog_ConstructionPlanConfig : Window
     {
-        private readonly int primaryThingId;
-        private readonly List<int> thingIds;
+        private readonly TrackedTargetIds targetIds;
         private readonly Map? primaryMap;
         private readonly Rect _anchor;
+        private QualityJobsStore? subscribedStore;
+        private FloatMenu? qualityMenu;
 
         // Layout constants derived from verified Listing metrics:
         //   Text.LineHeight (GameFont.Small) = 22f (compile-time constant;
@@ -245,8 +247,7 @@ namespace QualityJobs.UI
         public Dialog_ConstructionPlanConfig(List<int> thingIds, Map? primaryMap,
             Rect anchor)
         {
-            this.thingIds = thingIds;
-            primaryThingId = thingIds[0];
+            targetIds = new TrackedTargetIds(thingIds);
             this.primaryMap = primaryMap;
             _anchor = anchor;
             doCloseX = false;
@@ -256,7 +257,7 @@ namespace QualityJobs.UI
 
             QualityJobsStore? store = QualityJobsStore.Active;
             PlanPresentationSnapshot? plan = null;
-            store?.TryGetPlanPresentation(primaryThingId, out plan);
+            store?.TryGetPlanPresentation(targetIds.Primary, out plan);
             int planMinSkill = plan?.MinSkill ?? 0;
             bool planInspired = plan?.RequireInspired ?? false;
             bool planSpecialist = plan?.RequireSpecialist ?? false;
@@ -270,6 +271,37 @@ namespace QualityJobs.UI
             if (autoBest != planAutoBest) autoBest = planAutoBest;
             LoadLabels(plan);
         }
+
+        public override void PreOpen()
+        {
+            base.PreOpen();
+            subscribedStore = QualityJobsStore.Active;
+            if (subscribedStore != null)
+                subscribedStore.PlanRetargeted += OnPlanRetargeted;
+        }
+
+        public override void PostClose()
+        {
+            if (subscribedStore != null)
+            {
+                subscribedStore.PlanRetargeted -= OnPlanRetargeted;
+                subscribedStore = null;
+            }
+
+            FloatMenu? menu = qualityMenu;
+            qualityMenu = null;
+            if (menu != null)
+            {
+                menu.onCloseCallback = null;
+                StructuredTipPresenter.EndSuppression();
+                if (menu.IsOpen) menu.Close(doCloseSound: false);
+            }
+            StructuredTipPresenter.Reset();
+            base.PostClose();
+        }
+
+        private void OnPlanRetargeted(int previousThingId, int replacementThingId) =>
+            targetIds.Retarget(previousThingId, replacementThingId);
 
         protected override void SetInitialSizeAndPosition()
         {
@@ -300,7 +332,7 @@ namespace QualityJobs.UI
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             PlanPresentationSnapshot? plan = null;
-            store?.TryGetPlanPresentation(primaryThingId, out plan);
+            store?.TryGetPlanPresentation(targetIds.Primary, out plan);
             int currentMinSkill = plan?.MinSkill ?? 0;
             bool currentInspired = plan?.RequireInspired ?? false;
             bool currentSpecialist = plan?.RequireSpecialist ?? false;
@@ -459,10 +491,10 @@ namespace QualityJobs.UI
                     if (Widgets.ButtonText(clearRowRect, clearLabel!))
                     {
                         // Fix 5: Clear for every selected thing that has a plan.
-                        for (int i = 0; i < thingIds.Count; i++)
+                        for (int i = 0; i < targetIds.Count; i++)
                         {
                             QualityJobsStore? s = QualityJobsStore.Active;
-                            int thingId = thingIds[i];
+                            int thingId = targetIds[i];
                             if (s != null && s.TryGetPlanPresentation(thingId, out _))
                                 Commands.RemovePlan(thingId);
                         }
@@ -486,8 +518,8 @@ namespace QualityJobs.UI
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return false;
-            for (int i = 0; i < thingIds.Count; i++)
-                if (store.TryGetPlanPresentation(thingIds[i], out _)) return true;
+            for (int i = 0; i < targetIds.Count; i++)
+                if (store.TryGetPlanPresentation(targetIds[i], out _)) return true;
             return false;
         }
 
@@ -611,10 +643,35 @@ namespace QualityJobs.UI
                         options.Add(new FloatMenuOption(qualityLabels![q], () =>
                             PushMinQuality(capturedQ)));
                     }
-                    var menu = new FloatMenu(options) { vanishIfMouseDistant = false };
-                    Find.WindowStack.Add(menu);
+                    var menu = new FloatMenu(options)
+                    {
+                        vanishIfMouseDistant = false,
+                        onCloseCallback = OnQualityMenuClosed,
+                    };
+                    qualityMenu = menu;
+                    StructuredTipPresenter.BeginSuppression();
+                    try
+                    {
+                        Find.WindowStack.Add(menu);
+                    }
+                    catch
+                    {
+                        menu.onCloseCallback = null;
+                        qualityMenu = null;
+                        try
+                        {
+                            if (menu.IsOpen) menu.Close(doCloseSound: false);
+                        }
+                        finally
+                        {
+                            StructuredTipPresenter.EndSuppression();
+                        }
+                        throw;
+                    }
                 }
-                WrTips.Key("QJ_RetriedUntilTip").Region(qualityRowRect);
+                if (qualityMenu == null)
+                    WrTips.Key("QJ_RetriedUntilTip").Region(
+                        qualityLabelRect, qualityBtnRect);
                 // y not advanced after last row (no trailing gap).
 
                 Push(newMinSkill, newInspired, newSpecialist, newAutoBest);
@@ -678,8 +735,14 @@ namespace QualityJobs.UI
         private void PushMinQuality(int value)
         {
             minQuality = value;
-            for (int i = 0; i < thingIds.Count; i++)
-                Commands.SetPlanMinQuality(thingIds[i], value);
+            for (int i = 0; i < targetIds.Count; i++)
+                Commands.SetPlanMinQuality(targetIds[i], value);
+        }
+
+        private void OnQualityMenuClosed()
+        {
+            qualityMenu = null;
+            StructuredTipPresenter.EndSuppression();
         }
 
         /// <summary>Revision-gated auto current-best evaluation (auto spec §5).
@@ -691,9 +754,9 @@ namespace QualityJobs.UI
             int revision = store?.ExternalPawnFactsRevision ?? 0;
             if (autoBestFactsRevision == revision) return;
             autoBestFactsRevision = revision;
-            // MinSkill is ignored in auto mode, so pass 0.
-            var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
-            Pawn? best = Dispatcher.AutoBestForDisplay(null, condition);
+            Pawn? best = Dispatcher.ResolveAutoBestFacts(null,
+                requireInspired, requireSpecialist,
+                out int skill, out bool inspired, out int roleOffset);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -701,9 +764,6 @@ namespace QualityJobs.UI
                 autoBestCurrentLabel = null;
                 return;
             }
-            int skill = Dispatcher.ConstructionSkillOf(best);
-            bool inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
-            int roleOffset = Dispatcher.RoleOffsetOf(best);
             // Equality: same resolved identity + stats keeps the label instance.
             if (!cachedAutoValid || best.thingIDNumber != cachedAutoBestId
                 || skill != cachedAutoSkill || inspired != cachedAutoInspired
@@ -794,9 +854,9 @@ namespace QualityJobs.UI
 
             if (!skillChanged && !inspiredChanged && !specChanged && !autoChanged) return;
 
-            for (int i = 0; i < thingIds.Count; i++)
+            for (int i = 0; i < targetIds.Count; i++)
             {
-                int thingId = thingIds[i];
+                int thingId = targetIds[i];
                 if (skillChanged)    Commands.SetPlanMinSkill(thingId, newMinSkill);
                 if (inspiredChanged) Commands.SetPlanRequireInspired(thingId, newInspired);
                 if (specChanged)     Commands.SetPlanRequireSpecialist(thingId, newSpecialist);

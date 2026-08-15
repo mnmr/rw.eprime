@@ -27,6 +27,23 @@ namespace QualityJobs.Core
                 condition.RequireSpecialist ? SpecialistRoleOffset : 0);
 
         /// <summary>
+        /// Probability that one attempt made at this gate lands at or above the
+        /// requested quality. A target at or below Awful accepts every result.
+        /// Values above Legendary clamp to Legendary.
+        /// </summary>
+        public static double SuccessChanceFor(in ResumeCondition condition,
+            int targetQuality)
+        {
+            if (targetQuality <= 0) return 1.0;
+            if (targetQuality > 6) targetQuality = 6;
+            double[] distribution = DistributionFor(condition);
+            double chance = 0.0;
+            for (int quality = targetQuality; quality < distribution.Length; quality++)
+                chance += distribution[quality];
+            return chance;
+        }
+
+        /// <summary>
         /// Expected runs to land one result at or above
         /// <paramref name="targetQuality"/> under this gate. One when the gate
         /// carries no target; <see cref="ExpectedAttempts.Max"/> when the target

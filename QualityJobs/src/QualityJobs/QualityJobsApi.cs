@@ -1,240 +1,315 @@
 using System;
-using System.Runtime.CompilerServices;
+using System.Collections.Generic;
 using QualityJobs.Core;
 using RimWorld;
 using Verse;
 
 namespace QualityJobs
 {
-    /// Read-only integration surface for other mods. Everything here is a pure
-    /// query over current game state: no mutation, no multiplayer-visible
-    /// effect, no revision bump. Callers bind by reflection and must treat a
-    /// missing type or member as "Quality Jobs unavailable".
-    ///
-    /// Stability contract: members present at a given <see cref="ApiVersion"/>
-    /// keep their signature and meaning. Additions bump the version; removals
-    /// or semantic changes require a major-version bump.
-    ///
-    /// Cost: cache hits are allocation-free. Auto-best misses rank colonists
-    /// behind the store's external-facts revision gate and must run on the game
-    /// thread; manual answers depend only on their complete value key.
+    /// <summary>
+    /// Cached, read-only integration surface for other mods plus the one
+    /// supported command for creating a managed production bill. Callers must
+    /// use this surface from RimWorld's main thread because its identity handles
+    /// are live game objects.
+    /// </summary>
     public static class QualityJobsApi
     {
-        /// Incremented whenever a member is added. Callers may gate on it.
         public const int ApiVersion = 1;
 
-        /// The neutral answer: one run, no quality-driven rework.
-        public const float NoRework = 1f;
+        /// <summary>
+        /// Returns the currently published immutable snapshot. Cache hits do no
+        /// game-state traversal and return the same reference until its consumed
+        /// dependencies change.
+        /// </summary>
+        public static ManagedQualityJobsSnapshot GetManagedJobs()
+            => QualityJobsStore.Active?.ManagedJobsPresentation
+               ?? ManagedQualityJobsSnapshot.Empty;
 
-        /// True while a save has Quality Jobs enabled. False in the main menu,
-        /// and false for saves where the player disabled the mod.
-        public static bool Active => QualityJobsStore.Active != null;
+        /// <summary>
+        /// Creates one repeat-count production bill using the current per-save
+        /// Quality Jobs defaults. Success means the deterministic command was
+        /// accepted; Multiplayer may replay it after this call returns.
+        /// </summary>
+        public static CreateQualityBillResult CreateQualityBill(
+            Thing billGiver, ThingDef product)
+            => CreateQualityBillCore(billGiver, product, null);
 
-        /// Everything an expected-attempts answer depends on. Two bills of the
-        /// same recipe under the same resume condition rank the same colonists
-        /// and get the same answer, so they should only pay for it once.
-        private readonly struct AttemptsKey : IEquatable<AttemptsKey>
+        /// <summary>
+        /// Creates one repeat-count production bill using explicit Quality Jobs
+        /// options. Values are normalized by the authoritative command.
+        /// </summary>
+        public static CreateQualityBillResult CreateQualityBill(
+            Thing billGiver, ThingDef product, QualityBillOptions options)
+            => CreateQualityBillCore(billGiver, product, options);
+
+        private static CreateQualityBillResult CreateQualityBillCore(
+            Thing? billGiver, ThingDef? product, QualityBillOptions? options)
         {
-            private readonly RecipeDef? recipe;   // null = construction
-            private readonly Map? map;
-            private readonly int minSkill;
-            private readonly bool inspired;
-            private readonly bool specialist;
-            private readonly bool autoBest;
-            private readonly int target;
-
-            public AttemptsKey(RecipeDef? recipe, Map? map,
-                in ResumeCondition condition, bool autoBest, int target)
-            {
-                this.recipe = recipe;
-                this.map = map;
-                minSkill = condition.MinSkill;
-                inspired = condition.RequireInspired;
-                specialist = condition.RequireSpecialist;
-                this.autoBest = autoBest;
-                this.target = target;
-            }
-
-            public bool Equals(AttemptsKey other)
-                => ReferenceEquals(recipe, other.recipe)
-                   && ReferenceEquals(map, other.map)
-                   && minSkill == other.minSkill
-                   && inspired == other.inspired
-                   && specialist == other.specialist
-                   && autoBest == other.autoBest
-                   && target == other.target;
-
-            public override bool Equals(object? obj)
-                => obj is AttemptsKey other && Equals(other);
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    int hash = recipe != null ? recipe.shortHash : 0;
-                    hash = (hash * 397)
-                        ^ (map != null ? RuntimeHelpers.GetHashCode(map) : 0);
-                    hash = (hash * 397) ^ minSkill;
-                    hash = (hash * 397) ^ target;
-                    return (hash * 397)
-                        ^ ((inspired ? 1 : 0) | (specialist ? 2 : 0) | (autoBest ? 4 : 0));
-                }
-            }
-        }
-
-        // Cache contract:
-        // Owner: process, partitioned by the live QualityJobsStore below.
-        // Key: AttemptsKey — recipe (or construction), map, resume condition,
-        //      auto-best mode and quality target: the complete input set.
-        // Value: expected attempts (float), immutable.
-        // Dependencies: configuration is complete in the key; auto-best entries
-        //      additionally depend on the external pawn-facts revision (skills,
-        //      XP tie-breaks, inspiration, roles, work settings, and pawn scope).
-        // Refresh policy: lazy, first miss after a key change or, for auto-best,
-        //      after that revision moves; unrelated ticks reuse the same answer.
-        //      Bill/construction and manual/auto use separate memo domains so an
-        //      unrelated call cannot churn another domain's revision stamp.
-        // Equality policy: n/a (one value per key).
-        // Teardown: cleared when the owning store changes, so a previous save's
-        //      answers can never be served; auto keys hold map identity only
-        //      during that owning store's lifetime.
-        private static readonly RevisionMemo<AttemptsKey, float> billManualAttemptsMemo =
-            new RevisionMemo<AttemptsKey, float>();
-        private static readonly RevisionMemo<AttemptsKey, float> billAutoAttemptsMemo =
-            new RevisionMemo<AttemptsKey, float>();
-        private static readonly RevisionMemo<AttemptsKey, float> constructionManualAttemptsMemo =
-            new RevisionMemo<AttemptsKey, float>();
-        private static readonly RevisionMemo<AttemptsKey, float> constructionAutoAttemptsMemo =
-            new RevisionMemo<AttemptsKey, float>();
-        private static QualityJobsStore? memoOwner;
-
-        /// Drops memoised answers when the active save changes.
-        private static void EnsureMemoOwner(QualityJobsStore store)
-        {
-            if (ReferenceEquals(memoOwner, store)) return;
-            ClearMemos();
-            memoOwner = store;
-        }
-
-        internal static void ReleaseMemoOwner(QualityJobsStore store)
-        {
-            if (!ReferenceEquals(memoOwner, store)) return;
-            ClearMemos();
-            memoOwner = null;
-        }
-
-        private static void ClearMemos()
-        {
-            billManualAttemptsMemo.Clear();
-            billAutoAttemptsMemo.Clear();
-            constructionManualAttemptsMemo.Clear();
-            constructionAutoAttemptsMemo.Clear();
-        }
-
-        /// Expected number of production runs of <paramref name="bill"/> needed
-        /// to yield one product at or above its quality target, read off the
-        /// bill's configured gate.
-        ///
-        /// Returns <see cref="NoRework"/> (1) only when there is genuinely no
-        /// rework to predict: Quality Jobs inactive, the bill unmanaged, or no
-        /// quality target set. An unreachable target saturates at
-        /// <see cref="ExpectedAttempts.Max"/> rather than reporting one run.
-        public static float ExpectedAttemptsForBill(Bill? bill)
-        {
-            if (bill == null) return NoRework;
             QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null) return NoRework;
+            if (store == null)
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.QualityJobsInactive);
+            if (billGiver is not IBillGiver giver)
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.InvalidBillGiver);
+            if (!billGiver.Spawned || billGiver.MapHeld == null
+                || !ReferenceEquals(giver.Map, billGiver.MapHeld))
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.BillGiverUnavailable);
+            if (product == null)
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.UnsupportedProduct);
+            if (giver.BillStack.Count >= BillStack.MaxCount)
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.BillStackFull);
 
-            BillPresentationSnapshot presentation = store.BillPresentationFor(bill);
-            int target = presentation.TargetQuality;
-            if (target <= 0) return NoRework;
+            RecipeDef? recipe = null;
+            List<RecipeDef> recipes = billGiver.def.AllRecipes;
+            for (int i = 0; i < recipes.Count; i++)
+            {
+                RecipeDef candidate = recipes[i];
+                if (!ManagedRecipes.IsManagedRecipe(candidate)
+                    || !ReferenceEquals(candidate.ProducedThingDef, product))
+                    continue;
+                if (recipe != null && !ReferenceEquals(recipe, candidate))
+                    return new CreateQualityBillResult(
+                        CreateQualityBillStatus.AmbiguousRecipe);
+                recipe = candidate;
+            }
+            if (recipe == null)
+                return new CreateQualityBillResult(
+                    CreateQualityBillStatus.UnsupportedProduct);
 
-            BillConfig config = presentation.Config;
-            if (!config.Managed) return NoRework;
-
-            RecipeDef recipe = presentation.Recipe;
-
-            EnsureMemoOwner(store);
-            var key = new AttemptsKey(recipe,
-                config.AutoBest ? presentation.Map : null,
-                config.Condition, config.AutoBest, target);
-            long revision = config.AutoBest
-                ? (uint)store.ExternalPawnFactsRevision : 0L;
-            RevisionMemo<AttemptsKey, float> memo = config.AutoBest
-                ? billAutoAttemptsMemo : billManualAttemptsMemo;
-            if (memo.TryGet(revision, key, out float cached))
-                return cached;
-
-            float attempts = AttemptsFor(config.Condition, config.AutoBest,
-                recipe, target);
-            memo.Store(revision, key, attempts);
-            return attempts;
+            bool explicitOptions = options.HasValue;
+            QualityBillOptions values = options ?? new QualityBillOptions(
+                store.minSkillDefault,
+                store.requireInspiredDefault,
+                store.requireSpecialistDefault,
+                store.autoBestDefault,
+                (QualityCategory)store.targetQualityDefault);
+            Commands.CreateQualityBillFromApi(new CreateQualityBillValues
+            {
+                billGiverThingId = billGiver.thingIDNumber,
+                mapUniqueId = billGiver.MapHeld.uniqueID,
+                productDefName = product.defName,
+                recipeDefName = recipe.defName,
+                explicitOptions = explicitOptions,
+                skillGate = values.SkillGate,
+                requireInspired = values.RequireInspired,
+                requireSpecialist = values.RequireSpecialist,
+                autoBest = values.AutoBest,
+                targetQuality = (int)values.TargetQuality,
+            });
+            return new CreateQualityBillResult(CreateQualityBillStatus.Success);
         }
+    }
 
-        /// Expected number of build attempts for a quality-managed blueprint or
-        /// frame, counting the deconstruct-and-rebuild cycles Quality Jobs runs
-        /// when the rolled quality lands below the plan's target. Read off the
-        /// plan's configured gate.
-        ///
-        /// Returns <see cref="NoRework"/> (1) only for things Quality Jobs is
-        /// not managing and for plans with no quality target.
-        public static float ExpectedAttemptsForConstructible(Thing? thing)
+    /// <summary>Immutable published collection of all active managed work.</summary>
+    public sealed class ManagedQualityJobsSnapshot
+        : IContentSnapshot<ManagedQualityJobsSnapshot>
+    {
+        private static readonly IReadOnlyList<ManagedQualityJob> EmptyJobs =
+            Array.AsReadOnly(Array.Empty<ManagedQualityJob>());
+
+        internal static readonly ManagedQualityJobsSnapshot Empty =
+            new ManagedQualityJobsSnapshot(Array.Empty<ManagedQualityJob>());
+
+        private readonly IReadOnlyList<ManagedQualityJob> jobs;
+
+        internal ManagedQualityJobsSnapshot(ManagedQualityJob[] jobs)
         {
-            if (thing == null) return NoRework;
-            QualityJobsStore? store = QualityJobsStore.Active;
-            if (store == null
-                || !store.TryGetPlanPresentation(thing.thingIDNumber,
-                    out PlanPresentationSnapshot? plan)
-                || plan == null || plan.MinQuality <= 0)
-                return NoRework;
-
-            EnsureMemoOwner(store);
-            var key = new AttemptsKey(null,
-                plan.AutoBest ? plan.Map : null,
-                plan.Condition, plan.AutoBest, plan.MinQuality);
-            long revision = plan.AutoBest
-                ? (uint)store.ExternalPawnFactsRevision : 0L;
-            RevisionMemo<AttemptsKey, float> memo = plan.AutoBest
-                ? constructionAutoAttemptsMemo : constructionManualAttemptsMemo;
-            if (memo.TryGet(revision, key, out float cached))
-                return cached;
-
-            float attempts = AttemptsFor(plan.Condition, plan.AutoBest,
-                recipe: null, targetQuality: plan.MinQuality);
-            memo.Store(revision, key, attempts);
-            return attempts;
+            this.jobs = jobs.Length == 0 ? EmptyJobs : Array.AsReadOnly(jobs);
         }
 
-        /// The gate decides the odds. A gate admits exactly the workers its
-        /// resume condition describes, so the condition alone fixes the quality
-        /// distribution — no live pawn is consulted, and "nobody available right
-        /// now" is not an answer about how much rework a target implies.
-        ///
-        /// Auto-best is the one case where the gate's skill value is dynamic:
-        /// it tracks the colony's best finisher. That resolution mirrors the
-        /// plan and bill dialogs exactly, including their fallback to the
-        /// configured threshold when no colonist resolves.
-        private static float AttemptsFor(
-            in ResumeCondition condition, bool autoBest,
-            RecipeDef? recipe, int targetQuality)
+        public IReadOnlyList<ManagedQualityJob> Jobs => jobs;
+
+        bool IContentSnapshot<ManagedQualityJobsSnapshot>.HasSameContent(
+            ManagedQualityJobsSnapshot other) => HasSameContent(other);
+
+        internal bool HasSameContent(ManagedQualityJobsSnapshot other)
         {
-            if (!autoBest) return GateOdds.AttemptsFor(condition, targetQuality);
+            if (jobs.Count != other.jobs.Count) return false;
+            for (int i = 0; i < jobs.Count; i++)
+                if (!jobs[i].HasSameContent(other.jobs[i])) return false;
+            return true;
+        }
+    }
 
-            // Auto mode ignores MinSkill; the filters still bound the pool.
-            var poolCondition = new ResumeCondition(
-                0, condition.RequireInspired, condition.RequireSpecialist);
-            Pawn? best = Dispatcher.AutoBestForDisplay(recipe, poolCondition);
-            if (best == null) return GateOdds.AttemptsFor(condition, targetQuality);
-
-            return ExpectedAttempts.For(
-                QualityOdds.Distribution(
-                    recipe != null
-                        ? Dispatcher.SkillOf(best, recipe)
-                        : Dispatcher.ConstructionSkillOf(best),
-                    best.InspirationDef == InspirationDefOf.Inspired_Creativity,
-                    Dispatcher.RoleOffsetOf(best)),
-                targetQuality);
+    /// <summary>Captured Quality Jobs gate and target values.</summary>
+    public readonly struct QualityJobSettings
+    {
+        internal QualityJobSettings(int skillGate, bool requireInspired,
+            bool requireSpecialist, bool autoBest, QualityCategory targetQuality)
+        {
+            SkillGate = skillGate;
+            RequireInspired = requireInspired;
+            RequireSpecialist = requireSpecialist;
+            AutoBest = autoBest;
+            TargetQuality = targetQuality;
         }
 
+        public int SkillGate { get; }
+        public bool RequireInspired { get; }
+        public bool RequireSpecialist { get; }
+        public bool AutoBest { get; }
+        public QualityCategory TargetQuality { get; }
+
+        internal bool HasSameContent(in QualityJobSettings other)
+            => SkillGate == other.SkillGate
+               && RequireInspired == other.RequireInspired
+               && RequireSpecialist == other.RequireSpecialist
+               && AutoBest == other.AutoBest
+               && TargetQuality == other.TargetQuality;
+    }
+
+    public abstract class ManagedQualityJob
+    {
+        internal ManagedQualityJob(Map map, in QualityJobSettings settings,
+            double probabilityAtOrAboveTarget)
+        {
+            Map = map;
+            Settings = settings;
+            ProbabilityAtOrAboveTarget = probabilityAtOrAboveTarget;
+        }
+
+        public Map Map { get; }
+        public QualityJobSettings Settings { get; }
+        public double ProbabilityAtOrAboveTarget { get; }
+
+        internal bool HasSameCommonContent(ManagedQualityJob other)
+            => ReferenceEquals(Map, other.Map)
+               && Settings.HasSameContent(other.Settings)
+               && ProbabilityAtOrAboveTarget.Equals(
+                   other.ProbabilityAtOrAboveTarget);
+
+        internal abstract bool HasSameContent(ManagedQualityJob other);
+    }
+
+    public sealed class ManagedBillJob : ManagedQualityJob
+    {
+        private static readonly IReadOnlyList<UnfinishedThing> EmptyItems =
+            Array.AsReadOnly(Array.Empty<UnfinishedThing>());
+        private readonly IReadOnlyList<UnfinishedThing> unfinishedItems;
+        private readonly ManagedBillCounter counter;
+
+        internal ManagedBillJob(Map map, Bill_ProductionWithUft bill,
+            RecipeDef recipe, ThingDef product, in ManagedBillCounter counter,
+            UnfinishedThing[] unfinishedItems, in QualityJobSettings settings,
+            double probabilityAtOrAboveTarget)
+            : base(map, settings, probabilityAtOrAboveTarget)
+        {
+            Bill = bill;
+            Recipe = recipe;
+            Product = product;
+            this.counter = counter;
+            this.unfinishedItems = unfinishedItems.Length == 0
+                ? EmptyItems : Array.AsReadOnly(unfinishedItems);
+        }
+
+        public Bill_ProductionWithUft Bill { get; }
+        public RecipeDef Recipe { get; }
+        public ThingDef Product { get; }
+        /// <summary>Normalized Forever, RepeatCount, or TargetCount mode.</summary>
+        public ManagedBillRepeat RepeatMode => counter.Mode;
+        public int RemainingAcceptedIterations =>
+            counter.RemainingAcceptedIterations;
+        public IReadOnlyList<UnfinishedThing> UnfinishedItems => unfinishedItems;
+
+        internal override bool HasSameContent(ManagedQualityJob other)
+        {
+            if (other is not ManagedBillJob bill
+                || !HasSameCommonContent(bill)
+                || !ReferenceEquals(Bill, bill.Bill)
+                || !ReferenceEquals(Recipe, bill.Recipe)
+                || !ReferenceEquals(Product, bill.Product)
+                || !counter.HasSameContent(bill.counter)
+                || unfinishedItems.Count != bill.unfinishedItems.Count)
+                return false;
+            for (int i = 0; i < unfinishedItems.Count; i++)
+                if (!ReferenceEquals(unfinishedItems[i], bill.unfinishedItems[i]))
+                    return false;
+            return true;
+        }
+    }
+
+    public sealed class ManagedConstructionJob : ManagedQualityJob
+    {
+        private readonly IReadOnlyList<Thing> targets;
+
+        internal ManagedConstructionJob(Map map, ThingDef buildableDef,
+            ThingDef? stuff, Thing[] targets, in QualityJobSettings settings,
+            double probabilityAtOrAboveTarget)
+            : base(map, settings, probabilityAtOrAboveTarget)
+        {
+            BuildableDef = buildableDef;
+            Stuff = stuff;
+            this.targets = Array.AsReadOnly(targets);
+        }
+
+        public ThingDef BuildableDef { get; }
+        /// <summary>
+        /// Selected construction material. For blueprints and frames this is
+        /// IConstructible.EntityToBuildStuff(); for completed buildings it is
+        /// Thing.Stuff.
+        /// </summary>
+        public ThingDef? Stuff { get; }
+        public IReadOnlyList<Thing> Targets => targets;
+        public int Count => targets.Count;
+
+        internal override bool HasSameContent(ManagedQualityJob other)
+        {
+            if (other is not ManagedConstructionJob construction
+                || !HasSameCommonContent(construction)
+                || !ReferenceEquals(BuildableDef, construction.BuildableDef)
+                || !ReferenceEquals(Stuff, construction.Stuff)
+                || targets.Count != construction.targets.Count)
+                return false;
+            for (int i = 0; i < targets.Count; i++)
+                if (!ReferenceEquals(targets[i], construction.targets[i]))
+                    return false;
+            return true;
+        }
+    }
+
+    /// <summary>Explicit QJ options for a newly created production bill.</summary>
+    public readonly struct QualityBillOptions
+    {
+        public QualityBillOptions(int skillGate, bool requireInspired,
+            bool requireSpecialist, bool autoBest, QualityCategory targetQuality)
+        {
+            SkillGate = skillGate;
+            RequireInspired = requireInspired;
+            RequireSpecialist = requireSpecialist;
+            AutoBest = autoBest;
+            TargetQuality = targetQuality;
+        }
+
+        public int SkillGate { get; }
+        public bool RequireInspired { get; }
+        public bool RequireSpecialist { get; }
+        public bool AutoBest { get; }
+        public QualityCategory TargetQuality { get; }
+    }
+
+    public enum CreateQualityBillStatus
+    {
+        Success = 0,
+        QualityJobsInactive = 1,
+        InvalidBillGiver = 2,
+        BillGiverUnavailable = 3,
+        UnsupportedProduct = 4,
+        AmbiguousRecipe = 5,
+        BillStackFull = 6,
+    }
+
+    public readonly struct CreateQualityBillResult
+    {
+        internal CreateQualityBillResult(CreateQualityBillStatus status)
+        {
+            Status = status;
+        }
+
+        public CreateQualityBillStatus Status { get; }
+        public bool Succeeded => Status == CreateQualityBillStatus.Success;
     }
 }

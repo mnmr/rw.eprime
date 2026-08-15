@@ -1,9 +1,9 @@
 ﻿# Changelog
 
-## 1.0.5 — 2026-08-15
+## 1.0.5 — 2026-08-16
 
-- Added: Public API methods allowing other mods access to expected attempts to finish work (used by EPrime's Readouts to estimate resource material needs) .
-- Fixed: Rendering performance improvements.
+- Added: API methods allowing other mods to interact with Quality Jobs. EPrime's Readouts uses this to estimate resource material needs, and EPrime's Pawn Planner uses this to schedule new quality work bills.
+- Fixed: Performance improvements.
  
 ## 1.0.4 — 2026-08-10
 

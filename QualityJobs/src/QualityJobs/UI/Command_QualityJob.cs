@@ -60,6 +60,10 @@ namespace QualityJobs.UI
         public Command_QualityJob(int primaryThingId)
         {
             this.primaryThingId = primaryThingId;
+            // The representative grouped gizmo already applies the command to
+            // every selected eligible target. Prevent GizmoGridDrawer from also
+            // replaying the click through every hidden member of the group.
+            alsoClickIfOtherInGroupClicked = false;
             // action is not used by our ProcessInput override, but keeping it
             // set lets base-class code paths (e.g. tooltip rendering) behave
             // normally.

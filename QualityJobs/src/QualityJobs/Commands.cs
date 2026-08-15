@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Multiplayer.API;
 using QualityJobs.Core;
@@ -7,8 +8,8 @@ using Verse;
 namespace QualityJobs
 {
     /// All UI-originated mutations of per-save state (spec §13). Primitive
-    /// parameters only. Every setter compares before writing: no-op edits
-    /// change nothing (AGENTS.md).
+    /// parameters or explicitly synced primitive-field payloads only. Every
+    /// setter compares before writing: no-op edits change nothing (AGENTS.md).
     public static class Commands
     {
         [SyncMethod]
@@ -286,6 +287,80 @@ namespace QualityJobs
             store.NotifyConstructionDefaultsChanged();
         }
 
+        /// <summary>
+        /// Replay surface for QualityJobsApi.CreateQualityBill. The exact giver,
+        /// product, and recipe identities lock the operation to the map and
+        /// recipe validated by the caller; replay validates them again. Keep the
+        /// values in one SyncWorker payload: expanding them into parameters can
+        /// crash RimWorld Mono during Multiplayer registration (see AGENTS.md).
+        /// </summary>
+        [SyncMethod]
+        public static void CreateQualityBillFromApi(CreateQualityBillValues v)
+        {
+            if (v == null) return;
+            int billGiverThingId = v.billGiverThingId;
+            int mapUniqueId = v.mapUniqueId;
+            string productDefName = v.productDefName;
+            string recipeDefName = v.recipeDefName;
+            bool explicitOptions = v.explicitOptions;
+            int skillGate = v.skillGate;
+            bool requireInspired = v.requireInspired;
+            bool requireSpecialist = v.requireSpecialist;
+            bool autoBest = v.autoBest;
+            int targetQuality = v.targetQuality;
+
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || productDefName == null || recipeDefName == null)
+                return;
+            Thing? thing = FindSpawnedThing(billGiverThingId);
+            if (thing is not IBillGiver giver || !thing.Spawned
+                || thing.MapHeld == null
+                || thing.MapHeld.uniqueID != mapUniqueId
+                || !ReferenceEquals(giver.Map, thing.MapHeld)
+                || giver.BillStack.Count >= BillStack.MaxCount)
+                return;
+
+            ThingDef? product = DefDatabase<ThingDef>.GetNamedSilentFail(
+                productDefName);
+            RecipeDef? recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(
+                recipeDefName);
+            if (product == null || recipe == null
+                || !ManagedRecipes.IsManagedRecipe(recipe)
+                || !ReferenceEquals(recipe.ProducedThingDef, product)
+                || !thing.def.AllRecipes.Contains(recipe))
+                return;
+
+            if (!explicitOptions)
+            {
+                skillGate = store.minSkillDefault;
+                requireInspired = store.requireInspiredDefault;
+                requireSpecialist = store.requireSpecialistDefault;
+                autoBest = store.autoBestDefault;
+                targetQuality = store.targetQualityDefault;
+            }
+            skillGate = ConfigurationLimits.Skill(skillGate);
+            requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
+            targetQuality = ConfigurationLimits.Quality(targetQuality);
+
+            var bill = new Bill_ProductionWithUft(recipe)
+            {
+                repeatMode = BillRepeatModeDefOf.RepeatCount,
+                repeatCount = 1,
+                suspended = false,
+            };
+            giver.BillStack.AddBill(bill);
+
+            string billId = BillIds.IdOf(bill);
+            store.billManaged[billId] = true;
+            store.billMinSkill[billId] = skillGate;
+            store.billRequireInspired[billId] = requireInspired;
+            store.billRequireSpecialist[billId] = requireSpecialist;
+            store.billAutoBest[billId] = autoBest;
+            store.billTargetQuality[billId] = targetQuality;
+            store.NotifyBillConfigurationChanged(
+                billId, affectsEligibility: true);
+        }
+
         /// Spec §12: enable adds a fresh component seeded from the ISSUING
         /// client's defaults (passed as primitives for MP determinism — all
         /// clients seed identically from the same parameter set).
@@ -310,7 +385,6 @@ namespace QualityJobs
             if (store == null) return;
             Dispatcher.RestoreAllToVanilla(store);
             store.ReleasePresentation();
-            QualityJobsApi.ReleaseMemoOwner(store);
             Current.Game.components.Remove(store);
             // Clear the static fast-path flag so the draw patch sees zero plans
             // immediately after the component is removed.

@@ -22,10 +22,7 @@ namespace QualityJobs.Patches
         {
             QualityJobsStore? store = __instance.GetComponent<QualityJobsStore>();
             if (store != null)
-            {
                 store.ReleasePresentation();
-                QualityJobsApi.ReleaseMemoOwner(store);
-            }
             BillIds.Reset();
             PreceptIds.Reset();
             Patch_StockGate.ResetPresentation();

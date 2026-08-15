@@ -600,10 +600,9 @@ namespace QualityJobs.UI
             if (autoBestFactsRevision == revision) return;
             autoBestFactsRevision = revision;
 
-            // The auto pool honors the same filters the gate will apply; MinSkill
-            // is ignored in auto mode, so pass 0.
-            var condition = new ResumeCondition(0, requireInspired, requireSpecialist);
-            Pawn? best = Dispatcher.AutoBestForDisplay(presentation!.Recipe, condition);
+            Pawn? best = Dispatcher.ResolveAutoBestFacts(presentation!.Recipe,
+                requireInspired, requireSpecialist,
+                out int skill, out bool inspired, out int roleOffset);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -611,9 +610,6 @@ namespace QualityJobs.UI
                 _autoBestCurrentLabel = null;
                 return;
             }
-            int skill = Dispatcher.SkillOf(best, presentation!.Recipe);
-            bool inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
-            int roleOffset = Dispatcher.RoleOffsetOf(best);
             // Equality: same resolved identity + stats keeps the label instance.
             if (!cachedAutoValid || best.thingIDNumber != cachedAutoBestId
                 || skill != cachedAutoSkill || inspired != cachedAutoInspired

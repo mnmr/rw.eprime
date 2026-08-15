@@ -37,6 +37,7 @@ namespace QualityJobs.Patches
         {
             QualityJobsStore? store = QualityJobsStore.Active;
             if (store == null) return;
+            store.InvalidateManagedJobs();
             for (int i = store.entries.Count - 1; i >= 0; i--)
             {
                 WorkItemEntry e = store.entries[i];

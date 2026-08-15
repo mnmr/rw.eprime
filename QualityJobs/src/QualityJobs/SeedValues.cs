@@ -2,11 +2,13 @@ namespace QualityJobs
 {
     /// MP-synced payload for the enable command (spec §12). All 14 seed values
     /// travel as ONE synced object rather than as 14 primitive parameters:
-    /// RimWorld-Multiplayer's MethodInvoker cannot register a [SyncMethod] with
-    /// that many parameters (ILGenerator.make_room NRE at 12 params), so the
-    /// payload is bound field-by-field by a [SyncWorker] instead. Every client
-    /// reconstructs identical values from the same synced object and seeds the
-    /// store deterministically.
+    /// RimWorld-Multiplayer's Harmony MethodInvoker can grow past RimWorld
+    /// Mono's ILGenerator buffer for a many-parameter [SyncMethod], causing an
+    /// ILGenerator.make_room NRE during registration. The exact failure point
+    /// depends on parameter types, so AGENTS.md caps SyncMethods at six
+    /// parameters. This payload is bound field-by-field by a [SyncWorker]
+    /// instead, so every client reconstructs identical values from the same
+    /// synced object and seeds the store deterministically.
     ///
     /// Plain data holder — no game/Verse/Unity references — so it is safe to
     /// construct and bind on any client during synced replay.

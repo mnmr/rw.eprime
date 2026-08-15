@@ -40,6 +40,13 @@ namespace QualityJobs.UI
             StructuredTipPresenter.TipRegion(rect, this);
         }
 
+        /// Offers a hover region while keeping the resulting tooltip window
+        /// outside an adjacent interactive control.
+        internal void Region(Rect rect, Rect exclusionRect)
+        {
+            StructuredTipPresenter.TipRegion(rect, exclusionRect, this);
+        }
+
         string IStructuredTipSource.StableKey => stableKey;
 
         StructuredTip? IStructuredTipSource.Resolve()

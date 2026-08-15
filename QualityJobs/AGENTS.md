@@ -145,6 +145,15 @@ Changes to these dependencies require updated behavioral tests in the same chang
 ## Multiplayer determinism
 
 - Every multiplayer-visible mutation must be a registered `[SyncMethod]` or be performed by deterministic load/setup code before play.
+- A `[SyncMethod]` MUST declare no more than six parameters. Larger logical
+  argument sets MUST travel as one plain payload object registered through an
+  explicit field-by-field `[SyncWorker(shouldConstruct = true)]`. Do not infer
+  a higher safe limit from one working signature: Multiplayer builds a Harmony
+  `MethodInvoker` for every synced method, and RimWorld's Mono `ILGenerator`
+  can throw `NullReferenceException` from `ILGenerator.make_room` when the
+  generated invoker crosses its internal buffer. The emitted size depends on
+  parameter types; this has repeatedly broken 10-14-value signatures during
+  startup registration. Six is the repository's conservative verified cap.
 - Synced method parameters must be primitive, stable, and serialization-safe unless an approved sync worker exists.
 - Synced commands must not depend on local selection, current UI state, render order, wall-clock time, unordered enumeration, or unsynchronized randomness.
 - All clients must produce identical model state and revision changes from the same command.

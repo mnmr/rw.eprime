@@ -22,21 +22,34 @@ namespace QualityJobs.UI
         // Owner: process-level structured-tooltip presenter.
         // Key: producer stable key for the continuously hovered region.
         // Value: one frozen StructuredTip and its immutable cached geometry.
-        // Dependencies: stable key, continuous-hover session, and geometry's
-        // own UI metric revision.
-        // Refresh policy: resolve once when the hover delay opens a session.
+        // Dependencies: stable key, continuous-hover session, geometry's own
+        // UI metric revision, explicit suppression depth, and an optional
+        // screen-space exclusion rectangle supplied by the producer.
+        // Refresh policy: resolve once when the hover delay opens a session;
+        // suppress and reset immediately when an owned popup takes interaction.
         // Equality policy: the same session retains model identity.
-        // Teardown: Reset on UI-metric changes and producer reset.
+        // Teardown: Reset on UI-metric changes and producer reset; every popup
+        // owner pairs BeginSuppression with EndSuppression on close, failure,
+        // and owner teardown.
         private static readonly TooltipDisplayGate displayGate =
             new TooltipDisplayGate();
         private static readonly Action drawWindow = DrawWindow;
         private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;
         private static StructuredTip? frozen;
         private static Vector2 frozenSize;
+        private static int suppressionDepth;
 
         internal static void TipRegion(Rect rect, IStructuredTipSource source)
+            => TipRegion(rect, default, hasExclusion: false, source);
+
+        internal static void TipRegion(Rect rect, Rect exclusionRect,
+            IStructuredTipSource source)
+            => TipRegion(rect, exclusionRect, hasExclusion: true, source);
+
+        private static void TipRegion(Rect rect, Rect exclusionRect,
+            bool hasExclusion, IStructuredTipSource source)
         {
-            if (source == null || !IsHovered(rect)) return;
+            if (source == null || suppressionDepth != 0 || !IsHovered(rect)) return;
             TooltipDisplayState state = displayGate.Observe(
                 source.StableKey, Time.frameCount,
                 Time.realtimeSinceStartup, HoverDelay);
@@ -47,10 +60,24 @@ namespace QualityJobs.UI
                 if (frozen == null) return;
                 frozenSize = WrTipUI.Measure(frozen.Model, WrTipUI.MaxContentWidth);
             }
-            if (frozen == null || Find.WindowStack == null) return;
+            if (frozen == null) return;
 
             Vector2 mouse = Verse.UI.GUIToScreenPoint(Event.current.mousePosition);
-            Vector2 position = Position(mouse, frozenSize);
+            Rect screenExclusion = default;
+            if (hasExclusion)
+            {
+                Vector2 min = Verse.UI.GUIToScreenPoint(exclusionRect.min);
+                Vector2 max = Verse.UI.GUIToScreenPoint(exclusionRect.max);
+                screenExclusion = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+            }
+            if (!TooltipPlacement.TryPlace(
+                    mouse.x, mouse.y, frozenSize.x, frozenSize.y,
+                    Verse.UI.screenWidth, Verse.UI.screenHeight, hasExclusion,
+                    screenExclusion.x, screenExclusion.y,
+                    screenExclusion.width, screenExclusion.height,
+                    out float x, out float y))
+                return;
+            var position = new Vector2(x, y);
             var windowRect = new Rect(position.x, position.y,
                 frozenSize.x, frozenSize.y);
             Find.WindowStack.ImmediateWindow(WindowId, windowRect,
@@ -65,23 +92,20 @@ namespace QualityJobs.UI
             frozenSize = default;
         }
 
+        internal static void BeginSuppression()
+        {
+            suppressionDepth++;
+            Reset();
+        }
+
+        internal static void EndSuppression()
+        {
+            if (suppressionDepth > 0) suppressionDepth--;
+            Reset();
+        }
+
         private static bool IsHovered(Rect rect) =>
             Event.current.type == EventType.Repaint && Mouse.IsOver(rect);
-
-        private static Vector2 Position(Vector2 mouse, Vector2 size)
-        {
-            float y = mouse.y + 14f + size.y < Verse.UI.screenHeight
-                ? mouse.y + 14f
-                : mouse.y - 5f - size.y >= 0f
-                    ? mouse.y - 5f - size.y
-                    : Verse.UI.screenHeight - 14f - size.y;
-            float x = mouse.x + 16f + size.x < Verse.UI.screenWidth
-                ? mouse.x + 16f
-                : mouse.x - 4f - size.x;
-            return new Vector2(
-                Mathf.Clamp(x, 0f, Mathf.Max(0f, Verse.UI.screenWidth - size.x)),
-                Mathf.Clamp(y, 0f, Mathf.Max(0f, Verse.UI.screenHeight - size.y)));
-        }
 
         private static void DrawWindow()
         {
