@@ -9,11 +9,11 @@ using WorkRoles.Core;
 namespace WorkRoles
 {
     /// Per-giver skill facts derived from game data once per session: what a job
-    /// trains (and whether it grants XP), what skill levels its content requires,
-    /// and the success/failure curve tied to it. Feeds the role editor's tooltips
-    /// and, later, training-role logic. Everything except CurveStatByGiver reads
-    /// the live DefDatabase, so modded recipes, patched stat curves and changed
-    /// learn factors flow through automatically.
+    /// uses, what it trains (and whether it grants XP), what skill levels its
+    /// content requires, and the success/failure curve tied to it. Recipes,
+    /// requirements, and work-type relevance read the live DefDatabase; code-
+    /// defined direct-job use/training and curve associations use audited
+    /// baselines because defs do not declare those facts.
     public static class JobSkillProfiles
     {
         public sealed class SkillRange
@@ -62,6 +62,7 @@ namespace WorkRoles
             /// Undecorated def label (see GiverProfile.Title).
             public string Title;
             public string Description;
+            public List<string> UsedSkills = new List<string>();
             public List<string> TrainedSkills = new List<string>();
             public int XpGivers, TotalGivers;
             /// Vanilla unlock age (years); 0 = no gate.
@@ -295,6 +296,8 @@ namespace WorkRoles
                     }
                 bool curated = VanillaXpBaseline.XpByGiver.TryGetValue(
                     giver.defName, out string[] xpSkills);
+                bool curatedUsed = VanillaUsedSkillBaseline.UsedByGiver.TryGetValue(
+                    giver.defName, out IReadOnlyList<string> usedSkills);
                 builder.AddGiver(
                     giver.defName,
                     workTypeIdentities.Of(giver.workType),
@@ -304,7 +307,9 @@ namespace WorkRoles
                     giver.billGiversAllAnimals || giver.billGiversAllAnimalsCorpses,
                     giver.billGiversAllMechanoids || giver.billGiversAllMechanoidsCorpses,
                     curated,
-                    xpSkills);
+                    xpSkills,
+                    curatedUsed,
+                    usedSkills);
             }
 
             var observedRecipeUsers = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
@@ -484,24 +489,13 @@ namespace WorkRoles
                 GivesXp = facts.GivesXp,
                 UnlockAge = RecsAdapter.WorkTypeUnlockAge(giver.workType),
             };
+            if (facts.HasCuratedUsedSkills && !facts.UsesRecipes)
+                profile.UsedSkills = CuratedSkillLabels(snapshot,
+                    facts.UsedSkillDefNames, giver.defName, "used-skill");
+
             if (facts.HasCuratedXp && !facts.UsesRecipes)
-            {
-                var unknown = new List<string>();
-                for (int i = 0; i < facts.TrainedSkillDefNames.Count; i++)
-                {
-                    string name = facts.TrainedSkillDefNames[i];
-                    if (snapshot.SkillsByName.TryGetValue(name, out SkillDef skill))
-                        profile.TrainedSkills.Add(SkillLabel(skill));
-                    else
-                        unknown.Add(name);
-                }
-                if (unknown.Count > 0)
-                    Log.Warning($"[WorkRoles] XP table for {giver.defName} names unknown skill(s): "
-                        + unknown.ToCommaList());
-                // Curated facts carry names without identities, and used ==
-                // trained for curated non-bill work.
-                profile.UsedSkills = new List<string>(profile.TrainedSkills);
-            }
+                profile.TrainedSkills = CuratedSkillLabels(snapshot,
+                    facts.TrainedSkillDefNames, giver.defName, "XP");
             else
                 profile.TrainedSkills = SkillLabels(
                     snapshot, facts.TrainedSkillIdentities, facts.UsesRecipes);
@@ -521,7 +515,10 @@ namespace WorkRoles
             {
                 Title = (workType.gerundLabel ?? workType.labelShort ?? workType.defName)
                     .CapitalizeFirst(),
-                TrainedSkills = SkillLabels(snapshot, facts.RelevantSkillIdentities, false),
+                UsedSkills = CuratedSkillLabels(snapshot,
+                    facts.UsedSkillDefNames, workType.defName, "work-type used-skill"),
+                TrainedSkills = CuratedSkillLabels(snapshot,
+                    facts.TrainedSkillDefNames, workType.defName, "work-type XP"),
                 TotalGivers = facts.TotalGivers,
                 XpGivers = facts.XpGivers,
                 UnlockAge = RecsAdapter.WorkTypeUnlockAge(workType),
@@ -556,6 +553,28 @@ namespace WorkRoles
                     string label = SkillLabel(skill);
                     if (seen == null || seen.Add(label)) result.Add(label);
                 }
+            return result;
+        }
+
+        private static List<string> CuratedSkillLabels(
+            DefinitionSnapshot snapshot,
+            IReadOnlyList<string> defNames,
+            string giverDefName,
+            string tableName)
+        {
+            var result = new List<string>();
+            var unknown = new List<string>();
+            for (int i = 0; i < defNames.Count; i++)
+            {
+                string name = defNames[i];
+                if (snapshot.SkillsByName.TryGetValue(name, out SkillDef skill))
+                    result.Add(SkillLabel(skill));
+                else
+                    unknown.Add(name);
+            }
+            if (unknown.Count > 0)
+                Log.Warning($"[WorkRoles] {tableName} table for {giverDefName} names unknown skill(s): "
+                    + unknown.ToCommaList());
             return result;
         }
 
@@ -719,8 +738,8 @@ namespace WorkRoles
             if (!profile.Description.NullOrEmpty())
                 model.AddSection().Text(profile.Description);
             var facts = model.AddSection();
-            if (profile.TrainedSkills.Count > 0)
-                facts.Fact("WR_TipSkillsLabel".Translate(), profile.TrainedSkills.ToCommaList());
+            if (profile.UsedSkills.Count > 0)
+                facts.Fact("WR_TipSkillsLabel".Translate(), profile.UsedSkills.ToCommaList());
             facts.Fact("WR_TipXpLabel".Translate(),
                 "WR_TipXpValue".Translate(profile.XpGivers, profile.TotalGivers));
             if (profile.UnlockAge > 0)

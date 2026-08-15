@@ -111,9 +111,11 @@ internal static class VanillaJobSkillBaseline
         JobProfileIndexBuilder b, string name, string workType, string[] benches, int flags)
     {
         bool curated = VanillaXpBaseline.XpByGiver.TryGetValue(name, out string[] xp);
+        bool curatedUsed = VanillaUsedSkillBaseline.UsedByGiver.TryGetValue(
+            name, out IReadOnlyList<string> used);
         b.AddGiver(name, Id("w:" + workType), Sks(workTypeSkills[workType]),
             UserIds(benches), (flags & 1) != 0, (flags & 2) != 0, (flags & 4) != 0,
-            curated, xp);
+            curated, xp, curatedUsed, used);
     }
 
     private static void Ur(JobProfileIndexBuilder b, string name, int kind, string[] recipes)

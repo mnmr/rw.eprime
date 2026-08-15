@@ -30,7 +30,7 @@ namespace WorkRoles.Core.Recs
                 // Skill-less work (rescue, feeding, hauling-style chores) does
                 // not dilute the share denominator: a skill's share is measured
                 // against the role's skilled work only.
-                if (facts.UsedSkillDefNames.Count == 0
+                if (facts.CompatibilityUsedSkillDefNames.Count == 0
                     && facts.TrainedSkillDefNames.Count == 0
                     && facts.Requirements.Count == 0)
                 {
@@ -39,8 +39,8 @@ namespace WorkRoles.Core.Recs
                 }
                 if (facts.TrainedSkillDefNames.Count > 0)
                     scratch.SetSourceWeight(4);
-                for (int i = 0; i < facts.UsedSkillDefNames.Count; i++)
-                    scratch.AddUsedSkill(facts.UsedSkillDefNames[i]);
+                for (int i = 0; i < facts.CompatibilityUsedSkillDefNames.Count; i++)
+                    scratch.AddUsedSkill(facts.CompatibilityUsedSkillDefNames[i]);
                 for (int i = 0; i < facts.TrainedSkillDefNames.Count; i++)
                     scratch.AddTrainedSkill(facts.TrainedSkillDefNames[i]);
                 for (int i = 0; i < facts.Requirements.Count; i++)

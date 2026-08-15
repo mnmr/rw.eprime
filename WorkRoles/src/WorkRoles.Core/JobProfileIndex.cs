@@ -103,10 +103,13 @@ namespace WorkRoles.Core
             int workTypeIdentity,
             IReadOnlyList<int> usedSkillIdentities,
             IReadOnlyList<string> usedSkillDefNames,
+            IReadOnlyList<string> compatibilityUsedSkillDefNames,
             IReadOnlyList<int> trainedSkillIdentities,
             IReadOnlyList<string> trainedSkillDefNames,
             IReadOnlyList<int> relevantSkillIdentities,
             IReadOnlyList<string> relevantSkillDefNames,
+            IReadOnlyList<int> recipeIdentities,
+            bool hasCuratedUsedSkills,
             bool hasCuratedXp,
             bool usesRecipes,
             bool givesXp,
@@ -116,10 +119,13 @@ namespace WorkRoles.Core
             WorkTypeIdentity = workTypeIdentity;
             UsedSkillIdentities = usedSkillIdentities;
             UsedSkillDefNames = usedSkillDefNames;
+            CompatibilityUsedSkillDefNames = compatibilityUsedSkillDefNames;
             TrainedSkillIdentities = trainedSkillIdentities;
             TrainedSkillDefNames = trainedSkillDefNames;
             RelevantSkillIdentities = relevantSkillIdentities;
             RelevantSkillDefNames = relevantSkillDefNames;
+            RecipeIdentities = recipeIdentities;
+            HasCuratedUsedSkills = hasCuratedUsedSkills;
             HasCuratedXp = hasCuratedXp;
             UsesRecipes = usesRecipes;
             GivesXp = givesXp;
@@ -133,12 +139,22 @@ namespace WorkRoles.Core
         /// only after translation in the mutable facade.
         public IReadOnlyList<int> UsedSkillIdentities { get; }
         public IReadOnlyList<string> UsedSkillDefNames { get; }
+        /// Legacy role-skill evidence view. Direct code-defined jobs retain
+        /// the former XP-as-use assumption here so publishing more accurate
+        /// profile facts cannot silently retune recommendations or editors.
+        public IReadOnlyList<string> CompatibilityUsedSkillDefNames { get; }
         public IReadOnlyList<int> TrainedSkillIdentities { get; }
         public IReadOnlyList<string> TrainedSkillDefNames { get; }
         public IReadOnlyList<int> RelevantSkillIdentities { get; }
         public IReadOnlyList<string> RelevantSkillDefNames { get; }
+        /// Exact recipes reachable by this giver after required-work-type
+        /// filtering, in the same stable order used for aggregate facts.
+        public IReadOnlyList<int> RecipeIdentities { get; }
+        public bool HasCuratedUsedSkills { get; }
         public bool HasCuratedXp { get; }
         public bool UsesRecipes { get; }
+        public bool HasExactUsedSkills => UsesRecipes || HasCuratedUsedSkills;
+        public bool HasExactTrainedSkills => UsesRecipes || HasCuratedXp;
         public bool GivesXp { get; }
         public IReadOnlyList<JobProfileRequirementFacts> Requirements { get; }
     }
@@ -150,6 +166,10 @@ namespace WorkRoles.Core
             int workTypeIdentity,
             IReadOnlyList<int> relevantSkillIdentities,
             IReadOnlyList<string> relevantSkillDefNames,
+            IReadOnlyList<string> usedSkillDefNames,
+            IReadOnlyList<string> trainedSkillDefNames,
+            bool hasExactUsedSkills,
+            bool hasExactTrainedSkills,
             IReadOnlyList<string> giverDefNames,
             int xpGivers,
             IReadOnlyList<JobProfileRequirementFacts> requirements)
@@ -158,6 +178,10 @@ namespace WorkRoles.Core
             WorkTypeIdentity = workTypeIdentity;
             RelevantSkillIdentities = relevantSkillIdentities;
             RelevantSkillDefNames = relevantSkillDefNames;
+            UsedSkillDefNames = usedSkillDefNames;
+            TrainedSkillDefNames = trainedSkillDefNames;
+            HasExactUsedSkills = hasExactUsedSkills;
+            HasExactTrainedSkills = hasExactTrainedSkills;
             GiverDefNames = giverDefNames;
             XpGivers = xpGivers;
             Requirements = requirements;
@@ -167,6 +191,10 @@ namespace WorkRoles.Core
         public int WorkTypeIdentity { get; }
         public IReadOnlyList<int> RelevantSkillIdentities { get; }
         public IReadOnlyList<string> RelevantSkillDefNames { get; }
+        public IReadOnlyList<string> UsedSkillDefNames { get; }
+        public IReadOnlyList<string> TrainedSkillDefNames { get; }
+        public bool HasExactUsedSkills { get; }
+        public bool HasExactTrainedSkills { get; }
         /// Resolved declared members, including duplicate names, in the work
         /// type snapshot's original priority order.
         public IReadOnlyList<string> GiverDefNames { get; }
@@ -182,6 +210,7 @@ namespace WorkRoles.Core
         internal JobProfileIndex(
             IDictionary<string, JobProfileGiverFacts> givers,
             IDictionary<string, JobProfileWorkTypeFacts> workTypes,
+            IDictionary<int, JobProfileRecipeSource> recipes,
             IDictionary<int, IReadOnlyList<int>> recipesByUser,
             IDictionary<int, IReadOnlyList<int>> recipesBySkill,
             JobProfileRequirementFacts constructionRequirement,
@@ -191,6 +220,8 @@ namespace WorkRoles.Core
                 new Dictionary<string, JobProfileGiverFacts>(givers, StringComparer.Ordinal));
             WorkTypes = new ReadOnlyDictionary<string, JobProfileWorkTypeFacts>(
                 new Dictionary<string, JobProfileWorkTypeFacts>(workTypes, StringComparer.Ordinal));
+            Recipes = new ReadOnlyDictionary<int, JobProfileRecipeSource>(
+                new Dictionary<int, JobProfileRecipeSource>(recipes));
             RecipesByUser = new ReadOnlyDictionary<int, IReadOnlyList<int>>(
                 new Dictionary<int, IReadOnlyList<int>>(recipesByUser));
             RecipesBySkill = new ReadOnlyDictionary<int, IReadOnlyList<int>>(
@@ -201,6 +232,10 @@ namespace WorkRoles.Core
 
         public IReadOnlyDictionary<string, JobProfileGiverFacts> Givers { get; }
         public IReadOnlyDictionary<string, JobProfileWorkTypeFacts> WorkTypes { get; }
+        /// Immutable source facts for every observed recipe, keyed by adapter
+        /// reference identity. This retains work skill, learn factor, explicit
+        /// skill gates, and required work type without re-reading game defs.
+        public IReadOnlyDictionary<int, JobProfileRecipeSource> Recipes { get; }
         public IReadOnlyDictionary<int, IReadOnlyList<int>> RecipesByUser { get; }
         public IReadOnlyDictionary<int, IReadOnlyList<int>> RecipesBySkill { get; }
         public JobProfileRequirementFacts ConstructionRequirement { get; }
@@ -221,6 +256,8 @@ namespace WorkRoles.Core
             internal bool AllHumanlikes;
             internal bool AllAnimals;
             internal bool AllMechanoids;
+            internal bool HasCuratedUsedSkills;
+            internal List<string> CuratedUsedSkillDefNames;
             internal bool HasCuratedXp;
             internal List<string> CuratedXpSkillDefNames;
         }
@@ -299,7 +336,9 @@ namespace WorkRoles.Core
             bool allAnimals = false,
             bool allMechanoids = false,
             bool hasCuratedXp = false,
-            IEnumerable<string> curatedXpSkillDefNames = null)
+            IEnumerable<string> curatedXpSkillDefNames = null,
+            bool hasCuratedUsedSkills = false,
+            IEnumerable<string> curatedUsedSkillDefNames = null)
         {
             EnsureMutable();
             givers.Add(new GiverSource
@@ -311,6 +350,8 @@ namespace WorkRoles.Core
                 AllHumanlikes = allHumanlikes,
                 AllAnimals = allAnimals,
                 AllMechanoids = allMechanoids,
+                HasCuratedUsedSkills = hasCuratedUsedSkills,
+                CuratedUsedSkillDefNames = Copy(curatedUsedSkillDefNames),
                 HasCuratedXp = hasCuratedXp,
                 CuratedXpSkillDefNames = Copy(curatedXpSkillDefNames),
             });
@@ -400,6 +441,7 @@ namespace WorkRoles.Core
             return new JobProfileIndex(
                 giverFacts,
                 workTypeFacts,
+                recipes,
                 FreezeLists(mutableRecipesByUser),
                 BuildRecipesBySkill(),
                 RangeOf(constructionLevels, constructionSkill),
@@ -480,6 +522,7 @@ namespace WorkRoles.Core
             List<string> usedNames;
             List<int> trainedIds;
             List<string> trainedNames;
+            List<string> compatibilityUsedNames;
             List<JobProfileRequirementFacts> requirements;
             if (usesRecipes)
             {
@@ -487,30 +530,50 @@ namespace WorkRoles.Core
                 usedNames = DistinctRecipeSkillNames(giverRecipeIds, trainedOnly: false);
                 trainedIds = RecipeSkillIdentities(giverRecipeIds, trainedOnly: true);
                 trainedNames = DistinctRecipeSkillNames(giverRecipeIds, trainedOnly: true);
+                compatibilityUsedNames = new List<string>(usedNames);
                 requirements = RecipeRequirements(giverRecipeIds);
             }
             else
             {
                 requirements = new List<JobProfileRequirementFacts>();
-                if (source.HasCuratedXp)
+                if (source.HasCuratedUsedSkills)
                 {
-                    // The curated XP table is ground truth for the skills the
-                    // job actually exercises, used AND trained: the parent
-                    // work type's skills must not bleed in (rescue and feed
-                    // under Doctor involve no Medicine). Identities are
-                    // unknown for curated names; consumers resolve by name.
+                    // Code-defined jobs carry no declarative skill-use data.
+                    // An exact curated list, including an exact empty list,
+                    // must win over broad parent-work-type metadata.
+                    usedIds = new List<int>();
+                    usedNames = new List<string>(source.CuratedUsedSkillDefNames);
+                }
+                else if (source.HasCuratedXp)
+                {
+                    // Backward-compatible XP-as-use inference for callers that
+                    // have not supplied independent exact used-skill facts.
                     usedIds = new List<int>();
                     usedNames = new List<string>(source.CuratedXpSkillDefNames);
-                    trainedIds = new List<int>();
-                    trainedNames = new List<string>(source.CuratedXpSkillDefNames);
                 }
                 else
                 {
                     usedIds = relevantIds;
                     usedNames = relevantNames;
+                }
+
+                if (source.HasCuratedXp)
+                {
+                    // XP is independently curated because a job can use a
+                    // skill without training it. Identities are unknown for
+                    // curated names; consumers resolve them by defName.
+                    trainedIds = new List<int>();
+                    trainedNames = new List<string>(source.CuratedXpSkillDefNames);
+                }
+                else
+                {
                     trainedIds = new List<int>(relevantIds);
                     trainedNames = new List<string>(relevantNames);
                 }
+
+                compatibilityUsedNames = source.HasCuratedXp
+                    ? new List<string>(source.CuratedXpSkillDefNames)
+                    : new List<string>(relevantNames);
 
                 if (source.DefName == "ConstructFinishFrames")
                     requirements.Add(RangeOf(constructionLevels, constructionSkill));
@@ -523,10 +586,13 @@ namespace WorkRoles.Core
                 source.WorkTypeIdentity,
                 ReadOnly(usedIds),
                 ReadOnly(usedNames),
+                ReadOnly(compatibilityUsedNames),
                 ReadOnly(trainedIds),
                 ReadOnly(trainedNames),
                 ReadOnly(relevantIds),
                 ReadOnly(relevantNames),
+                ReadOnly(giverRecipeIds),
+                source.HasCuratedUsedSkills,
                 source.HasCuratedXp,
                 usesRecipes,
                 trainedNames.Count > 0,
@@ -618,12 +684,24 @@ namespace WorkRoles.Core
                 var members = new List<string>();
                 int xpGivers = 0;
                 var requirements = new List<JobProfileRequirementFacts>();
+                var usedNames = new List<string>();
+                var trainedNames = new List<string>();
+                var seenUsedNames = new HashSet<string>(StringComparer.Ordinal);
+                var seenTrainedNames = new HashSet<string>(StringComparer.Ordinal);
+                bool hasExactUsedSkills = true;
+                bool hasExactTrainedSkills = true;
                 for (int j = 0; j < source.GiverDefNames.Count; j++)
                 {
                     string name = source.GiverDefNames[j];
                     if (!giverFacts.TryGetValue(name, out JobProfileGiverFacts giver)) continue;
                     members.Add(name);
                     if (giver.GivesXp) xpGivers++;
+                    if (!giver.HasExactUsedSkills) hasExactUsedSkills = false;
+                    if (!giver.HasExactTrainedSkills) hasExactTrainedSkills = false;
+                    AddDistinctNames(usedNames, seenUsedNames,
+                        giver.UsedSkillDefNames);
+                    AddDistinctNames(trainedNames, seenTrainedNames,
+                        giver.TrainedSkillDefNames);
                     AddWorkTypeRequirements(requirements, giver.Requirements);
                 }
 
@@ -632,11 +710,24 @@ namespace WorkRoles.Core
                     source.Identity,
                     ReadOnly(SkillIdentities(source.RelevantSkills)),
                     ReadOnly(SkillNames(source.RelevantSkills)),
+                    ReadOnly(usedNames),
+                    ReadOnly(trainedNames),
+                    hasExactUsedSkills,
+                    hasExactTrainedSkills,
                     ReadOnly(members),
                     xpGivers,
                     ReadOnly(requirements));
             }
             return result;
+        }
+
+        private static void AddDistinctNames(
+            List<string> target,
+            HashSet<string> seen,
+            IReadOnlyList<string> source)
+        {
+            for (int i = 0; i < source.Count; i++)
+                if (seen.Add(source[i])) target.Add(source[i]);
         }
 
         private static void AddWorkTypeRequirements(

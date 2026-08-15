@@ -157,6 +157,39 @@ public class RecommendationCatalogProjectionTests
         await Assert.That(projected.Unskilled).IsFalse();
     }
 
+    [Test]
+    public async Task ExactSecondaryUsedSkillDoesNotChangeLegacyRoleSkillProjection()
+    {
+        var jobs = new FakeCatalog().WithWorkType("Hunting", "Hunt");
+        var builder = new JobProfileIndexBuilder();
+        JobProfileSkillSource[] shooting = [new(50, "Shooting")];
+        builder.AddWorkType(1, "Hunting", shooting, ["Hunt"]);
+        builder.AddGiver(
+            "Hunt",
+            1,
+            shooting,
+            hasCuratedXp: true,
+            curatedXpSkillDefNames: ["Shooting"],
+            hasCuratedUsedSkills: true,
+            curatedUsedSkillDefNames: ["Shooting", "Animals"]);
+        var hunter = new RecommendationRoleSource
+        {
+            Id = 1,
+            Entries = [new JobEntry(JobEntryKind.WorkType, "Hunting")],
+        };
+
+        RecommendationCatalogProjection projection = RecommendationCatalogBuilder.Build(
+            [hunter], [], jobs,
+            new Dictionary<string, int> { ["Hunting"] = 950 },
+            builder.Build());
+
+        RoleView projected = projection.Roles.Single();
+        await Assert.That(projected.Skills.Select(skill => skill.SkillDefName))
+            .IsEquivalentTo(["Shooting"])
+            .Because("profile fidelity must not change recommendation/editor role skills in this slice");
+        await Assert.That(projected.PrimarySkill).IsEqualTo("Shooting");
+    }
+
     private static JobProfileIndex Profiles()
     {
         var builder = new JobProfileIndexBuilder();

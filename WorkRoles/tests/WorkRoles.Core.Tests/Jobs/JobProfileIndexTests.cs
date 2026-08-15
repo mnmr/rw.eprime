@@ -30,6 +30,14 @@ public class JobProfileIndexTests
         await Assert.That(string.Join(",", index.RecipesByUser[100])).IsEqualTo("1000,1001,1000,1002").Because("AllRecipes concatenates direct then database-user recipes; giver Distinct is later");
         await Assert.That(string.Join(",", facts.UsedSkillDefNames)).IsEqualTo("Crafting,Artistic,Cooking");
         await Assert.That(string.Join(",", facts.TrainedSkillDefNames)).IsEqualTo("Crafting,Artistic");
+        await Assert.That(string.Join(",", facts.RecipeIdentities))
+            .IsEqualTo("900,1002,1000,1001");
+        await Assert.That(index.Recipes[1001].WorkSkill.Value.DefName)
+            .IsEqualTo("Cooking");
+        await Assert.That(index.Recipes[1001].WorkSkillLearnFactor)
+            .IsEqualTo(0f);
+        await Assert.That(facts.HasExactUsedSkills).IsTrue();
+        await Assert.That(facts.HasExactTrainedSkills).IsTrue();
         await Assert.That(facts.UsesRecipes).IsTrue();
         await Assert.That(facts.GivesXp).IsTrue();
         await Assert.That(facts.Requirements.Count).IsEqualTo(0);
@@ -59,6 +67,96 @@ public class JobProfileIndexTests
         await Assert.That(index.Givers["CuratedEmpty"].UsedSkillDefNames.Count).IsEqualTo(0);
         await Assert.That(string.Join(",", index.Givers["CuratedUnknown"].UsedSkillDefNames)).IsEqualTo("MissingSkill");
         await Assert.That(string.Join(",", index.Givers["Fallback"].UsedSkillDefNames)).IsEqualTo("Crafting");
+        await Assert.That(index.Givers["CuratedUnknown"].HasExactUsedSkills).IsFalse()
+            .Because("an XP-only compatibility caller did not supply exact skill-use facts");
+        await Assert.That(index.Givers["Fallback"].HasExactUsedSkills).IsFalse();
+        await Assert.That(index.Givers["Fallback"].HasExactTrainedSkills).IsFalse();
+    }
+
+    [Test]
+    public async Task CuratedUsedAndTrainedSkillsRemainIndependentAndExplicitEmptyWins()
+    {
+        var builder = new JobProfileIndexBuilder();
+        builder.AddWorkType(1, "Warden", Skills((10, "Social")),
+            ["ActivitySuppression", "ReleasePrisoner"]);
+        builder.AddGiver(
+            "ActivitySuppression",
+            1,
+            Skills((10, "Social")),
+            hasCuratedXp: true,
+            curatedXpSkillDefNames: ["Intellectual"],
+            hasCuratedUsedSkills: true,
+            curatedUsedSkillDefNames: ["Intellectual", "Social"]);
+        builder.AddGiver(
+            "ReleasePrisoner",
+            1,
+            Skills((10, "Social")),
+            hasCuratedXp: true,
+            curatedXpSkillDefNames: [],
+            hasCuratedUsedSkills: true,
+            curatedUsedSkillDefNames: []);
+
+        JobProfileIndex index = builder.Build();
+
+        await Assert.That(string.Join(",",
+            index.Givers["ActivitySuppression"].UsedSkillDefNames))
+            .IsEqualTo("Intellectual,Social");
+        await Assert.That(string.Join(",",
+            index.Givers["ActivitySuppression"].TrainedSkillDefNames))
+            .IsEqualTo("Intellectual");
+        await Assert.That(index.Givers["ReleasePrisoner"].UsedSkillDefNames.Count)
+            .IsEqualTo(0).Because("an exact empty list must not inherit the parent work type skill");
+        await Assert.That(index.Givers["ReleasePrisoner"].HasExactUsedSkills)
+            .IsTrue();
+        await Assert.That(string.Join(",",
+            index.WorkTypes["Warden"].UsedSkillDefNames))
+            .IsEqualTo("Intellectual,Social");
+        await Assert.That(string.Join(",",
+            index.WorkTypes["Warden"].TrainedSkillDefNames))
+            .IsEqualTo("Intellectual");
+        await Assert.That(string.Join(",",
+            index.WorkTypes["Warden"].RelevantSkillDefNames))
+            .IsEqualTo("Social");
+        await Assert.That(index.WorkTypes["Warden"].HasExactUsedSkills)
+            .IsTrue();
+        await Assert.That(index.WorkTypes["Warden"].HasExactTrainedSkills)
+            .IsTrue();
+    }
+
+    [Test]
+    public async Task VanillaUsedSkillBaselineCoversEveryAuditedDirectGiverIncludingEmptyJobs()
+    {
+        await Assert.That(VanillaUsedSkillBaseline.UsedByGiver.Count)
+            .IsEqualTo(VanillaXpBaseline.XpByGiver.Count);
+        await Assert.That(VanillaXpBaseline.XpByGiver.Keys.All(
+            VanillaUsedSkillBaseline.UsedByGiver.ContainsKey)).IsTrue();
+        await Assert.That(string.Join(",",
+            VanillaUsedSkillBaseline.UsedByGiver["ActivitySuppression"]))
+            .IsEqualTo("Intellectual,Social");
+        await Assert.That(string.Join(",",
+            VanillaUsedSkillBaseline.UsedByGiver["HunterHunt"]))
+            .IsEqualTo("Shooting,Animals");
+        await Assert.That(VanillaUsedSkillBaseline.UsedByGiver["ReleasePrisoner"].Count)
+            .IsEqualTo(0);
+        await Assert.That(() =>
+            ((IDictionary<string, IReadOnlyList<string>>)
+                VanillaUsedSkillBaseline.UsedByGiver).Add("Injected", []))
+            .Throws<NotSupportedException>();
+        await Assert.That(() =>
+            ((IList<string>)VanillaUsedSkillBaseline.UsedByGiver["HunterHunt"])[0]
+                = "Cooking")
+            .Throws<NotSupportedException>();
+
+        JobProfileIndex offline = WorkRoles.Lab.Data.VanillaJobSkillBaseline.Index;
+        await Assert.That(string.Join(",",
+            offline.Givers["ActivitySuppression"].UsedSkillDefNames))
+            .IsEqualTo("Intellectual,Social");
+        await Assert.That(string.Join(",",
+            offline.Givers["ActivitySuppression"].TrainedSkillDefNames))
+            .IsEqualTo("Intellectual");
+        await Assert.That(string.Join(",",
+            offline.Givers["HunterHunt"].UsedSkillDefNames))
+            .IsEqualTo("Shooting,Animals");
     }
 
     [Test]
@@ -143,6 +241,10 @@ public class JobProfileIndexTests
 
         await Assert.That(index.Givers["Giver"].RelevantSkillDefNames[0]).IsEqualTo("Crafting");
         await Assert.That(() => ((IDictionary<string, JobProfileGiverFacts>)index.Givers).Add("Other", index.Givers["Giver"])).Throws<NotSupportedException>();
+        await Assert.That(() => ((IDictionary<int, JobProfileRecipeSource>)index.Recipes).Add(1,
+            Recipe(1, 10, "Crafting", 1f))).Throws<NotSupportedException>();
+        await Assert.That(() => ((IList<int>)index.Givers["Giver"].RecipeIdentities).Clear())
+            .Throws<NotSupportedException>();
         await Assert.That(() => ((IList<string>)index.Givers["Giver"].RelevantSkillDefNames).Clear()).Throws<NotSupportedException>();
         await Assert.That(() => builder.AddConstructionRequirement(4)).Throws<InvalidOperationException>().Because("a built index is an immutable snapshot and its builder is single-use");
     }
