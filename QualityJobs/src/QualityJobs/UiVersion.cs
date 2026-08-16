@@ -1,4 +1,5 @@
 using QualityJobs.Core;
+using RimShared.Common;
 using Verse;
 
 namespace QualityJobs
@@ -16,7 +17,7 @@ namespace QualityJobs
             revision.Observe(
                 Prefs.UIScale,
                 Prefs.DisableTinyText,
-                LanguageDatabase.activeLanguage?.folderName);
+                LanguageDatabase.activeLanguage?.folderName ?? string.Empty);
 
         public static void Bump()
         {

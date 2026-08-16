@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="QualityJobs.Core.Tests/QualityJobs.Core.Tests.csproj" />
+  <Project Path="QualityJobs.Core/QualityJobs.Core.csproj" />
+  <Project Path="QualityJobs/QualityJobs.csproj" />
+</Solution>

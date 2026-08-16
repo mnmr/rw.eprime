@@ -1,5 +1,6 @@
 using System;
 using QualityJobs.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 

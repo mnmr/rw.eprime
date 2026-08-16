@@ -79,7 +79,7 @@ cached render paths, MP-safe commands, tests-first). The design spec is at
 ## Building
 
 ```powershell
-dotnet build -c Release --no-restore     # zero warnings required
+dotnet build -c Release src/QualityJobs.slnx --no-restore     # zero warnings required
 dotnet test src/QualityJobs.Core.Tests --no-restore
 pwsh scripts/deploy.ps1                  # deploy to the game's Mods folder
 ```
