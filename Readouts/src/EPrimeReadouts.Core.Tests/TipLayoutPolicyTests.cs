@@ -37,4 +37,37 @@ public class TipLayoutPolicyTests
             columns.ValueX, columns.ValueWidth, textWidth: 12f))
             .IsEqualTo(120f);
     }
+
+    [Test]
+    public async Task SingleResourceWorkMovesDifferingStockIntoTheHeader()
+    {
+        PlannedWorkTipLayout layout = PlannedWorkTipLayout.For(
+            pooled: false, available: 1647, inStock: 1815);
+
+        await Assert.That(layout.ColumnCount).IsEqualTo(4);
+        await Assert.That(layout.ShowResourceColumn).IsFalse();
+        await Assert.That(layout.ShowInStockColumn).IsFalse();
+        await Assert.That(layout.ShowStockInHeader).IsTrue();
+    }
+
+    [Test]
+    public async Task SingleResourceWithoutAStockDifferenceKeepsItsCompactHeader()
+    {
+        PlannedWorkTipLayout layout = PlannedWorkTipLayout.For(
+            pooled: false, available: 1815, inStock: 1815);
+
+        await Assert.That(layout.ShowStockInHeader).IsFalse();
+    }
+
+    [Test]
+    public async Task PoolWorkKeepsItsPerResourceStockColumns()
+    {
+        PlannedWorkTipLayout layout = PlannedWorkTipLayout.For(
+            pooled: true, available: 1647, inStock: 1815);
+
+        await Assert.That(layout.ColumnCount).IsEqualTo(6);
+        await Assert.That(layout.ShowResourceColumn).IsTrue();
+        await Assert.That(layout.ShowInStockColumn).IsTrue();
+        await Assert.That(layout.ShowStockInHeader).IsFalse();
+    }
 }

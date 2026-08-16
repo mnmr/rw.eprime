@@ -150,6 +150,15 @@ namespace EPrimeReadouts.Core
             foreach (var entry in entries.Values) entry.CountsDirty = true;
         }
 
+        /// Marks only one owner key dirty when an external count dependency is
+        /// partitioned more narrowly than this cache's complete key set.
+        public bool InvalidateCounts(TKey key)
+        {
+            if (!entries.TryGetValue(key, out Entry entry)) return false;
+            entry.CountsDirty = true;
+            return true;
+        }
+
         public bool Remove(TKey key) => entries.Remove(key);
 
         public void Clear() => entries.Clear();

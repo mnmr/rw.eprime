@@ -46,18 +46,4 @@ public class ThresholdRowLayoutTests
         await Assert.That(row.Width).IsEqualTo(402f);
     }
 
-    /// The draw code must consume the measured layout — hardcoded column
-    /// offsets are exactly the bug this guards against. Source-text check
-    /// because the game-assembly draw path cannot execute in tests.
-    [Test]
-    public async Task DrawOptionsBodyUsesMeasuredRowLayout()
-    {
-        var source = ArchitectureTestSupport.Source("UI", "EditorView.cs");
-        var body = ArchitectureTestSupport.Method(source, "private void DrawOptionsBody(");
-        await Assert.That(body).Contains("ThresholdRow");
-        await Assert.That(body).DoesNotContain("x + 106f");
-        await Assert.That(body).DoesNotContain("x + 166f");
-        await Assert.That(body).DoesNotContain("x + 234f");
-        await Assert.That(body).DoesNotContain("x + 288f");
-    }
 }

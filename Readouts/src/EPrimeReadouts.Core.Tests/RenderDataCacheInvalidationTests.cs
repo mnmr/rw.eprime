@@ -99,6 +99,27 @@ public class RenderDataCacheInvalidationTests
     }
 
     [Test]
+    public async Task KeyedInvalidationRebuildsOnlyTheAffectedMap()
+    {
+        var cache = NewCache();
+        int groundBuilds = 0;
+        int orbitBuilds = 0;
+        cache.Get("ground", 1, tick: 0, () => "pools",
+            () => "ground" + ++groundBuilds);
+        cache.Get("orbit", 1, tick: 0, () => "pools",
+            () => "orbit" + ++orbitBuilds);
+
+        cache.InvalidateCounts("ground");
+        cache.Get("ground", 1, tick: 0, () => "pools",
+            () => "ground" + ++groundBuilds);
+        cache.Get("orbit", 1, tick: 0, () => "pools",
+            () => "orbit" + ++orbitBuilds);
+
+        await Assert.That(groundBuilds).IsEqualTo(2);
+        await Assert.That(orbitBuilds).IsEqualTo(1);
+    }
+
+    [Test]
     public async Task InvalidationIsConsumedOnceNotStandingForever()
     {
         var cache = NewCache();

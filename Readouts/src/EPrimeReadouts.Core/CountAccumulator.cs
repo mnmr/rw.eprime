@@ -25,12 +25,70 @@ namespace EPrimeReadouts.Core
             public int Buildables;
         }
 
+        private readonly struct WorkKey : IEquatable<WorkKey>
+        {
+            internal WorkKey(
+                PlannedWorkKind kind,
+                string workDefName,
+                string stuffDefName,
+                string resourceDefName,
+                int unitCost,
+                PlannedWorkSource source)
+            {
+                Kind = kind;
+                Source = source;
+                WorkDefName = workDefName;
+                StuffDefName = stuffDefName;
+                ResourceDefName = resourceDefName;
+                UnitCost = unitCost;
+            }
+
+            internal readonly PlannedWorkKind Kind;
+            internal readonly PlannedWorkSource Source;
+            internal readonly string WorkDefName;
+            internal readonly string StuffDefName;
+            internal readonly string ResourceDefName;
+            internal readonly int UnitCost;
+
+            public bool Equals(WorkKey other) =>
+                Kind == other.Kind
+                && Source == other.Source
+                && string.Equals(WorkDefName, other.WorkDefName,
+                    StringComparison.Ordinal)
+                && string.Equals(StuffDefName, other.StuffDefName,
+                    StringComparison.Ordinal)
+                && string.Equals(ResourceDefName, other.ResourceDefName,
+                    StringComparison.Ordinal)
+                && UnitCost == other.UnitCost;
+
+            public override bool Equals(object obj) =>
+                obj is WorkKey other && Equals(other);
+
+            public override int GetHashCode() =>
+                ((int)Kind * 397)
+                ^ ((int)Source * 7919)
+                ^ (WorkDefName != null
+                    ? StringComparer.Ordinal.GetHashCode(WorkDefName) : 0)
+                ^ (StuffDefName != null
+                    ? StringComparer.Ordinal.GetHashCode(StuffDefName) : 0)
+                ^ (ResourceDefName != null
+                    ? StringComparer.Ordinal.GetHashCode(ResourceDefName) : 0)
+                ^ UnitCost;
+        }
+
+        private struct WorkTally
+        {
+            public int Queued;
+            public int Drain;
+        }
+
         private readonly Dictionary<string, int> counts =
             new Dictionary<string, int>();
         private readonly Dictionary<string, SearchTally> searchTallies =
             new Dictionary<string, SearchTally>();
         private readonly Dictionary<string, DebtTally> debtTallies =
             new Dictionary<string, DebtTally>();
+        private Dictionary<WorkKey, WorkTally> workTallies;
         private long fingerprint = 17;
         private bool published;
 
@@ -92,7 +150,7 @@ namespace EPrimeReadouts.Core
             EnsureWritable();
             if (amount <= 0) return;
             debtTallies.TryGetValue(defName, out DebtTally tally);
-            tally.Bills += amount;
+            tally.Bills = SaturatingAdd(tally.Bills, amount);
             debtTallies[defName] = tally;
             unchecked
             {
@@ -108,13 +166,70 @@ namespace EPrimeReadouts.Core
             EnsureWritable();
             if (amount <= 0) return;
             debtTallies.TryGetValue(defName, out DebtTally tally);
-            tally.Buildables += amount;
+            tally.Buildables = SaturatingAdd(tally.Buildables, amount);
             debtTallies[defName] = tally;
             unchecked
             {
                 fingerprint += (long)defHash * 8191 + amount * 17;
             }
         }
+
+        public void AddBillWork(
+            string resourceDefName,
+            int defHash,
+            string workDefName,
+            int queued,
+            int unitCost,
+            int drain,
+            PlannedWorkSource source = PlannedWorkSource.Standard)
+        {
+            AddBillDebt(resourceDefName, defHash, drain);
+            AddWork(PlannedWorkKind.Bill, workDefName, null,
+                resourceDefName, queued, unitCost, drain, source);
+        }
+
+        public void AddBuildableWork(
+            string resourceDefName,
+            int defHash,
+            string workDefName,
+            string stuffDefName,
+            int queued,
+            int unitCost,
+            int drain,
+            PlannedWorkSource source = PlannedWorkSource.Standard)
+        {
+            AddBuildableDebt(resourceDefName, defHash, drain);
+            AddWork(PlannedWorkKind.Buildable, workDefName, stuffDefName,
+                resourceDefName, queued, unitCost, drain, source);
+        }
+
+        private void AddWork(
+            PlannedWorkKind kind,
+            string workDefName,
+            string stuffDefName,
+            string resourceDefName,
+            int queued,
+            int unitCost,
+            int drain,
+            PlannedWorkSource source)
+        {
+            EnsureWritable();
+            if (drain <= 0 || queued <= 0 || unitCost <= 0
+                || string.IsNullOrEmpty(workDefName)
+                || string.IsNullOrEmpty(resourceDefName)) return;
+            if (workTallies == null)
+                workTallies = new Dictionary<WorkKey, WorkTally>();
+            var key = new WorkKey(kind, workDefName, stuffDefName,
+                resourceDefName, unitCost, source);
+            workTallies.TryGetValue(key, out WorkTally tally);
+            tally.Queued = SaturatingAdd(tally.Queued, queued);
+            tally.Drain = SaturatingAdd(tally.Drain, drain);
+            workTallies[key] = tally;
+        }
+
+        private static int SaturatingAdd(int left, int right)
+            => left >= int.MaxValue - right
+                ? int.MaxValue : left + right;
 
         public RenderCountSnapshot ToSnapshot()
         {
@@ -137,8 +252,24 @@ namespace EPrimeReadouts.Core
                         pair.Value.Bills, pair.Value.Buildables);
             }
 
+            PlannedWorkEntry[] plannedWork = null;
+            if (workTallies != null && workTallies.Count != 0)
+            {
+                plannedWork = new PlannedWorkEntry[workTallies.Count];
+                int index = 0;
+                foreach (var pair in workTallies)
+                {
+                    WorkKey key = pair.Key;
+                    plannedWork[index++] = new PlannedWorkEntry(
+                        key.Kind, key.WorkDefName, key.StuffDefName,
+                        key.ResourceDefName, pair.Value.Queued,
+                        key.UnitCost, pair.Value.Drain, key.Source);
+                }
+                Array.Sort(plannedWork, PlannedWorkEntry.CanonicalComparer);
+            }
+
             RenderCountSnapshot snapshot = RenderCountSnapshot.FromOwnedBuffers(
-                counts, fingerprint, search, debts);
+                counts, fingerprint, search, debts, plannedWork);
             published = true;
             return snapshot;
         }

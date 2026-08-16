@@ -15,12 +15,14 @@ namespace EPrimeReadouts
             internal Map Map;
             internal ReadoutStore Store;
             internal PlannedWorkOptions PlannedWork;
+            internal QualityJobsPlannedWorkSnapshot QualityJobs;
         }
 
         private static readonly Func<BuildState, PoolSnapshot> buildPools =
             state => PoolSnapshot.Build(state.Store.Model.Pools, GameResourceCatalog.Instance);
         private static readonly Func<BuildState, PoolSnapshot, RenderCountSnapshot> buildCounts =
-            (state, _) => GameCounts.BuildSnapshot(state.Map, state.PlannedWork);
+            (state, _) => GameCounts.BuildSnapshot(
+                state.Map, state.PlannedWork, state.QualityJobs);
 
         // Cache contract:
         // Owner: one ReadoutStore/world at a time.
@@ -28,10 +30,10 @@ namespace EPrimeReadouts
         //      canonical ground map so every floor shares one snapshot.
         // Value: immutable shared pool/count render snapshot.
         // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
-        //               counts, the planned-work reservation options
-        //               immediately, and (while MultiFloors is active) the
-        //               map-set stamp so stack membership changes rebuild
-        //               entries.
+        //               counts, the planned-work reservation options and the
+        //               relevant map/level-stack QJA projection immediately,
+        //               and (while MultiFloors is active) the map-set stamp so
+        //               stack membership changes rebuild entries.
         // Refresh policy: immediate structure; tick-throttled counts, except
         //               that a reservation-option change rebuilds counts at
         //               once (a user-authored edit must be visible while
@@ -41,6 +43,8 @@ namespace EPrimeReadouts
         private static ReadoutStore cacheOwner;
         private static int cacheMapSetStamp = -1;
         private static PlannedWorkOptions cachePlannedWork;
+        private static QualityJobsPlannedWorkSnapshot cacheQualityJobs =
+            QualityJobsPlannedWorkSnapshot.Empty;
         private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
             cache = NewCache();
 
@@ -56,6 +60,8 @@ namespace EPrimeReadouts
             if (!ReferenceEquals(cacheOwner, store))
             {
                 cache.Clear();
+                QualityJobsPlannedWork.Reset();
+                cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
                 cacheOwner = store;
             }
             if (LevelStacks.MultiFloorsActive
@@ -75,11 +81,27 @@ namespace EPrimeReadouts
                 cache.InvalidateCounts();
             }
 
+            QualityJobsPlannedWorkSnapshot qualityJobs =
+                plannedWork.Any && plannedWork.QualityRework
+                    ? QualityJobsPlannedWork.Current()
+                    : QualityJobsPlannedWorkSnapshot.Empty;
+            if (!ReferenceEquals(cacheQualityJobs, qualityJobs))
+            {
+                InvalidateChangedQualityMaps(cacheQualityJobs, qualityJobs);
+                cacheQualityJobs = qualityJobs;
+            }
+
             return cache.Get(
                 map,
                 store.PoolsVersion,
                 Find.TickManager.TicksGame,
-                new BuildState { Map = map, Store = store, PlannedWork = plannedWork },
+                new BuildState
+                {
+                    Map = map,
+                    Store = store,
+                    PlannedWork = plannedWork,
+                    QualityJobs = qualityJobs,
+                },
                 buildPools,
                 buildCounts);
         }
@@ -97,10 +119,45 @@ namespace EPrimeReadouts
                 settings.qualityJobsRework && QualityJobsBridge.Available);
         }
 
+        private static void InvalidateChangedQualityMaps(
+            QualityJobsPlannedWorkSnapshot previous,
+            QualityJobsPlannedWorkSnapshot current)
+        {
+            QualityJobsMapWorkSnapshot[] currentMaps = current.Maps;
+            for (int i = 0; i < currentMaps.Length; i++)
+            {
+                QualityJobsMapWorkSnapshot changed = currentMaps[i];
+                QualityJobsMapWorkSnapshot old = previous.For(changed.Map);
+                bool billsChanged = cachePlannedWork.ReserveBills
+                    && (old == null ? changed.HasBills : !changed.BillsEqual(old));
+                bool buildablesChanged = cachePlannedWork.ReserveBuildables
+                    && (old == null
+                        ? changed.HasBuildables
+                        : !changed.BuildablesEqual(old));
+                if (billsChanged || buildablesChanged)
+                    cache.InvalidateCounts(
+                        LevelStacks.CanonicalOrSelf(changed.Map));
+            }
+
+            QualityJobsMapWorkSnapshot[] previousMaps = previous.Maps;
+            for (int i = 0; i < previousMaps.Length; i++)
+            {
+                QualityJobsMapWorkSnapshot removed = previousMaps[i];
+                if (current.For(removed.Map) == null
+                    && ((cachePlannedWork.ReserveBills && removed.HasBills)
+                        || (cachePlannedWork.ReserveBuildables
+                            && removed.HasBuildables)))
+                    cache.InvalidateCounts(
+                        LevelStacks.CanonicalOrSelf(removed.Map));
+            }
+        }
+
         internal static void Remove(Map map)
         {
             if (map == null) return;
             cache.Remove(map);
+            QualityJobsPlannedWork.Reset();
+            cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
             if (cache.Count == 0) cacheOwner = null;
         }
 
@@ -110,6 +167,8 @@ namespace EPrimeReadouts
             cacheOwner = null;
             cacheMapSetStamp = -1;
             cachePlannedWork = default;
+            cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
+            QualityJobsPlannedWork.Reset();
         }
 
         private static RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot> NewCache() =>

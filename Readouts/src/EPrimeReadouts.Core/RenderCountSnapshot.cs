@@ -13,16 +13,20 @@ namespace EPrimeReadouts.Core
         private static readonly IReadOnlyDictionary<string, PlannedWorkDebt> emptyDebts =
             new ReadOnlyDictionary<string, PlannedWorkDebt>(
                 new Dictionary<string, PlannedWorkDebt>());
+        private static readonly IReadOnlyList<PlannedWorkEntry> emptyPlannedWork =
+            Array.AsReadOnly(Array.Empty<PlannedWorkEntry>());
 
         private readonly IReadOnlyDictionary<string, int> counts;
         private readonly IReadOnlyDictionary<string, SearchCount> searchCounts;
         private readonly IReadOnlyDictionary<string, PlannedWorkDebt> debts;
+        private readonly IReadOnlyList<PlannedWorkEntry> plannedWork;
 
         public RenderCountSnapshot(
             IReadOnlyDictionary<string, int> counts,
             long fingerprint,
             IReadOnlyDictionary<string, SearchCount> searchCounts = null,
-            IReadOnlyDictionary<string, PlannedWorkDebt> debts = null)
+            IReadOnlyDictionary<string, PlannedWorkDebt> debts = null,
+            IReadOnlyList<PlannedWorkEntry> plannedWork = null)
         {
             if (counts == null) throw new ArgumentNullException(nameof(counts));
             this.counts = CopyCounts(counts);
@@ -34,6 +38,10 @@ namespace EPrimeReadouts.Core
                 this.debts = emptyDebts;
             else
                 this.debts = CopyDebts(debts);
+            if (plannedWork == null || plannedWork.Count == 0)
+                this.plannedWork = emptyPlannedWork;
+            else
+                this.plannedWork = CopyPlannedWork(plannedWork);
             Fingerprint = fingerprint;
         }
 
@@ -41,11 +49,13 @@ namespace EPrimeReadouts.Core
             long fingerprint,
             IReadOnlyDictionary<string, int> counts,
             IReadOnlyDictionary<string, SearchCount> searchCounts,
-            IReadOnlyDictionary<string, PlannedWorkDebt> debts)
+            IReadOnlyDictionary<string, PlannedWorkDebt> debts,
+            IReadOnlyList<PlannedWorkEntry> plannedWork)
         {
             this.counts = counts;
             this.searchCounts = searchCounts;
             this.debts = debts;
+            this.plannedWork = plannedWork;
             Fingerprint = fingerprint;
         }
 
@@ -56,7 +66,8 @@ namespace EPrimeReadouts.Core
             Dictionary<string, int> counts,
             long fingerprint,
             Dictionary<string, SearchCount> searchCounts,
-            Dictionary<string, PlannedWorkDebt> debts)
+            Dictionary<string, PlannedWorkDebt> debts,
+            PlannedWorkEntry[] plannedWork)
         {
             if (counts == null) throw new ArgumentNullException(nameof(counts));
             return new RenderCountSnapshot(
@@ -69,7 +80,10 @@ namespace EPrimeReadouts.Core
                     : new ReadOnlyDictionary<string, SearchCount>(searchCounts),
                 debts == null || debts.Count == 0
                     ? emptyDebts
-                    : new ReadOnlyDictionary<string, PlannedWorkDebt>(debts));
+                    : new ReadOnlyDictionary<string, PlannedWorkDebt>(debts),
+                plannedWork == null || plannedWork.Length == 0
+                    ? emptyPlannedWork
+                    : Array.AsReadOnly(plannedWork));
         }
 
         private static IReadOnlyDictionary<string, int> CopyCounts(
@@ -97,6 +111,14 @@ namespace EPrimeReadouts.Core
             return new ReadOnlyDictionary<string, PlannedWorkDebt>(copy);
         }
 
+        private static IReadOnlyList<PlannedWorkEntry> CopyPlannedWork(
+            IReadOnlyList<PlannedWorkEntry> source)
+        {
+            var copy = new PlannedWorkEntry[source.Count];
+            for (int i = 0; i < source.Count; i++) copy[i] = source[i];
+            return Array.AsReadOnly(copy);
+        }
+
         public IReadOnlyDictionary<string, int> Counts => counts;
         /// Per-def search breakdown; defs absent here have nothing countable
         /// on the map. Never null.
@@ -104,6 +126,8 @@ namespace EPrimeReadouts.Core
         /// Per-def planned-work debt; defs absent here owe nothing. Empty when
         /// every reservation option is off. Never null.
         public IReadOnlyDictionary<string, PlannedWorkDebt> Debts => debts;
+        /// Item/resource provenance for planned-work tooltip tables. Never null.
+        public IReadOnlyList<PlannedWorkEntry> PlannedWork => plannedWork;
         public long Fingerprint { get; }
 
         /// Debt for one def, defaulting to nothing owed.
@@ -116,7 +140,8 @@ namespace EPrimeReadouts.Core
             if (ReferenceEquals(this, other)) return true;
             if (other == null || counts.Count != other.counts.Count
                 || searchCounts.Count != other.searchCounts.Count
-                || debts.Count != other.debts.Count)
+                || debts.Count != other.debts.Count
+                || plannedWork.Count != other.plannedWork.Count)
                 return false;
             foreach (var pair in counts)
                 if (!other.counts.TryGetValue(pair.Key, out int value)
@@ -133,6 +158,8 @@ namespace EPrimeReadouts.Core
                 if (!other.debts.TryGetValue(pair.Key, out PlannedWorkDebt value)
                     || !value.Equals(pair.Value))
                     return false;
+            for (int i = 0; i < plannedWork.Count; i++)
+                if (!plannedWork[i].Equals(other.plannedWork[i])) return false;
             return true;
         }
 

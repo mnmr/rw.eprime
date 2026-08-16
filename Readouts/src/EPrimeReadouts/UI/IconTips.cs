@@ -13,8 +13,28 @@ namespace EPrimeReadouts.UI
     /// deferred until the owned tooltip window opens after its hover delay.
     public static class IconTips
     {
-        /// Pool breakdown rows per tooltip column before a new column starts.
-        private const int MaxBreakdownRowsPerColumn = 20;
+        /// Pool breakdowns use up to this many columns. Rows are balanced from
+        /// the visible, non-zero members before the immutable tip is published.
+        private const int MaxBreakdownColumns = 3;
+        private const int MaxPlannedWorkRows = 8;
+
+        private static readonly TipColumnAlignment[] singleWorkAlignments =
+        {
+            TipColumnAlignment.Left,
+            TipColumnAlignment.Right,
+            TipColumnAlignment.Right,
+            TipColumnAlignment.Right,
+        };
+
+        private static readonly TipColumnAlignment[] pooledWorkAlignments =
+        {
+            TipColumnAlignment.Left,
+            TipColumnAlignment.Left,
+            TipColumnAlignment.Right,
+            TipColumnAlignment.Right,
+            TipColumnAlignment.Right,
+            TipColumnAlignment.Right,
+        };
 
         private readonly struct TipRevision : IEquatable<TipRevision>
         {
@@ -79,7 +99,8 @@ namespace EPrimeReadouts.UI
         // Key: canonical token.
         // Value: immutable StructuredTip/TipModel graph.
         // Dependencies: shared render snapshot identity, ThresholdsVersion,
-        // language revision, and the storage-only/hide-forbidden count-basis options.
+        // language revision, and the storage-only, hide-forbidden, and
+        // show-negative count-basis/presentation options.
         // Refresh policy: probed only at display-session start; a dependency
         // change rebuilds on the next display, never mid-display.
         // Equality policy: cache hits preserve StructuredTip identity.
@@ -177,6 +198,7 @@ namespace EPrimeReadouts.UI
             string canonical = token != null ? SlotToken.Canonical(token) : def.defName;
             bool isLegacyPool = token != null && SlotToken.IsPool(token);
             bool isPoolRef = token != null && SlotToken.IsPoolRef(token);
+            bool pooled = isLegacyPool || isPoolRef;
 
             string title;
             System.Collections.Generic.IReadOnlyList<string> poolMembers = null;
@@ -204,10 +226,22 @@ namespace EPrimeReadouts.UI
                 title = def.LabelCap;
             }
 
+            string badge = count.ToString();
+            if (!pooled && def != null && state.RenderData != null)
+            {
+                int inStock = StockOf(state.RenderData.Counts,
+                    EPrimeReadoutsMod.Settings, def.defName);
+                PlannedWorkTipLayout headerLayout = PlannedWorkTipLayout.For(
+                    pooled: false, available: count, inStock: inStock);
+                if (headerLayout.ShowStockInHeader)
+                    badge = "EPR.TipAvailableStock"
+                        .Translate(count, inStock).ToString();
+            }
+
             var model = new TipModel
             {
                 Title = title,
-                Badge = count.ToString(),
+                Badge = badge,
             };
 
             if (!isLegacyPool && !isPoolRef)
@@ -249,11 +283,16 @@ namespace EPrimeReadouts.UI
                     memberValues.Add(memberCount.ToString());
                 }
                 if (memberLabels.Count > 0)
+                {
+                    int rowsPerColumn = ColumnGrid.RowsPerColumn(
+                        memberLabels.Count, MaxBreakdownColumns);
                     model.AddSection().FactGrid(
-                        memberLabels, memberValues, MaxBreakdownRowsPerColumn);
+                        memberLabels, memberValues, rowsPerColumn);
+                }
             }
 
-            AddPlannedWorkSection(state, model, def, poolMembers, count);
+            AddPlannedWorkSection(state, model, def, poolMembers,
+                pooled);
 
             var tipStore = state.Store;
             if (tipStore != null && tipStore.Model.Thresholds.TryGetValue(canonical, out var spec))
@@ -265,63 +304,195 @@ namespace EPrimeReadouts.UI
             return new StructuredTip("EPR.Tip." + canonical, model);
         }
 
-        /// Explains a badge that sits below the stock actually on the map:
-        /// what is held, what planned work has claimed, and what is left.
-        /// Omitted entirely when nothing is reserved, which is every tooltip
-        /// while the reservation options are off.
+        /// Work/resource rows come from the shared immutable count snapshot.
+        /// Pool tips filter the rows to their own members; single-resource tips
+        /// use the same table with the implicit Resource column omitted.
         private static void AddPlannedWorkSection(
             BuildState state, TipModel model, ThingDef def,
             System.Collections.Generic.IReadOnlyList<string> poolMembers,
-            int available)
+            bool pooled)
         {
             if (state.RenderData == null) return;
             var counts = state.RenderData.Counts;
-            if (counts.Debts.Count == 0) return;
+            if (counts.PlannedWork.Count == 0) return;
+
+            System.Collections.Generic.IReadOnlyList<string> resources;
+            if (pooled)
+            {
+                if (poolMembers == null || poolMembers.Count == 0) return;
+                resources = poolMembers;
+            }
+            else
+            {
+                if (def == null) return;
+                resources = new[] { def.defName };
+            }
+
+            PlannedWorkSelection selection = PlannedWorkSelection.ForResources(
+                counts.PlannedWork, resources, MaxPlannedWorkRows);
+            if (selection.Rows.Count == 0 && selection.OverflowCount == 0) return;
 
             var settings = EPrimeReadoutsMod.Settings;
-            int onHand = 0, bills = 0, buildables = 0;
-            if (poolMembers != null)
-            {
-                for (int m = 0; m < poolMembers.Count; m++)
-                    AccumulatePlannedWork(counts, poolMembers[m], settings,
-                        ref onHand, ref bills, ref buildables);
-            }
-            else if (def != null)
-            {
-                AccumulatePlannedWork(counts, def.defName, settings,
-                    ref onHand, ref bills, ref buildables);
-            }
-            if (bills <= 0 && buildables <= 0) return;
+            PlannedWorkTipLayout layout = PlannedWorkTipLayout.For(
+                pooled, available: 0, inStock: 0);
+            TipColumnAlignment[] alignments = pooled
+                ? pooledWorkAlignments : singleWorkAlignments;
+            var section = model.AddSection();
+            section.Columns(Headers(layout), TipText.DimColor,
+                alignments: alignments);
+            section.Rule();
 
-            var section = model.AddSection(UiText.Get("EPR.TipPlannedWork"));
-            section.Fact(UiText.Get("EPR.TipOnHand"), onHand.ToString());
-            if (bills > 0)
-                section.Fact(UiText.Get("EPR.TipReservedBills"), "-" + bills.ToString());
-            if (buildables > 0)
-                section.Fact(UiText.Get("EPR.TipReservedBuildables"),
-                    "-" + buildables.ToString());
-            section.Fact(UiText.Get("EPR.TipAvailable"), available.ToString());
+            for (int i = 0; i < selection.Rows.Count; i++)
+            {
+                PlannedWorkEntry entry = selection.Rows[i];
+                section.Columns(Cells(counts, settings,
+                        entry, layout),
+                    color: entry.Source == PlannedWorkSource.QualityJob
+                        ? EprStyle.SelectionTint : (Color?)null,
+                    alignments: alignments);
+            }
+
+            if (selection.OverflowCount > 0)
+                section.Columns(OverflowCells(
+                        counts, settings, selection, layout),
+                    color: selection.OverflowSource
+                               == PlannedWorkSource.QualityJob
+                        ? EprStyle.SelectionTint : (Color?)null,
+                    alignments: alignments);
         }
 
-        /// Adds one def's undebted count and its debt to the running totals,
-        /// using the same narrowed basis the badge itself was built from.
-        private static void AccumulatePlannedWork(
-            RenderCountSnapshot counts, string defName, ReadoutSettings settings,
-            ref int onHand, ref int bills, ref int buildables)
+        private static string[] Headers(PlannedWorkTipLayout layout)
+        {
+            if (layout.ShowResourceColumn && layout.ShowInStockColumn)
+                return new[]
+                {
+                    UiText.Get("EPR.TipPlannedWork"),
+                    UiText.Get("EPR.TipResource"),
+                    UiText.Get("EPR.TipQueued"),
+                    UiText.Get("EPR.TipEach"),
+                    UiText.Get("EPR.TipDrain"),
+                    UiText.Get("EPR.TipInStock"),
+                };
+            return new[]
+            {
+                UiText.Get("EPR.TipPlannedWork"),
+                UiText.Get("EPR.TipQueued"),
+                UiText.Get("EPR.TipEach"),
+                UiText.Get("EPR.TipDrain"),
+            };
+        }
+
+        private static string[] Cells(
+            RenderCountSnapshot counts,
+            ReadoutSettings settings,
+            PlannedWorkEntry entry,
+            PlannedWorkTipLayout layout)
+        {
+            if (layout.ShowResourceColumn && layout.ShowInStockColumn)
+            {
+                string stock = StockOf(counts, settings,
+                    entry.ResourceDefName).ToString();
+                return new[]
+                {
+                    WorkLabel(entry),
+                    ResourceLabel(entry.ResourceDefName),
+                    entry.Queued.ToString(),
+                    entry.UnitCost.ToString(),
+                    "-" + entry.Drain.ToString(),
+                    stock,
+                };
+            }
+            return new[]
+            {
+                WorkLabel(entry),
+                entry.Queued.ToString(),
+                entry.UnitCost.ToString(),
+                "-" + entry.Drain.ToString(),
+            };
+        }
+
+        private static string[] OverflowCells(
+            RenderCountSnapshot counts,
+            ReadoutSettings settings,
+            PlannedWorkSelection selection,
+            PlannedWorkTipLayout layout)
+        {
+            string resource = selection.OverflowResourceDefName;
+            string label = "EPR.TipOtherPlannedWork"
+                .Translate(selection.OverflowCount).ToString();
+            if (layout.ShowResourceColumn && layout.ShowInStockColumn)
+            {
+                string stock = resource != null
+                    ? StockOf(counts, settings, resource).ToString() : "—";
+                return new[]
+                {
+                    label,
+                    resource != null
+                        ? ResourceLabel(resource)
+                        : UiText.Get("EPR.TipMixedResources"),
+                    resource != null
+                        ? selection.OverflowQueued.ToString() : "—",
+                    "—",
+                    "-" + selection.OverflowDrain.ToString(),
+                    stock,
+                };
+            }
+            return new[]
+            {
+                label,
+                selection.OverflowQueued.ToString(),
+                "—",
+                "-" + selection.OverflowDrain.ToString(),
+            };
+        }
+
+        private static string WorkLabel(PlannedWorkEntry entry)
+        {
+            if (entry.Kind == PlannedWorkKind.Bill)
+            {
+                ThingDef product = DefDatabase<ThingDef>.GetNamedSilentFail(
+                    entry.WorkDefName);
+                if (product != null) return product.LabelCap;
+                RecipeDef recipe = DefDatabase<RecipeDef>.GetNamedSilentFail(
+                    entry.WorkDefName);
+                return recipe != null ? recipe.LabelCap : entry.WorkDefName;
+            }
+
+            BuildableDef buildable = DefDatabase<ThingDef>.GetNamedSilentFail(
+                entry.WorkDefName);
+            if (buildable == null)
+                buildable = DefDatabase<TerrainDef>.GetNamedSilentFail(
+                    entry.WorkDefName);
+            ThingDef stuff = entry.StuffDefName != null
+                ? DefDatabase<ThingDef>.GetNamedSilentFail(entry.StuffDefName)
+                : null;
+            return buildable != null
+                ? GenLabel.ThingLabel(buildable, stuff).CapitalizeFirst()
+                : entry.WorkDefName;
+        }
+
+        private static string ResourceLabel(string defName)
+        {
+            ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            return def != null ? def.LabelCap : defName;
+        }
+
+        private static int StockOf(
+            RenderCountSnapshot counts,
+            ReadoutSettings settings,
+            string defName)
         {
             if (counts.SearchCounts.Count == 0)
             {
                 counts.Counts.TryGetValue(defName, out int raw);
-                onHand += raw;
+                return raw;
             }
-            else if (counts.SearchCounts.TryGetValue(defName, out SearchCount search))
-            {
-                onHand += CountBasis.Displayed(search,
-                    settings.searchStorageOnly, settings.searchHideForbidden);
-            }
-            PlannedWorkDebt debt = counts.DebtOf(defName);
-            bills += debt.Bills;
-            buildables += debt.Buildables;
+            return counts.SearchCounts.TryGetValue(
+                       defName, out SearchCount search)
+                ? CountBasis.Displayed(search,
+                    settings.searchStorageOnly,
+                    settings.searchHideForbidden)
+                : 0;
         }
 
         internal static void Reset()

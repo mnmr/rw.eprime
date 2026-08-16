@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using EPrimeReadouts.Core;
 using UnityEngine;
 using Verse;
 
@@ -136,9 +137,14 @@ namespace EPrimeReadouts
         }
 
         public TipSection Columns(
-            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+            IReadOnlyList<string> cells,
+            Color? color = null,
+            Texture2D icon = null,
+            bool tight = false,
+            IReadOnlyList<TipColumnAlignment> alignments = null)
         {
-            Rows.Add(new TipColumnsRow(cells, color, icon, tight));
+            Rows.Add(new TipColumnsRow(
+                cells, color, icon, tight, alignments));
             return this;
         }
 
@@ -243,14 +249,20 @@ namespace EPrimeReadouts
         public readonly Color? Color;
         public readonly Texture2D Icon;
         public readonly bool Tight;
+        public readonly IReadOnlyList<TipColumnAlignment> Alignments;
 
         public TipColumnsRow(
-            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+            IReadOnlyList<string> cells,
+            Color? color = null,
+            Texture2D icon = null,
+            bool tight = false,
+            IReadOnlyList<TipColumnAlignment> alignments = null)
         {
             Cells = cells;
             Color = color;
             Icon = icon;
             Tight = tight;
+            Alignments = alignments;
         }
     }
 

@@ -18,13 +18,12 @@ namespace EPrimeReadouts.UI
         private const float TitleGap = 4f;     // title line -> first section
         private const float SectionGap = 5f;   // section -> separator -> section
         internal const float TableInset = 16f; // table left/right inset in content
-        private const float TableColGap = 20f; // between table columns
+        private const float InterColumnGap = 20f; // between table/grid columns
         private const float CellIconSize = 16f;
         private const float CellIconGap = 2f;  // first-cell text -> icon
         private const float RuleGapAbove = 2f; // table rule hugs the row above
         private const float RuleGapBelow = 3f;
         private const float RowTighten = 4f;   // tight rows pull toward their parent
-        private const float FactGridColGap = 8f; // between fact-grid columns
         internal const float MaxContentWidth = 800f;
 
         private static readonly Color SeparatorColor = new Color(1f, 1f, 1f, 0.2f);
@@ -199,7 +198,7 @@ namespace EPrimeReadouts.UI
                 float[] cols = ColumnWidths(section);
                 if (cols != null)
                 {
-                    float tableW = TableInset * 2f + TableColGap * (cols.Length - 1);
+                    float tableW = TableInset * 2f + InterColumnGap * (cols.Length - 1);
                     foreach (float col in cols) tableW += col;
                     w = Mathf.Max(w, tableW);
                 }
@@ -232,7 +231,7 @@ namespace EPrimeReadouts.UI
                 float[] cols = ColumnWidths(section);
                 if (cols != null)
                 {
-                    float tableW = TableInset * 2f + TableColGap * (cols.Length - 1);
+                    float tableW = TableInset * 2f + InterColumnGap * (cols.Length - 1);
                     foreach (float col in cols) tableW += col;
                     w = Mathf.Max(w, tableW);
                 }
@@ -289,7 +288,7 @@ namespace EPrimeReadouts.UI
             float w = 0f;
             for (int c = 0; c < cols; c++)
             {
-                if (c > 0) w += FactGridColGap;
+                if (c > 0) w += InterColumnGap;
                 FactGridColumnWidths(grid, c, out float labelW, out float valueW);
                 w += labelW + ColGap + valueW;
             }
@@ -428,7 +427,7 @@ namespace EPrimeReadouts.UI
                 float tableLineW;
                 if (tableCols != null)
                 {
-                    tableLineW = TableColGap * (tableCols.Length - 1);
+                    tableLineW = InterColumnGap * (tableCols.Length - 1);
                     foreach (float col in tableCols) tableLineW += col;
                 }
                 else tableLineW = contentW;
@@ -497,9 +496,19 @@ namespace EPrimeReadouts.UI
                                 string cell = i < cellCount ? cols.Cells[i] : null;
                                 if (!cell.NullOrEmpty())
                                 {
+                                    float textW = WrText.FitWidth(cell);
+                                    TipColumnAlignment alignment =
+                                        i < (cols.Alignments?.Count ?? 0)
+                                            ? cols.Alignments[i]
+                                            : TipColumnAlignment.Left;
+                                    float textX = TipTableLayout.TextX(
+                                        cx, tableCols[i], textW, alignment);
                                     geo.Cmds.Add(new Cmd
                                     {
-                                        Rect = new Rect(cx, y, tableCols[i], lineH),
+                                        Rect = new Rect(textX, y,
+                                            alignment == TipColumnAlignment.Right
+                                                ? textW : tableCols[i],
+                                            lineH),
                                         Color = rowColor,
                                         Text = cell,
                                         NoWrap = true,
@@ -518,7 +527,7 @@ namespace EPrimeReadouts.UI
                                         Icon = cols.Icon,
                                     });
                                 }
-                                cx += tableCols[i] + TableColGap;
+                                cx += tableCols[i] + InterColumnGap;
                             }
                             y += lineH;
                             break;
@@ -566,7 +575,7 @@ namespace EPrimeReadouts.UI
                                         NoWrap = true,
                                     });
                                 }
-                                gx += gLabelW + gridGap + gValueW + FactGridColGap;
+                                gx += gLabelW + gridGap + gValueW + InterColumnGap;
                             }
                             // Column-major: the first column always holds the
                             // most rows, so it alone sets the grid's height.
@@ -581,7 +590,7 @@ namespace EPrimeReadouts.UI
                             {
                                 indent = 0f;
                                 for (int i = 0; i < span.AlignColumn && i < tableCols.Length; i++)
-                                    indent += tableCols[i] + TableColGap;
+                                    indent += tableCols[i] + InterColumnGap;
                             }
                             float spanW = Mathf.Max(24f, tableLineW - indent);
                             float h = Text.CalcHeight(span.Text, spanW);

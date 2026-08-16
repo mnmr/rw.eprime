@@ -33,4 +33,13 @@ public class ColumnGridTests
         await Assert.That(ColumnGrid.RowsInColumn(2, 21, 20)).IsEqualTo(0);
         await Assert.That(ColumnGrid.RowsInColumn(0, 5, 20)).IsEqualTo(5);
     }
+
+    [Test]
+    public async Task RowsPerColumnLimitsAResourceGridToThreeColumns()
+    {
+        await Assert.That(ColumnGrid.RowsPerColumn(0, 3)).IsEqualTo(0);
+        await Assert.That(ColumnGrid.RowsPerColumn(2, 3)).IsEqualTo(1);
+        await Assert.That(ColumnGrid.RowsPerColumn(30, 3)).IsEqualTo(10);
+        await Assert.That(ColumnGrid.RowsPerColumn(31, 3)).IsEqualTo(11);
+    }
 }

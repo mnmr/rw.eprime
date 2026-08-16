@@ -1,9 +1,10 @@
 ﻿# Changelog
 
-## 1.0.8 — 2026-08-15
+## 1.0.8 — 2026-08-16
 
 - Added: Options to deduct resources needed to fulfill queued work, including support for EPrime's Quality Jobs.
-- Fixed: Rendering performance improvements.
+- Fixed: Resource tooltips now show material debt attributed to the bill or buildable responsible.
+- Fixed: Performance improvements.
 
 ## 1.0.7 — 2026-08-08
 

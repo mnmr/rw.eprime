@@ -1,100 +1,131 @@
 using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using EPrimeReadouts.Core;
 using RimWorld;
 using Verse;
 
 namespace EPrimeReadouts
 {
-    /// EPrime's Quality Jobs integration: how many times a bill or buildable is
-    /// expected to run before it hits its quality target. Bound against that
-    /// mod's declared public read-only surface (QualityJobs.QualityJobsApi), so
-    /// a version mismatch disables the feature instead of misreporting it.
+    /// Soft-bound Quality Jobs integration. The foreign snapshot is projected
+    /// into EPrime-owned immutable arrays only when QJA publishes a new object.
     internal static class QualityJobsBridge
     {
-        /// The neutral answer everywhere the integration is unavailable or the
-        /// work carries no quality target: one run, no rework.
-        internal const float NoRework = 1f;
-
-        /// The mod's own packageId, matched the way vanilla matches MayRequire
-        /// so a Workshop install's "_steam" suffix still resolves.
         private const string PackageId = "EPrime.QualityJobs";
 
-        // One-time binding: the loaded mod set is fixed for the process, so a
-        // failed or absent probe never retries. On any API mismatch or runtime
-        // failure the integration disables itself with a single warning and
-        // reservations fall back to one run per item.
         private static bool resolved;
         private static bool installed;
 
-        // Compiled once at bind time into cached static delegates so the
-        // throttled snapshot pass makes plain delegate calls with no
-        // MethodInfo.Invoke argument-array or boxing allocations.
-        private static Func<Bill, float> billAttempts;
-        private static Func<Thing, float> constructibleAttempts;
+        private static Func<object> getManagedJobs;
+        private static Func<object, object> getJobs;
+        private static Func<object, int> getJobCount;
+        private static Func<object, int, object> getJobAt;
+        private static Func<object, Map> getMap;
+        private static Func<object, double> getProbability;
+        private static Func<object, Bill_Production> getBill;
+        private static Func<object, RecipeDef> getRecipe;
+        private static Func<object, ThingDef> getProduct;
+        private static Func<object, int> getRemainingIterations;
+        private static Func<object, ThingDef> getBuildableDef;
+        private static Func<object, ThingDef> getStuff;
+        private static Func<object, object> getTargets;
+        private static Func<object, int> getTargetCount;
+        private static Func<object, int, Thing> getTargetAt;
+        private static Type billJobType;
+        private static Type constructionJobType;
 
-        /// True when Quality Jobs is in the active mod list. Drives the options
-        /// dialog's disabled state, and is deliberately independent of whether
-        /// the API bound: a player who has the mod should see why the toggle is
-        /// misbehaving in the log, not a silently greyed-out row.
+        private static readonly Func<object, ManagedJobsSnapshot> buildSnapshot =
+            BuildSnapshot;
+        private static readonly IEqualityComparer<ManagedJobsSnapshot>
+            distinctSourceComparer = new DistinctSourceComparer();
+
+        // Cache contract:
+        // Owner: the active QJA store/world, behind process-scoped API binding.
+        // Key: QJA's published snapshot object, by reference identity.
+        // Value: immutable EPrime-owned bill/construction handle projection.
+        // Dependencies: Map, Bill, Recipe, Product,
+        //               RemainingAcceptedIterations and probability for bills;
+        //               Map, BuildableDef, Stuff, Targets and probability for
+        //               construction. UFTs and settings are intentionally not
+        //               consumed independently.
+        // Refresh policy: immediate on a new QJA snapshot reference.
+        // Equality policy: every distinct QJA source produces a distinct bridge
+        //                  projection so live handles are reread downstream;
+        //                  the resource projection preserves identity only
+        //                  after its complete rendered contents compare equal.
+        // Teardown: Reset releases source and projected world/game references.
+        private static readonly ReferenceProjectionCache<object, ManagedJobsSnapshot>
+            snapshotCache = new ReferenceProjectionCache<object, ManagedJobsSnapshot>(
+                buildSnapshot, distinctSourceComparer);
+
         internal static bool Installed
         {
             get { Resolve(); return installed; }
         }
 
-        /// True when the API bound and the expected-attempts queries are live.
         internal static bool Available
         {
-            get { Resolve(); return billAttempts != null; }
+            get { Resolve(); return getManagedJobs != null; }
         }
 
-        /// Expected production runs of this bill per product that meets its
-        /// quality target. Returns 1 when the integration is unavailable, the
-        /// bill is unmanaged, or it carries no quality target.
-        internal static float ExpectedAttemptsForBill(Bill bill)
+        internal static ManagedJobsSnapshot GetManagedJobs()
         {
             Resolve();
-            if (billAttempts == null || bill == null) return NoRework;
-            try
-            {
-                return Sane(billAttempts(bill));
-            }
-            catch (Exception exception)
-            {
-                Disable("bill quality lookup failed", exception);
-                return NoRework;
-            }
-        }
-
-        /// Expected build attempts for a blueprint or frame, counting the
-        /// deconstruct-and-rebuild cycles a below-target roll triggers.
-        internal static float ExpectedAttemptsForConstructible(Thing thing)
-        {
-            Resolve();
-            if (constructibleAttempts == null || thing == null) return NoRework;
-            try
-            {
-                return Sane(constructibleAttempts(thing));
-            }
-            catch (Exception exception)
-            {
-                Disable("construction quality lookup failed", exception);
-                return NoRework;
-            }
+            if (getManagedJobs == null) return ManagedJobsSnapshot.Empty;
+            object source = getManagedJobs();
+            return source == null
+                ? ManagedJobsSnapshot.Empty
+                : snapshotCache.Get(source);
         }
 
         internal static void Reset()
         {
-            // Binding is process-scoped and def-independent; nothing to release.
-            // Present so the teardown path can stay uniform across bridges.
+            // Binding is process-scoped. Only the world-owned source and
+            // projection references must be released at teardown.
+            snapshotCache.Clear();
         }
 
-        /// A foreign mod's answer is untrusted input: anything not finite and
-        /// at least one run would corrupt the reservation arithmetic.
-        private static float Sane(float attempts)
-            => attempts > NoRework && !float.IsNaN(attempts)
-               && !float.IsInfinity(attempts)
-                ? attempts : NoRework;
+        private static ManagedJobsSnapshot BuildSnapshot(object source)
+        {
+            object jobs = getJobs(source);
+            int count = getJobCount(jobs);
+            List<ManagedBillJob> bills = null;
+            List<ManagedConstructionJob> construction = null;
+            for (int i = 0; i < count; i++)
+            {
+                object job = getJobAt(jobs, i);
+                if (billJobType.IsInstanceOfType(job))
+                {
+                    if (bills == null) bills = new List<ManagedBillJob>();
+                    bills.Add(new ManagedBillJob(
+                        getMap(job), getBill(job), getRecipe(job),
+                        getProduct(job), getRemainingIterations(job),
+                        getProbability(job)));
+                    continue;
+                }
+                if (!constructionJobType.IsInstanceOfType(job)) continue;
+
+                object targets = getTargets(job);
+                int targetCount = getTargetCount(targets);
+                var copiedTargets = new Thing[targetCount];
+                for (int target = 0; target < targetCount; target++)
+                    copiedTargets[target] = getTargetAt(targets, target);
+                if (construction == null)
+                    construction = new List<ManagedConstructionJob>();
+                construction.Add(new ManagedConstructionJob(
+                    getMap(job), getBuildableDef(job), getStuff(job),
+                    copiedTargets, getProbability(job)));
+            }
+
+            if (bills == null && construction == null)
+                return ManagedJobsSnapshot.Empty;
+            return new ManagedJobsSnapshot(
+                bills != null ? bills.ToArray() : Array.Empty<ManagedBillJob>(),
+                construction != null
+                    ? construction.ToArray()
+                    : Array.Empty<ManagedConstructionJob>());
+        }
 
         private static void Resolve()
         {
@@ -107,58 +138,287 @@ namespace EPrimeReadouts
             Type api = GenTypes.GetTypeInAnyAssembly("QualityJobs.QualityJobsApi");
             if (api == null)
             {
-                Log.Warning("[EPrimeReadouts] Quality Jobs is active but exposes "
-                    + "no integration API; quality rework is not reserved for.");
+                WarnChangedApi();
                 return;
             }
-            const BindingFlags flags = BindingFlags.Public | BindingFlags.Static;
-            MethodInfo forBill = api.GetMethod("ExpectedAttemptsForBill", flags);
-            MethodInfo forConstructible =
-                api.GetMethod("ExpectedAttemptsForConstructible", flags);
-            if (!ShapeMatches(forBill, typeof(Bill))
-                || !ShapeMatches(forConstructible, typeof(Thing)))
-            {
-                Log.Warning("[EPrimeReadouts] Quality Jobs detected but its "
-                    + "integration API changed; quality rework is not reserved for.");
-                return;
-            }
+
             try
             {
-                billAttempts = Compile<Bill>(forBill);
-                constructibleAttempts = Compile<Thing>(forConstructible);
+                const BindingFlags flags = BindingFlags.Public
+                    | BindingFlags.Static;
+                MethodInfo get = api.GetMethod("GetManagedJobs", flags);
+                if (get == null || get.GetParameters().Length != 0
+                    || get.ReturnType == typeof(void))
+                    throw new MissingMemberException("GetManagedJobs");
+
+                Type snapshotType = get.ReturnType;
+                PropertyInfo jobsProperty = Property(snapshotType, "Jobs");
+                Type jobsType = jobsProperty.PropertyType;
+                PropertyInfo jobCountProperty = Property(jobsType, "Count");
+                PropertyInfo jobItemProperty = Indexer(jobsType);
+                Type jobType = jobItemProperty.PropertyType;
+
+                Assembly assembly = api.Assembly;
+                billJobType = assembly.GetType("QualityJobs.ManagedBillJob", true);
+                constructionJobType = assembly.GetType(
+                    "QualityJobs.ManagedConstructionJob", true);
+                if (!jobType.IsAssignableFrom(billJobType)
+                    || !jobType.IsAssignableFrom(constructionJobType))
+                    throw new MissingMemberException("managed job types");
+
+                PropertyInfo mapProperty = Property(jobType, "Map");
+                PropertyInfo probabilityProperty = Property(
+                    jobType, "ProbabilityAtOrAboveTarget");
+                PropertyInfo billProperty = Property(billJobType, "Bill");
+                PropertyInfo recipeProperty = Property(billJobType, "Recipe");
+                PropertyInfo productProperty = Property(billJobType, "Product");
+                PropertyInfo remainingProperty = Property(
+                    billJobType, "RemainingAcceptedIterations");
+                PropertyInfo buildableProperty = Property(
+                    constructionJobType, "BuildableDef");
+                PropertyInfo stuffProperty = Property(constructionJobType, "Stuff");
+                PropertyInfo targetsProperty = Property(
+                    constructionJobType, "Targets");
+                Type targetsType = targetsProperty.PropertyType;
+                PropertyInfo targetCountProperty = Property(targetsType, "Count");
+                PropertyInfo targetItemProperty = Indexer(targetsType);
+
+                RequireAssignable(mapProperty, typeof(Map));
+                RequireExact(probabilityProperty, typeof(double));
+                RequireAssignable(billProperty, typeof(Bill_Production));
+                RequireAssignable(recipeProperty, typeof(RecipeDef));
+                RequireAssignable(productProperty, typeof(ThingDef));
+                RequireExact(remainingProperty, typeof(int));
+                RequireAssignable(buildableProperty, typeof(ThingDef));
+                RequireAssignable(stuffProperty, typeof(ThingDef));
+                RequireExact(jobCountProperty, typeof(int));
+                RequireExact(targetCountProperty, typeof(int));
+                RequireAssignable(targetItemProperty, typeof(Thing));
+
+                getManagedJobs = CompileStaticObject(get);
+                getJobs = CompileProperty<object>(jobsProperty);
+                getJobCount = CompileProperty<int>(jobCountProperty);
+                getJobAt = CompileObjectIndexer(jobItemProperty);
+                getMap = CompileProperty<Map>(mapProperty);
+                getProbability = CompileProperty<double>(probabilityProperty);
+                getBill = CompileProperty<Bill_Production>(billProperty);
+                getRecipe = CompileProperty<RecipeDef>(recipeProperty);
+                getProduct = CompileProperty<ThingDef>(productProperty);
+                getRemainingIterations = CompileProperty<int>(remainingProperty);
+                getBuildableDef = CompileProperty<ThingDef>(buildableProperty);
+                getStuff = CompileProperty<ThingDef>(stuffProperty);
+                getTargets = CompileProperty<object>(targetsProperty);
+                getTargetCount = CompileProperty<int>(targetCountProperty);
+                getTargetAt = CompileIndexer<Thing>(targetItemProperty);
             }
             catch (Exception exception)
             {
-                billAttempts = null;
-                constructibleAttempts = null;
+                getManagedJobs = null;
+                snapshotCache.Clear();
                 Log.Warning("[EPrimeReadouts] Quality Jobs integration API "
-                    + "binding failed; quality rework is not reserved for: "
+                    + "binding failed; quality rework is unavailable: "
                     + exception.Message);
             }
         }
 
-        private static bool ShapeMatches(MethodInfo method, Type parameterType)
+        private static PropertyInfo Property(Type owner, string name)
         {
-            if (method == null || method.ReturnType != typeof(float)) return false;
-            ParameterInfo[] parameters = method.GetParameters();
-            return parameters.Length == 1
-                && parameters[0].ParameterType == parameterType;
+            PropertyInfo property = owner.GetProperty(
+                name, BindingFlags.Instance | BindingFlags.Public);
+            if (property != null) return property;
+            Type[] inherited = owner.GetInterfaces();
+            for (int i = 0; i < inherited.Length; i++)
+            {
+                property = inherited[i].GetProperty(
+                    name, BindingFlags.Instance | BindingFlags.Public);
+                if (property != null) return property;
+            }
+            throw new MissingMemberException(owner.FullName, name);
         }
 
-        private static Func<T, float> Compile<T>(MethodInfo method)
+        private static PropertyInfo Indexer(Type owner)
         {
-            ParameterExpression argument = Expression.Parameter(typeof(T), "arg");
-            return Expression.Lambda<Func<T, float>>(
-                Expression.Call(method, argument), argument).Compile();
+            PropertyInfo property = owner.GetProperty(
+                "Item", BindingFlags.Instance | BindingFlags.Public);
+            if (property == null || property.GetIndexParameters().Length != 1
+                || property.GetIndexParameters()[0].ParameterType != typeof(int))
+                throw new MissingMemberException(owner.FullName, "Item[int]");
+            return property;
         }
 
-        private static void Disable(string what, Exception exception)
+        private static void RequireExact(PropertyInfo property, Type expected)
         {
-            billAttempts = null;
-            constructibleAttempts = null;
-            Log.Warning("[EPrimeReadouts] Quality Jobs " + what
-                + "; quality rework is no longer reserved for: "
-                + exception.Message);
+            if (property.PropertyType != expected)
+                throw new MissingMemberException(
+                    property.DeclaringType?.FullName, property.Name);
+        }
+
+        private static void RequireAssignable(PropertyInfo property, Type expected)
+        {
+            if (!expected.IsAssignableFrom(property.PropertyType))
+                throw new MissingMemberException(
+                    property.DeclaringType?.FullName, property.Name);
+        }
+
+        private static Func<object> CompileStaticObject(MethodInfo method)
+            => Expression.Lambda<Func<object>>(
+                Expression.Convert(Expression.Call(method), typeof(object)))
+                .Compile();
+
+        private static Func<object, T> CompileProperty<T>(PropertyInfo property)
+        {
+            ParameterExpression instance = Expression.Parameter(
+                typeof(object), "instance");
+            return Expression.Lambda<Func<object, T>>(
+                Expression.Convert(
+                    Expression.Property(
+                        Expression.Convert(instance, property.DeclaringType),
+                        property),
+                    typeof(T)),
+                instance).Compile();
+        }
+
+        private static Func<object, int, object> CompileObjectIndexer(
+            PropertyInfo property) => CompileIndexer<object>(property);
+
+        private static Func<object, int, T> CompileIndexer<T>(PropertyInfo property)
+        {
+            ParameterExpression instance = Expression.Parameter(
+                typeof(object), "instance");
+            ParameterExpression index = Expression.Parameter(typeof(int), "index");
+            return Expression.Lambda<Func<object, int, T>>(
+                Expression.Convert(
+                    Expression.Property(
+                        Expression.Convert(instance, property.DeclaringType),
+                        property, index),
+                    typeof(T)),
+                instance, index).Compile();
+        }
+
+        private static void WarnChangedApi()
+        {
+            Log.Warning("[EPrimeReadouts] Quality Jobs is active but its "
+                + "managed-jobs API is unavailable; quality rework is disabled.");
+        }
+
+        private sealed class DistinctSourceComparer
+            : IEqualityComparer<ManagedJobsSnapshot>
+        {
+            public bool Equals(
+                ManagedJobsSnapshot left, ManagedJobsSnapshot right) => false;
+
+            public int GetHashCode(ManagedJobsSnapshot value) => 0;
+        }
+
+        internal sealed class ManagedJobsSnapshot
+            : IEquatable<ManagedJobsSnapshot>
+        {
+            internal static readonly ManagedJobsSnapshot Empty =
+                new ManagedJobsSnapshot(
+                    Array.Empty<ManagedBillJob>(),
+                    Array.Empty<ManagedConstructionJob>());
+
+            internal ManagedJobsSnapshot(
+                ManagedBillJob[] bills,
+                ManagedConstructionJob[] construction)
+            {
+                Bills = bills;
+                Construction = construction;
+            }
+
+            internal readonly ManagedBillJob[] Bills;
+            internal readonly ManagedConstructionJob[] Construction;
+
+            public bool Equals(ManagedJobsSnapshot other)
+            {
+                if (other == null
+                    || Bills.Length != other.Bills.Length
+                    || Construction.Length != other.Construction.Length)
+                    return false;
+                for (int i = 0; i < Bills.Length; i++)
+                    if (!Bills[i].Equals(other.Bills[i])) return false;
+                for (int i = 0; i < Construction.Length; i++)
+                    if (!Construction[i].Equals(other.Construction[i])) return false;
+                return true;
+            }
+
+            public override bool Equals(object obj)
+                => Equals(obj as ManagedJobsSnapshot);
+
+            public override int GetHashCode()
+                => (Bills.Length * 397) ^ Construction.Length;
+        }
+
+        internal readonly struct ManagedBillJob : IEquatable<ManagedBillJob>
+        {
+            internal ManagedBillJob(
+                Map map,
+                Bill_Production bill,
+                RecipeDef recipe,
+                ThingDef product,
+                int remainingAcceptedIterations,
+                double probability)
+            {
+                Map = map;
+                Bill = bill;
+                Recipe = recipe;
+                Product = product;
+                RemainingAcceptedIterations = remainingAcceptedIterations;
+                Probability = probability;
+            }
+
+            internal readonly Map Map;
+            internal readonly Bill_Production Bill;
+            internal readonly RecipeDef Recipe;
+            internal readonly ThingDef Product;
+            internal readonly int RemainingAcceptedIterations;
+            internal readonly double Probability;
+
+            public bool Equals(ManagedBillJob other)
+                => ReferenceEquals(Map, other.Map)
+                   && ReferenceEquals(Bill, other.Bill)
+                   && ReferenceEquals(Recipe, other.Recipe)
+                   && ReferenceEquals(Product, other.Product)
+                   && RemainingAcceptedIterations
+                   == other.RemainingAcceptedIterations
+                   && Probability.Equals(other.Probability);
+        }
+
+        internal readonly struct ManagedConstructionJob
+            : IEquatable<ManagedConstructionJob>
+        {
+            internal ManagedConstructionJob(
+                Map map,
+                ThingDef buildableDef,
+                ThingDef stuff,
+                Thing[] targets,
+                double probability)
+            {
+                Map = map;
+                BuildableDef = buildableDef;
+                Stuff = stuff;
+                Targets = targets;
+                Probability = probability;
+            }
+
+            internal readonly Map Map;
+            internal readonly ThingDef BuildableDef;
+            internal readonly ThingDef Stuff;
+            internal readonly Thing[] Targets;
+            internal readonly double Probability;
+
+            public bool Equals(ManagedConstructionJob other)
+            {
+                if (!ReferenceEquals(Map, other.Map)
+                    || !ReferenceEquals(BuildableDef, other.BuildableDef)
+                    || !ReferenceEquals(Stuff, other.Stuff)
+                    || !Probability.Equals(other.Probability)
+                    || Targets.Length != other.Targets.Length)
+                    return false;
+                for (int i = 0; i < Targets.Length; i++)
+                    if (!ReferenceEquals(Targets[i], other.Targets[i])) return false;
+                return true;
+            }
         }
     }
 }

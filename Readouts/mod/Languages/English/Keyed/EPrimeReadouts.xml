@@ -53,10 +53,14 @@
   <EPR.QualityJobsMissingTip>Requires EPrime's Quality Jobs, which is not installed.</EPR.QualityJobsMissingTip>
   <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs is installed but does not offer the integration this needs. Update it to enable this option.</EPR.QualityJobsOutdatedTip>
   <EPR.TipPlannedWork>Planned Work</EPR.TipPlannedWork>
-  <EPR.TipOnHand>On hand</EPR.TipOnHand>
-  <EPR.TipReservedBills>Bills</EPR.TipReservedBills>
-  <EPR.TipReservedBuildables>Buildables</EPR.TipReservedBuildables>
-  <EPR.TipAvailable>Available</EPR.TipAvailable>
+  <EPR.TipResource>Resource</EPR.TipResource>
+  <EPR.TipQueued>Queued</EPR.TipQueued>
+  <EPR.TipEach>Each</EPR.TipEach>
+  <EPR.TipDrain>Drain</EPR.TipDrain>
+  <EPR.TipInStock>In Stock</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} available · {1} in stock</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Other ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Mixed</EPR.TipMixedResources>
   <EPR.ClickOptions>Click Options</EPR.ClickOptions>
   <EPR.SearchOptions>Search Options</EPR.SearchOptions>
   <EPR.HoverOptions>Hover Options</EPR.HoverOptions>

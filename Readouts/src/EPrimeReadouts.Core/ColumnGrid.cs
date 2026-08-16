@@ -5,6 +5,9 @@ namespace EPrimeReadouts.Core
     /// rather than taller.
     public static class ColumnGrid
     {
+        public static int RowsPerColumn(int itemCount, int maxColumns) =>
+            itemCount <= 0 ? 0 : ((itemCount - 1) / maxColumns) + 1;
+
         public static int ColumnCount(int itemCount, int maxRows) =>
             itemCount <= 0 ? 0 : (itemCount + maxRows - 1) / maxRows;
 

@@ -13,13 +13,14 @@ namespace EPrimeReadouts
     {
         internal static RenderCountSnapshot BuildSnapshot(
             Map map,
-            PlannedWorkOptions plannedWork)
+            PlannedWorkOptions plannedWork,
+            QualityJobsPlannedWorkSnapshot qualityJobs)
         {
             var accumulator = new CountAccumulator();
             Dictionary<int, Map> levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
-                AccumulateMap(map, accumulator, plannedWork);
+                AccumulateMap(map, accumulator, plannedWork, qualityJobs);
                 return accumulator.ToSnapshot();
             }
 
@@ -33,14 +34,18 @@ namespace EPrimeReadouts
                 Map level = levels[order[i]];
                 if (level == null || level.Disposed) continue;
                 if (ReferenceEquals(level, map)) sawQueriedMap = true;
-                AccumulateMap(level, accumulator, plannedWork);
+                AccumulateMap(level, accumulator, plannedWork, qualityJobs);
             }
-            if (!sawQueriedMap) AccumulateMap(map, accumulator, plannedWork);
+            if (!sawQueriedMap)
+                AccumulateMap(map, accumulator, plannedWork, qualityJobs);
             return accumulator.ToSnapshot();
         }
 
         private static void AccumulateMap(
-            Map map, CountAccumulator accumulator, PlannedWorkOptions plannedWork)
+            Map map,
+            CountAccumulator accumulator,
+            PlannedWorkOptions plannedWork,
+            QualityJobsPlannedWorkSnapshot qualityJobs)
         {
             foreach (var pair in map.resourceCounter.AllCountedAmounts)
                 accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
@@ -100,7 +105,8 @@ namespace EPrimeReadouts
             // the debt a counter shows always belongs to the same instant as the
             // stock it was subtracted from. No-op when every option is off.
             if (plannedWork.Any)
-                PlannedWorkCounts.Accumulate(map, accumulator, plannedWork);
+                PlannedWorkCounts.Accumulate(
+                    map, accumulator, plannedWork, qualityJobs);
         }
 
         /// Current count for a single def from the shared render snapshot.

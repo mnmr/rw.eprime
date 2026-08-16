@@ -29,7 +29,7 @@ Features:
 - Options: Fully customizable groups, tiers and resource pools in the built-in settings dialog.
 - Tiered: Click to cycle how many tiers are rendered.
 - Ignore Missing: Per-item option to skip rendering if count is 0 (to keep readouts minimal).
-- Planned Work: Options to subtract resources needed for queued work (aka material debt).
+- Planned Work: Options to subtract resources needed for queued work (aka material debt), with support for EPrime's Quality Jobs.
 - Warning Thresholds: Per-item option to set thresholds, so counts render in different colors when running low.
 - Search: Quick search and inline result display. Can be configured or turned off in options.
 

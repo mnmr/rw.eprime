@@ -6,6 +6,34 @@ namespace EPrimeReadouts.Core.Tests;
 /// material a bill or an unfinished buildable takes off the displayed counter.
 public class PlannedWorkMathTests
 {
+    [Test]
+    public async Task QualityProbabilityConvertsToGeometricExpectedAttempts()
+    {
+        await Assert.That(PlannedWorkMath.ExpectedAttempts(0.25))
+            .IsEqualTo(4f);
+    }
+
+    [Test]
+    public async Task FailedQualityBuildCountsEveryRemainingRebuildAttempt()
+    {
+        await Assert.That(PlannedWorkMath.FailedBuildableDebt(
+                fullCost: 100,
+                expectedAttempts: 4f,
+                returnedFraction: 0.5f))
+            .IsEqualTo(200);
+    }
+
+    [Test]
+    public async Task UnreachableQualityWithFullRefundOwesOnlyCurrentOutstanding()
+    {
+        await Assert.That(PlannedWorkMath.BuildableDebt(
+                outstanding: 60,
+                fullCost: 100,
+                expectedAttempts: float.PositiveInfinity,
+                returnedFraction: 1f))
+            .IsEqualTo(60);
+    }
+
     // ---- bill iterations ---------------------------------------------------
 
     [Test]
@@ -223,5 +251,44 @@ public class PlannedWorkMathTests
         await Assert.That(PlannedWorkMath.BuildableDebt(
             outstanding: 60, fullCost: 100,
             expectedAttempts: 0.1f, returnedFraction: 0.5f)).IsEqualTo(60);
+    }
+
+    [Test]
+    public async Task CarriedStackCreditsEachDestinationOnlyUpToItsOutstandingNeed()
+    {
+        var carried = new CappedMaterialCredit(60);
+
+        int firstBlueprint = carried.Take(outstanding: 20);
+        int queuedBlueprint = carried.Take(outstanding: 40);
+
+        await Assert.That(firstBlueprint).IsEqualTo(20);
+        await Assert.That(queuedBlueprint).IsEqualTo(40);
+        await Assert.That(carried.Remaining).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ConstructionHaulPreservesPrimaryNeedBeforeCreditingCurrentTarget()
+    {
+        CappedMaterialCredit remainder = PlannedWorkMath.AllocateConstructionHaul(
+            carried: 50,
+            primaryOutstanding: 40,
+            currentOutstanding: 40,
+            out int primaryCredit,
+            out int currentCredit);
+
+        await Assert.That(primaryCredit).IsEqualTo(40);
+        await Assert.That(currentCredit).IsEqualTo(10);
+        await Assert.That(remainder.Remaining).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task ConstructionHaulChoosesNearestEligibleQueuedDestination()
+    {
+        var selection = new ClosestPlannedDestination();
+        selection.Consider(index: 0, distanceSquared: 100f, eligible: true);
+        selection.Consider(index: 1, distanceSquared: 9f, eligible: true);
+        selection.Consider(index: 2, distanceSquared: 1f, eligible: false);
+
+        await Assert.That(selection.Index).IsEqualTo(1);
     }
 }

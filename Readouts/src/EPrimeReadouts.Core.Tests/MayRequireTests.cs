@@ -309,8 +309,19 @@ public class MayRequireTests
 
     // ── Shipped seed file honors its own annotations ──────────────────────
 
-    private static string SeedXml() => File.ReadAllText(Path.Combine(
-        ArchitectureTestSupport.RepoRoot(), "mod", "Seed", "Readouts.xml"));
+    private static string SeedXml()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory != null &&
+               !File.Exists(Path.Combine(directory.FullName, "src", "EPrimeReadouts.sln")))
+            directory = directory.Parent;
+
+        if (directory == null)
+            throw new InvalidOperationException("repository root not found");
+
+        return File.ReadAllText(Path.Combine(
+            directory.FullName, "mod", "Seed", "Readouts.xml"));
+    }
 
     [Test]
     public async Task SeedFile_CoreOnly_DropsAllDlcAndModContent()

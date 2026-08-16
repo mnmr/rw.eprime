@@ -16,7 +16,8 @@ namespace EPrimeReadouts.Core
             Buildables = buildables;
         }
 
-        public int Total => Bills + Buildables;
+        public int Total => Bills >= int.MaxValue - Buildables
+            ? int.MaxValue : Bills + Buildables;
 
         public bool Equals(in PlannedWorkDebt other)
             => Bills == other.Bills && Buildables == other.Buildables;

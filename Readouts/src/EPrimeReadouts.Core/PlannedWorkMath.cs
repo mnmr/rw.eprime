@@ -15,10 +15,68 @@ namespace EPrimeReadouts.Core
         TargetCount = 2,
     }
 
+    /// Walks one carried material stack across its construction destinations.
+    /// Each destination may consume no more than its current outstanding need;
+    /// any remainder stays available for the next queued destination.
+    public struct CappedMaterialCredit
+    {
+        private int remaining;
+
+        public CappedMaterialCredit(int carried)
+        {
+            remaining = carried > 0 ? carried : 0;
+        }
+
+        public int Remaining => remaining;
+
+        public int Take(int outstanding)
+        {
+            if (remaining <= 0 || outstanding <= 0) return 0;
+            int taken = remaining < outstanding ? remaining : outstanding;
+            remaining -= taken;
+            return taken;
+        }
+    }
+
+    /// Single-pass nearest eligible destination selection. Equal distances
+    /// preserve queue order, matching vanilla's global-closest scan.
+    public struct ClosestPlannedDestination
+    {
+        private float distanceSquared;
+
+        public ClosestPlannedDestination()
+        {
+            Index = -1;
+            distanceSquared = float.MaxValue;
+        }
+
+        public int Index { get; private set; }
+
+        public void Consider(int index, float distanceSquared, bool eligible)
+        {
+            if (!eligible || index < 0 || distanceSquared < 0f) return;
+            if (Index >= 0 && distanceSquared >= this.distanceSquared) return;
+            Index = index;
+            this.distanceSquared = distanceSquared;
+        }
+    }
+
     /// Planned-work arithmetic: how much material outstanding work still owes.
     /// Deterministic and game-free so every rule here is directly testable.
     public static class PlannedWorkMath
     {
+        /// Expected independent attempts until one result is accepted. The
+        /// published probability is authoritative; zero means the expected
+        /// material demand is unbounded and downstream debt saturates.
+        public static float ExpectedAttempts(double probability)
+        {
+            if (probability >= 1.0) return 1f;
+            if (probability <= 0.0) return float.PositiveInfinity;
+            double attempts = 1.0 / probability;
+            return attempts >= float.MaxValue
+                ? float.PositiveInfinity : (float)attempts;
+        }
+
         /// Ceiling on the iterations a single bill may reserve for. A
         /// do-until-you-have bill with a huge target would otherwise zero every
         /// counter it touches on the strength of work that will take seasons.
@@ -69,6 +127,23 @@ namespace EPrimeReadouts.Core
             return CeilToInt((double)perIterationCost * iterations * attempts);
         }
 
+        /// Allocates a construction-haul stack the way vanilla commits it:
+        /// preserve the primary target's remaining need first, then let the
+        /// current destination consume only the excess. The returned credit
+        /// carries any further excess into the queued destinations.
+        public static CappedMaterialCredit AllocateConstructionHaul(
+            int carried,
+            int primaryOutstanding,
+            int currentOutstanding,
+            out int primaryCredit,
+            out int currentCredit)
+        {
+            var credit = new CappedMaterialCredit(carried);
+            primaryCredit = credit.Take(primaryOutstanding);
+            currentCredit = credit.Take(currentOutstanding);
+            return credit;
+        }
+
         /// The share of one material a deconstruct hands back, mirroring the
         /// per-item rules vanilla applies while building its leavings.
         ///
@@ -108,8 +183,28 @@ namespace EPrimeReadouts.Core
             double returned = returnedFraction;
             if (returned < 0.0) returned = 0.0;
             if (returned > 1.0) returned = 1.0;
+            double netRebuildCost = fullCost * (1.0 - returned);
+            if (netRebuildCost <= 0.0) return outstanding;
+            return CeilToInt(outstanding + rebuilds * netRebuildCost);
+        }
 
-            return CeilToInt(outstanding + rebuilds * fullCost * (1.0 - returned));
+        /// A finished below-target building has already consumed its first
+        /// attempt. Every attempt still expected from the published quality
+        /// probability is therefore a full deconstruct-and-rebuild cycle.
+        public static int FailedBuildableDebt(
+            int fullCost,
+            float expectedAttempts,
+            float returnedFraction)
+        {
+            if (fullCost <= 0) return 0;
+
+            double attempts = expectedAttempts > 1f ? expectedAttempts : 1f;
+            double returned = returnedFraction;
+            if (returned < 0.0) returned = 0.0;
+            if (returned > 1.0) returned = 1.0;
+            double netCost = fullCost * (1.0 - returned);
+            if (netCost <= 0.0) return 0;
+            return CeilToInt(attempts * netCost);
         }
 
         /// Rounds up, and never below zero. Debts are shortfalls: rounding a
