@@ -9,7 +9,7 @@ namespace EPrimeReadouts.Core
     {
         public sealed class Pool
         {
-            internal Pool(int id, string name, string iconDefName, string[] members)
+            internal Pool(int id, string name, string? iconDefName, string[] members)
             {
                 Id = id;
                 Name = name;
@@ -19,7 +19,7 @@ namespace EPrimeReadouts.Core
 
             public int Id { get; }
             public string Name { get; }
-            public string IconDefName { get; }
+            public string? IconDefName { get; }
             public IReadOnlyList<string> Members { get; }
         }
 
@@ -53,13 +53,13 @@ namespace EPrimeReadouts.Core
         public IReadOnlyList<Group> Groups { get; }
 
         public static ReadoutSnapshot Capture(
-            IReadOnlyList<ResourcePool> pools,
-            IReadOnlyList<ReadoutGroup> groups)
+            IReadOnlyList<ResourcePool>? pools,
+            IReadOnlyList<ReadoutGroup>? groups)
         {
             var poolCopy = new Pool[pools?.Count ?? 0];
             for (int i = 0; i < poolCopy.Length; i++)
             {
-                ResourcePool source = pools[i];
+                ResourcePool source = pools![i]; // Non-empty copy => pools exists.
                 string[] members = source.Members?.ToArray() ?? Array.Empty<string>();
                 poolCopy[i] = new Pool(source.Id, source.Name ?? "", source.IconDefName, members);
             }
@@ -67,19 +67,19 @@ namespace EPrimeReadouts.Core
             var groupCopy = new Group[groups?.Count ?? 0];
             for (int i = 0; i < groupCopy.Length; i++)
             {
-                ReadoutGroup source = groups[i];
+                ReadoutGroup source = groups![i]; // Non-empty copy => groups exists.
                 int tierCount = source.Tiers?.Count ?? 0;
                 var tiers = new IReadOnlyList<string>[tierCount];
                 for (int tier = 0; tier < tierCount; tier++)
                     tiers[tier] = Array.AsReadOnly(
-                        source.Tiers[tier]?.ToArray() ?? Array.Empty<string>());
+                        source.Tiers![tier]?.ToArray() ?? Array.Empty<string>());
                 groupCopy[i] = new Group(source.Id, source.Name ?? "", source.OrderIndex,
                     source.DefaultEnabled, tiers);
             }
             return new ReadoutSnapshot(poolCopy, groupCopy);
         }
 
-        public string ToXml(Func<string, string> packageIdOf = null)
+        public string ToXml(Func<string, string?>? packageIdOf = null)
         {
             var pools = new List<ResourcePool>(Pools.Count);
             for (int i = 0; i < Pools.Count; i++)

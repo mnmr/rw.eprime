@@ -64,13 +64,13 @@ namespace EPrimeReadouts
 
         internal readonly QualityJobsMapWorkSnapshot[] Maps;
 
-        internal QualityJobsMapWorkSnapshot For(Map map)
+        internal QualityJobsMapWorkSnapshot? For(Map map)
         {
-            byMap.TryGetValue(map, out QualityJobsMapWorkSnapshot found);
+            byMap.TryGetValue(map, out QualityJobsMapWorkSnapshot? found);
             return found;
         }
 
-        public bool Equals(QualityJobsPlannedWorkSnapshot other)
+        public bool Equals(QualityJobsPlannedWorkSnapshot? other)
         {
             if (other == null || Maps.Length != other.Maps.Length) return false;
             for (int i = 0; i < Maps.Length; i++)
@@ -168,13 +168,13 @@ namespace EPrimeReadouts
             }
         }
 
-        public bool Equals(QualityJobsMapWorkSnapshot other)
+        public bool Equals(QualityJobsMapWorkSnapshot? other)
         {
             if (other == null || !ReferenceEquals(Map, other.Map)) return false;
             return BillsEqual(other) && BuildablesEqual(other);
         }
 
-        internal bool BillsEqual(QualityJobsMapWorkSnapshot other)
+        internal bool BillsEqual(QualityJobsMapWorkSnapshot? other)
         {
             if (other == null
                 || !ReferenceEquals(Map, other.Map)
@@ -185,7 +185,7 @@ namespace EPrimeReadouts
             return WorkEquals(other, PlannedWorkKind.Bill);
         }
 
-        internal bool BuildablesEqual(QualityJobsMapWorkSnapshot other)
+        internal bool BuildablesEqual(QualityJobsMapWorkSnapshot? other)
         {
             if (other == null
                 || !ReferenceEquals(Map, other.Map)
@@ -272,7 +272,7 @@ namespace EPrimeReadouts
         internal readonly ThingDef Resource;
         internal readonly QualityJobsWorkEntry[] Entries;
 
-        public bool Equals(QualityJobsResourceWork other)
+        public bool Equals(QualityJobsResourceWork? other)
         {
             if (other == null
                 || !ReferenceEquals(Resource, other.Resource)
@@ -290,7 +290,7 @@ namespace EPrimeReadouts
         internal QualityJobsWorkEntry(
             PlannedWorkKind kind,
             string workDefName,
-            string stuffDefName,
+            string? stuffDefName,
             int queued,
             int unitCost,
             int drain)
@@ -305,7 +305,7 @@ namespace EPrimeReadouts
 
         internal readonly PlannedWorkKind Kind;
         internal readonly string WorkDefName;
-        internal readonly string StuffDefName;
+        internal readonly string? StuffDefName;
         internal readonly int Queued;
         internal readonly int UnitCost;
         internal readonly int Drain;

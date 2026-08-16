@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -89,9 +90,9 @@ namespace EPrimeReadouts.UI
         {
             public ThingDef Def;
             public int Count;
-            public string Token;
-            public ReadoutStore Store;
-            public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
+            public string? Token;
+            public ReadoutStore? Store;
+            public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
         }
 
         // Cache contract:
@@ -127,10 +128,10 @@ namespace EPrimeReadouts.UI
         private sealed class DeferredTip : IStructuredTipSource
         {
             internal readonly string CacheKey;
-            internal ThingDef Def;
+            internal ThingDef Def = null!; // assigned by Tip before any Resolve
             internal int Count;
-            internal string Token;
-            internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
+            internal string? Token;
+            internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
 
             internal DeferredTip(string cacheKey)
             {
@@ -173,8 +174,8 @@ namespace EPrimeReadouts.UI
             ThingDef def,
             int count,
             Band band,
-            string token,
-            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
+            string? token,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? renderData)
         {
             // Use token as cache key (null-safe fallback to defName for plain slots)
             string cacheKey = token ?? def.defName;
@@ -194,30 +195,30 @@ namespace EPrimeReadouts.UI
         {
             var def = state.Def;
             int count = state.Count;
-            string token = state.Token;
+            string? token = state.Token;
             string canonical = token != null ? SlotToken.Canonical(token) : def.defName;
             bool isLegacyPool = token != null && SlotToken.IsPool(token);
             bool isPoolRef = token != null && SlotToken.IsPoolRef(token);
             bool pooled = isLegacyPool || isPoolRef;
 
             string title;
-            System.Collections.Generic.IReadOnlyList<string> poolMembers = null;
+            System.Collections.Generic.IReadOnlyList<string>? poolMembers = null;
 
             if (isPoolRef)
             {
                 // First-class pool: look up snapshot for name and members
-                int poolId = SlotToken.PoolId(token);
+                int poolId = SlotToken.PoolId(token!); // isPoolRef implies a token
                 if (state.RenderData != null
                     && state.RenderData.Structure.TryGet(
-                        poolId, out poolMembers, out _, out string poolName))
+                        poolId, out poolMembers, out _, out string? poolName))
                 {
-                    title = poolName;
+                    title = poolName!; // set on the true path
                 }
                 else title = canonical;
             }
             else if (isLegacyPool)
             {
-                string member = SlotToken.MemberName(token);
+                string member = SlotToken.MemberName(token!); // isLegacyPool implies a token
                 title = GameResourceCatalog.Instance.CategoryLabelOf(member).CapitalizeFirst();
                 poolMembers = GameResourceCatalog.Instance.CountedDefsIn(member);
             }
@@ -247,7 +248,7 @@ namespace EPrimeReadouts.UI
             if (!isLegacyPool && !isPoolRef)
             {
                 var body = model.AddSection();
-                body.Text(def.description);
+                body.Text(def!.description); // icon tips always carry the slot's def
             }
             else if (poolMembers != null && poolMembers.Count > 0)
             {
@@ -308,8 +309,8 @@ namespace EPrimeReadouts.UI
         /// Pool tips filter the rows to their own members; single-resource tips
         /// use the same table with the implicit Resource column omitted.
         private static void AddPlannedWorkSection(
-            BuildState state, TipModel model, ThingDef def,
-            System.Collections.Generic.IReadOnlyList<string> poolMembers,
+            BuildState state, TipModel model, ThingDef? def,
+            System.Collections.Generic.IReadOnlyList<string>? poolMembers,
             bool pooled)
         {
             if (state.RenderData == null) return;
@@ -417,7 +418,7 @@ namespace EPrimeReadouts.UI
             PlannedWorkSelection selection,
             PlannedWorkTipLayout layout)
         {
-            string resource = selection.OverflowResourceDefName;
+            string? resource = selection.OverflowResourceDefName;
             string label = "EPR.TipOtherPlannedWork"
                 .Translate(selection.OverflowCount).ToString();
             if (layout.ShowResourceColumn && layout.ShowInStockColumn)
@@ -463,7 +464,7 @@ namespace EPrimeReadouts.UI
             if (buildable == null)
                 buildable = DefDatabase<TerrainDef>.GetNamedSilentFail(
                     entry.WorkDefName);
-            ThingDef stuff = entry.StuffDefName != null
+            ThingDef? stuff = entry.StuffDefName != null
                 ? DefDatabase<ThingDef>.GetNamedSilentFail(entry.StuffDefName)
                 : null;
             return buildable != null

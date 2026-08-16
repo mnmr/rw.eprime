@@ -19,17 +19,17 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate in WindowUpdate, never in OnGUI.
         // Equality policy: unchanged domain revisions preserve snapshot/XML identity.
         // Teardown: PreClose releases snapshot, XML and preview rows.
-        private ReadoutSnapshot snapshot;
-        private ReadoutStore snapshotStore;
+        private ReadoutSnapshot? snapshot;
+        private ReadoutStore? snapshotStore;
         private int snapshotGroupsVersion = -1;
         private int snapshotPoolsVersion = -1;
 
-        private string xml;           // export XML, rebuilt alongside the snapshot
+        private string? xml;          // export XML, rebuilt alongside the snapshot
         private Vector2 scroll;
         private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
-        private ReadoutSnapshot textSnapshot;
+        private ReadoutSnapshot? textSnapshot;
         private int textLanguageVersion = -1;
-        private string summaryText;
+        private string? summaryText;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
@@ -121,7 +121,7 @@ namespace EPrimeReadouts.UI
             if (snapshot != null)
                 preview.DrawListing(listRect, snapshot, ref scroll);
 
-            string path = CachedResolvedPath(out string problem, out _);
+            string? path = CachedResolvedPath(out string? problem, out _);
 
             DrawCaption(new Rect(inRect.x, captionRowY, 200f, CaptionRowH - 2f),
                 UiText.Get("EPR.ExportLocationLabel"));
@@ -155,7 +155,7 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(saveRect, UiText.Get("EPR.Save"), active: path != null)
                 && path != null)
             {
-                if (ReadoutsFiles.TryWrite(path, xml, out string writeError))
+                if (ReadoutsFiles.TryWrite(path, xml!, out string? writeError)) // xml built with the snapshot
                 {
                     Messages.Message("EPR.Exported".Translate(path),
                         MessageTypeDefOf.TaskCompletion, historical: false);

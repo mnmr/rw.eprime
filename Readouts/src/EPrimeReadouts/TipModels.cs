@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -25,8 +26,8 @@ namespace EPrimeReadouts
     /// exports and diagnostics; WrTipUI renders the model.
     public sealed class TipModel
     {
-        public string Title;
-        public string Badge;
+        public string? Title;
+        public string? Badge;
         public Color BadgeColor = Color.white;
         /// Extra inset beyond the tooltip renderer's 4px frame inset, for a
         /// total content inset of 8px.
@@ -38,9 +39,9 @@ namespace EPrimeReadouts
         // Dependencies = model content, font metrics and width; Refresh =
         // immediate on width/UI revision; Equality = equal key preserves object
         // identity; Teardown = releasing the TipModel releases the geometry.
-        internal object RenderCache;
+        internal object? RenderCache;
 
-        public TipSection AddSection(string header = null)
+        public TipSection AddSection(string? header = null)
         {
             var section = new TipSection { Header = header };
             Sections.Add(section);
@@ -88,7 +89,7 @@ namespace EPrimeReadouts
                             bool firstCell = true;
                             for (int i = 0; i < (columns.Cells?.Count ?? 0); i++)
                             {
-                                if (columns.Cells[i].NullOrEmpty()) continue;
+                                if (columns.Cells![i].NullOrEmpty()) continue; // loop entered only when non-null
                                 if (!firstCell) sb.Append(" · ");
                                 firstCell = false;
                                 sb.Append(columns.Cells[i]);
@@ -115,7 +116,7 @@ namespace EPrimeReadouts
     public sealed class TipSection
     {
         /// Optional dim header line above the rows.
-        public string Header;
+        public string? Header;
         public List<TipRow> Rows = new List<TipRow>();
 
         public TipSection Text(string text, bool dim = false)
@@ -139,9 +140,9 @@ namespace EPrimeReadouts
         public TipSection Columns(
             IReadOnlyList<string> cells,
             Color? color = null,
-            Texture2D icon = null,
+            Texture2D? icon = null,
             bool tight = false,
-            IReadOnlyList<TipColumnAlignment> alignments = null)
+            IReadOnlyList<TipColumnAlignment>? alignments = null)
         {
             Rows.Add(new TipColumnsRow(
                 cells, color, icon, tight, alignments));
@@ -247,16 +248,16 @@ namespace EPrimeReadouts
     {
         public readonly IReadOnlyList<string> Cells;
         public readonly Color? Color;
-        public readonly Texture2D Icon;
+        public readonly Texture2D? Icon;
         public readonly bool Tight;
-        public readonly IReadOnlyList<TipColumnAlignment> Alignments;
+        public readonly IReadOnlyList<TipColumnAlignment>? Alignments;
 
         public TipColumnsRow(
             IReadOnlyList<string> cells,
             Color? color = null,
-            Texture2D icon = null,
+            Texture2D? icon = null,
             bool tight = false,
-            IReadOnlyList<TipColumnAlignment> alignments = null)
+            IReadOnlyList<TipColumnAlignment>? alignments = null)
         {
             Cells = cells;
             Color = color;

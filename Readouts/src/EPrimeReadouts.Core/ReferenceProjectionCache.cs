@@ -22,13 +22,13 @@ namespace EPrimeReadouts.Core
     {
         private readonly Func<TSource, TValue> build;
         private readonly IEqualityComparer<TValue> comparer;
-        private TSource source;
-        private TValue value;
+        private TSource? source;
+        private TValue? value;
         private bool populated;
 
         public ReferenceProjectionCache(
             Func<TSource, TValue> build,
-            IEqualityComparer<TValue> comparer = null)
+            IEqualityComparer<TValue>? comparer = null)
         {
             this.build = build ?? throw new ArgumentNullException(nameof(build));
             this.comparer = comparer ?? EqualityComparer<TValue>.Default;
@@ -37,11 +37,11 @@ namespace EPrimeReadouts.Core
         public TValue Get(TSource current)
         {
             if (current == null) throw new ArgumentNullException(nameof(current));
-            if (populated && ReferenceEquals(source, current)) return value;
+            if (populated && ReferenceEquals(source, current)) return value!; // populated => value set.
 
             TValue candidate = build(current);
             source = current;
-            if (populated && comparer.Equals(value, candidate)) return value;
+            if (populated && comparer.Equals(value!, candidate)) return value!; // populated => value set.
 
             value = candidate;
             populated = true;

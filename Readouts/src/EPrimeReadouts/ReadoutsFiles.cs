@@ -70,7 +70,7 @@ namespace EPrimeReadouts
         }
 
         /// Reads the file at <paramref name="fullPath"/>. Returns true on success.
-        public static bool TryRead(string fullPath, out string xml, out string error)
+        public static bool TryRead(string fullPath, out string? xml, out string? error)
         {
             xml = null;
             error = null;
@@ -87,7 +87,7 @@ namespace EPrimeReadouts
         }
 
         /// Writes <paramref name="xml"/> to <paramref name="fullPath"/>. Returns true on success.
-        public static bool TryWrite(string fullPath, string xml, out string error)
+        public static bool TryWrite(string fullPath, string xml, out string? error)
         {
             error = null;
             try

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace EPrimeReadouts.Core
 {
@@ -8,11 +9,11 @@ namespace EPrimeReadouts.Core
     {
         public CellKind Kind;
         public RectF Rect;
-        public string DefName;        // Icon, Counter, Highlight
-        public string Text;           // Counter (formatted count) or Label (translation key)
+        public string? DefName;       // Icon, Counter, Highlight
+        public string? Text;          // Counter (formatted count) or Label (translation key)
         public Band Band;             // Counter tint
         public TriangleState Triangle;
-        public string Token;          // Icon and Counter: the raw slot token (null elsewhere)
+        public string? Token;         // Icon and Counter: the raw slot token (null elsewhere)
         public int GroupIndex;        // GroupBack: display position (0-based); -1 for Results
         public int GroupId;           // GroupBack: owning group id; -1 for Results
         public int Tier;              // Editor mode: tier index for Icon, Counter, EmptySlot

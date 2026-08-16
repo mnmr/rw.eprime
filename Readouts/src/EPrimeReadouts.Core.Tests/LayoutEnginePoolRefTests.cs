@@ -14,9 +14,9 @@ public class LayoutEnginePoolRefTests
         return group;
     }
 
-    private static LayoutInput Input(ReadoutGroup group, PoolSnapshot pools = null,
-        Dictionary<string, int> counts = null,
-        Dictionary<string, ThresholdSpec> thresholds = null) => new()
+    private static LayoutInput Input(ReadoutGroup group, PoolSnapshot? pools = null,
+        Dictionary<string, int>? counts = null,
+        Dictionary<string, ThresholdSpec>? thresholds = null) => new()
     {
         Groups = new List<ReadoutGroup> { group },
         Counts = counts ?? new Dictionary<string, int>(),
@@ -26,8 +26,8 @@ public class LayoutEnginePoolRefTests
         Width = 140f,
     };
 
-    private static LayoutInput EditorInput(ReadoutGroup group, PoolSnapshot pools = null,
-        Dictionary<string, int> counts = null) => new()
+    private static LayoutInput EditorInput(ReadoutGroup group, PoolSnapshot? pools = null,
+        Dictionary<string, int>? counts = null) => new()
     {
         Groups = new List<ReadoutGroup> { group },
         Counts = counts ?? new Dictionary<string, int>(),

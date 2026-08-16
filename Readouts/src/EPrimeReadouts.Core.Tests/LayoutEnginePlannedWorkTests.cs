@@ -15,7 +15,7 @@ public class LayoutEnginePlannedWorkTests
 
     private static LayoutInput Input(
         ReadoutGroup group,
-        Dictionary<string, PlannedWorkDebt> debts = null,
+        Dictionary<string, PlannedWorkDebt>? debts = null,
         bool allowNegative = false)
     {
         return new LayoutInput

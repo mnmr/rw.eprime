@@ -19,7 +19,7 @@ namespace EPrimeReadouts
         // Refresh policy: lazy, immediate on UI language revision changes.
         // Equality policy: unchanged dependencies preserve root identity.
         // Teardown: Reset releases all cached nodes on global teardown.
-        private static List<ResourceTreeNode> cachedRoots;
+        private static List<ResourceTreeNode>? cachedRoots;
         private static int cachedLanguageVersion = -1;
 
         public static List<ResourceTreeNode> GetRoots()

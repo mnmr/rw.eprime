@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -21,15 +22,15 @@ namespace EPrimeReadouts.UI
 
         private Vector2 scroll;
         private int builtPoolsVersion = -1;
-        private ReadoutStore builtStore;
-        private PoolSnapshot builtSnapshot;
+        private ReadoutStore? builtStore;
+        private PoolSnapshot? builtSnapshot;
 
         // Cached row data (rebuilt only when pools change)
         private struct PoolRow
         {
             public int Id;
             public string Name;
-            public ThingDef IconDef; // resolved from snapshot; null when unresolvable
+            public ThingDef? IconDef; // resolved from snapshot; null when unresolvable
         }
 
         // Cache contract:
@@ -40,8 +41,8 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate on a dependency change.
         // Equality policy: unchanged dependencies preserve array identity.
         // Teardown: Reset releases row and snapshot references on dialog close.
-        private PoolRow[] cachedRows;
-        private string pendingSelectName;
+        private PoolRow[]? cachedRows;
+        private string? pendingSelectName;
 
         private readonly PoolListHeightCache heightCache = new PoolListHeightCache(
             headerHeight: 28f,
@@ -65,7 +66,7 @@ namespace EPrimeReadouts.UI
             int poolsVersion = store != null ? store.PoolsVersion : -1;
             int rowCount = cachedRows?.Length ?? 0;
             return heightCache.GetDesiredHeight(
-                store,
+                store!, // compared only by reference; null owner is tolerated
                 poolsVersion,
                 UiVersion.Current,
                 rowCount,
@@ -103,7 +104,7 @@ namespace EPrimeReadouts.UI
             if (owner.selectedPoolId >= 0)
             {
                 bool found = false;
-                for (int i = 0; i < cachedRows.Length; i++)
+                for (int i = 0; i < cachedRows!.Length; i++) // built by EnsureRows above
                     if (cachedRows[i].Id == owner.selectedPoolId) { found = true; break; }
                 if (!found) owner.selectedPoolId = -1;
             }
@@ -113,7 +114,7 @@ namespace EPrimeReadouts.UI
             if (pendingSelectName != null)
             {
                 for (int i = 0; i < (cachedRows?.Length ?? 0); i++)
-                    if (cachedRows[i].Name == pendingSelectName)
+                    if (cachedRows![i].Name == pendingSelectName) // loop entered only when non-null
                     {
                         owner.selectedPoolId = cachedRows[i].Id;
                         float visibleH = rect.height - headerUsed - FooterH;
@@ -151,7 +152,7 @@ namespace EPrimeReadouts.UI
                 }
 
                 for (int i = start; i < end; i++)
-                    DrawPoolRow(cachedRows[i], i, viewRect.width, owner);
+                    DrawPoolRow(cachedRows![i], i, viewRect.width, owner); // rowCount > 0 implies rows
             }
 
             }
@@ -237,7 +238,7 @@ namespace EPrimeReadouts.UI
 
         private void EnsureRows(ReadoutStore store, Dialog_ReadoutConfig owner)
         {
-            PoolSnapshot snapshot = owner.PoolsSnapshot;
+            PoolSnapshot? snapshot = owner.PoolsSnapshot;
             if (ReferenceEquals(builtStore, store)
                 && builtPoolsVersion == store.PoolsVersion
                 && ReferenceEquals(builtSnapshot, snapshot)
@@ -253,8 +254,8 @@ namespace EPrimeReadouts.UI
             for (int i = 0; i < pools.Count; i++)
             {
                 ResourcePool pool = pools[i];
-                ThingDef iconDef = null;
-                if (snapshot != null && snapshot.TryGet(pool.Id, out _, out string iconDefName, out _))
+                ThingDef? iconDef = null;
+                if (snapshot != null && snapshot.TryGet(pool.Id, out _, out string? iconDefName, out _))
                     iconDef = !string.IsNullOrEmpty(iconDefName)
                         ? DefDatabase<ThingDef>.GetNamedSilentFail(iconDefName)
                         : null;

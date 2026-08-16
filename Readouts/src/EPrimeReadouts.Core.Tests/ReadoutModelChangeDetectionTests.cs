@@ -100,7 +100,7 @@ public class ReadoutModelChangeDetectionTests
         model.SetPoolIcon(1, "Steel");
 
         await Assert.That(model.SetPoolIcon(1, "")).IsTrue();
-        await Assert.That(model.PoolById(1).IconDefName).IsNull();
+        await Assert.That(model.PoolById(1)!.IconDefName).IsNull();
     }
 
     [Test]

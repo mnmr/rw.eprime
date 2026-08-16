@@ -55,7 +55,7 @@ public class ReadoutsXmlTests
         string xml = ReadoutsXml.Export(model.Pools, model.InDisplayOrder());
 
         // Import
-        bool ok = ReadoutsXml.TryImport(xml, out var iPools, out var iGroups, out string err);
+        bool ok = ReadoutsXml.TryImport(xml, out var iPools, out var iGroups, out string? err);
         await Assert.That(ok).IsTrue();
         await Assert.That(err).IsNull();
 
@@ -169,25 +169,25 @@ public class ReadoutsXmlTests
     [Test]
     public async Task TryImport_MalformedXml_ReturnsFalse()
     {
-        bool ok = ReadoutsXml.TryImport("<NotClosed>", out _, out _, out string error);
+        bool ok = ReadoutsXml.TryImport("<NotClosed>", out _, out _, out string? error);
         await Assert.That(ok).IsFalse();
         await Assert.That(error).IsNotNull();
-        await Assert.That(error.Length).IsGreaterThan(0);
+        await Assert.That(error!.Length).IsGreaterThan(0);
     }
 
     [Test]
     public async Task TryImport_WrongRoot_ReturnsFalse()
     {
-        bool ok = ReadoutsXml.TryImport("<WrongRoot/>", out _, out _, out string error);
+        bool ok = ReadoutsXml.TryImport("<WrongRoot/>", out _, out _, out string? error);
         await Assert.That(ok).IsFalse();
         await Assert.That(error).IsNotNull();
-        await Assert.That(error.Length).IsGreaterThan(0);
+        await Assert.That(error!.Length).IsGreaterThan(0);
     }
 
     [Test]
     public async Task TryImport_NullInput_ReturnsFalse()
     {
-        bool ok = ReadoutsXml.TryImport(null, out _, out _, out string error);
+        bool ok = ReadoutsXml.TryImport(null, out _, out _, out string? error);
         await Assert.That(ok).IsFalse();
         await Assert.That(error).IsNotNull();
     }
@@ -211,7 +211,7 @@ public class ReadoutsXmlTests
   </Groups>
 </Readouts>";
 
-        bool ok = ReadoutsXml.TryImport(xml, out var pools, out var groups, out string error);
+        bool ok = ReadoutsXml.TryImport(xml, out var pools, out var groups, out string? error);
         await Assert.That(ok).IsTrue();
         await Assert.That(pools.Count).IsEqualTo(0);
         await Assert.That(groups.Count).IsEqualTo(1);
@@ -292,7 +292,7 @@ public class ReadoutsXmlTests
   </Groups>
 </Readouts>";
 
-        bool ok = ReadoutsXml.TryImport(xml, out var pools, out var groups, out string error);
+        bool ok = ReadoutsXml.TryImport(xml, out var pools, out var groups, out string? error);
         await Assert.That(ok).IsTrue();
         await Assert.That(pools.Count).IsEqualTo(0);
         await Assert.That(groups.Count).IsEqualTo(1);

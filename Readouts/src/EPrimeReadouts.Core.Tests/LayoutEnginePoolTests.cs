@@ -12,8 +12,8 @@ public class LayoutEnginePoolTests
         return group;
     }
 
-    private static LayoutInput Input(ReadoutGroup group, Dictionary<string, int> counts = null,
-        Dictionary<string, ThresholdSpec> thresholds = null) => new()
+    private static LayoutInput Input(ReadoutGroup group, Dictionary<string, int>? counts = null,
+        Dictionary<string, ThresholdSpec>? thresholds = null) => new()
     {
         Groups = new List<ReadoutGroup> { group },
         Counts = counts ?? new Dictionary<string, int>(),

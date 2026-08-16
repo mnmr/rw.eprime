@@ -8,7 +8,7 @@ namespace EPrimeReadouts.Core
     /// two-level join is unambiguous.
     public static class TierBlobCodec
     {
-        public static string Encode(List<List<string>> tiers)
+        public static string Encode(List<List<string>>? tiers)
         {
             if (tiers == null) return "";
             var sb = new StringBuilder();
@@ -20,10 +20,10 @@ namespace EPrimeReadouts.Core
             return sb.ToString();
         }
 
-        public static List<List<string>> Decode(string blob)
+        public static List<List<string>> Decode(string? blob)
         {
             var tiers = new List<List<string>>();
-            if (string.IsNullOrEmpty(blob)) return tiers;
+            if (blob == null || blob.Length == 0) return tiers;
             foreach (var part in blob.Split('|'))
             {
                 var tier = new List<string>();

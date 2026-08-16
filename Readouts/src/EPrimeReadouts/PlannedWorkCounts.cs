@@ -29,7 +29,7 @@ namespace EPrimeReadouts
                 WorkByResource = new Dictionary<ThingDef,
                     List<QualityJobsWorkEntry>>(IdentityComparer<ThingDef>.Instance);
             internal readonly List<ThingDef> Resources = new List<ThingDef>();
-            internal Dictionary<CarriedKey, int> Carried;
+            internal Dictionary<CarriedKey, int>? Carried;
             internal bool CarriedBuilt;
 
             internal void Add(ThingDef resource, QualityJobsWorkEntry work)
@@ -108,7 +108,7 @@ namespace EPrimeReadouts
             QualityJobsPlannedWorkSnapshot qualityJobs)
         {
             if (map == null) return;
-            QualityJobsMapWorkSnapshot managed = options.QualityRework
+            QualityJobsMapWorkSnapshot? managed = options.QualityRework
                 ? qualityJobs?.For(map)
                 : null;
             if (options.ReserveBills)
@@ -180,7 +180,7 @@ namespace EPrimeReadouts
             for (int i = 0; i < ingredients.Count; i++)
             {
                 IngredientCount ingredient = ingredients[i];
-                ThingDef resource = SoleAllowedDef(
+                ThingDef? resource = SoleAllowedDef(
                     ingredient, job.Recipe, job.Bill);
                 if (resource == null) continue;
                 int unitCost = ingredient.CountRequiredOfFor(
@@ -215,7 +215,7 @@ namespace EPrimeReadouts
 
             float attempts = PlannedWorkMath.ExpectedAttempts(job.Probability);
             float baseReturned = job.BuildableDef.resourcesFractionWhenDeconstructed;
-            BuildingProperties leavings = job.BuildableDef.building;
+            BuildingProperties? leavings = job.BuildableDef.building;
             for (int costIndex = 0; costIndex < cost.Count; costIndex++)
             {
                 ThingDefCountClass item = cost[costIndex];
@@ -311,7 +311,7 @@ namespace EPrimeReadouts
         private static void AccumulateBills(
             Map map,
             CountAccumulator accumulator,
-            QualityJobsMapWorkSnapshot managed)
+            QualityJobsMapWorkSnapshot? managed)
         {
             var givers = map.listerThings.ThingsInGroup(
                 ThingRequestGroup.PotentialBillGiver);
@@ -337,9 +337,9 @@ namespace EPrimeReadouts
             // anything; neither is one whose giver has gone.
             if (bill.suspended || bill.paused || bill.DeletedOrDereferenced) return;
 
-            RecipeDef recipe = bill.recipe;
-            List<IngredientCount> ingredients = recipe?.ingredients;
-            if (ingredients == null || ingredients.Count == 0) return;
+            RecipeDef? recipe = bill.recipe;
+            List<IngredientCount>? ingredients = recipe?.ingredients;
+            if (recipe == null || ingredients == null || ingredients.Count == 0) return;
 
             int iterations = IterationsOf(bill, recipe);
             if (iterations <= 0) return;
@@ -347,7 +347,7 @@ namespace EPrimeReadouts
             for (int i = 0; i < ingredients.Count; i++)
             {
                 IngredientCount ingredient = ingredients[i];
-                ThingDef def = SoleAllowedDef(ingredient, recipe, bill);
+                ThingDef? def = SoleAllowedDef(ingredient, recipe, bill);
                 if (def == null) continue;
                 int unitCost = ingredient.CountRequiredOfFor(def, recipe, bill);
                 int debt = PlannedWorkMath.BillDebt(
@@ -410,10 +410,10 @@ namespace EPrimeReadouts
         /// will pick, so it reserves nothing rather than overstating scarcity on
         /// every candidate. The bill's own ingredient filter counts: narrowing a
         /// stuffed recipe to a single material makes it unambiguous.
-        private static ThingDef SoleAllowedDef(
+        private static ThingDef? SoleAllowedDef(
             IngredientCount ingredient, RecipeDef recipe, Bill bill)
         {
-            ThingFilter filter = ingredient.filter;
+            ThingFilter? filter = ingredient.filter;
             if (filter == null) return null;
 
             // Most recipes name their ingredient outright, and vanilla answers
@@ -427,7 +427,7 @@ namespace EPrimeReadouts
                 return Usable(fixedDef, recipe, bill) ? fixedDef : null;
             }
 
-            ThingDef sole = null;
+            ThingDef? sole = null;
             List<ThingDef> allDefs = DefDatabase<ThingDef>.AllDefsListForReading;
             for (int i = 0; i < allDefs.Count; i++)
             {
@@ -440,7 +440,7 @@ namespace EPrimeReadouts
             return sole != null && Counted(sole) ? sole : null;
         }
 
-        private static bool Usable(ThingDef def, RecipeDef recipe, Bill bill)
+        private static bool Usable(ThingDef? def, RecipeDef recipe, Bill bill)
             => def != null && Allowed(def, recipe, bill) && Counted(def);
 
         /// Both narrowing filters that stand between an ingredient slot and a
@@ -458,9 +458,9 @@ namespace EPrimeReadouts
         private static void AccumulateBuildables(
             Map map,
             CountAccumulator accumulator,
-            QualityJobsMapWorkSnapshot managed)
+            QualityJobsMapWorkSnapshot? managed)
         {
-            Dictionary<CarriedKey, int> carried = CarriedToBuildables(map);
+            Dictionary<CarriedKey, int>? carried = CarriedToBuildables(map);
             AccumulateConstructibles(map, ThingRequestGroup.Blueprint,
                 accumulator, managed, carried);
             AccumulateConstructibles(map, ThingRequestGroup.BuildingFrame,
@@ -470,8 +470,8 @@ namespace EPrimeReadouts
         private static void AccumulateConstructibles(
             Map map, ThingRequestGroup group,
             CountAccumulator accumulator,
-            QualityJobsMapWorkSnapshot managed,
-            Dictionary<CarriedKey, int> carried)
+            QualityJobsMapWorkSnapshot? managed,
+            Dictionary<CarriedKey, int>? carried)
         {
             Faction player = Faction.OfPlayer;
             List<Thing> things = map.listerThings.ThingsInGroup(group);
@@ -491,12 +491,12 @@ namespace EPrimeReadouts
                 // hands back is governed by the BUILT thing's leavings rules,
                 // not the blueprint's.
                 var built = thing.def.entityDefToBuild as ThingDef;
-                string workDefName = thing.def.entityDefToBuild?.defName;
+                string? workDefName = thing.def.entityDefToBuild?.defName;
                 if (workDefName == null) continue;
-                string stuffDefName = thing.Stuff?.defName;
+                string? stuffDefName = thing.Stuff?.defName;
                 float baseReturned =
                     thing.def.entityDefToBuild?.resourcesFractionWhenDeconstructed ?? 0f;
-                BuildingProperties leavings = built?.building;
+                BuildingProperties? leavings = built?.building;
 
                 for (int c = 0; c < cost.Count; c++)
                 {
@@ -532,15 +532,15 @@ namespace EPrimeReadouts
         /// registered before pickup while ResourceCounter still includes the
         /// source stack. A carried stack is the exact transition where the
         /// stock basis stops counting it and the outstanding debt must follow.
-        private static Dictionary<CarriedKey, int> CarriedToBuildables(Map map)
+        private static Dictionary<CarriedKey, int>? CarriedToBuildables(Map map)
         {
-            Dictionary<CarriedKey, int> carried = null;
+            Dictionary<CarriedKey, int>? carried = null;
             Faction player = Faction.OfPlayer;
             IReadOnlyList<Pawn> pawns = map.mapPawns.AllPawnsSpawned;
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
-                Thing material = pawn.carryTracker?.CarriedThing;
+                Thing? material = pawn.carryTracker?.CarriedThing;
                 Job job = pawn.CurJob;
                 if (material == null || material.stackCount <= 0
                     || job?.def != JobDefOf.HaulToContainer)
@@ -591,7 +591,7 @@ namespace EPrimeReadouts
             int primaryCredit,
             ThingDef resource,
             Faction player,
-            ref Dictionary<CarriedKey, int> carried,
+            ref Dictionary<CarriedKey, int>? carried,
             ref CappedMaterialCredit credit)
         {
             if (credit.Remaining <= 0 || queued.Count == 0) return;
@@ -648,7 +648,7 @@ namespace EPrimeReadouts
         }
 
         private static void CreditCarried(
-            ref Dictionary<CarriedKey, int> carried,
+            ref Dictionary<CarriedKey, int>? carried,
             Thing destination,
             ThingDef resource,
             Faction player,
@@ -660,8 +660,8 @@ namespace EPrimeReadouts
         }
 
         private static int CarriedCapacity(
-            Dictionary<CarriedKey, int> carried,
-            Thing destination,
+            Dictionary<CarriedKey, int>? carried,
+            Thing? destination,
             ThingDef resource,
             Faction player)
         {
@@ -677,8 +677,8 @@ namespace EPrimeReadouts
         }
 
         private static void AddCarried(
-            ref Dictionary<CarriedKey, int> carried,
-            Thing destination,
+            ref Dictionary<CarriedKey, int>? carried,
+            Thing? destination,
             ThingDef resource,
             int amount)
         {
@@ -694,7 +694,7 @@ namespace EPrimeReadouts
         /// Only player-owned, active construction draws on the colony's stock.
         /// The concrete-type check excludes Blueprint_Install: it also implements
         /// IConstructible, but its TotalMaterialCost logs an error by design.
-        private static bool EligibleConstructible(Thing thing, Faction player)
+        private static bool EligibleConstructible(Thing? thing, Faction player)
             => thing != null
                && thing.Faction == player
                && !thing.IsForbidden(player)
@@ -705,7 +705,7 @@ namespace EPrimeReadouts
         /// destination matters now that the snapshot retains per-work rows:
         /// credit for one chair must not reduce another buildable's drain.
         private static int TakeCarried(
-            Dictionary<CarriedKey, int> carried,
+            Dictionary<CarriedKey, int>? carried,
             Thing destination,
             ThingDef def,
             int outstanding)
@@ -729,7 +729,7 @@ namespace EPrimeReadouts
 
         /// Membership in one of a building's short leavings lists; absent lists
         /// are the common case and cost nothing.
-        private static bool Lists(List<ThingDef> defs, ThingDef def)
+        private static bool Lists(List<ThingDef>? defs, ThingDef def)
         {
             if (defs == null) return false;
             for (int i = 0; i < defs.Count; i++)

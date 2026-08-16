@@ -8,11 +8,11 @@ namespace EPrimeReadouts
 {
     public class EPrimeReadoutsMod : Mod
     {
-        public static ReadoutSettings Settings;
+        public static ReadoutSettings Settings = null!; // assigned in the mod constructor at startup
         private readonly Listing_Standard settingsListing = new Listing_Standard();
 
         /// The mod's content pack — used to locate shipped data files (Seed/).
-        public static ModContentPack ContentPack;
+        public static ModContentPack? ContentPack;
 
         // Cache contract:
         // Owner: this Mod/settings-window instance.
@@ -27,10 +27,10 @@ namespace EPrimeReadouts
         private int textOffsetY = int.MinValue;
         private int textPanelWidth = int.MinValue;
         private int textBottomMargin = int.MinValue;
-        private string offsetXLabel;
-        private string offsetYLabel;
-        private string panelWidthLabel;
-        private string bottomMarginLabel;
+        private string? offsetXLabel;
+        private string? offsetYLabel;
+        private string? panelWidthLabel;
+        private string? bottomMarginLabel;
 
         public EPrimeReadoutsMod(ModContentPack content) : base(content)
         {

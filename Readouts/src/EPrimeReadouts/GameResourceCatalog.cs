@@ -31,24 +31,24 @@ namespace EPrimeReadouts
         // Refresh policy: lazy once per loaded-def lifetime.
         // Equality policy: the built array and set retain identity until teardown.
         // Teardown: Reset clears all def-derived entries on global game teardown.
-        private static ThingDef[] extraCountedDefs;
-        private static HashSet<ThingDef> extraCountedDefSet;
+        private static ThingDef[]? extraCountedDefs;
+        private static HashSet<ThingDef>? extraCountedDefSet;
 
         internal static int ExtraCountedDefCount
         {
-            get { EnsureExtraCountedDefs(); return extraCountedDefs.Length; }
+            get { EnsureExtraCountedDefs(); return extraCountedDefs!.Length; }
         }
 
         internal static ThingDef ExtraCountedDefAt(int index)
         {
             EnsureExtraCountedDefs();
-            return extraCountedDefs[index];
+            return extraCountedDefs![index];
         }
 
         internal static bool IsExtraCountedDef(ThingDef def)
         {
             EnsureExtraCountedDefs();
-            return extraCountedDefSet.Contains(def);
+            return extraCountedDefSet!.Contains(def);
         }
 
         public bool Exists(string defName) =>

@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -8,23 +9,24 @@ namespace EPrimeReadouts.UI
     /// rebuild so drawing never touches DefDatabase.
     public sealed class DrawModel
     {
-        public RenderModel Model;
-        public ThingDef[] Defs;    // parallel to Model.Cells; null for non-icon cells
-        public int[] Counts;       // parallel; raw count for icon cells (tooltips)
-        public string[] Tokens;    // parallel; raw slot token for icon cells (tooltips)
-        public string[] Labels;    // parallel; translated labels for label cells
-        public string[] Tooltips;  // parallel; resolved icon hover labels
-        public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData;
+        // Instances are created only through Resolve, which assigns every field.
+        public RenderModel Model = null!;
+        public ThingDef?[] Defs = null!;    // parallel to Model.Cells; null for non-icon cells
+        public int[] Counts = null!;        // parallel; raw count for icon cells (tooltips)
+        public string?[] Tokens = null!;    // parallel; raw slot token for icon cells (tooltips)
+        public string?[] Labels = null!;    // parallel; translated labels for label cells
+        public string?[] Tooltips = null!;  // parallel; resolved icon hover labels
+        public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
 
         public static DrawModel Resolve(
             RenderModel model,
-            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData = null)
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? renderData = null)
         {
-            var defs = new ThingDef[model.Cells.Count];
+            var defs = new ThingDef?[model.Cells.Count];
             var counts = new int[model.Cells.Count];
-            var tokens = new string[model.Cells.Count];
-            var labels = new string[model.Cells.Count];
-            var tooltips = new string[model.Cells.Count];
+            var tokens = new string?[model.Cells.Count];
+            var labels = new string?[model.Cells.Count];
+            var tooltips = new string?[model.Cells.Count];
             for (int i = 0; i < model.Cells.Count; i++)
             {
                 var cell = model.Cells[i];
@@ -36,23 +38,23 @@ namespace EPrimeReadouts.UI
                     // Raw count carried on the cell — never parse the display
                     // text, which is compact-formatted ("12.8k") above 10000.
                     counts[i] = cell.Count;
-                    if (tokens[i] != null && SlotToken.IsPoolRef(tokens[i])
+                    if (tokens[i] != null && SlotToken.IsPoolRef(tokens[i]!)
                         && renderData != null
-                        && renderData.Structure.TryGet(SlotToken.PoolId(tokens[i]),
-                            out _, out _, out string poolName))
+                        && renderData.Structure.TryGet(SlotToken.PoolId(tokens[i]!),
+                            out _, out _, out string? poolName))
                         tooltips[i] = poolName;
-                    else if (tokens[i] != null && SlotToken.IsPool(tokens[i]))
+                    else if (tokens[i] != null && SlotToken.IsPool(tokens[i]!))
                         tooltips[i] = GameResourceCatalog.Instance.CategoryLabelOf(
-                            SlotToken.MemberName(tokens[i])).CapitalizeFirst();
+                            SlotToken.MemberName(tokens[i]!)).CapitalizeFirst();
                     else
-                        tooltips[i] = defs[i] != null ? defs[i].LabelCap : cell.DefName;
+                        tooltips[i] = defs[i] != null ? defs[i]!.LabelCap : cell.DefName;
                 }
                 else if (cell.Kind == CellKind.Label)
                     // Count > 0 marks a parameterized label ("…and {0} more");
                     // formatted here so drawing never builds strings.
                     labels[i] = cell.Count > 0
-                        ? string.Format(UiText.Get(cell.Text), cell.Count)
-                        : UiText.Get(cell.Text);
+                        ? string.Format(UiText.Get(cell.Text!), cell.Count) // label cells carry a key
+                        : UiText.Get(cell.Text!);
             }
             return new DrawModel
             {
@@ -124,7 +126,7 @@ namespace EPrimeReadouts.UI
                             // Per-def scale correction evens out how much of
                             // each texture is transparent padding, so icons
                             // read as visually same-sized. Cached lookup.
-                            float iconScale = IconScaleCache.ScaleFor(draw.Defs[i]);
+                            float iconScale = IconScaleCache.ScaleFor(draw.Defs[i]!);
                             var iconRect = iconScale == 1f ? rect : new Rect(
                                 rect.x + rect.width * (1f - iconScale) / 2f,
                                 rect.y + rect.height * (1f - iconScale) / 2f,
@@ -132,7 +134,7 @@ namespace EPrimeReadouts.UI
                                 rect.height * iconScale);
                             Widgets.ThingIcon(iconRect, draw.Defs[i]);
                             if (Mouse.IsOver(rect))
-                                IconTips.Tip(rect, draw.Defs[i], draw.Counts[i], cells[i + 1].Band,
+                                IconTips.Tip(rect, draw.Defs[i]!, draw.Counts[i], cells[i + 1].Band,
                                     draw.Tokens[i], draw.RenderData);
                         }
                         break;

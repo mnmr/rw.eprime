@@ -30,7 +30,7 @@ namespace EPrimeReadouts.Core
             internal WorkKey(
                 PlannedWorkKind kind,
                 string workDefName,
-                string stuffDefName,
+                string? stuffDefName,
                 string resourceDefName,
                 int unitCost,
                 PlannedWorkSource source)
@@ -46,7 +46,7 @@ namespace EPrimeReadouts.Core
             internal readonly PlannedWorkKind Kind;
             internal readonly PlannedWorkSource Source;
             internal readonly string WorkDefName;
-            internal readonly string StuffDefName;
+            internal readonly string? StuffDefName;
             internal readonly string ResourceDefName;
             internal readonly int UnitCost;
 
@@ -88,7 +88,7 @@ namespace EPrimeReadouts.Core
             new Dictionary<string, SearchTally>();
         private readonly Dictionary<string, DebtTally> debtTallies =
             new Dictionary<string, DebtTally>();
-        private Dictionary<WorkKey, WorkTally> workTallies;
+        private Dictionary<WorkKey, WorkTally>? workTallies;
         private long fingerprint = 17;
         private bool published;
 
@@ -192,7 +192,7 @@ namespace EPrimeReadouts.Core
             string resourceDefName,
             int defHash,
             string workDefName,
-            string stuffDefName,
+            string? stuffDefName,
             int queued,
             int unitCost,
             int drain,
@@ -206,7 +206,7 @@ namespace EPrimeReadouts.Core
         private void AddWork(
             PlannedWorkKind kind,
             string workDefName,
-            string stuffDefName,
+            string? stuffDefName,
             string resourceDefName,
             int queued,
             int unitCost,
@@ -234,7 +234,7 @@ namespace EPrimeReadouts.Core
         public RenderCountSnapshot ToSnapshot()
         {
             EnsureWritable();
-            Dictionary<string, SearchCount> search = null;
+            Dictionary<string, SearchCount>? search = null;
             if (searchTallies.Count != 0)
             {
                 search = new Dictionary<string, SearchCount>(searchTallies.Count);
@@ -243,7 +243,7 @@ namespace EPrimeReadouts.Core
                         pair.Value.Stored, pair.Value.Unforbidden,
                         pair.Value.StoredUnforbidden);
             }
-            Dictionary<string, PlannedWorkDebt> debts = null;
+            Dictionary<string, PlannedWorkDebt>? debts = null;
             if (debtTallies.Count != 0)
             {
                 debts = new Dictionary<string, PlannedWorkDebt>(debtTallies.Count);
@@ -252,7 +252,7 @@ namespace EPrimeReadouts.Core
                         pair.Value.Bills, pair.Value.Buildables);
             }
 
-            PlannedWorkEntry[] plannedWork = null;
+            PlannedWorkEntry[]? plannedWork = null;
             if (workTallies != null && workTallies.Count != 0)
             {
                 plannedWork = new PlannedWorkEntry[workTallies.Count];

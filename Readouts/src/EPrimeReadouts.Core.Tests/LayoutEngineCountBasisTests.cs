@@ -16,7 +16,7 @@ public class LayoutEngineCountBasisTests
 
     private static LayoutInput Input(
         ReadoutGroup group,
-        Dictionary<string, SearchCount> searchCounts,
+        Dictionary<string, SearchCount>? searchCounts,
         bool storageOnly = false, bool hideForbidden = false)
     {
         return new LayoutInput

@@ -60,7 +60,7 @@ namespace EPrimeReadouts.Core
         public static string Export(
             IReadOnlyList<ResourcePool> pools,
             IReadOnlyList<ReadoutGroup> groupsInDisplayOrder,
-            Func<string, string> packageIdOf = null)
+            Func<string, string?>? packageIdOf = null)
         {
             // Build id→name lookup
             var idToName = new Dictionary<int, string>();
@@ -73,8 +73,8 @@ namespace EPrimeReadouts.Core
             // Per-pool derived requirement set: distinct member packageIds when
             // ALL members are restricted, null when the pool is unrestricted.
             // Group derivation below reads it for pool-ref slots.
-            var poolRequirements = packageIdOf != null
-                ? new Dictionary<int, List<string>>()
+            Dictionary<int, List<string>?>? poolRequirements = packageIdOf != null
+                ? new Dictionary<int, List<string>?>()
                 : null;
 
             // ── Pools section ─────────────────────────────────────────────
@@ -88,7 +88,7 @@ namespace EPrimeReadouts.Core
                     if (!string.IsNullOrEmpty(pool.IconDefName))
                         poolEl.SetAttributeValue("Icon", pool.IconDefName);
 
-                    List<string> memberIds = null;
+                    List<string>? memberIds = null;
                     bool allRestricted = packageIdOf != null;
                     int memberCount = 0;
                     if (pool.Members != null)
@@ -98,7 +98,7 @@ namespace EPrimeReadouts.Core
                             if (string.IsNullOrEmpty(member)) continue;
                             memberCount++;
                             var memberEl = new XElement("Member", member);
-                            string packageId = packageIdOf?.Invoke(member);
+                            string? packageId = packageIdOf?.Invoke(member);
                             if (packageId != null)
                             {
                                 memberEl.SetAttributeValue("MayRequire", packageId);
@@ -134,7 +134,7 @@ namespace EPrimeReadouts.Core
                     if (!group.DefaultEnabled)
                         groupEl.SetAttributeValue("DefaultEnabled", "False");
 
-                    List<string> slotIds = null;
+                    List<string>? slotIds = null;
                     bool allSlotsRestricted = packageIdOf != null;
                     int slotCount = 0;
                     if (group.Tiers != null)
@@ -145,7 +145,7 @@ namespace EPrimeReadouts.Core
                             foreach (var token in tier)
                             {
                                 if (string.IsNullOrEmpty(token)) continue;
-                                string portable = TokenToPortable(token, idToName);
+                                string? portable = TokenToPortable(token, idToName);
                                 if (portable == null) continue;
                                 var slotEl = new XElement("Slot", portable);
                                 slotCount++;
@@ -156,7 +156,7 @@ namespace EPrimeReadouts.Core
                                     {
                                         // Never annotated directly: gating cascades
                                         // through the pool's own requirement set.
-                                        poolRequirements.TryGetValue(
+                                        poolRequirements!.TryGetValue( // Non-null when packageIdOf is provided.
                                             SlotToken.PoolId(token), out var poolSet);
                                         if (poolSet != null)
                                             foreach (var id in poolSet)
@@ -166,7 +166,7 @@ namespace EPrimeReadouts.Core
                                     }
                                     else
                                     {
-                                        string packageId = packageIdOf(SlotToken.Canonical(token));
+                                        string? packageId = packageIdOf(SlotToken.Canonical(token));
                                         if (packageId != null)
                                         {
                                             slotEl.SetAttributeValue("MayRequire", packageId);
@@ -211,7 +211,7 @@ namespace EPrimeReadouts.Core
 
         /// Appends a packageId to a lazily created list, preserving first-encounter
         /// order (deterministic attribute output) and skipping duplicates.
-        private static void AddDistinct(ref List<string> ids, string packageId)
+        private static void AddDistinct(ref List<string>? ids, string packageId)
         {
             if (ids == null) ids = new List<string>();
             if (!ids.Contains(packageId)) ids.Add(packageId);
@@ -219,7 +219,7 @@ namespace EPrimeReadouts.Core
 
         /// Converts a save-local token to its portable XML representation.
         /// Returns null when the token references an unknown pool (drop it).
-        private static string TokenToPortable(string token, Dictionary<int, string> idToName)
+        private static string? TokenToPortable(string token, Dictionary<int, string> idToName)
         {
             if (!SlotToken.IsPoolRef(token)) return token;
 
@@ -237,7 +237,7 @@ namespace EPrimeReadouts.Core
         /// <c>MayRequireAnyOf</c> (comma-separated packageIds, ANY must be active).
         /// A null predicate keeps everything.
         /// </summary>
-        private static bool ModsPresent(XElement el, Func<string, bool> isModActive)
+        private static bool ModsPresent(XElement el, Func<string, bool>? isModActive)
         {
             if (isModActive == null) return true;
 
@@ -285,11 +285,11 @@ namespace EPrimeReadouts.Core
         /// </para>
         /// </summary>
         public static bool TryImport(
-            string xml,
+            string? xml,
             out List<ResourcePool> pools,
             out List<ReadoutGroup> groups,
-            out string error,
-            Func<string, bool> isModActive = null)
+            out string? error,
+            Func<string, bool>? isModActive = null)
         {
             pools = new List<ResourcePool>();
             groups = new List<ReadoutGroup>();

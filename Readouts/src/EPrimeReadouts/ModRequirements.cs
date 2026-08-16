@@ -14,7 +14,7 @@ namespace EPrimeReadouts
 
         /// Export's packageIdOf hook: defName or "@CategoryDefName" → owning
         /// packageId, or null for base-game content and unresolvable names.
-        public static readonly Func<string, string> PackageIdOf = ResolvePackageId;
+        public static readonly Func<string, string?> PackageIdOf = ResolvePackageId;
 
         /// Matches vanilla's MayRequire evaluation on def list nodes
         /// (ModLister.AllModsActiveNoSuffix): case-insensitive and tolerant of
@@ -23,13 +23,13 @@ namespace EPrimeReadouts
         private static bool IsActive(string packageId) =>
             ModLister.GetActiveModWithIdentifier(packageId, ignorePostfix: true) != null;
 
-        private static string ResolvePackageId(string member)
+        private static string? ResolvePackageId(string member)
         {
             if (string.IsNullOrEmpty(member)) return null;
-            Def def = member[0] == '@'
+            Def? def = member[0] == '@'
                 ? (Def)DefDatabase<ThingCategoryDef>.GetNamedSilentFail(member.Substring(1))
                 : DefDatabase<ThingDef>.GetNamedSilentFail(member);
-            ModContentPack pack = def?.modContentPack;
+            ModContentPack? pack = def?.modContentPack;
             // PackageIdPlayerFacing: suffix-free, so an export from a Workshop
             // install imports cleanly against any install source of the mod.
             return pack == null || pack.IsCoreMod ? null : pack.PackageIdPlayerFacing;

@@ -18,8 +18,8 @@ public class ReadoutModelTests
     public async Task CreateAssignsSequentialOrderIndexes()
     {
         var model = ModelWithGroups("Food", "Drugs");
-        await Assert.That(model.GroupById(1).OrderIndex).IsEqualTo(0);
-        await Assert.That(model.GroupById(2).OrderIndex).IsEqualTo(1);
+        await Assert.That(model.GroupById(1)!.OrderIndex).IsEqualTo(0);
+        await Assert.That(model.GroupById(2)!.OrderIndex).IsEqualTo(1);
     }
 
     [Test]
@@ -59,7 +59,7 @@ public class ReadoutModelTests
     {
         var model = ModelWithGroups("Food");
         await Assert.That(model.RenameGroup(1, "Meals")).IsTrue();
-        await Assert.That(model.GroupById(1).Name).IsEqualTo("Meals");
+        await Assert.That(model.GroupById(1)!.Name).IsEqualTo("Meals");
         await Assert.That(model.RenameGroup(99, "X")).IsFalse();
     }
 
@@ -72,7 +72,7 @@ public class ReadoutModelTests
             new() { "A" }, new() { "B" }, new() { "C" }, new() { "D" },
         };
         await Assert.That(model.SetTiers(1, four)).IsFalse();
-        await Assert.That(model.GroupById(1).TierCount).IsEqualTo(0);
+        await Assert.That(model.GroupById(1)!.TierCount).IsEqualTo(0);
     }
 
     [Test]
@@ -81,7 +81,7 @@ public class ReadoutModelTests
         var model = ModelWithGroups("Food");
         var tiers = new List<List<string>> { new(), new() { "Steel" } };
         await Assert.That(model.SetTiers(1, tiers)).IsTrue();
-        await Assert.That(model.GroupById(1).TierCount).IsEqualTo(1);
+        await Assert.That(model.GroupById(1)!.TierCount).IsEqualTo(1);
     }
 
     [Test]
@@ -92,7 +92,7 @@ public class ReadoutModelTests
         model.SetThreshold("Gone", 10, 2);
         model.SetThreshold("Steel", 100, 20);
         model.CleanupMissing(d => d == "Steel", m => true);
-        await Assert.That(string.Join(",", model.GroupById(1).Tiers[0])).IsEqualTo("Steel");
+        await Assert.That(string.Join(",", model.GroupById(1)!.Tiers[0])).IsEqualTo("Steel");
         await Assert.That(model.Thresholds.ContainsKey("Gone")).IsFalse();
         await Assert.That(model.Thresholds.ContainsKey("Steel")).IsTrue();
     }

@@ -17,7 +17,7 @@ namespace EPrimeReadouts
             QualityJobsPlannedWorkSnapshot qualityJobs)
         {
             var accumulator = new CountAccumulator();
-            Dictionary<int, Map> levels = LevelStacks.LevelsOf(map);
+            Dictionary<int, Map>? levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
                 AccumulateMap(map, accumulator, plannedWork, qualityJobs);

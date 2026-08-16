@@ -2,7 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net472</TargetFramework>
     <LangVersion>10</LangVersion>
-    <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>EPrimeReadouts</RootNamespace>
     <AssemblyName>EPrimeReadouts</AssemblyName>

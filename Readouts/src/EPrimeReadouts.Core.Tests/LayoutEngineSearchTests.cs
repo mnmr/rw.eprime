@@ -152,7 +152,7 @@ public class LayoutEngineSearchTests
     /// an optional per-def search breakdown and filter flags.
     private static LayoutInput FilterInput(
         Dictionary<string, int> counts,
-        Dictionary<string, SearchCount> searchCounts = null,
+        Dictionary<string, SearchCount>? searchCounts = null,
         bool hideZero = false, bool storageOnly = false, bool hideForbidden = false)
     {
         var defs = new string[counts.Count];
@@ -174,7 +174,8 @@ public class LayoutEngineSearchTests
 
     private static (string DefName, int Count)[] Results(RenderModel model) =>
         model.Cells.Where(c => c.Kind == CellKind.Icon)
-            .Select(c => (c.DefName, c.Count)).ToArray();
+            .Select(c => (c.DefName ?? throw new InvalidOperationException(
+                "Icon cells must carry a def name."), c.Count)).ToArray();
 
     [Test]
     public async Task ResultsWithCountsSortBeforeZeroCountResults()

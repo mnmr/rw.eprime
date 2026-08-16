@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="EPrimeReadouts.Core.Tests/EPrimeReadouts.Core.Tests.csproj" />
+  <Project Path="EPrimeReadouts.Core/EPrimeReadouts.Core.csproj" />
+  <Project Path="EPrimeReadouts/EPrimeReadouts.csproj" />
+</Solution>

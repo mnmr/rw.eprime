@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using Verse;
 
 namespace EPrimeReadouts
@@ -16,7 +17,7 @@ namespace EPrimeReadouts
             revision.Observe(
                 Prefs.UIScale,
                 Prefs.DisableTinyText,
-                LanguageDatabase.activeLanguage?.folderName);
+                LanguageDatabase.activeLanguage?.folderName!); // Observe stores/compares null-safely
 
         public static void Bump()
         {

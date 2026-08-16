@@ -1,5 +1,6 @@
 using System;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using Verse;
 
 namespace EPrimeReadouts
@@ -40,7 +41,7 @@ namespace EPrimeReadouts
         //               paused).
         // Equality policy: equal refreshed counts preserve snapshot identity.
         // Teardown: Remove on map removal; Reset on world teardown/owner change.
-        private static ReadoutStore cacheOwner;
+        private static ReadoutStore? cacheOwner;
         private static int cacheMapSetStamp = -1;
         private static PlannedWorkOptions cachePlannedWork;
         private static QualityJobsPlannedWorkSnapshot cacheQualityJobs =
@@ -55,7 +56,7 @@ namespace EPrimeReadouts
             if (map == null) throw new ArgumentNullException(nameof(map));
             if (store == null) throw new ArgumentNullException(nameof(store));
 
-            map = LevelStacks.CanonicalOrSelf(map);
+            map = LevelStacks.CanonicalOrSelf(map)!; // non-null for non-null input
 
             if (!ReferenceEquals(cacheOwner, store))
             {
@@ -127,7 +128,7 @@ namespace EPrimeReadouts
             for (int i = 0; i < currentMaps.Length; i++)
             {
                 QualityJobsMapWorkSnapshot changed = currentMaps[i];
-                QualityJobsMapWorkSnapshot old = previous.For(changed.Map);
+                QualityJobsMapWorkSnapshot? old = previous.For(changed.Map);
                 bool billsChanged = cachePlannedWork.ReserveBills
                     && (old == null ? changed.HasBills : !changed.BillsEqual(old));
                 bool buildablesChanged = cachePlannedWork.ReserveBuildables
@@ -136,7 +137,7 @@ namespace EPrimeReadouts
                         : !changed.BuildablesEqual(old));
                 if (billsChanged || buildablesChanged)
                     cache.InvalidateCounts(
-                        LevelStacks.CanonicalOrSelf(changed.Map));
+                        LevelStacks.CanonicalOrSelf(changed.Map)!);
             }
 
             QualityJobsMapWorkSnapshot[] previousMaps = previous.Maps;
@@ -148,7 +149,7 @@ namespace EPrimeReadouts
                         || (cachePlannedWork.ReserveBuildables
                             && removed.HasBuildables)))
                     cache.InvalidateCounts(
-                        LevelStacks.CanonicalOrSelf(removed.Map));
+                        LevelStacks.CanonicalOrSelf(removed.Map)!);
             }
         }
 

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -34,19 +35,19 @@ namespace EPrimeReadouts.UI
         private int builtGroupId = -1;
         private int builtUiVersion = -1;
         private float builtWidth = -1f;
-        private RenderCountSnapshot builtCounts;
-        private PoolSnapshot builtPools;
+        private RenderCountSnapshot? builtCounts;
+        private PoolSnapshot? builtPools;
         private bool builtStorageOnly;
         private bool builtHideForbidden;
         private bool builtShowNegative;
 
-        private ReadoutStore groupOwner;
+        private ReadoutStore? groupOwner;
         private int groupSnapshotVersion = -1;
         private int groupSnapshotId = -1;
-        private ReadoutGroup groupSnapshot;
+        private ReadoutGroup? groupSnapshot;
 
         // Cached draw models: one per tier depth
-        private List<(RenderModel model, DrawModel draw)> cachedBands;
+        private List<(RenderModel model, DrawModel draw)>? cachedBands;
 
         // Cached name width (rebuilt alongside bands or when group changes)
         private float cachedNameWidth = -1f;
@@ -63,15 +64,15 @@ namespace EPrimeReadouts.UI
 
         // Tracks external selection changes (e.g. the resource tree selecting a
         // freshly added token) so buffers/display name re-derive exactly once.
-        private string lastSyncedCanonical;
+        private string? lastSyncedCanonical;
 
         private int selectionGroupsVersion = -1;
         private int selectionGroupId = -1;
-        private string selectionCanonical;
+        private string? selectionCanonical;
         private bool selectionInGroup;
-        private string selectionStoredToken;
-        private string optionsDisplayName;
-        private string optionsHeader;
+        private string? selectionStoredToken;
+        private string? optionsDisplayName;
+        private string? optionsHeader;
         private int optionsLanguageVersion = -1;
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -163,7 +164,7 @@ namespace EPrimeReadouts.UI
             float bandY = y;
             for (int t = 0; t < rowCount; t++)
             {
-                var (model, dm) = cachedBands[t];
+                var (model, dm) = cachedBands![t];
                 float bandH = model.TotalHeight;
                 var bandRect = new Rect(rect.x, bandY, rect.width, bandH);
 
@@ -205,7 +206,7 @@ namespace EPrimeReadouts.UI
                 }
                 bool dummy = false;
                 float optHeaderUsed = EprStyle.SectionHeader(rect.x, y, rect.width,
-                    optionsHeader, null, ref dummy);
+                    optionsHeader!, null, ref dummy); // set by the block above
                 y += optHeaderUsed;
                 DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y),
                     group, selectionStoredToken, owner);
@@ -216,8 +217,8 @@ namespace EPrimeReadouts.UI
             ReadoutStore store,
             int groupId,
             float width,
-            PoolSnapshot pools,
-            RenderCountSnapshot counts)
+            PoolSnapshot? pools,
+            RenderCountSnapshot? counts)
         {
             if (cachedBands == null) return true;
             if (store.GroupsVersion != builtGroupsVersion) return true;
@@ -306,7 +307,7 @@ namespace EPrimeReadouts.UI
 
                 if (cell.Kind == CellKind.Icon)
                 {
-                    string token = cell.Token;
+                    string? token = cell.Token;
                     if (token == null) continue;
                     string canonical = SlotToken.Canonical(token);
 
@@ -333,7 +334,7 @@ namespace EPrimeReadouts.UI
                             Widgets.DrawBoxSolid(new Rect(markerX, cellRect.y, 2f, cellRect.height),
                                 new Color(1f, 1f, 1f, 0.9f));
                             EprDrag.SetTokenDrop(group.Id, cell.Tier, insertSlot,
-                                EprDrag.FromTier >= 0, EprDrag.Payload,
+                                EprDrag.FromTier >= 0, EprDrag.Payload!, // tokenDrag implies a payload
                                 EprDrag.FromTier, EprDrag.FromSlot);
                         }
                     }
@@ -383,14 +384,14 @@ namespace EPrimeReadouts.UI
                     {
                         Widgets.DrawHighlight(cellRect);
                         EprDrag.SetTokenDrop(group.Id, cell.Tier, cell.Slot,
-                            EprDrag.FromTier >= 0, EprDrag.Payload,
+                            EprDrag.FromTier >= 0, EprDrag.Payload!, // tokenDrag implies a payload
                             EprDrag.FromTier, EprDrag.FromSlot);
                     }
                 }
             }
         }
 
-        private void EnsureSelection(ReadoutGroup group, int groupsVersion, string canonical)
+        private void EnsureSelection(ReadoutGroup? group, int groupsVersion, string? canonical)
         {
             int groupId = group?.Id ?? -1;
             if (selectionGroupsVersion == groupsVersion
@@ -415,14 +416,14 @@ namespace EPrimeReadouts.UI
                 }
         }
 
-        private ReadoutGroup GetGroupSnapshot(ReadoutStore store, int groupId)
+        private ReadoutGroup? GetGroupSnapshot(ReadoutStore store, int groupId)
         {
             if (ReferenceEquals(groupOwner, store)
                 && groupSnapshotVersion == store.GroupsVersion
                 && groupSnapshotId == groupId)
                 return groupSnapshot;
 
-            ReadoutGroup source = store.Model.GroupById(groupId);
+            ReadoutGroup? source = store.Model.GroupById(groupId);
             groupSnapshot = source == null ? null : new ReadoutGroup
             {
                 Id = source.Id,
@@ -445,7 +446,7 @@ namespace EPrimeReadouts.UI
             thresholdEditor.Select(
                 canonical,
                 store != null ? store.ThresholdsVersion : 0,
-                store?.Model.Thresholds);
+                store?.Model.Thresholds!); // Select tolerates a null dictionary
 
         }
 
@@ -505,7 +506,7 @@ namespace EPrimeReadouts.UI
             return thresholdRow;
         }
 
-        private void DrawOptionsBody(Rect rect, ReadoutGroup group, string storedToken,
+        private void DrawOptionsBody(Rect rect, ReadoutGroup group, string? storedToken,
             Dialog_ReadoutConfig owner)
         {
             if (owner.selectedCanonical == null) return;

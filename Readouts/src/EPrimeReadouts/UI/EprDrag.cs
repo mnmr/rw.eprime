@@ -13,7 +13,7 @@ namespace EPrimeReadouts.UI
 
         public static bool Active { get; private set; }
         /// Raw slot token being dragged; null when dragging a group row.
-        public static string Payload { get; private set; }
+        public static string? Payload { get; private set; }
         /// Tier the token came from; -1 when sourced from the resource tree.
         public static int FromTier { get; private set; } = -1;
         /// Slot index the token came from; -1 when sourced from the resource tree.
@@ -24,11 +24,11 @@ namespace EPrimeReadouts.UI
         private static bool pending;
         private static Vector2 pressPos;
         private static int pendingControlId;
-        private static string pendingPayload;
+        private static string? pendingPayload;
         private static int pendingFromTier = -1;
         private static int pendingFromSlot = -1;
         private static int pendingGroupId = -1;
-        private static Action pendingClickAction;
+        private static Action? pendingClickAction;
         private static bool pendingReleaseOverSource;
 
         private enum DropKind { None, Group, Token }
@@ -38,7 +38,7 @@ namespace EPrimeReadouts.UI
         private static int dropToTier;
         private static int dropToSlot;
         private static bool dropBandSourced;
-        private static string dropToken;
+        private static string? dropToken;
         private static int dropFromTier;
         private static int dropFromSlot;
 
@@ -165,7 +165,7 @@ namespace EPrimeReadouts.UI
             var tiers = Core.TierOps.Clone(group.Tiers);
             bool changed = dropBandSourced
                 ? Core.TierOps.Move(tiers, dropFromTier, dropFromSlot, dropToTier, dropToSlot)
-                : Core.TierOps.Add(tiers, dropToken, dropToTier, dropToSlot);
+                : Core.TierOps.Add(tiers, dropToken!, dropToTier, dropToSlot); // set by SetTokenDrop
             if (changed)
                 ReadoutCommands.SetGroupLayout(dropGroupId, Core.TierBlobCodec.Encode(tiers));
         }

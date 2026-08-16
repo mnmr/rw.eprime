@@ -17,23 +17,26 @@ namespace EPrimeReadouts
         private static bool resolved;
         private static bool installed;
 
-        private static Func<object> getManagedJobs;
-        private static Func<object, object> getJobs;
-        private static Func<object, int> getJobCount;
-        private static Func<object, int, object> getJobAt;
-        private static Func<object, Map> getMap;
-        private static Func<object, double> getProbability;
-        private static Func<object, Bill_Production> getBill;
-        private static Func<object, RecipeDef> getRecipe;
-        private static Func<object, ThingDef> getProduct;
-        private static Func<object, int> getRemainingIterations;
-        private static Func<object, ThingDef> getBuildableDef;
-        private static Func<object, ThingDef> getStuff;
-        private static Func<object, object> getTargets;
-        private static Func<object, int> getTargetCount;
-        private static Func<object, int, Thing> getTargetAt;
-        private static Type billJobType;
-        private static Type constructionJobType;
+        // getManagedJobs is the availability gate; the remaining accessors are
+        // assigned together when binding succeeds and are only invoked behind
+        // that gate, so they are declared non-null with late assignment.
+        private static Func<object>? getManagedJobs;
+        private static Func<object, object> getJobs = null!;
+        private static Func<object, int> getJobCount = null!;
+        private static Func<object, int, object> getJobAt = null!;
+        private static Func<object, Map> getMap = null!;
+        private static Func<object, double> getProbability = null!;
+        private static Func<object, Bill_Production> getBill = null!;
+        private static Func<object, RecipeDef> getRecipe = null!;
+        private static Func<object, ThingDef> getProduct = null!;
+        private static Func<object, int> getRemainingIterations = null!;
+        private static Func<object, ThingDef> getBuildableDef = null!;
+        private static Func<object, ThingDef> getStuff = null!;
+        private static Func<object, object> getTargets = null!;
+        private static Func<object, int> getTargetCount = null!;
+        private static Func<object, int, Thing> getTargetAt = null!;
+        private static Type billJobType = null!;
+        private static Type constructionJobType = null!;
 
         private static readonly Func<object, ManagedJobsSnapshot> buildSnapshot =
             BuildSnapshot;
@@ -90,8 +93,8 @@ namespace EPrimeReadouts
         {
             object jobs = getJobs(source);
             int count = getJobCount(jobs);
-            List<ManagedBillJob> bills = null;
-            List<ManagedConstructionJob> construction = null;
+            List<ManagedBillJob>? bills = null;
+            List<ManagedConstructionJob>? construction = null;
             for (int i = 0; i < count; i++)
             {
                 object job = getJobAt(jobs, i);
@@ -329,7 +332,7 @@ namespace EPrimeReadouts
             internal readonly ManagedBillJob[] Bills;
             internal readonly ManagedConstructionJob[] Construction;
 
-            public bool Equals(ManagedJobsSnapshot other)
+            public bool Equals(ManagedJobsSnapshot? other)
             {
                 if (other == null
                     || Bills.Length != other.Bills.Length

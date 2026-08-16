@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -23,7 +24,7 @@ namespace EPrimeReadouts.UI
         private int builtPoolId = -1;
         private int builtExpandStamp = -1;
         private int builtLanguageVersion = -1;
-        private ReadoutStore builtStore;
+        private ReadoutStore? builtStore;
 
         // Cache contract:
         // Owner: this dialog view and one ReadoutStore.
@@ -33,7 +34,7 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate on any dependency change.
         // Equality policy: unchanged dependencies preserve row-array identity.
         // Teardown: Reset releases rows/store/def references on dialog close.
-        private EditorRow[] cachedRows;
+        private EditorRow[]? cachedRows;
 
         private struct EditorRow
         {
@@ -100,7 +101,7 @@ namespace EPrimeReadouts.UI
 
         private void Rebuild(ReadoutStore store, int poolId)
         {
-            ResourcePool pool = store.Model.PoolById(poolId);
+            ResourcePool? pool = store.Model.PoolById(poolId);
             bool poolChanged = poolId != builtPoolId;
             builtStore = store;
             builtPoolsVersion = store.PoolsVersion;
@@ -158,7 +159,7 @@ namespace EPrimeReadouts.UI
         }
 
         private void AddNode(ResourceTreeNode node, int indent, List<string> members,
-            string iconDefName, List<EditorRow> into)
+            string? iconDefName, List<EditorRow> into)
         {
             bool open = expanded.Contains(node.Id);
             var state = PoolTriState.CategoryState(members, node.Id, GameResourceCatalog.Instance);

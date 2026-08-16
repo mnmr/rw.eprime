@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -34,8 +35,8 @@ namespace EPrimeReadouts.UI
         {
             public Rect Rect;
             public Color Color;
-            public string Text;
-            public Texture2D Icon;
+            public string? Text;
+            public Texture2D? Icon;
             public bool NoWrap;
         }
 
@@ -169,15 +170,17 @@ namespace EPrimeReadouts.UI
         private static float NaturalWidth(TipModel model)
         {
             float w = 0f;
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float titleW = WrText.FitWidth(model.Title);
-                if (!model.Badge.NullOrEmpty()) titleW += BadgeGap + WrText.FitWidth(model.Badge);
+                float titleW = WrText.FitWidth(title);
+                if (model.Badge is { Length: > 0 } badge)
+                    titleW += BadgeGap + WrText.FitWidth(badge);
                 w = titleW;
             }
             foreach (var section in model.Sections)
             {
-                if (!section.Header.NullOrEmpty()) w = Mathf.Max(w, WrText.FitWidth(section.Header));
+                if (section.Header is { Length: > 0 } header)
+                    w = Mathf.Max(w, WrText.FitWidth(header));
                 float factCol = LabelColumnWidth(model);
                 foreach (var row in section.Rows)
                     switch (row)
@@ -195,7 +198,7 @@ namespace EPrimeReadouts.UI
                             w = Mathf.Max(w, FactGridWidth(grid));
                             break;
                     }
-                float[] cols = ColumnWidths(section);
+                float[]? cols = ColumnWidths(section);
                 if (cols != null)
                 {
                     float tableW = TableInset * 2f + InterColumnGap * (cols.Length - 1);
@@ -215,10 +218,11 @@ namespace EPrimeReadouts.UI
         private static float FloorWidth(TipModel model)
         {
             float w = 24f;
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float titleW = WrText.FitWidth(model.Title);
-                if (!model.Badge.NullOrEmpty()) titleW += BadgeGap + WrText.FitWidth(model.Badge);
+                float titleW = WrText.FitWidth(title);
+                if (model.Badge is { Length: > 0 } badge)
+                    titleW += BadgeGap + WrText.FitWidth(badge);
                 w = Mathf.Max(w, titleW);
             }
             float factCol = LabelColumnWidth(model);
@@ -228,7 +232,7 @@ namespace EPrimeReadouts.UI
                 foreach (var row in section.Rows)
                     if (row is TipFactGridRow grid)
                         w = Mathf.Max(w, FactGridWidth(grid));
-                float[] cols = ColumnWidths(section);
+                float[]? cols = ColumnWidths(section);
                 if (cols != null)
                 {
                     float tableW = TableInset * 2f + InterColumnGap * (cols.Length - 1);
@@ -244,12 +248,12 @@ namespace EPrimeReadouts.UI
         /// Natural per-column widths across a section's columns rows, or null if
         /// none; column 0 reserves icon space when any row carries one so text
         /// alignment holds and icons trail the text.
-        private static float[] ColumnWidths(TipSection section)
+        private static float[]? ColumnWidths(TipSection section)
         {
             int count = 0;
             foreach (var row in section.Rows)
                 if (row is TipColumnsRow cols)
-                    count = Mathf.Max(count, cols.Cells?.Count ?? 0);
+                    count = Mathf.Max(count, cols.Cells.Count);
             if (count == 0) return null;
             var widths = new float[count];
             bool anyIcon = false;
@@ -257,7 +261,7 @@ namespace EPrimeReadouts.UI
                 if (row is TipColumnsRow cols)
                 {
                     anyIcon |= cols.Icon != null;
-                    for (int i = 0; i < (cols.Cells?.Count ?? 0); i++)
+                    for (int i = 0; i < cols.Cells.Count; i++)
                         if (!cols.Cells[i].NullOrEmpty())
                             widths[i] = Mathf.Max(widths[i], WrText.FitWidth(cols.Cells[i]));
                 }
@@ -296,7 +300,7 @@ namespace EPrimeReadouts.UI
         }
 
         private static bool TrySingleFactGridLayout(
-            TipModel model, out TipFactGridRow singleGrid,
+            TipModel model, out TipFactGridRow? singleGrid,
             out TipColumnLayout layout)
         {
             singleGrid = null;
@@ -317,10 +321,10 @@ namespace EPrimeReadouts.UI
 
             FactGridColumnWidths(singleGrid, 0,
                 out float rowLabelW, out float rowValueW);
-            float titleW = model.Title.NullOrEmpty()
-                ? 0f : WrText.FitWidth(model.Title);
-            float badgeW = model.Badge.NullOrEmpty()
-                ? 0f : WrText.FitWidth(model.Badge);
+            float titleW = model.Title is { Length: > 0 } title
+                ? WrText.FitWidth(title) : 0f;
+            float badgeW = model.Badge is { Length: > 0 } badge
+                ? WrText.FitWidth(badge) : 0f;
             layout = TipLayoutPolicy.SharedColumns(
                 titleW, badgeW, rowLabelW, rowValueW, BadgeGap);
             return true;
@@ -352,7 +356,7 @@ namespace EPrimeReadouts.UI
             float lineH = Text.LineHeightOf(GameFont.Small);
             float y = 0f;
             bool hasSharedGrid = TrySingleFactGridLayout(
-                model, out TipFactGridRow sharedGrid,
+                model, out TipFactGridRow? sharedGrid,
                 out TipColumnLayout sharedLayout);
             float sharedLabelW = 0f;
             float sharedValueX = 0f;
@@ -363,16 +367,17 @@ namespace EPrimeReadouts.UI
                 sharedValueX = sharedLabelW + BadgeGap;
             }
 
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float badgeW = model.Badge.NullOrEmpty() ? 0f : WrText.FitWidth(model.Badge);
+                string? badge = model.Badge;
+                float badgeW = badge is { Length: > 0 } ? WrText.FitWidth(badge) : 0f;
                 geo.Cmds.Add(new Cmd
                 {
                     Rect = new Rect(0f, y,
                         hasSharedGrid ? sharedLabelW : Mathf.Max(0f,
                             contentW - (badgeW > 0f ? badgeW + BadgeGap : 0f)), lineH),
                     Color = Color.white,
-                    Text = model.Title,
+                    Text = title,
                     NoWrap = true,
                 });
                 if (badgeW > 0f)
@@ -385,7 +390,7 @@ namespace EPrimeReadouts.UI
                     {
                         Rect = new Rect(badgeX, y, badgeW, lineH),
                         Color = model.BadgeColor,
-                        Text = model.Badge,
+                        Text = badge,
                         NoWrap = true,
                     });
                 }
@@ -408,13 +413,13 @@ namespace EPrimeReadouts.UI
                 }
                 firstSection = false;
 
-                if (!section.Header.NullOrEmpty())
+                if (section.Header is { Length: > 0 } header)
                 {
                     geo.Cmds.Add(new Cmd
                     {
                         Rect = new Rect(0f, y, contentW, lineH),
                         Color = TipText.DimColor,
-                        Text = section.Header,
+                        Text = header,
                     });
                     y += lineH;
                 }
@@ -423,7 +428,7 @@ namespace EPrimeReadouts.UI
                 float valueX = labelCol + ColGap;
                 float valueW = Mathf.Max(24f, contentW - valueX);
 
-                float[] tableCols = ColumnWidths(section);
+                float[]? tableCols = ColumnWidths(section);
                 float tableLineW;
                 if (tableCols != null)
                 {
@@ -488,18 +493,19 @@ namespace EPrimeReadouts.UI
                         {
                             if (tableCols == null) break;
                             if (cols.Tight) y -= RowTighten;
-                            int cellCount = cols.Cells?.Count ?? 0;
+                            int cellCount = cols.Cells.Count;
                             var rowColor = cols.Color ?? Color.white;
                             float cx = TableInset;
                             for (int i = 0; i < tableCols.Length; i++)
                             {
-                                string cell = i < cellCount ? cols.Cells[i] : null;
-                                if (!cell.NullOrEmpty())
+                                string? cell = i < cellCount ? cols.Cells[i] : null;
+                                if (cell is { Length: > 0 })
                                 {
                                     float textW = WrText.FitWidth(cell);
                                     TipColumnAlignment alignment =
-                                        i < (cols.Alignments?.Count ?? 0)
-                                            ? cols.Alignments[i]
+                                        cols.Alignments is { } alignments
+                                        && i < alignments.Count
+                                            ? alignments[i]
                                             : TipColumnAlignment.Left;
                                     float textX = TipTableLayout.TextX(
                                         cx, tableCols[i], textW, alignment);
@@ -516,7 +522,8 @@ namespace EPrimeReadouts.UI
                                 }
                                 if (i == 0 && cols.Icon != null)
                                 {
-                                    float textW = cell.NullOrEmpty() ? 0f : WrText.FitWidth(cell);
+                                    float textW = cell is { Length: > 0 }
+                                        ? WrText.FitWidth(cell) : 0f;
                                     float iconX = cx + CellIconGap
                                         + Mathf.Min(textW, tableCols[0] - (CellIconGap + CellIconSize));
                                     geo.Cmds.Add(new Cmd

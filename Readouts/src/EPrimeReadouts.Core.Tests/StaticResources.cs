@@ -38,7 +38,7 @@ public static class StaticResources
 
     /// Builds a PoolSnapshot with a single pool containing Meat_Cow and Meat_Chicken.
     /// Pool id=1, name="Meats", icon resolves to Meat_Cow.
-    public static PoolSnapshot MeatPool(int poolId = 1, string iconDefName = null)
+    public static PoolSnapshot MeatPool(int poolId = 1, string? iconDefName = null)
     {
         var pool = new ResourcePool
         {

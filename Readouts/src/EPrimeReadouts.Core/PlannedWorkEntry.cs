@@ -24,7 +24,7 @@ namespace EPrimeReadouts.Core
         public PlannedWorkEntry(
             PlannedWorkKind kind,
             string workDefName,
-            string stuffDefName,
+            string? stuffDefName,
             string resourceDefName,
             int queued,
             int unitCost,
@@ -44,7 +44,7 @@ namespace EPrimeReadouts.Core
         public PlannedWorkKind Kind { get; }
         public PlannedWorkSource Source { get; }
         public string WorkDefName { get; }
-        public string StuffDefName { get; }
+        public string? StuffDefName { get; }
         public string ResourceDefName { get; }
         public int Queued { get; }
         public int UnitCost { get; }
@@ -113,7 +113,7 @@ namespace EPrimeReadouts.Core
             int overflowCount,
             int overflowQueued,
             int overflowDrain,
-            string overflowResourceDefName,
+            string? overflowResourceDefName,
             PlannedWorkSource? overflowSource)
         {
             this.rows = rows;
@@ -129,13 +129,13 @@ namespace EPrimeReadouts.Core
         public int OverflowQueued { get; }
         public int OverflowDrain { get; }
         /// Null means either no overflow or an overflow spanning resources.
-        public string OverflowResourceDefName { get; }
+        public string? OverflowResourceDefName { get; }
         /// Null means either no overflow or an overflow spanning sources.
         public PlannedWorkSource? OverflowSource { get; }
 
         public static PlannedWorkSelection ForResources(
-            IReadOnlyList<PlannedWorkEntry> entries,
-            IReadOnlyList<string> resourceDefNames,
+            IReadOnlyList<PlannedWorkEntry>? entries,
+            IReadOnlyList<string>? resourceDefNames,
             int maxRows)
         {
             if (maxRows <= 0) throw new ArgumentOutOfRangeException(nameof(maxRows));
@@ -164,7 +164,7 @@ namespace EPrimeReadouts.Core
 
             int queued = 0;
             int drain = 0;
-            string resource = null;
+            string? resource = null;
             bool mixed = false;
             PlannedWorkSource? source = null;
             bool mixedSource = false;

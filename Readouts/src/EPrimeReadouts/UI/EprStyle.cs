@@ -1,5 +1,6 @@
 using System;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -50,7 +51,7 @@ namespace EPrimeReadouts.UI
         /// allowing the caller to place controls (e.g. a rename pencil) to the
         /// right of the clickable region without triggering the fold toggle.
         internal static float SectionHeader(float x, float y, float width, string label,
-            string caption, ref bool folded, float clickableWidth = -1f, bool foldable = true)
+            string? caption, ref bool folded, float clickableWidth = -1f, bool foldable = true)
         {
             using (new GuiStateScope())
             {
@@ -73,7 +74,7 @@ namespace EPrimeReadouts.UI
             {
                 Text.Font = GameFont.Tiny;
                 GUI.color = CaptionText;
-                float capH = CaptionHeight(caption, width);
+                float capH = CaptionHeight(caption!, width); // NullOrEmpty checked above
                 Widgets.Label(new Rect(x, y + used, width, capH), caption);
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;

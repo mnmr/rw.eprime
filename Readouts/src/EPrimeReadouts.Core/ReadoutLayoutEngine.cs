@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace EPrimeReadouts.Core
 {
@@ -11,30 +12,30 @@ namespace EPrimeReadouts.Core
         /// The user-configured depth when DepthOf reflects a transient hover
         /// expansion; tiers visible beyond it render HoverLit triangles. Null
         /// means DepthOf IS the configured depth (no hover distinction).
-        public Func<ReadoutGroup, int> ConfiguredDepthOf;
-        public IReadOnlyDictionary<string, int> Counts;
-        public Dictionary<string, ThresholdSpec> Thresholds;
+        public Func<ReadoutGroup, int>? ConfiguredDepthOf;
+        public IReadOnlyDictionary<string, int> Counts = null!; // Required input; set by every builder.
+        public Dictionary<string, ThresholdSpec> Thresholds = null!; // Required input; set by every builder.
         public string SearchText = "";
         /// Per-def search breakdown; null falls back to Counts with every
         /// stack treated as stored and unforbidden.
-        public IReadOnlyDictionary<string, SearchCount> SearchCounts;
+        public IReadOnlyDictionary<string, SearchCount>? SearchCounts;
         /// Per-player search-result filters (see BuildResults).
         public bool SearchHideZero;
         public bool SearchStorageOnly;
         public bool SearchHideForbidden;
         /// Per-def material already owed to planned work; null treated as empty.
-        public IReadOnlyDictionary<string, PlannedWorkDebt> Debts;
+        public IReadOnlyDictionary<string, PlannedWorkDebt>? Debts;
         /// Let a counter whose debt exceeds its stock show the overrun as a
         /// negative number instead of capping at zero.
         public bool AllowNegativeCounts;
         public float Width = 140f;
-        public IResourceCatalog Catalog;
+        public IResourceCatalog Catalog = null!; // Required input; set by every builder.
         public bool EditorMode;
         /// Font-resolved cell geometry; default reproduces the tiny-font
         /// baseline. See CellMetrics.
         public CellMetrics Metrics;
         /// Pool snapshot built at rebuild time; null treated as empty.
-        public PoolSnapshot Pools;
+        public PoolSnapshot? Pools;
     }
 
     /// Builds the panel's complete draw plan from pure inputs. Runs only when
@@ -58,8 +59,8 @@ namespace EPrimeReadouts.Core
             public string Token;
             public List<string> Members;  // def members (1+ entries)
             public int Sum;
-            public string IconDefName;    // icon defName (pool snapshot icon for #tokens; first member otherwise)
-            public string HighlightName;  // pool name (for #tokens) or null (use member labels for @tokens)
+            public string? IconDefName;   // icon defName (pool snapshot icon for #tokens; first member otherwise)
+            public string? HighlightName; // pool name (for #tokens) or null (use member labels for @tokens)
         }
 
         // Content inset: X is stripe + pad, Y is GroupPadY.
@@ -158,7 +159,7 @@ namespace EPrimeReadouts.Core
         /// Returns true when the token is resolvable (has ≥1 member), unless editorMode is true
         /// in which case pool-ref tokens with zero members are still included.
         private static bool ResolveToken(string token, LayoutInput input, bool editorMode,
-            out List<string> members, out string iconDefName, out string highlightName, out int sum)
+            out List<string>? members, out string? iconDefName, out string? highlightName, out int sum)
         {
             members = null;
             iconDefName = null;
@@ -181,7 +182,7 @@ namespace EPrimeReadouts.Core
                     return true;
                 }
                 // Known pool
-                if (poolMembers.Count == 0)
+                if (poolMembers!.Count == 0) // TryGet true => members populated.
                 {
                     // Zero members: skip in normal mode; in editor mode include with empty list
                     if (!editorMode) return false;
@@ -247,7 +248,7 @@ namespace EPrimeReadouts.Core
                     into.Add(new ResolvedSlot
                     {
                         Token = token,
-                        Members = members,
+                        Members = members!, // ResolveToken true => members set.
                         Sum = sum,
                         IconDefName = iconDefName,
                         HighlightName = highlightName,
@@ -363,9 +364,9 @@ namespace EPrimeReadouts.Core
                 var slot = slots[c];
                 // Icon defName: snapshot icon for pool refs, first member otherwise.
                 // May be null for empty pools in editor mode — cell still gets emitted.
-                string iconDefName = slot.IconDefName;
+                string? iconDefName = slot.IconDefName;
                 // For DefName on cells: use iconDefName (may be null for zero-member pools)
-                string cellDefName = iconDefName ?? (slot.Members.Count > 0 ? slot.Members[0] : null);
+                string? cellDefName = iconDefName ?? (slot.Members.Count > 0 ? slot.Members[0] : null);
                 float x = insetX + LayoutMetrics.MarkerColW + c * metrics.CellW;
                 var iconRect = new RectF(
                     x + (metrics.CellW - LayoutMetrics.IconSize) / 2f, y,
@@ -497,7 +498,7 @@ namespace EPrimeReadouts.Core
 
             // Render exactly one tier: tier at index depth-1
             int t = depth - 1;
-            List<string> tierTokens = t < tiers.Count ? tiers[t] : null;
+            List<string>? tierTokens = t < tiers.Count ? tiers[t] : null;
             int tokenCount = tierTokens != null ? tierTokens.Count : 0;
 
             float colX = insetX + LayoutMetrics.MarkerColW;
@@ -505,14 +506,14 @@ namespace EPrimeReadouts.Core
             // Emit existing token cells for the current tier
             for (int s = 0; s < tokenCount; s++)
             {
-                string token = tierTokens[s];
+                string token = tierTokens![s]; // tokenCount > 0 => tier exists.
                 // Resolve token in editor mode — pool refs with zero/no members still emit cells
                 bool resolved = ResolveToken(token, input, editorMode: true,
                     out var members, out var iconDefName, out _, out int sum);
                 if (!resolved) { colX += metrics.CellW; continue; }
 
                 // cellDefName may be null for zero-member pools in editor (icon cell still occupies column)
-                string cellDefName = iconDefName ?? (members.Count > 0 ? members[0] : null);
+                string? cellDefName = iconDefName ?? (members!.Count > 0 ? members[0] : null); // resolved => members set.
 
                 var iconRect = new RectF(
                     colX + (metrics.CellW - LayoutMetrics.IconSize) / 2f, insetY,

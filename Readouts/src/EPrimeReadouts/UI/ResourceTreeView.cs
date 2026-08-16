@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -22,7 +23,7 @@ namespace EPrimeReadouts.UI
         private struct RenderRow
         {
             internal TreeRow Row;
-            internal ThingDef Def;
+            internal ThingDef? Def;
             internal bool InGroup;
             internal bool Tinted;
             internal int GroupId;
@@ -37,15 +38,15 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate on any dependency change.
         // Equality policy: unchanged dependencies preserve row-array identity.
         // Teardown: Reset drops all model/snapshot/def references on dialog close.
-        private RenderRow[] rows;
-        private ReadoutStore builtStore;
+        private RenderRow[]? rows;
+        private ReadoutStore? builtStore;
         private int builtGroupsVersion = -1;
         private int builtStamp = -1;
         private int builtGroupId = -1;
         private int builtPoolId = -1;
         private int builtLanguageVersion = -1;
-        private string builtCanonical;
-        private PoolSnapshot builtPools;
+        private string? builtCanonical;
+        private PoolSnapshot? builtPools;
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
@@ -80,7 +81,7 @@ namespace EPrimeReadouts.UI
             float listH = rect.height - headerUsed - FilterH;
             if (listH <= 0f) return;
             var outRect = new Rect(rect.x, rect.y + headerUsed + FilterH, rect.width, listH);
-            var viewRect = new Rect(0f, 0f, outRect.width - 16f, rows.Length * RowH);
+            var viewRect = new Rect(0f, 0f, outRect.width - 16f, rows!.Length * RowH); // built by EnsureRows above
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
             try
             {
@@ -179,7 +180,7 @@ namespace EPrimeReadouts.UI
 
         private void EnsureRows(Dialog_ReadoutConfig owner)
         {
-            ReadoutStore store = ReadoutStore.Current;
+            ReadoutStore? store = ReadoutStore.Current;
             int groupsVersion = store?.GroupsVersion ?? -1;
             if (rows != null
                 && ReferenceEquals(store, builtStore)
@@ -195,8 +196,8 @@ namespace EPrimeReadouts.UI
 
             var flat = ResourceTreeFlattener.Flatten(
                 GameResourceTree.GetRoots(), expanded, filter, GameResourceCatalog.Instance);
-            ReadoutGroup selected = store?.Model.GroupById(owner.selectedGroupId);
-            IReadOnlyList<string> selectedPoolMembers = null;
+            ReadoutGroup? selected = store?.Model.GroupById(owner.selectedGroupId);
+            IReadOnlyList<string>? selectedPoolMembers = null;
             if (owner.selectedPoolId >= 0 && owner.PoolsSnapshot != null)
                 owner.PoolsSnapshot.TryGet(owner.selectedPoolId,
                     out selectedPoolMembers, out _, out _);
@@ -236,13 +237,13 @@ namespace EPrimeReadouts.UI
             builtLanguageVersion = UiVersion.LanguageCurrent;
         }
 
-        private static bool IsResourceTinted(string defName, string canonical)
+        private static bool IsResourceTinted(string defName, string? canonical)
         {
             if (canonical == null || SlotToken.IsPool(canonical)) return false;
             return defName == SlotToken.MemberName(canonical);
         }
 
-        private static bool IsCategoryTinted(string categoryId, string canonical)
+        private static bool IsCategoryTinted(string categoryId, string? canonical)
         {
             if (canonical == null || SlotToken.IsPool(canonical)) return false;
             string memberName = SlotToken.MemberName(canonical);
@@ -252,7 +253,7 @@ namespace EPrimeReadouts.UI
             return false;
         }
 
-        private static bool Contains(IReadOnlyList<string> members, string defName)
+        private static bool Contains(IReadOnlyList<string>? members, string defName)
         {
             if (members == null) return false;
             for (int i = 0; i < members.Count; i++)

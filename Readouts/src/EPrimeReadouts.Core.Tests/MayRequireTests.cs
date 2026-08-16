@@ -25,7 +25,7 @@ public class MayRequireTests
 
     /// Resolver mapping member keys (defName or "@Category") to packageIds;
     /// unmapped keys are vanilla (null).
-    private static Func<string, string> Packages(params (string key, string id)[] map)
+    private static Func<string, string?> Packages(params (string key, string id)[] map)
     {
         var d = new Dictionary<string, string>();
         foreach (var (key, id) in map) d[key] = id;
@@ -313,7 +313,7 @@ public class MayRequireTests
     {
         var directory = new DirectoryInfo(AppContext.BaseDirectory);
         while (directory != null &&
-               !File.Exists(Path.Combine(directory.FullName, "src", "EPrimeReadouts.sln")))
+               !File.Exists(Path.Combine(directory.FullName, "src", "EPrimeReadouts.slnx")))
             directory = directory.Parent;
 
         if (directory == null)
@@ -327,7 +327,7 @@ public class MayRequireTests
     public async Task SeedFile_CoreOnly_DropsAllDlcAndModContent()
     {
         bool ok = ReadoutsXml.TryImport(SeedXml(), out var pools, out var groups,
-            out string error, Active());
+            out string? error, Active());
         await Assert.That(ok).IsTrue();
         await Assert.That(error).IsNull();
 

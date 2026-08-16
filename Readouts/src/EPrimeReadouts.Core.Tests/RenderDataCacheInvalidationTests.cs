@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.Common;
 
 namespace EPrimeReadouts.Core.Tests;
 

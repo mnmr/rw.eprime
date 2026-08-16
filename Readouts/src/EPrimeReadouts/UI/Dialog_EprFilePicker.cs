@@ -53,16 +53,16 @@ namespace EPrimeReadouts.UI
         // Equality policy: unchanged inputs preserve strings and avoid syscalls.
         // Teardown: window collection releases all cached strings.
         private Location cachedLocation;
-        private string cachedFileName;
-        private string cachedCustomDir;
-        private string cachedPath;
-        private string cachedProblem;
+        private string? cachedFileName;
+        private string? cachedCustomDir;
+        private string? cachedPath;
+        private string? cachedProblem;
         private bool cachedExists;
         private bool cacheValid;
 
         /// Returns path state previously sampled by WindowUpdate. This draw-path
         /// accessor never resolves shell folders or touches the filesystem.
-        protected string CachedResolvedPath(out string problem, out bool exists)
+        protected string? CachedResolvedPath(out string? problem, out bool exists)
         {
             problem = cachedProblem;
             exists = cachedExists;
@@ -88,7 +88,7 @@ namespace EPrimeReadouts.UI
         /// Full destination, or null (with a reason) when not usable. The result
         /// uses the platform's directory separator throughout (game paths arrive
         /// with '/', Path.Combine joins with the native one — never mix them).
-        protected string ResolvedPath(out string problem)
+        protected string? ResolvedPath(out string? problem)
         {
             problem = null;
             string name = fileName.Trim();
@@ -119,7 +119,7 @@ namespace EPrimeReadouts.UI
         private static readonly char[] InvalidDirChars = Path.GetInvalidFileNameChars()
             .Where(c => c != '\\' && c != '/' && c != ':').ToArray();
 
-        private static string Strip(string text, char[] invalid)
+        private static string? Strip(string? text, char[] invalid)
         {
             if (text == null || text.IndexOfAny(invalid) < 0) return text;
             var sb = new StringBuilder(text.Length);
@@ -170,7 +170,7 @@ namespace EPrimeReadouts.UI
             if (includeNameField)
                 fileName = Strip(Widgets.TextField(
                     new Rect(locRect.xMax + 8f, locRowY, inRect.width - locRect.width - 8f, RowH - 6f), fileName),
-                    InvalidNameChars);
+                    InvalidNameChars)!; // non-null for non-null input
 
             if (location == Location.Custom)
             {
@@ -183,7 +183,7 @@ namespace EPrimeReadouts.UI
                 const float ClearW = 24f;
                 customDir = Strip(Widgets.TextField(
                     new Rect(inRect.x + labelW, customRowY, inRect.width - labelW - ClearW - 4f, RowH - 6f), customDir),
-                    InvalidDirChars);
+                    InvalidDirChars)!; // non-null for non-null input
                 var clearRect = new Rect(inRect.xMax - ClearW, customRowY + (RowH - 6f - ClearW) / 2f, ClearW, ClearW);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                     customDir = "";

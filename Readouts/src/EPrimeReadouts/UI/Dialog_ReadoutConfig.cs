@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -27,13 +28,13 @@ namespace EPrimeReadouts.UI
 
         /// Canonical token of the currently selected slot (e.g. "Steel" or "#3").
         /// Set by the editor view; may be null. ResourceTreeView reads this.
-        public string selectedCanonical;
+        public string? selectedCanonical;
 
         // Shared per-frame-safe pools snapshot — rebuilt only for pool edits.
-        public PoolSnapshot PoolsSnapshot { get; private set; }
+        public PoolSnapshot? PoolsSnapshot { get; private set; }
         public int poolsSnapshotVersion = -1;
-        private ReadoutStore poolsSnapshotStore;
-        internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> RenderData { get; private set; }
+        private ReadoutStore? poolsSnapshotStore;
+        internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData { get; private set; }
 
         /// Session state: false = show Resources tree, true = show Pools UI.
         private bool showPools;
@@ -43,9 +44,9 @@ namespace EPrimeReadouts.UI
         private readonly EditorView editor = new EditorView();
         private readonly PoolListView poolList = new PoolListView();
         private readonly PoolEditorView poolEditor = new PoolEditorView();
-        private string ghostPayload;
-        private PoolSnapshot ghostPools;
-        private ThingDef ghostDef;
+        private string? ghostPayload;
+        private PoolSnapshot? ghostPools;
+        private ThingDef? ghostDef;
 
         public Dialog_ReadoutConfig()
         {
@@ -245,7 +246,7 @@ namespace EPrimeReadouts.UI
             Widgets.ThingIcon(new Rect(mouse.x - 16f, mouse.y - 16f, 32f, 32f), ghostDef);
         }
 
-        private void EnsureGhost(string payload, PoolSnapshot pools)
+        private void EnsureGhost(string payload, PoolSnapshot? pools)
         {
             if (string.Equals(ghostPayload, payload, System.StringComparison.Ordinal)
                 && ReferenceEquals(ghostPools, pools))
@@ -254,11 +255,11 @@ namespace EPrimeReadouts.UI
             ghostPayload = payload;
             ghostPools = pools;
             ghostDef = null;
-            if (SlotToken.IsPoolRef(EprDrag.Payload))
+            if (SlotToken.IsPoolRef(EprDrag.Payload!)) // non-null while a drag is active
             {
                 int poolId = SlotToken.PoolId(payload);
                 if (pools != null
-                    && pools.TryGet(poolId, out _, out string iconDefName, out _)
+                    && pools.TryGet(poolId, out _, out string? iconDefName, out _)
                     && !string.IsNullOrEmpty(iconDefName))
                     ghostDef = DefDatabase<ThingDef>.GetNamedSilentFail(iconDefName);
             }

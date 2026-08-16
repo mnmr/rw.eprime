@@ -15,9 +15,9 @@ namespace EPrimeReadouts
         private int nextGroupId = 1;
         private int nextPoolId = 1;
         private bool seeded;
-        private List<GroupRecord> groupRecords;
-        private List<PoolRecord> poolRecords;
-        private Dictionary<string, string> thresholdRecords;
+        private List<GroupRecord>? groupRecords;
+        private List<PoolRecord>? poolRecords;
+        private Dictionary<string, string>? thresholdRecords;
 
         private readonly ReadoutRevisions revisions = new ReadoutRevisions();
 
@@ -29,7 +29,7 @@ namespace EPrimeReadouts
 
         public ReadoutStore(World world) : base(world) { }
 
-        public static ReadoutStore Current => Find.World?.GetComponent<ReadoutStore>();
+        public static ReadoutStore? Current => Find.World?.GetComponent<ReadoutStore>();
 
         public int TakeGroupId() => nextGroupId++;
 

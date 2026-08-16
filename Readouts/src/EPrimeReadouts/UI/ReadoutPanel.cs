@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -57,20 +58,20 @@ namespace EPrimeReadouts.UI
         // GameRenderData's 204-tick publisher.
         // Equality policy: unchanged dependencies preserve DrawModel identity.
         // Teardown: ReleaseMap/Reset drops map and store-derived state.
-        private static DrawModel draw;
+        private static DrawModel? draw;
         private static Vector2 scroll;
         private static float cachedTitleWidth = -1f;
         private static int cachedTitleUiVersion = -1;
-        private static string cachedTitleText;
-        private static string cachedCycleTip;
+        private static string? cachedTitleText;
+        private static string? cachedCycleTip;
         private static int viewStamp;
         private static int builtGroupsVersion = -1;
         private static int builtThresholdsVersion = -1;
         private static int builtStamp = -1;
-        private static Map builtMap;
+        private static Map? builtMap;
         private static float builtWidth;
-        private static PoolSnapshot builtPools;
-        private static RenderCountSnapshot builtCounts;
+        private static PoolSnapshot? builtPools;
+        private static RenderCountSnapshot? builtCounts;
         private static int builtUiVersion = -1;
 
         // Cache contract:
@@ -81,7 +82,7 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate when an exact dependency changes.
         // Equality policy: unchanged dependencies reuse the existing list contents.
         // Teardown: Hide/Reset clears rectangles and all retained identities.
-        private static DrawModel hotDraw;
+        private static DrawModel? hotDraw;
         private static float hotX;
         private static float hotHeaderY;
         private static float hotContentTop;
@@ -209,7 +210,7 @@ namespace EPrimeReadouts.UI
             y += SearchRowH;
 
             float maxContentH = Verse.UI.screenHeight - y - settings.bottomMargin;
-            float totalH = draw.Model.TotalHeight;
+            float totalH = draw!.Model.TotalHeight; // rebuilt before Draw in OnGUI
             float contentW = draw.Model.TotalWidth;
             bool scrolling = totalH > maxContentH;
             float contentH = scrolling ? maxContentH : totalH;
@@ -335,7 +336,7 @@ namespace EPrimeReadouts.UI
             // current selection). Hover/click detection is bounded iteration
             // over prebuilt hit rects; the selection pass itself runs only
             // inside the consumed click event.
-            var slots = draw.Model.SlotHits;
+            var slots = draw!.Model.SlotHits; // rebuilt before Draw in OnGUI
             for (int i = 0; i < slots.Count; i++)
             {
                 var rect = new Rect(slots[i].Rect.X, slots[i].Rect.Y,
@@ -498,7 +499,7 @@ namespace EPrimeReadouts.UI
             hotRects.Clear();
             hotRects.Add(new Rect(x, headerY,
                 EPrimeReadoutsMod.Settings.panelWidth, SearchRowH));
-            var cells = draw.Model.Cells;
+            var cells = draw!.Model.Cells; // rebuilt before Draw in OnGUI
             for (int i = 0; i < cells.Count; i++)
             {
                 var cell = cells[i];

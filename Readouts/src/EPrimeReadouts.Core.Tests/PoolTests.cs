@@ -199,7 +199,7 @@ public class PoolTests
         var model = new ReadoutModel();
         model.CreatePool(1, "Old");
         await Assert.That(model.RenamePool(1, "New")).IsTrue();
-        await Assert.That(model.PoolById(1).Name).IsEqualTo("New");
+        await Assert.That(model.PoolById(1)!.Name).IsEqualTo("New");
     }
 
     [Test]
@@ -217,7 +217,7 @@ public class PoolTests
         var source = new List<string> { "Meat_Cow", "@MeatRaw" };
         model.SetPoolMembers(1, source);
         source.Clear(); // mutate original — pool should be unaffected
-        await Assert.That(string.Join(",", model.PoolById(1).Members))
+        await Assert.That(string.Join(",", model.PoolById(1)!.Members))
             .IsEqualTo("Meat_Cow,@MeatRaw");
     }
 
@@ -227,7 +227,7 @@ public class PoolTests
         var model = new ReadoutModel();
         model.CreatePool(1, "Meats");
         await Assert.That(model.SetPoolIcon(1, "Meat_Cow")).IsTrue();
-        await Assert.That(model.PoolById(1).IconDefName).IsEqualTo("Meat_Cow");
+        await Assert.That(model.PoolById(1)!.IconDefName).IsEqualTo("Meat_Cow");
     }
 
     // ── DeletePool purges tokens and thresholds ────────────────────────────
@@ -244,7 +244,7 @@ public class PoolTests
 
         await Assert.That(model.PoolById(5)).IsNull();
         // "#5" removed, "Steel" stays
-        await Assert.That(string.Join(",", model.GroupById(1).Tiers[0])).IsEqualTo("Steel");
+        await Assert.That(string.Join(",", model.GroupById(1)!.Tiers[0])).IsEqualTo("Steel");
     }
 
     [Test]
@@ -257,7 +257,7 @@ public class PoolTests
 
         model.DeletePool(5);
 
-        await Assert.That(string.Join(",", model.GroupById(1).Tiers[0])).IsEqualTo("Steel");
+        await Assert.That(string.Join(",", model.GroupById(1)!.Tiers[0])).IsEqualTo("Steel");
     }
 
     [Test]
@@ -276,8 +276,8 @@ public class PoolTests
         model.DeletePool(3);
 
         // Tier 0 should be gone; "Steel" remains as tier 0
-        await Assert.That(model.GroupById(1).TierCount).IsEqualTo(1);
-        await Assert.That(string.Join(",", model.GroupById(1).Tiers[0])).IsEqualTo("Steel");
+        await Assert.That(model.GroupById(1)!.TierCount).IsEqualTo(1);
+        await Assert.That(string.Join(",", model.GroupById(1)!.Tiers[0])).IsEqualTo("Steel");
     }
 
     [Test]
@@ -368,8 +368,8 @@ public class PoolTests
         await Assert.That(pool.Members.Count).IsEqualTo(1);
         await Assert.That(pool.Members[0]).IsEqualTo("@MeatRaw");
         // Token replaced with "#10"
-        await Assert.That(model.GroupById(1).Tiers[0][0]).IsEqualTo("#10");
-        await Assert.That(model.GroupById(1).Tiers[0][1]).IsEqualTo("Steel");
+        await Assert.That(model.GroupById(1)!.Tiers[0][0]).IsEqualTo("#10");
+        await Assert.That(model.GroupById(1)!.Tiers[0][1]).IsEqualTo("Steel");
     }
 
     [Test]
@@ -382,7 +382,7 @@ public class PoolTests
         int nextId = 1;
         model.MigrateCategoryTokens(() => nextId++, cat => cat);
 
-        string token = model.GroupById(1).Tiers[0][0];
+        string token = model.GroupById(1)!.Tiers[0][0];
         await Assert.That(token).IsEqualTo("~#1"); // flag preserved
     }
 
@@ -402,8 +402,8 @@ public class PoolTests
         await Assert.That(model.Pools.Count).IsEqualTo(1);
         int pid = model.Pools[0].Id;
         // Both groups reference the same pool
-        await Assert.That(model.GroupById(1).Tiers[0][0]).IsEqualTo("#" + pid);
-        await Assert.That(model.GroupById(2).Tiers[0][0]).IsEqualTo("#" + pid);
+        await Assert.That(model.GroupById(1)!.Tiers[0][0]).IsEqualTo("#" + pid);
+        await Assert.That(model.GroupById(2)!.Tiers[0][0]).IsEqualTo("#" + pid);
     }
 
     [Test]
@@ -450,7 +450,7 @@ public class PoolTests
         bool found = snap.TryGet(1, out var members, out _, out _);
 
         await Assert.That(found).IsTrue();
-        await Assert.That(string.Join(",", members)).IsEqualTo("Steel,Plasteel");
+        await Assert.That(string.Join(",", members!)).IsEqualTo("Steel,Plasteel");
     }
 
     [Test]
@@ -463,7 +463,7 @@ public class PoolTests
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
         snap.TryGet(1, out var members, out _, out _);
 
-        await Assert.That(string.Join(",", members)).IsEqualTo("Meat_Cow,Meat_Chicken");
+        await Assert.That(string.Join(",", members!)).IsEqualTo("Meat_Cow,Meat_Chicken");
     }
 
     [Test]
@@ -479,7 +479,7 @@ public class PoolTests
         snap.TryGet(1, out var members, out _, out _);
 
         // Meat_Cow should appear only once
-        await Assert.That(string.Join(",", members)).IsEqualTo("Meat_Cow,Meat_Chicken");
+        await Assert.That(string.Join(",", members!)).IsEqualTo("Meat_Cow,Meat_Chicken");
     }
 
     [Test]
@@ -490,7 +490,7 @@ public class PoolTests
         pool.Members.Add("Steel");
 
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
-        snap.TryGet(1, out _, out string icon, out _);
+        snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsEqualTo("Plasteel");
     }
@@ -504,7 +504,7 @@ public class PoolTests
         pool.Members.Add("WoodLog");
 
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
-        snap.TryGet(1, out _, out string icon, out _);
+        snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsEqualTo("Steel");
     }
@@ -517,7 +517,7 @@ public class PoolTests
         pool.Members.Add("Cloth");
 
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
-        snap.TryGet(1, out _, out string icon, out _);
+        snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsEqualTo("Cloth");
     }
@@ -529,7 +529,7 @@ public class PoolTests
         var pool = new ResourcePool { Id = 1, Name = "Empty" };
 
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
-        snap.TryGet(1, out _, out string icon, out _);
+        snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsNull();
     }
@@ -552,7 +552,7 @@ public class PoolTests
         pool.Members.Add("Steel");
 
         var snap = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
-        snap.TryGet(1, out _, out string icon, out _);
+        snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsEqualTo("Gold");
     }
@@ -566,7 +566,7 @@ public class PoolTests
         var snapshot = PoolSnapshot.Build(new List<ResourcePool> { pool }, catalog);
         snapshot.TryGet(1, out var members, out _, out _);
 
-        await Assert.That(() => ((IList<string>)members)[0] = "Gold")
+        await Assert.That(() => ((IList<string>)members!)[0] = "Gold")
             .Throws<NotSupportedException>();
     }
 }

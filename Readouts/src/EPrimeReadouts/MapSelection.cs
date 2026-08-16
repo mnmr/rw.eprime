@@ -20,7 +20,7 @@ namespace EPrimeReadouts
         private static readonly List<Thing> candidates = new List<Thing>();
 
         public static void SelectMembers(
-            Map map,
+            Map? map,
             IReadOnlyList<string> members,
             bool storageOnly,
             bool hideForbidden,
@@ -51,7 +51,7 @@ namespace EPrimeReadouts
             if (!additive) selector.ClearSelection();
 
             bool selectedAny = false;
-            Thing jumpTarget = null;
+            Thing? jumpTarget = null;
             float jumpDistSq = float.MaxValue;
             IntVec3 cameraCell = Find.CameraDriver != null
                 ? Find.CameraDriver.MapPosition : map.Center;

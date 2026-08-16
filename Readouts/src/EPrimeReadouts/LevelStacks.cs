@@ -26,7 +26,7 @@ namespace EPrimeReadouts
         //          && comp != null ? comp.MapByLevel : null
         // so steady-state lookups are plain delegate calls with no
         // MethodInfo.Invoke argument-array or boxing allocations.
-        private static Func<Map, Dictionary<int, Map>> stackOf;
+        private static Func<Map, Dictionary<int, Map>?>? stackOf;
 
         // Cache contract:
         // Owner: process; entries reference only the current session's maps.
@@ -63,7 +63,7 @@ namespace EPrimeReadouts
 
         /// Render-path safe once resolved: a stamp compare plus a dictionary
         /// hit, except on the first lookup after the map set changed.
-        internal static Map CanonicalOrSelf(Map map)
+        internal static Map? CanonicalOrSelf(Map? map)
         {
             if (map == null) return null;
             Resolve();
@@ -74,7 +74,7 @@ namespace EPrimeReadouts
                 cachedStamp = mapSetStamp;
             }
             if (canonicalCache.TryGetValue(map, out Map canonical)) return canonical;
-            Dictionary<int, Map> levels = LevelsOf(map);
+            Dictionary<int, Map>? levels = LevelsOf(map);
             canonical = levels != null
                 && levels.TryGetValue(0, out Map ground)
                 && ground != null
@@ -87,7 +87,7 @@ namespace EPrimeReadouts
         /// The stack's mod-owned live level dictionary, or null when the map
         /// has no stack. Callers may only read it inside an invalidation-gated
         /// builder and must not retain or publish it.
-        internal static Dictionary<int, Map> LevelsOf(Map map)
+        internal static Dictionary<int, Map>? LevelsOf(Map? map)
         {
             Resolve();
             if (stackOf == null || map == null) return null;
@@ -145,7 +145,7 @@ namespace EPrimeReadouts
                 && parameters[1].ParameterType == comp.MakeByRefType();
         }
 
-        private static Func<Map, Dictionary<int, Map>> CompileStackOf(
+        private static Func<Map, Dictionary<int, Map>?> CompileStackOf(
             MethodInfo tryGet, PropertyInfo mapByLevel, Type compType)
         {
             ParameterExpression map = Expression.Parameter(typeof(Map), "map");
@@ -159,7 +159,7 @@ namespace EPrimeReadouts
                             comp, Expression.Constant(null, compType))),
                     Expression.Property(comp, mapByLevel),
                     Expression.Constant(null, typeof(Dictionary<int, Map>))));
-            return Expression.Lambda<Func<Map, Dictionary<int, Map>>>(body, map)
+            return Expression.Lambda<Func<Map, Dictionary<int, Map>?>>(body, map)
                 .Compile();
         }
     }

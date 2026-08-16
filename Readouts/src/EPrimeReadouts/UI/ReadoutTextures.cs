@@ -16,7 +16,7 @@ namespace EPrimeReadouts.UI
         // Refresh policy: eager at map construction, lazy safety fallback.
         // Equality policy: preserve texture identity until teardown.
         // Teardown: ResetOwned destroys only triangle, never vanilla/mod assets.
-        private static Texture2D triangle;
+        private static Texture2D? triangle;
         public static Texture2D Triangle => triangle ?? (triangle = MakeTriangle(14, 18));
 
         public static readonly Texture2D Gear =

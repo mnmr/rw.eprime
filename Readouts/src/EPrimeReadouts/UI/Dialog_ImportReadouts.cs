@@ -31,21 +31,21 @@ namespace EPrimeReadouts.UI
         // Refresh policy: WindowUpdate only, never OnGUI.
         // Equality policy: unchanged directory preserves list/entry identities.
         // Teardown: PreClose releases entries, XML and preview snapshots.
-        private List<ReadoutsFiles.Entry> files;
-        private string listedDir;   // directory the current file list came from
+        private List<ReadoutsFiles.Entry>? files;
+        private string? listedDir;  // directory the current file list came from
         private Vector2 sourceScroll;
-        private string clip;
+        private string? clip;
         private bool clipUsable;
 
         // ── Preview stage state ──────────────────────────────────────────────
-        private string pendingXml;
-        private ReadoutSnapshot previewSnapshot;
+        private string? pendingXml;
+        private ReadoutSnapshot? previewSnapshot;
         private Vector2 previewScroll;
         private readonly ReadoutsPreviewView preview = new ReadoutsPreviewView();
-        private ReadoutSnapshot previewTextSnapshot;
+        private ReadoutSnapshot? previewTextSnapshot;
         private int previewTextLanguageVersion = -1;
-        private string previewSummary;
-        private string previewWarning;
+        private string? previewSummary;
+        private string? previewWarning;
 
         public override Vector2 InitialSize => new Vector2(560f, 560f);
 
@@ -87,7 +87,7 @@ namespace EPrimeReadouts.UI
         private bool TryEnterPreview(string xml)
         {
             if (!ReadoutsXml.TryImport(xml, out var parsedPools, out var parsedGroups,
-                out string parseError, ModRequirements.IsModActive))
+                out string? parseError, ModRequirements.IsModActive))
             {
                 Messages.Message(
                     "EPR.ImportParseFailed".Translate(parseError),
@@ -140,7 +140,7 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(clipRect, UiText.Get("EPR.FromClipboard"), active: clipUsable)
                 && clipUsable)
             {
-                TryEnterPreview(clip);
+                TryEnterPreview(clip!); // clipUsable implies non-empty clip
             }
 
             // Location picker (no name field — a file is picked from the list).
@@ -231,13 +231,13 @@ namespace EPrimeReadouts.UI
                     if (Widgets.ButtonInvisible(
                         new Rect(rowRect.x, rowRect.y, rowRect.width - DeleteW - 4f, FileRowH)))
                     {
-                        if (!ReadoutsFiles.TryRead(fullPath, out string xml, out string readError))
+                        if (!ReadoutsFiles.TryRead(fullPath, out string? xml, out string? readError))
                         {
                             Messages.Message(readError, MessageTypeDefOf.RejectInput, historical: false);
                         }
                         else
                         {
-                            TryEnterPreview(xml);
+                            TryEnterPreview(xml!); // set on the true path
                         }
                     }
                 }
@@ -274,7 +274,7 @@ namespace EPrimeReadouts.UI
             // Warning line
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(1f, 0.75f, 0.35f);   // warm warning tint
-            string warning = previewWarning;
+            string warning = previewWarning!; // set by EnsurePreviewText above
             float warnH = EprStyle.CaptionHeight(warning, inRect.width);
             Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, warnH), warning);
             GUI.color = Color.white;
@@ -309,7 +309,7 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(new Rect(importX, footerY, ButtonW, FooterH),
                 UiText.Get("EPR.Import")))
             {
-                ReadoutCommands.ImportAll(pendingXml);
+                ReadoutCommands.ImportAll(pendingXml!); // set when entering the preview stage
                 Messages.Message(UiText.Get("EPR.Imported"),
                     MessageTypeDefOf.TaskCompletion, historical: false);
                 Close();

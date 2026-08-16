@@ -39,17 +39,17 @@ namespace EPrimeReadouts.UI
             new Dictionary<ThingDef, float>();
         private static readonly Queue<ThingDef> pending = new Queue<ThingDef>();
         private static readonly HashSet<ThingDef> pendingSet = new HashSet<ThingDef>();
-        private static Texture2D reader;
+        private static Texture2D? reader;
 
         /// Correction factor for the def's icon (1 when unmeasurable).
         /// Missing values use neutral scale until the update queue publishes one.
-        public static float ScaleFor(ThingDef def)
+        public static float ScaleFor(ThingDef? def)
         {
             if (def == null) return 1f;
             return cache.TryGetValue(def, out float cached) ? cached : 1f;
         }
 
-        internal static void Request(ThingDef def)
+        internal static void Request(ThingDef? def)
         {
             if (def == null || cache.ContainsKey(def) || !pendingSet.Add(def)) return;
             pending.Enqueue(def);

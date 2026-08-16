@@ -14,7 +14,7 @@ namespace EPrimeReadouts.Core
         public List<string> Members = new List<string>();
         /// Explicit icon choice; null/empty or unresolvable falls back to the
         /// first resolved member.
-        public string IconDefName;
+        public string? IconDefName;
     }
 
     /// Serializes a pool's member list as a comma-joined blob.
@@ -22,7 +22,7 @@ namespace EPrimeReadouts.Core
     /// Mirrors TierBlobCodec's single-level join.
     public static class PoolMembersCodec
     {
-        public static string Encode(List<string> members)
+        public static string Encode(List<string>? members)
         {
             if (members == null || members.Count == 0) return "";
             var sb = new StringBuilder();
@@ -37,10 +37,10 @@ namespace EPrimeReadouts.Core
             return sb.ToString();
         }
 
-        public static List<string> Decode(string blob)
+        public static List<string> Decode(string? blob)
         {
             var list = new List<string>();
-            if (string.IsNullOrEmpty(blob)) return list;
+            if (blob == null || blob.Length == 0) return list;
             foreach (var part in blob.Split(','))
                 if (part.Length > 0) list.Add(part);
             return list;

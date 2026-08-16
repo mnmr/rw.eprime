@@ -26,7 +26,7 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 ## Building from source
 
 ```
-dotnet build -c Release src\EPrimeReadouts.sln
+dotnet build -c Release src\EPrimeReadouts.slnx
 ```
 
 Three projects: `EPrimeReadouts.Core` (pure logic, netstandard2.0, unit-tested), `EPrimeReadouts` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package), and `EPrimeReadouts.Core.Tests` (.NET 10, TUnit).
@@ -42,7 +42,7 @@ Override the Mods directory with `pwsh scripts/deploy.ps1 -RimWorldMods <path>`.
 Run the tests with:
 
 ```
-dotnet test src\EPrimeReadouts.sln
+dotnet test src\EPrimeReadouts.slnx
 ```
 
 ## Check out my other mods

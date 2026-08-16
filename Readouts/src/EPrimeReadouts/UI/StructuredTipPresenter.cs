@@ -1,5 +1,6 @@
 using System;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -31,17 +32,17 @@ namespace EPrimeReadouts.UI
             new TooltipDisplayGate();
         private static readonly Action drawWindow = DrawWindow;
         private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;
-        private static StructuredTip frozen;
+        private static StructuredTip? frozen;
         private static WrTipUI.PreparedTip frozenGeometry;
         private static Vector2 frozenSize;
 
-        internal static void TipRegion(Rect rect, StructuredTip tip)
+        internal static void TipRegion(Rect rect, StructuredTip? tip)
         {
             if (tip == null || !IsHovered(rect)) return;
             Present(tip.StableKey, tip, null);
         }
 
-        internal static void TipRegion(Rect rect, IStructuredTipSource source)
+        internal static void TipRegion(Rect rect, IStructuredTipSource? source)
         {
             if (source == null || !IsHovered(rect)) return;
             Present(source.StableKey, null, source);
@@ -59,14 +60,14 @@ namespace EPrimeReadouts.UI
             Event.current.type == EventType.Repaint && Mouse.IsOver(rect);
 
         private static void Present(
-            string stableKey, StructuredTip ready, IStructuredTipSource source)
+            string stableKey, StructuredTip? ready, IStructuredTipSource? source)
         {
             TooltipDisplayState state = displayGate.Observe(
                 stableKey, Time.frameCount, Time.realtimeSinceStartup, HoverDelay);
             if (state == TooltipDisplayState.Pending) return;
             if (state == TooltipDisplayState.Opened)
             {
-                frozen = ready ?? source.Resolve();
+                frozen = ready ?? source?.Resolve();
                 if (frozen == null) return;
                 frozenGeometry = WrTipUI.Prepare(
                     frozen.Model, WrTipUI.MaxContentWidth);

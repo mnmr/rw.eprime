@@ -9,7 +9,7 @@ namespace EPrimeReadouts.Core
     /// </summary>
     public sealed class ThresholdEditorState
     {
-        private string selectedCanonical;
+        private string? selectedCanonical;
         private int observedRevision = -1;
         private bool observedHasThreshold;
         private int observedLow;

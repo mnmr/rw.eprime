@@ -11,9 +11,9 @@ namespace EPrimeReadouts.Core
 
         private sealed class Entry
         {
-            public IReadOnlyList<string> Members;
-            public string IconDefName;
-            public string Name;
+            public IReadOnlyList<string> Members = null!; // Always assigned by Build.
+            public string? IconDefName;
+            public string Name = null!; // Always assigned by Build.
         }
 
         private PoolSnapshot(Dictionary<int, Entry> entries)
@@ -50,8 +50,8 @@ namespace EPrimeReadouts.Core
                 }
 
                 // Resolve icon: explicit first, else first expanded member, else null
-                string icon = null;
-                if (!string.IsNullOrEmpty(pool.IconDefName) && catalog.Exists(pool.IconDefName))
+                string? icon = null;
+                if (!string.IsNullOrEmpty(pool.IconDefName) && catalog.Exists(pool.IconDefName!))
                     icon = pool.IconDefName;
                 else if (expanded.Count > 0)
                     icon = expanded[0];
@@ -67,8 +67,8 @@ namespace EPrimeReadouts.Core
         }
 
         /// Returns true and populates out-params when the pool id is found.
-        public bool TryGet(int poolId, out IReadOnlyList<string> members,
-            out string iconDefName, out string name)
+        public bool TryGet(int poolId, out IReadOnlyList<string>? members,
+            out string? iconDefName, out string? name)
         {
             if (entries.TryGetValue(poolId, out var entry))
             {

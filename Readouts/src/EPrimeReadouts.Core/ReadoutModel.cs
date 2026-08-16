@@ -31,7 +31,7 @@ namespace EPrimeReadouts.Core
         public List<ResourcePool> Pools = new List<ResourcePool>();
         public Dictionary<string, ThresholdSpec> Thresholds = new Dictionary<string, ThresholdSpec>();
 
-        public ReadoutGroup GroupById(int id)
+        public ReadoutGroup? GroupById(int id)
         {
             foreach (var group in Groups)
                 if (group.Id == id) return group;
@@ -138,7 +138,7 @@ namespace EPrimeReadouts.Core
 
         // ── Pool operations ───────────────────────────────────────────────
 
-        public ResourcePool PoolById(int id)
+        public ResourcePool? PoolById(int id)
         {
             foreach (var pool in Pools)
                 if (pool.Id == id) return pool;
@@ -220,12 +220,12 @@ namespace EPrimeReadouts.Core
         }
 
         /// Sets the explicit icon def name for the pool.
-        public bool SetPoolIcon(int id, string defName)
+        public bool SetPoolIcon(int id, string? defName)
         {
             var pool = PoolById(id);
             if (pool == null) return false;
-            string currentDefName = string.IsNullOrEmpty(pool.IconDefName) ? null : pool.IconDefName;
-            string nextDefName = string.IsNullOrEmpty(defName) ? null : defName;
+            string? currentDefName = string.IsNullOrEmpty(pool.IconDefName) ? null : pool.IconDefName;
+            string? nextDefName = string.IsNullOrEmpty(defName) ? null : defName;
             if (currentDefName == nextDefName) return false;
             pool.IconDefName = nextDefName;
             return true;
@@ -240,13 +240,13 @@ namespace EPrimeReadouts.Core
             return true;
         }
 
-        private static bool ListEqual(List<string> left, List<string> right)
+        private static bool ListEqual(List<string>? left, List<string>? right)
         {
             int leftCount = left != null ? left.Count : 0;
             int rightCount = right != null ? right.Count : 0;
             if (leftCount != rightCount) return false;
             for (int i = 0; i < leftCount; i++)
-                if (left[i] != right[i]) return false;
+                if (left![i] != right![i]) return false; // count > 0 => lists exist.
             return true;
         }
 
@@ -408,7 +408,7 @@ namespace EPrimeReadouts.Core
                         if (!canonical.StartsWith("@")) continue;
 
                         // Find existing pool whose members == exactly [canonical]
-                        ResourcePool match = null;
+                        ResourcePool? match = null;
                         foreach (var pool in Pools)
                         {
                             if (pool.Members.Count == 1 && pool.Members[0] == canonical)

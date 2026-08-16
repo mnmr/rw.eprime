@@ -13,7 +13,7 @@ namespace EPrimeReadouts.UI
 
         private Vector2 scroll;
         private string newName = "";
-        private string pendingSelect;
+        private string? pendingSelect;
 
         private struct GroupRow
         {
@@ -32,15 +32,15 @@ namespace EPrimeReadouts.UI
         // Refresh policy: immediate on store/version change.
         // Equality policy: unchanged dependencies preserve row-array identity.
         // Teardown: view becomes collectible with its dialog; Reset drops rows.
-        private ReadoutStore builtStore;
+        private ReadoutStore? builtStore;
         private int builtGroupsVersion = -1;
         private int builtPresentationVersion = -1;
         private static int presentationVersion;
-        private GroupRow[] rows;
+        private GroupRow[]? rows;
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
-            var store = ReadoutStore.Current;
+            var store = ReadoutStore.Current!; // dialog draws only while a world exists
             var settings = EPrimeReadoutsMod.Settings;
 
             // Section header with fold toggle
@@ -54,7 +54,7 @@ namespace EPrimeReadouts.UI
 
             if (pendingSelect != null)
             {
-                for (int i = 0; i < rows.Length; i++)
+                for (int i = 0; i < rows!.Length; i++) // built by EnsureRows above
                     if (rows[i].Name == pendingSelect)
                     {
                         owner.selectedGroupId = rows[i].Id;
@@ -70,7 +70,7 @@ namespace EPrimeReadouts.UI
 
             var listRect = new Rect(rect.x, rect.y + headerUsed, rect.width,
                 rect.height - headerUsed - FooterH);
-            var viewRect = new Rect(0f, 0f, listRect.width - 16f, rows.Length * RowH);
+            var viewRect = new Rect(0f, 0f, listRect.width - 16f, rows!.Length * RowH); // built by EnsureRows above
             Widgets.BeginScrollView(listRect, ref scroll, viewRect);
             try
             {

@@ -17,7 +17,7 @@ namespace EPrimeReadouts
         {
             if (TryReadSeedFile(out _, out var pools, out var groups))
             {
-                store.Model.ApplyImport(pools, groups,
+                store.Model.ApplyImport(pools!, groups!, // set on the true path
                     store.TakePoolId, store.TakeGroupId);
                 return;
             }
@@ -31,7 +31,7 @@ namespace EPrimeReadouts
         /// </summary>
         public static string GetRestorePayload()
         {
-            if (TryReadSeedFile(out string xml, out _, out _)) return xml;
+            if (TryReadSeedFile(out string? xml, out _, out _)) return xml!; // set on the true path
 
             var model = new ReadoutModel();
             int nextPoolId = 1;
@@ -41,20 +41,20 @@ namespace EPrimeReadouts
                 ModRequirements.PackageIdOf);
         }
 
-        private static bool TryReadSeedFile(out string xml,
-            out List<ResourcePool> pools, out List<ReadoutGroup> groups)
+        private static bool TryReadSeedFile(out string? xml,
+            out List<ResourcePool>? pools, out List<ReadoutGroup>? groups)
         {
             xml = null;
             pools = null;
             groups = null;
             try
             {
-                string root = EPrimeReadoutsMod.ContentPack?.RootDir;
+                string? root = EPrimeReadoutsMod.ContentPack?.RootDir;
                 if (string.IsNullOrEmpty(root)) return false;
                 string path = Path.Combine(root, "Seed", "Readouts.xml");
                 if (!File.Exists(path)) return false;
                 xml = File.ReadAllText(path);
-                if (!ReadoutsXml.TryImport(xml, out pools, out groups, out string error,
+                if (!ReadoutsXml.TryImport(xml, out pools, out groups, out string? error,
                     ModRequirements.IsModActive))
                 {
                     Log.Warning("[EPrimeReadouts] Seed/Readouts.xml invalid (" + error
@@ -152,7 +152,7 @@ namespace EPrimeReadouts
                     var kept = new List<string>();
                     foreach (var token in tier)
                     {
-                        string resolved = ResolveGroupToken(token, poolIdByName);
+                        string? resolved = ResolveGroupToken(token, poolIdByName);
                         if (resolved == null) continue;
                         kept.Add(resolved);
                     }
@@ -168,7 +168,7 @@ namespace EPrimeReadouts
         ///   "pool:Name"  → "#id" (or "~#id" if prefixed with "~pool:")
         ///   "~pool:Name" → "~#id"
         ///   plain defName (or "~defName") → validated via catalog, returns as-is or null
-        private static string ResolveGroupToken(string token, Dictionary<string, int> poolIdByName)
+        private static string? ResolveGroupToken(string token, Dictionary<string, int> poolIdByName)
         {
             bool hide = token.StartsWith("~");
             string core = hide ? token.Substring(1) : token;

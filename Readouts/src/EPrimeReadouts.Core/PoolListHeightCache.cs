@@ -16,15 +16,15 @@ namespace EPrimeReadouts.Core
         private readonly float footerHeight;
 
         private bool hasCaptionHeight;
-        private object captionOwner;
+        private object? captionOwner;
         private bool captionFolded;
-        private string captionText;
+        private string? captionText;
         private float captionWidth;
         private int captionMetricRevision;
         private float captionHeight;
 
         private bool hasDesiredHeight;
-        private object desiredOwner;
+        private object? desiredOwner;
         private int desiredPoolsVersion;
         private int desiredRowCount;
         private float desiredHeight;

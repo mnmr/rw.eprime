@@ -2,9 +2,11 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>10</LangVersion>
-    <Nullable>disable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>
     <RootNamespace>EPrimeReadouts.Core</RootNamespace>
     <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
   </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(RimSharedRoot)\Common\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
 </Project>

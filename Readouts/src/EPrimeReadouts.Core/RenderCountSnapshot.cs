@@ -24,9 +24,9 @@ namespace EPrimeReadouts.Core
         public RenderCountSnapshot(
             IReadOnlyDictionary<string, int> counts,
             long fingerprint,
-            IReadOnlyDictionary<string, SearchCount> searchCounts = null,
-            IReadOnlyDictionary<string, PlannedWorkDebt> debts = null,
-            IReadOnlyList<PlannedWorkEntry> plannedWork = null)
+            IReadOnlyDictionary<string, SearchCount>? searchCounts = null,
+            IReadOnlyDictionary<string, PlannedWorkDebt>? debts = null,
+            IReadOnlyList<PlannedWorkEntry>? plannedWork = null)
         {
             if (counts == null) throw new ArgumentNullException(nameof(counts));
             this.counts = CopyCounts(counts);
@@ -65,9 +65,9 @@ namespace EPrimeReadouts.Core
         internal static RenderCountSnapshot FromOwnedBuffers(
             Dictionary<string, int> counts,
             long fingerprint,
-            Dictionary<string, SearchCount> searchCounts,
-            Dictionary<string, PlannedWorkDebt> debts,
-            PlannedWorkEntry[] plannedWork)
+            Dictionary<string, SearchCount>? searchCounts,
+            Dictionary<string, PlannedWorkDebt>? debts,
+            PlannedWorkEntry[]? plannedWork)
         {
             if (counts == null) throw new ArgumentNullException(nameof(counts));
             return new RenderCountSnapshot(
@@ -135,7 +135,7 @@ namespace EPrimeReadouts.Core
             => debts.TryGetValue(defName, out PlannedWorkDebt debt)
                 ? debt : default;
 
-        public bool Equals(RenderCountSnapshot other)
+        public bool Equals(RenderCountSnapshot? other)
         {
             if (ReferenceEquals(this, other)) return true;
             if (other == null || counts.Count != other.counts.Count

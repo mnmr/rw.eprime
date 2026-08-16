@@ -4,10 +4,15 @@
 /plans
 /docs/superpowers/
 /temp
-/.worktrees/
 
 # Build artifacts shipped into the mod folder
 mod/1.6/Assemblies/
+
+/.idea/
+/.claude/
+/.codex/
+/.agents/
+/.worktrees/
 
 # Build results
 [Dd]ebug/
@@ -57,4 +62,3 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
-
