@@ -1,7 +1,7 @@
 namespace WorkRoles.Core.Tests.Persistence;
 
-/// Tuning round-trips through the role file format, and pre-tuning files keep
-/// parsing with hasTuning=false so imports derive their classification.
+/// Tuning and opt-in skill gates round-trip through the current role-file
+/// format. Legacy skill classifications are not reinterpreted as hard gates.
 public class RoleFileTuningTests
 {
     [Test]
@@ -19,7 +19,6 @@ public class RoleFileTuningTests
                 minAge = 10,
                 maxAge = 12,
                 requiredSkills = ["Medicine"],
-                optionalSkills = ["Social"],
                 entries = [new JobEntry(JobEntryKind.WorkType, "Doctor")],
             }
         );
@@ -34,7 +33,31 @@ public class RoleFileTuningTests
         await Assert.That(doctor.minAge).IsEqualTo(10);
         await Assert.That(doctor.maxAge).IsEqualTo(12);
         await Assert.That(string.Join(",", doctor.requiredSkills)).IsEqualTo("Medicine");
-        await Assert.That(string.Join(",", doctor.optionalSkills)).IsEqualTo("Social");
+    }
+
+    [Test]
+    public async Task LegacySkillClassificationDoesNotBecomeAHardGate()
+    {
+        const string legacy = """
+            <WorkRoles version="12">
+              <Roles>
+                <Role name="Doctor">
+                  <Options>
+                    <Tuning>
+                      <RequiredSkills>Medicine</RequiredSkills>
+                      <OptionalSkills>Social</OptionalSkills>
+                    </Tuning>
+                  </Options>
+                  <Jobs><WorkType>Doctor</WorkType></Jobs>
+                </Role>
+              </Roles>
+            </WorkRoles>
+            """;
+
+        RoleFileDocument parsed = RoleFile.Parse(legacy);
+
+        await Assert.That(parsed.roles.Single().hasTuning).IsTrue();
+        await Assert.That(parsed.roles.Single().requiredSkills).IsEmpty();
     }
 
     [Test]

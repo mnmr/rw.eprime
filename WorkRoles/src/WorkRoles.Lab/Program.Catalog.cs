@@ -84,8 +84,6 @@ internal static partial class Program
                     RoleTime.None, defName, "time"),
                 DeclaredRequiredSkills = SkillList(
                     tuning?.Element("skills")?.Element("required")),
-                DeclaredOptionalSkills = SkillList(
-                    tuning?.Element("skills")?.Element("optional")),
                 ColonyMin = colonyMin,
                 Coverage = demandCoverage,
                 Available = true,

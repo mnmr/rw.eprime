@@ -1,8 +1,10 @@
 ﻿# Changelog
 
-## 1.4.2 — 2026-08-15
+## 1.4.2 — 2026-08-16
 
-- Added: Support for detecting whether age limits are relevant for a pawn (no warnings on age-restricted role assignments; recommendations ignore configured age-bands).
+- Added: Support for detecting whether age limits are relevant for a pawn (avoids warnings on age-restricted role assignments and allows recommendations to ignore configured age-bands).
+- Changed: Improved classification of jobs and work types, to provide better role gates and more informative displays in role options.
+- Changed: Removed optional skills from role options. Required skills can be set to provide user-defined eligibility gates (to supplement the game-data derived gates).
 - Fixed: Minor performance improvements.
 
 ## 1.4.1 — 2026-08-14

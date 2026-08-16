@@ -26,7 +26,6 @@ namespace WorkRoles.Core
         public int ColonyMin { get; set; }
         public int Coverage { get; set; }
         public List<string> RequiredSkills { get; set; } = new List<string>();
-        public List<string> OptionalSkills { get; set; } = new List<string>();
         public int GroupId { get; set; }
         public int ActiveHours { get; set; }
         public List<string> LocationTokens { get; set; } = new List<string>();
@@ -64,7 +63,6 @@ namespace WorkRoles.Core
                 ColonyMin = ColonyMin,
                 Coverage = Coverage,
                 RequiredSkills = new List<string>(RequiredSkills),
-                OptionalSkills = new List<string>(OptionalSkills),
                 GroupId = GroupId,
                 ActiveHours = ActiveHours,
                 LocationTokens = new List<string>(LocationTokens),

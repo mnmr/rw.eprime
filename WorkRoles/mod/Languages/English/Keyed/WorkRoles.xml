@@ -128,7 +128,8 @@
   <WR_AddNew>Add New</WR_AddNew>
   <WR_WhenPanelCaption>Role progression: Here you can define at what skill the displayed roles are recommended. Overlapping roles complement.</WR_WhenPanelCaption>
   <WR_AddRole>Add Role</WR_AddRole>
-  <WR_NoXpRoleTip>No known XP-giving jobs. Mods can change what grants XP, so you may add it anyway.</WR_NoXpRoleTip>
+  <WR_NoContributionRoleTip>Trains none of the skills this role needs, so the path cannot use it as a training step. Mods can change what grants XP, so you may add it anyway.</WR_NoContributionRoleTip>
+  <WR_ContributesTip>Trains toward this role: {0}.</WR_ContributesTip>
 
   <!-- Recommendations tab: per-role tuning editors -->
   <WR_RecClassificationSection>Classification</WR_RecClassificationSection>
@@ -154,13 +155,25 @@
   <WR_ChampionPenaltyTip>When enabled, a colonist who already champions other roles is penalized when competing to champion this one. Disable it for roles where repeat championships are fine, such as occasional work.</WR_ChampionPenaltyTip>
   <WR_RoleAgeBandsLabel>Age groups that may be assigned this role:</WR_RoleAgeBandsLabel>
   <WR_RoleAgeBandsTip>Colonists outside the selected age bands are never assigned or recommended this role. Click a band outside the selection to include everything up to it, click the first or last selected band to remove it, and click a middle band to select only that band. Band edges follow the ages at which the game unlocks work. Every job in this role is possible from age {0}.</WR_RoleAgeBandsTip>
+  <WR_WorkTypesLabel>Work types</WR_WorkTypesLabel>
+  <WR_WorkTypesTip>Only colonists able to perform work of the specified types are eligible for this role.\n\nDerived from the selected jobs and shown for information.</WR_WorkTypesTip>
+  <WR_UsedSkillsLabel>Used</WR_UsedSkillsLabel>
+  <WR_UsedSkillsTip>Shows skills that affect jobs in this role. Hover a skill to see its effect.\n\nDerived from the selected jobs and shown for information.</WR_UsedSkillsTip>
+  <WR_TrainedSkillsLabel>Trained</WR_TrainedSkillsLabel>
+  <WR_TrainedSkillsTip>Shows skills that gain XP from jobs in this role.\n\nDerived from the selected jobs and shown for information.</WR_TrainedSkillsTip>
+  <WR_GatedSkillsLabel>Gated</WR_GatedSkillsLabel>
+  <WR_GatedSkillsTip>Shows skills that colonists need to perform certain jobs in this role. The minimum skill level depends on which recipe, plant or building is involved. Hover skills to see details.\n\nDerived from the selected jobs and shown for information.</WR_GatedSkillsTip>
+  <WR_RecMoreContentGates>{0} more</WR_RecMoreContentGates>
+  <WR_EffectSpeed>Speeds up work</WR_EffectSpeed>
+  <WR_EffectQuality>Improves quality</WR_EffectQuality>
+  <WR_EffectYield>Increases yield</WR_EffectYield>
+  <WR_EffectSuccess>Improves success chance</WR_EffectSuccess>
   <WR_RequiredSkillsLabel>Required</WR_RequiredSkillsLabel>
-  <WR_RequiredSkillsTip>Skills a colonist must be good at for this role to be recommended.</WR_RequiredSkillsTip>
-  <WR_OptionalSkillsLabel>Optional</WR_OptionalSkillsLabel>
-  <WR_OptionalSkillsTip>Skills that improve a colonist's fit for this role but are not required.</WR_OptionalSkillsTip>
+  <WR_RequiredSkillsTip>Optional hard gates chosen for this role. A colonist with any required skill disabled cannot be recommended the role. Skill level does not affect this gate, and it is separate from content minimums shown under Gated.</WR_RequiredSkillsTip>
   <WR_AddSkill>Add Skill</WR_AddSkill>
-  <WR_AddSkillTip>Required skills gate the role: only colonists with a decent verdict in them are considered, and the first required skill drives the candidate verdict. Optional skills sharpen the ranking of multi-skill roles without excluding anyone. Skills listed here override the skills derived from the role's jobs.</WR_AddSkillTip>
-  <WR_RemoveSkillTip>The engine stops weighing this skill for the role, widening who qualifies. A role left without required skills falls back to the primary skill implied by its jobs.</WR_RemoveSkillTip>
+  <WR_AddSkillTip>Add an explicit hard skill gate. This does not change the role's derived Used or Trained skills.</WR_AddSkillTip>
+  <WR_RemoveSkillTip>Remove this explicit hard skill gate.</WR_RemoveSkillTip>
+  <WR_RoleMissingRequiredSkills>Required skills disabled for {0}: {1}.</WR_RoleMissingRequiredSkills>
   <WR_PathAddRoleTip>Adds a role to this path.</WR_PathAddRoleTip>
   <WR_BandChipTip>Drag an end to resize the skill band, drag the middle to move it.</WR_BandChipTip>
   <WR_PriorityGridTitle>Priority Grid</WR_PriorityGridTitle>
@@ -342,7 +355,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_AlreadyAssigned>Already assigned</WR_AlreadyAssigned>
   <WR_WillBeRemoved>Not in recommendation list. Pin roles you want to keep before applying.</WR_WillBeRemoved>
   <WR_RecTipColonyNeed>Colony needs</WR_RecTipColonyNeed>
-  <WR_RecTipSkills>Required skills</WR_RecTipSkills>
+  <WR_RecTipSkills>Skills considered</WR_RecTipSkills>
   <WR_RecTipSignalVerdict>Signal verdict</WR_RecTipSignalVerdict>
   <WR_RecTipSelection>Selection</WR_RecTipSelection>
   <WR_RecTipAssignmentsOne>1 assignment requested</WR_RecTipAssignmentsOne>
@@ -590,6 +603,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- {0} skill, {1} level or level range, {2} gated count, {3} total count -->
   <WR_TipReqBills>{0} {1} ({2} of {3} bills are skill-gated)</WR_TipReqBills>
   <WR_TipReqItems>{0} {1} ({2} items are skill-gated)</WR_TipReqItems>
+  <WR_TipReqJobs>{0} {1} ({2} jobs are skill-gated)</WR_TipReqJobs>
   <!-- Curve milestone fact label; {0} = level -->
   <WR_TipLevelN>Level {0}</WR_TipLevelN>
   <WR_TipXpLabel>Gives XP</WR_TipXpLabel>

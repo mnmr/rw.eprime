@@ -112,6 +112,25 @@ public class RoleDefVanillaTests
             await Assert.That(role.Entries.Distinct().Count()).IsEqualTo(role.Entries.Count).Because($"{role.DefName} lists an entry twice");
     }
 
+    [Test]
+    public async Task ShippedRolesHaveNoExplicitSkillGates()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null
+            && !File.Exists(Path.Combine(dir.FullName, "WorkRoles.slnx")))
+            dir = dir.Parent;
+        XElement root = XElement.Load(Path.Combine(
+            dir!.FullName, "mod", "1.6", "Defs", "Roles.xml"));
+
+        foreach (XElement def in root.Elements("WorkRoles.RoleDef"))
+            await Assert.That(
+                    def.Element("tuning")?.Element("skills")
+                        ?.Element("required")?.Elements("li").Any()
+                    == true)
+                .IsFalse()
+                .Because($"{def.Element("defName")?.Value} must opt in explicitly");
+    }
+
     /// Every vanilla work type — and therefore every work-tab giver — must be
     /// covered by the shipped roles. Givers without a work type are player-only
     /// actions and out of scope.

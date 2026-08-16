@@ -14,7 +14,6 @@ public static class RoleDefaults
         public int ColonyMin;
         public int Coverage;
         public List<string> RequiredSkills = new();
-        public List<string> OptionalSkills = new();
         public List<(string Role, int Min, int Max)> Training = new();
     }
 
@@ -40,7 +39,6 @@ public static class RoleDefaults
                 tuning.Coverage = IntOf(values.Element("coverage"));
                 XElement skills = values.Element("skills");
                 tuning.RequiredSkills = SkillsOf(skills?.Element("required"));
-                tuning.OptionalSkills = SkillsOf(skills?.Element("optional"));
                 tuning.Training = TrainingOf(values.Element("training"));
             }
             result[defName] = tuning;

@@ -48,8 +48,7 @@ namespace WorkRoles.Core
         public bool enabled = true;
         public int activeHours = AllHours;
         public List<string> locations = new List<string>();
-        /// Recommendation tuning; hasTuning=false marks a pre-tuning file whose
-        /// roles derive their skill classification on import.
+        /// Recommendation tuning; hasTuning=false marks a pre-tuning file.
         public bool hasTuning;
         public RoleCategory category;
         public RoleTime time;
@@ -62,8 +61,9 @@ namespace WorkRoles.Core
         /// ideal colonist percentage.
         public int colonyMin;
         public int coverage;
+        /// User-authored hard skill gates. Derived Used/Trained skill facts are
+        /// never serialized.
         public List<string> requiredSkills = new List<string>();
-        public List<string> optionalSkills = new List<string>();
         /// Role-owned training path (v11): the role itself plus its training
         /// roles with skill bands. Empty = the implicit self-only path.
         public List<FileTrainingPathEntry> training =
@@ -178,10 +178,12 @@ namespace WorkRoles.Core
         /// onto the owning role (<Tuning><Training>) and retires the
         /// stand-alone <TrainingPaths> section (still parsed for import);
         /// v12 adds composite roles (a Role's composite attribute and its
-        /// ordered <Members> role references, replacing <Jobs>).
+        /// ordered <Members> role references, replacing <Jobs>); v13 changes
+        /// RequiredSkills from role-skill classification to opt-in hard gates
+        /// and retires OptionalSkills. Older skill lists are read and dropped.
         /// Parsing is lenient across versions (older readers ignore unknown
         /// elements, newer ones default absentees and skip retired ones).
-        public const string FormatVersion = "12";
+        public const string FormatVersion = "13";
 
         // Hand-editing help, embedded in every export. Non-obvious parts only.
         private const string FormatNotes = @"
@@ -208,6 +210,8 @@ namespace WorkRoles.Core
     replaces the stored recommendation order (unlisted roles place dynamically).
   - A Role's <Tuning> colonyMin and coverage attributes hold its assignment
     demand: the minimum assignment count and the ideal colonist percentage.
+  - <RequiredSkills> is an optional comma-separated list of hard skill gates.
+    Used and trained skills are derived from the role's jobs and are not stored.
   - A Role with composite=""true"" holds <Members> instead of <Jobs>: ordered
     <Role roleId=""..."">name</Role> references. Holders do the member roles'
     jobs in that order. Members must be regular roles without rules.
@@ -344,9 +348,6 @@ namespace WorkRoles.Core
                 if (role.requiredSkills.Count > 0)
                     tuning.Add(new XElement("RequiredSkills",
                         string.Join(",", role.requiredSkills)));
-                if (role.optionalSkills.Count > 0)
-                    tuning.Add(new XElement("OptionalSkills",
-                        string.Join(",", role.optionalSkills)));
                 if (role.training.Count > 0)
                 {
                     var training = new XElement("Training");
@@ -425,6 +426,10 @@ namespace WorkRoles.Core
                 doc.error = e.Message;
                 return doc;
             }
+            int.TryParse(root.Attribute("version")?.Value,
+                NumberStyles.Integer, CultureInfo.InvariantCulture,
+                out int formatVersion);
+            bool hasExplicitSkillGates = formatVersion >= 13;
             foreach (var colorEl in root.Element("Palette")?.Elements("Color")
                      ?? Enumerable.Empty<XElement>())
             {
@@ -451,7 +456,7 @@ namespace WorkRoles.Core
             foreach (var roleEl in root.Element("Roles")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
             {
-                var role = ParseRole(roleEl);
+                var role = ParseRole(roleEl, hasExplicitSkillGates);
                 if (role != null) doc.roles.Add(role);
             }
             foreach (var pathEl in root.Element("TrainingPaths")?.Elements("Path")
@@ -675,7 +680,8 @@ namespace WorkRoles.Core
         private static string EmptyToNull(string value) =>
             string.IsNullOrEmpty(value) ? null : value;
 
-        private static FileRole ParseRole(XElement el)
+        private static FileRole ParseRole(
+            XElement el, bool hasExplicitSkillGates)
         {
             string label = el.Attribute("name")?.Value?.Trim();
             if (string.IsNullOrEmpty(label)) return null;
@@ -736,10 +742,9 @@ namespace WorkRoles.Core
                     if (int.TryParse(tuningEl.Attribute("coverage")?.Value,
                             out int coverage))
                         role.coverage = coverage;
-                    role.requiredSkills = SplitSkills(
-                        tuningEl.Element("RequiredSkills")?.Value);
-                    role.optionalSkills = SplitSkills(
-                        tuningEl.Element("OptionalSkills")?.Value);
+                    if (hasExplicitSkillGates)
+                        role.requiredSkills = SplitSkills(
+                            tuningEl.Element("RequiredSkills")?.Value);
                     foreach (var entryEl in tuningEl.Element("Training")?.Elements("Role")
                              ?? Enumerable.Empty<XElement>())
                     {

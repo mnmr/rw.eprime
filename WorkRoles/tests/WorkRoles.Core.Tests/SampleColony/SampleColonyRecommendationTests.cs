@@ -199,6 +199,36 @@ public class SampleColonyRecommendationTests
         await Assert.That(actualRecommendedOrder).IsEqualTo("Core, Basics, Hunter, Miner, Builder, Grunt");
     }
 
+    /// Full-colony pins: every remaining current-map colonist's stored
+    /// assignments and published recommendation order, extracted 2026-08-16.
+    /// Guards recommendation outcomes and ordering across the whole cohort,
+    /// not just the individually narrated pawns above.
+    [Test]
+    [Arguments("Bashy", "Core, Basics, Warden, Farmer Away, Crafter, Hauler, Cleaner, Gene Maker", "Core, Basics, Warden, Farmer Away, Grunt")]
+    [Arguments("Cockroach", "Core, Basics, Cook, Smelter, Fabricator, Tailor, Smith, Drug Maker, Crafter, Hauler, Cleaner, Researcher, Gene Maker, Hunter", "Core, Basics, Cook, Smith, Fabricator, Tailor, Crafter, Drug Maker, Grunt, Hunter, Researcher")]
+    [Arguments("Flo", "Core, Medic, Basics, Handyman, Grower, Plant Cutter, Miner, Gene Maker", "Core, Medic, Basics, Handyman, Hunter, Grower, Plant Cutter, Grunt")]
+    [Arguments("Gorilla", "Core, Fix Roof, Nurse, Basics, Farmer Away, Handyman, Butcher, Brewer, Tailor, Smith, Hunter, Crafter, Grunt, Gene Maker", "Core, Medic, Nurse, Basics, Farmer Away, Hunter, Handyman, Smith, Tailor, Crafter, Butcher, Brewer, Grunt")]
+    [Arguments("Han", "Core, Basics, Farmer Away, Hauler, Butcher, Brewer, Tailor, Smith, Herder, Hunter, Crafter, Fisher, Grunt, Gene Maker", "Core, Basics, Farmer Away, Herder, Butcher, Brewer, Hunter, Smith, Tailor, Crafter, Fisher, Grunt")]
+    [Arguments("Hasonove", "Core, Basics, Fabricator, Cook, Tailor, Smith, Drug Maker, Builder, Crafter, Hauler, Cleaner, Researcher, Gene Maker, Hunter", "Core, Basics, Tailor, Cook, Fabricator, Smith, Crafter, Drug Maker, Builder, Grunt, Hunter, Researcher")]
+    [Arguments("Hazelnut", "Core, Basics, Farmer Away, Cook, Butcher, Brewer, Warden, Hunter, Hauler, Cleaner, Gene Maker", "Core, Basics, Farmer Away, Childcare, Warden, Butcher, Brewer, Hunter, Grunt")]
+    [Arguments("Jet", "Core, Basics, Fix Roof, Builder, Drug Maker, Fabricator, Tailor, Smith, Crafter, Hauler, Cleaner, Researcher, Gene Maker, Hunter", "Core, Basics, Builder, Crafter, Drug Maker, Fabricator, Smith, Tailor, Grunt, Hunter, Researcher")]
+    [Arguments("Macey", "Core, Basics, Fabricator, Tailor, Smith, Drug Maker, Crafter, Brewer, Hunter, Hauler, Cleaner, Researcher, Gene Maker", "Core, Basics, Drug Maker, Fabricator, Smith, Hunter, Tailor, Crafter, Butcher, Brewer, Grunt, Researcher")]
+    [Arguments("Madcat", "Core, Doctor, Basics, Haul Now, Handler, Cook, Childcare, Warden, Grower, Plant Cutter, Miner, Fisher, Grunt, Hunter, Gene Maker", "Core, Medic, Basics, Haul Now, Childcare, Warden, Cook, Handler, Grower, Plant Cutter, Hunter, Fisher, Grunt, Researcher")]
+    [Arguments("Niklas", "Core, Basics, Cook, Smelter, Farmer Away, Fabricator, Tailor, Smith, Handler, Crafter, Fisher, Hauler, Cleaner, Hunter, Gene Maker", "Core, Basics, Farmer Away, Handler, Cook, Fabricator, Smith, Tailor, Crafter, Fisher, Grunt, Hunter")]
+    [Arguments("Noah", "Core, Basics, Grower, Plant Cutter, Haul Now, Hunter, Cleaner, Hauler, Gene Maker", "Core, Basics, Cleaner, Hauler, Farmer, Grunt, Hunter")]
+    [Arguments("Pun", "Core, Doctor, Basics, Childcare, Warden, Farmer Away, Herder, Hunter, Fisher, Grunt", "Core, Doctor, Basics, Warden, Childcare, Farmer Away, Handler, Farmer, Fisher, Grunt, Hunter")]
+    [Arguments("Selma", "Core, Medic, Basics, Farmer Away, Butcher, Brewer, Tailor, Smith, Hunter, Grower, Plant Cutter, Crafter, Grunt, Researcher, Gene Maker", "Core, Medic, Basics, Farmer Away, Hunter, Grower, Plant Cutter, Smith, Tailor, Crafter, Butcher, Brewer, Grunt, Researcher")]
+    [Arguments("Severin", "Core, Doctor, Basics, Handler, Hunter, Farmer, Miner, Fisher, Grunt, Gene Maker", "Core, Doctor, Basics, Farmer, Handler, Miner, Fisher, Hunter, Grunt")]
+    [Arguments("Tontrool", "Core, Basics, Cook, Builder, Handler, Miner, Painter, Fisher, Hauler, Cleaner, Hunter, Gene Maker", "Core, Basics, Cook, Builder, Handler, Fisher, Grunt, Hunter")]
+    [Arguments("Twiggy", "Core, Basics, Farmer Away, Miner Away, Builder, Handler, Hunter, Miner, Fisher, Hauler, Cleaner, Gene Maker", "Core, Basics, Farmer Away, Miner Away, Handler, Miner, Builder, Fisher, Hunter, Grunt")]
+    public async Task RemainingColonistsKeepTheirPublishedOrders(string pawnName, string expectedCurrentOrder, string expectedRecommendedOrder)
+    {
+        RecommendationScenario scenario = BuildScenario(pawnName);
+
+        await Assert.That(string.Join(", ", scenario.CurrentAssignments)).IsEqualTo(expectedCurrentOrder);
+        await Assert.That(string.Join(", ", scenario.RecommendedAssignments)).IsEqualTo(expectedRecommendedOrder);
+    }
+
     /// Set equality with a readable diff on failure: the roles the expectation
     /// lists but the actual set lacks, and the roles it carries beyond it.
     private static async Task AssertSameRoles(string[] actual, string[] expected, string label)

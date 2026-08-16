@@ -657,11 +657,9 @@ namespace WorkRoles
             }
         }
 
-        /// Fills tuning on roles that predate it (old saves at load, pre-tuning
-        /// role files after import): template defs supply their authored
-        /// tuning; def-less roles derive skills from the same catalog
-        /// projection recommendations use. Deterministic (runs identically on
-        /// every client), persisted on next save.
+        /// Fills tuning on roles that predate it. Legacy Required/Optional
+        /// classification is deliberately discarded: it must never become a
+        /// new hard gate merely because an old save was loaded.
         internal void MigrateRoleTuning()
         {
             // Roles from pre-minAge saves and files derive their age floor:
@@ -669,6 +667,11 @@ namespace WorkRoles
             // age across the covered work types.
             foreach (Role role in roles)
             {
+                if (!role.skillGatesSeeded)
+                {
+                    role.requiredSkills.Clear();
+                    role.skillGatesSeeded = true;
+                }
                 if (role.minAge >= 0) continue;
                 RoleDef template = role.templateDefName == null ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
@@ -677,7 +680,6 @@ namespace WorkRoles
                     : RecsAdapter.MinUnlockAgeOf(role);
             }
             if (roles.All(role => role.tuningSeeded)) return;
-            Dictionary<int, WorkRoles.Core.Recs.RoleView> viewById = null;
             foreach (Role role in roles)
             {
                 if (role.tuningSeeded) continue;
@@ -691,20 +693,7 @@ namespace WorkRoles
                     role.championPenalty = def.tuning.championPenalty;
                     role.colonyMin = def.tuning.colonyMin;
                     role.coverage = def.tuning.coverage;
-                    role.requiredSkills = new List<string>(def.tuning.skills.required);
-                    role.optionalSkills = new List<string>(def.tuning.skills.optional);
-                    continue;
                 }
-                if (viewById == null)
-                    viewById = RecsAdapter.RoleViewsOf(this)
-                        .ToDictionary(view => view.Id);
-                if (!viewById.TryGetValue(role.id, out var view)) continue;
-                role.requiredSkills = view.Skills
-                    .Where(skill => skill.Required)
-                    .Select(skill => skill.SkillDefName).ToList();
-                role.optionalSkills = view.Skills
-                    .Where(skill => !skill.Required)
-                    .Select(skill => skill.SkillDefName).ToList();
             }
         }
     }

@@ -98,9 +98,14 @@ namespace WorkRoles.UI
                 return cached;
             var geo = new Geometry { MaxWidth = maxWidth };
             var oldFont = Text.Font;
+            bool oldWrap = Text.WordWrap;
             try
             {
                 Text.Font = GameFont.Small;
+                // Tooltip geometry must not inherit a no-wrap setting from the
+                // control that opened it. Compose uses CalcHeight for prose,
+                // facts, and actions, so multiline measurement is explicit.
+                Text.WordWrap = true;
                 float frame = Pad + model.Padding;
                 float contentMax = Mathf.Min(maxWidth, MaxContentWidth);
                 float contentW = Mathf.Min(NaturalWidth(model), contentMax);
@@ -123,6 +128,7 @@ namespace WorkRoles.UI
             }
             finally
             {
+                Text.WordWrap = oldWrap;
                 Text.Font = oldFont;
             }
         }

@@ -815,7 +815,7 @@ namespace WorkRoles.Core.Recs
 
         private sealed class CompositeSpec
         {
-            internal int Id;
+            internal RoleView Role;
             internal int[] MemberIds;
         }
 
@@ -841,7 +841,11 @@ namespace WorkRoles.Core.Recs
                 var members = new int[role.MemberRoleIds.Count];
                 for (int m = 0; m < members.Length; m++)
                     members[m] = role.MemberRoleIds[m];
-                var spec = new CompositeSpec { Id = role.Id, MemberIds = members };
+                var spec = new CompositeSpec
+                {
+                    Role = role,
+                    MemberIds = members,
+                };
                 if (!byFirstMember.TryGetValue(members[0], out List<CompositeSpec> list))
                     byFirstMember[members[0]] = list = new List<CompositeSpec>();
                 list.Add(spec);
@@ -857,14 +861,14 @@ namespace WorkRoles.Core.Recs
                 for (int i = 0; i < published.Length;)
                 {
                     CompositeSpec match = LongestCompositeMatch(
-                        byFirstMember, published, i);
+                        facts, pawnIndex, byFirstMember, published, i);
                     if (match == null)
                     {
                         scratch.Add(published[i]);
                         i++;
                         continue;
                     }
-                    scratch.Add(match.Id);
+                    scratch.Add(match.Role.Id);
                     AddBundledExplanation(explanationsByPawn[pawnIndex], match);
                     i += match.MemberIds.Length;
                     changed = true;
@@ -877,6 +881,8 @@ namespace WorkRoles.Core.Recs
         /// order; ties broken by smallest composite id. Member roles are unique
         /// per pawn, so a composite matches at most one window.
         private static CompositeSpec LongestCompositeMatch(
+            EngineContext facts,
+            int pawnIndex,
             Dictionary<int, List<CompositeSpec>> byFirstMember,
             int[] published,
             int start)
@@ -887,6 +893,9 @@ namespace WorkRoles.Core.Recs
             CompositeSpec best = null;
             for (int c = 0; c < candidates.Count; c++)
             {
+                if (!facts.MeetsExplicitRequiredSkills(
+                        pawnIndex, candidates[c].Role))
+                    continue;
                 int[] members = candidates[c].MemberIds;
                 if (start + members.Length > published.Length) continue;
                 bool match = true;
@@ -896,7 +905,7 @@ namespace WorkRoles.Core.Recs
                 if (best == null
                     || members.Length > best.MemberIds.Length
                     || members.Length == best.MemberIds.Length
-                        && candidates[c].Id < best.Id)
+                        && candidates[c].Role.Id < best.Role.Id)
                     best = candidates[c];
             }
             return best;
@@ -914,9 +923,9 @@ namespace WorkRoles.Core.Recs
                         spec.MemberIds[m],
                         out RoleRecommendationExplanation memberExplanation))
                     members.Add(memberExplanation);
-            explanations[spec.Id] = new RoleRecommendationExplanation
+            explanations[spec.Role.Id] = new RoleRecommendationExplanation
             {
-                RoleId = spec.Id,
+                RoleId = spec.Role.Id,
                 Recommended = true,
                 SelectionStage = RecommendationSelectionStage.Special,
                 SpecialPickReason = SpecialPickReason.Bundled,
@@ -1023,7 +1032,7 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             RoleView role)
         {
-            if (!facts.FullyCapable(pawnIndex, role)) return false;
+            if (!facts.MeetsCapabilityRequirement(pawnIndex, role)) return false;
             for (int index = 0; index < draft.RoleCount; index++)
             {
                 int otherRoleId = draft.RoleAt(index);
@@ -1045,7 +1054,7 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             RoleView role)
         {
-            if (!facts.FullyCapable(pawnIndex, role)) return false;
+            if (!facts.MeetsCapabilityRequirement(pawnIndex, role)) return false;
             for (int index = 0; index < draft.RoleCount; index++)
             {
                 int otherRoleId = draft.RoleAt(index);
@@ -1140,8 +1149,8 @@ namespace WorkRoles.Core.Recs
         /// skilled before skill-less, then higher natural priority, then id.
         private static int CompareSelection(RoleView left, RoleView right)
         {
-            if (left.Unskilled != right.Unskilled)
-                return left.Unskilled ? 1 : -1;
+            if (left.UseUnskilledPlacementRules != right.UseUnskilledPlacementRules)
+                return left.UseUnskilledPlacementRules ? 1 : -1;
             int priority = right.NaturalPriority.CompareTo(left.NaturalPriority);
             if (priority != 0) return priority;
             return left.Id.CompareTo(right.Id);
@@ -1156,7 +1165,8 @@ namespace WorkRoles.Core.Recs
             RoleView left,
             RoleView right)
         {
-            if (left.Unskilled && !right.Unskilled) return false;
+            if (left.UseUnskilledPlacementRules
+                && !right.UseUnskilledPlacementRules) return false;
             if (HigherInSharedPath(paths, left.Id, right.Id)) return true;
             return facts.Redundant(left.Id, right.Id)
                 && !facts.Redundant(right.Id, left.Id);

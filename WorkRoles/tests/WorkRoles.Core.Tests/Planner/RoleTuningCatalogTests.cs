@@ -2,8 +2,8 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles.Core.Tests.Planner;
 
-/// Role tuning travels intact through the published catalog boundary: sources
-/// carry it onto views, and the views own independent copies.
+/// Explicit role skill gates travel intact through the published catalog
+/// boundary, and the views own independent copies.
 public class RoleTuningCatalogTests
 {
     [Test]
@@ -11,7 +11,6 @@ public class RoleTuningCatalogTests
     {
         var jobs = new FakeCatalog().WithWorkType("Doctor", "TendA");
         List<string> required = ["Medicine"];
-        List<string> optional = ["Social"];
         var source = new RecommendationRoleSource
         {
             Id = 7,
@@ -20,7 +19,6 @@ public class RoleTuningCatalogTests
             Category = RoleCategory.Important,
             Time = RoleTime.PartTime,
             DeclaredRequiredSkills = required,
-            DeclaredOptionalSkills = optional,
         };
         RecommendationCatalogProjection catalog = RecommendationCatalogBuilder.Build([source], [], jobs, new Dictionary<string, int> { ["Doctor"] = 1300 }, VanillaJobSkillBaseline.Index);
 
@@ -29,13 +27,10 @@ public class RoleTuningCatalogTests
         await Assert.That(view.Category).IsEqualTo(RoleCategory.Important);
         await Assert.That(view.Time).IsEqualTo(RoleTime.PartTime);
         await Assert.That(string.Join(",", view.DeclaredRequiredSkills)).IsEqualTo("Medicine");
-        await Assert.That(string.Join(",", view.DeclaredOptionalSkills)).IsEqualTo("Social");
 
         // The view owns its copies: later source-list mutations must not leak in.
         required.Add("Cooking");
-        optional.Clear();
         await Assert.That(string.Join(",", view.DeclaredRequiredSkills)).IsEqualTo("Medicine");
-        await Assert.That(string.Join(",", view.DeclaredOptionalSkills)).IsEqualTo("Social");
     }
 
     [Test]
@@ -49,7 +44,51 @@ public class RoleTuningCatalogTests
         await Assert.That(view.ChampionPenalty).IsTrue();
         await Assert.That(view.Category).IsEqualTo(RoleCategory.None);
         await Assert.That(view.Time).IsEqualTo(RoleTime.None);
-        await Assert.That(view.DeclaredRequiredSkills).IsNull();
-        await Assert.That(view.DeclaredOptionalSkills).IsNull();
+        await Assert.That(view.DeclaredRequiredSkills).IsEmpty();
+    }
+
+    [Test]
+    public async Task CompositeInheritsMemberSkillGatesAndKeepsItsOwn()
+    {
+        var jobs = new FakeCatalog()
+            .WithWorkType("Doctor", "TendA")
+            .WithWorkType("Crafting", "CraftA");
+        var doctor = new RecommendationRoleSource
+        {
+            Id = 1,
+            DeclaredRequiredSkills = ["Medicine"],
+            Entries = [new JobEntry(JobEntryKind.WorkType, "Doctor")],
+        };
+        var crafter = new RecommendationRoleSource
+        {
+            Id = 2,
+            DeclaredRequiredSkills = ["Crafting"],
+            Entries = [new JobEntry(JobEntryKind.WorkType, "Crafting")],
+        };
+        var composite = new RecommendationRoleSource
+        {
+            Id = 3,
+            MemberRoleIds = [doctor.Id, crafter.Id],
+            DeclaredRequiredSkills = ["Intellectual"],
+            Entries =
+            [
+                new JobEntry(JobEntryKind.WorkType, "Doctor"),
+                new JobEntry(JobEntryKind.WorkType, "Crafting"),
+            ],
+        };
+
+        RecommendationCatalogProjection catalog =
+            RecommendationCatalogBuilder.Build(
+                [doctor, crafter, composite], [], jobs,
+                new Dictionary<string, int>
+                {
+                    ["Doctor"] = 1300,
+                    ["Crafting"] = 400,
+                },
+                VanillaJobSkillBaseline.Index);
+
+        RoleView view = catalog.Roles.Single(role => role.Id == composite.Id);
+        await Assert.That(view.DeclaredRequiredSkills)
+            .IsEquivalentTo(["Intellectual", "Medicine", "Crafting"]);
     }
 }

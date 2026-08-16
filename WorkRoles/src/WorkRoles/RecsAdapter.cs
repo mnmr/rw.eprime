@@ -127,10 +127,8 @@ namespace WorkRoles
                     Time = role.time,
                     MinAge = role.minAge < 0 ? 0 : role.minAge,
                     MaxAge = role.maxAge,
-                    DeclaredRequiredSkills = role.tuningSeeded
+                    DeclaredRequiredSkills = role.skillGatesSeeded
                         ? role.requiredSkills : null,
-                    DeclaredOptionalSkills = role.tuningSeeded
-                        ? role.optionalSkills : null,
                     ColonyMin = role.colonyMin,
                     Coverage = role.coverage,
                     Available = RoleAvailable(role),
@@ -262,8 +260,7 @@ namespace WorkRoles
         internal static string PrimarySkillOf(Role role)
         {
             if (role.TryGetPrimarySkillCache(out string cached)) return cached;
-            string primary = RoleSkillProfiles.ForRole(role)
-                .FirstOrDefault(skill => skill.Primary)?.SkillDefName;
+            string primary = RoleWorkSpecs.For(role).PrimarySkillDefName;
             role.SetPrimarySkillCache(primary);
             return primary;
         }
@@ -402,8 +399,7 @@ namespace WorkRoles
         }
 
         internal static bool IsUnskilledRole(Role role)
-            => !role.autoAssign && !role.HasRules
-            && RoleSkillProfiles.ForRole(role).Count == 0;
+            => !RoleWorkSpecs.For(role).IsSkilled;
 
         internal static bool ProvidesHunting(Role role)
             => WorkTypesOf(role).Any(wt => wt.defName == "Hunting");

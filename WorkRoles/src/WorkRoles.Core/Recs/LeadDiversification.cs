@@ -201,7 +201,7 @@ namespace WorkRoles.Core.Recs
             RoleView role,
             int minimum)
         {
-            IReadOnlyList<RoleSkillView> skills = facts.RequiredSkills(role);
+            IReadOnlyList<RoleSkillFact> skills = facts.RequiredSkills(role);
             if (skills.Count == 0) return false;
             for (int index = 0; index < skills.Count; index++)
                 if (facts.SkillLevel(pawnIndex, skills[index].SkillDefName) < minimum)

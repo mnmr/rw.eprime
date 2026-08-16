@@ -178,11 +178,9 @@ RepeatChampionOccasionalPenalty=repeatChampionOccasionalPenalty=20
     public async Task OptionalTargetPointsChangeThePublishedTrainingRole()
     {
         RoleView target = RecsTestBed.Role(1, "Crafting", "TargetWork");
-        target.Skills = TwoSkillProfile();
-        target.PrimarySkill = "Crafting";
+        ApplyTwoSkillProfile(target, "TargetWork");
         RoleView trainee = RecsTestBed.Role(2, "Crafting", "TrainingWork");
-        trainee.Skills = TwoSkillProfile();
-        trainee.PrimarySkill = "Crafting";
+        ApplyTwoSkillProfile(trainee, "TrainingWork");
         PathView path = RecsTestBed.Path(10, (trainee.Id, 0, 15), (target.Id, 15, 21));
 
         PawnView pawn = RecsTestBed.Pawn();
@@ -302,14 +300,10 @@ RepeatChampionOccasionalPenalty=repeatChampionOccasionalPenalty=20
         await Assert.That(skillMultiplierSecondAssignments.SetEquals([1])).IsTrue();
     }
 
-    private static List<RoleSkillView> TwoSkillProfile() =>
-        [
-            new RoleSkillView
-            {
-                SkillDefName = "Crafting",
-                Primary = true,
-                RequiredContent = 1,
-            },
-            new RoleSkillView { SkillDefName = "Intellectual", RequiredContent = 1 },
-        ];
+    /// Two used-and-trained skills with gated content, Crafting primary:
+    /// the two-skill covered set the optional-target rules read.
+    private static void ApplyTwoSkillProfile(RoleView role, string token) =>
+        RecsTestBed.SetSpec(role, RecsTestBed.Capability("Crafting", 0,
+            RecsTestBed.Giver(token, used: ["Crafting"], trained: ["Crafting"], gates: ("Crafting", 1)),
+            RecsTestBed.Giver($"{token}Research", used: ["Intellectual"], trained: ["Intellectual"], gates: ("Intellectual", 1))));
 }

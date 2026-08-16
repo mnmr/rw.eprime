@@ -355,7 +355,11 @@ namespace WorkRoles.UI
                 + CheckRowH + 8f
                 + MiniHeaderH + ScalingRowH + 2f + ScalingRowH;
             float right = MiniHeaderH
-                + detail.RequiredHeight + 6f + detail.OptionalHeight;
+                + detail.WorkTypesHeight
+                + detail.UsedHeight
+                + detail.TrainedHeight
+                + (detail.GatedChipCount > 0 ? detail.GatedHeight : 0f)
+                + detail.RequiredHeight;
             if (detail.ShowTrainingSection)
             {
                 right += 8f + MiniHeaderH;
@@ -423,10 +427,21 @@ namespace WorkRoles.UI
 
             // RIGHT: Skills, then the training path below them.
             float ry = MiniHeader(rightX, y, halfW, detail.SkillsHeader, null);
-            ry = DrawSkillTable(rightX, ry, halfW, detail.RequiredCaption,
-                "WR_RequiredSkillsTip", roleId, detail, optional: false) + 6f;
-            ry = DrawSkillTable(rightX, ry, halfW, detail.OptionalCaption,
-                "WR_OptionalSkillsTip", roleId, detail, optional: true);
+            ry = DrawDerivedSkillTable(rightX, ry, halfW,
+                detail.WorkTypesCaption, "WR_WorkTypesTip",
+                detail, DerivedSkillSection.WorkTypes);
+            ry = DrawDerivedSkillTable(rightX, ry, halfW,
+                detail.UsedCaption, "WR_UsedSkillsTip",
+                detail, DerivedSkillSection.Used);
+            ry = DrawDerivedSkillTable(rightX, ry, halfW,
+                detail.TrainedCaption, "WR_TrainedSkillsTip",
+                detail, DerivedSkillSection.Trained);
+            if (detail.GatedChipCount > 0)
+                ry = DrawDerivedSkillTable(rightX, ry, halfW,
+                    detail.GatedCaption, "WR_GatedSkillsTip",
+                    detail, DerivedSkillSection.Gated);
+            ry = DrawRequiredSkillTable(rightX, ry, halfW,
+                "WR_RequiredSkillsTip", roleId, detail);
 
             if (!detail.ShowTrainingSection) return;
             ry += 8f;
@@ -519,55 +534,143 @@ namespace WorkRoles.UI
             }
         }
 
-        /// One skill table block, three columns: the strip caption, one
-        /// selected skill per row with its remove X right-aligned inside the
-        /// skill column, and the Add button on the top row.
-        private static float DrawSkillTable(float x, float y, float width,
-            string caption, string tipKey, int roleId,
-            RecRoleDetailSnapshot detail, bool optional)
+        private enum DerivedSkillSection { WorkTypes, Used, Trained, Gated }
+
+        /// Read-only derived skill rows. All labels and tips were resolved in
+        /// the detail snapshot; drawing only indexes that immutable render
+        /// data and registers prebuilt tip regions.
+        private static float DrawDerivedSkillTable(
+            float x, float y, float width, string caption, string tipKey,
+            RecRoleDetailSnapshot detail, DerivedSkillSection section)
         {
-            const float pitch = RecommendationsTabState.SkillRowPitch;
-            Text.Font = GameFont.Small;
-            float addW = WrText.FitWidth(detail.AddSkillLabel) + 16f;
-            float captionW = Mathf.Max(
-                WrText.FitWidth(detail.RequiredCaption),
-                WrText.FitWidth(detail.OptionalCaption)) + 8f;
+            float pitch = detail.DerivedSkillRowHeight;
+            float captionW = detail.SkillCaptionWidth;
+            var captionRect = new Rect(x, y, captionW, pitch);
+            GameFont font = Text.Font;
+            TextAnchor anchor = Text.Anchor;
+            bool wrap = Text.WordWrap;
+            Color color = GUI.color;
+            try
+            {
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = false;
+                GUI.color = WrStyle.DimText;
+                Widgets.Label(captionRect, caption);
+                GUI.color = Color.white;
+                Text.WordWrap = wrap;
+                WrTips.Key(tipKey).Region(captionRect);
+                int count = section switch
+                {
+                    DerivedSkillSection.WorkTypes => detail.WorkTypeChipCount,
+                    DerivedSkillSection.Trained => detail.TrainedChipCount,
+                    DerivedSkillSection.Gated => detail.GatedChipCount,
+                    _ => detail.UsedChipCount,
+                };
+                for (int index = 0; index < count; index++)
+                {
+                    RecSkillChip chip = section switch
+                    {
+                        DerivedSkillSection.WorkTypes => detail.WorkTypeChipAt(index),
+                        DerivedSkillSection.Trained => detail.TrainedChipAt(index),
+                        DerivedSkillSection.Gated => detail.GatedChipAt(index),
+                        _ => detail.UsedChipAt(index),
+                    };
+                    if (chip.Rect.width <= 0f) break;
+                    var rowRect = new Rect(
+                        x + captionW + chip.Rect.x,
+                        y + chip.Rect.y,
+                        chip.Rect.width,
+                        chip.Rect.height);
+                    Text.WordWrap = false;
+                    Widgets.Label(rowRect, chip.Label);
+                    Text.WordWrap = wrap;
+                    if (chip.Tip != null)
+                        StructuredTipPresenter.TipRegion(rowRect, chip.Tip);
+                }
+            }
+            finally
+            {
+                GUI.color = color;
+                Text.WordWrap = wrap;
+                Text.Anchor = anchor;
+                Text.Font = font;
+            }
+            return y + pitch;
+        }
+
+        /// Editable hard-gate rows: one selected skill and remove control per
+        /// row, with the Add button sharing the first row.
+        private static float DrawRequiredSkillTable(
+            float x, float y, float width, string tipKey, int roleId,
+            RecRoleDetailSnapshot detail)
+        {
+            float pitch = detail.RequiredSkillRowHeight;
+            float addW = detail.AddSkillWidth;
+            float captionW = detail.SkillCaptionWidth;
             float skillX = x + captionW;
-            float buttonX = x + width - addW;
-            float removeX = buttonX - 8f - 24f;
+            float buttonX = x + detail.RequiredAddX;
+            float removeX = x + detail.RequiredRemoveX;
+            float removeW = detail.RequiredRemoveWidth;
 
             var captionRect = new Rect(x, y, captionW, pitch);
-            Text.Anchor = TextAnchor.MiddleLeft;
-            GUI.color = WrStyle.DimText;
-            Widgets.Label(captionRect, caption);
-            GUI.color = Color.white;
-            WrTips.Key(tipKey).Region(captionRect);
-
-            int count = optional ? detail.OptionalChipCount : detail.RequiredChipCount;
-            for (int i = 0; i < count; i++)
+            int count = detail.RequiredChipCount;
+            GameFont font = Text.Font;
+            TextAnchor anchor = Text.Anchor;
+            bool wrap = Text.WordWrap;
+            Color color = GUI.color;
+            try
             {
-                RecSkillChip chip = optional
-                    ? detail.OptionalChipAt(i) : detail.RequiredChipAt(i);
-                float rowY = y + i * pitch;
-                Widgets.Label(new Rect(skillX, rowY,
-                    removeX - skillX - 4f, pitch), chip.Label);
-                var removeRect = new Rect(removeX,
-                    rowY + (pitch - 24f) / 2f, 24f, 24f);
-                WrTips.Key("WR_RemoveSkillTip").Region(removeRect);
-                if (Widgets.ButtonImage(removeRect, TexButton.Delete))
-                    RoleCommands.RemoveRoleSkill(roleId, chip.DefName, optional);
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = false;
+                GUI.color = WrStyle.DimText;
+                Widgets.Label(captionRect, detail.RequiredCaption);
+                GUI.color = Color.white;
+                Text.WordWrap = wrap;
+                WrTips.Key(tipKey).Region(captionRect);
+
+                for (int i = 0; i < count; i++)
+                {
+                    RecSkillChip chip = detail.RequiredChipAt(i);
+                    float rowY = y + i * pitch;
+                    Text.WordWrap = false;
+                    Widgets.Label(new Rect(skillX, rowY,
+                        detail.RequiredSkillWidth, pitch), chip.Label);
+                    Text.WordWrap = wrap;
+                    var removeRect = new Rect(removeX,
+                        rowY + (pitch - 24f) / 2f, removeW, 24f);
+                    if (removeW > 0f)
+                    {
+                        WrTips.Key("WR_RemoveSkillTip").Region(removeRect);
+                        if (Widgets.ButtonImage(removeRect, TexButton.Delete))
+                            RoleCommands.RemoveRoleSkill(roleId, chip.DefName);
+                    }
+                }
+                var addRect = new Rect(buttonX, y, addW, pitch);
+                if (addW > 0f)
+                {
+                    WrTips.Key("WR_AddSkillTip").Region(addRect);
+                    Text.WordWrap = false;
+                    bool addClicked = Widgets.ButtonText(
+                        addRect, detail.AddSkillLabel);
+                    Text.WordWrap = wrap;
+                    if (addClicked) OpenSkillMenu(roleId, detail);
+                }
             }
-            Text.Anchor = TextAnchor.UpperLeft;
-            var addRect = new Rect(buttonX, y + 1f, addW, pitch - 4f);
-            WrTips.Key("WR_AddSkillTip").Region(addRect);
-            if (Widgets.ButtonText(addRect, detail.AddSkillLabel))
-                OpenSkillMenu(roleId, detail, optional);
+            finally
+            {
+                GUI.color = color;
+                Text.WordWrap = wrap;
+                Text.Anchor = anchor;
+                Text.Font = font;
+            }
             return y + Mathf.Max(1, count) * pitch;
         }
 
         /// Menu-click-only def resolution, like the order panel's Add Role.
         private static void OpenSkillMenu(int roleId,
-            RecRoleDetailSnapshot detail, bool optional)
+            RecRoleDetailSnapshot detail)
         {
             var options = new List<FloatMenuOption>();
             foreach (SkillDef skill in DefDatabase<SkillDef>.AllDefsListForReading
@@ -580,7 +683,7 @@ namespace WorkRoles.UI
                 options.Add(new FloatMenuOption(
                     (skill.skillLabel ?? skill.label ?? skill.defName)
                         .CapitalizeFirst(),
-                    () => RoleCommands.AddRoleSkill(roleId, captured, optional)));
+                    () => RoleCommands.AddRoleSkill(roleId, captured)));
             }
             if (options.Count > 0)
                 Find.WindowStack.Add(new FloatMenu(options));
@@ -748,7 +851,13 @@ namespace WorkRoles.UI
                 RoleChipUI.DrawBandChip(chipRect, view.ChipAt(i),
                     showRemove: !ownerEntry);
                 if (dragPathId == -1)
-                    WrTips.Key("WR_BandChipTip").Region(chipRect);
+                {
+                    StructuredTip entryTip = view.TipAt(i);
+                    if (entryTip != null)
+                        StructuredTipPresenter.TipRegion(chipRect, entryTip);
+                    else
+                        WrTips.Key("WR_BandChipTip").Region(chipRect);
+                }
 
                 if (i == dragEntry)
                 {

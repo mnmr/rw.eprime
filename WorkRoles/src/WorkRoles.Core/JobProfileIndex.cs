@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles.Core
 {
@@ -42,13 +43,17 @@ namespace WorkRoles.Core
             int? requiredWorkTypeIdentity,
             JobProfileSkillSource? workSkill,
             float workSkillLearnFactor,
-            IEnumerable<JobProfileSkillRequirementSource> skillRequirements)
+            IEnumerable<JobProfileSkillRequirementSource> skillRequirements,
+            string defName = null,
+            RoleWorkEffect effects = RoleWorkEffect.Unspecified)
         {
             RecipeIdentity = recipeIdentity;
             RequiredWorkTypeIdentity = requiredWorkTypeIdentity;
             WorkSkill = workSkill;
             WorkSkillLearnFactor = workSkillLearnFactor;
             SkillRequirements = Copy(skillRequirements);
+            DefName = defName;
+            Effects = effects;
         }
 
         public int RecipeIdentity { get; }
@@ -56,6 +61,11 @@ namespace WorkRoles.Core
         public JobProfileSkillSource? WorkSkill { get; }
         public float WorkSkillLearnFactor { get; }
         public IReadOnlyList<JobProfileSkillRequirementSource> SkillRequirements { get; }
+        /// Stable content name for spec/tooltip use; null on sources captured
+        /// before content records existed (regenerated baselines fill it).
+        public string DefName { get; }
+        /// Reduced effect kinds of WorkSkill on this recipe; display-only.
+        public RoleWorkEffect Effects { get; }
 
         private static IReadOnlyList<JobProfileSkillRequirementSource> Copy(
             IEnumerable<JobProfileSkillRequirementSource> source) =>
@@ -72,6 +82,35 @@ namespace WorkRoles.Core
         Humanlike = 1,
         Animal = 2,
         Mechanoid = 4,
+    }
+
+    /// One curated skill-to-effect association for a code-defined giver: the
+    /// adapter wires the giver to its stats, the stat's declarative skill
+    /// need supplies the skill, and the effect kind is display-only.
+    public readonly struct JobProfileSkillEffect
+    {
+        public JobProfileSkillEffect(string skillDefName, RoleWorkEffect effects)
+        {
+            SkillDefName = skillDefName;
+            Effects = effects;
+        }
+
+        public string SkillDefName { get; }
+        public RoleWorkEffect Effects { get; }
+    }
+
+    /// One gate-bearing plant or buildable: content-level minimums that never
+    /// promote to giver or role gates.
+    public sealed class JobProfileContentGateFacts
+    {
+        public JobProfileContentGateFacts(string defName, int minLevel)
+        {
+            DefName = defName;
+            MinLevel = minLevel;
+        }
+
+        public string DefName { get; }
+        public int MinLevel { get; }
     }
 
     public sealed class JobProfileRequirementFacts
@@ -103,7 +142,6 @@ namespace WorkRoles.Core
             int workTypeIdentity,
             IReadOnlyList<int> usedSkillIdentities,
             IReadOnlyList<string> usedSkillDefNames,
-            IReadOnlyList<string> compatibilityUsedSkillDefNames,
             IReadOnlyList<int> trainedSkillIdentities,
             IReadOnlyList<string> trainedSkillDefNames,
             IReadOnlyList<int> relevantSkillIdentities,
@@ -113,13 +151,15 @@ namespace WorkRoles.Core
             bool hasCuratedXp,
             bool usesRecipes,
             bool givesXp,
-            IReadOnlyList<JobProfileRequirementFacts> requirements)
+            IReadOnlyList<JobProfileRequirementFacts> requirements,
+            IReadOnlyList<JobProfileSkillEffect> curatedSkillEffects = null)
         {
+            CuratedSkillEffects = curatedSkillEffects
+                ?? Array.Empty<JobProfileSkillEffect>();
             DefName = defName;
             WorkTypeIdentity = workTypeIdentity;
             UsedSkillIdentities = usedSkillIdentities;
             UsedSkillDefNames = usedSkillDefNames;
-            CompatibilityUsedSkillDefNames = compatibilityUsedSkillDefNames;
             TrainedSkillIdentities = trainedSkillIdentities;
             TrainedSkillDefNames = trainedSkillDefNames;
             RelevantSkillIdentities = relevantSkillIdentities;
@@ -139,10 +179,6 @@ namespace WorkRoles.Core
         /// only after translation in the mutable facade.
         public IReadOnlyList<int> UsedSkillIdentities { get; }
         public IReadOnlyList<string> UsedSkillDefNames { get; }
-        /// Legacy role-skill evidence view. Direct code-defined jobs retain
-        /// the former XP-as-use assumption here so publishing more accurate
-        /// profile facts cannot silently retune recommendations or editors.
-        public IReadOnlyList<string> CompatibilityUsedSkillDefNames { get; }
         public IReadOnlyList<int> TrainedSkillIdentities { get; }
         public IReadOnlyList<string> TrainedSkillDefNames { get; }
         public IReadOnlyList<int> RelevantSkillIdentities { get; }
@@ -157,6 +193,9 @@ namespace WorkRoles.Core
         public bool HasExactTrainedSkills => UsesRecipes || HasCuratedXp;
         public bool GivesXp { get; }
         public IReadOnlyList<JobProfileRequirementFacts> Requirements { get; }
+        /// Adapter-curated effect kinds per used skill; display-only facts
+        /// merged into the spec's used-skill entries.
+        public IReadOnlyList<JobProfileSkillEffect> CuratedSkillEffects { get; }
     }
 
     public sealed class JobProfileWorkTypeFacts
@@ -214,8 +253,14 @@ namespace WorkRoles.Core
             IDictionary<int, IReadOnlyList<int>> recipesByUser,
             IDictionary<int, IReadOnlyList<int>> recipesBySkill,
             JobProfileRequirementFacts constructionRequirement,
-            JobProfileRequirementFacts sowingRequirement)
+            JobProfileRequirementFacts sowingRequirement,
+            IReadOnlyList<JobProfileContentGateFacts> constructionGates = null,
+            IReadOnlyList<JobProfileContentGateFacts> sowingGates = null)
         {
+            ConstructionGates = constructionGates
+                ?? Array.Empty<JobProfileContentGateFacts>();
+            SowingGates = sowingGates
+                ?? Array.Empty<JobProfileContentGateFacts>();
             Givers = new ReadOnlyDictionary<string, JobProfileGiverFacts>(
                 new Dictionary<string, JobProfileGiverFacts>(givers, StringComparer.Ordinal));
             WorkTypes = new ReadOnlyDictionary<string, JobProfileWorkTypeFacts>(
@@ -240,6 +285,9 @@ namespace WorkRoles.Core
         public IReadOnlyDictionary<int, IReadOnlyList<int>> RecipesBySkill { get; }
         public JobProfileRequirementFacts ConstructionRequirement { get; }
         public JobProfileRequirementFacts SowingRequirement { get; }
+        /// Per-content minimums behind ConstructFinishFrames and GrowerSow.
+        public IReadOnlyList<JobProfileContentGateFacts> ConstructionGates { get; }
+        public IReadOnlyList<JobProfileContentGateFacts> SowingGates { get; }
     }
 
     /// Single-use collector. The game adapter visits each Def collection once;
@@ -260,6 +308,7 @@ namespace WorkRoles.Core
             internal List<string> CuratedUsedSkillDefNames;
             internal bool HasCuratedXp;
             internal List<string> CuratedXpSkillDefNames;
+            internal List<JobProfileSkillEffect> CuratedSkillEffects;
         }
 
         private sealed class WorkTypeSource
@@ -307,6 +356,10 @@ namespace WorkRoles.Core
             new List<DatabaseRecipeSource>();
         private readonly List<int> constructionLevels = new List<int>();
         private readonly List<int> sowingLevels = new List<int>();
+        private readonly List<JobProfileContentGateFacts> constructionGates =
+            new List<JobProfileContentGateFacts>();
+        private readonly List<JobProfileContentGateFacts> sowingGates =
+            new List<JobProfileContentGateFacts>();
         private JobProfileSkillSource constructionSkill;
         private JobProfileSkillSource sowingSkill;
         private bool built;
@@ -338,7 +391,8 @@ namespace WorkRoles.Core
             bool hasCuratedXp = false,
             IEnumerable<string> curatedXpSkillDefNames = null,
             bool hasCuratedUsedSkills = false,
-            IEnumerable<string> curatedUsedSkillDefNames = null)
+            IEnumerable<string> curatedUsedSkillDefNames = null,
+            IEnumerable<JobProfileSkillEffect> curatedSkillEffects = null)
         {
             EnsureMutable();
             givers.Add(new GiverSource
@@ -354,6 +408,7 @@ namespace WorkRoles.Core
                 CuratedUsedSkillDefNames = Copy(curatedUsedSkillDefNames),
                 HasCuratedXp = hasCuratedXp,
                 CuratedXpSkillDefNames = Copy(curatedXpSkillDefNames),
+                CuratedSkillEffects = Copy(curatedSkillEffects),
             });
         }
 
@@ -427,6 +482,23 @@ namespace WorkRoles.Core
             if (level > 0) sowingLevels.Add(level);
         }
 
+        /// Content-record variants: retain the gated def's identity for spec
+        /// units and tooltips while feeding the aggregate range facts.
+        public void AddConstructionGate(string defName, int level)
+        {
+            AddConstructionRequirement(level);
+            if (level > 0 && !string.IsNullOrEmpty(defName))
+                constructionGates.Add(
+                    new JobProfileContentGateFacts(defName, level));
+        }
+
+        public void AddSowingGate(string defName, int level)
+        {
+            AddSowingRequirement(level);
+            if (level > 0 && !string.IsNullOrEmpty(defName))
+                sowingGates.Add(new JobProfileContentGateFacts(defName, level));
+        }
+
         public JobProfileIndex Build()
         {
             EnsureMutable();
@@ -445,7 +517,9 @@ namespace WorkRoles.Core
                 FreezeLists(mutableRecipesByUser),
                 BuildRecipesBySkill(),
                 RangeOf(constructionLevels, constructionSkill),
-                RangeOf(sowingLevels, sowingSkill));
+                RangeOf(sowingLevels, sowingSkill),
+                ReadOnly(constructionGates),
+                ReadOnly(sowingGates));
         }
 
         private Dictionary<int, List<int>> BuildRecipesByUser()
@@ -522,7 +596,6 @@ namespace WorkRoles.Core
             List<string> usedNames;
             List<int> trainedIds;
             List<string> trainedNames;
-            List<string> compatibilityUsedNames;
             List<JobProfileRequirementFacts> requirements;
             if (usesRecipes)
             {
@@ -530,7 +603,6 @@ namespace WorkRoles.Core
                 usedNames = DistinctRecipeSkillNames(giverRecipeIds, trainedOnly: false);
                 trainedIds = RecipeSkillIdentities(giverRecipeIds, trainedOnly: true);
                 trainedNames = DistinctRecipeSkillNames(giverRecipeIds, trainedOnly: true);
-                compatibilityUsedNames = new List<string>(usedNames);
                 requirements = RecipeRequirements(giverRecipeIds);
             }
             else
@@ -571,10 +643,6 @@ namespace WorkRoles.Core
                     trainedNames = new List<string>(relevantNames);
                 }
 
-                compatibilityUsedNames = source.HasCuratedXp
-                    ? new List<string>(source.CuratedXpSkillDefNames)
-                    : new List<string>(relevantNames);
-
                 if (source.DefName == "ConstructFinishFrames")
                     requirements.Add(RangeOf(constructionLevels, constructionSkill));
                 else if (source.DefName == "GrowerSow")
@@ -586,7 +654,6 @@ namespace WorkRoles.Core
                 source.WorkTypeIdentity,
                 ReadOnly(usedIds),
                 ReadOnly(usedNames),
-                ReadOnly(compatibilityUsedNames),
                 ReadOnly(trainedIds),
                 ReadOnly(trainedNames),
                 ReadOnly(relevantIds),
@@ -596,7 +663,8 @@ namespace WorkRoles.Core
                 source.HasCuratedXp,
                 usesRecipes,
                 trainedNames.Count > 0,
-                ReadOnly(requirements));
+                ReadOnly(requirements),
+                ReadOnly(source.CuratedSkillEffects));
         }
 
         private List<int> RecipeSkillIdentities(List<int> recipeIdentities, bool trainedOnly)
@@ -730,6 +798,10 @@ namespace WorkRoles.Core
                 if (seen.Add(source[i])) target.Add(source[i]);
         }
 
+        /// Work-type rows keep real aggregates: the floor is the lowest gate
+        /// among the member givers' gated content (a gate is always a
+        /// minimum, never "from zero"), and the gated count sums the
+        /// members' gated content.
         private static void AddWorkTypeRequirements(
             List<JobProfileRequirementFacts> target,
             IReadOnlyList<JobProfileRequirementFacts> source)
@@ -749,13 +821,17 @@ namespace WorkRoles.Core
                 if (existing < 0)
                     target.Add(new JobProfileRequirementFacts(
                         requirement.SkillIdentity, requirement.SkillDefName,
-                        0, requirement.Top, 0, 0));
-                else if (requirement.Top > target[existing].Top)
+                        requirement.Floor, requirement.Top,
+                        requirement.Gated, requirement.Total));
+                else
                 {
                     JobProfileRequirementFacts first = target[existing];
                     target[existing] = new JobProfileRequirementFacts(
                         first.SkillIdentity, first.SkillDefName,
-                        0, requirement.Top, 0, 0);
+                        Math.Min(first.Floor, requirement.Floor),
+                        Math.Max(first.Top, requirement.Top),
+                        first.Gated + requirement.Gated,
+                        first.Total + requirement.Total);
                 }
             }
         }

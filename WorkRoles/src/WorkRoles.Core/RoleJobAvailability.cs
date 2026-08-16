@@ -36,9 +36,12 @@ namespace WorkRoles.Core
         public static RoleAssignmentWarningSeverity From(
             RoleJobAvailability availability,
             bool hasVetoSignal,
-            bool hasDampenedSignal = false)
+            bool hasDampenedSignal = false,
+            bool hasMissingRequiredSkill = false)
         {
-            if (hasVetoSignal || availability == RoleJobAvailability.AllUnavailable)
+            if (hasMissingRequiredSkill
+                || hasVetoSignal
+                || availability == RoleJobAvailability.AllUnavailable)
                 return RoleAssignmentWarningSeverity.Critical;
             return hasDampenedSignal || availability == RoleJobAvailability.SomeUnavailable
                 ? RoleAssignmentWarningSeverity.Caution

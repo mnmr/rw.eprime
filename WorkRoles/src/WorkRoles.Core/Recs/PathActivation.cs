@@ -62,33 +62,55 @@ namespace WorkRoles.Core.Recs
             if (UniqueTargetRoleId(path) != target.Id)
                 return null;
 
+            EngineContext.PathSkillModel model = facts.PathSkills(path);
             var activeRoles = new List<int>();
-            var trainedSkills = new HashSet<string>();
+            var activeEntries = new bool[count];
             for (int entry = 0; entry < count; entry++)
             {
                 RoleView role = facts.RoleOf(path.RoleIds[entry]);
                 // A training role is Never by design (no own demand); it is
                 // still a valid path step to assign as the target's substitute,
-                // so Never does not exclude it here.
+                // so Never does not exclude it here. A role with an empty
+                // contribution fails InsideBand and cannot substitute.
                 if (role == null
                     || !role.Available
                     || !role.Enabled
-                    || !facts.Capable(pawnIndex, role)
+                    || !facts.MeetsCapabilityRequirement(pawnIndex, role)
                     || facts.BestSignal(pawnIndex, role, out _, out _)
                         < formulas.PathMinimumSignal
                     || !facts.InsideBand(pawnIndex, role, path, entry))
                     continue;
+                activeEntries[entry] = true;
                 if (!activeRoles.Contains(role.Id)) activeRoles.Add(role.Id);
-                foreach (RoleSkillView skill in facts.RequiredSkills(role))
-                    trainedSkills.Add(skill.SkillDefName);
             }
             if (activeRoles.Count == 0) return null;
-            foreach (RoleSkillView skill in facts.RequiredSkills(target))
+
+            // Every path-covered skill still below the target band must be
+            // trainable by an active non-target entry whose band holds the
+            // pawn's level in that skill; otherwise the path is unavailable.
+            int targetAt = path.RoleIds.IndexOf(target.Id);
+            PawnView pawn = facts.Colony.Pawns[pawnIndex];
+            for (int index = 0; index < model.Covered.Length; index++)
             {
-                if (!IsQualifyingTargetSkill(
-                        facts, target, path, skill))
-                    continue;
-                if (!trainedSkills.Contains(skill.SkillDefName)) return null;
+                string skill = model.Covered[index];
+                bool hasLevel = pawn.SkillLevels.TryGetValue(
+                    skill, out int level);
+                if (hasLevel && level >= path.BandMins[targetAt]) continue;
+                bool coveredByActive = false;
+                for (int entry = 0; entry < count && !coveredByActive; entry++)
+                {
+                    if (!activeEntries[entry] || entry == targetAt) continue;
+                    string[] contribution = model.Contributions[entry];
+                    for (int at = 0; at < contribution.Length; at++)
+                        if (contribution[at] == skill
+                            && hasLevel
+                            && PathMath.InsideBand(path, entry, level))
+                        {
+                            coveredByActive = true;
+                            break;
+                        }
+                }
+                if (!coveredByActive) return null;
             }
             return new PathActivation(
                 path.Id,
@@ -259,27 +281,18 @@ namespace WorkRoles.Core.Recs
                 facts, pawnIndex, target, formulas);
             if (activation == null) return false;
 
-            IReadOnlyList<RoleSkillView> targetSkills =
-                facts.RequiredSkills(target);
+            // Aptitude is judged over the path's qualifying skills (primary,
+            // gated, trainer-primary), as the pre-spec engine did.
             PathView path = facts.PathsById[activation.PathId];
-            int qualifyingSkillCount = 0;
-            for (int index = 0; index < targetSkills.Count; index++)
-                if (IsQualifyingTargetSkill(
-                        facts, target, path, targetSkills[index]))
-                    qualifyingSkillCount++;
-            if (qualifyingSkillCount <
-                formulas.OptionalTargetMinimumSkillCount)
+            string[] covered = facts.PathSkills(path).Qualifying;
+            if (covered.Length < formulas.OptionalTargetMinimumSkillCount)
                 return true;
 
             int points = 0;
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            for (int index = 0; index < targetSkills.Count; index++)
+            for (int index = 0; index < covered.Length; index++)
             {
-                RoleSkillView targetSkill = targetSkills[index];
-                if (!IsQualifyingTargetSkill(
-                        facts, target, path, targetSkill))
-                    continue;
-                string skill = targetSkill.SkillDefName;
+                string skill = covered[index];
                 if (!pawn.SkillLevels.TryGetValue(skill, out int level))
                     return false;
                 SignalBucket signal = pawn.SignalBuckets.TryGetValue(
@@ -296,16 +309,6 @@ namespace WorkRoles.Core.Recs
             return qualifiedByMultiSkillAptitude;
         }
 
-        internal static bool IsQualifyingTargetSkill(
-            EngineContext facts,
-            RoleView target,
-            PathView path,
-            RoleSkillView targetSkill)
-            => TrainingRoleSkillRequirements.IsTargetSkillRequired(
-                facts.RolesById,
-                target,
-                path,
-                targetSkill);
 
         internal static bool Connected(
             IReadOnlyList<PathView> paths,

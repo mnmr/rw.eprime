@@ -62,32 +62,8 @@ internal static partial class Program
                 importants, "Important", optionals, "Optional", "Normal");
             string time = Classify(role, label,
                 partTimes, "PartTime", opportunistics, "Opportunistic", "FullTime");
-            var required = role.Skills.Where(s => s.Required)
-                .Select(s => s.SkillDefName).ToList();
-            var optional = role.Skills.Where(s => !s.Required)
-                .Select(s => s.SkillDefName).ToList();
-
             Console.WriteLine($"  {defName} ({label})");
             Console.WriteLine("    <tuning>");
-            if (required.Count > 0 || optional.Count > 0)
-            {
-                Console.WriteLine("      <skills>");
-                if (required.Count > 0)
-                {
-                    Console.WriteLine("        <required>");
-                    foreach (var skill in required)
-                        Console.WriteLine($"          <li>{skill}</li>");
-                    Console.WriteLine("        </required>");
-                }
-                if (optional.Count > 0)
-                {
-                    Console.WriteLine("        <optional>");
-                    foreach (var skill in optional)
-                        Console.WriteLine($"          <li>{skill}</li>");
-                    Console.WriteLine("        </optional>");
-                }
-                Console.WriteLine("      </skills>");
-            }
             Console.WriteLine($"      <category>{category}</category>");
             Console.WriteLine($"      <time>{time}</time>");
             if (demand.TryGetValue(defName, out var numbers))

@@ -45,7 +45,7 @@ namespace WorkRoles.Core.Recs
             while (trailingUnskilledStart > 0
                 && byId.TryGetValue(
                     template[trailingUnskilledStart - 1], out RoleView trailing)
-                && trailing.Unskilled)
+                && trailing.UseUnskilledPlacementRules)
                 trailingUnskilledStart--;
             long boundary = trailingUnskilledStart < template.Count
                 ? trailingUnskilledStart * Slot

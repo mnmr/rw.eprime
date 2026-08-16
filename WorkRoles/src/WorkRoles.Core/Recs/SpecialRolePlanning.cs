@@ -171,7 +171,7 @@ namespace WorkRoles.Core.Recs
                     || !role.Available)
                     continue;
                 for (int pawnIndex = 0; pawnIndex < drafts.Length; pawnIndex++)
-                    if (facts.Capable(pawnIndex, role))
+                    if (facts.MeetsCapabilityRequirement(pawnIndex, role))
                         drafts[pawnIndex].AddSpecialRole(role.Id);
             }
 

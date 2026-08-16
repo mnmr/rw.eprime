@@ -73,12 +73,8 @@ public class RepeatChampionPenaltyTests
         await Assert.That(rivalAssignments).IsEmpty();
     }
 
-    private static RoleView SkilledRole(int id, string skill)
-    {
-        RoleView role = RecsTestBed.Role(id, "Crafting");
-        role.Skills.Add(new RoleSkillView { SkillDefName = skill, Primary = true });
-        return role;
-    }
+    private static RoleView SkilledRole(int id, string skill) =>
+        RecsTestBed.Skilled(id, "Crafting", skill);
 
     private static int Penalty(EngineContext facts, RoleView role, RecommendationFormulaEngine formulas, params int[] priorChampionRoleIds) =>
         RepeatChampionPenalties.PenaltyFor(facts, role, priorChampionRoleIds.ToList(), formulas);

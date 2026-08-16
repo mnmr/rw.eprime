@@ -5,10 +5,90 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RecommendationPlanScenarioTests
 {
     [Test]
+    public async Task ExplicitRequiredSkillDisqualifiesOnlyThePawnMissingThatSkill()
+    {
+        var recs = new RecsProjection().WorkType(
+            "Crafting", "Crafting", 400, "Craft");
+        RecommendationRoleSource maker = recs.RoleByWorkType(
+            1, 0, 100, "Crafting");
+        maker.DeclaredRequiredSkills = ["Medicine"];
+        var missing = new PawnView { CapableWorkTypes = { "Crafting" } };
+        missing.SkillLevels["Crafting"] = 12;
+        missing.SignalBuckets["Crafting"] = SignalBucket.Great;
+        var qualified = new PawnView { CapableWorkTypes = { "Crafting" } };
+        qualified.SkillLevels["Crafting"] = 4;
+        qualified.SkillLevels["Medicine"] = 0;
+        qualified.SignalBuckets["Crafting"] = SignalBucket.Neutral;
+
+        RecommendationPlan plan = recs.Plan(missing, qualified);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, maker.Id)).IsFalse();
+        await Assert.That(RecsProjection.Holds(plan, 1, maker.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task UnskilledRoleAllowsAPawnWhoCanDoOnlySomeOfItsWorkTypes()
+    {
+        var recs = new RecsProjection()
+            .WorkType("Hauling", null, 100, "Haul")
+            .WorkType("Cleaning", null, 90, "Clean");
+        RecommendationRoleSource core = recs.RoleByWorkType(
+            1, 0, 100, "Hauling", "Cleaning");
+        var partial = new PawnView { CapableWorkTypes = { "Hauling" } };
+
+        RecommendationPlan plan = recs.Plan(partial);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, core.Id)).IsTrue();
+    }
+
+    [Test]
+    public async Task SkilledRoleStillRequiresEveryCoveredWorkType()
+    {
+        var recs = new RecsProjection()
+            .WorkType("Tailoring", "Crafting", 400, "Tailor")
+            .WorkType("Smithing", "Crafting", 390, "Smith");
+        RecommendationRoleSource crafter = recs.RoleByWorkType(
+            1, 0, 100, "Tailoring", "Smithing");
+        var partial = new PawnView { CapableWorkTypes = { "Tailoring" } };
+        partial.SkillLevels["Crafting"] = 12;
+        partial.SignalBuckets["Crafting"] = SignalBucket.Great;
+
+        RecommendationPlan plan = recs.Plan(partial);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, crafter.Id)).IsFalse();
+    }
+
+    [Test]
+    public async Task AutoAssignUsesTheSameSkilledVersusUnskilledCapabilityRule()
+    {
+        var recs = new RecsProjection()
+            .WorkType("EssentialA", null, 1000, "EssentialAJob")
+            .WorkType("EssentialB", null, 990, "EssentialBJob")
+            .WorkType("SkilledA", "Crafting", 500, "SkilledAJob")
+            .WorkType("SkilledB", "Crafting", 490, "SkilledBJob");
+        RecommendationRoleSource unskilled = recs.RoleByWorkType(
+            1, 0, 0, "EssentialA", "EssentialB");
+        RecommendationRoleSource skilled = recs.RoleByWorkType(
+            2, 0, 0, "SkilledA", "SkilledB");
+        recs.AutoAssign(unskilled.Id).AutoAssign(skilled.Id);
+        var pawn = new PawnView
+        {
+            CapableWorkTypes = { "EssentialA", "SkilledA" },
+        };
+        pawn.SkillLevels["Crafting"] = 12;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Great;
+
+        RecommendationPlan plan = recs.Plan(pawn);
+
+        await Assert.That(RecsProjection.Holds(plan, 0, unskilled.Id)).IsTrue();
+        await Assert.That(RecsProjection.Holds(plan, 0, skilled.Id)).IsFalse();
+    }
+
+    [Test]
     public async Task ScaleRequiredTotalIncludesTrainingWaiverAssignments()
     {
         RoleView target = CraftingRole(100, "TargetWork");
-        target.Skills.Add(new RoleSkillView { SkillDefName = "Intellectual", RequiredContent = 1 });
+        RecsTestBed.AddGate(target, "Intellectual");
         RecsTestBed.Require(target, 3);
 
         RoleView craftTrainee = CraftingRole(101, "CraftTraineeWork");
@@ -924,9 +1004,7 @@ public class RecommendationPlanScenarioTests
         RecsTestBed.Require(doctor, 1);
         RoleView basics = RecsTestBed.Unskilled(102, "BasicWorker");
         basics.AutoAssign = true;
-        RoleView hunter = SkilledRole(103, "Hunting", "Shooting");
-        hunter.Hunting = true;
-        RoleView hauler = RecsTestBed.Unskilled(104, "Hauling");
+        RoleView hunter = SkilledRole(103, "Hunting", "Shooting");        RoleView hauler = RecsTestBed.Unskilled(104, "Hauling");
         RoleView fireBlocker = RecsTestBed.Unskilled(105, "Firefighting");
         fireBlocker.Blocker = true;
 
@@ -1021,8 +1099,6 @@ public class RecommendationPlanScenarioTests
         RecsTestBed.Require(researcher, 1);
         researcher.PreserveRecommendationOrder = true;
         RoleView hunter = SkilledRole(205, "Hunting", "Shooting");
-        hunter.Hunting = true;
-
         PawnView pawn = MultiSkillPawn(
             new Dictionary<string, (int, SignalBucket)>
             {
@@ -1082,9 +1158,7 @@ public class RecommendationPlanScenarioTests
          */
         RoleView sharpshooter = SkilledRole(106, "Sharpshooting", "Shooting", "Hunting", "MarksmanWork");
         RecsTestBed.Require(sharpshooter, 1);
-        RoleView hunter = SkilledRole(107, "Hunting", "Shooting", "Hunting");
-        hunter.Hunting = true;
-        PawnView pawn = MultiSkillPawn(
+        RoleView hunter = SkilledRole(107, "Hunting", "Shooting", "Hunting");        PawnView pawn = MultiSkillPawn(
             new Dictionary<string, (int, SignalBucket)> { ["Shooting"] = (14, SignalBucket.Strong) },
             ("Sharpshooting", SignalBucket.Strong),
             ("Hunting", SignalBucket.Strong)
@@ -1127,6 +1201,36 @@ public class RecommendationPlanScenarioTests
         await Assert.That(bundled.SpecialPickReason).IsEqualTo(SpecialPickReason.Bundled);
         string actualBundledMemberOrder = string.Join(",", bundled.BundledMembers.Select(member => member.RoleId));
         await Assert.That(actualBundledMemberOrder).IsEqualTo("1,2");
+    }
+
+    [Test]
+    public async Task CompositeIsNotSubstitutedWhenPawnMissesItsExplicitSkillGate()
+    {
+        RoleView farmer = SkilledRole(1, "Growing", "Plants", "Grow");
+        RecsTestBed.Require(farmer, 1);
+        RoleView handler = SkilledRole(2, "Handling", "Animals", "Handle");
+        RecsTestBed.Require(handler, 1);
+        RoleView composite = RecsTestBed.Role(3, "Growing", "Grow", "Handle");
+        composite.MemberRoleIds = [farmer.Id, handler.Id];
+        RecsTestBed.SetGates(composite, "Medicine");
+
+        Dictionary<string, (int, SignalBucket)> skills = new()
+        {
+            ["Plants"] = (20, SignalBucket.Strong),
+            ["Animals"] = (4, SignalBucket.Strong),
+        };
+        PawnView pawn = MultiSkillPawn(
+            skills,
+            ("Growing", SignalBucket.Strong),
+            ("Handling", SignalBucket.Strong));
+        ColonyView colony = RecsTestBed.Colony(
+            [farmer, handler, composite], pawn);
+
+        RecommendationPlan plan = RecommendationPlan.Build(colony);
+        string assignments = string.Join(",", Enumerable.Range(
+            0, plan.RoleCountAt(0)).Select(index => plan.RoleAt(0, index)));
+
+        await Assert.That(assignments).IsEqualTo("1,2");
     }
 
     [Test]
@@ -1183,13 +1287,8 @@ public class RecommendationPlanScenarioTests
 
     private static RoleView CraftingRole(int id, string workType) => SkilledRole(id, workType, "Crafting");
 
-    private static RoleView SkilledRole(int id, string workType, string skill, params string[] coverage)
-    {
-        RoleView role = RecsTestBed.Role(id, workType, coverage);
-        role.PrimarySkill = skill;
-        role.Skills.Add(new RoleSkillView { SkillDefName = skill, Primary = true });
-        return role;
-    }
+    private static RoleView SkilledRole(int id, string workType, string skill, params string[] coverage) =>
+        RecsTestBed.Skilled(id, workType, skill, coverage);
 
     private static PawnView CraftingPawn(int level, params (string WorkType, SignalBucket Verdict)[] signals)
     {

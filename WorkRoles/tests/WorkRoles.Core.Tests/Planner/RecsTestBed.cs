@@ -3,7 +3,9 @@ using WorkRoles.Core.Recs;
 namespace WorkRoles.Core.Tests.Planner;
 
 /// Shared builders for the rule-pipeline suites: small synthetic colonies
-/// with coverage tokens standing in for expanded giver sets.
+/// with coverage tokens standing in for expanded giver sets. Roles publish
+/// real RoleWorkSpecs derived through RoleWorkSpecBuilder, so fixtures run
+/// the production weighting, participation, and primary selection.
 internal static class RecsTestBed
 {
     public static readonly Dictionary<string, IReadOnlyList<string>> Skills = new()
@@ -14,23 +16,75 @@ internal static class RecsTestBed
         ["Hunting"] = ["Shooting"],
     };
 
-    /// Coverage tokens default to one token named after the work type.
-    /// Ordinary roles carry no demand by default (surplus-eligible), like the
-    /// shipped catalog; Require sets the two demand numbers.
-    public static RoleView Role(int id, string workType, params string[] coverage) =>
-        new()
-        {
-            Id = id,
-            WorkTypes = { workType },
-            Coverage = coverage.Length > 0 ? [.. coverage] : [workType],
-            PrimarySkill = Skills.TryGetValue(workType, out var s) && s.Count > 0 ? s[0] : null,
-        };
-
-    public static RoleView Unskilled(int id, string workType, params string[] coverage)
+    public static RoleWorkGiverSpec Giver(string name, string[] used = null, string[] trained = null, params (string Skill, int Min)[] gates)
     {
-        var role = Role(id, workType, coverage);
-        role.Unskilled = true;
-        role.PrimarySkill = null;
+        var useSpecs = new List<RoleSkillUseSpec>();
+        foreach (string skill in used ?? [])
+            useSpecs.Add(new RoleSkillUseSpec(skill, RoleWorkEffect.Unspecified));
+        var contents = new List<RoleWorkContentSpec>();
+        foreach ((string skill, int min) in gates)
+            contents.Add(new RoleWorkContentSpec(RoleWorkContentKind.Recipe, $"{name}_{skill}{min}", null, RoleWorkEffect.Unspecified, false, [new RoleContentGate(skill, min)]));
+        return new RoleWorkGiverSpec(name, useSpecs, trained ?? [], contents);
+    }
+
+    public static RoleWorkCapabilitySpec Capability(string workType, int priority, params RoleWorkGiverSpec[] givers) => new(workType, priority, false, givers);
+
+    /// Rebuilds the role's spec from capabilities, preserving assignment gates.
+    public static void SetSpec(RoleView role, params RoleWorkCapabilitySpec[] capabilities) =>
+        role.WorkSpec = RoleWorkSpecBuilder.Build(role.Id, capabilities, role.WorkSpec.AssignmentSkillGates);
+
+    /// Replaces the user-authored enabled-skill gates.
+    public static void SetGates(RoleView role, params string[] gates) =>
+        role.WorkSpec = RoleWorkSpecBuilder.Build(role.Id, role.WorkSpec.Capabilities, gates);
+
+    public static void SetNaturalPriority(RoleView role, int priority)
+    {
+        var capabilities = new List<RoleWorkCapabilitySpec>();
+        foreach (RoleWorkCapabilitySpec capability in role.WorkSpec.Capabilities)
+            capabilities.Add(new RoleWorkCapabilitySpec(capability.WorkTypeDefName, priority, capability.IncludesWholeWorkType, capability.Givers));
+        role.WorkSpec = RoleWorkSpecBuilder.Build(role.Id, capabilities, role.WorkSpec.AssignmentSkillGates);
+    }
+
+    /// Appends a gate-only content giver, adding gate evidence to the profile.
+    public static void AddGate(RoleView role, string skill, int min = 1)
+    {
+        var capabilities = new List<RoleWorkCapabilitySpec>(role.WorkSpec.Capabilities.Count);
+        for (int index = 0; index < role.WorkSpec.Capabilities.Count; index++)
+        {
+            RoleWorkCapabilitySpec capability = role.WorkSpec.Capabilities[index];
+            if (index == 0)
+            {
+                var givers = new List<RoleWorkGiverSpec>(capability.Givers) { Giver($"{skill}GateWork", gates: (skill, min)) };
+                capability = new RoleWorkCapabilitySpec(capability.WorkTypeDefName, capability.NaturalPriority, capability.IncludesWholeWorkType, givers);
+            }
+            capabilities.Add(capability);
+        }
+        role.WorkSpec = RoleWorkSpecBuilder.Build(role.Id, capabilities, role.WorkSpec.AssignmentSkillGates);
+    }
+
+    /// Coverage tokens default to one token named after the work type; the
+    /// first token carries the work type's mapped skill, used and trained
+    /// like real skilled givers. Ordinary roles carry no demand by default
+    /// (surplus-eligible), like the shipped catalog; Require sets the two
+    /// demand numbers.
+    public static RoleView Role(int id, string workType, params string[] coverage)
+    {
+        string primary = Skills.TryGetValue(workType, out IReadOnlyList<string> skills) && skills.Count > 0 ? skills[0] : null;
+        return Build(id, workType, primary, coverage);
+    }
+
+    public static RoleView Unskilled(int id, string workType, params string[] coverage) => Build(id, workType, null, coverage);
+
+    public static RoleView Skilled(int id, string workType, string skill, params string[] coverage) => Build(id, workType, skill, coverage);
+
+    private static RoleView Build(int id, string workType, string primary, string[] coverage)
+    {
+        string[] tokens = coverage.Length > 0 ? coverage : [workType];
+        var role = new RoleView { Id = id, Coverage = [.. tokens] };
+        var givers = new RoleWorkGiverSpec[tokens.Length];
+        for (int index = 0; index < tokens.Length; index++)
+            givers[index] = index == 0 && primary != null ? Giver(tokens[index], used: [primary], trained: [primary]) : Giver(tokens[index]);
+        SetSpec(role, Capability(workType, 0, givers));
         return role;
     }
 
@@ -61,7 +115,6 @@ internal static class RecsTestBed
         {
             Roles = roles,
             Pawns = pawns.ToList(),
-            WorkTypeSkills = Skills,
             OrderTemplate = WorkRoles.Core.Recs.OrderTemplate.ResolveTemplate(null, roles),
         };
         foreach (var pawn in pawns)

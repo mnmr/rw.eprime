@@ -18,6 +18,8 @@ public class RoleCopyValuesTests
         await Assert.That(copy.MaxAge).IsEqualTo(17);
         await Assert.That(copy.ColonyMin).IsEqualTo(2);
         await Assert.That(copy.Coverage).IsEqualTo(19);
+        await Assert.That(string.Join(";", copy.RequiredSkills))
+            .IsEqualTo("Crafting;Intellectual");
         await Assert.That(copy.GroupId).IsEqualTo(42);
         await Assert.That(copy.ActiveHours).IsEqualTo(0x00F0F0);
         await Assert.That(copy.TemplateDefName).IsNull();
@@ -38,6 +40,7 @@ public class RoleCopyValuesTests
         RoleCopyValues<int> copy = source.ForPlayerDuplicate();
 
         await Assert.That(ReferenceEquals(copy.LocationTokens, source.LocationTokens)).IsFalse();
+        await Assert.That(ReferenceEquals(copy.RequiredSkills, source.RequiredSkills)).IsFalse();
         await Assert.That(ReferenceEquals(copy.Entries, source.Entries)).IsFalse();
         await Assert.That(ReferenceEquals(copy.WorkTypeSnapshots, source.WorkTypeSnapshots)).IsFalse();
         await Assert.That(ReferenceEquals(copy.WorkTypeSnapshots.Comparer, StringComparer.OrdinalIgnoreCase)).IsTrue();
@@ -46,24 +49,28 @@ public class RoleCopyValuesTests
             await Assert.That(ReferenceEquals(copy.WorkTypeSnapshots[key], source.WorkTypeSnapshots[key])).IsFalse().Because(key + " giver list must be independently owned");
 
         source.LocationTokens.Add("source:only");
+        source.RequiredSkills.Add("SourceOnly");
         source.Entries.Add(new JobEntry(JobEntryKind.WorkGiver, "SourceOnly"));
         source.WorkTypeSnapshots["Crafting"].Add("SourceSnapshotOnly");
         source.WorkTypeSnapshots["Empty"].Add("SourceEmptyOnly");
         source.WorkTypeSnapshots.Add("SourceOuterOnly", ["Source"]);
 
         await Assert.That(copy.LocationTokens.Contains("source:only")).IsFalse();
+        await Assert.That(copy.RequiredSkills.Contains("SourceOnly")).IsFalse();
         await Assert.That(copy.Entries.Any(entry => entry.DefName == "SourceOnly")).IsFalse();
         await Assert.That(copy.WorkTypeSnapshots["Crafting"].Contains("SourceSnapshotOnly")).IsFalse();
         await Assert.That(copy.WorkTypeSnapshots["Empty"].Count).IsEqualTo(0);
         await Assert.That(copy.WorkTypeSnapshots.ContainsKey("SourceOuterOnly")).IsFalse();
 
         copy.LocationTokens.Add("copy:only");
+        copy.RequiredSkills.Add("CopyOnly");
         copy.Entries.Add(new JobEntry(JobEntryKind.WorkGiver, "CopyOnly"));
         copy.WorkTypeSnapshots["Crafting"].Add("CopySnapshotOnly");
         copy.WorkTypeSnapshots["Empty"].Add("CopyEmptyOnly");
         copy.WorkTypeSnapshots.Add("CopyOuterOnly", ["Copy"]);
 
         await Assert.That(source.LocationTokens.Contains("copy:only")).IsFalse();
+        await Assert.That(source.RequiredSkills.Contains("CopyOnly")).IsFalse();
         await Assert.That(source.Entries.Any(entry => entry.DefName == "CopyOnly")).IsFalse();
         await Assert.That(source.WorkTypeSnapshots["Crafting"].Contains("CopySnapshotOnly")).IsFalse();
         await Assert.That(source.WorkTypeSnapshots["Empty"].Contains("CopyEmptyOnly")).IsFalse();
@@ -86,6 +93,7 @@ public class RoleCopyValuesTests
             MaxAge = 17,
             ColonyMin = 2,
             Coverage = 19,
+            RequiredSkills = ["Crafting", "Intellectual"],
             GroupId = 42,
             ActiveHours = 0x00F0F0,
             LocationTokens = ["Settlements", "settlement:17"],

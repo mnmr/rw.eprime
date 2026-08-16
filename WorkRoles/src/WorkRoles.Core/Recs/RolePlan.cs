@@ -17,13 +17,15 @@ namespace WorkRoles.Core.Recs
             SignalBucket verdict,
             int skillLevel,
             int championScore,
-            int championSignalScore)
+            int championSignalScore,
+            int gateReadiness)
         {
             PawnIndex = pawnIndex;
             Verdict = verdict;
             SkillLevel = skillLevel;
             ChampionScore = championScore;
             ChampionSignalScore = championSignalScore;
+            GateReadiness = gateReadiness;
         }
 
         internal int PawnIndex { get; }
@@ -31,6 +33,9 @@ namespace WorkRoles.Core.Recs
         internal int SkillLevel { get; }
         internal int ChampionScore { get; }
         internal int ChampionSignalScore { get; }
+        /// Gate-bearing contents this pawn currently meets: the final
+        /// same-role tie-break, never an eligibility input.
+        internal int GateReadiness { get; }
     }
 
     internal sealed class RolePlan
@@ -189,7 +194,7 @@ namespace WorkRoles.Core.Recs
             {
                 if (facts.HasProtectedDirectAssignment(pawnIndex, role.Id))
                     continue;
-                if (!facts.FullyCapable(pawnIndex, role)) continue;
+                if (!facts.MeetsCapabilityRequirement(pawnIndex, role)) continue;
                 // The path keeps roles at the colonist's skill level: a pawn in
                 // a higher band does not also hold this lower trainee role.
                 if (PathActivation.BelongsToHigherBand(facts, pawnIndex, role))
@@ -222,7 +227,8 @@ namespace WorkRoles.Core.Recs
                     verdict,
                     skillLevel,
                     championScore,
-                    championSignalScore));
+                    championSignalScore,
+                    facts.GateReadinessCount(pawnIndex, role)));
             }
 
             // A champion is only forced when no eligible candidate already
@@ -412,7 +418,9 @@ namespace WorkRoles.Core.Recs
                     || virtualSkill == bestVirtualSkill
                     && (candidate.ChampionSignalScore > bestSignalScore
                         || candidate.ChampionSignalScore == bestSignalScore
-                        && candidate.PawnIndex < best.PawnIndex))
+                        && (candidate.GateReadiness > best.GateReadiness
+                            || candidate.GateReadiness == best.GateReadiness
+                            && candidate.PawnIndex < best.PawnIndex)))
                 {
                     best = candidate;
                     bestVirtualSkill = virtualSkill;
@@ -440,24 +448,19 @@ namespace WorkRoles.Core.Recs
                 return formulas.ChampionSkillScore(
                     fallbackLevel, fallbackVerdict);
 
-            IReadOnlyList<RoleSkillView> targetSkills =
-                facts.RequiredSkills(role);
+            // Multi-skill championship judges the path's qualifying skills
+            // (primary, gated, trainer-primary), as the pre-spec engine did.
+            string[] covered = facts.PathSkills(path).Qualifying;
             PawnView pawn = facts.Colony.Pawns[pawnIndex];
-            int count = 0;
             int score = 0;
             int qualifyingSignalScore = 0;
-            for (int index = 0; index < targetSkills.Count; index++)
+            for (int index = 0; index < covered.Length; index++)
             {
-                RoleSkillView skill = targetSkills[index];
-                if (!PathActivation.IsQualifyingTargetSkill(
-                        facts, role, path, skill))
-                    continue;
-                count++;
-                if (!pawn.SkillLevels.TryGetValue(
-                        skill.SkillDefName, out int level))
+                string skillName = covered[index];
+                if (!pawn.SkillLevels.TryGetValue(skillName, out int level))
                     return int.MinValue;
                 SignalBucket signal = pawn.SignalBuckets.TryGetValue(
-                    skill.SkillDefName, out SignalBucket classified)
+                    skillName, out SignalBucket classified)
                     ? classified
                     : SignalBucket.Neutral;
                 if (signal < formulas.CandidateMinimumSignal)
@@ -465,7 +468,7 @@ namespace WorkRoles.Core.Recs
                 score += formulas.ChampionSkillScore(level, signal);
                 qualifyingSignalScore += formulas.ChampionSignalTieBreak(signal);
             }
-            if (count < formulas.ChampionMultiSkillMinimumCount)
+            if (covered.Length < formulas.ChampionMultiSkillMinimumCount)
                 return formulas.ChampionSkillScore(
                     fallbackLevel, fallbackVerdict);
             signalScore = qualifyingSignalScore;
@@ -508,8 +511,10 @@ namespace WorkRoles.Core.Recs
                 if (verdict != 0) return verdict;
             }
             int skill = right.SkillLevel.CompareTo(left.SkillLevel);
-            return skill != 0
-                ? skill
+            if (skill != 0) return skill;
+            int readiness = right.GateReadiness.CompareTo(left.GateReadiness);
+            return readiness != 0
+                ? readiness
                 : left.PawnIndex.CompareTo(right.PawnIndex);
         }
     }

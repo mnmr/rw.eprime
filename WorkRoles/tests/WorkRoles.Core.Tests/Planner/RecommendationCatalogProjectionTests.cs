@@ -84,7 +84,6 @@ public class RecommendationCatalogProjectionTests
         ColonyView colony = projection.CreateColony([role.Id], [first, second]);
 
         await Assert.That(colony.SkillMaxLevels["Crafting"]).IsEqualTo(13);
-        await Assert.That(colony.WorkTypeSkills["Crafting"]).IsEquivalentTo(["Crafting"]);
         await Assert.That(colony.Roles.Single().Id).IsEqualTo(1);
     }
 
@@ -158,7 +157,7 @@ public class RecommendationCatalogProjectionTests
     }
 
     [Test]
-    public async Task ExactSecondaryUsedSkillDoesNotChangeLegacyRoleSkillProjection()
+    public async Task ExactSecondaryUsedSkillParticipatesInTheRoleSkillProjection()
     {
         var jobs = new FakeCatalog().WithWorkType("Hunting", "Hunt");
         var builder = new JobProfileIndexBuilder();
@@ -185,9 +184,59 @@ public class RecommendationCatalogProjectionTests
 
         RoleView projected = projection.Roles.Single();
         await Assert.That(projected.Skills.Select(skill => skill.SkillDefName))
-            .IsEquivalentTo(["Shooting"])
-            .Because("profile fidelity must not change recommendation/editor role skills in this slice");
+            .IsEquivalentTo(["Shooting", "Animals"])
+            .Because("role skill facts must use the exact skills each job uses");
         await Assert.That(projected.PrimarySkill).IsEqualTo("Shooting");
+    }
+
+    [Test]
+    public async Task CompositeInheritsTheAlreadyFilteredProfilesOfItsMembers()
+    {
+        var jobs = new FakeCatalog()
+            .WithWorkType("Crafting", "Craft")
+            .WithWorkType("Cooking", "CookA", "CookB", "CookC");
+        var builder = new JobProfileIndexBuilder();
+        JobProfileSkillSource[] crafting = [new(10, "Crafting")];
+        JobProfileSkillSource[] cooking = [new(11, "Cooking")];
+        builder.AddWorkType(1, "Crafting", crafting, ["Craft"]);
+        builder.AddWorkType(2, "Cooking", cooking, ["CookA", "CookB", "CookC"]);
+        builder.AddGiver("Craft", 1, crafting,
+            hasCuratedXp: true, curatedXpSkillDefNames: ["Crafting"]);
+        builder.AddGiver("CookA", 2, cooking,
+            hasCuratedXp: true, curatedXpSkillDefNames: ["Cooking"]);
+        builder.AddGiver("CookB", 2, cooking,
+            hasCuratedXp: true, curatedXpSkillDefNames: ["Cooking"]);
+        builder.AddGiver("CookC", 2, cooking,
+            hasCuratedXp: true, curatedXpSkillDefNames: ["Cooking"]);
+        var crafter = new RecommendationRoleSource
+        {
+            Id = 1,
+            Entries = [new JobEntry(JobEntryKind.WorkType, "Crafting")],
+        };
+        var cook = new RecommendationRoleSource
+        {
+            Id = 2,
+            Entries = [new JobEntry(JobEntryKind.WorkType, "Cooking")],
+        };
+        var composite = new RecommendationRoleSource
+        {
+            Id = 3,
+            MemberRoleIds = [crafter.Id, cook.Id],
+        };
+
+        RecommendationCatalogProjection projection = RecommendationCatalogBuilder.Build(
+            [crafter, cook, composite], [], jobs,
+            new Dictionary<string, int>
+            {
+                ["Crafting"] = 400,
+                ["Cooking"] = 300,
+            },
+            builder.Build());
+
+        RoleView projected = projection.Roles.Single(role => role.Id == composite.Id);
+        await Assert.That(projected.Skills.Select(skill => skill.SkillDefName))
+            .IsEquivalentTo(["Crafting", "Cooking"])
+            .Because("a dominant member must not erase another member's specialist skill");
     }
 
     private static JobProfileIndex Profiles()

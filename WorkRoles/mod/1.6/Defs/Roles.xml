@@ -104,11 +104,6 @@
     <colorRef>red-800</colorRef>
     <group>Medical</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Medicine</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>2</colonyMin>
@@ -132,11 +127,6 @@
     <colorRef>red-900</colorRef>
     <group>Medical</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Medicine</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -188,11 +178,6 @@
     <group>Social</group>
     <!-- Needed work only while the colony has children; the adapter zeroes it otherwise. -->
     <tuning>
-      <skills>
-        <required>
-          <li>Social</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>1</colonyMin>
@@ -270,14 +255,6 @@
     <colorRef>cyan-900</colorRef>
     <group>Social</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Social</li>
-        </required>
-        <optional>
-          <li>Intellectual</li>
-        </optional>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -313,14 +290,6 @@
     <colorRef>cyan-800</colorRef>
     <group>Social</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Social</li>
-        </required>
-        <optional>
-          <li>Intellectual</li>
-        </optional>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>2</colonyMin>
@@ -395,11 +364,6 @@
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Animals</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>PartTime</time>
       <colonyMin>2</colonyMin>
@@ -426,11 +390,6 @@
     <colorRef>green-700</colorRef>
     <group>Food</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Cooking</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -454,11 +413,6 @@
     <colorRef>green-800</colorRef>
     <group>Food</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Cooking</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -477,11 +431,6 @@
     <colorRef>green-800</colorRef>
     <group>Food</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Cooking</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -501,14 +450,6 @@
     <colorRef>teal-700</colorRef>
     <group>Animals</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Shooting</li>
-        </required>
-        <optional>
-          <li>Animals</li>
-        </optional>
-      </skills>
       <category>Optional</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -531,11 +472,6 @@
     <colorRef>teal-800</colorRef>
     <group>Animals</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Animals</li>
-        </required>
-      </skills>
       <category>Optional</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -554,11 +490,6 @@
     <colorRef>yellow-700</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Construction</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -582,11 +513,6 @@
     <colorRef>yellow-800</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Construction</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -618,11 +544,6 @@
     <colorRef>lime-700</colorRef>
     <group>Outdoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Plants</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -647,11 +568,6 @@
     <colorRef>lime-800</colorRef>
     <group>Outdoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Plants</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -670,11 +586,6 @@
     <colorRef>lime-800</colorRef>
     <group>Outdoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Plants</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -693,11 +604,6 @@
     <colorRef>sky-700</colorRef>
     <group>Outdoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Mining</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -716,11 +622,6 @@
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Crafting</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -743,11 +644,6 @@
     <colorRef>amber-700</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Crafting</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -770,11 +666,6 @@
     <colorRef>amber-800</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Crafting</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -798,14 +689,6 @@
     <colorRef>orange-700</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Crafting</li>
-        </required>
-        <optional>
-          <li>Cooking</li>
-        </optional>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>2</colonyMin>
@@ -824,11 +707,6 @@
     <colorRef>slate-700</colorRef>
     <group>Research</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Intellectual</li>
-        </required>
-      </skills>
       <category>Optional</category>
       <time>Opportunistic</time>
       <colonyMin>3</colonyMin>
@@ -850,11 +728,6 @@
     <group>Research</group>
     <!-- The whole def is Anomaly-only, so this need is DLC-conditional for free. -->
     <tuning>
-      <skills>
-        <required>
-          <li>Intellectual</li>
-        </required>
-      </skills>
       <category>Optional</category>
       <time>PartTime</time>
       <colonyMin>1</colonyMin>
@@ -874,11 +747,6 @@
     <colorRef>purple-700</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Artistic</li>
-        </required>
-      </skills>
       <category>Optional</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -901,11 +769,6 @@
     <colorRef>red-900</colorRef>
     <group>Medical</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Medicine</li>
-        </required>
-      </skills>
       <category>Important</category>
       <time>PartTime</time>
       <colonyMin>0</colonyMin>
@@ -932,15 +795,6 @@
     <colorRef>orange-800</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Crafting</li>
-          <li>Intellectual</li>
-        </required>
-        <optional>
-          <li>Cooking</li>
-        </optional>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -965,11 +819,6 @@
     <colorRef>purple-800</colorRef>
     <group>Indoors</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Artistic</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>
@@ -994,11 +843,6 @@
     <colorRef>teal-900</colorRef>
     <group>Animals</group>
     <tuning>
-      <skills>
-        <required>
-          <li>Animals</li>
-        </required>
-      </skills>
       <category>Normal</category>
       <time>FullTime</time>
       <colonyMin>0</colonyMin>

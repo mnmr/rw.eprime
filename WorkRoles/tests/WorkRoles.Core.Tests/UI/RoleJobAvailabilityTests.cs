@@ -45,4 +45,18 @@ public class RoleJobAvailabilityTests
 
         await Assert.That(result).IsEqualTo(expected);
     }
+
+    [Test]
+    public async Task MissingExplicitRequiredSkillUsesCriticalMarker()
+    {
+        RoleAssignmentWarningSeverity result =
+            RoleAssignmentWarningSummary.From(
+                RoleJobAvailability.Available,
+                hasVetoSignal: false,
+                hasDampenedSignal: false,
+                hasMissingRequiredSkill: true);
+
+        await Assert.That(result)
+            .IsEqualTo(RoleAssignmentWarningSeverity.Critical);
+    }
 }

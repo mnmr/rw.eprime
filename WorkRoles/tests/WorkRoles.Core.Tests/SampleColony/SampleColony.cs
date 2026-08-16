@@ -70,7 +70,6 @@ public static class SampleColony
                     Category = tuning?.Category ?? default,
                     Time = tuning?.Time ?? default,
                     DeclaredRequiredSkills = tuning == null ? null : [.. tuning.RequiredSkills],
-                    DeclaredOptionalSkills = tuning == null ? null : [.. tuning.OptionalSkills],
                     Available = true,
                     Enabled = true,
                     SpecialRole = role.SpecialRole == null ? RecommendationSpecialRoleKind.None : Enum.Parse<RecommendationSpecialRoleKind>(role.SpecialRole, true),

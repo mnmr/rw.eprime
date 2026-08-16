@@ -185,22 +185,16 @@ namespace WorkRoles.Core.Recs
             if (targetAt < 0 || targetAt >= path.BandMins.Count)
                 return Array.Empty<RecommendationTrainingSkill>();
 
-            IReadOnlyList<RoleSkillView> required =
-                facts.RequiredSkills(target);
-            var result = new List<RecommendationTrainingSkill>(
-                required.Count);
+            // The published training skills are the path's qualifying set,
+            // as the pre-spec engine derived it.
+            string[] covered = facts.PathSkills(path).Qualifying;
+            var result = new List<RecommendationTrainingSkill>(covered.Length);
             int targetMinimum = path.BandMins[targetAt];
-            for (int index = 0; index < required.Count; index++)
-            {
-                RoleSkillView skill = required[index];
-                if (!PathActivation.IsQualifyingTargetSkill(
-                        facts, target, path, skill))
-                    continue;
+            for (int index = 0; index < covered.Length; index++)
                 result.Add(new RecommendationTrainingSkill(
-                    skill.SkillDefName,
-                    facts.SkillLevel(pawnIndex, skill.SkillDefName),
+                    covered[index],
+                    facts.SkillLevel(pawnIndex, covered[index]),
                     targetMinimum));
-            }
             return result.Count == 0
                 ? Array.Empty<RecommendationTrainingSkill>()
                 : result.ToArray();
@@ -210,7 +204,7 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             RoleView role)
         {
-            IReadOnlyList<RoleSkillView> required =
+            IReadOnlyList<RoleSkillFact> required =
                 facts.RequiredSkills(role);
             if (required.Count == 0) return Array.Empty<string>();
             var names = new SortedSet<string>(StringComparer.Ordinal);
@@ -261,7 +255,7 @@ namespace WorkRoles.Core.Recs
                 return SpecialPickReason.FireSafety;
             if (IsProtectedExisting(pawn, role))
                 return SpecialPickReason.Protected;
-            if (role.Unskilled && HasExisting(pawn, role.Id))
+            if (role.UseUnskilledPlacementRules && HasExisting(pawn, role.Id))
                 return SpecialPickReason.Retained;
             return SpecialPickReason.None;
         }
@@ -305,7 +299,7 @@ namespace WorkRoles.Core.Recs
             if (!role.Enabled || !role.Available
                 || role.HasRules || role.Blocker)
                 return;
-            if (!facts.Capable(pawnIndex, role))
+            if (!facts.MeetsCapabilityRequirement(pawnIndex, role))
             {
                 explanation.RejectReason = PickRejectReason.Incapable;
                 return;
@@ -372,7 +366,7 @@ namespace WorkRoles.Core.Recs
             int pawnIndex,
             RoleView role)
         {
-            if (!facts.FullyCapable(pawnIndex, role)) return -1;
+            if (!facts.MeetsCapabilityRequirement(pawnIndex, role)) return -1;
             for (int index = 0; index < draft.RoleCount; index++)
             {
                 int candidateRoleId = draft.RoleAt(index);

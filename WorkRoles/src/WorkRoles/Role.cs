@@ -25,10 +25,13 @@ namespace WorkRoles
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
         public bool blocker;
-        /// Recommendation tuning: copied from the template def at seeding or
-        /// filled by load-time migration; authoritative once set.
+        /// User-authored hard skill gates. Empty means no explicit skill gate;
+        /// Used/Trained skill facts are always derived from the role's jobs.
         public List<string> requiredSkills = new List<string>();
-        public List<string> optionalSkills = new List<string>();
+        /// False only while loading a save from before requiredSkills became
+        /// opt-in gates. Migration drops the old classification instead of
+        /// silently turning it into assignment rejection rules.
+        public bool skillGatesSeeded;
         public RoleCategory category;
         public RoleTime time;
         /// False = repeat championships use the occasional-work penalty.
@@ -76,6 +79,7 @@ namespace WorkRoles
         private Dictionary<string, string> scribeSnapshots;
         private string scribeLocations;
         private string scribeRequiredSkills;
+        // Retired role-skill classification, consumed and dropped on load.
         private string scribeOptionalSkills;
         private HashSet<string> coverageCache;
         // Cached XP-frequency primary skill (null is a valid value, hence the
@@ -142,6 +146,9 @@ namespace WorkRoles
             primarySkillCache = null;
             primarySkillCached = false;
             fullyUnlocksAtAgeCache = -1;
+            // Coverage-affecting edits (entries, snapshots, composite member
+            // edits via the reverse scan) are exactly the work-spec inputs.
+            RoleWorkRevision.Bump();
         }
 
         /// True when this role's coverage strictly includes other's (equal
@@ -185,6 +192,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref colonyMin, "colonyMin");
             Scribe_Values.Look(ref coverage, "coverage");
             Scribe_Values.Look(ref tuningSeeded, "tuningSeeded");
+            Scribe_Values.Look(ref skillGatesSeeded, "skillGatesSeeded");
             Scribe_Collections.Look(ref trainingRoleIds, "trainingRoleIds", LookMode.Value);
             Scribe_Collections.Look(ref trainingMins, "trainingMins", LookMode.Value);
             Scribe_Collections.Look(ref trainingMaxes, "trainingMaxes", LookMode.Value);
@@ -202,17 +210,14 @@ namespace WorkRoles
             {
                 if (requiredSkills.Count > 0)
                     scribeRequiredSkills = string.Join(",", requiredSkills);
-                if (optionalSkills.Count > 0)
-                    scribeOptionalSkills = string.Join(",", optionalSkills);
             }
             Scribe_Values.Look(ref scribeRequiredSkills, "requiredSkills");
             Scribe_Values.Look(ref scribeOptionalSkills, "optionalSkills");
             if (Scribe.mode == LoadSaveMode.LoadingVars)
             {
-                requiredSkills = scribeRequiredSkills.NullOrEmpty()
+                requiredSkills = !skillGatesSeeded
+                    || scribeRequiredSkills.NullOrEmpty()
                     ? new List<string>() : scribeRequiredSkills.Split(',').ToList();
-                optionalSkills = scribeOptionalSkills.NullOrEmpty()
-                    ? new List<string>() : scribeOptionalSkills.Split(',').ToList();
             }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);

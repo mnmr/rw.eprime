@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
+using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
@@ -145,6 +146,68 @@ namespace WorkRoles
 
         /// Curves where lower is better bottom out instead of reaching 1.0.
         private static readonly HashSet<string> LowerIsBetter = new HashSet<string> { "FoodPoisonChance" };
+
+        /// Which stats tell a code-defined giver's effect story. Like
+        /// CurveStatByGiver, only the giver-to-stat association is curated
+        /// (the game wires it in JobDrivers); the skill link comes from the
+        /// stat's declarative skill needs and the effect kind from
+        /// EffectKindByStat. Display-only facts.
+        private static readonly Dictionary<string, string[]> EffectStatsByGiver = new Dictionary<string, string[]>
+        {
+            ["DoctorTendToHumanlikes"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoctorTendEmergency"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoctorTendToSelf"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoctorTendToSelfEmergency"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoctorTendToAnimals"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoctorTendToEntities"] = new[] { "MedicalTendSpeed", "MedicalTendQuality" },
+            ["DoBillsMedicalHumanOperation"] = new[] { "MedicalSurgerySuccessChance" },
+            ["DoBillsMedicalAnimalOperation"] = new[] { "MedicalSurgerySuccessChance" },
+            ["DoBillsCook"] = new[] { "FoodPoisonChance" },
+            ["DoBillsCookCampfire"] = new[] { "FoodPoisonChance" },
+            ["Mine"] = new[] { "MiningSpeed", "MiningYield" },
+            ["Drill"] = new[] { "MiningSpeed", "MiningYield" },
+            ["GrowerSow"] = new[] { "PlantWorkSpeed" },
+            ["PlantSeed"] = new[] { "PlantWorkSpeed" },
+            ["Replant"] = new[] { "PlantWorkSpeed" },
+            ["GrowerHarvest"] = new[] { "PlantWorkSpeed", "PlantHarvestYield" },
+            ["PlantsCut"] = new[] { "PlantWorkSpeed" },
+            ["ExtractTree"] = new[] { "PlantWorkSpeed" },
+            ["ConstructFinishFrames"] = new[] { "ConstructionSpeed", "ConstructSuccessChance" },
+            ["Repair"] = new[] { "ConstructionSpeed" },
+            ["FixBrokenDownBuilding"] = new[] { "FixBrokenDownBuildingSuccessChance" },
+            ["ConstructSmoothFloors"] = new[] { "SmoothingSpeed" },
+            ["ConstructSmoothWalls"] = new[] { "SmoothingSpeed" },
+            ["Research"] = new[] { "ResearchSpeed" },
+            ["Milk"] = new[] { "AnimalGatherSpeed", "AnimalGatherYield" },
+            ["Shear"] = new[] { "AnimalGatherSpeed", "AnimalGatherYield" },
+            ["Tame"] = new[] { "TameAnimalChance" },
+            ["Train"] = new[] { "TrainAnimalChance" },
+            ["Fish"] = new[] { "FishingYield" },
+        };
+
+        /// Reduced effect kind per stat above. FoodPoisonChance is a failure
+        /// chance the skill lowers, so it reads as a success effect.
+        private static readonly Dictionary<string, WorkRoles.Core.Recs.RoleWorkEffect> EffectKindByStat = new Dictionary<string, WorkRoles.Core.Recs.RoleWorkEffect>
+        {
+            ["MedicalTendSpeed"] = RoleWorkEffect.Speed,
+            ["MiningSpeed"] = RoleWorkEffect.Speed,
+            ["PlantWorkSpeed"] = RoleWorkEffect.Speed,
+            ["ConstructionSpeed"] = RoleWorkEffect.Speed,
+            ["SmoothingSpeed"] = RoleWorkEffect.Speed,
+            ["ResearchSpeed"] = RoleWorkEffect.Speed,
+            ["AnimalGatherSpeed"] = RoleWorkEffect.Speed,
+            ["MedicalTendQuality"] = RoleWorkEffect.Quality,
+            ["MiningYield"] = RoleWorkEffect.Yield,
+            ["PlantHarvestYield"] = RoleWorkEffect.Yield,
+            ["AnimalGatherYield"] = RoleWorkEffect.Yield,
+            ["FishingYield"] = RoleWorkEffect.Yield,
+            ["MedicalSurgerySuccessChance"] = RoleWorkEffect.Success,
+            ["ConstructSuccessChance"] = RoleWorkEffect.Success,
+            ["FixBrokenDownBuildingSuccessChance"] = RoleWorkEffect.Success,
+            ["FoodPoisonChance"] = RoleWorkEffect.Success,
+            ["TameAnimalChance"] = RoleWorkEffect.Success,
+            ["TrainAnimalChance"] = RoleWorkEffect.Success,
+        };
 
         private static DefinitionSnapshot definitionFacts;
         private static Dictionary<string, GiverProfile> byGiver;
@@ -309,7 +372,8 @@ namespace WorkRoles
                     curated,
                     xpSkills,
                     curatedUsed,
-                    usedSkills);
+                    usedSkills,
+                    CuratedGiverEffects(giver, xpSkills, usedSkills, snapshot));
             }
 
             var observedRecipeUsers = new HashSet<ThingDef>(ReferenceComparer<ThingDef>.Instance);
@@ -336,9 +400,10 @@ namespace WorkRoles
                 }
 
                 if (thing.constructionSkillPrerequisite > 0)
-                    builder.AddConstructionRequirement(thing.constructionSkillPrerequisite);
+                    builder.AddConstructionGate(
+                        thing.defName, thing.constructionSkillPrerequisite);
                 if (thing.plant != null && thing.plant.sowMinSkill > 0 && thing.plant.Sowable)
-                    builder.AddSowingRequirement(thing.plant.sowMinSkill);
+                    builder.AddSowingGate(thing.defName, thing.plant.sowMinSkill);
             }
 
             // A fixed bill giver may be a runtime/non-database ThingDef. The
@@ -364,7 +429,8 @@ namespace WorkRoles
 
             foreach (TerrainDef terrain in DefDatabase<TerrainDef>.AllDefsListForReading)
                 if (terrain != null && terrain.constructionSkillPrerequisite > 0)
-                    builder.AddConstructionRequirement(terrain.constructionSkillPrerequisite);
+                    builder.AddConstructionGate(
+                        terrain.defName, terrain.constructionSkillPrerequisite);
 
             foreach (RecipeDef recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
             {
@@ -440,7 +506,98 @@ namespace WorkRoles
                     ? (int?)null : workTypeIdentities.Of(recipe.requiredGiverWorkType),
                 workSkill,
                 recipe.workSkillLearnFactor,
-                requirements);
+                requirements,
+                recipe.defName,
+                RecipeEffects(recipe));
+        }
+
+        /// Effect kinds are declarative def links: a skill-need on the work
+        /// speed stat means Speed, on the efficiency stat Yield, a work skill
+        /// with quality-bearing products Quality, and a surgery outcome whose
+        /// success stat uses that skill Success. Display-only facts.
+        private static RoleWorkEffect RecipeEffects(RecipeDef recipe)
+        {
+            if (recipe.workSkill == null) return RoleWorkEffect.Unspecified;
+            bool affectsQuality = false;
+            if (!recipe.products.NullOrEmpty())
+                for (int i = 0; i < recipe.products.Count; i++)
+                {
+                    ThingDef product = recipe.products[i]?.thingDef;
+                    if (product != null && product.HasComp(typeof(CompQuality)))
+                    {
+                        affectsQuality = true;
+                        break;
+                    }
+                }
+            StatDef surgerySuccess = recipe.surgeryOutcomeEffect == null
+                ? null
+                : DefDatabase<StatDef>.GetNamedSilentFail(
+                    "MedicalSurgerySuccessChance");
+            return RoleWorkEffectRules.ForRecipe(
+                StatUsesSkill(recipe.workSpeedStat, recipe.workSkill),
+                StatUsesSkill(recipe.efficiencyStat, recipe.workSkill),
+                affectsQuality,
+                StatUsesSkill(surgerySuccess, recipe.workSkill));
+        }
+
+        /// Effect kinds for a code-defined giver: the curated giver-to-stat
+        /// wiring supplies the stats, each stat's declarative skill need
+        /// supplies the skill, so no effect claim exists without both links.
+        private static List<JobProfileSkillEffect> CuratedGiverEffects(
+            WorkGiverDef giver,
+            string[] xpSkills,
+            IReadOnlyList<string> usedSkills,
+            DefinitionSnapshot snapshot)
+        {
+            if (!EffectStatsByGiver.TryGetValue(
+                    giver.defName, out string[] statNames))
+                return null;
+            var candidates = new List<string>();
+            AddCandidateSkills(candidates, usedSkills);
+            AddCandidateSkills(candidates, xpSkills);
+            if (giver.workType?.relevantSkills != null)
+                foreach (SkillDef relevant in giver.workType.relevantSkills)
+                    if (relevant != null && !candidates.Contains(relevant.defName))
+                        candidates.Add(relevant.defName);
+
+            List<JobProfileSkillEffect> result = null;
+            foreach (string skillName in candidates)
+            {
+                if (!snapshot.SkillsByName.TryGetValue(
+                        skillName, out SkillDef skill)) continue;
+                RoleWorkEffect effects = RoleWorkEffect.Unspecified;
+                foreach (string statName in statNames)
+                {
+                    StatDef stat = DefDatabase<StatDef>.GetNamedSilentFail(statName);
+                    if (stat != null && StatUsesSkill(stat, skill))
+                        effects |= EffectKindByStat[statName];
+                }
+                if (effects == RoleWorkEffect.Unspecified) continue;
+                (result ??= new List<JobProfileSkillEffect>()).Add(
+                    new JobProfileSkillEffect(skillName, effects));
+            }
+            return result;
+        }
+
+        private static void AddCandidateSkills(
+            List<string> candidates, IReadOnlyList<string> skills)
+        {
+            if (skills == null) return;
+            for (int i = 0; i < skills.Count; i++)
+                if (skills[i] != null && !candidates.Contains(skills[i]))
+                    candidates.Add(skills[i]);
+        }
+
+        private static bool StatUsesSkill(StatDef stat, SkillDef skill)
+        {
+            if (stat == null || skill == null) return false;
+            if (stat.skillNeedFactors != null)
+                for (int i = 0; i < stat.skillNeedFactors.Count; i++)
+                    if (stat.skillNeedFactors[i]?.skill == skill) return true;
+            if (stat.skillNeedOffsets != null)
+                for (int i = 0; i < stat.skillNeedOffsets.Count; i++)
+                    if (stat.skillNeedOffsets[i]?.skill == skill) return true;
+            return false;
         }
 
         private static List<JobProfileSkillSource> SkillSources(
@@ -747,7 +904,7 @@ namespace WorkRoles
                     "WR_TipUnlockAgeValue".Translate(profile.UnlockAge));
             foreach (var range in profile.Requirements)
                 facts.Fact("WR_TipRequiresLabel".Translate(),
-                    "WR_TipReqItems".Translate(
+                    "WR_TipReqJobs".Translate(
                         range.SkillLabel, LevelRange(range), range.Gated).ToString());
             if (hint != null)
                 model.AddSection().Text(hint);

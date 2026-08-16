@@ -28,7 +28,14 @@ namespace WorkRoles
                     label, Store.roles, role => role.label)) return;
             // A blank role has no entries yet, so empty derived skills and a
             // zero age floor are correct.
-            Store.roles.Add(new Role { id = Store.NextId(), label = label, tuningSeeded = true, minAge = 0 });
+            Store.roles.Add(new Role
+            {
+                id = Store.NextId(),
+                label = label,
+                tuningSeeded = true,
+                skillGatesSeeded = true,
+                minAge = 0,
+            });
             Store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
@@ -79,8 +86,8 @@ namespace WorkRoles
                 colonyMin = def.tuning.colonyMin,
                 coverage = def.tuning.coverage,
                 requiredSkills = new List<string>(def.tuning.skills.required),
-                optionalSkills = new List<string>(def.tuning.skills.optional),
                 tuningSeeded = true,
+                skillGatesSeeded = true,
             };
             role.minAge = def.tuning.minAge >= 0
                 ? def.tuning.minAge : RecsAdapter.MinUnlockAgeOf(role);
@@ -284,28 +291,26 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
-        /// Within one role a skill is either required or optional: adding to
-        /// one list removes it from the other in the same command.
         [SyncMethod]
-        public static void AddRoleSkill(int roleId, string skillDefName, bool optional)
+        public static void AddRoleSkill(int roleId, string skillDefName)
         {
             var role = FindRole(roleId);
             if (role == null || skillDefName.NullOrEmpty()
                 || DefDatabase<SkillDef>.GetNamedSilentFail(skillDefName) == null) return;
-            var target = optional ? role.optionalSkills : role.requiredSkills;
-            if (target.Contains(skillDefName)) return;
-            (optional ? role.requiredSkills : role.optionalSkills).Remove(skillDefName);
-            target.Add(skillDefName);
+            if (role.requiredSkills.Contains(skillDefName)) return;
+            role.skillGatesSeeded = true;
+            role.requiredSkills.Add(skillDefName);
+            RoleWorkRevision.Bump();
             UiVersion.Bump();
         }
 
         [SyncMethod]
-        public static void RemoveRoleSkill(int roleId, string skillDefName, bool optional)
+        public static void RemoveRoleSkill(int roleId, string skillDefName)
         {
             var role = FindRole(roleId);
             if (role == null || skillDefName.NullOrEmpty()) return;
-            if (!(optional ? role.optionalSkills : role.requiredSkills)
-                    .Remove(skillDefName)) return;
+            if (!role.requiredSkills.Remove(skillDefName)) return;
+            RoleWorkRevision.Bump();
             UiVersion.Bump();
         }
 
@@ -712,7 +717,6 @@ namespace WorkRoles
                 ColonyMin = source.colonyMin,
                 Coverage = source.coverage,
                 RequiredSkills = source.requiredSkills,
-                OptionalSkills = source.optionalSkills,
                 GroupId = source.groupId,
                 ActiveHours = source.activeHours,
                 LocationTokens = source.locationTokens,
@@ -741,8 +745,8 @@ namespace WorkRoles
                 colonyMin = values.ColonyMin,
                 coverage = values.Coverage,
                 requiredSkills = values.RequiredSkills,
-                optionalSkills = values.OptionalSkills,
                 tuningSeeded = true,
+                skillGatesSeeded = true,
                 groupId = values.GroupId,
                 activeHours = values.ActiveHours,
                 locationTokens = values.LocationTokens,
@@ -1008,7 +1012,13 @@ namespace WorkRoles
             if (Store == null) return null;
             label = CatalogNameRules.Unique(label, Store.roles, existing => existing.label);
             if (label == null) return null;
-            var role = new Role { id = Store.NextId(), label = label, autoAssign = autoAssign };
+            var role = new Role
+            {
+                id = Store.NextId(),
+                label = label,
+                autoAssign = autoAssign,
+                skillGatesSeeded = true,
+            };
             Store.roles.Add(role);
             Store.InvalidateRoleIndex();
             return role;

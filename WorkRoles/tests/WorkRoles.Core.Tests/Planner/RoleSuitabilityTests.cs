@@ -7,6 +7,22 @@ namespace WorkRoles.Core.Tests.Planner;
 public class RoleSuitabilityTests
 {
     [Test]
+    public async Task EmptyRoleSkillProfileDoesNotFallBackToParentWorkTypeSkills()
+    {
+        var role = RecsTestBed.Unskilled(1, "Doctor", "Rescue");
+        var pawn = new PawnView { CapableWorkTypes = { "Doctor" } };
+        pawn.SkillLevels["Medicine"] = 18;
+        pawn.SignalBuckets["Medicine"] = SignalBucket.Exceptional;
+        ColonyView colony = RecsTestBed.Colony([role], pawn);
+
+        List<Dictionary<int, SignalBucket>> verdicts =
+            RoleSuitability.Verdicts(colony);
+
+        await Assert.That(verdicts[0][role.Id])
+            .IsEqualTo(SignalBucket.Neutral);
+    }
+
+    [Test]
     public async Task VerdictsMatchTheEngineSignalPerPawnAndRole()
     {
         RoleView cook = RecsTestBed.Role(1, "Cooking");
@@ -37,5 +53,27 @@ public class RoleSuitabilityTests
         await Assert.That(verdicts[1][doctor.Id]).IsEqualTo(SignalBucket.Exceptional);
         await Assert.That(verdicts[0][hauler.Id]).IsEqualTo(SignalBucket.Neutral);
         await Assert.That(verdicts[1][hauler.Id]).IsEqualTo(SignalBucket.Neutral);
+    }
+
+    [Test]
+    public async Task CompositeVerdictIsTheMemberAverageRoundedDown()
+    {
+        RoleView farmer = RecsTestBed.Role(1, "Crafting");
+        RoleView doctor = RecsTestBed.Role(2, "Doctor");
+        RoleView composite = RecsTestBed.Role(3, "Crafting");
+        composite.MemberRoleIds = [farmer.Id, doctor.Id];
+        var pawn = RecsTestBed.Pawn();
+        pawn.SkillLevels["Crafting"] = 15;
+        pawn.SignalBuckets["Crafting"] = SignalBucket.Exceptional;
+        pawn.SkillLevels["Medicine"] = 3;
+        pawn.SignalBuckets["Medicine"] = SignalBucket.Poor;
+        ColonyView colony = RecsTestBed.Colony(
+            [farmer, doctor, composite], pawn);
+
+        List<Dictionary<int, SignalBucket>> verdicts =
+            RoleSuitability.Verdicts(colony);
+
+        await Assert.That(verdicts[0][composite.Id])
+            .IsEqualTo(SignalBucket.Strong);
     }
 }

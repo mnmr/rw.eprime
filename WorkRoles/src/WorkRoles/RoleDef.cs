@@ -8,7 +8,7 @@ using WorkRoles.Core.Recs;
 
 namespace WorkRoles
 {
-    /// Recommendation tuning: skill classification, importance, time profile,
+    /// Recommendation tuning: explicit skill gates, importance, time profile,
     /// demand, champion-penalty policy and the role's training path.
     public class RoleTuning
     {
@@ -44,7 +44,10 @@ namespace WorkRoles
 
     public class RoleTuningSkills
     {
+        /// Optional hard gates. Shipped defs leave this empty.
         public List<string> required = new List<string>();
+        /// Retired pre-gate classification field. Kept only so old third-party
+        /// defs deserialize without unknown-node warnings; never consumed.
         public List<string> optional = new List<string>();
     }
 
@@ -129,7 +132,6 @@ namespace WorkRoles
                 (tuning?.colonyMin ?? 0).ToString(),
                 (tuning?.coverage ?? 0).ToString(),
                 string.Join("|", tuning?.skills?.required ?? new List<string>()),
-                string.Join("|", tuning?.skills?.optional ?? new List<string>()),
                 string.Join("|", (tuning?.training ?? new List<RoleTrainingEntry>())
                     .Select(entry => entry.role + ":" + entry.min + ":" + entry.max)),
                 string.Join("|", entries));
@@ -155,8 +157,7 @@ namespace WorkRoles
             if (!colorRef.NullOrEmpty()
                 && DefDatabase<PaletteDef>.GetNamedSilentFail(colorRef) == null)
                 yield return $"unknown colorRef '{colorRef}'";
-            foreach (var skill in (tuning?.skills?.required ?? new List<string>())
-                     .Concat(tuning?.skills?.optional ?? new List<string>()))
+            foreach (var skill in tuning?.skills?.required ?? new List<string>())
                 if (DefDatabase<SkillDef>.GetNamedSilentFail(skill) == null)
                     yield return $"tuning skill '{skill}' matches no SkillDef";
             foreach (var entry in tuning?.training ?? new List<RoleTrainingEntry>())

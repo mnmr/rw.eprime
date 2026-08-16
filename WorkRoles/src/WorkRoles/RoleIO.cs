@@ -81,7 +81,8 @@ namespace WorkRoles
                     enabled = role.enabled,
                     activeHours = role.activeHours,
                     locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
-                    hasTuning = role.tuningSeeded,
+                    hasTuning = role.tuningSeeded
+                        || role.requiredSkills.Count > 0,
                     category = role.category,
                     time = role.time,
                     championPenalty = role.championPenalty,
@@ -90,7 +91,6 @@ namespace WorkRoles
                     colonyMin = role.colonyMin,
                     coverage = role.coverage,
                     requiredSkills = role.requiredSkills.ToList(),
-                    optionalSkills = role.optionalSkills.ToList(),
                     training = training,
                     entries = role.entries.ToList(),
                     composite = role.composite,
@@ -472,11 +472,11 @@ namespace WorkRoles
             private readonly int colonyMin;
             private readonly int coverage;
             private readonly bool tuningSeeded;
+            private readonly bool skillGatesSeeded;
             private readonly int groupId;
             private readonly int activeHours;
             private readonly bool composite;
             private readonly List<string> requiredSkills;
-            private readonly List<string> optionalSkills;
             private readonly List<string> locationTokens;
             private readonly List<JobEntry> entries;
             private readonly List<int> memberRoleIds;
@@ -503,11 +503,11 @@ namespace WorkRoles
                 colonyMin = role.colonyMin;
                 coverage = role.coverage;
                 tuningSeeded = role.tuningSeeded;
+                skillGatesSeeded = role.skillGatesSeeded;
                 groupId = role.groupId;
                 activeHours = role.activeHours;
                 composite = role.composite;
                 requiredSkills = new List<string>(role.requiredSkills);
-                optionalSkills = new List<string>(role.optionalSkills);
                 locationTokens = new List<string>(role.locationTokens);
                 entries = new List<JobEntry>(role.entries);
                 memberRoleIds = new List<int>(role.memberRoleIds);
@@ -535,11 +535,11 @@ namespace WorkRoles
                 && colonyMin == other.colonyMin
                 && coverage == other.coverage
                 && tuningSeeded == other.tuningSeeded
+                && skillGatesSeeded == other.skillGatesSeeded
                 && groupId == other.groupId
                 && activeHours == other.activeHours
                 && composite == other.composite
                 && requiredSkills.SequenceEqual(other.requiredSkills)
-                && optionalSkills.SequenceEqual(other.optionalSkills)
                 && locationTokens.SequenceEqual(other.locationTokens)
                 && entries.SequenceEqual(other.entries)
                 && memberRoleIds.SequenceEqual(other.memberRoleIds)
@@ -772,7 +772,7 @@ namespace WorkRoles
                     target.colonyMin = Mathf.Clamp(row.role.colonyMin, 0, 30);
                     target.coverage = Mathf.Clamp(row.role.coverage, 0, 100);
                     target.requiredSkills = row.role.requiredSkills.ToList();
-                    target.optionalSkills = row.role.optionalSkills.ToList();
+                    target.skillGatesSeeded = true;
                     // Pre-tuning files leave this false; the migration below
                     // derives their classification like a pre-tuning save.
                     target.tuningSeeded = row.role.hasTuning;

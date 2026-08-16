@@ -33,8 +33,9 @@ namespace WorkRoles.Core.Recs
             RoleView left,
             RoleView right)
         {
-            IReadOnlyList<RoleSkillView> leftSkills = facts.RequiredSkills(left);
-            IReadOnlyList<RoleSkillView> rightSkills =
+            IReadOnlyList<RoleSkillFact> leftSkills =
+                facts.RequiredSkills(left);
+            IReadOnlyList<RoleSkillFact> rightSkills =
                 facts.RequiredSkills(right);
             for (int leftAt = 0; leftAt < leftSkills.Count; leftAt++)
                 for (int rightAt = 0; rightAt < rightSkills.Count; rightAt++)

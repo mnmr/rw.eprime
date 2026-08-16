@@ -64,12 +64,15 @@ namespace WorkRoles.UI
         private RecRolePanelsSnapshot panelsSnapshot;
 
         // Cache contract — Owner: Recommendations tab. Key: (UiVersion.Current,
-        // RoleStore identity, expanded role id, available width, language
-        // generation via explicit invalidation). Value: one immutable
+        // RoleStore identity, expanded role id, available width, live Small
+        // line height, language generation via explicit invalidation). Value:
+        // one immutable
         // RecRoleDetailSnapshot (single slot: the accordion expands one panel).
-        // Dependencies: the role's category/time/championPenalty/skill lists,
-        // holder scales and training paths, detached role-chip and add-menu
-        // projections, skill/enum labels, language, font, and width. Refresh:
+        // Dependencies: the role's category/time/championPenalty, explicit
+        // required-skill gates, job-derived Used/Trained facts, holder scales
+        // and training paths, detached role-chip and add-menu projections,
+        // skill/enum labels, language, GameFont.Small widths/line height, and
+        // available width. Refresh:
         // immediate on key change. DefinitionReloadCoordinator.Revision is part
         // of the key because skill labels resolve SkillDefs. Equality: matching
         // key preserves snapshot identity. Teardown: Reset/language invalidation
@@ -79,6 +82,7 @@ namespace WorkRoles.UI
         private RoleStore detailStore;
         private int detailRoleId = -1;
         private float detailWidth = -1f;
+        private float detailSmallLineHeight = -1f;
         private RecRoleDetailSnapshot detail;
 
         internal int OrderStamp => orderGeneration;
@@ -125,6 +129,7 @@ namespace WorkRoles.UI
             detailStore = null;
             detailRoleId = -1;
             detailWidth = -1f;
+            detailSmallLineHeight = -1f;
             detail = null;
         }
 
@@ -647,31 +652,123 @@ namespace WorkRoles.UI
         internal RecRoleDetailSnapshot EnsureDetail(
             RoleStore store, int roleId, float width)
         {
+            float smallLineHeight = Text.LineHeightOf(GameFont.Small);
             if (detailStamp == UiVersion.Current
                 && detailDefinitionRevision == DefinitionReloadCoordinator.Revision
                 && ReferenceEquals(detailStore, store)
-                && detailRoleId == roleId && detailWidth == width)
+                && detailRoleId == roleId && detailWidth == width
+                && detailSmallLineHeight == smallLineHeight)
                 return detail;
             detailStamp = UiVersion.Current;
             detailDefinitionRevision = DefinitionReloadCoordinator.Revision;
             detailStore = store;
             detailRoleId = roleId;
             detailWidth = width;
+            detailSmallLineHeight = smallLineHeight;
             detail = null;
 
             Role role = store.RoleById(roleId);
             if (role == null) return null;
 
-            // Skill chips flow inside the right half column.
+            // Skill facts render as compact comma-separated rows in the right
+            // half column. Every inline segment keeps its own premeasured hit
+            // region so effect and gate details remain individually hoverable.
             Text.Font = GameFont.Small;
-            float halfWidth = (width - 12f) / 2f;
+            float halfWidth = Mathf.Max(0f, (width - 12f) / 2f);
+            string workTypesCaption = "WR_WorkTypesLabel".Translate().ToString();
+            string usedCaption = "WR_UsedSkillsLabel".Translate().ToString();
+            string trainedCaption = "WR_TrainedSkillsLabel".Translate().ToString();
+            string gatedCaption = "WR_GatedSkillsLabel".Translate().ToString();
+            string requiredCaption = "WR_RequiredSkillsLabel".Translate().ToString();
+            string addSkillLabel = "WR_AddSkill".Translate().ToString();
+            float desiredAddSkillWidth = WrText.FitWidth(addSkillLabel) + 16f;
+            float desiredCaptionWidth = Mathf.Max(72f,
+                Mathf.Max(WrText.FitWidth(workTypesCaption),
+                    Mathf.Max(WrText.FitWidth(usedCaption),
+                        Mathf.Max(WrText.FitWidth(trainedCaption),
+                            Mathf.Max(WrText.FitWidth(gatedCaption),
+                                WrText.FitWidth(requiredCaption)))))) + 8f;
+            float derivedRowHeight = Mathf.Ceil(smallLineHeight);
+            float requiredRowHeight = Mathf.Max(24f, derivedRowHeight);
+
+            const float minimumSkillWidth = 32f;
+            const float requiredLabelGap = 4f;
+            const float removeWidth = 24f;
+            const float addGap = 8f;
+            float requiredMinimum = minimumSkillWidth
+                + requiredLabelGap + removeWidth;
+            bool hasRequiredSkills = role.requiredSkills.Count > 0;
+            float minimumAddSkillWidth = Mathf.Min(
+                desiredAddSkillWidth, 40f);
+            float reservedRightWidth = minimumAddSkillWidth
+                + (hasRequiredSkills ? addGap + requiredMinimum : 0f);
+            float captionWidth = Mathf.Min(desiredCaptionWidth,
+                Mathf.Max(0f, halfWidth - reservedRightWidth));
+            float skillWidth = Mathf.Max(0f, halfWidth - captionWidth);
+            float addFloor = Mathf.Min(minimumAddSkillWidth,
+                Mathf.Max(0f, skillWidth
+                    - (hasRequiredSkills ? addGap : 0f)));
+            float fullAddCapacity = Mathf.Max(0f, skillWidth
+                - (hasRequiredSkills ? requiredMinimum + addGap : 0f));
+            float addSkillWidth = Mathf.Min(desiredAddSkillWidth,
+                Mathf.Max(addFloor, fullAddCapacity));
+            if (addSkillWidth < desiredAddSkillWidth)
+            {
+                float addTextWidth = Mathf.Max(0f, addSkillWidth - 16f);
+                addSkillLabel = addTextWidth > 0f
+                    ? addSkillLabel.Truncate(addTextWidth)
+                    : string.Empty;
+            }
+            float requiredAddX = halfWidth - addSkillWidth;
+            float actualAddGap = hasRequiredSkills && addSkillWidth > 0f
+                ? Mathf.Min(addGap,
+                    Mathf.Max(0f, requiredAddX - captionWidth))
+                : 0f;
+            float requiredRemoveRight = requiredAddX - actualAddGap;
+            float requiredRemoveWidth = Mathf.Min(removeWidth,
+                Mathf.Max(0f, requiredRemoveRight - captionWidth));
+            float requiredRemoveX = requiredRemoveRight - requiredRemoveWidth;
+            float actualLabelGap = requiredRemoveWidth > 0f
+                ? Mathf.Min(requiredLabelGap,
+                    Mathf.Max(0f, requiredRemoveX - captionWidth))
+                : 0f;
+            float requiredSkillWidth = Mathf.Max(0f,
+                requiredRemoveX - actualLabelGap - captionWidth);
+            var workTypeChips = new List<RecSkillChip>();
+            var usedChips = new List<RecSkillChip>();
+            var trainedChips = new List<RecSkillChip>();
+            var gatedChips = new List<RecSkillChip>();
             var requiredChips = new List<RecSkillChip>();
-            var optionalChips = new List<RecSkillChip>();
             var present = new HashSet<string>();
-            float requiredHeight = LayoutSkillChips(
-                role.requiredSkills, halfWidth, requiredChips, present);
-            float optionalHeight = LayoutSkillChips(
-                role.optionalSkills, halfWidth, optionalChips, present);
+            RoleWorkSpec workSpec = RoleWorkSpecs.For(role);
+            // The role's work-type capabilities, in capability order; each
+            // chip carries the shared work-type tooltip.
+            foreach (RoleWorkCapabilitySpec capability in workSpec.Capabilities)
+                workTypeChips.Add(new RecSkillChip(
+                    capability.WorkTypeDefName,
+                    WorkTypeLabel(capability.WorkTypeDefName),
+                    default,
+                    JobSkillProfiles.WorkTypeStructuredTip(
+                        capability.WorkTypeDefName)));
+            foreach (RoleSkillFact skill in workSpec.Skills)
+            {
+                string label = SkillLabel(skill.SkillDefName);
+                if (skill.UsedGivers > 0)
+                    usedChips.Add(new RecSkillChip(skill.SkillDefName, label,
+                        default, EffectTip(roleId, skill, label)));
+                if (skill.TrainedGivers > 0)
+                    trainedChips.Add(new RecSkillChip(
+                        skill.SkillDefName, label, default));
+                if (skill.GatedContents > 0)
+                    gatedChips.Add(new RecSkillChip(skill.SkillDefName, label,
+                        default, GateTip(roleId, workSpec, skill.SkillDefName, label)));
+            }
+            LayoutInlineSkillChips(workTypeChips, skillWidth, derivedRowHeight);
+            LayoutInlineSkillChips(usedChips, skillWidth, derivedRowHeight);
+            LayoutInlineSkillChips(trainedChips, skillWidth, derivedRowHeight);
+            LayoutInlineSkillChips(gatedChips, skillWidth, derivedRowHeight);
+            float requiredHeight = LayoutRequiredSkillChips(
+                role.requiredSkills, requiredRowHeight, requiredChips, present);
 
             // Unskilled roles have no skill progression to train: their panel
             // drops the training path section entirely. Every skilled role
@@ -704,12 +801,21 @@ namespace WorkRoles.UI
                 },
                 "WR_ChampionPenalty".Translate().ToString(),
                 role.championPenalty,
-                "WR_RequiredSkillsLabel".Translate().ToString(),
+                captionWidth, derivedRowHeight, requiredRowHeight,
+                requiredSkillWidth, requiredRemoveX, requiredRemoveWidth,
+                requiredAddX,
+                workTypesCaption,
+                workTypeChips, derivedRowHeight,
+                usedCaption,
+                usedChips, derivedRowHeight,
+                trainedCaption,
+                trainedChips, derivedRowHeight,
+                gatedCaption,
+                gatedChips, derivedRowHeight,
+                requiredCaption,
                 requiredChips, requiredHeight,
-                "WR_OptionalSkillsLabel".Translate().ToString(),
-                optionalChips, optionalHeight,
                 present,
-                "WR_AddSkill".Translate().ToString(),
+                addSkillLabel, addSkillWidth,
                 "WR_RoleColonyMinLabel".Translate().ToString(),
                 role.colonyMin,
                 role.colonyMin.ToString(CultureInfo.InvariantCulture),
@@ -722,21 +828,45 @@ namespace WorkRoles.UI
             return detail;
         }
 
-        /// One 26px row per skill; the Add button shares the top row, so an
-        /// empty table still spans one row. The view lays the three columns
-        /// (caption, skill + remove, Add button) arithmetically.
-        internal const float SkillRowPitch = 26f;
+        /// One derived row, with each comma-separated skill carrying a cached
+        /// local draw/hit rectangle. Widths and strings are built only behind
+        /// the detail snapshot's explicit revision/width invalidation gate.
+        private static void LayoutInlineSkillChips(
+            List<RecSkillChip> chips, float width, float rowHeight)
+        {
+            float x = 0f;
+            for (int i = 0; i < chips.Count; i++)
+            {
+                RecSkillChip chip = chips[i];
+                string label = i + 1 < chips.Count
+                    ? chip.Label + ", " : chip.Label;
+                float remaining = Mathf.Max(0f, width - x);
+                float fullWidth = WrText.FitWidth(label);
+                float fittedWidth = Mathf.Min(remaining, fullWidth);
+                if (fullWidth > remaining)
+                    label = remaining > 0f
+                        ? label.Truncate(remaining) : string.Empty;
+                chips[i] = new RecSkillChip(
+                    chip.DefName, label,
+                    new Rect(x, 0f, fittedWidth, rowHeight), chip.Tip);
+                x += fittedWidth;
+            }
+        }
 
-        private static float LayoutSkillChips(List<string> skillDefNames,
-            float width, List<RecSkillChip> chips, HashSet<string> present)
+        /// Required skills remain editable one per row. The row is never
+        /// shorter than either the Small font's live line box or its 24px
+        /// controls, so glyphs and buttons cannot clip.
+        private static float LayoutRequiredSkillChips(
+            IReadOnlyList<string> skillDefNames, float rowHeight,
+            List<RecSkillChip> chips, HashSet<string> present)
         {
             for (int i = 0; i < skillDefNames.Count; i++)
             {
                 string defName = skillDefNames[i];
-                present.Add(defName);
+                present?.Add(defName);
                 chips.Add(new RecSkillChip(defName, SkillLabel(defName), default));
             }
-            return Mathf.Max(1, chips.Count) * SkillRowPitch;
+            return Mathf.Max(1, chips.Count) * rowHeight;
         }
 
         private static string SkillLabel(string defName)
@@ -746,14 +876,118 @@ namespace WorkRoles.UI
                 : (skill.skillLabel ?? skill.label ?? skill.defName).CapitalizeFirst();
         }
 
+        private static string WorkTypeLabel(string defName)
+        {
+            WorkTypeDef workType =
+                DefDatabase<WorkTypeDef>.GetNamedSilentFail(defName);
+            return workType == null ? defName
+                : (workType.gerundLabel ?? workType.labelShort ?? workType.defName)
+                    .CapitalizeFirst();
+        }
+
+        /// Effect kinds as localized phrases; null when nothing is known so
+        /// no unsupported effect claim is invented for modded work.
+        private static StructuredTip EffectTip(
+            int roleId, RoleSkillFact skill, string label)
+        {
+            if (skill.Effects == RoleWorkEffect.Unspecified) return null;
+            var model = new TipModel { Title = label };
+            var section = model.AddSection();
+            if ((skill.Effects & RoleWorkEffect.Speed) != 0)
+                section.Text("WR_EffectSpeed".Translate().ToString());
+            if ((skill.Effects & RoleWorkEffect.Quality) != 0)
+                section.Text("WR_EffectQuality".Translate().ToString());
+            if ((skill.Effects & RoleWorkEffect.Yield) != 0)
+                section.Text("WR_EffectYield".Translate().ToString());
+            if ((skill.Effects & RoleWorkEffect.Success) != 0)
+                section.Text("WR_EffectSuccess".Translate().ToString());
+            return new StructuredTip(
+                $"rec-skill-effects:{roleId}:{skill.SkillDefName}", model);
+        }
+
+        /// The exact content minimums behind a gate-bearing skill, capped so
+        /// content-heavy roles stay readable.
+        private static StructuredTip GateTip(
+            int roleId, RoleWorkSpec spec, string skillDefName, string label)
+        {
+            const int MaxLines = 12;
+            var model = new TipModel { Title = label };
+            var section = model.AddSection();
+            int lines = 0;
+            int more = 0;
+            foreach (RoleWorkCapabilitySpec capability in spec.Capabilities)
+                foreach (RoleWorkGiverSpec giver in capability.Givers)
+                    foreach (RoleWorkContentSpec content in giver.Contents)
+                        foreach (RoleContentGate gate in content.Gates)
+                        {
+                            if (gate.SkillDefName != skillDefName
+                                || content.DefName == null)
+                                continue;
+                            if (lines >= MaxLines)
+                            {
+                                more++;
+                                continue;
+                            }
+                            section.Fact(ContentLabel(content),
+                                "WR_TipLevelN".Translate(
+                                    gate.MinimumLevel).ToString());
+                            lines++;
+                        }
+            if (more > 0)
+                section.Text(
+                    "WR_RecMoreContentGates".Translate(more).ToString(),
+                    dim: true);
+            if (lines == 0 && more == 0) return null;
+            return new StructuredTip(
+                $"rec-skill-gates:{roleId}:{skillDefName}", model);
+        }
+
+        private static string ContentLabel(RoleWorkContentSpec content)
+        {
+            switch (content.Kind)
+            {
+                case RoleWorkContentKind.Recipe:
+                    RecipeDef recipe =
+                        DefDatabase<RecipeDef>.GetNamedSilentFail(content.DefName);
+                    if (recipe != null) return recipe.LabelCap.ToString();
+                    break;
+                default:
+                    ThingDef thing =
+                        DefDatabase<ThingDef>.GetNamedSilentFail(content.DefName);
+                    if (thing != null) return thing.LabelCap.ToString();
+                    TerrainDef terrain =
+                        DefDatabase<TerrainDef>.GetNamedSilentFail(content.DefName);
+                    if (terrain != null) return terrain.LabelCap.ToString();
+                    break;
+            }
+            return content.DefName;
+        }
+
         /// The role's own path; an unstored (implicit) path synthesizes as the
         /// owner alone on the full skill axis.
         private static RecPathView BuildPathView(RoleStore store, Role owner)
         {
+            // A candidate contributes when it trains the owner's primary or
+            // gate-bearing skills, or trains its own primary skill that the
+            // owner's work carries; an empty contribution is identified
+            // before adding.
+            RoleWorkSpec ownerSpec = RoleWorkSpecs.For(owner);
+            var neededSkills = new List<string>();
+            var ownerSkills = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (RoleSkillFact fact in ownerSpec.Skills)
+            {
+                if (fact.Primary || fact.GatedContents > 0)
+                    neededSkills.Add(fact.SkillDefName);
+                if (fact.UsedGivers > 0 || fact.TrainedGivers > 0)
+                    ownerSkills.Add(fact.SkillDefName);
+            }
+            string noContributionTip = "WR_NoContributionRoleTip".Translate();
+
             var roleIds = new List<int>();
             var mins = new List<int>();
             var maxes = new List<int>();
             var chips = new List<RoleChipRenderData>();
+            var tips = new List<StructuredTip>();
             for (int i = 0; i < owner.trainingRoleIds.Count; i++)
             {
                 Role role = store.RoleById(owner.trainingRoleIds[i]);
@@ -762,6 +996,8 @@ namespace WorkRoles.UI
                 mins.Add(owner.trainingMins[i]);
                 maxes.Add(owner.trainingMaxes[i]);
                 chips.Add(RoleChipRenderData.From(role));
+                tips.Add(BandChipTip(owner, role, neededSkills, ownerSkills,
+                    noContributionTip));
             }
             if (roleIds.Count == 0)
             {
@@ -769,6 +1005,8 @@ namespace WorkRoles.UI
                 mins.Add(0);
                 maxes.Add(SkillProgressionMath.MaxLevel);
                 chips.Add(RoleChipRenderData.From(owner));
+                tips.Add(BandChipTip(owner, owner, neededSkills, ownerSkills,
+                    noContributionTip));
             }
 
             List<int> rows = SkillProgressionMath.PackRows(
@@ -777,18 +1015,23 @@ namespace WorkRoles.UI
             int displayRows = rowCount + 1;
             var presentRoleIds = new HashSet<int>(roleIds);
             var addOptions = new List<RecRoleMenuOption>();
-            string noXpTip = "WR_NoXpRoleTip".Translate();
             for (int i = 0; i < store.roles.Count; i++)
             {
                 Role role = store.roles[i];
                 if (!IsNormalTrainingRole(role)
                     || presentRoleIds.Contains(role.id)) continue;
-                bool hasXp = HasXpJobs(role);
-                string label = hasXp ? role.label
+                List<string> contribution = ContributionTo(
+                    neededSkills, ownerSkills, role);
+                bool contributes = contribution.Count > 0;
+                string label = contributes ? role.label
                     : role.label.Colorize(new Color(0.62f, 0.62f, 0.62f));
+                string tip = contributes
+                    ? "WR_ContributesTip".Translate(
+                        contribution.Select(SkillLabel).ToCommaList()).ToString()
+                    : noContributionTip;
                 addOptions.Add(new RecRoleMenuOption(
-                    role.id, label, hasXp ? null : noXpTip,
-                    hasXp ? 0 : 1, role.label));
+                    role.id, label, tip,
+                    contributes ? 0 : 1, role.label));
             }
             addOptions.Sort(RecRoleMenuOption.CompareByLabel);
             return new RecPathView(
@@ -799,18 +1042,50 @@ namespace WorkRoles.UI
                 rows,
                 chips,
                 addOptions,
-                displayRows);
+                displayRows,
+                tips);
         }
 
-        private static bool HasXpJobs(Role role)
+        /// One placed band chip's tip: what the entry trains toward the
+        /// owner (the owner's own chip carries just the drag hint), with the
+        /// band drag hint folded into the same region.
+        private static StructuredTip BandChipTip(
+            Role owner,
+            Role entry,
+            IReadOnlyList<string> neededSkills,
+            HashSet<string> ownerSkills,
+            string noContributionTip)
         {
-            foreach (string giverName in role.Coverage())
+            var model = new TipModel { Title = entry.label };
+            if (entry.id != owner.id)
             {
-                JobSkillProfiles.GiverProfile profile =
-                    JobSkillProfiles.ForGiver(giverName);
-                if (profile != null && profile.GivesXp) return true;
+                List<string> contribution = ContributionTo(
+                    neededSkills, ownerSkills, entry);
+                model.AddSection().Text(contribution.Count > 0
+                    ? "WR_ContributesTip".Translate(
+                        contribution.Select(SkillLabel).ToCommaList()).ToString()
+                    : noContributionTip);
             }
-            return false;
+            model.AddSection().Text(
+                "WR_BandChipTip".Translate().ToString(), dim: true);
+            return new StructuredTip(
+                $"rec-path-entry:{owner.id}:{entry.id}", model);
+        }
+
+        private static List<string> ContributionTo(
+            IReadOnlyList<string> neededSkills,
+            HashSet<string> ownerSkills,
+            Role candidate)
+        {
+            var contribution = new List<string>();
+            RoleWorkSpec spec = RoleWorkSpecs.For(candidate);
+            foreach (RoleSkillFact fact in spec.Skills)
+                if (fact.Participates && fact.TrainedGivers > 0
+                    && (neededSkills.Contains(fact.SkillDefName)
+                        || fact.Primary
+                        && ownerSkills.Contains(fact.SkillDefName)))
+                    contribution.Add(fact.SkillDefName);
+            return contribution;
         }
 
         private static bool IsNormalTrainingRole(Role role) =>
@@ -1165,12 +1440,17 @@ namespace WorkRoles.UI
 
     internal readonly struct RecSkillChip
     {
-        internal RecSkillChip(string defName, string label, Rect rect)
+        internal RecSkillChip(string defName, string label, Rect rect,
+            StructuredTip tip = null)
         {
             DefName = defName;
             Label = label;
             Rect = rect;
+            Tip = tip;
         }
+
+        /// Effect kinds or gated-content lines; null renders no tip region.
+        internal StructuredTip Tip { get; }
 
         internal string DefName { get; }
         internal string Label { get; }
@@ -1179,8 +1459,11 @@ namespace WorkRoles.UI
 
     internal sealed class RecRoleDetailSnapshot
     {
+        private readonly List<RecSkillChip> workTypeChips;
+        private readonly List<RecSkillChip> usedChips;
+        private readonly List<RecSkillChip> trainedChips;
+        private readonly List<RecSkillChip> gatedChips;
         private readonly List<RecSkillChip> requiredChips;
-        private readonly List<RecSkillChip> optionalChips;
         private readonly HashSet<string> presentSkills;
         private readonly List<RecPathView> paths;
 
@@ -1192,11 +1475,22 @@ namespace WorkRoles.UI
             string timeCaption, int timeValue,
             IReadOnlyList<string> timeOptions,
             string championLabel, bool championPenalty,
+            float skillCaptionWidth, float derivedSkillRowHeight,
+            float requiredSkillRowHeight, float requiredSkillWidth,
+            float requiredRemoveX, float requiredRemoveWidth,
+            float requiredAddX,
+            string workTypesCaption, List<RecSkillChip> workTypeChips,
+            float workTypesHeight,
+            string usedCaption, List<RecSkillChip> usedChips,
+            float usedHeight,
+            string trainedCaption, List<RecSkillChip> trainedChips,
+            float trainedHeight,
+            string gatedCaption, List<RecSkillChip> gatedChips,
+            float gatedHeight,
             string requiredCaption, List<RecSkillChip> requiredChips,
             float requiredHeight,
-            string optionalCaption, List<RecSkillChip> optionalChips,
-            float optionalHeight,
             HashSet<string> presentSkills, string addSkillLabel,
+            float addSkillWidth,
             string colonyMinCaption, int colonyMin, string colonyMinLabel,
             string coverageCaption, int coverage, string coverageLabel,
             string trainingHeader, bool showTrainingSection,
@@ -1214,14 +1508,31 @@ namespace WorkRoles.UI
             TimeOptions = timeOptions;
             ChampionLabel = championLabel;
             ChampionPenalty = championPenalty;
+            SkillCaptionWidth = skillCaptionWidth;
+            DerivedSkillRowHeight = derivedSkillRowHeight;
+            RequiredSkillRowHeight = requiredSkillRowHeight;
+            RequiredSkillWidth = requiredSkillWidth;
+            RequiredRemoveX = requiredRemoveX;
+            RequiredRemoveWidth = requiredRemoveWidth;
+            RequiredAddX = requiredAddX;
+            WorkTypesCaption = workTypesCaption;
+            this.workTypeChips = workTypeChips;
+            WorkTypesHeight = workTypesHeight;
+            UsedCaption = usedCaption;
+            this.usedChips = usedChips;
+            UsedHeight = usedHeight;
+            TrainedCaption = trainedCaption;
+            this.trainedChips = trainedChips;
+            TrainedHeight = trainedHeight;
+            GatedCaption = gatedCaption;
+            this.gatedChips = gatedChips;
+            GatedHeight = gatedHeight;
             RequiredCaption = requiredCaption;
             this.requiredChips = requiredChips;
             RequiredHeight = requiredHeight;
-            OptionalCaption = optionalCaption;
-            this.optionalChips = optionalChips;
-            OptionalHeight = optionalHeight;
             this.presentSkills = presentSkills;
             AddSkillLabel = addSkillLabel;
+            AddSkillWidth = addSkillWidth;
             ColonyMinCaption = colonyMinCaption;
             ColonyMin = colonyMin;
             ColonyMinLabel = colonyMinLabel;
@@ -1246,16 +1557,36 @@ namespace WorkRoles.UI
         internal IReadOnlyList<string> TimeOptions { get; }
         internal string ChampionLabel { get; }
         internal bool ChampionPenalty { get; }
+        internal float SkillCaptionWidth { get; }
+        internal float DerivedSkillRowHeight { get; }
+        internal float RequiredSkillRowHeight { get; }
+        internal float RequiredSkillWidth { get; }
+        internal float RequiredRemoveX { get; }
+        internal float RequiredRemoveWidth { get; }
+        internal float RequiredAddX { get; }
+        internal string WorkTypesCaption { get; }
+        internal int WorkTypeChipCount => workTypeChips.Count;
+        internal RecSkillChip WorkTypeChipAt(int index) => workTypeChips[index];
+        internal float WorkTypesHeight { get; }
+        internal string UsedCaption { get; }
+        internal int UsedChipCount => usedChips.Count;
+        internal RecSkillChip UsedChipAt(int index) => usedChips[index];
+        internal float UsedHeight { get; }
+        internal string TrainedCaption { get; }
+        internal int TrainedChipCount => trainedChips.Count;
+        internal RecSkillChip TrainedChipAt(int index) => trainedChips[index];
+        internal float TrainedHeight { get; }
+        internal string GatedCaption { get; }
+        internal int GatedChipCount => gatedChips.Count;
+        internal RecSkillChip GatedChipAt(int index) => gatedChips[index];
+        internal float GatedHeight { get; }
         internal string RequiredCaption { get; }
         internal int RequiredChipCount => requiredChips.Count;
         internal RecSkillChip RequiredChipAt(int index) => requiredChips[index];
         internal float RequiredHeight { get; }
-        internal string OptionalCaption { get; }
-        internal int OptionalChipCount => optionalChips.Count;
-        internal RecSkillChip OptionalChipAt(int index) => optionalChips[index];
-        internal float OptionalHeight { get; }
         internal bool HasSkill(string defName) => presentSkills.Contains(defName);
         internal string AddSkillLabel { get; }
+        internal float AddSkillWidth { get; }
         internal string ColonyMinCaption { get; }
         internal int ColonyMin { get; }
         internal string ColonyMinLabel { get; }
@@ -1281,7 +1612,8 @@ namespace WorkRoles.UI
         internal RecPathView(int pathId, List<int> roleIds,
             List<int> mins, List<int> maxes, List<int> rows,
             List<RoleChipRenderData> chips,
-            List<RecRoleMenuOption> addOptions, int displayRows)
+            List<RecRoleMenuOption> addOptions, int displayRows,
+            List<StructuredTip> tips = null)
         {
             PathId = pathId;
             this.roleIds = roleIds;
@@ -1290,8 +1622,16 @@ namespace WorkRoles.UI
             this.rows = rows;
             this.chips = chips;
             this.addOptions = addOptions;
+            this.tips = tips;
             DisplayRows = displayRows;
         }
+
+        private readonly List<StructuredTip> tips;
+
+        /// Per-entry band tip: the entry's contribution to the owner plus the
+        /// drag hint; null when the snapshot carried no tips.
+        internal StructuredTip TipAt(int index) =>
+            tips != null && index < tips.Count ? tips[index] : null;
 
         internal int PathId { get; }
         internal int Count => roleIds.Count;

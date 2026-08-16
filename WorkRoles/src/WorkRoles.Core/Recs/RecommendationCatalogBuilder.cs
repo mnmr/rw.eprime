@@ -34,9 +34,8 @@ namespace WorkRoles.Core.Recs
         public int MinAge;
         /// Maximum biological age (years, inclusive) for holding the role; 0 = no gate.
         public int MaxAge;
-        /// Authored skill classification; null = no authored data.
+        /// User-authored hard skill gates; null or empty = no additional gate.
         public List<string> DeclaredRequiredSkills;
-        public List<string> DeclaredOptionalSkills;
         /// Authored demand: minimum assignment count and ideal colonist percentage.
         public int ColonyMin;
         public int Coverage;
@@ -46,27 +45,23 @@ namespace WorkRoles.Core.Recs
     }
 
     /// Complete role-catalog projection consumed by RecommendationPlan. The
-    /// role views and work-type map are owned by this projection.
+    /// role views and their work specs are owned by this projection.
     public sealed class RecommendationCatalogProjection
     {
         internal RecommendationCatalogProjection(
             List<RoleView> roles,
             List<PathView> paths,
-            Dictionary<string, IReadOnlyList<string>> workTypeSkills,
             int hunterRoleId,
             int fireBlockerRoleId)
         {
             Roles = new ReadOnlyCollection<RoleView>(roles);
             Paths = new ReadOnlyCollection<PathView>(paths);
-            WorkTypeSkills = new ReadOnlyDictionary<string, IReadOnlyList<string>>(
-                workTypeSkills);
             HunterRoleId = hunterRoleId;
             FireBlockerRoleId = fireBlockerRoleId;
         }
 
         public IReadOnlyList<RoleView> Roles { get; }
         public IReadOnlyList<PathView> Paths { get; }
-        public IReadOnlyDictionary<string, IReadOnlyList<string>> WorkTypeSkills { get; }
         public int HunterRoleId { get; }
         public int FireBlockerRoleId { get; }
 
@@ -81,7 +76,6 @@ namespace WorkRoles.Core.Recs
                 OrderTemplate = orderTemplate == null
                     ? new List<int>()
                     : new List<int>(orderTemplate),
-                WorkTypeSkills = WorkTypeSkills,
                 HunterRoleId = HunterRoleId,
                 FireBlockerRoleId = FireBlockerRoleId,
             };
@@ -122,26 +116,20 @@ namespace WorkRoles.Core.Recs
                 for (int index = 0; index < paths.Count; index++)
                     ownedPaths.Add(CopyPath(paths[index]));
             var views = new List<RoleView>(sources.Count);
-            var projections = new List<RecommendationRoleProjection>(sources.Count);
-            var scratch = new RoleSkillEvidenceAccumulator();
             for (int index = 0; index < sources.Count; index++)
             {
                 RecommendationRoleSource source = sources[index]
                     ?? throw new ArgumentException(
                         "Role sources cannot contain null.", nameof(sources));
-                RecommendationRoleProjection projection = Project(
+                views.Add(ViewOf(
                     source,
-                    CoverageMath.CoverageOf(source.Entries, jobs),
-                    jobs,
-                    naturalPriorities,
-                    jobProfiles.Givers,
-                    scratch);
-                projections.Add(projection);
-                views.Add(ViewOf(source, projection, jobs));
+                    SpecOf(source, jobs, naturalPriorities, jobProfiles, null),
+                    jobs));
             }
+            ApplyCompositeSpecs(sources, views);
 
             IReadOnlyDictionary<int, HashSet<string>> excludedByRole =
-                TrainingRoleSkillRequirements.ExcludedCoverageByRole(
+                TrainingCoverageExclusion.ExcludedCoverageByRole(
                     views, ownedPaths);
             for (int index = 0; index < sources.Count; index++)
             {
@@ -149,43 +137,26 @@ namespace WorkRoles.Core.Recs
                 if (!excludedByRole.TryGetValue(
                         source.Id, out HashSet<string> excluded))
                     continue;
-                var skillCoverage = new HashSet<string>(views[index].Coverage);
-                skillCoverage.ExceptWith(excluded);
-                RecommendationRoleProjection projection = Project(
-                    source,
-                    skillCoverage,
-                    jobs,
-                    naturalPriorities,
-                    jobProfiles.Givers,
-                    scratch);
-                projections[index] = projection;
-                views[index] = ViewOf(source, projection, jobs);
+                views[index].WorkSpec = SpecOf(
+                    source, jobs, naturalPriorities, jobProfiles, excluded);
             }
-            TrainingRoleSkillRequirements.ApplyTargetRequirements(
-                views, ownedPaths);
-
-            int hunterRoleId = ResolveHunterRoleId(
-                sources, projections);
-            int fireBlockerRoleId = ResolveFireBlockerRoleId(
-                sources, projections);
+            ApplyCompositeSpecs(sources, views);
 
             return new RecommendationCatalogProjection(
                 views,
                 ownedPaths,
-                WorkTypeSkills(jobProfiles.WorkTypes),
-                hunterRoleId,
-                fireBlockerRoleId);
+                ResolveHunterRoleId(sources, views),
+                ResolveFireBlockerRoleId(sources, views));
         }
 
-        private static RecommendationRoleProjection Project(
+        private static RoleWorkSpec SpecOf(
             RecommendationRoleSource source,
-            IEnumerable<string> skillCoverage,
             IJobCatalog jobs,
             IReadOnlyDictionary<string, int> naturalPriorities,
-            IReadOnlyDictionary<string, JobProfileGiverFacts> giverFacts,
-            RoleSkillEvidenceAccumulator scratch)
+            JobProfileIndex jobProfiles,
+            ISet<string> excludedProfileGivers)
         {
-            var workTypes = new List<RecommendationWorkTypeEvidence>();
+            var seedWorkTypes = new List<string>();
             var literalWorkTypes = new List<string>();
             for (int entryIndex = 0;
                  entryIndex < source.Entries.Count;
@@ -200,24 +171,27 @@ namespace WorkRoles.Core.Recs
                 }
                 else
                     workType = jobs.WorkTypeOf(entry.DefName);
-                if (workType == null) continue;
-                naturalPriorities.TryGetValue(workType, out int priority);
-                workTypes.Add(new RecommendationWorkTypeEvidence(
-                    workType, priority));
+                if (workType != null) seedWorkTypes.Add(workType);
             }
-            IReadOnlyList<RoleSkillEvidence> evidence =
-                RoleSkillEvidenceSource.ForCoverage(
-                    skillCoverage, giverFacts, scratch);
-            return new RecommendationRoleProjection(
-                workTypes, literalWorkTypes, evidence);
+            return RoleWorkSpecBuilder.Build(
+                source.Id,
+                CoverageMath.OrderedCoverageOf(source.Entries, jobs),
+                seedWorkTypes,
+                literalWorkTypes,
+                jobs.WorkTypeOf,
+                naturalPriorities,
+                jobProfiles.Givers,
+                jobProfiles,
+                source.DeclaredRequiredSkills,
+                excludedProfileGivers);
         }
 
         private static RoleView ViewOf(
             RecommendationRoleSource source,
-            RecommendationRoleProjection projection,
+            RoleWorkSpec spec,
             IJobCatalog jobs)
         {
-            var view = new RoleView
+            return new RoleView
             {
                 Id = source.Id,
                 TemplateDefName = source.TemplateDefName,
@@ -229,7 +203,6 @@ namespace WorkRoles.Core.Recs
                 AutoAssign = source.AutoAssign,
                 HasRules = source.HasRules,
                 Blocker = source.Blocker,
-                Hunting = projection.Hunting,
                 PreserveRecommendationOrder =
                     source.PreserveRecommendationOrder,
                 ChampionPenalty = source.ChampionPenalty,
@@ -237,23 +210,63 @@ namespace WorkRoles.Core.Recs
                 Time = source.Time,
                 MinAge = source.MinAge,
                 MaxAge = source.MaxAge,
-                DeclaredRequiredSkills = source.DeclaredRequiredSkills == null
-                    ? null : new List<string>(source.DeclaredRequiredSkills),
-                DeclaredOptionalSkills = source.DeclaredOptionalSkills == null
-                    ? null : new List<string>(source.DeclaredOptionalSkills),
-                NaturalPriority = projection.MaxNaturalPriority,
-                WorkTypes = projection.CopyWorkTypes(),
                 ColonyMin = source.ColonyMin,
                 CoveragePercent = source.Coverage,
-                Skills = projection.CopySkillViews(),
-                PrimarySkill = projection.PrimarySkill,
-                Unskilled = !source.AutoAssign
-                    && !source.HasRules
-                    && !projection.HasSkillEvidence,
                 Available = source.Available,
                 Enabled = source.Enabled,
+                WorkSpec = spec,
             };
-            return view;
+        }
+
+        /// Composite roles publish the deduplicated union of member givers;
+        /// gates union the composite's own and every member's gates.
+        private static void ApplyCompositeSpecs(
+            IReadOnlyList<RecommendationRoleSource> sources,
+            IList<RoleView> views)
+        {
+            var indexById = new Dictionary<int, int>(sources.Count);
+            for (int index = 0; index < sources.Count; index++)
+                indexById[sources[index].Id] = index;
+
+            for (int index = 0; index < sources.Count; index++)
+            {
+                RecommendationRoleSource source = sources[index];
+                if (source.MemberRoleIds == null) continue;
+                var memberSpecs = new List<RoleWorkSpec>(
+                    source.MemberRoleIds.Count);
+                var gates = new List<string>();
+                var seenGates = new HashSet<string>(StringComparer.Ordinal);
+                AddGates(source.DeclaredRequiredSkills, gates, seenGates);
+                for (int memberIndex = 0;
+                     memberIndex < source.MemberRoleIds.Count;
+                     memberIndex++)
+                {
+                    if (!indexById.TryGetValue(
+                            source.MemberRoleIds[memberIndex], out int resolved))
+                        continue;
+                    memberSpecs.Add(views[resolved].WorkSpec);
+                    AddGates(
+                        views[resolved].WorkSpec.AssignmentSkillGates,
+                        gates,
+                        seenGates);
+                }
+                views[index].WorkSpec = RoleWorkSpecBuilder.Merge(
+                    source.Id, memberSpecs, gates);
+            }
+        }
+
+        private static void AddGates(
+            IReadOnlyList<string> source,
+            ICollection<string> target,
+            ISet<string> seen)
+        {
+            if (source == null) return;
+            for (int index = 0; index < source.Count; index++)
+            {
+                string skill = source[index];
+                if (!string.IsNullOrEmpty(skill) && seen.Add(skill))
+                    target.Add(skill);
+            }
         }
 
         private static PathView CopyPath(PathView path)
@@ -270,21 +283,9 @@ namespace WorkRoles.Core.Recs
             };
         }
 
-        private static Dictionary<string, IReadOnlyList<string>> WorkTypeSkills(
-            IReadOnlyDictionary<string, JobProfileWorkTypeFacts> workTypes)
-        {
-            var result = new Dictionary<string, IReadOnlyList<string>>(
-                StringComparer.Ordinal);
-            foreach (KeyValuePair<string, JobProfileWorkTypeFacts> pair in workTypes)
-                if (pair.Value.RelevantSkillDefNames.Count > 0)
-                    result[pair.Key] = new List<string>(
-                        pair.Value.RelevantSkillDefNames);
-            return result;
-        }
-
         private static int ResolveHunterRoleId(
             IReadOnlyList<RecommendationRoleSource> sources,
-            IReadOnlyList<RecommendationRoleProjection> projections)
+            IReadOnlyList<RoleView> views)
         {
             for (int index = 0; index < sources.Count; index++)
             {
@@ -303,7 +304,7 @@ namespace WorkRoles.Core.Recs
                 if (!source.Enabled
                     || source.HasRules
                     || source.Blocker
-                    || !projections[index].HasLiteralWorkType("Hunting"))
+                    || !views[index].WorkSpec.HasLiteralWorkType("Hunting"))
                     continue;
                 if (best == null
                     || source.Entries.Count < best.Entries.Count)
@@ -314,7 +315,7 @@ namespace WorkRoles.Core.Recs
 
         private static int ResolveFireBlockerRoleId(
             IReadOnlyList<RecommendationRoleSource> sources,
-            IReadOnlyList<RecommendationRoleProjection> projections)
+            IReadOnlyList<RoleView> views)
         {
             for (int index = 0; index < sources.Count; index++)
             {
@@ -333,7 +334,7 @@ namespace WorkRoles.Core.Recs
                 if (source.Enabled
                     && !source.HasRules
                     && source.Blocker
-                    && projections[index].HasLiteralWorkType("Firefighter"))
+                    && views[index].WorkSpec.HasLiteralWorkType("Firefighter"))
                     return source.Id;
             }
             return -1;

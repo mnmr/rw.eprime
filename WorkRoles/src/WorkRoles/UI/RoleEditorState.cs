@@ -584,7 +584,8 @@ namespace WorkRoles.UI
             {
                 skillsStamp = UiVersion.Current;
                 skillsRoleId = role.id;
-                skillsUsed = RoleSkillProfiles.ForRole(role)
+                skillsUsed = RoleWorkSpecs.For(role).Skills
+                    .Where(skill => skill.Participates)
                     .Select(skill => new RoleSkillPresentation(
                         SkillLabel(skill.SkillDefName), skill.Primary))
                     .ToList();

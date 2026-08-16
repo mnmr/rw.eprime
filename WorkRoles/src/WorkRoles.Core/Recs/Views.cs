@@ -34,23 +34,10 @@ namespace WorkRoles.Core.Recs
         public bool Pinned;
     }
 
-    /// One skill's role-level importance, derived from the role's actual jobs.
-    /// Every required skill participates in eligibility; Primary drives the
-    /// signal bucket used for qualification and ranking.
-    public sealed class RoleSkillView
-    {
-        public string SkillDefName;
-        public bool Primary;
-        public bool Required = true;
-        public int Importance = 1;
-        public int UsedJobs;
-        public int TrainedJobs;
-        public int RequiredContent;
-    }
-
-    /// One catalog role as the rules see it. Ordinary recommendation roles
-    /// carry colonyMin/coverage demand; an unskilled role without demand is
-    /// never assigned.
+    /// One catalog role as the rules see it. Work and skill facts live on the
+    /// role's WorkSpec; the members here are policy, demand, and identity.
+    /// Ordinary recommendation roles carry colonyMin/coverage demand; an
+    /// unskilled role without demand is never assigned.
     public class RoleView
     {
         public int Id;
@@ -67,7 +54,6 @@ namespace WorkRoles.Core.Recs
         public bool AutoAssign;
         public bool HasRules;
         public bool Blocker;
-        public bool Hunting;
         /// Ignores training-path placement and remains at its recommendation
         /// order slot. When unlisted, Ordering provides a conservative tail
         /// fallback ahead of trailing unskilled work.
@@ -86,33 +72,49 @@ namespace WorkRoles.Core.Recs
         /// 0 = no gate. The exclusive tick bound is one year past the cap.
         public int MaxAge;
         public long MaxAgeTicks => (MaxAge + 1L) * BiologicalAge.TicksPerYear;
-        /// Authored skill classification (def tuning or per-save role data).
-        /// Carried for future gating and validation; rules still consume the
-        /// derived Skills profile today. Null = no authored data.
-        public List<string> DeclaredRequiredSkills;
-        public List<string> DeclaredOptionalSkills;
-        public float NaturalPriority;
-        public List<string> WorkTypes = new List<string>();
         /// Authored demand: minimum assignment count and ideal colonist
         /// percentage. EngineContext precomputes the resulting requirement
         /// per plan build (RoleDemand.RequirementFor).
         public int ColonyMin;
         public int CoveragePercent;
+        public bool Available = true;
+        public bool Enabled = true;
+
+        /// The complete immutable work-facts projection; every work, skill,
+        /// and gate read below derives from it.
+        public RoleWorkSpec WorkSpec = RoleWorkSpec.Empty;
+
+        public IReadOnlyList<string> WorkTypes => WorkSpec.CapabilityWorkTypes;
+        public bool Hunting => WorkSpec.HasHuntingCapability;
+        public float NaturalPriority => WorkSpec.MaxNaturalPriority;
+        /// User-authored hard skill gates. A pawn must have every listed skill
+        /// enabled to be eligible; an empty list adds no gate.
+        public IReadOnlyList<string> DeclaredRequiredSkills =>
+            WorkSpec.AssignmentSkillGates;
+        public IReadOnlyList<RoleSkillFact> Skills => WorkSpec.Skills;
+        /// True when the derived facts say at least one skill is used by the
+        /// role's jobs. Skilled roles require full work-type capability;
+        /// unskilled roles require partial capability.
+        public bool UsesSkills => WorkSpec.IsSkilled;
+        /// Decisive skill for band gating and signals; null = unskilled entry,
+        /// never gates.
+        public string PrimarySkill => WorkSpec.PrimarySkillDefName;
+        /// The work fact alone: no used-skill evidence. Channel-independent;
+        /// an automatic or rule-carrying chore is still unskilled.
+        public bool Unskilled => !WorkSpec.IsSkilled;
+        /// Demand-planning rules for plain unskilled chores. Automatic and
+        /// rule-carrying roles are granted through their own channels, so the
+        /// never/fill placement rules do not apply to them.
+        public bool UseUnskilledPlacementRules =>
+            Unskilled && !HasRules && !AutoAssign;
 
         public bool HasDemand => ColonyMin > 0 || CoveragePercent > 0;
         /// Unskilled role the player opted into demand: assigns every capable pawn.
-        public bool UnskilledFill => Unskilled && HasDemand;
+        public bool UnskilledFill => UseUnskilledPlacementRules && HasDemand;
         /// Unskilled role without demand: the planner never assigns it.
-        public bool IsNever => Unskilled && !HasDemand;
+        public bool IsNever => UseUnskilledPlacementRules && !HasDemand;
         public bool PlannedByDemand => !AutoAssign && !HasRules && !Blocker
             && !Hunting;
-        public List<RoleSkillView> Skills = new List<RoleSkillView>();
-        /// Measured skill for band gating (most XP-frequent across the role's
-        /// jobs); null = unskilled entry, never gates.
-        public string PrimarySkill;
-        public bool Unskilled;
-        public bool Available = true;
-        public bool Enabled = true;
     }
 
     /// One training path: bands are [min, max) with 21 = open top. Paths are
@@ -133,8 +135,6 @@ namespace WorkRoles.Core.Recs
         public List<PathView> Paths = new List<PathView>();
         /// Resolved recommendation-order template (role ids).
         public List<int> OrderTemplate = new List<int>();
-        public IReadOnlyDictionary<string, IReadOnlyList<string>> WorkTypeSkills =
-            new Dictionary<string, IReadOnlyList<string>>();
         public Dictionary<string, int> SkillMaxLevels = new Dictionary<string, int>();
         public int HunterRoleId = -1;
         public int FireBlockerRoleId = -1;

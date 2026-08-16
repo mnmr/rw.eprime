@@ -82,6 +82,7 @@ namespace WorkRoles.UI
             SortedSet<string> awfulWorkTypes = null;
             SortedSet<string> awfulSkills = null;
             SortedSet<string> awfulDescriptions = null;
+            SortedSet<string> missingRequiredSkills = null;
             string incapableReason = null;
             string noRangedWeaponReason = null;
             SortedDictionary<int, string> tooYoungReasons = null;
@@ -97,11 +98,24 @@ namespace WorkRoles.UI
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;
             string primarySkill = RecsAdapter.PrimarySkillOf(role);
             bool awfulPrimarySkill = false;
-            // Only skills that pass the role profile's share filter matter for
-            // warnings — a sliver like Finish Off's melee never marks.
+            // Only participating skills matter for warnings — a sliver like
+            // Finish Off's melee never marks.
+            WorkRoles.Core.Recs.RoleWorkSpec workSpec = RoleWorkSpecs.For(role);
             var participatingSkills = new HashSet<string>(System.StringComparer.Ordinal);
-            foreach (var skillView in RoleSkillProfiles.ForRole(role))
-                participatingSkills.Add(skillView.SkillDefName);
+            foreach (WorkRoles.Core.Recs.RoleSkillFact fact in workSpec.Skills)
+                if (fact.Participates)
+                    participatingSkills.Add(fact.SkillDefName);
+            IReadOnlyList<string> requiredGates = workSpec.AssignmentSkillGates;
+            for (int index = 0; index < requiredGates.Count; index++)
+            {
+                string defName = requiredGates[index];
+                if (externalSnapshot.RecommendationFacts.SkillLevels
+                    .ContainsKey(defName)) continue;
+                SkillDef skill = DefDatabase<SkillDef>.GetNamedSilentFail(defName);
+                (missingRequiredSkills ??= new SortedSet<string>(
+                    System.StringComparer.Ordinal)).Add(
+                    skill?.LabelCap ?? defName);
+            }
 
             foreach (string giverName in role.Coverage())
             {
@@ -167,7 +181,9 @@ namespace WorkRoles.UI
 
             bool hasAwfulSignal = awfulWorkTypes?.Count > 0 || awfulSkills?.Count > 0;
             if (!tooYoungForRole && !tooOldForRole
-                && availability == RoleJobAvailability.Available && !hasAwfulSignal)
+                && availability == RoleJobAvailability.Available
+                && !hasAwfulSignal
+                && missingRequiredSkills == null)
                 return RoleCapabilityPresentation.Available;
 
             var warnings = new List<string>(3);
@@ -182,6 +198,11 @@ namespace WorkRoles.UI
             if (tooOldForRole)
                 warnings.Add("WR_RoleTooOld".Translate(
                     pawn.LabelShortCap, role.maxAge).ToString());
+            if (missingRequiredSkills != null)
+                warnings.Add("WR_RoleMissingRequiredSkills".Translate(
+                    pawn.LabelShortCap,
+                    new List<string>(missingRequiredSkills)
+                        .ToCommaList(useAnd: true)).ToString());
 
             if (availability != RoleJobAvailability.Available)
             {
@@ -227,7 +248,8 @@ namespace WorkRoles.UI
             RoleAssignmentWarningSeverity severity =
                 RoleAssignmentWarningSummary.From(availability,
                     hasVetoSignal: awfulWorkTypes?.Count > 0 || awfulPrimarySkill,
-                    hasDampenedSignal: awfulSkills?.Count > 0);
+                    hasDampenedSignal: awfulSkills?.Count > 0,
+                    hasMissingRequiredSkill: missingRequiredSkills != null);
             // Outside the role's age gates the assignment makes no sense at
             // all, whatever the per-job availability worked out to.
             if (tooYoungForRole || tooOldForRole)
