@@ -9,7 +9,7 @@ namespace WorkRoles.Core.Signals
         public static IReadOnlyList<Signal> Collect<TContext>(
             TContext context,
             IReadOnlyList<Func<TContext, IEnumerable<Signal>>> providers,
-            Action<int, Exception> onFailure = null)
+            Action<int, Exception>? onFailure = null)
         {
             if (providers == null) throw new ArgumentNullException(nameof(providers));
             var result = new List<Signal>();

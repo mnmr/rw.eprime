@@ -1,13 +1,14 @@
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using WorkRoles.Core;
 
 namespace WorkRoles.UI
 {
     public static class RoleClipboard
     {
-        private static RoleStore owner;
-        private static List<RoleAssignment> copied;
+        private static RoleStore? owner;
+        private static List<RoleAssignment>? copied;
 
         public static bool HasContent =>
             owner != null && ReferenceEquals(owner, RoleStore.Current)
@@ -16,11 +17,11 @@ namespace WorkRoles.UI
         public static List<RoleAssignment> Content => ClipboardRules.SnapshotForOwner(
             owner, RoleStore.Current, copied, Snapshot);
 
-        public static void CopyFrom(RoleStore store, PawnRoleSet set)
+        public static void CopyFrom(RoleStore? store, PawnRoleSet? set)
             => CopyFromSnapshot(store, set?.assignments);
 
-        internal static void CopyFromSnapshot(RoleStore store,
-            IReadOnlyList<RoleAssignment> assignments)
+        internal static void CopyFromSnapshot(RoleStore? store,
+            IReadOnlyList<RoleAssignment>? assignments)
         {
             if (store == null)
             {

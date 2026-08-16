@@ -1,3 +1,4 @@
+using RimShared.Common;
 using Verse;
 using WorkRoles.Core;
 using WorkRoles.Core.Signals;

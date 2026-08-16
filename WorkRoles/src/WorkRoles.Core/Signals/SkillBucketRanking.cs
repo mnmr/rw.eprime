@@ -71,14 +71,14 @@ namespace WorkRoles.Core.Signals
             return ordered;
         }
 
-        public static SkillBucketChoice Best(
+        public static SkillBucketChoice? Best(
             SkillBucketSnapshot snapshot,
             IEnumerable<SkillBucketCandidate> candidates)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             if (candidates == null) throw new ArgumentNullException(nameof(candidates));
 
-            SkillBucketChoice best = null;
+            SkillBucketChoice? best = null;
             foreach (SkillBucketCandidate candidate in candidates)
             {
                 SignalBucket bucket = snapshot.ForSkill(candidate.SkillDefName)?.Bucket

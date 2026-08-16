@@ -14,15 +14,15 @@ namespace WorkRoles.Patches
                 ? 0 : ExternalPawnFacts.Revisions.RevisionOf(Pawn);
         }
 
-        internal Pawn Pawn { get; }
-        internal string Label { get; }
+        internal Pawn? Pawn { get; }
+        internal string? Label { get; }
         internal int Revision { get; }
     }
 
     public readonly struct TraitPresentationTransitionState
     {
-        private readonly Trait[] traits;
-        private readonly bool[] suppressed;
+        private readonly Trait[]? traits;
+        private readonly bool[]? suppressed;
 
         internal TraitPresentationTransitionState(Pawn pawn)
         {
@@ -45,7 +45,7 @@ namespace WorkRoles.Patches
             }
         }
 
-        internal Pawn Pawn { get; }
+        internal Pawn? Pawn { get; }
         internal int Revision { get; }
 
         internal bool Changed()
@@ -55,7 +55,7 @@ namespace WorkRoles.Patches
             if (traits == null || source.Count != traits.Length) return true;
             for (int i = 0; i < traits.Length; i++)
                 if (!ReferenceEquals(source[i], traits[i])
-                    || (source[i]?.Suppressed == true) != suppressed[i])
+                    || (source[i]?.Suppressed == true) != suppressed![i]) // assigned together with traits
                     return true;
             return false;
         }
@@ -65,7 +65,7 @@ namespace WorkRoles.Patches
     {
         internal static void IfChanged(TraitPresentationTransitionState state)
         {
-            Pawn pawn = state.Pawn;
+            Pawn? pawn = state.Pawn;
             if (pawn == null || !state.Changed()
                 || ExternalPawnFacts.Revisions.RevisionOf(pawn)
                     != state.Revision)

@@ -8,12 +8,12 @@ namespace WorkRoles.UI
     [DefOf]
     public static class WR_KeyBindingDefOf
     {
-        public static KeyBindingDef WR_PrevColonist;
-        public static KeyBindingDef WR_NextColonist;
-        public static KeyBindingDef WR_FirstColonist;
-        public static KeyBindingDef WR_LastColonist;
-        public static KeyBindingDef WR_PrevPage;
-        public static KeyBindingDef WR_NextPage;
+        public static KeyBindingDef WR_PrevColonist = null!; // assigned by DefOf reflection
+        public static KeyBindingDef WR_NextColonist = null!;
+        public static KeyBindingDef WR_FirstColonist = null!;
+        public static KeyBindingDef WR_LastColonist = null!;
+        public static KeyBindingDef WR_PrevPage = null!;
+        public static KeyBindingDef WR_NextPage = null!;
 
         static WR_KeyBindingDefOf() => DefOfHelper.EnsureInitializedInCtor(typeof(WR_KeyBindingDefOf));
     }

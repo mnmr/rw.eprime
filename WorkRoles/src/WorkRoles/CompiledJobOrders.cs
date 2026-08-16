@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using HarmonyLib;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using Verse.AI;
@@ -15,23 +16,23 @@ namespace WorkRoles
 
         private sealed class Entry
         {
-            public List<WorkGiver> Normal;
-            public List<WorkGiver> Emergency;
+            public List<WorkGiver> Normal = null!;    // set by Build
+            public List<WorkGiver> Emergency = null!; // set by Build
             /// Role ids whose assignment, global toggle and runtime rules all
             /// passed when this pawn snapshot was compiled.
-            public int[] ActiveRoleIds;
+            public int[] ActiveRoleIds = null!;
             /// giver defName -> role id whose claim ranked it (first-claim-wins).
-            public Dictionary<string, int> GiverRoleIds;
+            public Dictionary<string, int> GiverRoleIds = null!;
             /// Flat def-index priorities: the GetPriority prefix
             /// runs thousands of times per second — array reads, no hashing.
-            public int[] PriorityByIndex;
-            public int[] VanillaByIndex;
+            public int[] PriorityByIndex = null!;
+            public int[] VanillaByIndex = null!;
         }
 
         private sealed class ProjectionDefinitionCache
         {
-            public WorkTypeDef[] AllWorkTypes;
-            public VanillaProjectionDefinitionMetadata Metadata;
+            public WorkTypeDef[] AllWorkTypes = null!;                 // set by ProjectionDefinitions
+            public VanillaProjectionDefinitionMetadata Metadata = null!;
         }
 
         private static readonly ExplicitProjectionCache<Pawn, Entry> cache =
@@ -46,8 +47,8 @@ namespace WorkRoles
         private static readonly Func<Pawn, string, bool> PawnCanDoJob = CanPawnDoJob;
         private static readonly Func<Pawn, bool> PawnIsManaged =
             pawn => RoleStore.Current?.IsManaged(pawn) == true;
-        private static ProjectionDefinitionCache projectionDefinitions;
-        private static VanillaProjectionMetadata projectionMetadata;
+        private static ProjectionDefinitionCache? projectionDefinitions;
+        private static VanillaProjectionMetadata? projectionMetadata;
         private static int basicsRevision;
         private static int projectionMetadataBasicsRevision = -1;
         private static int projectionBasicsRoleId = -1;
@@ -164,10 +165,10 @@ namespace WorkRoles
             }
         }
 
-        private static bool IsBasicsRole(int roleId, Role role) =>
+        private static bool IsBasicsRole(int roleId, Role? role) =>
             role?.templateDefName == BasicsTemplate || roleId == projectionBasicsRoleId;
 
-        private static void InvalidateBasics(Role role, Action invalidateUi)
+        private static void InvalidateBasics(Role? role, Action invalidateUi)
         {
             role?.InvalidateCoverage();
             // The full cache clear below covers compiled orders; composites
@@ -251,13 +252,13 @@ namespace WorkRoles
             }, UiVersion.Bump);
         }
 
-        private static TimedRoleInvalidationPlan<Pawn> PlanTimeRuled(
+        private static TimedRoleInvalidationPlan<Pawn>? PlanTimeRuled(
             Func<Pawn, bool> belongsToContext)
         {
             var store = RoleStore.Current;
             if (store?.roles == null) return null;
 
-            List<TimedRoleInvalidationSource> roleSources = null;
+            List<TimedRoleInvalidationSource>? roleSources = null;
             for (int i = 0; i < store.roles.Count; i++)
             {
                 var role = store.roles[i];
@@ -330,8 +331,8 @@ namespace WorkRoles
             // notify scrubs the queue and ends the current job unless
             // player-forced. PriorityFor forces the rebuild first, so the job
             // search triggered by an interruption sees the new giver lists.
-            List<WorkTypeDef> revoked = null;
-            void CollectRevoked(WorkTypeDef workType)
+            List<WorkTypeDef>? revoked = null;
+            void CollectRevoked(WorkTypeDef? workType)
             {
                 if (workType == null || PriorityFor(pawn, workType) != 0) return;
                 revoked = revoked ?? new List<WorkTypeDef>();
@@ -347,7 +348,7 @@ namespace WorkRoles
 
             // Demoted current job: the type stayed active but ranks worse than
             // at issue (its claimant deactivated, or new work entered above).
-            if (currentType == null || current.playerForced) return;
+            if (currentType == null || current!.playerForced) return; // currentType != null implies current != null
             if (jobs.curJob != current) return;
             int rank = PriorityFor(pawn, currentType);
             if (rank == 0) return;
@@ -376,11 +377,11 @@ namespace WorkRoles
         {
             priority = 0;
             if (workType == null
-                || !cache.TryGetManaged(pawn, PawnIsManaged, out Entry entry))
+                || !cache.TryGetManaged(pawn, PawnIsManaged, out Entry? entry))
                 return false;
             int[] byIndex = vanillaProjection
-                ? entry.VanillaByIndex
-                : entry.PriorityByIndex;
+                ? entry!.VanillaByIndex
+                : entry!.PriorityByIndex;
             int index = workType.index;
             priority = (uint)index < (uint)byIndex.Length ? byIndex[index] : 0;
             return true;
@@ -444,7 +445,7 @@ namespace WorkRoles
         /// Cache-only eviction for lifecycle code that owns its own UI bump.
         internal static void RemoveCached(Pawn pawn) => cache.Remove(pawn);
 
-        private static AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>
+        private static AccessTools.FieldRef<Pawn_WorkSettings, DefMap<WorkTypeDef, int>>?
             vanillaPriorities;
         private static bool vanillaPrioritiesResolved;
 
@@ -471,7 +472,7 @@ namespace WorkRoles
 
         private static bool TryGetVanillaPriorities(
             Pawn_WorkSettings workSettings,
-            out DefMap<WorkTypeDef, int> priorities)
+            out DefMap<WorkTypeDef, int>? priorities)
         {
             priorities = null;
             if (!vanillaPrioritiesResolved)
@@ -543,7 +544,7 @@ namespace WorkRoles
             return projectionDefinitions;
         }
 
-        private static List<string> BasicsWorkTypes(Role basics)
+        private static List<string> BasicsWorkTypes(Role? basics)
         {
             var result = new List<string>();
             if (basics?.entries == null) return result;
@@ -563,7 +564,7 @@ namespace WorkRoles
                 && projectionMetadataBasicsRevision == basicsRevision)
                 return projectionMetadata;
 
-            Role basics = null;
+            Role? basics = null;
             var roles = RoleStore.Current?.roles;
             if (roles != null)
                 for (int i = 0; i < roles.Count; i++)
@@ -598,7 +599,7 @@ namespace WorkRoles
         {
             var store = RoleStore.Current;
             var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
-            List<int> activeRoleIds = null;
+            List<int>? activeRoleIds = null;
             if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
             {
                 foreach (var assignment in set.assignments)

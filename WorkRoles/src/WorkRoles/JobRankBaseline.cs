@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using Verse;
 using Verse.AI;
 using WorkRoles.Core;
@@ -34,7 +35,7 @@ namespace WorkRoles
             }
             baselines[pawn] = new Baseline
             {
-                Job = job,
+                Job = job!, // non-null: workType came from job?.workGiverDef?.workType
                 Rank = CompiledJobOrders.PriorityFor(pawn, workType),
             };
         }

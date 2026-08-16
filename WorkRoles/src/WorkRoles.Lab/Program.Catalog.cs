@@ -15,18 +15,18 @@ internal static partial class Program
         public Dictionary<int, string> Labels = new();
         public Dictionary<int, string> PathNames = new();
         public List<int> Template = new();
-        public RecommendationCatalogProjection Projection;
+        public RecommendationCatalogProjection Projection = null!;
 
         public string LabelOf(int roleId)
-            => Labels.TryGetValue(roleId, out string label) ? label
-                : DefNames.TryGetValue(roleId, out string defName)
+            => Labels.TryGetValue(roleId, out string? label) ? label
+                : DefNames.TryGetValue(roleId, out string? defName)
                     ? defName.Substring(3) : $"?{roleId}";
     }
 
     private static string RepoRoot()
     {
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir != null && !File.Exists(Path.Combine(dir.FullName, "WorkRoles.slnx")))
+        while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, "mod", "1.6", "Defs")))
             dir = dir.Parent;
         return dir?.FullName ?? throw new InvalidOperationException("repo root not found");
     }
@@ -49,7 +49,7 @@ internal static partial class Program
             if (!AvailableInAllDlc(def)) continue;
             string defName = RequiredText(def, "defName");
             List<JobEntry> entries = LoadEntries(def, defName);
-            XElement tuning = def.Element("tuning");
+            XElement? tuning = def.Element("tuning");
             int colonyMin = OptionalInt(
                 tuning?.Element("colonyMin")?.Value, 0, defName, "colonyMin");
             int demandCoverage = OptionalInt(
@@ -83,7 +83,7 @@ internal static partial class Program
                     tuning?.Element("time")?.Value,
                     RoleTime.None, defName, "time"),
                 DeclaredRequiredSkills = SkillList(
-                    tuning?.Element("skills")?.Element("required")),
+                    tuning?.Element("skills")?.Element("required"))!,
                 ColonyMin = colonyMin,
                 Coverage = demandCoverage,
                 Available = true,
@@ -102,13 +102,13 @@ internal static partial class Program
         {
             if (!AvailableInAllDlc(def)) continue;
             string defName = RequiredText(def, "defName");
-            XElement training = def.Element("tuning")?.Element("training");
+            XElement? training = def.Element("tuning")?.Element("training");
             if (training == null || !idByDef.TryGetValue(defName, out int ownerId))
                 continue;
             var path = new PathView { Id = ownerId };
             foreach (var li in training.Elements("li"))
             {
-                string roleDef = li.Element("role")?.Value.Trim();
+                string? roleDef = li.Element("role")?.Value.Trim();
                 if (roleDef == null || !idByDef.TryGetValue(roleDef, out int roleId))
                     throw new InvalidDataException(
                         $"RoleDef {defName}: unknown training role '{roleDef}'.");
@@ -146,12 +146,12 @@ internal static partial class Program
         return catalog;
     }
 
-    private static List<string> SkillList(XElement listElement) =>
+    private static List<string>? SkillList(XElement? listElement) =>
         listElement?.Elements("li").Select(li => li.Value.Trim()).ToList();
 
     private static bool AvailableInAllDlc(XElement element)
     {
-        string packageId = element.Attribute("MayRequire")?.Value.Trim();
+        string? packageId = element.Attribute("MayRequire")?.Value.Trim();
         return string.IsNullOrEmpty(packageId)
             || packageId.StartsWith("Ludeon.", StringComparison.OrdinalIgnoreCase);
     }
@@ -182,7 +182,7 @@ internal static partial class Program
 
     private static string RequiredText(XElement parent, string elementName)
     {
-        string value = parent.Element(elementName)?.Value.Trim();
+        string? value = parent.Element(elementName)?.Value.Trim();
         if (!string.IsNullOrEmpty(value)) return value;
         throw new InvalidDataException(
             $"{parent.Name}: missing {elementName}.");
@@ -190,7 +190,7 @@ internal static partial class Program
 
     private static bool OptionalBool(XElement parent, string elementName)
     {
-        string value = parent.Element(elementName)?.Value.Trim();
+        string? value = parent.Element(elementName)?.Value.Trim();
         if (string.IsNullOrEmpty(value)) return false;
         if (bool.TryParse(value, out bool parsed)) return parsed;
         throw new InvalidDataException(
@@ -198,7 +198,7 @@ internal static partial class Program
     }
 
     private static int OptionalInt(
-        string value, int fallback, string owner, string field)
+        string? value, int fallback, string owner, string field)
     {
         if (string.IsNullOrWhiteSpace(value)) return fallback;
         if (int.TryParse(value.Trim(), out int parsed)) return parsed;
@@ -207,7 +207,7 @@ internal static partial class Program
     }
 
     private static T OptionalEnum<T>(
-        string value, T fallback, string owner, string field)
+        string? value, T fallback, string owner, string field)
         where T : struct, Enum
     {
         if (string.IsNullOrWhiteSpace(value)) return fallback;

@@ -28,7 +28,7 @@ namespace WorkRoles.Core
         public int RoleId { get; }
         /// Enabled work type no existing role can carry at its own rank; the
         /// caller creates a single-type role and assigns it at this position.
-        public string CarrierWorkType { get; }
+        public string? CarrierWorkType { get; }
 
         public MigrationSlot(int roleId)
         {
@@ -88,8 +88,8 @@ namespace WorkRoles.Core
             IReadOnlyDictionary<string, int> priorities,
             IReadOnlyList<string> workTypesInOrder,
             IJobCatalog catalog,
-            ISet<int> relaxedRoles,
-            Func<string, bool> carrierEligible)
+            ISet<int>? relaxedRoles,
+            Func<string, bool>? carrierEligible)
         {
             var picked = new List<(MigrationSlot slot, int priority, int order)>();
             var consumed = new HashSet<string>();

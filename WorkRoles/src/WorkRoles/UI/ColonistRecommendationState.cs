@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -26,10 +27,10 @@ namespace WorkRoles.UI
         // Refresh: immediately when a key changes. Equality: a matching key
         // preserves list identity. Teardown: Reset/ReleaseSnapshots drops
         // plans, suitability, and all previews.
-        private List<PawnFixPlan> plans;
+        private List<PawnFixPlan>? plans;
         private readonly Dictionary<Pawn, Dictionary<int, SignalBucket>> planSuitability =
             new Dictionary<Pawn, Dictionary<int, SignalBucket>>();
-        private RoleStore planOwner;
+        private RoleStore? planOwner;
         private ScopeCacheStamp planStamp = ScopeCacheStamp.Invalid;
         private int planMapId = -1;
         private int planTuningRevision = -1;
@@ -46,17 +47,17 @@ namespace WorkRoles.UI
         // before any planner/external-snapshot work. Equality: equal rebuilt
         // contents preserve the published snapshot identity. Teardown: Reset,
         // language invalidation, and ReleaseSnapshots drop every owned reference.
-        private RoleStore previewOwner;
-        private ColonistsRosterCatalogSnapshot previewCatalog;
+        private RoleStore? previewOwner;
+        private ColonistsRosterCatalogSnapshot? previewCatalog;
         private ScopeCacheStamp previewStamp = ScopeCacheStamp.Invalid;
-        private Pawn previewPawn;
+        private Pawn? previewPawn;
         private bool previewVerdictsShown;
         private int previewTuningRevision = -1;
         private int previewMapId = -1;
         private int previewLanguageRevision = -1;
         private float previewWidth = -1f;
         private float previewHeight = -1f;
-        private ColonistRecommendationRenderSnapshot preview;
+        private ColonistRecommendationRenderSnapshot? preview;
 
         internal void Reset()
         {
@@ -98,15 +99,15 @@ namespace WorkRoles.UI
             preview = null;
         }
 
-        internal IReadOnlyList<PawnFixPlan> Plans(Pawn anchor, ScopeCacheStamp stamp,
+        internal IReadOnlyList<PawnFixPlan> Plans(Pawn? anchor, ScopeCacheStamp stamp,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
             => Plans(RoleStore.Current, anchor, stamp, externalSnapshot);
 
-        private IReadOnlyList<PawnFixPlan> Plans(RoleStore store, Pawn anchor,
+        private IReadOnlyList<PawnFixPlan> Plans(RoleStore? store, Pawn? anchor,
             ScopeCacheStamp stamp,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
-            Map map = anchor?.MapHeld ?? Find.CurrentMap;
+            Map? map = anchor?.MapHeld ?? Find.CurrentMap;
             int mapId = map?.uniqueID ?? -1;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
             if (plans == null
@@ -144,10 +145,10 @@ namespace WorkRoles.UI
                 && previewWidth == width && previewHeight == height)
                 return preview;
 
-            externalSnapshot(pawn);
+            externalSnapshot(pawn!); // the snapshot provider tolerates a null pawn
             IReadOnlyList<PawnFixPlan> source = Plans(store,
                 pawn, stamp, externalSnapshot);
-            PawnFixPlan plan = null;
+            PawnFixPlan? plan = null;
             for (int i = 0; i < source.Count; i++)
                 if (ReferenceEquals(source[i].Pawn, pawn))
                 {
@@ -155,7 +156,7 @@ namespace WorkRoles.UI
                     break;
                 }
             ColonistRecommendationRenderSnapshot rebuilt =
-                BuildRenderSnapshot(store, pawn, catalog, plan, width, height,
+                BuildRenderSnapshot(store!, pawn!, catalog, plan, width, height, // null store/pawn yield a null plan, so neither is dereferenced
                     externalSnapshot);
             bool ownerChanged = !ReferenceEquals(previewOwner, store);
             if (preview == null || ownerChanged
@@ -178,7 +179,7 @@ namespace WorkRoles.UI
 
         private ColonistRecommendationRenderSnapshot BuildRenderSnapshot(
             RoleStore store, Pawn pawn,
-            ColonistsRosterCatalogSnapshot catalog, PawnFixPlan plan,
+            ColonistsRosterCatalogSnapshot catalog, PawnFixPlan? plan,
             float width, float height,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
@@ -203,7 +204,7 @@ namespace WorkRoles.UI
                 Dialog_ChangesPreview.Line line = BuildPreviewEntry(
                     store, plan, externalSnapshot).lines[0];
                 store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
-                List<RoleAssignment> existing = set?.assignments;
+                List<RoleAssignment>? existing = set?.assignments;
                 float chipBottom = height - 28f;
                 float chipX = 0f;
                 float chipY = 28f;
@@ -247,8 +248,8 @@ namespace WorkRoles.UI
                             || RoleActivation.IsActive(
                                 catalog.IsRoleEnabled(roleId),
                                 assignmentState);
-                        StructuredTip tooltip = line.StructuredTipAt(i);
-                        string fallback = source.Tip;
+                        StructuredTip? tooltip = line.StructuredTipAt(i);
+                        string? fallback = source.Tip;
                         if (fallback == null && assigned)
                             fallback = (source.State
                                     == Dialog_ChangesPreview.ChipState.Removed
@@ -281,7 +282,7 @@ namespace WorkRoles.UI
         }
 
         private static int RecommendedInsertIndex(int roleId,
-            List<RoleAssignment> target, List<RoleAssignment> existing)
+            List<RoleAssignment> target, List<RoleAssignment>? existing)
         {
             if (existing == null) return -1;
             int clickedRank = RoleIndex(target, roleId);
@@ -303,7 +304,7 @@ namespace WorkRoles.UI
         }
 
         internal List<Dialog_ChangesPreview.PawnPreview> FixEntries(RoleStore store,
-            Pawn only, Pawn anchor, ScopeCacheStamp stamp,
+            Pawn? only, Pawn? anchor, ScopeCacheStamp stamp,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             var entries = new List<Dialog_ChangesPreview.PawnPreview>();
@@ -344,7 +345,7 @@ namespace WorkRoles.UI
             var line = new Dialog_ChangesPreview.Line();
             foreach (RoleAssignment assignment in plan.Target)
             {
-                Role role = store.RoleById(assignment.roleId);
+                Role? role = store.RoleById(assignment.roleId);
                 if (role == null) continue;
                 bool kept = existingIds.Contains(assignment.roleId);
                 var state = kept
@@ -359,7 +360,7 @@ namespace WorkRoles.UI
             for (int i = 0; i < existing.Count; i++)
             {
                 if (targetIds.Contains(existing[i].roleId)) continue;
-                Role role = store.RoleById(existing[i].roleId);
+                Role? role = store.RoleById(existing[i].roleId);
                 if (role == null) continue;
                 var state = Dialog_ChangesPreview.ChipState.Removed;
                 plan.Explanations.TryGetValue(role.id, out var explanation);
@@ -375,7 +376,7 @@ namespace WorkRoles.UI
             return entry;
         }
 
-        private List<PawnFixPlan> BuildColonyFixPlan(RoleStore store, Map map,
+        private List<PawnFixPlan> BuildColonyFixPlan(RoleStore? store, Map? map,
             Func<Pawn, PawnExternalSnapshot> externalSnapshot)
         {
             var result = new List<PawnFixPlan>();
@@ -449,13 +450,13 @@ namespace WorkRoles.UI
                 foreach (RoleAssignment assignment in target)
                 {
                     if (existingIds.Contains(assignment.roleId)) continue;
-                    Role role = store.RoleById(assignment.roleId);
+                    Role? role = store.RoleById(assignment.roleId);
                     if (role != null) plan.Added.Add(role);
                 }
                 foreach (RoleAssignment assignment in existing)
                 {
                     if (targetIds.Contains(assignment.roleId)) continue;
-                    Role role = store.RoleById(assignment.roleId);
+                    Role? role = store.RoleById(assignment.roleId);
                     if (role != null) plan.Removed.Add(role);
                 }
                 result.Add(plan);
@@ -463,9 +464,9 @@ namespace WorkRoles.UI
             return result;
         }
 
-        private static List<Pawn> MapColonists(Map map)
+        private static List<Pawn> MapColonists(Map? map)
         {
-            return ColonyScope.PawnsOnMap(map)
+            return ColonyScope.PawnsOnMap(map!) // PawnsOnMap handles a null map
                 .Where(pawn => !pawn.DevelopmentalStage.Baby())
                 .Distinct()
                 .ToList();
@@ -495,7 +496,7 @@ namespace WorkRoles.UI
     {
         internal ColonistRecommendationRenderChip(RoleChipRenderData chip,
             bool assigned, ChipStyle style, bool removedOutline, Rect rect,
-            RoleChipVerdict verdict, StructuredTip tooltip, string fallbackTip,
+            RoleChipVerdict verdict, StructuredTip? tooltip, string? fallbackTip,
             int insertIndex)
         {
             Chip = chip;
@@ -515,8 +516,8 @@ namespace WorkRoles.UI
         internal bool RemovedOutline { get; }
         internal Rect Rect { get; }
         internal RoleChipVerdict Verdict { get; }
-        internal StructuredTip Tooltip { get; }
-        internal string FallbackTip { get; }
+        internal StructuredTip? Tooltip { get; }
+        internal string? FallbackTip { get; }
         internal int InsertIndex { get; }
 
         internal bool ContentEquals(ColonistRecommendationRenderChip other)
@@ -565,9 +566,9 @@ namespace WorkRoles.UI
                 for (int rowIndex = 0;
                         rowIndex < leftSection.Rows.Count; rowIndex++)
                 {
-                    TipFactRow leftFact =
+                    TipFactRow? leftFact =
                         leftSection.Rows[rowIndex] as TipFactRow;
-                    TipFactRow rightFact =
+                    TipFactRow? rightFact =
                         rightSection.Rows[rowIndex] as TipFactRow;
                     if (leftFact == null || rightFact == null
                         || !string.Equals(leftFact.Label, rightFact.Label,

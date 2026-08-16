@@ -31,7 +31,7 @@ namespace WorkRoles.Core.Signals
         public static PawnSignalSnapshot Create(
             IEnumerable<string> enabledSkillDefNames,
             SignalSnapshot signals,
-            SignalClassificationCatalog catalog = null)
+            SignalClassificationCatalog? catalog = null)
         {
             if (enabledSkillDefNames == null)
                 throw new ArgumentNullException(nameof(enabledSkillDefNames));

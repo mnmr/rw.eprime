@@ -14,9 +14,10 @@ namespace WorkRoles.UI
         private const float FooterGap = 8f;
 
         private int previewLanguageRevision = -1;
-        private string selectAllLabel;
-        private string cancelLabel;
-        private string applyLabel;
+        // Assigned by ObservePreviewLanguageRevision before first use.
+        private string selectAllLabel = null!;
+        private string cancelLabel = null!;
+        private string applyLabel = null!;
 
         protected Dialog_PreviewBase()
         {
@@ -56,7 +57,7 @@ namespace WorkRoles.UI
             return toggled;
         }
 
-        protected float DrawCachedPreviewTitle(Rect inRect, string title)
+        protected float DrawCachedPreviewTitle(Rect inRect, string? title)
         {
             ObservePreviewLanguageRevision();
             if (Event.current.type == EventType.Repaint)

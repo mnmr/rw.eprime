@@ -1,4 +1,5 @@
 using System;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -8,7 +9,7 @@ namespace WorkRoles.UI
     internal interface IStructuredTipSource
     {
         string StableKey { get; }
-        StructuredTip Resolve();
+        StructuredTip? Resolve();
     }
 
     /// Owns the complete lifecycle and window for this mod's structured tips.
@@ -32,7 +33,7 @@ namespace WorkRoles.UI
             new TooltipDisplayGate();
         private static readonly Action drawWindow = DrawWindow;
         private static readonly Texture2D atlas = ActiveTip.TooltipBGAtlas;
-        private static StructuredTip frozen;
+        private static StructuredTip? frozen;
         private static Vector2 frozenSize;
 
         internal static void TipRegion(Rect rect, StructuredTip tip)
@@ -65,7 +66,7 @@ namespace WorkRoles.UI
             Event.current.type == EventType.Repaint && Mouse.IsOver(rect);
 
         private static void Present(
-            string stableKey, StructuredTip ready, IStructuredTipSource source)
+            string stableKey, StructuredTip? ready, IStructuredTipSource? source)
         {
             TooltipDisplayState state = displayGate.Observe(
                 stableKey, Time.frameCount, Time.realtimeSinceStartup, HoverDelay);
@@ -74,7 +75,7 @@ namespace WorkRoles.UI
                 return;
             if (state == TooltipDisplayState.Opened)
             {
-                frozen = ready ?? source.Resolve();
+                frozen = ready ?? source!.Resolve(); // exactly one of ready/source is set
                 if (frozen == null) return;
                 frozenSize = WrTipUI.Measure(frozen.Model, WrTipUI.MaxContentWidth);
             }

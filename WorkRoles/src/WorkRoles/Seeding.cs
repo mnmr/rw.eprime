@@ -25,7 +25,8 @@ namespace WorkRoles
             // Groups first, in authored order — roles then land in them by label.
             foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
                          .OrderBy(d => d.order))
-                RoleCommands.EnsureGroup(SeededDefIdentity.GroupLabel(groupDef));
+                if (SeededDefIdentity.GroupLabel(groupDef) is { Length: > 0 } groupLabel)
+                    RoleCommands.EnsureGroup(groupLabel);
             foreach (var def in defs)
                 RoleCommands.CreateRoleFromDef(def);
             store.seeded = true;
@@ -82,7 +83,7 @@ namespace WorkRoles
                     // migration. Every visible giver-bearing type now has a carrier
                     // (single-type role, relaxed multi-type match or generated
                     // carrier role), so a drop is a catalog/planner bug.
-                    foreach (var pair in before)
+                    foreach (var pair in before!) // assignment succeeded, so the pawn was a colonist/slave and before was captured
                     {
                         if (pair.Value == 0) continue;
                         // Giver-less work types (Patient, Bed rest) never rank in the
@@ -127,15 +128,15 @@ namespace WorkRoles
 
         /// RoleDef reference -> live role: template link first, then a unique
         /// case-insensitive match on the def's invariant seeded label.
-        private static Role ResolvePathRole(RoleStore store, string roleDefName)
+        private static Role? ResolvePathRole(RoleStore store, string? roleDefName)
         {
-            if (roleDefName.NullOrEmpty()) return null;
+            if (roleDefName is not { Length: > 0 }) return null;
             var role = store.RoleByTemplate(roleDefName);
             if (role != null) return role;
-            string label = SeededDefIdentity.RoleLabel(
+            string? label = SeededDefIdentity.RoleLabel(
                 DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName));
-            if (label.NullOrEmpty()) return null;
-            Role match = null;
+            if (label is not { Length: > 0 }) return null;
+            Role? match = null;
             foreach (var candidate in store.roles)
                 if (string.Equals(candidate.label, label, System.StringComparison.OrdinalIgnoreCase))
                 {
@@ -151,7 +152,7 @@ namespace WorkRoles
         /// path is a no-op), the owner is not among them, or bands are invalid.
         internal static bool CreateTrainingFromDef(RoleStore store, RoleDef def)
         {
-            Role owner = ResolvePathRole(store, def.defName);
+            Role? owner = ResolvePathRole(store, def.defName);
             if (owner == null || owner.trainingRoleIds.Count > 0) return false;
             var roleIds = new List<int>();
             var mins = new List<int>();
@@ -159,9 +160,9 @@ namespace WorkRoles
             var unresolved = new List<string>();
             foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
             {
-                if (entry.role.NullOrEmpty()) continue;
-                var role = ResolvePathRole(store, entry.role);
-                if (role == null) { unresolved.Add(entry.role); continue; }
+                if (entry.role is not { Length: > 0 } roleDefName) continue;
+                var role = ResolvePathRole(store, roleDefName);
+                if (role == null) { unresolved.Add(roleDefName); continue; }
                 if (roleIds.Contains(role.id)) continue;
                 roleIds.Add(role.id);
                 mins.Add(entry.min);
@@ -225,7 +226,7 @@ namespace WorkRoles
         /// pawns through the normal single-role match); created labels are
         /// reported through generatedRoleLabels.
         public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn,
-            ISet<int> relaxedRoles = null, List<string> generatedRoleLabels = null)
+            ISet<int>? relaxedRoles = null, List<string>? generatedRoleLabels = null)
         {
             var store = RoleStore.Current;
             if (store == null || !store.seeded) return false;
@@ -273,13 +274,13 @@ namespace WorkRoles
         /// A migrating pawn ranks this work type apart from every role that
         /// carries it: materialize a dedicated single-type role. labelShort
         /// names it ("Haul+" for both Allow Tool and Keyz' Allow Utilities).
-        private static Role CreateCarrierRole(string workTypeDefName)
+        private static Role? CreateCarrierRole(string workTypeDefName)
         {
             var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
             if (workType == null) return null;
-            string label = !workType.labelShort.NullOrEmpty()
+            string label = workType.labelShort is { Length: > 0 }
                 ? workType.labelShort.CapitalizeFirst()
-                : SeededDefIdentity.WorkTypeRoleLabel(workType);
+                : SeededDefIdentity.WorkTypeRoleLabel(workType) ?? workType.defName;
             var role = RoleCommands.CreateRoleDirect(label);
             if (role == null) return null;
             ApplyGeneratedColor(role, workType.defName);
@@ -329,7 +330,7 @@ namespace WorkRoles
             var priorities = new Dictionary<string, int>();
             foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
                 if (!pawn.WorkTypeIsDisabled(workType))
-                    priorities[workType.defName] = everWork ? workSettings.GetPriority(workType) : 0;
+                    priorities[workType.defName] = everWork ? workSettings!.GetPriority(workType) : 0; // everWork implies workSettings != null
             return priorities;
         }
 
@@ -445,7 +446,8 @@ namespace WorkRoles
 
                 if (workType.visible)
                 {
-                    string label = SeededDefIdentity.WorkTypeRoleLabel(workType);
+                    string label = SeededDefIdentity.WorkTypeRoleLabel(workType)
+                        ?? workType.defName;
                     var role = RoleCommands.CreateRoleDirect(label);
                     if (role != null)
                     {
@@ -536,18 +538,18 @@ namespace WorkRoles
         /// holder defaults, a missing training path, or the recommendation-order reset.
         public class RestoreItem
         {
-            public string label;
+            public string label = null!;       // set at construction
             /// What applying this item does (preview row tooltip).
-            public string explanation;
-            public string templateDef;
-            public string workType;
+            public string explanation = null!; // set at construction
+            public string? templateDef;
+            public string? workType;
             public int backfillRoleId = -1;
             public int groupRoleId = -1;
             public int colorRoleId = -1;
             public int holderRoleId = -1;
             public int entriesRoleId = -1;
             public int paletteSnapRoleId = -1;
-            public string pathDef;
+            public string? pathDef;
             public bool recommendationOrder;
 
             /// Applying would undo a deliberate player change (drift/opt-out
@@ -572,7 +574,7 @@ namespace WorkRoles
 
         private static string DefGroupLabel(RoleDef def) => def.group.NullOrEmpty()
             ? "WR_GroupDefault".Translate().ToString()
-            : SeededDefIdentity.GroupLabel(def);
+            : SeededDefIdentity.GroupLabel(def) ?? def.group ?? "";
 
         /// The role's color differs from what its def resolves today.
         private static bool ColorDrifted(Role role, RoleDef def)
@@ -672,7 +674,8 @@ namespace WorkRoles
             foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
             {
                 if (store.RoleByTemplate(def.defName) != null) continue;
-                string seedLabel = SeededDefIdentity.RoleLabel(def);
+                string seedLabel = SeededDefIdentity.RoleLabel(def)
+                    ?? def.defName;
                 bool labelTaken = store.roles.Any(r => string.Equals(r.label, seedLabel,
                     System.StringComparison.OrdinalIgnoreCase));
                 result.Add(new RestoreItem
@@ -806,17 +809,18 @@ namespace WorkRoles
             int count = 0;
             foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
             {
-                if (entry.role.NullOrEmpty() || !counted.Add(entry.role)) continue;
-                if (ResolvePathRole(store, entry.role) != null
-                    || (DefDatabase<RoleDef>.GetNamedSilentFail(entry.role) != null
-                        && store.RoleByTemplate(entry.role) == null))
+                if (entry.role is not { Length: > 0 } roleDefName
+                    || !counted.Add(roleDefName)) continue;
+                if (ResolvePathRole(store, roleDefName) != null
+                    || (DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName) != null
+                        && store.RoleByTemplate(roleDefName) == null))
                     count++;
             }
             return count;
         }
 
         /// Moved-giver detection lives in Core (WorkTypeCoverage) with tests.
-        private static Dictionary<string, List<string>> MovedVanillaGiversFor(Role role) =>
+        private static Dictionary<string, List<string>>? MovedVanillaGiversFor(Role role) =>
             WorkTypeCoverage.MovedGivers(role.entries, role.workTypeSnapshots,
                 VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
 
@@ -831,7 +835,7 @@ namespace WorkRoles
                 var pawn = pair.Key;
                 var set = pair.Value;
                 if (pawn == null || set?.assignments == null) continue;
-                List<(int, HashSet<string>)> roles = null;
+                List<(int, HashSet<string>)>? roles = null;
                 foreach (var assignment in set.assignments)
                 {
                     if (assignment == null) continue;
@@ -858,7 +862,7 @@ namespace WorkRoles
                 if (role != null && role.templateDefName != null && role.enabled && !role.blocker)
                     candidates.Add((role.id, role.Coverage()));
 
-            List<Pawn> touched = null;
+            List<Pawn>? touched = null;
             foreach (var pair in prior)
             {
                 var pawn = pair.Key;
@@ -969,7 +973,7 @@ namespace WorkRoles
                     var role = store.RoleById(roleId);
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-                    if (def == null || !EntriesDrifted(role, def)) continue;
+                    if (role == null || def == null || !EntriesDrifted(role, def)) continue;
                     role.entries = DefaultEntriesFor(def);
                     // Stale union-only snapshots could resurrect removed givers.
                     role.workTypeSnapshots.Clear();
@@ -998,9 +1002,11 @@ namespace WorkRoles
                     var role = store.RoleById(roleId);
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-                    if (def == null || !GroupDrifted(store, role, def)) continue;
-                    role.groupId = RoleCommands.EnsureGroup(
-                        SeededDefIdentity.GroupLabel(def)).id;
+                    if (role == null || def == null || !GroupDrifted(store, role, def)) continue;
+                    RoleGroup? group = RoleCommands.EnsureGroup(
+                        SeededDefIdentity.GroupLabel(def));
+                    if (group == null) continue;
+                    role.groupId = group.id;
                     result.Add("WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)));
                     anyMoved = true;
                 }
@@ -1013,7 +1019,7 @@ namespace WorkRoles
                     var role = store.RoleById(roleId);
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-                    if (def == null || !ColorDrifted(role, def)) continue;
+                    if (role == null || def == null || !ColorDrifted(role, def)) continue;
                     var (has, color) = def.ResolvedColor();
                     role.hasCustomColor = has;
                     role.color = color;
@@ -1026,7 +1032,7 @@ namespace WorkRoles
                     var role = store.RoleById(roleId);
                     var def = role?.templateDefName == null ? null
                         : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
-                    if (def == null || !HoldersDrifted(role, def)) continue;
+                    if (role == null || def == null || !HoldersDrifted(role, def)) continue;
                     role.colonyMin = def.tuning?.colonyMin ?? 0;
                     role.coverage = def.tuning?.coverage ?? 0;
                     result.Add("WR_RestoreHoldersItem".Translate(role.label));

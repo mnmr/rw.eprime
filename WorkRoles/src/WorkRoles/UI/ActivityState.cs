@@ -10,9 +10,9 @@ namespace WorkRoles.UI
     internal readonly struct ActivitySnapshot
     {
         internal readonly int RoleId;
-        internal readonly string Label;
+        internal readonly string? Label;
 
-        internal ActivitySnapshot(int roleId, string label)
+        internal ActivitySnapshot(int roleId, string? label)
         {
             RoleId = roleId;
             Label = label;
@@ -36,7 +36,7 @@ namespace WorkRoles.UI
             (int activityRevision, int uiRevision, int definitionRevision,
                 ActivitySnapshot value)> cache =
             new Dictionary<Pawn, (int, int, int, ActivitySnapshot)>();
-        private RoleStore observedOwner;
+        private RoleStore? observedOwner;
 
         internal ActivitySnapshot For(Pawn pawn)
         {
@@ -47,7 +47,7 @@ namespace WorkRoles.UI
         }
 
         internal ActivitySnapshot For(Pawn pawn, int activityRevision,
-            int uiRevision, int definitionRevision, RoleStore owner)
+            int uiRevision, int definitionRevision, RoleStore? owner)
         {
             if (pawn == null) return new ActivitySnapshot(-1, "");
             if (!ReferenceEquals(observedOwner, owner))
@@ -78,20 +78,20 @@ namespace WorkRoles.UI
         {
             if (pawn.Drafted) return Other("WR_NowDrafted");
             if (pawn.InMentalState) return Other("WR_NowMental");
-            Job job = pawn.jobs?.curJob;
+            Job? job = pawn.jobs?.curJob;
             if (job == null) return Other("WR_NowIdle");
             if (job.playerForced) return Other("WR_NowForced");
-            string giver = job.workGiverDef?.defName;
+            string? giver = job.workGiverDef?.defName;
             if (giver != null)
                 return CompiledJobOrders.TryGetClaimingRole(pawn, giver, out int roleId)
                     ? new ActivitySnapshot(roleId, null)
                     : Other("WR_NowBusy");
-            string workType = NonScanWorkTypeFor(pawn, job);
+            string? workType = NonScanWorkTypeFor(pawn, job);
             if (workType != null)
                 return CompiledJobOrders.TryGetClaimingRoleForWorkType(pawn, workType, out int roleId)
                     ? new ActivitySnapshot(roleId, null)
                     : Other("WR_NowBusy");
-            if (pawn.jobs.curDriver?.asleep == true || job.def == JobDefOf.LayDown)
+            if (pawn.jobs!.curDriver?.asleep == true || job.def == JobDefOf.LayDown) // jobs non-null: curJob was read above
                 return Other("WR_NowSleeping");
             if (job.def?.joyKind != null) return Other("WR_NowRecreation");
             if (pawn.mindState?.lastJobTag == JobTag.SatisfyingNeeds) return Other("WR_NowNeeds");
@@ -102,7 +102,7 @@ namespace WorkRoles.UI
         /// opportunistic and bill-product hauls started outside JobGiver_Work.
         /// Job def plus tag pin down the work type; DLC-gated JobDefOf fields
         /// are null when inactive.
-        private static string NonScanWorkTypeFor(Pawn pawn, Job job)
+        private static string? NonScanWorkTypeFor(Pawn pawn, Job job)
         {
             JobDef def = job.def;
             if (def == null) return null;
@@ -125,11 +125,12 @@ namespace WorkRoles.UI
         internal static string ActivityPhrase(Pawn pawn, RoleStore store)
         {
             if (pawn == null) return "";
-            string report = pawn.jobs?.curDriver?.GetReport();
-            if (!report.NullOrEmpty()) return report;
+            string? report = pawn.jobs?.curDriver?.GetReport();
+            if (!report.NullOrEmpty()) return report!;
             ActivitySnapshot value = Resolve(pawn);
             string label = value.RoleId >= 0
-                ? store?.RoleById(value.RoleId)?.label ?? "" : value.Label;
+                ? store?.RoleById(value.RoleId)?.label ?? ""
+                : value.Label!; // non-role snapshots always carry a label
             return label.UncapitalizeFirst();
         }
     }

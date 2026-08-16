@@ -103,7 +103,7 @@ namespace WorkRoles.Core.Recs
             return -1;
         }
 
-        internal PathActivation ActivationToward(int targetRoleId)
+        internal PathActivation? ActivationToward(int targetRoleId)
         {
             for (int index = 0; index < activations.Count; index++)
                 if (activations[index].TargetRoleId == targetRoleId)
@@ -459,7 +459,7 @@ namespace WorkRoles.Core.Recs
 
         private bool OrdersMember(PathView path, int targetRoleId, int roleId)
         {
-            PathActivation activation = ActivationFor(path.Id);
+            PathActivation? activation = ActivationFor(path.Id);
             if (activation != null)
             {
                 for (int index = 0; index < activation.ActiveRoleIds.Length; index++)
@@ -473,7 +473,7 @@ namespace WorkRoles.Core.Recs
                 && path.BandMins[roleAt] < path.BandMins[targetAt];
         }
 
-        private PathActivation ActivationFor(int pathId)
+        private PathActivation? ActivationFor(int pathId)
         {
             for (int index = 0; index < activations.Count; index++)
                 if (activations[index].PathId == pathId) return activations[index];
@@ -671,7 +671,7 @@ namespace WorkRoles.Core.Recs
                         rolePlan.IsMinimumPick(candidateIndex);
                     // RolePlan already resolved each downgraded pick's path
                     // activation; publish never re-runs path resolution.
-                    PathActivation activation =
+                    PathActivation? activation =
                         rolePlan.ResolvedActivationAt(candidateIndex);
                     if (surplus
                         && !PathActivation.TargetBandContains(
@@ -760,7 +760,7 @@ namespace WorkRoles.Core.Recs
                         continue;
                     int pawnIndex = plan.CandidateAt(candidateIndex).PawnIndex;
                     PawnDraft draft = drafts[pawnIndex];
-                    PathActivation activation = draft.ActivationToward(
+                    PathActivation? activation = draft.ActivationToward(
                         plan.RoleId);
                     bool direct = draft.HasDirectRole(plan.RoleId);
                     if (activation == null && !direct) continue;
@@ -815,8 +815,8 @@ namespace WorkRoles.Core.Recs
 
         private sealed class CompositeSpec
         {
-            internal RoleView Role;
-            internal int[] MemberIds;
+            internal RoleView Role = null!;    // always set at creation
+            internal int[] MemberIds = null!;  // always set at creation
         }
 
         /// Post-planning pass: collapse a consecutive, in-member-order run of a
@@ -860,7 +860,7 @@ namespace WorkRoles.Core.Recs
                 bool changed = false;
                 for (int i = 0; i < published.Length;)
                 {
-                    CompositeSpec match = LongestCompositeMatch(
+                    CompositeSpec? match = LongestCompositeMatch(
                         facts, pawnIndex, byFirstMember, published, i);
                     if (match == null)
                     {
@@ -880,7 +880,7 @@ namespace WorkRoles.Core.Recs
         /// The longest composite whose member ids equal published[start..] in
         /// order; ties broken by smallest composite id. Member roles are unique
         /// per pawn, so a composite matches at most one window.
-        private static CompositeSpec LongestCompositeMatch(
+        private static CompositeSpec? LongestCompositeMatch(
             EngineContext facts,
             int pawnIndex,
             Dictionary<int, List<CompositeSpec>> byFirstMember,
@@ -890,7 +890,7 @@ namespace WorkRoles.Core.Recs
             if (!byFirstMember.TryGetValue(
                     published[start], out List<CompositeSpec> candidates))
                 return null;
-            CompositeSpec best = null;
+            CompositeSpec? best = null;
             for (int c = 0; c < candidates.Count; c++)
             {
                 if (!facts.MeetsExplicitRequiredSkills(

@@ -12,9 +12,9 @@ namespace WorkRoles.Core
         public bool Enabled { get; set; } = true;
         public bool HasCustomColor { get; set; }
         public TColor Color { get; set; }
-        public string IconPath { get; set; }
-        public string TemplateDefName { get; set; }
-        public string TemplateVersion { get; set; }
+        public string? IconPath { get; set; }
+        public string? TemplateDefName { get; set; }
+        public string? TemplateVersion { get; set; }
         public uint TemplateHash { get; set; }
         public bool AutoAssign { get; set; }
         public bool Blocker { get; set; }

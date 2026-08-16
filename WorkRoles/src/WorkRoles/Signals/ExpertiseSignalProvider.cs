@@ -10,7 +10,7 @@ namespace WorkRoles.Signals
     {
         private readonly SignalCatalog catalog;
 
-        internal ExpertiseSignalProvider(SignalCatalog catalog = null)
+        internal ExpertiseSignalProvider(SignalCatalog? catalog = null)
         {
             this.catalog = catalog ?? SignalCatalog.Default;
         }
@@ -20,7 +20,7 @@ namespace WorkRoles.Signals
             var result = new List<Signal>();
             foreach (VseSignalReflection.ExpertiseFact fact in VseSignalReflection.Expertises(pawn))
             {
-                string packageId = SignalUiFactory.PackageId(fact.Def);
+                string? packageId = SignalUiFactory.PackageId(fact.Def);
                 SignalDefinition definition = catalog.Find(SignalSourceKind.Expertise, fact.Def.defName)
                     .FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Equals(x.Source.PackageId, packageId));
                 if (definition == null || !StringComparer.Ordinal.Equals(definition.SkillDefName, fact.Skill.defName))

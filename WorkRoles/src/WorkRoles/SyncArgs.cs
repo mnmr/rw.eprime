@@ -6,7 +6,7 @@ namespace WorkRoles
     /// signatures, and a class with a SyncWorker stays extensible.
     public class ImportSelection
     {
-        public string xml;
+        public string xml = null!; // always set by the issuing client
         public bool palette;
         public bool paletteOverwrite;
         public bool roles;

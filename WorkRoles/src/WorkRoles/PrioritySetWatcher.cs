@@ -19,9 +19,9 @@ namespace WorkRoles
     {
         private sealed class PendingWarning
         {
-            public string key;
-            public string modName;
-            public string sampledWorkType;
+            public string key = null!;     // always set by the object initializer
+            public string modName = null!; // always set by the object initializer
+            public string? sampledWorkType;
         }
 
         // Assembly ownership is process-stable and safe to retain across saves.
@@ -33,7 +33,7 @@ namespace WorkRoles
         // Scalar session identity only: retaining World here would keep the
         // unloaded world graph alive after returning to the main menu.
         private static int? sessionWorldId;
-        private static PendingWarning pending;
+        private static PendingWarning? pending;
 
         internal static bool HasPendingWarning => pending != null;
 
@@ -143,7 +143,7 @@ namespace WorkRoles
         /// The first stack frame owned by a mod assembly (ours, vanilla,
         /// Harmony, Multiplayer and system frames are skipped; unknown
         /// assemblies stay silent).
-        private static ModContentPack ResolveCallingMod()
+        private static ModContentPack? ResolveCallingMod()
         {
             var trace = new StackTrace(2, false);
             for (int i = 0; i < trace.FrameCount; i++)

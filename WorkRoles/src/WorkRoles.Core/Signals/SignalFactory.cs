@@ -7,21 +7,21 @@ namespace WorkRoles.Core.Signals
     {
         public static Signal Instantiate(
             SignalDefinition definition,
-            string runtimeSkillDefName = null,
-            string actualSourceDefName = null,
+            string? runtimeSkillDefName = null,
+            string? actualSourceDefName = null,
             float? currentScale = null,
             float scaleMultiplier = 1f,
-            SignalUiOverride ui = null)
+            SignalUiOverride? ui = null)
         {
             if (definition == null) throw new ArgumentNullException(nameof(definition));
             if (float.IsNaN(scaleMultiplier) || float.IsInfinity(scaleMultiplier))
                 throw new ArgumentOutOfRangeException(nameof(scaleMultiplier));
 
-            string skill = ResolveSkill(definition, runtimeSkillDefName);
+            string? skill = ResolveSkill(definition, runtimeSkillDefName);
             string actualDefName = string.IsNullOrWhiteSpace(actualSourceDefName)
                 ? definition.Source.DefName
-                : actualSourceDefName;
-            string templateId = definition.Source.TemplateId;
+                : actualSourceDefName!;
+            string? templateId = definition.Source.TemplateId;
             if (!StringComparer.Ordinal.Equals(actualDefName, definition.Source.DefName) && templateId == null)
                 templateId = definition.Source.DefName;
 
@@ -56,7 +56,7 @@ namespace WorkRoles.Core.Signals
             return new Signal(definition.Type, source, skill, effects, MergeUi(definition.FallbackUi, ui));
         }
 
-        private static string ResolveSkill(SignalDefinition definition, string runtimeSkillDefName)
+        private static string? ResolveSkill(SignalDefinition definition, string? runtimeSkillDefName)
         {
             if (definition.DerivesSkillFromSource)
             {
@@ -78,15 +78,15 @@ namespace WorkRoles.Core.Signals
             return runtimeSkillDefName;
         }
 
-        private static SignalUi MergeUi(SignalUi fallback, SignalUiOverride value) => new SignalUi(
+        private static SignalUi MergeUi(SignalUi fallback, SignalUiOverride? value) => new SignalUi(
             Prefer(value?.Label, fallback.Label),
             Prefer(value?.Description, fallback.Description),
             Prefer(value?.IconKey, fallback.IconKey),
             Prefer(value?.AuthorTier, fallback.AuthorTier),
             Prefer(value?.ColorKey, fallback.ColorKey),
-            Prefer(value?.SourceDisplayName, fallback.SourceDisplayName));
+            Prefer(value?.SourceDisplayName, fallback.SourceDisplayName)!); // fallback.SourceDisplayName is never null.
 
-        private static string Prefer(string value, string fallback) =>
+        private static string? Prefer(string? value, string? fallback) =>
             string.IsNullOrWhiteSpace(value) ? fallback : value;
     }
 }

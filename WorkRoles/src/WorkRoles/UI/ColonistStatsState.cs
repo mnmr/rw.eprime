@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -39,9 +40,10 @@ namespace WorkRoles.UI
 
         private sealed class ExternalCapture
         {
-            internal PawnExternalSnapshot Snapshot;
-            internal List<SkillLine> SkillLines;
-            internal Dictionary<SkillDef, SkillLine> SkillLinesByDef;
+            // All fields are set by CaptureExternal's object initializer.
+            internal PawnExternalSnapshot Snapshot = null!;
+            internal List<SkillLine> SkillLines = null!;
+            internal Dictionary<SkillDef, SkillLine> SkillLinesByDef = null!;
         }
 
         // Owner: Colonists window. Key: Pawn reference identity. Value: immutable
@@ -77,7 +79,7 @@ namespace WorkRoles.UI
             presentations =
                 new Dictionary<(Pawn, SkillDef), ColonistSkillPresentation>();
         private int presentationStamp = -1;
-        private RoleStore presentationStore;
+        private RoleStore? presentationStore;
         private int presentationTuningRevision = -1;
 
         // Owner: Colonists window. Key: (UiVersion, selected Pawn identity).
@@ -88,8 +90,8 @@ namespace WorkRoles.UI
         // Snapshot read after key change. Equality: exact key hits preserve
         // snapshot identity. Teardown: InvalidatePresentations clears it.
         private int statsStamp = -1;
-        private Pawn statsPawn;
-        private ColonistStatsSnapshot stats;
+        private Pawn? statsPawn;
+        private ColonistStatsSnapshot? stats;
 
         internal bool NeedsExternalSnapshotRefresh =>
             externalSnapshots.NeedsRefresh(ExternalPawnFacts.Revisions);
@@ -142,8 +144,8 @@ namespace WorkRoles.UI
         }
 
         internal PawnExternalSnapshot ExternalSnapshot(Pawn pawn) =>
-            externalSnapshots.TryGet(pawn, out ExternalCapture capture)
-                ? capture.Snapshot
+            externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
+                ? capture!.Snapshot
                 : PawnExternalSnapshot.Empty;
 
         internal PawnSignalSnapshot SignalSnapshot(Pawn pawn) =>
@@ -152,10 +154,10 @@ namespace WorkRoles.UI
         internal SkillLine SkillLineSnapshot(Pawn pawn, SkillDef skill)
         {
             if (pawn != null && skill != null
-                && externalSnapshots.TryGet(pawn, out ExternalCapture capture)
-                && capture.SkillLinesByDef.TryGetValue(skill, out SkillLine line))
+                && externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
+                && capture!.SkillLinesByDef.TryGetValue(skill, out SkillLine line))
                 return line;
-            return new SkillLine(skill,
+            return new SkillLine(skill!, // existing behavior: placeholder lines may carry a null def
                 skill?.skillLabel.CapitalizeFirst() ?? "",
                 "-", Passion.None, 0, 0, -1f, disabled: true);
         }
@@ -174,8 +176,8 @@ namespace WorkRoles.UI
             width = RosterCellMinWidth;
             foreach (Pawn pawn in externalSnapshots.Owners)
             {
-                if (!externalSnapshots.TryGet(pawn, out ExternalCapture capture)
-                    || !capture.SkillLinesByDef.TryGetValue(skill, out SkillLine line)
+                if (!externalSnapshots.TryGet(pawn, out ExternalCapture? capture)
+                    || !capture!.SkillLinesByDef.TryGetValue(skill, out SkillLine line)
                     || line.Disabled) continue;
                 SkillSignalView view = SignalPresentationPolicy.ForSkill(
                     SignalSnapshot(pawn).Signals, skill.defName);
@@ -201,7 +203,7 @@ namespace WorkRoles.UI
 
         private void EnsurePresentationGeneration()
         {
-            RoleStore store = RoleStore.Current;
+            RoleStore? store = RoleStore.Current;
             int tuningRevision = store?.RecommendationTuningRevision ?? -1;
             if (presentationStamp == UiVersion.Current
                 && ReferenceEquals(presentationStore, store)
@@ -226,13 +228,13 @@ namespace WorkRoles.UI
                 return cached;
 
             SkillSignalView signalView = SignalPresentationPolicy.ForSkill(
-                pawnSnapshot.Signals, line.Def?.defName);
+                pawnSnapshot.Signals, line.Def?.defName!); // existing behavior: placeholder lines may carry a null def
             List<Texture2D> icons = SkillSignalPresentation.ResolveIcons(signalView);
             float labelWidth;
             using (new TextBlock(GameFont.Small))
                 labelWidth = Text.CalcSize(line.Label).x;
             SignalBucket? baseBucket = pawnSnapshot.SkillBuckets
-                .ForSkill(line.Def?.defName)?.Bucket;
+                .ForSkill(line.Def?.defName!)?.Bucket;
             SignalBucket? bucket = baseBucket;
             int promotionThreshold = -1;
             if (bucket.HasValue)
@@ -241,7 +243,7 @@ namespace WorkRoles.UI
                     presentationStore?.recommendationTuning
                     ?? RecommendationsTuningOptions.Default;
                 bucket = tuning.PromoteSkillSignal(line.Level, bucket.Value);
-                if (bucket.Value > baseBucket.Value)
+                if (bucket.Value > baseBucket!.Value) // baseBucket had a value for bucket.HasValue to hold
                     promotionThreshold = line.Level >= tuning.Get(
                             RecommendationTuningOption.OptionalTargetGreatLevel)
                         ? tuning.Get(
@@ -261,7 +263,7 @@ namespace WorkRoles.UI
                         bucket ?? SignalBucket.Neutral),
                 SkillSignalPresentation.CreateTooltip(
                     pawn,
-                    line.Def?.defName,
+                    line.Def?.defName!,
                     line.Label,
                     line.ValueText,
                     SkillTextColor(line, signalView.PassionTier),
@@ -278,13 +280,14 @@ namespace WorkRoles.UI
         {
             SignalSnapshot(pawn);
             EnsurePresentationGeneration();
-            if (statsStamp == UiVersion.Current && statsPawn == pawn) return stats;
+            if (statsStamp == UiVersion.Current && statsPawn == pawn)
+                return stats!; // published together with the stamp/pawn key
             statsStamp = UiVersion.Current;
             statsPawn = pawn;
 
             List<SkillLine> lines = externalSnapshots.TryGet(
-                pawn, out ExternalCapture capture)
-                ? capture.SkillLines
+                pawn, out ExternalCapture? capture)
+                ? capture!.SkillLines
                 : new List<SkillLine>();
             var items = new List<ColonistSkillPresentation>(lines.Count);
             float columnWidth = MinimumSkillColumnWidth;
@@ -320,7 +323,7 @@ namespace WorkRoles.UI
     {
         internal ColonistSkillPresentation(SkillLine line, float labelWidth,
             SkillSignalView signalView, IReadOnlyList<Texture2D> signalIcons,
-            RoleChipVerdict verdictStars, StructuredTip tooltip)
+            RoleChipVerdict verdictStars, StructuredTip? tooltip)
         {
             Line = line;
             LabelWidth = labelWidth;
@@ -337,7 +340,7 @@ namespace WorkRoles.UI
         /// The tooltip's (promoted) skill verdict as a star pair; default for
         /// disabled skills.
         internal RoleChipVerdict VerdictStars { get; }
-        internal StructuredTip Tooltip { get; }
+        internal StructuredTip? Tooltip { get; }
     }
 
     internal sealed class ColonistStatsSnapshot

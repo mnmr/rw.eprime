@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -11,8 +12,8 @@ namespace WorkRoles.Signals
 {
     internal static class SkillSignalPresentation
     {
-        private static readonly Dictionary<string, Texture2D> IconCache =
-            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, Texture2D?> IconCache =
+            new Dictionary<string, Texture2D?>(StringComparer.Ordinal);
         private static readonly HashSet<string> WarnedOfficialIcons =
             new HashSet<string>(StringComparer.Ordinal);
 
@@ -28,7 +29,7 @@ namespace WorkRoles.Signals
             var result = new List<Texture2D>(view.IconCandidates.Count);
             foreach (PawnSignal signal in view.IconCandidates)
             {
-                Texture2D texture = ResolveIcon(signal.Ui.IconKey);
+                Texture2D? texture = ResolveIcon(signal.Ui.IconKey);
                 if (texture != null)
                     result.Add(texture);
                 else
@@ -40,10 +41,10 @@ namespace WorkRoles.Signals
             return result;
         }
 
-        private static Texture2D ResolveIcon(string iconKey)
+        private static Texture2D? ResolveIcon(string? iconKey)
         {
-            if (string.IsNullOrWhiteSpace(iconKey)) return null;
-            if (!IconCache.TryGetValue(iconKey, out Texture2D texture))
+            if (iconKey is not { Length: > 0 }) return null;
+            if (!IconCache.TryGetValue(iconKey, out Texture2D? texture))
             {
                 texture = ContentFinder<Texture2D>.Get(iconKey, false);
                 IconCache[iconKey] = texture;
@@ -51,7 +52,7 @@ namespace WorkRoles.Signals
             return texture;
         }
 
-        internal static StructuredTip CreateTooltip(
+        internal static StructuredTip? CreateTooltip(
             Pawn pawn,
             string skillDefName,
             string skillLabel,
@@ -101,8 +102,8 @@ namespace WorkRoles.Signals
                     {
                         "WR_SignalSkillPromotion".Translate().ToString(),
                         "WR_SignalSkillPromotionEffect".Translate(
-                            BucketLabel(baseBucket.Value),
-                            BucketLabel(bucket.Value)).ToString(),
+                            BucketLabel(baseBucket!.Value), // promoted implies both buckets
+                            BucketLabel(bucket!.Value)).ToString(),
                         "WR_SignalSkillPromotionCondition".Translate(
                             skillLevel, promotionThreshold).ToString(),
                         "WorkRoles",
@@ -119,18 +120,19 @@ namespace WorkRoles.Signals
 
         private static void AddSignalRows(TipSection table, PawnSignal signal, Color? rowColor, Pawn pawn)
         {
-            string name = string.IsNullOrWhiteSpace(signal.Ui.Label)
-                ? InvariantDefName.Humanize(signal.Source.DefName)
-                : signal.Ui.Label;
+            string name = signal.Ui.Label is { Length: > 0 } label
+                ? label
+                : InvariantDefName.Humanize(signal.Source.DefName);
             if (signal.Relation == SignalRelation.Spillover)
                 name += " " + "WR_SignalFromSkill".Translate(
                     InvariantDefName.Humanize(signal.OriginSkillDefName));
-            Texture2D icon = ResolveIcon(signal.Ui.IconKey);
-            string source = signal.Ui.SourceDisplayName;
+            Texture2D? icon = ResolveIcon(signal.Ui.IconKey);
+            string source = signal.Ui.SourceDisplayName ?? "";
 
             if (signal.Effects.Count == 0)
             {
-                table.Columns(new[] { name, null, null, source }, rowColor, icon);
+                // Null cells render as empty columns; TipColumnsRow tolerates them.
+                table.Columns(new string[] { name, null!, null!, source }, rowColor, icon!);
             }
             else
             {
@@ -138,16 +140,16 @@ namespace WorkRoles.Signals
                 {
                     SignalEffect effect = signal.Effects[i];
                     table.Columns(i == 0
-                        ? new[] { name, EffectText(signal, effect), ConditionText(effect), source }
-                        : new[] { null, EffectText(signal, effect), ConditionText(effect), null },
+                        ? new string[] { name, EffectText(signal, effect), ConditionText(effect), source }
+                        : new string[] { null!, EffectText(signal, effect), ConditionText(effect), null! },
                         rowColor,
-                        i == 0 ? icon : null,
+                        (i == 0 ? icon : null)!,
                         tight: i > 0);
                 }
             }
 
-            if (!string.IsNullOrWhiteSpace(signal.Ui.Description))
-                table.Span(ResolveDescription(signal.Ui.Description, pawn), alignColumn: 1);
+            if (signal.Ui.Description is { Length: > 0 } description)
+                table.Span(ResolveDescription(description, pawn), alignColumn: 1);
         }
 
         /// Trait/gene descriptions carry grammar tokens meant for pawn context:
@@ -182,7 +184,7 @@ namespace WorkRoles.Signals
             if (effect.Operation == SignalOperation.Descriptive)
             {
                 string label = InvariantDefName.Humanize(effect.Kind.ToString());
-                string subject = DescriptiveSubject(signal, effect);
+                string? subject = DescriptiveSubject(signal, effect);
                 return subject == null ? label : label + ": " + subject.ToLowerInvariant();
             }
             string head = effect.Kind == SignalEffectKind.StatModifier
@@ -194,9 +196,9 @@ namespace WorkRoles.Signals
 
         /// The descriptive effect's subject; suppressed when it would repeat
         /// the tooltip's own skill (or the CurrentSkill placeholder).
-        private static string DescriptiveSubject(PawnSignal signal, SignalEffect effect)
+        private static string? DescriptiveSubject(PawnSignal signal, SignalEffect effect)
         {
-            string target = effect.TargetDefName;
+            string? target = effect.TargetDefName;
             if (string.IsNullOrWhiteSpace(target) || target == "CurrentSkill"
                 || string.Equals(target, signal.SkillDefName, StringComparison.Ordinal))
                 return null;
@@ -300,14 +302,15 @@ namespace WorkRoles.Signals
             switch (effect.Operation)
             {
                 case SignalOperation.Add:
-                    value = factor ? Percent(1f + displayedMagnitude.Value) : Signed(displayedMagnitude);
+                    // factor implies displayedMagnitude.HasValue.
+                    value = factor ? Percent(1f + displayedMagnitude!.Value) : Signed(displayedMagnitude);
                     break;
                 case SignalOperation.Multiply:
-                    value = factor ? Percent(displayedMagnitude.Value) : "×" + Number(displayedMagnitude);
+                    value = factor ? Percent(displayedMagnitude!.Value) : "×" + Number(displayedMagnitude);
                     break;
                 case SignalOperation.Set:
                     value = "= " + (factor
-                        ? Percent(displayedMagnitude.Value) : Number(displayedMagnitude));
+                        ? Percent(displayedMagnitude!.Value) : Number(displayedMagnitude));
                     break;
                 case SignalOperation.Disable:
                     value = "WR_SignalDisabled".Translate();
@@ -341,13 +344,13 @@ namespace WorkRoles.Signals
             const string prefix = "package:";
             if (text != null && text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 return ModDisplayName(text.Substring(prefix.Length));
-            return text;
+            return text!; // non-null per SignalCondition contract; check above is defensive
         }
 
         private static string ModDisplayName(string packageId)
         {
-            string name = ModLister.GetModWithIdentifier(packageId)?.Name;
-            if (!string.IsNullOrWhiteSpace(name)) return name;
+            string? name = ModLister.GetModWithIdentifier(packageId)?.Name;
+            if (!string.IsNullOrWhiteSpace(name)) return name!; // net472: no NotNullWhen on IsNullOrWhiteSpace
             int dot = packageId.LastIndexOf('.');
             return dot >= 0 ? packageId.Substring(dot + 1) : packageId;
         }
@@ -363,7 +366,7 @@ namespace WorkRoles.Signals
         private static string Number(float? value) =>
             value.HasValue ? value.Value.ToString("0.##") : "?";
 
-        private static void WarnOfficialMissing(PawnSignal signal, string iconKey)
+        private static void WarnOfficialMissing(PawnSignal signal, string? iconKey)
         {
             if (!Prefs.DevMode || !SignalPresentationPolicy.IsOfficialPackage(signal.Source.PackageId))
                 return;

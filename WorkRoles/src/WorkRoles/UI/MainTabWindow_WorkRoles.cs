@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -264,12 +265,12 @@ namespace WorkRoles.UI
         // Refresh: immediately when the observed language revision changes.
         // Equality: matching revision reuses strings, list, and delegates.
         // Teardown: PostClose clears the tab list; strings follow the window.
-        private List<TabRecord> tabs;
-        private string fixMyColonyLabel;
-        private string restoreDefaultsLabel;
-        private string nothingToRestoreMessage;
-        private string exportLabel;
-        private string importLabel;
+        private List<TabRecord>? tabs;
+        private string fixMyColonyLabel = null!;         // assigned by ObserveLanguageRevision before any draw
+        private string restoreDefaultsLabel = null!;
+        private string nothingToRestoreMessage = null!;
+        private string exportLabel = null!;
+        private string importLabel = null!;
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -332,7 +333,7 @@ namespace WorkRoles.UI
             // Active-tab emphasis: TabRecord reads labelColor per pass, so a
             // per-frame field write is how selection tints the label (between
             // the normal white and the hover yellow).
-            for (int i = 0; i < tabs.Count; i++)
+            for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
                 tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
             TabDrawer.DrawTabs(content, tabs);
             // Vanilla leaves the menu-section top border visible under the
@@ -380,7 +381,12 @@ namespace WorkRoles.UI
                 var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
                 if (Widgets.ButtonText(exportRect, exportLabel))
-                    Find.WindowStack.Add(new Dialog_ExportPreview(RoleIO.BuildXml(RoleStore.Current)));
+                {
+                    RoleStore? store = RoleStore.Current;
+                    if (store != null)
+                        Find.WindowStack.Add(new Dialog_ExportPreview(
+                            RoleIO.BuildXml(store)));
+                }
 
                 var importRect = new Rect(exportRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 WrTips.Key("WR_ImportTip", RoleIO.ExportFile).Region(importRect);

@@ -12,7 +12,7 @@ namespace WorkRoles.Signals
     {
         private readonly SignalCatalog catalog;
 
-        internal GeneSignalProvider(SignalCatalog catalog = null)
+        internal GeneSignalProvider(SignalCatalog? catalog = null)
         {
             this.catalog = catalog ?? SignalCatalog.Default;
         }

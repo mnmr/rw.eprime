@@ -80,11 +80,11 @@ namespace WorkRoles.Core.Signals
             return text;
         }
 
-        public bool Equals(SignalCondition other) => other != null
+        public bool Equals(SignalCondition? other) => other != null
             && StringComparer.Ordinal.Equals(Key, other.Key)
             && StringComparer.Ordinal.Equals(Description, other.Description);
 
-        public override bool Equals(object obj) => Equals(obj as SignalCondition);
+        public override bool Equals(object? obj) => Equals(obj as SignalCondition);
 
         public override int GetHashCode() => SignalHash.Of(Key, Description);
 
@@ -101,8 +101,8 @@ namespace WorkRoles.Core.Signals
         public SignalSourceKind Kind { get; }
         public string DefName { get; }
         public string PackageId { get; }
-        public string TemplateId { get; }
-        public string EffectDiscriminator { get; }
+        public string? TemplateId { get; }
+        public string? EffectDiscriminator { get; }
         public IReadOnlyList<string> RequiredPackageIds { get; }
         public int? Degree { get; }
 
@@ -110,9 +110,9 @@ namespace WorkRoles.Core.Signals
             SignalSourceKind kind,
             string defName,
             string packageId,
-            string templateId = null,
-            string effectDiscriminator = null,
-            IEnumerable<string> requiredPackageIds = null,
+            string? templateId = null,
+            string? effectDiscriminator = null,
+            IEnumerable<string>? requiredPackageIds = null,
             int? degree = null)
         {
             Kind = kind;
@@ -124,7 +124,7 @@ namespace WorkRoles.Core.Signals
             Degree = degree;
         }
 
-        public bool Equals(SignalSource other) => other != null
+        public bool Equals(SignalSource? other) => other != null
             && Kind == other.Kind
             && StringComparer.Ordinal.Equals(DefName, other.DefName)
             && StringComparer.Ordinal.Equals(PackageId, other.PackageId)
@@ -133,13 +133,13 @@ namespace WorkRoles.Core.Signals
             && Degree == other.Degree
             && SignalHash.SequenceEqual(RequiredPackageIds, other.RequiredPackageIds);
 
-        public override bool Equals(object obj) => Equals(obj as SignalSource);
+        public override bool Equals(object? obj) => Equals(obj as SignalSource);
 
         public override int GetHashCode() => SignalHash.WithSequence(
             SignalHash.Of((int)Kind, DefName, PackageId, TemplateId, EffectDiscriminator, Degree),
             RequiredPackageIds);
 
-        private static IReadOnlyList<string> CopyDependencies(IEnumerable<string> values)
+        private static IReadOnlyList<string> CopyDependencies(IEnumerable<string>? values)
         {
             var unique = new SortedSet<string>(StringComparer.Ordinal);
             if (values != null)
@@ -150,7 +150,7 @@ namespace WorkRoles.Core.Signals
             return new ReadOnlyCollection<string>(new List<string>(unique));
         }
 
-        private static string Optional(string value, string name)
+        private static string? Optional(string? value, string name)
         {
             if (value == null) return null;
             if (string.IsNullOrWhiteSpace(value))
@@ -165,7 +165,7 @@ namespace WorkRoles.Core.Signals
         public SignalOperation Operation { get; }
         public float? Magnitude { get; }
         public SignalValueUnit Unit { get; }
-        public string TargetDefName { get; }
+        public string? TargetDefName { get; }
         public IReadOnlyList<SignalCondition> Conditions { get; }
         public SignalScaleKind ScaleKind { get; }
         public float? CurrentScale { get; }
@@ -178,8 +178,8 @@ namespace WorkRoles.Core.Signals
             SignalOperation operation,
             float? magnitude,
             SignalValueUnit unit,
-            string targetDefName = null,
-            IEnumerable<SignalCondition> conditions = null,
+            string? targetDefName = null,
+            IEnumerable<SignalCondition>? conditions = null,
             SignalScaleKind scaleKind = SignalScaleKind.None,
             float? currentScale = null,
             float scaleMultiplier = 1f,
@@ -216,7 +216,7 @@ namespace WorkRoles.Core.Signals
             AlreadyReflected = alreadyReflected;
         }
 
-        public bool Equals(SignalEffect other) => other != null
+        public bool Equals(SignalEffect? other) => other != null
             && Kind == other.Kind
             && Operation == other.Operation
             && Magnitude.Equals(other.Magnitude)
@@ -229,7 +229,7 @@ namespace WorkRoles.Core.Signals
             && ResolvedMagnitude.Equals(other.ResolvedMagnitude)
             && AlreadyReflected == other.AlreadyReflected;
 
-        public override bool Equals(object obj) => Equals(obj as SignalEffect);
+        public override bool Equals(object? obj) => Equals(obj as SignalEffect);
 
         public override int GetHashCode()
         {
@@ -239,7 +239,7 @@ namespace WorkRoles.Core.Signals
                 ResolvedMagnitude, AlreadyReflected);
         }
 
-        private static IReadOnlyList<SignalCondition> CopyConditions(IEnumerable<SignalCondition> conditions)
+        private static IReadOnlyList<SignalCondition> CopyConditions(IEnumerable<SignalCondition>? conditions)
         {
             var copy = new List<SignalCondition>();
             if (conditions != null)
@@ -256,24 +256,24 @@ namespace WorkRoles.Core.Signals
 
     public sealed class SignalUi : IEquatable<SignalUi>
     {
-        public string Label { get; }
-        public string Description { get; }
-        public string IconKey { get; }
-        public string AuthorTier { get; }
-        public string ColorKey { get; }
+        public string? Label { get; }
+        public string? Description { get; }
+        public string? IconKey { get; }
+        public string? AuthorTier { get; }
+        public string? ColorKey { get; }
         public string SourceDisplayName { get; }
 
         public SignalUi(
-            string label,
-            string description,
-            string iconKey,
-            string authorTier,
-            string colorKey,
+            string? label,
+            string? description,
+            string? iconKey,
+            string? authorTier,
+            string? colorKey,
             string sourceDisplayName)
         {
             // Labels are first-letter-uppercased only when the leading char is
             // standard Latin a-z; anything else passes through untouched.
-            if (!string.IsNullOrEmpty(label) && label[0] >= 'a' && label[0] <= 'z')
+            if (!string.IsNullOrEmpty(label) && label![0] >= 'a' && label[0] <= 'z')
                 label = char.ToUpperInvariant(label[0]) + label.Substring(1);
             Label = label;
             Description = description;
@@ -283,7 +283,7 @@ namespace WorkRoles.Core.Signals
             SourceDisplayName = SignalCondition.Required(sourceDisplayName, nameof(sourceDisplayName));
         }
 
-        public bool Equals(SignalUi other) => other != null
+        public bool Equals(SignalUi? other) => other != null
             && StringComparer.Ordinal.Equals(Label, other.Label)
             && StringComparer.Ordinal.Equals(Description, other.Description)
             && StringComparer.Ordinal.Equals(IconKey, other.IconKey)
@@ -291,7 +291,7 @@ namespace WorkRoles.Core.Signals
             && StringComparer.Ordinal.Equals(ColorKey, other.ColorKey)
             && StringComparer.Ordinal.Equals(SourceDisplayName, other.SourceDisplayName);
 
-        public override bool Equals(object obj) => Equals(obj as SignalUi);
+        public override bool Equals(object? obj) => Equals(obj as SignalUi);
 
         public override int GetHashCode() => SignalHash.Of(
             Label, Description, IconKey, AuthorTier, ColorKey, SourceDisplayName);
@@ -301,9 +301,9 @@ namespace WorkRoles.Core.Signals
     {
         public SignalType Type { get; }
         public SignalSource Source { get; }
-        public string SkillDefName { get; }
-        public string WorkTypeDefName { get; }
-        public string OriginSkillDefName { get; }
+        public string? SkillDefName { get; }
+        public string? WorkTypeDefName { get; }
+        public string? OriginSkillDefName { get; }
         public SignalRelation Relation { get; }
         public IReadOnlyList<SignalEffect> Effects { get; }
         public SignalUi Ui { get; }
@@ -311,12 +311,12 @@ namespace WorkRoles.Core.Signals
         public Signal(
             SignalType type,
             SignalSource source,
-            string skillDefName,
+            string? skillDefName,
             IEnumerable<SignalEffect> effects,
             SignalUi ui,
-            string originSkillDefName = null,
+            string? originSkillDefName = null,
             SignalRelation relation = SignalRelation.Primary,
-            string workTypeDefName = null)
+            string? workTypeDefName = null)
         {
             if (source == null) throw new ArgumentNullException(nameof(source));
             if (skillDefName != null && string.IsNullOrWhiteSpace(skillDefName))
@@ -346,7 +346,7 @@ namespace WorkRoles.Core.Signals
             Ui = ui;
         }
 
-        public bool Equals(Signal other) => other != null
+        public bool Equals(Signal? other) => other != null
             && Type == other.Type
             && Source.Equals(other.Source)
             && StringComparer.Ordinal.Equals(SkillDefName, other.SkillDefName)
@@ -356,7 +356,7 @@ namespace WorkRoles.Core.Signals
             && SignalHash.SequenceEqual(Effects, other.Effects)
             && Ui.Equals(other.Ui);
 
-        public override bool Equals(object obj) => Equals(obj as Signal);
+        public override bool Equals(object? obj) => Equals(obj as Signal);
 
         public override int GetHashCode()
         {
@@ -382,14 +382,14 @@ namespace WorkRoles.Core.Signals
 
     internal static class SignalHash
     {
-        public static int Of(params object[] values)
+        public static int Of(params object?[] values)
         {
             unchecked
             {
                 int hash = 17;
                 for (int i = 0; i < values.Length; i++)
                 {
-                    object value = values[i];
+                    object? value = values[i];
                     int part = value is string text
                         ? StringComparer.Ordinal.GetHashCode(text)
                         : value?.GetHashCode() ?? 0;

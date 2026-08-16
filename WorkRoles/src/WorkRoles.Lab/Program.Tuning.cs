@@ -24,7 +24,7 @@ internal static partial class Program
                      .Elements("WorkRoles.RoleDef"))
         {
             string defName = def.Element("defName")!.Value.Trim();
-            XElement tuningEl = def.Element("tuning");
+            XElement? tuningEl = def.Element("tuning");
             int colonyMin = OptionalInt(
                 tuningEl?.Element("colonyMin")?.Value, 0, defName, "colonyMin");
             int coverage = OptionalInt(

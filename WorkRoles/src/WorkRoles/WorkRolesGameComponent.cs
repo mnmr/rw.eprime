@@ -1,3 +1,4 @@
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -104,7 +105,7 @@ namespace WorkRoles
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);
-            if (worldHourBoundary.ShouldRun(GenTicks.TicksAbs))
+            if (worldHourBoundary.Observe(GenTicks.TicksAbs))
                 CompiledJobOrders.InvalidateWorldTimeRuled();
         }
     }

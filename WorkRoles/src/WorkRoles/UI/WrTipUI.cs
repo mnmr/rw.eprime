@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -34,8 +35,8 @@ namespace WorkRoles.UI
         {
             public Rect Rect;
             public Color Color;
-            public string Text;
-            public Texture2D Icon;
+            public string? Text;
+            public Texture2D? Icon;
             public bool NoWrap;
         }
 
@@ -137,15 +138,17 @@ namespace WorkRoles.UI
         private static float NaturalWidth(TipModel model)
         {
             float w = 0f;
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float titleW = WrText.FitWidth(model.Title);
-                if (!model.Badge.NullOrEmpty()) titleW += BadgeGap + WrText.FitWidth(model.Badge);
+                float titleW = WrText.FitWidth(title);
+                if (model.Badge is { Length: > 0 } badge)
+                    titleW += BadgeGap + WrText.FitWidth(badge);
                 w = titleW;
             }
             foreach (var section in model.Sections)
             {
-                if (!section.Header.NullOrEmpty()) w = Mathf.Max(w, WrText.FitWidth(section.Header));
+                if (section.Header is { Length: > 0 } header)
+                    w = Mathf.Max(w, WrText.FitWidth(header));
                 float factCol = LabelColumnWidth(model);
                 foreach (var row in section.Rows)
                     switch (row)
@@ -164,7 +167,7 @@ namespace WorkRoles.UI
                                 + (inline.Label != null ? factCol + ColGap : 0f));
                             break;
                     }
-                float[] cols = ColumnWidths(section);
+                float[]? cols = ColumnWidths(section);
                 if (cols != null)
                 {
                     float tableW = TableColGap * (cols.Length - 1);
@@ -181,17 +184,18 @@ namespace WorkRoles.UI
         private static float FloorWidth(TipModel model)
         {
             float w = 24f;
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float titleW = WrText.FitWidth(model.Title);
-                if (!model.Badge.NullOrEmpty()) titleW += BadgeGap + WrText.FitWidth(model.Badge);
+                float titleW = WrText.FitWidth(title);
+                if (model.Badge is { Length: > 0 } badge)
+                    titleW += BadgeGap + WrText.FitWidth(badge);
                 w = Mathf.Max(w, titleW);
             }
             float factCol = LabelColumnWidth(model);
             if (factCol > 0f) w = Mathf.Max(w, factCol + ColGap + 24f);
             foreach (var section in model.Sections)
             {
-                float[] cols = ColumnWidths(section);
+                float[]? cols = ColumnWidths(section);
                 if (cols != null)
                 {
                     float tableW = TableColGap * (cols.Length - 1);
@@ -212,7 +216,8 @@ namespace WorkRoles.UI
             float w = 0f;
             for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
             {
-                TipInlineSegment segment = inline.Segments[i];
+                TipInlineSegment segment =
+                    inline.Segments![i]; // loop is empty when Segments is null
                 w += segment.Gap + (segment.Text != null
                     ? WrText.FitWidth(segment.Text)
                     : InlineIconSize);
@@ -223,7 +228,7 @@ namespace WorkRoles.UI
         /// Natural per-column widths across a section's columns rows, or null if
         /// none; column 0 reserves icon space when any row carries one so text
         /// alignment holds and icons trail the text.
-        private static float[] ColumnWidths(TipSection section)
+        private static float[]? ColumnWidths(TipSection section)
         {
             int count = 0;
             foreach (var row in section.Rows)
@@ -237,7 +242,7 @@ namespace WorkRoles.UI
                 {
                     anyIcon |= cols.Icon != null;
                     for (int i = 0; i < (cols.Cells?.Count ?? 0); i++)
-                        if (!cols.Cells[i].NullOrEmpty())
+                        if (!cols.Cells![i].NullOrEmpty()) // loop is empty when Cells is null
                             widths[i] = Mathf.Max(widths[i], WrText.FitWidth(cols.Cells[i]));
                 }
             if (anyIcon) widths[0] += CellIconGap + CellIconSize;
@@ -259,8 +264,8 @@ namespace WorkRoles.UI
                         case TipActionRow action:
                             w = Mathf.Max(w, WrText.FitWidth(action.InputToken));
                             break;
-                        case TipInlineRow inline when !inline.Label.NullOrEmpty():
-                            w = Mathf.Max(w, WrText.FitWidth(inline.Label));
+                        case TipInlineRow { Label: { Length: > 0 } label }:
+                            w = Mathf.Max(w, WrText.FitWidth(label));
                             break;
                     }
             return w;
@@ -273,15 +278,16 @@ namespace WorkRoles.UI
             float lineH = Text.LineHeightOf(GameFont.Small);
             float y = 0f;
 
-            if (!model.Title.NullOrEmpty())
+            if (model.Title is { Length: > 0 } title)
             {
-                float badgeW = model.Badge.NullOrEmpty() ? 0f : WrText.FitWidth(model.Badge);
+                string? badge = model.Badge;
+                float badgeW = badge is { Length: > 0 } ? WrText.FitWidth(badge) : 0f;
                 geo.Cmds.Add(new Cmd
                 {
                     Rect = new Rect(0f, y,
                         Mathf.Max(0f, contentW - (badgeW > 0f ? badgeW + BadgeGap : 0f)), lineH),
                     Color = Color.white,
-                    Text = model.Title,
+                    Text = title,
                     NoWrap = true,
                 });
                 if (badgeW > 0f)
@@ -290,7 +296,7 @@ namespace WorkRoles.UI
                     {
                         Rect = new Rect(contentW - badgeW, y, badgeW, lineH),
                         Color = model.BadgeColor,
-                        Text = model.Badge,
+                        Text = badge,
                         NoWrap = true,
                     });
                 }
@@ -313,13 +319,13 @@ namespace WorkRoles.UI
                 }
                 firstSection = false;
 
-                if (!section.Header.NullOrEmpty())
+                if (section.Header is { Length: > 0 } header)
                 {
                     geo.Cmds.Add(new Cmd
                     {
                         Rect = new Rect(0f, y, contentW, lineH),
                         Color = TipText.DimColor,
-                        Text = section.Header,
+                        Text = header,
                     });
                     y += lineH;
                 }
@@ -328,7 +334,7 @@ namespace WorkRoles.UI
                 float valueX = labelCol + ColGap;
                 float valueW = Mathf.Max(24f, contentW - valueX);
 
-                float[] tableCols = ColumnWidths(section);
+                float[]? tableCols = ColumnWidths(section);
                 float tableLineW;
                 if (tableCols != null)
                 {
@@ -398,7 +404,8 @@ namespace WorkRoles.UI
                             float cx = 0f;
                             for (int i = 0; i < tableCols.Length; i++)
                             {
-                                string cell = i < cellCount ? cols.Cells[i] : null;
+                                string? cell = i < cellCount
+                                    ? cols.Cells![i] : null; // cellCount > 0 implies Cells
                                 if (!cell.NullOrEmpty())
                                 {
                                     geo.Cmds.Add(new Cmd
@@ -411,7 +418,8 @@ namespace WorkRoles.UI
                                 }
                                 if (i == 0 && cols.Icon != null)
                                 {
-                                    float textW = cell.NullOrEmpty() ? 0f : WrText.FitWidth(cell);
+                                    float textW = cell.NullOrEmpty()
+                                        ? 0f : WrText.FitWidth(cell!); // non-null: NullOrEmpty was false
                                     float iconX = cx + CellIconGap
                                         + Mathf.Min(textW, tableCols[0] - (CellIconGap + CellIconSize));
                                     geo.Cmds.Add(new Cmd
@@ -443,7 +451,8 @@ namespace WorkRoles.UI
                             }
                             for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
                             {
-                                TipInlineSegment segment = inline.Segments[i];
+                                TipInlineSegment segment =
+                                    inline.Segments![i]; // loop is empty when Segments is null
                                 cx += segment.Gap;
                                 if (segment.Text != null)
                                 {

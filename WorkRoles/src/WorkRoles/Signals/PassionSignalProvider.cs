@@ -12,7 +12,7 @@ namespace WorkRoles.Signals
     {
         private readonly SignalCatalog catalog;
 
-        internal PassionSignalProvider(SignalCatalog catalog = null)
+        internal PassionSignalProvider(SignalCatalog? catalog = null)
         {
             this.catalog = catalog ?? SignalCatalog.Default;
         }
@@ -24,7 +24,7 @@ namespace WorkRoles.Signals
             foreach (SkillRecord skill in pawn.skills.skills)
             {
                 if (skill == null || skill.TotallyDisabled || skill.passion == Passion.None) continue;
-                string vanilla = skill.passion == Passion.Minor ? "Minor"
+                string? vanilla = skill.passion == Passion.Minor ? "Minor"
                     : skill.passion == Passion.Major ? "Major" : null;
                 if (vanilla != null)
                 {
@@ -34,10 +34,10 @@ namespace WorkRoles.Signals
                     continue;
                 }
 
-                VseSignalReflection.PassionFact fact = VseSignalReflection.Passion(skill.passion);
+                VseSignalReflection.PassionFact? fact = VseSignalReflection.Passion(skill.passion);
                 if (fact == null) continue;
-                string packageId = SignalUiFactory.PackageId(fact.Def);
-                if (PassionSignalDefinitions.IsExcludedTransientIdentity(packageId, fact.Def.defName))
+                string? packageId = SignalUiFactory.PackageId(fact.Def);
+                if (PassionSignalDefinitions.IsExcludedTransientIdentity(packageId!, fact.Def.defName))
                     continue;
                 SignalDefinition known = catalog.Find(SignalSourceKind.Passion, fact.Def.defName)
                     .FirstOrDefault(x => StringComparer.OrdinalIgnoreCase.Equals(x.Source.PackageId, packageId));

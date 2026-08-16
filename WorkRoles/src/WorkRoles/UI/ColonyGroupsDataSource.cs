@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using RimShared.Common;
 using Verse;
 using WorkRoles.Core;
 
@@ -15,13 +16,13 @@ namespace WorkRoles.UI
     internal static class ColonyGroupsDataSource
     {
         private static bool resolved;
-        private static PropertyInfo allPawnGroups; // static TacticUtils.AllPawnGroups
-        private static FieldInfo groupId;          // ColonistGroup.groupID (persisted)
-        private static FieldInfo curGroupName;     // ColonistGroup.curGroupName
-        private static FieldInfo groupName;        // fallback name
-        private static PropertyInfo activePawns;   // ColonistGroup.ActivePawns (filtered)
+        private static PropertyInfo? allPawnGroups; // static TacticUtils.AllPawnGroups
+        private static FieldInfo? groupId;          // ColonistGroup.groupID (persisted)
+        private static FieldInfo? curGroupName;     // ColonistGroup.curGroupName
+        private static FieldInfo? groupName;        // fallback name
+        private static PropertyInfo? activePawns;   // ColonistGroup.ActivePawns (filtered)
 
-        private static List<MembershipGroup<Pawn>> snapshot;
+        private static List<MembershipGroup<Pawn>>? snapshot;
 
         internal static bool Available
         {
@@ -47,19 +48,19 @@ namespace WorkRoles.UI
             if (!Available) return snapshot;
             try
             {
-                if (!(allPawnGroups.GetValue(null, null) is IEnumerable groups)) return snapshot;
+                if (!(allPawnGroups!.GetValue(null, null) is IEnumerable groups)) return snapshot; // Available checked above
                 foreach (var group in groups)
                 {
                     if (group == null) continue;
-                    string name = curGroupName?.GetValue(group) as string;
+                    string? name = curGroupName?.GetValue(group) as string;
                     if (name.NullOrEmpty()) name = groupName?.GetValue(group) as string;
                     var membership = new MembershipGroup<Pawn>
                     {
                         // groupID is persisted, so collapse state survives renames.
-                        Key = "cg|" + (groupId != null ? groupId.GetValue(group) : (object)name),
+                        Key = "cg|" + (groupId != null ? groupId.GetValue(group) : (object?)name),
                         Title = name ?? "?",
                     };
-                    if (activePawns.GetValue(group, null) is IEnumerable pawns)
+                    if (activePawns!.GetValue(group, null) is IEnumerable pawns) // Resolve guarantees it beside allPawnGroups
                         foreach (var p in pawns)
                             if (p is Pawn pawn)
                                 membership.Members.Add(pawn);

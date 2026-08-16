@@ -29,7 +29,7 @@ namespace WorkRoles.UI
         private int dropStamp = -1;
         private int dropFrom = -1;
         private int dropTo = -1;
-        private System.Action dropAction;
+        private System.Action? dropAction;
 
         // Band drag in flight: committed as ONE synced command on release.
         private int dragPathId = -1;
@@ -97,7 +97,7 @@ namespace WorkRoles.UI
         // language. Refresh: on width change. Teardown: language invalidation
         // resets.
         private float whenCaptionWidth = -1f;
-        private string whenCaptionText;
+        private string? whenCaptionText;
         private float whenCaptionHeight;
 
         private float WhenCaptionHeight(float width)
@@ -152,8 +152,8 @@ namespace WorkRoles.UI
             state.EnsureHelpLayout(orderW);
 
             state.EnsurePanels(flowW);
-            RecOrderSnapshot order = state.Order;
-            RecRoleDetailSnapshot detail = expandedRoleId != -1
+            RecOrderSnapshot order = state.Order!; // EnsureOrder ran above
+            RecRoleDetailSnapshot? detail = expandedRoleId != -1
                 ? state.EnsureDetail(store, expandedRoleId, flowW - PanelPad * 2f)
                 : null;
             if (detail == null && expandedRoleId != -1)
@@ -163,7 +163,7 @@ namespace WorkRoles.UI
             // A drag whose path or entry vanished must not block future presses.
             if (dragPathId != -1)
             {
-                RecPathView dragView = FindPathView(detail, dragPathId);
+                RecPathView? dragView = FindPathView(detail, dragPathId);
                 if (dragView == null || !dragView.ContainsRole(dragRoleId))
                     ClearBandDrag();
             }
@@ -178,18 +178,18 @@ namespace WorkRoles.UI
                 state.RecommendationOrderHelpHeight);
             y = recOrderHelpRect.yMax + 6f;
             var recPanel = new Rect(flowX, y, orderW,
-                state.Order.LayoutHeight + RecPanelPad * 2f);
+                order.LayoutHeight + RecPanelPad * 2f);
             float columnsTop = recPanel.yMax + 16f;
 
             // LEFT column: the role panels.
             y = columnsTop;
             var leftHeader = new Rect(flowX, y, flowW, 28f);
             y += 26f;
+            RecRolePanelsSnapshot panels = state.Panels!; // EnsurePanels ran above
             var panelsHelpRect = new Rect(flowX, y, flowW,
-                state.Panels.HelpHeight);
+                panels.HelpHeight);
             y = panelsHelpRect.yMax + 8f;
             float panelsStartY = y;
-            RecRolePanelsSnapshot panels = state.Panels;
             float bodyHeight = detail == null
                 ? 0f : BodyHeight(detail, flowW - PanelPad * 2f);
             for (int i = 0; i < panels.Count; i++)
@@ -207,7 +207,7 @@ namespace WorkRoles.UI
             float gy = sideBySide ? columnsTop : y;
             var rightHeader = new Rect(gx, gy, gw, 28f);
             gy += 26f;
-            RecTuningSnapshot tuning = state.Tuning;
+            RecTuningSnapshot tuning = state.Tuning!; // EnsureTuning ran above
             var globalHelpRect = new Rect(gx, gy, gw, tuning.GlobalHelpHeight);
             gy = globalHelpRect.yMax + 8f;
             float tuningStartY = gy;
@@ -289,8 +289,8 @@ namespace WorkRoles.UI
             RoleDrag.ResolveMouseUp();
         }
 
-        private static RecPathView FindPathView(
-            RecRoleDetailSnapshot detail, int pathId)
+        private static RecPathView? FindPathView(
+            RecRoleDetailSnapshot? detail, int pathId)
         {
             if (detail == null) return null;
             for (int i = 0; i < detail.PathCount; i++)
@@ -302,7 +302,7 @@ namespace WorkRoles.UI
 
         private void DrawRolePanels(float x, float y, float width,
             RecRolePanelsSnapshot panels,
-            RecRoleDetailSnapshot detail, float bodyHeight)
+            RecRoleDetailSnapshot? detail, float bodyHeight)
         {
             for (int i = 0; i < panels.Count; i++)
             {
@@ -340,7 +340,7 @@ namespace WorkRoles.UI
                         bodyHeight + PanelPad * 2f);
                     Widgets.DrawBoxSolidWithOutline(
                         body, WrStyle.PanelBackground, WrStyle.PanelOutline);
-                    DrawExpandedBody(body.ContractedBy(PanelPad), detail);
+                    DrawExpandedBody(body.ContractedBy(PanelPad), detail!); // expanded ⇒ detail != null
                     y += body.height;
                 }
                 y += PanelGap;
@@ -511,9 +511,9 @@ namespace WorkRoles.UI
         /// panel's tip and command routing. The commands clamp and no-op at
         /// the bounds.
         private static void DrawScalingRow(Rect rect, string caption,
-            string tipKey, string tipArg, string valueLabel, int value,
+            string tipKey, string? tipArg, string valueLabel, int value,
             int roleId, ScalingField field, string controlName,
-            string unitSuffix = null)
+            string? unitSuffix = null)
         {
             (tipArg == null ? WrTips.Key(tipKey) : WrTips.Key(tipKey, tipArg))
                 .Region(rect);
@@ -830,7 +830,7 @@ namespace WorkRoles.UI
                 rowsY + (view.DisplayRows - 1) * BandRowH,
                 110f, RoleChipUI.Height);
             WrTips.Key("WR_PathAddRoleTip").Region(pathAddRect);
-            if (Widgets.ButtonText(pathAddRect, state.Order.AddLabel))
+            if (Widgets.ButtonText(pathAddRect, state.Order!.AddLabel)) // order built before any panel draws
                 OpenAddRoleMenu(view);
 
             for (int i = 0; i < view.Count; i++)
@@ -852,7 +852,7 @@ namespace WorkRoles.UI
                     showRemove: !ownerEntry);
                 if (dragPathId == -1)
                 {
-                    StructuredTip entryTip = view.TipAt(i);
+                    StructuredTip? entryTip = view.TipAt(i);
                     if (entryTip != null)
                         StructuredTipPresenter.TipRegion(chipRect, entryTip);
                     else
@@ -1013,7 +1013,7 @@ namespace WorkRoles.UI
         // ----- Left: global options -----
 
         /// Editor-style mini-header: small dim label over a faint rule.
-        private static float MiniHeader(float x, float y, float width, string label, StructuredTip tip)
+        private static float MiniHeader(float x, float y, float width, string label, StructuredTip? tip)
         {
             Text.Font = GameFont.Small;
             var labelRect = new Rect(x, y, width, 22f);
@@ -1026,7 +1026,7 @@ namespace WorkRoles.UI
             return y + 30f;
         }
 
-        private static void DrawHelpParagraph(Rect rect, string text)
+        private static void DrawHelpParagraph(Rect rect, string? text)
         {
             GameFont previousFont = Text.Font;
             Color previousColor = GUI.color;
@@ -1068,7 +1068,7 @@ namespace WorkRoles.UI
                 {
                     RecTuningItem item = section.ItemAt(index);
                     if (item.Table != null) DrawTuningTable(item.Table, origin);
-                    else DrawTuningRow(item.Row, origin);
+                    else DrawTuningRow(item.Row!, origin); // exactly one of Row/Table is set
                 }
             }
             finally
@@ -1235,7 +1235,7 @@ namespace WorkRoles.UI
             Widgets.DrawBoxSolidWithOutline(
                 panel, WrStyle.PanelBackground, WrStyle.PanelOutline);
             var origin = new Vector2(panel.x + RecPanelPad, panel.y + RecPanelPad);
-            RecOrderSnapshot order = state.Order;
+            RecOrderSnapshot order = state.Order!; // order built before any panel draws
 
             Text.Font = GameFont.Small;
             for (int i = 0; i < order.Count; i++)

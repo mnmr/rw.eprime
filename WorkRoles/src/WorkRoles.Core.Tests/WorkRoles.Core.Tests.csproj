@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\WorkRoles.Core\WorkRoles.Core.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="TUnit" Version="1.58.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\WorkRoles.Lab\Data\VanillaJobSkillBaseline.cs"
+             Link="OfflineData\VanillaJobSkillBaseline.cs" />
+    <Compile Include="..\WorkRoles.Lab\Data\VanillaWorkOrder.cs"
+             Link="OfflineData\VanillaWorkOrder.cs" />
+  </ItemGroup>
+</Project>

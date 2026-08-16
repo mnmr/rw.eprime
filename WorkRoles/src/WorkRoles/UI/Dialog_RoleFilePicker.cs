@@ -31,7 +31,8 @@ namespace WorkRoles.UI
         // Teardown: dialog close releases the instance and its owned array.
         private readonly string[] locationLabels = new string[4];
         private int textLanguageRevision = -1;
-        private string enterPathLabel;
+        // Assigned by EnsureTextCache before first use.
+        private string enterPathLabel = null!;
         private float enterPathLabelWidth;
 
         private static bool OnWindows =>
@@ -89,10 +90,10 @@ namespace WorkRoles.UI
         // ordinally equal input keys reuse the complete result. Teardown: dialog
         // close and completion of any queued cached delegate release the instance.
         private Location cachedLocation;
-        private string cachedFileName;
-        private string cachedCustomDir;
-        private string cachedPath;
-        private string cachedProblem;
+        private string? cachedFileName;
+        private string? cachedCustomDir;
+        private string? cachedPath;
+        private string? cachedProblem;
         private bool cachedExists;
         private bool cacheValid;
         private bool pathRefreshPending;
@@ -106,7 +107,7 @@ namespace WorkRoles.UI
         /// Path + existence, recomputed outside OnGUI when the input key changes.
         /// Idle passes only compare the cached key; File.Exists and special-folder
         /// resolution execute at most once for each queued refresh.
-        protected string CachedResolvedPath(out string problem, out bool exists)
+        protected string? CachedResolvedPath(out string? problem, out bool exists)
         {
             bool current = cacheValid
                 && cachedLocation == location
@@ -139,7 +140,7 @@ namespace WorkRoles.UI
         /// Full destination, or null (with a reason) when not usable. The result
         /// uses the platform's directory separator throughout (game paths arrive
         /// with '/', Path.Combine joins with the native one — never mix them).
-        protected string ResolvedPath(out string problem)
+        protected string? ResolvedPath(out string? problem)
         {
             problem = null;
             string name = fileName.Trim();
@@ -172,7 +173,8 @@ namespace WorkRoles.UI
 
         private static string Strip(string text, char[] invalid)
         {
-            if (text == null || text.IndexOfAny(invalid) < 0) return text;
+            // Callers pass Widgets.TextField results, which are never null.
+            if (text == null || text.IndexOfAny(invalid) < 0) return text!;
             var sb = new StringBuilder(text.Length);
             foreach (char c in text)
                 if (Array.IndexOf(invalid, c) < 0) sb.Append(c);

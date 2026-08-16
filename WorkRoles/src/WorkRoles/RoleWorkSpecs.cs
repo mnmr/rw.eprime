@@ -34,8 +34,8 @@ namespace WorkRoles
     internal static class RoleWorkSpecs
     {
         private static readonly RoleWorkSpecCache Cache = new RoleWorkSpecCache();
-        private static JobProfileIndex prioritiesIndex;
-        private static Dictionary<string, int> naturalPriorities;
+        private static JobProfileIndex? prioritiesIndex;
+        private static Dictionary<string, int>? naturalPriorities;
 
         internal static void Reset()
         {
@@ -47,9 +47,11 @@ namespace WorkRoles
         internal static RoleWorkSpec For(Role role)
         {
             if (role == null) return RoleWorkSpec.Empty;
+            RoleStore? store = RoleStore.Current;
+            if (store == null) return RoleWorkSpec.Empty;
             return Cache.For(
                 role.id,
-                RoleStore.Current,
+                store,
                 RoleWorkRevision.Current,
                 JobSkillProfiles.RecommendationIndex(),
                 () => Build(role));
@@ -64,7 +66,7 @@ namespace WorkRoles
                 if (store != null)
                     foreach (int memberId in role.memberRoleIds)
                     {
-                        Role member = store.RoleById(memberId);
+                        Role? member = store.RoleById(memberId);
                         if (member == null || member.composite) continue;
                         if (member.blocker && !role.blocker) continue;
                         members.Add(For(member));
@@ -100,13 +102,13 @@ namespace WorkRoles
                 role.requiredSkills);
         }
 
-        private static IReadOnlyList<string> GateUnion(Role role, RoleStore store)
+        private static IReadOnlyList<string> GateUnion(Role role, RoleStore? store)
         {
             var gates = new List<string>(role.requiredSkills);
             if (store == null) return gates;
             foreach (int memberId in role.memberRoleIds)
             {
-                Role member = store.RoleById(memberId);
+                Role? member = store.RoleById(memberId);
                 if (member == null || member.composite) continue;
                 if (member.blocker && !role.blocker) continue;
                 foreach (string gate in member.requiredSkills)

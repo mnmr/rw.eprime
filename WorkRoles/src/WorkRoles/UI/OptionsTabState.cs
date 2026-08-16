@@ -104,8 +104,8 @@ namespace WorkRoles.UI
         // Teardown: Reset releases the snapshot and owner references;
         // InvalidateLanguageCaches forces a language comparison without dropping
         // an equal published snapshot.
-        private RoleStore owner;
-        private WorkRolesSettings settingsOwner;
+        private RoleStore? owner;
+        private WorkRolesSettings? settingsOwner;
         private int languageRevision = -1;
         private bool builtNumeric;
         private bool builtVanillaRange;
@@ -113,7 +113,7 @@ namespace WorkRoles.UI
         private bool builtColonistVerdicts;
         private bool builtPaletteVerdicts;
         private bool builtRecommendationVerdicts;
-        private OptionsRenderSnapshot snapshot;
+        private OptionsRenderSnapshot? snapshot;
 
         internal void Reset()
         {
@@ -128,9 +128,9 @@ namespace WorkRoles.UI
             languageRevision = -1;
         }
 
-        internal OptionsRenderSnapshot Snapshot(RoleStore store)
+        internal OptionsRenderSnapshot Snapshot(RoleStore? store)
         {
-            WorkRolesSettings settings = WorkRolesMod.Settings;
+            WorkRolesSettings? settings = WorkRolesMod.Settings;
             int language = LanguageChangeCoordinator.Revision;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool vanillaRange = store?.reportVanillaPriorities ?? true;

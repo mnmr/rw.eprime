@@ -12,13 +12,13 @@ namespace WorkRoles
     public class PaletteDef : Def
     {
         /// "#rrggbb"; parsed into color at load.
-        public string hex;
+        public string? hex;
         public Color color = Color.white;
 
         public override void PostLoad()
         {
             base.PostLoad();
-            if (!hex.NullOrEmpty() && ColorRgb.TryParseHex(hex, out var parsed))
+            if (!hex.NullOrEmpty() && ColorRgb.TryParseHex(hex!, out var parsed))
                 color = new Color(parsed.R, parsed.G, parsed.B);
         }
 
@@ -26,7 +26,7 @@ namespace WorkRoles
         {
             foreach (var error in base.ConfigErrors())
                 yield return error;
-            if (!hex.NullOrEmpty() && !ColorRgb.TryParseHex(hex, out _))
+            if (!hex.NullOrEmpty() && !ColorRgb.TryParseHex(hex!, out _))
                 yield return $"unparseable hex '{hex}' (want \"#rrggbb\")";
         }
     }

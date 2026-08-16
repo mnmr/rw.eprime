@@ -77,8 +77,8 @@ namespace WorkRoles.Core.Recs
     {
         public RoleWorkContentSpec(
             RoleWorkContentKind kind,
-            string defName,
-            string usedSkillDefName,
+            string? defName,
+            string? usedSkillDefName,
             RoleWorkEffect effects,
             bool trainsUsedSkill,
             IReadOnlyList<RoleContentGate> gates)
@@ -92,9 +92,10 @@ namespace WorkRoles.Core.Recs
         }
 
         public RoleWorkContentKind Kind { get; }
-        public string DefName { get; }
+        /// Null for anonymous aggregate-only gate records; tooltips skip null names.
+        public string? DefName { get; }
         /// Recipe work skill; null for gate-only content.
-        public string UsedSkillDefName { get; }
+        public string? UsedSkillDefName { get; }
         public RoleWorkEffect Effects { get; }
         public bool TrainsUsedSkill { get; }
         public IReadOnlyList<RoleContentGate> Gates { get; }
@@ -108,9 +109,9 @@ namespace WorkRoles.Core.Recs
     {
         public RoleWorkGiverSpec(
             string workGiverDefName,
-            IReadOnlyList<RoleSkillUseSpec> usedSkills,
-            IReadOnlyList<string> trainedSkillDefNames,
-            IReadOnlyList<RoleWorkContentSpec> contents)
+            IReadOnlyList<RoleSkillUseSpec>? usedSkills,
+            IReadOnlyList<string>? trainedSkillDefNames,
+            IReadOnlyList<RoleWorkContentSpec>? contents)
         {
             WorkGiverDefName = workGiverDefName;
             UsedSkills = usedSkills ?? Array.Empty<RoleSkillUseSpec>();
@@ -206,7 +207,7 @@ namespace WorkRoles.Core.Recs
             RoleWorkCapabilityRequirement capabilityRequirement,
             IReadOnlyList<RoleSkillFact> skills,
             IReadOnlyList<string> assignmentSkillGates,
-            string primarySkillDefName,
+            string? primarySkillDefName,
             bool isSkilled)
         {
             RoleId = roleId;
@@ -243,7 +244,7 @@ namespace WorkRoles.Core.Recs
         /// User-authored enablement gates (Role.requiredSkills); no level.
         public IReadOnlyList<string> AssignmentSkillGates { get; }
         /// Primary among participating used skills; null when none.
-        public string PrimarySkillDefName { get; }
+        public string? PrimarySkillDefName { get; }
         /// True when at least one participating skill has used evidence: the
         /// existing skilled/unskilled classification boundary, unchanged.
         public bool IsSkilled { get; }

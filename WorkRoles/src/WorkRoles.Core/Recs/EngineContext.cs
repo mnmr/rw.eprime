@@ -30,8 +30,8 @@ namespace WorkRoles.Core.Recs
             new Dictionary<int, PathSkillModel>();
         private readonly Dictionary<int, RoleWorkContentSpec[]> gatedContentsByRole =
             new Dictionary<int, RoleWorkContentSpec[]>();
-        private Dictionary<int, long> basePositions;
-        private IReadOnlyDictionary<int, long> basePositionsView;
+        private Dictionary<int, long>? basePositions;
+        private IReadOnlyDictionary<int, long>? basePositionsView;
 
         public EngineContext(ColonyView colony)
         {
@@ -58,8 +58,10 @@ namespace WorkRoles.Core.Recs
                         redundantBy[covered.Id].Add(covering.Id);
         }
 
+        // Returns null for unknown ids; kept declared non-nullable because the
+        // wide caller surface null-checks the result locally.
         public RoleView RoleOf(int id) =>
-            RolesById.TryGetValue(id, out RoleView role) ? role : null;
+            RolesById.TryGetValue(id, out RoleView role) ? role : null!;
 
         public HolderRequirement RequirementOf(int roleId) =>
             requirementByRoleId.TryGetValue(
@@ -74,7 +76,7 @@ namespace WorkRoles.Core.Recs
 
         public IReadOnlyDictionary<int, long> BasePositions()
         {
-            if (basePositions != null) return basePositionsView;
+            if (basePositions != null) return basePositionsView!; // assigned together with basePositions
             basePositions = Ordering.BasePositions(
                 Colony.Roles, Colony.OrderTemplate);
             basePositionsView = new ReadOnlyDictionary<int, long>(basePositions);
@@ -252,17 +254,17 @@ namespace WorkRoles.Core.Recs
                 TargetRoleId = PathActivation.UniqueTargetRoleId(path),
                 Contributions = new string[path.RoleIds.Count][],
             };
-            RoleView target = RoleOf(model.TargetRoleId);
+            RoleView? target = RoleOf(model.TargetRoleId);
             var qualifying = new List<string>();
             if (target != null)
             {
                 qualifying.AddRange(NeededSkills(target));
                 for (int entry = 0; entry < path.RoleIds.Count; entry++)
                 {
-                    RoleView trainer = RoleOf(path.RoleIds[entry]);
+                    RoleView? trainer = RoleOf(path.RoleIds[entry]);
                     if (trainer == null || trainer.Id == model.TargetRoleId)
                         continue;
-                    string primary = trainer.PrimarySkill;
+                    string? primary = trainer.PrimarySkill;
                     if (primary == null || qualifying.Contains(primary))
                         continue;
                     foreach (RoleSkillFact fact in target.Skills)
@@ -276,7 +278,7 @@ namespace WorkRoles.Core.Recs
             var covered = new List<string>();
             for (int entry = 0; entry < path.RoleIds.Count; entry++)
             {
-                RoleView role = RoleOf(path.RoleIds[entry]);
+                RoleView? role = RoleOf(path.RoleIds[entry]);
                 if (role == null || role.Id == model.TargetRoleId
                     || target == null)
                 {
@@ -361,7 +363,9 @@ namespace WorkRoles.Core.Recs
             PawnView pawn = Colony.Pawns[pawnIndex];
             if (!MeetsExplicitRequiredSkills(pawnIndex, role))
             {
-                skill = FirstMissingExplicitRequiredSkill(pawn, role);
+                // Non-null: MeetsExplicitRequiredSkills returned false, so a
+                // missing required skill exists.
+                skill = FirstMissingExplicitRequiredSkill(pawn, role)!;
                 source = SignalSource.Aggregated;
                 return SignalBucket.Awful;
             }
@@ -373,7 +377,7 @@ namespace WorkRoles.Core.Recs
                             workTypes[index], out SignalBucket workTypeBucket)
                         && workTypeBucket == SignalBucket.Awful)
                     {
-                        skill = null;
+                        skill = null!; // callers treat the out skill as optional (see SkillLevel)
                         source = SignalSource.Aggregated;
                         return SignalBucket.Awful;
                     }
@@ -409,12 +413,12 @@ namespace WorkRoles.Core.Recs
                     return Dampen(pawn, required, skill, bucket);
                 }
 
-            skill = null;
+            skill = null!; // callers treat the out skill as optional (see SkillLevel)
             source = SignalSource.None;
             return SignalBucket.Neutral;
         }
 
-        private static string FirstMissingExplicitRequiredSkill(
+        private static string? FirstMissingExplicitRequiredSkill(
             PawnView pawn, RoleView role)
         {
             IReadOnlyList<string> required = role.DeclaredRequiredSkills;
@@ -449,7 +453,7 @@ namespace WorkRoles.Core.Recs
         {
             IReadOnlyList<AssignmentView> existing =
                 Colony.Pawns[pawnIndex].Existing;
-            RoleView role = RoleOf(roleId);
+            RoleView? role = RoleOf(roleId);
             for (int index = 0; index < existing.Count; index++)
                 if (existing[index].RoleId == roleId
                     && (existing[index].Pinned

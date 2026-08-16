@@ -12,7 +12,7 @@ namespace WorkRoles
     /// demand, champion-penalty policy and the role's training path.
     public class RoleTuning
     {
-        public RoleTuningSkills skills;
+        public RoleTuningSkills skills = null!; // non-null after RoleDef.PostLoad
         public RoleCategory category;
         public RoleTime time;
         /// False = repeat championships use the occasional-work penalty.
@@ -36,7 +36,7 @@ namespace WorkRoles
     public class RoleTrainingEntry
     {
         /// RoleDef defName; entry order is the final stable tie-breaker.
-        public string role;
+        public string? role;
         /// [min, max) skill band on the 0..21 axis (21 = open top).
         public int min;
         public int max = SkillProgressionMath.MaxLevel;
@@ -55,25 +55,25 @@ namespace WorkRoles
     {
         /// Optional invariant persisted name when it intentionally differs from
         /// the readable form of defName. Never translate this field.
-        public string seedLabel;
+        public string? seedLabel;
         /// Entries as "WorkType:DefName" or "WorkGiver:DefName" strings (tolerant of missing defs).
         public List<string> entries = new List<string>();
         public bool autoAssign;
         /// A PaletteDef defName ("slate-700"); preferred over the inline pair.
-        public string colorRef;
+        public string? colorRef;
         /// Inline one-off color (kept for mods that don't want a palette entry).
         public Color color = Color.white;
         public bool hasCustomColor;
-        public string iconPath;
+        public string? iconPath;
 
         /// Recommendation tuning block. Always non-null after PostLoad; defs
         /// without one get theirs built from the legacy fields below.
-        public RoleTuning tuning;
+        public RoleTuning tuning = null!;
 
         /// Legacy pre-tuning elements (third-party defs on the old schema).
         /// holderScale is legacy-ignored like tuning.scale; the penalty flag
         /// still migrates in PostLoad.
-        public string holderScale;
+        public string? holderScale;
         public bool usesOccasionalRepeatChampionPenalty;
 
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
@@ -99,9 +99,9 @@ namespace WorkRoles
         }
 
         /// Role-list group name (resolved to a RoleGroupDef invariant name); empty = Default.
-        public string group;
+        public string? group;
         /// Time rule: 24-char bitstring, hour 0 leftmost, '1' = active. Null = always.
-        public string activeHours;
+        public string? activeHours;
         /// Location rule: any of Settlements, Caravans. Empty = anywhere.
         public List<string> locations = new List<string>();
 

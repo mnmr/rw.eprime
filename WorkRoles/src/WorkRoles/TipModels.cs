@@ -108,8 +108,8 @@ namespace WorkRoles
                 int rightCount = rightColumns.Cells?.Count ?? 0;
                 if (leftCount != rightCount) return false;
                 for (int i = 0; i < leftCount; i++)
-                    if (!string.Equals(leftColumns.Cells[i],
-                            rightColumns.Cells[i], StringComparison.Ordinal))
+                    if (!string.Equals(leftColumns.Cells![i],   // leftCount > 0 implies Cells != null
+                            rightColumns.Cells![i], StringComparison.Ordinal))
                         return false;
                 return true;
             }
@@ -134,8 +134,8 @@ namespace WorkRoles
                 if (leftCount != rightCount) return false;
                 for (int i = 0; i < leftCount; i++)
                 {
-                    TipInlineSegment leftSegment = leftInline.Segments[i];
-                    TipInlineSegment rightSegment = rightInline.Segments[i];
+                    TipInlineSegment leftSegment = leftInline.Segments![i];   // leftCount > 0 implies Segments != null
+                    TipInlineSegment rightSegment = rightInline.Segments![i];
                     if (!string.Equals(leftSegment.Text, rightSegment.Text,
                             StringComparison.Ordinal)
                         || !ReferenceEquals(leftSegment.Icon,
@@ -158,7 +158,7 @@ namespace WorkRoles
         private static bool NullableColorEquals(Color? left, Color? right)
         {
             if (left.HasValue != right.HasValue) return false;
-            return !left.HasValue || ColorEquals(left.Value, right.Value);
+            return !left.HasValue || ColorEquals(left.Value, right!.Value); // HasValue equality checked above
         }
 
         private static bool ColorEquals(Color left, Color right) =>
@@ -171,8 +171,8 @@ namespace WorkRoles
     /// the model directly from cached snapshots.
     public sealed class TipModel
     {
-        public string Title;
-        public string Badge;
+        public string? Title;
+        public string? Badge;
         public Color BadgeColor = Color.white;
         /// Extra inset beyond the tooltip renderer's 4px frame inset, for a
         /// total content inset of 8px.
@@ -181,9 +181,9 @@ namespace WorkRoles
 
         // WrTipUI's cached geometry; models are immutable after construction, so
         // measurement happens once instead of every hover frame.
-        internal object RenderCache;
+        internal object? RenderCache;
 
-        public TipSection AddSection(string header = null)
+        public TipSection AddSection(string? header = null)
         {
             var section = new TipSection { Header = header };
             Sections.Add(section);
@@ -230,7 +230,7 @@ namespace WorkRoles
                             bool firstCell = true;
                             for (int i = 0; i < (columns.Cells?.Count ?? 0); i++)
                             {
-                                if (columns.Cells[i].NullOrEmpty()) continue;
+                                if (columns.Cells![i].NullOrEmpty()) continue; // loop implies Cells != null
                                 if (!firstCell) sb.Append(" · ");
                                 firstCell = false;
                                 sb.Append(columns.Cells[i]);
@@ -245,7 +245,7 @@ namespace WorkRoles
                             if (!inline.Label.NullOrEmpty())
                                 sb.Append(inline.Label).Append(": ");
                             for (int i = 0; i < (inline.Segments?.Count ?? 0); i++)
-                                if (inline.Segments[i].Text != null)
+                                if (inline.Segments![i].Text != null) // loop implies Segments != null
                                     sb.Append(inline.Segments[i].Text);
                             break;
                         }
@@ -259,7 +259,7 @@ namespace WorkRoles
     public sealed class TipSection
     {
         /// Optional dim header line above the rows.
-        public string Header;
+        public string? Header;
         public List<TipRow> Rows = new List<TipRow>();
 
         public TipSection Text(string text, bool dim = false)
@@ -281,7 +281,7 @@ namespace WorkRoles
         }
 
         public TipSection Columns(
-            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+            IReadOnlyList<string> cells, Color? color = null, Texture2D? icon = null, bool tight = false)
         {
             Rows.Add(new TipColumnsRow(cells, color, icon, tight));
             return this;
@@ -293,7 +293,7 @@ namespace WorkRoles
             return this;
         }
 
-        public TipSection Inline(IReadOnlyList<TipInlineSegment> segments, string label = null)
+        public TipSection Inline(IReadOnlyList<TipInlineSegment> segments, string? label = null)
         {
             Rows.Add(new TipInlineRow(segments, label));
             return this;
@@ -367,11 +367,11 @@ namespace WorkRoles
     {
         public readonly IReadOnlyList<string> Cells;
         public readonly Color? Color;
-        public readonly Texture2D Icon;
+        public readonly Texture2D? Icon;
         public readonly bool Tight;
 
         public TipColumnsRow(
-            IReadOnlyList<string> cells, Color? color = null, Texture2D icon = null, bool tight = false)
+            IReadOnlyList<string> cells, Color? color = null, Texture2D? icon = null, bool tight = false)
         {
             Cells = cells;
             Color = color;
@@ -387,9 +387,9 @@ namespace WorkRoles
     public sealed class TipInlineRow : TipRow
     {
         public readonly IReadOnlyList<TipInlineSegment> Segments;
-        public readonly string Label;
+        public readonly string? Label;
 
-        public TipInlineRow(IReadOnlyList<TipInlineSegment> segments, string label = null)
+        public TipInlineRow(IReadOnlyList<TipInlineSegment> segments, string? label = null)
         {
             Segments = segments;
             Label = label;
@@ -400,8 +400,8 @@ namespace WorkRoles
     /// before the segment.
     public readonly struct TipInlineSegment
     {
-        public readonly string Text;
-        public readonly Texture2D Icon;
+        public readonly string? Text;
+        public readonly Texture2D? Icon;
         public readonly Color Color;
         public readonly float Gap;
 

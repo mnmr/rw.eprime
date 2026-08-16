@@ -25,11 +25,11 @@ namespace WorkRoles.UI
         // colors, role rules, hunting identity, width, font, and language.
         // Refresh: immediate on a key change. Equality: key hits preserve
         // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
-        private RoleStore orderStore;
+        private RoleStore? orderStore;
         private int orderUiVersion = -1;
         private int orderGeneration;
         private float orderWidth = -1f;
-        private RecOrderSnapshot orderSnapshot;
+        private RecOrderSnapshot? orderSnapshot;
 
         // Owner: Recommendations window. Key: language revision. Value: two
         // immutable StructuredTip models. Dependencies: translated tip text.
@@ -47,10 +47,10 @@ namespace WorkRoles.UI
         // Dependencies: tuning descriptors, normalized values, language, font,
         // width. Refresh: immediate on a key change. Equality: key hits preserve
         // section/row identity. Teardown: Reset/InvalidateLanguageCaches clears it.
-        private RoleStore tuningStore;
+        private RoleStore? tuningStore;
         private int tuningRevision = -1;
         private float tuningWidth = -1f;
-        private RecTuningSnapshot tuningSnapshot;
+        private RecTuningSnapshot? tuningSnapshot;
 
         // Cache contract — Owner: Recommendations tab. Key: published order
         // snapshot identity and available width. Value: one immutable panel
@@ -59,9 +59,9 @@ namespace WorkRoles.UI
         // language (the order snapshot is replaced on language invalidation).
         // Refresh: immediate on a key change. Equality: matching key preserves
         // snapshot identity. Teardown: Reset/InvalidateLanguageCaches releases it.
-        private RecOrderSnapshot panelsOrder;
+        private RecOrderSnapshot? panelsOrder;
         private float panelsWidth = -1f;
-        private RecRolePanelsSnapshot panelsSnapshot;
+        private RecRolePanelsSnapshot? panelsSnapshot;
 
         // Cache contract — Owner: Recommendations tab. Key: (UiVersion.Current,
         // RoleStore identity, expanded role id, available width, live Small
@@ -79,21 +79,21 @@ namespace WorkRoles.UI
         // releases it.
         private int detailStamp = -1;
         private int detailDefinitionRevision = -1;
-        private RoleStore detailStore;
+        private RoleStore? detailStore;
         private int detailRoleId = -1;
         private float detailWidth = -1f;
         private float detailSmallLineHeight = -1f;
-        private RecRoleDetailSnapshot detail;
+        private RecRoleDetailSnapshot? detail;
 
         internal int OrderStamp => orderGeneration;
-        internal RecOrderSnapshot Order => orderSnapshot;
+        internal RecOrderSnapshot? Order => orderSnapshot;
 
-        internal StructuredTip RecommendationOrderTip { get; private set; }
-        internal StructuredTip TrainingTip { get; private set; }
-        internal string RecommendationOrderHelp { get; private set; }
+        internal StructuredTip? RecommendationOrderTip { get; private set; }
+        internal StructuredTip? TrainingTip { get; private set; }
+        internal string? RecommendationOrderHelp { get; private set; }
         internal float RecommendationOrderHelpHeight { get; private set; }
-        internal RecTuningSnapshot Tuning => tuningSnapshot;
-        internal RecRolePanelsSnapshot Panels => panelsSnapshot;
+        internal RecTuningSnapshot? Tuning => tuningSnapshot;
+        internal RecRolePanelsSnapshot? Panels => panelsSnapshot;
 
         internal void Reset()
         {
@@ -189,7 +189,7 @@ namespace WorkRoles.UI
             var rebuiltSections = new List<RecTuningSection>();
             string tuningReset = "WR_RecTuneReset".Translate();
             string headerLabel = "WR_RecGlobalPanel".Translate();
-            string globalHelp = null;
+            string? globalHelp = null;
             float globalHelpHeight = 0f;
 
             RecommendationsTuningOptions options = store.recommendationTuning
@@ -198,12 +198,12 @@ namespace WorkRoles.UI
             // Controls occupy 108px at the right edge; captions keep 20px clear.
             const float descriptionWidthReserve = 128f;
             string cellHint = "WR_RecTuneCellHint".Translate();
-            string sectionKey = null;
-            string sectionLabel = null;
-            string sectionIntro = null;
+            string? sectionKey = null;
+            string? sectionLabel = null;
+            string? sectionIntro = null;
             float sectionIntroHeight = 0f;
-            List<RecTuningItem> items = null;
-            RecTuningTableBuilder table = null;
+            List<RecTuningItem>? items = null;
+            RecTuningTableBuilder? table = null;
             RecTuningTableGroup tableGroup = RecTuningTableGroup.None;
             float tableCellsX = 0f;
             float tableCellsY = 0f;
@@ -213,7 +213,7 @@ namespace WorkRoles.UI
             {
                 if (table != null)
                 {
-                    items.Add(new RecTuningItem(table.Publish()));
+                    items!.Add(new RecTuningItem(table.Publish())); // a table only opens inside a section
                     table = null;
                 }
                 tableGroup = RecTuningTableGroup.None;
@@ -223,7 +223,7 @@ namespace WorkRoles.UI
                 CloseTable();
                 if (items != null)
                     rebuiltSections.Add(new RecTuningSection(
-                        sectionKey, sectionLabel, sectionIntro,
+                        sectionKey!, sectionLabel!, sectionIntro!, // set together with items
                         sectionIntroHeight, items, y - rowGap));
             }
             GameFont previousFont = Text.Font;
@@ -269,9 +269,9 @@ namespace WorkRoles.UI
                             System.Math.Max(80f, width - descriptionWidthReserve));
                         float rowHeight = System.Math.Max(
                             44f, 21f + descriptionHeight);
-                        List<string> enumOptions = null;
-                        List<Color> enumColors = null;
-                        List<string> enumTipKeys = null;
+                        List<string>? enumOptions = null;
+                        List<Color>? enumColors = null;
+                        List<string>? enumTipKeys = null;
                         if (descriptor.ValueKind
                             == RecommendationTuningValueKind.SignalBucket)
                         {
@@ -287,19 +287,19 @@ namespace WorkRoles.UI
                                 enumTipKeys.Add(VerdictKey((SignalBucket)bucket));
                             }
                         }
-                        items.Add(new RecTuningItem(new RecommendationTuningRow(
+                        items!.Add(new RecTuningItem(new RecommendationTuningRow( // section opened above
                             descriptor,
                             value,
-                            sectionLabel: null,
+                            sectionLabel: null!, // null = single row without section banner
                             label,
                             description,
                             valueLabel,
                             sectionRect: default,
                             new Rect(0f, y, width, rowHeight),
                             "WR_Tune_" + descriptor.StableKey,
-                            enumOptions,
-                            enumColors,
-                            enumTipKeys)));
+                            enumOptions!,  // null = non-enum row, by design
+                            enumColors!,
+                            enumTipKeys!)));
                         y += rowHeight + rowGap;
                         continue;
                     }
@@ -342,10 +342,10 @@ namespace WorkRoles.UI
                         y += System.Math.Max(
                             21f + descriptionHeight, cellsHeight) + rowGap;
                     }
-                    int column = table.CellCount;
+                    int column = table!.CellCount; // opened above when the group started
                     float cellX = tableCellsX + column
                         * (tableCellW + RecTuningTable.CellGap);
-                    (string header, Color headerColor, string headerTipKey) =
+                    (string header, Color headerColor, string? headerTipKey) =
                         HeaderFor(group, column);
                     table.AddCell(new RecTuningTableCell(
                         descriptor, value, valueLabel,
@@ -499,7 +499,7 @@ namespace WorkRoles.UI
         /// plain ordinals, category and time columns their full editor labels.
         /// The multiplier row's Awful column carries the admits-Awful caveat
         /// in its tooltip.
-        private static (string text, Color color, string tipKey) HeaderFor(
+        private static (string text, Color color, string? tipKey) HeaderFor(
             RecTuningTableGroup group, int column)
         {
             switch (group)
@@ -649,7 +649,7 @@ namespace WorkRoles.UI
 
         /// Null when the role is gone: the view must collapse the accordion
         /// before layout.
-        internal RecRoleDetailSnapshot EnsureDetail(
+        internal RecRoleDetailSnapshot? EnsureDetail(
             RoleStore store, int roleId, float width)
         {
             float smallLineHeight = Text.LineHeightOf(GameFont.Small);
@@ -667,7 +667,7 @@ namespace WorkRoles.UI
             detailSmallLineHeight = smallLineHeight;
             detail = null;
 
-            Role role = store.RoleById(roleId);
+            Role? role = store.RoleById(roleId);
             if (role == null) return null;
 
             // Skill facts render as compact comma-separated rows in the right
@@ -887,7 +887,7 @@ namespace WorkRoles.UI
 
         /// Effect kinds as localized phrases; null when nothing is known so
         /// no unsupported effect claim is invented for modded work.
-        private static StructuredTip EffectTip(
+        private static StructuredTip? EffectTip(
             int roleId, RoleSkillFact skill, string label)
         {
             if (skill.Effects == RoleWorkEffect.Unspecified) return null;
@@ -907,7 +907,7 @@ namespace WorkRoles.UI
 
         /// The exact content minimums behind a gate-bearing skill, capped so
         /// content-heavy roles stay readable.
-        private static StructuredTip GateTip(
+        private static StructuredTip? GateTip(
             int roleId, RoleWorkSpec spec, string skillDefName, string label)
         {
             const int MaxLines = 12;
@@ -960,7 +960,7 @@ namespace WorkRoles.UI
                     if (terrain != null) return terrain.LabelCap.ToString();
                     break;
             }
-            return content.DefName;
+            return content.DefName ?? "";
         }
 
         /// The role's own path; an unstored (implicit) path synthesizes as the
@@ -990,7 +990,7 @@ namespace WorkRoles.UI
             var tips = new List<StructuredTip>();
             for (int i = 0; i < owner.trainingRoleIds.Count; i++)
             {
-                Role role = store.RoleById(owner.trainingRoleIds[i]);
+                Role? role = store.RoleById(owner.trainingRoleIds[i]);
                 if (role == null) continue;
                 roleIds.Add(owner.trainingRoleIds[i]);
                 mins.Add(owner.trainingMins[i]);
@@ -1136,8 +1136,8 @@ namespace WorkRoles.UI
 
     internal readonly struct RecRoleMenuOption
     {
-        internal RecRoleMenuOption(int roleId, string label, string tooltip,
-            int sortTier = 0, string sortLabel = null)
+        internal RecRoleMenuOption(int roleId, string label, string? tooltip,
+            int sortTier = 0, string? sortLabel = null)
         {
             RoleId = roleId;
             Label = label;
@@ -1148,7 +1148,7 @@ namespace WorkRoles.UI
 
         internal int RoleId { get; }
         internal string Label { get; }
-        internal string Tooltip { get; }
+        internal string? Tooltip { get; }
         private int SortTier { get; }
         private string SortLabel { get; }
 
@@ -1363,8 +1363,8 @@ namespace WorkRoles.UI
             Table = table;
         }
 
-        internal RecommendationTuningRow Row { get; }
-        internal RecTuningTable Table { get; }
+        internal RecommendationTuningRow? Row { get; }
+        internal RecTuningTable? Table { get; }
     }
 
     internal sealed class RecTuningTable
@@ -1404,7 +1404,7 @@ namespace WorkRoles.UI
     {
         internal RecTuningTableCell(RecommendationTuningDescriptor descriptor,
             int value, string valueLabel, string header, Color headerColor,
-            string headerTip, Rect headerRect, Rect cellRect)
+            string? headerTip, Rect headerRect, Rect cellRect)
         {
             Descriptor = descriptor;
             Value = value;
@@ -1421,7 +1421,7 @@ namespace WorkRoles.UI
         internal string ValueLabel { get; }
         internal string Header { get; }
         internal Color HeaderColor { get; }
-        internal string HeaderTip { get; }
+        internal string? HeaderTip { get; }
         internal Rect HeaderRect { get; }
         internal Rect CellRect { get; }
     }
@@ -1441,7 +1441,7 @@ namespace WorkRoles.UI
     internal readonly struct RecSkillChip
     {
         internal RecSkillChip(string defName, string label, Rect rect,
-            StructuredTip tip = null)
+            StructuredTip? tip = null)
         {
             DefName = defName;
             Label = label;
@@ -1450,7 +1450,7 @@ namespace WorkRoles.UI
         }
 
         /// Effect kinds or gated-content lines; null renders no tip region.
-        internal StructuredTip Tip { get; }
+        internal StructuredTip? Tip { get; }
 
         internal string DefName { get; }
         internal string Label { get; }
@@ -1613,7 +1613,7 @@ namespace WorkRoles.UI
             List<int> mins, List<int> maxes, List<int> rows,
             List<RoleChipRenderData> chips,
             List<RecRoleMenuOption> addOptions, int displayRows,
-            List<StructuredTip> tips = null)
+            List<StructuredTip>? tips = null)
         {
             PathId = pathId;
             this.roleIds = roleIds;
@@ -1626,11 +1626,11 @@ namespace WorkRoles.UI
             DisplayRows = displayRows;
         }
 
-        private readonly List<StructuredTip> tips;
+        private readonly List<StructuredTip>? tips;
 
         /// Per-entry band tip: the entry's contribution to the owner plus the
         /// drag hint; null when the snapshot carried no tips.
-        internal StructuredTip TipAt(int index) =>
+        internal StructuredTip? TipAt(int index) =>
             tips != null && index < tips.Count ? tips[index] : null;
 
         internal int PathId { get; }

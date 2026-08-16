@@ -6,7 +6,7 @@ namespace WorkRoles.Core.Recs
     public sealed class RoleTemplateCandidate
     {
         public RoleTemplateCandidate(string key, IEnumerable<string> coverage,
-            string primarySkill)
+            string? primarySkill)
         {
             Key = key;
             Coverage = new HashSet<string>(coverage);
@@ -15,14 +15,14 @@ namespace WorkRoles.Core.Recs
 
         public string Key { get; }
         public HashSet<string> Coverage { get; }
-        public string PrimarySkill { get; }
+        public string? PrimarySkill { get; }
     }
 
     public static class RoleTemplateMatcher
     {
-        public static RoleTemplateCandidate Closest(
+        public static RoleTemplateCandidate? Closest(
             IReadOnlyCollection<string> requestedCoverage,
-            string requestedPrimarySkill,
+            string? requestedPrimarySkill,
             IEnumerable<RoleTemplateCandidate> candidates)
         {
             if (requestedCoverage == null || requestedCoverage.Count == 0) return null;

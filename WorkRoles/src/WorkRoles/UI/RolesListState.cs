@@ -22,10 +22,10 @@ namespace WorkRoles.UI
         // Refresh: lazy on the first BuildSections read after revision change.
         // Equality: exact slot/revision hits preserve builder identity. Teardown:
         // ReleaseSectionsSnapshot clears both slots when window data is released.
-        private static readonly List<RoleSection>[] sectionsCache = new List<RoleSection>[2];
+        private static readonly List<RoleSection>?[] sectionsCache = new List<RoleSection>?[2];
         private static readonly int[] sectionsCacheStamp = { -1, -1 };
         private static readonly int[] sectionsCacheDefinitionRevision = { -1, -1 };
-        private static RoleStore sectionsCacheOwner;
+        private static RoleStore? sectionsCacheOwner;
         private static int collapseRevision;
 
         // Owner: window. Key: this RolesListState instance and RoleStore
@@ -37,15 +37,15 @@ namespace WorkRoles.UI
         // Equality: exact equal contents preserve snapshot identity within one
         // store; store changes always republish. Teardown: Reset/ReleaseWindowData
         // release the rows and store reference.
-        private RoleListSnapshot snapshot;
-        private RoleStore displayOwner;
+        private RoleListSnapshot? snapshot;
+        private RoleStore? displayOwner;
         private int displayStamp = -1;
         private int displayDefinitionRevision = -1;
         private int displayLocationRevision = -1;
         private int displayCollapseRevision = -1;
         private bool displayNestedPreference;
-        private string displaySearch;
-        private string displayJobFilter;
+        private string? displaySearch;
+        private string? displayJobFilter;
 
         // Owner: this Roles-list state for one open Work Roles window.
         // Key: RoleStore identity and UiVersion.Current.
@@ -57,12 +57,12 @@ namespace WorkRoles.UI
         // Equality: exact equal contents preserve identity within one store;
         // a store-owner change always republishes for ownership partitioning.
         // Teardown: Reset releases the snapshot and its store reference.
-        private RoleSelectionSnapshot selectionSnapshot;
-        private RoleStore selectionOwner;
+        private RoleSelectionSnapshot? selectionSnapshot;
+        private RoleStore? selectionOwner;
         private int selectionStamp = -1;
 
         internal string RoleSearch { get; set; } = "";
-        internal string JobFilterDefName { get; set; }
+        internal string? JobFilterDefName { get; set; }
         internal bool FiltersActive => !RoleSearch.NullOrEmpty() || JobFilterDefName != null;
 
         internal void Reset()
@@ -90,13 +90,13 @@ namespace WorkRoles.UI
         }
 
         internal RoleListSnapshot Snapshot(RoleStore store, int selectedRoleId,
-            bool revealSelected, System.Func<Role, StructuredTip> roleTooltip)
+            bool revealSelected, System.Func<Role, StructuredTip?>? roleTooltip)
         {
             bool ownerChanged = !ReferenceEquals(displayOwner, store);
             bool filtered = FiltersActive;
             bool nestedPreference = WorkRolesMod.Settings?.nestedRoleTree ?? true;
             bool nested = nestedPreference && !filtered;
-            IReadOnlyList<RoleSection> sections = filtered ? null : BuildSections(store, nested);
+            IReadOnlyList<RoleSection>? sections = filtered ? null : BuildSections(store, nested);
 
             if (revealSelected && sections != null)
                 foreach (RoleSection section in sections)
@@ -131,7 +131,7 @@ namespace WorkRoles.UI
                 else
                 {
                     var publishedSections = new Dictionary<RoleSection,
-                        RoleListSectionSnapshot>(sections.Count);
+                        RoleListSectionSnapshot>(sections!.Count); // !filtered ⇒ sections built above
                     GameFont oldFont = Text.Font;
                     try
                     {
@@ -194,11 +194,11 @@ namespace WorkRoles.UI
         }
 
         private static RoleListRowSnapshot PublishRoleRow(
-            RoleListSectionSnapshot section, Role role, RoleStore store,
+            RoleListSectionSnapshot? section, Role role, RoleStore store,
             int depth, bool virtualRow, ISet<string> liveLocationIds,
-            System.Func<Role, StructuredTip> roleTooltip)
+            System.Func<Role, StructuredTip?>? roleTooltip)
         {
-            string originGroupLabel = null;
+            string? originGroupLabel = null;
             if (virtualRow)
                 originGroupLabel = store.GroupById(role.groupId)?.label
                     ?? "WR_GroupDefault".Translate().ToString();
@@ -251,7 +251,7 @@ namespace WorkRoles.UI
             // A composite spells nothing itself; its coverage is the members'
             // expanded giver union, which is what the filter asks about.
             if (role.composite) return role.Coverage().Contains(JobFilterDefName);
-            string parentType = giver?.workType?.defName;
+            string? parentType = giver?.workType?.defName;
             return role.entries.Any(entry => entry.Kind == JobEntryKind.WorkGiver
                 ? entry.DefName == JobFilterDefName
                 : parentType != null && entry.DefName == parentType);
@@ -303,15 +303,15 @@ namespace WorkRoles.UI
                 sectionsCacheDefinitionRevision[slot] = definitionRevision;
                 sectionsCache[slot] = BuildSectionsUncached(store, nested);
             }
-            return sectionsCache[slot];
+            return sectionsCache[slot]!; // built above when the slot was empty
         }
 
         internal static (IReadOnlyList<Role> roots,
-            IReadOnlyList<(Role role, Role parent, int depth, bool virtualRow)> rows)
+            IReadOnlyList<(Role role, Role? parent, int depth, bool virtualRow)> rows)
             BuildRoleTree(RoleStore store)
         {
             var roots = new List<Role>();
-            var rows = new List<(Role role, Role parent, int depth, bool virtualRow)>();
+            var rows = new List<(Role role, Role? parent, int depth, bool virtualRow)>();
             foreach (RoleSection section in BuildSections(store, nested: true))
             {
                 roots.AddRange(section.roots);
@@ -332,7 +332,7 @@ namespace WorkRoles.UI
                && !parent.composite && !child.composite;
 
         private static (List<Role> roots,
-            List<(Role role, Role parent, int depth, bool virtualRow)> rows)
+            List<(Role role, Role? parent, int depth, bool virtualRow)> rows)
             BuildRoleTree(List<Role> members, List<Role> allRoles)
         {
             var memberSet = new HashSet<Role>(members);
@@ -342,7 +342,7 @@ namespace WorkRoles.UI
                     nested.Add(role);
 
             List<Role> roots = members.Where(role => !nested.Contains(role)).ToList();
-            var rows = new List<(Role role, Role parent, int depth, bool virtualRow)>(members.Count);
+            var rows = new List<(Role role, Role? parent, int depth, bool virtualRow)>(members.Count);
             foreach (Role root in roots)
             {
                 rows.Add((root, null, 0, false));
@@ -386,7 +386,7 @@ namespace WorkRoles.UI
         {
             var sections = new List<RoleSection>();
             var byGroupId = new Dictionary<int, RoleSection>();
-            RoleSection defaultSection = null;
+            RoleSection? defaultSection = null;
 
             RoleSection Default() => defaultSection ??= new RoleSection
             {
@@ -454,7 +454,7 @@ namespace WorkRoles.UI
                         // indentation or virtual rows; a role covered by two
                         // parents keeps only its first occurrence.
                         var seen = new HashSet<Role>();
-                        var flat = new List<(Role role, Role parent, int depth,
+                        var flat = new List<(Role role, Role? parent, int depth,
                             bool virtualRow)>(section.members.Count);
                         foreach (var row in section.rows)
                             if (!row.virtualRow && seen.Add(row.role))
@@ -467,7 +467,7 @@ namespace WorkRoles.UI
                 {
                     section.roots = section.members;
                     section.rows = section.members
-                        .Select(role => (role, (Role)null, 0, false)).ToList();
+                        .Select(role => (role, (Role?)null, 0, false)).ToList();
                 }
                 section.displayTitle = section.title + " (" + section.members.Count + ")";
             }
@@ -507,7 +507,7 @@ namespace WorkRoles.UI
             return -1;
         }
 
-        internal bool TryGetRole(int roleId, out string label)
+        internal bool TryGetRole(int roleId, out string? label)
         {
             for (int i = 0; i < entries.Length; i++)
                 if (entries[i].RoleId == roleId)
@@ -557,8 +557,8 @@ namespace WorkRoles.UI
                 || rows.Count != other.rows.Count)
                 return false;
 
-            RoleListSectionSnapshot previousLeftSection = null;
-            RoleListSectionSnapshot previousRightSection = null;
+            RoleListSectionSnapshot? previousLeftSection = null;
+            RoleListSectionSnapshot? previousRightSection = null;
             for (int i = 0; i < rows.Count; i++)
             {
                 RoleListRowSnapshot leftRow = rows[i];
@@ -583,7 +583,7 @@ namespace WorkRoles.UI
         {
             for (int i = 0; i < rows.Count; i++)
             {
-                RoleListSectionSnapshot section = rows[i].Section;
+                RoleListSectionSnapshot? section = rows[i].Section;
                 if (section != null && section.GroupId == groupId)
                     return section.GroupIndex;
             }
@@ -593,12 +593,12 @@ namespace WorkRoles.UI
 
     internal sealed class RoleListRowSnapshot
     {
-        internal RoleListRowSnapshot(RoleListSectionSnapshot section,
+        internal RoleListRowSnapshot(RoleListSectionSnapshot? section,
             RoleChipRenderData chip,
-            int depth, bool virtualRow, bool invalid, string label,
-            StructuredTip tooltip, bool enabled, bool hasCustomColor, Color color,
+            int depth, bool virtualRow, bool invalid, string? label,
+            StructuredTip? tooltip, bool enabled, bool hasCustomColor, Color color,
             bool blocker, bool hasTimeRule, bool hasLocationRule,
-            bool composite, string virtualOriginGroupLabel)
+            bool composite, string? virtualOriginGroupLabel)
         {
             Section = section;
             Chip = chip;
@@ -620,19 +620,19 @@ namespace WorkRoles.UI
         internal static RoleListRowSnapshot ForHeader(
             RoleListSectionSnapshot section) =>
             new RoleListRowSnapshot(section,
-                new RoleChipRenderData(-1, null, default(Color), false,
+                new RoleChipRenderData(-1, null!, default(Color), false, // header sentinel chip; never rendered
                     false, false, false),
                 0, false, false, null,
                 null, true, false, default, false, false, false, false, null);
 
-        internal RoleListSectionSnapshot Section { get; }
+        internal RoleListSectionSnapshot? Section { get; }
         internal RoleChipRenderData Chip { get; }
         internal int RoleId => Chip.RoleId;
         internal int Depth { get; }
         internal bool VirtualRow { get; }
         internal bool Invalid { get; }
-        internal string Label { get; }
-        internal StructuredTip Tooltip { get; }
+        internal string? Label { get; }
+        internal StructuredTip? Tooltip { get; }
         internal bool Enabled { get; }
         internal bool HasCustomColor { get; }
         internal Color Color { get; }
@@ -640,7 +640,7 @@ namespace WorkRoles.UI
         internal bool HasTimeRule { get; }
         internal bool HasLocationRule { get; }
         internal bool Composite { get; }
-        internal string VirtualOriginGroupLabel { get; }
+        internal string? VirtualOriginGroupLabel { get; }
 
         internal bool ContentEqualsExcludingSection(
             RoleListRowSnapshot other)
@@ -742,16 +742,16 @@ namespace WorkRoles.UI
     /// Conditional Roles overlay. Instances belong to the shared section snapshot.
     internal sealed class RoleSection
     {
-        internal string key;
-        internal string title;
+        internal string key = null!;   // always set by the section builder's initializer
+        internal string title = null!; // always set by the section builder's initializer
         internal string commandName = "";
-        internal RoleGroup group;
+        internal RoleGroup? group;
         internal bool renamable;
         internal bool draggable;
         internal bool dropTarget;
         internal List<Role> members = new List<Role>();
-        internal List<Role> roots;
-        internal List<(Role role, Role parent, int depth, bool virtualRow)> rows;
-        internal string displayTitle;
+        internal List<Role> roots = null!;    // assigned by BuildSectionsUncached before publish
+        internal List<(Role role, Role? parent, int depth, bool virtualRow)> rows = null!; // assigned by BuildSectionsUncached before publish
+        internal string displayTitle = null!; // assigned by BuildSectionsUncached before publish
     }
 }

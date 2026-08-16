@@ -20,7 +20,7 @@ namespace WorkRoles.UI
         // OnGUI, never per repaint. Equality: equal clipboard text preserves the
         // published string identity and usability result. Teardown: dialog close
         // releases the snapshot and cached refresh delegate.
-        private string clip;
+        private string? clip;
         private bool clipUsable;
         private readonly System.Action refreshClipboardAction;
 
@@ -31,8 +31,8 @@ namespace WorkRoles.UI
         // Equality: duplicate clicks while pending reuse the existing command.
         // Teardown: completion clears inputs; dialog close releases the instance.
         private readonly System.Action importPendingAction;
-        private string pendingImportPath;
-        private string pendingImportXml;
+        private string? pendingImportPath;
+        private string? pendingImportXml;
         private bool importPending;
         // Owner: import dialog. Key: LanguageChangeCoordinator.Revision. Value:
         // immutable translated labels. Dependencies: language only. Refresh:
@@ -40,11 +40,12 @@ namespace WorkRoles.UI
         // revision preserves all string identities. Teardown: dialog close
         // releases the single-slot label cache.
         private int textLanguageRevision = -1;
-        private string titleLabel;
-        private string clipboardLabel;
-        private string locationCaption;
-        private string cancelLabel;
-        private string importLabel;
+        // Assigned by EnsureTextCache before first use.
+        private string titleLabel = null!;
+        private string clipboardLabel = null!;
+        private string locationCaption = null!;
+        private string cancelLabel = null!;
+        private string importLabel = null!;
 
         public Dialog_ImportSource()
         {
@@ -105,7 +106,7 @@ namespace WorkRoles.UI
                 CaptionRowH - 2f), locationCaption);
             DrawLocationRows(inRect, locRowY, customRowY);
 
-            string path = CachedResolvedPath(out string problem, out bool exists);
+            string? path = CachedResolvedPath(out string? problem, out bool exists);
 
             var cancelRect = new Rect(inRect.x, btnY, ButtonW, ButtonH);
             var importRect = new Rect(inRect.xMax - ButtonW, btnY, ButtonW, ButtonH);
@@ -133,7 +134,7 @@ namespace WorkRoles.UI
             importLabel = "WR_Import".Translate().ToString();
         }
 
-        private void QueueImport(string xml, string path)
+        private void QueueImport(string? xml, string? path)
         {
             if (importPending) return;
             importPending = true;
@@ -144,8 +145,8 @@ namespace WorkRoles.UI
 
         private void ImportPending()
         {
-            string xml = pendingImportXml;
-            string path = pendingImportPath;
+            string? xml = pendingImportXml;
+            string? path = pendingImportPath;
             pendingImportXml = null;
             pendingImportPath = null;
             importPending = false;

@@ -9,7 +9,7 @@ namespace WorkRoles.Core.Signals
         public SignalType Type { get; }
         public SignalSource Source { get; }
         public int? Degree { get; }
-        public string SkillDefName { get; }
+        public string? SkillDefName { get; }
         public bool DerivesSkillFromSource { get; }
         public IReadOnlyList<SignalEffect> Effects { get; }
         public SignalUi FallbackUi { get; }
@@ -20,7 +20,7 @@ namespace WorkRoles.Core.Signals
             SignalType type,
             SignalSource source,
             int? degree,
-            string skillDefName,
+            string? skillDefName,
             bool derivesSkillFromSource,
             IEnumerable<SignalEffect> effects,
             SignalUi fallbackUi,
@@ -79,20 +79,20 @@ namespace WorkRoles.Core.Signals
 
     public sealed class SignalUiOverride
     {
-        public string Label { get; }
-        public string Description { get; }
-        public string IconKey { get; }
-        public string AuthorTier { get; }
-        public string ColorKey { get; }
-        public string SourceDisplayName { get; }
+        public string? Label { get; }
+        public string? Description { get; }
+        public string? IconKey { get; }
+        public string? AuthorTier { get; }
+        public string? ColorKey { get; }
+        public string? SourceDisplayName { get; }
 
         public SignalUiOverride(
-            string label = null,
-            string description = null,
-            string iconKey = null,
-            string authorTier = null,
-            string colorKey = null,
-            string sourceDisplayName = null)
+            string? label = null,
+            string? description = null,
+            string? iconKey = null,
+            string? authorTier = null,
+            string? colorKey = null,
+            string? sourceDisplayName = null)
         {
             Label = label;
             Description = description;

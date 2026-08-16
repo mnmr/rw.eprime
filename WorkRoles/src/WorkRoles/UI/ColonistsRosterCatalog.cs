@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -187,7 +188,7 @@ namespace WorkRoles.UI
             List<ColonistJobFilterOption> jobOptions,
             List<ColonistSkillFilterOption> skillOptions,
             List<ColonistGroupOption> groupOptions,
-            ColonistsRosterCatalogSnapshot previous)
+            ColonistsRosterCatalogSnapshot? previous)
         {
             this.roles = roles;
             this.chipCatalog = chipCatalog;
@@ -231,7 +232,7 @@ namespace WorkRoles.UI
         }
 
         internal static ColonistsRosterCatalogSnapshot Build(RoleStore store,
-            ColonistsRosterCatalogSnapshot previous,
+            ColonistsRosterCatalogSnapshot? previous,
             bool rebuildDefinitions, bool rebuildGroups,
             bool forceNewOwnedSnapshots)
         {
@@ -327,10 +328,10 @@ namespace WorkRoles.UI
         {
             var skillLabels = new List<string>();
             var skillRoles = new List<List<ColonistPaletteRole>>();
-            List<ColonistPaletteRole> everyone = null;
-            List<ColonistPaletteRole> unskilled = null;
-            string everyoneLabel = null;
-            string unskilledLabel = null;
+            List<ColonistPaletteRole>? everyone = null;
+            List<ColonistPaletteRole>? unskilled = null;
+            string? everyoneLabel = null;
+            string? unskilledLabel = null;
 
             int ClusterIndex(string label)
             {
@@ -352,7 +353,7 @@ namespace WorkRoles.UI
                         new List<ColonistPaletteRole>());
                 }
                 string primaryName = RecsAdapter.PrimarySkillOf(root) ?? "";
-                SkillDef primary = null;
+                SkillDef? primary = null;
                 for (int i = 0; i < skillOptions.Count; i++)
                     if (string.Equals(skillOptions[i].Skill.defName,
                             primaryName, StringComparison.Ordinal))
@@ -371,7 +372,7 @@ namespace WorkRoles.UI
             }
 
             var seen = new HashSet<int>();
-            Role root = null;
+            Role? root = null;
             var tree = RolesListState.BuildRoleTree(store).rows;
             for (int i = 0; i < tree.Count; i++)
             {
@@ -386,13 +387,13 @@ namespace WorkRoles.UI
 
             var result = new List<ColonistPaletteClusterSnapshot>();
             if (everyone != null)
-                result.Add(new ColonistPaletteClusterSnapshot(everyoneLabel,
+                result.Add(new ColonistPaletteClusterSnapshot(everyoneLabel!, // set together with the list
                     everyone));
             for (int i = 0; i < skillLabels.Count; i++)
                 result.Add(new ColonistPaletteClusterSnapshot(skillLabels[i],
                     skillRoles[i]));
             if (unskilled != null)
-                result.Add(new ColonistPaletteClusterSnapshot(unskilledLabel,
+                result.Add(new ColonistPaletteClusterSnapshot(unskilledLabel!, // set together with the list
                     unskilled));
             return result;
         }
@@ -443,7 +444,7 @@ namespace WorkRoles.UI
         internal bool IsRoleEnabled(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts) && facts.Enabled;
 
-        internal string AbbreviationFor(int roleId) =>
+        internal string? AbbreviationFor(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts)
                 ? facts.Abbreviation : null;
 
@@ -469,7 +470,7 @@ namespace WorkRoles.UI
         internal ColonistRoleFilterOption RoleOptionAt(int index) =>
             roleOptions[index];
 
-        internal string RoleLabelOrNull(int roleId) =>
+        internal string? RoleLabelOrNull(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts)
                 ? facts.Chip.Label : null;
 
@@ -477,19 +478,19 @@ namespace WorkRoles.UI
         internal ColonistJobFilterOption JobOptionAt(int index) =>
             jobOptions[index];
 
-        internal bool ContainsJob(string defName)
+        internal bool ContainsJob(string? defName)
             => defName != null && jobIndexes.ContainsKey(defName);
 
-        internal string JobLabelOrNull(string defName)
+        internal string? JobLabelOrNull(string? defName)
         {
             return defName != null && jobIndexes.TryGetValue(defName,
                 out int index) ? jobOptions[index].Label : null;
         }
 
-        internal HashSet<string> SearchMatchingGivers(string term)
+        internal HashSet<string>? SearchMatchingGivers(string? term)
         {
             if (term.NullOrEmpty()) return null;
-            HashSet<string> result = null;
+            HashSet<string>? result = null;
             for (int i = 0; i < jobOptions.Count; i++)
             {
                 ColonistJobFilterOption option = jobOptions[i];
@@ -509,15 +510,15 @@ namespace WorkRoles.UI
         internal ColonistSkillFilterOption SkillOptionAt(int index) =>
             skillOptions[index];
 
-        internal SkillDef SkillOrNull(string defName)
-            => !defName.NullOrEmpty() && skillsByName.TryGetValue(defName,
+        internal SkillDef? SkillOrNull(string? defName)
+            => !defName.NullOrEmpty() && skillsByName.TryGetValue(defName!,
                 out SkillDef skill) ? skill : null;
 
         internal int GroupOptionCount => groupOptions.Count;
         internal ColonistGroupOption GroupOptionAt(int index) =>
             groupOptions[index];
 
-        internal string GroupLabelOrNull(string key)
+        internal string? GroupLabelOrNull(string? key)
             => key != null && groupLabels.TryGetValue(key, out string label)
                 ? label : null;
 

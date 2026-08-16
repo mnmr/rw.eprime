@@ -1,0 +1,29 @@
+namespace WorkRoles.Core.Tests.Planner;
+
+public sealed class FakeCatalog : IJobCatalog
+{
+    private readonly Dictionary<string, List<string>> typeToGivers = new();
+    private readonly Dictionary<string, string> giverToType = new();
+    private readonly HashSet<string> emergency = new();
+
+    public FakeCatalog WithWorkType(string workType, params string[] givers)
+    {
+        typeToGivers[workType] = [.. givers];
+        foreach (var g in givers)
+            giverToType[g] = workType;
+        return this;
+    }
+
+    public FakeCatalog WithEmergency(params string[] givers)
+    {
+        foreach (var g in givers)
+            emergency.Add(g);
+        return this;
+    }
+
+    public IReadOnlyList<string> WorkGiversOf(string workTypeDefName) => typeToGivers.TryGetValue(workTypeDefName, out var list) ? list : [];
+
+    public string WorkTypeOf(string workGiverDefName) => giverToType.TryGetValue(workGiverDefName, out var t) ? t : null!;
+
+    public bool IsEmergency(string workGiverDefName) => emergency.Contains(workGiverDefName);
+}

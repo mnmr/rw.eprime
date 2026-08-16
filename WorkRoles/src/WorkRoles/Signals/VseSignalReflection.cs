@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using HarmonyLib;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -15,9 +16,9 @@ namespace WorkRoles.Signals
     {
         internal sealed class PassionFact
         {
-            public Def Def;
-            public string IconPath;
-            public string AuthorTier;
+            public Def Def = null!; // always set via object initializer
+            public string? IconPath;
+            public string AuthorTier = null!; // always set via object initializer
             public bool IsBad;
             public float LearnRate;
             public float ForgetRate;
@@ -26,19 +27,19 @@ namespace WorkRoles.Signals
 
         internal sealed class ExpertiseFact
         {
-            public Def Def;
-            public SkillDef Skill;
+            public Def Def = null!; // always set via object initializer
+            public SkillDef Skill = null!; // always set via object initializer
             public int Level;
             public float StatMultiplier;
-            public string FullDescription;
+            public string? FullDescription;
         }
 
         private sealed class PassionMetadata
         {
-            internal object Value;
-            internal Def Def;
-            internal string IconPath;
-            internal string AuthorTier;
+            internal object Value = null!; // always set via object initializer
+            internal Def Def = null!; // always set via object initializer
+            internal string? IconPath;
+            internal string AuthorTier = null!; // always set via object initializer
         }
 
         private struct PassionMutableState
@@ -51,23 +52,23 @@ namespace WorkRoles.Signals
 
         private static readonly DefinitionOwnedCache<PassionMetadata[]> passionDefinitions =
             new DefinitionOwnedCache<PassionMetadata[]>();
-        private static PassionMutableState[] passionMutableState;
-        private static Func<object, bool> passionIsBadRead;
-        private static Func<object, float> passionLearnRateRead;
-        private static Func<object, float> passionForgetRateRead;
-        private static Func<object, float> passionOtherLearnRateRead;
+        private static PassionMutableState[]? passionMutableState;
+        private static Func<object, bool>? passionIsBadRead;
+        private static Func<object, float>? passionLearnRateRead;
+        private static Func<object, float>? passionForgetRateRead;
+        private static Func<object, float>? passionOtherLearnRateRead;
 
         private static bool expertiseInitialized;
         private static bool expertiseDisabled;
-        private static Func<Pawn, object> expertiseTrackerRead;
-        private static Func<object, IList> allExpertiseRead;
-        private static Func<object, Def> recordDefRead;
-        private static Func<object, int> recordLevelRead;
-        private static Func<object, SkillDef> expertiseSkillRead;
-        private static Func<object> settingsRead;
-        private static Func<object, float> statMultiplierRead;
-        private static Func<object, bool> crossSkillEffectsRead;
-        private static MethodInfo fullDescription;
+        private static Func<Pawn, object>? expertiseTrackerRead;
+        private static Func<object, IList>? allExpertiseRead;
+        private static Func<object, Def>? recordDefRead;
+        private static Func<object, int>? recordLevelRead;
+        private static Func<object, SkillDef>? expertiseSkillRead;
+        private static Func<object>? settingsRead;
+        private static Func<object, float>? statMultiplierRead;
+        private static Func<object, bool>? crossSkillEffectsRead;
+        private static MethodInfo? fullDescription;
 
         private static bool globalSnapshotCaptured;
         private static float observedStatMultiplier = 1f;
@@ -84,7 +85,7 @@ namespace WorkRoles.Signals
             observedStatMultiplier = 1f;
             observedCrossSkillEffects = false;
 
-            PassionMetadata[] passionMetadata = passionDefinitions.Value;
+            PassionMetadata[]? passionMetadata = passionDefinitions.Value;
             if (!passionDefinitions.Disabled && passionMetadata != null)
             {
                 try
@@ -93,12 +94,14 @@ namespace WorkRoles.Signals
                     {
                         PassionMetadata metadata = passionMetadata[i];
                         if (metadata == null) continue;
-                        passionMutableState[i] = new PassionMutableState
+                        // Readers and state array are set whenever passion
+                        // definitions are published and not disabled.
+                        passionMutableState![i] = new PassionMutableState
                         {
-                            IsBad = passionIsBadRead(metadata.Value),
-                            LearnRate = passionLearnRateRead(metadata.Value),
-                            ForgetRate = passionForgetRateRead(metadata.Value),
-                            OtherLearnRate = passionOtherLearnRateRead(metadata.Value),
+                            IsBad = passionIsBadRead!(metadata.Value),
+                            LearnRate = passionLearnRateRead!(metadata.Value),
+                            ForgetRate = passionForgetRateRead!(metadata.Value),
+                            OtherLearnRate = passionOtherLearnRateRead!(metadata.Value),
                         };
                     }
                 }
@@ -119,8 +122,9 @@ namespace WorkRoles.Signals
                     }
                     else
                     {
-                        observedStatMultiplier = statMultiplierRead(currentSettings);
-                        observedCrossSkillEffects = crossSkillEffectsRead(currentSettings);
+                        // Set together with settingsRead in EnsureExpertise.
+                        observedStatMultiplier = statMultiplierRead!(currentSettings);
+                        observedCrossSkillEffects = crossSkillEffectsRead!(currentSettings);
                     }
                 }
                 catch (Exception exception)
@@ -165,19 +169,20 @@ namespace WorkRoles.Signals
             globalSnapshotCaptured = false;
         }
 
-        internal static PassionFact Passion(Passion passion)
+        internal static PassionFact? Passion(Passion passion)
         {
             int index = (int)passion;
             if (index <= 2) return null;
             CaptureGlobalInputs();
-            PassionMetadata[] passionMetadata = passionDefinitions.Value;
+            PassionMetadata[]? passionMetadata = passionDefinitions.Value;
             if (passionDefinitions.Disabled || passionMetadata == null
                 || index >= passionMetadata.Length)
                 return null;
 
             PassionMetadata metadata = passionMetadata[index];
             if (metadata == null) return null;
-            PassionMutableState state = passionMutableState[index];
+            // Sized together with the published metadata array.
+            PassionMutableState state = passionMutableState![index];
             return new PassionFact
             {
                 Def = metadata.Def,
@@ -197,8 +202,10 @@ namespace WorkRoles.Signals
                 return Array.Empty<ExpertiseFact>();
             try
             {
+                // All expertise readers are set together with
+                // expertiseTrackerRead in EnsureExpertise.
                 object tracker = expertiseTrackerRead(pawn);
-                IList records = tracker == null ? null : allExpertiseRead(tracker);
+                IList? records = tracker == null ? null : allExpertiseRead!(tracker);
                 if (records == null || records.Count == 0)
                     return Array.Empty<ExpertiseFact>();
 
@@ -207,16 +214,16 @@ namespace WorkRoles.Signals
                 {
                     object record = records[i];
                     if (record == null) continue;
-                    Def def = recordDefRead(record);
-                    SkillDef skill = def == null ? null : expertiseSkillRead(def);
+                    Def def = recordDefRead!(record);
+                    SkillDef? skill = def == null ? null : expertiseSkillRead!(def);
                     if (def == null || skill == null) continue;
                     result.Add(new ExpertiseFact
                     {
                         Def = def,
                         Skill = skill,
-                        Level = recordLevelRead(record),
+                        Level = recordLevelRead!(record),
                         StatMultiplier = observedStatMultiplier,
-                        FullDescription = fullDescription.Invoke(record, null) as string,
+                        FullDescription = fullDescription!.Invoke(record, null) as string,
                     });
                 }
                 return result;
@@ -273,14 +280,14 @@ namespace WorkRoles.Signals
                 passionForgetRateRead = CompileInstanceField<float>(forgetRate, defType);
                 passionOtherLearnRateRead = CompileInstanceField<float>(otherLearnRate, defType);
 
-                Array definitions = passionsField.GetValue(null) as Array;
+                Array? definitions = passionsField.GetValue(null) as Array;
                 if (definitions == null) throw AuditedShape("passion definitions");
                 var passionMetadata = new PassionMetadata[definitions.Length];
                 passionMutableState = new PassionMutableState[definitions.Length];
                 for (int i = 0; i < definitions.Length; i++)
                 {
                     object value = definitions.GetValue(i);
-                    Def def = value as Def;
+                    Def? def = value as Def;
                     if (def == null) continue;
                     int colorValue = colorRead(value);
                     string authorTier = Enum.GetName(color.FieldType, colorValue)
@@ -427,7 +434,7 @@ namespace WorkRoles.Signals
             Type propertyType)
         {
             PropertyInfo property = AccessTools.Property(owner, name);
-            MethodInfo getter = property?.GetGetMethod(true);
+            MethodInfo? getter = property?.GetGetMethod(true);
             if (property == null || getter == null || getter.IsStatic
                 || property.PropertyType != propertyType)
                 throw AuditedShape(owner.FullName + "." + name);

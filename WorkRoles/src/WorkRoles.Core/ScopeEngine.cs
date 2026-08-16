@@ -32,8 +32,8 @@ namespace WorkRoles.Core
     public sealed class ScopeOption
     {
         public ScopeKind Kind;
-        public string LocationId; // set for Kind == Location
-        public string Label;      // set for Kind == Location; All/Current translate game-side
+        public string? LocationId; // set for Kind == Location
+        public string? Label;      // set for Kind == Location; All/Current translate game-side
         public bool IsShip;       // set for Kind == Location
     }
 
@@ -67,7 +67,7 @@ namespace WorkRoles.Core
 
         /// Whether a pawn falls inside the scope. Caravan pawns (no location)
         /// only appear under All.
-        public static bool Matches(ScopeOption scope, string pawnLocationId, string currentLocationId)
+        public static bool Matches(ScopeOption scope, string? pawnLocationId, string currentLocationId)
         {
             switch (scope.Kind)
             {
@@ -80,9 +80,9 @@ namespace WorkRoles.Core
         /// True when the listed pawns come from more than one place (several
         /// maps, or maps plus caravans) — colony planning needs a single
         /// location. Caravan pawns pass null and count as one shared bucket.
-        public static bool SpansMultipleLocations(IEnumerable<string> pawnLocationIds)
+        public static bool SpansMultipleLocations(IEnumerable<string?> pawnLocationIds)
         {
-            string seen = null;
+            string? seen = null;
             bool any = false;
             foreach (var id in pawnLocationIds)
             {

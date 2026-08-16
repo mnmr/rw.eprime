@@ -1,42 +1,43 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace WorkRoles.Core
 {
     public readonly struct ImportIdentitySource
     {
-        public ImportIdentitySource(string label, string preferredIdentity)
+        public ImportIdentitySource(string? label, string? preferredIdentity)
         {
             Label = label;
             PreferredIdentity = preferredIdentity;
         }
 
-        public string Label { get; }
-        public string PreferredIdentity { get; }
+        public string? Label { get; }
+        public string? PreferredIdentity { get; }
     }
 
     public readonly struct ImportIdentityExisting
     {
-        public ImportIdentityExisting(string label, string preferredIdentity)
+        public ImportIdentityExisting(string? label, string? preferredIdentity)
         {
             Label = label;
             PreferredIdentity = preferredIdentity;
         }
 
-        public string Label { get; }
-        public string PreferredIdentity { get; }
+        public string? Label { get; }
+        public string? PreferredIdentity { get; }
     }
 
     public readonly struct ImportIdentityDecision
     {
-        public ImportIdentityDecision(int existingIndex, string displayLabel)
+        public ImportIdentityDecision(int existingIndex, string? displayLabel)
         {
             ExistingIndex = existingIndex;
             DisplayLabel = displayLabel;
         }
 
         public int ExistingIndex { get; }
-        public string DisplayLabel { get; }
+        public string? DisplayLabel { get; }
     }
 
     /// Plans document rows without depending on game objects. Preferred
@@ -46,8 +47,8 @@ namespace WorkRoles.Core
     public static class ImportIdentityPlanner
     {
         public static IReadOnlyList<ImportIdentityDecision> Plan(
-            IReadOnlyList<ImportIdentitySource> imports,
-            IReadOnlyList<ImportIdentityExisting> existing,
+            IReadOnlyList<ImportIdentitySource>? imports,
+            IReadOnlyList<ImportIdentityExisting>? existing,
             bool discardUnmatchedExistingLabels = false)
         {
             int importCount = imports?.Count ?? 0;
@@ -56,7 +57,7 @@ namespace WorkRoles.Core
             var matches = new int[importCount];
             for (int importIndex = 0; importIndex < importCount; importIndex++)
             {
-                ImportIdentitySource source = imports[importIndex];
+                ImportIdentitySource source = imports![importIndex]; // importCount > 0 implies non-null
                 int match = FindPreferred(source, existing, claimed);
                 if (match < 0) match = FindLabel(source, existing, claimed);
                 matches[importIndex] = match;
@@ -67,7 +68,7 @@ namespace WorkRoles.Core
             if (!discardUnmatchedExistingLabels)
             {
                 for (int i = 0; i < existingCount; i++)
-                    Reserve(existing[i].Label, reservedLabels);
+                    Reserve(existing![i].Label, reservedLabels); // existingCount > 0 implies non-null
             }
             else
             {
@@ -78,7 +79,7 @@ namespace WorkRoles.Core
                 {
                     int match = matches[importIndex];
                     if (match >= 0 && SameLabel(
-                            imports[importIndex].Label, existing[match].Label))
+                            imports![importIndex].Label, existing![match].Label))
                         Reserve(existing[match].Label, reservedLabels);
                 }
             }
@@ -86,13 +87,13 @@ namespace WorkRoles.Core
             var result = new ImportIdentityDecision[importCount];
             for (int importIndex = 0; importIndex < importCount; importIndex++)
             {
-                ImportIdentitySource source = imports[importIndex];
+                ImportIdentitySource source = imports![importIndex];
                 int match = matches[importIndex];
                 if (match >= 0)
                 {
-                    string displayLabel = source.Label?.Trim();
+                    string? displayLabel = source.Label?.Trim();
                     bool unchangedLegacyDuplicate = SameLabel(
-                        displayLabel, existing[match].Label);
+                        displayLabel, existing![match].Label); // match >= 0 implies non-null
                     if (!unchangedLegacyDuplicate)
                     {
                         displayLabel = CatalogNameRules.Unique(
@@ -104,7 +105,7 @@ namespace WorkRoles.Core
                     continue;
                 }
 
-                string unique = CatalogNameRules.Unique(
+                string? unique = CatalogNameRules.Unique(
                     source.Label, reservedLabels, label => label);
                 if (unique != null) reservedLabels.Add(unique);
                 result[importIndex] = new ImportIdentityDecision(-1, unique);
@@ -112,17 +113,17 @@ namespace WorkRoles.Core
             return result;
         }
 
-        private static bool SameLabel(string first, string second) =>
+        private static bool SameLabel(string? first, string? second) =>
             string.Equals(first?.Trim(), second?.Trim(),
                 StringComparison.OrdinalIgnoreCase);
 
-        private static void Reserve(string label, List<string> reservedLabels)
+        private static void Reserve(string? label, List<string> reservedLabels)
         {
-            if (!string.IsNullOrWhiteSpace(label)) reservedLabels.Add(label.Trim());
+            if (!string.IsNullOrWhiteSpace(label)) reservedLabels.Add(label!.Trim());
         }
 
         private static int FindPreferred(ImportIdentitySource source,
-            IReadOnlyList<ImportIdentityExisting> existing, bool[] claimed)
+            IReadOnlyList<ImportIdentityExisting>? existing, bool[] claimed)
         {
             if (string.IsNullOrEmpty(source.PreferredIdentity) || existing == null)
                 return -1;
@@ -135,11 +136,11 @@ namespace WorkRoles.Core
         }
 
         private static int FindLabel(ImportIdentitySource source,
-            IReadOnlyList<ImportIdentityExisting> existing, bool[] claimed)
+            IReadOnlyList<ImportIdentityExisting>? existing, bool[] claimed)
         {
             if (string.IsNullOrWhiteSpace(source.Label) || existing == null)
                 return -1;
-            string label = source.Label.Trim();
+            string label = source.Label!.Trim(); // guarded by IsNullOrWhiteSpace above
             for (int i = 0; i < existing.Count; i++)
                 if (!claimed[i] && string.Equals(
                         existing[i].Label?.Trim(), label,

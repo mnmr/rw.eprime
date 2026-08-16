@@ -6,13 +6,13 @@ namespace WorkRoles.Signals
 {
     internal static class SignalUiFactory
     {
-        internal static SignalUiOverride ForDef(
-            Def def,
+        internal static SignalUiOverride? ForDef(
+            Def? def,
             SignalDefinition definition,
-            string iconKey = null,
-            string authorTier = null,
-            string colorKey = null,
-            string description = null)
+            string? iconKey = null,
+            string? authorTier = null,
+            string? colorKey = null,
+            string? description = null)
         {
             if (def == null) return null;
             return new SignalUiOverride(
@@ -24,16 +24,16 @@ namespace WorkRoles.Signals
                 sourceDisplayName: SourceDisplayName(def, definition));
         }
 
-        internal static string PackageId(Def def) => def?.modContentPack?.PackageId;
+        internal static string? PackageId(Def? def) => def?.modContentPack?.PackageId;
 
-        internal static string SourceDisplayName(Def def, SignalDefinition definition)
+        internal static string SourceDisplayName(Def? def, SignalDefinition? definition)
         {
-            string packageId = PackageId(def);
+            string? packageId = PackageId(def);
             if (packageId != null && packageId.StartsWith("ludeon.rimworld", StringComparison.OrdinalIgnoreCase))
                 return definition?.FallbackUi.SourceDisplayName ?? "RimWorld";
             return string.IsNullOrWhiteSpace(def?.modContentPack?.Name)
                 ? definition?.FallbackUi.SourceDisplayName ?? "Unknown mod"
-                : def.modContentPack.Name;
+                : def!.modContentPack.Name; // non-empty Name implies def and pack exist
         }
     }
 }

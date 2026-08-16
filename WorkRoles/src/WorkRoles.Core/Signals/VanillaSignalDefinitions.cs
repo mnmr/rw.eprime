@@ -29,9 +29,9 @@ namespace WorkRoles.Core.Signals
         public static readonly IReadOnlyList<SignalDefinition> All = Build();
 
         public static bool IsGeneratedAptitudeIdentity(
-            string actualDefName,
-            string templateDefName,
-            string skillDefName) =>
+            string? actualDefName,
+            string? templateDefName,
+            string? skillDefName) =>
             !string.IsNullOrWhiteSpace(actualDefName)
             && !string.IsNullOrWhiteSpace(templateDefName)
             && !string.IsNullOrWhiteSpace(skillDefName)
@@ -198,7 +198,7 @@ namespace WorkRoles.Core.Signals
         }
 
         private static SignalDefinition Gene(
-            string defName, string label, string skill, params SignalEffect[] effects) =>
+            string defName, string label, string? skill, params SignalEffect[] effects) =>
             Definition(SignalType.Active, SignalSourceKind.Gene, defName, Biotech, "Biotech",
                 null, skill, false, effects, label, "UI/Icons/Genes/" + defName);
 
@@ -206,8 +206,8 @@ namespace WorkRoles.Core.Signals
             string defName,
             int degree,
             string label,
-            string skill,
-            string discriminator,
+            string? skill,
+            string? discriminator,
             SignalType type,
             SignalEffect first,
             params SignalEffect[] rest) =>
@@ -218,8 +218,8 @@ namespace WorkRoles.Core.Signals
             string defName,
             int degree,
             string label,
-            string skill,
-            string discriminator,
+            string? skill,
+            string? discriminator,
             SignalType type,
             SignalEffect first,
             SignalEffect second,
@@ -232,8 +232,8 @@ namespace WorkRoles.Core.Signals
             string defName,
             int degree,
             string label,
-            string skill,
-            string discriminator,
+            string? skill,
+            string? discriminator,
             SignalType type,
             SignalEffect first,
             string packageId,
@@ -245,8 +245,8 @@ namespace WorkRoles.Core.Signals
             string defName,
             int degree,
             string label,
-            string skill,
-            string discriminator,
+            string? skill,
+            string? discriminator,
             SignalType type,
             IEnumerable<SignalEffect> effects,
             string packageId,
@@ -267,12 +267,12 @@ namespace WorkRoles.Core.Signals
             string packageId,
             string sourceDisplayName,
             int? degree,
-            string skill,
+            string? skill,
             bool derivesSkill,
             IEnumerable<SignalEffect> effects,
             string label,
-            string icon,
-            string discriminator = null) =>
+            string? icon,
+            string? discriminator = null) =>
             new SignalDefinition(
                 type,
                 new SignalSource(kind, defName, packageId, effectDiscriminator: discriminator),
@@ -291,12 +291,12 @@ namespace WorkRoles.Core.Signals
                 SignalValueUnit.StatValue, "WorkSpeedGlobal");
 
         private static SignalEffect Disabled(
-            SignalEffectKind kind, string target, string condition = null) =>
+            SignalEffectKind kind, string target, string? condition = null) =>
             new SignalEffect(kind, SignalOperation.Disable, null, SignalValueUnit.None,
                 target, Conditions(condition));
 
         private static SignalEffect Descriptive(
-            SignalEffectKind kind, string target, string condition) =>
+            SignalEffectKind kind, string target, string? condition) =>
             new SignalEffect(kind, SignalOperation.Descriptive, null, SignalValueUnit.None,
                 target, Conditions(condition));
 
@@ -306,12 +306,12 @@ namespace WorkRoles.Core.Signals
             float value,
             SignalValueUnit unit,
             string target,
-            string condition = null,
+            string? condition = null,
             bool alreadyReflected = false) =>
             new SignalEffect(kind, operation, value, unit, target,
                 Conditions(condition), alreadyReflected: alreadyReflected);
 
-        private static IReadOnlyList<SignalCondition> Conditions(string condition) =>
+        private static IReadOnlyList<SignalCondition>? Conditions(string? condition) =>
             condition == null ? null : new[]
             {
                 new SignalCondition(condition,

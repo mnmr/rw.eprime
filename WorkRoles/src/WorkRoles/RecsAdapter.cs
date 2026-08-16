@@ -24,7 +24,7 @@ namespace WorkRoles
 
         internal PawnExternalSnapshot(PawnSignalSnapshot signals,
             PawnView recommendationFacts, WorkTags disabledWorkTags,
-            Dictionary<string, int> ageBlockedWorkTypes)
+            Dictionary<string, int>? ageBlockedWorkTypes)
         {
             Signals = signals ?? PawnSignalSnapshot.Empty;
             RecommendationFacts = recommendationFacts ?? new PawnView();
@@ -96,13 +96,13 @@ namespace WorkRoles
 
         private static RecommendationCatalogProjection BuildRoleCatalog(
             IReadOnlyList<Role> roles,
-            IReadOnlyList<PathView> paths = null)
+            IReadOnlyList<PathView>? paths = null)
         {
             var sources = new List<RecommendationRoleSource>(roles.Count);
             for (int index = 0; index < roles.Count; index++)
             {
                 Role role = roles[index];
-                RoleDef template = role.templateDefName == null
+                RoleDef? template = role.templateDefName == null
                     ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(
                         role.templateDefName);
@@ -226,7 +226,7 @@ namespace WorkRoles
                     if (skill.TotallyDisabled) continue;
                     facts.SkillLevels[skill.def.defName] = skill.Level;
                 }
-            Dictionary<string, int> ageBlocked = null;
+            Dictionary<string, int>? ageBlocked = null;
             foreach (WorkTypeDef workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
             {
                 if (!pawn.WorkTypeIsDisabled(workType))
@@ -257,10 +257,10 @@ namespace WorkRoles
         /// skill across its covered givers (accurate per-giver data), ties
         /// alphabetical; null when no giver trains anything (never gates).
         /// Cached on the role; entry edits invalidate with coverage.
-        internal static string PrimarySkillOf(Role role)
+        internal static string? PrimarySkillOf(Role role)
         {
-            if (role.TryGetPrimarySkillCache(out string cached)) return cached;
-            string primary = RoleWorkSpecs.For(role).PrimarySkillDefName;
+            if (role.TryGetPrimarySkillCache(out string? cached)) return cached;
+            string? primary = RoleWorkSpecs.For(role).PrimarySkillDefName;
             role.SetPrimarySkillCache(primary);
             return primary;
         }
@@ -276,7 +276,7 @@ namespace WorkRoles
             if (store == null) return entries;
             foreach (int memberId in role.memberRoleIds)
             {
-                Role member = store.RoleById(memberId);
+                Role? member = store.RoleById(memberId);
                 if (member == null || member.composite) continue;
                 if (member.blocker && !role.blocker) continue;
                 entries.AddRange(member.entries);
@@ -293,7 +293,7 @@ namespace WorkRoles
             if (store == null) return members;
             foreach (int memberId in role.memberRoleIds)
             {
-                Role member = store.RoleById(memberId);
+                Role? member = store.RoleById(memberId);
                 if (member == null || member.composite) continue;
                 if (member.blocker && !role.blocker) continue;
                 members.Add(memberId);

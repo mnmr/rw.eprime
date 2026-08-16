@@ -22,9 +22,9 @@ internal static partial class Program
 
     private sealed class Colonist
     {
-        public PawnView Pawn;
+        public PawnView Pawn = null!;
         public List<(string skill, int level, bool major)> Passions = new();
-        public string AwfulSkill;
+        public string AwfulSkill = null!;
     }
 
     private static List<Colonist> GenColonists(int count, int seed)

@@ -12,7 +12,7 @@ namespace WorkRoles.Core.Signals
             IEnumerable<Signal> signals,
             IEnumerable<string> enabledSkillDefNames,
             bool crossSkillEffectsEnabled,
-            IEnumerable<string> persistentlyBadSkillDefNames = null)
+            IEnumerable<string>? persistentlyBadSkillDefNames = null)
         {
             if (signals == null) throw new ArgumentNullException(nameof(signals));
             if (enabledSkillDefNames == null)

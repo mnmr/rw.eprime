@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using RimWorld.Planet;
 using Verse;
@@ -37,7 +38,7 @@ namespace WorkRoles
         public int RecommendationTuningRevision { get; internal set; }
         /// Legacy scribe slot: very old saves carry the hidden All role here;
         /// PostLoadInit migrates it into the catalog as an ordinary role.
-        public Role allRole;
+        public Role? allRole;
         public List<string> knownWorkTypes = new List<string>();
         /// Custom swatch slot count: the editor's two rows of 19.
         public const int MaxCustomSwatches = 38;
@@ -58,7 +59,7 @@ namespace WorkRoles
         public List<RoleGroup> groups = new List<RoleGroup>();
         /// Legacy stand-alone training paths: read from old saves only and
         /// folded into their target role at load (roles own training now).
-        private List<TrainingPath> legacyTrainingPaths;
+        private List<TrainingPath>? legacyTrainingPaths;
         private int nextRoleId = 1;
         private int nextGroupId = 1; // 0 reserved for the Default group
         internal const int CurrentLocationTokenSchemaVersion = 1;
@@ -69,17 +70,17 @@ namespace WorkRoles
             set => locationTokenSchemaVersion = value;
         }
 
-        private List<Pawn> pawnKeysWorkingList;
-        private List<PawnRoleSet> setValuesWorkingList;
-        private List<Bill> billKeysWorkingList;
-        private List<int> billValuesWorkingList;
-        private List<Pawn> locationKeysWorkingList;
-        private List<string> locationValuesWorkingList;
-        private Dictionary<Pawn, int> legacyLastLocationMapIds;
-        private List<Pawn> legacyLocationKeysWorkingList;
-        private List<int> legacyLocationValuesWorkingList;
+        private List<Pawn>? pawnKeysWorkingList;
+        private List<PawnRoleSet>? setValuesWorkingList;
+        private List<Bill>? billKeysWorkingList;
+        private List<int>? billValuesWorkingList;
+        private List<Pawn>? locationKeysWorkingList;
+        private List<string>? locationValuesWorkingList;
+        private Dictionary<Pawn, int>? legacyLastLocationMapIds;
+        private List<Pawn>? legacyLocationKeysWorkingList;
+        private List<int>? legacyLocationValuesWorkingList;
 
-        private static RoleStore cached;
+        private static RoleStore? cached;
 
         private static Dictionary<Bill, int> NewBillRoleDictionary() =>
             new Dictionary<Bill, int>(ReferenceIdentityComparer<Bill>.Instance);
@@ -105,7 +106,7 @@ namespace WorkRoles
             cached = this;
         }
 
-        public static RoleStore Current
+        public static RoleStore? Current
         {
             get
             {
@@ -127,7 +128,7 @@ namespace WorkRoles
 
         public RoleGroup GroupById(int id) => groups.FirstOrDefault(g => g.id == id);
 
-        public RoleGroup GroupByName(string name) => groups.FirstOrDefault(g =>
+        public RoleGroup GroupByName(string? name) => groups.FirstOrDefault(g =>
             string.Equals(g.label, name?.Trim(), System.StringComparison.OrdinalIgnoreCase));
 
         /// Drops training entries whose role is gone (bands ride along) and
@@ -186,7 +187,7 @@ namespace WorkRoles
 
         internal CompositeMemberFacts CompositeMemberFactsOf(int roleId)
         {
-            Role member = RoleById(roleId);
+            Role? member = RoleById(roleId);
             return member == null
                 ? default
                 : new CompositeMemberFacts(true, member.composite, member.HasRules);
@@ -196,7 +197,7 @@ namespace WorkRoles
         /// (composites cannot nest), so one linear scan is complete.
         internal List<Role> CompositesContaining(int roleId)
         {
-            List<Role> result = null;
+            List<Role>? result = null;
             for (int i = 0; i < roles.Count; i++)
             {
                 Role candidate = roles[i];
@@ -268,11 +269,11 @@ namespace WorkRoles
 
         // Hot path: chips resolve roles per visible row per GUI pass. The index
         // rebuilds lazily; every roles-list mutation calls InvalidateRoleIndex.
-        private Dictionary<int, Role> roleIndex;
+        private Dictionary<int, Role>? roleIndex;
 
         internal void InvalidateRoleIndex() => roleIndex = null;
 
-        public Role RoleById(int id)
+        public Role? RoleById(int id)
         {
             if (roleIndex == null)
             {
@@ -302,7 +303,7 @@ namespace WorkRoles
         /// preserve the current projection, remove mod state, dirty vanilla's
         /// cached giver lists, then request UI invalidation. Callers performing a
         /// bulk command may supply a coalescing request action.
-        internal bool UnmanagePawn(Pawn pawn, Action invalidateUi = null)
+        internal bool UnmanagePawn(Pawn pawn, Action? invalidateUi = null)
         {
             if (pawn == null || !pawnSets.TryGetValue(pawn, out var set)) return false;
             var requestUiInvalidation = invalidateUi ?? UiVersion.Bump;
@@ -329,7 +330,7 @@ namespace WorkRoles
                     PawnLocationTracker.NotifyUnmanaged(pawn);
                     CompiledJobOrders.RemoveCached(pawn);
                 },
-                notifyVanilla: () => workSettings.Notify_UseWorkPrioritiesChanged(),
+                notifyVanilla: () => workSettings!.Notify_UseWorkPrioritiesChanged(), // invoked only when hasVanillaWorkSettings
                 invalidateUi: requestUiInvalidation);
             return true;
         }
@@ -337,7 +338,7 @@ namespace WorkRoles
         public IEnumerable<Pawn> PawnsWithRole(int roleId) =>
             pawnSets.Where(kv => kv.Value.assignments.Any(a => a.roleId == roleId)).Select(kv => kv.Key);
 
-        internal bool RemoveBillRole(Bill bill)
+        internal bool RemoveBillRole(Bill? bill)
         {
             return bill != null && billRoles != null && billRoles.Remove(bill);
         }
@@ -355,7 +356,7 @@ namespace WorkRoles
         internal int RemoveBillRolesForRole(int roleId)
         {
             if (billRoles == null || billRoles.Count == 0) return 0;
-            List<Bill> candidates = null;
+            List<Bill>? candidates = null;
             foreach (var mapping in billRoles)
                 if (mapping.Value == roleId)
                 {
@@ -373,11 +374,11 @@ namespace WorkRoles
         /// Captures only mapped bills belonging to a stack. The list remains null
         /// when no cleanup can occur, so the common RemoveIncompletableBills path
         /// adds no allocation for unrestricted or still-completable bills.
-        internal List<Bill> CaptureBillRolesForStack(BillStack stack,
+        internal List<Bill>? CaptureBillRolesForStack(BillStack stack,
             bool onlyIncompletable = false)
         {
             if (stack == null || billRoles == null || billRoles.Count == 0) return null;
-            List<Bill> candidates = null;
+            List<Bill>? candidates = null;
             foreach (Bill bill in billRoles.Keys)
             {
                 if (bill == null || !ReferenceEquals(bill.billStack, stack)) continue;
@@ -389,7 +390,7 @@ namespace WorkRoles
         }
 
         internal int RemoveCapturedBillRolesMissingFromStack(BillStack stack,
-            List<Bill> candidates)
+            List<Bill>? candidates)
         {
             if (candidates == null || candidates.Count == 0) return 0;
             int removed = 0;
@@ -401,7 +402,7 @@ namespace WorkRoles
 
         internal int RemoveBillRolesForStack(BillStack stack)
         {
-            List<Bill> candidates = CaptureBillRolesForStack(stack);
+            List<Bill>? candidates = CaptureBillRolesForStack(stack);
             if (candidates == null) return 0;
             int removed = 0;
             foreach (Bill bill in candidates)
@@ -412,17 +413,17 @@ namespace WorkRoles
         internal int SweepBillRoles(IEnumerable<Bill> liveBills)
         {
             if (billRoles == null || billRoles.Count == 0) return 0;
-            IReadOnlyList<Bill> stale = IdentityKeySweepPlanner.StaleKeys(
+            IReadOnlyList<Bill?> stale = IdentityKeySweepPlanner.StaleKeys(
                 billRoles.Keys, liveBills ?? Array.Empty<Bill>());
             int removed = 0;
-            foreach (Bill bill in stale)
+            foreach (Bill? bill in stale)
                 if (RemoveBillRole(bill)) removed++;
             return removed;
         }
 
-        internal static bool BillStackContainsReference(BillStack stack, Bill bill)
+        internal static bool BillStackContainsReference(BillStack? stack, Bill bill)
         {
-            List<Bill> bills = stack?.Bills;
+            List<Bill>? bills = stack?.Bills;
             if (bills == null || bill == null) return false;
             for (int i = 0; i < bills.Count; i++)
                 if (ReferenceEquals(bills[i], bill)) return true;
@@ -451,7 +452,7 @@ namespace WorkRoles
 
             // Pawns can own surgery bills while in world storage, caravans,
             // travelling transporters, temporary holders, or the current gravship.
-            List<Pawn> pawns = Find.World == null ? null : PawnsFinder.All_AliveOrDead;
+            List<Pawn>? pawns = Find.World == null ? null : PawnsFinder.All_AliveOrDead;
             if (pawns != null)
                 for (int i = 0; i < pawns.Count; i++)
                     AddLiveBills(pawns[i], live);
@@ -469,7 +470,7 @@ namespace WorkRoles
         {
             if (giver == null || live == null) return;
             if (giver is Thing owner && owner.Destroyed) return;
-            List<Bill> bills = giver.BillStack?.Bills;
+            List<Bill>? bills = giver.BillStack?.Bills;
             if (bills == null) return;
             for (int i = 0; i < bills.Count; i++)
             {
@@ -482,7 +483,7 @@ namespace WorkRoles
         {
             if (bill == null || bill.deleted) return false;
             BillStack stack = bill.billStack;
-            IBillGiver giver = stack?.billGiver;
+            IBillGiver? giver = stack?.billGiver;
             if (giver == null || giver is Thing owner && owner.Destroyed) return false;
             return BillStackContainsReference(stack, bill);
         }
@@ -610,7 +611,7 @@ namespace WorkRoles
                             || !SkillProgressionMath.Validate(
                                 path.roleIds.Count, path.bandMins, path.bandMaxes))
                             continue;
-                        Role owner = RoleById(LegacyTargetOf(path));
+                        Role? owner = RoleById(LegacyTargetOf(path));
                         if (owner == null || owner.trainingRoleIds.Count > 0)
                             continue;
                         owner.trainingRoleIds = new List<int>(path.roleIds);
@@ -630,7 +631,7 @@ namespace WorkRoles
                     roles.Add(allRole);
                     InvalidateRoleIndex();
                     foreach (var set in pawnSets.Values)
-                        if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != allRole.id))
+                        if (set.assignments.Count > 0 && set.assignments.All(a => a.roleId != allRole!.id))
                             set.assignments.Add(new RoleAssignment { roleId = allRole.id });
                     allRole = null;
                 }
@@ -673,7 +674,7 @@ namespace WorkRoles
                     role.skillGatesSeeded = true;
                 }
                 if (role.minAge >= 0) continue;
-                RoleDef template = role.templateDefName == null ? null
+                RoleDef? template = role.templateDefName == null ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                 role.minAge = template?.tuning != null && template.tuning.minAge >= 0
                     ? template.tuning.minAge
@@ -684,7 +685,7 @@ namespace WorkRoles
             {
                 if (role.tuningSeeded) continue;
                 role.tuningSeeded = true;
-                RoleDef def = role.templateDefName == null ? null
+                RoleDef? def = role.templateDefName == null ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                 if (def?.tuning != null)
                 {

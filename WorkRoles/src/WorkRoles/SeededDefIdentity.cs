@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -10,28 +11,28 @@ namespace WorkRoles
     /// Def.label remains client-local presentation only.
     internal static class SeededDefIdentity
     {
-        internal static string RoleLabel(RoleDef def) =>
+        internal static string? RoleLabel(RoleDef? def) =>
             def == null ? null : !def.seedLabel.NullOrEmpty()
                 ? def.seedLabel : InvariantDefName.Humanize(def.defName, "WS_");
 
-        internal static string GroupLabel(RoleGroupDef def) =>
+        internal static string? GroupLabel(RoleGroupDef? def) =>
             def == null ? null : InvariantDefName.Humanize(def.defName, "WS_Group");
 
-        internal static string WorkTypeRoleLabel(WorkTypeDef def) =>
+        internal static string? WorkTypeRoleLabel(WorkTypeDef? def) =>
             def == null ? null : InvariantDefName.Humanize(def.defName);
 
-        internal static string GroupLabel(RoleDef def)
+        internal static string? GroupLabel(RoleDef? def)
         {
             var groupDef = GroupDef(def);
             return groupDef == null ? def?.group?.Trim() : GroupLabel(groupDef);
         }
 
-        internal static string GroupIdentity(RoleDef def) =>
+        internal static string? GroupIdentity(RoleDef? def) =>
             GroupDef(def)?.defName ?? def?.group?.Trim();
 
-        private static RoleGroupDef GroupDef(RoleDef roleDef)
+        private static RoleGroupDef? GroupDef(RoleDef? roleDef)
         {
-            string name = roleDef?.group?.Trim();
+            string? name = roleDef?.group?.Trim();
             if (name.NullOrEmpty()) return null;
             return DefDatabase<RoleGroupDef>.AllDefsListForReading.FirstOrDefault(def =>
                 string.Equals(GroupLabel(def), name, StringComparison.OrdinalIgnoreCase)

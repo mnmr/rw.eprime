@@ -28,16 +28,17 @@ namespace WorkRoles.UI
         // revision change. Equality: matching revision reuses strings/width.
         // Teardown: dialog close releases the instance and cached delegate.
         private int textLanguageRevision = -1;
-        private string titleLabel;
-        private string copyClipboardLabel;
-        private string copiedToClipboardMessage;
-        private string exportLocationLabel;
-        private string copyPathLabel;
+        // Assigned by EnsureTextCache before first use.
+        private string titleLabel = null!;
+        private string copyClipboardLabel = null!;
+        private string copiedToClipboardMessage = null!;
+        private string exportLocationLabel = null!;
+        private string copyPathLabel = null!;
         private float copyPathLabelWidth;
-        private string cancelLabel;
-        private string saveLabel;
+        private string cancelLabel = null!;
+        private string saveLabel = null!;
         private readonly System.Action savePendingAction;
-        private string pendingSavePath;
+        private string? pendingSavePath;
 
         public override Vector2 InitialSize => new Vector2(680f, 660f);
 
@@ -100,7 +101,7 @@ namespace WorkRoles.UI
                 Widgets.EndScrollView();
             }
 
-            string path = CachedResolvedPath(out string problem, out _);
+            string? path = CachedResolvedPath(out string? problem, out _);
 
             DrawCaption(new Rect(inRect.x, captionRowY, 200f,
                 CaptionRowH - 2f), exportLocationLabel);
@@ -165,10 +166,10 @@ namespace WorkRoles.UI
 
         private void SavePending()
         {
-            string path = pendingSavePath;
+            string? path = pendingSavePath;
             pendingSavePath = null;
             if (path == null) return;
-            string error = RoleIO.SaveTo(path, xml);
+            string? error = RoleIO.SaveTo(path, xml);
             if (error == null)
             {
                 Messages.Message("WR_ExportSaved".Translate(path),

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -10,14 +11,14 @@ namespace WorkRoles.UI
     /// sources (Colony Groups) keep their own group order.
     internal sealed class GroupSourceDef
     {
-        internal string Key;
-        internal string Label;
-        internal System.Func<List<Pawn>, List<GroupSection<Pawn>>> Partition;
+        internal string Key = null!; // always set by the object initializer
+        internal string Label = null!; // always set by the object initializer
+        internal System.Func<List<Pawn>, List<GroupSection<Pawn>>>? Partition;
     }
 
     internal static class GroupSources
     {
-        private static List<GroupSourceDef> all;
+        private static List<GroupSourceDef>? all;
 
         internal static List<GroupSourceDef> All() => all ??= Build();
 
@@ -74,9 +75,9 @@ namespace WorkRoles.UI
             if (ModsConfig.BiotechActive)
                 list.Add(Classified("xenotype", "WR_GroupXenotype".Translate(), pawn =>
                 {
-                    string name = pawn.genes?.XenotypeLabelCap.ToString();
+                    string? name = pawn.genes?.XenotypeLabelCap.ToString();
                     if (name.NullOrEmpty()) name = "?";
-                    return ("xenotype|" + name, name);
+                    return ("xenotype|" + name, name!);
                 }));
             if (ModsConfig.IdeologyActive)
             {

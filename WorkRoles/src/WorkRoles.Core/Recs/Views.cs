@@ -15,7 +15,7 @@ namespace WorkRoles.Core.Recs
         public Dictionary<string, int> SkillLevels = new Dictionary<string, int>();
         public Dictionary<string, SignalBucket> SignalBuckets =
             new Dictionary<string, SignalBucket>();
-        public Dictionary<string, SignalBucket> WorkTypeSignalBuckets;
+        public Dictionary<string, SignalBucket>? WorkTypeSignalBuckets;
         public HashSet<string> CapableWorkTypes = new HashSet<string>();
         public long BiologicalAgeTicks = long.MaxValue;
         /// False when the game reports that biological age does not disable
@@ -42,15 +42,15 @@ namespace WorkRoles.Core.Recs
     {
         public int Id;
         /// Template def the role was seeded from; null for player-made roles.
-        public string TemplateDefName;
+        public string? TemplateDefName;
         /// Live non-composite members of a composite role; null for ordinary
         /// roles. Band gates read these: a bundle cannot downgrade to a lower
         /// path rung the way a path target can.
-        public List<int> MemberRoleIds;
+        public List<int>? MemberRoleIds;
         public HashSet<string> Coverage = new HashSet<string>();
         /// Coverage in the role's own job order; null = no order data
         /// (redundancy folding stays permissive).
-        public List<string> OrderedCoverage;
+        public List<string>? OrderedCoverage;
         public bool AutoAssign;
         public bool HasRules;
         public bool Blocker;
@@ -98,7 +98,7 @@ namespace WorkRoles.Core.Recs
         public bool UsesSkills => WorkSpec.IsSkilled;
         /// Decisive skill for band gating and signals; null = unskilled entry,
         /// never gates.
-        public string PrimarySkill => WorkSpec.PrimarySkillDefName;
+        public string? PrimarySkill => WorkSpec.PrimarySkillDefName;
         /// The work fact alone: no used-skill evidence. Channel-independent;
         /// an automatic or rule-carrying chore is still unskilled.
         public bool Unskilled => !WorkSpec.IsSkilled;

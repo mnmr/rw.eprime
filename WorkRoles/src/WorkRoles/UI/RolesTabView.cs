@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -72,12 +73,12 @@ namespace WorkRoles.UI
 
         // Pawn source for the holders row, injected by MainTabWindow (the
         // colonist table owns the scope and its pawn snapshot).
-        internal System.Func<IReadOnlyList<Pawn>> listedPawns;
-        internal System.Func<int> pawnListRevision;
+        internal System.Func<IReadOnlyList<Pawn>> listedPawns = null!;   // injected by MainTabWindow
+        internal System.Func<int> pawnListRevision = null!;             // injected by MainTabWindow
 
         // Unified role tip (TreeRow context), injected by MainTabWindow: the
         // builder lives on ColonistsTabView (it needs BestFits' pawn snapshot).
-        internal System.Func<Role, StructuredTip> roleTip;
+        internal System.Func<Role, StructuredTip?> roleTip = null!;     // injected by MainTabWindow
 
         private readonly RolesListState listState = new RolesListState();
         private readonly RoleEditorState editorState = new RoleEditorState();
@@ -94,8 +95,8 @@ namespace WorkRoles.UI
         // Equality: an exact equal rebuild preserves snapshot identity.
         // Teardown: Reset releases the snapshot; language invalidation retains
         // it only for equal-content reuse on the required refresh.
-        private RolesTabChromeSnapshot chromeSnapshot;
-        private string chromeJobFilter = "\0";
+        private RolesTabChromeSnapshot? chromeSnapshot;
+        private string? chromeJobFilter = "\0";
         private int chromeLanguageRevision = -1;
         private int chromeDefinitionRevision = -1;
 
@@ -108,7 +109,7 @@ namespace WorkRoles.UI
         // Refresh: immediately on the next size read after a key change.
         // Equality: exact key hits reuse the scalar without rebuilding.
         // Teardown: Reset releases the store reference and invalidates stamps.
-        private RoleStore desiredHeightOwner;
+        private RoleStore? desiredHeightOwner;
         private int desiredHeightRoleCount = -1;
         private int desiredHeightDefinitionRevision = -1;
         private float desiredHeight = DefaultDesiredHeight;
@@ -290,7 +291,7 @@ namespace WorkRoles.UI
 
         private RolesTabChromeSnapshot ChromeSnapshot()
         {
-            string jobFilter = listState.JobFilterDefName;
+            string? jobFilter = listState.JobFilterDefName;
             int languageRevision = LanguageChangeCoordinator.Revision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             if (chromeSnapshot != null
@@ -306,7 +307,7 @@ namespace WorkRoles.UI
             {
                 Text.Font = GameFont.Small;
                 string anyJob = "WR_FilterAnyJob".Translate().ToString();
-                WorkGiverDef giverDef = jobFilter == null
+                WorkGiverDef? giverDef = jobFilter == null
                     ? null
                     : DefDatabase<WorkGiverDef>.GetNamedSilentFail(jobFilter);
                 string jobFilterLabel = giverDef == null
@@ -364,7 +365,7 @@ namespace WorkRoles.UI
                 GUI.color = oldColor;
             }
 
-            RoleEditorSnapshot editor = editorState.Snapshot(store,
+            RoleEditorSnapshot? editor = editorState.Snapshot(store,
                 selectedRoleId, listedPawns, pawnListRevision?.Invoke() ?? 0,
                 editorRect.width, rulesRevealed.Contains(selectedRoleId),
                 scrollJobTreeToSelection);
@@ -479,7 +480,7 @@ namespace WorkRoles.UI
         /// so selection can't use a return value: the entered name is watched
         /// for instead, and the newest role carrying it gets selected, its
         /// section expanded and its row scrolled into view.
-        private string pendingSelectLabel;
+        private string? pendingSelectLabel;
         private bool scrollToSelected;
 
         private void DrawRoleList(
@@ -544,11 +545,11 @@ namespace WorkRoles.UI
             for (int i = firstRow; i <= lastRow; i++)
             {
                 RoleListRowSnapshot publishedRow = snapshot.RowAt(i);
-                RoleListSectionSnapshot section = publishedRow.Section;
+                RoleListSectionSnapshot? section = publishedRow.Section;
                 var row = new Rect(0f, i * RowHeight, scrollRect.width - 16f, RowHeight);
                 if (publishedRow.RoleId < 0)
                 {
-                    DrawGroupHeader(row, section, draggedRoleId, groupDrag, snapshot);
+                    DrawGroupHeader(row, section!, draggedRoleId, groupDrag, snapshot); // header rows always carry a section
                     continue;
                 }
                 float indent = publishedRow.Depth * 18f;
@@ -567,7 +568,7 @@ namespace WorkRoles.UI
                 GUI.color = Color.white;
                 if (publishedRow.VirtualRow && Mouse.IsOver(row))
                     WrTips.Key("WR_VirtualRoleTip",
-                        publishedRow.VirtualOriginGroupLabel).Region(row);
+                        publishedRow.VirtualOriginGroupLabel!).Region(row); // virtual rows carry their origin label
 
                 var labelRect = new Rect(swatch.xMax + 6f, row.y, row.width - swatch.width - 8f - indent, RowHeight);
                 // Invalid roles (no jobs, or every named location gone) render
@@ -589,7 +590,7 @@ namespace WorkRoles.UI
                 // Marker strip after the label: the same icons the chips carry
                 // (pin excluded — it marks assignments, not role definitions).
                 // Measured before the italic reset so markers clear the label.
-                float markerX = labelRect.x + WrText.FitWidth(publishedRow.Label) + 4f;
+                float markerX = labelRect.x + WrText.FitWidth(publishedRow.Label!) + 4f; // role rows always carry a label
                 if (publishedRow.VirtualRow) Text.CurFontStyle.fontStyle = FontStyle.Normal;
                 void ListMarker(Texture2D tex, bool tinted)
                 {
@@ -636,11 +637,11 @@ namespace WorkRoles.UI
             float bw = (rect.width - 8f) / 3f;
             float by = rect.yMax - buttonsHeight + 4f;
             bool selectedRoleExists = selection.TryGetRole(
-                selectedRoleId, out string selectedRoleLabel);
+                selectedRoleId, out string? selectedRoleLabel);
             if (Widgets.ButtonText(new Rect(rect.x, by, bw, 30f),
                 chrome.NewLabel))
             {
-                Find.WindowStack.Add(new Dialog_RenameRole("WR_NewRoleTitle".Translate(), null, enteredName =>
+                Find.WindowStack.Add(new Dialog_RenameRole("WR_NewRoleTitle".Translate(), null!, enteredName => // null = new mode (no copy source)
                 {
                     RoleCommands.CreateRole(enteredName);
                     pendingSelectLabel = enteredName;
@@ -653,7 +654,7 @@ namespace WorkRoles.UI
                 if (selectedRoleExists)
                 {
                     Find.WindowStack.Add(new Dialog_RenameRole(
-                        "WR_CopyRoleTitle".Translate(), selectedRoleLabel,
+                        "WR_CopyRoleTitle".Translate(), selectedRoleLabel!, // non-null: selectedRoleExists
                         enteredName =>
                     {
                         RoleCommands.DuplicateRole(selectedRoleId, enteredName);
@@ -769,7 +770,7 @@ namespace WorkRoles.UI
             int i, Rect row, int draggedRoleId)
         {
             RoleListRowSnapshot publishedRow = snapshot.RowAt(i);
-            RoleListSectionSnapshot section = publishedRow.Section;
+            RoleListSectionSnapshot section = publishedRow.Section!; // drops only run unfiltered, where role rows carry sections
             // A nested child's within-own-group drop is a no-op — its display
             // position comes from the tree, not the catalog order. Its virtual
             // rows elsewhere don't block: dropping there moves it to that group.
@@ -834,7 +835,7 @@ namespace WorkRoles.UI
         private static void DrawGroupDragGhost()
         {
             if (!RoleDrag.Active || RoleDrag.GroupId < 0) return;
-            string label = RoleDrag.GroupGhostLabel;
+            string? label = RoleDrag.GroupGhostLabel;
             if (label == null) return;
             var mouse = Event.current.mousePosition;
             GameFont oldFont = Text.Font;
@@ -1437,7 +1438,7 @@ namespace WorkRoles.UI
                 for (int i = 0; i < rules.LocationCount; i++)
                 {
                     RoleLocationOptionSnapshot location = rules.LocationAt(i);
-                    string token = location.Token;
+                    string? token = location.Token;
                     var item = new FloatMenuOption(location.Label,
                         token == null
                             ? (System.Action)(() =>
@@ -1572,7 +1573,7 @@ namespace WorkRoles.UI
 
         private void DrawEntries(Rect rect, RoleEditorSnapshot model)
         {
-            RoleEntriesSnapshot entries = model.Entries;
+            RoleEntriesSnapshot entries = model.Entries!; // non-composite editor only
             // Same visible-gap correction as the Available Jobs header.
             WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing, rect.width - 8f, 28f),
                 entries.Title);
@@ -1660,7 +1661,7 @@ namespace WorkRoles.UI
                     WrTips.Warning("WR_MissingDef", entry.DefName).Region(row);
                 if (!missing && Mouse.IsOver(row))
                 {
-                    StructuredTip skillTip = publishedRow.SkillTip;
+                    StructuredTip? skillTip = publishedRow.SkillTip;
                     if (skillTip != null)
                         StructuredTipPresenter.TipRegion(row, skillTip);
                 }
@@ -1699,7 +1700,7 @@ namespace WorkRoles.UI
 
         private void DrawJobTree(Rect rect, RoleEditorSnapshot model)
         {
-            RoleJobTreeSnapshot tree = model.JobTree;
+            RoleJobTreeSnapshot tree = model.JobTree!; // non-composite editor only
             const float SearchW = 110f;
             const float SearchLabelW = 46f;
             const float SearchH = 24f;
@@ -1821,7 +1822,7 @@ namespace WorkRoles.UI
                         editorState.ToggleWorkTypeExpanded(node.TypeDefName);
                     if (Mouse.IsOver(row))
                     {
-                        StructuredTip skillTip = node.SkillTip;
+                        StructuredTip? skillTip = node.SkillTip;
                         if (skillTip != null)
                             StructuredTipPresenter.TipRegion(row, skillTip);
                     }
@@ -1854,7 +1855,7 @@ namespace WorkRoles.UI
                     GUI.color = Color.white;
                     if (Mouse.IsOver(row))
                     {
-                        StructuredTip skillTip = node.SkillTip;
+                        StructuredTip? skillTip = node.SkillTip;
                         if (skillTip != null)
                             StructuredTipPresenter.TipRegion(row, skillTip);
                     }
@@ -1875,7 +1876,7 @@ namespace WorkRoles.UI
 
         // Paint-select drag over giver checkboxes (state lives for one drag).
         private int paintAnchorRow = -1;
-        private string paintTypeDefName;
+        private string? paintTypeDefName;
         private bool paintAdds;
         private readonly HashSet<string> paintApplied = new HashSet<string>();
 
@@ -1913,7 +1914,8 @@ namespace WorkRoles.UI
         private void PaintGiver(RoleEditorSnapshot model,
             RoleJobTreeNode node)
         {
-            if (!paintApplied.Add(node.GiverDefName)) return;
+            string? giverDefName = node.GiverDefName;
+            if (giverDefName == null || !paintApplied.Add(giverDefName)) return;
             MultiCheckboxState state = node.State;
             // Off only ever removes an own entry: partial rows have none.
             bool changes = paintAdds
@@ -1973,11 +1975,11 @@ namespace WorkRoles.UI
                 if (node.TypeEntryIndex >= 0)
                     RoleCommands.AddEntry(model.RoleId,
                         new JobEntry(JobEntryKind.WorkGiver,
-                            node.GiverDefName), node.TypeEntryIndex);
+                            node.GiverDefName!), node.TypeEntryIndex); // giver rows only
                 else
                     RoleCommands.AddEntry(model.RoleId,
                         new JobEntry(JobEntryKind.WorkGiver,
-                            node.GiverDefName));
+                            node.GiverDefName!)); // giver rows only
             }
             else if (node.OwnEntryIndex >= 0)
             {
@@ -2038,7 +2040,7 @@ namespace WorkRoles.UI
 
         private void DrawCompositeCandidates(Rect rect, RoleEditorSnapshot model)
         {
-            RoleCompositeSnapshot composite = model.Composite;
+            RoleCompositeSnapshot composite = model.Composite!; // composite editor only
             WrText.HeaderLabel(new Rect(rect.x + 4f, rect.y + WrText.MediumTopBearing,
                 rect.width - 4f, 28f), composite.CandidatesTitle);
             float topY = rect.y + 28f + 4f;
@@ -2080,7 +2082,7 @@ namespace WorkRoles.UI
                     Text.Anchor = TextAnchor.UpperLeft;
                     Widgets.DrawHighlightIfMouseover(row);
                     if (Widgets.ButtonInvisible(row))
-                        editorState.ToggleCandidateSection(candidate.HeaderKey);
+                        editorState.ToggleCandidateSection(candidate.HeaderKey!); // header rows carry a key
                     continue;
                 }
                 if (Mouse.IsOver(row)) Widgets.DrawHighlight(row);
@@ -2101,7 +2103,7 @@ namespace WorkRoles.UI
 
         private void DrawCompositeMembers(Rect rect, RoleEditorSnapshot model)
         {
-            RoleCompositeSnapshot composite = model.Composite;
+            RoleCompositeSnapshot composite = model.Composite!; // composite editor only
             WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing,
                 rect.width - 8f, 28f), composite.MembersTitle);
             var scrollRect = new Rect(rect.x + 8f, rect.y + 28f + 4f,

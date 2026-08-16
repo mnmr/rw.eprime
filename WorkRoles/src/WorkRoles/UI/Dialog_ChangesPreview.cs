@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -24,7 +25,7 @@ namespace WorkRoles.UI
 
         internal readonly struct PreviewChipSource
         {
-            internal PreviewChipSource(Role role, ChipState state, string tip)
+            internal PreviewChipSource(Role role, ChipState state, string? tip)
             {
                 RoleId = role.id;
                 RenderData = RoleChipRenderData.From(role);
@@ -35,7 +36,7 @@ namespace WorkRoles.UI
             internal int RoleId { get; }
             internal RoleChipRenderData RenderData { get; }
             internal ChipState State { get; }
-            internal string Tip { get; }
+            internal string? Tip { get; }
         }
 
         /// One preview line: chips with per-chip states, reason tooltips, and
@@ -45,26 +46,26 @@ namespace WorkRoles.UI
             private readonly List<PreviewChipSource> chipSources =
                 new List<PreviewChipSource>();
             private readonly List<RoleChipVerdict> verdicts = new List<RoleChipVerdict>();
-            private readonly List<StructuredTip> structuredTips =
-                new List<StructuredTip>();
+            private readonly List<StructuredTip?> structuredTips =
+                new List<StructuredTip?>();
 
             internal int ChipCount => chipSources.Count;
             internal PreviewChipSource ChipAt(int index) => chipSources[index];
 
-            internal void AddChip(Role role, ChipState state, StructuredTip tip,
+            internal void AddChip(Role role, ChipState state, StructuredTip? tip,
                 RoleChipVerdict verdict = default)
             {
-                string text = tip?.PlainText;
+                string? text = tip?.PlainText;
                 var source = new PreviewChipSource(role, state, text);
                 chipSources.Add(source);
                 verdicts.Add(verdict);
                 structuredTips.Add(tip);
             }
 
-            internal void InsertChip(int index, Role role, ChipState state, StructuredTip tip,
+            internal void InsertChip(int index, Role role, ChipState state, StructuredTip? tip,
                 RoleChipVerdict verdict = default)
             {
-                string text = tip?.PlainText;
+                string? text = tip?.PlainText;
                 var source = new PreviewChipSource(role, state, text);
                 chipSources.Insert(index, source);
                 verdicts.Insert(index, verdict);
@@ -74,7 +75,7 @@ namespace WorkRoles.UI
             internal RoleChipVerdict VerdictAt(int index) =>
                 index >= 0 && index < verdicts.Count ? verdicts[index] : default;
 
-            internal StructuredTip StructuredTipAt(int index)
+            internal StructuredTip? StructuredTipAt(int index)
             {
                 return index >= 0 && index < structuredTips.Count
                     ? structuredTips[index] : null;
@@ -83,7 +84,7 @@ namespace WorkRoles.UI
 
         public class PawnPreview
         {
-            public Pawn pawn;
+            public Pawn pawn = null!; // assigned by every preview builder
             public List<Line> lines = new List<Line>();
             public bool included = true;
         }
@@ -91,7 +92,7 @@ namespace WorkRoles.UI
         private readonly struct ChipLayout
         {
             public ChipLayout(RoleChipRenderData renderData, ChipState state,
-                string tip, StructuredTip structuredTip, Rect rect,
+                string? tip, StructuredTip? structuredTip, Rect rect,
                 RoleChipVerdict verdict)
             {
                 RenderData = renderData;
@@ -104,8 +105,8 @@ namespace WorkRoles.UI
 
             internal RoleChipRenderData RenderData { get; }
             internal ChipState State { get; }
-            internal string Tip { get; }
-            internal StructuredTip StructuredTip { get; }
+            internal string? Tip { get; }
+            internal StructuredTip? StructuredTip { get; }
             internal Rect Rect { get; }
             internal RoleChipVerdict Verdict { get; }
 
@@ -194,8 +195,8 @@ namespace WorkRoles.UI
         private const float GroupGap = 8f;
         private const float ChipGap = 4f;
 
-        private string title;
-        private readonly Func<string> titleFactory;
+        private string? title;
+        private readonly Func<string>? titleFactory;
         private readonly List<PawnPreview> entries;
         private readonly Action<HashSet<Pawn>> onApply;
         private readonly Func<List<PawnPreview>> rebuild;
@@ -212,8 +213,8 @@ namespace WorkRoles.UI
         // text, preview source rows, and width. Refresh: immediate on a key
         // change. Equality: equal contents retain identity within one RoleStore.
         // Teardown: PostClose releases the snapshot, owner, and revision stamps.
-        private ChangesPreviewRenderSnapshot renderSnapshot;
-        private RoleStore renderOwner;
+        private ChangesPreviewRenderSnapshot? renderSnapshot;
+        private RoleStore? renderOwner;
         private int renderUiRevision = int.MinValue;
         private int renderLanguageRevision = int.MinValue;
         private int renderEntriesGeneration = int.MinValue;
@@ -224,7 +225,7 @@ namespace WorkRoles.UI
 
         public override Vector2 InitialSize => new Vector2(560f, 620f);
 
-        public Dialog_ChangesPreview(string title, List<PawnPreview> entries,
+        public Dialog_ChangesPreview(string? title, List<PawnPreview> entries,
             Action<HashSet<Pawn>> onApply, Func<List<PawnPreview>> rebuild)
         {
             this.title = title;
@@ -258,7 +259,7 @@ namespace WorkRoles.UI
                 entry => entry.pawn,
                 entry => entry.included,
                 ReferenceIdentityComparer<Pawn>.Instance);
-            List<PawnPreview> refreshed = rebuild?.Invoke();
+            List<PawnPreview>? refreshed = rebuild?.Invoke();
             if (refreshed != null)
             {
                 includedCount = IdentitySelectionPreserver.Restore(
@@ -296,11 +297,11 @@ namespace WorkRoles.UI
         }
 
         private static void DrawStateChip(Rect rect, RoleChipRenderData role,
-            ChipState state, string tip, StructuredTip structuredTip,
+            ChipState state, string? tip, StructuredTip? structuredTip,
             RoleChipVerdict verdict)
         {
             var style = state == ChipState.Kept ? ChipStyle.Subtle : ChipStyle.Normal;
-            RoleChipUI.Draw(rect, role, style, showRemove: false, dragSource: null, onClick: null,
+            RoleChipUI.Draw(rect, role, style, showRemove: false, dragSource: null!, onClick: null!,
                 interactive: false, verdict: verdict);
             if (state == ChipState.Removed)
                 RoleChipUI.DrawRemovedOutline(rect);
@@ -315,7 +316,7 @@ namespace WorkRoles.UI
 
         private void EnsureRenderSnapshot(float width)
         {
-            RoleStore store = RoleStore.Current;
+            RoleStore? store = RoleStore.Current;
             int uiRevision = UiVersion.Current;
             int languageRevision = LanguageChangeCoordinator.Revision;
             int factsCurrent = ExternalPawnFacts.Revisions.Current;
@@ -364,7 +365,7 @@ namespace WorkRoles.UI
                     for (int chipIndex = 0; chipIndex < line.ChipCount; chipIndex++)
                     {
                         var chip = line.ChipAt(chipIndex);
-                        Role currentRole = store?.RoleById(chip.RoleId);
+                        Role? currentRole = store?.RoleById(chip.RoleId);
                         RoleChipRenderData renderData = currentRole == null
                             ? chip.RenderData
                             : RoleChipRenderData.From(currentRole);
@@ -452,7 +453,8 @@ namespace WorkRoles.UI
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             EnsureRenderSnapshot(rowW);
-            ChangesPreviewRenderSnapshot snapshot = renderSnapshot;
+            ChangesPreviewRenderSnapshot snapshot =
+                renderSnapshot!; // published by EnsureRenderSnapshot above
             float contentH = entries.Count == 0
                 ? PawnRowH : snapshot.Layout.ContentExtent;
 

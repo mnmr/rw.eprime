@@ -122,14 +122,14 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(BillStack), nameof(BillStack.Clear))]
     public static class Patch_BillStack_Clear
     {
-        public static void Prefix(BillStack __instance, out List<Bill> __state)
+        public static void Prefix(BillStack __instance, out List<Bill>? __state)
         {
             __state = RoleStore.Current?.CaptureBillRolesForStack(__instance);
         }
 
-        public static void Postfix(BillStack __instance, List<Bill> __state)
+        public static void Postfix(BillStack __instance, List<Bill>? __state)
         {
-            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state);
+            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state!); // callee null-checks
         }
     }
 
@@ -139,15 +139,15 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(BillStack), nameof(BillStack.RemoveIncompletableBills))]
     public static class Patch_BillStack_RemoveIncompletableBills
     {
-        public static void Prefix(BillStack __instance, out List<Bill> __state)
+        public static void Prefix(BillStack __instance, out List<Bill>? __state)
         {
             __state = RoleStore.Current?.CaptureBillRolesForStack(
                 __instance, onlyIncompletable: true);
         }
 
-        public static void Postfix(BillStack __instance, List<Bill> __state)
+        public static void Postfix(BillStack __instance, List<Bill>? __state)
         {
-            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state);
+            RoleStore.Current?.RemoveCapturedBillRolesMissingFromStack(__instance, __state!); // callee null-checks
         }
     }
 
@@ -157,15 +157,15 @@ namespace WorkRoles.Patches
     [HarmonyPatch(typeof(Thing), nameof(Thing.Destroy), typeof(DestroyMode))]
     public static class Patch_Thing_DestroyBillRoles
     {
-        public static void Prefix(Thing __instance, out BillStack __state)
+        public static void Prefix(Thing __instance, out BillStack? __state)
         {
             __state = (__instance as IBillGiver)?.BillStack;
         }
 
-        public static void Postfix(Thing __instance, BillStack __state)
+        public static void Postfix(Thing __instance, BillStack? __state)
         {
             if (__instance != null && __instance.Destroyed)
-                RoleStore.Current?.RemoveBillRolesForStack(__state);
+                RoleStore.Current?.RemoveBillRolesForStack(__state!); // callee null-checks
         }
     }
 
@@ -220,7 +220,7 @@ namespace WorkRoles.Patches
                         bill.SetAnyPawnRestriction();
                         RoleCommands.SetBillRole(bill, roleId);
                     }),
-                    payload = null
+                    payload = null! // role entries carry no pawn payload
                 };
             }
         }
@@ -236,7 +236,7 @@ namespace WorkRoles.Patches
     public static class Patch_DialogBillConfig_DoWindowContents
     {
         /// The bill whose dialog is currently drawing (null outside DoWindowContents).
-        internal static Bill_Production CurrentBill;
+        internal static Bill_Production? CurrentBill;
 
         public static bool Prepare() =>
             BillDialogCompatibility.WorkerUiAvailable;
@@ -276,7 +276,7 @@ namespace WorkRoles.Patches
         /// this at startup (vanilla value 96 + a sliver so the sentinel is unique).
         public const int WorkerSectionHeight = 101;
 
-        internal static Listing_Standard WorkerSection;
+        internal static Listing_Standard? WorkerSection;
 
         public static bool Prepare() =>
             BillDialogCompatibility.WorkerUiAvailable;

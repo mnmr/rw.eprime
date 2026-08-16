@@ -61,7 +61,7 @@ namespace WorkRoles.Core.Signals
             All = new ReadOnlyCollection<SkillBucketSignal>(all);
         }
 
-        public SkillBucketSignal ForSkill(string skillDefName)
+        public SkillBucketSignal? ForSkill(string skillDefName)
         {
             if (string.IsNullOrWhiteSpace(skillDefName)) return null;
             return bySkill.TryGetValue(skillDefName, out var signal) ? signal : null;
@@ -114,7 +114,7 @@ namespace WorkRoles.Core.Signals
             All = new ReadOnlyCollection<WorkTypeBucketSignal>(all);
         }
 
-        public WorkTypeBucketSignal ForWorkType(string workTypeDefName)
+        public WorkTypeBucketSignal? ForWorkType(string workTypeDefName)
         {
             if (string.IsNullOrWhiteSpace(workTypeDefName)) return null;
             return byWorkType.TryGetValue(workTypeDefName, out var signal)
@@ -127,7 +127,7 @@ namespace WorkRoles.Core.Signals
     {
         public static WorkTypeBucketSnapshot Aggregate(
             SignalSnapshot snapshot,
-            SignalClassificationCatalog catalog = null)
+            SignalClassificationCatalog? catalog = null)
         {
             if (snapshot == null) throw new ArgumentNullException(nameof(snapshot));
             catalog = catalog ?? SignalClassificationCatalog.Default;
@@ -159,7 +159,7 @@ namespace WorkRoles.Core.Signals
         public static SkillBucketSnapshot Aggregate(
             IEnumerable<string> enabledSkillDefNames,
             SignalSnapshot snapshot,
-            SignalClassificationCatalog catalog = null)
+            SignalClassificationCatalog? catalog = null)
         {
             if (enabledSkillDefNames == null)
                 throw new ArgumentNullException(nameof(enabledSkillDefNames));

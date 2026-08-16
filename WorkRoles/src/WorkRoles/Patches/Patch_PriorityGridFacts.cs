@@ -15,7 +15,7 @@ namespace WorkRoles.Patches
                 ? 0 : PriorityGridFacts.Revisions.RevisionOf(Pawn);
         }
 
-        internal Pawn Pawn { get; }
+        internal Pawn? Pawn { get; }
         internal int Level { get; }
         internal int Revision { get; }
 
@@ -75,8 +75,8 @@ namespace WorkRoles.Patches
 
     public sealed class PriorityGridPassionTransitionState
     {
-        private readonly SkillRecord[] records;
-        private readonly Passion[] passions;
+        private readonly SkillRecord[]? records;
+        private readonly Passion[]? passions;
         private readonly int revision;
 
         internal PriorityGridPassionTransitionState(Pawn pawn,
@@ -99,7 +99,7 @@ namespace WorkRoles.Patches
             }
         }
 
-        private Pawn Pawn { get; }
+        private Pawn? Pawn { get; }
 
         internal void InvalidateIfChanged()
         {
@@ -107,7 +107,7 @@ namespace WorkRoles.Patches
                 || PriorityGridFacts.Revisions.RevisionOf(Pawn) != revision)
                 return;
             for (int i = 0; i < records.Length; i++)
-                if (records[i] != null && records[i].passion != passions[i])
+                if (records[i] != null && records[i].passion != passions![i]) // assigned together with records
                 {
                     PriorityGridFacts.Invalidate(Pawn);
                     return;

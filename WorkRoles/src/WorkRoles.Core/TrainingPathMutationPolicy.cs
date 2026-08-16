@@ -5,14 +5,14 @@ namespace WorkRoles.Core
     public static class TrainingPathMutationPolicy
     {
         public static bool IntSequenceEqual(
-            IReadOnlyList<int> current,
-            IReadOnlyList<int> requested)
+            IReadOnlyList<int>? current,
+            IReadOnlyList<int>? requested)
         {
             int currentCount = current?.Count ?? 0;
             int requestedCount = requested?.Count ?? 0;
             if (currentCount != requestedCount) return false;
             for (int i = 0; i < currentCount; i++)
-                if (current[i] != requested[i]) return false;
+                if (current![i] != requested![i]) return false; // equal non-zero counts imply non-null
             return true;
         }
 
@@ -41,8 +41,8 @@ namespace WorkRoles.Core
             IReadOnlyList<int> currentMins,
             IReadOnlyList<int> currentMaxes,
             IReadOnlyList<int> requestedRoleIds,
-            IReadOnlyList<int> requestedMins,
-            IReadOnlyList<int> requestedMaxes) =>
+            IReadOnlyList<int>? requestedMins,
+            IReadOnlyList<int>? requestedMaxes) =>
             IntSequenceEqual(currentRoleIds, requestedRoleIds)
             && IntSequenceEqual(currentMins, requestedMins)
             && IntSequenceEqual(currentMaxes, requestedMaxes);

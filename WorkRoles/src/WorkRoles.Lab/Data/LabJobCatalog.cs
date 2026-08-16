@@ -10,16 +10,16 @@ internal sealed class LabJobCatalog : IJobCatalog
     public IReadOnlyList<string> WorkGiversOf(string workTypeDefName) =>
         workTypeDefName != null
         && VanillaWorkOrder.GiversInOrder.TryGetValue(
-            workTypeDefName, out string[] givers)
+            workTypeDefName, out string[]? givers)
             ? givers
             : NoGivers;
 
     public string WorkTypeOf(string workGiverDefName) =>
         workGiverDefName != null
         && VanillaGiverBaseline.GiverWorkType.TryGetValue(
-            workGiverDefName, out string workType)
+            workGiverDefName, out string? workType)
             ? workType
-            : null;
+            : null!;
 
     public bool IsEmergency(string workGiverDefName) => false;
 }

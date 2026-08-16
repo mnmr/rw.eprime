@@ -10,7 +10,7 @@ namespace WorkRoles.Core.Signals
             new ReadOnlyCollection<Signal>(new List<Signal>());
 
         private readonly Dictionary<string, IReadOnlyList<Signal>> bySkill;
-        private Dictionary<string, IReadOnlyList<Signal>> byWorkType;
+        private Dictionary<string, IReadOnlyList<Signal>>? byWorkType;
 
         public static readonly SignalSnapshot Empty =
             new SignalSnapshot(Array.Empty<Signal>());
@@ -42,7 +42,7 @@ namespace WorkRoles.Core.Signals
             all.Sort(SignalComparer.Instance);
             var global = new List<Signal>();
             var grouped = new Dictionary<string, List<Signal>>(StringComparer.Ordinal);
-            Dictionary<string, List<Signal>> groupedByWorkType = null;
+            Dictionary<string, List<Signal>>? groupedByWorkType = null;
             foreach (Signal signal in all)
             {
                 if (signal.WorkTypeDefName != null)

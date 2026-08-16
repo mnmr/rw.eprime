@@ -24,7 +24,7 @@ namespace WorkRoles.Signals
 
         private readonly SignalCatalog catalog;
 
-        internal AptitudeSignalProvider(SignalCatalog catalog = null)
+        internal AptitudeSignalProvider(SignalCatalog? catalog = null)
         {
             this.catalog = catalog ?? SignalCatalog.Default;
         }
@@ -44,7 +44,7 @@ namespace WorkRoles.Signals
             foreach (Gene gene in pawn.genes.GenesListForReading)
             {
                 if (gene == null || !gene.Active || gene.def == null) continue;
-                string template = TemplateOf(gene.def.defName);
+                string? template = TemplateOf(gene.def.defName);
                 if (template == null) continue;
                 if (!StringComparer.OrdinalIgnoreCase.Equals(
                         gene.def.modContentPack?.PackageId, "ludeon.rimworld.biotech"))
@@ -123,7 +123,7 @@ namespace WorkRoles.Signals
             }
         }
 
-        private static string TemplateOf(string defName)
+        private static string? TemplateOf(string? defName)
         {
             if (defName == null) return null;
             foreach (string template in Templates.Keys)

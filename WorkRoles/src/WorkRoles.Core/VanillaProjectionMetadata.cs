@@ -37,7 +37,7 @@ namespace WorkRoles.Core
 
         public VanillaProjectionDefinitionMetadata(
             IEnumerable<VanillaProjectionWorkTypeSource> sources,
-            IEnumerable<string> priorityOrderedWorkTypes)
+            IEnumerable<string>? priorityOrderedWorkTypes)
         {
             if (sources == null) throw new ArgumentNullException(nameof(sources));
 

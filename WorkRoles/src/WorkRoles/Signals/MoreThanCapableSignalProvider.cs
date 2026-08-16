@@ -19,7 +19,7 @@ namespace WorkRoles.Signals
         private const string ApiMethodName = "IsBadWork";
 
         private static bool initialized;
-        private static Func<Pawn, WorkTypeDef, bool> isBadWork;
+        private static Func<Pawn, WorkTypeDef, bool>? isBadWork;
         private static bool warned;
 
         internal static bool Available
@@ -34,7 +34,7 @@ namespace WorkRoles.Signals
         public IEnumerable<PawnSignal> Collect(Pawn pawn)
         {
             EnsureInitialized();
-            Func<Pawn, WorkTypeDef, bool> query = isBadWork;
+            Func<Pawn, WorkTypeDef, bool>? query = isBadWork;
             if (pawn == null || query == null)
                 return Array.Empty<PawnSignal>();
 

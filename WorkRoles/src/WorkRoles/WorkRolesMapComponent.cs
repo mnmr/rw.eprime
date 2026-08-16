@@ -1,3 +1,4 @@
+using RimShared.Common;
 using Verse;
 using WorkRoles.Core;
 
@@ -17,7 +18,7 @@ namespace WorkRoles
         public override void MapComponentTick()
         {
             CompiledJobOrders.DrainPendingReconciles(map);
-            if (hourBoundary.ShouldRun(GenTicks.TicksAbs))
+            if (hourBoundary.Observe(GenTicks.TicksAbs))
                 CompiledJobOrders.InvalidateTimeRuledForMap(map);
         }
     }

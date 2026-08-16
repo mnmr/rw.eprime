@@ -42,7 +42,8 @@ namespace WorkRoles.UI
         // refreshes immediately when the language revision changes.
         // Equality: equal localized chrome retains snapshot identity.
         // Teardown: closing the dialog releases all instance-owned values.
-        private DialogChromeSnapshot chromeSnapshot;
+        // Assigned by EnsureChrome, called from the constructor.
+        private DialogChromeSnapshot chromeSnapshot = null!;
         private int chromeLanguageRevision = -1;
 
         public Dialog_SmallConfirm(string text, Action onConfirm)

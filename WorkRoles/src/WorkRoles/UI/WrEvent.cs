@@ -1,3 +1,4 @@
+using RimShared.Common;
 using UnityEngine;
 using WorkRoles.Core;
 

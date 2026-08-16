@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -15,9 +16,9 @@ namespace WorkRoles.UI
         private readonly string stableKey;
         private readonly Func<string> gather;
         private readonly TipRefresh refresh;
-        private string text;
+        private string? text;
         private int lastFrame;
-        private StructuredTip structured;
+        private StructuredTip? structured;
 
         private WrTip(string stableKey, Func<string> gather, TipRefresh refresh)
         {
@@ -43,7 +44,7 @@ namespace WorkRoles.UI
 
         string IStructuredTipSource.StableKey => stableKey;
 
-        StructuredTip IStructuredTipSource.Resolve()
+        StructuredTip? IStructuredTipSource.Resolve()
         {
             int frame = Time.frameCount;
             if (TipGatherPolicy.ShouldGather(refresh, text != null, frame, lastFrame))
@@ -52,7 +53,9 @@ namespace WorkRoles.UI
                 structured = null;
             }
             lastFrame = frame;
-            if (text.Length == 0) return null;
+            // ShouldGather always gathers while text is null, so it is
+            // non-null past this point.
+            if (text!.Length == 0) return null;
             if (structured == null)
             {
                 var model = new TipModel();
@@ -81,8 +84,8 @@ namespace WorkRoles.UI
     {
         private static readonly Dictionary<string, WrTip> plain
             = new Dictionary<string, WrTip>();
-        private static readonly Dictionary<(string key, string arg), WrTip> withArg
-            = new Dictionary<(string, string), WrTip>();
+        private static readonly Dictionary<(string key, string? arg), WrTip> withArg
+            = new Dictionary<(string, string?), WrTip>();
         private static readonly Dictionary<string, WrTip> warnPlain
             = new Dictionary<string, WrTip>();
         private static readonly Dictionary<(string key, string arg), WrTip> warnWithArg
@@ -104,7 +107,7 @@ namespace WorkRoles.UI
         private static WrTip CreateKeyed(string key)
             => plain[key] = WrTip.Pinned(key, () => key.Translate().Resolve());
 
-        internal static WrTip Key(string key, string arg)
+        internal static WrTip Key(string key, string? arg)
         {
             Observe();
             if (!withArg.TryGetValue((key, arg), out WrTip tip))
@@ -112,7 +115,7 @@ namespace WorkRoles.UI
             return tip;
         }
 
-        private static WrTip CreateKeyed(string key, string arg)
+        private static WrTip CreateKeyed(string key, string? arg)
             => withArg[(key, arg)] = WrTip.Pinned(key + ":" + arg,
                 () => key.Translate(arg).Resolve());
 

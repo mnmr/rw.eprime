@@ -11,14 +11,14 @@ namespace WorkRoles.UI
         // Focused control name, its text buffer, and an owner token (role id,
         // 0 for global options) so a mid-edit owner switch drops the edit
         // rather than committing it against the new owner.
-        private static string editControl;
-        private static string editBuffer;
+        private static string? editControl;
+        private static string? editBuffer;
         private static int editOwner;
         // When another field steals focus mid-edit (it can draw and claim the
         // shared slot before the edited field's commit branch runs), the
         // in-flight edit parks here and commits on the owner's next draw.
-        private static string pendingControl;
-        private static string pendingBuffer;
+        private static string? pendingControl;
+        private static string? pendingBuffer;
         private static int pendingOwner;
 
         /// Modifier-accelerated stepping: plain click = 1 step, Shift ×5,
@@ -40,7 +40,7 @@ namespace WorkRoles.UI
         /// steps or commits a typed edit; the caller's command clamps it.
         internal static int? DrawRow(Rect rect, string caption,
             string valueLabel, int value, string controlName, int owner,
-            string unitSuffix = null)
+            string? unitSuffix = null)
         {
             int? requested = null;
             GameFont oldFont = Text.Font;
@@ -118,7 +118,7 @@ namespace WorkRoles.UI
                 editing = false;
             }
             GUI.SetNextControlName(controlName);
-            string text = editing ? editBuffer : shownValue;
+            string text = editing ? editBuffer! : shownValue; // editing implies buffer set
             string typed = Widgets.TextField(rect, text);
             if (GUI.GetNameOfFocusedControl() == controlName)
             {
@@ -148,13 +148,13 @@ namespace WorkRoles.UI
 
         private static int? TakeNumericEdit()
         {
-            string buffer = editBuffer;
+            string? buffer = editBuffer;
             editControl = null;
             editBuffer = null;
             return Parse(buffer);
         }
 
-        private static int? Parse(string buffer) =>
+        private static int? Parse(string? buffer) =>
             int.TryParse(buffer, out int value) ? value : (int?)null;
     }
 }

@@ -9,7 +9,7 @@ namespace WorkRoles.UI
     /// colonist presentation use this cache, so it belongs outside either view.
     internal static class WorkJobLabels
     {
-        private static Dictionary<WorkGiverDef, string> giverDisplayCache;
+        private static Dictionary<WorkGiverDef, string>? giverDisplayCache;
 
         internal static string GiverDisplayName(WorkGiverDef giver)
         {

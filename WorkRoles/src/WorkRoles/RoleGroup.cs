@@ -13,12 +13,12 @@ namespace WorkRoles
         public const int DefaultId = 0;
 
         public int id;
-        public string label;
+        public string label = null!; // assigned at creation or load
 
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id");
-            Scribe_Values.Look(ref label, "label");
+            Scribe_Values.Look(ref label!, "label");
         }
     }
 }

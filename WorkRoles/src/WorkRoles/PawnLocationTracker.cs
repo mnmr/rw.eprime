@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using Verse;
 using WorkRoles.Core;
 
@@ -19,7 +20,7 @@ namespace WorkRoles
             if (pawn == null) return;
             var store = RoleStore.Current;
             if (!departures.Spawned(pawn, store?.IsManaged(pawn) == true)) return;
-            RecordCurrentLocation(store, pawn, invalidateOnChange: true);
+            RecordCurrentLocation(store!, pawn, invalidateOnChange: true); // Spawned only reports managed pawns, which implies a store
         }
 
         /// A pawn's first assignment starts location tracking immediately; this
@@ -43,7 +44,7 @@ namespace WorkRoles
         private static void RecordCurrentLocation(RoleStore store, Pawn pawn,
             bool invalidateOnChange)
         {
-            string id = ColonyScope.PlaceOf(pawn).LocationId;
+            string? id = ColonyScope.PlaceOf(pawn).LocationId;
             if (store.lastLocationIds.TryGetValue(pawn, out string previous)
                 && previous == id)
                 return;
@@ -92,7 +93,7 @@ namespace WorkRoles
 
         /// Canonical location id of the pawn's map, or the last one it
         /// departed from while off-map; null when unknown.
-        internal static string EffectiveLocationId(Pawn pawn)
+        internal static string? EffectiveLocationId(Pawn pawn)
         {
             if (pawn == null) return null;
             var held = pawn.MapHeld;

@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="WorkRoles.Core.Tests/WorkRoles.Core.Tests.csproj" />
+  <Project Path="WorkRoles.Core/WorkRoles.Core.csproj" />
+  <Project Path="WorkRoles.Lab/WorkRoles.Lab.csproj" />
+  <Project Path="WorkRoles/WorkRoles.csproj" />
+</Solution>

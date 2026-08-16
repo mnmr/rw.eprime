@@ -166,12 +166,12 @@ namespace WorkRoles.Core
         public static Dictionary<string, int> ToVanillaPriorities(
             IReadOnlyDictionary<string, int> workTypeRanks,
             Func<string, int> columnOf,
-            VanillaProjectionCategories categories = null)
+            VanillaProjectionCategories? categories = null)
         {
             var rankedWorkTypes = RankedWorkTypes(workTypeRanks);
             var buckets = Project(rankedWorkTypes, columnOf, null, out bool lumped);
 
-            HashSet<string> pinned = null;
+            HashSet<string>? pinned = null;
             if (lumped && categories != null)
             {
                 pinned = new HashSet<string>();
@@ -244,7 +244,7 @@ namespace WorkRoles.Core
             IReadOnlyDictionary<string, int> workTypeRanks,
             Dictionary<string, int> buckets,
             HashSet<string> category,
-            HashSet<string> pinned)
+            HashSet<string>? pinned)
         {
             int firstRank = int.MaxValue;
             foreach (var pair in workTypeRanks)
@@ -274,7 +274,7 @@ namespace WorkRoles.Core
         private static Dictionary<string, int> Project(
             IReadOnlyList<KeyValuePair<string, int>> rankedWorkTypes,
             Func<string, int> columnOf,
-            HashSet<string> pinnedToOne,
+            HashSet<string>? pinnedToOne,
             out bool lumped)
         {
             var buckets = new Dictionary<string, int>();

@@ -11,7 +11,7 @@ namespace WorkRoles
     public class TrainingPath : IExposable
     {
         public int id;
-        public string name;
+        public string? name;
         public List<int> roleIds = new List<int>();
         public List<int> bandMins = new List<int>();
         public List<int> bandMaxes = new List<int>();

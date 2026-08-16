@@ -19,15 +19,15 @@ namespace WorkRoles.UI
         /// Group-header drag (role-list group reorder); -1 when dragging a role.
         public static int GroupId { get; private set; } = -1;
         /// Pawn the chip was dragged from; null when dragging from the palette.
-        public static Pawn SourcePawn { get; private set; }
+        public static Pawn? SourcePawn { get; private set; }
 
         private static bool pending;
         private static Vector2 pressPos;
         private static int pendingControlId;
         private static int pendingRoleId = -1;
         private static int pendingGroupId = -1;
-        private static Pawn pendingSource;
-        private static Action pendingClickAction;
+        private static Pawn? pendingSource;
+        private static Action? pendingClickAction;
         private static bool pendingReleaseOverSource;
 
         // Owner: the open Work Roles window's single pending/active drag.
@@ -44,22 +44,22 @@ namespace WorkRoles.UI
         // on mouse-up, window open/close, and relevant game lifecycle release.
         private static RoleChipRenderData pendingRoleGhost;
         private static RoleChipRenderData roleGhost;
-        private static string pendingGroupGhostLabel;
-        private static string groupGhostLabel;
+        private static string? pendingGroupGhostLabel;
+        private static string? groupGhostLabel;
         private static float pendingGroupGhostWidth;
         private static float groupGhostWidth;
 
         internal static RoleChipRenderData RoleGhost => roleGhost;
-        internal static string GroupGhostLabel => groupGhostLabel;
+        internal static string? GroupGhostLabel => groupGhostLabel;
         internal static float GroupGhostWidth => groupGhostWidth;
 
         // Drop target registered by whichever row the mouse is over this frame.
-        public static Pawn HoverPawn;
+        public static Pawn? HoverPawn;
         public static int HoverInsertIndex = -1;
 
         /// Generic drop registered by the hovered target (Roles tab role tree):
         /// invoked on mouse-up, taking precedence over the pawn drop context.
-        public static Action HoverDropAction;
+        public static Action? HoverDropAction;
 
         // Visual feedback: true when dragging over a pawn that already has the role.
         public static bool HoverBlocked;
@@ -67,7 +67,7 @@ namespace WorkRoles.UI
         /// Register a press. controlId is the source control's IMGUI identity;
         /// release containment is confirmed by that same control in its own clip.
         internal static void OnPress(int controlId, RoleChipRenderData role,
-            Pawn source, Action clickAction)
+            Pawn? source, Action? clickAction)
         {
             pending = true;
             pressPos = (Vector2)UnityEngine.Input.mousePosition;   // raw screen pixels, GUI-independent

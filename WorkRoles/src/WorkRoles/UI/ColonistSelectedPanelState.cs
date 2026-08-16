@@ -57,7 +57,7 @@ namespace WorkRoles.UI
 
         internal ColonistSelectedActivitySnapshot(bool hasRole,
             RoleChipRenderData role, float roleWidth, string label,
-            string tipText, StructuredTip tooltip)
+            string tipText, StructuredTip? tooltip)
         {
             HasRole = hasRole;
             Role = role;
@@ -71,7 +71,7 @@ namespace WorkRoles.UI
         internal RoleChipRenderData Role { get; }
         internal float RoleWidth { get; }
         internal string Label { get; }
-        internal StructuredTip Tooltip { get; }
+        internal StructuredTip? Tooltip { get; }
 
         internal bool ContentEquals(ColonistSelectedActivitySnapshot other)
         {
@@ -90,7 +90,7 @@ namespace WorkRoles.UI
         private readonly string tipText;
 
         internal ColonistSelectedTraitRowSnapshot(string label, string tipText,
-            StructuredTip tooltip)
+            StructuredTip? tooltip)
         {
             Label = label;
             this.tipText = tipText;
@@ -98,7 +98,7 @@ namespace WorkRoles.UI
         }
 
         internal string Label { get; }
-        internal StructuredTip Tooltip { get; }
+        internal StructuredTip? Tooltip { get; }
 
         internal bool ContentEquals(ColonistSelectedTraitRowSnapshot other) =>
             other != null
@@ -146,9 +146,9 @@ namespace WorkRoles.UI
         // the activity component. Equality: equal component rebuilds preserve
         // their identity and therefore the published panel identity. Teardown:
         // Release on reset, language invalidation, window close, or owner change.
-        private RoleStore owner;
-        private Pawn pawn;
-        private ColonistsRosterCatalogSnapshot activityCatalog;
+        private RoleStore? owner;
+        private Pawn? pawn;
+        private ColonistsRosterCatalogSnapshot? activityCatalog;
         private int externalRevision = -1;
         private int activityRevision = -1;
         private int uiRevision = -1;
@@ -156,17 +156,17 @@ namespace WorkRoles.UI
         private int languageRevision = -1;
         private float portraitSize = -1f;
         private float activityWidth = -1f;
-        private ColonistSelectedChromeSnapshot chrome;
-        private ColonistSelectedActivitySnapshot activity;
-        private ColonistSelectedTraitsSnapshot traits;
-        private ColonistSelectedPanelSnapshot published;
+        private ColonistSelectedChromeSnapshot? chrome;
+        private ColonistSelectedActivitySnapshot? activity;
+        private ColonistSelectedTraitsSnapshot? traits;
+        private ColonistSelectedPanelSnapshot? published;
 
         internal ColonistSelectedPanelState(ActivityState activityState)
         {
             this.activityState = activityState;
         }
 
-        internal ColonistSelectedPanelSnapshot Snapshot(RoleStore store,
+        internal ColonistSelectedPanelSnapshot? Snapshot(RoleStore store,
             Pawn selected, ColonistsRosterCatalogSnapshot catalog,
             float portraitSize, float activityWidth)
         {
@@ -184,7 +184,7 @@ namespace WorkRoles.UI
             int nextDefinition = DefinitionReloadCoordinator.Revision;
             int nextLanguage = LanguageChangeCoordinator.Revision;
 
-            ColonistSelectedChromeSnapshot nextChrome = chrome;
+            ColonistSelectedChromeSnapshot? nextChrome = chrome;
             if (ownerChanged || pawnChanged || externalRevision != nextExternal
                 || languageRevision != nextLanguage
                 || this.portraitSize != portraitSize)
@@ -195,7 +195,7 @@ namespace WorkRoles.UI
                     nextChrome = chrome;
             }
 
-            ColonistSelectedTraitsSnapshot nextTraits = traits;
+            ColonistSelectedTraitsSnapshot? nextTraits = traits;
             if (ownerChanged || pawnChanged || externalRevision != nextExternal
                 || languageRevision != nextLanguage)
             {
@@ -205,7 +205,7 @@ namespace WorkRoles.UI
                     nextTraits = traits;
             }
 
-            ColonistSelectedActivitySnapshot nextActivitySnapshot = activity;
+            ColonistSelectedActivitySnapshot? nextActivitySnapshot = activity;
             if (ownerChanged || pawnChanged || activityRevision != nextActivity
                 || uiRevision != nextUi || languageRevision != nextLanguage
                 || definitionRevision != nextDefinition
@@ -223,8 +223,10 @@ namespace WorkRoles.UI
                 || !ReferenceEquals(chrome, nextChrome)
                 || !ReferenceEquals(activity, nextActivitySnapshot)
                 || !ReferenceEquals(traits, nextTraits))
+                // A null cached component forces its rebuild branch above, so
+                // every next* is non-null here.
                 published = new ColonistSelectedPanelSnapshot(selected,
-                    nextChrome, nextActivitySnapshot, nextTraits);
+                    nextChrome!, nextActivitySnapshot!, nextTraits!);
 
             owner = store;
             pawn = selected;
@@ -320,7 +322,7 @@ namespace WorkRoles.UI
             // revision. Keep the published tooltip at the activity granularity
             // whose complete dependencies ActivityTracker and UiVersion cover.
             string tipText = label;
-            StructuredTip tip = BuildTextTip(
+            StructuredTip? tip = BuildTextTip(
                 "activity:" + pawn.thingIDNumber, tipText);
             return new ColonistSelectedActivitySnapshot(hasRole, role, width,
                 label, tipText, tip);
@@ -329,7 +331,7 @@ namespace WorkRoles.UI
         private static ColonistSelectedTraitsSnapshot BuildTraits(Pawn pawn)
         {
             var rows = new List<ColonistSelectedTraitRowSnapshot>();
-            List<Trait> source = pawn.story?.traits?.allTraits;
+            List<Trait>? source = pawn.story?.traits?.allTraits;
             if (source == null) return new ColonistSelectedTraitsSnapshot(rows);
             for (int i = 0; i < source.Count; i++)
             {
@@ -344,7 +346,7 @@ namespace WorkRoles.UI
             return new ColonistSelectedTraitsSnapshot(rows);
         }
 
-        private static StructuredTip BuildTextTip(string stableKey, string text)
+        private static StructuredTip? BuildTextTip(string stableKey, string text)
         {
             if (text.NullOrEmpty()) return null;
             var model = new TipModel();

@@ -39,7 +39,7 @@ namespace WorkRoles.UI
         // Refresh: immediately on the next size read after a dependency change.
         // Equality: an equal rebuild preserves snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
-        private RoleColorPickerSizeSnapshot sizeSnapshot;
+        private RoleColorPickerSizeSnapshot? sizeSnapshot;
         private int sizePickableCount = -1;
         private int sizeLanguageRevision = -1;
 

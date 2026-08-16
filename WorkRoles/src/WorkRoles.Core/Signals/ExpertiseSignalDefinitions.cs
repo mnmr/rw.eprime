@@ -127,7 +127,7 @@ namespace WorkRoles.Core.Signals
             string skill,
             string packageId,
             string sourceDisplayName,
-            IEnumerable<string> dependencies,
+            IEnumerable<string>? dependencies,
             IEnumerable<SignalEffect> effects) =>
             new SignalDefinition(
                 SignalType.Active,
@@ -139,7 +139,7 @@ namespace WorkRoles.Core.Signals
                 effects: effects,
                 fallbackUi: new SignalUi(label, null, ExpertiseIcon, null, null, sourceDisplayName));
 
-        private static SignalEffect S(string statDefName, float value, string condition = null) =>
+        private static SignalEffect S(string statDefName, float value, string? condition = null) =>
             new SignalEffect(
                 KindOf(statDefName),
                 SignalOperation.Add,

@@ -1,3 +1,4 @@
+using RimShared.Common;
 using RimWorld;
 using WorkRoles.Core;
 
@@ -10,7 +11,7 @@ namespace WorkRoles
         private static readonly OwnerScopedTransferTable<Bill, RoleStore, int> staged =
             new OwnerScopedTransferTable<Bill, RoleStore, int>();
 
-        internal static bool PropagateClone(Bill source, Bill clone, RoleStore store)
+        internal static bool PropagateClone(Bill? source, Bill? clone, RoleStore? store)
         {
             if (source == null || clone == null || store == null) return false;
             if (store.billRoles != null
@@ -22,10 +23,11 @@ namespace WorkRoles
             return staged.Propagate(source, clone, store);
         }
 
-        internal static int RoleIdForScribe(Bill bill, RoleStore store) =>
-            staged.TryGet(bill, store, out int roleId) ? roleId : -1;
+        internal static int RoleIdForScribe(Bill? bill, RoleStore? store) =>
+            bill != null && store != null && staged.TryGet(bill, store, out int roleId)
+                ? roleId : -1;
 
-        internal static void RestoreFromScribe(Bill bill, RoleStore store, int roleId)
+        internal static void RestoreFromScribe(Bill? bill, RoleStore? store, int roleId)
         {
             if (bill != null && store != null && roleId >= 0)
                 staged.Set(bill, store, roleId);

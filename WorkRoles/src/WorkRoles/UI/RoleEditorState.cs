@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -19,7 +20,7 @@ namespace WorkRoles.UI
         // revision change. Equality: equal rebuilt contents preserve identity.
         // Teardown: Reset releases the tip reference.
         private int tipsLanguageRevision = -1;
-        private StructuredTip blockerTip;
+        private StructuredTip? blockerTip;
 
         // Owner: Roles window. Key: definition-reload revision. Value: the
         // collection of definition-derived editor cache slots below.
@@ -36,7 +37,7 @@ namespace WorkRoles.UI
         // coverage, definition labels, role revision, and language. Refresh: lazy
         // on first read after key change. Equality: exact keys reuse list/item
         // identity. Teardown: Reset/language invalidation releases the list.
-        private List<RoleSkillPresentation> skillsUsed;
+        private List<RoleSkillPresentation>? skillsUsed;
         private int skillsStamp = -1;
         private int skillsRoleId = -1;
 
@@ -46,7 +47,7 @@ namespace WorkRoles.UI
         // Refresh: immediate on the next Holders read after key change. Equality:
         // exact keys reuse list identity. Teardown: Reset releases holder rows,
         // owner references, and the remembered scope stamp.
-        private List<RoleHolderPresentation> holders;
+        private List<RoleHolderPresentation>? holders;
         private ScopeCacheStamp holdersStamp = ScopeCacheStamp.Invalid;
         private int holdersRoleId = -1;
 
@@ -56,7 +57,7 @@ namespace WorkRoles.UI
         // role entries and the game job catalog represented by UiVersion.
         // Refresh: lazy on first read after key change. Equality: exact keys reuse
         // set identity. Teardown: Reset releases the set and stamps.
-        private HashSet<int> deadEntries;
+        private HashSet<int>? deadEntries;
         private int deadEntriesStamp = -1;
         private int deadEntriesRoleId = -1;
 
@@ -84,17 +85,17 @@ namespace WorkRoles.UI
         // lazy on first Coverage read after revision change. Equality: matching
         // revision reuses sets and presentation identity. Teardown: Reset/language
         // invalidation releases the complete coverage projection.
-        private HashSet<string> uncoveredGivers;
-        private HashSet<string> uncoveredTypes;
-        private string uncoveredWarning;
+        private HashSet<string>? uncoveredGivers;
+        private HashSet<string>? uncoveredTypes;
+        private string? uncoveredWarning;
         private int uncoveredStamp = -1;
-        private RoleCoveragePresentation coverage;
+        private RoleCoveragePresentation? coverage;
         // Owner: view. Key: (warning string identity, available width).
         // Value: wrapped Small-font warning height. Dependencies: coverage
         // generation, language, font, and width. Refresh: immediately on key
         // change. Equality: identical keys reuse the measured float. Teardown:
         // Reset/language invalidation clears the single slot.
-        private string measuredCoverageWarning;
+        private string? measuredCoverageWarning;
         private float measuredCoverageWarningWidth = -1f;
         private float measuredCoverageWarningHeight;
 
@@ -104,11 +105,11 @@ namespace WorkRoles.UI
         // coverage, language, filter, and expansion state. Refresh: immediate on
         // the next TreeNodes read after key change. Equality: exact keys preserve
         // list/row identity. Teardown: Reset/language invalidation releases rows.
-        private List<RoleJobTreeNode> treeNodes;
+        private List<RoleJobTreeNode>? treeNodes;
         private int treeNodesStamp = -1;
         private int treeNodesRoleId = -1;
         private int treeNodesRevision = -1;
-        private string treeNodesFilter;
+        private string? treeNodesFilter;
         private int treeRevision;
         private readonly HashSet<string> expandedWorkTypes = new HashSet<string>();
         // Available Roles sections collapsed in the composite editor
@@ -134,7 +135,7 @@ namespace WorkRoles.UI
         // dependency changes. Equality:
         // unchanged dependencies preserve the snapshot identity. Teardown:
         // Reset/language invalidation releases the complete projection.
-        private RoleEditorSnapshot editorSnapshot;
+        private RoleEditorSnapshot? editorSnapshot;
         private int editorSnapshotStamp = -1;
         private int editorSnapshotRoleId = -1;
         private int editorSnapshotLocationRevision = -1;
@@ -142,13 +143,13 @@ namespace WorkRoles.UI
         private int editorSnapshotTreeRevision = -1;
         private float editorSnapshotWidth = -1f;
         private bool editorSnapshotRulesRevealed;
-        private string editorSnapshotFilter;
+        private string? editorSnapshotFilter;
         // The composite candidate list mirrors the role list's nested/flat mode.
         private bool editorSnapshotNested;
 
         internal string Filter { get; set; } = "";
 
-        internal RoleEditorSnapshot Snapshot(RoleStore store, int roleId,
+        internal RoleEditorSnapshot? Snapshot(RoleStore store, int roleId,
             Func<IReadOnlyList<Pawn>> listedPawns, int pawnRevision,
             float width, bool rulesRevealed,
             bool revealTreeSelection)
@@ -175,13 +176,13 @@ namespace WorkRoles.UI
             editorSnapshotFilter = Filter;
             editorSnapshotNested = sectionsNested;
 
-            Role role = store?.RoleById(roleId);
+            Role? role = store?.RoleById(roleId);
             if (role == null)
             {
                 editorSnapshotTreeRevision = treeRevision;
                 return editorSnapshot = null;
             }
-            bool memberLocked = store.IsCompositeMember(role.id);
+            bool memberLocked = store!.IsCompositeMember(role.id); // role != null implies store != null
 
             const float TopBoxPadding = 8f;
             const float PencilSize = 26f;
@@ -312,7 +313,7 @@ namespace WorkRoles.UI
                 bool dead = !presentation.Missing && deadEntries.Contains(i);
                 // One tip per row: dead entries fold the hint into the skill
                 // tip instead of registering a second region.
-                StructuredTip skillTip = presentation.Missing ? null
+                StructuredTip? skillTip = presentation.Missing ? null
                     : entry.Kind == JobEntryKind.WorkType
                         ? dead
                             ? JobSkillProfiles.WorkTypeDeadStructuredTip(entry.DefName)
@@ -329,7 +330,7 @@ namespace WorkRoles.UI
                 "WR_JobColumn".Translate().ToString(), entryRows);
 
             RoleCoveragePresentation coverage = Coverage(store);
-            (string typeDefName, string giverDefName)? target = null;
+            (string typeDefName, string? giverDefName)? target = null;
             if (revealTreeSelection)
             {
                 target = FirstEntryTreeTarget(role);
@@ -380,7 +381,7 @@ namespace WorkRoles.UI
             var members = new List<CompositeMemberRow>(role.memberRoleIds.Count);
             foreach (int memberId in role.memberRoleIds)
             {
-                Role member = store.RoleById(memberId);
+                Role? member = store.RoleById(memberId);
                 if (member == null) continue;
                 members.Add(new CompositeMemberRow(member.id, member.label,
                     member.hasCustomColor, member.color, member.blocker,
@@ -485,7 +486,7 @@ namespace WorkRoles.UI
 
         internal StructuredTip BlockerTip
         {
-            get { EnsureTips(); return blockerTip; }
+            get { EnsureTips(); return blockerTip!; } // EnsureTips builds it
         }
 
         internal void Reset()
@@ -715,7 +716,7 @@ namespace WorkRoles.UI
         {
             ObserveDefinitionRevision();
             if (uncoveredGivers != null && uncoveredStamp == UiVersion.Current)
-                return coverage;
+                return coverage!; // set together with uncoveredGivers
 
             uncoveredStamp = UiVersion.Current;
             var covered = new HashSet<string>();
@@ -741,7 +742,7 @@ namespace WorkRoles.UI
         internal float CoverageWarningHeight(
             RoleCoveragePresentation presentation, float width)
         {
-            string warning = presentation?.Warning;
+            string? warning = presentation?.Warning;
             if (ReferenceEquals(measuredCoverageWarning, warning)
                 && measuredCoverageWarningWidth == width)
                 return measuredCoverageWarningHeight;
@@ -785,7 +786,7 @@ namespace WorkRoles.UI
                 string typeName = (type.gerundLabel ?? type.labelShort ?? type.defName)
                     .CapitalizeFirst();
                 bool typeMatches = !filtering || Matches(typeName);
-                List<WorkGiverDef> matching = null;
+                List<WorkGiverDef>? matching = null;
                 if (filtering && !typeMatches)
                 {
                     matching = new List<WorkGiverDef>();
@@ -825,7 +826,7 @@ namespace WorkRoles.UI
                     // One tip per row: the covered-via-type hint rides the
                     // skill tip (a second region on the same rect would keep
                     // resetting the shared hover gate).
-                    StructuredTip giverTip =
+                    StructuredTip? giverTip =
                         giverState == MultiCheckboxState.Partial
                             ? JobSkillProfiles.GiverCoveredStructuredTip(giver.defName)
                             : JobSkillProfiles.GiverStructuredTip(giver.defName);
@@ -866,7 +867,7 @@ namespace WorkRoles.UI
             treeRevision++;
         }
 
-        internal static (string typeDefName, string giverDefName)?
+        internal static (string typeDefName, string? giverDefName)?
             FirstEntryTreeTarget(Role role)
         {
             foreach (JobEntry entry in role.entries)
@@ -926,8 +927,8 @@ namespace WorkRoles.UI
     internal sealed class RoleEditorSnapshot
     {
         internal RoleEditorSnapshot(RoleEditorHeaderSnapshot header,
-            RoleRulesSnapshot rules, RoleEntriesSnapshot entries,
-            RoleJobTreeSnapshot jobTree, RoleCompositeSnapshot composite)
+            RoleRulesSnapshot rules, RoleEntriesSnapshot? entries,
+            RoleJobTreeSnapshot? jobTree, RoleCompositeSnapshot? composite)
         {
             Header = header;
             Rules = rules;
@@ -938,10 +939,10 @@ namespace WorkRoles.UI
 
         internal RoleEditorHeaderSnapshot Header { get; }
         internal RoleRulesSnapshot Rules { get; }
-        internal RoleEntriesSnapshot Entries { get; }
-        internal RoleJobTreeSnapshot JobTree { get; }
+        internal RoleEntriesSnapshot? Entries { get; }
+        internal RoleJobTreeSnapshot? JobTree { get; }
         /// Non-null for composite roles; Entries and JobTree are null then.
-        internal RoleCompositeSnapshot Composite { get; }
+        internal RoleCompositeSnapshot? Composite { get; }
         internal int RoleId => Header.RoleId;
         internal string RoleLabel => Header.RoleLabel;
     }
@@ -979,7 +980,7 @@ namespace WorkRoles.UI
     /// role at a depth.
     internal readonly struct CompositeCandidateRow
     {
-        private CompositeCandidateRow(string headerTitle, string headerKey,
+        private CompositeCandidateRow(string? headerTitle, string? headerKey,
             bool headerCollapsed, CompositeMemberRow role, int depth)
         {
             HeaderTitle = headerTitle;
@@ -997,8 +998,8 @@ namespace WorkRoles.UI
             => new CompositeCandidateRow(title, key, collapsed, default, 0);
 
         internal bool IsHeader => HeaderTitle != null;
-        internal string HeaderTitle { get; }
-        internal string HeaderKey { get; }
+        internal string? HeaderTitle { get; }
+        internal string? HeaderKey { get; }
         internal bool HeaderCollapsed { get; }
         internal CompositeMemberRow Role { get; }
         internal int Depth { get; }
@@ -1189,8 +1190,8 @@ namespace WorkRoles.UI
 
     internal readonly struct RoleLocationOptionSnapshot
     {
-        internal RoleLocationOptionSnapshot(string label, string token,
-            string tooltip)
+        internal RoleLocationOptionSnapshot(string label, string? token,
+            string? tooltip)
         {
             Label = label;
             Token = token;
@@ -1198,8 +1199,8 @@ namespace WorkRoles.UI
         }
 
         internal string Label { get; }
-        internal string Token { get; }
-        internal string Tooltip { get; }
+        internal string? Token { get; }
+        internal string? Tooltip { get; }
     }
 
     internal sealed class RoleEntriesSnapshot
@@ -1228,7 +1229,7 @@ namespace WorkRoles.UI
     internal readonly struct RoleEntryRowSnapshot
     {
         internal RoleEntryRowSnapshot(JobEntry entry,
-            RoleEntryPresentation presentation, bool dead, StructuredTip skillTip)
+            RoleEntryPresentation presentation, bool dead, StructuredTip? skillTip)
         {
             Entry = entry;
             Presentation = presentation;
@@ -1239,7 +1240,7 @@ namespace WorkRoles.UI
         internal JobEntry Entry { get; }
         internal RoleEntryPresentation Presentation { get; }
         internal bool Dead { get; }
-        internal StructuredTip SkillTip { get; }
+        internal StructuredTip? SkillTip { get; }
     }
 
     internal sealed class RoleJobTreeSnapshot
@@ -1247,7 +1248,7 @@ namespace WorkRoles.UI
         private readonly IReadOnlyList<RoleJobTreeNode> nodes;
 
         internal RoleJobTreeSnapshot(string title, string searchLabel,
-            string addAllJobsLabel, string warning, float warningHeight,
+            string addAllJobsLabel, string? warning, float warningHeight,
             IReadOnlyList<RoleJobTreeNode> nodes, int targetIndex)
         {
             Title = title;
@@ -1262,7 +1263,7 @@ namespace WorkRoles.UI
         internal string Title { get; }
         internal string SearchLabel { get; }
         internal string AddAllJobsLabel { get; }
-        internal string Warning { get; }
+        internal string? Warning { get; }
         internal float WarningHeight { get; }
         internal int Count => nodes.Count;
         internal RoleJobTreeNode NodeAt(int index) => nodes[index];
@@ -1315,7 +1316,7 @@ namespace WorkRoles.UI
     internal sealed class RoleCoveragePresentation
     {
         internal RoleCoveragePresentation(IReadOnlyCollection<string> givers,
-            IReadOnlyCollection<string> workTypes, string warning)
+            IReadOnlyCollection<string> workTypes, string? warning)
         {
             Givers = givers;
             WorkTypes = workTypes;
@@ -1324,17 +1325,17 @@ namespace WorkRoles.UI
 
         internal IReadOnlyCollection<string> Givers { get; }
         internal IReadOnlyCollection<string> WorkTypes { get; }
-        internal string Warning { get; }
+        internal string? Warning { get; }
     }
 
     internal readonly struct RoleJobTreeNode
     {
-        private readonly List<string> missingGivers;
+        private readonly List<string>? missingGivers;
 
-        internal RoleJobTreeNode(string typeDefName, string giverDefName,
+        internal RoleJobTreeNode(string typeDefName, string? giverDefName,
             string label, MultiCheckboxState state, bool expanded,
-            bool warning, StructuredTip skillTip, int ownEntryIndex,
-            int typeEntryIndex, int entryCount, List<string> missingGivers)
+            bool warning, StructuredTip? skillTip, int ownEntryIndex,
+            int typeEntryIndex, int entryCount, List<string>? missingGivers)
         {
             TypeDefName = typeDefName;
             GiverDefName = giverDefName;
@@ -1350,16 +1351,16 @@ namespace WorkRoles.UI
         }
 
         internal string TypeDefName { get; }
-        internal string GiverDefName { get; }
+        internal string? GiverDefName { get; }
         internal string Label { get; }
         internal MultiCheckboxState State { get; }
         internal bool Expanded { get; }
         internal bool Warning { get; }
-        internal StructuredTip SkillTip { get; }
+        internal StructuredTip? SkillTip { get; }
         internal int OwnEntryIndex { get; }
         internal int TypeEntryIndex { get; }
         internal int EntryCount { get; }
         internal int MissingGiverCount => missingGivers?.Count ?? 0;
-        internal string MissingGiverAt(int index) => missingGivers[index];
+        internal string MissingGiverAt(int index) => missingGivers![index]; // guarded by MissingGiverCount
     }
 }

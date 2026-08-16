@@ -11,22 +11,23 @@ namespace WorkRoles.Core
     {
         public static List<string> Normalize(
             IReadOnlyList<string> source,
-            string stableShipToken,
+            string? stableShipToken,
             ISet<string> liveSettlementTokens)
         {
             var result = new List<string>();
             if (source == null || source.Count == 0) return result;
 
             var seen = new HashSet<string>(StringComparer.Ordinal);
-            bool canMapShip = !string.IsNullOrEmpty(stableShipToken)
+            string? mappedShipToken = stableShipToken is { Length: > 0 }
                 && stableShipToken.StartsWith(
                     LocationRules.ShipPrefix, StringComparison.Ordinal)
-                && stableShipToken.Length > LocationRules.ShipPrefix.Length;
+                && stableShipToken.Length > LocationRules.ShipPrefix.Length
+                    ? stableShipToken : null;
 
             for (int i = 0; i < source.Count; i++)
             {
                 string token = source[i];
-                string keep = null;
+                string? keep = null;
                 if (token == LocationRules.Settlements
                     || token == LocationRules.Caravans)
                     keep = token;
@@ -34,8 +35,8 @@ namespace WorkRoles.Core
                     && token.StartsWith(
                         LocationRules.ShipPrefix, StringComparison.Ordinal)
                     && token.Length > LocationRules.ShipPrefix.Length
-                    && canMapShip)
-                    keep = stableShipToken;
+                    && mappedShipToken != null)
+                    keep = mappedShipToken;
                 else if (!string.IsNullOrEmpty(token)
                     && token.StartsWith(
                         LocationRules.SettlementPrefix, StringComparison.Ordinal)

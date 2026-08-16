@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -11,9 +12,11 @@ namespace WorkRoles
 {
     public static partial class RoleCommands
     {
-        private static RoleStore Store => RoleStore.Current;
+        // Synced commands retain their existing null guards during world teardown;
+        // the assertion keeps the established command-body shape allocation-free.
+        private static RoleStore Store => RoleStore.Current!;
 
-        private static Role FindRole(int roleId) => Store?.RoleById(roleId);
+        private static Role? FindRole(int roleId) => Store?.RoleById(roleId);
 
         // ----- Role lifecycle -----
 
@@ -21,10 +24,11 @@ namespace WorkRoles
         // be null for the caller. The UI selects the new role by watching for
         // its label (RolesTabView.pendingSelectLabel).
         [SyncMethod]
-        public static void CreateRole(string label)
+        public static void CreateRole(string? label)
         {
             label = label?.Trim();
-            if (Store == null || !CatalogNameRules.IsAvailable(
+            if (Store == null || label is not { Length: > 0 }
+                || !CatalogNameRules.IsAvailable(
                     label, Store.roles, role => role.label)) return;
             // A blank role has no entries yet, so empty derived skills and a
             // zero age floor are correct.
@@ -60,10 +64,10 @@ namespace WorkRoles
 
         /// Engine-initiated (load-time seeding): runs inside the synced simulation
         /// on every client, so it must NOT be a synced command.
-        internal static Role CreateRoleFromDef(RoleDef def)
+        internal static Role? CreateRoleFromDef(RoleDef def)
         {
             if (Store == null || def == null) return null;
-            string label = CatalogNameRules.Unique(
+            string? label = CatalogNameRules.Unique(
                 SeededDefIdentity.RoleLabel(def), Store.roles, existing => existing.label);
             if (label == null) return null;
             var (hasColor, color) = def.ResolvedColor();
@@ -93,9 +97,13 @@ namespace WorkRoles
                 ? def.tuning.minAge : RecsAdapter.MinUnlockAgeOf(role);
             role.maxAge = UnityEngine.Mathf.Clamp(def.tuning.maxAge, 0, 18);
             if (!def.group.NullOrEmpty())
-                role.groupId = ResolveOrCreateGroup(SeededDefIdentity.GroupLabel(def)).id;
-            if (!def.activeHours.NullOrEmpty() && def.activeHours.Length == 24)
-                role.activeHours = RoleFile.BitsToHours(def.activeHours);
+            {
+                RoleGroup? group = ResolveOrCreateGroup(
+                    SeededDefIdentity.GroupLabel(def));
+                if (group != null) role.groupId = group.id;
+            }
+            if (def.activeHours is { Length: 24 } activeHours)
+                role.activeHours = RoleFile.BitsToHours(activeHours);
             foreach (var location in def.locations)
             {
                 if (string.Equals(location, "Settlements", System.StringComparison.OrdinalIgnoreCase))
@@ -113,7 +121,7 @@ namespace WorkRoles
         }
 
         /// Seeding path for group creation: runs inside the synced simulation.
-        internal static RoleGroup EnsureGroup(string label) => ResolveOrCreateGroup(label);
+        internal static RoleGroup? EnsureGroup(string? label) => ResolveOrCreateGroup(label);
 
         /// Applies an import on every client: the raw XML travels with the command
         /// and each client rebuilds the same deterministic plan. Selections use
@@ -349,8 +357,8 @@ namespace WorkRoles
                 bandMins.Clear();
                 bandMaxes.Clear();
             }
-            IReadOnlyList<int> normalizedMins = trainingRoleIds.Count == 0 ? null : bandMins;
-            IReadOnlyList<int> normalizedMaxes = trainingRoleIds.Count == 0 ? null : bandMaxes;
+            IReadOnlyList<int>? normalizedMins = trainingRoleIds.Count == 0 ? null : bandMins;
+            IReadOnlyList<int>? normalizedMaxes = trainingRoleIds.Count == 0 ? null : bandMaxes;
             if (TrainingPathMutationPolicy.BandsEqual(
                     role.trainingRoleIds, role.trainingMins, role.trainingMaxes,
                     trainingRoleIds, normalizedMins, normalizedMaxes)) return;
@@ -442,10 +450,11 @@ namespace WorkRoles
         /// on purpose: command args travel between MP clients, and comparing
         /// against a locally-translated name inside the command body would
         /// resolve differently per language — a guaranteed desync.
-        private static RoleGroup ResolveOrCreateGroup(string groupName)
+        private static RoleGroup? ResolveOrCreateGroup(string? groupName)
         {
             groupName = groupName?.Trim();
-            if (groupName.NullOrEmpty() || GroupNameRules.IsDefault(groupName))
+            if (groupName is not { Length: > 0 }
+                || GroupNameRules.IsDefault(groupName))
                 return Store.EnsureDefaultGroup();
             var group = Store.GroupByName(groupName);
             if (group != null) return group;
@@ -501,7 +510,7 @@ namespace WorkRoles
         /// lands just before beforeRoleId (-1 = end), which fixes its place
         /// within the target group's span (catalog order is display order).
         [SyncMethod]
-        public static void MoveRoleTo(int roleId, string groupName, int beforeRoleId, bool withChildren)
+        public static void MoveRoleTo(int roleId, string? groupName, int beforeRoleId, bool withChildren)
         {
             var role = FindRole(roleId);
             if (role == null) return;
@@ -510,7 +519,7 @@ namespace WorkRoles
             if (group == null) return;
             var moving = MovingBlock(role, withChildren);
             var before = beforeRoleId >= 0 ? FindRole(beforeRoleId) : null;
-            List<Role> reordered = null;
+            List<Role>? reordered = null;
             if (before == null || !moving.Contains(before))
             {
                 reordered = Store.roles.Where(candidate =>
@@ -546,15 +555,18 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void RenameGroup(int groupId, string name)
+        public static void RenameGroup(int groupId, string? name)
         {
-            var group = Store?.GroupById(groupId);
+            RoleStore? store = RoleStore.Current;
+            if (store == null) return;
+            var group = store.GroupById(groupId);
             name = name?.Trim();
-            if (group == null || groupId == RoleGroup.DefaultId
+            if (group == null || name is not { Length: > 0 }
+                || groupId == RoleGroup.DefaultId
                 || string.Equals(group.label, name,
                     System.StringComparison.Ordinal)
                 || !GroupNameRules.IsAvailable(
-                    name, Store.groups, existing => existing.label, group)) return;
+                    name, store.groups, existing => existing.label, group)) return;
             group.label = name;
             UiVersion.Bump();
         }
@@ -592,11 +604,12 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void RenameRole(int roleId, string label)
+        public static void RenameRole(int roleId, string? label)
         {
             var role = FindRole(roleId);
             label = label?.Trim();
-            if (role == null || string.Equals(role.label, label,
+            if (role == null || label is not { Length: > 0 }
+                || string.Equals(role.label, label,
                     System.StringComparison.Ordinal)
                 || !CatalogNameRules.IsAvailable(
                     label, Store.roles, existing => existing.label, role)) return;
@@ -681,11 +694,12 @@ namespace WorkRoles
 
         // Void like CreateRole: MP-deferred execution eats return values.
         [SyncMethod]
-        public static void DuplicateRole(int roleId, string label = null)
+        public static void DuplicateRole(int roleId, string? label = null)
         {
             var source = FindRole(roleId);
             label = (label ?? source?.label)?.Trim();
-            if (source == null || !CatalogNameRules.IsAvailable(
+            if (source == null || label is not { Length: > 0 }
+                || !CatalogNameRules.IsAvailable(
                     label, Store.roles, existing => existing.label)) return;
             var copy = PlayerDuplicate(source, Store.NextId(), label);
             Store.roles.Add(copy);
@@ -762,12 +776,14 @@ namespace WorkRoles
         [SyncMethod]
         public static void MoveRoleInCatalog(int from, int to)
         {
-            var roles = Store?.roles;
-            if (roles == null || from < 0 || from >= roles.Count || to < 0 || to >= roles.Count || from == to) return;
+            RoleStore? store = RoleStore.Current;
+            if (store == null) return;
+            var roles = store.roles;
+            if (from < 0 || from >= roles.Count || to < 0 || to >= roles.Count || from == to) return;
             var role = roles[from];
             roles.RemoveAt(from);
             roles.Insert(to, role);
-            Store.InvalidateRoleIndex();
+            store.InvalidateRoleIndex();
             UiVersion.Bump();
         }
 
@@ -786,7 +802,7 @@ namespace WorkRoles
 
             var liveSettlementTokens = new HashSet<string>(
                 System.StringComparer.Ordinal);
-            string stableShipToken = ColonyScope.CollectLocationMigrationFacts(
+            string? stableShipToken = ColonyScope.CollectLocationMigrationFacts(
                 liveSettlementTokens);
 
             var changedRoles = new List<Role>();
@@ -1007,7 +1023,7 @@ namespace WorkRoles
 
         /// Engine-initiated path (coverage generation): creates a role without going through
         /// sync interception — runs deterministically on every client at load time.
-        internal static Role CreateRoleDirect(string label, bool autoAssign = false)
+        internal static Role? CreateRoleDirect(string? label, bool autoAssign = false)
         {
             if (Store == null) return null;
             label = CatalogNameRules.Unique(label, Store.roles, existing => existing.label);

@@ -14,7 +14,7 @@ namespace WorkRoles.Core.Recs
     {
         private sealed class SkillTotals
         {
-            internal string SkillDefName;
+            internal string SkillDefName = null!; // always set at creation (Of)
             internal RoleWorkEffect Effects;
             internal int UsedGivers;
             internal int TrainedGivers;
@@ -33,8 +33,8 @@ namespace WorkRoles.Core.Recs
             IReadOnlyDictionary<string, int> naturalPriorities,
             IReadOnlyDictionary<string, JobProfileGiverFacts> giverFacts,
             JobProfileIndex index,
-            IReadOnlyList<string> assignmentSkillGates,
-            ISet<string> excludedProfileGivers = null)
+            IReadOnlyList<string>? assignmentSkillGates,
+            ISet<string>? excludedProfileGivers = null)
         {
             if (workTypeOf == null)
                 throw new ArgumentNullException(nameof(workTypeOf));
@@ -102,7 +102,7 @@ namespace WorkRoles.Core.Recs
         public static RoleWorkSpec Build(
             int roleId,
             IReadOnlyList<RoleWorkCapabilitySpec> capabilities,
-            IReadOnlyList<string> assignmentSkillGates)
+            IReadOnlyList<string>? assignmentSkillGates)
             => Assemble(
                 capabilities == null
                     ? new List<RoleWorkCapabilitySpec>()
@@ -113,7 +113,7 @@ namespace WorkRoles.Core.Recs
         private static RoleWorkSpec Assemble(
             List<RoleWorkCapabilitySpec> capabilities,
             int roleId,
-            IReadOnlyList<string> assignmentSkillGates)
+            IReadOnlyList<string>? assignmentSkillGates)
             => Assemble(
                 roleId,
                 capabilities,
@@ -126,7 +126,7 @@ namespace WorkRoles.Core.Recs
         public static RoleWorkSpec Merge(
             int roleId,
             IReadOnlyList<RoleWorkSpec> memberSpecs,
-            IReadOnlyList<string> assignmentSkillGates)
+            IReadOnlyList<string>? assignmentSkillGates)
         {
             var capabilityOrder = new List<string>();
             var giversByWorkType =
@@ -189,13 +189,13 @@ namespace WorkRoles.Core.Recs
         private static RoleWorkSpec Assemble(
             int roleId,
             List<RoleWorkCapabilitySpec> capabilities,
-            IReadOnlyList<string> assignmentSkillGates,
+            IReadOnlyList<string>? assignmentSkillGates,
             Action<List<RoleWorkCapabilitySpec>, List<SkillTotals>> totalsOf)
         {
             var totals = new List<SkillTotals>();
             totalsOf(capabilities, totals);
 
-            SkillTotals primary = null;
+            SkillTotals? primary = null;
             foreach (SkillTotals skill in totals)
             {
                 skill.Importance = skill.UsedGivers + 2 * skill.TrainedGivers
@@ -255,7 +255,7 @@ namespace WorkRoles.Core.Recs
         private static void WeightedTotals(
             List<RoleWorkCapabilitySpec> capabilities,
             List<SkillTotals> totals,
-            ISet<string> excludedProfileGivers)
+            ISet<string>? excludedProfileGivers)
         {
             var bySkill = new Dictionary<string, SkillTotals>(
                 StringComparer.Ordinal);
@@ -277,7 +277,7 @@ namespace WorkRoles.Core.Recs
                     var touched = new HashSet<string>(StringComparer.Ordinal);
                     foreach (RoleSkillUseSpec use in giver.UsedSkills)
                     {
-                        SkillTotals skill = Of(bySkill, totals, use.SkillDefName);
+                        SkillTotals? skill = Of(bySkill, totals, use.SkillDefName);
                         if (skill == null) continue;
                         skill.UsedGivers++;
                         skill.Effects |= use.Effects;
@@ -286,7 +286,7 @@ namespace WorkRoles.Core.Recs
                     }
                     foreach (string trained in giver.TrainedSkillDefNames)
                     {
-                        SkillTotals skill = Of(bySkill, totals, trained);
+                        SkillTotals? skill = Of(bySkill, totals, trained);
                         if (skill == null) continue;
                         skill.TrainedGivers++;
                         if (touched.Add(trained))
@@ -312,14 +312,14 @@ namespace WorkRoles.Core.Recs
                 {
                     foreach (RoleSkillUseSpec use in giver.UsedSkills)
                     {
-                        SkillTotals skill = Of(bySkill, totals, use.SkillDefName);
+                        SkillTotals? skill = Of(bySkill, totals, use.SkillDefName);
                         if (skill == null) continue;
                         skill.UsedGivers++;
                         skill.Effects |= use.Effects;
                     }
                     foreach (string trained in giver.TrainedSkillDefNames)
                     {
-                        SkillTotals skill = Of(bySkill, totals, trained);
+                        SkillTotals? skill = Of(bySkill, totals, trained);
                         if (skill != null) skill.TrainedGivers++;
                     }
                     AddGateTotals(giver, bySkill, totals, null, 0);
@@ -333,13 +333,13 @@ namespace WorkRoles.Core.Recs
             RoleWorkGiverSpec giver,
             Dictionary<string, SkillTotals> bySkill,
             List<SkillTotals> totals,
-            HashSet<string> touched,
+            HashSet<string>? touched,
             int weight)
         {
             foreach (RoleWorkContentSpec content in giver.Contents)
                 foreach (RoleContentGate gate in content.Gates)
                 {
-                    SkillTotals skill = Of(bySkill, totals, gate.SkillDefName);
+                    SkillTotals? skill = Of(bySkill, totals, gate.SkillDefName);
                     if (skill == null) continue;
                     skill.GatedContents++;
                     if (touched != null && touched.Add(gate.SkillDefName))
@@ -354,7 +354,7 @@ namespace WorkRoles.Core.Recs
             return false;
         }
 
-        private static bool Better(SkillTotals candidate, SkillTotals best)
+        private static bool Better(SkillTotals candidate, SkillTotals? best)
         {
             if (best == null) return true;
             if (candidate.Importance != best.Importance)
@@ -365,7 +365,7 @@ namespace WorkRoles.Core.Recs
                 candidate.SkillDefName, best.SkillDefName) < 0;
         }
 
-        private static SkillTotals Of(
+        private static SkillTotals? Of(
             Dictionary<string, SkillTotals> bySkill,
             List<SkillTotals> totals,
             string skillDefName)
@@ -385,7 +385,7 @@ namespace WorkRoles.Core.Recs
             IReadOnlyDictionary<string, JobProfileGiverFacts> giverFacts,
             JobProfileIndex index)
         {
-            JobProfileGiverFacts facts = null;
+            JobProfileGiverFacts? facts = null;
             giverFacts?.TryGetValue(giverName, out facts);
             if (facts == null)
                 return new RoleWorkGiverSpec(giverName, null, null, null);
@@ -401,7 +401,7 @@ namespace WorkRoles.Core.Recs
                     if (!index.Recipes.TryGetValue(
                             recipeIdentity, out JobProfileRecipeSource recipe))
                         continue;
-                    string skill = recipe.WorkSkill?.DefName;
+                    string? skill = recipe.WorkSkill?.DefName;
                     var gates = new List<RoleContentGate>(
                         recipe.SkillRequirements.Count);
                     foreach (JobProfileSkillRequirementSource requirement
@@ -474,8 +474,8 @@ namespace WorkRoles.Core.Recs
         private static void AddGateContents(
             string giverName,
             string gatedGiverName,
-            IReadOnlyList<JobProfileContentGateFacts> gateFacts,
-            JobProfileRequirementFacts requirement,
+            IReadOnlyList<JobProfileContentGateFacts>? gateFacts,
+            JobProfileRequirementFacts? requirement,
             RoleWorkContentKind kind,
             List<RoleWorkContentSpec> contents)
         {
@@ -516,7 +516,7 @@ namespace WorkRoles.Core.Recs
         }
 
         private static IReadOnlyList<string> CopyGates(
-            IReadOnlyList<string> gates)
+            IReadOnlyList<string>? gates)
         {
             if (gates == null || gates.Count == 0)
                 return Array.Empty<string>();

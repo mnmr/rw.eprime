@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using UnityEngine;
 using WorkRoles.Core;
 
@@ -11,7 +12,7 @@ namespace WorkRoles
         // Owner: process. Key: none (SwatchPalette is immutable static data).
         // Value: the standard swatches as Core Rgba values. Dependencies:
         // none. Refresh: never. Equality: n/a. Teardown: none.
-        private static IReadOnlyList<Rgba> standardRgba;
+        private static IReadOnlyList<Rgba>? standardRgba;
 
         internal static IReadOnlyList<Rgba> StandardRgba()
         {

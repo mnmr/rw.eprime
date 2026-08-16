@@ -109,7 +109,7 @@ namespace WorkRoles.Core.Signals
             string defName,
             SignalBucket bucket,
             int? degree = null,
-            string discriminator = null)
+            string? discriminator = null)
         {
             var key = new PolicyKey(relation, kind, packageId, defName, degree, discriminator);
             if (values.ContainsKey(key))
@@ -131,10 +131,10 @@ namespace WorkRoles.Core.Signals
             public PolicyKey(
                 SignalRelation relation,
                 SignalSourceKind kind,
-                string packageId,
-                string defName,
+                string? packageId,
+                string? defName,
                 int? degree,
-                string discriminator)
+                string? discriminator)
             {
                 this.relation = relation;
                 this.kind = kind;
@@ -151,7 +151,7 @@ namespace WorkRoles.Core.Signals
                 && degree == other.degree
                 && StringComparer.Ordinal.Equals(discriminator, other.discriminator);
 
-            public override bool Equals(object obj) => obj is PolicyKey other && Equals(other);
+            public override bool Equals(object? obj) => obj is PolicyKey other && Equals(other);
 
             public override int GetHashCode()
             {

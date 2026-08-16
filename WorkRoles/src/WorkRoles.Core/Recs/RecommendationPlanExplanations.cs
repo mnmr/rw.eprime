@@ -85,7 +85,7 @@ namespace WorkRoles.Core.Recs
                         SignalSkillLevel = signalSkillLevel,
                         SignalSkillDefName = signalSkill,
                     };
-                    RecommendationTargetAssignment selection =
+                    RecommendationTargetAssignment? selection =
                         FindTargetAssignment(
                             targetAssignments,
                             pawnIndex,
@@ -147,7 +147,7 @@ namespace WorkRoles.Core.Recs
             return result;
         }
 
-        private static RecommendationTargetAssignment FindTargetAssignment(
+        private static RecommendationTargetAssignment? FindTargetAssignment(
             RecommendationTargetAssignment[] assignments,
             int pawnIndex,
             int roleId,

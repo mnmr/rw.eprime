@@ -225,13 +225,13 @@ namespace WorkRoles.Core.Signals
             float forget = 1f,
             float other = 1f,
             bool isBad = false,
-            string tier = null,
-            string icon = null,
-            IEnumerable<SignalCondition> conditions = null,
-            IEnumerable<SignalCondition> otherConditions = null,
-            IEnumerable<string> dependencies = null,
+            string? tier = null,
+            string? icon = null,
+            IEnumerable<SignalCondition>? conditions = null,
+            IEnumerable<SignalCondition>? otherConditions = null,
+            IEnumerable<string>? dependencies = null,
             bool transient = false,
-            IEnumerable<SignalEffect> extras = null)
+            IEnumerable<SignalEffect>? extras = null)
         {
             var effects = new List<SignalEffect>
             {

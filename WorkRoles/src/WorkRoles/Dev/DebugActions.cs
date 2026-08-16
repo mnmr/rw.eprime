@@ -45,7 +45,7 @@ namespace WorkRoles.Dev
             if (store == null || !store.pawnSets.TryGetValue(p, out var set)) return;
             var options = set.assignments
                 .Select(a => store.RoleById(a.roleId))
-                .Where(r => r != null)
+                .OfType<Role>()
                 .Select(role => new DebugMenuOption(role.label, DebugMenuOptionMode.Action,
                     () => RoleCommands.RemoveRoleFromPawn(p, role.id)))
                 .ToList();

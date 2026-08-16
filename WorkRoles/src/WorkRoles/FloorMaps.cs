@@ -19,9 +19,9 @@ namespace WorkRoles
         private const int MaxDepth = 32;
 
         private static bool resolved;
-        private static MethodInfo tryGetController; // LevelUtility.TryGetLevelControllerOnCurrentTile[Always](Map, out MF_LevelMapComp)
-        private static PropertyInfo mapByLevel;     // MF_LevelMapComp.MapByLevel: Dictionary<int, Map>
-        private static MethodInfo abGetGroundMap;   // AsAboveSoBelow.ABApi.GetGroundMap(Map)
+        private static MethodInfo? tryGetController; // LevelUtility.TryGetLevelControllerOnCurrentTile[Always](Map, out MF_LevelMapComp)
+        private static PropertyInfo? mapByLevel;     // MF_LevelMapComp.MapByLevel: Dictionary<int, Map>
+        private static MethodInfo? abGetGroundMap;   // AsAboveSoBelow.ABApi.GetGroundMap(Map)
 
         // Stacks change only when maps are created or removed, but a same-tick
         // destroy+create (gravship stack travel) keeps the count equal, so the
@@ -35,7 +35,7 @@ namespace WorkRoles
             cacheStamp = -1;
         }
 
-        internal static Map Canonical(Map map)
+        internal static Map? Canonical(Map? map)
         {
             if (map == null) return null;
             var maps = Find.Maps;
@@ -61,26 +61,26 @@ namespace WorkRoles
             Map current = map;
             for (int depth = 0; depth < MaxDepth; depth++)
             {
-                Map next = SourceOf(current) ?? GroundOf(current) ?? ColumnGroundOf(current);
+                Map? next = SourceOf(current) ?? GroundOf(current) ?? ColumnGroundOf(current);
                 if (next == null || next == current) break;
                 current = next;
             }
             return current;
         }
 
-        private static Map SourceOf(Map map) =>
+        private static Map? SourceOf(Map map) =>
             map.Parent is PocketMapParent pocket ? pocket.sourceMap : null;
 
-        private static Map GroundOf(Map map)
+        private static Map? GroundOf(Map map)
         {
             Resolve();
             if (tryGetController == null) return null;
             try
             {
-                var args = new object[] { map, null };
+                var args = new object?[] { map, null };
                 if (!(bool)tryGetController.Invoke(null, args) || args[1] == null)
                     return null;
-                return mapByLevel.GetValue(args[1])
+                return mapByLevel!.GetValue(args[1]) // resolved together with tryGetController
                     is System.Collections.IDictionary levels && levels.Contains(0)
                     ? levels[0] as Map
                     : null;
@@ -94,7 +94,7 @@ namespace WorkRoles
             }
         }
 
-        private static Map ColumnGroundOf(Map map)
+        private static Map? ColumnGroundOf(Map map)
         {
             Resolve();
             if (abGetGroundMap == null) return null;

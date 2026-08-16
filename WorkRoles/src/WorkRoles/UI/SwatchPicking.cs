@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;

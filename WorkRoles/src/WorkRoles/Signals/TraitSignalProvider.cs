@@ -10,7 +10,7 @@ namespace WorkRoles.Signals
     {
         private readonly SignalCatalog catalog;
 
-        internal TraitSignalProvider(SignalCatalog catalog = null)
+        internal TraitSignalProvider(SignalCatalog? catalog = null)
         {
             this.catalog = catalog ?? SignalCatalog.Default;
         }

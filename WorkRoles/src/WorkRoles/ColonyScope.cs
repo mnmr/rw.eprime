@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Multiplayer.API;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -15,10 +16,10 @@ namespace WorkRoles
     {
         private sealed class MapClassification
         {
-            internal Building_GravEngine GravEngine;
-            internal string MapLocationId;
-            internal string ShipLocationId;
-            internal Faction OwnerFaction;
+            internal Building_GravEngine? GravEngine;
+            internal string? MapLocationId;
+            internal string? ShipLocationId;
+            internal Faction? OwnerFaction;
             internal bool SpawnedViaGravship;
             internal bool ParentCanBePlayerHome;
             internal bool ParentIsSettlement;
@@ -62,7 +63,7 @@ namespace WorkRoles
         private sealed class LocationSnapshotEntry
         {
             internal int Stamp = -1;
-            internal LocationSnapshot Snapshot;
+            internal LocationSnapshot? Snapshot;
         }
 
         private static readonly IReadOnlyList<LocationInfo> NoLocations =
@@ -97,7 +98,7 @@ namespace WorkRoles
             locationSnapshots = new Dictionary<Faction, LocationSnapshotEntry>(
                 ReferenceIdentityComparer<Faction>.Instance);
         private static int locationsMapCount = -1;
-        [System.ThreadStatic] private static List<Thing> gravEngineSearch;
+        [System.ThreadStatic] private static List<Thing>? gravEngineSearch;
 
         internal static int LocationRevision => mapClassifications.Revision;
 
@@ -106,7 +107,7 @@ namespace WorkRoles
             locationSnapshots.Clear();
         }
 
-        internal static void InvalidateClassification(Map map)
+        internal static void InvalidateClassification(Map? map)
         {
             map = FloorMaps.Canonical(map);
             if (map == null) return;
@@ -135,10 +136,10 @@ namespace WorkRoles
         // first Multiplayer.API assembly in mod-list order wins resolution, so
         // an older stub shipped by another mod would make a direct call throw
         // MissingMethodException at JIT time. Bind via reflection once instead.
-        private static readonly System.Func<Faction> realPlayerFactionGetter =
+        private static readonly System.Func<Faction>? realPlayerFactionGetter =
             ResolveRealPlayerFactionGetter();
 
-        private static System.Func<Faction> ResolveRealPlayerFactionGetter()
+        private static System.Func<Faction>? ResolveRealPlayerFactionGetter()
         {
             var getter = typeof(MP).GetProperty(
                 "RealPlayerFaction",
@@ -194,7 +195,7 @@ namespace WorkRoles
             foreach (var map in Find.Maps)
             {
                 var place = PlaceOf(map, faction, out var gravEngine,
-                    out string shipLocationId);
+                    out string? shipLocationId);
                 if (!place.IsSettlement && !place.IsShip) continue;
                 if (place.IsShip)
                 {
@@ -205,8 +206,9 @@ namespace WorkRoles
 
                 // Floor maps canonicalize to their ground map's id: one
                 // location per stack.
-                if (!seen.Add(place.LocationId)) continue;
-                result.Add(new LocationInfo(place.LocationId,
+                string? locationId = place.LocationId;
+                if (locationId == null || !seen.Add(locationId)) continue;
+                result.Add(new LocationInfo(locationId,
                     map.Parent?.LabelCap.ToString() ?? "?", isShip: false));
                 // A ship parked at a settlement is inactive there, but remains
                 // visible and removable in the role picker under its own stable
@@ -218,20 +220,20 @@ namespace WorkRoles
 
             // During flight the landing map is gone, but the same engine remains
             // attached to the game's singular Gravship world object.
-            RimWorld.Planet.Gravship travelingShip = Current.Game?.Gravship;
-            Building_GravEngine travelingEngine = travelingShip?.Engine;
-            if (travelingEngine != null && travelingShip.Faction == faction)
+            RimWorld.Planet.Gravship? travelingShip = Current.Game?.Gravship;
+            Building_GravEngine? travelingEngine = travelingShip?.Engine;
+            if (travelingEngine != null && travelingShip!.Faction == faction)
                 AddShipLocation(result, seen, travelingEngine,
                     travelingEngine.ThingID, isActive: false);
             return result;
         }
 
         private static void AddShipLocation(List<LocationInfo> result,
-            HashSet<string> seen, Building_GravEngine engine,
-            string shipLocationId, bool isActive)
+            HashSet<string> seen, Building_GravEngine? engine,
+            string? shipLocationId, bool isActive)
         {
             if (engine == null || shipLocationId.NullOrEmpty()
-                || !seen.Add(shipLocationId))
+                || !seen.Add(shipLocationId!))
                 return;
             // Unnamed ships fall back to a short label — the map parent's
             // ("Gravship landing site") overflows every dropdown.
@@ -239,26 +241,26 @@ namespace WorkRoles
                 ? engine.RenamableLabel
                 : "WR_ShipFallback".Translate().ToString();
             result.Add(new LocationInfo(
-                shipLocationId, label, isShip: true, isActive: isActive));
+                shipLocationId!, label, isShip: true, isActive: isActive));
         }
 
         /// Authoritative load migration must not depend on ViewFaction (which
         /// is client-local in multifaction Multiplayer). Collect every
         /// player-owned settlement plus the game's singular player Gravship
         /// from cached invariant classifications instead.
-        internal static string CollectLocationMigrationFacts(
+        internal static string? CollectLocationMigrationFacts(
             ISet<string> liveSettlementTokens)
         {
-            string stableShipToken = null;
+            string? stableShipToken = null;
             foreach (var sourceMap in Find.Maps)
             {
-                Map map = FloorMaps.Canonical(sourceMap);
+                Map? map = FloorMaps.Canonical(sourceMap);
                 if (map == null) continue;
                 MapClassification classification = mapClassifications.Get(map);
                 if (classification.OwnerFaction?.IsPlayer != true) continue;
                 PawnPlace place = FactionLocationClassifier.Classify(
-                    classification.MapLocationId,
-                    classification.ShipLocationId,
+                    classification.MapLocationId!, // Classify tolerates null ids; its params predate nullable annotations
+                    classification.ShipLocationId!,
                     ownedByFaction: true,
                     spawnedViaGravship: classification.SpawnedViaGravship,
                     parentCanBePlayerHome: classification.ParentCanBePlayerHome,
@@ -276,12 +278,12 @@ namespace WorkRoles
                         + classification.ShipLocationId;
             }
 
-            RimWorld.Planet.Gravship travelingShip = Current.Game?.Gravship;
-            Building_GravEngine travelingEngine = travelingShip?.Engine;
+            RimWorld.Planet.Gravship? travelingShip = Current.Game?.Gravship;
+            Building_GravEngine? travelingEngine = travelingShip?.Engine;
             if (stableShipToken == null
                 && travelingShip?.Faction?.IsPlayer == true)
                 stableShipToken = LocationRules.ShipPrefix
-                    + travelingEngine.ThingID;
+                    + travelingEngine!.ThingID; // a traveling gravship always has its engine
             return stableShipToken;
         }
 
@@ -297,16 +299,16 @@ namespace WorkRoles
         internal static PawnPlace PlaceOf(Pawn pawn) =>
             pawn == null ? new PawnPlace() : PlaceOf(pawn.MapHeld, pawn.Faction);
 
-        private static PawnPlace PlaceOf(Map map, Faction faction) =>
+        private static PawnPlace PlaceOf(Map? map, Faction? faction) =>
             PlaceOf(map, faction, out _);
 
         private static PawnPlace PlaceOf(
-            Map map, Faction faction, out Building_GravEngine gravEngine)
+            Map? map, Faction? faction, out Building_GravEngine? gravEngine)
             => PlaceOf(map, faction, out gravEngine, out _);
 
         private static PawnPlace PlaceOf(
-            Map map, Faction faction, out Building_GravEngine gravEngine,
-            out string shipLocationId)
+            Map? map, Faction? faction, out Building_GravEngine? gravEngine,
+            out string? shipLocationId)
         {
             // Floor maps classify as their ground map: grav machinery must sit
             // in the ground substructure footprint, so the engine search stays
@@ -333,7 +335,7 @@ namespace WorkRoles
 
         private static MapClassification BuildMapClassification(Map map)
         {
-            Building_GravEngine gravEngine = FindGravEngineFresh(map);
+            Building_GravEngine? gravEngine = FindGravEngineFresh(map);
             return new MapClassification
             {
                 GravEngine = gravEngine,
@@ -350,7 +352,7 @@ namespace WorkRoles
         /// despawn or holder transfer can therefore return the old answer for
         /// the remainder of that tick; compiled snapshots need the post-event
         /// state, so mirror the vanilla lookup without that temporal cache.
-        private static Building_GravEngine FindGravEngineFresh(Map map)
+        private static Building_GravEngine? FindGravEngineFresh(Map map)
         {
             if (!ModsConfig.OdysseyActive || map == null) return null;
 
@@ -424,14 +426,14 @@ namespace WorkRoles
             }
         }
 
-        internal static string LocationId(Map map) =>
+        internal static string? LocationId(Map map) =>
             PlaceOf(map, ViewFaction).LocationId;
 
         /// Off-map pawns (caravans) report the location they departed from.
-        internal static string LocationIdOf(Pawn pawn) =>
+        internal static string? LocationIdOf(Pawn pawn) =>
             PawnLocationTracker.EffectiveLocationId(pawn);
 
-        internal static string CurrentLocationId() => LocationId(Find.CurrentMap);
+        internal static string CurrentLocationId() => LocationId(Find.CurrentMap) ?? "";
 
         internal static List<Pawn> PawnsOnMap(Map map)
         {
@@ -474,7 +476,7 @@ namespace WorkRoles
                         result.Add(pawn);
                         continue;
                     }
-                    string lastId = PawnLocationTracker.EffectiveLocationId(pawn);
+                    string? lastId = PawnLocationTracker.EffectiveLocationId(pawn);
                     if (lastId != null && ScopeEngine.Matches(scope, lastId, currentId))
                         result.Add(pawn);
                 }
@@ -488,7 +490,7 @@ namespace WorkRoles
         internal static string LabelOf(ScopeOption option)
         {
             if (option.Kind == ScopeKind.All) return "WR_ScopeAll".Translate().ToString();
-            if (option.Kind != ScopeKind.CurrentLocation) return option.Label;
+            if (option.Kind != ScopeKind.CurrentLocation) return option.Label ?? "";
             // The current location folds its name in ("Rimosa (current
             // location)"), so the menu carries no separate named entry for it.
             string currentId = CurrentLocationId();

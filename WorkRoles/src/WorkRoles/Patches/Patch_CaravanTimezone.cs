@@ -40,10 +40,12 @@ namespace WorkRoles.Patches
                 isTraveler: caravan != null, hasSpawnedMap: map != null))
             {
                 case TimezoneCrossingResponse.InvalidateTravelerPawns:
-                    CompiledJobOrders.InvalidateBatch(caravan.PawnsListForReading);
+                    // Policy returns this response only when isTraveler was true.
+                    CompiledJobOrders.InvalidateBatch(caravan!.PawnsListForReading);
                     break;
                 case TimezoneCrossingResponse.InvalidateMapTimeRuled:
-                    CompiledJobOrders.InvalidateTimeRuledForMovedMap(map);
+                    // Policy returns this response only when hasSpawnedMap was true.
+                    CompiledJobOrders.InvalidateTimeRuledForMovedMap(map!);
                     break;
             }
         }

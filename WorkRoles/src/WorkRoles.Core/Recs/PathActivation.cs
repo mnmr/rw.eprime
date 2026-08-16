@@ -18,27 +18,27 @@ namespace WorkRoles.Core.Recs
         internal int TargetRoleId { get; }
         internal int[] ActiveRoleIds { get; }
 
-        internal static PathActivation Find(
+        internal static PathActivation? Find(
             EngineContext facts,
             int pawnIndex,
             RoleView target,
             RecommendationFormulaEngine formulas)
         {
-            PathActivation best = null;
-            PathView bestPath = null;
+            PathActivation? best = null;
+            PathView? bestPath = null;
             for (int pathIndex = 0;
                  pathIndex < facts.Colony.Paths.Count;
                  pathIndex++)
             {
                 PathView path = facts.Colony.Paths[pathIndex];
-                PathActivation candidate = Build(
+                PathActivation? candidate = Build(
                     facts, pawnIndex, target, path, formulas);
                 if (candidate == null) continue;
                 int structure = best == null
-                    ? -1 : CompareStructure(path, bestPath);
+                    ? -1 : CompareStructure(path, bestPath!); // bestPath set with best
                 if (best == null
                     || structure < 0
-                    || structure == 0 && path.Id < bestPath.Id)
+                    || structure == 0 && path.Id < bestPath!.Id)
                 {
                     best = candidate;
                     bestPath = path;
@@ -47,7 +47,7 @@ namespace WorkRoles.Core.Recs
             return best;
         }
 
-        private static PathActivation Build(
+        private static PathActivation? Build(
             EngineContext facts,
             int pawnIndex,
             RoleView target,
@@ -67,7 +67,7 @@ namespace WorkRoles.Core.Recs
             var activeEntries = new bool[count];
             for (int entry = 0; entry < count; entry++)
             {
-                RoleView role = facts.RoleOf(path.RoleIds[entry]);
+                RoleView? role = facts.RoleOf(path.RoleIds[entry]);
                 // A training role is Never by design (no own demand); it is
                 // still a valid path step to assign as the target's substitute,
                 // so Never does not exclude it here. A role with an empty
@@ -176,21 +176,21 @@ namespace WorkRoles.Core.Recs
             return result;
         }
 
-        internal static PathView PreferredTargetPath(
+        internal static PathView? PreferredTargetPath(
             IReadOnlyList<PathView> paths,
             int targetRoleId)
         {
-            PathView best = null;
+            PathView? best = null;
             for (int index = 0; index < paths.Count; index++)
             {
                 PathView candidate = paths[index];
                 if (UniqueTargetRoleId(candidate) != targetRoleId) continue;
                 int structure = best == null
                     ? -1
-                    : CompareStructure(candidate, best);
+                    : CompareStructure(candidate, best!); // non-null when structure computed
                 if (best == null
                     || structure < 0
-                    || structure == 0 && candidate.Id < best.Id)
+                    || structure == 0 && candidate.Id < best!.Id)
                     best = candidate;
             }
             return best;
@@ -224,7 +224,7 @@ namespace WorkRoles.Core.Recs
                 for (int higherEntry = 0; higherEntry < count; higherEntry++)
                 {
                     if (path.BandMins[higherEntry] <= ownMin) continue;
-                    RoleView higherRole =
+                    RoleView? higherRole =
                         facts.RoleOf(path.RoleIds[higherEntry]);
                     if (higherRole != null
                         && facts.InsideBand(
@@ -277,7 +277,7 @@ namespace WorkRoles.Core.Recs
             }
             if (!targetHasPath) return true;
 
-            PathActivation activation = Find(
+            PathActivation? activation = Find(
                 facts, pawnIndex, target, formulas);
             if (activation == null) return false;
 

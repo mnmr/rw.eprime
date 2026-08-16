@@ -103,7 +103,7 @@ namespace WorkRoles.Core.Recs
         public SignalBucket SignalBucket = SignalBucket.Neutral;
         public SignalBucket BaseSignalBucket = SignalBucket.Neutral;
         public int SignalSkillLevel = -1;
-        public string SignalSkillDefName;
+        public string? SignalSkillDefName;
         /// For a substituted composite: the folded-in members' explanations in
         /// member order, so the tooltip shows each member's full reasoning.
         public IReadOnlyList<RoleRecommendationExplanation> BundledMembers =

@@ -6,7 +6,7 @@ namespace WorkRoles.Core
     /// Resolves portable file labels once, then replays only invariant tokens.
     public static class ImportLocationResolver
     {
-        public static string Resolve(string fileToken,
+        public static string? Resolve(string fileToken,
             IReadOnlyList<LocationInfo> locations)
         {
             if (fileToken == LocationRules.Settlements
@@ -57,7 +57,7 @@ namespace WorkRoles.Core
             return result;
         }
 
-        public static string FromMap(string fileToken,
+        public static string? FromMap(string fileToken,
             IReadOnlyDictionary<string, string> resolved)
         {
             if (fileToken == LocationRules.Settlements

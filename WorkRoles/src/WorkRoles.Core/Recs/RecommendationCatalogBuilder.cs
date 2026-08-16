@@ -18,9 +18,9 @@ namespace WorkRoles.Core.Recs
     {
         public int Id;
         /// Template def the role was seeded from; null for player-made roles.
-        public string TemplateDefName;
+        public string? TemplateDefName;
         /// Live non-composite members of a composite role; null for ordinary roles.
-        public List<int> MemberRoleIds;
+        public List<int>? MemberRoleIds;
         public List<JobEntry> Entries = new List<JobEntry>();
         public bool AutoAssign;
         public bool HasRules;
@@ -35,7 +35,7 @@ namespace WorkRoles.Core.Recs
         /// Maximum biological age (years, inclusive) for holding the role; 0 = no gate.
         public int MaxAge;
         /// User-authored hard skill gates; null or empty = no additional gate.
-        public List<string> DeclaredRequiredSkills;
+        public List<string>? DeclaredRequiredSkills;
         /// Authored demand: minimum assignment count and ideal colonist percentage.
         public int ColonyMin;
         public int Coverage;
@@ -154,7 +154,7 @@ namespace WorkRoles.Core.Recs
             IJobCatalog jobs,
             IReadOnlyDictionary<string, int> naturalPriorities,
             JobProfileIndex jobProfiles,
-            ISet<string> excludedProfileGivers)
+            ISet<string>? excludedProfileGivers)
         {
             var seedWorkTypes = new List<string>();
             var literalWorkTypes = new List<string>();
@@ -256,7 +256,7 @@ namespace WorkRoles.Core.Recs
         }
 
         private static void AddGates(
-            IReadOnlyList<string> source,
+            IReadOnlyList<string>? source,
             ICollection<string> target,
             ISet<string> seen)
         {
@@ -297,7 +297,7 @@ namespace WorkRoles.Core.Recs
                     return source.Id;
             }
 
-            RecommendationRoleSource best = null;
+            RecommendationRoleSource? best = null;
             for (int index = 0; index < sources.Count; index++)
             {
                 RecommendationRoleSource source = sources[index];

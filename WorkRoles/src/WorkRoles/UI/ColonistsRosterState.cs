@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -29,11 +30,11 @@ namespace WorkRoles.UI
         // Refresh: immediate on the next ListedPawns read after invalidation.
         // Equality: matching ScopeCacheStamp and map identity reuse the cohort.
         // Teardown: ReleaseSnapshots clears scope, options, pawns, and stamps.
-        private ScopeOption scope;
-        private List<Pawn> pawns;
+        private ScopeOption? scope;
+        private List<Pawn>? pawns;
         private ScopeCacheStamp pawnsStamp = ScopeCacheStamp.Invalid;
         private int pawnsMapId = -1;
-        private List<ScopeOption> scopeOptions;
+        private List<ScopeOption>? scopeOptions;
         private bool spansMultipleLocations;
 
         // Owner: Colonists window. Key: RoleStore identity, UiVersion, language,
@@ -44,8 +45,8 @@ namespace WorkRoles.UI
         // the next catalog read after a key change. Equality: an equal rebuild keeps
         // snapshot identity; a different store always republishes. Teardown:
         // ReleaseSnapshots drops the snapshot and owner reference.
-        private ColonistsRosterCatalogSnapshot catalog;
-        private RoleStore catalogOwner;
+        private ColonistsRosterCatalogSnapshot? catalog;
+        private RoleStore? catalogOwner;
         private int catalogUiVersion = -1;
         private int catalogLanguageRevision = -1;
         private int catalogDefinitionRevision = -1;
@@ -57,16 +58,16 @@ namespace WorkRoles.UI
         // Refresh: immediate on the next Sections read after a key change. Equality:
         // equal rebuilt contents preserve identity. Teardown: ReleaseSnapshots
         // releases the snapshot and all remembered keys.
-        private ColonistSectionsSnapshot sections;
-        private RoleStore sectionsOwner;
-        private ColonistsRosterCatalogSnapshot sectionsCatalog;
+        private ColonistSectionsSnapshot? sections;
+        private RoleStore? sectionsOwner;
+        private ColonistsRosterCatalogSnapshot? sectionsCatalog;
         private ScopeCacheStamp sectionsStamp = ScopeCacheStamp.Invalid;
         private int sectionsMapId = -1;
-        private string sectionsSearch;
+        private string? sectionsSearch;
         private int sectionsRoleFilter;
-        private string sectionsJobFilter;
-        private string sectionsGroupBy;
-        private string sectionsSort;
+        private string? sectionsJobFilter;
+        private string? sectionsGroupBy;
+        private string? sectionsSort;
         private ColonistOrder sectionsOrder;
 
         // Owner: Colonists window profile. Key: the profile's persisted skill
@@ -76,7 +77,7 @@ namespace WorkRoles.UI
         // Refresh: immediate on an explicit column edit; otherwise lazy after a
         // definition revision. Equality: an equal rebuild preserves snapshot
         // identity and revision. Teardown: ReleaseSnapshots drops the snapshot.
-        private ColonistSkillColumnsSnapshot skillColumns;
+        private ColonistSkillColumnsSnapshot? skillColumns;
         private bool skillColumnsLoaded;
         private int skillColumnsDefinitionRevision = -1;
         private int skillColumnsRevision;
@@ -93,7 +94,7 @@ namespace WorkRoles.UI
         internal int RoleFilterId { get; set; } = -1;
         /// Work-giver defName; pawns pass when an assigned non-blocker role's
         /// coverage contains it.
-        internal string JobFilterDefName { get; set; }
+        internal string? JobFilterDefName { get; set; }
         internal bool FiltersActive =>
             !Search.NullOrEmpty() || RoleFilterId != -1 || JobFilterDefName != null;
         internal ScopeCacheStamp PawnListStamp
@@ -105,7 +106,7 @@ namespace WorkRoles.UI
             }
         }
         internal int PawnListRevision => PawnListStamp.PawnListRevision;
-        internal ScopeOption Scope => scope;
+        internal ScopeOption? Scope => scope;
         internal IReadOnlyList<ScopeOption> ScopeOptions
         {
             get
@@ -122,7 +123,7 @@ namespace WorkRoles.UI
         }
         internal ColonistSkillColumnsSnapshot SkillColumns
         {
-            get { EnsureSkillColumnsLoaded(); return skillColumns; }
+            get { EnsureSkillColumnsLoaded(); return skillColumns!; } // published by EnsureSkillColumnsLoaded
         }
         internal int SkillColumnsRevision
         {
@@ -211,7 +212,7 @@ namespace WorkRoles.UI
             {
                 pawnsMapId = Find.CurrentMap.uniqueID;
                 scopeOptions = ScopeEngine.BuildOptions(ColonyScope.Locations());
-                ScopeOption revalidated = ScopeEngine.Revalidate(scope, scopeOptions);
+                ScopeOption revalidated = ScopeEngine.Revalidate(scope!, scopeOptions); // Revalidate handles a null scope
                 if (scope != null && !SameScope(scope, revalidated))
                     pawnListRevisions.Invalidate();
                 scope = revalidated;
@@ -232,7 +233,7 @@ namespace WorkRoles.UI
             return profile.PawnsIn(new ScopeOption { Kind = ScopeKind.All });
         }
 
-        internal void SelectScope(ScopeOption value)
+        internal void SelectScope(ScopeOption? value)
         {
             if (scope != null && value != null && SameScope(scope, value)) return;
             scope = value;
@@ -269,7 +270,7 @@ namespace WorkRoles.UI
             catalogUiVersion = uiVersion;
             catalogLanguageRevision = languageRevision;
             catalogDefinitionRevision = definitionRevision;
-            return catalog;
+            return catalog!; // assigned above whenever it was null
         }
 
         internal void ValidateRoleFilter(ColonistsRosterCatalogSnapshot current)
@@ -324,7 +325,7 @@ namespace WorkRoles.UI
             sectionsGroupBy = profile.GetGroupBy();
             sectionsSort = profile.GetSortColumn();
             sectionsOrder = order;
-            return sections;
+            return sections!; // assigned above whenever it was null
         }
 
         private void InvalidateSections()
@@ -348,7 +349,7 @@ namespace WorkRoles.UI
         {
             if (!FiltersActive) return listed as List<Pawn> ?? listed.ToList();
 
-            HashSet<int> matchingRoles = null;
+            HashSet<int>? matchingRoles = null;
             if (RoleFilterId != -1)
             {
                 matchingRoles = new HashSet<int> { RoleFilterId };
@@ -357,7 +358,7 @@ namespace WorkRoles.UI
 
             // Search matches pawn names OR job names: the term expands once to
             // the giver set whose display name (or work-type gerund) contains it.
-            HashSet<string> searchGivers =
+            HashSet<string>? searchGivers =
                 currentCatalog.SearchMatchingGivers(Search);
 
             var result = new List<Pawn>();
@@ -400,7 +401,7 @@ namespace WorkRoles.UI
         }
 
         private static bool PawnCoverageIntersects(RoleStore store, Pawn pawn,
-            HashSet<string> givers,
+            HashSet<string>? givers,
             ColonistsRosterCatalogSnapshot currentCatalog)
         {
             if (givers == null || givers.Count == 0) return false;
@@ -423,7 +424,7 @@ namespace WorkRoles.UI
                     pawn => pawn.LabelShortCap, StringComparer.OrdinalIgnoreCase).ToList();
             else
             {
-                List<Pawn> bar = Find.ColonistBar?.GetColonistsInOrder();
+                List<Pawn>? bar = Find.ColonistBar?.GetColonistsInOrder();
                 if (bar == null) ordered = listed;
                 else
                 {
@@ -435,7 +436,7 @@ namespace WorkRoles.UI
                 }
             }
 
-            SkillDef sortSkill = currentCatalog.SkillOrNull(
+            SkillDef? sortSkill = currentCatalog.SkillOrNull(
                 profile.GetSortColumn());
             if (sortSkill != null)
                 ordered = ordered.OrderByDescending(
@@ -455,7 +456,7 @@ namespace WorkRoles.UI
 
         internal void ToggleCollapsed(string groupKey)
         {
-            List<string> collapsed = profile.GetCollapsedGroups();
+            List<string>? collapsed = profile.GetCollapsedGroups();
             if (collapsed == null) return;
             if (!collapsed.Remove(groupKey)) collapsed.Add(groupKey);
             profile.SetCollapsedGroups(collapsed);
@@ -464,7 +465,7 @@ namespace WorkRoles.UI
         internal void ToggleSkillColumn(SkillDef skill)
         {
             EnsureSkillColumnsLoaded();
-            List<SkillDef> rebuilt = skillColumns.Copy();
+            List<SkillDef> rebuilt = skillColumns!.Copy();
             int existingIndex = skillColumns.IndexOf(skill);
             if (existingIndex >= 0)
             {
@@ -489,7 +490,7 @@ namespace WorkRoles.UI
         internal void RemoveSkillColumn(int index)
         {
             EnsureSkillColumnsLoaded();
-            if (index < 0 || index >= skillColumns.Count) return;
+            if (index < 0 || index >= skillColumns!.Count) return;
             SkillDef removed = skillColumns.At(index);
             List<SkillDef> rebuilt = skillColumns.Copy();
             rebuilt.RemoveAt(index);
@@ -506,7 +507,7 @@ namespace WorkRoles.UI
             skillColumnsLoaded = true;
             skillColumnsDefinitionRevision = definitionRevision;
             var rebuilt = new List<SkillDef>();
-            List<string> saved = profile.GetSkillColumns();
+            List<string>? saved = profile.GetSkillColumns();
             if (saved != null)
                 foreach (string defName in saved)
                 {
@@ -518,7 +519,7 @@ namespace WorkRoles.UI
             PublishSkillColumns(rebuilt);
             string sort = profile.GetSortColumn();
             if (!sort.NullOrEmpty()
-                && skillColumns.IndexOfDefName(sort) < 0)
+                && skillColumns!.IndexOfDefName(sort) < 0)
                 profile.SetSortColumn("");
         }
 
@@ -532,7 +533,7 @@ namespace WorkRoles.UI
 
         private void SaveSkillColumns()
         {
-            var saved = new List<string>(skillColumns.Count);
+            var saved = new List<string>(skillColumns!.Count);
             for (int i = 0; i < skillColumns.Count; i++)
                 saved.Add(skillColumns.At(i).defName);
             profile.SetSkillColumns(saved);

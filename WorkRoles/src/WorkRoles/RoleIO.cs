@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -16,8 +17,8 @@ namespace WorkRoles
         public const string DefaultFileName = "WorkRoles.xml";
 
         // Session-fixed paths; the properties are read per frame from tooltips.
-        private static string gameDataDir;
-        private static string exportFile;
+        private static string? gameDataDir;
+        private static string? exportFile;
 
         /// Our folder under the game's per-user data root (beside Saves\, Config\).
         public static string GameDataDir =>
@@ -60,7 +61,7 @@ namespace WorkRoles
                 var training = new List<FileTrainingPathEntry>();
                 for (int i = 0; i < role.trainingRoleIds.Count; i++)
                 {
-                    string memberLabel = store.RoleById(role.trainingRoleIds[i])?.label;
+                    string? memberLabel = store.RoleById(role.trainingRoleIds[i])?.label;
                     if (memberLabel != null)
                         training.Add(new FileTrainingPathEntry(
                             RoleFileId(role.trainingRoleIds[i]), memberLabel,
@@ -80,7 +81,8 @@ namespace WorkRoles
                     blocker = role.blocker,
                     enabled = role.enabled,
                     activeHours = role.activeHours,
-                    locations = role.locationTokens.Select(FileLocationToken).Where(t => t != null).ToList(),
+                    locations = role.locationTokens.Select(FileLocationToken)
+                        .Where(t => t != null).Select(t => t!).ToList(),
                     hasTuning = role.tuningSeeded
                         || role.requiredSkills.Count > 0,
                     category = role.category,
@@ -96,7 +98,7 @@ namespace WorkRoles
                     composite = role.composite,
                     members = role.memberRoleIds
                         .Select(id => store.RoleById(id))
-                        .Where(member => member != null)
+                        .OfType<Role>()
                         .Select(member => new FileRoleReference(
                             RoleFileId(member.id), member.label))
                         .ToList(),
@@ -105,11 +107,11 @@ namespace WorkRoles
             // Only the stored template travels (empty = the derived default).
             doc.recommendationOrderWithIds = store.recommendationOrder
                 .Select(id => store.RoleById(id))
-                .Where(role => role != null)
+                .OfType<Role>()
                 .Select(role => new FileRoleReference(RoleFileId(role.id), role.label))
                 .ToList();
             doc.recommendationOrder = doc.recommendationOrderWithIds
-                .Select(reference => reference.label).ToList();
+                .Select(reference => reference.label).OfType<string>().ToList();
             return RoleFile.Build(doc);
         }
 
@@ -118,7 +120,7 @@ namespace WorkRoles
 
         /// Specific locations export by NAME (ids are save-local); stale tokens
         /// (a location that no longer exists) drop out of the export.
-        private static string FileLocationToken(string token)
+        private static string? FileLocationToken(string token)
         {
             if (token == LocationRules.Settlements
                 || token == LocationRules.Caravans
@@ -152,7 +154,7 @@ namespace WorkRoles
         }
 
         /// Writes xml to path, creating directories; returns an error or null.
-        public static string SaveTo(string path, string xml)
+        public static string? SaveTo(string path, string xml)
         {
             try
             {
@@ -230,9 +232,9 @@ namespace WorkRoles
         /// slot name, then the file's palette, then a PaletteDef, then hex
         /// (undocumented leniency for hand-edited files); unknown names fall back
         /// to slate-600. Null = no custom color.
-        internal static (bool has, Color color) ResolveColor(string colorRef, RoleStore store, RoleFileDocument doc)
+        internal static (bool has, Color color) ResolveColor(string? colorRef, RoleStore store, RoleFileDocument doc)
         {
-            if (colorRef.NullOrEmpty()) return (false, default);
+            if (colorRef is not { Length: > 0 }) return (false, default);
             var swatches = SwatchPalette.Swatches;
             for (int i = 0; i < swatches.Length; i++)
                 if (SwatchPalette.ExportName(i) == colorRef)
@@ -259,7 +261,7 @@ namespace WorkRoles
         public class PaletteRow
         {
             public int sourceIndex;
-            public string name;
+            public string name = null!; // set at construction
             public Color color;
             public bool isNew;                 // false = same-name slot changes color
             public List<string> recolors = new List<string>(); // role labels affected
@@ -267,9 +269,9 @@ namespace WorkRoles
 
         public class RoleRow
         {
-            public FileRole role;
-            public Role existing;              // null = new role
-            public string displayLabel;
+            public FileRole role = null!;      // set at construction
+            public Role? existing;             // null = new role
+            public string? displayLabel;
             public bool preservesExistingLabel;
         }
 
@@ -279,7 +281,7 @@ namespace WorkRoles
         {
             if (!imported.templateDef.NullOrEmpty())
             {
-                var byTemplate = store.RoleByTemplate(imported.templateDef);
+                var byTemplate = store.RoleByTemplate(imported.templateDef!); // guarded by NullOrEmpty above
                 if (byTemplate != null) return byTemplate;
             }
             return store.roles.FirstOrDefault(r => string.Equals(
@@ -322,7 +324,7 @@ namespace WorkRoles
         {
             for (int i = 0; i < store.customSwatches.Count; i++)
             {
-                string current = i < store.customSwatchNames.Count
+                string? current = i < store.customSwatchNames.Count
                     ? store.customSwatchNames[i]
                     : null;
                 if (current.NullOrEmpty()) current = $"custom-{i + 1}";
@@ -372,7 +374,7 @@ namespace WorkRoles
         internal static List<Role> OverwriteDeletes(RoleStore store, List<RoleRow> rows)
         {
             var kept = new HashSet<Role>(rows.Where(r => r.existing != null)
-                .Select(r => r.existing));
+                .Select(r => r.existing!));
             return store.roles.Where(r => !kept.Contains(r)).ToList();
         }
 
@@ -461,7 +463,7 @@ namespace WorkRoles
             private readonly bool enabled;
             private readonly bool hasCustomColor;
             private readonly Color color;
-            private readonly string templateDefName;
+            private readonly string? templateDefName;
             private readonly bool autoAssign;
             private readonly bool blocker;
             private readonly RoleCategory category;
@@ -591,7 +593,7 @@ namespace WorkRoles
             }
 
             int paletteChanges = 0, updated = 0, added = 0, deleted = 0, pathsAdded = 0;
-            Dictionary<FileRole, Role> runtimeRoles = null;
+            Dictionary<FileRole, Role>? runtimeRoles = null;
             store.SyncSwatchNames();
 
             if (paletteInclude && paletteOverwrite)
@@ -652,7 +654,7 @@ namespace WorkRoles
                 var plannedRoles = RoleIO.RoleRows(store, doc, rolesOverwrite);
                 runtimeRoles = plannedRoles
                     .Where(row => row.existing != null)
-                    .ToDictionary(row => row.role, row => row.existing);
+                    .ToDictionary(row => row.role, row => row.existing!);
 
                 // Groups travel with the roles section: merge appends missing
                 // groups at the end; overwrite adopts the file's order (Default
@@ -670,7 +672,7 @@ namespace WorkRoles
                 {
                     FileGroup fileGroup = fileGroups[groupIndex];
                     ImportIdentityDecision decision = groupPlan[groupIndex];
-                    RoleGroup group = decision.ExistingIndex < 0
+                    RoleGroup? group = decision.ExistingIndex < 0
                         ? null : existingGroups[decision.ExistingIndex];
                     if (group == null && GroupNameRules.IsDefault(decision.DisplayLabel))
                         group = store.EnsureDefaultGroup();
@@ -679,7 +681,7 @@ namespace WorkRoles
                         group = new RoleGroup
                         {
                             id = store.NextGroupId(),
-                            label = decision.DisplayLabel,
+                            label = decision.DisplayLabel!, // guarded by NullOrEmpty above
                         };
                         store.groups.Add(group);
                     }
@@ -718,7 +720,7 @@ namespace WorkRoles
                     foreach (RoleIO.RoleRow row in plannedRoles)
                         if (row.existing != null && !row.preservesExistingLabel
                             && !row.displayLabel.NullOrEmpty())
-                            row.existing.label = null;
+                            row.existing.label = null!; // transiently vacated; reassigned below in file order
                 }
                 foreach (int index in selected)
                 {
@@ -733,11 +735,11 @@ namespace WorkRoles
                     var locationTokens = row.role.locations
                         .Select(token => ImportLocationResolver.FromMap(
                             token, resolvedLocations))
-                        .Where(token => token != null).ToList();
+                        .OfType<string>().ToList();
                     var importedEntries = row.role.composite
                         ? new List<JobEntry>()
                         : row.role.entries.Distinct().ToList();
-                    var target = row.existing;
+                    Role? target = row.existing;
                     bool clearWorkSnapshots = target == null
                         || target.composite != row.role.composite
                         || !target.entries.SequenceEqual(importedEntries);
@@ -745,7 +747,7 @@ namespace WorkRoles
                     {
                         target = new Role { id = store.NextId() };
                         target.templateDefName = !row.role.templateDef.NullOrEmpty()
-                            && store.RoleByTemplate(row.role.templateDef) == null ? row.role.templateDef : null;
+                            && store.RoleByTemplate(row.role.templateDef!) == null ? row.role.templateDef : null;
                         store.roles.Add(target);
                         store.InvalidateRoleIndex();
                         added++;
@@ -754,7 +756,7 @@ namespace WorkRoles
                     {
                         updated++;
                     }
-                    target.label = row.displayLabel;
+                    target.label = row.displayLabel!; // planner always yields a label for applied rows
                     target.hasCustomColor = hasColor;
                     if (hasColor) target.color = color;
                     target.autoAssign = row.role.autoAssign;
@@ -796,13 +798,13 @@ namespace WorkRoles
                     var maxes = new List<int>();
                     foreach (var entry in row.role.training)
                     {
-                        Role member = RuntimeRole(doc, runtimeRoles, entry.role);
+                        Role? member = RuntimeRole(doc, runtimeRoles!, entry.role);
                         if (member == null || ids.Contains(member.id)) continue;
                         ids.Add(member.id);
                         mins.Add(entry.min);
                         maxes.Add(entry.max);
                     }
-                    row.existing.trainingRoleIds = ids;
+                    row.existing!.trainingRoleIds = ids; // applied rows always carry a target
                     row.existing.trainingMins = mins;
                     row.existing.trainingMaxes = maxes;
                     store.SanitizeRoleTraining(row.existing);
@@ -811,7 +813,7 @@ namespace WorkRoles
                 // training: references may point at roles this import added.
                 foreach (RoleIO.RoleRow row in appliedRows)
                 {
-                    if (!row.existing.composite)
+                    if (!row.existing!.composite) // applied rows always carry a target
                     {
                         row.existing.memberRoleIds.Clear();
                         continue;
@@ -819,7 +821,7 @@ namespace WorkRoles
                     var memberIds = new List<int>();
                     foreach (var reference in row.role.members)
                     {
-                        Role member = RuntimeRole(doc, runtimeRoles, reference);
+                        Role? member = RuntimeRole(doc, runtimeRoles!, reference);
                         if (member == null || memberIds.Contains(member.id)) continue;
                         memberIds.Add(member.id);
                     }
@@ -855,12 +857,12 @@ namespace WorkRoles
                     if (index < 0 || index >= doc.trainingPaths.Count) continue;
                     var filePath = doc.trainingPaths[index];
                     var (ids, mins, maxes) = RoleFile.ResolvePathEntries(filePath, doc,
-                        fileRole => runtimeRoles.TryGetValue(fileRole, out var runtime)
+                        fileRole => runtimeRoles!.TryGetValue(fileRole, out var runtime) // paths imply rolesInclude
                             ? runtime.id : (int?)null);
                     if (ids.Count < 2
                         || !SkillProgressionMath.Validate(ids.Count, mins, maxes))
                         continue;
-                    Role owner = store.RoleById(UniqueTargetOf(ids, mins));
+                    Role? owner = store.RoleById(UniqueTargetOf(ids, mins));
                     if (owner == null || owner.trainingRoleIds.Count > 0) continue;
                     owner.trainingRoleIds = ids;
                     owner.trainingMins = mins;
@@ -874,8 +876,8 @@ namespace WorkRoles
             if (orderInclude && effectiveOrder.Count > 0)
             {
                 store.recommendationOrder = effectiveOrder
-                    .Select(reference => RuntimeRole(doc, runtimeRoles, reference)?.id)
-                    .Where(id => id.HasValue).Select(id => id.Value).Distinct().ToList();
+                    .Select(reference => RuntimeRole(doc, runtimeRoles!, reference)?.id) // order implies rolesInclude
+                    .Where(id => id.HasValue).Select(id => id!.Value).Distinct().ToList();
             }
 
             // Invariant close-out: no import outcome (skipped palette rows,
@@ -941,22 +943,22 @@ namespace WorkRoles
             }
         }
 
-        private static Role RuntimeRole(RoleFileDocument document,
-            Dictionary<FileRole, Role> runtimeRoles, string fileId, string label)
+        private static Role? RuntimeRole(RoleFileDocument document,
+            Dictionary<FileRole, Role> runtimeRoles, string? fileId, string? label)
         {
             var fileRole = RoleFile.ResolveRole(document, fileId, label);
             return fileRole != null && runtimeRoles.TryGetValue(fileRole, out var runtime)
                 ? runtime : null;
         }
 
-        private static Role RuntimeRole(RoleFileDocument document,
-            Dictionary<FileRole, Role> runtimeRoles, FileRoleReference reference) =>
+        private static Role? RuntimeRole(RoleFileDocument document,
+            Dictionary<FileRole, Role> runtimeRoles, FileRoleReference? reference) =>
             reference == null ? null : RuntimeRole(
                 document, runtimeRoles, reference.fileId, reference.label);
 
         /// Resolves a file group name to a group id, creating unknown groups
         /// (leniency: a role may reference a name missing from <Groups>).
-        private static int GroupIdFor(string fileId, string name, RoleFileDocument document,
+        private static int GroupIdFor(string? fileId, string? name, RoleFileDocument document,
             Dictionary<FileGroup, RoleGroup> runtimeGroups, RoleStore store)
         {
             var fileGroup = RoleFile.ResolveGroup(document, fileId, name);
@@ -965,11 +967,11 @@ namespace WorkRoles
             // Hand-edited files may name Default explicitly (we never write it).
             if (GroupNameRules.IsDefault(name)) return store.EnsureDefaultGroup().id;
             if (name.NullOrEmpty()) return RoleGroup.DefaultId;
-            var group = store.GroupByName(name);
+            var group = store.GroupByName(name!); // guarded by NullOrEmpty above
             if (group == null && GroupNameRules.IsAvailable(
                     name, store.groups, existing => existing.label))
             {
-                group = new RoleGroup { id = store.NextGroupId(), label = name.Trim() };
+                group = new RoleGroup { id = store.NextGroupId(), label = name!.Trim() };
                 store.groups.Add(group);
             }
             return group?.id ?? RoleGroup.DefaultId;

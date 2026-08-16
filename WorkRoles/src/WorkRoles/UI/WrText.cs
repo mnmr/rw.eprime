@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using LudeonTK;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -9,7 +10,7 @@ namespace WorkRoles.UI
 {
     public static class WrText
     {
-        private static Func<Vector2, Vector2> unclip;
+        private static Func<Vector2, Vector2>? unclip;
         private static bool unclipResolved;
 
         /// Label rising at an angle out of a column header, its lower-left

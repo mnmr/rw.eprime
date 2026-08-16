@@ -20,9 +20,9 @@ namespace WorkRoles.Core.Recs
     /// - Teardown: Reset clears entries and identity seeds; idempotent.
     public sealed class RoleWorkSpecCache
     {
-        private object owner;
+        private object? owner;
         private int builtRevision = int.MinValue;
-        private object builtIndex;
+        private object? builtIndex;
         private Dictionary<int, RoleWorkSpec> specs =
             new Dictionary<int, RoleWorkSpec>();
         private Dictionary<int, RoleWorkSpec> previous =

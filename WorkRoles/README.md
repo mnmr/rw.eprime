@@ -92,7 +92,7 @@ These are mods I've checked for compatibility:
 ## Building from source
 
 ```
-dotnet build WorkRoles.slnx
+dotnet build src/WorkRoles.slnx
 ```
 
 Three projects: `WorkRoles.Core` (pure logic, netstandard2.0, unit-tested), `WorkRoles` (net472 game assembly; game refs via the `Krafs.Rimworld.Ref` NuGet package — no game files needed), and `WorkRoles.Core.Tests` (.NET 10, TUnit).
@@ -108,7 +108,7 @@ Override the Mods directory with `pwsh scripts/deploy.ps1 -RimWorldMods <path>`.
 Run the tests with:
 
 ```
-dotnet test --project tests/WorkRoles.Core.Tests/WorkRoles.Core.Tests.csproj
+dotnet test --project src/WorkRoles.Core.Tests/WorkRoles.Core.Tests.csproj
 ```
 
 ## Disclaimer

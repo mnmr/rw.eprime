@@ -44,14 +44,14 @@ namespace WorkRoles.Core
         /// entries but currently sit under a DIFFERENT work type (moved by a mod)
         /// and aren't yet remembered in the role's snapshots. Missing givers are
         /// skipped. Null when there is nothing to recover.
-        public static Dictionary<string, List<string>> MovedGivers(
+        public static Dictionary<string, List<string>>? MovedGivers(
             IReadOnlyList<JobEntry> entries,
             IReadOnlyDictionary<string, List<string>> snapshots,
             IReadOnlyDictionary<string, string> baseline,
             IJobCatalog catalog)
         {
-            Dictionary<string, List<string>> result = null;
-            HashSet<string> explicitGivers = null;
+            Dictionary<string, List<string>>? result = null;
+            HashSet<string>? explicitGivers = null;
             foreach (var entry in entries)
                 if (entry.Kind == JobEntryKind.WorkGiver)
                     (explicitGivers ??= new HashSet<string>()).Add(entry.DefName);

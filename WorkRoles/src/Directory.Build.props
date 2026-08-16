@@ -1,0 +1,6 @@
+<Project>
+  <PropertyGroup>
+    <RimSharedRoot>$(MSBuildThisFileDirectory)..\..\Shared</RimSharedRoot>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+</Project>

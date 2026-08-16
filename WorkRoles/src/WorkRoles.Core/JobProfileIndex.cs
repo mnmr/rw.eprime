@@ -44,7 +44,7 @@ namespace WorkRoles.Core
             JobProfileSkillSource? workSkill,
             float workSkillLearnFactor,
             IEnumerable<JobProfileSkillRequirementSource> skillRequirements,
-            string defName = null,
+            string? defName = null,
             RoleWorkEffect effects = RoleWorkEffect.Unspecified)
         {
             RecipeIdentity = recipeIdentity;
@@ -63,7 +63,7 @@ namespace WorkRoles.Core
         public IReadOnlyList<JobProfileSkillRequirementSource> SkillRequirements { get; }
         /// Stable content name for spec/tooltip use; null on sources captured
         /// before content records existed (regenerated baselines fill it).
-        public string DefName { get; }
+        public string? DefName { get; }
         /// Reduced effect kinds of WorkSkill on this recipe; display-only.
         public RoleWorkEffect Effects { get; }
 
@@ -152,7 +152,7 @@ namespace WorkRoles.Core
             bool usesRecipes,
             bool givesXp,
             IReadOnlyList<JobProfileRequirementFacts> requirements,
-            IReadOnlyList<JobProfileSkillEffect> curatedSkillEffects = null)
+            IReadOnlyList<JobProfileSkillEffect>? curatedSkillEffects = null)
         {
             CuratedSkillEffects = curatedSkillEffects
                 ?? Array.Empty<JobProfileSkillEffect>();
@@ -254,8 +254,8 @@ namespace WorkRoles.Core
             IDictionary<int, IReadOnlyList<int>> recipesBySkill,
             JobProfileRequirementFacts constructionRequirement,
             JobProfileRequirementFacts sowingRequirement,
-            IReadOnlyList<JobProfileContentGateFacts> constructionGates = null,
-            IReadOnlyList<JobProfileContentGateFacts> sowingGates = null)
+            IReadOnlyList<JobProfileContentGateFacts>? constructionGates = null,
+            IReadOnlyList<JobProfileContentGateFacts>? sowingGates = null)
         {
             ConstructionGates = constructionGates
                 ?? Array.Empty<JobProfileContentGateFacts>();
@@ -297,45 +297,45 @@ namespace WorkRoles.Core
     {
         private sealed class GiverSource
         {
-            internal string DefName;
+            internal string DefName = null!;               // always set at creation
             internal int WorkTypeIdentity;
-            internal List<JobProfileSkillSource> RelevantSkills;
-            internal List<int> FixedRecipeUserIdentities;
+            internal List<JobProfileSkillSource> RelevantSkills = null!;
+            internal List<int> FixedRecipeUserIdentities = null!;
             internal bool AllHumanlikes;
             internal bool AllAnimals;
             internal bool AllMechanoids;
             internal bool HasCuratedUsedSkills;
-            internal List<string> CuratedUsedSkillDefNames;
+            internal List<string> CuratedUsedSkillDefNames = null!;
             internal bool HasCuratedXp;
-            internal List<string> CuratedXpSkillDefNames;
-            internal List<JobProfileSkillEffect> CuratedSkillEffects;
+            internal List<string> CuratedXpSkillDefNames = null!;
+            internal List<JobProfileSkillEffect> CuratedSkillEffects = null!;
         }
 
         private sealed class WorkTypeSource
         {
             internal int Identity;
-            internal string DefName;
-            internal List<JobProfileSkillSource> RelevantSkills;
-            internal List<string> GiverDefNames;
+            internal string DefName = null!;               // always set at creation
+            internal List<JobProfileSkillSource> RelevantSkills = null!;
+            internal List<string> GiverDefNames = null!;
         }
 
         private sealed class RecipeUserSource
         {
             internal int Identity;
             internal JobProfileRecipeUserKind Kind;
-            internal List<int> DirectRecipeIdentities;
+            internal List<int> DirectRecipeIdentities = null!; // always set at creation
         }
 
         private sealed class DatabaseRecipeSource
         {
             internal int RecipeIdentity;
-            internal List<int> UserIdentities;
+            internal List<int> UserIdentities = null!;     // always set at creation
         }
 
         private sealed class MutableRequirement
         {
             internal int SkillIdentity;
-            internal string SkillDefName;
+            internal string SkillDefName = null!;          // always set at creation
             internal int Floor;
             internal int Top;
             internal int Gated;
@@ -384,15 +384,15 @@ namespace WorkRoles.Core
             string defName,
             int workTypeIdentity,
             IEnumerable<JobProfileSkillSource> relevantSkills,
-            IEnumerable<int> fixedRecipeUserIds = null,
+            IEnumerable<int>? fixedRecipeUserIds = null,
             bool allHumanlikes = false,
             bool allAnimals = false,
             bool allMechanoids = false,
             bool hasCuratedXp = false,
-            IEnumerable<string> curatedXpSkillDefNames = null,
+            IEnumerable<string>? curatedXpSkillDefNames = null,
             bool hasCuratedUsedSkills = false,
-            IEnumerable<string> curatedUsedSkillDefNames = null,
-            IEnumerable<JobProfileSkillEffect> curatedSkillEffects = null)
+            IEnumerable<string>? curatedUsedSkillDefNames = null,
+            IEnumerable<JobProfileSkillEffect>? curatedSkillEffects = null)
         {
             EnsureMutable();
             givers.Add(new GiverSource
@@ -696,7 +696,7 @@ namespace WorkRoles.Core
                 string name = recipe.WorkSkill.Value.DefName;
                 if (name == null ? seenNull : !seen.Add(name)) continue;
                 if (name == null) seenNull = true;
-                result.Add(name);
+                result.Add(name!); // a single null entry is deliberately retained (deduped via seenNull)
             }
             return result;
         }
@@ -899,7 +899,7 @@ namespace WorkRoles.Core
         private static IReadOnlyList<T> ReadOnly<T>(List<T> source) =>
             new ReadOnlyCollection<T>(source);
 
-        private static List<T> Copy<T>(IEnumerable<T> source) =>
+        private static List<T> Copy<T>(IEnumerable<T>? source) =>
             source == null ? new List<T>() : new List<T>(source);
 
         private void EnsureMutable()

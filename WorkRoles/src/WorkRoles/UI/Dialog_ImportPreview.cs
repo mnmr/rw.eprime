@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -14,7 +15,7 @@ namespace WorkRoles.UI
     {
         private class Row
         {
-            public string label;
+            public string? label; // populated by EnsureUiText before layout
             public bool included = true;
         }
 
@@ -41,7 +42,7 @@ namespace WorkRoles.UI
                 RenderKind kind,
                 Section section = Section.Palette,
                 int sourceIndex = 0,
-                string text = null,
+                string? text = null,
                 float textHeight = 0f)
             {
                 Kind = kind;
@@ -54,7 +55,7 @@ namespace WorkRoles.UI
             public RenderKind Kind { get; }
             public Section Section { get; }
             public int SourceIndex { get; }
-            public string Text { get; }
+            public string? Text { get; }
             public float TextHeight { get; }
         }
 
@@ -111,10 +112,11 @@ namespace WorkRoles.UI
 
         private readonly string xml;
         private readonly RoleFileDocument doc;
-        private List<RoleIO.PaletteRow> paletteRows;
-        private List<RoleIO.RoleRow> roleRows;
-        private List<Row> paletteMergeUi;
-        private List<Row> roleMergeUi;
+        // Assigned by EnsureMergeRows, called from the constructor.
+        private List<RoleIO.PaletteRow> paletteRows = null!;
+        private List<RoleIO.RoleRow> roleRows = null!;
+        private List<Row> paletteMergeUi = null!;
+        private List<Row> roleMergeUi = null!;
         private readonly bool[] paletteSelectionBySource;
         private readonly List<Row> pathMergeUi;
         private readonly List<string> paletteOverwriteInfo = new List<string>();
@@ -144,7 +146,7 @@ namespace WorkRoles.UI
         // Refresh: immediately after a store, selection, language, or width change.
         // Equality: exact equal rows and extents preserve snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
-        private ImportRenderSnapshot renderSnapshot;
+        private ImportRenderSnapshot? renderSnapshot;
         private float rowLayoutWidth = -1f;
         private int rowLayoutState = -1;
         private int rowLayoutStamp = -1;
@@ -152,19 +154,20 @@ namespace WorkRoles.UI
         private bool rowLayoutDirty = true;
         private int uiLanguageRevision = -1;
         private int uiMergeGeneration = -1;
-        private RoleStore mergeOwner;
+        private RoleStore? mergeOwner;
         private int mergeUiRevision = -1;
         private int mergeGeneration;
 
-        private string titleText;
-        private string paletteTitle;
-        private string rolesTitle;
-        private string pathsTitle;
-        private string orderTitle;
-        private string mergeLabel;
-        private string overwriteLabel;
-        private string nothingToMergeText;
-        private string orderInfoText;
+        // Assigned by EnsureUiText before the first draw uses them.
+        private string titleText = null!;
+        private string paletteTitle = null!;
+        private string rolesTitle = null!;
+        private string pathsTitle = null!;
+        private string orderTitle = null!;
+        private string mergeLabel = null!;
+        private string overwriteLabel = null!;
+        private string nothingToMergeText = null!;
+        private string orderInfoText = null!;
         private float mergeControlWidth;
         private float overwriteControlWidth;
         private Vector2 scroll;
@@ -209,7 +212,8 @@ namespace WorkRoles.UI
             var listRect = PreviewBodyRect(inRect, listTop);
             float rowW = listRect.width - 16f;
             EnsureRenderRows(rowW);
-            ImportRenderSnapshot snapshot = renderSnapshot;
+            ImportRenderSnapshot snapshot =
+                renderSnapshot!; // published by EnsureRenderRows above
 
             Widgets.BeginScrollView(listRect, ref scroll,
                 new Rect(0f, 0f, rowW, snapshot.ContentExtent));
@@ -252,7 +256,7 @@ namespace WorkRoles.UI
 
         private void EnsureMergeRows()
         {
-            RoleStore store = RoleStore.Current;
+            RoleStore? store = RoleStore.Current;
             int uiRevision = UiVersion.Current;
             if (ReferenceEquals(mergeOwner, store)
                 && mergeUiRevision == uiRevision)
@@ -476,7 +480,7 @@ namespace WorkRoles.UI
             RenderKind kind,
             float height,
             Section section = Section.Palette,
-            string text = null)
+            string? text = null)
         {
             target.Add(new RenderRow(kind, section, text: text));
             heights.Add(height);
@@ -545,7 +549,7 @@ namespace WorkRoles.UI
 
         private void DrawSectionHeader(
             Section section,
-            string title,
+            string? title,
             float width,
             float y)
         {
@@ -587,7 +591,7 @@ namespace WorkRoles.UI
         private void DrawSectionHeader(
             float width,
             float y,
-            string title,
+            string? title,
             ref bool include,
             ref bool overwrite)
         {
@@ -614,7 +618,7 @@ namespace WorkRoles.UI
         private void DrawMergeRow(
             Section section,
             int index,
-            string label,
+            string? label,
             float width,
             float y)
         {

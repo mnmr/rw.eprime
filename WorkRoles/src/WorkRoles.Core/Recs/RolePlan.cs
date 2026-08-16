@@ -58,7 +58,7 @@ namespace WorkRoles.Core.Recs
         // The training-path activation each downgraded pick publishes (null for
         // direct picks and for picks with no path activation). Computed once
         // here so publish does not re-run path resolution.
-        private readonly PathActivation[] resolvedActivations;
+        private readonly PathActivation?[] resolvedActivations;
         private readonly RecommendationFormulaEngine formulas;
         private int minimumPickCount;
         private int coverageRepairCount;
@@ -73,7 +73,7 @@ namespace WorkRoles.Core.Recs
             int[] stageRanks,
             int[] selectionSlots,
             SignalBucket[] selectionSignals,
-            PathActivation[] resolvedActivations,
+            PathActivation?[] resolvedActivations,
             int selectionSlotCount,
             int minimumPickCount,
             RecommendationFormulaEngine formulas,
@@ -119,7 +119,7 @@ namespace WorkRoles.Core.Recs
         internal int SelectionSlotCount { get; }
         internal SignalBucket SelectionSignalAt(int index) =>
             selectionSignals[index];
-        internal PathActivation ResolvedActivationAt(int index) =>
+        internal PathActivation? ResolvedActivationAt(int index) =>
             resolvedActivations[index];
         internal RecommendationTargetAssignmentKind AssignmentKindAt(
             int index)
@@ -163,8 +163,8 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             RoleView role,
             RecommendationFormulaEngine formulas,
-            PawnDraft[] drafts = null,
-            List<int>[] priorChampionsByPawn = null)
+            PawnDraft[]? drafts = null,
+            List<int>[]? priorChampionsByPawn = null)
         {
             int colonySize = facts.Colony.Pawns.Count;
             int capacity = System.Math.Max(0, colonySize);
@@ -185,7 +185,7 @@ namespace WorkRoles.Core.Recs
                 requiredTotal,
                 System.Math.Max(0, directMinimum - protectedDirectHolders));
             int trainingWaivers = requiredTotal - directPicks;
-            PathView championPath = PathActivation.PreferredTargetPath(
+            PathView? championPath = PathActivation.PreferredTargetPath(
                 facts.Colony.Paths, role.Id);
 
             var eligible = new List<CandidateFact>(colonySize);
@@ -361,7 +361,7 @@ namespace WorkRoles.Core.Recs
             // Resolve the training-path activation each downgraded pick will
             // publish, once, so publish never re-runs path resolution. Direct
             // picks always take the target and carry no activation.
-            var resolvedActivations = new PathActivation[candidates.Length];
+            var resolvedActivations = new PathActivation?[candidates.Length];
             for (int index = 0; index < candidates.Length; index++)
             {
                 if ((flags[index] & Selected) == 0
@@ -437,7 +437,7 @@ namespace WorkRoles.Core.Recs
             EngineContext facts,
             int pawnIndex,
             RoleView role,
-            PathView path,
+            PathView? path,
             int fallbackLevel,
             SignalBucket fallbackVerdict,
             RecommendationFormulaEngine formulas,

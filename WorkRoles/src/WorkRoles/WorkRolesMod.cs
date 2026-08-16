@@ -8,10 +8,10 @@ namespace WorkRoles
     {
         public const string HarmonyId = "mnmr.workroles";
 
-        public static WorkRolesSettings Settings { get; private set; }
+        public static WorkRolesSettings Settings { get; private set; } = null!; // assigned in the mod constructor
 
         /// About.xml modVersion of the running mod (stamped on seeded roles).
-        public static string Version { get; private set; }
+        public static string? Version { get; private set; }
 
         public WorkRolesMod(ModContentPack content) : base(content)
         {

@@ -19,8 +19,8 @@ namespace WorkRoles
     {
         public sealed class SkillRange
         {
-            public string SkillLabel;
-            public string SkillDefName;
+            public string SkillLabel = null!;   // set by SkillRangeOf
+            public string SkillDefName = null!; // set by SkillRangeOf
             public int Floor, Top;    // min/max required level among gated content
             public int Gated;         // content pieces carrying a requirement
             public int Total;         // 0 = open-ended pool (buildings, plants)
@@ -30,7 +30,7 @@ namespace WorkRoles
         {
             /// Undecorated def label — never the disambiguated display name;
             /// provenance belongs only to the source footer.
-            public string Title;
+            public string Title = null!; // set by BuildGiver
             /// Skills the work uses for performance, from recipes for bill work and otherwise from the work type.
             public List<string> UsedSkills = new List<string>();
             /// Same skills as UsedSkills, by defName (language-independent).
@@ -46,33 +46,33 @@ namespace WorkRoles
             /// Vanilla unlock age (years) of the parent work type; 0 = no gate.
             public int UnlockAge;
             public List<SkillRange> Requirements = new List<SkillRange>();
-            public string CurveHeader; // stat label, or null when no curve
-            public List<(string label, string value)> CurveRows;
-            public string SourceLine;  // "Work giver: defName (mod)" footer
-            public string TipCache;
-            internal StructuredTip StructuredTipCache;
+            public string? CurveHeader; // stat label, or null when no curve
+            public List<(string label, string value)>? CurveRows;
+            public string SourceLine = null!; // "Work giver: defName (mod)" footer, set by BuildGiver
+            public string? TipCache;
+            internal StructuredTip? StructuredTipCache;
             // Hint-composed variants: one region registers one tooltip, so
             // contextual hints ride the same tip instead of a second region
             // (two stable keys on one rect keep resetting the hover gate).
-            internal StructuredTip CoveredTipCache;
-            internal StructuredTip DeadTipCache;
+            internal StructuredTip? CoveredTipCache;
+            internal StructuredTip? DeadTipCache;
         }
 
         public sealed class WorkTypeProfile
         {
             /// Undecorated def label (see GiverProfile.Title).
-            public string Title;
-            public string Description;
+            public string Title = null!; // set by BuildWorkType
+            public string? Description;
             public List<string> UsedSkills = new List<string>();
             public List<string> TrainedSkills = new List<string>();
             public int XpGivers, TotalGivers;
             /// Vanilla unlock age (years); 0 = no gate.
             public int UnlockAge;
             public List<SkillRange> Requirements = new List<SkillRange>();
-            public string SourceLine; // "Work type: defName (mod)" footer
-            public string TipCache;
-            internal StructuredTip StructuredTipCache;
-            internal StructuredTip DeadTipCache;
+            public string SourceLine = null!; // "Work type: defName (mod)" footer, set by BuildWorkType
+            public string? TipCache;
+            internal StructuredTip? StructuredTipCache;
+            internal StructuredTip? DeadTipCache;
         }
 
         private sealed class ReferenceIdentity<T> where T : class
@@ -101,8 +101,8 @@ namespace WorkRoles
 
         private sealed class CurveFacts
         {
-            internal string StatDefName;
-            internal List<(int level, float value)> Milestones;
+            internal string StatDefName = null!;                     // set at construction
+            internal List<(int level, float value)> Milestones = null!; // set at construction
         }
 
         /// The Core index is language-independent. These maps are the sole
@@ -110,7 +110,7 @@ namespace WorkRoles
         /// definition reload invalidation drops the whole snapshot atomically.
         private sealed class DefinitionSnapshot
         {
-            internal JobProfileIndex Index;
+            internal JobProfileIndex Index = null!; // set before BuildDefinitionFacts returns
             internal readonly Dictionary<string, WorkGiverDef> Givers =
                 new Dictionary<string, WorkGiverDef>(StringComparer.Ordinal);
             internal readonly Dictionary<string, WorkTypeDef> WorkTypes =
@@ -209,9 +209,9 @@ namespace WorkRoles
             ["TrainAnimalChance"] = RoleWorkEffect.Success,
         };
 
-        private static DefinitionSnapshot definitionFacts;
-        private static Dictionary<string, GiverProfile> byGiver;
-        private static Dictionary<string, WorkTypeProfile> byType;
+        private static DefinitionSnapshot? definitionFacts;
+        private static Dictionary<string, GiverProfile>? byGiver;
+        private static Dictionary<string, WorkTypeProfile>? byType;
         private static int profileGeneration;
         private static int queuedLocalizedFacadeGeneration = -1;
 
@@ -261,16 +261,16 @@ namespace WorkRoles
         private static string SkillLabel(SkillDef skill) =>
             (skill.skillLabel ?? skill.label ?? skill.defName).CapitalizeFirst();
 
-        public static GiverProfile ForGiver(string defName)
+        public static GiverProfile? ForGiver(string defName)
         {
             EnsureBuilt();
-            return byGiver.TryGetValue(defName, out var profile) ? profile : null;
+            return byGiver!.TryGetValue(defName, out var profile) ? profile : null;
         }
 
-        public static WorkTypeProfile ForWorkType(string defName)
+        public static WorkTypeProfile? ForWorkType(string defName)
         {
             EnsureBuilt();
-            return byType.TryGetValue(defName, out var profile) ? profile : null;
+            return byType!.TryGetValue(defName, out var profile) ? profile : null;
         }
 
         /// Invariant per-giver facts from the Core index, for skill-evidence
@@ -460,7 +460,7 @@ namespace WorkRoles
             foreach (KeyValuePair<string, string> pair in CurveStatByGiver)
             {
                 if (!snapshot.StatsByName.TryGetValue(pair.Value, out StatDef stat)) continue;
-                SkillNeed_Direct need = stat.skillNeedFactors?.OfType<SkillNeed_Direct>()
+                SkillNeed_Direct? need = stat.skillNeedFactors?.OfType<SkillNeed_Direct>()
                     .FirstOrDefault(n => n.skill != null && !n.valuesPerLevel.NullOrEmpty());
                 if (need == null) continue;
                 List<(int level, float value)> milestones = LowerIsBetter.Contains(pair.Value)
@@ -522,14 +522,14 @@ namespace WorkRoles
             if (!recipe.products.NullOrEmpty())
                 for (int i = 0; i < recipe.products.Count; i++)
                 {
-                    ThingDef product = recipe.products[i]?.thingDef;
+                    ThingDef? product = recipe.products[i]?.thingDef;
                     if (product != null && product.HasComp(typeof(CompQuality)))
                     {
                         affectsQuality = true;
                         break;
                     }
                 }
-            StatDef surgerySuccess = recipe.surgeryOutcomeEffect == null
+            StatDef? surgerySuccess = recipe.surgeryOutcomeEffect == null
                 ? null
                 : DefDatabase<StatDef>.GetNamedSilentFail(
                     "MedicalSurgerySuccessChance");
@@ -543,10 +543,10 @@ namespace WorkRoles
         /// Effect kinds for a code-defined giver: the curated giver-to-stat
         /// wiring supplies the stats, each stat's declarative skill need
         /// supplies the skill, so no effect claim exists without both links.
-        private static List<JobProfileSkillEffect> CuratedGiverEffects(
+        private static List<JobProfileSkillEffect>? CuratedGiverEffects(
             WorkGiverDef giver,
-            string[] xpSkills,
-            IReadOnlyList<string> usedSkills,
+            string[]? xpSkills,
+            IReadOnlyList<string>? usedSkills,
             DefinitionSnapshot snapshot)
         {
             if (!EffectStatsByGiver.TryGetValue(
@@ -560,7 +560,7 @@ namespace WorkRoles
                     if (relevant != null && !candidates.Contains(relevant.defName))
                         candidates.Add(relevant.defName);
 
-            List<JobProfileSkillEffect> result = null;
+            List<JobProfileSkillEffect>? result = null;
             foreach (string skillName in candidates)
             {
                 if (!snapshot.SkillsByName.TryGetValue(
@@ -580,7 +580,7 @@ namespace WorkRoles
         }
 
         private static void AddCandidateSkills(
-            List<string> candidates, IReadOnlyList<string> skills)
+            List<string> candidates, IReadOnlyList<string>? skills)
         {
             if (skills == null) return;
             for (int i = 0; i < skills.Count; i++)
@@ -588,7 +588,7 @@ namespace WorkRoles
                     candidates.Add(skills[i]);
         }
 
-        private static bool StatUsesSkill(StatDef stat, SkillDef skill)
+        private static bool StatUsesSkill(StatDef? stat, SkillDef? skill)
         {
             if (stat == null || skill == null) return false;
             if (stat.skillNeedFactors != null)
@@ -625,7 +625,7 @@ namespace WorkRoles
 
         /// Mods often end descriptions with an "added by X" line; the source
         /// footer already carries provenance, so those lines are dropped.
-        private static string StripSelfAttribution(string description, ModContentPack mod)
+        private static string? StripSelfAttribution(string? description, ModContentPack? mod)
         {
             if (description == null || mod?.Name == null || description.IndexOf('\n') < 0)
                 return description;
@@ -703,7 +703,7 @@ namespace WorkRoles
             DefinitionSnapshot snapshot, IReadOnlyList<int> identities, bool distinct)
         {
             var result = new List<string>();
-            HashSet<string> seen = distinct ? new HashSet<string>() : null;
+            HashSet<string>? seen = distinct ? new HashSet<string>() : null;
             for (int i = 0; i < identities.Count; i++)
                 if (snapshot.SkillsByIdentity.TryGetValue(identities[i], out SkillDef skill))
                 {
@@ -765,7 +765,7 @@ namespace WorkRoles
         // ----- Tooltip composition (cached; defs are session-fixed, a language
         // switch clears via InvalidateLanguageCaches) -----
 
-        public static string GiverTip(string defName)
+        public static string? GiverTip(string defName)
         {
             var profile = ForGiver(defName);
             if (profile == null) return null;
@@ -775,14 +775,14 @@ namespace WorkRoles
                 : tip.PlainText;
         }
 
-        internal static StructuredTip GiverStructuredTip(string defName)
+        internal static StructuredTip? GiverStructuredTip(string defName)
         {
             var profile = ForGiver(defName);
             return profile == null ? null : EnsureGiverTip(defName, profile);
         }
 
         /// Giver tip with the covered-via-work-type hint folded in.
-        internal static StructuredTip GiverCoveredStructuredTip(string defName)
+        internal static StructuredTip? GiverCoveredStructuredTip(string defName)
         {
             var profile = ForGiver(defName);
             if (profile == null) return null;
@@ -793,7 +793,7 @@ namespace WorkRoles
         }
 
         /// Giver tip with the dead-entry hint folded in.
-        internal static StructuredTip GiverDeadStructuredTip(string defName)
+        internal static StructuredTip? GiverDeadStructuredTip(string defName)
         {
             var profile = ForGiver(defName);
             if (profile == null) return null;
@@ -816,7 +816,7 @@ namespace WorkRoles
             return profile.StructuredTipCache;
         }
 
-        public static string WorkTypeTip(string defName)
+        public static string? WorkTypeTip(string defName)
         {
             var profile = ForWorkType(defName);
             if (profile == null) return null;
@@ -826,14 +826,14 @@ namespace WorkRoles
                 : tip.PlainText;
         }
 
-        internal static StructuredTip WorkTypeStructuredTip(string defName)
+        internal static StructuredTip? WorkTypeStructuredTip(string defName)
         {
             var profile = ForWorkType(defName);
             return profile == null ? null : EnsureWorkTypeTip(defName, profile);
         }
 
         /// Work-type tip with the dead-entry hint folded in.
-        internal static StructuredTip WorkTypeDeadStructuredTip(string defName)
+        internal static StructuredTip? WorkTypeDeadStructuredTip(string defName)
         {
             var profile = ForWorkType(defName);
             if (profile == null) return null;
@@ -857,7 +857,7 @@ namespace WorkRoles
         }
 
         private static TipModel BuildGiverModel(GiverProfile profile,
-            string hint = null)
+            string? hint = null)
         {
             var model = new TipModel { Title = profile.Title };
             var facts = model.AddSection();
@@ -889,11 +889,11 @@ namespace WorkRoles
         }
 
         private static TipModel BuildTypeModel(WorkTypeProfile profile,
-            string hint = null)
+            string? hint = null)
         {
             var model = new TipModel { Title = profile.Title };
-            if (!profile.Description.NullOrEmpty())
-                model.AddSection().Text(profile.Description);
+            if (profile.Description is { Length: > 0 } description)
+                model.AddSection().Text(description);
             var facts = model.AddSection();
             if (profile.UsedSkills.Count > 0)
                 facts.Fact("WR_TipSkillsLabel".Translate(), profile.UsedSkills.ToCommaList());

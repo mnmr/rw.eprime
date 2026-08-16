@@ -25,7 +25,7 @@ namespace WorkRoles
             {
                 if (def.giverClass == null || !typeof(WorkGiver_DoBill).IsAssignableFrom(def.giverClass)) continue;
                 if (def.fixedBillGiverDefs == null || !def.fixedBillGiverDefs.Contains(bench.def)) continue;
-                if (bill.recipe.requiredGiverWorkType != null && bill.recipe.requiredGiverWorkType != def.workType) continue;
+                if (bill!.recipe.requiredGiverWorkType != null && bill.recipe.requiredGiverWorkType != def.workType) continue; // bench != null implies bill != null
                 givers.Add(def);
             }
             if (givers.Count == 0) return result;
@@ -67,7 +67,7 @@ namespace WorkRoles
         }
 
         /// The role a bill is restricted to, or null.
-        public static Role RestrictionFor(Bill bill)
+        public static Role? RestrictionFor(Bill bill)
         {
             var store = RoleStore.Current;
             if (store == null || bill == null || !store.billRoles.TryGetValue(bill, out int roleId)) return null;

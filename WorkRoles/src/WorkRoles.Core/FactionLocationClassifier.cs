@@ -5,7 +5,7 @@ namespace WorkRoles.Core
     /// </summary>
     public static class FactionLocationClassifier
     {
-        public static PawnPlace Classify(string locationId,
+        public static PawnPlace Classify(string? locationId,
             bool ownedByFaction,
             bool spawnedViaGravship,
             bool parentCanBePlayerHome,
@@ -15,8 +15,8 @@ namespace WorkRoles.Core
                 parentIsSettlement, hasGravEngine);
 
         public static PawnPlace Classify(
-            string mapLocationId,
-            string shipLocationId,
+            string? mapLocationId,
+            string? shipLocationId,
             bool ownedByFaction,
             bool spawnedViaGravship,
             bool parentCanBePlayerHome,

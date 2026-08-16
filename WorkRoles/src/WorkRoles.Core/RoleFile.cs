@@ -20,7 +20,7 @@ namespace WorkRoles.Core
                 + ((int)Math.Round(G * 255)).ToString("x2")
                 + ((int)Math.Round(B * 255)).ToString("x2");
 
-        public static bool TryParseHex(string text, out ColorRgb color)
+        public static bool TryParseHex(string? text, out ColorRgb color)
         {
             color = default;
             text = text?.Trim();
@@ -37,12 +37,12 @@ namespace WorkRoles.Core
     /// tokens with NAMES instead of save-local ids ("settlement:Boarwood").
     public class FileRole
     {
-        public string fileId;
-        public string label;
-        public string templateDef;
-        public string group;   // role-list group name; null = the Default group
-        public string groupId;
-        public string colorRef;
+        public string? fileId;
+        public string? label;
+        public string? templateDef;
+        public string? group;   // role-list group name; null = the Default group
+        public string? groupId;
+        public string? colorRef;
         public bool autoAssign;
         public bool blocker;
         public bool enabled = true;
@@ -78,8 +78,8 @@ namespace WorkRoles.Core
 
     public class FileGroup
     {
-        public string fileId;
-        public string name;
+        public string? fileId;
+        public string? name;
 
         public static implicit operator FileGroup(string name) => new FileGroup { name = name };
         public override string ToString() => name ?? "";
@@ -87,11 +87,11 @@ namespace WorkRoles.Core
 
     public class FileRoleReference
     {
-        public string fileId;
-        public string label;
+        public string? fileId;
+        public string? label;
 
         public FileRoleReference() { }
-        public FileRoleReference(string fileId, string label)
+        public FileRoleReference(string? fileId, string? label)
         {
             this.fileId = fileId;
             this.label = label;
@@ -108,10 +108,10 @@ namespace WorkRoles.Core
         public int min;
         public int max;
 
-        public FileTrainingPathEntry(string label, int min, int max)
+        public FileTrainingPathEntry(string? label, int min, int max)
             : this(null, label, min, max) { }
 
-        public FileTrainingPathEntry(string fileId, string label, int min, int max)
+        public FileTrainingPathEntry(string? fileId, string? label, int min, int max)
         {
             role = new FileRoleReference(fileId, label);
             this.min = min;
@@ -127,11 +127,11 @@ namespace WorkRoles.Core
     /// display labels for legacy fallback, with skill bands and an anchor.
     public class FileTrainingPath
     {
-        public string name;
-        public string colorRef;   // color NAME, like a role's; null = no override
-        public string anchorRole; // null = no anchor
-        public string anchorRoleId;
-        public FileRoleReference anchorWithId;
+        public string? name;
+        public string? colorRef;   // color NAME, like a role's; null = no override
+        public string? anchorRole; // null = no anchor
+        public string? anchorRoleId;
+        public FileRoleReference? anchorWithId;
         public bool anchorBefore = true;
         // Compatibility surface shipped by formats 1-6. Keep this exact field
         // type: external callers compile direct field references against it.
@@ -156,7 +156,7 @@ namespace WorkRoles.Core
         public List<string> recommendationOrder = new List<string>();
         public List<FileRoleReference> recommendationOrderWithIds =
             new List<FileRoleReference>();
-        public string error; // set when nothing usable could be parsed
+        public string? error; // set when nothing usable could be parsed
     }
 
     /// The export file format: human-readable, hand-editable XML, versioned at the
@@ -265,9 +265,9 @@ namespace WorkRoles.Core
                     if (!string.IsNullOrEmpty(path.anchorRole))
                     {
                         var anchor = new XElement("Anchor", path.anchorRole);
-                        FileRoleReference anchorReference = AnchorWithStableId(path);
+                        FileRoleReference? anchorReference = AnchorWithStableId(path);
                         if (!string.IsNullOrEmpty(anchorReference?.fileId))
-                            anchor.Add(new XAttribute("roleId", anchorReference.fileId));
+                            anchor.Add(new XAttribute("roleId", anchorReference!.fileId));
                         if (!path.anchorBefore) anchor.Add(new XAttribute("before", "false"));
                         el.Add(anchor);
                     }
@@ -277,7 +277,7 @@ namespace WorkRoles.Core
                             new XAttribute("min", entry.min), new XAttribute("max", entry.max),
                             entry.role?.label ?? "");
                         if (!string.IsNullOrEmpty(entry.role?.fileId))
-                            role.Add(new XAttribute("roleId", entry.role.fileId));
+                            role.Add(new XAttribute("roleId", entry.role!.fileId));
                         el.Add(role);
                     }
                     paths.Add(el);
@@ -294,7 +294,7 @@ namespace WorkRoles.Core
                 {
                     var role = new XElement("Role", reference?.label ?? "");
                     if (!string.IsNullOrEmpty(reference?.fileId))
-                        role.Add(new XAttribute("roleId", reference.fileId));
+                        role.Add(new XAttribute("roleId", reference!.fileId));
                     order.Add(role);
                 }
                 root.Add(order);
@@ -358,7 +358,7 @@ namespace WorkRoles.Core
                             new XAttribute("max", entry.max),
                             entry.role?.label ?? "");
                         if (!string.IsNullOrEmpty(entry.role?.fileId))
-                            entryEl.Add(new XAttribute("roleId", entry.role.fileId));
+                            entryEl.Add(new XAttribute("roleId", entry.role!.fileId));
                         training.Add(entryEl);
                     }
                     tuning.Add(training);
@@ -399,7 +399,7 @@ namespace WorkRoles.Core
                 {
                     var memberEl = new XElement("Role", member?.label ?? "");
                     if (!string.IsNullOrEmpty(member?.fileId))
-                        memberEl.Add(new XAttribute("roleId", member.fileId));
+                        memberEl.Add(new XAttribute("roleId", member!.fileId));
                     members.Add(memberEl);
                 }
                 element.Add(members);
@@ -433,22 +433,22 @@ namespace WorkRoles.Core
             foreach (var colorEl in root.Element("Palette")?.Elements("Color")
                      ?? Enumerable.Empty<XElement>())
             {
-                string name = colorEl.Attribute("name")?.Value;
+                string? name = colorEl.Attribute("name")?.Value;
                 if (!string.IsNullOrEmpty(name) && ColorRgb.TryParseHex(colorEl.Value, out var color)
                     && doc.palette.All(p => p.name != name))
-                    doc.palette.Add((name, color));
+                    doc.palette.Add((name!, color)); // guarded by IsNullOrEmpty above
             }
             foreach (var groupEl in root.Element("Groups")?.Elements("Group")
                      ?? Enumerable.Empty<XElement>())
             {
-                string name = groupEl.Attribute("name")?.Value?.Trim();
-                string fileId = groupEl.Attribute("fileId")?.Value?.Trim();
+                string? name = groupEl.Attribute("name")?.Value?.Trim();
+                string? fileId = groupEl.Attribute("fileId")?.Value?.Trim();
                 if (!string.IsNullOrEmpty(name)
                     && (!string.IsNullOrEmpty(fileId)
                         || !doc.groups.Any(group => string.Equals(
                             group, name, StringComparison.OrdinalIgnoreCase))))
                 {
-                    doc.groups.Add(name);
+                    doc.groups.Add(name!); // guarded by IsNullOrEmpty above
                     doc.groupsWithIds.Add(new FileGroup
                         { fileId = EmptyToNull(fileId), name = name });
                 }
@@ -468,10 +468,10 @@ namespace WorkRoles.Core
             foreach (var roleEl in root.Element("RecommendationOrder")?.Elements("Role")
                      ?? Enumerable.Empty<XElement>())
             {
-                string label = roleEl.Value?.Trim();
+                string? label = roleEl.Value?.Trim();
                 if (!string.IsNullOrEmpty(label))
                 {
-                    doc.recommendationOrder.Add(label);
+                    doc.recommendationOrder.Add(label!); // guarded by IsNullOrEmpty above
                     doc.recommendationOrderWithIds.Add(new FileRoleReference(
                         EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label));
                 }
@@ -481,31 +481,31 @@ namespace WorkRoles.Core
             return doc;
         }
 
-        private static FileTrainingPath ParseTrainingPath(XElement el)
+        private static FileTrainingPath? ParseTrainingPath(XElement el)
         {
-            string name = el.Attribute("name")?.Value?.Trim();
+            string? name = el.Attribute("name")?.Value?.Trim();
             if (string.IsNullOrEmpty(name)) return null;
             var path = new FileTrainingPath { name = name };
-            string colorRef = el.Attribute("color")?.Value?.Trim();
+            string? colorRef = el.Attribute("color")?.Value?.Trim();
             if (!string.IsNullOrEmpty(colorRef)) path.colorRef = colorRef;
             var anchor = el.Element("Anchor");
             if (!string.IsNullOrEmpty(anchor?.Value?.Trim()))
             {
-                path.anchorRole = anchor.Value.Trim();
+                path.anchorRole = anchor!.Value.Trim(); // guarded by IsNullOrEmpty above
                 path.anchorRoleId = EmptyToNull(anchor.Attribute("roleId")?.Value?.Trim());
                 path.anchorWithId = new FileRoleReference(path.anchorRoleId, path.anchorRole);
                 path.anchorBefore = anchor.Attribute("before")?.Value?.Trim() != "false";
             }
             foreach (var roleEl in el.Elements("Role"))
             {
-                string label = roleEl.Value?.Trim();
+                string? label = roleEl.Value?.Trim();
                 int.TryParse(roleEl.Attribute("min")?.Value, out int min);
                 int.TryParse(roleEl.Attribute("max")?.Value, out int max);
                 // Bands the geometry rules reject are skipped, not fatal.
                 if (string.IsNullOrEmpty(label)
                     || min < 0 || max > SkillProgressionMath.MaxLevel
                     || max - min < SkillProgressionMath.MinSpan) continue;
-                path.entries.Add((label, min, max));
+                path.entries.Add((label!, min, max)); // guarded by IsNullOrEmpty above
                 path.entriesWithIds.Add(new FileTrainingPathEntry(
                     EmptyToNull(roleEl.Attribute("roleId")?.Value?.Trim()), label, min, max));
             }
@@ -549,18 +549,18 @@ namespace WorkRoles.Core
             return (ids, mins, maxes);
         }
 
-        public static FileRole ResolveRole(RoleFileDocument document, string fileId, string label)
+        public static FileRole? ResolveRole(RoleFileDocument document, string? fileId, string? label)
         {
-            FileRole byId = UniqueById(document?.roles, fileId, role => role.fileId);
+            FileRole? byId = UniqueById(document?.roles, fileId, role => role.fileId);
             if (byId != null) return byId;
             return document?.roles?.FirstOrDefault(role => role != null
                 && string.Equals(role.label, label, StringComparison.OrdinalIgnoreCase));
         }
 
-        public static FileGroup ResolveGroup(RoleFileDocument document, string fileId, string name)
+        public static FileGroup ResolveGroup(RoleFileDocument document, string? fileId, string? name)
         {
             IReadOnlyList<FileGroup> groups = GroupsWithStableIds(document);
-            FileGroup byId = UniqueById(groups, fileId, group => group.fileId);
+            FileGroup? byId = UniqueById(groups, fileId, group => group.fileId);
             if (byId != null) return byId;
             return groups.FirstOrDefault(group => group != null
                 && string.Equals(group.name, name, StringComparison.OrdinalIgnoreCase));
@@ -570,9 +570,9 @@ namespace WorkRoles.Core
         /// remains aligned with the legacy public collection callers may mutate.
         public static IReadOnlyList<FileGroup> GroupsWithStableIds(RoleFileDocument document)
         {
-            List<string> legacy = document?.groups;
+            List<string>? legacy = document?.groups;
             if (legacy == null || legacy.Count == 0) return Array.Empty<FileGroup>();
-            List<FileGroup> rich = document.groupsWithIds;
+            List<FileGroup> rich = document!.groupsWithIds; // non-null legacy implies document non-null
             if (rich != null && rich.Count == legacy.Count)
             {
                 bool aligned = true;
@@ -595,10 +595,10 @@ namespace WorkRoles.Core
         public static IReadOnlyList<FileRoleReference> RecommendationOrderWithStableIds(
             RoleFileDocument document)
         {
-            List<string> legacy = document?.recommendationOrder;
+            List<string>? legacy = document?.recommendationOrder;
             if (legacy == null || legacy.Count == 0)
                 return Array.Empty<FileRoleReference>();
-            List<FileRoleReference> rich = document.recommendationOrderWithIds;
+            List<FileRoleReference> rich = document!.recommendationOrderWithIds; // non-null legacy implies document non-null
             if (rich != null && rich.Count == legacy.Count)
             {
                 bool aligned = true;
@@ -621,10 +621,10 @@ namespace WorkRoles.Core
         public static IReadOnlyList<FileTrainingPathEntry> EntriesWithStableIds(
             FileTrainingPath path)
         {
-            List<(string role, int min, int max)> legacy = path?.entries;
+            List<(string role, int min, int max)>? legacy = path?.entries;
             if (legacy == null || legacy.Count == 0)
                 return Array.Empty<FileTrainingPathEntry>();
-            List<FileTrainingPathEntry> rich = path.entriesWithIds;
+            List<FileTrainingPathEntry> rich = path!.entriesWithIds; // non-null legacy implies path non-null
             if (rich != null && rich.Count == legacy.Count)
             {
                 bool aligned = true;
@@ -651,10 +651,10 @@ namespace WorkRoles.Core
             return fallback;
         }
 
-        public static FileRoleReference AnchorWithStableId(FileTrainingPath path)
+        public static FileRoleReference? AnchorWithStableId(FileTrainingPath path)
         {
             if (path == null || string.IsNullOrEmpty(path.anchorRole)) return null;
-            FileRoleReference rich = path.anchorWithId;
+            FileRoleReference? rich = path.anchorWithId;
             if (rich != null
                 && string.Equals(rich.label, path.anchorRole, StringComparison.Ordinal)
                 && string.Equals(rich.fileId, path.anchorRoleId, StringComparison.Ordinal))
@@ -662,11 +662,11 @@ namespace WorkRoles.Core
             return new FileRoleReference(null, path.anchorRole);
         }
 
-        private static T UniqueById<T>(IEnumerable<T> items, string fileId, Func<T, string> idOf)
+        private static T? UniqueById<T>(IEnumerable<T>? items, string? fileId, Func<T, string?> idOf)
             where T : class
         {
             if (items == null || string.IsNullOrEmpty(fileId)) return null;
-            T match = null;
+            T? match = null;
             foreach (T item in items)
             {
                 if (item == null) continue;
@@ -677,13 +677,13 @@ namespace WorkRoles.Core
             return match;
         }
 
-        private static string EmptyToNull(string value) =>
+        private static string? EmptyToNull(string? value) =>
             string.IsNullOrEmpty(value) ? null : value;
 
-        private static FileRole ParseRole(
+        private static FileRole? ParseRole(
             XElement el, bool hasExplicitSkillGates)
         {
-            string label = el.Attribute("name")?.Value?.Trim();
+            string? label = el.Attribute("name")?.Value?.Trim();
             if (string.IsNullOrEmpty(label)) return null;
             var role = new FileRole
             {
@@ -704,7 +704,7 @@ namespace WorkRoles.Core
                 foreach (var loc in options.Element("Locations")?.Elements()
                          ?? Enumerable.Empty<XElement>())
                 {
-                    string name = loc.Attribute("name")?.Value;
+                    string? name = loc.Attribute("name")?.Value;
                     if (loc.Name == "Settlements") role.locations.Add(LocationRules.Settlements);
                     else if (loc.Name == "Caravans") role.locations.Add(LocationRules.Caravans);
                     else if (loc.Name == "Nowhere") role.locations.Add(LocationRules.Nowhere);
@@ -713,7 +713,7 @@ namespace WorkRoles.Core
                     else if (loc.Name == "Ship" && !string.IsNullOrEmpty(name))
                         role.locations.Add(LocationRules.ShipPrefix + name);
                 }
-                string bits = options.Element("ActiveHours")?.Value.Trim();
+                string? bits = options.Element("ActiveHours")?.Value.Trim();
                 if (bits != null && bits.Length == 24)
                     role.activeHours = BitsToHours(bits);
                 // <Training> (v2/v3) is retired: skipped, never read.
@@ -748,7 +748,7 @@ namespace WorkRoles.Core
                     foreach (var entryEl in tuningEl.Element("Training")?.Elements("Role")
                              ?? Enumerable.Empty<XElement>())
                     {
-                        string entryLabel = entryEl.Value?.Trim();
+                        string? entryLabel = entryEl.Value?.Trim();
                         int.TryParse(entryEl.Attribute("min")?.Value, out int min);
                         int.TryParse(entryEl.Attribute("max")?.Value, out int max);
                         // Bands the geometry rules reject are skipped, not fatal.
@@ -770,7 +770,7 @@ namespace WorkRoles.Core
                 foreach (var memberEl in el.Element("Members")?.Elements("Role")
                          ?? Enumerable.Empty<XElement>())
                 {
-                    string memberLabel = memberEl.Value?.Trim();
+                    string? memberLabel = memberEl.Value?.Trim();
                     if (string.IsNullOrEmpty(memberLabel)) continue;
                     role.members.Add(new FileRoleReference(
                         EmptyToNull(memberEl.Attribute("roleId")?.Value?.Trim()),
@@ -788,10 +788,10 @@ namespace WorkRoles.Core
             return role;
         }
 
-        private static List<string> SplitSkills(string joined) =>
+        private static List<string> SplitSkills(string? joined) =>
             string.IsNullOrWhiteSpace(joined)
                 ? new List<string>()
-                : joined.Split(',').Select(s => s.Trim())
+                : joined!.Split(',').Select(s => s.Trim())
                     .Where(s => s.Length > 0).ToList();
 
         /// 24-char bitstring, hour 0 leftmost; '1' = active during that hour.

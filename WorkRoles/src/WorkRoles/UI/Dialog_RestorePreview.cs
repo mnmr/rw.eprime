@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -33,22 +34,22 @@ namespace WorkRoles.UI
 
         private class Row
         {
-            public Seeding.RestoreItem item;
+            public Seeding.RestoreItem item = null!; // set at construction site
             public bool included = true;
             public RestoreItemKey Key => new RestoreItemKey(item);
         }
 
         private readonly struct RestoreItemKey : IEquatable<RestoreItemKey>
         {
-            private readonly string templateDef;
-            private readonly string workType;
+            private readonly string? templateDef;
+            private readonly string? workType;
             private readonly int backfillRoleId;
             private readonly int groupRoleId;
             private readonly int colorRoleId;
             private readonly int holderRoleId;
             private readonly int entriesRoleId;
             private readonly int paletteSnapRoleId;
-            private readonly string pathDef;
+            private readonly string? pathDef;
             private readonly bool recommendationOrder;
 
             internal RestoreItemKey(Seeding.RestoreItem item)
@@ -111,9 +112,9 @@ namespace WorkRoles.UI
         // Refresh: immediate at the next DoWindowContents call. Equality: equal
         // rows preserve list identity; stable item keys preserve user selections
         // within the same store. Teardown: PostClose clears rows and owner refs.
-        private List<Row> rows;
+        private List<Row> rows = null!; // published by PublishRows in the ctor
         private bool anyUndo;
-        private RoleStore rowsOwner;
+        private RoleStore? rowsOwner;
         private int rowsUiRevision = -1;
         private int rowsDefinitionRevision = -1;
         private int rowsLanguageRevision = -1;
@@ -133,7 +134,7 @@ namespace WorkRoles.UI
 
         private void EnsureRowsCurrent()
         {
-            RoleStore owner = RoleStore.Current;
+            RoleStore? owner = RoleStore.Current;
             int uiRevision = UiVersion.Current;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int languageRevision = LanguageChangeCoordinator.Revision;
@@ -154,7 +155,7 @@ namespace WorkRoles.UI
         private void PublishRows(List<Seeding.RestoreItem> items,
             bool preserveSelections)
         {
-            Dictionary<RestoreItemKey, bool> selections = null;
+            Dictionary<RestoreItemKey, bool>? selections = null;
             if (preserveSelections && rows != null)
             {
                 selections = new Dictionary<RestoreItemKey, bool>(rows.Count);
@@ -195,7 +196,7 @@ namespace WorkRoles.UI
             return true;
         }
 
-        private string titleText;
+        private string? titleText;
 
         // Owner: this Restore Defaults preview dialog instance.
         // Key: dialog identity, exact available width, and language revision.
@@ -206,7 +207,7 @@ namespace WorkRoles.UI
         // Refresh: immediately when the language revision or width changes.
         // Equality: an equal rebuild preserves snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
-        private RestoreWarningSnapshot warningSnapshot;
+        private RestoreWarningSnapshot? warningSnapshot;
         private float warningWidth = -1f;
         private int warningLanguageRevision = -1;
 
@@ -303,10 +304,10 @@ namespace WorkRoles.UI
                 var selected = rows.Where(r => r.included).Select(r => r.item).ToList();
                 RoleCommands.RestoreSelected(new RestoreSelection
                 {
-                    templateDefs = selected.Where(i => i.templateDef != null).Select(i => i.templateDef).ToList(),
-                    workTypes = selected.Where(i => i.workType != null).Select(i => i.workType).ToList(),
+                    templateDefs = selected.Select(i => i.templateDef).OfType<string>().ToList(),
+                    workTypes = selected.Select(i => i.workType).OfType<string>().ToList(),
                     backfillRoleIds = selected.Where(i => i.backfillRoleId != -1).Select(i => i.backfillRoleId).ToList(),
-                    pathDefs = selected.Where(i => i.pathDef != null).Select(i => i.pathDef).ToList(),
+                    pathDefs = selected.Select(i => i.pathDef).OfType<string>().ToList(),
                     groupRoleIds = selected.Where(i => i.groupRoleId != -1).Select(i => i.groupRoleId).ToList(),
                     colorRoleIds = selected.Where(i => i.colorRoleId != -1).Select(i => i.colorRoleId).ToList(),
                     holderRoleIds = selected.Where(i => i.holderRoleId != -1).Select(i => i.holderRoleId).ToList(),
@@ -321,7 +322,7 @@ namespace WorkRoles.UI
         public override void PostClose()
         {
             rows?.Clear();
-            rows = null;
+            rows = null!; // released at teardown; the dialog never draws after close
             rowsOwner = null;
             rowsUiRevision = -1;
             rowsDefinitionRevision = -1;

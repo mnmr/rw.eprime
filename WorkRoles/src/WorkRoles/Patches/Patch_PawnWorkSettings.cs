@@ -18,8 +18,8 @@ namespace WorkRoles.Patches
                 ? 0 : PriorityGridFacts.Revisions.RevisionOf(Pawn);
         }
 
-        internal Pawn Pawn { get; }
-        internal WorkTypeDef WorkType { get; }
+        internal Pawn? Pawn { get; }
+        internal WorkTypeDef? WorkType { get; }
         internal int Priority { get; }
         internal int Revision { get; }
 
@@ -105,7 +105,7 @@ namespace WorkRoles.Patches
             // means another mod — same single-source policy as SetPriority
             // (null work type = "all work" in the watcher dialog).
             if (!IsManaged(___pawn)) return true;
-            PrioritySetWatcher.OnBlockedSetPriority(___pawn, null, 0);
+            PrioritySetWatcher.OnBlockedSetPriority(___pawn, null!, 0); // null = "all work" in the watcher dialog
             return false;
         }
     }

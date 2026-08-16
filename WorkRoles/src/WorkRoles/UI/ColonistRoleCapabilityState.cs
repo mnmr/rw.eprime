@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using Verse;
 using WorkRoles.Core;
@@ -21,14 +22,14 @@ namespace WorkRoles.UI
 
         internal RoleCapabilityPresentation(
             RoleAssignmentWarningSeverity warningSeverity,
-            string tooltip)
+            string? tooltip)
         {
             WarningSeverity = warningSeverity;
             Tooltip = tooltip;
         }
 
         internal RoleAssignmentWarningSeverity WarningSeverity { get; }
-        internal string Tooltip { get; }
+        internal string? Tooltip { get; }
     }
 
     /// <summary>
@@ -79,13 +80,13 @@ namespace WorkRoles.UI
             bool hasRangedWeapon = externalSnapshot.HasRangedWeapon;
             int totalJobs = 0;
             var blocked = new List<(string label, string reason)>();
-            SortedSet<string> awfulWorkTypes = null;
-            SortedSet<string> awfulSkills = null;
-            SortedSet<string> awfulDescriptions = null;
-            SortedSet<string> missingRequiredSkills = null;
-            string incapableReason = null;
-            string noRangedWeaponReason = null;
-            SortedDictionary<int, string> tooYoungReasons = null;
+            SortedSet<string>? awfulWorkTypes = null;
+            SortedSet<string>? awfulSkills = null;
+            SortedSet<string>? awfulDescriptions = null;
+            SortedSet<string>? missingRequiredSkills = null;
+            string? incapableReason = null;
+            string? noRangedWeaponReason = null;
+            SortedDictionary<int, string>? tooYoungReasons = null;
             bool ageLimitsApply =
                 externalSnapshot.RecommendationFacts.AgeLimitsApply;
             bool tooYoungForRole = ageLimitsApply && role.minAge > 0
@@ -96,7 +97,7 @@ namespace WorkRoles.UI
                 && externalSnapshot.RecommendationFacts.BiologicalAgeTicks
                     >= (role.maxAge + 1L) * BiologicalAge.TicksPerYear;
             bool hasWorkTypeSignals = signalSnapshot.WorkTypeBuckets.All.Count > 0;
-            string primarySkill = RecsAdapter.PrimarySkillOf(role);
+            string? primarySkill = RecsAdapter.PrimarySkillOf(role);
             bool awfulPrimarySkill = false;
             // Only participating skills matter for warnings — a sliver like
             // Finish Off's melee never marks.
@@ -123,7 +124,7 @@ namespace WorkRoles.UI
                 if (def == null) continue;
                 totalJobs++;
 
-                WorkTypeBucketSignal workTypeSignal = !hasWorkTypeSignals
+                WorkTypeBucketSignal? workTypeSignal = !hasWorkTypeSignals
                     || def.workType == null
                     ? null
                     : signalSnapshot.WorkTypeBuckets.ForWorkType(def.workType.defName);
@@ -131,13 +132,13 @@ namespace WorkRoles.UI
                 {
                     (awfulWorkTypes ??= new SortedSet<string>(
                         System.StringComparer.Ordinal))
-                        .Add(def.workType.labelShort.CapitalizeFirst());
+                        .Add(def.workType!.labelShort.CapitalizeFirst()); // signal exists only for a non-null workType
                     foreach (SignalContribution contribution in workTypeSignal.Contributions)
                         if (contribution.IsClassified
-                            && !contribution.Signal.Ui.Description.NullOrEmpty())
+                            && contribution.Signal.Ui.Description is { Length: > 0 } description)
                             (awfulDescriptions ??= new SortedSet<string>(
                                 System.StringComparer.Ordinal))
-                                .Add(contribution.Signal.Ui.Description);
+                                .Add(description);
                 }
 
                 if (def.workType?.relevantSkills != null)

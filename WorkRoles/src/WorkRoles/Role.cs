@@ -11,16 +11,16 @@ namespace WorkRoles
         public const int AllHours = 0xFFFFFF;
 
         public int id;
-        public string label;
+        public string label = null!; // assigned at creation or load
         public bool enabled = true;
         public bool hasCustomColor;
         public Color color = Color.white;
-        public string iconPath;
+        public string? iconPath;
         /// defName of the RoleDef this role was seeded from; null for player-created roles.
-        public string templateDefName;
+        public string? templateDefName;
         /// Mod version and def fingerprint (RoleDef.StableHash) captured when the
         /// role was created from its template — lets loads detect def drift.
-        public string templateVersion;
+        public string? templateVersion;
         public uint templateHash;
         public bool autoAssign;
         /// Blocker role: its jobs are never done and are vetoed in all later roles.
@@ -75,28 +75,28 @@ namespace WorkRoles
         /// JobOrderCompiler.WithMovedSnapshotGivers. Invisible to the editor.
         public Dictionary<string, List<string>> workTypeSnapshots = new Dictionary<string, List<string>>();
 
-        private List<string> scribeEntries;
-        private Dictionary<string, string> scribeSnapshots;
-        private string scribeLocations;
-        private string scribeRequiredSkills;
+        private List<string>? scribeEntries;
+        private Dictionary<string, string>? scribeSnapshots;
+        private string? scribeLocations;
+        private string? scribeRequiredSkills;
         // Retired role-skill classification, consumed and dropped on load.
-        private string scribeOptionalSkills;
-        private HashSet<string> coverageCache;
+        private string? scribeOptionalSkills;
+        private HashSet<string>? coverageCache;
         // Cached XP-frequency primary skill (null is a valid value, hence the
         // flag); derived from coverage, so it invalidates with it.
-        private string primarySkillCache;
+        private string? primarySkillCache;
         private bool primarySkillCached;
         // Cached age (years) at which every covered work type is unlocked;
         // derived from coverage, so it invalidates with it. -1 = not computed.
         private int fullyUnlocksAtAgeCache = -1;
 
-        internal bool TryGetPrimarySkillCache(out string skill)
+        internal bool TryGetPrimarySkillCache(out string? skill)
         {
             skill = primarySkillCache;
             return primarySkillCached;
         }
 
-        internal void SetPrimarySkillCache(string skill)
+        internal void SetPrimarySkillCache(string? skill)
         {
             primarySkillCache = skill;
             primarySkillCached = true;
@@ -132,7 +132,7 @@ namespace WorkRoles
             if (store == null) return union; // no world: nothing to cache
             for (int i = 0; i < memberRoleIds.Count; i++)
             {
-                Role member = store.RoleById(memberRoleIds[i]);
+                Role? member = store.RoleById(memberRoleIds[i]);
                 if (member == null || member.composite) continue;
                 if (member.blocker && !blocker) continue;
                 union.UnionWith(member.Coverage());
@@ -170,7 +170,7 @@ namespace WorkRoles
         public void ExposeData()
         {
             Scribe_Values.Look(ref id, "id");
-            Scribe_Values.Look(ref label, "label");
+            Scribe_Values.Look(ref label!, "label");
             Scribe_Values.Look(ref enabled, "enabled", true);
             Scribe_Values.Look(ref hasCustomColor, "hasCustomColor");
             Scribe_Values.Look(ref color, "color", Color.white);
@@ -217,7 +217,7 @@ namespace WorkRoles
             {
                 requiredSkills = !skillGatesSeeded
                     || scribeRequiredSkills.NullOrEmpty()
-                    ? new List<string>() : scribeRequiredSkills.Split(',').ToList();
+                    ? new List<string>() : scribeRequiredSkills!.Split(',').ToList();
             }
             Scribe_Values.Look(ref groupId, "groupId", RoleGroup.DefaultId);
             Scribe_Values.Look(ref activeHours, "activeHours", AllHours);
@@ -233,7 +233,7 @@ namespace WorkRoles
             {
                 locationTokens = scribeLocations.NullOrEmpty()
                     ? new List<string>()
-                    : scribeLocations.Split(',').ToList();
+                    : scribeLocations!.Split(',').ToList();
                 if (locationTokens.Count == 0 && legacyLocation != RoleLocation.Any)
                     locationTokens.Add(legacyLocation == RoleLocation.HomeOnly
                         ? LocationRules.Settlements : LocationRules.Caravans);

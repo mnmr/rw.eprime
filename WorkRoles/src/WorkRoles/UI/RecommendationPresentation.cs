@@ -11,12 +11,12 @@ namespace WorkRoles.UI
     internal static class RecommendationPresentation
     {
         internal static StructuredTip CreateTooltip(
-            RoleStore store,
+            RoleStore? store,
             Pawn pawn,
             Role role,
             Dialog_ChangesPreview.ChipState state,
-            RoleRecommendationExplanation explanation,
-            SkillBucketSnapshot skillBuckets)
+            RoleRecommendationExplanation? explanation,
+            SkillBucketSnapshot? skillBuckets)
         {
             var model = new TipModel { Title = role.label };
             if (explanation == null)
@@ -36,7 +36,7 @@ namespace WorkRoles.UI
                 foreach (RoleRecommendationExplanation member in
                          explanation.BundledMembers)
                 {
-                    Role memberRole = store?.RoleById(member.RoleId);
+                    Role? memberRole = store?.RoleById(member.RoleId);
                     if (memberRole == null) continue;
                     PopulateFacts(
                         model.AddSection(memberRole.label),
@@ -52,10 +52,10 @@ namespace WorkRoles.UI
 
         private static void PopulateFacts(
             TipSection facts,
-            RoleStore store,
+            RoleStore? store,
             Role role,
             RoleRecommendationExplanation explanation,
-            SkillBucketSnapshot skillBuckets)
+            SkillBucketSnapshot? skillBuckets)
         {
             // Full-coverage demand has no slot count and no selection story:
             // everyone capable is assigned.
@@ -83,12 +83,13 @@ namespace WorkRoles.UI
         }
 
         private static string SignalVerdict(
-            SkillBucketSnapshot skillBuckets,
+            SkillBucketSnapshot? skillBuckets,
             RoleRecommendationExplanation explanation)
         {
             string verdict = SkillSignalPresentation.BucketLabel(
                 explanation.SignalBucket);
-            SkillBucketSignal bucket = (skillBuckets ?? SkillBucketSnapshot.Empty)
+            if (explanation.SignalSkillDefName == null) return verdict;
+            SkillBucketSignal? bucket = (skillBuckets ?? SkillBucketSnapshot.Empty)
                 .ForSkill(explanation.SignalSkillDefName);
             if (bucket == null) return verdict;
 
@@ -113,11 +114,11 @@ namespace WorkRoles.UI
         }
 
         private static string RecommendationDecisionText(
-            RoleStore store,
+            RoleStore? store,
             Role role,
             RoleRecommendationExplanation explanation)
         {
-            string selection = SelectionDecisionText(
+            string? selection = SelectionDecisionText(
                 store, role, explanation);
             if (selection != null) return selection;
 
@@ -144,7 +145,7 @@ namespace WorkRoles.UI
             {
                 case PickRejectReason.ControlledByTarget:
                 {
-                    Role controller = store?.RoleById(explanation.RelatedRoleId);
+                    Role? controller = store?.RoleById(explanation.RelatedRoleId);
                     return controller == null
                         ? "WR_RecDecisionNever".Translate().ToString()
                         : "WR_RecDecisionControlledByTraining".Translate(
@@ -164,7 +165,7 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionOutOfBand".Translate();
                 case PickRejectReason.Covered:
                 {
-                    Role covering = store?.RoleById(explanation.RelatedRoleId);
+                    Role? covering = store?.RoleById(explanation.RelatedRoleId);
                     return covering == null
                         ? "WR_RecDecisionCoveredUnknown".Translate().ToString()
                         : "WR_RecDecisionCovered".Translate(
@@ -194,8 +195,8 @@ namespace WorkRoles.UI
             return result;
         }
 
-        private static string SelectionDecisionText(
-            RoleStore store,
+        private static string? SelectionDecisionText(
+            RoleStore? store,
             Role role,
             RoleRecommendationExplanation explanation)
         {
@@ -210,7 +211,7 @@ namespace WorkRoles.UI
                         : null;
                 case RecommendationSelectionStage.TrainingWaiver:
                 {
-                    Role target = store?.RoleById(explanation.RelatedRoleId);
+                    Role? target = store?.RoleById(explanation.RelatedRoleId);
                     if (!HasSelectionSlot(explanation)) return null;
                     if (target == null)
                         return "WR_RecDecisionTrainingSlotUnknown".Translate(

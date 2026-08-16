@@ -9,10 +9,10 @@ namespace WorkRoles.UI
         private sealed class RenameChromeSnapshot
         {
             internal RenameChromeSnapshot(
-                string title,
-                string copySource,
+                string? title,
+                string? copySource,
                 string nameTaken,
-                string cancel,
+                string? cancel,
                 string ok)
             {
                 Title = title;
@@ -22,10 +22,10 @@ namespace WorkRoles.UI
                 Ok = ok;
             }
 
-            internal string Title { get; }
-            internal string CopySource { get; }
+            internal string? Title { get; }
+            internal string? CopySource { get; }
             internal string NameTaken { get; }
-            internal string Cancel { get; }
+            internal string? Cancel { get; }
             internal string Ok { get; }
 
             internal bool ContentEquals(RenameChromeSnapshot other) =>
@@ -38,15 +38,15 @@ namespace WorkRoles.UI
         }
 
         private readonly Action<string> onConfirm;
-        private readonly string fixedTitle;
-        private readonly string titleKey;
-        private readonly string sourceLabel;      // copy mode: the original role's name
+        private readonly string? fixedTitle;
+        private readonly string? titleKey;
+        private readonly string? sourceLabel;     // copy mode: the original role's name
         private readonly bool requireUniqueName;  // copy mode: OK only for new names
         private readonly int exceptRoleId = -1;
         private readonly int exceptGroupId = -1;
         private readonly bool showCancel;         // group mode: explicit Cancel beside OK
         private string name;
-        private string validatedName;
+        private string? validatedName;
         private string trimmedName = "";
         private int validationRevision = int.MinValue;
         private bool nameTaken;
@@ -62,7 +62,8 @@ namespace WorkRoles.UI
         // Refresh: immediately on the first draw after a language revision.
         // Equality: an equal localized rebuild preserves snapshot identity.
         // Teardown: closing the dialog releases the instance-owned snapshot.
-        private RenameChromeSnapshot chromeSnapshot;
+        // Assigned by EnsureChrome before the first draw uses it.
+        private RenameChromeSnapshot chromeSnapshot = null!;
         private int chromeLanguageRevision = -1;
 
         public override Vector2 InitialSize => new Vector2(360f, sourceLabel == null ? 160f : 186f);
@@ -111,7 +112,7 @@ namespace WorkRoles.UI
         /// New/copy constructor: the input starts empty and only a name no existing
         /// role carries can be accepted; sourceLabel (copy mode) shows the original
         /// role's name above the input, or is null (new mode).
-        public Dialog_RenameRole(string title, string sourceLabel, Action<string> onConfirm)
+        public Dialog_RenameRole(string title, string? sourceLabel, Action<string> onConfirm)
         {
             this.onConfirm = onConfirm;
             fixedTitle = title;
@@ -144,7 +145,7 @@ namespace WorkRoles.UI
                 && chromeLanguageRevision == languageRevision)
                 return;
 
-            string resolvedTitle = titleKey == null
+            string? resolvedTitle = titleKey == null
                 ? fixedTitle
                 : titleKey.Translate().ToString();
             var rebuilt = new RenameChromeSnapshot(
@@ -165,10 +166,10 @@ namespace WorkRoles.UI
             var store = RoleStore.Current;
             if (store == null) return false;
             if (exceptGroupId >= 0)
-                return !WorkRoles.Core.GroupNameRules.IsAvailable(
+                return !RimShared.Common.GroupNameRules.IsAvailable(
                     candidate, store.groups, group => group.label,
                     store.GroupById(exceptGroupId));
-            return !WorkRoles.Core.CatalogNameRules.IsAvailable(
+            return !RimShared.Common.CatalogNameRules.IsAvailable(
                 candidate, store.roles, role => role.label,
                 exceptRoleId < 0 ? null : store.RoleById(exceptRoleId));
         }

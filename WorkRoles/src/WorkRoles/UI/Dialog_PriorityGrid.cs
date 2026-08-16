@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using RimShared.Common;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -22,16 +23,17 @@ namespace WorkRoles.UI
         // Pawn names are fixed for the dialog lifetime. Definition and translated
         // column geometry is replaceable at its authoritative revision boundary.
         private readonly string[] pawnNames;
-        private string[] columnLabels;
-        private Vector2[] columnLabelSizes;
-        private InclinedLabelGeometry[] columnLabelGeometries;
+        // Assigned by EnsureColumnCache, called from the constructor.
+        private string[] columnLabels = null!;
+        private Vector2[] columnLabelSizes = null!;
+        private InclinedLabelGeometry[] columnLabelGeometries = null!;
         private Vector2 phantomLabelSize;
         private InclinedLabelGeometry phantomLabelGeometry;
         private float headerRunOut;
-        private string[] columnTips;
-        private string titleLabel;
-        private string rawModeLabel;
-        private string vanillaModeLabel;
+        private string[] columnTips = null!;
+        private string titleLabel = null!;
+        private string rawModeLabel = null!;
+        private string vanillaModeLabel = null!;
         private float modeToggleW;
         private Vector2 scroll;
         /// Local view state only — never written back to the synced setting.
@@ -47,8 +49,8 @@ namespace WorkRoles.UI
         // Refresh: immediate on an event-driven key change. Equality: equal
         // rebuilt contents retain identity within the same RoleStore owner.
         // Teardown: PostClose drops snapshot/owner references and revision stamps.
-        private PriorityGridSnapshot gridSnapshot;
-        private RoleStore gridStore;
+        private PriorityGridSnapshot? gridSnapshot;
+        private RoleStore? gridStore;
         private int gridUiRevision = int.MinValue;
         private int gridDefinitionRevision = int.MinValue;
         private int gridFactsCurrent = int.MinValue;
@@ -69,8 +71,8 @@ namespace WorkRoles.UI
         {
             internal PriorityGridCellSnapshot(Texture2D baseTexture,
                 Texture2D blendTexture, float blendAlpha,
-                Texture2D passionTexture, int rawPriority,
-                int vanillaPriority, string rawLabel, string vanillaLabel,
+                Texture2D? passionTexture, int rawPriority,
+                int vanillaPriority, string? rawLabel, string? vanillaLabel,
                 Color priorityColor)
             {
                 Available = true;
@@ -89,17 +91,17 @@ namespace WorkRoles.UI
             internal Texture2D BaseTexture { get; }
             internal Texture2D BlendTexture { get; }
             internal float BlendAlpha { get; }
-            internal Texture2D PassionTexture { get; }
+            internal Texture2D? PassionTexture { get; }
             internal int RawPriority { get; }
             internal int VanillaPriority { get; }
-            internal string RawLabel { get; }
-            internal string VanillaLabel { get; }
+            internal string? RawLabel { get; }
+            internal string? VanillaLabel { get; }
             internal Color PriorityColor { get; }
 
             internal int Priority(bool vanilla) => vanilla
                 ? VanillaPriority : RawPriority;
 
-            internal string Label(bool vanilla) => vanilla
+            internal string? Label(bool vanilla) => vanilla
                 ? VanillaLabel : RawLabel;
 
             internal bool ContentEquals(PriorityGridCellSnapshot other) =>
@@ -236,7 +238,7 @@ namespace WorkRoles.UI
             }
             Text.Font = GameFont.Small;
 
-            bool numeric = gridSnapshot.Numeric;
+            bool numeric = gridSnapshot!.Numeric; // published by EnsureGridSnapshot
 
             if (numeric)
             {
@@ -364,7 +366,7 @@ namespace WorkRoles.UI
 
         private void EnsureGridSnapshot()
         {
-            RoleStore store = RoleStore.Current;
+            RoleStore? store = RoleStore.Current;
             int uiRevision = UiVersion.Current;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int factsCurrent = PriorityGridFacts.Revisions.Current;
@@ -423,7 +425,7 @@ namespace WorkRoles.UI
         }
 
         private static PriorityGridCellSnapshot BuildCell(Pawn pawn,
-            WorkTypeDef workType, RoleStore store)
+            WorkTypeDef workType, RoleStore? store)
         {
             if (pawn.WorkTypeIsDisabled(workType)) return default;
 
@@ -453,7 +455,7 @@ namespace WorkRoles.UI
 
             Passion passion = pawn.skills?.MaxPassionOfRelevantSkillsFor(workType)
                 ?? Passion.None;
-            Texture2D passionTexture = passion == Passion.Major
+            Texture2D? passionTexture = passion == Passion.Major
                 ? WidgetsWork.PassionWorkboxMajorIcon
                 : passion == Passion.Minor
                     ? WidgetsWork.PassionWorkboxMinorIcon
@@ -570,7 +572,7 @@ namespace WorkRoles.UI
                 for (int c = visibleBodyColumns.Start; c < visibleBodyColumns.EndExclusive; c++)
                 {
                     PriorityGridCellSnapshot cell =
-                        gridSnapshot.CellAt(sourceRow, c);
+                        gridSnapshot!.CellAt(sourceRow, c);
                     if (!cell.Available) continue; // vanilla leaves these blank
                     // Floored centering: (ColW - 25) / 2 is 0.5, and a half-pixel
                     // x smears the box textures at every UI scale.
@@ -578,7 +580,7 @@ namespace WorkRoles.UI
                     DrawWorkBoxBackground(box, cell);
                     int priority = cell.Priority(showVanilla);
                     if (priority <= 0) continue;
-                    if (!gridSnapshot.Numeric)
+                    if (!gridSnapshot!.Numeric)
                     {
                         GUI.DrawTexture(box, WidgetsWork.WorkBoxCheckTex);
                     }
@@ -596,7 +598,7 @@ namespace WorkRoles.UI
 
         private void ToggleSort(int columnIndex)
         {
-            gridSnapshot.CopyPriorities(columnIndex, showVanilla, sortPriorities);
+            gridSnapshot!.CopyPriorities(columnIndex, showVanilla, sortPriorities);
             sortState.Toggle(columnIndex, sortPriorities);
         }
 
@@ -604,7 +606,7 @@ namespace WorkRoles.UI
         {
             if (sortState.SortedColumnIndex is int columnIndex)
             {
-                gridSnapshot.CopyPriorities(columnIndex, showVanilla, sortPriorities);
+                gridSnapshot!.CopyPriorities(columnIndex, showVanilla, sortPriorities);
                 sortState.Refresh(sortPriorities);
             }
         }

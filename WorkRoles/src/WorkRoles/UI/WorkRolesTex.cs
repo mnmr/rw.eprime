@@ -30,14 +30,16 @@ namespace WorkRoles.UI
         // ReleaseForTeardown destroys only these owned assets and clears them.
         // Runtime-built white disc (no art asset needed), tinted via GUI.color
         // at draw time — e.g. the training path color dot.
-        public static Texture2D Circle { get; private set; }
+        // null! pattern: EnsureRuntimeTextures repopulates these at startup and
+        // PreOpen after teardown, before any draw can observe them.
+        public static Texture2D Circle { get; private set; } = null!;
         // Runtime-built white 5-pointed star (point up), tinted via GUI.color
         // at draw time — the chip verdict marker stack.
-        public static Texture2D Star { get; private set; }
+        public static Texture2D Star { get; private set; } = null!;
         // 1px-wide gradient (section bg fading to transparent), stretched to
         // the panel width at draw time; bilinear sampling makes it smooth
         // where stacked 1px strips banded.
-        public static Texture2D ScrollEdgeFade { get; private set; }
+        public static Texture2D ScrollEdgeFade { get; private set; } = null!;
 
         static WorkRolesTex()
         {
@@ -71,9 +73,9 @@ namespace WorkRoles.UI
             if (Circle != null) UnityEngine.Object.Destroy(Circle);
             if (Star != null) UnityEngine.Object.Destroy(Star);
             if (ScrollEdgeFade != null) UnityEngine.Object.Destroy(ScrollEdgeFade);
-            Circle = null;
-            Star = null;
-            ScrollEdgeFade = null;
+            Circle = null!; // cleared at teardown; rebuilt by EnsureRuntimeTextures
+            Star = null!;
+            ScrollEdgeFade = null!;
         }
 
         /// 32px so a 16px draw stays anti-aliased at UI scales above 1.
