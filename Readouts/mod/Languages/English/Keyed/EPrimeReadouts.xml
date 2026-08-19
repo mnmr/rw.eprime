@@ -28,13 +28,15 @@
   <EPR.EnableTip>Show this group in the readout</EPR.EnableTip>
   <EPR.RestoreDefaults>Restore defaults</EPR.RestoreDefaults>
   <EPR.RestoreConfirm>Replace ALL groups and thresholds with the default set? This affects every player in multiplayer.</EPR.RestoreConfirm>
-  <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.</EPR.HelpGroups>
-  <EPR.HelpResources>These are in-game items you can display counters for. Use the copy icon to add resource sets (a single entry displaying the sum of all items in the set). Click to add to the selected group; shift-click to remove.</EPR.HelpResources>
-  <EPR.HelpEditor>Here you can edit what resources (or resource sets) a group displays. A group can have up to three display tiers. The small triangles indicate how many tiers are currently visible (click to cycle).</EPR.HelpEditor>
+  <EPR.Help>Help</EPR.Help>
+  <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.&#10;&#10;Click the checkmark to toggle visibility or [x] to delete the group.&#10;&#10;Add new groups using the name input and Add button.</EPR.HelpGroups>
+  <EPR.HelpResources>This panel shows in-game items you can display counters for.&#10;&#10;You can also build resource pools that summarizes counters for multiple items into a single item. Click the Resource Pools button to toggle what this panel displays.&#10;&#10;Click an item to append it to the currently selected group. Drag to manually position where the item should land. Right-click an already assigned item to remove it again.</EPR.HelpResources>
+  <EPR.HelpEditor>This panel shows you the tiers of the currently selected group.&#10;&#10;A group can have up to three display tiers. A new tier automatically becomes available when the previous tier is non-empty.&#10;&#10;Click or drag items from the panel on the right to add them to the selected group.&#10;&#10;Click a slot to set display options. Right-click a slot to clear the assignment. Drag items to re-arrange inside or between tiers.</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Hide zero-count results</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>When enabled, only counts eligible, non-rotten items in stockpile zones or storage buildings such as shelves. Loose map items elsewhere on the map are excluded. Items carried by pawns, held in inventories or containers, or hidden in unrevealed areas are never counted. Forbidden items are included unless “Ignore forbidden items” is also enabled.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
   <EPR.ExpandOnHover>Expand on hover</EPR.ExpandOnHover>
@@ -69,7 +71,7 @@
   <EPR.ShowPools>Resource Pools</EPR.ShowPools>
   <EPR.ShowResources>Resources</EPR.ShowResources>
   <EPR.Pools>Resource Pools</EPR.Pools>
-  <EPR.HelpPools>Reusable sets of resources displayed as a single entry with a combined count. Drag a pool into a group tier like any resource.</EPR.HelpPools>
+  <EPR.HelpPools>This panel allows you to configure resource pools. A resource pool is a selection of items that you want summarized as a single icon in the readout.&#10;&#10;You can only assign pools to tiers by dragging.&#10;&#10;Clicking a group selects it and shows the Configure Resource Pool panel, where you can tree-select which items to include in the pool.</EPR.HelpPools>
   <EPR.ConfigurePool>Configure Resource Pool</EPR.ConfigurePool>
   <EPR.HelpPoolEditor>Tick categories or individual resources to include them. Click a resource's name to use its icon for the pool.</EPR.HelpPoolEditor>
   <EPR.DeletePoolConfirm>Delete pool "{0}"? Slots using it will be removed from all groups.</EPR.DeletePoolConfirm>

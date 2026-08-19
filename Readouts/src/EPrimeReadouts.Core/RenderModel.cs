@@ -5,6 +5,16 @@ namespace EPrimeReadouts.Core
 {
     public enum CellKind { GroupBack, Triangle, Highlight, Icon, Counter, Label, EmptySlot }
 
+    public enum CellRenderPass { Visual, Text }
+
+    public static class RenderCellPass
+    {
+        public static CellRenderPass PassOf(CellKind kind)
+            => kind == CellKind.Counter || kind == CellKind.Label
+                ? CellRenderPass.Text
+                : CellRenderPass.Visual;
+    }
+
     public struct RenderCell
     {
         public CellKind Kind;
@@ -36,6 +46,22 @@ namespace EPrimeReadouts.Core
         public string Token;
         public IReadOnlyList<string> Members;
         public RectF Rect;
+        public int CellIndex;
+    }
+
+    /// One vertically ordered, non-overlapping panel section. Its ranges point
+    /// into the render model's flat buffers so viewport consumers can skip
+    /// complete offscreen groups without walking their cells or hit regions.
+    public struct RenderBand
+    {
+        public int GroupId;
+        public RectF Rect;
+        public int CellStart;
+        public int CellCount;
+        public int SlotStart;
+        public int SlotCount;
+        public int MarkerStart;
+        public int MarkerCount;
     }
 
     /// Complete draw plan for one panel width + state. The game assembly
@@ -45,6 +71,7 @@ namespace EPrimeReadouts.Core
         public List<RenderCell> Cells = new List<RenderCell>();
         public List<MarkerHit> MarkerHits = new List<MarkerHit>();
         public List<SlotHit> SlotHits = new List<SlotHit>();
+        public List<RenderBand> Bands = new List<RenderBand>();
         public float TotalHeight;
         public float TotalWidth;
     }

@@ -16,7 +16,7 @@ namespace EPrimeReadouts.UI
         private const float PanelH = 56f;
         private const float Gap = 10f;
         private const float LeftW = 220f;
-        private const float ToggleBtnW = 110f;
+        private const float ToggleBtnW = 130f;
         private const float ToggleBtnH = 24f;
         private const float PoolEditorMinH = 120f;
 
@@ -175,9 +175,8 @@ namespace EPrimeReadouts.UI
                 var editorRect = new Rect(rightX, content.y, halfW, content.height);
                 var rightHalf = new Rect(rightX + halfW + Gap, content.y, halfW, content.height);
 
-                // Toggle button FIRST: IMGUI gives the click to the earliest
-                // drawn control, and the views' section headers lay an
-                // invisible full-width fold toggle over this same strip.
+                // The Resources/Resource Pools toggle shares the main header
+                // strip and is drawn before the selected view.
                 string toggleLabel = showPools
                     ? UiText.Get("EPR.ShowResources")
                     : UiText.Get("EPR.ShowPools");
@@ -185,31 +184,44 @@ namespace EPrimeReadouts.UI
                     ToggleBtnW, ToggleBtnH);
                 if (Widgets.ButtonText(toggleRect, toggleLabel))
                     showPools = !showPools;
-                tree.HeaderReservedRight = ToggleBtnW + 8f;
-                poolList.HeaderReservedRight = ToggleBtnW + 8f;
-
                 // --- Right half: Resources or Pools depending on showPools toggle ---
                 Rect poolListRect, poolEditorRect;
+                bool drawPoolEditor = false;
                 if (showPools)
                 {
-                    // Dynamic height: desired height clamped so pool editor gets at least 120px
+                    // Keep the fixed pool-list chrome inside its assigned rect.
+                    // When the dialog is too short for that chrome plus the pool
+                    // editor, the list takes priority and the editor is hidden.
                     float desiredListH = poolList.DesiredHeight(rightHalf.width, this);
-                    float maxListH = selectedPoolId >= 0
-                        ? Mathf.Max(0f, rightHalf.height - PoolEditorMinH - Gap)
-                        : rightHalf.height;
-                    float poolListH = Mathf.Min(desiredListH, maxListH);
+                    float poolListH = Mathf.Min(desiredListH, rightHalf.height);
 
-                    poolListRect = new Rect(rightHalf.x, rightHalf.y, rightHalf.width, poolListH);
                     if (selectedPoolId >= 0)
                     {
-                        float poolEditorH = rightHalf.height - poolListH - Gap;
-                        poolEditorRect = new Rect(rightHalf.x, rightHalf.y + poolListH + Gap,
-                            rightHalf.width, poolEditorH);
+                        float maxListWithEditor = Mathf.Max(
+                            0f, rightHalf.height - PoolEditorMinH - Gap);
+                        if (maxListWithEditor >= poolList.MinimumHeight(rightHalf.width))
+                        {
+                            poolListH = Mathf.Min(desiredListH, maxListWithEditor);
+                            float poolEditorH = rightHalf.height - poolListH - Gap;
+                            poolEditorRect = new Rect(
+                                rightHalf.x,
+                                rightHalf.y + poolListH + Gap,
+                                rightHalf.width,
+                                poolEditorH);
+                            drawPoolEditor = true;
+                        }
+                        else
+                        {
+                            poolEditorRect = default(Rect);
+                        }
                     }
                     else
                     {
                         poolEditorRect = default(Rect);
                     }
+
+                    poolListRect = new Rect(
+                        rightHalf.x, rightHalf.y, rightHalf.width, poolListH);
                 }
                 else
                 {
@@ -224,7 +236,7 @@ namespace EPrimeReadouts.UI
                 if (showPools)
                 {
                     poolList.Draw(poolListRect, this);
-                    if (selectedPoolId >= 0)
+                    if (drawPoolEditor && selectedPoolId >= 0)
                         poolEditor.Draw(poolEditorRect, this);
                 }
                 else

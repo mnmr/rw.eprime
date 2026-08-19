@@ -16,10 +16,6 @@ namespace EPrimeReadouts.UI
         private const float IconW = 20f;
         private const int VirtualizeThreshold = 30;
 
-        /// Right-side width the dialog reserves in the header strip (toggle
-        /// button); the fold-clickable region shrinks to stay clear of it.
-        public float HeaderReservedRight;
-
         private Vector2 scroll;
         private int builtPoolsVersion = -1;
         private ReadoutStore? builtStore;
@@ -45,17 +41,18 @@ namespace EPrimeReadouts.UI
         private string? pendingSelectName;
 
         private readonly PoolListHeightCache heightCache = new PoolListHeightCache(
-            headerHeight: 28f,
-            captionGap: 4f,
+            headerHeight: 2f * EprStyle.SectionHeaderHeight
+                + EprStyle.HelpCollapsedBottomMargin,
+            captionGap: 2f * EprStyle.HelpPanelPadding
+                + EprStyle.HelpExpandedBottomMargin,
             rowHeight: RowH,
             maxVisibleRows: 8,
             footerHeight: FooterH);
         private static readonly Func<string, float, float> measureCaptionHeight = MeasureCaptionHeight;
 
-        /// Returns the desired height for this panel: header (including caption when
-        /// unfolded) + min(rowCount, 8) * RowH + FooterH. Recomputed only when the
-        /// fold state, available width, or pool version changes. Caption measurement
-        /// is cached separately, so pool edits only redo the cheap row calculation.
+        /// Returns the desired height for this panel: title header, Help foldout,
+        /// optional framed Help panel, up to eight rows, and the footer. Recomputed
+        /// only when the fold state, width, UI metrics, or pool data changes.
         public float DesiredHeight(float availableWidth, Dialog_ReadoutConfig owner)
         {
             UiVersion.ObserveCurrentMetrics();
@@ -76,9 +73,25 @@ namespace EPrimeReadouts.UI
                 measureCaptionHeight);
         }
 
+        /// Minimum height that keeps both headers, the complete Help foldout,
+        /// and the Add footer inside this panel. Rows can use a smaller
+        /// scrollable viewport, but these fixed elements cannot.
+        public float MinimumHeight(float availableWidth)
+        {
+            var settings = EPrimeReadoutsMod.Settings;
+            return EprStyle.SectionHeaderHeight
+                + EprStyle.HelpGroupHeight(
+                    availableWidth,
+                    UiText.Get("EPR.HelpPools"),
+                    settings.helpPoolsFolded)
+                + FooterH;
+        }
+
         private static float MeasureCaptionHeight(string caption, float availableWidth)
         {
-            return EprStyle.CaptionHeight(caption, availableWidth);
+            return EprStyle.CaptionHeight(
+                caption,
+                Mathf.Max(1f, availableWidth - 2f * EprStyle.HelpPanelPadding));
         }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -87,15 +100,25 @@ namespace EPrimeReadouts.UI
             var settings = EPrimeReadoutsMod.Settings;
             if (store == null) return;
 
-            // Section header with fold toggle
+            float headerUsed = EprStyle.SectionHeader(
+                rect.x, rect.y, rect.width, UiText.Get("EPR.Pools"));
+
             bool folded = settings.helpPoolsFolded;
-            float clickableW = HeaderReservedRight > 0f
-                ? rect.width - HeaderReservedRight : -1f;
-            float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                UiText.Get("EPR.Pools"), UiText.Get("EPR.HelpPools"), ref folded,
-                clickableW);
+            headerUsed += EprStyle.HelpGroup(
+                rect.x,
+                rect.y + headerUsed,
+                rect.width,
+                UiText.Get("EPR.Help"),
+                UiText.Get("EPR.HelpPools"),
+                ref folded);
             if (folded != settings.helpPoolsFolded)
+            {
                 EPrimeReadoutsMod.Persist(s => s.helpPoolsFolded = folded);
+                // Dialog_ReadoutConfig sized this panel before this input event
+                // toggled the foldout. Let the next IMGUI pass recalculate the
+                // outer rectangle before drawing any height-dependent body.
+                return;
+            }
 
             // Rebuild cached rows when pool data changes
             EnsureRows(store, owner);
@@ -130,35 +153,38 @@ namespace EPrimeReadouts.UI
 
             int rowCount = cachedRows?.Length ?? 0;
 
+            float bodyHeight = rect.height - headerUsed;
+            if (bodyHeight < FooterH) return;
+
             var listRect = new Rect(rect.x, rect.y + headerUsed,
-                rect.width, rect.height - headerUsed - FooterH);
+                rect.width, bodyHeight - FooterH);
             var viewRect = new Rect(0f, 0f, listRect.width - 16f, rowCount * RowH);
-            Widgets.BeginScrollView(listRect, ref scroll, viewRect);
-            try
+            if (listRect.height > 0f)
             {
-            if (rowCount > 0)
-            {
-                bool useVirtual = rowCount > VirtualizeThreshold;
-                int start = 0, end = rowCount;
-                if (useVirtual && listRect.height > 0f)
+                Widgets.BeginScrollView(listRect, ref scroll, viewRect);
+                try
                 {
-                    var vr = UniformViewportRange.Calculate(rowCount, RowH, 0f, scroll.y, listRect.height);
-                    start = vr.Start;
-                    end = vr.EndExclusive;
-                }
-                else if (listRect.height <= 0f)
+                if (rowCount > 0)
                 {
-                    end = 0;
+                    bool useVirtual = rowCount > VirtualizeThreshold;
+                    int start = 0, end = rowCount;
+                    if (useVirtual)
+                    {
+                        var vr = UniformViewportRange.Calculate(
+                            rowCount, RowH, 0f, scroll.y, listRect.height);
+                        start = vr.Start;
+                        end = vr.EndExclusive;
+                    }
+
+                    for (int i = start; i < end; i++)
+                        DrawPoolRow(cachedRows![i], i, viewRect.width, owner); // rowCount > 0 implies rows
                 }
 
-                for (int i = start; i < end; i++)
-                    DrawPoolRow(cachedRows![i], i, viewRect.width, owner); // rowCount > 0 implies rows
-            }
-
-            }
-            finally
-            {
-                Widgets.EndScrollView();
+                }
+                finally
+                {
+                    Widgets.EndScrollView();
+                }
             }
 
             // Footer: Add button → name dialog

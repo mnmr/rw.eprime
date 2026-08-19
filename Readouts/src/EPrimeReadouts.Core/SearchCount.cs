@@ -2,8 +2,8 @@ namespace EPrimeReadouts.Core
 {
     /// Per-def stack breakdown backing the search-result filters. Total spans
     /// every counted stack on the map (stored or scattered); the remaining
-    /// fields carve out the subsets the per-player search options narrow to.
-    /// Group counters keep the vanilla storage-only basis and never read this.
+    /// fields carve out the subsets the per-player count options narrow to.
+    /// Group counters, search results and tooltip totals share this basis.
     public readonly struct SearchCount
     {
         public readonly int Total;

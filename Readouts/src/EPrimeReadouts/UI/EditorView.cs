@@ -122,19 +122,25 @@ namespace EPrimeReadouts.UI
                 cachedNameUiVersion = UiVersion.Current;
             }
 
-            // Pencil sits right of the name text; SectionHeader clickable region shrinks to
-            // name width + small padding so the pencil does not trigger the fold toggle.
+            // Pencil sits right of the name text.
             float pencilX = group != null
                 ? Mathf.Min(rect.x + cachedNameWidth + 6f, rect.xMax - PencilW - 2f)
                 : rect.xMax; // no pencil
-            float clickableW = group != null ? (pencilX - rect.x) : rect.width;
 
-            float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                headerLabel, UiText.Get("EPR.HelpEditor"), ref folded, clickableW);
+            float headerUsed = EprStyle.SectionHeader(
+                rect.x, rect.y, rect.width, headerLabel);
+
+            headerUsed += EprStyle.HelpGroup(
+                rect.x,
+                rect.y + headerUsed,
+                rect.width,
+                UiText.Get("EPR.Help"),
+                UiText.Get("EPR.HelpEditor"),
+                ref folded);
             if (folded != settings.helpEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpEditorFolded = folded);
 
-            // Draw rename pencil (handled before the invisible button above so it gets priority)
+            // Draw the rename pencil in the fixed group header.
             if (group != null)
             {
                 var pencilRect = new Rect(pencilX, rect.y + 2f, PencilW, PencilH);
@@ -150,7 +156,7 @@ namespace EPrimeReadouts.UI
 
             if (group == null)
             {
-                GUI.color = new Color(1f, 1f, 1f, 0.5f);
+                GUI.color = EprStyle.SelectionTint;
                 Widgets.Label(new Rect(rect.x, rect.y + headerUsed, rect.width, 24f),
                     UiText.Get("EPR.SelectGroupHint"));
                 GUI.color = Color.white;
@@ -239,6 +245,7 @@ namespace EPrimeReadouts.UI
 
         private void Rebuild(ReadoutStore store, ReadoutGroup group, float width, Dialog_ReadoutConfig owner)
         {
+            ReleaseCachedBands();
             if (builtGroupsVersion != store.GroupsVersion)
                 cachedNameWidth = -1f;
             var basisSettings = EPrimeReadoutsMod.Settings;
@@ -315,7 +322,8 @@ namespace EPrimeReadouts.UI
                     if (Mouse.IsOver(cellRect))
                     {
                         Widgets.DrawHighlight(cellRect);
-                        TooltipHandler.TipRegion(cellRect, (TaggedString)dm.Tooltips[i]);
+                        WrTips.Text("EPR.EditorTip", token, dm.Tooltips[i])
+                            .Region(cellRect);
                     }
 
                     // Selection highlight
@@ -345,27 +353,15 @@ namespace EPrimeReadouts.UI
 
                     if (e.type == EventType.MouseDown && e.button == 0 && Mouse.IsOver(cellRect))
                     {
-                        if (e.shift)
-                        {
-                            // Shift+left: remove
-                            int groupId = group.Id;
-                            var tiers = TierOps.Clone(group.Tiers);
-                            if (TierOps.Remove(tiers, token))
-                                ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
-                            if (owner.selectedCanonical == canonical) owner.selectedCanonical = null;
-                            e.Use();
-                        }
-                        else
-                        {
-                            // Plain left: drag + click=select
-                            string capturedToken = token;
-                            string capturedCanonical = canonical;
-                            int fromTier = cell.Tier;
-                            int fromSlot = cell.Slot;
-                            EprDrag.OnPressToken(controlId, capturedToken, fromTier, fromSlot, () =>
-                                Select(capturedCanonical, owner));
-                            e.Use();
-                        }
+                        // Left: drag + click=select. Shift has no alternate
+                        // removal behavior; right-click remains the shortcut.
+                        string capturedToken = token;
+                        string capturedCanonical = canonical;
+                        int fromTier = cell.Tier;
+                        int fromSlot = cell.Slot;
+                        EprDrag.OnPressToken(controlId, capturedToken, fromTier, fromSlot, () =>
+                            Select(capturedCanonical, owner));
+                        e.Use();
                     }
                     else if (e.type == EventType.MouseDown && e.button == 1 && Mouse.IsOver(cellRect))
                     {
@@ -580,7 +576,7 @@ namespace EPrimeReadouts.UI
 
         internal void Reset()
         {
-            cachedBands = null;
+            ReleaseCachedBands();
             builtGroupsVersion = -1;
             builtThresholdsVersion = -1;
             builtGroupId = -1;
@@ -603,6 +599,12 @@ namespace EPrimeReadouts.UI
             optionsLanguageVersion = -1;
             thresholdRow = default;
             thresholdRowUiVersion = -1;
+        }
+
+        private void ReleaseCachedBands()
+        {
+            if (cachedBands == null) return;
+            cachedBands = null;
         }
     }
 }

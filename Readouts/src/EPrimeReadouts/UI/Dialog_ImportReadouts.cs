@@ -136,7 +136,7 @@ namespace EPrimeReadouts.UI
             // [From clipboard] top-right, mirroring export's Copy button.
             var clipRect = new Rect(inRect.xMax - ButtonW, inRect.y, ButtonW, FooterH);
             if (!clipUsable)
-                TooltipHandler.TipRegion(clipRect, UiText.Get("EPR.ClipboardEmpty"));
+                WrTips.Key("EPR.ClipboardEmpty").Region(clipRect);
             if (Widgets.ButtonText(clipRect, UiText.Get("EPR.FromClipboard"), active: clipUsable)
                 && clipUsable)
             {

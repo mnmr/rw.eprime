@@ -1,6 +1,7 @@
 using EPrimeReadouts.UI;
 using HarmonyLib;
 using RimWorld;
+using UnityEngine;
 
 namespace EPrimeReadouts.Patches
 {
@@ -12,7 +13,11 @@ namespace EPrimeReadouts.Patches
         public static bool Prefix()
         {
             if (EPrimeReadoutsMod.Settings.useVanillaReadout) return true;
-            ReadoutPanel.OnGUI();
+            // ResourceReadoutOnGUI is invoked for both Layout and Repaint.
+            // We replace vanilla on Layout too, but have no layout work of our
+            // own, so keep that call out of the panel pipeline entirely.
+            if (Event.current.type != EventType.Layout)
+                ReadoutPanel.OnGUI();
             return false;
         }
     }

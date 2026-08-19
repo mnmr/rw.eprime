@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
 using UnityEngine;
@@ -16,7 +17,14 @@ namespace EPrimeReadouts.UI
         public string?[] Tokens = null!;    // parallel; raw slot token for icon cells (tooltips)
         public string?[] Labels = null!;    // parallel; translated labels for label cells
         public string?[] Tooltips = null!;  // parallel; resolved icon hover labels
+        public Texture2D?[] IconTextures = null!;
+        public Color[] IconColors = null!;
+        public float[] IconCorrections = null!;
+        public float[] IconFittedScales = null!;
+        public GUIContent?[] CounterContents = null!;
         public RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData;
+        private int iconScaleRevision = -1;
+        internal int IconDataRevision => iconScaleRevision;
 
         public static DrawModel Resolve(
             RenderModel model,
@@ -27,6 +35,11 @@ namespace EPrimeReadouts.UI
             var tokens = new string?[model.Cells.Count];
             var labels = new string?[model.Cells.Count];
             var tooltips = new string?[model.Cells.Count];
+            var iconTextures = new Texture2D?[model.Cells.Count];
+            var iconColors = new Color[model.Cells.Count];
+            var iconCorrections = new float[model.Cells.Count];
+            var iconFittedScales = new float[model.Cells.Count];
+            var counterContents = new GUIContent?[model.Cells.Count];
             for (int i = 0; i < model.Cells.Count; i++)
             {
                 var cell = model.Cells[i];
@@ -49,6 +62,8 @@ namespace EPrimeReadouts.UI
                     else
                         tooltips[i] = defs[i] != null ? defs[i]!.LabelCap : cell.DefName;
                 }
+                else if (cell.Kind == CellKind.Counter)
+                    counterContents[i] = new GUIContent(cell.Text ?? "");
                 else if (cell.Kind == CellKind.Label)
                     // Count > 0 marks a parameterized label ("…and {0} more");
                     // formatted here so drawing never builds strings.
@@ -56,7 +71,7 @@ namespace EPrimeReadouts.UI
                         ? string.Format(UiText.Get(cell.Text!), cell.Count) // label cells carry a key
                         : UiText.Get(cell.Text!);
             }
-            return new DrawModel
+            var resolved = new DrawModel
             {
                 Model = model,
                 Defs = defs,
@@ -64,8 +79,61 @@ namespace EPrimeReadouts.UI
                 Tokens = tokens,
                 Labels = labels,
                 Tooltips = tooltips,
+                IconTextures = iconTextures,
+                IconColors = iconColors,
+                IconCorrections = iconCorrections,
+                IconFittedScales = iconFittedScales,
+                CounterContents = counterContents,
                 RenderData = renderData,
             };
+            resolved.RefreshIconCacheIfNeeded();
+            return resolved;
+        }
+
+        public void RefreshCounts(
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
+        {
+            RenderData = renderData;
+            for (int i = 0; i < Model.Cells.Count; i++)
+                if (Model.Cells[i].Kind == CellKind.Icon)
+                    Counts[i] = Model.Cells[i].Count;
+                else if (Model.Cells[i].Kind == CellKind.Counter)
+                {
+                    GUIContent? content = CounterContents[i];
+                    string text = Model.Cells[i].Text ?? "";
+                    if (content != null && content.text != text)
+                        content.text = text;
+                }
+        }
+
+        public void RefreshIconCacheIfNeeded()
+        {
+            int revision = IconScaleCache.Revision;
+            if (iconScaleRevision == revision) return;
+            for (int i = 0; i < Model.Cells.Count; i++)
+            {
+                ThingDef? def = Defs[i];
+                if (def == null) continue;
+                float correction = IconScaleCache.ScaleFor(def);
+                Texture2D? texture = def.uiIcon;
+                bool usable = texture != null && texture != BaseContent.BadTex;
+                IconRenderPlan plan = IconRenderPlan.Create(
+                    usable, correction, GenUI.IconDrawScale(def));
+                IconCorrections[i] = plan.CorrectionScale;
+                IconFittedScales[i] = plan.FittedScale;
+                IconTextures[i] = plan.UseDirectRendering ? texture : null;
+                IconColors[i] = def.uiIconColor;
+            }
+            iconScaleRevision = revision;
+        }
+
+        internal void RegisterHoveredTip(int cellIndex)
+        {
+            if ((uint)cellIndex >= (uint)Defs.Length) return;
+            ThingDef? def = Defs[cellIndex];
+            if (def == null) return;
+            IconTips.TipHovered(
+                def, Counts[cellIndex], Tokens[cellIndex], RenderData);
         }
     }
 
@@ -78,7 +146,6 @@ namespace EPrimeReadouts.UI
         private static readonly Color LowTint = new Color(1f, 0.92f, 0.55f);
         private static readonly Color CriticalTint = new Color(1f, 0.72f, 0.45f);
         private static readonly Color LabelDim = new Color(1f, 1f, 1f, 0.6f);
-        private static readonly Color Backing = new Color(0f, 0f, 0f, 0.35f);
         private static readonly Color NeutralStripe = new Color(1f, 1f, 1f, 0.35f);
         private static readonly Color[] StripePalette =
         {
@@ -93,76 +160,220 @@ namespace EPrimeReadouts.UI
         internal static Color StripeColorFor(int groupIndex) =>
             groupIndex < 0 ? NeutralStripe : StripePalette[groupIndex % StripePalette.Length];
 
+        internal static Color TriangleColorFor(TriangleState state) =>
+            state == TriangleState.Lit
+                ? Color.white
+                : state == TriangleState.HoverLit
+                    ? HoverTriangle : DimTriangle;
+
+        internal static Color BackingColorFor(PanelVisualOptions options) =>
+            new Color(0f, 0f, 0f, options.BandOpacity);
+
+        internal static Color TextColorFor(RenderCell cell) =>
+            cell.Kind == CellKind.Label
+                ? LabelDim
+                : cell.Band == Band.Low
+                    ? LowTint
+                    : cell.Band == Band.Critical
+                        ? CriticalTint : Color.white;
+
         public static void Draw(DrawModel draw)
+            => DrawDirect(draw, float.MinValue, float.MaxValue,
+                inputBlocked: false, PanelVisualOptions.Default);
+
+        public static void Draw(
+            DrawModel draw, float viewportTop, float viewportBottom)
+            => DrawDirect(draw, viewportTop, viewportBottom,
+                inputBlocked: false, PanelVisualOptions.Default);
+
+        public static void Draw(
+            DrawModel draw,
+            float viewportTop,
+            float viewportBottom,
+            bool inputBlocked)
+            => DrawDirect(draw, viewportTop, viewportBottom, inputBlocked,
+                PanelVisualOptions.Default);
+
+        public static void DrawDirect(
+            DrawModel draw,
+            float viewportTop,
+            float viewportBottom,
+            bool inputBlocked,
+            PanelVisualOptions options)
         {
+            PanelRenderPolicy policy = PanelRenderPolicy.For(
+                Event.current.type == EventType.Repaint, inputBlocked);
+            if (!policy.DrawCells) return;
+            draw.RefreshIconCacheIfNeeded();
             using (new GuiStateScope())
             {
-            var cells = draw.Model.Cells;
-            for (int i = 0; i < cells.Count; i++)
+                var bands = draw.Model.Bands;
+                PanelBandRange visible = bands.Count == 0
+                    ? default
+                    : PanelViewport.VisibleBands(bands, viewportTop, viewportBottom);
+                if (bands.Count == 0)
+                    DrawVisualCells(draw, 0, draw.Model.Cells.Count,
+                        viewportTop, viewportBottom, options);
+                else
+                {
+                    for (int bandIndex = visible.Start;
+                         bandIndex < visible.End;
+                         bandIndex++)
+                    {
+                        RenderBand band = bands[bandIndex];
+                        DrawVisualCells(draw, band.CellStart, band.CellCount,
+                            viewportTop, viewportBottom, options);
+                    }
+                }
+
+                Text.Font = GameFont.Tiny;
+                TextAnchor textAnchor = Text.Anchor;
+                if (bands.Count == 0)
+                    DrawTextCells(draw, 0, draw.Model.Cells.Count,
+                        viewportTop, viewportBottom, ref textAnchor);
+                else
+                {
+                    for (int bandIndex = visible.Start;
+                         bandIndex < visible.End;
+                         bandIndex++)
+                    {
+                        RenderBand band = bands[bandIndex];
+                        DrawTextCells(
+                            draw, band.CellStart, band.CellCount,
+                            viewportTop, viewportBottom, ref textAnchor);
+                    }
+                }
+            }
+        }
+
+        private static void DrawVisualCells(
+            DrawModel draw,
+            int start,
+            int count,
+            float viewportTop,
+            float viewportBottom,
+            PanelVisualOptions options)
+        {
+            List<RenderCell> cells = draw.Model.Cells;
+            int end = start + count;
+            for (int i = start; i < end; i++)
             {
-                var cell = cells[i];
-                var rect = new Rect(cell.Rect.X, cell.Rect.Y, cell.Rect.W, cell.Rect.H);
+                RenderCell cell = cells[i];
+                if (RenderCellPass.PassOf(cell.Kind) != CellRenderPass.Visual)
+                    continue;
+                if (!PanelViewport.IntersectsVertically(
+                    cell.Rect, viewportTop, viewportBottom)) continue;
+                var rect = new Rect(
+                    cell.Rect.X, cell.Rect.Y, cell.Rect.W, cell.Rect.H);
                 switch (cell.Kind)
                 {
                     case CellKind.GroupBack:
-                        Widgets.DrawBoxSolid(rect, Backing);
+                    {
                         Widgets.DrawBoxSolid(
-                            new Rect(rect.x, rect.y, LayoutMetrics.StripeW, rect.height),
+                            rect, BackingColorFor(options));
+                        Widgets.DrawBoxSolid(
+                            new Rect(rect.x, rect.y,
+                                LayoutMetrics.StripeW, rect.height),
                             StripeColorFor(cell.GroupIndex));
                         break;
+                    }
                     case CellKind.Triangle:
-                        GUI.color = cell.Triangle == TriangleState.Lit ? Color.white
-                            : cell.Triangle == TriangleState.HoverLit ? HoverTriangle
-                            : DimTriangle;
+                    {
+                        GUI.color = TriangleColorFor(cell.Triangle);
                         GUI.DrawTexture(rect, ReadoutTextures.Triangle);
                         GUI.color = Color.white;
                         break;
+                    }
                     case CellKind.Highlight:
+                    {
                         Widgets.DrawHighlight(rect);
                         break;
+                    }
                     case CellKind.Icon:
-                        if (draw.Defs[i] != null)
+                    {
+                        ThingDef? def = draw.Defs[i];
+                        if (def == null) break;
+                        Texture2D? texture = draw.IconTextures[i];
+                        if (texture != null)
                         {
-                            // Per-def scale correction evens out how much of
-                            // each texture is transparent padding, so icons
-                            // read as visually same-sized. Cached lookup.
-                            float iconScale = IconScaleCache.ScaleFor(draw.Defs[i]!);
-                            var iconRect = iconScale == 1f ? rect : new Rect(
-                                rect.x + rect.width * (1f - iconScale) / 2f,
-                                rect.y + rect.height * (1f - iconScale) / 2f,
-                                rect.width * iconScale,
-                                rect.height * iconScale);
-                            Widgets.ThingIcon(iconRect, draw.Defs[i]);
-                            if (Mouse.IsOver(rect))
-                                IconTips.Tip(rect, draw.Defs[i]!, draw.Counts[i], cells[i + 1].Band,
-                                    draw.Tokens[i], draw.RenderData);
+                            GUI.color = draw.IconColors[i];
+                            Widgets.DrawTextureFitted(
+                                rect, texture, draw.IconFittedScales[i]);
+                            GUI.color = Color.white;
+                        }
+                        else
+                        {
+                            float correction = draw.IconCorrections[i];
+                            var iconRect = correction == 1f
+                                ? rect : new Rect(
+                                    rect.x + rect.width
+                                        * (1f - correction) / 2f,
+                                    rect.y + rect.height
+                                        * (1f - correction) / 2f,
+                                    rect.width * correction,
+                                    rect.height * correction);
+                            Widgets.ThingIcon(iconRect, def);
                         }
                         break;
-                    case CellKind.Counter:
-                        if (cell.Band != Band.Normal)
-                            GUI.color = cell.Band == Band.Low ? LowTint : CriticalTint;
-                        Text.Font = GameFont.Tiny;
-                        Text.Anchor = TextAnchor.UpperCenter;
-                        Widgets.Label(rect, cell.Text);
-                        Text.Anchor = TextAnchor.UpperLeft;
-                        Text.Font = GameFont.Small;
-                        GUI.color = Color.white;
-                        break;
-                    case CellKind.Label:
-                        GUI.color = LabelDim;
-                        Text.Font = GameFont.Tiny;
-                        Widgets.Label(rect, draw.Labels[i]);
-                        Text.Font = GameFont.Small;
-                        GUI.color = Color.white;
-                        break;
+                    }
                     case CellKind.EmptySlot:
-                        Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.06f));
-                        GUI.color = new Color(1f, 1f, 1f, 0.25f);
-                        Widgets.DrawBox(rect);
-                        GUI.color = Color.white;
+                        // Invisible append/drop target in the editor band.
                         break;
                 }
             }
+        }
+
+        private static void DrawTextCells(
+            DrawModel draw,
+            int start,
+            int count,
+            float viewportTop,
+            float viewportBottom,
+            ref TextAnchor textAnchor)
+        {
+            var cells = draw.Model.Cells;
+            int end = start + count;
+            for (int i = start; i < end; i++)
+            {
+                RenderCell cell = cells[i];
+                if (cell.Kind != CellKind.Counter
+                    && cell.Kind != CellKind.Label) continue;
+                if (!PanelViewport.IntersectsVertically(
+                    cell.Rect, viewportTop, viewportBottom)) continue;
+                var rect = new Rect(cell.Rect.X, cell.Rect.Y, cell.Rect.W, cell.Rect.H);
+                switch (cell.Kind)
+                {
+                    case CellKind.Counter:
+                    {
+                        if (cell.Band != Band.Normal)
+                            GUI.color = cell.Band == Band.Low
+                                ? LowTint : CriticalTint;
+                        if (textAnchor != TextAnchor.UpperCenter)
+                        {
+                            Text.Anchor = TextAnchor.UpperCenter;
+                            textAnchor = TextAnchor.UpperCenter;
+                        }
+                        GUIContent? content = draw.CounterContents[i];
+                        if (content != null)
+                            GUI.Label(rect, content, Text.CurFontStyle);
+                        else
+                            Widgets.Label(rect, cell.Text);
+                        GUI.color = Color.white;
+                        break;
+                    }
+                    case CellKind.Label:
+                    {
+                        GUI.color = LabelDim;
+                        if (textAnchor != TextAnchor.UpperLeft)
+                        {
+                            Text.Anchor = TextAnchor.UpperLeft;
+                            textAnchor = TextAnchor.UpperLeft;
+                        }
+                        Widgets.Label(rect, draw.Labels[i]);
+                        GUI.color = Color.white;
+                        break;
+                    }
+                }
             }
         }
     }

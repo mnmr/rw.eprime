@@ -65,6 +65,20 @@ public class LayoutEnginePoolRefTests
     }
 
     [Test]
+    public async Task PoolRef_ReusesTheImmutableSnapshotMemberList()
+    {
+        PoolSnapshot pools = StaticResources.MeatPool(PoolId);
+        pools.TryGet(PoolId, out IReadOnlyList<string>? members,
+            out _, out _);
+
+        RenderModel model = ReadoutLayoutEngine.Build(Input(
+            Group(1, SlotToken.PoolToken(PoolId)), pools));
+
+        await Assert.That(ReferenceEquals(
+            model.SlotHits[0].Members, members)).IsTrue();
+    }
+
+    [Test]
     public async Task PoolRef_ExplicitIconDefName_UsedAsIcon()
     {
         // Pool with explicit icon = Meat_Chicken

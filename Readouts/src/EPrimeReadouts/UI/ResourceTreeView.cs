@@ -13,8 +13,6 @@ namespace EPrimeReadouts.UI
         private const float RowH = 24f;
         private const float FilterH = 28f;
 
-        public float HeaderReservedRight;
-
         private Vector2 scroll;
         private string filter = "";
         private readonly HashSet<string> expanded = new HashSet<string>();
@@ -53,12 +51,17 @@ namespace EPrimeReadouts.UI
             UiVersion.ObserveCurrentMetrics();
             var settings = EPrimeReadoutsMod.Settings;
 
+            float headerUsed = EprStyle.SectionHeader(
+                rect.x, rect.y, rect.width, UiText.Get("EPR.Resources"));
+
             bool folded = settings.helpResourcesFolded;
-            float clickableW = HeaderReservedRight > 0f
-                ? rect.width - HeaderReservedRight : -1f;
-            float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                UiText.Get("EPR.Resources"), UiText.Get("EPR.HelpResources"), ref folded,
-                clickableW);
+            headerUsed += EprStyle.HelpGroup(
+                rect.x,
+                rect.y + headerUsed,
+                rect.width,
+                UiText.Get("EPR.Help"),
+                UiText.Get("EPR.HelpResources"),
+                ref folded);
             if (folded != settings.helpResourcesFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpResourcesFolded = folded);
 
@@ -136,8 +139,7 @@ namespace EPrimeReadouts.UI
                     && rect.Contains(Event.current.mousePosition)
                     && (Event.current.button == 1
                         || (Event.current.button == 0
-                            && (Event.current.shift
-                                || checkRect.Contains(Event.current.mousePosition)))))
+                            && checkRect.Contains(Event.current.mousePosition))))
                 {
                     var group = ReadoutStore.Current?.Model.GroupById(data.GroupId);
                     if (group != null)
@@ -158,7 +160,7 @@ namespace EPrimeReadouts.UI
             int rowControlId = GUIUtility.GetControlID(FocusType.Passive, rect);
             EprDrag.ObserveSource(rowControlId, rect);
             if (Event.current.type == EventType.MouseDown && Event.current.button == 0
-                && !Event.current.shift && rect.Contains(Event.current.mousePosition))
+                && rect.Contains(Event.current.mousePosition))
             {
                 int groupId = data.GroupId;
                 string defName = row.DefName;
@@ -168,6 +170,9 @@ namespace EPrimeReadouts.UI
                     if (group == null) return;
                     var tiers = TierOps.Clone(group.Tiers);
                     int tier = tiers.Count == 0 ? 0 : tiers.Count - 1;
+                    if (tier < tiers.Count
+                        && tiers[tier].Count >= TierOps.MaxSlotsPerTier)
+                        tier++;
                     if (TierOps.Add(tiers, defName, tier, -1))
                     {
                         ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));

@@ -28,8 +28,18 @@ namespace EPrimeReadouts.Core
                 throw new ArgumentException("into must have at least " + TierOps.MaxTiers + " elements", nameof(into));
             depth = ClampDepth(tierCount, depth);
             for (int i = 0; i < TierOps.MaxTiers; i++)
-                into[i] = i >= tierCount ? TriangleState.Absent
-                    : i < depth ? TriangleState.Lit : TriangleState.Dim;
+                into[i] = StateAt(tierCount, depth, i);
+        }
+
+        public static TriangleState StateAt(
+            int tierCount, int depth, int tierIndex)
+        {
+            depth = ClampDepth(tierCount, depth);
+            return tierIndex < 0 || tierIndex >= tierCount
+                ? TriangleState.Absent
+                : tierIndex < depth
+                    ? TriangleState.Lit
+                    : TriangleState.Dim;
         }
     }
 }

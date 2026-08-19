@@ -4,6 +4,19 @@ namespace EPrimeReadouts.Core.Tests;
 
 public class MarkersTests
 {
+    [Test]
+    public async Task StateAtReturnsOneTierWithoutAnIntermediateBuffer()
+    {
+        await Assert.That(Markers.StateAt(3, 2, 0))
+            .IsEqualTo(TriangleState.Lit);
+        await Assert.That(Markers.StateAt(3, 2, 1))
+            .IsEqualTo(TriangleState.Lit);
+        await Assert.That(Markers.StateAt(3, 2, 2))
+            .IsEqualTo(TriangleState.Dim);
+        await Assert.That(Markers.StateAt(3, 2, 3))
+            .IsEqualTo(TriangleState.Absent);
+    }
+
     private static TriangleState[] Compute(int tierCount, int depth)
     {
         var states = new TriangleState[TierOps.MaxTiers];

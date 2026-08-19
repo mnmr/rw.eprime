@@ -52,15 +52,14 @@ namespace EPrimeReadouts.UI
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
             var store = ReadoutStore.Current;
-            var settings = EPrimeReadoutsMod.Settings;
             if (store == null) return;
 
-            // Section header with fold toggle
-            bool folded = settings.helpPoolEditorFolded;
+            // This explanatory caption remains permanently attached to the
+            // Configure Resource Pool section; it has no separate Help foldout.
+            bool folded = false;
             float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                UiText.Get("EPR.ConfigurePool"), UiText.Get("EPR.HelpPoolEditor"), ref folded);
-            if (folded != settings.helpPoolEditorFolded)
-                EPrimeReadoutsMod.Persist(s => s.helpPoolEditorFolded = folded);
+                UiText.Get("EPR.ConfigurePool"), UiText.Get("EPR.HelpPoolEditor"),
+                ref folded, foldable: false);
 
             // Rebuild cached rows when needed
             if (NeedsRebuild(store, owner.selectedPoolId))
@@ -279,8 +278,7 @@ namespace EPrimeReadouts.UI
                     ReadoutCommands.SetPoolIcon(builtPoolId, row.DefName);
 
                 if (Mouse.IsOver(iconClickRect))
-                    TooltipHandler.TipRegion(iconClickRect,
-                        (TaggedString)UiText.Get("EPR.HelpPoolEditor"));
+                    WrTips.Key("EPR.HelpPoolEditor").Region(iconClickRect);
             }
         }
 

@@ -6,21 +6,22 @@ using Verse;
 namespace EPrimeReadouts
 {
     /// Builds the count payload used by GameRenderData. The caller owns the
-    /// 204-tick cadence; this class performs one complete, deterministic pass.
+    /// 204-tick stock cadence; this class performs one deterministic stock pass
+    /// and merges the independently cached planned-work contribution.
     /// When the map belongs to a MultiFloors stack, the pass covers every
     /// level map in ascending level order so readouts show stack totals.
     public static class GameCounts
     {
         internal static RenderCountSnapshot BuildSnapshot(
             Map map,
-            PlannedWorkOptions plannedWork,
-            QualityJobsPlannedWorkSnapshot qualityJobs)
+            int tick,
+            CountSnapshotOptions options)
         {
             var accumulator = new CountAccumulator();
             Dictionary<int, Map>? levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
-                AccumulateMap(map, accumulator, plannedWork, qualityJobs);
+                AccumulateMap(map, tick, accumulator, options);
                 return accumulator.ToSnapshot();
             }
 
@@ -34,18 +35,18 @@ namespace EPrimeReadouts
                 Map level = levels[order[i]];
                 if (level == null || level.Disposed) continue;
                 if (ReferenceEquals(level, map)) sawQueriedMap = true;
-                AccumulateMap(level, accumulator, plannedWork, qualityJobs);
+                AccumulateMap(level, tick, accumulator, options);
             }
             if (!sawQueriedMap)
-                AccumulateMap(map, accumulator, plannedWork, qualityJobs);
+                AccumulateMap(map, tick, accumulator, options);
             return accumulator.ToSnapshot();
         }
 
         private static void AccumulateMap(
             Map map,
+            int tick,
             CountAccumulator accumulator,
-            PlannedWorkOptions plannedWork,
-            QualityJobsPlannedWorkSnapshot qualityJobs)
+            CountSnapshotOptions options)
         {
             foreach (var pair in map.resourceCounter.AllCountedAmounts)
                 accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
@@ -78,35 +79,40 @@ namespace EPrimeReadouts
                         accumulator.Add(inner.def.defName, inner.def.shortHash, inner.stackCount);
                     accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
                         inner.stackCount, stored: true,
-                        forbidden: held.IsForbidden(Faction.OfPlayer));
+                        forbidden: options.InspectForbidden
+                            && held.IsForbidden(Faction.OfPlayer));
                 }
             }
 
-            // Scattered pass: spawned haulables outside any slot group. The
-            // group-count basis stays storage-only (vanilla behavior); these
-            // stacks only widen the search breakdown so the search options can
-            // include or exclude loose items.
-            var things = map.listerThings.ThingsInGroup(ThingRequestGroup.HaulableEver);
-            for (int i = 0; i < things.Count; i++)
+            // Scattered pass: spawned haulables outside any slot group. It is
+            // omitted entirely for the storage-only basis; otherwise these
+            // stacks widen the shared count breakdown to map-wide totals.
+            if (options.IncludeScattered)
             {
-                Thing thing = things[i];
-                if (thing.IsInAnyStorage()) continue;
-                var inner = thing.GetInnerIfMinified();
-                if (!inner.def.CountAsResource
-                    && !GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
-                if (inner.IsNotFresh()) continue;
-                if (thing.Position.Fogged(map)) continue;
-                accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
-                    inner.stackCount, stored: false,
-                    forbidden: thing.IsForbidden(Faction.OfPlayer));
+                var things = map.listerThings.ThingsInGroup(
+                    ThingRequestGroup.HaulableEver);
+                for (int i = 0; i < things.Count; i++)
+                {
+                    Thing thing = things[i];
+                    if (thing.IsInAnyStorage()) continue;
+                    var inner = thing.GetInnerIfMinified();
+                    if (!inner.def.CountAsResource
+                        && !GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
+                    if (inner.IsNotFresh()) continue;
+                    if (thing.Position.Fogged(map)) continue;
+                    accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
+                        inner.stackCount, stored: false,
+                        forbidden: options.InspectForbidden
+                            && thing.IsForbidden(Faction.OfPlayer));
+                }
             }
 
-            // Planned-work reservations share this map walk and this cadence, so
-            // the debt a counter shows always belongs to the same instant as the
-            // stock it was subtracted from. No-op when every option is off.
-            if (plannedWork.Any)
-                PlannedWorkCounts.Accumulate(
-                    map, accumulator, plannedWork, qualityJobs);
+            // The expensive bill/buildable walk has its own 1020-tick cache.
+            // Replay its compact immutable result into every 204-tick stock
+            // refresh so debt remains present between planned-work scans.
+            if (options.PlannedWork.Any)
+                GamePlannedWorkData.Get(map, tick,
+                    options.PlannedWork).AccumulateInto(accumulator);
         }
 
         /// Current count for a single def from the shared render snapshot.

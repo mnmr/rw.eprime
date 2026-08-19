@@ -23,7 +23,6 @@ namespace EPrimeReadouts
         public bool helpResourcesFolded;
         public bool helpEditorFolded;
         public bool helpPoolsFolded;
-        public bool helpPoolEditorFolded;
         public bool showSearchFilter = true;
         public bool showModNameWhenNoSearch = true;
         /// Count-basis filters applied to every displayed count (group slots,
@@ -67,7 +66,6 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref helpResourcesFolded, "helpResourcesFolded", false);
             Scribe_Values.Look(ref helpEditorFolded, "helpEditorFolded", false);
             Scribe_Values.Look(ref helpPoolsFolded, "helpPoolsFolded", false);
-            Scribe_Values.Look(ref helpPoolEditorFolded, "helpPoolEditorFolded", false);
             Scribe_Values.Look(ref showSearchFilter, "showSearchFilter", true);
             Scribe_Values.Look(ref showModNameWhenNoSearch, "showModNameWhenNoSearch", true);
             Scribe_Values.Look(ref searchHideZero, "searchHideZero", true);

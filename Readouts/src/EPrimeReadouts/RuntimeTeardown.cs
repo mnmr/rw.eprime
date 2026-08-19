@@ -17,12 +17,14 @@ namespace EPrimeReadouts
             GameResourceTree.Reset();
             ReadoutPanel.Reset();
             IconTips.Reset();
+            WrTips.Reset();
             WrText.Reset();
             PanelCellMetrics.Reset();
             UiText.Reset();
             EprStyle.Reset();
             EprDrag.Cancel();
-            IconScaleCache.Reset();
+            PanelBufferBackend.Shared.Release();
+            IconScaleCache.ReleaseGraphics();
             ReadoutTextures.ResetOwned();
         }
     }
@@ -49,6 +51,7 @@ namespace EPrimeReadouts
                 graphicsInitialized = true;
             }
             IconScaleCache.ProcessPending();
+            ReadoutPanel.ProcessPendingGraphics(map);
         }
 
         public override void MapRemoved()

@@ -53,6 +53,8 @@ namespace EPrimeReadouts
         //               construction. UFTs and settings are intentionally not
         //               consumed independently.
         // Refresh policy: immediate on a new QJA snapshot reference.
+        //                 A runtime API/projection failure disables the bridge
+        //                 for the process and publishes the empty fallback.
         // Equality policy: every distinct QJA source produces a distinct bridge
         //                  projection so live handles are reread downstream;
         //                  the resource projection preserves identity only
@@ -76,10 +78,22 @@ namespace EPrimeReadouts
         {
             Resolve();
             if (getManagedJobs == null) return ManagedJobsSnapshot.Empty;
-            object source = getManagedJobs();
-            return source == null
-                ? ManagedJobsSnapshot.Empty
-                : snapshotCache.Get(source);
+            try
+            {
+                object source = getManagedJobs();
+                return source == null
+                    ? ManagedJobsSnapshot.Empty
+                    : snapshotCache.Get(source);
+            }
+            catch (Exception exception)
+            {
+                getManagedJobs = null;
+                snapshotCache.Clear();
+                Log.Warning("[EPrimeReadouts] Quality Jobs runtime API failed; "
+                    + "quality rework is disabled for this process: "
+                    + exception.GetType().Name + ": " + exception.Message);
+                return ManagedJobsSnapshot.Empty;
+            }
         }
 
         internal static void Reset()

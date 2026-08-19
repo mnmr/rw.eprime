@@ -36,6 +36,22 @@ public class LayoutEngineSlotHitTests
     }
 
     [Test]
+    public async Task GroupSlotHitsPointDirectlyAtTheirMatchingIconCells()
+    {
+        var model = ReadoutLayoutEngine.Build(Input("Steel", "WoodLog"));
+        var cellIndexField = typeof(SlotHit).GetField("CellIndex");
+
+        await Assert.That(cellIndexField).IsNotNull();
+        for (int i = 0; i < model.SlotHits.Count; i++)
+        {
+            int cellIndex = (int)cellIndexField!.GetValue(model.SlotHits[i])!;
+            RenderCell cell = model.Cells[cellIndex];
+            await Assert.That(cell.Kind).IsEqualTo(CellKind.Icon);
+            await Assert.That(cell.Token).IsEqualTo(model.SlotHits[i].Token);
+        }
+    }
+
+    [Test]
     public async Task PoolSlotHitCarriesAllMemberDefNames()
     {
         var input = Input("#1");
@@ -75,6 +91,21 @@ public class LayoutEngineSlotHitTests
         await Assert.That(model.SlotHits[0].Token).IsEqualTo("WoodLog");
         await Assert.That(model.SlotHits[0].Members).IsEquivalentTo(new[] { "WoodLog" });
         await Assert.That(model.SlotHits[1].Token).IsEqualTo("Steel");
+    }
+
+    [Test]
+    public async Task SearchResultHitPointsDirectlyAtItsIconCell()
+    {
+        var input = Input("Steel");
+        input.SearchText = "wood";
+        var model = ReadoutLayoutEngine.Build(input);
+        var cellIndexField = typeof(SlotHit).GetField("CellIndex");
+
+        await Assert.That(cellIndexField).IsNotNull();
+        int cellIndex = (int)cellIndexField!.GetValue(model.SlotHits[0])!;
+        RenderCell cell = model.Cells[cellIndex];
+        await Assert.That(cell.Kind).IsEqualTo(CellKind.Icon);
+        await Assert.That(cell.DefName).IsEqualTo("WoodLog");
     }
 
     [Test]

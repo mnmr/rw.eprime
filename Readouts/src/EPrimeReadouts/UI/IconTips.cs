@@ -9,9 +9,9 @@ using Verse;
 namespace EPrimeReadouts.UI
 {
     /// Structured hover tips for resource icons: label + count badge,
-    /// description prose, pool breakdown, threshold facts. Hovering only
-    /// records intent (a dictionary read plus field writes); gathering is
-    /// deferred until the owned tooltip window opens after its hover delay.
+    /// description prose, pool breakdown, threshold facts. The panel's single
+    /// hit test records the hovered slot; gathering and layout are deferred
+    /// until the owned tooltip window first opens after its hover delay.
     public static class IconTips
     {
         /// Pool breakdowns use up to this many columns. Rows are balanced from
@@ -169,11 +169,9 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        public static void Tip(
-            Rect rect,
+        internal static void TipHovered(
             ThingDef def,
             int count,
-            Band band,
             string? token,
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? renderData)
         {
@@ -188,7 +186,7 @@ namespace EPrimeReadouts.UI
             deferred.Count = count;
             deferred.Token = token;
             deferred.RenderData = renderData;
-            StructuredTipPresenter.TipRegion(rect, deferred);
+            StructuredTipPresenter.PresentHovered(deferred);
         }
 
         private static StructuredTip Build(BuildState state)

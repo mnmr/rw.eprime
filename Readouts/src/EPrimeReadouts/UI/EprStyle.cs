@@ -9,6 +9,12 @@ namespace EPrimeReadouts.UI
     /// Shared dialog styling (WorkRoles-derived palette).
     internal static class EprStyle
     {
+        internal const float SectionHeaderHeight = 28f;
+        internal const float HelpPanelOffset = 8f;
+        internal const float HelpPanelPadding = 8f;
+        internal const float HelpExpandedBottomMargin = 20f;
+        internal const float HelpCollapsedBottomMargin = 8f;
+
         private struct CaptionMeasureState
         {
             internal string Caption;
@@ -42,6 +48,76 @@ namespace EPrimeReadouts.UI
             return SectionHeader(x, y, width, label, null, ref folded, foldable: false);
         }
 
+        /// A secondary Help foldout followed by either a compact collapsed gap
+        /// or a framed caption panel. Returns the complete vertical footprint.
+        internal static float HelpGroup(float x, float y, float width,
+            string label, string caption, ref bool folded)
+        {
+            float used = FoldoutHeader(x, y, width, label, ref folded);
+            if (folded) return used + HelpCollapsedBottomMargin;
+
+            float textWidth = Mathf.Max(1f, width - 2f * HelpPanelPadding);
+            float captionHeight = CaptionHeight(caption, textWidth);
+            float panelHeight = captionHeight + 2f * HelpPanelPadding;
+            var panelRect = new Rect(
+                x,
+                y + used + HelpPanelOffset,
+                width,
+                panelHeight);
+
+            using (new GuiStateScope())
+            {
+                Widgets.DrawBoxSolidWithOutline(
+                    panelRect, PanelBackground, PanelOutline);
+                Text.Font = GameFont.Tiny;
+                GUI.color = CaptionText;
+                Widgets.Label(new Rect(
+                    panelRect.x + HelpPanelPadding,
+                    panelRect.y + HelpPanelPadding,
+                    textWidth,
+                    captionHeight), caption);
+            }
+
+            return used + HelpPanelOffset + panelHeight
+                + HelpExpandedBottomMargin;
+        }
+
+        /// Complete vertical footprint of a Help foldout without drawing it.
+        internal static float HelpGroupHeight(float width, string caption, bool folded)
+        {
+            if (folded) return SectionHeaderHeight + HelpCollapsedBottomMargin;
+
+            float textWidth = Mathf.Max(1f, width - 2f * HelpPanelPadding);
+            return SectionHeaderHeight
+                + HelpPanelOffset
+                + CaptionHeight(caption, textWidth)
+                + 2f * HelpPanelPadding
+                + HelpExpandedBottomMargin;
+        }
+
+        private static float FoldoutHeader(float x, float y, float width,
+            string label, ref bool folded)
+        {
+            using (new GuiStateScope())
+            {
+                var clickRect = new Rect(x, y, width, 22f);
+                Widgets.DrawHighlightIfMouseover(clickRect);
+                if (Widgets.ButtonInvisible(clickRect)) folded = !folded;
+
+                GUI.DrawTexture(
+                    new Rect(x + 1f, y + 3f, 16f, 16f),
+                    folded ? TexButton.Reveal : TexButton.Collapse);
+
+                Text.Font = GameFont.Small;
+                GUI.color = HeaderText;
+                Widgets.Label(new Rect(x + 21f, y, Mathf.Max(0f, width - 21f), 22f),
+                    label);
+                GUI.color = HeaderRule;
+                WrText.LineHorizontal(x, y + 24f, width);
+            }
+            return SectionHeaderHeight;
+        }
+
         /// Underlined section header. When <paramref name="foldable"/>, clicking
         /// toggles the folded flag. While unfolded (or not foldable), wraps the
         /// caption below in Tiny caption text and returns the total height
@@ -69,7 +145,7 @@ namespace EPrimeReadouts.UI
                 Widgets.DrawHighlightIfMouseover(clickRect);
                 if (Widgets.ButtonInvisible(clickRect)) folded = !folded;
             }
-            float used = 28f;
+            float used = SectionHeaderHeight;
             if ((!foldable || !folded) && !caption.NullOrEmpty())
             {
                 Text.Font = GameFont.Tiny;

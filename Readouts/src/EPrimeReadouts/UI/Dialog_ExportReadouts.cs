@@ -134,7 +134,7 @@ namespace EPrimeReadouts.UI
             float linkW = WrText.FitWidth(copyPathLabel) + 6f;
             var linkRect = new Rect(inRect.xMax - linkW, captionRowY, linkW, CaptionRowH - 4f);
             if (problem != null)
-                TooltipHandler.TipRegion(linkRect, problem);
+                WrTips.Text("EPR.ExportProblem", problem).Region(linkRect);
             if (Widgets.ButtonText(linkRect, copyPathLabel, drawBackground: false))
             {
                 GUIUtility.systemCopyBuffer = path ?? "";
@@ -151,7 +151,7 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(cancelRect, UiText.Get("EPR.Cancel")))
                 Close();
             if (problem != null)
-                TooltipHandler.TipRegion(saveRect, problem);
+                WrTips.Text("EPR.ExportProblem", problem).Region(saveRect);
             if (Widgets.ButtonText(saveRect, UiText.Get("EPR.Save"), active: path != null)
                 && path != null)
             {

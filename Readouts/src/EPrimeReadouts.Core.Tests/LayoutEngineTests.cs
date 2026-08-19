@@ -32,6 +32,90 @@ public class LayoutEngineTests
         await Assert.That(CellsOf(model, CellKind.Counter)[0].Text).IsEqualTo("120");
     }
 
+    [Test]
+    public async Task RenderBandsPartitionEveryCellAndHitByGroup()
+    {
+        RenderModel model = ReadoutLayoutEngine.Build(Input(
+            Group(1, new[] { "Steel", "WoodLog" }),
+            Group(2, new[] { "Silver" })));
+
+        await Assert.That(model.Bands.Count).IsEqualTo(2);
+        await Assert.That(model.Bands[0].GroupId).IsEqualTo(1);
+        await Assert.That(model.Bands[1].GroupId).IsEqualTo(2);
+        await Assert.That(model.Bands[0].CellStart).IsEqualTo(0);
+        await Assert.That(model.Bands[0].CellCount
+            + model.Bands[1].CellCount).IsEqualTo(model.Cells.Count);
+        await Assert.That(model.Bands[0].SlotCount
+            + model.Bands[1].SlotCount).IsEqualTo(model.SlotHits.Count);
+        await Assert.That(model.Bands[0].MarkerCount
+            + model.Bands[1].MarkerCount).IsEqualTo(model.MarkerHits.Count);
+    }
+
+    [Test]
+    public async Task PlainSlotMembersAreReusedAcrossCountOnlyRebuilds()
+    {
+        LayoutInput input = Input(Group(1, new[] { "Steel" }));
+
+        RenderModel first = ReadoutLayoutEngine.Build(input);
+        RenderModel second = ReadoutLayoutEngine.Build(input);
+
+        await Assert.That(ReferenceEquals(
+            first.SlotHits[0].Members,
+            second.SlotHits[0].Members)).IsTrue();
+        await Assert.That(first.SlotHits[0].Members is string[]).IsFalse();
+    }
+
+    [Test]
+    public async Task CountRefreshUpdatesCellsWithoutReplacingLayout()
+    {
+        LayoutInput input = Input(Group(1, new[] { "Steel" }));
+        input.Thresholds["Steel"] = new ThresholdSpec(100, 20);
+        RenderModel model = ReadoutLayoutEngine.Build(input);
+        int cellCount = model.Cells.Count;
+        SlotHit hit = model.SlotHits[0];
+
+        input.Counts = StaticResources.Counts(("Steel", 75));
+        bool refreshed = ReadoutLayoutEngine.TryRefreshCounts(input, model);
+
+        RenderCell icon = CellsOf(model, CellKind.Icon)[0];
+        RenderCell counter = CellsOf(model, CellKind.Counter)[0];
+        await Assert.That(refreshed).IsTrue();
+        await Assert.That(model.Cells.Count).IsEqualTo(cellCount);
+        await Assert.That(model.SlotHits[0].Rect).IsEqualTo(hit.Rect);
+        await Assert.That(icon.Count).IsEqualTo(75);
+        await Assert.That(counter.Count).IsEqualTo(75);
+        await Assert.That(counter.Text).IsEqualTo("75");
+        await Assert.That(counter.Band).IsEqualTo(Band.Low);
+    }
+
+    [Test]
+    public async Task CountRefreshRejectsAHiddenSlotBecomingVisible()
+    {
+        LayoutInput input = Input(Group(1, new[] { "Steel", "~Cloth" }));
+        RenderModel model = ReadoutLayoutEngine.Build(input);
+
+        input.Counts = StaticResources.Counts(("Steel", 120), ("Cloth", 5));
+        bool refreshed = ReadoutLayoutEngine.TryRefreshCounts(input, model);
+
+        await Assert.That(refreshed).IsFalse();
+        await Assert.That(CellsOf(model, CellKind.Icon).Count).IsEqualTo(1);
+        await Assert.That(CellsOf(model, CellKind.Counter)[0].Text)
+            .IsEqualTo("120");
+    }
+
+    [Test]
+    public async Task CountRefreshRejectsActiveSearchResults()
+    {
+        LayoutInput input = Input(Group(1, new[] { "Steel" }));
+        input.SearchText = "steel";
+        RenderModel model = ReadoutLayoutEngine.Build(input);
+
+        input.Counts = StaticResources.Counts(("Steel", 121));
+
+        await Assert.That(ReadoutLayoutEngine.TryRefreshCounts(input, model))
+            .IsFalse();
+    }
+
     /// With the NEW default (show-when-zero), a plain "Cloth" slot renders even at zero.
     /// "~Cloth" (hide-when-zero) is hidden at zero count.
     [Test]

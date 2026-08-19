@@ -9,7 +9,7 @@ namespace EPrimeReadouts.UI
     internal interface IStructuredTipSource
     {
         string StableKey { get; }
-        StructuredTip Resolve();
+        StructuredTip? Resolve();
     }
 
     /// Owns the complete lifecycle and window for this mod's structured tips.
@@ -45,6 +45,14 @@ namespace EPrimeReadouts.UI
         internal static void TipRegion(Rect rect, IStructuredTipSource? source)
         {
             if (source == null || !IsHovered(rect)) return;
+            Present(source.StableKey, null, source);
+        }
+
+        /// The panel has already performed its one authoritative hit test for
+        /// this repaint, so registering that source must not hit-test again.
+        internal static void PresentHovered(IStructuredTipSource? source)
+        {
+            if (source == null || Event.current.type != EventType.Repaint) return;
             Present(source.StableKey, null, source);
         }
 

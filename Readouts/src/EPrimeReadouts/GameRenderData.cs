@@ -14,16 +14,16 @@ namespace EPrimeReadouts
         private struct BuildState
         {
             internal Map Map;
+            internal int Tick;
             internal ReadoutStore Store;
-            internal PlannedWorkOptions PlannedWork;
-            internal QualityJobsPlannedWorkSnapshot QualityJobs;
+            internal CountSnapshotOptions Options;
         }
 
         private static readonly Func<BuildState, PoolSnapshot> buildPools =
             state => PoolSnapshot.Build(state.Store.Model.Pools, GameResourceCatalog.Instance);
         private static readonly Func<BuildState, PoolSnapshot, RenderCountSnapshot> buildCounts =
             (state, _) => GameCounts.BuildSnapshot(
-                state.Map, state.PlannedWork, state.QualityJobs);
+                state.Map, state.Tick, state.Options);
 
         // Cache contract:
         // Owner: one ReadoutStore/world at a time.
@@ -31,21 +31,20 @@ namespace EPrimeReadouts
         //      canonical ground map so every floor shares one snapshot.
         // Value: immutable shared pool/count render snapshot.
         // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
-        //               counts, the planned-work reservation options and the
-        //               relevant map/level-stack QJA projection immediately,
+        //               counts, count-basis and planned-work options
+        //               immediately; planned-work scans independently every
+        //               1020 elapsed game ticks;
         //               and (while MultiFloors is active) the map-set stamp so
         //               stack membership changes rebuild entries.
         // Refresh policy: immediate structure; tick-throttled counts, except
-        //               that a reservation-option change rebuilds counts at
+        //               that a count-collection option change rebuilds at
         //               once (a user-authored edit must be visible while
         //               paused).
         // Equality policy: equal refreshed counts preserve snapshot identity.
         // Teardown: Remove on map removal; Reset on world teardown/owner change.
         private static ReadoutStore? cacheOwner;
         private static int cacheMapSetStamp = -1;
-        private static PlannedWorkOptions cachePlannedWork;
-        private static QualityJobsPlannedWorkSnapshot cacheQualityJobs =
-            QualityJobsPlannedWorkSnapshot.Empty;
+        private static CountSnapshotOptions cacheOptions;
         private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
             cache = NewCache();
 
@@ -61,114 +60,79 @@ namespace EPrimeReadouts
             if (!ReferenceEquals(cacheOwner, store))
             {
                 cache.Clear();
+                GamePlannedWorkData.Reset();
                 QualityJobsPlannedWork.Reset();
-                cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
                 cacheOwner = store;
             }
             if (LevelStacks.MultiFloorsActive
                 && cacheMapSetStamp != LevelStacks.MapSetStamp)
             {
                 cache.Clear();
+                GamePlannedWorkData.Reset();
                 cacheMapSetStamp = LevelStacks.MapSetStamp;
             }
 
-            // Reservation options change what the count pass gathers, so they
-            // must bypass the tick throttle — a struct compare per call, then
-            // a counts-only invalidation on the frame the player toggles one.
-            PlannedWorkOptions plannedWork = CurrentPlannedWork();
-            if (!cachePlannedWork.Equals(plannedWork))
+            // Count-basis and reservation options change what the count pass
+            // gathers, so they bypass the tick throttle — a struct compare per
+            // call, then a counts-only invalidation on the toggle frame.
+            CountSnapshotOptions options = CurrentOptions();
+            if (!cacheOptions.Equals(options))
             {
-                cachePlannedWork = plannedWork;
+                if (!cacheOptions.PlannedWork.Equals(options.PlannedWork))
+                    GamePlannedWorkData.Reset();
+                cacheOptions = options;
                 cache.InvalidateCounts();
             }
 
-            QualityJobsPlannedWorkSnapshot qualityJobs =
-                plannedWork.Any && plannedWork.QualityRework
-                    ? QualityJobsPlannedWork.Current()
-                    : QualityJobsPlannedWorkSnapshot.Empty;
-            if (!ReferenceEquals(cacheQualityJobs, qualityJobs))
-            {
-                InvalidateChangedQualityMaps(cacheQualityJobs, qualityJobs);
-                cacheQualityJobs = qualityJobs;
-            }
+            int tick = Find.TickManager.TicksGame;
 
             return cache.Get(
                 map,
                 store.PoolsVersion,
-                Find.TickManager.TicksGame,
+                tick,
                 new BuildState
                 {
                     Map = map,
+                    Tick = tick,
                     Store = store,
-                    PlannedWork = plannedWork,
-                    QualityJobs = qualityJobs,
+                    Options = options,
                 },
                 buildPools,
                 buildCounts);
         }
 
-        /// The player's reservation options, with quality rework forced off
-        /// while the Quality Jobs integration is unavailable so the snapshot
-        /// never differs from what the options dialog says is in effect.
-        private static PlannedWorkOptions CurrentPlannedWork()
+        /// The player options that change snapshot collection, with quality
+        /// rework forced off while the Quality Jobs integration is unavailable
+        /// so the snapshot matches what the options dialog says is in effect.
+        private static CountSnapshotOptions CurrentOptions()
         {
             var settings = EPrimeReadoutsMod.Settings;
             if (settings == null) return default;
-            return new PlannedWorkOptions(
-                settings.reserveForBills,
-                settings.reserveForBuildables,
-                settings.qualityJobsRework && QualityJobsBridge.Available);
-        }
-
-        private static void InvalidateChangedQualityMaps(
-            QualityJobsPlannedWorkSnapshot previous,
-            QualityJobsPlannedWorkSnapshot current)
-        {
-            QualityJobsMapWorkSnapshot[] currentMaps = current.Maps;
-            for (int i = 0; i < currentMaps.Length; i++)
-            {
-                QualityJobsMapWorkSnapshot changed = currentMaps[i];
-                QualityJobsMapWorkSnapshot? old = previous.For(changed.Map);
-                bool billsChanged = cachePlannedWork.ReserveBills
-                    && (old == null ? changed.HasBills : !changed.BillsEqual(old));
-                bool buildablesChanged = cachePlannedWork.ReserveBuildables
-                    && (old == null
-                        ? changed.HasBuildables
-                        : !changed.BuildablesEqual(old));
-                if (billsChanged || buildablesChanged)
-                    cache.InvalidateCounts(
-                        LevelStacks.CanonicalOrSelf(changed.Map)!);
-            }
-
-            QualityJobsMapWorkSnapshot[] previousMaps = previous.Maps;
-            for (int i = 0; i < previousMaps.Length; i++)
-            {
-                QualityJobsMapWorkSnapshot removed = previousMaps[i];
-                if (current.For(removed.Map) == null
-                    && ((cachePlannedWork.ReserveBills && removed.HasBills)
-                        || (cachePlannedWork.ReserveBuildables
-                            && removed.HasBuildables)))
-                    cache.InvalidateCounts(
-                        LevelStacks.CanonicalOrSelf(removed.Map)!);
-            }
+            return new CountSnapshotOptions(
+                settings.searchStorageOnly,
+                settings.searchHideForbidden,
+                new PlannedWorkOptions(
+                    settings.reserveForBills,
+                    settings.reserveForBuildables,
+                    settings.qualityJobsRework && QualityJobsBridge.Available));
         }
 
         internal static void Remove(Map map)
         {
             if (map == null) return;
             cache.Remove(map);
+            GamePlannedWorkData.Remove(map);
             QualityJobsPlannedWork.Reset();
-            cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
             if (cache.Count == 0) cacheOwner = null;
         }
 
         internal static void Reset()
         {
             cache.Clear();
+            GamePlannedWorkData.Reset();
             cacheOwner = null;
             cacheMapSetStamp = -1;
-            cachePlannedWork = default;
-            cacheQualityJobs = QualityJobsPlannedWorkSnapshot.Empty;
+            cacheOptions = default;
             QualityJobsPlannedWork.Reset();
         }
 

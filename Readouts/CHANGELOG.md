@@ -1,5 +1,18 @@
 ﻿# Changelog
 
+## 1.1.1 — 2026-08-18
+
+- Added: Help texts to better explain how the settings UI works.
+- Changed: Tier-triangles now render vertically stacked so they take up less space.
+
+## 1.1.0 — 2026-08-18
+
+- Fixed: Removed debug logging.
+
+## 1.0.9 — 2026-08-18
+
+- Fixed: Reworked rendering to greatly improve performance.
+
 ## 1.0.8 — 2026-08-16
 
 - Added: Options to deduct resources needed to fulfill queued work, including support for EPrime's Quality Jobs.

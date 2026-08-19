@@ -4,10 +4,12 @@ namespace EPrimeReadouts.Core
     /// multiplies the whole UI coordinate space, so these need no scaling).
     public static class LayoutMetrics
     {
-        public const float MarkerColW = 26f;  // fits 3 triangles + gaps
+        public const float MarkerColW = 11f;  // 2px pad + 7px triangle + 2px pad
         public const float TriW = 7f;
         public const float TriH = 9f;
-        public const float TriGap = 1f;
+        public const float TriGap = 1f;        // vertical gap
+        public const float MarkerStackH =
+            TierOps.MaxTiers * TriH + (TierOps.MaxTiers - 1) * TriGap;
         public const float CellW = 34f;       // one resource column
         public const float IconSize = 27f;    // vanilla resource icon size
         public const float IconRowH = 27f;    // flush with the icon

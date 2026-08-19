@@ -143,4 +143,28 @@ public class CountAccumulatorTests
             .Throws<InvalidOperationException>();
         await Assert.That(snapshot.Counts["Steel"]).IsEqualTo(40);
     }
+
+    [Test]
+    public async Task CachedPlannedWorkCanBeReplayedIntoANewSnapshot()
+    {
+        var scanned = new CountAccumulator();
+        scanned.AddBillWork("Steel", defHash: 11,
+            workDefName: "ComponentIndustrial", queued: 3,
+            unitCost: 12, drain: 36);
+        scanned.AddBuildableWork("WoodLog", defHash: 22,
+            workDefName: "DiningChair", stuffDefName: "WoodLog",
+            queued: 2, unitCost: 45, drain: 90,
+            source: PlannedWorkSource.QualityJob);
+        RenderCountSnapshot cached = scanned.ToSnapshot();
+
+        var refreshed = new CountAccumulator();
+        for (int i = 0; i < cached.PlannedWork.Count; i++)
+        {
+            PlannedWorkEntry entry = cached.PlannedWork[i];
+            refreshed.AddCachedPlannedWork(entry,
+                entry.ResourceDefName == "Steel" ? 11 : 22);
+        }
+
+        await Assert.That(refreshed.ToSnapshot().Equals(cached)).IsTrue();
+    }
 }

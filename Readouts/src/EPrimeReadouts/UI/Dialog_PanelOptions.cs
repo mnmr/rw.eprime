@@ -40,8 +40,8 @@ namespace EPrimeReadouts.UI
             SectionHeader(listing, "EPR.CountOptions");
 
             bool storageOnly = settings.searchStorageOnly;
-            listing.CheckboxLabeled(UiText.Get("EPR.SearchStorageOnly"), ref storageOnly);
-            if (storageOnly != settings.searchStorageOnly)
+            if (CheckboxRow(listing, "EPR.SearchStorageOnly",
+                    "EPR.SearchStorageOnlyTip", ref storageOnly))
             {
                 EPrimeReadoutsMod.Persist(s => s.searchStorageOnly = storageOnly);
                 ReadoutPanel.BumpView();
@@ -62,7 +62,7 @@ namespace EPrimeReadouts.UI
             // even while the game is paused.
             bool reserveBills = settings.reserveForBills;
             if (CheckboxRow(listing, "EPR.ReserveForBills",
-                UiText.Get("EPR.ReserveForBillsTip"), ref reserveBills))
+                "EPR.ReserveForBillsTip", ref reserveBills))
             {
                 EPrimeReadoutsMod.Persist(s => s.reserveForBills = reserveBills);
                 ReadoutPanel.BumpView();
@@ -70,7 +70,7 @@ namespace EPrimeReadouts.UI
 
             bool reserveBuildables = settings.reserveForBuildables;
             if (CheckboxRow(listing, "EPR.ReserveForBuildables",
-                UiText.Get("EPR.ReserveForBuildablesTip"), ref reserveBuildables))
+                "EPR.ReserveForBuildablesTip", ref reserveBuildables))
             {
                 EPrimeReadoutsMod.Persist(s => s.reserveForBuildables = reserveBuildables);
                 ReadoutPanel.BumpView();
@@ -78,7 +78,7 @@ namespace EPrimeReadouts.UI
 
             bool showNegative = settings.showNegativeCounts;
             if (CheckboxRow(listing, "EPR.ShowNegativeCounts",
-                UiText.Get("EPR.ShowNegativeCountsTip"), ref showNegative))
+                "EPR.ShowNegativeCountsTip", ref showNegative))
             {
                 EPrimeReadoutsMod.Persist(s => s.showNegativeCounts = showNegative);
                 ReadoutPanel.BumpView();
@@ -95,7 +95,7 @@ namespace EPrimeReadouts.UI
                     ? "EPR.QualityJobsOutdatedTip"
                     : "EPR.QualityJobsMissingTip";
             bool qualityRework = settings.qualityJobsRework;
-            if (CheckboxRow(listing, "EPR.QualityJobsRework", UiText.Get(qualityTip),
+            if (CheckboxRow(listing, "EPR.QualityJobsRework", qualityTip,
                     ref qualityRework, disabled: !qualityReady))
             {
                 EPrimeReadoutsMod.Persist(s => s.qualityJobsRework = qualityRework);
@@ -195,12 +195,12 @@ namespace EPrimeReadouts.UI
         /// swallows clicks and greys its label. Returns true when the player
         /// changed the value.
         private static bool CheckboxRow(
-            Listing_Standard listing, string labelKey, string tooltip,
+            Listing_Standard listing, string labelKey, string tooltipKey,
             ref bool value, bool disabled = false)
         {
             Rect rect = listing.GetRect(Text.LineHeight);
             if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
-            TooltipHandler.TipRegion(rect, (TaggedString)tooltip);
+            WrTips.Key(tooltipKey).Region(rect);
             bool before = value;
             if (disabled) GUI.color = EprStyle.CaptionText;
             Widgets.CheckboxLabeled(rect, UiText.Get(labelKey), ref value, disabled);

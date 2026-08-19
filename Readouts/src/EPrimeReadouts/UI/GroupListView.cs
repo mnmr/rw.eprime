@@ -43,10 +43,17 @@ namespace EPrimeReadouts.UI
             var store = ReadoutStore.Current!; // dialog draws only while a world exists
             var settings = EPrimeReadoutsMod.Settings;
 
-            // Section header with fold toggle
+            float headerUsed = EprStyle.SectionHeader(
+                rect.x, rect.y, rect.width, UiText.Get("EPR.Groups"));
+
             bool folded = settings.helpGroupsFolded;
-            float headerUsed = EprStyle.SectionHeader(rect.x, rect.y, rect.width,
-                UiText.Get("EPR.Groups"), UiText.Get("EPR.HelpGroups"), ref folded);
+            headerUsed += EprStyle.HelpGroup(
+                rect.x,
+                rect.y + headerUsed,
+                rect.width,
+                UiText.Get("EPR.Help"),
+                UiText.Get("EPR.HelpGroups"),
+                ref folded);
             if (folded != settings.helpGroupsFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpGroupsFolded = folded);
 
@@ -104,8 +111,7 @@ namespace EPrimeReadouts.UI
                     ReadoutPanel.BumpView();
                 }
                 var checkRect = new Rect(row.x + 2f, row.y + 5f, 16f, 16f);
-                if (Mouse.IsOver(checkRect))
-                    TooltipHandler.TipRegion(checkRect, (TaggedString)UiText.Get("EPR.EnableTip"));
+                WrTips.Key("EPR.EnableTip").Region(checkRect);
 
                 // Name area: right of checkbox, left of delete button
                 var nameRect = new Rect(row.x + 24f, row.y, row.width - 48f, RowH);

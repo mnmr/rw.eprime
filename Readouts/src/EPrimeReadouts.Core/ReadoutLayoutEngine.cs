@@ -57,7 +57,7 @@ namespace EPrimeReadouts.Core
         private struct ResolvedSlot
         {
             public string Token;
-            public List<string> Members;  // def members (1+ entries)
+            public IReadOnlyList<string> Members;  // def members (1+ entries)
             public int Sum;
             public string? IconDefName;   // icon defName (pool snapshot icon for #tokens; first member otherwise)
             public string? HighlightName; // pool name (for #tokens) or null (use member labels for @tokens)
@@ -65,6 +65,16 @@ namespace EPrimeReadouts.Core
 
         // Content inset: X is stripe + pad, Y is GroupPadY.
         private static float InsetX => LayoutMetrics.StripeW + LayoutMetrics.GroupPadX;
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<
+            string, IReadOnlyList<string>> singleMemberLists =
+            new System.Collections.Concurrent.ConcurrentDictionary<
+                string, IReadOnlyList<string>>(StringComparer.Ordinal);
+        private static readonly Func<string, IReadOnlyList<string>> buildSingleMember =
+            member => Array.AsReadOnly(new[] { member });
+
+        private static IReadOnlyList<string> SingleMember(string member)
+            => singleMemberLists.GetOrAdd(member, buildSingleMember);
 
         // Columns for the Results section (wraps at panel width, capped).
         private static int ResultsColumns(LayoutInput input) =>
@@ -78,13 +88,36 @@ namespace EPrimeReadouts.Core
             + LayoutMetrics.MarkerColW + slotCount * metrics.CellW
             + LayoutMetrics.GroupPadX;
 
+        // Markers keep the shipped 7x9 size and occupy stable tier positions
+        // within a centered three-marker stack. The full icon+counter band is
+        // the vertical constraint, not only its icon row.
+        private static RectF MarkerRect(
+            float insetX, float insetY, float rowPairH, int tier) =>
+            new RectF(
+                insetX + (LayoutMetrics.MarkerColW - LayoutMetrics.TriW) / 2f,
+                insetY + (rowPairH - LayoutMetrics.MarkerStackH) / 2f
+                    + tier * (LayoutMetrics.TriH + LayoutMetrics.TriGap),
+                LayoutMetrics.TriW, LayoutMetrics.TriH);
+
+        // Keep the slim visual column easy to click by treating the stripe,
+        // leading pad, and marker column as one full-height interaction rail.
+        private static RectF MarkerHitRect(float insetY, float rowPairH) =>
+            new RectF(0f, insetY, InsetX + LayoutMetrics.MarkerColW, rowPairH);
+
         public static RenderModel Build(LayoutInput input)
         {
             var model = new RenderModel();
             float y = 0f;
             float maxGroupW = 0f;
             bool searching = !input.EditorMode && SearchMatcher.IsActive(input.SearchText);
-            if (searching) y = BuildResults(input, model, y);
+            if (searching)
+            {
+                int cellStart = model.Cells.Count;
+                int slotStart = model.SlotHits.Count;
+                int markerStart = model.MarkerHits.Count;
+                y = BuildResults(input, model, y);
+                RecordBand(model, cellStart, slotStart, markerStart);
+            }
             var slots = new List<ResolvedSlot>();
             // Stripe colors key on the group's position among the enabled
             // groups (the input list), NOT on its render position: a group
@@ -99,7 +132,11 @@ namespace EPrimeReadouts.Core
                     if (y > 0f) y += LayoutMetrics.GroupGap;
                     float containerW = EditorGroupContainerWidth(group, input);
                     if (containerW > maxGroupW) maxGroupW = containerW;
+                    int cellStart = model.Cells.Count;
+                    int slotStart = model.SlotHits.Count;
+                    int markerStart = model.MarkerHits.Count;
                     y = BuildEditorGroup(group, input, model, y, groupDisplayIndex, containerW);
+                    RecordBand(model, cellStart, slotStart, markerStart);
                 }
                 else if (input.DepthOf(group) == 0)
                 {
@@ -107,7 +144,11 @@ namespace EPrimeReadouts.Core
                     // every enabled group — including groups the expanded
                     // layout would omit for having no visible slots.
                     if (y > 0f) y += LayoutMetrics.GroupGap;
+                    int cellStart = model.Cells.Count;
+                    int slotStart = model.SlotHits.Count;
+                    int markerStart = model.MarkerHits.Count;
                     y = BuildCollapsedGroup(group, input, model, y, groupDisplayIndex);
+                    RecordBand(model, cellStart, slotStart, markerStart);
                 }
                 else
                 {
@@ -117,12 +158,142 @@ namespace EPrimeReadouts.Core
                     if (y > 0f) y += LayoutMetrics.GroupGap;
                     float containerW = GroupContainerWidth(slots.Count, input.Metrics);
                     if (containerW > maxGroupW) maxGroupW = containerW;
+                    int cellStart = model.Cells.Count;
+                    int slotStart = model.SlotHits.Count;
+                    int markerStart = model.MarkerHits.Count;
                     y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
+                    RecordBand(model, cellStart, slotStart, markerStart);
                 }
             }
             model.TotalHeight = y;
             model.TotalWidth = maxGroupW > input.Width ? maxGroupW : input.Width;
             return model;
+        }
+
+        /// Updates count-derived cell payloads without rebuilding geometry.
+        /// Returns false when the new counts change which slots/groups are
+        /// present, or when active search makes result geometry count-dependent.
+        public static bool TryRefreshCounts(LayoutInput input, RenderModel model)
+        {
+            if (input.EditorMode || SearchMatcher.IsActive(input.SearchText))
+                return false;
+            if (!HasSameVisibleSlots(input, model)) return false;
+
+            for (int bandIndex = 0; bandIndex < model.Bands.Count; bandIndex++)
+            {
+                RenderBand band = model.Bands[bandIndex];
+                int slotOffset = 0;
+                int sum = 0;
+                int cellEnd = band.CellStart + band.CellCount;
+                for (int cellIndex = band.CellStart;
+                     cellIndex < cellEnd;
+                     cellIndex++)
+                {
+                    RenderCell cell = model.Cells[cellIndex];
+                    if (cell.Kind == CellKind.Icon)
+                    {
+                        SlotHit hit = model.SlotHits[band.SlotStart + slotOffset];
+                        sum = SumMembers(input, hit.Members);
+                        cell.Count = sum;
+                        model.Cells[cellIndex] = cell;
+                    }
+                    else if (cell.Kind == CellKind.Counter)
+                    {
+                        cell.Count = sum;
+                        cell.Text = CountFormat.Compact(sum);
+                        cell.Band = CounterBand(
+                            input, SlotToken.Canonical(cell.Token!), sum);
+                        model.Cells[cellIndex] = cell;
+                        slotOffset++;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private static bool HasSameVisibleSlots(
+            LayoutInput input, RenderModel model)
+        {
+            int bandIndex = 0;
+            for (int groupIndex = 0; groupIndex < input.Groups.Count; groupIndex++)
+            {
+                ReadoutGroup group = input.Groups[groupIndex];
+                if (input.DepthOf(group) == 0)
+                {
+                    if (bandIndex >= model.Bands.Count
+                        || model.Bands[bandIndex].GroupId != group.Id
+                        || model.Bands[bandIndex].SlotCount != 0)
+                        return false;
+                    bandIndex++;
+                    continue;
+                }
+
+                int visibleCount = 0;
+                int depth = Markers.ClampDepth(
+                    group.TierCount, input.DepthOf(group));
+                for (int tier = 0; tier < depth; tier++)
+                {
+                    List<string> tokens = group.Tiers[tier];
+                    for (int slot = 0; slot < tokens.Count; slot++)
+                    {
+                        string token = tokens[slot];
+                        if (!ResolveToken(token, input, editorMode: false,
+                                out _, out _, out _, out int sum))
+                            continue;
+                        if (!IsVisible(token, input, sum)) continue;
+
+                        if (bandIndex >= model.Bands.Count)
+                            return false;
+                        RenderBand band = model.Bands[bandIndex];
+                        if (band.GroupId != group.Id
+                            || visibleCount >= band.SlotCount
+                            || !string.Equals(
+                                model.SlotHits[band.SlotStart + visibleCount].Token,
+                                token, StringComparison.Ordinal))
+                            return false;
+                        visibleCount++;
+                    }
+                }
+
+                if (visibleCount == 0)
+                {
+                    if (bandIndex < model.Bands.Count
+                        && model.Bands[bandIndex].GroupId == group.Id)
+                        return false;
+                    continue;
+                }
+                if (visibleCount != model.Bands[bandIndex].SlotCount)
+                    return false;
+                bandIndex++;
+            }
+            return bandIndex == model.Bands.Count;
+        }
+
+        private static int SumMembers(
+            LayoutInput input, IReadOnlyList<string> members)
+        {
+            int sum = 0;
+            for (int i = 0; i < members.Count; i++)
+                sum += EffectiveCount(input, members[i]);
+            return sum;
+        }
+
+        private static void RecordBand(
+            RenderModel model, int cellStart, int slotStart, int markerStart)
+        {
+            if (cellStart >= model.Cells.Count) return;
+            RenderCell backing = model.Cells[cellStart];
+            model.Bands.Add(new RenderBand
+            {
+                GroupId = backing.GroupId,
+                Rect = backing.Rect,
+                CellStart = cellStart,
+                CellCount = model.Cells.Count - cellStart,
+                SlotStart = slotStart,
+                SlotCount = model.SlotHits.Count - slotStart,
+                MarkerStart = markerStart,
+                MarkerCount = model.MarkerHits.Count - markerStart,
+            });
         }
 
         /// Displayed count for one def under the storage-only, hide-forbidden
@@ -159,7 +330,8 @@ namespace EPrimeReadouts.Core
         /// Returns true when the token is resolvable (has ≥1 member), unless editorMode is true
         /// in which case pool-ref tokens with zero members are still included.
         private static bool ResolveToken(string token, LayoutInput input, bool editorMode,
-            out List<string>? members, out string? iconDefName, out string? highlightName, out int sum)
+            out IReadOnlyList<string>? members, out string? iconDefName,
+            out string? highlightName, out int sum)
         {
             members = null;
             iconDefName = null;
@@ -175,7 +347,7 @@ namespace EPrimeReadouts.Core
                 {
                     // Unknown pool: skip in normal mode; in editor mode return an empty slot
                     if (!editorMode) return false;
-                    members = new List<string>();
+                    members = Array.Empty<string>();
                     iconDefName = null;
                     highlightName = null;
                     sum = 0;
@@ -186,13 +358,13 @@ namespace EPrimeReadouts.Core
                 {
                     // Zero members: skip in normal mode; in editor mode include with empty list
                     if (!editorMode) return false;
-                    members = new List<string>();
+                    members = Array.Empty<string>();
                     iconDefName = poolIcon; // may be null
                     highlightName = poolName;
                     sum = 0;
                     return true;
                 }
-                members = new List<string>(poolMembers);
+                members = poolMembers;
                 iconDefName = poolIcon;
                 highlightName = poolName;
                 foreach (var m in members) sum += EffectiveCount(input, m);
@@ -203,7 +375,7 @@ namespace EPrimeReadouts.Core
                 // Legacy @Category token
                 var cats = input.Catalog.CountedDefsIn(SlotToken.MemberName(token));
                 if (cats.Count == 0) return false;
-                members = new List<string>(cats);
+                members = cats;
                 iconDefName = members[0];
                 highlightName = null; // use member labels for legacy pools
                 foreach (var m in members) sum += EffectiveCount(input, m);
@@ -214,7 +386,7 @@ namespace EPrimeReadouts.Core
                 // Plain defName
                 string defName = SlotToken.MemberName(token);
                 if (!input.Catalog.Exists(defName)) return false;
-                members = new List<string> { defName };
+                members = SingleMember(defName);
                 iconDefName = defName;
                 highlightName = null;
                 sum = EffectiveCount(input, defName);
@@ -239,11 +411,7 @@ namespace EPrimeReadouts.Core
                     // see, so hide-when-zero must not swallow it. With
                     // negatives off the sum is already clamped at zero, so
                     // this stays equivalent to the original sum > 0 rule.
-                    string canonical = SlotToken.Canonical(token);
-                    bool visible = sum != 0
-                        || SlotToken.ShowWhenZero(token)
-                        || input.Thresholds.ContainsKey(canonical);
-                    if (!visible) continue;
+                    if (!IsVisible(token, input, sum)) continue;
 
                     into.Add(new ResolvedSlot
                     {
@@ -256,6 +424,12 @@ namespace EPrimeReadouts.Core
                 }
             }
         }
+
+        private static bool IsVisible(
+            string token, LayoutInput input, int sum)
+            => sum != 0
+                || SlotToken.ShowWhenZero(token)
+                || input.Thresholds.ContainsKey(SlotToken.Canonical(token));
 
         /// Horizontally collapsed band: the normal single-row band height at
         /// the zero-slot container width — stripe backing and one dim
@@ -284,10 +458,8 @@ namespace EPrimeReadouts.Core
                 {
                     Kind = CellKind.Triangle,
                     Triangle = TriangleState.Dim,
-                    Rect = new RectF(
-                        insetX + i * (LayoutMetrics.TriW + LayoutMetrics.TriGap),
-                        insetY + (LayoutMetrics.IconRowH - LayoutMetrics.TriH) / 2f,
-                        LayoutMetrics.TriW, LayoutMetrics.TriH),
+                    Rect = MarkerRect(
+                        insetX, insetY, input.Metrics.RowPairH, i),
                 });
             return yTop + containerH;
         }
@@ -312,38 +484,35 @@ namespace EPrimeReadouts.Core
             // Tiers visible only through hover expansion (beyond the
             // configured depth) show HoverLit instead of Lit.
             int depth = Markers.ClampDepth(group.TierCount, input.DepthOf(group));
-            var states = new TriangleState[TierOps.MaxTiers];
-            Markers.Compute(group.TierCount, depth, states);
+            int configured = -1;
             if (input.ConfiguredDepthOf != null)
-            {
-                int configured = Markers.ClampDepth(
+                configured = Markers.ClampDepth(
                     group.TierCount, input.ConfiguredDepthOf(group));
-                for (int i = configured; i < depth; i++)
-                    if (states[i] == TriangleState.Lit)
-                        states[i] = TriangleState.HoverLit;
-            }
             float insetX = InsetX;
             float insetY = yTop + LayoutMetrics.GroupPadY;
             for (int i = 0; i < TierOps.MaxTiers; i++)
             {
-                if (states[i] == TriangleState.Absent) continue;
+                TriangleState state = Markers.StateAt(
+                    group.TierCount, depth, i);
+                if (configured >= 0 && i >= configured && i < depth
+                    && state == TriangleState.Lit)
+                    state = TriangleState.HoverLit;
+                if (state == TriangleState.Absent) continue;
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Triangle,
-                    Triangle = states[i],
-                    Rect = new RectF(
-                        insetX + i * (LayoutMetrics.TriW + LayoutMetrics.TriGap),
-                        insetY + (LayoutMetrics.IconRowH - LayoutMetrics.TriH) / 2f,
-                        LayoutMetrics.TriW, LayoutMetrics.TriH),
+                    Triangle = state,
+                    Rect = MarkerRect(
+                        insetX, insetY, input.Metrics.RowPairH, i),
                 });
             }
 
-            // MarkerHit is the INSET clickable region (matches drawn triangles)
+            // The leading rail is clickable even though only 11px is reserved
+            // between the inset and the first resource cell.
             model.MarkerHits.Add(new MarkerHit
             {
                 GroupId = group.Id,
-                Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    input.Metrics.RowPairH),
+                Rect = MarkerHitRect(insetY, input.Metrics.RowPairH),
             });
 
             // Build the icon/counter row, inset (single row, no wrapping)
@@ -403,6 +572,7 @@ namespace EPrimeReadouts.Core
                         });
                 }
 
+                int iconCellIndex = model.Cells.Count;
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Icon,
@@ -431,6 +601,7 @@ namespace EPrimeReadouts.Core
                     Token = slot.Token,
                     Members = slot.Members,
                     Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
+                    CellIndex = iconCellIndex,
                 });
             }
         }
@@ -470,30 +641,26 @@ namespace EPrimeReadouts.Core
 
             // Markers: count = min(3, max(tiers.Count, depth)), lit = depth
             int markerCount = Math.Min(3, Math.Max(tiers.Count, depth));
-            var states = new TriangleState[TierOps.MaxTiers];
-            Markers.Compute(markerCount, depth, states);
-
             float insetX = InsetX;
             float insetY = yTop + LayoutMetrics.GroupPadY;
             for (int i = 0; i < TierOps.MaxTiers; i++)
             {
-                if (states[i] == TriangleState.Absent) continue;
+                TriangleState state = Markers.StateAt(
+                    markerCount, depth, i);
+                if (state == TriangleState.Absent) continue;
                 model.Cells.Add(new RenderCell
                 {
                     Kind = CellKind.Triangle,
-                    Triangle = states[i],
-                    Rect = new RectF(
-                        insetX + i * (LayoutMetrics.TriW + LayoutMetrics.TriGap),
-                        insetY + (LayoutMetrics.IconRowH - LayoutMetrics.TriH) / 2f,
-                        LayoutMetrics.TriW, LayoutMetrics.TriH),
+                    Triangle = state,
+                    Rect = MarkerRect(
+                        insetX, insetY, metrics.RowPairH, i),
                 });
             }
 
             model.MarkerHits.Add(new MarkerHit
             {
                 GroupId = group.Id,
-                Rect = new RectF(insetX, insetY, LayoutMetrics.MarkerColW,
-                    metrics.RowPairH),
+                Rect = MarkerHitRect(insetY, metrics.RowPairH),
             });
 
             // Render exactly one tier: tier at index depth-1
@@ -693,6 +860,7 @@ namespace EPrimeReadouts.Core
                     var iconRect = new RectF(
                         x + (metrics.CellW - LayoutMetrics.IconSize) / 2f, y,
                         LayoutMetrics.IconSize, LayoutMetrics.IconSize);
+                    int iconCellIndex = model.Cells.Count;
                     model.Cells.Add(new RenderCell
                         { Kind = CellKind.Icon, DefName = defName, Count = count, Rect = iconRect });
                     model.Cells.Add(new RenderCell
@@ -711,8 +879,9 @@ namespace EPrimeReadouts.Core
                     model.SlotHits.Add(new SlotHit
                     {
                         Token = defName,
-                        Members = new List<string> { defName },
+                        Members = SingleMember(defName),
                         Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
+                        CellIndex = iconCellIndex,
                     });
                 }
                 y += metrics.RowPairH;

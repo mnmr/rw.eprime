@@ -203,6 +203,23 @@ namespace EPrimeReadouts.Core
                 resourceDefName, queued, unitCost, drain, source);
         }
 
+        /// Replays one immutable planned-work row from a less frequently
+        /// refreshed scan into the current stock snapshot.
+        public void AddCachedPlannedWork(PlannedWorkEntry entry, int defHash)
+        {
+            if (entry.Kind == PlannedWorkKind.Bill)
+            {
+                AddBillWork(entry.ResourceDefName, defHash,
+                    entry.WorkDefName, entry.Queued, entry.UnitCost,
+                    entry.Drain, entry.Source);
+                return;
+            }
+
+            AddBuildableWork(entry.ResourceDefName, defHash,
+                entry.WorkDefName, entry.StuffDefName, entry.Queued,
+                entry.UnitCost, entry.Drain, entry.Source);
+        }
+
         private void AddWork(
             PlannedWorkKind kind,
             string workDefName,
