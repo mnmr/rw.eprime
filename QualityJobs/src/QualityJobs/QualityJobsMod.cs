@@ -60,6 +60,19 @@ namespace QualityJobs
         {
             SettingsLabels.Ensure();
 
+            // A Game and its components exist before FinalizeInit publishes the
+            // per-save settings snapshot. Treat the store as an editable source
+            // only while playing and after that snapshot is actually ready.
+            QualityJobsStore? loadedStore =
+                Current.ProgramState == ProgramState.Playing
+                    ? QualityJobsStore.Active
+                    : null;
+            StoreSettingsSnapshot? activeSettings = null;
+            QualityJobsStore? activeStore = loadedStore != null
+                && loadedStore.TryGetSettingsPresentation(out activeSettings)
+                    ? loadedStore
+                    : null;
+
             // ── Header panel ─────────────────────────────────────────────────────────
             // Full-width, PanelH tall, drawn at top of inRect (y=0).
             // inRect is already ContractedBy(Window.Margin=18f) and AtZero'd by
@@ -89,12 +102,11 @@ namespace QualityJobs
             // Right-side button: Disable / Enable (only when a game is loaded).
             // Multi-pass safety: Widgets.ButtonText returns true only on the
             // MouseUp event pass; dialog open is therefore per-click, not per-frame.
-            if (Current.Game != null)
+            if (Current.ProgramState == ProgramState.Playing)
             {
                 float btnY    = panelRect.y + (PanelH - 28f) / 2f;
                 var   btnRect = new Rect(panelRect.xMax - 158f, btnY, 150f, 28f);
-                QualityJobsStore? store = QualityJobsStore.Active;
-                if (store != null)
+                if (loadedStore != null)
                 {
                     // Disable button: opens confirmation dialog.
                     if (Widgets.ButtonText(btnRect, SettingsLabels.DisableButton!))
@@ -125,9 +137,6 @@ namespace QualityJobs
             // Dual-pattern: when a game is loaded and the store is active, the
             // grid reads from/writes to the store via synced commands. Otherwise
             // reads/writes global Settings directly (new-save seeds).
-            QualityJobsStore? activeStore = (Current.Game != null) ? QualityJobsStore.Active : null;
-            StoreSettingsSnapshot? activeSettings = activeStore?.SettingsPresentation;
-
             // ── Two-column defaults grid ──────────────────────────────────────────
             // Left column: bill defaults.  Right column: construction defaults.
             // Column widths: (bodyW - ColGap) / 2 — split at midpoint with 24px gap.

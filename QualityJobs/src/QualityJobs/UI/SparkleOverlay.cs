@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Verse;
@@ -99,7 +100,20 @@ namespace QualityJobs.UI
             }
         }
 
-        internal static void Draw(MapSnapshot snapshot)
+        internal static void DrawSafely(QualityJobsStore store,
+            MapSnapshot snapshot)
+        {
+            try
+            {
+                Draw(snapshot);
+            }
+            catch (Exception exception)
+            {
+                store.DisableOverlayDrawingAfterFault(exception);
+            }
+        }
+
+        private static void Draw(MapSnapshot snapshot)
         {
             Model[] models = snapshot.Models;
             for (int modelIndex = 0; modelIndex < models.Length; modelIndex++)

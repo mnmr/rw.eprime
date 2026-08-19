@@ -59,7 +59,7 @@ namespace QualityJobs.Patches
             if (store.TryGetOverlayPresentation(map,
                     out SparkleOverlay.MapSnapshot? snapshot)
                 && snapshot != null)
-                SparkleOverlay.Draw(snapshot);
+                SparkleOverlay.DrawSafely(store, snapshot);
         }
     }
 }

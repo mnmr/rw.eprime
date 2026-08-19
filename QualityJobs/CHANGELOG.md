@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.0.7 — 2026-08-18
+
+- Fixed: Added two more log guards so that all logging sites are guarded.
+
+## 1.0.6 — 2026-08-18
+
+- Fixed: Delayed init so mod load order isn't important and added a log error guard so the same error isn't logged repeatedly.
+
 ## 1.0.5 — 2026-08-16
 
 - Added: API methods allowing other mods to interact with Quality Jobs. EPrime's Readouts uses this to estimate resource material needs, and EPrime's Pawn Planner uses this to schedule new quality work bills.

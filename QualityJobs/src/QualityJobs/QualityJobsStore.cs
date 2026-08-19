@@ -170,8 +170,15 @@ namespace QualityJobs
         // fourteen per-save default fields. Refresh: immediate after a successful
         // command and during load/seed. Equality: no-op commands do not republish.
         // Teardown: ReleasePresentation clears the published store-owned state.
-        private StoreSettingsSnapshot settingsPresentation = null!;
-        internal StoreSettingsSnapshot SettingsPresentation => settingsPresentation;
+        private StoreSettingsSnapshot? settingsPresentation;
+        internal StoreSettingsSnapshot SettingsPresentation => settingsPresentation!;
+
+        internal bool TryGetSettingsPresentation(
+            out StoreSettingsSnapshot? snapshot)
+        {
+            snapshot = settingsPresentation;
+            return snapshot != null;
+        }
 
         // Cache contract — Owner: this per-save store. Key: singleton API feed.
         // Value: immutable ManagedQualityJobsSnapshot; its QJ-owned models and
@@ -189,6 +196,10 @@ namespace QualityJobs
         private ManagedQualityJobsSnapshot managedJobsPresentation =
             ManagedQualityJobsSnapshot.Empty;
         private bool managedJobsDirty = true;
+        // Store-lifetime circuit breaker for the repeated update path. An
+        // unexpected publication failure clears the API feed, logs once, and
+        // suppresses all automatic retries until a new store is created.
+        private bool managedJobsPublicationFaulted;
         // Cache contract — Owner: this per-save store. Key: map/product,
         // target-count bill, ingredient filter, and included slot-group identity.
         // Value: private mutable event-routing index; it never escapes. Dependencies:
@@ -299,6 +310,10 @@ namespace QualityJobs
         // draw call in the common case. It reflects published overlay snapshots,
         // not the authoritative plans list, and ReleasePresentation clears it.
 
+        // Store-lifetime circuit breaker for the per-frame render path. A draw
+        // failure disables all overlay publication until a new store is created.
+        private bool overlayDrawingFaulted;
+
         /// True when at least one published map overlay contains draw models.
         public static bool AnyOverlays;
 
@@ -337,6 +352,17 @@ namespace QualityJobs
         internal bool TryGetOverlayPresentation(Map map,
             out SparkleOverlay.MapSnapshot? snapshot)
             => overlayPresentations.TryGetValue(map, out snapshot);
+
+        internal void DisableOverlayDrawingAfterFault(Exception exception)
+        {
+            if (overlayDrawingFaulted) return;
+            overlayDrawingFaulted = true;
+            AnyOverlays = false;
+            Log.Error(
+                "Quality Jobs disabled construction sparkle overlays for this "
+                + "save after an unexpected drawing error. Automatic retries "
+                + "are suppressed until the save is reloaded.\n" + exception);
+        }
 
         internal BillPresentationSnapshot BillPresentationFor(Bill bill)
         {
@@ -741,7 +767,7 @@ namespace QualityJobs
         internal void ReleasePresentation()
         {
             PlanRetargeted = null;
-            settingsPresentation = null!;
+            settingsPresentation = null;
             planPresentations.Clear();
             billPresentations.Clear();
             overlayPresentations.Clear();
@@ -810,7 +836,8 @@ namespace QualityJobs
             else
             {
                 overlayPresentations.Remove(map);
-                AnyOverlays = overlayPresentations.Count != 0;
+                AnyOverlays = !overlayDrawingFaulted
+                    && overlayPresentations.Count != 0;
             }
 
             if (billPresentations.Count != 0)
@@ -834,7 +861,10 @@ namespace QualityJobs
             spawnedUftsByMap.Remove(map);
         }
 
-        internal void InvalidateManagedJobs() => managedJobsDirty = true;
+        internal void InvalidateManagedJobs()
+        {
+            if (!managedJobsPublicationFaulted) managedJobsDirty = true;
+        }
 
         internal void NotifyTargetCountThingChanged(Thing thing, Map? map)
         {
@@ -985,19 +1015,41 @@ namespace QualityJobs
 
         private void PublishManagedJobsPresentation()
         {
-            var jobs = new List<ManagedQualityJob>();
-            var targetCountDependencies =
-                new ManagedTargetCountDependencies();
-            PublishManagedBillJobs(jobs, targetCountDependencies);
-            PublishManagedConstructionJobs(jobs);
+            if (managedJobsPublicationFaulted
+                || Current.ProgramState != ProgramState.Playing
+                || Current.Game?.World == null)
+                return;
 
-            ManagedQualityJobsSnapshot candidate = jobs.Count == 0
-                ? ManagedQualityJobsSnapshot.Empty
-                : new ManagedQualityJobsSnapshot(jobs.ToArray());
-            managedJobsPresentation = SnapshotPublication.Publish(
-                managedJobsPresentation, candidate);
-            managedTargetCountDependencies = targetCountDependencies;
+            // Consume the invalidation before entering the failure-prone build.
+            // If it throws, the frame update cannot immediately retry it.
             managedJobsDirty = false;
+            try
+            {
+                var jobs = new List<ManagedQualityJob>();
+                var targetCountDependencies =
+                    new ManagedTargetCountDependencies();
+                PublishManagedBillJobs(jobs, targetCountDependencies);
+                PublishManagedConstructionJobs(jobs);
+
+                ManagedQualityJobsSnapshot candidate = jobs.Count == 0
+                    ? ManagedQualityJobsSnapshot.Empty
+                    : new ManagedQualityJobsSnapshot(jobs.ToArray());
+                managedJobsPresentation = SnapshotPublication.Publish(
+                    managedJobsPresentation, candidate);
+                managedTargetCountDependencies = targetCountDependencies;
+            }
+            catch (Exception ex)
+            {
+                managedJobsPublicationFaulted = true;
+                managedJobsPresentation = ManagedQualityJobsSnapshot.Empty;
+                managedTargetCountDependencies =
+                    new ManagedTargetCountDependencies();
+                Log.Error(
+                    "Quality Jobs disabled managed-jobs API publication for "
+                    + "this save after an unexpected error. The API snapshot "
+                    + "was cleared, and automatic retries are suppressed until "
+                    + "the save is reloaded.\n" + ex);
+            }
         }
 
         private void PublishManagedBillJobs(List<ManagedQualityJob> jobs,
@@ -1058,7 +1110,7 @@ namespace QualityJobs
         private void PublishManagedConstructionJobs(List<ManagedQualityJob> jobs)
         {
             var groups = new List<ConstructionApiGroup>();
-            Faction? player = Faction.OfPlayer;
+            Faction? player = Faction.OfPlayerSilentFail;
             for (int i = 0; i < plans.Count; i++)
             {
                 ConstructionPlan plan = plans[i];
@@ -1257,7 +1309,7 @@ namespace QualityJobs
                         new SparkleOverlay.MapSnapshot(pair.Value.ToArray()));
             }
             overlayPresentations = next;
-            AnyOverlays = next.Count != 0;
+            AnyOverlays = !overlayDrawingFaulted && next.Count != 0;
         }
 
         public override void FinalizeInit()
@@ -1550,7 +1602,12 @@ namespace QualityJobs
 
         public override void GameComponentUpdate()
         {
-            if (managedJobsDirty) PublishManagedJobsPresentation();
+            if (!managedJobsDirty
+                || managedJobsPublicationFaulted
+                || Current.ProgramState != ProgramState.Playing
+                || Current.Game?.World == null)
+                return;
+            PublishManagedJobsPresentation();
         }
 
         public override void GameComponentTick()
