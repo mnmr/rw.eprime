@@ -33,12 +33,64 @@ namespace EPrimeReadouts.UI
         private static readonly Func<CaptionMeasureState, float> measureCaptionHeight =
             state => Text.CalcHeight(state.Caption, state.Width);
 
+        // Cache contract:
+        // Owner: process/current UI presentation.
+        // Key: UiVersion.Current.
+        // Value: whole-pixel line geometry for a Tiny request after RimWorld's
+        // possible Small-font substitution.
+        // Dependencies: UI scale, tiny-text preference, language font support,
+        // and platform as represented by the UI metric revision.
+        // Refresh policy: first read in a UI revision; every later dialog read
+        // reuses the measured value.
+        // Teardown: Reset clears the stamp and value.
+        private static ResolvedTinyTextMetrics tinyTextMetrics;
+        private static int tinyTextMetricsVersion = -1;
+
         internal static readonly Color PanelBackground = new Color(0.08f, 0.08f, 0.08f, 0.9f);
         internal static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
         internal static readonly Color HeaderText = new Color(0.85f, 0.85f, 0.85f);
         internal static readonly Color HeaderRule = new Color(1f, 1f, 1f, 0.25f);
         internal static readonly Color CaptionText = new Color(0.60f, 0.62f, 0.64f);
         internal static readonly Color SelectionTint = new Color(1f, 0.95f, 0.55f);
+
+        internal static ResolvedTinyTextMetrics TinyTextMetrics
+        {
+            get
+            {
+                UiVersion.ObserveCurrentMetrics();
+                if (tinyTextMetricsVersion == UiVersion.Current)
+                    return tinyTextMetrics;
+                using (new GuiStateScope())
+                {
+                    Text.Font = GameFont.Tiny;
+                    tinyTextMetrics = new ResolvedTinyTextMetrics(
+                        Text.LineHeight,
+                        Text.Font == GameFont.Small);
+                }
+                tinyTextMetricsVersion = UiVersion.Current;
+                return tinyTextMetrics;
+            }
+        }
+
+        /// A compact mode selector styled as one segment of a shared header.
+        /// Returns true when the segment is clicked.
+        internal static bool SegmentedTab(Rect rect, string label, bool active)
+        {
+            using (new GuiStateScope())
+            {
+                Color fill = active
+                    ? new Color(1f, 1f, 1f, 0.16f)
+                    : new Color(1f, 1f, 1f, 0.04f);
+                Widgets.DrawBoxSolid(rect, fill);
+                if (!active) Widgets.DrawHighlightIfMouseover(rect);
+
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = active ? Color.white : HeaderText;
+                Widgets.Label(rect, label);
+                return Widgets.ButtonInvisible(rect);
+            }
+        }
 
         /// Plain underlined header (no fold toggle, no caption). Returns the
         /// height consumed.
@@ -58,6 +110,7 @@ namespace EPrimeReadouts.UI
 
             float textWidth = Mathf.Max(1f, width - 2f * HelpPanelPadding);
             float captionHeight = CaptionHeight(caption, textWidth);
+            ResolvedTinyTextMetrics metrics = TinyTextMetrics;
             float panelHeight = captionHeight + 2f * HelpPanelPadding;
             var panelRect = new Rect(
                 x,
@@ -73,7 +126,7 @@ namespace EPrimeReadouts.UI
                 GUI.color = CaptionText;
                 Widgets.Label(new Rect(
                     panelRect.x + HelpPanelPadding,
-                    panelRect.y + HelpPanelPadding,
+                    panelRect.y + HelpPanelPadding + metrics.CaptionOffsetY,
                     textWidth,
                     captionHeight), caption);
             }
@@ -151,7 +204,11 @@ namespace EPrimeReadouts.UI
                 Text.Font = GameFont.Tiny;
                 GUI.color = CaptionText;
                 float capH = CaptionHeight(caption!, width); // NullOrEmpty checked above
-                Widgets.Label(new Rect(x, y + used, width, capH), caption);
+                Widgets.Label(new Rect(
+                    x,
+                    y + used + TinyTextMetrics.CaptionOffsetY,
+                    width,
+                    capH), caption);
                 GUI.color = Color.white;
                 Text.Font = GameFont.Small;
                 used += capH + 4f;
@@ -167,13 +224,14 @@ namespace EPrimeReadouts.UI
             Text.Font = GameFont.Tiny;
             try
             {
-                return captionHeights.Get(
+                float measured = captionHeights.Get(
                     caption,
                     (int)GameFont.Tiny,
                     width,
                     UiVersion.Current,
                     new CaptionMeasureState { Caption = caption, Width = width },
                     measureCaptionHeight);
+                return TinyTextMetrics.MinHeight(Mathf.Ceil(measured));
             }
             finally
             {
@@ -181,6 +239,11 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        internal static void Reset() => captionHeights.Reset();
+        internal static void Reset()
+        {
+            captionHeights.Reset();
+            tinyTextMetrics = default;
+            tinyTextMetricsVersion = -1;
+        }
     }
 }

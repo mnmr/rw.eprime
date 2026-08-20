@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
 using UnityEngine;
@@ -7,8 +5,8 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// Right-side top panel: list of resource pools with icon + name, add/rename/delete,
-    /// drag-source into group editor tier slots.
+    /// Full-height center-panel list of resource pools with create, select,
+    /// rename, and delete actions.
     public sealed class PoolListView
     {
         private const float RowH = 26f;
@@ -17,169 +15,98 @@ namespace EPrimeReadouts.UI
         private const int VirtualizeThreshold = 30;
 
         private Vector2 scroll;
-        private int builtPoolsVersion = -1;
-        private ReadoutStore? builtStore;
         private PoolSnapshot? builtSnapshot;
 
-        // Cached row data (rebuilt only when pools change)
         private struct PoolRow
         {
-            public int Id;
-            public string Name;
-            public ThingDef? IconDef; // resolved from snapshot; null when unresolvable
+            internal int Id;
+            internal string Name;
+            internal ThingDef? IconDef;
         }
 
         // Cache contract:
-        // Owner: this dialog view and one ReadoutStore.
-        // Key: store identity, PoolsVersion, and shared PoolSnapshot identity.
-        // Value: immutable row array with resolved ThingDef icons.
-        // Dependencies: pool id/name/icon data.
-        // Refresh policy: immediate on a dependency change.
-        // Equality policy: unchanged dependencies preserve array identity.
-        // Teardown: Reset releases row and snapshot references on dialog close.
+        // Owner: this dialog view.
+        // Key: shared PoolSnapshot identity.
+        // Value: immutable pool rows with resolved icon defs.
+        // Dependencies: pool snapshot id/name/icon data.
+        // Refresh policy: immediate when the shared snapshot changes.
+        // Equality policy: unchanged snapshot identity preserves row identity.
+        // Teardown: Reset releases row, snapshot, and def references.
         private PoolRow[]? cachedRows;
+        private int pendingSelectId = -1;
         private string? pendingSelectName;
-
-        private readonly PoolListHeightCache heightCache = new PoolListHeightCache(
-            headerHeight: 2f * EprStyle.SectionHeaderHeight
-                + EprStyle.HelpCollapsedBottomMargin,
-            captionGap: 2f * EprStyle.HelpPanelPadding
-                + EprStyle.HelpExpandedBottomMargin,
-            rowHeight: RowH,
-            maxVisibleRows: 8,
-            footerHeight: FooterH);
-        private static readonly Func<string, float, float> measureCaptionHeight = MeasureCaptionHeight;
-
-        /// Returns the desired height for this panel: title header, Help foldout,
-        /// optional framed Help panel, up to eight rows, and the footer. Recomputed
-        /// only when the fold state, width, UI metrics, or pool data changes.
-        public float DesiredHeight(float availableWidth, Dialog_ReadoutConfig owner)
-        {
-            UiVersion.ObserveCurrentMetrics();
-            var store = ReadoutStore.Current;
-            var settings = EPrimeReadoutsMod.Settings;
-            bool folded = settings.helpPoolsFolded;
-            if (store != null) EnsureRows(store, owner);
-            int poolsVersion = store != null ? store.PoolsVersion : -1;
-            int rowCount = cachedRows?.Length ?? 0;
-            return heightCache.GetDesiredHeight(
-                store!, // compared only by reference; null owner is tolerated
-                poolsVersion,
-                UiVersion.Current,
-                rowCount,
-                folded,
-                availableWidth,
-                UiText.Get("EPR.HelpPools"),
-                measureCaptionHeight);
-        }
-
-        /// Minimum height that keeps both headers, the complete Help foldout,
-        /// and the Add footer inside this panel. Rows can use a smaller
-        /// scrollable viewport, but these fixed elements cannot.
-        public float MinimumHeight(float availableWidth)
-        {
-            var settings = EPrimeReadoutsMod.Settings;
-            return EprStyle.SectionHeaderHeight
-                + EprStyle.HelpGroupHeight(
-                    availableWidth,
-                    UiText.Get("EPR.HelpPools"),
-                    settings.helpPoolsFolded)
-                + FooterH;
-        }
-
-        private static float MeasureCaptionHeight(string caption, float availableWidth)
-        {
-            return EprStyle.CaptionHeight(
-                caption,
-                Mathf.Max(1f, availableWidth - 2f * EprStyle.HelpPanelPadding));
-        }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
         {
-            var store = ReadoutStore.Current;
+            if (ReadoutStore.Current == null) return;
             var settings = EPrimeReadoutsMod.Settings;
-            if (store == null) return;
-
-            float headerUsed = EprStyle.SectionHeader(
-                rect.x, rect.y, rect.width, UiText.Get("EPR.Pools"));
 
             bool folded = settings.helpPoolsFolded;
-            headerUsed += EprStyle.HelpGroup(
+            float headerUsed = EprStyle.HelpGroup(
                 rect.x,
-                rect.y + headerUsed,
+                rect.y,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get("EPR.HelpPools"),
                 ref folded);
             if (folded != settings.helpPoolsFolded)
-            {
                 EPrimeReadoutsMod.Persist(s => s.helpPoolsFolded = folded);
-                // Dialog_ReadoutConfig sized this panel before this input event
-                // toggled the foldout. Let the next IMGUI pass recalculate the
-                // outer rectangle before drawing any height-dependent body.
-                return;
-            }
 
-            // Rebuild cached rows when pool data changes
-            EnsureRows(store, owner);
+            EnsureRows(owner.PoolsSnapshot);
 
-            // Defensive: clear selection if selected pool is gone
-            if (owner.selectedPoolId >= 0)
+            if (owner.selectedPoolId >= 0 && !Contains(owner.selectedPoolId))
+                owner.selectedPoolId = -1;
+
+            float listHeight = Mathf.Max(0f, rect.height - headerUsed - FooterH);
+            if (pendingSelectId < 0 && pendingSelectName != null)
             {
-                bool found = false;
-                for (int i = 0; i < cachedRows!.Length; i++) // built by EnsureRows above
-                    if (cachedRows[i].Id == owner.selectedPoolId) { found = true; break; }
-                if (!found) owner.selectedPoolId = -1;
+                for (int i = 0; i < cachedRows!.Length; i++)
+                {
+                    if (!PoolNameRules.Comparer.Equals(
+                        cachedRows[i].Name, pendingSelectName)) continue;
+                    pendingSelectId = cachedRows[i].Id;
+                    pendingSelectName = null;
+                    break;
+                }
             }
-
-            // Pending selection by name (after create) — select AND scroll the
-            // new row into view (pools are name-sorted, so it can land anywhere).
-            if (pendingSelectName != null)
+            if (pendingSelectId >= 0)
             {
-                for (int i = 0; i < (cachedRows?.Length ?? 0); i++)
-                    if (cachedRows![i].Name == pendingSelectName) // loop entered only when non-null
-                    {
-                        owner.selectedPoolId = cachedRows[i].Id;
-                        float visibleH = rect.height - headerUsed - FooterH;
-                        float rowTop = i * RowH;
-                        if (rowTop < scroll.y)
-                            scroll.y = rowTop;
-                        else if (rowTop + RowH > scroll.y + visibleH)
-                            scroll.y = rowTop + RowH - Mathf.Max(RowH, visibleH);
-                        break;
-                    }
-                pendingSelectName = null;
+                for (int i = 0; i < cachedRows!.Length; i++)
+                {
+                    if (cachedRows[i].Id != pendingSelectId) continue;
+                    owner.selectedPoolId = cachedRows[i].Id;
+                    float rowTop = i * RowH;
+                    if (rowTop < scroll.y)
+                        scroll.y = rowTop;
+                    else if (rowTop + RowH > scroll.y + listHeight)
+                        scroll.y = rowTop + RowH - Mathf.Max(RowH, listHeight);
+                    pendingSelectId = -1;
+                    pendingSelectName = null;
+                    break;
+                }
             }
 
-            int rowCount = cachedRows?.Length ?? 0;
-
-            float bodyHeight = rect.height - headerUsed;
-            if (bodyHeight < FooterH) return;
-
-            var listRect = new Rect(rect.x, rect.y + headerUsed,
-                rect.width, bodyHeight - FooterH);
-            var viewRect = new Rect(0f, 0f, listRect.width - 16f, rowCount * RowH);
+            var listRect = new Rect(
+                rect.x, rect.y + headerUsed, rect.width, listHeight);
+            int rowCount = cachedRows!.Length;
+            var viewRect = new Rect(
+                0f, 0f, Mathf.Max(0f, listRect.width - 16f), rowCount * RowH);
             if (listRect.height > 0f)
             {
                 Widgets.BeginScrollView(listRect, ref scroll, viewRect);
                 try
                 {
-                if (rowCount > 0)
-                {
-                    bool useVirtual = rowCount > VirtualizeThreshold;
-                    int start = 0, end = rowCount;
-                    if (useVirtual)
+                    int start = 0;
+                    int end = rowCount;
+                    if (rowCount > VirtualizeThreshold)
                     {
-                        var vr = UniformViewportRange.Calculate(
+                        var visible = UniformViewportRange.Calculate(
                             rowCount, RowH, 0f, scroll.y, listRect.height);
-                        start = vr.Start;
-                        end = vr.EndExclusive;
+                        start = visible.Start;
+                        end = visible.EndExclusive;
                     }
-
                     for (int i = start; i < end; i++)
-                        DrawPoolRow(cachedRows![i], i, viewRect.width, owner); // rowCount > 0 implies rows
-                }
-
+                        DrawPoolRow(cachedRows[i], i, viewRect.width, owner);
                 }
                 finally
                 {
@@ -187,8 +114,8 @@ namespace EPrimeReadouts.UI
                 }
             }
 
-            // Footer: Add button → name dialog
-            var footer = new Rect(rect.x, rect.yMax - FooterH + 4f, rect.width, FooterH - 4f);
+            var footer = new Rect(
+                rect.x, rect.yMax - FooterH + 4f, rect.width, FooterH - 4f);
             if (Widgets.ButtonText(footer, UiText.Get("EPR.Add")))
             {
                 Find.WindowStack.Add(new Dialog_NameInput(
@@ -196,29 +123,40 @@ namespace EPrimeReadouts.UI
                     name =>
                     {
                         ReadoutCommands.CreatePool(name);
-                        pendingSelectName = name;
-                    }));
+                        ResourcePool? created =
+                            ReadoutStore.Current?.Model.PoolByName(name);
+                        if (created != null)
+                            pendingSelectId = created.Id;
+                        else
+                            pendingSelectName = PoolNameRules.Normalize(name);
+                    },
+                    name => PoolNameProblem(name, -1)));
             }
         }
 
-        private void DrawPoolRow(PoolRow row, int index, float viewW, Dialog_ReadoutConfig owner)
+        private static void DrawPoolRow(PoolRow row, int index, float viewWidth,
+            Dialog_ReadoutConfig owner)
         {
-            var rect = new Rect(0f, index * RowH, viewW, RowH);
+            var rect = new Rect(0f, index * RowH, viewWidth, RowH);
+            if (row.Id == owner.selectedPoolId)
+                Widgets.DrawHighlightSelected(rect);
+            else if (Mouse.IsOver(rect))
+                Widgets.DrawHighlight(rect);
 
-            // Highlight selected / hover
-            if (row.Id == owner.selectedPoolId) Widgets.DrawHighlightSelected(rect);
-            else if (Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
-
-            // Icon
             if (row.IconDef != null)
-                Widgets.ThingIcon(new Rect(rect.x + 2f, rect.y + 3f, IconW, IconW), row.IconDef);
+                Widgets.ThingIcon(
+                    new Rect(rect.x + 2f, rect.y + 3f, IconW, IconW), row.IconDef);
 
-            // Name label
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rect.x + IconW + 6f, rect.y, viewW - IconW - 6f - 48f, RowH), row.Name);
-            Text.Anchor = TextAnchor.UpperLeft;
+            using (new GuiStateScope())
+            {
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(
+                    rect.x + IconW + 6f,
+                    rect.y,
+                    viewWidth - IconW - 6f - 48f,
+                    RowH), row.Name);
+            }
 
-            // Rename pencil button
             var renameRect = new Rect(rect.xMax - 46f, rect.y + 2f, 22f, 22f);
             if (Widgets.ButtonImage(renameRect, TexButton.Rename))
             {
@@ -226,10 +164,10 @@ namespace EPrimeReadouts.UI
                 string capturedName = row.Name;
                 Find.WindowStack.Add(new Dialog_NameInput(
                     "EPR.Rename", capturedName,
-                    newName => ReadoutCommands.RenamePool(capturedId, newName)));
+                    name => ReadoutCommands.RenamePool(capturedId, name),
+                    name => PoolNameProblem(name, capturedId)));
             }
 
-            // Delete ✕ button
             var deleteRect = new Rect(rect.xMax - 22f, rect.y + 2f, 22f, 22f);
             if (Widgets.ButtonText(deleteRect, "✕"))
             {
@@ -240,64 +178,69 @@ namespace EPrimeReadouts.UI
                     () =>
                     {
                         ReadoutCommands.DeletePool(capturedId);
-                        if (owner.selectedPoolId == capturedId) owner.selectedPoolId = -1;
+                        if (owner.selectedPoolId == capturedId)
+                            owner.selectedPoolId = -1;
                     },
                     destructive: true));
             }
 
-            // Drag source: drag this pool into group editor tier slots.
-            int controlId = GUIUtility.GetControlID(FocusType.Passive, rect);
-            EprDrag.ObserveSource(controlId, rect);
-
-            if (Event.current.type == EventType.MouseDown && Event.current.button == 0
-                && !renameRect.Contains(Event.current.mousePosition)
-                && !deleteRect.Contains(Event.current.mousePosition)
-                && rect.Contains(Event.current.mousePosition))
+            Event current = Event.current;
+            if (current.type == EventType.MouseDown
+                && current.button == 0
+                && rect.Contains(current.mousePosition)
+                && !renameRect.Contains(current.mousePosition)
+                && !deleteRect.Contains(current.mousePosition))
             {
-                int capturedId = row.Id;
-                string poolToken = SlotToken.PoolToken(capturedId);
-                EprDrag.OnPressToken(controlId, poolToken, -1, -1,
-                    clickAction: () => owner.selectedPoolId = capturedId);
-                Event.current.Use();
+                owner.selectedPoolId = row.Id;
+                current.Use();
             }
         }
 
-        private void EnsureRows(ReadoutStore store, Dialog_ReadoutConfig owner)
+        private bool Contains(int poolId)
         {
-            PoolSnapshot? snapshot = owner.PoolsSnapshot;
-            if (ReferenceEquals(builtStore, store)
-                && builtPoolsVersion == store.PoolsVersion
-                && ReferenceEquals(builtSnapshot, snapshot)
-                && cachedRows != null)
+            for (int i = 0; i < cachedRows!.Length; i++)
+                if (cachedRows[i].Id == poolId) return true;
+            return false;
+        }
+
+        private static string? PoolNameProblem(string name, int exceptPoolId)
+        {
+            ReadoutStore? store = ReadoutStore.Current;
+            if (store == null || store.Model.CanUsePoolName(name, exceptPoolId))
+                return null;
+            return UiText.Get("EPR.PoolNameTaken");
+        }
+
+        private void EnsureRows(PoolSnapshot? snapshot)
+        {
+            if (ReferenceEquals(builtSnapshot, snapshot) && cachedRows != null)
                 return;
 
-            builtStore = store;
-            builtPoolsVersion = store.PoolsVersion;
             builtSnapshot = snapshot;
-
-            var pools = store.Model.Pools;
-            var built = new PoolRow[pools.Count];
-            for (int i = 0; i < pools.Count; i++)
+            int count = snapshot?.Count ?? 0;
+            var built = new PoolRow[count];
+            for (int i = 0; i < count; i++)
             {
-                ResourcePool pool = pools[i];
-                ThingDef? iconDef = null;
-                if (snapshot != null && snapshot.TryGet(pool.Id, out _, out string? iconDefName, out _))
-                    iconDef = !string.IsNullOrEmpty(iconDefName)
-                        ? DefDatabase<ThingDef>.GetNamedSilentFail(iconDefName)
-                        : null;
-                built[i] = new PoolRow { Id = pool.Id, Name = pool.Name, IconDef = iconDef };
+                PoolSnapshotEntry entry = snapshot!.EntryAt(i);
+                ThingDef? iconDef = !string.IsNullOrEmpty(entry.IconDefName)
+                    ? DefDatabase<ThingDef>.GetNamedSilentFail(entry.IconDefName)
+                    : null;
+                built[i] = new PoolRow
+                {
+                    Id = entry.Id,
+                    Name = entry.Name,
+                    IconDef = iconDef,
+                };
             }
             cachedRows = built;
         }
 
         internal void Reset()
         {
-            builtStore = null;
-            builtPoolsVersion = -1;
             builtSnapshot = null;
             cachedRows = null;
+            pendingSelectId = -1;
             pendingSelectName = null;
-            heightCache.Reset();
             scroll = Vector2.zero;
         }
     }

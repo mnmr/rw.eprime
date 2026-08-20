@@ -62,11 +62,14 @@ namespace EPrimeReadouts.Core
             IReadOnlyList<ReadoutGroup> groupsInDisplayOrder,
             Func<string, string?>? packageIdOf = null)
         {
+            if (!TryCollectPoolNames(pools, out _, out string? poolNameError))
+                throw new InvalidOperationException(poolNameError);
+
             // Build id→name lookup
             var idToName = new Dictionary<int, string>();
             if (pools != null)
                 foreach (var p in pools)
-                    idToName[p.Id] = p.Name;
+                    idToName[p.Id] = PoolNameRules.Normalize(p.Name);
 
             var root = new XElement("Readouts");
 
@@ -84,7 +87,7 @@ namespace EPrimeReadouts.Core
                 foreach (var pool in pools)
                 {
                     var poolEl = new XElement("Pool");
-                    poolEl.SetAttributeValue("Name", pool.Name ?? "");
+                    poolEl.SetAttributeValue("Name", PoolNameRules.Normalize(pool.Name));
                     if (!string.IsNullOrEmpty(pool.IconDefName))
                         poolEl.SetAttributeValue("Icon", pool.IconDefName);
 
@@ -272,11 +275,14 @@ namespace EPrimeReadouts.Core
         /// <summary>
         /// Parses the XML format. Returns false with a short error on malformed XML
         /// or a missing &lt;Readouts&gt; root. Unknown elements/attributes are ignored;
-        /// empty slots/members are dropped; imported group tiers keep "pool:Name"
-        /// tokens verbatim (resolution to "#id" happens in ApplyImport).
+        /// empty slots/members are dropped; imported group tiers keep portable
+        /// "pool:Name" tokens (resolution to "#id" happens in ApplyImport).
         /// Imported ResourcePool/ReadoutGroup instances carry Id = 0 (assigned on apply);
         /// ReadoutGroup.OrderIndex = position in file.
-        /// Excess tiers beyond TierOps.MaxTiers are dropped; tiers are compacted.
+        /// Pool names and references are trimmed and compared ordinally without
+        /// case; blank names, duplicate names, and unknown references reject the
+        /// complete input. Excess tiers beyond TierOps.MaxTiers are dropped;
+        /// tiers are compacted.
         /// <para>
         /// When <paramref name="isModActive"/> is provided, Pool, Member, Group,
         /// Tier, and Slot elements honor <c>MayRequire</c>/<c>MayRequireAnyOf</c>
@@ -318,12 +324,18 @@ namespace EPrimeReadouts.Core
 
             // ── Pools ─────────────────────────────────────────────────────
             var poolsEl = root.Element("Pools");
+            var unavailablePoolNames = new HashSet<string>(PoolNameRules.Comparer);
             if (poolsEl != null)
             {
                 foreach (var poolEl in poolsEl.Elements("Pool"))
                 {
-                    if (!ModsPresent(poolEl, isModActive)) continue;
-                    string name = (string)poolEl.Attribute("Name") ?? "";
+                    string name = PoolNameRules.Normalize(
+                        (string)poolEl.Attribute("Name") ?? "");
+                    if (!ModsPresent(poolEl, isModActive))
+                    {
+                        if (name.Length > 0) unavailablePoolNames.Add(name);
+                        continue;
+                    }
                     string icon = (string)poolEl.Attribute("Icon");
 
                     var pool = new ResourcePool
@@ -336,7 +348,7 @@ namespace EPrimeReadouts.Core
                     foreach (var memberEl in poolEl.Elements("Member"))
                     {
                         if (!ModsPresent(memberEl, isModActive)) continue;
-                        string member = memberEl.Value;
+                        string member = memberEl.Value.Trim();
                         if (!string.IsNullOrEmpty(member))
                             pool.Members.Add(member);
                     }
@@ -347,6 +359,8 @@ namespace EPrimeReadouts.Core
 
             // ── Groups ────────────────────────────────────────────────────
             var groupsEl = root.Element("Groups");
+            var availablePoolNames = new HashSet<string>(PoolNameRules.Comparer);
+            foreach (var pool in pools) availablePoolNames.Add(pool.Name);
             if (groupsEl != null)
             {
                 int orderIndex = 0;
@@ -384,7 +398,14 @@ namespace EPrimeReadouts.Core
                         foreach (var slotEl in tierEl.Elements("Slot"))
                         {
                             if (!ModsPresent(slotEl, isModActive)) continue;
-                            string slot = slotEl.Value;
+                            string slot = slotEl.Value.Trim();
+                            if (IsPortablePoolRef(slot))
+                            {
+                                string referencedName = PortablePoolName(slot);
+                                if (!availablePoolNames.Contains(referencedName)
+                                    && unavailablePoolNames.Contains(referencedName))
+                                    continue;
+                            }
                             if (!string.IsNullOrEmpty(slot))
                                 tierTokens.Add(slot);
                         }
@@ -401,6 +422,12 @@ namespace EPrimeReadouts.Core
                 }
             }
 
+            if (!TryValidatePortableModel(pools, groups, out error))
+            {
+                pools.Clear();
+                groups.Clear();
+                return false;
+            }
             return true;
         }
 
@@ -412,12 +439,70 @@ namespace EPrimeReadouts.Core
         /// there is no collision risk.
         /// </summary>
         internal static bool IsPortablePoolRef(string token) =>
-            SlotToken.Canonical(token).StartsWith(PoolRefPrefix);
+            SlotToken.Canonical(token).StartsWith(
+                PoolRefPrefix, StringComparison.Ordinal);
 
         /// <summary>
         /// Extracts the pool name from a portable token (strips flag and "pool:" prefix).
         /// </summary>
         internal static string PortablePoolName(string token) =>
-            SlotToken.Canonical(token).Substring(PoolRefPrefix.Length);
+            PoolNameRules.Normalize(
+                SlotToken.Canonical(token).Substring(PoolRefPrefix.Length));
+
+        internal static bool TryValidatePortableModel(
+            IReadOnlyList<ResourcePool>? pools,
+            IReadOnlyList<ReadoutGroup>? groups,
+            out string? error)
+        {
+            if (!TryCollectPoolNames(pools, out HashSet<string> names, out error))
+                return false;
+
+            if (groups == null) return true;
+            for (int groupIndex = 0; groupIndex < groups.Count; groupIndex++)
+            {
+                ReadoutGroup group = groups[groupIndex];
+                if (group.Tiers == null) continue;
+                for (int tierIndex = 0; tierIndex < group.Tiers.Count; tierIndex++)
+                {
+                    List<string> tier = group.Tiers[tierIndex];
+                    if (tier == null) continue;
+                    for (int slotIndex = 0; slotIndex < tier.Count; slotIndex++)
+                    {
+                        string token = tier[slotIndex];
+                        if (string.IsNullOrEmpty(token) || !IsPortablePoolRef(token))
+                            continue;
+                        string poolName = PortablePoolName(token);
+                        if (poolName.Length > 0 && names.Contains(poolName)) continue;
+                        error = "Unknown resource pool reference \"" + poolName + "\".";
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private static bool TryCollectPoolNames(
+            IReadOnlyList<ResourcePool>? pools,
+            out HashSet<string> names,
+            out string? error)
+        {
+            names = new HashSet<string>(PoolNameRules.Comparer);
+            error = null;
+            if (pools == null) return true;
+
+            for (int i = 0; i < pools.Count; i++)
+            {
+                string name = PoolNameRules.Normalize(pools[i].Name);
+                if (name.Length == 0)
+                {
+                    error = "Resource pool names must not be empty.";
+                    return false;
+                }
+                if (names.Add(name)) continue;
+                error = "Duplicate resource pool name \"" + name + "\".";
+                return false;
+            }
+            return true;
+        }
     }
 }

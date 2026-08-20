@@ -9,18 +9,57 @@ namespace EPrimeReadouts.UI
 {
     internal static class ItemPickerFilterBar
     {
-        internal const float Height = 32f;
+        internal static float Height =>
+            EprStyle.TinyTextMetrics.LineHeight + ControlH + BottomGap;
         private const float Gap = 6f;
         private const float ClearW = 20f;
+        private const float ControlH = 24f;
+        private const float BottomGap = 8f;
 
         internal static void Draw(Rect rect, ItemPickerState state,
             string controlName, Action changed)
         {
+            ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
+            float captionH = metrics.LineHeight;
             float searchAreaW = Mathf.Floor(rect.width * 0.30f);
+            float pickerAreaX = rect.x + searchAreaW + Gap;
+            float pickerAreaW = Mathf.Max(0f, rect.xMax - pickerAreaX);
+            float pickerW = Mathf.Max(1f, pickerAreaW - Gap);
+            float typeW = pickerW * 0.45f;
+            float controlY = rect.y + captionH;
+            var typeRect = new Rect(pickerAreaX, controlY, typeW, ControlH);
+            var sourceRect = new Rect(typeRect.xMax + Gap, controlY,
+                Mathf.Max(1f, rect.xMax - typeRect.xMax - Gap), ControlH);
+
+            using (new GuiStateScope())
+            {
+                Text.Font = GameFont.Tiny;
+                GUI.color = EprStyle.CaptionText;
+                Widgets.Label(new Rect(
+                    rect.x,
+                    rect.y + metrics.CaptionOffsetY,
+                    searchAreaW,
+                    captionH),
+                    UiText.Get("EPR.SearchFilter"));
+                Widgets.Label(new Rect(
+                    pickerAreaX,
+                    rect.y + metrics.CaptionOffsetY,
+                    typeW,
+                    captionH),
+                    UiText.Get("EPR.ItemFilter"));
+                Widgets.Label(new Rect(
+                    sourceRect.x,
+                    rect.y + metrics.CaptionOffsetY,
+                    sourceRect.width,
+                    captionH),
+                    UiText.Get("EPR.SourceFilter"));
+            }
+
             float searchFieldW = state.Query.NullOrEmpty()
                 ? searchAreaW
                 : Mathf.Max(1f, searchAreaW - ClearW - 2f);
-            var searchRect = new Rect(rect.x, rect.y, searchFieldW, 24f);
+            var searchRect = new Rect(
+                rect.x, controlY, searchFieldW, ControlH);
             GUI.SetNextControlName(controlName);
             string query = Widgets.TextField(searchRect, state.Query);
             if (!string.Equals(query, state.Query, StringComparison.Ordinal))
@@ -31,21 +70,16 @@ namespace EPrimeReadouts.UI
             if (!state.Query.NullOrEmpty())
             {
                 var clearRect = new Rect(
-                    rect.x + searchAreaW - ClearW, rect.y + 2f, ClearW, ClearW);
+                    rect.x + searchAreaW - ClearW,
+                    controlY + 2f,
+                    ClearW,
+                    ClearW);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                 {
                     state.Query = "";
                     changed();
                 }
             }
-
-            float pickerAreaX = rect.x + searchAreaW + Gap;
-            float pickerAreaW = Mathf.Max(0f, rect.xMax - pickerAreaX);
-            float pickerW = Mathf.Max(1f, pickerAreaW - Gap);
-            float typeW = pickerW * 0.45f;
-            var typeRect = new Rect(pickerAreaX, rect.y, typeW, 24f);
-            var sourceRect = new Rect(typeRect.xMax + Gap, rect.y,
-                Mathf.Max(1f, rect.xMax - typeRect.xMax - Gap), 24f);
 
             string typeLabel = state.Type == ItemPickerType.Resources
                 ? UiText.Get("EPR.Resources")

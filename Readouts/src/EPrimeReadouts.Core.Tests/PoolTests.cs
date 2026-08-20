@@ -164,6 +164,28 @@ public class PoolTests
     }
 
     [Test]
+    public async Task CreatePool_TrimsName()
+    {
+        var model = new ReadoutModel();
+
+        var pool = model.CreatePool(1, "  Concrete  ");
+
+        await Assert.That(pool.Name).IsEqualTo("Concrete");
+    }
+
+    [Test]
+    public async Task CreatePool_RejectsCaseInsensitiveTrimmedDuplicate()
+    {
+        var model = new ReadoutModel();
+        model.CreatePool(1, "Concrete");
+
+        await Assert.That(() => model.CreatePool(2, "  concrete  "))
+            .Throws<InvalidOperationException>();
+        await Assert.That(model.Pools.Count).IsEqualTo(1);
+        await Assert.That(model.PoolById(2)).IsNull();
+    }
+
+    [Test]
     public async Task PoolsStayNameSortedThroughCreateAndRename()
     {
         var model = new ReadoutModel();
@@ -207,6 +229,17 @@ public class PoolTests
     {
         var model = new ReadoutModel();
         await Assert.That(model.RenamePool(99, "X")).IsFalse();
+    }
+
+    [Test]
+    public async Task RenamePool_RejectsCaseInsensitiveTrimmedDuplicate()
+    {
+        var model = new ReadoutModel();
+        model.CreatePool(1, "Concrete");
+        model.CreatePool(2, "Mortar");
+
+        await Assert.That(model.RenamePool(2, " concrete ")).IsFalse();
+        await Assert.That(model.PoolById(2)!.Name).IsEqualTo("Mortar");
     }
 
     [Test]
@@ -334,6 +367,49 @@ public class PoolTests
     }
 
     [Test]
+    public async Task CleanupMissing_NormalizesLegacyPoolNamesDeterministically()
+    {
+        var model = new ReadoutModel();
+        model.Pools.Add(new ResourcePool { Id = 1, Name = "  Concrete  " });
+        model.Pools.Add(new ResourcePool { Id = 2, Name = "concrete" });
+        model.Pools.Add(new ResourcePool { Id = 3, Name = "   " });
+
+        model.CleanupMissing(tokenValid: _ => true, memberValid: _ => true);
+
+        await Assert.That(model.PoolById(1)!.Name).IsEqualTo("Concrete");
+        await Assert.That(model.PoolById(2)!.Name).IsEqualTo("concrete (2)");
+        await Assert.That(model.PoolById(3)!.Name).IsEqualTo("Pool");
+    }
+
+    [Test]
+    public async Task CleanupMissing_DuplicateDoesNotClaimExistingSuffixedName()
+    {
+        var model = new ReadoutModel();
+        model.Pools.Add(new ResourcePool { Id = 1, Name = "Concrete" });
+        model.Pools.Add(new ResourcePool { Id = 2, Name = "concrete" });
+        model.Pools.Add(new ResourcePool { Id = 3, Name = "Concrete (2)" });
+
+        model.CleanupMissing(tokenValid: _ => true, memberValid: _ => true);
+
+        await Assert.That(model.PoolById(1)!.Name).IsEqualTo("Concrete");
+        await Assert.That(model.PoolById(2)!.Name).IsEqualTo("concrete (3)");
+        await Assert.That(model.PoolById(3)!.Name).IsEqualTo("Concrete (2)");
+    }
+
+    [Test]
+    public async Task CleanupMissing_BlankDoesNotClaimExistingFallbackName()
+    {
+        var model = new ReadoutModel();
+        model.Pools.Add(new ResourcePool { Id = 1, Name = "   " });
+        model.Pools.Add(new ResourcePool { Id = 2, Name = "Pool" });
+
+        model.CleanupMissing(tokenValid: _ => true, memberValid: _ => true);
+
+        await Assert.That(model.PoolById(1)!.Name).IsEqualTo("Pool (2)");
+        await Assert.That(model.PoolById(2)!.Name).IsEqualTo("Pool");
+    }
+
+    [Test]
     public async Task CleanupMissing_StillPurgesStaleThresholds()
     {
         var model = new ReadoutModel();
@@ -404,6 +480,21 @@ public class PoolTests
         // Both groups reference the same pool
         await Assert.That(model.GroupById(1)!.Tiers[0][0]).IsEqualTo("#" + pid);
         await Assert.That(model.GroupById(2)!.Tiers[0][0]).IsEqualTo("#" + pid);
+    }
+
+    [Test]
+    public async Task MigrateCategoryTokens_DisambiguatesCollidingPoolName()
+    {
+        var model = new ReadoutModel();
+        model.CreatePool(1, "Concrete").Members.Add("Steel");
+        model.CreateGroup(1, "Materials");
+        model.SetTiers(1, new List<List<string>> { new() { "@Concrete" } });
+
+        int nextId = 2;
+        model.MigrateCategoryTokens(() => nextId++, _ => " concrete ");
+
+        await Assert.That(model.PoolById(2)!.Name).IsEqualTo("concrete (2)");
+        await Assert.That(model.GroupById(1)!.Tiers[0][0]).IsEqualTo("#2");
     }
 
     [Test]
@@ -568,5 +659,36 @@ public class PoolTests
 
         await Assert.That(() => ((IList<string>)members!)[0] = "Gold")
             .Throws<NotSupportedException>();
+    }
+
+    [Test]
+    public async Task PoolSnapshot_PublishesInputOrderWithStableEntryData()
+    {
+        var catalog = StaticResources.Catalog();
+        var alpha = new ResourcePool
+        {
+            Id = 2,
+            Name = "Alpha",
+            IconDefName = "Steel",
+            Members = new List<string> { "Steel" },
+        };
+        var zinc = new ResourcePool
+        {
+            Id = 9,
+            Name = "Zinc",
+            Members = new List<string> { "Plasteel" },
+        };
+
+        var snapshot = PoolSnapshot.Build(
+            new List<ResourcePool> { alpha, zinc }, catalog);
+
+        await Assert.That(snapshot.Count).IsEqualTo(2);
+        await Assert.That(snapshot.EntryAt(0).Id).IsEqualTo(2);
+        await Assert.That(snapshot.EntryAt(0).Name).IsEqualTo("Alpha");
+        await Assert.That(snapshot.EntryAt(0).IconDefName).IsEqualTo("Steel");
+        await Assert.That(string.Join(",", snapshot.EntryAt(0).Members))
+            .IsEqualTo("Steel");
+        await Assert.That(snapshot.EntryAt(1).Id).IsEqualTo(9);
+        await Assert.That(snapshot.EntryAt(1).Name).IsEqualTo("Zinc");
     }
 }

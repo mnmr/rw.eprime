@@ -1,8 +1,22 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace EPrimeReadouts.Core
 {
+    /// <summary>
+    /// Shared normalization and comparison policy for user-visible pool names.
+    /// Pool names are unique only within the pool namespace; resource def names
+    /// and labels deliberately do not participate in this policy.
+    /// </summary>
+    public static class PoolNameRules
+    {
+        public const string LegacyFallbackName = "Pool";
+        public static StringComparer Comparer { get; } = StringComparer.OrdinalIgnoreCase;
+
+        public static string Normalize(string? name) => (name ?? "").Trim();
+    }
+
     /// A named, user-defined collection of resources. Members are defNames or
     /// "@CategoryDefName" refs (expanded at snapshot time so newly-added modded
     /// resources join automatically).

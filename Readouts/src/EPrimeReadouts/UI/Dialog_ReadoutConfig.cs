@@ -6,9 +6,9 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// The configuration window: inset top panel, then (left) Groups panel,
-    /// (right) a vertical split — left half EditorView (full height), right half
-    /// toggles between ResourceTreeView and Pools UI (PoolListView + PoolEditorView).
+    /// The configuration window: Groups on the left, a segmented center panel
+    /// switching between group editing and resource pools, and an always-visible
+    /// Resources panel on the right.
     /// Every completed action fires a sync command immediately — no Apply/Cancel.
     /// Resizable; size persists.
     public class Dialog_ReadoutConfig : Window
@@ -16,9 +16,8 @@ namespace EPrimeReadouts.UI
         private const float PanelH = 56f;
         private const float Gap = 10f;
         private const float LeftW = 220f;
-        private const float ToggleBtnW = 130f;
-        private const float ToggleBtnH = 24f;
-        private const float PoolEditorMinH = 120f;
+        private const float ModeHeaderH = 34f;
+        private const float ModeBodyGap = 6f;
 
         /// Currently selected group id; -1 = none.
         public int selectedGroupId = -1;
@@ -27,7 +26,7 @@ namespace EPrimeReadouts.UI
         public int selectedPoolId = -1;
 
         /// Canonical token of the currently selected slot (e.g. "Steel" or "#3").
-        /// Set by the editor view; may be null. ResourceTreeView reads this.
+        /// Set by the editor view; may be null. The group resource tree reads this.
         public string? selectedCanonical;
 
         // Shared per-frame-safe pools snapshot — rebuilt only for pool edits.
@@ -36,14 +35,12 @@ namespace EPrimeReadouts.UI
         private ReadoutStore? poolsSnapshotStore;
         internal RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? RenderData { get; private set; }
 
-        /// Session state: false = show Resources tree, true = show Pools UI.
-        private bool showPools;
+        private ReadoutConfigMode centerMode = ReadoutConfigMode.GroupEditor;
 
         private readonly GroupListView groups = new GroupListView();
-        private readonly ResourceTreeView tree = new ResourceTreeView();
         private readonly EditorView editor = new EditorView();
         private readonly PoolListView poolList = new PoolListView();
-        private readonly PoolEditorView poolEditor = new PoolEditorView();
+        private readonly ResourcePanelView resources = new ResourcePanelView();
         private string? ghostPayload;
         private PoolSnapshot? ghostPools;
         private ThingDef? ghostDef;
@@ -75,10 +72,9 @@ namespace EPrimeReadouts.UI
             });
             EprDrag.Cancel();
             groups.Reset();
-            tree.Reset();
             editor.Reset();
             poolList.Reset();
-            poolEditor.Reset();
+            resources.Reset();
             PoolsSnapshot = null;
             poolsSnapshotStore = null;
             RenderData = null;
@@ -168,88 +164,27 @@ namespace EPrimeReadouts.UI
                 // Left column: Groups panel (fixed 220px, full height)
                 var leftRect = new Rect(content.x, content.y, LeftW, content.height);
 
-                // Remaining area to the right — split into left half (editor) and right half
-                float rightX = leftRect.xMax + Gap;
-                float rightW = content.xMax - rightX;
-                float halfW = (rightW - Gap) / 2f;
+                float columnsX = leftRect.xMax + Gap;
+                float columnsWidth = content.xMax - columnsX;
+                float columnWidth = (columnsWidth - Gap) / 2f;
+                var centerRect = new Rect(
+                    columnsX, content.y, columnWidth, content.height);
+                var rightRect = new Rect(
+                    centerRect.xMax + Gap, content.y, columnWidth, content.height);
+                var centerBodyRect = new Rect(
+                    centerRect.x,
+                    centerRect.y + ModeHeaderH + ModeBodyGap,
+                    centerRect.width,
+                    centerRect.height - ModeHeaderH - ModeBodyGap);
 
-                var editorRect = new Rect(rightX, content.y, halfW, content.height);
-                var rightHalf = new Rect(rightX + halfW + Gap, content.y, halfW, content.height);
-
-                // The Resources/Resource Pools toggle shares the main header
-                // strip and is drawn before the selected view.
-                string toggleLabel = showPools
-                    ? UiText.Get("EPR.ShowResources")
-                    : UiText.Get("EPR.ShowPools");
-                var toggleRect = new Rect(rightHalf.xMax - ToggleBtnW, rightHalf.y - 2f,
-                    ToggleBtnW, ToggleBtnH);
-                if (Widgets.ButtonText(toggleRect, toggleLabel))
-                {
-                    showPools = !showPools;
-                    if (showPools) tree.Unfocus();
-                    else poolEditor.Unfocus();
-                }
-                // --- Right half: Resources or Pools depending on showPools toggle ---
-                Rect poolListRect, poolEditorRect;
-                bool drawPoolEditor = false;
-                if (showPools)
-                {
-                    // Keep the fixed pool-list chrome inside its assigned rect.
-                    // When the dialog is too short for that chrome plus the pool
-                    // editor, the list takes priority and the editor is hidden.
-                    float desiredListH = poolList.DesiredHeight(rightHalf.width, this);
-                    float poolListH = Mathf.Min(desiredListH, rightHalf.height);
-
-                    if (selectedPoolId >= 0)
-                    {
-                        float maxListWithEditor = Mathf.Max(
-                            0f, rightHalf.height - PoolEditorMinH - Gap);
-                        if (maxListWithEditor >= poolList.MinimumHeight(rightHalf.width))
-                        {
-                            poolListH = Mathf.Min(desiredListH, maxListWithEditor);
-                            float poolEditorH = rightHalf.height - poolListH - Gap;
-                            poolEditorRect = new Rect(
-                                rightHalf.x,
-                                rightHalf.y + poolListH + Gap,
-                                rightHalf.width,
-                                poolEditorH);
-                            drawPoolEditor = true;
-                        }
-                        else
-                        {
-                            poolEditorRect = default(Rect);
-                        }
-                    }
-                    else
-                    {
-                        poolEditorRect = default(Rect);
-                    }
-
-                    poolListRect = new Rect(
-                        rightHalf.x, rightHalf.y, rightHalf.width, poolListH);
-                }
-                else
-                {
-                    poolListRect = default(Rect);
-                    poolEditorRect = default(Rect);
-                }
-
-                // Draw all panels
                 groups.Draw(leftRect, this);
-                editor.Draw(editorRect, this);
-
-                if (showPools)
-                {
-                    poolList.Draw(poolListRect, this);
-                    if (drawPoolEditor && selectedPoolId >= 0)
-                        poolEditor.Draw(poolEditorRect, this);
-                    else
-                        poolEditor.Unfocus();
-                }
+                DrawModeHeader(new Rect(
+                    centerRect.x, centerRect.y, centerRect.width, ModeHeaderH));
+                if (centerMode == ReadoutConfigMode.GroupEditor)
+                    editor.Draw(centerBodyRect, this);
                 else
-                {
-                    tree.Draw(rightHalf, this);
-                }
+                    poolList.Draw(centerBodyRect, this);
+                resources.Draw(rightRect, this, centerMode);
 
                 DrawDragGhost();
                 EprDrag.ResolveMouseUp();
@@ -259,9 +194,55 @@ namespace EPrimeReadouts.UI
         public override void OnCancelKeyPressed()
         {
             if (groups.HandleEscape() || editor.HandleEscape()
-                || tree.HandleEscape() || poolEditor.HandleEscape())
+                || resources.HandleEscape())
                 return;
             base.OnCancelKeyPressed();
+        }
+
+        internal void SelectGroup(int groupId)
+        {
+            selectedGroupId = groupId;
+            SetCenterMode(ReadoutConfigMode.GroupEditor);
+        }
+
+        private void SetCenterMode(ReadoutConfigMode mode)
+        {
+            if (centerMode == mode) return;
+            EprDrag.Cancel();
+            if (centerMode == ReadoutConfigMode.GroupEditor)
+                editor.Unfocus();
+            centerMode = mode;
+        }
+
+        private void DrawModeHeader(Rect rect)
+        {
+            Widgets.DrawBoxSolidWithOutline(
+                rect, EprStyle.PanelBackground, EprStyle.PanelOutline);
+            const float Padding = 3f;
+            const float SegmentGap = 2f;
+            float segmentWidth = Mathf.Max(
+                1f, (rect.width - 2f * Padding - SegmentGap) / 2f);
+            var groupRect = new Rect(
+                rect.x + Padding,
+                rect.y + Padding,
+                segmentWidth,
+                rect.height - 2f * Padding);
+            var poolsRect = new Rect(
+                groupRect.xMax + SegmentGap,
+                groupRect.y,
+                segmentWidth,
+                groupRect.height);
+
+            if (EprStyle.SegmentedTab(
+                groupRect,
+                UiText.Get("EPR.GroupEditor"),
+                centerMode == ReadoutConfigMode.GroupEditor))
+                SetCenterMode(ReadoutConfigMode.GroupEditor);
+            if (EprStyle.SegmentedTab(
+                poolsRect,
+                UiText.Get("EPR.ResourcePoolEditor"),
+                centerMode == ReadoutConfigMode.ResourcePools))
+                SetCenterMode(ReadoutConfigMode.ResourcePools);
         }
 
         private void DrawDragGhost()

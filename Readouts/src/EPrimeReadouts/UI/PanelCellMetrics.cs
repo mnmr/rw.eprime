@@ -40,7 +40,9 @@ namespace EPrimeReadouts.UI
                 using (new GuiStateScope())
                 {
                     // Resolves to Small when tiny text is unavailable; both
-                    // FitWidth and LineHeight then measure the resolved font.
+                    // FitWidth and LineHeight then measure the resolved font;
+                    // the published line box is rounded up to avoid fractional
+                    // glyph-row clipping.
                     Text.Font = GameFont.Tiny;
                     float maxW = 0f;
                     for (int i = 0; i < WideSamples.Length; i++)
@@ -48,7 +50,10 @@ namespace EPrimeReadouts.UI
                         float w = WrText.FitWidth(WideSamples[i]);
                         if (w > maxW) maxW = w;
                     }
-                    cached = new CellMetrics(maxW, Text.LineHeight);
+                    var textMetrics = new ResolvedTinyTextMetrics(
+                        Text.LineHeight,
+                        Text.Font == GameFont.Small);
+                    cached = new CellMetrics(maxW, textMetrics.LineHeight);
                 }
                 stamp = UiVersion.Current;
                 return cached;

@@ -30,8 +30,9 @@ verification commands. Where this file is silent, the root contract governs.
 | Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, storage-only and hide-forbidden count-basis options immediately, `PlannedWorkOptions` immediately (including while paused), and 204 elapsed game ticks; replace only when contents differ |
 | Main readout layout/draw model | Map, width, view state, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, pool snapshot identity, count snapshot identity |
-| Pool list/editor rows | `PoolsVersion` and relevant selection or expansion state |
-| Pool list desired height | `PoolsVersion`, row count, fold state, width, UI metric revision |
+| Pool display/list rows | Shared pool snapshot identity and relevant selection state |
+| Group assignment tree rows | Store/world identity, `GroupsVersion`, selected group and token, pool snapshot identity, shared filter revision, group expansion state, and language revision |
+| Pool membership tree rows | Store/world identity, `PoolsVersion`, selected pool, shared filter revision, pool expansion state, and language revision |
 | Tooltip content | Token, render snapshot identity, `ThresholdsVersion`; capture when a display session begins and retain until it ends |
 | Tooltip geometry | Tooltip model identity, maximum width, UI metric revision; capture when a display session begins and retain until it ends |
 | Text width/height | Text, font, available width where applicable, UI metric revision |

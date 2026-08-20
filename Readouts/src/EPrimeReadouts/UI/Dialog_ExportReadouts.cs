@@ -100,13 +100,19 @@ namespace EPrimeReadouts.UI
             }
 
             // ── Summary line ────────────────────────────────────────────────
+            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
+            float summaryH = tinyMetrics.MinHeight(18f);
             Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
-            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, 18f),
+            Widgets.Label(new Rect(
+                    inRect.x,
+                    bodyTop + tinyMetrics.CaptionOffsetY,
+                    inRect.width,
+                    summaryH),
                 summaryText);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            bodyTop  += 20f;
+            bodyTop  += summaryH + 2f;
 
             // Bottom-up layout: Cancel/Save row, optional custom-dir row,
             // location+filename row, caption/Copy Path link row.

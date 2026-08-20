@@ -145,11 +145,42 @@ namespace EPrimeReadouts.Core
             return null;
         }
 
+        public ResourcePool? PoolByName(string name)
+        {
+            string normalized = PoolNameRules.Normalize(name);
+            if (normalized.Length == 0) return null;
+            foreach (var pool in Pools)
+                if (PoolNameRules.Comparer.Equals(pool.Name, normalized)) return pool;
+            return null;
+        }
+
+        /// <summary>
+        /// True when a normalized, non-empty name is unused by every pool other
+        /// than <paramref name="exceptPoolId"/>. Resource and category names are
+        /// intentionally outside this namespace.
+        /// </summary>
+        public bool CanUsePoolName(string? name, int exceptPoolId = -1)
+        {
+            string normalized = PoolNameRules.Normalize(name);
+            if (normalized.Length == 0) return false;
+            foreach (var pool in Pools)
+                if (pool.Id != exceptPoolId
+                    && PoolNameRules.Comparer.Equals(pool.Name, normalized))
+                    return false;
+            return true;
+        }
+
         /// Adds a new pool with the given id and name, returns it. The pools
         /// list stays name-sorted.
         public ResourcePool CreatePool(int id, string name)
         {
-            var pool = new ResourcePool { Id = id, Name = name ?? "" };
+            string normalized = PoolNameRules.Normalize(name);
+            if (normalized.Length == 0)
+                throw new ArgumentException("Pool name must not be empty.", nameof(name));
+            if (!CanUsePoolName(normalized))
+                throw new InvalidOperationException(
+                    "A resource pool named \"" + normalized + "\" already exists.");
+            var pool = new ResourcePool { Id = id, Name = normalized };
             Pools.Add(pool);
             SortPools();
             return pool;
@@ -159,11 +190,65 @@ namespace EPrimeReadouts.Core
         {
             var pool = PoolById(id);
             if (pool == null) return false;
-            string nextName = name ?? "";
+            string nextName = PoolNameRules.Normalize(name);
+            if (nextName.Length == 0 || !CanUsePoolName(nextName, id)) return false;
             if (pool.Name == nextName) return false;
             pool.Name = nextName;
             SortPools();
             return true;
+        }
+
+        private string MakeUniquePoolName(string? requestedName)
+        {
+            string baseName = PoolNameRules.Normalize(requestedName);
+            if (baseName.Length == 0) baseName = PoolNameRules.LegacyFallbackName;
+            if (CanUsePoolName(baseName)) return baseName;
+
+            int suffix = 2;
+            while (true)
+            {
+                string candidate = baseName + " (" + suffix + ")";
+                if (CanUsePoolName(candidate)) return candidate;
+                suffix++;
+            }
+        }
+
+        private void NormalizeLegacyPoolNames()
+        {
+            var normalizedNames = new string[Pools.Count];
+            var reservedNames = new HashSet<string>(PoolNameRules.Comparer);
+            for (int i = 0; i < Pools.Count; i++)
+            {
+                string normalized = PoolNameRules.Normalize(Pools[i].Name);
+                normalizedNames[i] = normalized;
+                if (normalized.Length != 0) reservedNames.Add(normalized);
+            }
+
+            var claimedNames = new HashSet<string>(PoolNameRules.Comparer);
+            bool changed = false;
+            for (int i = 0; i < Pools.Count; i++)
+            {
+                ResourcePool pool = Pools[i];
+                string baseName = normalizedNames[i];
+                string uniqueName;
+                if (baseName.Length != 0 && claimedNames.Add(baseName))
+                {
+                    uniqueName = baseName;
+                }
+                else
+                {
+                    if (baseName.Length == 0) baseName = PoolNameRules.LegacyFallbackName;
+                    uniqueName = baseName;
+                    int suffix = 2;
+                    while (!reservedNames.Add(uniqueName))
+                        uniqueName = baseName + " (" + suffix++ + ")";
+                }
+
+                if (pool.Name == uniqueName) continue;
+                pool.Name = uniqueName;
+                changed = true;
+            }
+            if (changed) SortPools();
         }
 
         /// Pools are kept name-sorted (case-insensitive, id tie-break) as a
@@ -268,6 +353,7 @@ namespace EPrimeReadouts.Core
         /// </summary>
         public void CleanupMissing(Func<string, bool> tokenValid, Func<string, bool> memberValid)
         {
+            NormalizeLegacyPoolNames();
             foreach (var group in Groups) TierOps.Cleanup(group.Tiers, tokenValid);
 
             var stale = new List<string>();
@@ -285,11 +371,12 @@ namespace EPrimeReadouts.Core
         /// Overwrite-import: clears Pools, Groups and Thresholds, then recreates
         /// pools (new ids) and groups (new ids, file order = display order),
         /// resolving "pool:Name" slot tokens to "#id" (flag preserved; refs to
-        /// unknown pool names dropped, tiers compacted). Deterministic given the
-        /// same xml + id allocators, so it is MP-sync safe.
+        /// unknown or duplicate normalized pool names are rejected before any
+        /// mutation). Deterministic given the same xml + id allocators, so it is
+        /// MP-sync safe.
         /// <para>
-        /// Pool-name lookup: when duplicate pool names exist in the import data,
-        /// the LAST pool with that name wins (its id is used for resolution).
+        /// Pool-name lookup trims names and uses ordinal, case-insensitive
+        /// comparison, matching create, rename, migration, and export.
         /// </para>
         /// </summary>
         public ReadoutChange ApplyImport(
@@ -298,6 +385,9 @@ namespace EPrimeReadouts.Core
             Func<int> takePoolId,
             Func<int> takeGroupId)
         {
+            if (!ReadoutsXml.TryValidatePortableModel(pools, groups, out _))
+                return ReadoutChange.None;
+
             ReadoutChange change = ReadoutChange.None;
             if (Pools.Count > 0 || (pools != null && pools.Count > 0))
                 change |= ReadoutChange.Pools;
@@ -310,8 +400,8 @@ namespace EPrimeReadouts.Core
             Groups.Clear();
             Thresholds.Clear();
 
-            // Create pools with real ids; build name→id map (last wins on duplicate names)
-            var nameToId = new Dictionary<string, int>();
+            // Create pools with real ids; names were validated before mutation.
+            var nameToId = new Dictionary<string, int>(PoolNameRules.Comparer);
             if (pools != null)
             {
                 foreach (var imported in pools)
@@ -320,14 +410,14 @@ namespace EPrimeReadouts.Core
                     var pool = new ResourcePool
                     {
                         Id = newId,
-                        Name = imported.Name ?? "",
+                        Name = PoolNameRules.Normalize(imported.Name),
                         IconDefName = imported.IconDefName,
                         Members = imported.Members != null
                             ? new List<string>(imported.Members)
                             : new List<string>(),
                     };
                     Pools.Add(pool);
-                    nameToId[pool.Name] = newId; // last pool wins on duplicate names
+                    nameToId.Add(pool.Name, newId);
                 }
                 SortPools();
             }
@@ -360,8 +450,7 @@ namespace EPrimeReadouts.Core
                                 {
                                     // Resolve "pool:Name" → "#id" (flag preserved)
                                     string poolName = ReadoutsXml.PortablePoolName(token);
-                                    if (!nameToId.TryGetValue(poolName, out int resolvedId))
-                                        continue; // unknown pool name → drop
+                                    int resolvedId = nameToId[poolName];
                                     bool flag = !SlotToken.ShowWhenZero(token);
                                     resolvedTier.Add(SlotToken.WithShowWhenZero(
                                         SlotToken.PoolToken(resolvedId), !flag));
@@ -422,9 +511,10 @@ namespace EPrimeReadouts.Core
                         {
                             string catName = canonical.Substring(1); // strip '@'
                             int newId = takeId();
-                            string poolName = nameForCategory != null
+                            string requestedName = nameForCategory != null
                                 ? nameForCategory(catName)
                                 : catName;
+                            string poolName = MakeUniquePoolName(requestedName);
                             match = CreatePool(newId, poolName);
                             match.Members.Add(canonical);
                         }

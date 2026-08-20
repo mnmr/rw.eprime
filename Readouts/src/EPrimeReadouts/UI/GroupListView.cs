@@ -64,7 +64,7 @@ namespace EPrimeReadouts.UI
                 for (int i = 0; i < rows!.Length; i++) // built by EnsureRows above
                     if (rows[i].Name == pendingSelect)
                     {
-                        owner.selectedGroupId = rows[i].Id;
+                        owner.SelectGroup(rows[i].Id);
                         string newKey = rows[i].DepthKey;
                         EPrimeReadoutsMod.Persist(s => s.enabledGroups[newKey] = true);
                         rows[i].Enabled = true;
@@ -125,7 +125,7 @@ namespace EPrimeReadouts.UI
                 {
                     int capturedId = group.Id;
                     EprDrag.OnPressGroup(controlId, capturedId,
-                        () => owner.selectedGroupId = capturedId);
+                        () => owner.SelectGroup(capturedId));
                     e.Use();
                 }
 

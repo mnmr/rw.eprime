@@ -29,8 +29,8 @@ namespace EPrimeReadouts.Core
         }
     }
 
-    /// Session-local mutable state. Each picker owns its own instance; callers
-    /// may share the filtering code without coupling the user's choices.
+    /// Session-local mutable state. Callers may give pickers independent state
+    /// or deliberately share one instance across related picker modes.
     public sealed class ItemPickerState
     {
         public string Query = "";

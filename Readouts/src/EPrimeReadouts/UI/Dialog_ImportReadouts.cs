@@ -16,7 +16,8 @@ namespace EPrimeReadouts.UI
     {
         private enum Stage { Source, Preview }
 
-        private const float FileRowH = 28f;
+        private static float FileRowH =>
+            EprStyle.TinyTextMetrics.MinHeight(28f);
         private const float DeleteW  = 22f;
 
         // ── Stage ────────────────────────────────────────────────────────────
@@ -264,20 +265,30 @@ namespace EPrimeReadouts.UI
             EnsurePreviewText();
 
             // Summary line
+            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
+            float summaryH = tinyMetrics.MinHeight(18f);
             Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
-            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, 18f),
+            Widgets.Label(new Rect(
+                    inRect.x,
+                    bodyTop + tinyMetrics.CaptionOffsetY,
+                    inRect.width,
+                    summaryH),
                 previewSummary);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            bodyTop  += 20f;
+            bodyTop  += summaryH + 2f;
 
             // Warning line
             Text.Font = GameFont.Tiny;
             GUI.color = new Color(1f, 0.75f, 0.35f);   // warm warning tint
             string warning = previewWarning!; // set by EnsurePreviewText above
             float warnH = EprStyle.CaptionHeight(warning, inRect.width);
-            Widgets.Label(new Rect(inRect.x, bodyTop, inRect.width, warnH), warning);
+            Widgets.Label(new Rect(
+                inRect.x,
+                bodyTop + tinyMetrics.CaptionOffsetY,
+                inRect.width,
+                warnH), warning);
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
             bodyTop  += warnH + 4f;

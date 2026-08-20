@@ -2,30 +2,50 @@ using System.Collections.Generic;
 
 namespace EPrimeReadouts.Core
 {
+    public readonly struct PoolSnapshotEntry
+    {
+        public int Id { get; }
+        public string Name { get; }
+        public IReadOnlyList<string> Members { get; }
+        public string? IconDefName { get; }
+
+        internal PoolSnapshotEntry(int id, string name,
+            IReadOnlyList<string> members, string? iconDefName)
+        {
+            Id = id;
+            Name = name;
+            Members = members;
+            IconDefName = iconDefName;
+        }
+    }
+
     /// Immutable per-rebuild resolution of every pool: expanded member defNames
-    /// (deduped, member order, category refs expanded via the catalog) and the
-    /// effective icon defName. Built once per rebuild; rendering only reads it.
+    /// (deduped, member order, category refs expanded via the catalog), the
+    /// effective icon defName, and deterministic input order. Built once per
+    /// rebuild; rendering only reads it.
     public sealed class PoolSnapshot
     {
-        private readonly Dictionary<int, Entry> entries;
+        private readonly Dictionary<int, PoolSnapshotEntry> entries;
+        private readonly PoolSnapshotEntry[] orderedEntries;
 
-        private sealed class Entry
-        {
-            public IReadOnlyList<string> Members = null!; // Always assigned by Build.
-            public string? IconDefName;
-            public string Name = null!; // Always assigned by Build.
-        }
-
-        private PoolSnapshot(Dictionary<int, Entry> entries)
+        private PoolSnapshot(Dictionary<int, PoolSnapshotEntry> entries,
+            PoolSnapshotEntry[] orderedEntries)
         {
             this.entries = entries;
+            this.orderedEntries = orderedEntries;
         }
+
+        public int Count => orderedEntries.Length;
+
+        public PoolSnapshotEntry EntryAt(int index) => orderedEntries[index];
 
         public static PoolSnapshot Build(IReadOnlyList<ResourcePool> pools, IResourceCatalog catalog)
         {
-            var entries = new Dictionary<int, Entry>(pools.Count);
-            foreach (var pool in pools)
+            var entries = new Dictionary<int, PoolSnapshotEntry>(pools.Count);
+            var orderedEntries = new PoolSnapshotEntry[pools.Count];
+            for (int poolIndex = 0; poolIndex < pools.Count; poolIndex++)
             {
+                ResourcePool pool = pools[poolIndex];
                 var expanded = new List<string>();
                 var seen = new HashSet<string>();
 
@@ -56,14 +76,15 @@ namespace EPrimeReadouts.Core
                 else if (expanded.Count > 0)
                     icon = expanded[0];
 
-                entries[pool.Id] = new Entry
-                {
-                    Members = expanded.AsReadOnly(),
-                    IconDefName = icon,
-                    Name = pool.Name ?? "",
-                };
+                var entry = new PoolSnapshotEntry(
+                    pool.Id,
+                    pool.Name ?? "",
+                    expanded.AsReadOnly(),
+                    icon);
+                entries[pool.Id] = entry;
+                orderedEntries[poolIndex] = entry;
             }
-            return new PoolSnapshot(entries);
+            return new PoolSnapshot(entries, orderedEntries);
         }
 
         /// Returns true and populates out-params when the pool id is found.

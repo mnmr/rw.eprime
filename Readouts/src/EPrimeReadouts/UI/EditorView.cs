@@ -513,6 +513,7 @@ namespace EPrimeReadouts.UI
             if (owner.selectedCanonical == null) return;
 
             float y = rect.y;
+            ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
 
             // Line 1: show-when-zero checkbox (width capped at 50% of panel)
             bool showWhenZero = storedToken == null || SlotToken.ShowWhenZero(storedToken);
@@ -538,39 +539,62 @@ namespace EPrimeReadouts.UI
             y += 24f;
 
             // Line 2: threshold caption (Tiny, CaptionText style)
+            float captionH = tinyMetrics.MinHeight(22f);
             Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
-            Widgets.Label(new Rect(rect.x, y, rect.width, 22f),
+            Widgets.Label(new Rect(
+                    rect.x,
+                    y + tinyMetrics.CaptionOffsetY,
+                    rect.width,
+                    captionH),
                 UiText.Get("EPR.ThresholdCaption"));
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
-            y += 24f;
+            y += captionH + 2f;
 
             // Line 3: low/critical/set/clear. Columns start where measured
             // labels end, so substituted fonts and long translations shift
             // the row instead of clipping.
             var row = EnsureThresholdRow();
+            const float ControlH = 24f;
+            float thresholdRowH = Mathf.Max(ControlH, tinyMetrics.LineHeight);
+            float controlY = y + Mathf.Floor((thresholdRowH - ControlH) / 2f);
+            float labelY = y
+                + Mathf.Floor((thresholdRowH - tinyMetrics.LineHeight) / 2f)
+                + tinyMetrics.CaptionOffsetY;
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x, y + 3f, row.LowLabelW, 22f),
+            Widgets.Label(new Rect(
+                    rect.x,
+                    labelY,
+                    row.LowLabelW,
+                    tinyMetrics.LineHeight),
                 UiText.Get("EPR.Low"));
             Text.Font = GameFont.Small;
             DrawThresholdField(
-                new Rect(rect.x + row.LowFieldX, y, ThresholdRowLayout.FieldW, 24f),
+                new Rect(rect.x + row.LowFieldX, controlY,
+                    ThresholdRowLayout.FieldW, ControlH),
                 "EPR.LowThreshold", ref thresholdEditor.LowValue,
                 ref thresholdEditor.LowBuffer);
             Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(rect.x + row.CriticalLabelX, y + 3f,
-                row.CriticalLabelW, 22f), UiText.Get("EPR.Critical"));
+            Widgets.Label(new Rect(
+                    rect.x + row.CriticalLabelX,
+                    labelY,
+                    row.CriticalLabelW,
+                    tinyMetrics.LineHeight),
+                UiText.Get("EPR.Critical"));
             Text.Font = GameFont.Small;
             DrawThresholdField(
-                new Rect(rect.x + row.CriticalFieldX, y, ThresholdRowLayout.FieldW, 24f),
+                new Rect(rect.x + row.CriticalFieldX, controlY,
+                    ThresholdRowLayout.FieldW, ControlH),
                 "EPR.CriticalThreshold", ref thresholdEditor.CriticalValue,
                 ref thresholdEditor.CriticalBuffer);
-            if (Widgets.ButtonText(new Rect(rect.x + row.SetX, y, row.SetW, 24f),
+            if (Widgets.ButtonText(new Rect(
+                    rect.x + row.SetX, controlY, row.SetW, ControlH),
                 UiText.Get("EPR.Set")))
                 ReadoutCommands.SetThreshold(owner.selectedCanonical,
                     thresholdEditor.LowValue, thresholdEditor.CriticalValue);
-            if (Widgets.ButtonText(new Rect(rect.x + row.ClearX, y, row.ClearW, 24f),
+            if (Widgets.ButtonText(new Rect(
+                    rect.x + row.ClearX, controlY, row.ClearW, ControlH),
                 UiText.Get("EPR.Clear")))
             {
                 ReadoutCommands.ClearThreshold(owner.selectedCanonical);
@@ -618,6 +642,8 @@ namespace EPrimeReadouts.UI
                 "EPR.CriticalThreshold", thresholdEditor.CriticalBuffer,
                 () => thresholdEditor.CriticalBuffer = "");
         }
+
+        internal void Unfocus() => UnfocusThresholdInputs();
 
         private static void DrawThresholdField(Rect rect, string controlName,
             ref int value, ref string buffer)

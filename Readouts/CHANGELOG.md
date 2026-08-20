@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.2.0 — 2026-08-20
+
+- Added: Support for adding non-resource storage items to groups or pools.
+- Added: Ability to filter resources by source (All, Vanilla/DLC, mods).
+- Changed: Redesigned settings so that the pool list/editor gets more space.
+- Changed: Pools are now part of the resource tree so that assignment works just like for other items.
+- Fixed: Improved import/export (better validation and collision detection).
+
 ## 1.1.1 — 2026-08-18
 
 - Added: Help texts to better explain how the settings UI works.

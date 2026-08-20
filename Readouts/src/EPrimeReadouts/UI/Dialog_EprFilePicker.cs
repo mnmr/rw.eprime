@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using EPrimeReadouts.Core;
 using UnityEngine;
 using Verse;
 
@@ -17,7 +18,8 @@ namespace EPrimeReadouts.UI
         protected enum Location { GameData, Desktop, UserHome, Custom }
 
         protected const float RowH = 30f;
-        protected const float CaptionRowH = 22f;
+        protected static float CaptionRowH =>
+            EprStyle.TinyTextMetrics.MinHeight(22f);
 
         protected Location location = Location.GameData;
         protected string fileName = "Readouts.xml";
@@ -131,6 +133,9 @@ namespace EPrimeReadouts.UI
         /// Tiny grey caption, matching the dialog captions elsewhere.
         protected static void DrawCaption(Rect rect, string text)
         {
+            ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
+            rect.y += metrics.CaptionOffsetY;
+            rect.height = metrics.MinHeight(rect.height);
             Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
             Text.Anchor = TextAnchor.LowerLeft;

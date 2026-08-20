@@ -1,4 +1,5 @@
 using System;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -11,15 +12,18 @@ namespace EPrimeReadouts.UI
     {
         private readonly string titleKey;
         private readonly Action<string> onAccept;
+        private readonly Func<string, string?>? validate;
         private string value;
         private bool requestInitialFocus = true;
 
         public override Vector2 InitialSize => new Vector2(320f, 130f);
 
-        public Dialog_NameInput(string titleKey, string initialValue, Action<string> onAccept)
+        public Dialog_NameInput(string titleKey, string initialValue,
+            Action<string> onAccept, Func<string, string?>? validate = null)
         {
             this.titleKey = titleKey;
             this.onAccept = onAccept;
+            this.validate = validate;
             value = initialValue ?? "";
             doCloseX = true;
             absorbInputAroundWindow = true;
@@ -88,6 +92,13 @@ namespace EPrimeReadouts.UI
         {
             string trimmed = value.Trim();
             if (trimmed.NullOrEmpty()) return false;
+            string? problem = validate?.Invoke(trimmed);
+            if (!problem.NullOrEmpty())
+            {
+                Messages.Message(
+                    problem, MessageTypeDefOf.RejectInput, historical: false);
+                return false;
+            }
             onAccept(trimmed);
             return true;
         }

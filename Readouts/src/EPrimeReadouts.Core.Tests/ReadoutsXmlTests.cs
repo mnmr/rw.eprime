@@ -126,10 +126,10 @@ public class ReadoutsXmlTests
         await Assert.That(string.Join(",", tier)).IsEqualTo("pool:Meats,Steel");
     }
 
-    // ── Import drops unknown pool:Name and compacts ───────────────────────
+    // ── Import rejects unknown pool:Name atomically ──────────────────────
 
     [Test]
-    public async Task Import_UnknownPoolName_DroppedAndCompacted()
+    public async Task TryImport_UnknownPoolName_ReturnsFalse()
     {
         // Hand-authored XML referencing a pool that does not appear in <Pools>
         string xml = @"<Readouts>
@@ -152,16 +152,14 @@ public class ReadoutsXmlTests
   </Groups>
 </Readouts>";
 
-        bool ok = ReadoutsXml.TryImport(xml, out var pools, out var groups, out _);
-        await Assert.That(ok).IsTrue();
-
-        var fresh = new ReadoutModel();
-        fresh.ApplyImport(pools, groups, Counter(1), Counter(1));
-
-        var fg = fresh.InDisplayOrder()[0];
-        // Tier 0: "pool:Unknown" dropped, "pool:Metals" resolves to "#1", "Silver" stays
-        await Assert.That(fg.TierCount).IsEqualTo(1); // tier 1 had only unknowns → compacted away
-        await Assert.That(string.Join(",", fg.Tiers[0])).IsEqualTo("#1,Silver");
+        bool ok = ReadoutsXml.TryImport(
+            xml, out var pools, out var groups, out string? error);
+        await Assert.That(ok).IsFalse();
+        await Assert.That(error).IsNotNull();
+        await Assert.That(error!.Contains("Unknown", StringComparison.OrdinalIgnoreCase))
+            .IsTrue();
+        await Assert.That(pools.Count).IsEqualTo(0);
+        await Assert.That(groups.Count).IsEqualTo(0);
     }
 
     // ── TryImport malformed XML → false + non-empty error ────────────────
@@ -317,6 +315,22 @@ public class ReadoutsXmlTests
         await Assert.That(pools.Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task TryImport_BlankPoolName_ReturnsFalse()
+    {
+        string xml = @"<Readouts>
+  <Pools><Pool Name=""   ""><Member>Steel</Member></Pool></Pools>
+</Readouts>";
+
+        bool ok = ReadoutsXml.TryImport(
+            xml, out var pools, out var groups, out string? error);
+
+        await Assert.That(ok).IsFalse();
+        await Assert.That(error).IsNotNull();
+        await Assert.That(pools.Count).IsEqualTo(0);
+        await Assert.That(groups.Count).IsEqualTo(0);
+    }
+
     // ── Export: empty members/tiers not written ───────────────────────────
 
     [Test]
@@ -331,6 +345,20 @@ public class ReadoutsXmlTests
         await Assert.That(ok).IsTrue();
         await Assert.That(groups.Count).IsEqualTo(1);
         await Assert.That(groups[0].TierCount).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task Export_DuplicateNormalizedPoolNames_Throws()
+    {
+        var pools = new List<ResourcePool>
+        {
+            new ResourcePool { Id = 1, Name = "Concrete" },
+            new ResourcePool { Id = 2, Name = " concrete " },
+        };
+
+        await Assert.That(() => ReadoutsXml.Export(
+                pools, new List<ReadoutGroup>()))
+            .Throws<InvalidOperationException>();
     }
 
     // ── Pool name with special XML chars round-trips ──────────────────────
@@ -355,6 +383,53 @@ public class ReadoutsXmlTests
         await Assert.That(fresh.Pools[0].Name).IsEqualTo("Meat & Fish <Raw>");
         // Slot should resolve to the new pool id
         await Assert.That(string.Join(",", fresh.InDisplayOrder()[0].Tiers[0])).IsEqualTo("#1");
+    }
+
+    [Test]
+    public async Task RoundTrip_NormalizedPoolNameCanMatchPlainItemToken()
+    {
+        var model = new ReadoutModel();
+        model.CreatePool(1, "  Concrete  ").Members.Add("Steel");
+        model.CreateGroup(1, "Materials");
+        model.SetTiers(1, new List<List<string>>
+        {
+            new() { "Concrete", "#1" },
+        });
+
+        string xml = ReadoutsXml.Export(model.Pools, model.InDisplayOrder());
+        bool ok = ReadoutsXml.TryImport(
+            xml, out var pools, out var groups, out string? error);
+        var imported = new ReadoutModel();
+        imported.ApplyImport(pools, groups, Counter(), Counter());
+
+        await Assert.That(ok).IsTrue();
+        await Assert.That(error).IsNull();
+        await Assert.That(imported.Pools[0].Name).IsEqualTo("Concrete");
+        await Assert.That(string.Join(",", imported.Groups[0].Tiers[0]))
+            .IsEqualTo("Concrete,#1");
+    }
+
+    [Test]
+    public async Task TryImport_NormalizesPoolNamesAndReferences()
+    {
+        string xml = @"<Readouts>
+  <Pools>
+    <Pool Name=""  Concrete  ""><Member>Steel</Member></Pool>
+  </Pools>
+  <Groups>
+    <Group Name=""Materials""><Tier><Slot>pool:concrete</Slot></Tier></Group>
+  </Groups>
+</Readouts>";
+
+        bool ok = ReadoutsXml.TryImport(
+            xml, out var pools, out var groups, out string? error);
+        var imported = new ReadoutModel();
+        imported.ApplyImport(pools, groups, Counter(), Counter());
+
+        await Assert.That(ok).IsTrue();
+        await Assert.That(error).IsNull();
+        await Assert.That(imported.Pools[0].Name).IsEqualTo("Concrete");
+        await Assert.That(imported.Groups[0].Tiers[0][0]).IsEqualTo("#1");
     }
 
     // ── ApplyImport: clears existing state first ──────────────────────────
@@ -384,18 +459,17 @@ public class ReadoutsXmlTests
         await Assert.That(model.Groups[0].Name).IsEqualTo("NewGroup");
     }
 
-    // ── ApplyImport: duplicate pool names — last wins ─────────────────────
+    // ── Duplicate pool names are rejected before apply ───────────────────
 
     [Test]
-    public async Task ApplyImport_DuplicatePoolName_LastWins()
+    public async Task TryImport_DuplicateNormalizedPoolNames_ReturnsFalse()
     {
-        // Two pools with the same name; the slot should resolve to the second one's id
         string xml = @"<Readouts>
   <Pools>
     <Pool Name=""Dup"">
       <Member>Steel</Member>
     </Pool>
-    <Pool Name=""Dup"">
+    <Pool Name="" dup "">
       <Member>Gold</Member>
     </Pool>
   </Pools>
@@ -406,16 +480,45 @@ public class ReadoutsXmlTests
   </Groups>
 </Readouts>";
 
-        ReadoutsXml.TryImport(xml, out var pools, out var groups, out _);
+        bool ok = ReadoutsXml.TryImport(
+            xml, out var pools, out var groups, out string? error);
 
-        var fresh = new ReadoutModel();
-        fresh.ApplyImport(pools, groups, Counter(1), Counter(1));
+        await Assert.That(ok).IsFalse();
+        await Assert.That(error).IsNotNull();
+        await Assert.That(error!.Contains("dup", StringComparison.OrdinalIgnoreCase))
+            .IsTrue();
+        await Assert.That(pools.Count).IsEqualTo(0);
+        await Assert.That(groups.Count).IsEqualTo(0);
+    }
 
-        // Two pools created: ids 1 and 2; last "Dup" → id 2
-        await Assert.That(fresh.Pools.Count).IsEqualTo(2);
-        var tier = fresh.InDisplayOrder()[0].Tiers[0];
-        // "pool:Dup" should resolve to id 2 (last pool named "Dup")
-        await Assert.That(string.Join(",", tier)).IsEqualTo("#2");
+    [Test]
+    public async Task ApplyImport_InvalidPoolNamesLeaveCurrentModelUntouched()
+    {
+        var model = new ReadoutModel();
+        model.CreatePool(10, "Existing").Members.Add("Steel");
+        model.CreateGroup(20, "Existing group");
+        model.SetTiers(20, new List<List<string>> { new() { "Steel" } });
+        int allocatedPoolIds = 0;
+        int allocatedGroupIds = 0;
+        var invalidPools = new List<ResourcePool>
+        {
+            new ResourcePool { Name = "Dup" },
+            new ResourcePool { Name = " dup " },
+        };
+
+        ReadoutChange change = model.ApplyImport(
+            invalidPools,
+            new List<ReadoutGroup> { new ReadoutGroup { Name = "Replacement" } },
+            () => { allocatedPoolIds++; return 100 + allocatedPoolIds; },
+            () => { allocatedGroupIds++; return 200 + allocatedGroupIds; });
+
+        await Assert.That(change).IsEqualTo(ReadoutChange.None);
+        await Assert.That(allocatedPoolIds).IsEqualTo(0);
+        await Assert.That(allocatedGroupIds).IsEqualTo(0);
+        await Assert.That(model.Pools.Count).IsEqualTo(1);
+        await Assert.That(model.PoolById(10)!.Name).IsEqualTo("Existing");
+        await Assert.That(model.Groups.Count).IsEqualTo(1);
+        await Assert.That(model.GroupById(20)!.Tiers[0][0]).IsEqualTo("Steel");
     }
 
     // ── ApplyImport: group display order matches file order ───────────────

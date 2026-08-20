@@ -52,21 +52,6 @@ public class ItemPickerFilterTests
     }
 
     [Test]
-    public async Task SeparatePickerStatesRetainIndependentChoices()
-    {
-        var resources = new ItemPickerState();
-        var pools = new ItemPickerState();
-
-        resources.Query = "steel";
-        resources.SourceId = "author.mod";
-        resources.Type = ItemPickerType.AllStorableItems;
-
-        await Assert.That(pools.Query).IsEqualTo("");
-        await Assert.That(pools.SourceId).IsEqualTo(ItemSourceIds.All);
-        await Assert.That(pools.Type).IsEqualTo(ItemPickerType.Resources);
-    }
-
-    [Test]
     public async Task EmptyFilteredResultDoesNotChangeSavedExpansionState()
     {
         var expanded = new HashSet<string> { "Items" };

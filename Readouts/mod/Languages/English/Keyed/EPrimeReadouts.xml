@@ -15,8 +15,12 @@
   <EPR.AllStorableItems>All Storable Items</EPR.AllStorableItems>
   <EPR.All>All</EPR.All>
   <EPR.Vanilla>Vanilla</EPR.Vanilla>
+  <EPR.SearchFilter>Search filter</EPR.SearchFilter>
+  <EPR.ItemFilter>Item filter</EPR.ItemFilter>
+  <EPR.SourceFilter>Source filter</EPR.SourceFilter>
   <EPR.NoMatchingItems>No matching items</EPR.NoMatchingItems>
   <EPR.Editor>Editor</EPR.Editor>
+  <EPR.GroupEditor>Group Editor</EPR.GroupEditor>
   <EPR.RenameGroup>Rename group</EPR.RenameGroup>
   <EPR.Add>Add</EPR.Add>
   <EPR.Rename>Rename</EPR.Rename>
@@ -34,7 +38,7 @@
   <EPR.RestoreConfirm>Replace ALL groups and thresholds with the default set? This affects every player in multiplayer.</EPR.RestoreConfirm>
   <EPR.Help>Help</EPR.Help>
   <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.&#10;&#10;Click the checkmark to toggle visibility or [x] to delete the group.&#10;&#10;Add new groups using the name input and Add button.</EPR.HelpGroups>
-  <EPR.HelpResources>This panel shows in-game items you can display counters for.&#10;&#10;You can also build resource pools that summarizes counters for multiple items into a single item. Click the Resource Pools button to toggle what this panel displays.&#10;&#10;Click an item to append it to the currently selected group. Drag to manually position where the item should land. Right-click an already assigned item to remove it again.</EPR.HelpResources>
+  <EPR.HelpResources>Browse resources and defined resource pools to add them to the selected group.&#10;&#10;Click an entry to append it to the group, or drag it to place it in a specific tier slot. Assigned entries are dimmed and marked; right-click them or click their checkmark to remove them.</EPR.HelpResources>
   <EPR.HelpEditor>This panel shows you the tiers of the currently selected group.&#10;&#10;A group can have up to three display tiers. A new tier automatically becomes available when the previous tier is non-empty.&#10;&#10;Click or drag items from the panel on the right to add them to the selected group.&#10;&#10;Click a slot to set display options. Right-click a slot to clear the assignment. Drag items to re-arrange inside or between tiers.</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
@@ -72,14 +76,14 @@
   <EPR.HoverOptions>Hover Options</EPR.HoverOptions>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
-  <EPR.ShowPools>Resource Pools</EPR.ShowPools>
-  <EPR.ShowResources>Resources</EPR.ShowResources>
   <EPR.Pools>Resource Pools</EPR.Pools>
-  <EPR.HelpPools>This panel allows you to configure resource pools. A resource pool is a selection of items that you want summarized as a single icon in the readout.&#10;&#10;You can only assign pools to tiers by dragging.&#10;&#10;Clicking a group selects it and shows the Configure Resource Pool panel, where you can tree-select which items to include in the pool.</EPR.HelpPools>
-  <EPR.ConfigurePool>Configure Resource Pool</EPR.ConfigurePool>
-  <EPR.HelpPoolEditor>Tick categories or individual resources to include them. Click a resource's name to use its icon for the pool.</EPR.HelpPoolEditor>
+  <EPR.ResourcePoolEditor>Resource Pool Editor</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Create a resource pool, then select it here to edit its contents in the Resources panel. Use the row actions to rename or delete a pool.&#10;&#10;To add a pool to a group, switch to Group Editor and use the Resource Pools branch in the Resources tree.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Use the shared filters to narrow the resource tree. Tick categories or individual resources to include them in the selected pool. Click a resource's icon to use it as the pool icon.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Select or create a resource pool to begin.</EPR.SelectOrCreatePool>
   <EPR.DeletePoolConfirm>Delete pool "{0}"? Slots using it will be removed from all groups.</EPR.DeletePoolConfirm>
   <EPR.NameLabel>Name</EPR.NameLabel>
+  <EPR.PoolNameTaken>A resource pool with this name already exists.</EPR.PoolNameTaken>
   <EPR.OK>OK</EPR.OK>
   <EPR.Cancel>Cancel</EPR.Cancel>
   <EPR.Export>Export</EPR.Export>

@@ -110,7 +110,9 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.CreatePool(store.TakePoolId(), name);
+            string normalized = PoolNameRules.Normalize(name);
+            if (!store.Model.CanUsePoolName(normalized)) return;
+            store.Model.CreatePool(store.TakePoolId(), normalized);
             store.Bump(ReadoutChange.Pools);
         }
 
