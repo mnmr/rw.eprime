@@ -185,4 +185,24 @@ public class PoolTriStateTests
         await Assert.That(original.Count).IsEqualTo(1);
         await Assert.That(result.Contains("@MeatRaw")).IsFalse();
     }
+
+    [Test]
+    public async Task FilteredCategoryToggleOnlyChangesMatchingDefsAndExpandsCoveringReference()
+    {
+        var catalog = new FakeResourceCatalog()
+            .With("Meat_Cow", "cow meat")
+            .With("Meat_Chicken", "chicken meat")
+            .With("Meat_Alpaca", "alpaca meat")
+            .WithCategory("MeatRaw", "raw meat", "Meat_Cow", "Meat_Chicken", "Meat_Alpaca");
+
+        var removed = PoolTriState.ToggleCategoryScope(
+            Members("@MeatRaw"), "MeatRaw", new[] { "Meat_Cow" }, catalog);
+        var added = PoolTriState.ToggleCategoryScope(
+            Members(), "MeatRaw", new[] { "Meat_Cow" }, catalog);
+
+        await Assert.That(string.Join(",", removed)).IsEqualTo("Meat_Chicken,Meat_Alpaca");
+        await Assert.That(string.Join(",", added)).IsEqualTo("Meat_Cow");
+        await Assert.That(removed.Contains("@MeatRaw")).IsFalse();
+        await Assert.That(added.Contains("@MeatRaw")).IsFalse();
+    }
 }

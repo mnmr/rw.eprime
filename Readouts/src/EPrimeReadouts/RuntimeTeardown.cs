@@ -22,6 +22,7 @@ namespace EPrimeReadouts
             PanelCellMetrics.Reset();
             UiText.Reset();
             EprStyle.Reset();
+            Dialog_CompactConfirm.Reset();
             EprDrag.Cancel();
             PanelBufferBackend.Shared.Release();
             IconScaleCache.ReleaseGraphics();

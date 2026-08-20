@@ -5,12 +5,14 @@ using Verse;
 namespace EPrimeReadouts.UI
 {
     /// Minimal name-input dialog: label + text field + OK/Cancel buttons.
-    /// Enter key accepts; Escape cancels (via base Window handling).
+    /// Enter accepts. Escape clears, then unfocuses, then closes according to
+    /// the shared dialog-input policy.
     public sealed class Dialog_NameInput : Window
     {
         private readonly string titleKey;
         private readonly Action<string> onAccept;
         private string value;
+        private bool requestInitialFocus = true;
 
         public override Vector2 InitialSize => new Vector2(320f, 130f);
 
@@ -23,6 +25,7 @@ namespace EPrimeReadouts.UI
             absorbInputAroundWindow = true;
             forcePause = false;
             closeOnClickedOutside = false;
+            closeOnAccept = true;
         }
 
         public override void DoWindowContents(Rect inRect)
@@ -40,7 +43,11 @@ namespace EPrimeReadouts.UI
 
             GUI.SetNextControlName("NameInputField");
             value = Widgets.TextField(new Rect(inRect.x, y, inRect.width, 24f), value);
-            GUI.FocusControl("NameInputField");
+            if (requestInitialFocus)
+            {
+                GUI.FocusControl("NameInputField");
+                requestInitialFocus = false;
+            }
             y += 32f;
 
             float btnW = 80f;
@@ -52,18 +59,8 @@ namespace EPrimeReadouts.UI
             bool cancelled = Widgets.ButtonText(new Rect(btnX + btnW + btnGap, y, btnW, 24f),
                 UiText.Get("EPR.Cancel"));
 
-            // Enter key accepts
-            if (Event.current.type == EventType.KeyDown
-                && Event.current.keyCode == KeyCode.Return
-                && !value.NullOrEmpty())
+            if (accepted && TryAccept())
             {
-                accepted = true;
-                Event.current.Use();
-            }
-
-            if (accepted && !value.NullOrEmpty())
-            {
-                onAccept(value.Trim());
                 Close();
             }
             else if (cancelled)
@@ -71,6 +68,28 @@ namespace EPrimeReadouts.UI
                 Close();
             }
             }
+        }
+
+        public override void OnAcceptKeyPressed()
+        {
+            if (TryAccept())
+                base.OnAcceptKeyPressed();
+        }
+
+        public override void OnCancelKeyPressed()
+        {
+            if (DialogInputFocus.TryHandleEscape(
+                "NameInputField", value, () => value = ""))
+                return;
+            base.OnCancelKeyPressed();
+        }
+
+        private bool TryAccept()
+        {
+            string trimmed = value.Trim();
+            if (trimmed.NullOrEmpty()) return false;
+            onAccept(trimmed);
+            return true;
         }
     }
 }

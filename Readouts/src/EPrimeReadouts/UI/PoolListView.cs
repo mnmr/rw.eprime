@@ -235,7 +235,7 @@ namespace EPrimeReadouts.UI
             {
                 int capturedId = row.Id;
                 string capturedName = row.Name;
-                Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                Find.WindowStack.Add(new Dialog_CompactConfirm(
                     "EPR.DeletePoolConfirm".Translate(capturedName),
                     () =>
                     {

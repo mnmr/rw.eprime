@@ -57,6 +57,20 @@ namespace EPrimeReadouts.Core
             return TriState.Partial;
         }
 
+        /// Returns the selection state for the exact defs represented by a
+        /// filtered category row. Empty scopes are Off.
+        public static TriState ScopeState(List<string> members,
+            IReadOnlyList<string> scopedDefs, IResourceCatalog catalog)
+        {
+            if (scopedDefs.Count == 0) return TriState.Off;
+            int selected = 0;
+            foreach (var defName in scopedDefs)
+                if (IsSelected(members, defName, catalog)) selected++;
+            if (selected == 0) return TriState.Off;
+            if (selected == scopedDefs.Count) return TriState.On;
+            return TriState.Partial;
+        }
+
         // ── Mutations ─────────────────────────────────────────────────────
 
         /// Toggles <paramref name="defName"/>: adds when not selected, removes
@@ -125,6 +139,26 @@ namespace EPrimeReadouts.Core
             }
         }
 
+        /// Toggles only the defs matching the active picker filter. A complete
+        /// category scope retains the compact @Category representation;
+        /// partial scopes remain explicit so hidden defs are never changed.
+        public static List<string> ToggleCategoryScope(List<string> members, string categoryDefName,
+            IReadOnlyList<string> scopedDefs, IResourceCatalog catalog)
+        {
+            if (SameSet(scopedDefs, catalog.CountedDefsIn(categoryDefName)))
+                return ToggleCategory(members, categoryDefName, catalog);
+
+            bool turnOff = ScopeState(members, scopedDefs, catalog) == TriState.On;
+            var result = new List<string>(members);
+            foreach (var defName in scopedDefs)
+            {
+                bool isSelected = IsSelected(result, defName, catalog);
+                if ((turnOff && isSelected) || (!turnOff && !isSelected))
+                    result = ToggleDef(result, defName, catalog);
+            }
+            return result;
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────
 
         /// Returns a new list where every @Category ref that covers
@@ -154,6 +188,16 @@ namespace EPrimeReadouts.Core
                 result.Add(member);
             }
             return result;
+        }
+
+        private static bool SameSet(IReadOnlyList<string> left, IReadOnlyList<string> right)
+        {
+            if (left.Count != right.Count) return false;
+            var set = new HashSet<string>(left);
+            if (set.Count != right.Count) return false;
+            foreach (var item in right)
+                if (!set.Contains(item)) return false;
+            return true;
         }
     }
 }

@@ -16,6 +16,7 @@ namespace EPrimeReadouts.UI
             doCloseButton = true;
             absorbInputAroundWindow = true;
             forcePause = false;
+            closeOnAccept = false;
         }
 
         public override Vector2 InitialSize => new Vector2(380f, 660f);

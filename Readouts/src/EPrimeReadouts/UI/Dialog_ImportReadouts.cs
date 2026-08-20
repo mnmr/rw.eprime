@@ -96,6 +96,7 @@ namespace EPrimeReadouts.UI
             }
             pendingXml    = xml;
             previewSnapshot = ReadoutSnapshot.Capture(parsedPools, parsedGroups);
+            UnfocusPickerInputs();
             stage = Stage.Preview;
             return true;
         }
@@ -196,7 +197,7 @@ namespace EPrimeReadouts.UI
                     {
                         string capturedPath = fullPath;
                         string capturedName = name;
-                        Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                        Find.WindowStack.Add(new Dialog_CompactConfirm(
                             "EPR.DeleteFileConfirm".Translate(capturedName),
                             () =>
                             {

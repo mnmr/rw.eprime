@@ -148,7 +148,7 @@ namespace EPrimeReadouts.UI
                 if (Widgets.ButtonText(new Rect(row.xMax - 24f, row.y + 2f, 22f, 22f), "✕"))
                 {
                     int id = group.Id;
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    Find.WindowStack.Add(new Dialog_CompactConfirm(
                         "EPR.DeleteConfirm".Translate(group.Name),
                         () => ReadoutCommands.DeleteGroup(id), destructive: true));
                 }
@@ -166,6 +166,7 @@ namespace EPrimeReadouts.UI
                 listRect.y + rows.Length * RowH + 8f,
                 rect.yMax - FooterH + 4f);
             var footer = new Rect(rect.x, footerY, rect.width, FooterH - 4f);
+            GUI.SetNextControlName("EPR.NewGroupName");
             newName = Widgets.TextField(
                 new Rect(footer.x, footer.y, footer.width - 60f, 24f), newName);
             if (Widgets.ButtonText(new Rect(footer.xMax - 56f, footer.y, 56f, 24f),
@@ -221,8 +222,12 @@ namespace EPrimeReadouts.UI
             builtPresentationVersion = -1;
             rows = null;
             pendingSelect = null;
+            newName = "";
             scroll = Vector2.zero;
         }
+
+        internal bool HandleEscape() => DialogInputFocus.TryHandleEscape(
+            "EPR.NewGroupName", newName, () => newName = "");
 
         private static void DrawInsertMarker(Rect row, float markerY, float width)
         {

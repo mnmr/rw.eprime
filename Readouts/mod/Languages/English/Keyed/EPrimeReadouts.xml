@@ -12,6 +12,10 @@
   <EPR.BottomMargin>Bottom margin</EPR.BottomMargin>
   <EPR.Groups>Groups</EPR.Groups>
   <EPR.Resources>Resources</EPR.Resources>
+  <EPR.AllStorableItems>All Storable Items</EPR.AllStorableItems>
+  <EPR.All>All</EPR.All>
+  <EPR.Vanilla>Vanilla</EPR.Vanilla>
+  <EPR.NoMatchingItems>No matching items</EPR.NoMatchingItems>
   <EPR.Editor>Editor</EPR.Editor>
   <EPR.RenameGroup>Rename group</EPR.RenameGroup>
   <EPR.Add>Add</EPR.Add>

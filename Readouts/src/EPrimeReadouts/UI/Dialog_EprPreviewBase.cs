@@ -20,6 +20,7 @@ namespace EPrimeReadouts.UI
             doCloseX                = true;
             draggable               = true;
             forcePause              = false;
+            closeOnAccept           = false;
         }
 
         /// Draws the title and returns the Y coordinate just below it.

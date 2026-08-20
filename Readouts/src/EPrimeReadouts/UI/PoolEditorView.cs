@@ -14,10 +14,18 @@ namespace EPrimeReadouts.UI
     {
         private const float RowH = 24f;
         private const float CheckboxW = 24f;
+        private const string FilterControl = "EPR.PoolPickerFilter";
 
         private Vector2 scroll;
+        private readonly ItemPickerState filterState = new ItemPickerState();
         private readonly HashSet<string> expanded = new HashSet<string>();
+        private readonly System.Action filterChanged;
         private int expandStamp;
+
+        public PoolEditorView()
+        {
+            filterChanged = OnFilterChanged;
+        }
 
         // Caching fields
         private int builtPoolsVersion = -1;
@@ -28,7 +36,8 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: this dialog view and one ReadoutStore.
-        // Key: store identity, pool id, PoolsVersion, expansion stamp, language revision.
+        // Key: store identity, pool id, PoolsVersion, expansion/query/type/source
+        // stamp, and language revision.
         // Value: immutable flattened editor rows with resolved ThingDefs/state.
         // Dependencies: selected pool raw members/icon, tree expansion and language.
         // Refresh policy: immediate on any dependency change.
@@ -47,6 +56,7 @@ namespace EPrimeReadouts.UI
             public TriState State;   // derived from pool members
             public ThingDef Def;
             public bool IsCurrentIcon;
+            public IReadOnlyList<string> MatchingDefNames;
         }
 
         public void Draw(Rect rect, Dialog_ReadoutConfig owner)
@@ -61,6 +71,11 @@ namespace EPrimeReadouts.UI
                 UiText.Get("EPR.ConfigurePool"), UiText.Get("EPR.HelpPoolEditor"),
                 ref folded, foldable: false);
 
+            ItemPickerFilterBar.Draw(
+                new Rect(rect.x, rect.y + headerUsed, rect.width, 24f),
+                filterState, FilterControl, filterChanged);
+            headerUsed += ItemPickerFilterBar.Height;
+
             // Rebuild cached rows when needed
             if (NeedsRebuild(store, owner.selectedPoolId))
                 Rebuild(store, owner.selectedPoolId);
@@ -73,6 +88,15 @@ namespace EPrimeReadouts.UI
             float listH = rect.height - headerUsed;
             if (listH <= 0f) return;
             var outRect = new Rect(rect.x, rect.y + headerUsed, rect.width, listH);
+            if (rowCount == 0)
+            {
+                Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = EprStyle.CaptionText;
+                Widgets.Label(outRect, UiText.Get("EPR.NoMatchingItems"));
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+                return;
+            }
             var viewRect = new Rect(0f, 0f, outRect.width - 16f, rowCount * RowH);
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
             try
@@ -113,11 +137,7 @@ namespace EPrimeReadouts.UI
             }
 
             var members = pool.Members;
-            var roots = GameResourceTree.GetRoots();
-
-            // Selecting a different pool reveals its members: collapse the
-            // whole tree, then expand every category that is Partial or On so
-            // the selection is reachable by scrolling alone.
+            var roots = GameResourceTree.GetRoots(filterState.Type);
             if (poolChanged)
             {
                 expanded.Clear();
@@ -127,10 +147,45 @@ namespace EPrimeReadouts.UI
             }
             builtExpandStamp = expandStamp;
 
-            var builtRows = new List<EditorRow>();
-            foreach (var root in roots)
-                AddNode(root, 0, members, pool.IconDefName, builtRows);
-            cachedRows = builtRows.ToArray();
+            var flat = ResourceTreeFlattener.Flatten(
+                roots, expanded,
+                new ItemTreeFilter(filterState.Query, filterState.Type, filterState.SourceId),
+                GameResourceCatalog.Instance);
+            var builtRows = new EditorRow[flat.Count];
+            for (int i = 0; i < flat.Count; i++)
+            {
+                TreeRow row = flat[i];
+                if (row.IsCategory)
+                {
+                    builtRows[i] = new EditorRow
+                    {
+                        IsCategory = true,
+                        Indent = row.Indent,
+                        Id = row.Id,
+                        Label = row.Label,
+                        Expanded = row.Expanded,
+                        MatchingDefNames = row.MatchingDefNames,
+                        State = PoolTriState.ScopeState(
+                            members, row.MatchingDefNames, GameResourceCatalog.Instance),
+                    };
+                }
+                else
+                {
+                    ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(row.DefName);
+                    builtRows[i] = new EditorRow
+                    {
+                        Indent = row.Indent,
+                        DefName = row.DefName,
+                        Label = row.Label,
+                        State = PoolTriState.IsSelected(
+                            members, row.DefName, GameResourceCatalog.Instance)
+                                ? TriState.On : TriState.Off,
+                        Def = def,
+                        IsCurrentIcon = pool.IconDefName == row.DefName,
+                    };
+                }
+            }
+            cachedRows = builtRows;
 
             // Scroll so the first partially selected category sits at the top
             // of the view (fallback: first fully selected one; else the top).
@@ -148,53 +203,17 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        /// Recursively expands categories whose tri-state is Partial or On.
-        private void ExpandSelected(ResourceTreeNode node, List<string> members)
+        /// Preserves the established pool-switch behavior: reveal every
+        /// branch containing a selected member, including ancestors in ASI's
+        /// broader storage hierarchy.
+        private bool ExpandSelected(ResourceTreeNode node, List<string> members)
         {
-            var state = PoolTriState.CategoryState(members, node.Id, GameResourceCatalog.Instance);
-            if (state != TriState.Off) expanded.Add(node.Id);
+            bool selected = PoolTriState.CategoryState(
+                members, node.Id, GameResourceCatalog.Instance) != TriState.Off;
             foreach (var child in node.Children)
-                ExpandSelected(child, members);
-        }
-
-        private void AddNode(ResourceTreeNode node, int indent, List<string> members,
-            string? iconDefName, List<EditorRow> into)
-        {
-            bool open = expanded.Contains(node.Id);
-            var state = PoolTriState.CategoryState(members, node.Id, GameResourceCatalog.Instance);
-
-            into.Add(new EditorRow
-            {
-                IsCategory = true,
-                Indent = indent,
-                Id = node.Id,
-                Label = node.Label,
-                Expanded = open,
-                State = state,
-            });
-
-            if (!open) return;
-
-            foreach (var child in node.Children)
-                AddNode(child, indent + 1, members, iconDefName, into);
-
-            foreach (var defName in node.DefNames)
-            {
-                bool selected = PoolTriState.IsSelected(members, defName, GameResourceCatalog.Instance);
-                var label = GameResourceCatalog.Instance.LabelOf(defName);
-                ThingDef def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
-                if (def == null) continue;
-                into.Add(new EditorRow
-                {
-                    IsCategory = false,
-                    Indent = indent + 1,
-                    DefName = defName,
-                    Label = label,
-                    State = selected ? TriState.On : TriState.Off,
-                    Def = def,
-                    IsCurrentIcon = iconDefName == defName,
-                });
-            }
+                if (ExpandSelected(child, members)) selected = true;
+            if (selected) expanded.Add(node.Id);
+            return selected;
         }
 
         private void DrawEditorRow(EditorRow row, int index, float viewW)
@@ -216,7 +235,8 @@ namespace EPrimeReadouts.UI
                     var pool = ReadoutStore.Current?.Model.PoolById(builtPoolId);
                     if (pool != null)
                     {
-                        var newMembers = PoolTriState.ToggleCategory(pool.Members, row.Id,
+                        var newMembers = PoolTriState.ToggleCategoryScope(
+                            pool.Members, row.Id, row.MatchingDefNames,
                             GameResourceCatalog.Instance);
                         ReadoutCommands.SetPoolMembers(pool.Id, PoolMembersCodec.Encode(newMembers));
                     }
@@ -292,7 +312,25 @@ namespace EPrimeReadouts.UI
             cachedRows = null;
             expanded.Clear();
             expandStamp = 0;
+            filterState.Query = "";
+            filterState.Type = ItemPickerType.Resources;
+            filterState.SourceId = ItemSourceIds.All;
             scroll = Vector2.zero;
+        }
+
+        internal bool HandleEscape() => DialogInputFocus.TryHandleEscape(
+            FilterControl, filterState.Query, () =>
+            {
+                filterState.Query = "";
+                OnFilterChanged();
+            });
+
+        internal void Unfocus() => DialogInputFocus.Unfocus(FilterControl);
+
+        private void OnFilterChanged()
+        {
+            expandStamp++;
+            scroll.y = 0f;
         }
 
         /// WorkRoles-style MultiCheckboxClicked: draws the appropriate checkbox

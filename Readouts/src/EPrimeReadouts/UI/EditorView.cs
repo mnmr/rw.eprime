@@ -156,6 +156,7 @@ namespace EPrimeReadouts.UI
 
             if (group == null)
             {
+                UnfocusThresholdInputs();
                 GUI.color = EprStyle.SelectionTint;
                 Widgets.Label(new Rect(rect.x, rect.y + headerUsed, rect.width, 24f),
                     UiText.Get("EPR.SelectGroupHint"));
@@ -216,6 +217,10 @@ namespace EPrimeReadouts.UI
                 y += optHeaderUsed;
                 DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y),
                     group, selectionStoredToken, owner);
+            }
+            else
+            {
+                UnfocusThresholdInputs();
             }
         }
 
@@ -549,16 +554,18 @@ namespace EPrimeReadouts.UI
             Widgets.Label(new Rect(rect.x, y + 3f, row.LowLabelW, 22f),
                 UiText.Get("EPR.Low"));
             Text.Font = GameFont.Small;
-            Widgets.TextFieldNumeric(
+            DrawThresholdField(
                 new Rect(rect.x + row.LowFieldX, y, ThresholdRowLayout.FieldW, 24f),
-                ref thresholdEditor.LowValue, ref thresholdEditor.LowBuffer, 0f, 999999f);
+                "EPR.LowThreshold", ref thresholdEditor.LowValue,
+                ref thresholdEditor.LowBuffer);
             Text.Font = GameFont.Tiny;
             Widgets.Label(new Rect(rect.x + row.CriticalLabelX, y + 3f,
                 row.CriticalLabelW, 22f), UiText.Get("EPR.Critical"));
             Text.Font = GameFont.Small;
-            Widgets.TextFieldNumeric(
+            DrawThresholdField(
                 new Rect(rect.x + row.CriticalFieldX, y, ThresholdRowLayout.FieldW, 24f),
-                ref thresholdEditor.CriticalValue, ref thresholdEditor.CriticalBuffer, 0f, 999999f);
+                "EPR.CriticalThreshold", ref thresholdEditor.CriticalValue,
+                ref thresholdEditor.CriticalBuffer);
             if (Widgets.ButtonText(new Rect(rect.x + row.SetX, y, row.SetW, 24f),
                 UiText.Get("EPR.Set")))
                 ReadoutCommands.SetThreshold(owner.selectedCanonical,
@@ -599,6 +606,43 @@ namespace EPrimeReadouts.UI
             optionsLanguageVersion = -1;
             thresholdRow = default;
             thresholdRowUiVersion = -1;
+        }
+
+        internal bool HandleEscape()
+        {
+            if (DialogInputFocus.TryHandleEscape(
+                "EPR.LowThreshold", thresholdEditor.LowBuffer,
+                () => thresholdEditor.LowBuffer = ""))
+                return true;
+            return DialogInputFocus.TryHandleEscape(
+                "EPR.CriticalThreshold", thresholdEditor.CriticalBuffer,
+                () => thresholdEditor.CriticalBuffer = "");
+        }
+
+        private static void DrawThresholdField(Rect rect, string controlName,
+            ref int value, ref string buffer)
+        {
+            GUI.SetNextControlName(controlName);
+            string edited = Widgets.TextField(rect, buffer);
+            if (string.Equals(edited, buffer, StringComparison.Ordinal)) return;
+            if (edited.Length == 0)
+            {
+                buffer = "";
+                return;
+            }
+            for (int i = 0; i < edited.Length; i++)
+                if (edited[i] < '0' || edited[i] > '9')
+                    return;
+            if (!int.TryParse(edited, out int parsed)) return;
+            if (parsed < 0 || parsed > 999999) return;
+            buffer = edited;
+            value = parsed;
+        }
+
+        private static void UnfocusThresholdInputs()
+        {
+            DialogInputFocus.Unfocus("EPR.LowThreshold");
+            DialogInputFocus.Unfocus("EPR.CriticalThreshold");
         }
 
         private void ReleaseCachedBands()

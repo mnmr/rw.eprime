@@ -6,9 +6,9 @@ using Verse;
 
 namespace EPrimeReadouts
 {
-    /// Builds the vanilla resource category tree (ThingCategoryDef roots) once
-    /// and caches it. Both ResourceTreeView and PoolEditorView share this tree
-    /// so the expensive DefDatabase walk happens only once per game session.
+    /// Builds the resource-readout and broad storage category trees once and
+    /// caches them. Both picker views share these trees so the expensive
+    /// DefDatabase walk happens only once per game session and language.
     public static class GameResourceTree
     {
         // Cache contract:
@@ -19,30 +19,56 @@ namespace EPrimeReadouts
         // Refresh policy: lazy, immediate on UI language revision changes.
         // Equality policy: unchanged dependencies preserve root identity.
         // Teardown: Reset releases all cached nodes on global teardown.
-        private static List<ResourceTreeNode>? cachedRoots;
+        private static List<ResourceTreeNode>? cachedResourceRoots;
+        private static List<ResourceTreeNode>? cachedStorableRoots;
         private static int cachedLanguageVersion = -1;
 
-        public static List<ResourceTreeNode> GetRoots()
+        public static List<ResourceTreeNode> GetRoots(ItemPickerType type = ItemPickerType.Resources)
         {
             UiVersion.ObserveCurrentMetrics();
-            if (cachedRoots != null
-                && cachedLanguageVersion == UiVersion.LanguageCurrent)
-                return cachedRoots;
-            cachedRoots = new List<ResourceTreeNode>();
-            cachedLanguageVersion = UiVersion.LanguageCurrent;
-            foreach (var category in DefDatabase<ThingCategoryDef>.AllDefs)
-                if (category.resourceReadoutRoot)
-                    cachedRoots.Add(BuildNode(category));
-            return cachedRoots;
+            if (cachedLanguageVersion != UiVersion.LanguageCurrent)
+            {
+                cachedResourceRoots = null;
+                cachedStorableRoots = null;
+                cachedLanguageVersion = UiVersion.LanguageCurrent;
+            }
+
+            if (type == ItemPickerType.AllStorableItems)
+            {
+                if (cachedStorableRoots == null)
+                {
+                    cachedStorableRoots = new List<ResourceTreeNode>();
+                    ThingCategoryDef root = ThingCategoryDefOf.Root;
+                    foreach (var child in root.childCategories)
+                        cachedStorableRoots.Add(BuildNode(child, splitResourceRoots: false));
+                    if (root.childThingDefs.Count != 0)
+                        cachedStorableRoots.Add(BuildNode(root, splitResourceRoots: false,
+                            includeChildren: false));
+                }
+                return cachedStorableRoots;
+            }
+
+            if (cachedResourceRoots == null)
+            {
+                cachedResourceRoots = new List<ResourceTreeNode>();
+                foreach (var category in DefDatabase<ThingCategoryDef>.AllDefs)
+                    if (category.resourceReadoutRoot)
+                        cachedResourceRoots.Add(BuildNode(category, splitResourceRoots: true));
+            }
+            return cachedResourceRoots;
         }
 
-        public static ResourceTreeNode BuildNode(ThingCategoryDef category)
+        private static ResourceTreeNode BuildNode(ThingCategoryDef category,
+            bool splitResourceRoots, bool includeChildren = true)
         {
             var node = new ResourceTreeNode { Id = category.defName, Label = category.LabelCap };
-            foreach (var child in category.childCategories)
+            if (includeChildren)
             {
-                if (child.resourceReadoutRoot) continue;
-                node.Children.Add(BuildNode(child));
+                foreach (var child in category.childCategories)
+                {
+                    if (splitResourceRoots && child.resourceReadoutRoot) continue;
+                    node.Children.Add(BuildNode(child, splitResourceRoots));
+                }
             }
             var defs = new List<ThingDef>(category.childThingDefs);
             defs.Sort((a, b) => string.Compare(a.label, b.label, StringComparison.OrdinalIgnoreCase));
@@ -55,7 +81,8 @@ namespace EPrimeReadouts
 
         internal static void Reset()
         {
-            cachedRoots = null;
+            cachedResourceRoots = null;
+            cachedStorableRoots = null;
             cachedLanguageVersion = -1;
         }
     }

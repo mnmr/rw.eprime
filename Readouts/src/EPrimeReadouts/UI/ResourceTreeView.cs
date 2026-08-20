@@ -11,12 +11,18 @@ namespace EPrimeReadouts.UI
     public sealed class ResourceTreeView
     {
         private const float RowH = 24f;
-        private const float FilterH = 28f;
+        private const string FilterControl = "EPR.ResourcePickerFilter";
 
         private Vector2 scroll;
-        private string filter = "";
+        private readonly ItemPickerState filterState = new ItemPickerState();
         private readonly HashSet<string> expanded = new HashSet<string>();
+        private readonly Action filterChanged;
         private int stamp;
+
+        public ResourceTreeView()
+        {
+            filterChanged = OnFilterChanged;
+        }
 
         private struct RenderRow
         {
@@ -29,7 +35,7 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: this dialog view and one ReadoutStore.
-        // Key: store identity, GroupsVersion, expansion/filter stamp, selected
+        // Key: store identity, GroupsVersion, expansion/query/type/source stamp, selected
         // group/token/pool, PoolSnapshot identity, and the language revision.
         // Value: immutable flattened rows with resolved defs and selection flags.
         // Dependencies: resource tree labels, group membership, pool membership.
@@ -65,25 +71,24 @@ namespace EPrimeReadouts.UI
             if (folded != settings.helpResourcesFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpResourcesFolded = folded);
 
-            var filterRect = new Rect(rect.x, rect.y + headerUsed, rect.width - 20f, 24f);
-            string newFilter = Widgets.TextField(filterRect, filter);
-            if (newFilter != filter)
-            {
-                filter = newFilter;
-                stamp++;
-            }
-            if (!filter.NullOrEmpty()
-                && Widgets.ButtonImage(new Rect(rect.xMax - 18f, rect.y + headerUsed + 4f,
-                    16f, 16f), TexButton.CloseXSmall))
-            {
-                filter = "";
-                stamp++;
-            }
+            ItemPickerFilterBar.Draw(
+                new Rect(rect.x, rect.y + headerUsed, rect.width, 24f),
+                filterState, FilterControl, filterChanged);
 
             EnsureRows(owner);
-            float listH = rect.height - headerUsed - FilterH;
+            float listH = rect.height - headerUsed - ItemPickerFilterBar.Height;
             if (listH <= 0f) return;
-            var outRect = new Rect(rect.x, rect.y + headerUsed + FilterH, rect.width, listH);
+            var outRect = new Rect(rect.x,
+                rect.y + headerUsed + ItemPickerFilterBar.Height, rect.width, listH);
+            if (rows!.Length == 0)
+            {
+                Text.Anchor = TextAnchor.MiddleCenter;
+                GUI.color = EprStyle.CaptionText;
+                Widgets.Label(outRect, UiText.Get("EPR.NoMatchingItems"));
+                GUI.color = Color.white;
+                Text.Anchor = TextAnchor.UpperLeft;
+                return;
+            }
             var viewRect = new Rect(0f, 0f, outRect.width - 16f, rows!.Length * RowH); // built by EnsureRows above
             Widgets.BeginScrollView(outRect, ref scroll, viewRect);
             try
@@ -200,7 +205,9 @@ namespace EPrimeReadouts.UI
                 return;
 
             var flat = ResourceTreeFlattener.Flatten(
-                GameResourceTree.GetRoots(), expanded, filter, GameResourceCatalog.Instance);
+                GameResourceTree.GetRoots(filterState.Type), expanded,
+                new ItemTreeFilter(filterState.Query, filterState.Type, filterState.SourceId),
+                GameResourceCatalog.Instance);
             ReadoutGroup? selected = store?.Model.GroupById(owner.selectedGroupId);
             IReadOnlyList<string>? selectedPoolMembers = null;
             if (owner.selectedPoolId >= 0 && owner.PoolsSnapshot != null)
@@ -279,8 +286,25 @@ namespace EPrimeReadouts.UI
             builtPools = null;
             expanded.Clear();
             stamp = 0;
-            filter = "";
+            filterState.Query = "";
+            filterState.Type = ItemPickerType.Resources;
+            filterState.SourceId = ItemSourceIds.All;
             scroll = Vector2.zero;
+        }
+
+        internal bool HandleEscape() => DialogInputFocus.TryHandleEscape(
+            FilterControl, filterState.Query, () =>
+            {
+                filterState.Query = "";
+                OnFilterChanged();
+            });
+
+        internal void Unfocus() => DialogInputFocus.Unfocus(FilterControl);
+
+        private void OnFilterChanged()
+        {
+            stamp++;
+            scroll.y = 0f;
         }
     }
 }

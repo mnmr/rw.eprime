@@ -57,6 +57,7 @@ namespace EPrimeReadouts.UI
             absorbInputAroundWindow = false;
             forcePause = false;
             closeOnClickedOutside = false;
+            closeOnAccept = false;
         }
 
         public override Vector2 InitialSize =>
@@ -140,7 +141,7 @@ namespace EPrimeReadouts.UI
                 if (Widgets.ButtonText(restoreRect, UiText.Get("EPR.RestoreDefaults")))
                 {
                     string restorePayload = DefaultGroups.GetRestorePayload();
-                    Find.WindowStack.Add(Dialog_MessageBox.CreateConfirmation(
+                    Find.WindowStack.Add(new Dialog_CompactConfirm(
                         "EPR.RestoreConfirm".Translate(),
                         () => ReadoutCommands.RestoreDefaults(restorePayload), destructive: true));
                 }
@@ -183,7 +184,11 @@ namespace EPrimeReadouts.UI
                 var toggleRect = new Rect(rightHalf.xMax - ToggleBtnW, rightHalf.y - 2f,
                     ToggleBtnW, ToggleBtnH);
                 if (Widgets.ButtonText(toggleRect, toggleLabel))
+                {
                     showPools = !showPools;
+                    if (showPools) tree.Unfocus();
+                    else poolEditor.Unfocus();
+                }
                 // --- Right half: Resources or Pools depending on showPools toggle ---
                 Rect poolListRect, poolEditorRect;
                 bool drawPoolEditor = false;
@@ -238,6 +243,8 @@ namespace EPrimeReadouts.UI
                     poolList.Draw(poolListRect, this);
                     if (drawPoolEditor && selectedPoolId >= 0)
                         poolEditor.Draw(poolEditorRect, this);
+                    else
+                        poolEditor.Unfocus();
                 }
                 else
                 {
@@ -247,6 +254,14 @@ namespace EPrimeReadouts.UI
                 DrawDragGhost();
                 EprDrag.ResolveMouseUp();
             }
+        }
+
+        public override void OnCancelKeyPressed()
+        {
+            if (groups.HandleEscape() || editor.HandleEscape()
+                || tree.HandleEscape() || poolEditor.HandleEscape())
+                return;
+            base.OnCancelKeyPressed();
         }
 
         private void DrawDragGhost()

@@ -163,14 +163,22 @@ namespace EPrimeReadouts.UI
                 {
                     if (l == Location.Desktop && !OnWindows) continue;
                     var captured = l;
-                    options.Add(new FloatMenuOption(LocationLabel(l), () => location = captured));
+                    options.Add(new FloatMenuOption(LocationLabel(l), () =>
+                    {
+                        location = captured;
+                        if (captured != Location.Custom)
+                            DialogInputFocus.Unfocus("EPR.CustomDirectory");
+                    }));
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
             if (includeNameField)
+            {
+                GUI.SetNextControlName("EPR.FileName");
                 fileName = Strip(Widgets.TextField(
                     new Rect(locRect.xMax + 8f, locRowY, inRect.width - locRect.width - 8f, RowH - 6f), fileName),
                     InvalidNameChars)!; // non-null for non-null input
+            }
 
             if (location == Location.Custom)
             {
@@ -181,6 +189,7 @@ namespace EPrimeReadouts.UI
                 Widgets.Label(new Rect(inRect.x, customRowY, labelW, RowH - 6f), enterPath);
                 Text.Anchor = TextAnchor.UpperLeft;
                 const float ClearW = 24f;
+                GUI.SetNextControlName("EPR.CustomDirectory");
                 customDir = Strip(Widgets.TextField(
                     new Rect(inRect.x + labelW, customRowY, inRect.width - labelW - ClearW - 4f, RowH - 6f), customDir),
                     InvalidDirChars)!; // non-null for non-null input
@@ -188,6 +197,22 @@ namespace EPrimeReadouts.UI
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                     customDir = "";
             }
+        }
+
+        public override void OnCancelKeyPressed()
+        {
+            if (DialogInputFocus.TryHandleEscape(
+                    "EPR.FileName", fileName, () => fileName = "")
+                || DialogInputFocus.TryHandleEscape(
+                    "EPR.CustomDirectory", customDir, () => customDir = ""))
+                return;
+            base.OnCancelKeyPressed();
+        }
+
+        protected static void UnfocusPickerInputs()
+        {
+            DialogInputFocus.Unfocus("EPR.FileName");
+            DialogInputFocus.Unfocus("EPR.CustomDirectory");
         }
     }
 }
