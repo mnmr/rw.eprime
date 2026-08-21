@@ -38,6 +38,19 @@ public class ResourceTreeFlattenerTests
     }
 
     [Test]
+    public async Task ItemRowsUseStandaloneDisplayLabels()
+    {
+        var rows = ResourceTreeFlattener.Flatten(
+            Tree(),
+            new HashSet<string> { "Manufactured" },
+            new ItemTreeFilter("", ItemPickerType.Resources, ItemSourceIds.All),
+            StaticResources.Catalog());
+
+        var component = rows.Single(row => row.DefName == "ComponentIndustrial");
+        await Assert.That(component.Label).IsEqualTo("Component");
+    }
+
+    [Test]
     public async Task FilterForceExpandsAndShowsOnlyMatches()
     {
         var rows = ResourceTreeFlattener.Flatten(Tree(), new HashSet<string>(), "meal", StaticResources.Catalog());

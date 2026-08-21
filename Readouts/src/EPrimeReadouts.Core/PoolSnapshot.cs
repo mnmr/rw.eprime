@@ -19,10 +19,10 @@ namespace EPrimeReadouts.Core
         }
     }
 
-    /// Immutable per-rebuild resolution of every pool: expanded member defNames
-    /// (deduped, member order, category refs expanded via the catalog), the
-    /// effective icon defName, and deterministic input order. Built once per
-    /// rebuild; rendering only reads it.
+    /// Immutable per-rebuild resolution of every pool: expanded canonical
+    /// member defNames (deduped, member order, category refs expanded via the
+    /// catalog), the canonical effective icon defName, and deterministic input
+    /// order. Built once per rebuild; rendering only reads it.
     public sealed class PoolSnapshot
     {
         private readonly Dictionary<int, PoolSnapshotEntry> entries;
@@ -58,22 +58,29 @@ namespace EPrimeReadouts.Core
                         string catName = member.Substring(1);
                         var defs = catalog.CountedDefsIn(catName);
                         foreach (var def in defs)
-                            if (!string.IsNullOrEmpty(def) && seen.Add(def))
-                                expanded.Add(def);
+                        {
+                            string canonical = catalog.CanonicalDefNameOf(def);
+                            if (!string.IsNullOrEmpty(canonical) && seen.Add(canonical))
+                                expanded.Add(canonical);
+                        }
                     }
                     else
                     {
                         // Plain defName
-                        if (catalog.Exists(member) && seen.Add(member))
-                            expanded.Add(member);
+                        string canonical = catalog.CanonicalDefNameOf(member);
+                        if (!string.IsNullOrEmpty(canonical) && seen.Add(canonical))
+                            expanded.Add(canonical);
                     }
                 }
 
                 // Resolve icon: explicit first, else first expanded member, else null
                 string? icon = null;
-                if (!string.IsNullOrEmpty(pool.IconDefName) && catalog.Exists(pool.IconDefName!))
-                    icon = pool.IconDefName;
-                else if (expanded.Count > 0)
+                if (!string.IsNullOrEmpty(pool.IconDefName))
+                {
+                    string canonical = catalog.CanonicalDefNameOf(pool.IconDefName!);
+                    if (!string.IsNullOrEmpty(canonical)) icon = canonical;
+                }
+                if (icon == null && expanded.Count > 0)
                     icon = expanded[0];
 
                 var entry = new PoolSnapshotEntry(

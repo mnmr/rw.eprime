@@ -558,6 +558,23 @@ public class PoolTests
     }
 
     [Test]
+    public async Task PoolSnapshot_CategoryAliasesCollapseToCanonicalDef()
+    {
+        var catalog = new FakeResourceCatalog()
+            .With("Meat_Cow", "raw meat")
+            .WithAlias("Meat_Chicken", "Meat_Cow")
+            .WithCategory("MeatRaw", "raw meat", "Meat_Chicken", "Meat_Cow");
+        var pool = new ResourcePool { Id = 1, Name = "Meats" };
+        pool.Members.Add("@MeatRaw");
+
+        var snapshot = PoolSnapshot.Build(
+            new List<ResourcePool> { pool }, catalog);
+        snapshot.TryGet(1, out var members, out _, out _);
+
+        await Assert.That(string.Join(",", members!)).IsEqualTo("Meat_Cow");
+    }
+
+    [Test]
     public async Task PoolSnapshot_DedupeAcrossOverlappingMembers()
     {
         var catalog = StaticResources.Catalog();
@@ -574,6 +591,53 @@ public class PoolTests
     }
 
     [Test]
+    public async Task PoolSnapshot_AliasedMembersCollapseToCanonicalDef()
+    {
+        var catalog = new FakeResourceCatalog()
+            .With("Meat_Cow", "raw meat")
+            .WithAlias("Meat_Chicken", "Meat_Cow");
+        var pool = new ResourcePool { Id = 1, Name = "Meats" };
+        pool.Members.Add("Meat_Chicken");
+
+        var snapshot = PoolSnapshot.Build(
+            new List<ResourcePool> { pool }, catalog);
+        snapshot.TryGet(1, out var members, out _, out _);
+        var group = new ReadoutGroup { Id = 1, Name = "Raw" };
+        group.Tiers.Add(new List<string> { SlotToken.PoolToken(1) });
+        RenderModel render = ReadoutLayoutEngine.Build(new LayoutInput
+        {
+            Groups = new List<ReadoutGroup> { group },
+            Counts = new Dictionary<string, int> { ["Meat_Cow"] = 37 },
+            Thresholds = new Dictionary<string, ThresholdSpec>(),
+            Catalog = catalog,
+            Pools = snapshot,
+            Width = 140f,
+        });
+
+        await Assert.That(string.Join(",", members!)).IsEqualTo("Meat_Cow");
+        await Assert.That(render.Cells.Single(cell => cell.Kind == CellKind.Counter).Text)
+            .IsEqualTo("37");
+    }
+
+    [Test]
+    public async Task PoolSnapshot_DistinctDefsWithSameLabelRemainSeparate()
+    {
+        var catalog = new FakeResourceCatalog()
+            .With("Meat_Cow", "raw meat")
+            .With("Meat_Yak", "raw meat");
+        var pool = new ResourcePool { Id = 1, Name = "Meats" };
+        pool.Members.Add("Meat_Cow");
+        pool.Members.Add("Meat_Yak");
+
+        var snapshot = PoolSnapshot.Build(
+            new List<ResourcePool> { pool }, catalog);
+        snapshot.TryGet(1, out var members, out _, out _);
+
+        await Assert.That(string.Join(",", members!))
+            .IsEqualTo("Meat_Cow,Meat_Yak");
+    }
+
+    [Test]
     public async Task PoolSnapshot_ExplicitIcon_UsedWhenResolvable()
     {
         var catalog = StaticResources.Catalog();
@@ -584,6 +648,27 @@ public class PoolTests
         snap.TryGet(1, out _, out string? icon, out _);
 
         await Assert.That(icon).IsEqualTo("Plasteel");
+    }
+
+    [Test]
+    public async Task PoolSnapshot_AliasedExplicitIconUsesCanonicalDef()
+    {
+        var catalog = new FakeResourceCatalog()
+            .With("Meat_Cow", "raw meat")
+            .WithAlias("Meat_Chicken", "Meat_Cow");
+        var pool = new ResourcePool
+        {
+            Id = 1,
+            Name = "Meats",
+            IconDefName = "Meat_Chicken",
+        };
+        pool.Members.Add("Meat_Cow");
+
+        var snapshot = PoolSnapshot.Build(
+            new List<ResourcePool> { pool }, catalog);
+        snapshot.TryGet(1, out _, out string? icon, out _);
+
+        await Assert.That(icon).IsEqualTo("Meat_Cow");
     }
 
     [Test]

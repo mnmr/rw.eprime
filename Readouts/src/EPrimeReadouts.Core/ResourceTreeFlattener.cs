@@ -90,7 +90,7 @@ namespace EPrimeReadouts.Core
                 {
                     Indent = indent + 1,
                     DefName = defName,
-                    Label = catalog.LabelOf(defName),
+                    Label = catalog.LabelCapOf(defName),
                 });
             }
         }
@@ -159,7 +159,7 @@ namespace EPrimeReadouts.Core
                 {
                     Indent = indent + 1,
                     DefName = defName,
-                    Label = catalog.LabelOf(defName),
+                    Label = catalog.LabelCapOf(defName),
                 });
             }
         }

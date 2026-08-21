@@ -92,8 +92,17 @@ namespace EPrimeReadouts
         public bool Exists(string defName) =>
             DefDatabase<ThingDef>.GetNamedSilentFail(defName) != null;
 
+        public string CanonicalDefNameOf(string defName) =>
+            DefDatabase<ThingDef>.GetNamedSilentFail(defName)?.defName ?? "";
+
         public string LabelOf(string defName) =>
             DefDatabase<ThingDef>.GetNamedSilentFail(defName)?.label ?? "";
+
+        public string LabelCapOf(string defName)
+        {
+            var def = DefDatabase<ThingDef>.GetNamedSilentFail(defName);
+            return def != null ? (string)def.LabelCap : "";
+        }
 
         public bool IsResource(string defName)
         {

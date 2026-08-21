@@ -3,7 +3,7 @@
   <name>EPrime's Readouts</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.eprimereadouts</packageId>
-  <modVersion>1.2.0</modVersion>
+  <modVersion>1.2.1</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -37,7 +37,7 @@ Compatibility:
 - Safe to add/remove mid-game.
 - Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic (updates counters every 204 ticks).
 - Multiplayer compatible.
-- MultiFloors mod support (readouts show combined resource counts across all floors). Other multi-floor mods (Strata, 'As above, so below I/II') do not need special support to work.
+- MultiFloors mod support (readouts show combined resource counts across all floors). Other multi-floor mods (Strata, 'As above, so below 2') do not need special support to work.
 - Requires Harmony.
 
 Check Out My Other Mods:

@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.2.1 — 2026-08-21
+
+- Added: Support for mods that combine item definitions (e.g. meat types).
+- Fixed: Use the capitalized name for items in the resource/item browser.
+
 ## 1.2.0 — 2026-08-20
 
 - Added: Support for adding non-resource storage items to groups or pools.
