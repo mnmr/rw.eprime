@@ -32,6 +32,9 @@ namespace EPrimeReadouts.UI
             internal ThingDef? IconDef;
             internal bool InGroup;
             internal bool Selected;
+            /// Root only: the selected slot token is a pool, so the collapsed
+            /// branch shows the same containment highlight categories use.
+            internal bool Tinted;
             internal int GroupId;
         }
 
@@ -96,7 +99,8 @@ namespace EPrimeReadouts.UI
                 GUI.DrawTexture(
                     arrowRect, row.Expanded ? TexButton.Collapse : TexButton.Reveal);
                 Text.Anchor = TextAnchor.MiddleLeft;
-                GUI.color = EprStyle.SelectionTint;
+                GUI.color = data.Tinted
+                    ? EprStyle.SelectionTint : EprStyle.PoolTint;
                 Widgets.Label(new Rect(
                     rect.x + 22f, rect.y, rect.width - 22f, rect.height), row.Label);
                 GUI.color = Color.white;
@@ -113,7 +117,7 @@ namespace EPrimeReadouts.UI
             if (data.Selected) Widgets.DrawHighlightSelected(rect);
             else if (!data.InGroup && Mouse.IsOver(rect)) Widgets.DrawHighlight(rect);
 
-            if (data.InGroup) GUI.color = new Color(1f, 1f, 1f, 0.4f);
+            if (data.InGroup) GUI.color = EprStyle.AssignedTint;
             if (data.IconDef != null)
                 Widgets.ThingIcon(new Rect(x, rect.y + 2f, 20f, 20f), data.IconDef);
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -170,7 +174,7 @@ namespace EPrimeReadouts.UI
             }
 
             if (data.Def == null) return;
-            if (data.InGroup) GUI.color = new Color(1f, 1f, 1f, 0.4f);
+            if (data.InGroup) GUI.color = EprStyle.AssignedTint;
             Widgets.ThingIcon(new Rect(x, rect.y + 2f, 20f, 20f), data.Def);
             Text.Anchor = TextAnchor.MiddleLeft;
             if (!data.InGroup && data.Tinted) GUI.color = EprStyle.SelectionTint;
@@ -318,6 +322,9 @@ namespace EPrimeReadouts.UI
                         owner.selectedCanonical,
                         row.Token,
                         StringComparison.Ordinal),
+                    Tinted = row.IsRoot
+                        && owner.selectedCanonical != null
+                        && SlotToken.IsPoolRef(owner.selectedCanonical),
                     GroupId = selected?.Id ?? -1,
                 };
             }

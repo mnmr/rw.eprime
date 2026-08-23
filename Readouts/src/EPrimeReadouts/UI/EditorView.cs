@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -32,6 +33,7 @@ namespace EPrimeReadouts.UI
         // Teardown: Reset releases all store, model, snapshot and def references.
         private int builtGroupsVersion = -1;
         private int builtThresholdsVersion = -1;
+        private int builtCountRulesVersion = -1;
         private int builtGroupId = -1;
         private int builtUiVersion = -1;
         private float builtWidth = -1f;
@@ -216,7 +218,7 @@ namespace EPrimeReadouts.UI
                     optionsHeader!, null, ref dummy); // set by the block above
                 y += optHeaderUsed;
                 DrawOptionsBody(new Rect(rect.x, y, rect.width, rect.yMax - y),
-                    group, selectionStoredToken, owner);
+                    group, selectionStoredToken, owner, store);
             }
             else
             {
@@ -234,6 +236,7 @@ namespace EPrimeReadouts.UI
             if (cachedBands == null) return true;
             if (store.GroupsVersion != builtGroupsVersion) return true;
             if (store.ThresholdsVersion != builtThresholdsVersion) return true;
+            if (store.CountRulesVersion != builtCountRulesVersion) return true;
             if (groupId != builtGroupId) return true;
             if (UiVersion.Current != builtUiVersion) return true;
             if (width != builtWidth) return true;
@@ -256,6 +259,7 @@ namespace EPrimeReadouts.UI
             var basisSettings = EPrimeReadoutsMod.Settings;
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
+            builtCountRulesVersion = store.CountRulesVersion;
             builtGroupId = group.Id;
             builtUiVersion = UiVersion.Current;
             builtWidth = width;
@@ -291,6 +295,7 @@ namespace EPrimeReadouts.UI
                     Debts = builtCounts?.Debts,
                     AllowNegativeCounts = builtShowNegative,
                     Thresholds = store.Model.Thresholds,
+                    CountRules = store.Model.CountRules,
                     Width = width,
                     Catalog = GameResourceCatalog.Instance,
                     Pools = pools,
@@ -388,6 +393,37 @@ namespace EPrimeReadouts.UI
                             EprDrag.FromTier >= 0, EprDrag.Payload!, // tokenDrag implies a payload
                             EprDrag.FromTier, EprDrag.FromSlot);
                     }
+                }
+            }
+
+            // A left press on the band background clears the slot selection.
+            // Slot icons consumed their press above; each icon/empty cell's
+            // full column (icon plus counter) stays slot territory so a click
+            // on a counter remains inert instead of deselecting.
+            if (e.type == EventType.MouseDown && e.button == 0
+                && owner.selectedCanonical != null
+                && e.mousePosition.x >= 0f && e.mousePosition.x <= bandRect.width
+                && e.mousePosition.y >= 0f && e.mousePosition.y <= bandRect.height)
+            {
+                float cellW = PanelCellMetrics.Current.CellW;
+                float halfPad = (cellW - LayoutMetrics.IconSize) / 2f;
+                bool onSlotColumn = false;
+                for (int i = 0; i < cells.Count; i++)
+                {
+                    var cell = cells[i];
+                    if (cell.Kind != CellKind.Icon && cell.Kind != CellKind.EmptySlot)
+                        continue;
+                    float colX = cell.Rect.X - halfPad;
+                    if (e.mousePosition.x >= colX && e.mousePosition.x <= colX + cellW)
+                    {
+                        onSlotColumn = true;
+                        break;
+                    }
+                }
+                if (!onSlotColumn)
+                {
+                    owner.selectedCanonical = null;
+                    e.Use();
                 }
             }
         }
@@ -488,6 +524,77 @@ namespace EPrimeReadouts.UI
         /// Extra width ButtonText needs around its caption.
         private const float ButtonPadX = 16f;
 
+        // Cache contract:
+        // Owner: this EditorView instance.
+        // Key: none (single value).
+        // Value: resolved count-rule row captions, the stable segment-label
+        // array handed to SegmentedControl, and measured widths.
+        // Dependencies: UiVersion.Current (language, UI scale — labels and
+        // segments both render Small).
+        // Refresh policy: immediate on UI revision change.
+        // Equality policy: equal rebuilds are identical.
+        // Teardown: Reset restores the unset stamp.
+        private int ruleRowUiVersion = -1;
+        private string? ruleCaption;
+        private string? ruleStorageLabel;
+        private string? ruleForbiddenLabel;
+        private readonly string[] ruleStateLabels = new string[3];
+        private float ruleLabelW;
+        private float ruleRowW;
+
+        /// Horizontal padding inside one segment around its caption.
+        private const float SegmentPadX = 12f;
+
+        /// Vertical padding above each section caption in the options body.
+        private const float CaptionPadTop = 20f;
+
+        private void EnsureRuleRow()
+        {
+            if (ruleRowUiVersion == UiVersion.Current) return;
+            using (new GuiStateScope())
+            {
+                ruleCaption = UiText.Get("EPR.CountRuleCaption");
+                ruleStorageLabel = UiText.Get("EPR.SearchStorageOnly");
+                ruleForbiddenLabel = UiText.Get("EPR.SearchHideForbidden");
+                ruleStateLabels[(int)BasisOverride.Inherit] = UiText.Get("EPR.RuleDefault");
+                ruleStateLabels[(int)BasisOverride.ForceOn] = UiText.Get("EPR.RuleAlwaysOn");
+                ruleStateLabels[(int)BasisOverride.ForceOff] = UiText.Get("EPR.RuleAlwaysOff");
+                Text.Font = GameFont.Small;
+                ruleLabelW = Mathf.Max(
+                    WrText.FitWidth(ruleStorageLabel),
+                    WrText.FitWidth(ruleForbiddenLabel));
+                // Segments share one width, so the row is sized from the
+                // widest translated caption — every language fits.
+                float stateW = 0f;
+                for (int i = 0; i < ruleStateLabels.Length; i++)
+                    stateW = Mathf.Max(stateW, WrText.FitWidth(ruleStateLabels[i]));
+                ruleRowW = ruleStateLabels.Length * (stateW + 2f * SegmentPadX)
+                    + 2f * 2f + (ruleStateLabels.Length - 1);
+            }
+            ruleRowUiVersion = UiVersion.Current;
+        }
+
+        /// One override row: Small label on the left, a right-aligned
+        /// three-segment selector (Default / Always On / Always Off).
+        /// Segment indices are BasisOverride ordinals. Returns the
+        /// (possibly changed) state.
+        private BasisOverride DrawRuleRow(
+            Rect rect, ref float y, string label, BasisOverride state)
+        {
+            const float ControlH = 24f;
+            TextAnchor anchor = Text.Anchor;
+            Text.Font = GameFont.Small;
+            Text.Anchor = TextAnchor.MiddleLeft;
+            Widgets.Label(new Rect(rect.x, y, ruleLabelW, ControlH), label);
+            Text.Anchor = anchor;
+            int clicked = SegmentedControl.Row(
+                new Rect(rect.xMax - ruleRowW, y, ruleRowW, ControlH),
+                ruleStateLabels, (int)state);
+            if (clicked >= 0) state = (BasisOverride)clicked;
+            y += ControlH + 2f;
+            return state;
+        }
+
         private ThresholdRowLayout EnsureThresholdRow()
         {
             if (thresholdRowUiVersion == UiVersion.Current) return thresholdRow;
@@ -508,7 +615,7 @@ namespace EPrimeReadouts.UI
         }
 
         private void DrawOptionsBody(Rect rect, ReadoutGroup group, string? storedToken,
-            Dialog_ReadoutConfig owner)
+            Dialog_ReadoutConfig owner, ReadoutStore store)
         {
             if (owner.selectedCanonical == null) return;
 
@@ -536,7 +643,7 @@ namespace EPrimeReadouts.UI
                             break;
                         }
             }
-            y += 24f;
+            y += 22f + CaptionPadTop;
 
             // Line 2: threshold caption (Tiny, CaptionText style)
             float captionH = tinyMetrics.MinHeight(22f);
@@ -603,6 +710,34 @@ namespace EPrimeReadouts.UI
                 thresholdEditor.LowBuffer = "0";
                 thresholdEditor.CriticalBuffer = "0";
             }
+            y += thresholdRowH + CaptionPadTop;
+
+            // Line 4: count-rule caption (Tiny, CaptionText style)
+            EnsureRuleRow();
+            Text.Font = GameFont.Tiny;
+            GUI.color = EprStyle.CaptionText;
+            Widgets.Label(new Rect(
+                    rect.x, y + tinyMetrics.CaptionOffsetY, rect.width, captionH),
+                ruleCaption);
+            GUI.color = Color.white;
+            Text.Font = GameFont.Small;
+            y += captionH + 2f;
+
+            // Lines 5-6: count-basis overrides. Rules are keyed by canonical
+            // token and shared across every slot showing it, so this edits
+            // authoritative state through a synced command.
+            store.Model.CountRules.TryGetValue(
+                owner.selectedCanonical, out CountRule rule);
+            BasisOverride storage = DrawRuleRow(rect, ref y,
+                ruleStorageLabel!, rule.StorageOnly);
+            if (storage != rule.StorageOnly)
+                ReadoutCommands.SetCountRule(owner.selectedCanonical,
+                    (int)storage, (int)rule.HideForbidden);
+            BasisOverride forbidden = DrawRuleRow(rect, ref y,
+                ruleForbiddenLabel!, rule.HideForbidden);
+            if (forbidden != rule.HideForbidden)
+                ReadoutCommands.SetCountRule(owner.selectedCanonical,
+                    (int)rule.StorageOnly, (int)forbidden);
         }
 
         internal void Reset()
@@ -610,6 +745,7 @@ namespace EPrimeReadouts.UI
             ReleaseCachedBands();
             builtGroupsVersion = -1;
             builtThresholdsVersion = -1;
+            builtCountRulesVersion = -1;
             builtGroupId = -1;
             builtUiVersion = -1;
             builtWidth = -1f;
@@ -630,6 +766,13 @@ namespace EPrimeReadouts.UI
             optionsLanguageVersion = -1;
             thresholdRow = default;
             thresholdRowUiVersion = -1;
+            ruleRowUiVersion = -1;
+            ruleCaption = null;
+            ruleStorageLabel = null;
+            ruleForbiddenLabel = null;
+            ruleStateLabels[0] = ruleStateLabels[1] = ruleStateLabels[2] = null!;
+            ruleLabelW = 0f;
+            ruleRowW = 0f;
         }
 
         internal bool HandleEscape()

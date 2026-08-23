@@ -70,6 +70,7 @@ namespace EPrimeReadouts.UI
         private static int viewStamp;
         private static int builtGroupsVersion = -1;
         private static int builtThresholdsVersion = -1;
+        private static int builtCountRulesVersion = -1;
         private static int builtStamp = -1;
         private static Map? builtMap;
         private static float builtWidth;
@@ -175,6 +176,7 @@ namespace EPrimeReadouts.UI
             cachedTitleText = null;
             builtGroupsVersion = -1;
             builtThresholdsVersion = -1;
+            builtCountRulesVersion = -1;
             builtStamp = -1;
             builtMap = null;
             builtWidth = 0f;
@@ -428,7 +430,8 @@ namespace EPrimeReadouts.UI
             else if (drawStable || !repaint || searchFieldFocused)
             {
                 GUI.SetNextControlName(SearchControlName);
-                string newText = Widgets.TextField(fieldRect, SearchText ?? "");
+                string newText = MouseFocusTextField.Draw(fieldRect,
+                    SearchText ?? "", Text.CurTextFieldStyle);
                 if (newText != SearchText)
                 {
                     SearchText = newText;
@@ -713,6 +716,7 @@ namespace EPrimeReadouts.UI
             if (draw == null
                 || builtGroupsVersion != store.GroupsVersion
                 || builtThresholdsVersion != store.ThresholdsVersion
+                || builtCountRulesVersion != store.CountRulesVersion
                 || builtStamp != viewStamp
                 || builtUiVersion != UiVersion.Current
                 || builtMap != map || builtWidth != width
@@ -769,6 +773,7 @@ namespace EPrimeReadouts.UI
                     store.DepthKey(g.Id), out int depth) ? depth : 1,
                 Counts = renderData.Counts.Counts,
                 Thresholds = store.Model.Thresholds,
+                CountRules = store.Model.CountRules,
                 SearchText = SearchText,
                 SearchCounts = renderData.Counts.SearchCounts,
                 SearchHideZero = settings.searchHideZero,
@@ -790,6 +795,7 @@ namespace EPrimeReadouts.UI
             builtInput = input;
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
+            builtCountRulesVersion = store.CountRulesVersion;
             builtStamp = viewStamp;
             builtMap = map;
             builtWidth = width;

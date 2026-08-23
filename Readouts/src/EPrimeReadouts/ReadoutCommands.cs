@@ -76,6 +76,22 @@ namespace EPrimeReadouts
                 store.Bump(ReadoutChange.Thresholds);
         }
 
+        /// Per-token count-basis override. The states travel as BasisOverride
+        /// ordinals (0 inherit, 1 force on, 2 force off) so the command needs
+        /// only primitives; out-of-range values are rejected on every client.
+        /// A fully-inherit rule clears the entry.
+        [SyncMethod]
+        public static void SetCountRule(string token, int storageOnly, int hideForbidden)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null) return;
+            if (storageOnly < 0 || storageOnly > 2) return;
+            if (hideForbidden < 0 || hideForbidden > 2) return;
+            if (store.Model.SetCountRule(token, new CountRule(
+                    (BasisOverride)storageOnly, (BasisOverride)hideForbidden)))
+                store.Bump(ReadoutChange.CountRules);
+        }
+
         [SyncMethod]
         public static void ClearThreshold(string defName)
         {

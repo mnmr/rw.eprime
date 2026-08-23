@@ -123,6 +123,8 @@ public class ReadoutModelChangeDetectionTests
         model.CreateGroup(1, "Materials");
         model.SetTiers(1, new List<List<string>> { new() { "#1" } });
         model.SetThreshold("#1", 100, 20);
+        model.SetCountRule("#1", new CountRule(
+            BasisOverride.ForceOn, BasisOverride.Inherit));
 
         bool deleted = model.DeletePool(1, out var change);
 

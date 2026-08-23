@@ -31,9 +31,10 @@ namespace EPrimeReadouts
         //      canonical ground map so every floor shares one snapshot.
         // Value: immutable shared pool/count render snapshot.
         // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
-        //               counts, count-basis and planned-work options
-        //               immediately; planned-work scans independently every
-        //               1020 elapsed game ticks;
+        //               counts, the derived collection needs (count-basis
+        //               options unioned with the stored count rules) and
+        //               planned-work options immediately; planned-work scans
+        //               independently every 1020 elapsed game ticks;
         //               and (while MultiFloors is active) the map-set stamp so
         //               stack membership changes rebuild entries.
         // Refresh policy: immediate structure; tick-throttled counts, except
@@ -45,6 +46,19 @@ namespace EPrimeReadouts
         private static ReadoutStore? cacheOwner;
         private static int cacheMapSetStamp = -1;
         private static CountSnapshotOptions cacheOptions;
+
+        // Cache contract:
+        // Owner: the same ReadoutStore/world as the render cache above.
+        // Key: none (two booleans).
+        // Value: whether any stored count rule forces scattered collection or
+        //        forbidden inspection beyond the global options.
+        // Dependencies: CountRulesVersion.
+        // Refresh policy: immediate on revision change.
+        // Equality policy: value booleans; equal recomputes are identical.
+        // Teardown: reset with the render cache on owner change and Reset.
+        private static int unionRulesVersion = -1;
+        private static bool unionForcesScattered;
+        private static bool unionForcesForbidden;
         private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
             cache = NewCache();
 
@@ -63,6 +77,7 @@ namespace EPrimeReadouts
                 GamePlannedWorkData.Reset();
                 QualityJobsPlannedWork.Reset();
                 cacheOwner = store;
+                unionRulesVersion = -1;
             }
             if (LevelStacks.MultiFloorsActive
                 && cacheMapSetStamp != LevelStacks.MapSetStamp)
@@ -75,7 +90,7 @@ namespace EPrimeReadouts
             // Count-basis and reservation options change what the count pass
             // gathers, so they bypass the tick throttle — a struct compare per
             // call, then a counts-only invalidation on the toggle frame.
-            CountSnapshotOptions options = CurrentOptions();
+            CountSnapshotOptions options = CurrentOptions(store);
             if (!cacheOptions.Equals(options))
             {
                 if (!cacheOptions.PlannedWork.Equals(options.PlannedWork))
@@ -101,16 +116,27 @@ namespace EPrimeReadouts
                 buildCounts);
         }
 
-        /// The player options that change snapshot collection, with quality
-        /// rework forced off while the Quality Jobs integration is unavailable
-        /// so the snapshot matches what the options dialog says is in effect.
-        private static CountSnapshotOptions CurrentOptions()
+        /// The effective collection options: the player's count-basis options
+        /// widened by the union of stored count rules, so the snapshot always
+        /// gathers what any overridden token needs while unconfigured
+        /// storage-only users keep the cheap pass. Quality rework is forced
+        /// off while the Quality Jobs integration is unavailable so the
+        /// snapshot matches what the options dialog says is in effect.
+        private static CountSnapshotOptions CurrentOptions(ReadoutStore store)
         {
             var settings = EPrimeReadoutsMod.Settings;
             if (settings == null) return default;
+            if (unionRulesVersion != store.CountRulesVersion)
+            {
+                unionForcesScattered =
+                    CountRuleUnion.AnyForcesScattered(store.Model.CountRules);
+                unionForcesForbidden =
+                    CountRuleUnion.AnyForcesForbidden(store.Model.CountRules);
+                unionRulesVersion = store.CountRulesVersion;
+            }
             return new CountSnapshotOptions(
-                settings.searchStorageOnly,
-                settings.searchHideForbidden,
+                settings.searchStorageOnly && !unionForcesScattered,
+                settings.searchHideForbidden || unionForcesForbidden,
                 new PlannedWorkOptions(
                     settings.reserveForBills,
                     settings.reserveForBuildables,
@@ -133,6 +159,9 @@ namespace EPrimeReadouts
             cacheOwner = null;
             cacheMapSetStamp = -1;
             cacheOptions = default;
+            unionRulesVersion = -1;
+            unionForcesScattered = false;
+            unionForcesForbidden = false;
             QualityJobsPlannedWork.Reset();
         }
 

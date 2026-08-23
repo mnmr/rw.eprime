@@ -15,6 +15,11 @@ namespace EPrimeReadouts.Core
         public Func<ReadoutGroup, int>? ConfiguredDepthOf;
         public IReadOnlyDictionary<string, int> Counts = null!; // Required input; set by every builder.
         public Dictionary<string, ThresholdSpec> Thresholds = null!; // Required input; set by every builder.
+        /// Shared per-token count-basis overrides keyed by canonical token;
+        /// null or a missing entry falls back to the global options below.
+        /// Search results always use the globals — the search section's own
+        /// filter toggles are those options.
+        public IReadOnlyDictionary<string, CountRule>? CountRules;
         public string SearchText = "";
         /// Per-def search breakdown; null falls back to Counts with every
         /// stack treated as stored and unforbidden.
@@ -193,7 +198,7 @@ namespace EPrimeReadouts.Core
                     if (cell.Kind == CellKind.Icon)
                     {
                         SlotHit hit = model.SlotHits[band.SlotStart + slotOffset];
-                        sum = SumMembers(input, hit.Members);
+                        sum = SumMembers(input, hit.Token, hit.Members);
                         cell.Count = sum;
                         model.Cells[cellIndex] = cell;
                     }
@@ -270,11 +275,14 @@ namespace EPrimeReadouts.Core
         }
 
         private static int SumMembers(
-            LayoutInput input, IReadOnlyList<string> members)
+            LayoutInput input, string token, IReadOnlyList<string> members)
         {
+            ResolveBasis(input, SlotToken.Canonical(token),
+                out bool storageOnly, out bool hideForbidden);
             int sum = 0;
             for (int i = 0; i < members.Count; i++)
-                sum += EffectiveCount(input, members[i]);
+                sum += EffectiveCount(input, members[i],
+                    storageOnly, hideForbidden);
             return sum;
         }
 
@@ -296,17 +304,36 @@ namespace EPrimeReadouts.Core
             });
         }
 
-        /// Displayed count for one def under the storage-only, hide-forbidden
-        /// and planned-work options. These options narrow every displayed count
-        /// (group slots, pool sums, visibility, thresholds, search results),
-        /// not just the search section. A null SearchCounts input falls back
-        /// to the raw group-count basis via ResolveSearchCount.
-        private static int EffectiveCount(LayoutInput input, string defName)
+        /// The storage-only / hide-forbidden basis for one slot token: the
+        /// token's count rule where present, the global options otherwise.
+        /// Rules are keyed by canonical token, so a pool slot resolves through
+        /// its own "#id" key and never through its members' keys.
+        private static void ResolveBasis(LayoutInput input, string canonical,
+            out bool storageOnly, out bool hideForbidden)
+        {
+            storageOnly = input.SearchStorageOnly;
+            hideForbidden = input.SearchHideForbidden;
+            if (input.CountRules != null
+                && input.CountRules.TryGetValue(canonical, out CountRule rule))
+            {
+                storageOnly = rule.ResolveStorageOnly(storageOnly);
+                hideForbidden = rule.ResolveHideForbidden(hideForbidden);
+            }
+        }
+
+        /// Displayed count for one def under the resolved storage-only /
+        /// hide-forbidden basis and the planned-work options. The basis
+        /// narrows every displayed count (group slots, pool sums, visibility,
+        /// thresholds); search results resolve their global basis inline in
+        /// BuildResults. A null SearchCounts input falls back to the raw
+        /// group-count basis via ResolveSearchCount.
+        private static int EffectiveCount(LayoutInput input, string defName,
+            bool storageOnly, bool hideForbidden)
         {
             input.Counts.TryGetValue(defName, out int raw);
             SearchCount search = ResolveSearchCount(input, defName, raw);
             return CountBasis.Displayed(search,
-                input.SearchStorageOnly, input.SearchHideForbidden,
+                storageOnly, hideForbidden,
                 ResolveDebt(input, defName), input.AllowNegativeCounts);
         }
 
@@ -337,6 +364,8 @@ namespace EPrimeReadouts.Core
             iconDefName = null;
             highlightName = null;
             sum = 0;
+            ResolveBasis(input, SlotToken.Canonical(token),
+                out bool storageOnly, out bool hideForbidden);
 
             if (SlotToken.IsPoolRef(token))
             {
@@ -367,7 +396,8 @@ namespace EPrimeReadouts.Core
                 members = poolMembers;
                 iconDefName = poolIcon;
                 highlightName = poolName;
-                foreach (var m in members) sum += EffectiveCount(input, m);
+                foreach (var m in members)
+                    sum += EffectiveCount(input, m, storageOnly, hideForbidden);
                 return true;
             }
             else if (SlotToken.IsPool(token))
@@ -378,7 +408,8 @@ namespace EPrimeReadouts.Core
                 members = cats;
                 iconDefName = members[0];
                 highlightName = null; // use member labels for legacy pools
-                foreach (var m in members) sum += EffectiveCount(input, m);
+                foreach (var m in members)
+                    sum += EffectiveCount(input, m, storageOnly, hideForbidden);
                 return true;
             }
             else
@@ -389,7 +420,7 @@ namespace EPrimeReadouts.Core
                 members = SingleMember(defName);
                 iconDefName = defName;
                 highlightName = null;
-                sum = EffectiveCount(input, defName);
+                sum = EffectiveCount(input, defName, storageOnly, hideForbidden);
                 return true;
             }
         }

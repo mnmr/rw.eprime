@@ -30,6 +30,9 @@ namespace EPrimeReadouts.Core
         public List<ReadoutGroup> Groups = new List<ReadoutGroup>();
         public List<ResourcePool> Pools = new List<ResourcePool>();
         public Dictionary<string, ThresholdSpec> Thresholds = new Dictionary<string, ThresholdSpec>();
+        /// Per-token count-basis overrides, keyed like Thresholds by canonical
+        /// token. Absent means fully inherit the player's global options.
+        public Dictionary<string, CountRule> CountRules = new Dictionary<string, CountRule>();
 
         public ReadoutGroup? GroupById(int id)
         {
@@ -135,6 +138,19 @@ namespace EPrimeReadouts.Core
         }
 
         public bool ClearThreshold(string defName) => Thresholds.Remove(defName);
+
+        /// Sets or clears the per-token count-basis override. A fully-inherit
+        /// rule removes the entry (absent == inherit). Returns false when
+        /// nothing changed.
+        public bool SetCountRule(string token, CountRule rule)
+        {
+            if (rule.IsInherit) return CountRules.Remove(token);
+            if (CountRules.TryGetValue(token, out var current)
+                && current.Equals(rule))
+                return false;
+            CountRules[token] = rule;
+            return true;
+        }
 
         // ── Pool operations ───────────────────────────────────────────────
 
@@ -288,9 +304,11 @@ namespace EPrimeReadouts.Core
                 }
             }
 
-            // Remove threshold keyed "#id"
+            // Remove threshold and count rule keyed "#id"
             if (Thresholds.Remove(canonicalToken))
                 change |= ReadoutChange.Thresholds;
+            if (CountRules.Remove(canonicalToken))
+                change |= ReadoutChange.CountRules;
             return true;
         }
 
@@ -361,6 +379,11 @@ namespace EPrimeReadouts.Core
                 if (!tokenValid(key)) stale.Add(key);
             foreach (var key in stale) Thresholds.Remove(key);
 
+            stale.Clear();
+            foreach (var key in CountRules.Keys)
+                if (!tokenValid(key)) stale.Add(key);
+            foreach (var key in stale) CountRules.Remove(key);
+
             foreach (var pool in Pools)
                 pool.Members.RemoveAll(m => !memberValid(m));
         }
@@ -395,10 +418,13 @@ namespace EPrimeReadouts.Core
                 change |= ReadoutChange.Groups;
             if (Thresholds.Count > 0)
                 change |= ReadoutChange.Thresholds;
+            if (CountRules.Count > 0)
+                change |= ReadoutChange.CountRules;
 
             Pools.Clear();
             Groups.Clear();
             Thresholds.Clear();
+            CountRules.Clear();
 
             // Create pools with real ids; names were validated before mutation.
             var nameToId = new Dictionary<string, int>(PoolNameRules.Comparer);

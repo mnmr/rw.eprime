@@ -36,7 +36,9 @@ namespace EPrimeReadouts
         {
             Settings = GetSettings<ReadoutSettings>();
             ContentPack = content;
-            new Harmony("mnmr.eprimereadouts").PatchAll();
+            var harmony = new Harmony("mnmr.eprimereadouts");
+            MouseFocusTextField.Initialize(harmony);
+            harmony.PatchAll();
         }
 
         /// Applies a settings change and writes to disk — deferred while any

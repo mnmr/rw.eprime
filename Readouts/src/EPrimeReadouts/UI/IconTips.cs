@@ -41,9 +41,11 @@ namespace EPrimeReadouts.UI
         {
             private readonly RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData;
             private readonly int thresholdsVersion;
+            private readonly int countRulesVersion;
             private readonly int languageVersion;
             // Count-basis options narrow the badge and the pool breakdown, so
-            // toggling them must rebuild the tip on its next display session.
+            // toggling them must rebuild the tip on its next display session;
+            // count-rule edits shift the per-token basis the same way.
             private readonly bool storageOnly;
             private readonly bool hideForbidden;
             // The planned-work debt itself arrives with renderData; only the
@@ -53,6 +55,7 @@ namespace EPrimeReadouts.UI
             public TipRevision(
                 RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData,
                 int thresholdsVersion,
+                int countRulesVersion,
                 int languageVersion,
                 bool storageOnly,
                 bool hideForbidden,
@@ -60,6 +63,7 @@ namespace EPrimeReadouts.UI
             {
                 this.renderData = renderData;
                 this.thresholdsVersion = thresholdsVersion;
+                this.countRulesVersion = countRulesVersion;
                 this.languageVersion = languageVersion;
                 this.storageOnly = storageOnly;
                 this.hideForbidden = hideForbidden;
@@ -69,6 +73,7 @@ namespace EPrimeReadouts.UI
             public bool Equals(TipRevision other) =>
                 ReferenceEquals(renderData, other.renderData)
                 && thresholdsVersion == other.thresholdsVersion
+                && countRulesVersion == other.countRulesVersion
                 && languageVersion == other.languageVersion
                 && storageOnly == other.storageOnly
                 && hideForbidden == other.hideForbidden
@@ -80,6 +85,7 @@ namespace EPrimeReadouts.UI
             public override int GetHashCode() =>
                 ((renderData != null ? renderData.GetHashCode() : 0) * 397)
                 ^ thresholdsVersion
+                ^ (countRulesVersion << 8)
                 ^ languageVersion
                 ^ (storageOnly ? 1 << 30 : 0)
                 ^ (hideForbidden ? 1 << 29 : 0)
@@ -100,8 +106,8 @@ namespace EPrimeReadouts.UI
         // Key: canonical token.
         // Value: immutable StructuredTip/TipModel graph.
         // Dependencies: shared render snapshot identity, ThresholdsVersion,
-        // language revision, and the storage-only, hide-forbidden, and
-        // show-negative count-basis/presentation options.
+        // CountRulesVersion, language revision, and the storage-only,
+        // hide-forbidden, and show-negative count-basis/presentation options.
         // Refresh policy: probed only at display-session start; a dependency
         // change rebuilds on the next display, never mid-display.
         // Equality policy: cache hits preserve StructuredTip identity.
@@ -159,6 +165,7 @@ namespace EPrimeReadouts.UI
                         CacheKey,
                         new TipRevision(RenderData,
                             store != null ? store.ThresholdsVersion : 0,
+                            store != null ? store.CountRulesVersion : 0,
                             UiVersion.LanguageCurrent,
                             settings.searchStorageOnly,
                             settings.searchHideForbidden,
@@ -199,6 +206,19 @@ namespace EPrimeReadouts.UI
             bool isPoolRef = token != null && SlotToken.IsPoolRef(token);
             bool pooled = isLegacyPool || isPoolRef;
 
+            // The tip shows the hovered token's numbers, so every stock figure
+            // in it uses that token's resolved basis: its count rule where one
+            // is stored, the global options otherwise — matching the slot sum.
+            var basisSettings = EPrimeReadoutsMod.Settings;
+            bool basisStorageOnly = basisSettings.searchStorageOnly;
+            bool basisHideForbidden = basisSettings.searchHideForbidden;
+            if (state.Store != null && state.Store.Model.CountRules.TryGetValue(
+                    canonical, out CountRule tipRule))
+            {
+                basisStorageOnly = tipRule.ResolveStorageOnly(basisStorageOnly);
+                basisHideForbidden = tipRule.ResolveHideForbidden(basisHideForbidden);
+            }
+
             string title;
             System.Collections.Generic.IReadOnlyList<string>? poolMembers = null;
 
@@ -229,7 +249,7 @@ namespace EPrimeReadouts.UI
             if (!pooled && def != null && state.RenderData != null)
             {
                 int inStock = StockOf(state.RenderData.Counts,
-                    EPrimeReadoutsMod.Settings, def.defName);
+                    basisStorageOnly, basisHideForbidden, def.defName);
                 PlannedWorkTipLayout headerLayout = PlannedWorkTipLayout.For(
                     pooled: false, available: count, inStock: inStock);
                 if (headerLayout.ShowStockInHeader)
@@ -273,7 +293,7 @@ namespace EPrimeReadouts.UI
                         else if (counts.SearchCounts.TryGetValue(
                             memberDef.defName, out SearchCount search))
                             memberCount = CountBasis.Displayed(search,
-                                settings.searchStorageOnly, settings.searchHideForbidden,
+                                basisStorageOnly, basisHideForbidden,
                                 counts.DebtOf(memberDef.defName).Total,
                                 settings.showNegativeCounts);
                     }
@@ -291,7 +311,7 @@ namespace EPrimeReadouts.UI
             }
 
             AddPlannedWorkSection(state, model, def, poolMembers,
-                pooled);
+                pooled, basisStorageOnly, basisHideForbidden);
 
             var tipStore = state.Store;
             if (tipStore != null && tipStore.Model.Thresholds.TryGetValue(canonical, out var spec))
@@ -309,7 +329,7 @@ namespace EPrimeReadouts.UI
         private static void AddPlannedWorkSection(
             BuildState state, TipModel model, ThingDef? def,
             System.Collections.Generic.IReadOnlyList<string>? poolMembers,
-            bool pooled)
+            bool pooled, bool storageOnly, bool hideForbidden)
         {
             if (state.RenderData == null) return;
             var counts = state.RenderData.Counts;
@@ -331,7 +351,6 @@ namespace EPrimeReadouts.UI
                 counts.PlannedWork, resources, MaxPlannedWorkRows);
             if (selection.Rows.Count == 0 && selection.OverflowCount == 0) return;
 
-            var settings = EPrimeReadoutsMod.Settings;
             PlannedWorkTipLayout layout = PlannedWorkTipLayout.For(
                 pooled, available: 0, inStock: 0);
             TipColumnAlignment[] alignments = pooled
@@ -344,7 +363,7 @@ namespace EPrimeReadouts.UI
             for (int i = 0; i < selection.Rows.Count; i++)
             {
                 PlannedWorkEntry entry = selection.Rows[i];
-                section.Columns(Cells(counts, settings,
+                section.Columns(Cells(counts, storageOnly, hideForbidden,
                         entry, layout),
                     color: entry.Source == PlannedWorkSource.QualityJob
                         ? EprStyle.SelectionTint : (Color?)null,
@@ -353,7 +372,7 @@ namespace EPrimeReadouts.UI
 
             if (selection.OverflowCount > 0)
                 section.Columns(OverflowCells(
-                        counts, settings, selection, layout),
+                        counts, storageOnly, hideForbidden, selection, layout),
                     color: selection.OverflowSource
                                == PlannedWorkSource.QualityJob
                         ? EprStyle.SelectionTint : (Color?)null,
@@ -383,13 +402,14 @@ namespace EPrimeReadouts.UI
 
         private static string[] Cells(
             RenderCountSnapshot counts,
-            ReadoutSettings settings,
+            bool storageOnly,
+            bool hideForbidden,
             PlannedWorkEntry entry,
             PlannedWorkTipLayout layout)
         {
             if (layout.ShowResourceColumn && layout.ShowInStockColumn)
             {
-                string stock = StockOf(counts, settings,
+                string stock = StockOf(counts, storageOnly, hideForbidden,
                     entry.ResourceDefName).ToString();
                 return new[]
                 {
@@ -412,7 +432,8 @@ namespace EPrimeReadouts.UI
 
         private static string[] OverflowCells(
             RenderCountSnapshot counts,
-            ReadoutSettings settings,
+            bool storageOnly,
+            bool hideForbidden,
             PlannedWorkSelection selection,
             PlannedWorkTipLayout layout)
         {
@@ -422,7 +443,8 @@ namespace EPrimeReadouts.UI
             if (layout.ShowResourceColumn && layout.ShowInStockColumn)
             {
                 string stock = resource != null
-                    ? StockOf(counts, settings, resource).ToString() : "—";
+                    ? StockOf(counts, storageOnly, hideForbidden, resource)
+                        .ToString() : "—";
                 return new[]
                 {
                     label,
@@ -476,9 +498,11 @@ namespace EPrimeReadouts.UI
             return def != null ? def.LabelCap : defName;
         }
 
+        /// Stock for one def under the hovered token's resolved basis.
         private static int StockOf(
             RenderCountSnapshot counts,
-            ReadoutSettings settings,
+            bool storageOnly,
+            bool hideForbidden,
             string defName)
         {
             if (counts.SearchCounts.Count == 0)
@@ -488,9 +512,7 @@ namespace EPrimeReadouts.UI
             }
             return counts.SearchCounts.TryGetValue(
                        defName, out SearchCount search)
-                ? CountBasis.Displayed(search,
-                    settings.searchStorageOnly,
-                    settings.searchHideForbidden)
+                ? CountBasis.Displayed(search, storageOnly, hideForbidden)
                 : 0;
         }
 

@@ -9,7 +9,8 @@ namespace EPrimeReadouts.Core
         Groups = 1,
         Pools = 2,
         Thresholds = 4,
-        All = Groups | Pools | Thresholds,
+        CountRules = 8,
+        All = Groups | Pools | Thresholds | CountRules,
     }
 
     /// <summary>
@@ -22,6 +23,7 @@ namespace EPrimeReadouts.Core
         public int Groups { get; private set; }
         public int Pools { get; private set; }
         public int Thresholds { get; private set; }
+        public int CountRules { get; private set; }
 
         public void Bump(ReadoutChange change)
         {
@@ -31,6 +33,7 @@ namespace EPrimeReadouts.Core
             if ((change & ReadoutChange.Groups) != 0) Groups++;
             if ((change & ReadoutChange.Pools) != 0) Pools++;
             if ((change & ReadoutChange.Thresholds) != 0) Thresholds++;
+            if ((change & ReadoutChange.CountRules) != 0) CountRules++;
         }
     }
 }

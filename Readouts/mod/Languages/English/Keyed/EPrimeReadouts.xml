@@ -76,6 +76,10 @@
   <EPR.HoverOptions>Hover Options</EPR.HoverOptions>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Override count options wherever this entry is shown</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Default</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Always On</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Always Off</EPR.RuleAlwaysOff>
   <EPR.Pools>Resource Pools</EPR.Pools>
   <EPR.ResourcePoolEditor>Resource Pool Editor</EPR.ResourcePoolEditor>
   <EPR.HelpPools>Create a resource pool, then select it here to edit its contents in the Resources panel. Use the row actions to rename or delete a pool.&#10;&#10;To add a pool to a group, switch to Group Editor and use the Resource Pools branch in the Resources tree.</EPR.HelpPools>

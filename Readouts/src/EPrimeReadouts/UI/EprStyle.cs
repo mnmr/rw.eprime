@@ -52,6 +52,12 @@ namespace EPrimeReadouts.UI
         internal static readonly Color HeaderRule = new Color(1f, 1f, 1f, 0.25f);
         internal static readonly Color CaptionText = new Color(0.60f, 0.62f, 0.64f);
         internal static readonly Color SelectionTint = new Color(1f, 0.95f, 0.55f);
+        /// Default tint for the resource-pools branch, distinct from the
+        /// yellow SelectionTint so a selection highlight remains visible on it.
+        internal static readonly Color PoolTint = new Color(0.55f, 0.8f, 1f);
+        /// Tree entries already assigned to the selected group: dimmed, but
+        /// bright enough to stay readable next to unassigned rows.
+        internal static readonly Color AssignedTint = new Color(1f, 1f, 1f, 0.6f);
 
         internal static ResolvedTinyTextMetrics TinyTextMetrics
         {
@@ -69,26 +75,6 @@ namespace EPrimeReadouts.UI
                 }
                 tinyTextMetricsVersion = UiVersion.Current;
                 return tinyTextMetrics;
-            }
-        }
-
-        /// A compact mode selector styled as one segment of a shared header.
-        /// Returns true when the segment is clicked.
-        internal static bool SegmentedTab(Rect rect, string label, bool active)
-        {
-            using (new GuiStateScope())
-            {
-                Color fill = active
-                    ? new Color(1f, 1f, 1f, 0.16f)
-                    : new Color(1f, 1f, 1f, 0.04f);
-                Widgets.DrawBoxSolid(rect, fill);
-                if (!active) Widgets.DrawHighlightIfMouseover(rect);
-
-                Text.Font = GameFont.Small;
-                Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color = active ? Color.white : HeaderText;
-                Widgets.Label(rect, label);
-                return Widgets.ButtonInvisible(rect);
             }
         }
 

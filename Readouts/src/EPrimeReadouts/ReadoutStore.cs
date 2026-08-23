@@ -18,6 +18,7 @@ namespace EPrimeReadouts
         private List<GroupRecord>? groupRecords;
         private List<PoolRecord>? poolRecords;
         private Dictionary<string, string>? thresholdRecords;
+        private Dictionary<string, string>? countRuleRecords;
 
         private readonly ReadoutRevisions revisions = new ReadoutRevisions();
 
@@ -26,6 +27,7 @@ namespace EPrimeReadouts
         public int GroupsVersion => revisions.Groups;
         public int PoolsVersion => revisions.Pools;
         public int ThresholdsVersion => revisions.Thresholds;
+        public int CountRulesVersion => revisions.CountRules;
 
         public ReadoutStore(World world) : base(world) { }
 
@@ -55,10 +57,14 @@ namespace EPrimeReadouts
                 thresholdRecords = new Dictionary<string, string>();
                 foreach (var pair in Model.Thresholds)
                     thresholdRecords[pair.Key] = pair.Value.Low + "," + pair.Value.Critical;
+                countRuleRecords = new Dictionary<string, string>();
+                foreach (var pair in Model.CountRules)
+                    countRuleRecords[pair.Key] = CountRuleCodec.Encode(pair.Value);
             }
             Scribe_Collections.Look(ref groupRecords, "groups", LookMode.Deep);
             Scribe_Collections.Look(ref poolRecords, "pools", LookMode.Deep);
             Scribe_Collections.Look(ref thresholdRecords, "thresholds", LookMode.Value, LookMode.Value);
+            Scribe_Collections.Look(ref countRuleRecords, "countRules", LookMode.Value, LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 Model = new ReadoutModel();
@@ -76,9 +82,17 @@ namespace EPrimeReadouts
                             && int.TryParse(parts[1], out int critical))
                             Model.Thresholds[pair.Key] = new ThresholdSpec(low, critical);
                     }
+                if (countRuleRecords != null)
+                    foreach (var pair in countRuleRecords)
+                        // Malformed or fully-inherit entries are skipped, never
+                        // partially applied.
+                        if (CountRuleCodec.TryDecode(pair.Value, out CountRule rule)
+                            && !rule.IsInherit)
+                            Model.CountRules[pair.Key] = rule;
                 groupRecords = null;
                 poolRecords = null;
                 thresholdRecords = null;
+                countRuleRecords = null;
             }
         }
 

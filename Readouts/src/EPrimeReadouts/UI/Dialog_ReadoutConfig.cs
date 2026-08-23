@@ -1,5 +1,6 @@
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -201,6 +202,9 @@ namespace EPrimeReadouts.UI
 
         internal void SelectGroup(int groupId)
         {
+            // A slot selection belongs to the group it was made in; navigating
+            // to another group must drop it (and the tree tint it drives).
+            if (selectedGroupId != groupId) selectedCanonical = null;
             selectedGroupId = groupId;
             SetCenterMode(ReadoutConfigMode.GroupEditor);
         }
@@ -214,35 +218,18 @@ namespace EPrimeReadouts.UI
             centerMode = mode;
         }
 
+        /// Reused label slots for the mode header, so the render pass hands
+        /// SegmentedRow a stable array of cached translated strings.
+        private static readonly string[] modeLabels = new string[2];
+
         private void DrawModeHeader(Rect rect)
         {
-            Widgets.DrawBoxSolidWithOutline(
-                rect, EprStyle.PanelBackground, EprStyle.PanelOutline);
-            const float Padding = 3f;
-            const float SegmentGap = 2f;
-            float segmentWidth = Mathf.Max(
-                1f, (rect.width - 2f * Padding - SegmentGap) / 2f);
-            var groupRect = new Rect(
-                rect.x + Padding,
-                rect.y + Padding,
-                segmentWidth,
-                rect.height - 2f * Padding);
-            var poolsRect = new Rect(
-                groupRect.xMax + SegmentGap,
-                groupRect.y,
-                segmentWidth,
-                groupRect.height);
-
-            if (EprStyle.SegmentedTab(
-                groupRect,
-                UiText.Get("EPR.GroupEditor"),
-                centerMode == ReadoutConfigMode.GroupEditor))
-                SetCenterMode(ReadoutConfigMode.GroupEditor);
-            if (EprStyle.SegmentedTab(
-                poolsRect,
-                UiText.Get("EPR.ResourcePoolEditor"),
-                centerMode == ReadoutConfigMode.ResourcePools))
-                SetCenterMode(ReadoutConfigMode.ResourcePools);
+            modeLabels[(int)ReadoutConfigMode.GroupEditor] =
+                UiText.Get("EPR.GroupEditor");
+            modeLabels[(int)ReadoutConfigMode.ResourcePools] =
+                UiText.Get("EPR.ResourcePoolEditor");
+            int clicked = SegmentedControl.Row(rect, modeLabels, (int)centerMode);
+            if (clicked >= 0) SetCenterMode((ReadoutConfigMode)clicked);
         }
 
         private void DrawDragGhost()

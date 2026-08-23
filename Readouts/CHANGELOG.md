@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 1.2.3 — 2026-08-23
+
+- Added: Options to override the global counter settings, so you can e.g. include map items but turn it off for some items/pools selectively.
+
+## 1.2.2 — 2026-08-22
+
+- Added: Hide the command bar button to toggle readout categorization (it has no effect with this mod installed).
+- Fixed: Search input is no longer tab-navigable.
+
 ## 1.2.1 — 2026-08-21
 
 - Added: Support for mods that combine item definitions (e.g. meat types).

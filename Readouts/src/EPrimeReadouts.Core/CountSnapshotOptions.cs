@@ -2,8 +2,10 @@ using System;
 
 namespace EPrimeReadouts.Core
 {
-    /// Per-player inputs that determine which game state a count snapshot must
-    /// collect. Pure presentation choices stay outside this value.
+    /// Effective collection inputs that determine which game state a count
+    /// snapshot must collect: the per-player count options, widened by the
+    /// union of stored count rules so overridden tokens always find their
+    /// data. Pure presentation choices stay outside this value.
     public readonly struct CountSnapshotOptions
         : IEquatable<CountSnapshotOptions>
     {
