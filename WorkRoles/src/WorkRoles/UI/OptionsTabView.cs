@@ -10,6 +10,11 @@ namespace WorkRoles.UI
     {
         private readonly OptionsTabState state = new OptionsTabState();
 
+        /// Opens the auto-optimize enable confirmation; wired by the window to
+        /// the Colonists tab, which owns the fix-plan machinery. Disabling
+        /// needs no confirmation and issues the command directly.
+        internal System.Action? showAutoOptimizeEnablePreview;
+
         public void Reset() => state.Reset();
 
         internal void ReleaseWindowData() => Reset();
@@ -31,6 +36,10 @@ namespace WorkRoles.UI
             y += 34f;
             var rangeRect = new Rect(flowX, y, flowW, 28f);
             y += 34f;
+            var automationHeader = new Rect(flowX, y + 8f, flowW, 28f);
+            y += 8f + 32f;
+            var autoOptimizeRect = new Rect(flowX, y, flowW, 28f);
+            y += 34f;
             var displayHeader = new Rect(flowX, y + 8f, flowW, 28f);
             y += 8f + 32f;
 
@@ -49,6 +58,23 @@ namespace WorkRoles.UI
                 rangeRect, snapshot.RangeLabel, ref vanillaNew);
             if (vanillaNew != snapshot.VanillaRange)
                 RoleCommands.SetReportVanillaPriorities(vanillaNew);
+
+            // Per-save automation: the hourly auto-optimize schedule is shared
+            // world state (AutoOptimizer runs in the synced simulation), so
+            // the edit travels through a synced command like the toggles above.
+            WrText.HeaderLabel(automationHeader, snapshot.AutomationHeader);
+            StructuredTipPresenter.TipRegion(
+                autoOptimizeRect, snapshot.AutoOptimizeTip);
+            bool autoOptimizeNew = snapshot.AutoOptimize;
+            Widgets.CheckboxLabeled(
+                autoOptimizeRect, snapshot.AutoOptimizeLabel, ref autoOptimizeNew);
+            if (autoOptimizeNew != snapshot.AutoOptimize)
+            {
+                // Enabling opens a confirmation preview; the checkbox stays
+                // unchecked until the dialog's apply issues the command.
+                if (autoOptimizeNew) showAutoOptimizeEnablePreview?.Invoke();
+                else RoleCommands.SetAutoOptimize(false);
+            }
 
             // Client-side display preferences: chip caches key on these values
             // directly, so a write here is picked up on the next draw pass.

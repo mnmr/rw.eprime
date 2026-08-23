@@ -1,8 +1,18 @@
 using Verse;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
-    public enum ChipDisplay { Normal, Compact, Minimal }
+    public enum ChipDisplay
+    {
+        Normal = 0,
+        Compact = 1,
+        // Retains Minimal's legacy ordinal; the persistence codec also maps
+        // the former textual name to this icon mode.
+        Icons = 2,
+        CompactGrid = 3,
+        IconsGrid = 4,
+    }
     public enum ColonistOrder { ColonistBar, Alphabetical }
     public enum PaletteMode { Skills, Groups, Hidden }
 
@@ -82,7 +92,12 @@ namespace WorkRoles
 
         public override void ExposeData()
         {
-            Scribe_Values.Look(ref chipDisplay, "chipDisplay", ChipDisplay.Normal);
+            var persistedChipDisplay =
+                ChipDisplayPreferenceCodec.Encode((int)chipDisplay);
+            Scribe_Values.Look(ref persistedChipDisplay, "chipDisplay", "Normal");
+            if (Scribe.mode == LoadSaveMode.LoadingVars)
+                chipDisplay = (ChipDisplay)ChipDisplayPreferenceCodec.Decode(
+                    persistedChipDisplay);
             Scribe_Values.Look(ref colonistOrder, "colonistOrder", ColonistOrder.ColonistBar);
             Scribe_Collections.Look(ref skillColumns, "skillColumns", LookMode.Value);
             Scribe_Values.Look(ref groupBy, "groupBy", "none");

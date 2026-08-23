@@ -50,6 +50,8 @@ namespace WorkRoles
         internal static void ReleaseForTeardown()
         {
             ReleaseOwners();
+            UI.RoleIconPresentationCatalog.ReleaseForTeardown();
+            UI.RoleIconCatalog.ReleaseForTeardown();
         }
 
         internal static void QueueHotReloadWarm()

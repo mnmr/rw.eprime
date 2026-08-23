@@ -54,6 +54,7 @@ In multiplayer, every change (role edits, assignments, toggles) is a synced comm
 - **Hunting:** recommended for everyone with a gun as a way to improve shooting skill, but at different priority based on current skill level.
 - **Apply Per Colonist:** click single roles in the "Recommended Roles" panel to cherry-pick or "Make It So" to apply the displayed role set to the selected colonist.
 - **Fix My Colony:** apply recommendations across all colonists, with a preview to see what would change.
+- **Auto-Optimize:** optional Options-tab toggle (per savegame, off by default) that runs Fix My Colony automatically every in-game hour for each colony and applies the changes; nothing is written when colonists already match the recommendation. Enabling shows a confirmation preview of what would change; while on, the Fix My Colony and Make It So buttons are hidden (assigning, re-ordering and pinning roles still work as usual).
 - **Role Pinning:** pin role assignments that you don't want the recommendation engine to touch. Right-click on assigned roles; pinned roles show a pin icon.
 - **Untouched:** auto (rule-carrying) roles, pinned and blockers are never suggested, moved or removed.
 - **Genetics:** pawns terrified of fire automatically get Pyrophobe (blocker role) placed before Core (to block its Firefighting).

@@ -10,6 +10,7 @@ namespace WorkRoles.UI
             ColonyGroupsDataSource.ReleaseSnapshot();
             RolesListState.ReleaseSectionsSnapshot();
             GroupSources.ReleaseWindowData();
+            RoleIconPresentationCatalog.ReleaseForTeardown();
             WorkJobLabels.InvalidateLanguageCaches();
             ColonistsTabView.InvalidateSharedLanguageCaches();
             ColonyScope.ReleaseSnapshot();

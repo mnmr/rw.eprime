@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RimShared.Common;
 using RimWorld;
+using UnityEngine;
 using Verse;
 using WorkRoles.Core;
 
@@ -146,17 +147,20 @@ namespace WorkRoles.UI
         private sealed class RoleFacts
         {
             internal RoleFacts(RoleChipRenderData chip, bool enabled,
-                string abbreviation, HashSet<string> coverage)
+                string abbreviation, Texture2D? icon,
+                HashSet<string> coverage)
             {
                 Chip = chip;
                 Enabled = enabled;
                 Abbreviation = abbreviation;
+                Icon = icon;
                 Coverage = coverage;
             }
 
             internal RoleChipRenderData Chip { get; }
             internal bool Enabled { get; }
             internal string Abbreviation { get; }
+            internal Texture2D? Icon { get; }
             internal HashSet<string> Coverage { get; }
 
             internal bool ContentEquals(RoleFacts other) =>
@@ -164,6 +168,7 @@ namespace WorkRoles.UI
                 && Chip.ContentEquals(other.Chip)
                 && string.Equals(Abbreviation, other.Abbreviation,
                     StringComparison.Ordinal)
+                && ReferenceEquals(Icon, other.Icon)
                 && Coverage.SetEquals(other.Coverage);
         }
 
@@ -256,9 +261,11 @@ namespace WorkRoles.UI
                 string abbreviation = abbreviations.TryGetValue(role.id,
                     out string value) ? value : role.label;
                 RoleChipRenderData chip = RoleChipRenderData.From(role);
+                RoleIconPresentation icon =
+                    RoleIconPresentationCatalog.For(role.id);
                 detachedChips[role.id] = chip;
                 roles[role.id] = new RoleFacts(chip,
-                    role.enabled, abbreviation,
+                    role.enabled, abbreviation, icon.Texture,
                     new HashSet<string>(role.Coverage(),
                         StringComparer.Ordinal));
                 roleOptions.Add(new ColonistRoleFilterOption(role.id,
@@ -447,6 +454,10 @@ namespace WorkRoles.UI
         internal string? AbbreviationFor(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts)
                 ? facts.Abbreviation : null;
+
+        internal Texture2D? IconFor(int roleId) =>
+            roles.TryGetValue(roleId, out RoleFacts facts)
+                ? facts.Icon : null;
 
         internal bool ContainsRole(int roleId) => roles.ContainsKey(roleId);
 

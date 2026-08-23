@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.5.0 — 2026-08-23
+
+- Added: Option to turn on colony automation. When enabled, WorkRoles applies "Fix My Colony" across all player colonies once per game hour (2500 ticks).
+- Added: Icon assignments for the default role set as well as extra icons for use with custom roles or as replacements. Some icons are courtesy of SoggyDorito65 (from their Priority Overhaul mod).
+- Added: Icon display mode for role chips, along with fixed-width versions for both initials and icons.
+- Added: Icon display and picker in the role editor.
+
 ## 1.4.2 — 2026-08-16
 
 - Added: Support for detecting whether age limits are relevant for a pawn (avoids warnings on age-restricted role assignments and allows recommendations to ignore configured age-bands).

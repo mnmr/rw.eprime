@@ -20,8 +20,12 @@ namespace WorkRoles.UI
         public static readonly Texture2D ForceOnMarker;
         public static readonly Texture2D RoleCapabilityPartial;
         public static readonly Texture2D RoleCapabilityAll;
+        public static readonly Texture2D RoleIconPlaceholder;
         public static readonly Texture2D DisplayOptions;
         public static readonly Texture2D Logo;
+        // The vanilla tab atlas (TabRecord keeps its copy private); drawn by
+        // WrTabs, never mutated.
+        public static readonly Texture2D TabAtlas;
         // Owner: world session. Key: the current world lifecycle (one shared
         // slot). Value: two WorkRoles-owned Texture2D assets. Dependencies:
         // fixed dimensions and the UI section background used by the fade.
@@ -55,8 +59,11 @@ namespace WorkRoles.UI
                 "UI/Icons/ColonistBar/MentalStateNonAggro");
             RoleCapabilityAll = ContentFinder<Texture2D>.Get(
                 "UI/Icons/ColonistBar/MentalStateAggro");
+            RoleIconPlaceholder = ContentFinder<Texture2D>.Get(
+                "UI/Icons/QuestionMark");
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
+            TabAtlas = ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas");
             EnsureRuntimeTextures();
             StartupTiming.Record("textures", sw.ElapsedMilliseconds);
         }

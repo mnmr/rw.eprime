@@ -292,6 +292,7 @@ namespace WorkRoles.UI
             chipSequenceStamp = ScopeCacheStamp.Invalid;
             chipSequenceDisplay = -1;
             chipSequenceTuningRevision = -1;
+            chipWidthGrid = default;
             rulesPassCache.Clear();
             rulesPassStamp = ScopeCacheStamp.Invalid;
             InvalidateTableLayout();
@@ -401,9 +402,12 @@ namespace WorkRoles.UI
             // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | [+] | gap | trailing
             float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f + 16f;
             float widestStrip = 0f;
+            bool grid = RoleChipUI.UsesGrid(TableChips);
             for (int i = 0; i < pawns.Count; i++)
             {
-                float w = chipSequences[pawns[i]].UnwrappedWidth;
+                ColonistChipSequenceSnapshot sequence = chipSequences[pawns[i]];
+                float w = chipWidthGrid.UnwrappedWidth(sequence.Count,
+                    sequence.UnwrappedWidth, ChipGap, grid);
                 if (w > widestStrip) widestStrip = w;
             }
             float tableWidth = fixedLeft + SkillColumnsWidth() + widestStrip;
@@ -444,11 +448,11 @@ namespace WorkRoles.UI
 
         private float TableChipWidth(RoleChipRenderData role,
             string? abbreviation, bool pinned, bool forcedOn,
-            RoleCapabilityPresentation capability) =>
+            RoleCapabilityPresentation capability, Texture2D? icon) =>
             RoleChipUI.WidthFor(role, showRemove: true, TableChips,
                 abbreviation, pinned, capability.WarningSeverity, forcedOn,
                 // Suitability is meaningless for blockers: no verdict slot.
-                verdictSlot: ColonistVerdicts && !role.Blocker);
+                verdictSlot: ColonistVerdicts && !role.Blocker, icon: icon);
 
         /// The roles-column width used by both desired-height measurement and
         /// live table layout.
@@ -461,10 +465,11 @@ namespace WorkRoles.UI
         {
             float x = 0f, y = 0f;
             int line = 0;
+            bool grid = RoleChipUI.UsesGrid(TableChips);
             for (int i = 0; i < sequence.Count; i++)
             {
                 ColonistChipSourceSnapshot source = sequence.ChipAt(i);
-                float w = source.Width;
+                float w = chipWidthGrid.WidthFor(source.Width, grid);
                 if (x + w > stripWidth && x > 0f)
                 {
                     line++;
@@ -477,7 +482,7 @@ namespace WorkRoles.UI
                         new Rect(x, y, w, RoleChipUI.Height), line,
                         source.Capability, source.GlobalEnabled, source.State,
                         source.Pinned, source.Suppressed,
-                        source.Abbreviation,
+                        source.Abbreviation, source.Icon,
                         RoleTip(source.RenderData.RoleId,
                             RoleTipContext.AssignmentChip, pawn),
                         source.PinToggleLabel, source.Verdict));
@@ -591,7 +596,8 @@ namespace WorkRoles.UI
                 List<ColonistsScopeMenuOption> scopeOptions,
                 bool hasSettings, string displayLabel,
                 string normalChipsLabel, string compactChipsLabel,
-                string minimalChipsLabel, string skillsLabel,
+                string iconsChipsLabel, string compactGridChipsLabel,
+                string iconsGridChipsLabel, string skillsLabel,
                 string groupKey, string groupLabel)
             {
                 Catalog = catalog;
@@ -611,7 +617,9 @@ namespace WorkRoles.UI
                 DisplayLabel = displayLabel;
                 NormalChipsLabel = normalChipsLabel;
                 CompactChipsLabel = compactChipsLabel;
-                MinimalChipsLabel = minimalChipsLabel;
+                IconsChipsLabel = iconsChipsLabel;
+                CompactGridChipsLabel = compactGridChipsLabel;
+                IconsGridChipsLabel = iconsGridChipsLabel;
                 SkillsLabel = skillsLabel;
                 GroupKey = groupKey;
                 GroupLabel = groupLabel;
@@ -636,7 +644,9 @@ namespace WorkRoles.UI
             internal string DisplayLabel { get; }
             internal string NormalChipsLabel { get; }
             internal string CompactChipsLabel { get; }
-            internal string MinimalChipsLabel { get; }
+            internal string IconsChipsLabel { get; }
+            internal string CompactGridChipsLabel { get; }
+            internal string IconsGridChipsLabel { get; }
             internal string SkillsLabel { get; }
             internal string GroupKey { get; }
             internal string GroupLabel { get; }
@@ -662,7 +672,11 @@ namespace WorkRoles.UI
                     || !Same(DisplayLabel, other.DisplayLabel)
                     || !Same(NormalChipsLabel, other.NormalChipsLabel)
                     || !Same(CompactChipsLabel, other.CompactChipsLabel)
-                    || !Same(MinimalChipsLabel, other.MinimalChipsLabel)
+                    || !Same(IconsChipsLabel, other.IconsChipsLabel)
+                    || !Same(CompactGridChipsLabel,
+                        other.CompactGridChipsLabel)
+                    || !Same(IconsGridChipsLabel,
+                        other.IconsGridChipsLabel)
                     || !Same(SkillsLabel, other.SkillsLabel)
                     || !Same(GroupKey, other.GroupKey)
                     || !Same(GroupLabel, other.GroupLabel)) return false;
@@ -808,8 +822,14 @@ namespace WorkRoles.UI
                     ? "✓ " : "") + "WR_ChipsNormal".Translate();
                 string checkCompact = (chipDisplay == ChipDisplay.Compact
                     ? "✓ " : "") + "WR_ChipsCompact".Translate();
-                string checkMinimal = (chipDisplay == ChipDisplay.Minimal
-                    ? "✓ " : "") + "WR_ChipsMinimal".Translate();
+                string checkIcons = (chipDisplay == ChipDisplay.Icons
+                    ? "✓ " : "") + "WR_ChipsIcons".Translate();
+                string checkCompactGrid =
+                    (chipDisplay == ChipDisplay.CompactGrid ? "✓ " : "")
+                    + "WR_ChipsCompactGrid".Translate();
+                string checkIconsGrid =
+                    (chipDisplay == ChipDisplay.IconsGrid ? "✓ " : "")
+                    + "WR_ChipsIconsGrid".Translate();
                 int skillCount = rosterState.SkillColumns.Count;
                 string skillsLabel = skillCount == 0
                     ? "WR_SkillsButton".Translate().ToString()
@@ -830,8 +850,8 @@ namespace WorkRoles.UI
                     scopeLabel, scopeWidth, scopeOptions,
                     hasSettings,
                     "WR_DisplayButton".Translate().ToString(),
-                    checkNormal, checkCompact, checkMinimal, skillsLabel,
-                    groupKey, groupLabel);
+                    checkNormal, checkCompact, checkIcons, checkCompactGrid,
+                    checkIconsGrid, skillsLabel, groupKey, groupLabel);
             }
             finally
             {
@@ -1587,8 +1607,12 @@ namespace WorkRoles.UI
                     () => profile.SetTableChips(ChipDisplay.Normal)),
                 new FloatMenuOption(chrome.CompactChipsLabel,
                     () => profile.SetTableChips(ChipDisplay.Compact)),
-                new FloatMenuOption(chrome.MinimalChipsLabel,
-                    () => profile.SetTableChips(ChipDisplay.Minimal)),
+                new FloatMenuOption(chrome.IconsChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.Icons)),
+                new FloatMenuOption(chrome.CompactGridChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.CompactGrid)),
+                new FloatMenuOption(chrome.IconsGridChipsLabel,
+                    () => profile.SetTableChips(ChipDisplay.IconsGrid)),
             }));
         }
 
@@ -2846,8 +2870,8 @@ namespace WorkRoles.UI
             internal ColonistChipSourceSnapshot(RoleChipRenderData renderData,
                 float width, RoleCapabilityPresentation capability,
                 bool globalEnabled, AssignmentState state, bool pinned,
-                bool suppressed, string? abbreviation, string pinToggleLabel,
-                RoleChipVerdict verdict)
+                bool suppressed, string? abbreviation, Texture2D? icon,
+                string pinToggleLabel, RoleChipVerdict verdict)
             {
                 RenderData = renderData;
                 Width = width;
@@ -2857,6 +2881,7 @@ namespace WorkRoles.UI
                 Pinned = pinned;
                 Suppressed = suppressed;
                 Abbreviation = abbreviation;
+                Icon = icon;
                 PinToggleLabel = pinToggleLabel;
                 Verdict = verdict;
             }
@@ -2869,6 +2894,7 @@ namespace WorkRoles.UI
             internal bool Pinned { get; }
             internal bool Suppressed { get; }
             internal string? Abbreviation { get; }
+            internal Texture2D? Icon { get; }
             internal string PinToggleLabel { get; }
             internal RoleChipVerdict Verdict { get; }
 
@@ -2881,6 +2907,7 @@ namespace WorkRoles.UI
                     || Suppressed != other.Suppressed
                     || !string.Equals(Abbreviation, other.Abbreviation,
                         System.StringComparison.Ordinal)
+                    || !ReferenceEquals(Icon, other.Icon)
                     || !string.Equals(PinToggleLabel, other.PinToggleLabel,
                         System.StringComparison.Ordinal)) return false;
                 if (Capability.WarningSeverity
@@ -2921,6 +2948,12 @@ namespace WorkRoles.UI
             internal ColonistChipSourceSnapshot ChipAt(int index) =>
                 chips[index];
 
+            internal void IncludeWidths(ref RoleChipWidthGrid grid)
+            {
+                for (int i = 0; i < chips.Count; i++)
+                    grid.Include(chips[i].Width);
+            }
+
             internal void CopyAssignmentsToClipboard() =>
                 RoleClipboard.CopyFromSnapshot(owner, assignments);
 
@@ -2946,8 +2979,10 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: RoleStore/catalog identity, pawn-scope
         // stamp, chip-display mode, verdict preference, and recommendation tuning.
         // Value: immutable width-independent detached chip sequences per listed
-        // pawn. Dependencies: assignments, role presentation, capability/rules,
-        // verdicts, external pawn facts, language, and every key component.
+        // pawn plus the aggregate widest assigned-chip width for grid modes.
+        // Dependencies: assignments, role presentation and icon textures,
+        // capability/rules, verdicts, external pawn facts, language, definitions,
+        // and every key component.
         // Refresh: immediate as one generation on the next sequence read. Equality:
         // equal per-pawn rebuilds preserve snapshot identity. Teardown:
         // ReleaseSnapshots/language/external invalidation releases the dictionary.
@@ -2958,6 +2993,7 @@ namespace WorkRoles.UI
         private ScopeCacheStamp chipSequenceStamp = ScopeCacheStamp.Invalid;
         private int chipSequenceDisplay = -1;
         private int chipSequenceTuningRevision = -1;
+        private RoleChipWidthGrid chipWidthGrid;
 
         private void EnsureChipSequences(RoleStore store)
         {
@@ -2974,11 +3010,13 @@ namespace WorkRoles.UI
             IReadOnlyList<Pawn> pawns = ListedPawns();
             var rebuilt = new Dictionary<Pawn, ColonistChipSequenceSnapshot>(
                 pawns.Count);
+            var rebuiltWidthGrid = new RoleChipWidthGrid();
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
                 ColonistChipSequenceSnapshot candidate =
                     BuildChipSequence(store, catalog, pawn);
+                candidate.IncludeWidths(ref rebuiltWidthGrid);
                 if (ReferenceEquals(chipSequenceOwner, store)
                     && chipSequences.TryGetValue(pawn,
                         out ColonistChipSequenceSnapshot previous)
@@ -2987,6 +3025,7 @@ namespace WorkRoles.UI
                 rebuilt[pawn] = candidate;
             }
             chipSequences = rebuilt;
+            chipWidthGrid = rebuiltWidthGrid;
             chipSequenceOwner = store;
             chipSequenceCatalog = catalog;
             chipSequenceStamp = stamp;
@@ -3006,6 +3045,7 @@ namespace WorkRoles.UI
             string pinLabel = "WR_PinAssignment".Translate().ToString();
             string unpinLabel = "WR_UnpinAssignment".Translate().ToString();
             float unwrappedWidth = 0f;
+            ChipDisplay display = TableChips;
             for (int i = 0; i < capacity; i++)
             {
                 RoleAssignment assignment = set!.assignments[i]; // capacity > 0 implies a set
@@ -3015,18 +3055,20 @@ namespace WorkRoles.UI
                 RoleCapabilityPresentation capability =
                     roleCapabilityState.PresentationFor(pawn, role,
                         PawnListStamp, ExternalSnapshotFor(pawn));
-                string? abbreviation = TableChips == ChipDisplay.Compact
+                string? abbreviation = RoleChipUI.NeedsAbbreviation(display)
                     ? catalog.AbbreviationFor(assignment.roleId) : null;
+                Texture2D? icon = RoleChipUI.UsesIcons(display)
+                    ? catalog.IconFor(assignment.roleId) : null;
                 bool forcedOn = assignment.state == AssignmentState.ForceOn;
                 float width = TableChipWidth(renderData, abbreviation,
-                    assignment.pinned, forcedOn, capability);
+                    assignment.pinned, forcedOn, capability, icon);
                 bool chipEnabled = RoleActivation.IsActive(role.enabled,
                     assignment.state);
                 chips.Add(new ColonistChipSourceSnapshot(renderData, width,
                     capability, role.enabled, assignment.state,
                     assignment.pinned,
                     chipEnabled && !RulesPass(role, pawn), abbreviation,
-                    assignment.pinned ? unpinLabel : pinLabel,
+                    icon, assignment.pinned ? unpinLabel : pinLabel,
                     renderData.Blocker ? default(RoleChipVerdict)
                         : VerdictFrom(verdicts, assignment.roleId)));
                 assignments.Add(new RoleAssignment
@@ -3054,8 +3096,9 @@ namespace WorkRoles.UI
             internal RoleChipLayout(RoleChipRenderData renderData, Rect rect,
                 int line, RoleCapabilityPresentation capability,
                 bool globalEnabled, AssignmentState state, bool pinned,
-                bool suppressed, string? abbreviation, StructuredTip? tooltip,
-                string pinToggleLabel, RoleChipVerdict verdict)
+                bool suppressed, string? abbreviation, Texture2D? icon,
+                StructuredTip? tooltip, string pinToggleLabel,
+                RoleChipVerdict verdict)
             {
                 RenderData = renderData;
                 Rect = rect;
@@ -3066,6 +3109,7 @@ namespace WorkRoles.UI
                 Pinned = pinned;
                 Suppressed = suppressed;
                 Abbreviation = abbreviation;
+                Icon = icon;
                 Tooltip = tooltip;
                 PinToggleLabel = pinToggleLabel;
                 Verdict = verdict;
@@ -3080,6 +3124,7 @@ namespace WorkRoles.UI
             internal bool Pinned { get; }
             internal bool Suppressed { get; }
             internal string? Abbreviation { get; }
+            internal Texture2D? Icon { get; }
             internal StructuredTip? Tooltip { get; }
             internal string PinToggleLabel { get; }
             internal RoleChipVerdict Verdict { get; }
@@ -3728,7 +3773,7 @@ namespace WorkRoles.UI
                     strikes: RoleChipStrikes.Count(
                         chip.GlobalEnabled, chip.State),
                     forcedOn: chip.State == AssignmentState.ForceOn,
-                    verdict: chip.Verdict);
+                    verdict: chip.Verdict, icon: chip.Icon);
                 if (click == ChipClick.Remove)
                     RoleCommands.RemoveRoleFromPawn(
                         row.Pawn, chip.RenderData.RoleId);
@@ -4143,7 +4188,10 @@ namespace WorkRoles.UI
                     }
                 }
 
-                if (preview.HasChanges)
+                // Make It So hides while auto-optimize owns bulk fixes; the
+                // panel's chips stay clickable for per-role cherry-picking.
+                if (preview.HasChanges
+                    && RoleStore.Current?.autoOptimize != true)
                 {
                     Rect localApply = preview.ApplyRect;
                     var makeItSoRect = new Rect(recX + localApply.x,
@@ -4204,6 +4252,46 @@ namespace WorkRoles.UI
             => Find.WindowStack.Add(new Dialog_ChangesPreview(
                 () => "WR_FixMyColony".Translate(), BuildFixEntries(null),
                 included => ApplyFix(null, included), () => RebuildFixEntries(null)));
+
+        /// Opens the auto-optimize enable confirmation: the Fix My Colony
+        /// preview plus an explanation banner, without per-pawn selection
+        /// (the hourly schedule fixes everyone regardless). Confirming
+        /// applies the shown changes now and turns the schedule on; nothing
+        /// changes on cancel.
+        public void ShowAutoOptimizeEnablePreview()
+            => Find.WindowStack.Add(new Dialog_ChangesPreview(
+                () => "WR_OptAutoOptimize".Translate(), BuildFixEntries(null),
+                _ =>
+                {
+                    ApplyFix(null);
+                    RoleCommands.SetAutoOptimize(true);
+                },
+                () => RebuildFixEntries(null),
+                infoFactory: AutoOptimizeInfoText,
+                warningFactory: AutoOptimizeGlobalWarningText,
+                selectable: false));
+
+        /// The enable banner restates the option tooltip's information, plus
+        /// what confirming does.
+        private static string AutoOptimizeInfoText() =>
+            "WR_OptAutoOptimizeTipWhat".Translate().ToString() + " "
+            + "WR_OptAutoOptimizeTipWhy".Translate().ToString() + "\n\n"
+            + "WR_AutoOptimizeConfirmApply".Translate().ToString();
+
+        /// With more than one colony the schedule's global reach deserves a
+        /// warning: the toggle applies everywhere while the preview shows only
+        /// the current colony. Counts the same maps AutoOptimizer will touch.
+        private static string? AutoOptimizeGlobalWarningText()
+        {
+            int colonies = 0;
+            List<Map> maps = Find.Maps;
+            for (int index = 0; index < maps.Count; index++)
+                if (ColonyScope.IsColonyLocationForSimulation(maps[index]))
+                    colonies++;
+            return colonies > 1
+                ? "WR_AutoOptimizeGlobalWarning".Translate().ToString()
+                : null;
+        }
 
         // ----- Helpers -----
 

@@ -18,6 +18,14 @@
   <WR_OptVanillaRangeTipWhat>WorkRoles orders work by unique priorities (sequential numbers starting with 1).</WR_OptVanillaRangeTipWhat>
   <WR_OptVanillaRangeTipOff>Other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
   <WR_OptVanillaRangeTipOn>Priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
+  <WR_AutomationSection>Automation Settings</WR_AutomationSection>
+  <WR_OptAutoOptimize>Auto-optimize colonies every in-game hour</WR_OptAutoOptimize>
+  <WR_OptAutoOptimizeTipWhat>Runs Fix My Colony automatically for each colony and applies the changes, per savegame.</WR_OptAutoOptimizeTipWhat>
+  <WR_OptAutoOptimizeTipOff>Role assignments only change when you edit them</WR_OptAutoOptimizeTipOff>
+  <WR_OptAutoOptimizeTipOn>Recommended assignments are applied at the top of every in-game hour</WR_OptAutoOptimizeTipOn>
+  <WR_OptAutoOptimizeTipWhy>Pinned assignments are never touched, and nothing is written when a colonist already matches the recommendation.</WR_OptAutoOptimizeTipWhy>
+  <WR_AutoOptimizeConfirmApply>Apply makes the changes below now and turns hourly auto-optimization on. While it is on, the Fix My Colony and Make It So buttons are hidden; you can still assign, re-order and pin roles as usual.</WR_AutoOptimizeConfirmApply>
+  <WR_AutoOptimizeGlobalWarning>You have multiple colonies: auto-optimization is GLOBAL and will change role assignments in ALL of them every hour. The preview below only shows changes for the current colony.</WR_AutoOptimizeGlobalWarning>
   <WR_DisplaySection>Display Settings</WR_DisplaySection>
   <WR_OptSkillCaptions>Show top skills under colonist names</WR_OptSkillCaptions>
   <WR_OptSkillCaptionsTip>Each colonist row in the table carries a small caption under the name listing that colonist's best work skills with their levels, coloured by suitability. Turn this off to render the name on its own line.</WR_OptSkillCaptionsTip>
@@ -271,7 +279,9 @@
   <WR_GroupTitleUngrouped>Ungrouped</WR_GroupTitleUngrouped>
   <WR_ChipsNormal>Chips: Full names</WR_ChipsNormal>
   <WR_ChipsCompact>Chips: Initials</WR_ChipsCompact>
-  <WR_ChipsMinimal>Chips: Squares</WR_ChipsMinimal>
+  <WR_ChipsIcons>Chips: Icons</WR_ChipsIcons>
+  <WR_ChipsCompactGrid>Chips: Initials (grid)</WR_ChipsCompactGrid>
+  <WR_ChipsIconsGrid>Chips: Icons (grid)</WR_ChipsIconsGrid>
   <WR_OrderSuffixBar>(Tab order)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Display</WR_DisplayButton>
@@ -681,6 +691,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
 
   <!-- ===== Shared / dialogs ===== -->
 
+  <WR_SelectRoleIcon>Select role icon</WR_SelectRoleIcon>
   <WR_RenameRoleTitle>Rename Role</WR_RenameRoleTitle>
   <WR_OK>OK</WR_OK>
 

@@ -69,6 +69,9 @@ namespace WorkRoles
 
             int assigned = 0;
             var failures = new List<string>();
+            int priorityDrops = 0;
+            int pawnMigrationFailures = 0;
+            string? firstFailure = null;
             foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
             {
                 try
@@ -95,7 +98,9 @@ namespace WorkRoles
                         if (workType != null && !workType.visible) continue;
                         if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
                         {
-                            Log.Error($"[WorkRoles] migration dropped {pair.Key} (was priority {pair.Value}) for {pawn.LabelShort}");
+                            priorityDrops++;
+                            firstFailure ??= $"{pawn.LabelShort}: lost {pair.Key} "
+                                + $"(was priority {pair.Value})";
                             failures.Add("WR_SeedDropFailure".Translate(
                                 pawn.LabelShort, workType.labelShort ?? pair.Key, pair.Value));
                         }
@@ -104,10 +109,26 @@ namespace WorkRoles
                 catch (System.Exception e)
                 {
                     // One corrupt pawn must not abort migration for the rest.
-                    Log.Error($"[WorkRoles] failed to migrate priorities of {pawn?.LabelShort ?? "unknown pawn"}: {e}");
+                    pawnMigrationFailures++;
+                    firstFailure ??= $"{pawn?.LabelShort ?? "unknown pawn"}: "
+                        + $"migration failed: {e}";
                     failures.Add("WR_SeedPawnFailure".Translate(
                         pawn?.LabelShort ?? "?", e.Message));
                 }
+            }
+
+            int failureCount = priorityDrops + pawnMigrationFailures;
+            if (failureCount > 0)
+            {
+                string priorityDropLabel = priorityDrops == 1
+                    ? "priority drop" : "priority drops";
+                string pawnFailureLabel = pawnMigrationFailures == 1
+                    ? "pawn migration exception" : "pawn migration exceptions";
+                Log.Error($"[WorkRoles] migration completed with {failureCount} "
+                    + $"failure{(failureCount == 1 ? "" : "s")}: "
+                    + $"{priorityDrops} {priorityDropLabel}, "
+                    + $"{pawnMigrationFailures} {pawnFailureLabel}. "
+                    + $"First failure: {firstFailure}");
             }
 
             Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");

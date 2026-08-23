@@ -11,7 +11,8 @@ namespace WorkRoles.UI
         public Color Bg;
         public Color Outline;      // selection/highlight = recolor, never a second ring
         public Color LabelColor;
-        public string Label;       // null = no label (Minimal)
+        public string Label;       // null when Icon supplies the chip content
+        public Texture? Icon;
         public bool ShowRemove;
         public bool Grips;         // inner band-resize grips at both ends
         public float LabelInsetLeft, LabelInsetRight; // computed by composers (markers etc.)
@@ -88,6 +89,15 @@ namespace WorkRoles.UI
             GUI.color = spec.LabelColor;
             if (spec.Label != null)
                 Widgets.Label(labelRect, spec.Label);
+            else if (spec.Icon != null)
+            {
+                float size = Mathf.Min(20f,
+                    Mathf.Min(rect.height, labelRect.width));
+                GUI.DrawTexture(new Rect(
+                    labelRect.x + (labelRect.width - size) / 2f,
+                    rect.y + (rect.height - size) / 2f,
+                    size, size), spec.Icon);
+            }
             GUI.color = Color.white;
             Text.WordWrap = oldWrap;
             Text.Anchor = TextAnchor.UpperLeft;

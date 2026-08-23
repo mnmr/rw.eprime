@@ -38,10 +38,11 @@ namespace WorkRoles.UI
         private bool spansMultipleLocations;
 
         // Owner: Colonists window. Key: RoleStore identity, UiVersion, language,
-        // and definition revisions. Value: an immutable detached role/definition
-        // catalog shared by palette, filters, grouping controls, and chip labels.
-        // Dependencies: ordered role catalog/coverage/tree placement, job and skill
-        // definitions, group sources, and translated labels. Refresh: immediate on
+        // definition, and shared role-icon presentation revisions. Value: an immutable detached role/definition
+        // catalog shared by palette, filters, grouping controls, chip labels, and
+        // stable externally owned role-icon textures. Dependencies: ordered role
+        // catalog/coverage/tree placement, role or seeded-template icon paths, job
+        // and skill definitions, group sources, and translated labels. Refresh: immediate on
         // the next catalog read after a key change. Equality: an equal rebuild keeps
         // snapshot identity; a different store always republishes. Teardown:
         // ReleaseSnapshots drops the snapshot and owner reference.
@@ -50,6 +51,7 @@ namespace WorkRoles.UI
         private int catalogUiVersion = -1;
         private int catalogLanguageRevision = -1;
         private int catalogDefinitionRevision = -1;
+        private int catalogRoleIconRevision = -1;
 
         // Owner: Colonists window. Key: pawn-scope stamp, map identity, filters,
         // grouping/sort preferences, colonist order, and detached catalog identity.
@@ -188,6 +190,7 @@ namespace WorkRoles.UI
             catalogUiVersion = -1;
             catalogLanguageRevision = -1;
             catalogDefinitionRevision = -1;
+            catalogRoleIconRevision = -1;
             pawnListRevisions.Invalidate();
         }
 
@@ -248,10 +251,12 @@ namespace WorkRoles.UI
             int uiVersion = UiVersion.Current;
             int languageRevision = LanguageChangeCoordinator.Revision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
+            int roleIconRevision = RoleIconPresentationCatalog.Revision;
             if (catalog != null && ReferenceEquals(catalogOwner, store)
                 && catalogUiVersion == uiVersion
                 && catalogLanguageRevision == languageRevision
-                && catalogDefinitionRevision == definitionRevision)
+                && catalogDefinitionRevision == definitionRevision
+                && catalogRoleIconRevision == roleIconRevision)
                 return catalog;
 
             bool rebuildDefinitions = catalog == null
@@ -270,6 +275,7 @@ namespace WorkRoles.UI
             catalogUiVersion = uiVersion;
             catalogLanguageRevision = languageRevision;
             catalogDefinitionRevision = definitionRevision;
+            catalogRoleIconRevision = roleIconRevision;
             return catalog!; // assigned above whenever it was null
         }
 

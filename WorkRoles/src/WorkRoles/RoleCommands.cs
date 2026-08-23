@@ -185,6 +185,14 @@ namespace WorkRoles
             Store.reportVanillaPriorities = value;
         }
 
+        /// Hourly automatic Fix My Colony on or off (AutoOptimizer).
+        [SyncMethod]
+        public static void SetAutoOptimize(bool value)
+        {
+            if (Store == null || Store.autoOptimize == value) return;
+            Store.autoOptimize = value;
+        }
+
         /// Full replacement of the recommendation order (Options tab reorder).
         [SyncMethod]
         public static void SetRecommendationOrder(List<int> roleIds)
@@ -627,6 +635,19 @@ namespace WorkRoles
                     true, color.r, color.g, color.b, color.a)) return;
             role.color = color;
             role.hasCustomColor = true;
+            UiVersion.Bump();
+        }
+
+        /// Sets the persisted role presentation icon. Empty means explicitly
+        /// unassigned; null remains reserved for legacy template fallback.
+        [SyncMethod]
+        public static void SetRoleIcon(int roleId, string? iconPath)
+        {
+            var role = FindRole(roleId);
+            string? normalized = iconPath?.Trim();
+            if (role == null || string.Equals(role.iconPath, normalized,
+                    System.StringComparison.Ordinal)) return;
+            role.iconPath = normalized;
             UiVersion.Bump();
         }
 

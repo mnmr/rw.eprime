@@ -7,7 +7,8 @@ namespace WorkRoles.Core.Tests.Roles;
 /// (VanillaWorkOrder, generated from the game's Data XML).
 public class RoleDefVanillaTests
 {
-    private record RoleXml(string DefName, List<JobEntry> Entries);
+    private record RoleXml(string DefName, string? IconPath,
+        List<JobEntry> Entries);
 
     private static readonly List<RoleXml> Roles = LoadShippedRoles();
 
@@ -37,7 +38,8 @@ public class RoleDefVanillaTests
                 else
                     throw new InvalidDataException($"unparseable entry '{li.Value}'");
             }
-            roles.Add(new RoleXml(def.Element("defName")!.Value, entries));
+            roles.Add(new RoleXml(def.Element("defName")!.Value,
+                def.Element("iconPath")?.Value.Trim(), entries));
         }
         return roles;
     }
@@ -129,6 +131,25 @@ public class RoleDefVanillaTests
                     == true)
                 .IsFalse()
                 .Because($"{def.Element("defName")?.Value} must opt in explicitly");
+    }
+
+    [Test]
+    public async Task EveryShippedRoleIconResolvesToAPackagedTexture()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir != null
+            && !Directory.Exists(Path.Combine(dir.FullName, "mod", "Textures")))
+            dir = dir.Parent;
+
+        foreach (RoleXml role in Roles)
+        {
+            await Assert.That(role.IconPath).IsNotNull()
+                .Because($"{role.DefName} has no icon");
+            string texturePath = Path.Combine(dir!.FullName, "mod", "Textures",
+                role.IconPath!.Replace('/', Path.DirectorySeparatorChar) + ".png");
+            await Assert.That(File.Exists(texturePath)).IsTrue()
+                .Because($"{role.DefName}: texture '{role.IconPath}' is not packaged");
+        }
     }
 
     /// Every vanilla work type — and therefore every work-tab giver — must be

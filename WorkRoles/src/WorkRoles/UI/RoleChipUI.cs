@@ -91,7 +91,7 @@ namespace WorkRoles.UI
         private static readonly Color RemovedColor = new Color(1f, 0f, 0f, 1f); // #ff0000
 
         private const float VerdictStarSize = 10f;
-
+        private const float RoleIconSize = 20f;
         /// Vertical two-star verdict stack: equal gaps above, between, and
         /// below the stars across the chip height, then each star nudged 1px
         /// toward the middle so the pair reads as one marker.
@@ -139,8 +139,23 @@ namespace WorkRoles.UI
         private const float MarkerGap = 2f;
         private const float VerdictSlotW = 12f;
 
+        private static bool Condensed(ChipDisplay display) =>
+            display != ChipDisplay.Normal;
+
+        internal static bool UsesIcons(ChipDisplay display) =>
+            display == ChipDisplay.Icons || display == ChipDisplay.IconsGrid;
+
+        internal static bool UsesGrid(ChipDisplay display) =>
+            display == ChipDisplay.CompactGrid
+            || display == ChipDisplay.IconsGrid;
+
+        internal static bool NeedsAbbreviation(ChipDisplay display) =>
+            display == ChipDisplay.Compact
+            || display == ChipDisplay.CompactGrid
+            || UsesIcons(display);
+
         private static float LabelGap(ChipDisplay display) =>
-            display == ChipDisplay.Compact ? 2f : 4f;
+            Condensed(display) ? 2f : 4f;
 
         /// Prefix markers: suitability verdict, cached pawn capability, blocker,
         /// time rule, location rule, the forced-on flag, and — on plain manual
@@ -168,7 +183,7 @@ namespace WorkRoles.UI
 
         private static float LeftInset(float markerBand, ChipDisplay display) =>
             markerBand > 0f ? MarkerEdgePad + markerBand + LabelGap(display)
-            : display == ChipDisplay.Compact ? 4f : PadFor(display);
+            : Condensed(display) ? 4f : PadFor(display);
 
         private static float RightInset(bool showRemove, ChipDisplay display) =>
             showRemove ? MarkerEdgePad + RemoveSize + LabelGap(display)
@@ -209,20 +224,22 @@ namespace WorkRoles.UI
 
         /// Compact chips run tight: exact-measured initials need no breathing room.
         private static float PadFor(ChipDisplay display) =>
-            display == ChipDisplay.Compact ? 2f : PadX;
+            Condensed(display) ? 2f : PadX;
 
         public static float WidthFor(Role role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string? abbrev = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool forcedOn = false, bool verdictSlot = false)
+            bool forcedOn = false, bool verdictSlot = false,
+            Texture2D? icon = null)
             => WidthFor(RoleChipRenderData.From(role), showRemove, display,
-                abbrev, pinned, warningSeverity, forcedOn, verdictSlot);
+                abbrev, pinned, warningSeverity, forcedOn, verdictSlot, icon);
 
         internal static float WidthFor(RoleChipRenderData role, bool showRemove,
             ChipDisplay display = ChipDisplay.Normal, string? abbrev = null,
             bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
-            bool forcedOn = false, bool verdictSlot = false)
+            bool forcedOn = false, bool verdictSlot = false,
+            Texture2D? icon = null)
         {
             GameFont oldFont = Text.Font;
             try
@@ -230,11 +247,9 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
                 float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
                     verdictSlot);
-                // Minimal chips with markers carry no blank label square; Compact
-                // chips share one width (the widest initials) so columns line up.
-                float labelW = display == ChipDisplay.Minimal
-                    ? (band > 0f ? 0f : 10f)
-                    : display == ChipDisplay.Compact && abbrev != null
+                float labelW = UsesIcons(display) && icon != null
+                    ? RoleIconSize
+                    : NeedsAbbreviation(display) && abbrev != null
                         ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
                         : WrText.FitWidth(role.Label);
                 return labelW + LeftInset(band, display)
@@ -283,10 +298,11 @@ namespace WorkRoles.UI
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
             int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
-            RoleChipVerdict verdict = default)
+            RoleChipVerdict verdict = default, Texture2D? icon = null)
             => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
                 dragSource, onClick, interactive, display, abbrev, pinned,
-                warningSeverity, paint, activeOutline, strikes, forcedOn, verdict);
+                warningSeverity, paint, activeOutline, strikes, forcedOn,
+                verdict, icon);
 
         internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
             ChipStyle style, bool showRemove, Pawn? dragSource, Action? onClick,
@@ -295,7 +311,7 @@ namespace WorkRoles.UI
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
             int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
-            RoleChipVerdict verdict = default)
+            RoleChipVerdict verdict = default, Texture2D? icon = null)
         {
             if (paint)
             {
@@ -320,19 +336,24 @@ namespace WorkRoles.UI
                         ? new Color(LabelColor.r, LabelColor.g, LabelColor.b, 0.65f)
                     : LabelColor;
 
-                // Compact initials get a uniform 4px inset (the exact-measure slack
-                // covers it) so text stays left-aligned across rows.
+                float markerBand = MarkerBand(role, pinned, warningSeverity,
+                    forcedOn, verdict.Shown);
+                float leftInset = LeftInset(markerBand, display);
+                float rightInset = RightInset(showRemove, display);
+                string? label = UsesIcons(display) && icon != null
+                    ? null
+                    : NeedsAbbreviation(display) && abbrev != null
+                        ? abbrev : role.Label;
                 var spec = new ChipSpec
                 {
                     Bg = bg,
                     Outline = activeOutline ? ActiveOutlineColor : OutlineColor,
                     LabelColor = labelColor,
-                    Label = display == ChipDisplay.Minimal ? null! // ChipSpec.Label: null = no label (Minimal)
-                        : display == ChipDisplay.Compact && abbrev != null ? abbrev : role.Label,
+                    Label = label!,
+                    Icon = UsesIcons(display) ? icon : null,
                     ShowRemove = showRemove,
-                    LabelInsetLeft = LeftInset(MarkerBand(role, pinned,
-                        warningSeverity, forcedOn, verdict.Shown), display),
-                    LabelInsetRight = RightInset(showRemove, display),
+                    LabelInsetLeft = leftInset,
+                    LabelInsetRight = rightInset,
                     StrikeCount = style == ChipStyle.Disabled
                         ? strikes : RoleChipStrikes.None,
                 };

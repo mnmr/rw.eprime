@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24">
+  <defs>
+    <mask id="nurse-cap" maskUnits="userSpaceOnUse" x="0" y="0" width="24" height="24">
+      <rect width="24" height="24" fill="#fff"/>
+      <path fill="#000" d="m12 15.5-4-3.6C4.8 8.7 9.2 5.1 12 8.5c2.8-3.4 7.2.2 4 3.4z"/>
+    </mask>
+  </defs>
+  <path mask="url(#nurse-cap)" fill="#fff" d="M1 8c6-7 16-7 22 0l-3 9H4zM4 19h16v4H4z"/>
+</svg>

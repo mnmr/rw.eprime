@@ -29,7 +29,7 @@ commands. Where this file is silent, the root contract governs.
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
 | Map classification and locations (`ColonyScope`) | Classification invalidation per map, map-set changes, and the singular landed/traveling Gravship engine identity/state; publishes `LocationRevision` |
 | Window scope stamps (roster/recommendation/editor states) | `ScopeCacheStamp` of `UiVersion.Current` and `PawnListRevisionTracker.Revision` (advances on observed-map change or explicit invalidation) |
-| Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy` |
+| Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy`. The same per-map boundary observation drives `AutoOptimizer` (no additional gate, no per-tick polling) |
 
 Changes to these dependencies require updated behavioral tests in the same change.
 
@@ -42,6 +42,15 @@ Changes to these dependencies require updated behavioral tests in the same chang
 
 - `RoleStore` is authoritative per-save state.
 - Only `RoleCommands` and deterministic store lifecycle code may mutate the shared model.
+- Approved exception (owner, 2026-08-23): `AutoOptimizer` applies
+  `RoleCommands.PasteRoleSet` from deterministic map-tick code at the
+  2500-tick hour boundary when `RoleStore.autoOptimize` is on. The shared
+  simulation clock is the synchronizer: every client computes the plan from
+  synced state only (no view faction, current map, or window state may
+  influence the multiplayer outcome), and sync interception is inert during
+  ticking. `ColonyFixPlanner` (Core) supplies the targets and changed flags
+  shared with the Fix My Colony preview; the single-player-only preview-open
+  guard is the sole permitted local input.
 
 ## Required testing (additions)
 

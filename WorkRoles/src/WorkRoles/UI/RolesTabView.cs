@@ -1003,16 +1003,35 @@ namespace WorkRoles.UI
             // Title with the rename pencil directly AFTER the name (the right
             // column now belongs to the four toggles).
             const float PencilSize = 26f;
+            var frameRect = new Rect(leftX,
+                rowsStartY + (TitleH - RoleIconStyle.FrameSize) / 2f,
+                RoleIconStyle.FrameSize, RoleIconStyle.FrameSize);
+            Widgets.DrawHighlightIfMouseover(frameRect);
+            GUI.color = RoleIconStyle.FrameColor;
+            Widgets.DrawBox(frameRect);
+            GUI.color = header.RoleIconAssigned
+                ? RoleIconStyle.IconTint
+                : RoleIconStyle.PlaceholderTint;
+            GUI.DrawTexture(new Rect(
+                frameRect.x + RoleIconStyle.IconInset,
+                frameRect.y + RoleIconStyle.IconInset,
+                RoleIconStyle.IconSize, RoleIconStyle.IconSize),
+                header.RoleIcon);
+            GUI.color = Color.white;
+            if (Widgets.ButtonInvisible(frameRect))
+                Find.WindowStack.Add(new Dialog_RoleIconPicker(
+                    model.RoleId, header.RoleIconPath));
+            float titleX = frameRect.xMax + RoleIconStyle.TitleGap;
             Text.Font = GameFont.Medium;
-            Text.Anchor = TextAnchor.UpperLeft;
-            float titleMaxW = checksX - 8f - leftX - PencilSize - 6f;
+            Text.Anchor = TextAnchor.MiddleLeft;
             float titleW = header.RoleLabelWidth;
-            Widgets.Label(new Rect(leftX, rowsStartY, titleW, TitleH),
+            Widgets.Label(new Rect(titleX, rowsStartY, titleW, TitleH),
                 header.ShownRoleLabel);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.UpperLeft;
             float pencilY = rowsStartY + (TitleH - PencilSize) / 2f;
-            if (Widgets.ButtonImage(new Rect(leftX + titleW + 6f, pencilY, PencilSize, PencilSize), TexButton.Rename))
+            if (Widgets.ButtonImage(new Rect(titleX + titleW + 6f,
+                    pencilY, PencilSize, PencilSize), TexButton.Rename))
                 Find.WindowStack.Add(Dialog_RenameRole.ForRole(
                     model.RoleId, model.RoleLabel));
 

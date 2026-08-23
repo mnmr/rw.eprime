@@ -131,7 +131,8 @@ namespace WorkRoles.UI
         // render projection with producer-owned buffers hidden behind indexed
         // accessors. Dependencies: UiVersion, location and pawn-scope revisions,
         // editor width, language, filter/expansion state, and local rules
-        // disclosure, and definition revision. Refresh: immediate when any
+        // disclosure, shared role-icon presentation revision, and definition revision.
+        // Refresh: immediate when any
         // dependency changes. Equality:
         // unchanged dependencies preserve the snapshot identity. Teardown:
         // Reset/language invalidation releases the complete projection.
@@ -141,6 +142,7 @@ namespace WorkRoles.UI
         private int editorSnapshotLocationRevision = -1;
         private int editorSnapshotPawnRevision = -1;
         private int editorSnapshotTreeRevision = -1;
+        private int editorSnapshotRoleIconRevision = -1;
         private float editorSnapshotWidth = -1f;
         private bool editorSnapshotRulesRevealed;
         private string? editorSnapshotFilter;
@@ -161,6 +163,8 @@ namespace WorkRoles.UI
                 && editorSnapshotLocationRevision == ColonyScope.LocationRevision
                 && editorSnapshotPawnRevision == pawnRevision
                 && editorSnapshotTreeRevision == treeRevision
+                && editorSnapshotRoleIconRevision
+                    == RoleIconPresentationCatalog.Revision
                 && editorSnapshotWidth == width
                 && editorSnapshotRulesRevealed == rulesRevealed
                 && editorSnapshotFilter == Filter
@@ -171,6 +175,8 @@ namespace WorkRoles.UI
             editorSnapshotRoleId = roleId;
             editorSnapshotLocationRevision = ColonyScope.LocationRevision;
             editorSnapshotPawnRevision = pawnRevision;
+            editorSnapshotRoleIconRevision =
+                RoleIconPresentationCatalog.Revision;
             editorSnapshotWidth = width;
             editorSnapshotRulesRevealed = rulesRevealed;
             editorSnapshotFilter = Filter;
@@ -198,7 +204,14 @@ namespace WorkRoles.UI
                 Mathf.Max(WrText.FitWidth(conditionalRoleLabel),
                     WrText.FitWidth(compositeLabel))) + 30f;
             float checksX = width / 2f - checksWidth;
-            float titleMaxWidth = checksX - 8f - TopBoxPadding
+            RoleIconPresentation iconPresentation =
+                RoleIconPresentationCatalog.For(role.id);
+            bool roleIconAssigned = iconPresentation.Assigned;
+            Texture2D roleIcon = iconPresentation.Texture
+                ?? WorkRolesTex.RoleIconPlaceholder;
+            float titleStartX = TopBoxPadding + RoleIconStyle.FrameSize
+                + RoleIconStyle.TitleGap;
+            float titleMaxWidth = checksX - 8f - titleStartX
                 - PencilSize - 6f;
             Text.Font = GameFont.Medium;
             float roleLabelWidth = Mathf.Min(
@@ -263,7 +276,10 @@ namespace WorkRoles.UI
             IReadOnlyList<RoleSkillPresentation> skills = SkillsUsed(role);
 
             var header = new RoleEditorHeaderSnapshot(role.id, role.label,
-                shownRoleLabel, roleLabelWidth, role.hasCustomColor, role.color,
+                shownRoleLabel, roleLabelWidth,
+                iconPresentation.EffectivePath,
+                roleIcon, roleIconAssigned,
+                role.hasCustomColor, role.color,
                 role.autoAssign, role.blocker, role.HasRules,
                 role.HasRules || rulesRevealed, memberLocked, role.composite,
                 customSwatches, customRows,
@@ -519,6 +535,7 @@ namespace WorkRoles.UI
             editorSnapshotLocationRevision = -1;
             editorSnapshotPawnRevision = -1;
             editorSnapshotTreeRevision = -1;
+            editorSnapshotRoleIconRevision = -1;
             editorSnapshotWidth = -1f;
             editorSnapshotFilter = null;
             tipsLanguageRevision = -1;
@@ -1036,6 +1053,7 @@ namespace WorkRoles.UI
 
         internal RoleEditorHeaderSnapshot(int roleId, string roleLabel,
             string shownRoleLabel, float roleLabelWidth,
+            string roleIconPath, Texture2D roleIcon, bool roleIconAssigned,
             bool hasCustomColor, Color roleColor, bool autoAssign,
             bool blocker, bool hasRules, bool rulesShown, bool memberLocked,
             bool composite,
@@ -1060,6 +1078,9 @@ namespace WorkRoles.UI
             RoleLabel = roleLabel;
             ShownRoleLabel = shownRoleLabel;
             RoleLabelWidth = roleLabelWidth;
+            RoleIconPath = roleIconPath;
+            RoleIcon = roleIcon;
+            RoleIconAssigned = roleIconAssigned;
             HasCustomColor = hasCustomColor;
             RoleColor = roleColor;
             AutoAssign = autoAssign;
@@ -1102,6 +1123,9 @@ namespace WorkRoles.UI
         internal string RoleLabel { get; }
         internal string ShownRoleLabel { get; }
         internal float RoleLabelWidth { get; }
+        internal string RoleIconPath { get; }
+        internal Texture2D RoleIcon { get; }
+        internal bool RoleIconAssigned { get; }
         internal bool HasCustomColor { get; }
         internal Color RoleColor { get; }
         internal bool AutoAssign { get; }

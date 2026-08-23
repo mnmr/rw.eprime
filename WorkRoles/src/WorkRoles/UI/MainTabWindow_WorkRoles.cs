@@ -35,6 +35,8 @@ namespace WorkRoles.UI
             rolesTab.pawnListRevision = () => colonistsTab.PawnListRevision;
             rolesTab.roleTip = role => colonistsTab.RoleTip(
                 role, RoleTipContext.TreeRow);
+            optionsTab.showAutoOptimizeEnablePreview =
+                colonistsTab.ShowAutoOptimizeEnablePreview;
         }
 
         public override Vector2 RequestedTabSize => TargetSize();
@@ -183,6 +185,8 @@ namespace WorkRoles.UI
         public override void WindowUpdate()
         {
             base.WindowUpdate();
+            RoleIconCatalog.WarmDefinitions();
+            RoleIconPresentationCatalog.Refresh(RoleStore.Current);
             WrToast.Update();
             if (pendingWindowRect.TryConsume(out var nextWindowRect))
                 windowRect = nextWindowRect;
@@ -228,6 +232,8 @@ namespace WorkRoles.UI
         {
             ObserveLanguageRevision();
             WorkRolesTex.EnsureRuntimeTextures();
+            RoleIconCatalog.WarmDefinitions();
+            RoleIconPresentationCatalog.Refresh(RoleStore.Current);
             base.PreOpen();
             ActivityTracker.Enable();
             RoleDrag.Cancel();
@@ -335,11 +341,11 @@ namespace WorkRoles.UI
             // the normal white and the hover yellow).
             for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
                 tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
-            TabDrawer.DrawTabs(content, tabs);
+            WrTabs.DrawTabs(content, tabs);
             // Vanilla leaves the menu-section top border visible under the
             // active tab. Overpaint its span with the section fill so the
             // active tab connects seamlessly to the content (geometry mirrors
-            // TabDrawer: tabWidth capped at 200, 10px horizontal overlap).
+            // WrTabs: tabWidth capped at 200, 10px horizontal overlap).
             float tabWidth = Mathf.Min(200f,
                 (content.width + (tabs.Count - 1) * 10f) / tabs.Count);
             float activeTabX = content.x + (int)curTab * (tabWidth - 10f);
@@ -352,8 +358,10 @@ namespace WorkRoles.UI
             const float ActionBtnH = 28f;
             float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
             var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
-            if (curTab == Tab.Colonists)
+            if (curTab == Tab.Colonists
+                && RoleStore.Current?.autoOptimize != true)
             {
+                // Hidden entirely while auto-optimize owns bulk fixes.
                 // Colony planning is per location: with pawns from several maps
                 // (or caravans) in view, Fix My Colony disables.
                 bool spansLocations = colonistsTab.ScopeSpansMultipleLocations;

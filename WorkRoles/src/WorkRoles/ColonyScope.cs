@@ -287,6 +287,16 @@ namespace WorkRoles
             return stableShipToken;
         }
 
+        /// Deterministic colony-location test for simulation-driven work
+        /// (AutoOptimizer): classifies with Faction.OfPlayer — the ticking
+        /// map's faction context under multiplayer — never the client-local
+        /// view faction.
+        internal static bool IsColonyLocationForSimulation(Map map)
+        {
+            PawnPlace place = PlaceOf(map, Faction.OfPlayer);
+            return place.IsSettlement || place.IsShip;
+        }
+
         /// A gravship map that isn't parked at a settlement — a ship landed at
         /// one of the player's settlements counts as that settlement.
         internal static bool IsShipMap(Map map) => PlaceOf(map, ViewFaction).IsShip;

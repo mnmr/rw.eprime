@@ -24,6 +24,10 @@ namespace WorkRoles
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
         public bool reportVanillaPriorities = true;
+        /// Hourly automatic Fix My Colony (AutoOptimizer). World state, not a
+        /// mod setting: the schedule mutates shared assignments from
+        /// deterministic tick code, so MP clients must agree it is on.
+        public bool autoOptimize;
         /// The user's recommendation order template (role ids); empty = the
         /// shipped default template. A pure override: unlisted roles are
         /// not merged in — they place dynamically (RecommendationOrder).
@@ -505,6 +509,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
+            Scribe_Values.Look(ref autoOptimize, "autoOptimize");
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)
                 recommendationOrder = new List<int>();

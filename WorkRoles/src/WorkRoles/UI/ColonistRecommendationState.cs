@@ -389,6 +389,10 @@ namespace WorkRoles.UI
                 colony,
                 store.recommendationTuning
                     ?? RecommendationsTuningOptions.Default);
+            // Targets and changed flags come from the shared planner so the
+            // preview shows exactly what AutoOptimizer would apply.
+            IReadOnlyList<PawnFixTarget> fixTargets =
+                ColonyFixPlanner.Build(colony, recommendations);
             List<Dictionary<int, SignalBucket>> suitability =
                 RoleSuitability.Verdicts(colony);
             for (int i = 0; i < pawns.Count; i++)
@@ -400,13 +404,13 @@ namespace WorkRoles.UI
                 store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
                 List<RoleAssignment> existing =
                     set?.assignments ?? new List<RoleAssignment>();
-                var target = new List<RoleAssignment>(
-                    recommendations.RoleCountAt(i));
+                PawnFixTarget fixTarget = fixTargets[i];
+                var target = new List<RoleAssignment>(fixTarget.RoleIds.Count);
                 for (int roleIndex = 0;
-                     roleIndex < recommendations.RoleCountAt(i);
+                     roleIndex < fixTarget.RoleIds.Count;
                      roleIndex++)
                 {
-                    int roleId = recommendations.RoleAt(i, roleIndex);
+                    int roleId = fixTarget.RoleIds[roleIndex];
                     RoleAssignment held = existing.FirstOrDefault(
                         assignment => assignment.roleId == roleId);
                     target.Add(new RoleAssignment
@@ -417,11 +421,7 @@ namespace WorkRoles.UI
                     });
                 }
 
-                var plan = new PawnFixPlan(
-                    pawn,
-                    target,
-                    !existing.Select(a => a.roleId)
-                        .SequenceEqual(target.Select(a => a.roleId)));
+                var plan = new PawnFixPlan(pawn, target, fixTarget.Changed);
                 for (int roleIndex = 0;
                      roleIndex < recommendations.RoleCountAt(i);
                      roleIndex++)

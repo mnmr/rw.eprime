@@ -19,7 +19,10 @@ namespace WorkRoles
         {
             CompiledJobOrders.DrainPendingReconciles(map);
             if (hourBoundary.Observe(GenTicks.TicksAbs))
+            {
                 CompiledJobOrders.InvalidateTimeRuledForMap(map);
+                AutoOptimizer.RunForMap(map);
+            }
         }
     }
 }

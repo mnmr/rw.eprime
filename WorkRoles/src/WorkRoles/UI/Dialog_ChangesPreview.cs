@@ -200,9 +200,34 @@ namespace WorkRoles.UI
         private readonly List<PawnPreview> entries;
         private readonly Action<HashSet<Pawn>> onApply;
         private readonly Func<List<PawnPreview>> rebuild;
+        /// False renders a purely informational plan (no select-all row, no
+        /// per-pawn checkboxes) and keeps Apply enabled even with no changes —
+        /// the auto-optimize enable confirmation applies the whole plan.
+        private readonly bool selectable;
         private int includedCount;
         private int observedLanguageRevision;
         private int entriesGeneration;
+
+        // Owner: this dialog instance. Key: the banner factories' language
+        // revision and the available banner width. Value: the translated info
+        // and warning texts plus their measured wrapped heights (immutable
+        // between key changes; a null/empty warning result renders nothing).
+        // Dependencies: LanguageChangeCoordinator.Revision, banner width,
+        // GameFont.Small metrics (the dialog is fixed-size, so width moves
+        // only with UI metrics, which rebuild the whole window layout). The
+        // warning's condition (e.g. colony count) is deliberately frozen for
+        // the display session and re-evaluated on language refresh or reopen.
+        // Refresh: immediate on the next draw after a key change. Equality:
+        // matching keys reuse texts and heights. Teardown: PostClose resets
+        // the stamps; the strings follow the dialog instance.
+        private readonly Func<string>? infoFactory;
+        private readonly Func<string?>? warningFactory;
+        private string? infoText;
+        private string? warningText;
+        private int infoLanguageRevision = int.MinValue;
+        private float infoMeasuredWidth = -1f;
+        private float infoHeight;
+        private float warningHeight;
 
         // Owner: changes-preview dialog. Key: RoleStore identity, UiVersion,
         // language revision, available row width, entry generation, and each
@@ -228,6 +253,7 @@ namespace WorkRoles.UI
         public Dialog_ChangesPreview(string? title, List<PawnPreview> entries,
             Action<HashSet<Pawn>> onApply, Func<List<PawnPreview>> rebuild)
         {
+            selectable = true;
             this.title = title;
             this.entries = entries ?? new List<PawnPreview>();
             this.onApply = onApply;
@@ -240,10 +266,15 @@ namespace WorkRoles.UI
 
         internal Dialog_ChangesPreview(Func<string> titleFactory,
             List<PawnPreview> entries, Action<HashSet<Pawn>> onApply,
-            Func<List<PawnPreview>> rebuild)
+            Func<List<PawnPreview>> rebuild,
+            Func<string>? infoFactory = null,
+            Func<string?>? warningFactory = null, bool selectable = true)
             : this(titleFactory?.Invoke(), entries, onApply, rebuild)
         {
             this.titleFactory = titleFactory;
+            this.infoFactory = infoFactory;
+            this.warningFactory = warningFactory;
+            this.selectable = selectable;
         }
 
         private void RefreshLanguageIfNeeded()
@@ -312,6 +343,37 @@ namespace WorkRoles.UI
                 else
                     TooltipHandler.TipRegion(rect, tip);
             }
+        }
+
+        /// Measurement-gated banner build: CalcHeight runs only when the
+        /// language revision or available width changes.
+        private void EnsureInfoBanner(float width)
+        {
+            if (infoFactory == null) return;
+            int languageRevision = LanguageChangeCoordinator.Revision;
+            if (infoText != null && infoLanguageRevision == languageRevision
+                && infoMeasuredWidth == width)
+                return;
+            infoText = infoFactory();
+            string? warning = warningFactory?.Invoke();
+            warningText = string.IsNullOrEmpty(warning) ? null : warning;
+            GameFont previousFont = Text.Font;
+            bool previousWordWrap = Text.WordWrap;
+            try
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                infoHeight = Text.CalcHeight(infoText, width);
+                warningHeight = warningText == null
+                    ? 0f : Text.CalcHeight(warningText, width);
+            }
+            finally
+            {
+                Text.Font = previousFont;
+                Text.WordWrap = previousWordWrap;
+            }
+            infoLanguageRevision = languageRevision;
+            infoMeasuredWidth = width;
         }
 
         private void EnsureRenderSnapshot(float width)
@@ -436,7 +498,32 @@ namespace WorkRoles.UI
         {
             RefreshLanguageIfNeeded();
             float listTop = DrawCachedPreviewTitle(inRect, title);
-            if (entries.Count > 0)
+            if (infoFactory != null)
+            {
+                EnsureInfoBanner(inRect.width);
+                if (Event.current.type == EventType.Repaint)
+                {
+                    GUI.color = WrStyle.DimText;
+                    Widgets.Label(new Rect(inRect.x, listTop, inRect.width,
+                        infoHeight), infoText);
+                    GUI.color = Color.white;
+                }
+                listTop += infoHeight;
+                if (warningText != null)
+                {
+                    listTop += 4f;
+                    if (Event.current.type == EventType.Repaint)
+                    {
+                        GUI.color = TipText.WarningColor;
+                        Widgets.Label(new Rect(inRect.x, listTop,
+                            inRect.width, warningHeight), warningText);
+                        GUI.color = Color.white;
+                    }
+                    listTop += warningHeight;
+                }
+                listTop += 8f;
+            }
+            if (selectable && entries.Count > 0)
             {
                 // Select-all toggle above the list.
                 bool all = includedCount == entries.Count;
@@ -483,7 +570,7 @@ namespace WorkRoles.UI
                 Widgets.EndScrollView();
             }
 
-            bool canApply = includedCount > 0;
+            bool canApply = !selectable || includedCount > 0;
             if (DrawPreviewFooter(inRect, canApply))
             {
                 if (SamePlan(entries, rebuild()))
@@ -510,6 +597,12 @@ namespace WorkRoles.UI
             renderEntriesGeneration = int.MinValue;
             renderFactsCurrent = int.MinValue;
             renderWidth = -1f;
+            infoText = null;
+            warningText = null;
+            infoLanguageRevision = int.MinValue;
+            infoMeasuredWidth = -1f;
+            infoHeight = 0f;
+            warningHeight = 0f;
             base.PostClose();
             StructuredTipPresenter.Reset();
         }
@@ -523,10 +616,13 @@ namespace WorkRoles.UI
                 EntryLayout descriptor = snapshot.EntryAt(i);
                 float top = snapshot.Layout.OffsetOf(i);
 
-                bool before = entry.included;
-                Widgets.Checkbox(new Vector2(0f, top), ref entry.included, 20f);
-                if (before != entry.included)
-                    includedCount += entry.included ? 1 : -1;
+                if (selectable)
+                {
+                    bool before = entry.included;
+                    Widgets.Checkbox(new Vector2(0f, top), ref entry.included, 20f);
+                    if (before != entry.included)
+                        includedCount += entry.included ? 1 : -1;
+                }
 
                 if (Event.current.type != EventType.Repaint) continue;
                 Widgets.Label(new Rect(26f, top, width - 26f, PawnRowH),
