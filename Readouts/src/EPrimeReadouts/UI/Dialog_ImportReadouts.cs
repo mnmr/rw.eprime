@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -219,14 +220,13 @@ namespace EPrimeReadouts.UI
                     Widgets.Label(new Rect(rowRect.x + 4f, rowRect.y, availW * 0.60f, FileRowH), name);
 
                     // Modified date (right, caption style)
-                    Text.Font   = GameFont.Tiny;
                     GUI.color   = EprStyle.CaptionText;
                     float dateW = availW * 0.38f;
                     Text.Anchor = TextAnchor.MiddleRight;
-                    Widgets.Label(new Rect(rowRect.x + availW * 0.60f, rowRect.y, dateW, FileRowH),
+                    TinyText.Label(new Rect(rowRect.x + availW * 0.60f,
+                        rowRect.y, dateW, FileRowH),
                         file.ModifiedText);
                     GUI.color   = Color.white;
-                    Text.Font   = GameFont.Small;
                     Text.Anchor = TextAnchor.UpperLeft;
 
                     // Row click → read + enter preview
@@ -267,30 +267,26 @@ namespace EPrimeReadouts.UI
             // Summary line
             ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
             float summaryH = tinyMetrics.MinHeight(18f);
-            Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                     inRect.x,
                     bodyTop + tinyMetrics.CaptionOffsetY,
                     inRect.width,
                     summaryH),
-                previewSummary);
+                previewSummary!);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             bodyTop  += summaryH + 2f;
 
             // Warning line
-            Text.Font = GameFont.Tiny;
             GUI.color = new Color(1f, 0.75f, 0.35f);   // warm warning tint
             string warning = previewWarning!; // set by EnsurePreviewText above
             float warnH = EprStyle.CaptionHeight(warning, inRect.width);
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                 inRect.x,
                 bodyTop + tinyMetrics.CaptionOffsetY,
                 inRect.width,
                 warnH), warning);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             bodyTop  += warnH + 4f;
 
             // ── Framed preview listing ───────────────────────────────────────

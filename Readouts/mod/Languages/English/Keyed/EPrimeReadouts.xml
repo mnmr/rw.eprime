@@ -76,7 +76,7 @@
   <EPR.HoverOptions>Hover Options</EPR.HoverOptions>
   <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
   <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
-  <EPR.CountRuleCaption>Override count options wherever this entry is shown</EPR.CountRuleCaption>
+  <EPR.CountRuleCaption>Override counting options for this resource/pool</EPR.CountRuleCaption>
   <EPR.RuleDefault>Default</EPR.RuleDefault>
   <EPR.RuleAlwaysOn>Always On</EPR.RuleAlwaysOn>
   <EPR.RuleAlwaysOff>Always Off</EPR.RuleAlwaysOff>

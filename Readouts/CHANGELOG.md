@@ -1,8 +1,9 @@
 ﻿# Changelog
 
-## 1.2.3 — 2026-08-23
+## 1.2.3 — 2026-08-24
 
 - Added: Options to override the global counter settings, so you can e.g. include map items but turn it off for some items/pools selectively.
+- Fixed: Minor UX fixes and a bit of UI polish.
 
 ## 1.2.2 — 2026-08-22
 

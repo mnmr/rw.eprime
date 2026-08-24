@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -140,13 +141,11 @@ namespace EPrimeReadouts.UI
         private static void DrawRow(string text, float x, float y, float width)
         {
             if (Event.current.type != EventType.Repaint) return;
-            Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
             Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(x + 8f, y, width - 8f, RowH), text);
+            TinyText.Label(new Rect(x + 8f, y, width - 8f, RowH), text);
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
         }
 
         internal void Reset()

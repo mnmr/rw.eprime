@@ -1,5 +1,6 @@
 using UnityEngine;
 using Verse;
+using RimShared.UiLib;
 
 namespace EPrimeReadouts.UI
 {
@@ -40,6 +41,12 @@ namespace EPrimeReadouts.UI
             if (!fitWidths.TryGetValue(key, out float width))
                 fitWidths[key] = width = Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
             return width;
+        }
+
+        public static float FitTinyWidth(string text)
+        {
+            using (TinyText.UseFont())
+                return FitWidth(text);
         }
 
 

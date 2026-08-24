@@ -1,5 +1,6 @@
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using Verse;
 
 namespace EPrimeReadouts.UI
@@ -43,16 +44,16 @@ namespace EPrimeReadouts.UI
                     // FitWidth and LineHeight then measure the resolved font;
                     // the published line box is rounded up to avoid fractional
                     // glyph-row clipping.
-                    Text.Font = GameFont.Tiny;
                     float maxW = 0f;
                     for (int i = 0; i < WideSamples.Length; i++)
                     {
-                        float w = WrText.FitWidth(WideSamples[i]);
+                        float w = WrText.FitTinyWidth(WideSamples[i]);
                         if (w > maxW) maxW = w;
                     }
+                    TinyTextMetrics shared = TinyText.Metrics;
                     var textMetrics = new ResolvedTinyTextMetrics(
-                        Text.LineHeight,
-                        Text.Font == GameFont.Small);
+                        shared.LineHeight,
+                        shared.Font == GameFont.Small);
                     cached = new CellMetrics(maxW, textMetrics.LineHeight);
                 }
                 stamp = UiVersion.Current;

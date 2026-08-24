@@ -1,6 +1,7 @@
 using System;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -66,13 +67,9 @@ namespace EPrimeReadouts.UI
                 UiVersion.ObserveCurrentMetrics();
                 if (tinyTextMetricsVersion == UiVersion.Current)
                     return tinyTextMetrics;
-                using (new GuiStateScope())
-                {
-                    Text.Font = GameFont.Tiny;
-                    tinyTextMetrics = new ResolvedTinyTextMetrics(
-                        Text.LineHeight,
-                        Text.Font == GameFont.Small);
-                }
+                TinyTextMetrics shared = TinyText.Metrics;
+                tinyTextMetrics = new ResolvedTinyTextMetrics(
+                    shared.LineHeight, shared.Font == GameFont.Small);
                 tinyTextMetricsVersion = UiVersion.Current;
                 return tinyTextMetrics;
             }
@@ -108,9 +105,8 @@ namespace EPrimeReadouts.UI
             {
                 Widgets.DrawBoxSolidWithOutline(
                     panelRect, PanelBackground, PanelOutline);
-                Text.Font = GameFont.Tiny;
                 GUI.color = CaptionText;
-                Widgets.Label(new Rect(
+                TinyText.Label(new Rect(
                     panelRect.x + HelpPanelPadding,
                     panelRect.y + HelpPanelPadding + metrics.CaptionOffsetY,
                     textWidth,
@@ -187,16 +183,14 @@ namespace EPrimeReadouts.UI
             float used = SectionHeaderHeight;
             if ((!foldable || !folded) && !caption.NullOrEmpty())
             {
-                Text.Font = GameFont.Tiny;
                 GUI.color = CaptionText;
                 float capH = CaptionHeight(caption!, width); // NullOrEmpty checked above
-                Widgets.Label(new Rect(
+                TinyText.Label(new Rect(
                     x,
                     y + used + TinyTextMetrics.CaptionOffsetY,
                     width,
-                    capH), caption);
+                    capH), caption!);
                 GUI.color = Color.white;
-                Text.Font = GameFont.Small;
                 used += capH + 4f;
             }
             return used;
@@ -206,22 +200,16 @@ namespace EPrimeReadouts.UI
         internal static float CaptionHeight(string caption, float width)
         {
             UiVersion.ObserveCurrentMetrics();
-            GameFont previousFont = Text.Font;
-            Text.Font = GameFont.Tiny;
-            try
+            using (TinyText.UseFont())
             {
                 float measured = captionHeights.Get(
                     caption,
-                    (int)GameFont.Tiny,
+                    (int)TinyText.Metrics.Font,
                     width,
                     UiVersion.Current,
                     new CaptionMeasureState { Caption = caption, Width = width },
                     measureCaptionHeight);
                 return TinyTextMetrics.MinHeight(Mathf.Ceil(measured));
-            }
-            finally
-            {
-                Text.Font = previousFont;
             }
         }
 

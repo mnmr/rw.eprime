@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -136,13 +137,11 @@ namespace EPrimeReadouts.UI
             ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
             rect.y += metrics.CaptionOffsetY;
             rect.height = metrics.MinHeight(rect.height);
-            Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
             Text.Anchor = TextAnchor.LowerLeft;
-            Widgets.Label(rect, text);
+            TinyText.Label(rect, text);
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
         }
 
         /// Inset panel behind list content; returns the inner content rect.

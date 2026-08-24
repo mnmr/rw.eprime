@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -33,23 +34,22 @@ namespace EPrimeReadouts.UI
 
             using (new GuiStateScope())
             {
-                Text.Font = GameFont.Tiny;
                 GUI.color = EprStyle.CaptionText;
-                Widgets.Label(new Rect(
+                DrawFilterCaption(new Rect(
                     rect.x,
-                    rect.y + metrics.CaptionOffsetY,
+                    rect.y,
                     searchAreaW,
                     captionH),
                     UiText.Get("EPR.SearchFilter"));
-                Widgets.Label(new Rect(
+                DrawFilterCaption(new Rect(
                     pickerAreaX,
-                    rect.y + metrics.CaptionOffsetY,
+                    rect.y,
                     typeW,
                     captionH),
                     UiText.Get("EPR.ItemFilter"));
-                Widgets.Label(new Rect(
+                DrawFilterCaption(new Rect(
                     sourceRect.x,
-                    rect.y + metrics.CaptionOffsetY,
+                    rect.y,
                     sourceRect.width,
                     captionH),
                     UiText.Get("EPR.SourceFilter"));
@@ -119,6 +119,13 @@ namespace EPrimeReadouts.UI
             }
             if (WrText.FitWidth(sourceLabel) > sourceRect.width - 16f)
                 TooltipHandler.TipRegion(sourceRect, sourceLabel);
+        }
+
+        private static void DrawFilterCaption(Rect rect, string text)
+        {
+            rect.y -= 2f;
+            rect.height += 2f;
+            TinyText.Label(rect, text);
         }
 
         private static FloatMenuOption TypeOption(string label, ItemPickerType type,

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -226,21 +227,23 @@ namespace EPrimeReadouts.UI
                     }
                 }
 
-                Text.Font = GameFont.Tiny;
-                TextAnchor textAnchor = Text.Anchor;
-                if (bands.Count == 0)
-                    DrawTextCells(draw, 0, draw.Model.Cells.Count,
-                        viewportTop, viewportBottom, ref textAnchor);
-                else
+                using (TinyText.UseFont())
                 {
-                    for (int bandIndex = visible.Start;
-                         bandIndex < visible.End;
-                         bandIndex++)
-                    {
-                        RenderBand band = bands[bandIndex];
-                        DrawTextCells(
-                            draw, band.CellStart, band.CellCount,
+                    TextAnchor textAnchor = Text.Anchor;
+                    if (bands.Count == 0)
+                        DrawTextCells(draw, 0, draw.Model.Cells.Count,
                             viewportTop, viewportBottom, ref textAnchor);
+                    else
+                    {
+                        for (int bandIndex = visible.Start;
+                             bandIndex < visible.End;
+                             bandIndex++)
+                        {
+                            RenderBand band = bands[bandIndex];
+                            DrawTextCells(
+                                draw, band.CellStart, band.CellCount,
+                                viewportTop, viewportBottom, ref textAnchor);
+                        }
                     }
                 }
             }

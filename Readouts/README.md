@@ -4,24 +4,26 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 
 ## Key features
 
-- **Resource Pools:** combine resources into pools, so you can render "Meats" as a single counter. Tooltips then provide the details.
-- **Easy Setup:** ships with predefined groups and resource pools.
-- **Ignore Missing:** per-item option to skip rendering if count is 0 (to keep readouts minimal).
-- **Warning Thresholds:** per-item option to set thresholds, so counts render in different colors when running low.
-- **Modern UI:** renders as transparent stripes with a small group marker.
-- **Search:** quick search and inline result display. Can be turned off in options.
+- **Display Groups:** each group is a band of resource icons with counters, rendered as transparent stripes with a small colored group marker so counters stay readable against the map. Groups can be enabled/disabled and reordered.
+- **Tiers:** put your must-see resources in tier 1 and details in tiers 2-3, then click a band's triangle markers to cycle how many tiers are shown.
+- **Resource Pools:** combine resources into pools, so you can render "Meats" (or all leathers, all stone blocks) as a single icon with the summed count. Tooltips then provide the details.
+- **Easy Setup:** ships with predefined groups (Food, Raw, Medicine, Drugs, Textiles, Materials, Wealth) and resource pools covering every vanilla and DLC resource. A Restore Defaults button brings them back anytime.
+- **Material Debt:** options to subtract resources needed for planned work (bills, buildables), with support for [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051).
+- **Ignore Missing:** per-item option to skip rendering if count is 0 (to keep readouts minimal). Thresholded resources stay visible at zero.
+- **Warning Thresholds:** per-item low/critical thresholds, so counts tint yellow/orange when running low.
+- **Search:** quick search that highlights matches and lists every matching resource on the map, including ones not in any group. Can be configured or turned off in options.
 - **No Map Scrolling:** map scrolling is disabled when the mouse hovers over the readouts, so you can interact without force-panning the map left.
-- **Tiered:** click to cycle how many tiers are rendered.
-- **Options:** fully customizable groups, tiers and resource pools in the built-in settings dialog.
+- **Options:** fully customizable groups, tiers and resource pools in the built-in settings dialog, with drag-and-drop editing and a live per-tier preview that renders exactly like the readout does in-game.
 - **Import/Export:** easily share or backup your readout setup.
 - **Designed for Performance:** cached rendering, no per-frame work, event- and interval-driven logic (updates counters every 204 ticks).
 
 ## Compatibility
 
 - Requires [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077).
-- Safe to add to or remove from existing saves.
-- Multiplayer compatible.
-- MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, "As above, so below" I/II) do not need special support to work.
+- Safe to add to or remove from existing saves. Removing a content mod cleans its resources from your groups automatically.
+- Multiplayer compatible ([RimWorld Multiplayer](https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745)): group definitions are shared and synced; what each player shows is their own choice.
+- MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, "As above, so below 2") do not need special support to work.
+- Not compatible with other mods that replace the resource readout (Readouts+, Custom Resource Readout, Toggleable Readouts, and similar).
 
 ## Building from source
 

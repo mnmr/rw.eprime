@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -102,16 +103,14 @@ namespace EPrimeReadouts.UI
             // ── Summary line ────────────────────────────────────────────────
             ResolvedTinyTextMetrics tinyMetrics = EprStyle.TinyTextMetrics;
             float summaryH = tinyMetrics.MinHeight(18f);
-            Text.Font   = GameFont.Tiny;
             GUI.color   = EprStyle.CaptionText;
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                     inRect.x,
                     bodyTop + tinyMetrics.CaptionOffsetY,
                     inRect.width,
                     summaryH),
-                summaryText);
+                summaryText!);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             bodyTop  += summaryH + 2f;
 
             // Bottom-up layout: Cancel/Save row, optional custom-dir row,

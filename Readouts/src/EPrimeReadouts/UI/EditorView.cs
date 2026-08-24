@@ -16,8 +16,6 @@ namespace EPrimeReadouts.UI
     /// show-when-zero and threshold controls.
     public sealed class EditorView
     {
-        private const float PencilW = 18f;
-        private const float PencilH = 18f;
         private static readonly IReadOnlyDictionary<string, int> emptyCounts =
             new Dictionary<string, int>();
 
@@ -51,9 +49,18 @@ namespace EPrimeReadouts.UI
         // Cached draw models: one per tier depth
         private List<(RenderModel model, DrawModel draw)>? cachedBands;
 
-        // Cached name width (rebuilt alongside bands or when group changes)
+        // Owner: this EditorView. Key: selected group identity,
+        // GroupsVersion, and UiVersion.Current. Value: the Medium-font name
+        // width plus coupled row/icon geometry. Dependencies: the group
+        // group name and active Medium GUI style. Refresh: immediate on a key
+        // change, before drawing the row. Equality: exact key hits reuse all
+        // measurements. Teardown: Reset releases the key and measurements.
         private float cachedNameWidth = -1f;
+        private float cachedNameLineHeight = -1f;
+        private float cachedRenameSize = -1f;
+        private float cachedNameRowHeight = -1f;
         private int cachedNameGroupId = -1;
+        private int cachedNameGroupsVersion = -1;
         private int cachedNameUiVersion = -1;
 
         // Options fields synchronized against the selected token's stored value.
@@ -108,33 +115,37 @@ namespace EPrimeReadouts.UI
                 owner.RenderData?.Counts))
                 Rebuild(store, group, rect.width, owner);
 
-            // --- Section header: group name with rename pencil ---
-            // Measure cached name width (update when group changes)
+            // --- Help, followed by the selected group name ---
             bool folded = settings.helpEditorFolded;
-            string headerLabel = group != null ? group.Name : UiText.Get("EPR.Editor");
 
-            // Cache name width alongside rebuild gate (only per group change, not per frame)
+            // Establish the font first, then cache every piece of geometry
+            // coupled to it. The rename icon follows the font size while the
+            // row follows the larger of icon and measured line height.
             if (group != null && (cachedNameGroupId != group.Id
+                || cachedNameGroupsVersion != store.GroupsVersion
                 || cachedNameUiVersion != UiVersion.Current
                 || cachedNameWidth < 0f))
             {
-                Text.Font = GameFont.Small;
-                cachedNameWidth = WrText.FitWidth(group.Name);
+                using (new GuiStateScope())
+                {
+                    Text.Font = GameFont.Medium;
+                    cachedNameWidth = WrText.FitWidth(group.Name);
+                    cachedNameLineHeight = Mathf.Ceil(Text.LineHeight);
+                    cachedRenameSize = Mathf.Ceil(
+                        Text.CurFontStyle.fontSize);
+                    if (cachedRenameSize <= 0f)
+                        cachedRenameSize = cachedNameLineHeight;
+                    cachedNameRowHeight = Mathf.Max(
+                        cachedNameLineHeight, cachedRenameSize) + 4f;
+                }
                 cachedNameGroupId = group.Id;
+                cachedNameGroupsVersion = store.GroupsVersion;
                 cachedNameUiVersion = UiVersion.Current;
             }
 
-            // Pencil sits right of the name text.
-            float pencilX = group != null
-                ? Mathf.Min(rect.x + cachedNameWidth + 6f, rect.xMax - PencilW - 2f)
-                : rect.xMax; // no pencil
-
-            float headerUsed = EprStyle.SectionHeader(
-                rect.x, rect.y, rect.width, headerLabel);
-
-            headerUsed += EprStyle.HelpGroup(
+            float headerUsed = EprStyle.HelpGroup(
                 rect.x,
-                rect.y + headerUsed,
+                rect.y,
                 rect.width,
                 UiText.Get("EPR.Help"),
                 UiText.Get("EPR.HelpEditor"),
@@ -142,18 +153,49 @@ namespace EPrimeReadouts.UI
             if (folded != settings.helpEditorFolded)
                 EPrimeReadoutsMod.Persist(s => s.helpEditorFolded = folded);
 
-            // Draw the rename pencil in the fixed group header.
+            // The selected name is a stronger white row below Help; the rename
+            // pencil follows the measured name rather than staying in the
+            // section header above it. HelpGroup's trailing margin is shared
+            // evenly above and below this visual row without changing the
+            // logical advance to the editor body.
             if (group != null)
             {
-                var pencilRect = new Rect(pencilX, rect.y + 2f, PencilW, PencilH);
-                if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
+                float helpBottomMargin = folded
+                    ? EprStyle.HelpCollapsedBottomMargin
+                    : EprStyle.HelpExpandedBottomMargin;
+                float groupNameY = rect.y + headerUsed
+                    - helpBottomMargin / 2f;
+                float pencilX = Mathf.Min(
+                    rect.x + cachedNameWidth + 6f,
+                    rect.xMax - cachedRenameSize - 2f);
+                float labelWidth = Mathf.Max(
+                    0f, pencilX - rect.x - 6f);
+                var labelRect = new Rect(rect.x, groupNameY,
+                    labelWidth, cachedNameRowHeight);
+                var pencilRect = new Rect(pencilX,
+                    groupNameY
+                        + (cachedNameRowHeight - cachedRenameSize) / 2f,
+                    cachedRenameSize, cachedRenameSize);
+                using (new GuiStateScope())
                 {
-                    int capturedId = group.Id;
-                    string capturedName = group.Name;
-                    Find.WindowStack.Add(new Dialog_NameInput(
-                        "EPR.RenameGroup", capturedName,
-                        name => ReadoutCommands.RenameGroup(capturedId, name.Trim())));
+                    Text.Font = GameFont.Medium;
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Text.WordWrap = false;
+                    GUI.color = Color.white;
+                    Widgets.Label(labelRect, group.Name);
+                    if (cachedNameWidth > labelWidth)
+                        TooltipHandler.TipRegion(labelRect, group.Name);
+                    if (Widgets.ButtonImage(pencilRect, TexButton.Rename))
+                    {
+                        int capturedId = group.Id;
+                        string capturedName = group.Name;
+                        Find.WindowStack.Add(new Dialog_NameInput(
+                            "EPR.RenameGroup", capturedName,
+                            name => ReadoutCommands.RenameGroup(
+                                capturedId, name.Trim())));
+                    }
                 }
+                headerUsed += cachedNameRowHeight;
             }
 
             if (group == null)
@@ -254,8 +296,6 @@ namespace EPrimeReadouts.UI
         private void Rebuild(ReadoutStore store, ReadoutGroup group, float width, Dialog_ReadoutConfig owner)
         {
             ReleaseCachedBands();
-            if (builtGroupsVersion != store.GroupsVersion)
-                cachedNameWidth = -1f;
             var basisSettings = EPrimeReadoutsMod.Settings;
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
@@ -546,7 +586,7 @@ namespace EPrimeReadouts.UI
         private const float SegmentPadX = 12f;
 
         /// Vertical padding above each section caption in the options body.
-        private const float CaptionPadTop = 20f;
+        private const float CaptionPadTop = 16f;
 
         private void EnsureRuleRow()
         {
@@ -602,9 +642,9 @@ namespace EPrimeReadouts.UI
             {
                 // Labels render in Tiny, which RimWorld resolves to Small when
                 // tiny text is unavailable; measure whatever it resolves to.
-                Text.Font = GameFont.Tiny;
-                float lowW = WrText.FitWidth(UiText.Get("EPR.Low"));
-                float criticalW = WrText.FitWidth(UiText.Get("EPR.Critical"));
+                float lowW = WrText.FitTinyWidth(UiText.Get("EPR.Low"));
+                float criticalW = WrText.FitTinyWidth(
+                    UiText.Get("EPR.Critical"));
                 Text.Font = GameFont.Small;
                 float setW = WrText.FitWidth(UiText.Get("EPR.Set")) + ButtonPadX;
                 float clearW = WrText.FitWidth(UiText.Get("EPR.Clear")) + ButtonPadX;
@@ -647,16 +687,14 @@ namespace EPrimeReadouts.UI
 
             // Line 2: threshold caption (Tiny, CaptionText style)
             float captionH = tinyMetrics.MinHeight(22f);
-            Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
-            Widgets.Label(new Rect(
+            TinyText.Caption(new Rect(
                     rect.x,
-                    y + tinyMetrics.CaptionOffsetY,
+                    y,
                     rect.width,
                     captionH),
                 UiText.Get("EPR.ThresholdCaption"));
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             y += captionH + 2f;
 
             // Line 3: low/critical/set/clear. Columns start where measured
@@ -669,27 +707,23 @@ namespace EPrimeReadouts.UI
             float labelY = y
                 + Mathf.Floor((thresholdRowH - tinyMetrics.LineHeight) / 2f)
                 + tinyMetrics.CaptionOffsetY;
-            Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                     rect.x,
                     labelY,
                     row.LowLabelW,
                     tinyMetrics.LineHeight),
                 UiText.Get("EPR.Low"));
-            Text.Font = GameFont.Small;
             DrawThresholdField(
                 new Rect(rect.x + row.LowFieldX, controlY,
                     ThresholdRowLayout.FieldW, ControlH),
                 "EPR.LowThreshold", ref thresholdEditor.LowValue,
                 ref thresholdEditor.LowBuffer);
-            Text.Font = GameFont.Tiny;
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                     rect.x + row.CriticalLabelX,
                     labelY,
                     row.CriticalLabelW,
                     tinyMetrics.LineHeight),
                 UiText.Get("EPR.Critical"));
-            Text.Font = GameFont.Small;
             DrawThresholdField(
                 new Rect(rect.x + row.CriticalFieldX, controlY,
                     ThresholdRowLayout.FieldW, ControlH),
@@ -714,13 +748,11 @@ namespace EPrimeReadouts.UI
 
             // Line 4: count-rule caption (Tiny, CaptionText style)
             EnsureRuleRow();
-            Text.Font = GameFont.Tiny;
             GUI.color = EprStyle.CaptionText;
-            Widgets.Label(new Rect(
-                    rect.x, y + tinyMetrics.CaptionOffsetY, rect.width, captionH),
-                ruleCaption);
+            TinyText.Caption(new Rect(
+                    rect.x, y, rect.width, captionH),
+                ruleCaption!);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             y += captionH + 2f;
 
             // Lines 5-6: count-basis overrides. Rules are keyed by canonical
@@ -755,6 +787,13 @@ namespace EPrimeReadouts.UI
             groupSnapshotVersion = -1;
             groupSnapshotId = -1;
             groupSnapshot = null;
+            cachedNameWidth = -1f;
+            cachedNameLineHeight = -1f;
+            cachedRenameSize = -1f;
+            cachedNameRowHeight = -1f;
+            cachedNameGroupId = -1;
+            cachedNameGroupsVersion = -1;
+            cachedNameUiVersion = -1;
             selectionGroupsVersion = -1;
             selectionGroupId = -1;
             selectionCanonical = null;

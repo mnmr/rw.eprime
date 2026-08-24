@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Text;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -42,8 +43,8 @@ namespace EPrimeReadouts.UI
                 return false;
 
             using (new GuiStateScope())
+            using (TinyText.UseFont())
             {
-                Text.Font = GameFont.Tiny;
                 GUIStyle style = Text.CurFontStyle;
                 Font? font = style.font ?? GUI.skin.font;
                 if (font == null || font.material == null
