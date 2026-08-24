@@ -1,11 +1,12 @@
 ﻿# Changelog
 
-## 1.5.0 — 2026-08-23
+## 1.5.0 — 2026-08-24
 
 - Added: Option to turn on colony automation. When enabled, WorkRoles applies "Fix My Colony" across all player colonies once per game hour (2500 ticks).
 - Added: Icon assignments for the default role set as well as extra icons for use with custom roles or as replacements. Some icons are courtesy of SoggyDorito65 (from their Priority Overhaul mod).
 - Added: Icon display mode for role chips, along with fixed-width versions for both initials and icons.
 - Added: Icon display and picker in the role editor.
+- Changed: Framed the role palette panel and moved the grouping display picker to the Options panel.
 
 ## 1.4.2 — 2026-08-16
 

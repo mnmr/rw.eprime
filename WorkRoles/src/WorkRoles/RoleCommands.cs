@@ -191,6 +191,7 @@ namespace WorkRoles
         {
             if (Store == null || Store.autoOptimize == value) return;
             Store.autoOptimize = value;
+            AutoOptimizePresentationRevision.Bump();
         }
 
         /// Full replacement of the recommendation order (Options tab reorder).

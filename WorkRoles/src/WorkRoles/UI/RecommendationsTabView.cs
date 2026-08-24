@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -46,16 +47,15 @@ namespace WorkRoles.UI
         // Row pitch leaves 5px between chips: a 1px separator with 2px
         // clearance to the chips on both sides.
         private const float BandRowH = RoleChipUI.Height + 5f;
-        private const float AxisH = 22f; // 16px numbers + 1px ticks above the baseline
+        private const float AxisH = 22f; // 16px numbers + ticks and baseline
         // Axis baseline sits at axis bottom + 1; rows follow 2px below it. The
         // axis numbers sit flush with the inner top so their clearance equals
         // the side padding.
         private const float RowsStartY = AxisH + 4f;
         private const float RecPanelPad = 8f;
         private const float WhenPanelPad = 8f;
-        // Tiny-font caption over the WHEN panel: full line height (16f clipped
-        // descenders) and one shared caption -> panel gap.
-        private const float PanelCaptionH = 18f;
+        // One shared caption-to-panel gap; the caption itself is measured by
+        // TinyText so the Small fallback receives its full line height.
         private const float PanelCaptionGap = 2f;
 
         // Role panel geometry: header row, inner padding, editor row heights.
@@ -89,27 +89,31 @@ namespace WorkRoles.UI
         {
             state.InvalidateLanguageCaches();
             whenCaptionWidth = -1f;
+            whenCaptionTinyMetrics = default;
         }
 
         // WHEN caption: translate + wrap measurement per pass are
-        // render-forbidden. Owner: view. Key: caption width (single slot).
+        // render-forbidden. Owner: view. Key: caption width and effective Tiny
+        // metrics (single slot).
         // Value: wrapped caption text and height. Dependencies: width,
-        // language. Refresh: on width change. Teardown: language invalidation
-        // resets.
+        // language and Tiny/Small fallback state. Refresh: on either key
+        // change. Teardown: language invalidation resets.
         private float whenCaptionWidth = -1f;
+        private TinyTextMetrics whenCaptionTinyMetrics;
         private string? whenCaptionText;
         private float whenCaptionHeight;
 
         private float WhenCaptionHeight(float width)
         {
-            if (whenCaptionWidth != width)
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
+            if (whenCaptionWidth != width
+                || whenCaptionTinyMetrics != tinyMetrics)
             {
                 whenCaptionWidth = width;
-                GameFont previousFont = Text.Font;
-                Text.Font = GameFont.Tiny;
+                whenCaptionTinyMetrics = tinyMetrics;
                 whenCaptionText = "WR_WhenPanelCaption".Translate();
-                whenCaptionHeight = Text.CalcHeight(whenCaptionText, width);
-                Text.Font = previousFont;
+                whenCaptionHeight = TinyText.CalcHeight(
+                    whenCaptionText, width);
             }
             return whenCaptionHeight;
         }
@@ -699,11 +703,9 @@ namespace WorkRoles.UI
         {
             float captionHeight = WhenCaptionHeight(width);
             var whenCaptionRect = new Rect(x, y, width, captionHeight);
-            Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
-            Widgets.Label(whenCaptionRect, whenCaptionText);
+            TinyText.Label(whenCaptionRect, whenCaptionText!);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
             y += captionHeight + PanelCaptionGap;
 
             var whenPanel = new Rect(x, y, width,
@@ -731,16 +733,16 @@ namespace WorkRoles.UI
         /// only their ticks render.
         private static void DrawAxis(Rect rect)
         {
-            Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.LowerCenter;
             GUI.color = WrStyle.DimText;
             float scale = rect.width / SkillProgressionMath.MaxLevel;
+            float labelH = Mathf.Max(16f, TinyText.LineHeight);
             for (int lvl = 2; lvl < SkillProgressionMath.MaxLevel; lvl += 2)
-                Widgets.Label(new Rect(rect.x + lvl * scale - 9f, rect.y, 18f, rect.height - 6f),
+                TinyText.Label(new Rect(rect.x + lvl * scale - 9f,
+                    rect.y + 16f - labelH, 18f, labelH),
                     lvl.ToStringCached());
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
             var dim = new Color(1f, 1f, 1f, 0.25f);
             for (int lvl = 0; lvl <= SkillProgressionMath.MaxLevel; lvl++)
                 Widgets.DrawBoxSolid(new Rect(
@@ -862,15 +864,15 @@ namespace WorkRoles.UI
                 if (i == dragEntry)
                 {
                     // Live level readout at the moving edge (slide: the min edge).
-                    Text.Font = GameFont.Tiny;
                     Text.Anchor = TextAnchor.LowerCenter;
                     int shown = dragKind == BandDragKind.MaxEdge ? max : min;
                     float shownX = dragKind == BandDragKind.MaxEdge ? bx + bandPx : bx;
                     // Edge readouts clamp inside the band span (panel edge).
                     float readX = Mathf.Clamp(shownX - 12f, bandX, bandX + bandW - 24f);
-                    Widgets.Label(new Rect(readX, rowY - 16f, 24f, 16f), shown.ToStringCached());
+                    float readoutH = Mathf.Max(16f, TinyText.LineHeight);
+                    TinyText.Label(new Rect(readX, rowY - readoutH,
+                        24f, readoutH), shown.ToStringCached());
                     Text.Anchor = TextAnchor.UpperLeft;
-                    Text.Font = GameFont.Small;
                 }
 
                 if (e.type != EventType.MouseDown || e.button != 0 || dragPathId != -1) continue;
@@ -1083,19 +1085,20 @@ namespace WorkRoles.UI
         {
             Rect rect = Offset(row.RowRect, origin);
             Text.Font = GameFont.Small;
+            const float labelAdvance = 21f;
+            float labelHeight = Mathf.Max(labelAdvance,
+                Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
             // Controls occupy the rightmost 108px; captions keep 20px clear.
             Widgets.Label(new Rect(
-                rect.x, rect.y, rect.width - 128f, 21f), row.Label);
-            Text.Font = GameFont.Tiny;
+                rect.x, rect.y, rect.width - 128f, labelHeight), row.Label);
             GUI.color = WrStyle.CaptionText;
-            Widgets.Label(new Rect(
+            TinyText.Label(new Rect(
                 rect.x,
-                rect.y + 21f,
+                rect.y + labelAdvance,
                 rect.width - 128f,
-                rect.height - 21f),
+                rect.height - labelAdvance),
                 row.Description);
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
 
             float controlsX = rect.xMax - 108f;
             if (row.EnumOptions != null)
@@ -1185,12 +1188,16 @@ namespace WorkRoles.UI
             Event e = Event.current;
             Text.Font = GameFont.Small;
             Widgets.Label(Offset(table.LabelRect, origin), table.Label);
-            Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
-            Widgets.Label(Offset(table.DescriptionRect, origin),
+            TinyText.Label(Offset(table.DescriptionRect, origin),
                 table.Description);
             Text.Anchor = TextAnchor.MiddleRight;
-            Widgets.Label(Offset(table.HintRect, origin), table.Hint);
+            Rect hintRect = Offset(table.HintRect, origin);
+            float hintVisualH = Mathf.Max(
+                hintRect.height, TinyText.LineHeight);
+            TinyText.Label(new Rect(hintRect.x,
+                hintRect.center.y - hintVisualH / 2f,
+                hintRect.width, hintVisualH), table.Hint);
             GUI.color = Color.white;
 
             Text.Font = GameFont.Small;

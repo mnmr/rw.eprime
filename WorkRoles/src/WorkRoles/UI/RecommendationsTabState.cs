@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -41,15 +42,18 @@ namespace WorkRoles.UI
         private float helpWidth = -1f;
 
         // Cache contract — Owner: Recommendations tab. Key: RoleStore identity,
-        // RecommendationTuningRevision, available width, and language-cache
-        // generation (explicit invalidation). Value: immutable-by-publication
+        // RecommendationTuningRevision, available width, effective Tiny
+        // metrics, and language-cache generation (explicit invalidation).
+        // Value: immutable-by-publication
         // sections of translated rows, formatted values, and measured geometry.
-        // Dependencies: tuning descriptors, normalized values, language, font,
-        // width. Refresh: immediate on a key change. Equality: key hits preserve
+        // Dependencies: tuning descriptors, normalized values, language,
+        // effective Small/Tiny font metrics, and width. Refresh: immediate on
+        // a key change. Equality: key hits preserve
         // section/row identity. Teardown: Reset/InvalidateLanguageCaches clears it.
         private RoleStore? tuningStore;
         private int tuningRevision = -1;
         private float tuningWidth = -1f;
+        private TinyTextMetrics tuningTinyMetrics;
         private RecTuningSnapshot? tuningSnapshot;
 
         // Cache contract — Owner: Recommendations tab. Key: published order
@@ -118,6 +122,7 @@ namespace WorkRoles.UI
             tuningStore = null;
             tuningRevision = -1;
             tuningWidth = -1f;
+            tuningTinyMetrics = default;
             tuningSnapshot = null;
 
             panelsOrder = null;
@@ -182,9 +187,11 @@ namespace WorkRoles.UI
 
         internal void EnsureTuning(RoleStore store, float width)
         {
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
             if (ReferenceEquals(tuningStore, store)
                 && tuningRevision == store.RecommendationTuningRevision
-                && tuningWidth == width)
+                && tuningWidth == width
+                && tuningTinyMetrics == tinyMetrics)
                 return;
             var rebuiltSections = new List<RecTuningSection>();
             string tuningReset = "WR_RecTuneReset".Translate();
@@ -231,9 +238,11 @@ namespace WorkRoles.UI
             {
                 // The right-aligned cell hint under a table block can be wider
                 // than the cells; captions must clear both (drawn Tiny).
-                Text.Font = GameFont.Tiny;
-                float cellHintWidth = WrText.FitWidth(cellHint);
+                float cellHintWidth = WrText.FitTinyWidth(cellHint);
                 Text.Font = GameFont.Small;
+                const float labelAdvance = 21f;
+                float labelVisualHeight = System.Math.Max(labelAdvance,
+                    Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
                 globalHelp = "WR_RecGlobalPanelHelp".Translate();
                 globalHelpHeight = Text.CalcHeight(globalHelp, width);
                 foreach (RecommendationTuningDescriptor descriptor in
@@ -264,11 +273,11 @@ namespace WorkRoles.UI
                         CloseTable();
                         string label = descriptor.LabelKey.Translate();
                         string description = descriptor.DescriptionKey.Translate();
-                        float descriptionHeight = Text.CalcHeight(
+                        float descriptionHeight = TinyText.CalcHeight(
                             description,
                             System.Math.Max(80f, width - descriptionWidthReserve));
                         float rowHeight = System.Math.Max(
-                            44f, 21f + descriptionHeight);
+                            44f, labelAdvance + descriptionHeight);
                         List<string>? enumOptions = null;
                         List<Color>? enumColors = null;
                         List<string>? enumTipKeys = null;
@@ -324,23 +333,26 @@ namespace WorkRoles.UI
                         float textWidth = width
                             - System.Math.Max(cellsWidth, cellHintWidth) - 20f;
                         string description = descKey.Translate();
-                        float descriptionHeight = Text.CalcHeight(
+                        float descriptionHeight = TinyText.CalcHeight(
                             description, textWidth);
                         float cellsHeight = RecTuningTable.HeaderH
-                            + RecTuningTable.CellH + 2f + RecTuningTable.HintH;
+                            + RecTuningTable.CellH + 2f
+                            + RecTuningTable.HintH;
                         tableCellsX = width - cellsWidth;
                         tableCellsY = y;
                         table = new RecTuningTableBuilder(
                             labelKey.Translate(),
                             description,
                             cellHint,
-                            new Rect(0f, y, textWidth, 21f),
-                            new Rect(0f, y + 21f, textWidth, descriptionHeight),
+                            new Rect(0f, y, textWidth, labelVisualHeight),
+                            new Rect(0f, y + labelAdvance,
+                                textWidth, descriptionHeight),
                             new Rect(0f, y + RecTuningTable.HeaderH
                                 + RecTuningTable.CellH + 2f,
                                 width, RecTuningTable.HintH));
                         y += System.Math.Max(
-                            21f + descriptionHeight, cellsHeight) + rowGap;
+                            labelAdvance + descriptionHeight,
+                            cellsHeight) + rowGap;
                     }
                     int column = table!.CellCount; // opened above when the group started
                     float cellX = tableCellsX + column
@@ -366,6 +378,7 @@ namespace WorkRoles.UI
             tuningStore = store;
             tuningRevision = store.RecommendationTuningRevision;
             tuningWidth = width;
+            tuningTinyMetrics = tinyMetrics;
         }
 
         private sealed class RecTuningTableBuilder

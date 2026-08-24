@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -184,13 +185,13 @@ namespace WorkRoles.UI
         /// Tiny grey caption, matching the filter-row captions.
         protected static void DrawCaption(Rect rect, string text)
         {
-            Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
             Text.Anchor = TextAnchor.LowerLeft;
-            Widgets.Label(rect, text);
+            float visualH = Mathf.Max(rect.height, TinyText.LineHeight);
+            TinyText.Label(new Rect(rect.x, rect.yMax - visualH,
+                rect.width, visualH), text);
             Text.Anchor = TextAnchor.UpperLeft;
             GUI.color = Color.white;
-            Text.Font = GameFont.Small;
         }
 
         /// Location dropdown + file name field, and the Enter-path row (with a

@@ -2,6 +2,7 @@ using System;
 using HarmonyLib;
 using LudeonTK;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -225,6 +226,14 @@ namespace WorkRoles.UI
             if (!fitWidths.TryGetValue(key, out float width))
                 fitWidths[key] = width = Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
             return width;
+        }
+
+        /// Width measured with TinyText's effective font, including the Small
+        /// fallback, while retaining this mod's shared current-font cache.
+        public static float FitTinyWidth(string text)
+        {
+            using (TinyText.UseFont())
+                return FitWidth(text);
         }
 
         /// Medium-font glyphs start ~8px below the label rect's top (internal

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -105,14 +106,23 @@ namespace WorkRoles.UI
         // DefinitionReloadCoordinator.Revision.
         // Value: cached scalar desired height (immutable).
         // Dependencies: role-catalog membership count, work-type definition
-        // membership, and the fixed Roles-tab geometry constants below.
+        // membership, and measured Roles-tab geometry below.
         // Refresh: immediately on the next size read after a key change.
         // Equality: exact key hits reuse the scalar without rebuilding.
         // Teardown: Reset releases the store reference and invalidates stamps.
         private RoleStore? desiredHeightOwner;
         private int desiredHeightRoleCount = -1;
         private int desiredHeightDefinitionRevision = -1;
+        private float desiredHeightAgeBlockHeight = -1f;
         private float desiredHeight = DefaultDesiredHeight;
+
+        // Owner: this Roles-tab view. Key: UiVersion.Current. Value: the
+        // rounded Small-font line height used by the age-band caption.
+        // Dependencies: UI scale and active Small font metrics. Refresh:
+        // immediate on a UI-metric revision. Equality: exact revision hits
+        // reuse the scalar. Teardown: ReleaseDesiredHeightCache resets it.
+        private int ageBandsMetricsUiVersion = -1;
+        private float ageBandsCaptionHeight = -1f;
 
         // Slightly yellow composite labels in the role tree.
         private static readonly Color CompositeLabelColor = new Color(1f, 0.93f, 0.72f);
@@ -145,9 +155,10 @@ namespace WorkRoles.UI
         private const int HourCellH = 20;
         private const int HourCellGap = 2;
         private const int HourGridW = 24 * (HourCellW + HourCellGap) - HourCellGap;
-        private const int HourLabelH = 18;
+        private const int HourLabelAdvance = 18;
         // Legend row + hour-number row + cell row.
-        private const float RulesSectionH = HourLabelH + 2f + HourLabelH + 2f + HourCellH;
+        private const float RulesSectionH =
+            HourLabelAdvance + 2f + HourLabelAdvance + 2f + HourCellH;
         // Vanilla-schedule look: paint a color over a grey base.
         private static readonly Color HourActiveColor = SwatchPalette.Hex("0E7490"); // Tailwind cyan-700
         private static readonly Color HourInactiveColor = new Color(0.35f, 0.35f, 0.35f);
@@ -190,19 +201,24 @@ namespace WorkRoles.UI
             RoleSelectionSnapshot selection = listState.SelectionSnapshot(store);
             int roleCount = selection.Count;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
+            float ageBlockHeight = AgeBandsBlockHeight();
             if (ReferenceEquals(desiredHeightOwner, store)
                 && desiredHeightRoleCount == roleCount
-                && desiredHeightDefinitionRevision == definitionRevision)
+                && desiredHeightDefinitionRevision == definitionRevision
+                && desiredHeightAgeBlockHeight == ageBlockHeight)
                 return desiredHeight;
 
             float chrome = 120f; // tabs, margins, editor gaps
             float list = roleCount * RowHeight + 40f + ListFilterRowsH; // rows + buttons + filter rows
             // The job tree lists every work type, hidden ones included.
             int workTypes = DefDatabase<WorkTypeDef>.AllDefsListForReading.Count;
-            float editor = 190f + 32f + workTypes * 26f; // top box + tree header + collapsed roots
+            float editor = 190f + 32f + workTypes * 26f
+                + (RulesSectionH - 60f)
+                + (ageBlockHeight - 44f); // top box + tree header + collapsed roots
             desiredHeightOwner = store;
             desiredHeightRoleCount = roleCount;
             desiredHeightDefinitionRevision = definitionRevision;
+            desiredHeightAgeBlockHeight = ageBlockHeight;
             desiredHeight = chrome + Mathf.Max(list, editor);
             return desiredHeight;
         }
@@ -286,6 +302,9 @@ namespace WorkRoles.UI
             desiredHeightOwner = null;
             desiredHeightRoleCount = -1;
             desiredHeightDefinitionRevision = -1;
+            desiredHeightAgeBlockHeight = -1f;
+            ageBandsMetricsUiVersion = -1;
+            ageBandsCaptionHeight = -1f;
             desiredHeight = DefaultDesiredHeight;
         }
 
@@ -381,6 +400,7 @@ namespace WorkRoles.UI
 
         /// Two captioned rows: Search + Display Mode (left/right) on top, the
         /// Job Filter below with room for long job names, plus the clear X.
+        private const float ListFilterCaptionAdvance = 16f;
         internal const float ListFilterRowsH = 90f;
 
         private static void FilterCaption(Rect rect, string text)
@@ -389,9 +409,8 @@ namespace WorkRoles.UI
             Color oldColor = GUI.color;
             try
             {
-                Text.Font = GameFont.Tiny;
                 GUI.color = WrStyle.CaptionText;
-                Widgets.Label(rect, text);
+                TinyText.CompactCaption(rect, text);
             }
             finally
             {
@@ -403,14 +422,15 @@ namespace WorkRoles.UI
         private void DrawListFilterRow(Rect rect, RolesTabChromeSnapshot chrome,
             bool nestedPreference)
         {
-            const float LabelH = 16f; // room for Tiny descenders (Job Filter's y)
+            float labelH = Mathf.Max(
+                ListFilterCaptionAdvance, TinyText.LineHeight);
             const float InputH = 24f;
             const float ToggleW = 64f;
             const float JobBtnW = 220f;
 
-            float y1 = rect.y + LabelH;
+            float y1 = rect.y + ListFilterCaptionAdvance;
             float searchW = rect.width - ToggleW - 8f - 22f;
-            FilterCaption(new Rect(rect.x, rect.y, searchW, LabelH),
+            FilterCaption(new Rect(rect.x, rect.y, searchW, labelH),
                 chrome.SearchCaption);
             listState.RoleSearch = Widgets.TextField(
                 new Rect(rect.x, y1, searchW, InputH), listState.RoleSearch);
@@ -424,7 +444,7 @@ namespace WorkRoles.UI
 
             // Nested/flat toggle: auto-nesting of covered roles on or off.
             var toggleRect = new Rect(rect.xMax - ToggleW, y1, ToggleW, InputH);
-            FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, LabelH),
+            FilterCaption(new Rect(toggleRect.x, rect.y, ToggleW, labelH),
                 chrome.DisplayModeCaption);
             WrTips.Key("WR_TreeToggleTip").Region(toggleRect);
             if (Widgets.ButtonText(toggleRect,
@@ -432,8 +452,8 @@ namespace WorkRoles.UI
                 ToggleNestedPreference(nestedPreference);
 
             float y2Label = y1 + InputH + 6f;
-            float y2 = y2Label + LabelH;
-            FilterCaption(new Rect(rect.x, y2Label, JobBtnW, LabelH),
+            float y2 = y2Label + ListFilterCaptionAdvance;
+            FilterCaption(new Rect(rect.x, y2Label, JobBtnW, labelH),
                 chrome.JobFilterCaption);
             var jobRect = new Rect(rect.x, y2, JobBtnW, InputH);
             string jobLabel = chrome.JobFilterLabel;
@@ -877,13 +897,13 @@ namespace WorkRoles.UI
             const float AssignedRowH = 22f;
             const float GroupRowH = 26f;
             const float SkillsRowH = 22f;
-            const float AgeBlockH = 44f;
             const float CheckRowH = 24f;
             const float RulesRowGap = 6f;
+            float ageBlockH = AgeBandsBlockHeight();
             int customRows = header.CustomRows;
             float swatchGridH = (SwatchSize + SwatchGap) * (SwatchRows + customRows) - SwatchGap;
             float leftContentH = Mathf.Max(
-                TitleH + AssignedRowH + 2f + GroupRowH - 4f + 8f + AgeBlockH
+                TitleH + AssignedRowH + 2f + GroupRowH - 4f + 8f + ageBlockH
                     + 2f + SkillsRowH,
                 CheckRowH * 4f);
             bool rulesShown = header.RulesShown;
@@ -1018,9 +1038,16 @@ namespace WorkRoles.UI
                 RoleIconStyle.IconSize, RoleIconStyle.IconSize),
                 header.RoleIcon);
             GUI.color = Color.white;
-            if (Widgets.ButtonInvisible(frameRect))
-                Find.WindowStack.Add(new Dialog_RoleIconPicker(
-                    model.RoleId, header.RoleIconPath));
+            var iconEvent = Event.current;
+            if (iconEvent.type == EventType.MouseDown
+                && iconEvent.button == 0
+                && frameRect.Contains(iconEvent.mousePosition))
+            {
+                Dialog_RoleIconPicker.Toggle(model.RoleId,
+                    header.RoleIconPath,
+                    Verse.UI.GUIToScreenRect(frameRect));
+                iconEvent.Use();
+            }
             float titleX = frameRect.xMax + RoleIconStyle.TitleGap;
             Text.Font = GameFont.Medium;
             Text.Anchor = TextAnchor.MiddleLeft;
@@ -1057,9 +1084,9 @@ namespace WorkRoles.UI
             // 8px below the group picker.
             float ageY = groupY + GroupRowH - 4f + 8f;
             DrawAgeBandsRow(new Rect(leftX, ageY,
-                checksX - 8f - leftX, AgeBlockH), model);
+                checksX - 8f - leftX, ageBlockH), model);
 
-            DrawSkillsUsedRow(new Rect(leftX, ageY + AgeBlockH + 2f,
+            DrawSkillsUsedRow(new Rect(leftX, ageY + ageBlockH + 2f,
                 checksX - 8f - leftX, SkillsRowH), model);
 
             // Expanding section (full box width): rules while the conditional-role
@@ -1151,36 +1178,55 @@ namespace WorkRoles.UI
         // Selected band with no performable work in the role's coverage.
         private static readonly Color AgeLacksJobsOutline =
             new Color(0.85f, 0.3f, 0.25f, 0.7f);
+        private const float AgeBandsCaptionGap = 1f;
+        private const float AgeBandSegmentH = 24f;
+
+        private float AgeBandsCaptionHeight()
+        {
+            int uiVersion = UiVersion.Current;
+            if (ageBandsMetricsUiVersion == uiVersion)
+                return ageBandsCaptionHeight;
+            using (new GuiStateScope())
+            {
+                Text.Font = GameFont.Small;
+                ageBandsCaptionHeight = Mathf.Ceil(Text.LineHeight);
+            }
+            ageBandsMetricsUiVersion = uiVersion;
+            return ageBandsCaptionHeight;
+        }
+
+        private float AgeBandsBlockHeight() =>
+            AgeBandsCaptionHeight() + AgeBandsCaptionGap + AgeBandSegmentH;
 
         /// The role's age gates as one row of toggleable bands: dim caption on
         /// top, one segment per AgeBands entry. Clicking outside the selection
         /// extends it, an end band trims off, an interior band collapses to
         /// itself (AgeBands.Click), so the selection stays contiguous and
         /// never empties.
-        private static void DrawAgeBandsRow(Rect rect, RoleEditorSnapshot model)
+        private void DrawAgeBandsRow(Rect rect, RoleEditorSnapshot model)
         {
             RoleEditorHeaderSnapshot header = model.Header;
+            float captionHeight = AgeBandsCaptionHeight();
             WrTips.Key("WR_RoleAgeBandsTip", header.AgeTipArg).Region(rect);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(rect.x, rect.y, rect.width, 19f),
+            Widgets.Label(new Rect(rect.x, rect.y, rect.width, captionHeight),
                 header.AgeBandsCaption);
             GUI.color = Color.white;
 
-            const float SegmentH = 24f;
             const float SegmentGap = 2f;
             (int lo, int hi) = header.AgeSelection;
             float segmentW = (rect.width - (AgeBands.Count - 1) * SegmentGap)
                 / AgeBands.Count;
-            float segmentY = rect.y + 20f;
+            float segmentY = rect.y + captionHeight + AgeBandsCaptionGap;
             Text.Anchor = TextAnchor.MiddleCenter;
             bool wrap = Text.WordWrap;
             Text.WordWrap = false;
             for (int band = 0; band < AgeBands.Count; band++)
             {
                 var cell = new Rect(rect.x + band * (segmentW + SegmentGap),
-                    segmentY, segmentW, SegmentH);
+                    segmentY, segmentW, AgeBandSegmentH);
                 bool selected = band >= lo && band <= hi;
                 Widgets.DrawBoxSolid(cell, AgeCellPanel);
                 if (selected)
@@ -1374,8 +1420,8 @@ namespace WorkRoles.UI
             // The clock icon ties the grid to the chips' time marker.
             int x0 = Mathf.RoundToInt(rect.x) + 22;
             int legendY = Mathf.RoundToInt(rect.y);
-            int labelsY = legendY + HourLabelH + 2;
-            int cellsY = labelsY + HourLabelH + 2;
+            float labelsY = legendY + HourLabelAdvance + 2f;
+            float cellsY = labelsY + HourLabelAdvance + 2f;
 
             // Legend top-left, above the grid it explains.
             const float LegendGap = 12f;
@@ -1390,14 +1436,20 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
 
             // Hour headers: one per cell, Tiny and bottom-anchored (vanilla schedule style).
-            Text.Font = GameFont.Tiny;
             Text.Anchor = TextAnchor.LowerCenter;
+            bool previousWrap = Text.WordWrap;
+            Text.WordWrap = false;
             GUI.color = WrStyle.DimText;
+            float hourLabelH = Mathf.Max(
+                HourLabelAdvance, TinyText.LineHeight);
             for (int h = 0; h < 24; h++)
-                Widgets.Label(new Rect(x0 + h * (HourCellW + HourCellGap), labelsY, HourCellW, HourLabelH), h.ToString());
+                TinyText.Label(new Rect(
+                    x0 + h * (HourCellW + HourCellGap),
+                    labelsY + HourLabelAdvance - hourLabelH,
+                    HourCellW, hourLabelH), h.ToString());
             GUI.color = Color.white;
+            Text.WordWrap = previousWrap;
             Text.Anchor = TextAnchor.UpperLeft;
-            Text.Font = GameFont.Small;
 
             var gridRect = new Rect(x0, cellsY, HourGridW, HourCellH);
             if (Mouse.IsOver(gridRect))
@@ -1478,12 +1530,15 @@ namespace WorkRoles.UI
         {
             Text.Font = GameFont.Small;
             float labelW = WrText.FitWidth(label);
-            Widgets.DrawBoxSolid(new Rect(x, y + (HourLabelH - LegendSwatch) / 2f, LegendSwatch, LegendSwatch), color);
+            Widgets.DrawBoxSolid(new Rect(x,
+                y + (HourLabelAdvance - LegendSwatch) / 2f,
+                LegendSwatch, LegendSwatch), color);
             GUI.color = new Color(0.75f, 0.75f, 0.75f);
             TextAnchor previousAnchor = Text.Anchor;
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(
-                x + LegendSwatch + 4f, y, labelW, HourLabelH), label);
+                x + LegendSwatch + 4f, y, labelW,
+                HourLabelAdvance), label);
             Text.Anchor = previousAnchor;
             GUI.color = Color.white;
             return x + LegendSwatch + 4f + labelW;

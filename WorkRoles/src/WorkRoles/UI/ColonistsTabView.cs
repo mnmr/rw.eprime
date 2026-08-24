@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -101,11 +102,17 @@ namespace WorkRoles.UI
         private bool focusSearch;
 
         private const float PaletteMaxHeight = 260f;   // palette scrolls beyond this
-        private const float PalettePadding = 6f;
-        private const float ClusterLabelH = 15f;
+        /// The first palette row is a caption whose line box carries roughly
+        /// this much top leading before the first ink pixel. The panel's top
+        /// inset is reduced by it so the visual gap to the caption matches the
+        /// other sides' padding.
+        private const float PaletteCaptionInkAllowance = 2f;
+        private const float MinimumClusterLabelH = 15f;
         private const float ClusterGapX = 20f;
         private const float ClusterGapY = 4f;
-        private const float FilterRowH = 28f;
+        private const float FilterInputH = 24f;
+        private const float FilterCaptionAdvance = 16f;
+        private const float FilterCaptionGap = 1f;
         private const float RowHeight = 35f;
         /// Stacked name and caption line boxes may overlap by this much: glyph
         /// ink stops short of a line box's edges (ascender and descender
@@ -117,6 +124,7 @@ namespace WorkRoles.UI
         private const float IconButton = 24f;
         private const float ChipGap = 4f;
         private const float StatsPanelMargin = 8f;
+        private const float PalettePanelPadding = 6f;
         /// Design width: fixed chrome (tab strip + FMC button, filter row, editor
         /// swatch grid) fits at this size, so it doubles as the window's min width.
         internal const float DefaultWidth = 1010f;
@@ -143,6 +151,10 @@ namespace WorkRoles.UI
         private const float SkillLabelDecoratorGap = 4f;
         private const float SkillValueGap = 8f;
         private const float SkillValueWidth = 48f;
+        // Small-font row labels paint one pixel above their geometric center.
+        // Keep this as an explicit visual-only correction: row pitch, hit
+        // regions, portraits, chips, and decorators retain their layout.
+        private const float ColonistRowTextOffsetY = 1f;
 
         public void Reset()
         {
@@ -215,6 +227,7 @@ namespace WorkRoles.UI
             rosterState.InvalidateLanguageCaches();
             rowTextMetricsSmallLineHeight = -1f;
             rowTextMetricsCaptionLineHeight = -1f;
+            filterMetricsInitialized = false;
             InvalidateTableLayout();
         }
 
@@ -365,7 +378,7 @@ namespace WorkRoles.UI
             RoleStore? store = RoleStore.Current;
             if (store == null) return;
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
-            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode ?? PaletteMode.Skills;
+            PaletteMode paletteMode = PaletteGrouping;
             int key = ((TableDisplayKey * 31 + (int)paletteMode) * 31
                     + rosterState.SkillColumnsRevision) * 31
                 + (selectedPawn?.thingIDNumber ?? -1);
@@ -431,17 +444,21 @@ namespace WorkRoles.UI
             IReadOnlyList<Pawn> pawns)
         {
             float chrome = 80f;
-            float paletteSection = PaletteHeight(store, desiredWidthCache - 16f - PaletteModeW) + 8f + FilterRowH + 4f;
+            float paletteSection = PaletteHeight(store,
+                    desiredWidthCache - PalettePanelPadding * 2f - 16f)
+                + PalettePanelPadding * 2f - PaletteCaptionInkAllowance
+                + 8f + FilterMetrics().RowHeight + 4f;
             float statsPanel = StatsPanelHeight() + StatsPanelMargin;
             float tableContent = 0f;
             float stripW = TableStripWidth(desiredWidthCache);
+            float minimumTextHeight = TextMetrics().MinRowHeight;
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
                 float stripH = LayoutChips(stripW, chipSequences[pawn], pawn,
                     result: null);
-                tableContent += Mathf.Max(TextMetrics().MinRowHeight,
-                    stripH + 7f);
+                tableContent += Mathf.Max(minimumTextHeight,
+                    Mathf.CeilToInt(stripH + 7f));
             }
             return chrome + paletteSection + tableContent + statsPanel;
         }
@@ -517,17 +534,21 @@ namespace WorkRoles.UI
 
             float statsPanelH = StatsPanelHeight(selectedPawn);
             float tableBottom = rect.yMax - statsPanelH - StatsPanelMargin;
-            float paletteH = PaletteHeight(store, rect.width - 16f - PaletteModeW);
-            float filterTop = rect.y + paletteH + 8f;
-            float tableTop = filterTop + FilterRowH + 4f;
+            float paletteH = PaletteHeight(store,
+                rect.width - PalettePanelPadding * 2f - 16f);
+            float palettePanelH = paletteH + PalettePanelPadding * 2f
+                - PaletteCaptionInkAllowance;
+            FilterControlMetrics filterMetrics = FilterMetrics();
+            float filterTop = rect.y + palettePanelH + 8f;
+            float tableTop = filterTop + filterMetrics.RowHeight + 4f;
 
-            DrawPalette(new Rect(rect.x, rect.y, rect.width, paletteH), store);
+            DrawPalettePanel(new Rect(rect.x, rect.y, rect.width,
+                palettePanelH), store);
 
-            Widgets.DrawBoxSolid(new Rect(rect.x, rect.y + paletteH + 4f, rect.width, 2f),
-                new Color(1f, 1f, 1f, 0.25f));
-
-            DrawFilterRow(new Rect(rect.x, filterTop, rect.width, FilterRowH), store);
-            DrawPawnTable(new Rect(rect.x, tableTop, rect.width, tableBottom - tableTop), store);
+            DrawFilterRow(new Rect(rect.x, filterTop, rect.width,
+                filterMetrics.RowHeight), store, filterMetrics);
+            DrawPawnTable(new Rect(rect.x, tableTop, rect.width,
+                tableBottom - tableTop), store);
             DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
 
             RoleChipUI.DrawDragGhost();
@@ -587,8 +608,10 @@ namespace WorkRoles.UI
 
             internal ColonistsChromeSnapshot(
                 ColonistsRosterCatalogSnapshot catalog,
-                PaletteMode paletteMode, string paletteModeLabel,
-                string searchLabel, string noFilterMatchesLabel,
+                string searchCaption, string roleFilterCaption,
+                string jobFilterCaption, string scopeCaption,
+                string groupCaption, string skillColumnsCaption,
+                string roleDisplayCaption, string noFilterMatchesLabel,
                 string allRolesLabel,
                 string roleFilterLabel, string anyJobLabel,
                 string jobFilterLabel, string jobFilterShown,
@@ -601,9 +624,13 @@ namespace WorkRoles.UI
                 string groupKey, string groupLabel)
             {
                 Catalog = catalog;
-                PaletteMode = paletteMode;
-                PaletteModeLabel = paletteModeLabel;
-                SearchLabel = searchLabel;
+                SearchCaption = searchCaption;
+                RoleFilterCaption = roleFilterCaption;
+                JobFilterCaption = jobFilterCaption;
+                ScopeCaption = scopeCaption;
+                GroupCaption = groupCaption;
+                SkillColumnsCaption = skillColumnsCaption;
+                RoleDisplayCaption = roleDisplayCaption;
                 NoFilterMatchesLabel = noFilterMatchesLabel;
                 AllRolesLabel = allRolesLabel;
                 RoleFilterLabel = roleFilterLabel;
@@ -626,9 +653,13 @@ namespace WorkRoles.UI
             }
 
             internal ColonistsRosterCatalogSnapshot Catalog { get; }
-            internal PaletteMode PaletteMode { get; }
-            internal string PaletteModeLabel { get; }
-            internal string SearchLabel { get; }
+            internal string SearchCaption { get; }
+            internal string RoleFilterCaption { get; }
+            internal string JobFilterCaption { get; }
+            internal string ScopeCaption { get; }
+            internal string GroupCaption { get; }
+            internal string SkillColumnsCaption { get; }
+            internal string RoleDisplayCaption { get; }
             internal string NoFilterMatchesLabel { get; }
             internal string AllRolesLabel { get; }
             internal string RoleFilterLabel { get; }
@@ -655,12 +686,17 @@ namespace WorkRoles.UI
             {
                 if (other == null
                     || !ReferenceEquals(Catalog, other.Catalog)
-                    || PaletteMode != other.PaletteMode
                     || ScopeWidth != other.ScopeWidth
                     || HasSettings != other.HasSettings
                     || scopeOptions.Count != other.scopeOptions.Count
-                    || !Same(PaletteModeLabel, other.PaletteModeLabel)
-                    || !Same(SearchLabel, other.SearchLabel)
+                    || !Same(SearchCaption, other.SearchCaption)
+                    || !Same(RoleFilterCaption, other.RoleFilterCaption)
+                    || !Same(JobFilterCaption, other.JobFilterCaption)
+                    || !Same(ScopeCaption, other.ScopeCaption)
+                    || !Same(GroupCaption, other.GroupCaption)
+                    || !Same(SkillColumnsCaption,
+                        other.SkillColumnsCaption)
+                    || !Same(RoleDisplayCaption, other.RoleDisplayCaption)
                     || !Same(NoFilterMatchesLabel,
                         other.NoFilterMatchesLabel)
                     || !Same(AllRolesLabel, other.AllRolesLabel)
@@ -692,7 +728,7 @@ namespace WorkRoles.UI
         }
 
         // Owner: Colonists window. Key: RoleStore/catalog identity, selected
-        // role/job/scope, pawn-scope/location/map revisions, palette mode,
+        // role/job/scope, pawn-scope/location/map revisions,
         // skill-column revision, chip-display/group preferences,
         // language/definition revisions, and settings availability. Value:
         // immutable detached palette/filter/table chrome labels, measurements,
@@ -711,7 +747,6 @@ namespace WorkRoles.UI
         private int chromePawnListRevision = -1;
         private int chromeLocationRevision = -1;
         private int chromeMapId = -1;
-        private PaletteMode chromePaletteMode;
         private int chromeSkillColumnsRevision = -1;
         private ChipDisplay chromeChipDisplay;
         private string? chromeGroupKey;
@@ -748,8 +783,6 @@ namespace WorkRoles.UI
             int pawnListRevision = PawnListRevision;
             int locationRevision = ColonyScope.LocationRevision;
             int mapId = Find.CurrentMap?.uniqueID ?? -1;
-            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode
-                ?? PaletteMode.Skills;
             int skillColumnsRevision = rosterState.SkillColumnsRevision;
             ChipDisplay chipDisplay = TableChips;
             string groupKey = profile.GetGroupBy();
@@ -768,7 +801,6 @@ namespace WorkRoles.UI
                 && chromePawnListRevision == pawnListRevision
                 && chromeLocationRevision == locationRevision
                 && chromeMapId == mapId
-                && chromePaletteMode == paletteMode
                 && chromeSkillColumnsRevision == skillColumnsRevision
                 && chromeChipDisplay == chipDisplay
                 && string.Equals(chromeGroupKey, groupKey,
@@ -838,13 +870,13 @@ namespace WorkRoles.UI
                 string groupLabel = catalog.GroupLabelOrNull(groupKey)
                     ?? groupKey;
                 rebuilt = new ColonistsChromeSnapshot(catalog,
-                    paletteMode,
-                    (paletteMode == PaletteMode.Groups
-                        ? "WR_PaletteByGroups"
-                        : paletteMode == PaletteMode.Hidden
-                            ? "WR_PaletteHidden"
-                            : "WR_PaletteBySkills").Translate().ToString(),
-                    "WR_Search".Translate().ToString(),
+                    "WR_ColonistNameCaption".Translate().ToString(),
+                    "WR_AssignedRoleCaption".Translate().ToString(),
+                    "WR_CoveredJobCaption".Translate().ToString(),
+                    "WR_LocationCaption".Translate().ToString(),
+                    "WR_GroupByCaption".Translate().ToString(),
+                    "WR_SkillColumnsCaption".Translate().ToString(),
+                    "WR_RoleDisplayCaption".Translate().ToString(),
                     "WR_NoFilterMatches".Translate().ToString(), allRoles,
                     roleLabel, anyJob, fullJobLabel, shownJobLabel,
                     scopeLabel, scopeWidth, scopeOptions,
@@ -872,7 +904,6 @@ namespace WorkRoles.UI
             chromePawnListRevision = PawnListRevision;
             chromeLocationRevision = ColonyScope.LocationRevision;
             chromeMapId = Find.CurrentMap?.uniqueID ?? -1;
-            chromePaletteMode = paletteMode;
             chromeSkillColumnsRevision = rosterState.SkillColumnsRevision;
             chromeChipDisplay = chipDisplay;
             chromeGroupKey = groupKey;
@@ -1106,9 +1137,11 @@ namespace WorkRoles.UI
             ColonistsRosterCatalogSnapshot catalog, PaletteMode mode,
             float rowWidth, List<PaletteChipSnapshot> chips,
             List<PaletteLabelSnapshot> labels, bool verdictSlots,
-            PaletteTipSnapshot tips)
+            PaletteTipSnapshot tips, TinyTextMetrics tinyMetrics)
         {
-            float lineH = ClusterLabelH + 2f + RoleChipUI.Height;
+            float labelH = Mathf.Max(
+                MinimumClusterLabelH, tinyMetrics.LineHeight);
+            float lineH = MinimumClusterLabelH + 2f + RoleChipUI.Height;
             var cursors = new List<float>();   // per-line x cursor; index gives y
             float YOf(int line) => line * (lineH + ClusterGapY);
 
@@ -1119,9 +1152,7 @@ namespace WorkRoles.UI
                 ColonistPaletteClusterSnapshot cluster =
                     catalog.PaletteClusterAt(mode, clusterIndex);
                 if (cluster.Count == 0) continue;
-                Text.Font = GameFont.Tiny;
-                float labelW = WrText.FitWidth(cluster.Label);
-                Text.Font = GameFont.Small;
+                float labelW = WrText.FitTinyWidth(cluster.Label);
 
                 var widths = new List<float>(cluster.Count);
                 float chipsW = 0f;
@@ -1152,14 +1183,14 @@ namespace WorkRoles.UI
                     float x = cursors[line] + (cursors[line] > 0f ? ClusterGapX : 0f);
                     float y = YOf(line);
                     labels.Add(new PaletteLabelSnapshot(cluster.Label,
-                        new Rect(x, y, labelW, ClusterLabelH)));
+                        new Rect(x, y, labelW, labelH)));
                     float cx = x;
                     for (int i = 0; i < widths.Count; i++)
                     {
                         ColonistPaletteRole role = cluster.RoleAt(i);
                         chips.Add(new PaletteChipSnapshot(role.Chip,
                             role.Enabled, new Rect(cx,
-                                y + ClusterLabelH + 2f, widths[i],
+                                y + MinimumClusterLabelH + 2f, widths[i],
                                 RoleChipUI.Height),
                             tips.TipFor(role.Chip.RoleId)));
                         cx += widths[i] + ChipGap;
@@ -1195,14 +1226,14 @@ namespace WorkRoles.UI
                             labels.Add(new PaletteLabelSnapshot(cluster.Label,
                                 new Rect(x, YOf(line),
                                     Mathf.Min(labelW, rowWidth - x),
-                                    ClusterLabelH)));
+                                    labelH)));
                             segStart = x;
                             segmentOpen = true;
                         }
                         ColonistPaletteRole role = cluster.RoleAt(i);
                         chips.Add(new PaletteChipSnapshot(role.Chip,
                             role.Enabled, new Rect(x,
-                                YOf(line) + ClusterLabelH + 2f, widths[i],
+                                YOf(line) + MinimumClusterLabelH + 2f, widths[i],
                                 RoleChipUI.Height),
                             tips.TipFor(role.Chip.RoleId)));
                         x += widths[i] + ChipGap;
@@ -1218,12 +1249,14 @@ namespace WorkRoles.UI
         // snapshot identities, row width, palette mode, and verdict-slot
         // presence. Value: an immutable one-shot snapshot of detached
         // chip/label/tooltip render data. Dependencies: the shared catalog and
-        // tooltip producer, cached text measurements, width, mode, and slot policy.
+        // tooltip producer, effective Tiny metrics, cached text measurements,
+        // width, mode, and slot policy.
         // Refresh: immediate on the next PaletteLayout key miss. Equality: exact
         // contents preserve snapshot identity. Teardown: ReleaseSnapshots and
         // language invalidation release the snapshot and source reference.
         private float paletteLayoutW = -1f;
         private int paletteLayoutMode = -1;
+        private TinyTextMetrics paletteLayoutTextMetrics;
         private int paletteLayoutRevision;
         private ColonistsRosterCatalogSnapshot? paletteCatalog;
         private PaletteTipSnapshot? paletteLayoutTips;
@@ -1237,17 +1270,17 @@ namespace WorkRoles.UI
             float rowWidth)
         {
             ColonistsRosterCatalogSnapshot catalog = rosterState.Catalog(store);
-            PaletteMode paletteMode = WorkRolesMod.Settings?.paletteMode
-                ?? PaletteMode.Skills;
-            PaletteTipSnapshot tips = paletteMode == PaletteMode.Hidden
-                ? PaletteTipSnapshot.Empty : EnsurePaletteTips(store);
+            PaletteMode paletteMode = PaletteGrouping;
+            PaletteTipSnapshot tips = EnsurePaletteTips(store);
             // Verdict slots ride the mode key: they widen every palette chip.
             int mode = (int)paletteMode * 2
                 + (PaletteVerdictSlots ? 1 : 0);
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
             if (paletteSnapshot == null
                 || !ReferenceEquals(paletteCatalog, catalog)
                 || !ReferenceEquals(paletteLayoutTips, tips)
-                || paletteLayoutW != rowWidth || paletteLayoutMode != mode)
+                || paletteLayoutW != rowWidth || paletteLayoutMode != mode
+                || paletteLayoutTextMetrics != tinyMetrics)
             {
                 var chips = new List<PaletteChipSnapshot>();
                 var labels = new List<PaletteLabelSnapshot>();
@@ -1255,9 +1288,8 @@ namespace WorkRoles.UI
                 float height;
                 try
                 {
-                    height = paletteMode == PaletteMode.Hidden ? 0f
-                        : LayoutPalette(catalog, paletteMode, rowWidth, chips,
-                            labels, PaletteVerdictSlots, tips);
+                    height = LayoutPalette(catalog, paletteMode, rowWidth,
+                        chips, labels, PaletteVerdictSlots, tips, tinyMetrics);
                 }
                 finally
                 {
@@ -1275,6 +1307,7 @@ namespace WorkRoles.UI
                 paletteLayoutTips = tips;
                 paletteLayoutW = rowWidth;
                 paletteLayoutMode = mode;
+                paletteLayoutTextMetrics = tinyMetrics;
             }
             return paletteSnapshot;
         }
@@ -1330,39 +1363,47 @@ namespace WorkRoles.UI
         private float PaletteHeight(RoleStore store, float rowWidth)
         {
             PaletteLayoutSnapshot layout = PaletteLayout(store, rowWidth);
-            return WorkRolesMod.Settings?.paletteMode == PaletteMode.Hidden
-                ? 26f // just the mode button, so the palette can come back
-                : Mathf.Min(layout.ContentHeight + PalettePadding,
-                    PaletteMaxHeight);
+            return Mathf.Min(layout.ContentHeight, PaletteMaxHeight);
         }
 
-        /// Width the palette mode button reserves in the panel's top-right.
-        private const float PaletteModeW = 76f;
+        /// The palette grouping normalized for display: the retired Hidden
+        /// value from older client settings reads as Skills.
+        private static PaletteMode PaletteGrouping
+        {
+            get
+            {
+                PaletteMode mode = WorkRolesMod.Settings?.paletteMode
+                    ?? PaletteMode.Skills;
+                return mode == PaletteMode.Hidden ? PaletteMode.Skills : mode;
+            }
+        }
+
+        /// The palette sits in a dark panel; together with the stats panel it
+        /// frames the table and its filter controls, which stay on the plain
+        /// section background (the scroll-edge fade texture matches that).
+        /// The top inset gives back the caption's ink allowance so every side
+        /// shows the same visual padding.
+        private void DrawPalettePanel(Rect rect, RoleStore store)
+        {
+            Widgets.DrawBoxSolidWithOutline(rect, WrStyle.PanelBackground,
+                WrStyle.PanelOutline);
+            DrawPalette(new Rect(
+                rect.x + PalettePanelPadding,
+                rect.y + PalettePanelPadding - PaletteCaptionInkAllowance,
+                rect.width - PalettePanelPadding * 2f,
+                rect.height - PalettePanelPadding * 2f
+                    + PaletteCaptionInkAllowance), store);
+        }
 
         private void DrawPalette(Rect rect, RoleStore store)
         {
-            // Arrangement button, cycling Skills -> Groups -> Hidden. Hidden
-            // collapses the palette to just this button.
-            var modeRect = new Rect(rect.xMax - PaletteModeW + 6f, rect.y, PaletteModeW - 12f, 22f);
-            ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
-            var settings = WorkRolesMod.Settings;
-            PaletteMode mode = chrome.PaletteMode;
-            WrTips.Key("WR_PaletteModeTip").Region(modeRect);
-            if (Widgets.ButtonText(modeRect, chrome.PaletteModeLabel)
-                && settings != null)
-            {
-                settings.paletteMode = (PaletteMode)(((int)mode + 1) % 3);
-                WorkRolesGameComponent.RequestSettingsWrite();
-            }
-            if (mode == PaletteMode.Hidden) return;
-
-            float rowWidth = rect.width - 16f - PaletteModeW;
+            float rowWidth = rect.width - 16f;
             PaletteLayoutSnapshot layout = PaletteLayout(store, rowWidth);
             PaletteVerdictSnapshot? verdictSnapshot =
                 EnsurePaletteVerdicts(layout);
             float contentHeight = layout.ContentHeight;
 
-            var scrollRect = new Rect(rect.x, rect.y, rect.width - PaletteModeW, rect.height);
+            var scrollRect = rect;
             Widgets.BeginScrollView(scrollRect, ref paletteScroll, new Rect(0f, 0f, rowWidth, contentHeight));
             try
             {
@@ -1370,7 +1411,6 @@ namespace WorkRoles.UI
             float visibleBottom = visibleTop + scrollRect.height;
             bool repaint = Event.current.type == EventType.Repaint;
 
-            Text.Font = GameFont.Tiny;
             GUI.color = WrStyle.CaptionText;
             for (int labelIndex = 0; labelIndex < layout.LabelCount;
                     labelIndex++)
@@ -1378,7 +1418,7 @@ namespace WorkRoles.UI
                 PaletteLabelSnapshot label = layout.LabelAt(labelIndex);
                 Rect labelRect = label.Rect;
                 if (repaint && labelRect.yMax >= visibleTop && labelRect.y <= visibleBottom)
-                    Widgets.Label(labelRect, label.Label);
+                    TinyText.CompactCaption(labelRect, label.Label);
             }
             GUI.color = Color.white;
             Text.Font = GameFont.Small;
@@ -1441,24 +1481,72 @@ namespace WorkRoles.UI
 
         // ----- Filter row -----
 
-        private void DrawFilterRow(Rect rect, RoleStore store)
+        private readonly struct FilterControlMetrics
         {
-            ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
-            // Slimmed so the added job filter still fits the design width
-            // (left cluster 619px + right cluster 354px inside ~990px).
-            const float SearchLabelW = 46f;
-            const float SearchW = 110f;
-            const float SearchH = 24f;
-            const float RoleBtnW = 135f;
-            float y = rect.y + (rect.height - SearchH) / 2f;
+            internal FilterControlMetrics(CaptionedControlRowLayout layout)
+            {
+                CaptionVisualHeight = layout.CaptionVisualHeight;
+                CaptionAdvance = layout.CaptionAdvance;
+                RowHeight = layout.RowHeight;
+            }
 
-            Text.Anchor = TextAnchor.MiddleLeft;
-            Widgets.Label(new Rect(rect.x, y, SearchLabelW, SearchH),
-                chrome.SearchLabel);
+            internal float CaptionVisualHeight { get; }
+            internal float CaptionAdvance { get; }
+            internal float RowHeight { get; }
+        }
+
+        // Owner: Colonists window. Key: tiny-font support and the exact active
+        // caption line height. Value: immutable caption font/row geometry.
+        // Dependencies: the player's tiny-font preference, language/font
+        // support, and UI-scale font metrics. Refresh: immediate on the next
+        // metrics read after either key changes. Equality: exact key hits reuse
+        // the value. Teardown: the view owns no external resources; language
+        // invalidation resets the remembered line height.
+        private FilterControlMetrics filterMetrics;
+        private bool filterMetricsInitialized;
+        private TinyTextMetrics filterMetricsKey;
+
+        private FilterControlMetrics FilterMetrics()
+        {
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
+            if (filterMetricsInitialized && filterMetricsKey == tinyMetrics)
+                return filterMetrics;
+            filterMetricsInitialized = true;
+            filterMetricsKey = tinyMetrics;
+            CaptionedControlRowLayout layout =
+                CaptionedControlRowLayout.Calculate(tinyMetrics.LineHeight,
+                    FilterCaptionAdvance, FilterInputH, FilterCaptionGap);
+            filterMetrics = new FilterControlMetrics(layout);
+            return filterMetrics;
+        }
+
+        private static void DrawControlCaption(Rect rect, string text,
+            FilterControlMetrics metrics)
+        {
+            Text.Anchor = TextAnchor.LowerLeft;
+            GUI.color = WrStyle.CaptionText;
+            rect.y += metrics.CaptionAdvance - metrics.CaptionVisualHeight;
+            TinyText.Label(rect, text);
+            GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;
+        }
+
+        private void DrawFilterRow(Rect rect, RoleStore store,
+            FilterControlMetrics metrics)
+        {
+            using var guiState = new GuiStateScope(capture: true);
+            ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
+            const float SearchW = 140f;
+            const float RoleBtnW = 135f;
+            float y = rect.y + metrics.CaptionAdvance + FilterCaptionGap;
+
+            var searchRect = new Rect(rect.x, y, SearchW, FilterInputH);
+            DrawControlCaption(new Rect(searchRect.x, rect.y,
+                searchRect.width, metrics.CaptionVisualHeight),
+                chrome.SearchCaption, metrics);
+            WrTips.Key("WR_ColonistSearchTip").Region(searchRect);
             GUI.SetNextControlName(SearchControlName);
-            rosterState.Search = Widgets.TextField(
-                new Rect(rect.x + SearchLabelW + 4f, y, SearchW, SearchH),
+            rosterState.Search = Widgets.TextField(searchRect,
                 rosterState.Search);
 
             // Ctrl+F hands focus to the search box with any existing text
@@ -1478,17 +1566,22 @@ namespace WorkRoles.UI
                 }
             }
 
-            float btnX = rect.x + SearchLabelW + 4f + SearchW + 12f;
-            if (Widgets.ButtonText(new Rect(btnX, y, RoleBtnW, SearchH),
-                    chrome.RoleFilterLabel))
+            float btnX = searchRect.xMax + 8f;
+            var roleRect = new Rect(btnX, y, RoleBtnW, FilterInputH);
+            DrawControlCaption(new Rect(roleRect.x, rect.y, roleRect.width,
+                metrics.CaptionVisualHeight), chrome.RoleFilterCaption, metrics);
+            WrTips.Key("WR_ColonistRoleFilterTip").Region(roleRect);
+            if (Widgets.ButtonText(roleRect, chrome.RoleFilterLabel))
                 OpenRoleFilterMenu(chrome);
 
             // Job filter: pawns whose assigned roles cover the selected job.
             float jobX = btnX + RoleBtnW + 8f;
-            var jobBtnRect = new Rect(jobX, y, RoleBtnW, SearchH);
-            if (!string.Equals(chrome.JobFilterShown,
-                    chrome.JobFilterLabel, System.StringComparison.Ordinal))
-                TooltipHandler.TipRegion(jobBtnRect, chrome.JobFilterLabel);
+            var jobBtnRect = new Rect(jobX, y, RoleBtnW, FilterInputH);
+            DrawControlCaption(new Rect(jobBtnRect.x, rect.y,
+                jobBtnRect.width, metrics.CaptionVisualHeight),
+                chrome.JobFilterCaption, metrics);
+            WrTips.Key("WR_ColonistJobFilterTip",
+                chrome.JobFilterLabel).Region(jobBtnRect);
             if (Widgets.ButtonText(jobBtnRect, chrome.JobFilterShown))
                 OpenJobFilterMenu(chrome);
 
@@ -1497,14 +1590,19 @@ namespace WorkRoles.UI
             // Long location names widen the button; RoleBtnW is only the minimum.
             float scopeX = jobX + RoleBtnW + 8f;
             float scopeW = chrome.ScopeWidth;
-            if (Widgets.ButtonText(new Rect(scopeX, y, scopeW, SearchH),
-                    chrome.ScopeLabel))
+            var scopeRect = new Rect(scopeX, y, scopeW, FilterInputH);
+            DrawControlCaption(new Rect(scopeRect.x, rect.y,
+                scopeRect.width, metrics.CaptionVisualHeight), chrome.ScopeCaption,
+                metrics);
+            WrTips.Key("WR_ColonistScopeTip").Region(scopeRect);
+            if (Widgets.ButtonText(scopeRect, chrome.ScopeLabel))
                 OpenScopeMenu(chrome);
 
             if (rosterState.FiltersActive)
             {
-                var clearRect = new Rect(scopeX + scopeW + 8f, y + (SearchH - 18f) / 2f, 18f, 18f);
-                WrTips.Key("WR_ClearFilters").Region(clearRect);
+                var clearRect = new Rect(scopeX + scopeW + 8f,
+                    y + (FilterInputH - 18f) / 2f, 18f, 18f);
+                WrTips.Key("WR_ColonistClearFiltersTip").Region(clearRect);
                 if (Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
                 {
                     rosterState.Search = "";
@@ -1519,8 +1617,12 @@ namespace WorkRoles.UI
             if (chrome.HasSettings)
             {
                 const float DisplayBtnW = 90f;
-                var displayRect = new Rect(rect.xMax - DisplayBtnW, y, DisplayBtnW, SearchH);
-                WrTips.Key("WR_DisplayOptions").Region(displayRect);
+                var displayRect = new Rect(rect.xMax - DisplayBtnW, y,
+                    DisplayBtnW, FilterInputH);
+                DrawControlCaption(new Rect(displayRect.x, rect.y,
+                    displayRect.width, metrics.CaptionVisualHeight),
+                    chrome.RoleDisplayCaption, metrics);
+                WrTips.Key("WR_ColonistRoleDisplayTip").Region(displayRect);
                 if (Widgets.ButtonText(displayRect, chrome.DisplayLabel))
                     OpenDisplayMenu(chrome);
 
@@ -1528,7 +1630,12 @@ namespace WorkRoles.UI
                 if (profile.ShowSkills)
                 {
                     const float SkillsBtnW = 110f;
-                    var skillsRect = new Rect(displayRect.x - 8f - SkillsBtnW, y, SkillsBtnW, SearchH);
+                    var skillsRect = new Rect(displayRect.x - 8f - SkillsBtnW,
+                        y, SkillsBtnW, FilterInputH);
+                    DrawControlCaption(new Rect(skillsRect.x, rect.y,
+                        skillsRect.width, metrics.CaptionVisualHeight),
+                        chrome.SkillColumnsCaption, metrics);
+                    WrTips.Key("WR_ColonistSkillColumnsTip").Region(skillsRect);
                     if (Widgets.ButtonText(skillsRect, chrome.SkillsLabel))
                         OpenSkillColumnsMenu(chrome);
                     groupRight = skillsRect.x;
@@ -1537,7 +1644,12 @@ namespace WorkRoles.UI
                 // Grouping sits with the display controls: it changes how the
                 // table renders, not which pawns it lists.
                 const float GroupBtnW = 130f;
-                var groupRect = new Rect(groupRight - 8f - GroupBtnW, y, GroupBtnW, SearchH);
+                var groupRect = new Rect(groupRight - 8f - GroupBtnW, y,
+                    GroupBtnW, FilterInputH);
+                DrawControlCaption(new Rect(groupRect.x, rect.y,
+                    groupRect.width, metrics.CaptionVisualHeight),
+                    chrome.GroupCaption, metrics);
+                WrTips.Key("WR_ColonistGroupTip").Region(groupRect);
                 if (Widgets.ButtonText(groupRect, chrome.GroupLabel))
                     OpenGroupMenu(chrome);
             }
@@ -2099,11 +2211,14 @@ namespace WorkRoles.UI
             // Chip strips wrap against the roles column; everything else is
             // fixed-width, so the row-height estimate is exact.
             EstimatedStripWidth = TableStripWidth(rect.width);
+            ColonistTableHeaderLayout tableGeometry =
+                ColonistTableHeaderLayout.Calculate(
+                    rect.x, rect.y, rect.width);
 
             bool grouped = sections.Grouped;
             var outRect = new Rect(rect.x, rect.y + TableHeaderH, rect.width, rect.height - TableHeaderH);
             lastTableViewH = outRect.height;
-            float viewW = outRect.width - 16f;
+            float viewW = tableGeometry.ScrollContentWidth;
             EnsureTableLayout(sections, grouped, EstimatedStripWidth);
             if (pendingCenterSelected)
             {
@@ -2130,7 +2245,9 @@ namespace WorkRoles.UI
                 return;
             }
 
-            DrawTableHeader(new Rect(rect.x, rect.y, rect.width - 16f, TableHeaderH), store);
+            DrawTableHeader(new Rect(rect.x, rect.y,
+                tableGeometry.HeaderWidth, TableHeaderH), store,
+                tableGeometry);
 
             float totalH = tableRowLayout?.ContentExtent ?? 0f;
             Widgets.BeginScrollView(outRect, ref tableScroll,
@@ -2395,7 +2512,8 @@ namespace WorkRoles.UI
         /// clears a skill sort, or toggles Tab order/A-Z when none is active)
         /// and skill columns (click sorts by that skill, highest first — the
         /// sorting column's label renders in the passion yellow; X removes).
-        private void DrawTableHeader(Rect rect, RoleStore store)
+        private void DrawTableHeader(Rect rect, RoleStore store,
+            ColonistTableHeaderLayout layout)
         {
             ColonistTableHeaderSnapshot header = TableHeaderSnapshot(store);
             GameFont oldFont = Text.Font;
@@ -2407,9 +2525,11 @@ namespace WorkRoles.UI
                 Text.Font = GameFont.Small;
 
                 // Priority grid over every listed colonist (the filtered table set).
-                var gridRect = new Rect(rect.xMax - 26f, rect.y + (rect.height - 18f) / 2f, 18f, 18f);
+                var gridRect = new Rect(layout.PriorityGridLeft,
+                    layout.PriorityGridTop, layout.PriorityGridWidth,
+                    layout.PriorityGridHeight);
                 WrTips.Key("WR_ShowPriorityGridTip").Region(gridRect);
-                if (Widgets.ButtonImage(gridRect, TexButton.Info))
+                if (Widgets.ButtonImage(gridRect, WorkRolesTex.PriorityGrid))
                 {
                     List<Pawn> listed = rosterState.Sections(store).CopyPawns();
                     Find.WindowStack.Add(new Dialog_PriorityGrid(listed));
@@ -2507,12 +2627,12 @@ namespace WorkRoles.UI
             Color oldColor = GUI.color;
             try
             {
+                ColonistRowSnapshot publishedRow = RowSnapshotFor(
+                    pawn, store, EstimatedStripWidth);
+
                 GUI.color = new Color(1f, 1f, 1f, 0.2f);
                 WrText.LineHorizontal(rect.x, rect.y, rect.width);
                 GUI.color = oldColor;
-
-                ColonistRowSnapshot publishedRow = RowSnapshotFor(
-                    pawn, store, EstimatedStripWidth);
 
                 if (pawn == selectedPawn)
                     Widgets.DrawHighlightSelected(rect);
@@ -2692,8 +2812,6 @@ namespace WorkRoles.UI
             return true;
         }
 
-        // Strip slack is 7 (4 above, 3 below via the ceil'd top pad): the
-        // bottom pixel is deliberately trimmed.
         private float RowHeightOf(Pawn pawn) =>
             Mathf.Max(TextMetrics().MinRowHeight,
                 Mathf.CeilToInt(StripHeightFor(pawn) + 7f));
@@ -2782,7 +2900,9 @@ namespace WorkRoles.UI
         /// the portrait/name area selects the pawn for the stats panel.
         internal void DrawColonistCell(Rect rect, ColonistRowSnapshot row)
         {
-            var portraitRect = new Rect(rect.x, rect.y + (rect.height - PortraitSize) / 2f, PortraitSize, PortraitSize);
+            var portraitRect = new Rect(rect.x,
+                rect.y + (rect.height - PortraitSize) / 2f,
+                PortraitSize, PortraitSize);
             GUI.DrawTexture(portraitRect, row.Portrait);
 
             // The name and caption line boxes stack as one block, centered on
@@ -2792,7 +2912,9 @@ namespace WorkRoles.UI
             bool hasCaption = row.CaptionCount > 0;
             RowTextMetrics boxes = row.LineBoxes;
             float blockH = hasCaption ? boxes.BlockHeight : boxes.NameBox;
-            float blockTop = rect.y + Mathf.Floor((rect.height - blockH) / 2f);
+            float blockTop = rect.y
+                + Mathf.Floor((rect.height - blockH) / 2f)
+                + ColonistRowTextOffsetY;
             var nameRect = new Rect(portraitRect.xMax + 6f, blockTop,
                 NameWidth, boxes.NameBox);
             GameFont oldFont = Text.Font;
@@ -2808,7 +2930,6 @@ namespace WorkRoles.UI
 
                 if (hasCaption)
                 {
-                    Text.Font = GameFont.Tiny;
                     float captionX = nameRect.x;
                     float captionY = nameRect.yMax - LineBoxOverlap;
                     float captionH = boxes.CaptionBox;
@@ -2816,19 +2937,19 @@ namespace WorkRoles.UI
                     {
                         RowCaptionSegment segment = row.CaptionAt(i);
                         GUI.color = segment.AbbrevColor;
-                        Widgets.Label(new Rect(captionX, captionY,
+                        TinyText.Label(new Rect(captionX, captionY,
                             segment.AbbrevWidth + 4f, captionH),
                             segment.Abbrev);
                         captionX += segment.AbbrevWidth;
                         GUI.color = segment.LevelColor;
-                        Widgets.Label(new Rect(captionX, captionY,
+                        TinyText.Label(new Rect(captionX, captionY,
                             segment.LevelWidth + 4f, captionH),
                             segment.Level);
                         captionX += segment.LevelWidth;
                         if (i < row.CaptionCount - 1)
                         {
                             GUI.color = WrStyle.CaptionText;
-                            Widgets.Label(new Rect(captionX, captionY,
+                            TinyText.Label(new Rect(captionX, captionY,
                                 segment.TrailingWidth + 4f, captionH),
                                 segment.Trailing);
                             captionX += segment.TrailingWidth;
@@ -2849,7 +2970,9 @@ namespace WorkRoles.UI
             if (Widgets.ButtonInvisible(selectRect))
                 selectedPawn = row.Pawn;
 
-            var copyRect = new Rect(nameRect.xMax + 2f, rect.y + (rect.height - IconButton) / 2f, IconButton, IconButton);
+            var copyRect = new Rect(nameRect.xMax + 2f,
+                rect.y + (rect.height - IconButton) / 2f,
+                IconButton, IconButton);
             var pasteRect = new Rect(copyRect.xMax + 2f, copyRect.y, IconButton, IconButton);
             WrTips.Key("WR_CopyRolesTip").Region(copyRect);
             if (Widgets.ButtonImage(copyRect, TexButton.Copy))
@@ -3475,12 +3598,15 @@ namespace WorkRoles.UI
         /// survives 1.25 and loses pixels at 1x.
         internal readonly struct RowTextMetrics
         {
-            private RowTextMetrics(float nameBox, float captionBox, float blockHeight, float minRowHeight)
+            private RowTextMetrics(float nameBox, float captionBox,
+                float blockHeight, float minRowHeight,
+                TinyTextMetrics tinyMetrics)
             {
                 NameBox = nameBox;
                 CaptionBox = captionBox;
                 BlockHeight = blockHeight;
                 MinRowHeight = minRowHeight;
+                TinyMetrics = tinyMetrics;
             }
 
             internal float NameBox { get; }
@@ -3488,25 +3614,27 @@ namespace WorkRoles.UI
             /// Name and caption stacked with the permitted line-box overlap.
             internal float BlockHeight { get; }
             internal float MinRowHeight { get; }
+            private TinyTextMetrics TinyMetrics { get; }
 
             internal bool ContentEquals(RowTextMetrics other) =>
                 NameBox == other.NameBox
                 && CaptionBox == other.CaptionBox
                 && BlockHeight == other.BlockHeight
-                && MinRowHeight == other.MinRowHeight;
+                && MinRowHeight == other.MinRowHeight
+                && TinyMetrics == other.TinyMetrics;
 
             /// Tiny falls back to Small whenever tiny text is unsupported (player
             /// preference, language, Steam Deck), which is the one case where the
             /// stacked pair outgrows the standard row.
             internal static RowTextMetrics Build(bool captions,
-                float smallLineHeight, float captionLineHeight)
+                float smallLineHeight, TinyTextMetrics tinyMetrics)
             {
                 float nameBox = Mathf.Ceil(smallLineHeight);
-                float captionBox = Mathf.Ceil(captionLineHeight);
+                float captionBox = tinyMetrics.LineHeight;
                 float block = captions
                     ? nameBox + captionBox - LineBoxOverlap : nameBox;
                 return new RowTextMetrics(nameBox, captionBox, block,
-                    Mathf.Max(RowHeight, block));
+                    Mathf.Max(RowHeight, block), tinyMetrics);
             }
         }
 
@@ -3518,28 +3646,27 @@ namespace WorkRoles.UI
         // the remembered line heights.
         private RowTextMetrics rowTextMetrics;
         private bool rowTextMetricsCaptions;
-        private bool rowTextMetricsTinySupported;
+        private TinyTextMetrics rowTextMetricsTiny;
         private float rowTextMetricsSmallLineHeight = -1f;
         private float rowTextMetricsCaptionLineHeight = -1f;
 
         private RowTextMetrics TextMetrics()
         {
             bool captions = SkillCaptions;
-            bool tinySupported = Text.TinyFontSupported;
+            TinyTextMetrics tinyMetrics = TinyText.Metrics;
             float smallLineHeight = Text.LineHeightOf(GameFont.Small);
-            float captionLineHeight = Text.LineHeightOf(
-                tinySupported ? GameFont.Tiny : GameFont.Small);
+            float captionLineHeight = tinyMetrics.LineHeight;
             if (rowTextMetricsCaptions == captions
-                && rowTextMetricsTinySupported == tinySupported
+                && rowTextMetricsTiny == tinyMetrics
                 && rowTextMetricsSmallLineHeight == smallLineHeight
                 && rowTextMetricsCaptionLineHeight == captionLineHeight)
                 return rowTextMetrics;
             rowTextMetricsCaptions = captions;
-            rowTextMetricsTinySupported = tinySupported;
+            rowTextMetricsTiny = tinyMetrics;
             rowTextMetricsSmallLineHeight = smallLineHeight;
             rowTextMetricsCaptionLineHeight = captionLineHeight;
             rowTextMetrics = RowTextMetrics.Build(
-                captions, smallLineHeight, captionLineHeight);
+                captions, smallLineHeight, tinyMetrics);
             return rowTextMetrics;
         }
 
@@ -3571,8 +3698,7 @@ namespace WorkRoles.UI
             GameFont oldFont = Text.Font;
             try
             {
-                Text.Font = GameFont.Tiny;
-                float separatorWidth = WrText.FitWidth(", ");
+                float separatorWidth = WrText.FitTinyWidth(", ");
                 float available = NameWidth - 2f;
                 float used = 0f;
                 foreach (SkillBucketChoice choice in top)
@@ -3591,8 +3717,8 @@ namespace WorkRoles.UI
                         ? label.Substring(0, 3) : label).ToLowerInvariant()
                         + " ";
                     string level = choice.SkillLevel.ToString();
-                    float abbrevWidth = WrText.FitWidth(abbrev);
-                    float levelWidth = WrText.FitWidth(level);
+                    float abbrevWidth = WrText.FitTinyWidth(abbrev);
+                    float levelWidth = WrText.FitTinyWidth(level);
                     // A new segment needs the previous segment's separator too.
                     float segmentWidth = (result.Count > 0
                             ? separatorWidth : 0f)
@@ -3642,8 +3768,9 @@ namespace WorkRoles.UI
                 if (skill.Disabled)
                 {
                     GUI.color = WrStyle.DisabledText;
-                    Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f,
-                        cell.height), skill.ValueText);
+                    Widgets.Label(new Rect(cell.x + 2f,
+                        cell.y + ColonistRowTextOffsetY,
+                        44f, cell.height), skill.ValueText);
                     return;
                 }
 
@@ -3651,8 +3778,9 @@ namespace WorkRoles.UI
                 // Labels paint on Repaint only; layout and input passes only
                 // need the cached presentation and hover region.
                 if (Event.current.type == EventType.Repaint)
-                    Widgets.Label(new Rect(cell.x + 2f, cell.y, 44f,
-                        cell.height), skill.ValueText);
+                    Widgets.Label(new Rect(cell.x + 2f,
+                        cell.y + ColonistRowTextOffsetY,
+                        44f, cell.height), skill.ValueText);
             }
             finally
             {
@@ -3664,7 +3792,8 @@ namespace WorkRoles.UI
             float ix = cell.x + 48f;
             for (int iconIndex = 0; iconIndex < skill.IconCount; iconIndex++)
             {
-                GUI.DrawTexture(new Rect(ix, cell.y + (cell.height - 16f) / 2f,
+                GUI.DrawTexture(new Rect(ix,
+                    cell.y + (cell.height - 16f) / 2f,
                     16f, 16f), skill.IconAt(iconIndex));
                 ix += 18f;
             }
@@ -3888,11 +4017,14 @@ namespace WorkRoles.UI
                 Color oldColor = GUI.color;
                 try
                 {
-                    Text.Font = GameFont.Tiny;
                     Text.Anchor = TextAnchor.MiddleCenter;
                     Text.WordWrap = false;
                     GUI.color = WrStyle.CaptionText;
-                    Widgets.Label(slotRect, activity.Label);
+                    float visualH = Mathf.Max(
+                        slotRect.height, TinyText.LineHeight);
+                    TinyText.Label(new Rect(slotRect.x,
+                        slotRect.center.y - visualH / 2f,
+                        slotRect.width, visualH), activity.Label);
                 }
                 finally
                 {
@@ -3978,25 +4110,30 @@ namespace WorkRoles.UI
             ColonistSelectedTraitsSnapshot pawnTraits = selected.Traits;
             if (pawnTraits.Count > 0)
             {
-                Text.Font = GameFont.Tiny;
                 GUI.color = new Color(0.7f, 0.7f, 0.7f);
                 bool traitWrap = Text.WordWrap;
                 Text.WordWrap = false;
+                const float traitAdvance = 16f;
+                float traitVisualH = Mathf.Max(
+                    traitAdvance, TinyText.LineHeight);
                 float traitY = slotY + ActivitySlotH + 2f;
                 for (int i = 0; i < pawnTraits.Count; i++)
                 {
-                    if (traitY + 16f > rect.yMax) break;
+                    if (traitY + traitAdvance > rect.yMax) break;
                     ColonistSelectedTraitRowSnapshot trait = pawnTraits.RowAt(i);
-                    var traitRect = new Rect(rect.x, traitY, portraitBoxSize, 16f);
-                    Widgets.Label(traitRect, trait.Label);
-                    if (trait.Tooltip != null && Mouse.IsOver(traitRect))
-                        StructuredTipPresenter.TipRegion(traitRect,
+                    var traitSlotRect = new Rect(rect.x, traitY,
+                        portraitBoxSize, traitAdvance);
+                    var traitLabelRect = new Rect(rect.x,
+                        traitSlotRect.center.y - traitVisualH / 2f,
+                        portraitBoxSize, traitVisualH);
+                    TinyText.Label(traitLabelRect, trait.Label);
+                    if (trait.Tooltip != null && Mouse.IsOver(traitSlotRect))
+                        StructuredTipPresenter.TipRegion(traitSlotRect,
                             trait.Tooltip);
-                    traitY += 16f;
+                    traitY += traitAdvance;
                 }
                 Text.WordWrap = traitWrap;
                 GUI.color = Color.white;
-                Text.Font = GameFont.Small;
             }
 
             ColonistStatsSnapshot statsSnapshot = statsState.Snapshot(selected.Pawn);

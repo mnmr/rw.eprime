@@ -98,7 +98,8 @@ namespace WorkRoles.UI
         /// coverage contains it.
         internal string? JobFilterDefName { get; set; }
         internal bool FiltersActive =>
-            !Search.NullOrEmpty() || RoleFilterId != -1 || JobFilterDefName != null;
+            !string.IsNullOrWhiteSpace(Search) || RoleFilterId != -1
+            || JobFilterDefName != null;
         internal ScopeCacheStamp PawnListStamp
         {
             get
@@ -362,21 +363,20 @@ namespace WorkRoles.UI
                 currentCatalog.AddRolesCovering(RoleFilterId, matchingRoles);
             }
 
-            // Search matches pawn names OR job names: the term expands once to
-            // the giver set whose display name (or work-type gerund) contains it.
-            HashSet<string>? searchGivers =
-                currentCatalog.SearchMatchingGivers(Search);
+            ColonistSearchQuery search = ColonistSearchQuery.Parse(Search);
+            ColonistSearchMatches? searchMatches = search.IsEmpty
+                ? null : new ColonistSearchMatches(currentCatalog);
 
             var result = new List<Pawn>();
             for (int i = 0; i < listed.Count; i++)
             {
                 Pawn pawn = listed[i];
-                if (!Search.NullOrEmpty()
-                    && pawn.LabelShortCap.IndexOf(
-                        Search, StringComparison.OrdinalIgnoreCase) < 0
-                    && !PawnCoverageIntersects(store, pawn, searchGivers,
-                        currentCatalog))
-                    continue;
+                if (searchMatches != null)
+                {
+                    var searchTarget = new ColonistSearchTarget(pawn, store,
+                        currentCatalog, searchMatches);
+                    if (!search.Matches(searchTarget)) continue;
+                }
                 if (matchingRoles != null)
                 {
                     store.pawnSets.TryGetValue(pawn, out PawnRoleSet set);
@@ -391,6 +391,81 @@ namespace WorkRoles.UI
                 result.Add(pawn);
             }
             return result;
+        }
+
+        private sealed class ColonistSearchMatches
+        {
+            private readonly ColonistsRosterCatalogSnapshot catalog;
+            private readonly Dictionary<string, HashSet<int>?> roles =
+                new Dictionary<string, HashSet<int>?>(
+                    StringComparer.OrdinalIgnoreCase);
+            private readonly Dictionary<string, HashSet<string>?> jobs =
+                new Dictionary<string, HashSet<string>?>(
+                    StringComparer.OrdinalIgnoreCase);
+
+            internal ColonistSearchMatches(
+                ColonistsRosterCatalogSnapshot catalog)
+            {
+                this.catalog = catalog;
+            }
+
+            internal HashSet<int>? Roles(string term)
+            {
+                if (!roles.TryGetValue(term, out HashSet<int>? result))
+                {
+                    result = catalog.SearchMatchingRoles(term);
+                    roles.Add(term, result);
+                }
+                return result;
+            }
+
+            internal HashSet<string>? Jobs(string term)
+            {
+                if (!jobs.TryGetValue(term, out HashSet<string>? result))
+                {
+                    result = catalog.SearchMatchingGivers(term);
+                    jobs.Add(term, result);
+                }
+                return result;
+            }
+        }
+
+        private readonly struct ColonistSearchTarget : IColonistSearchTarget
+        {
+            private readonly Pawn pawn;
+            private readonly RoleStore store;
+            private readonly ColonistsRosterCatalogSnapshot catalog;
+            private readonly ColonistSearchMatches matches;
+
+            internal ColonistSearchTarget(Pawn pawn, RoleStore store,
+                ColonistsRosterCatalogSnapshot catalog,
+                ColonistSearchMatches matches)
+            {
+                this.pawn = pawn;
+                this.store = store;
+                this.catalog = catalog;
+                this.matches = matches;
+            }
+
+            public bool NameContains(string term) =>
+                pawn.LabelShortCap.IndexOf(term,
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+
+            public bool HasRoleContaining(string term)
+            {
+                HashSet<int>? roleIds = matches.Roles(term);
+                if (roleIds == null
+                    || !store.pawnSets.TryGetValue(pawn,
+                        out PawnRoleSet set) || set == null) return false;
+                for (int i = 0; i < set.assignments.Count; i++)
+                    if (roleIds.Contains(set.assignments[i].roleId))
+                        return true;
+                return false;
+            }
+
+            public bool HasJobContaining(string term) =>
+                PawnCoverageIntersects(store, pawn, matches.Jobs(term),
+                    catalog);
         }
 
         /// Union coverage of the pawn's assigned non-blocker roles contains

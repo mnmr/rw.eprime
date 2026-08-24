@@ -10,6 +10,7 @@ namespace WorkRoles.UI
     {
         private const float CellGap = 8f;
         private const float GridPadding = 6f;
+        private const float AnchorGap = 6f;
         private const int Columns = 10;
         private const int Rows = 10;
         private const float GridSize = GridPadding * 2f
@@ -21,6 +22,13 @@ namespace WorkRoles.UI
 
         private readonly int roleId;
         private readonly string selectedPath;
+        private readonly Rect anchorRect;
+
+        // WindowStack closes closeOnClickedOutside dialogs before the parent
+        // window processes the same MouseDown. Remember that one close so the
+        // role-icon opener can treat it as a toggle instead of reopening.
+        private static int outsideCloseRoleId = -1;
+        private static int outsideCloseFrame = -1;
 
         // Owner: this dialog instance. Key: shared catalog snapshot identity and
         // definition revision. Value: the shared immutable icon choices.
@@ -32,10 +40,12 @@ namespace WorkRoles.UI
         public override Vector2 InitialSize =>
             new Vector2(GridSize + Margin * 2f, GridSize + Margin * 2f);
 
-        public Dialog_RoleIconPicker(int roleId, string selectedPath)
+        public Dialog_RoleIconPicker(int roleId, string selectedPath,
+            Rect anchorRect)
         {
             this.roleId = roleId;
             this.selectedPath = selectedPath ?? "";
+            this.anchorRect = anchorRect;
             absorbInputAroundWindow = false;
             closeOnClickedOutside = true;
             closeOnAccept = false;
@@ -43,6 +53,73 @@ namespace WorkRoles.UI
             doCloseX = false;
             draggable = false;
             EnsureSnapshot();
+        }
+
+        protected override void SetInitialSizeAndPosition()
+        {
+            Vector2 size = InitialSize;
+            float maxX = Mathf.Max(0f, Verse.UI.screenWidth - size.x);
+            float maxY = Mathf.Max(0f, Verse.UI.screenHeight - size.y);
+            float x;
+            float y;
+
+            if (anchorRect.xMax + AnchorGap + size.x
+                    <= Verse.UI.screenWidth)
+            {
+                x = anchorRect.xMax + AnchorGap;
+                y = Mathf.Clamp(anchorRect.y, 0f, maxY);
+            }
+            else if (anchorRect.x - AnchorGap - size.x >= 0f)
+            {
+                x = anchorRect.x - AnchorGap - size.x;
+                y = Mathf.Clamp(anchorRect.y, 0f, maxY);
+            }
+            else if (anchorRect.yMax + AnchorGap + size.y
+                    <= Verse.UI.screenHeight)
+            {
+                x = Mathf.Clamp(anchorRect.x, 0f, maxX);
+                y = anchorRect.yMax + AnchorGap;
+            }
+            else if (anchorRect.y - AnchorGap - size.y >= 0f)
+            {
+                x = Mathf.Clamp(anchorRect.x, 0f, maxX);
+                y = anchorRect.y - AnchorGap - size.y;
+            }
+            else
+            {
+                // Extremely small displays may have no side large enough for
+                // the picker. Keep it on-screen and favor the roomier side.
+                float rightRoom = Verse.UI.screenWidth - anchorRect.xMax;
+                x = rightRoom >= anchorRect.x
+                    ? anchorRect.xMax + AnchorGap
+                    : anchorRect.x - AnchorGap - size.x;
+                x = Mathf.Clamp(x, 0f, maxX);
+                y = Mathf.Clamp(anchorRect.y, 0f, maxY);
+            }
+
+            windowRect = new Rect(x, y, size.x, size.y).Rounded();
+        }
+
+        internal static void Toggle(int roleId, string selectedPath,
+            Rect anchorRect)
+        {
+            if (outsideCloseRoleId == roleId
+                && outsideCloseFrame == Time.frameCount)
+            {
+                outsideCloseRoleId = -1;
+                outsideCloseFrame = -1;
+                return;
+            }
+
+            if (Find.WindowStack.TryGetWindow<Dialog_RoleIconPicker>(
+                    out Dialog_RoleIconPicker open))
+            {
+                open.Close();
+                return;
+            }
+
+            Find.WindowStack.Add(new Dialog_RoleIconPicker(
+                roleId, selectedPath, anchorRect));
         }
 
         private void EnsureSnapshot()
@@ -117,6 +194,13 @@ namespace WorkRoles.UI
 
         public override void PostClose()
         {
+            Event? current = Event.current;
+            if (current != null && current.type == EventType.MouseDown
+                && current.button == 0)
+            {
+                outsideCloseRoleId = roleId;
+                outsideCloseFrame = Time.frameCount;
+            }
             catalog = null!;
             base.PostClose();
         }

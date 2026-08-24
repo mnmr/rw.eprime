@@ -34,6 +34,7 @@
   <WR_OptVerdictsPalette>Show verdicts for the selected colonist in the role palette</WR_OptVerdictsPalette>
   <WR_OptVerdictsPaletteTip>Palette chips show how well suited each role is for the currently selected colonist.</WR_OptVerdictsPaletteTip>
   <WR_OptVerdictsRecommendations>Show verdicts on recommended role chips</WR_OptVerdictsRecommendations>
+  <WR_OptPaletteGrouping>Role palette grouping</WR_OptPaletteGrouping>
   <WR_OptVerdictsRecommendationsTip>Recommended role chips (stats panel and change previews) show the suitability verdict for the colonist they are recommended to.</WR_OptVerdictsRecommendationsTip>
   <!-- Recommendations tab (WR_OptRecOrder also labels the import preview section) -->
   <WR_RecGlobalPanel>Global Options</WR_RecGlobalPanel>
@@ -257,6 +258,24 @@
   <WR_ActChipX>Remove</WR_ActChipX>
 
   <!-- Filter row -->
+  <WR_ColonistNameCaption>Colonist name</WR_ColonistNameCaption>
+  <WR_AssignedRoleCaption>Assigned role</WR_AssignedRoleCaption>
+  <WR_CoveredJobCaption>Covered job</WR_CoveredJobCaption>
+  <WR_LocationCaption>Location</WR_LocationCaption>
+  <WR_GroupByCaption>Group by</WR_GroupByCaption>
+  <WR_SkillColumnsCaption>Skill columns</WR_SkillColumnsCaption>
+  <WR_RoleDisplayCaption>Role display</WR_RoleDisplayCaption>
+  <WR_ColonistSearchTip>Searches colonist names. Separate terms with spaces; every term must match. Prefix a term with r: or role: to search assigned role names, or j: or job: to search jobs supplied by assigned roles. Example: br r:doc.</WR_ColonistSearchTip>
+  <WR_ColonistRoleFilterTip>Lists colonists assigned the selected role. An assigned non-blocker role also matches when its jobs fully cover the selected role. This combines with the search, job, and location filters.</WR_ColonistRoleFilterTip>
+  <!-- {0} = full selected job label -->
+  <WR_ColonistJobFilterTip>Selected: {0}
+
+Lists colonists whose assigned non-blocker roles contain this job. This checks role coverage, not the colonist's current activity or vanilla work priority.</WR_ColonistJobFilterTip>
+  <WR_ColonistScopeTip>Chooses which colony locations supply colonists to the table. Current location follows the active map; Everywhere includes settlements, caravans, and a traveling gravship.</WR_ColonistScopeTip>
+  <WR_ColonistGroupTip>Divides the visible colonists into sections using the selected characteristic. Grouping does not change which colonists match the filters; section headers can be collapsed.</WR_ColonistGroupTip>
+  <WR_ColonistSkillColumnsTip>Selects up to three skill columns for the table. Click a skill header to sort by it, or click its X to remove the column.</WR_ColonistSkillColumnsTip>
+  <WR_ColonistRoleDisplayTip>Chooses how assigned role chips are drawn in the colonist table: full names, initials, or icons, with natural or equal-width grid spacing. This is a per-player display setting.</WR_ColonistRoleDisplayTip>
+  <WR_ColonistClearFiltersTip>Clears the colonist-name search and the assigned-role and covered-job filters. The location scope, grouping, skill columns, and role display stay unchanged.</WR_ColonistClearFiltersTip>
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
   <!-- {0} = scope name (location or Everywhere/Current location) -->
   <WR_ScopeAll>Everywhere</WR_ScopeAll>
@@ -293,11 +312,16 @@
   <!-- {0} = active skill columns, {1} = maximum -->
   <WR_SkillsButtonCount>Skills ({0}/{1})</WR_SkillsButtonCount>
   <WR_ColColonist>Colonist</WR_ColColonist>
-  <WR_ClearFilters>Clear filters</WR_ClearFilters>
   <WR_NoFilterMatches>No colonists match the filter.</WR_NoFilterMatches>
   <WR_FixMyColony>Fix My Colony</WR_FixMyColony>
   <WR_FixMyColonyTip>Replace every colonist's roles with their recommended roles.</WR_FixMyColonyTip>
   <WR_FixNeedsSingleLocation>Recommendations are computed per location. Narrow the scope filter to a single settlement or ship to use Fix My Colony.</WR_FixNeedsSingleLocation>
+  <WR_AutoManaged>Auto-managed</WR_AutoManaged>
+  <WR_AutoManagedTip>WorkRoles automatically updates role assignments for every colony at the top of each in-game hour.
+
+Pinned assignments are preserved.
+
+Disable "Auto-optimize colonies every in-game hour" on the Options tab to restore Fix My Colony.</WR_AutoManagedTip>
 
   <!-- Swallowed SetPriority warning; {0} = sampled mod, {1} = sampled work type, {2} = blocked writes since the previous notice/session start -->
   <WR_SetPriorityBlockedTitle>WorkRoles manages priorities</WR_SetPriorityBlockedTitle>
@@ -677,8 +701,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_JobFilterLabel>Job Filter</WR_JobFilterLabel>
   <WR_PaletteBySkills>Skills</WR_PaletteBySkills>
   <WR_PaletteByGroups>Groups</WR_PaletteByGroups>
-  <WR_PaletteHidden>Hidden</WR_PaletteHidden>
-  <WR_PaletteModeTip>Arrange the palette by relevant skill or role groups, or hide it entirely. Click to cycle.</WR_PaletteModeTip>
+  <WR_PaletteModeTip>Arrange the role palette by relevant skill or by your role groups.</WR_PaletteModeTip>
 
   <!-- Chip tooltips when a rule suppresses the role -->
   <WR_SuppressedHours>Off: outside active hours</WR_SuppressedHours>

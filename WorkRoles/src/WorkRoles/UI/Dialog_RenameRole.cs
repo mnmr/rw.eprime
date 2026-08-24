@@ -1,4 +1,5 @@
 using System;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -247,10 +248,9 @@ namespace WorkRoles.UI
                 if (nameTaken)
                 {
                     GUI.color = new Color(0.9f, 0.4f, 0.4f);
-                    Text.Font = GameFont.Tiny;
-                    Widgets.Label(new Rect(0f, y, inRect.width, 20f),
+                    TinyText.Label(new Rect(0f, y, inRect.width,
+                        Mathf.Max(20f, TinyText.LineHeight)),
                         chrome.NameTaken);
-                    Text.Font = GameFont.Small;
                     GUI.color = oldColor;
                 }
 

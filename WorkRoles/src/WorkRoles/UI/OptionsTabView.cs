@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -111,6 +112,38 @@ namespace WorkRoles.UI
                 SetDisplayPreference(
                     OptionsDisplayPreference.VerdictsOnRecommendationChips,
                     changed.Value);
+            y += 34f;
+
+            // Palette grouping: a right-aligned Skills/Groups segmented pair
+            // (the retired in-palette cycle button's replacement).
+            var paletteRow = new Rect(flowX, y, flowW, 28f);
+            WrTips.Key("WR_PaletteModeTip").Region(paletteRow);
+            float controlW = snapshot.PaletteGroupingControlWidth;
+            TextAnchor oldAnchor = Text.Anchor;
+            try
+            {
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Widgets.Label(new Rect(flowX, y, flowW - controlW - 8f, 28f),
+                    snapshot.PaletteGroupingLabel);
+            }
+            finally
+            {
+                Text.Anchor = oldAnchor;
+            }
+            int clicked = SegmentedControl.Row(
+                new Rect(flowX + flowW - controlW, y + 2f, controlW, 24f),
+                snapshot.PaletteGroupingOptions,
+                snapshot.PaletteGroupingIndex);
+            if (clicked >= 0 && clicked != snapshot.PaletteGroupingIndex)
+            {
+                WorkRolesSettings settings = WorkRolesMod.Settings;
+                if (settings != null)
+                {
+                    settings.paletteMode = clicked == 1
+                        ? PaletteMode.Groups : PaletteMode.Skills;
+                    WorkRolesGameComponent.RequestSettingsWrite();
+                }
+            }
         }
 
         private static bool? DisplayToggle(

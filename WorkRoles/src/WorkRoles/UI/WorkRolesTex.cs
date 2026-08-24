@@ -22,6 +22,7 @@ namespace WorkRoles.UI
         public static readonly Texture2D RoleCapabilityAll;
         public static readonly Texture2D RoleIconPlaceholder;
         public static readonly Texture2D DisplayOptions;
+        public static readonly Texture2D PriorityGrid;
         public static readonly Texture2D Logo;
         // The vanilla tab atlas (TabRecord keeps its copy private); drawn by
         // WrTabs, never mutated.
@@ -62,6 +63,8 @@ namespace WorkRoles.UI
             RoleIconPlaceholder = ContentFinder<Texture2D>.Get(
                 "UI/Icons/QuestionMark");
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
+            PriorityGrid = ContentFinder<Texture2D>.Get(
+                "WorkRoles/PriorityGrid");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
             TabAtlas = ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas");
             EnsureRuntimeTextures();

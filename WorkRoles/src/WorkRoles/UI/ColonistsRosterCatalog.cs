@@ -485,6 +485,20 @@ namespace WorkRoles.UI
             roles.TryGetValue(roleId, out RoleFacts facts)
                 ? facts.Chip.Label : null;
 
+        internal HashSet<int>? SearchMatchingRoles(string term)
+        {
+            HashSet<int>? result = null;
+            for (int i = 0; i < roleOptions.Count; i++)
+            {
+                ColonistRoleFilterOption option = roleOptions[i];
+                if (option.Label.IndexOf(term,
+                        StringComparison.OrdinalIgnoreCase) < 0)
+                    continue;
+                (result ?? (result = new HashSet<int>())).Add(option.RoleId);
+            }
+            return result;
+        }
+
         internal int JobOptionCount => jobOptions.Count;
         internal ColonistJobFilterOption JobOptionAt(int index) =>
             jobOptions[index];

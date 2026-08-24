@@ -14,6 +14,8 @@ namespace WorkRoles
         IconsGrid = 4,
     }
     public enum ColonistOrder { ColonistBar, Alphabetical }
+    /// Hidden is retired (kept so older persisted settings still parse); it
+    /// normalizes to Skills on load.
     public enum PaletteMode { Skills, Groups, Hidden }
 
     internal enum OptionsDisplayPreference
@@ -42,8 +44,7 @@ namespace WorkRoles
         public System.Collections.Generic.List<string> collapsedRoleGroups = new System.Collections.Generic.List<string>();
         /// Role list: auto-nest covered roles under their coverer (false = flat).
         public bool nestedRoleTree = true;
-        /// Palette arrangement: skill clusters, role groups in player order, or
-        /// collapsed entirely (only the mode button remains).
+        /// Palette arrangement: skill clusters or role groups in player order.
         public PaletteMode paletteMode = PaletteMode.Skills;
         /// Suitability verdict badges on role chips, per surface: colonist
         /// table rows (each row's own pawn), the role palette (the selected
@@ -106,6 +107,11 @@ namespace WorkRoles
             Scribe_Collections.Look(ref collapsedRoleGroups, "collapsedRoleGroups", LookMode.Value);
             Scribe_Values.Look(ref nestedRoleTree, "nestedRoleTree", true);
             Scribe_Values.Look(ref paletteMode, "paletteMode", PaletteMode.Skills);
+            // The retired Hidden mode reads as Skills so the palette always
+            // renders (the in-panel cycle button that restored it is gone).
+            if (Scribe.mode != LoadSaveMode.Saving
+                && paletteMode == PaletteMode.Hidden)
+                paletteMode = PaletteMode.Skills;
             Scribe_Values.Look(ref verdictsOnColonistChips, "verdictsOnColonistChips", true);
             Scribe_Values.Look(ref verdictsInPalette, "verdictsInPalette", true);
             Scribe_Values.Look(ref verdictsOnRecommendationChips, "verdictsOnRecommendationChips", true);

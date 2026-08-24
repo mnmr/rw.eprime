@@ -23,6 +23,12 @@ namespace WorkRoles.UI
         private const float TabHeight = 32f;
         // Between TabRecord's normal white and its hover yellow.
         private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
+        private static readonly Color AutoManagedColor =
+            new Color(0.55f, 0.8f, 0.45f);
+        private static readonly Color AutoManagedBackground =
+            new Color(0.10f, 0.16f, 0.09f, 0.95f);
+        private static readonly Color AutoManagedOutline =
+            new Color(0.55f, 0.8f, 0.45f, 0.65f);
 
         public MainTabWindow_WorkRoles()
         {
@@ -218,6 +224,7 @@ namespace WorkRoles.UI
                 }, () => curTab == Tab.Options),
             };
             fixMyColonyLabel = "WR_FixMyColony".Translate().ToString();
+            autoManagedLabel = "WR_AutoManaged".Translate().ToString();
             restoreDefaultsLabel = "WR_RestoreDefaults".Translate().ToString();
             nothingToRestoreMessage = "WR_NothingToRestore".Translate().ToString();
             exportLabel = "WR_Export".Translate().ToString();
@@ -261,6 +268,8 @@ namespace WorkRoles.UI
             recommendationsTab.ReleaseWindowData();
             optionsTab.ReleaseWindowData();
             WindowDataLifecycle.ReleaseShared();
+            autoManagedGate.Reset();
+            autoManagedSnapshot = false;
             tabs = null;
             StructuredTipPresenter.Reset();
         }
@@ -273,10 +282,59 @@ namespace WorkRoles.UI
         // Teardown: PostClose clears the tab list; strings follow the window.
         private List<TabRecord>? tabs;
         private string fixMyColonyLabel = null!;         // assigned by ObserveLanguageRevision before any draw
+        private string autoManagedLabel = null!;
         private string restoreDefaultsLabel = null!;
         private string nothingToRestoreMessage = null!;
         private string exportLabel = null!;
         private string importLabel = null!;
+
+        // Owner: WorkRoles window. Key: RoleStore identity and the narrow
+        // AutoOptimizePresentationRevision. Value: immutable auto-managed
+        // status bool. Dependencies: only RoleStore.autoOptimize. Refresh:
+        // immediate on the first pass after the command advances the revision,
+        // or when the store owner changes. Equality: unchanged owner/revision
+        // reuses the bool without reading the model. Teardown: PostClose resets
+        // the gate and cached value.
+        private readonly OwnerRevisionGate<RoleStore> autoManagedGate =
+            new OwnerRevisionGate<RoleStore>();
+        private bool autoManagedSnapshot;
+
+        private bool AutoManagedSnapshot()
+        {
+            RoleStore? store = RoleStore.Current;
+            if (autoManagedGate.ShouldRefresh(store,
+                    AutoOptimizePresentationRevision.Current))
+                autoManagedSnapshot = store?.autoOptimize == true;
+            return autoManagedSnapshot;
+        }
+
+        private void DrawAutoManagedIndicator(Rect rect)
+        {
+            WrTips.Key("WR_AutoManagedTip").Region(rect);
+            GameFont oldFont = Text.Font;
+            TextAnchor oldAnchor = Text.Anchor;
+            Color oldColor = GUI.color;
+            try
+            {
+                Widgets.DrawBoxSolidWithOutline(rect, AutoManagedBackground,
+                    AutoManagedOutline);
+                GUI.color = AutoManagedColor;
+                const float DotSize = 8f;
+                GUI.DrawTexture(new Rect(rect.x + 10f,
+                    rect.y + (rect.height - DotSize) / 2f,
+                    DotSize, DotSize), WorkRolesTex.Circle);
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleCenter;
+                Widgets.Label(new Rect(rect.x + 22f, rect.y,
+                    rect.width - 26f, rect.height), autoManagedLabel);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+                Text.Anchor = oldAnchor;
+                GUI.color = oldColor;
+            }
+        }
 
         public override void DoWindowContents(Rect inRect)
         {
@@ -358,19 +416,23 @@ namespace WorkRoles.UI
             const float ActionBtnH = 28f;
             float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
             var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
-            if (curTab == Tab.Colonists
-                && RoleStore.Current?.autoOptimize != true)
+            if (curTab == Tab.Colonists)
             {
-                // Hidden entirely while auto-optimize owns bulk fixes.
-                // Colony planning is per location: with pawns from several maps
-                // (or caravans) in view, Fix My Colony disables.
-                bool spansLocations = colonistsTab.ScopeSpansMultipleLocations;
-                (spansLocations ? WrTips.Key("WR_FixNeedsSingleLocation")
-                    : WrTips.Key("WR_FixMyColonyTip")).Region(actionRect);
-                if (Widgets.ButtonText(actionRect, fixMyColonyLabel, drawBackground: true,
-                        doMouseoverSound: true, active: !spansLocations)
-                    && !spansLocations)
-                    colonistsTab.ShowFixPreview();
+                if (AutoManagedSnapshot())
+                    DrawAutoManagedIndicator(actionRect);
+                else
+                {
+                    // Colony planning is per location: with pawns from several
+                    // maps (or caravans) in view, Fix My Colony disables.
+                    bool spansLocations =
+                        colonistsTab.ScopeSpansMultipleLocations;
+                    (spansLocations ? WrTips.Key("WR_FixNeedsSingleLocation")
+                        : WrTips.Key("WR_FixMyColonyTip")).Region(actionRect);
+                    if (Widgets.ButtonText(actionRect, fixMyColonyLabel,
+                            drawBackground: true, doMouseoverSound: true,
+                            active: !spansLocations) && !spansLocations)
+                        colonistsTab.ShowFixPreview();
+                }
             }
             else if (curTab == Tab.Roles)
             {

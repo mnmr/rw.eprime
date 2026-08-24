@@ -1,3 +1,4 @@
+using UnityEngine;
 using Verse;
 
 namespace WorkRoles.UI
@@ -16,6 +17,10 @@ namespace WorkRoles.UI
             string colonistVerdictsLabel,
             string paletteVerdictsLabel,
             string recommendationVerdictsLabel,
+            string paletteGroupingLabel,
+            string[] paletteGroupingOptions,
+            int paletteGroupingIndex,
+            float paletteGroupingControlWidth,
             StructuredTip numericTip,
             StructuredTip rangeTip,
             StructuredTip autoOptimizeTip,
@@ -37,6 +42,10 @@ namespace WorkRoles.UI
             ColonistVerdictsLabel = colonistVerdictsLabel;
             PaletteVerdictsLabel = paletteVerdictsLabel;
             RecommendationVerdictsLabel = recommendationVerdictsLabel;
+            PaletteGroupingLabel = paletteGroupingLabel;
+            PaletteGroupingOptions = paletteGroupingOptions;
+            PaletteGroupingIndex = paletteGroupingIndex;
+            PaletteGroupingControlWidth = paletteGroupingControlWidth;
             NumericTip = numericTip;
             RangeTip = rangeTip;
             AutoOptimizeTip = autoOptimizeTip;
@@ -59,6 +68,12 @@ namespace WorkRoles.UI
         internal string ColonistVerdictsLabel { get; }
         internal string PaletteVerdictsLabel { get; }
         internal string RecommendationVerdictsLabel { get; }
+        internal string PaletteGroupingLabel { get; }
+        /// Segment labels in PaletteMode ordinal order (Skills, Groups);
+        /// producer-owned array, never mutated after publication.
+        internal string[] PaletteGroupingOptions { get; }
+        internal int PaletteGroupingIndex { get; }
+        internal float PaletteGroupingControlWidth { get; }
         internal StructuredTip NumericTip { get; }
         internal StructuredTip RangeTip { get; }
         internal StructuredTip AutoOptimizeTip { get; }
@@ -93,6 +108,13 @@ namespace WorkRoles.UI
             && string.Equals(RecommendationVerdictsLabel,
                 other.RecommendationVerdictsLabel,
                 System.StringComparison.Ordinal)
+            && string.Equals(PaletteGroupingLabel, other.PaletteGroupingLabel,
+                System.StringComparison.Ordinal)
+            && SameOptions(PaletteGroupingOptions,
+                other.PaletteGroupingOptions)
+            && PaletteGroupingIndex == other.PaletteGroupingIndex
+            && PaletteGroupingControlWidth
+                == other.PaletteGroupingControlWidth
             && NumericTip.ContentEquals(other.NumericTip)
             && RangeTip.ContentEquals(other.RangeTip)
             && AutoOptimizeTip.ContentEquals(other.AutoOptimizeTip)
@@ -103,6 +125,16 @@ namespace WorkRoles.UI
             && ColonistVerdicts == other.ColonistVerdicts
             && PaletteVerdicts == other.PaletteVerdicts
             && RecommendationVerdicts == other.RecommendationVerdicts;
+
+        private static bool SameOptions(string[] left, string[] right)
+        {
+            if (left.Length != right.Length) return false;
+            for (int i = 0; i < left.Length; i++)
+                if (!string.Equals(left[i], right[i],
+                        System.StringComparison.Ordinal))
+                    return false;
+            return true;
+        }
     }
 
     /// Owns the Options tab's detached open-window projection.
@@ -110,13 +142,14 @@ namespace WorkRoles.UI
     {
         // Owner: Options tab window instance.
         // Key: RoleStore identity, WorkRolesSettings identity,
-        // LanguageChangeCoordinator.Revision, and the exact seven boolean
-        // values displayed by the tab.
+        // LanguageChangeCoordinator.Revision, UiVersion.Current (the palette
+        // grouping control width is a text measurement), the palette grouping
+        // value, and the exact seven boolean values displayed by the tab.
         // Value: immutable OptionsRenderSnapshot containing translated chrome,
-        // structured tips, and detached checkbox values.
-        // Dependencies: language, manual-priority mode, reported priority range,
-        // the auto-optimize schedule toggle, and the four client-local display
-        // preferences.
+        // structured tips, measured control geometry, and detached values.
+        // Dependencies: language, UI metrics, manual-priority mode, reported
+        // priority range, the auto-optimize schedule toggle, the palette
+        // grouping preference, and the four client-local display preferences.
         // Refresh: immediate when an exact key input changes, including paused
         // synced execution and local preference edits.
         // Equality: exact equal rebuilt contents preserve snapshot identity.
@@ -126,9 +159,11 @@ namespace WorkRoles.UI
         private RoleStore? owner;
         private WorkRolesSettings? settingsOwner;
         private int languageRevision = -1;
+        private int uiRevision = -1;
         private bool builtNumeric;
         private bool builtVanillaRange;
         private bool builtAutoOptimize;
+        private int builtPaletteGrouping = -1;
         private bool builtSkillCaptions;
         private bool builtColonistVerdicts;
         private bool builtPaletteVerdicts;
@@ -140,6 +175,8 @@ namespace WorkRoles.UI
             owner = null;
             settingsOwner = null;
             languageRevision = -1;
+            uiRevision = -1;
+            builtPaletteGrouping = -1;
             snapshot = null;
         }
 
@@ -152,9 +189,13 @@ namespace WorkRoles.UI
         {
             WorkRolesSettings? settings = WorkRolesMod.Settings;
             int language = LanguageChangeCoordinator.Revision;
+            int ui = UiVersion.Current;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool vanillaRange = store?.reportVanillaPriorities ?? true;
             bool autoOptimize = store?.autoOptimize ?? false;
+            PaletteMode paletteGrouping =
+                settings?.paletteMode == PaletteMode.Groups
+                    ? PaletteMode.Groups : PaletteMode.Skills;
             bool skillCaptions = settings?.colonistSkillCaptions ?? true;
             bool colonistVerdicts = settings?.verdictsOnColonistChips ?? true;
             bool paletteVerdicts = settings?.verdictsInPalette ?? true;
@@ -165,9 +206,11 @@ namespace WorkRoles.UI
             if (snapshot != null
                 && !ownerChanged
                 && languageRevision == language
+                && uiRevision == ui
                 && builtNumeric == numeric
                 && builtVanillaRange == vanillaRange
                 && builtAutoOptimize == autoOptimize
+                && builtPaletteGrouping == (int)paletteGrouping
                 && builtSkillCaptions == skillCaptions
                 && builtColonistVerdicts == colonistVerdicts
                 && builtPaletteVerdicts == paletteVerdicts
@@ -201,6 +244,32 @@ namespace WorkRoles.UI
                     "WR_OptAutoOptimizeTipOn".Translate());
             autoOptimizeModel.AddSection().Text(
                 "WR_OptAutoOptimizeTipWhy".Translate(), dim: true);
+            // Segment labels in PaletteMode ordinal order; the control width
+            // fits the widest translated label per segment (measured behind
+            // this snapshot's language/UI-revision gate).
+            var paletteGroupingOptions = new[]
+            {
+                "WR_PaletteBySkills".Translate().ToString(),
+                "WR_PaletteByGroups".Translate().ToString(),
+            };
+            float paletteControlWidth;
+            GameFont previousFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                float widestSegment = 0f;
+                foreach (string option in paletteGroupingOptions)
+                {
+                    float width = WrText.FitWidth(option);
+                    if (width > widestSegment) widestSegment = width;
+                }
+                paletteControlWidth = Mathf.Max(140f,
+                    (widestSegment + 24f) * paletteGroupingOptions.Length + 5f);
+            }
+            finally
+            {
+                Text.Font = previousFont;
+            }
             var rebuilt = new OptionsRenderSnapshot(
                 "WR_CompatSection".Translate(),
                 numericLabel,
@@ -212,6 +281,10 @@ namespace WorkRoles.UI
                 "WR_OptVerdictsColonists".Translate(),
                 "WR_OptVerdictsPalette".Translate(),
                 "WR_OptVerdictsRecommendations".Translate(),
+                "WR_OptPaletteGrouping".Translate(),
+                paletteGroupingOptions,
+                paletteGrouping == PaletteMode.Groups ? 1 : 0,
+                paletteControlWidth,
                 new StructuredTip("options:numeric", numericModel),
                 new StructuredTip("options:vanilla-range", rangeModel),
                 new StructuredTip("options:auto-optimize", autoOptimizeModel),
@@ -228,9 +301,11 @@ namespace WorkRoles.UI
             owner = store;
             settingsOwner = settings;
             languageRevision = language;
+            uiRevision = ui;
             builtNumeric = numeric;
             builtVanillaRange = vanillaRange;
             builtAutoOptimize = autoOptimize;
+            builtPaletteGrouping = (int)paletteGrouping;
             builtSkillCaptions = skillCaptions;
             builtColonistVerdicts = colonistVerdicts;
             builtPaletteVerdicts = paletteVerdicts;
