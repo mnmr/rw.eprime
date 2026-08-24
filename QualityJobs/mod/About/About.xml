@@ -3,7 +3,7 @@
   <name>EPrime's Quality Jobs</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.QualityJobs</packageId>
-  <modVersion>1.0.7</modVersion>
+  <modVersion>1.0.8</modVersion>
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
@@ -18,15 +18,16 @@
     <li>brrainz.harmony</li>
   </loadAfter>
   <description>
-Quality Jobs lets everyone work on unfinished items, but only qualified colonists are allowed to finish the job. Works for both crafting and construction. 
+Quality Jobs lets everyone work on unfinished items, but only qualified colonists are allowed to finish the job (quality outcome only depends on the finisher).
 
-You can configure default quality options and override these per bill or buildable. 
+- Works for both crafting and construction. 
+- Automatically hands the finishing touch to the best qualifying pawn, with support for inspirations and specialists.
+- Configurable defaults with override options per bill or buildable. 
+- Unfinished work sharing also unblocks bills, so a colonist with an unfinished item doesn't block others from working at the bench.
 
-For crafting, sharing of unfinished works also unblocks bills so they don't become locked to the colonist last working on an item.
-
-Multiplayer compatible. 
-Safe to add/remove mid-save (but when removing you must use the settings option to disable the mod, otherwise unfinished bill items will have to be dismantled).
+Safe to add/remove mid-save (but when removing you must use the settings option to disable the mod, otherwise unfinished bill items will have to be cancelled).
 Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
+Multiplayer compatible. 
 Requires Harmony.
   </description>
 </ModMetaData>

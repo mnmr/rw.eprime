@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.0.8 — 2026-08-24
+
+- Changed: Improved API surface and some internal optimizations.
+
 ## 1.0.7 — 2026-08-18
 
 - Fixed: Added two more log guards so that all logging sites are guarded.

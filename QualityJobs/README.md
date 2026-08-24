@@ -44,6 +44,9 @@ master crafter do the final touch — this mod automates the entire loop.
 
 **General**
 
+- Not a cheat: quality is still rolled by the pawn who finishes the work,
+  exactly as vanilla rules dictate — the mod just helps ensure that pawn is
+  someone with a high success rate.
 - Inspired Creativity is consumed on the finishing touch, exactly as vanilla
   intends.
 - Paused items show "Author: reserved (Quality Jobs)" and cannot be resumed
@@ -92,6 +95,10 @@ Core is netstandard2.0 with no game references so its tests run anywhere.
 
 - [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092): a modern, compact resource readout with support for custom resource pools.
 - [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134): easily and intuitively manage work priorities by assigning named roles to colonists.
+
+## Disclaimer
+
+Created with the help of Claude Code.
 
 ## License
 
