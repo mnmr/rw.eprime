@@ -124,7 +124,10 @@ namespace WorkRoles.UI
         private const float IconButton = 24f;
         private const float ChipGap = 4f;
         private const float StatsPanelMargin = 8f;
-        private const float PalettePanelPadding = 6f;
+        /// Palette panel insets: sides and bottom breathe at 8px; the top
+        /// keeps a tighter 6px so the caption hugs the panel edge.
+        private const float PalettePanelPadding = 8f;
+        private const float PalettePanelTopPadding = 6f;
         /// Design width: fixed chrome (tab strip + FMC button, filter row, editor
         /// swatch grid) fits at this size, so it doubles as the window's min width.
         internal const float DefaultWidth = 1010f;
@@ -446,19 +449,20 @@ namespace WorkRoles.UI
             float chrome = 80f;
             float paletteSection = PaletteHeight(store,
                     desiredWidthCache - PalettePanelPadding * 2f - 16f)
-                + PalettePanelPadding * 2f - PaletteCaptionInkAllowance
+                + PalettePanelTopPadding + PalettePanelPadding
+                - PaletteCaptionInkAllowance
                 + 8f + FilterMetrics().RowHeight + 4f;
             float statsPanel = StatsPanelHeight() + StatsPanelMargin;
             float tableContent = 0f;
             float stripW = TableStripWidth(desiredWidthCache);
-            float minimumTextHeight = TextMetrics().MinRowHeight;
+            RowTextMetrics rowMetrics = TextMetrics();
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
                 float stripH = LayoutChips(stripW, chipSequences[pawn], pawn,
                     result: null);
-                tableContent += Mathf.Max(minimumTextHeight,
-                    Mathf.CeilToInt(stripH + 7f));
+                tableContent += ColonistRowMetrics.Height(
+                    rowMetrics.MinRowHeight, rowMetrics.BlockHeight, stripH);
             }
             return chrome + paletteSection + tableContent + statsPanel;
         }
@@ -536,8 +540,8 @@ namespace WorkRoles.UI
             float tableBottom = rect.yMax - statsPanelH - StatsPanelMargin;
             float paletteH = PaletteHeight(store,
                 rect.width - PalettePanelPadding * 2f - 16f);
-            float palettePanelH = paletteH + PalettePanelPadding * 2f
-                - PaletteCaptionInkAllowance;
+            float palettePanelH = paletteH + PalettePanelTopPadding
+                + PalettePanelPadding - PaletteCaptionInkAllowance;
             FilterControlMetrics filterMetrics = FilterMetrics();
             float filterTop = rect.y + palettePanelH + 8f;
             float tableTop = filterTop + filterMetrics.RowHeight + 4f;
@@ -1389,9 +1393,9 @@ namespace WorkRoles.UI
                 WrStyle.PanelOutline);
             DrawPalette(new Rect(
                 rect.x + PalettePanelPadding,
-                rect.y + PalettePanelPadding - PaletteCaptionInkAllowance,
+                rect.y + PalettePanelTopPadding - PaletteCaptionInkAllowance,
                 rect.width - PalettePanelPadding * 2f,
-                rect.height - PalettePanelPadding * 2f
+                rect.height - PalettePanelTopPadding - PalettePanelPadding
                     + PaletteCaptionInkAllowance), store);
         }
 
@@ -2634,11 +2638,15 @@ namespace WorkRoles.UI
                 WrText.LineHorizontal(rect.x, rect.y, rect.width);
                 GUI.color = oldColor;
 
+                // Snapped and one device pixel taller than the row so both
+                // hairline separators sit on highlighted background (the
+                // unsnapped quad missed the top one by rasterization phase).
                 if (pawn == selectedPawn)
-                    Widgets.DrawHighlightSelected(rect);
+                    Widgets.DrawHighlightSelected(
+                        PixelBox.RowHighlightSpan(rect));
                 else if (Mouse.IsOver(rect))
                 {
-                    Widgets.DrawHighlight(rect);
+                    Widgets.DrawHighlight(PixelBox.RowHighlightSpan(rect));
                     TargetHighlighter.Highlight(publishedRow.Pawn,
                         arrow: true, colonistBar: publishedRow.IsColonist);
                 }
@@ -2812,9 +2820,12 @@ namespace WorkRoles.UI
             return true;
         }
 
-        private float RowHeightOf(Pawn pawn) =>
-            Mathf.Max(TextMetrics().MinRowHeight,
-                Mathf.CeilToInt(StripHeightFor(pawn) + 7f));
+        private float RowHeightOf(Pawn pawn)
+        {
+            RowTextMetrics metrics = TextMetrics();
+            return ColonistRowMetrics.Height(metrics.MinRowHeight,
+                metrics.BlockHeight, StripHeightFor(pawn));
+        }
 
         private void Select(Pawn pawn)
         {

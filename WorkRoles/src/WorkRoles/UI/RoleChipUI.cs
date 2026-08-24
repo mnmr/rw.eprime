@@ -116,19 +116,9 @@ namespace WorkRoles.UI
         }
 
         /// Red border marking a chip whose role is about to be removed.
+        /// Snapped like the chip box so it replaces the outline pixels exactly.
         public static void DrawRemovedOutline(Rect rect)
-        {
-            Color oldColor = GUI.color;
-            try
-            {
-                GUI.color = RemovedColor;
-                Widgets.DrawBox(rect);
-            }
-            finally
-            {
-                GUI.color = oldColor;
-            }
-        }
+            => RimShared.UiLib.PixelBox.Outline(rect, RemovedColor);
 
         // Shared chip metrics: markers sit MarkerEdgePad from the left border
         // with MarkerGap between slots; the label follows the band (or the

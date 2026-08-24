@@ -188,14 +188,18 @@ namespace WorkRoles.UI
                 degrees);
         }
 
-        /// Pixel-snapped 1px lines, tinted by the ambient GUI.color: an
-        /// unsnapped hairline blurs (or doubles) at fractional UI scales.
+        /// Device-pixel hairlines, tinted by the ambient GUI.color: exactly
+        /// one physical pixel thick at any UI scale. AdjustRectToUIScaling is
+        /// not enough — it floors one edge and ceils the other, so a
+        /// one-logical-unit line doubles at fractional scales.
         public static void LineVertical(float x, float y, float length)
-            => GUI.DrawTexture(UIScaling.AdjustRectToUIScaling(new Rect(x, y, 1f, length)),
+            => GUI.DrawTexture(
+                RimShared.UiLib.PixelBox.HairlineVertical(x, y, length),
                 BaseContent.WhiteTex);
 
         public static void LineHorizontal(float x, float y, float length)
-            => GUI.DrawTexture(UIScaling.AdjustRectToUIScaling(new Rect(x, y, length, 1f)),
+            => GUI.DrawTexture(
+                RimShared.UiLib.PixelBox.HairlineHorizontal(x, y, length),
                 BaseContent.WhiteTex);
 
         /// Width that safely fits a single-line label at any UI scale, measured

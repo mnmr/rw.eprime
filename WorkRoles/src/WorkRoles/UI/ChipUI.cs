@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -53,8 +54,12 @@ namespace WorkRoles.UI
 
         private static void DrawGrip(Rect zone)
         {
-            Widgets.DrawBoxSolid(new Rect(zone.center.x - 2f, zone.y + 5f, 1f, zone.height - 10f), GripColor);
-            Widgets.DrawBoxSolid(new Rect(zone.center.x + 1f, zone.y + 5f, 1f, zone.height - 10f), GripColor);
+            // Device-pixel hairlines: unsnapped 1-logical-px bars render one
+            // or two physical pixels by position at fractional UI scales.
+            Widgets.DrawBoxSolid(PixelBox.HairlineVertical(
+                zone.center.x - 2f, zone.y + 5f, zone.height - 10f), GripColor);
+            Widgets.DrawBoxSolid(PixelBox.HairlineVertical(
+                zone.center.x + 1f, zone.y + 5f, zone.height - 10f), GripColor);
         }
 
         /// Draws one chip from a spec: box, grips, label, strike, remove X.
@@ -67,7 +72,9 @@ namespace WorkRoles.UI
             Color oldColor = GUI.color;
             try
             {
-            Widgets.DrawBoxSolidWithOutline(rect, spec.Bg, spec.Outline);
+            // Pixel-snapped: a logical-unit outline renders 1-2 physical px
+            // per edge at fractional UI scales and can spill past the fill.
+            PixelBox.SolidWithOutline(rect, spec.Bg, spec.Outline);
 
             if (spec.Grips)
             {
