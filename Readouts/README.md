@@ -7,6 +7,7 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 - **Display Groups:** each group is a band of resource icons with counters, rendered as transparent stripes with a small colored group marker so counters stay readable against the map. Groups can be enabled/disabled and reordered.
 - **Tiers:** put your must-see resources in tier 1 and details in tiers 2-3, then click a band's triangle markers to cycle how many tiers are shown.
 - **Resource Pools:** combine resources into pools, so you can render "Meats" (or all leathers, all stone blocks) as a single icon with the summed count. Tooltips then provide the details.
+- **Beyond Resources:** any storable item can be tracked, not just resources — weapons, apparel, bionics and more can be added to groups and pools.
 - **Easy Setup:** ships with predefined groups (Food, Raw, Medicine, Drugs, Textiles, Materials, Wealth) and resource pools covering every vanilla and DLC resource. A Restore Defaults button brings them back anytime.
 - **Material Debt:** options to subtract resources needed for planned work (bills, buildables), with support for [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051).
 - **Ignore Missing:** per-item option to skip rendering if count is 0 (to keep readouts minimal). Thresholded resources stay visible at zero.
@@ -22,7 +23,7 @@ EPrime's Readouts replaces [RimWorld](https://rimworldgame.com/)'s resource read
 - Requires [Harmony](https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077).
 - Safe to add to or remove from existing saves. Removing a content mod cleans its resources from your groups automatically.
 - Multiplayer compatible ([RimWorld Multiplayer](https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745)): group definitions are shared and synced; what each player shows is their own choice.
-- MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, "As above, so below 2") do not need special support to work.
+- MultiFloors mod support: readouts show combined resource counts across all floors of a level stack. Other multi-floor mods (Strata, 'As above, so below 2') do not need special support to work.
 - Not compatible with other mods that replace the resource readout (Readouts+, Custom Resource Readout, Toggleable Readouts, and similar).
 
 ## Building from source
@@ -54,7 +55,7 @@ dotnet test src\EPrimeReadouts.slnx
 
 ## Disclaimer
 
-This was created with the help of Claude Code (see WorkRoles for my longer take on this). The mod is free, made in my spare time, and without AI it likely would not exist.
+Created with the help of Claude Code.
 
 ## License
 
