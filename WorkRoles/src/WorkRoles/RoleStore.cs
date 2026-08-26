@@ -495,13 +495,45 @@ namespace WorkRoles
         public override void ExposeData()
         {
             base.ExposeData();
+            Dictionary<Pawn, PawnRoleSet> pawnSetsToExpose = pawnSets;
+            Dictionary<Pawn, string> locationIdsToExpose = lastLocationIds;
             if (Scribe.mode == LoadSaveMode.Saving)
             {
+                // Reference keys are only resolvable next load when the game
+                // itself serializes the pawn. The anchor deliberately accepts
+                // ANY holder chain (caravans, travelling transporters,
+                // gravship-held containers, modded holders such as vehicle
+                // passengers) instead of predicting the game's persistence
+                // buckets: only detached pawns — generated preview/simulation
+                // pawns with no holder — are unresolvable. Faction leavers and
+                // subhumans fail the colony-member fact and retire too. Filter
+                // only the serialized snapshot: saving must not mutate
+                // authoritative in-memory state on one multiplayer peer.
+                pawnSetsToExpose = new Dictionary<Pawn, PawnRoleSet>(
+                    ReferenceIdentityComparer<Pawn>.Instance);
+                foreach (var kv in pawnSets)
+                {
+                    Pawn pawn = kv.Key;
+                    if (pawn == null) continue;
+                    if (PawnRolePersistencePolicy.ShouldRetain(
+                        isAlive: !pawn.Dead && !pawn.Destroyed,
+                        isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony,
+                        hasPersistenceAnchor: pawn.MapHeld != null
+                            || pawn.IsWorldPawn()
+                            || pawn.ParentHolder != null))
+                        pawnSetsToExpose[pawn] = kv.Value;
+                }
+                locationIdsToExpose = new Dictionary<Pawn, string>(
+                    ReferenceIdentityComparer<Pawn>.Instance);
+                foreach (var kv in lastLocationIds)
+                    if (kv.Key != null && pawnSetsToExpose.ContainsKey(kv.Key))
+                        locationIdsToExpose[kv.Key] = kv.Value;
+
                 // The saved vanilla priority maps double as the mod-removal fallback —
                 // make sure every managed pawn's projection is current before writing.
                 // Empty sets are skipped: an unmanaged pawn's projection is empty and
                 // syncing it would zero their real vanilla priorities.
-                foreach (var kv in pawnSets)
+                foreach (var kv in pawnSetsToExpose)
                     if (kv.Key != null && !kv.Key.Destroyed && kv.Value.assignments.Count > 0)
                         CompiledJobOrders.MirrorFreshVanillaFallback(kv.Key);
                 SweepBillRolesBeforeSave();
@@ -543,15 +575,20 @@ namespace WorkRoles
             Scribe_Collections.Look(ref knownWorkTypes, "knownWorkTypes", LookMode.Value);
             Scribe_Collections.Look(ref customSwatches, "customSwatches", LookMode.Value);
             Scribe_Collections.Look(ref customSwatchNames, "customSwatchNames", LookMode.Value);
-            Scribe_Collections.Look(ref pawnSets, "pawnSets", LookMode.Reference, LookMode.Deep,
+            Scribe_Collections.Look(ref pawnSetsToExpose, "pawnSets",
+                LookMode.Reference, LookMode.Deep,
                 ref pawnKeysWorkingList, ref setValuesWorkingList);
+            if (Scribe.mode != LoadSaveMode.Saving)
+                pawnSets = pawnSetsToExpose;
             Scribe_Collections.Look(ref billRoles, "billRoles", LookMode.Reference, LookMode.Value,
                 ref billKeysWorkingList, ref billValuesWorkingList);
             Scribe_Values.Look(ref locationTokenSchemaVersion,
                 "locationTokenSchemaVersion", 0);
-            Scribe_Collections.Look(ref lastLocationIds, "lastLocationIds",
+            Scribe_Collections.Look(ref locationIdsToExpose, "lastLocationIds",
                 LookMode.Reference, LookMode.Value,
                 ref locationKeysWorkingList, ref locationValuesWorkingList);
+            if (Scribe.mode != LoadSaveMode.Saving)
+                lastLocationIds = locationIdsToExpose;
             // Versions before stable ship identity stored numeric map ids.
             // Read that node only while loading; new saves write the opaque map.
             if (Scribe.mode != LoadSaveMode.Saving)

@@ -35,7 +35,7 @@ namespace WorkRoles.Patches
             {
                 if (__instance.Faction?.IsPlayer != true)
                     store.UnmanagePawn(__instance);
-                else if (Current.ProgramState == ProgramState.Playing)
+                else
                     Seeding.TryAutoAssignBasics(__instance);
             }
 
@@ -51,21 +51,51 @@ namespace WorkRoles.Patches
         }
     }
 
-    /// Covers pawns whose work settings initialize after spawn.
+    /// Covers pawns whose work settings initialize after spawn, and joiners
+    /// generated mid-game (PawnGenerator initializes work settings for
+    /// player-faction requests before the pawn spawns or boards anything).
     [HarmonyPatch(typeof(Pawn_WorkSettings), nameof(Pawn_WorkSettings.EnableAndInitialize))]
     public static class Patch_PawnWorkSettings_EnableAndInitialize
     {
         public static void Postfix(Pawn ___pawn)
         {
-            if (Current.ProgramState != ProgramState.Playing) return;
+            if (Scribe.mode != LoadSaveMode.Inactive || ___pawn == null) return;
             Seeding.TryAutoAssignBasics(___pawn);
             // A re-init on a managed pawn zeroed the dormant vanilla map and its
             // SetPriority rebuild was swallowed — restore the projection now.
+            // Deliberately not gated on ProgramState: a re-init during map
+            // finalization must also be repaired, and a freshly generated pawn
+            // can never be managed here.
             if (RoleStore.Current?.IsManaged(___pawn) == true)
             {
                 CompiledJobOrders.Invalidate(___pawn);
                 CompiledJobOrders.MirrorFreshVanillaFallback(___pawn);
             }
+        }
+    }
+
+    /// Subhumans (ghouls) cannot hold work priorities, so a turned colonist is
+    /// evicted at the mutation boundary: UnmanagePawn mirrors the current
+    /// projection into the vanilla fallback before removing tracking, keeping
+    /// memory and the next save in agreement (IsColonist is false for
+    /// subhumans, so the persistence filter would drop the entry anyway).
+    /// Turn/Revert run in deterministic simulation code on every peer.
+    [HarmonyPatch(typeof(Pawn_MutantTracker), nameof(Pawn_MutantTracker.Turn))]
+    public static class Patch_PawnMutantTracker_Turn
+    {
+        public static void Postfix(Pawn ___pawn) =>
+            RoleStore.Current?.UnmanagePawn(___pawn);
+    }
+
+    /// A reverted mutant rejoins the colony like any other joiner. Reverts that
+    /// are part of dying (shambler cleanup) must not assign roles to a corpse.
+    [HarmonyPatch(typeof(Pawn_MutantTracker), nameof(Pawn_MutantTracker.Revert))]
+    public static class Patch_PawnMutantTracker_Revert
+    {
+        public static void Postfix(Pawn ___pawn, bool beingKilled)
+        {
+            if (!beingKilled)
+                Seeding.TryAutoAssignBasics(___pawn);
         }
     }
 }

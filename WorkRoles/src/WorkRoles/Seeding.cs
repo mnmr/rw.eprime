@@ -357,12 +357,24 @@ namespace WorkRoles
 
         /// Assigns only the auto-assign roles (Basics) — used for pawns joining
         /// mid-game, mirroring vanilla's minimal auto-enable; vocational roles are the
-        /// player's call (the Recommended Roles panel covers it).
+        /// player's call (the Recommended Roles panel covers it). Assignment
+        /// happens at the joining event itself (generation, faction change,
+        /// mutant revert) even for pawns not yet spawned or on the roster:
+        /// deferring on admission state would require process-local history
+        /// that neither survives a save/load nor stays identical across
+        /// multiplayer peers. Never-admitted preview pawns are instead dropped
+        /// by the persistence-anchor filter when the store is saved.
         public static void TryAutoAssignBasics(Pawn pawn)
         {
+            if (Current.ProgramState != ProgramState.Playing) return;
+            if (Scribe.mode != LoadSaveMode.Inactive) return;
             var store = RoleStore.Current;
             if (store == null || !store.seeded) return;
-            if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return;
+            if (pawn == null) return;
+            if (!PawnRolePersistencePolicy.ShouldAutoAssign(
+                    isAlive: !pawn.Dead && !pawn.Destroyed,
+                    isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony))
+                return;
             if (store.IsManaged(pawn)) return;
 
             foreach (var role in store.roles)

@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.1 — 2026-08-24
+
+- Fixed: Gracefully handle when tracked pawns become unavailable (e.g. optimized away). Narrowed tracking to only alive player-owned pawns.
+
 ## 1.5.0 — 2026-08-24
 
 - Added: Option to turn on colony automation. When enabled, WorkRoles applies "Fix My Colony" across all player colonies once per game hour (2500 ticks).
