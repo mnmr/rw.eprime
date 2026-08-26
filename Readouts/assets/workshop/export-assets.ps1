@@ -32,10 +32,29 @@ $about = Join-Path $repo "mod\About"
 
 function Export-Svg([string]$svg, [string]$png, [int]$w, [int]$h, [double]$scale) {
     $url = "file:///" + ($svg -replace '\\', '/')
+    # Edge's --headless=new launcher exits before its child writes the
+    # screenshot, so delete any stale output first and poll for the fresh
+    # file instead of trusting the launcher's exit.
+    Remove-Item $png -ErrorAction SilentlyContinue
     & $edge --headless=new --disable-gpu --force-device-scale-factor=$scale `
         --default-background-color=00000000 `
         --window-size="$w,$h" --screenshot="$png" $url 2>$null | Out-Null
+    for ($i = 0; $i -lt 60 -and -not (Test-Path $png); $i++) { Start-Sleep -Milliseconds 250 }
     if (-not (Test-Path $png)) { throw "screenshot failed: $png" }
+    # Wait for the writer to finish: size must be stable and the file openable.
+    for ($i = 0; $i -lt 60; $i++) {
+        $a = (Get-Item $png).Length
+        Start-Sleep -Milliseconds 250
+        $b = (Get-Item $png).Length
+        if ($a -eq $b -and $a -gt 0) {
+            try {
+                $fs = [System.IO.File]::Open($png, 'Open', 'Read', 'None')
+                $fs.Dispose()
+                return
+            } catch { }
+        }
+    }
+    throw "screenshot never stabilized: $png"
 }
 
 Add-Type -AssemblyName System.Drawing
