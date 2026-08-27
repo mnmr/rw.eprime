@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>EPrime's Readouts</name>
+  <author>Morten Mertner</author>
+  <packageId>mnmr.eprimereadouts</packageId>
+  <modVersion>1.2.5</modVersion>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <description>
+Replaces the vanilla resource readout with customizable groups that render item counts as a stylish, modern band with up to three display tiers.
+
+Features:
+- Resource Pools: Combine items into pools, so you can render multiple items as a single counter. Tooltips then provide the details.
+- Easy Setup: Ships with predefined groups and resource pools.
+- Modern UI: Renders as transparent stripes with a small group marker.
+- No Map Scrolling: Map scrolling is disabled when mouse hovers over the readouts, so you can interact without force-panning the map left.
+- Import/Export: Easily share or backup your setup.
+- Options: Fully customizable groups, tiers and resource pools in the built-in settings dialog.
+- Tiered: Click to cycle how many tiers are rendered.
+- Ignore Missing: Per-item option to skip rendering if count is 0 (to keep readouts minimal).
+- Planned Work: Options to subtract resources needed for queued work (aka material debt), with support for EPrime's Quality Jobs.
+- Warning Thresholds: Per-item option to set thresholds, so counts render in different colors when running low.
+- Search: Quick search and inline result display. Can be configured or turned off in options.
+
+Compatibility:
+- Safe to add/remove mid-game.
+- Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic (updates counters every 204 ticks).
+- Multiplayer compatible.
+- MultiFloors mod support (readouts show combined resource counts across all floors). Other multi-floor mods (Strata, 'As above, so below 2') do not need special support to work.
+- Requires Harmony.
+
+Check Out My Other Mods:
+- EPrime's Quality Jobs: Manage quality crafting and construction, so your items get the best possible quality.
+- WorkRoles: Easily and intuitively manage work priorities by assigning named roles to colonists.
+  </description>
+</ModMetaData>

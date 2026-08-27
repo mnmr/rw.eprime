@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <EPR.Title>EPrime's Readouts</EPR.Title>
+  <EPR.Results>Results</EPR.Results>
+  <EPR.NoMatches>No matches</EPR.NoMatches>
+  <EPR.MoreResults>…and {0} more</EPR.MoreResults>
+  <EPR.CycleTip>Cycle visible tiers</EPR.CycleTip>
+  <EPR.UseVanilla>Use vanilla readout</EPR.UseVanilla>
+  <EPR.OffsetX>Horizontal offset</EPR.OffsetX>
+  <EPR.OffsetY>Vertical offset</EPR.OffsetY>
+  <EPR.PanelWidth>Panel width</EPR.PanelWidth>
+  <EPR.BottomMargin>Bottom margin</EPR.BottomMargin>
+  <EPR.Groups>Groups</EPR.Groups>
+  <EPR.Resources>Resources</EPR.Resources>
+  <EPR.AllStorableItems>All Storable Items</EPR.AllStorableItems>
+  <EPR.All>All</EPR.All>
+  <EPR.Vanilla>Vanilla</EPR.Vanilla>
+  <EPR.SearchFilter>Search filter</EPR.SearchFilter>
+  <EPR.ItemFilter>Item filter</EPR.ItemFilter>
+  <EPR.SourceFilter>Source filter</EPR.SourceFilter>
+  <EPR.NoMatchingItems>No matching items</EPR.NoMatchingItems>
+  <EPR.Editor>Editor</EPR.Editor>
+  <EPR.GroupEditor>Group Editor</EPR.GroupEditor>
+  <EPR.RenameGroup>Rename group</EPR.RenameGroup>
+  <EPR.Add>Add</EPR.Add>
+  <EPR.Rename>Rename</EPR.Rename>
+  <EPR.DeleteConfirm>Delete group "{0}"?</EPR.DeleteConfirm>
+  <EPR.SelectGroupHint>Select or create a group to edit it.</EPR.SelectGroupHint>
+  <EPR.Thresholds>Thresholds</EPR.Thresholds>
+  <EPR.Low>Low</EPR.Low>
+  <EPR.Critical>Critical</EPR.Critical>
+  <EPR.Set>Set</EPR.Set>
+  <EPR.Clear>Clear</EPR.Clear>
+  <EPR.ShowWhenZero>Show when zero</EPR.ShowWhenZero>
+  <EPR.PoolTip>Add as a pooled entry: one slot showing the combined count of everything in this category</EPR.PoolTip>
+  <EPR.EnableTip>Show this group in the readout</EPR.EnableTip>
+  <EPR.RestoreDefaults>Restore defaults</EPR.RestoreDefaults>
+  <EPR.RestoreConfirm>Replace ALL groups and thresholds with the default set? This affects every player in multiplayer.</EPR.RestoreConfirm>
+  <EPR.Help>Help</EPR.Help>
+  <EPR.HelpGroups>These are your resource display groups. Each group renders as a separate band.&#10;&#10;Click the checkmark to toggle visibility or [x] to delete the group.&#10;&#10;Add new groups using the name input and Add button.</EPR.HelpGroups>
+  <EPR.HelpResources>Browse resources and defined resource pools to add them to the selected group.&#10;&#10;Click an entry to append it to the group, or drag it to place it in a specific tier slot. Assigned entries are dimmed and marked; right-click them or click their checkmark to remove them.</EPR.HelpResources>
+  <EPR.HelpEditor>This panel shows you the tiers of the currently selected group.&#10;&#10;A group can have up to three display tiers. A new tier automatically becomes available when the previous tier is non-empty.&#10;&#10;Click or drag items from the panel on the right to add them to the selected group.&#10;&#10;Click a slot to set display options. Right-click a slot to clear the assignment. Drag items to re-arrange inside or between tiers.</EPR.HelpEditor>
+  <EPR.Options>Options</EPR.Options>
+  <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
+  <EPR.SearchHideZero>Hide zero-count results</EPR.SearchHideZero>
+  <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
+  <EPR.SearchStorageOnlyTip>When enabled, only counts eligible, non-rotten items in stockpile zones or storage buildings such as shelves. Loose map items elsewhere on the map are excluded. Items carried by pawns, held in inventories or containers, or hidden in unrevealed areas are never counted. Forbidden items are included unless “Ignore forbidden items” is also enabled.</EPR.SearchStorageOnlyTip>
+  <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
+  <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
+  <EPR.ExpandOnHover>Expand on hover</EPR.ExpandOnHover>
+  <EPR.CollapseWhenIdle>Collapse when not hovering</EPR.CollapseWhenIdle>
+  <EPR.ShowModName>Show mod name</EPR.ShowModName>
+  <EPR.CountOptions>Count Options</EPR.CountOptions>
+  <EPR.PlannedWorkOptions>Planned Work</EPR.PlannedWorkOptions>
+  <EPR.ReserveForBills>Reserve resources for bill items</EPR.ReserveForBills>
+  <EPR.ReserveForBillsTip>Subtracts the ingredients your outstanding bills still have to consume. A bill only reserves an ingredient it can be satisfied by in exactly one way — "any leather" and similar open choices reserve nothing.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBuildables>Reserve resources for buildables</EPR.ReserveForBuildables>
+  <EPR.ReserveForBuildablesTip>Subtracts the materials your blueprints and part-built frames still need. Materials already hauled into a frame are not counted again, and forbidden blueprints are ignored.</EPR.ReserveForBuildablesTip>
+  <EPR.ShowNegativeCounts>Show overruns as negative numbers</EPR.ShowNegativeCounts>
+  <EPR.ShowNegativeCountsTip>When planned work needs more than you have, show how far short you are instead of stopping at zero.</EPR.ShowNegativeCountsTip>
+  <EPR.QualityJobsRework>Quality Jobs support</EPR.QualityJobsRework>
+  <EPR.QualityJobsReworkTip>For bills and buildables with a quality target, estimate how many attempts the target will take and reserve for all of them. Rebuilt structures give back the share vanilla refunds when they are deconstructed.</EPR.QualityJobsReworkTip>
+  <EPR.QualityJobsMissingTip>Requires EPrime's Quality Jobs, which is not installed.</EPR.QualityJobsMissingTip>
+  <EPR.QualityJobsOutdatedTip>EPrime's Quality Jobs is installed but does not offer the integration this needs. Update it to enable this option.</EPR.QualityJobsOutdatedTip>
+  <EPR.TipPlannedWork>Planned Work</EPR.TipPlannedWork>
+  <EPR.TipResource>Resource</EPR.TipResource>
+  <EPR.TipQueued>Queued</EPR.TipQueued>
+  <EPR.TipEach>Each</EPR.TipEach>
+  <EPR.TipDrain>Drain</EPR.TipDrain>
+  <EPR.TipInStock>In Stock</EPR.TipInStock>
+  <EPR.TipAvailableStock>{0} available · {1} in stock</EPR.TipAvailableStock>
+  <EPR.TipOtherPlannedWork>Other ({0})</EPR.TipOtherPlannedWork>
+  <EPR.TipMixedResources>Mixed</EPR.TipMixedResources>
+  <EPR.ClickOptions>Click Options</EPR.ClickOptions>
+  <EPR.SearchOptions>Search Options</EPR.SearchOptions>
+  <EPR.HoverOptions>Hover Options</EPR.HoverOptions>
+  <EPR.OptionsFor>Display Options for {0}</EPR.OptionsFor>
+  <EPR.ThresholdCaption>Customize thresholds for colorized counters</EPR.ThresholdCaption>
+  <EPR.CountRuleCaption>Override counting options for this resource/pool</EPR.CountRuleCaption>
+  <EPR.RuleDefault>Default</EPR.RuleDefault>
+  <EPR.RuleAlwaysOn>Always On</EPR.RuleAlwaysOn>
+  <EPR.RuleAlwaysOff>Always Off</EPR.RuleAlwaysOff>
+  <EPR.Pools>Resource Pools</EPR.Pools>
+  <EPR.ResourcePoolEditor>Resource Pool Editor</EPR.ResourcePoolEditor>
+  <EPR.HelpPools>Create a resource pool, then select it here to edit its contents in the Resources panel. Use the row actions to rename or delete a pool.&#10;&#10;To add a pool to a group, switch to Group Editor and use the Resource Pools branch in the Resources tree.</EPR.HelpPools>
+  <EPR.HelpPoolEditor>Use the shared filters to narrow the resource tree. Tick categories or individual resources to include them in the selected pool. Click a resource's icon to use it as the pool icon.</EPR.HelpPoolEditor>
+  <EPR.SelectOrCreatePool>Select or create a resource pool to begin.</EPR.SelectOrCreatePool>
+  <EPR.DeletePoolConfirm>Delete pool "{0}"? Slots using it will be removed from all groups.</EPR.DeletePoolConfirm>
+  <EPR.NameLabel>Name</EPR.NameLabel>
+  <EPR.PoolNameTaken>A resource pool with this name already exists.</EPR.PoolNameTaken>
+  <EPR.OK>OK</EPR.OK>
+  <EPR.Cancel>Cancel</EPR.Cancel>
+  <EPR.Export>Export</EPR.Export>
+  <EPR.Import>Import</EPR.Import>
+  <EPR.Exported>Exported to {0}</EPR.Exported>
+  <EPR.Imported>Import applied successfully.</EPR.Imported>
+  <EPR.NoFiles>No export files found.</EPR.NoFiles>
+
+  <!-- Export preview dialog -->
+  <EPR.ExportPreviewTitle>Export Readouts</EPR.ExportPreviewTitle>
+  <EPR.CopyToClipboard>Copy to Clipboard</EPR.CopyToClipboard>
+  <EPR.CopiedToClipboard>Copied to clipboard.</EPR.CopiedToClipboard>
+  <EPR.Save>Save</EPR.Save>
+  <EPR.ExportLocationLabel>Save location</EPR.ExportLocationLabel>
+  <EPR.CopyPath>Copy Path</EPR.CopyPath>
+
+  <!-- Shared location picker -->
+  <EPR.LocGameData>Game data folder</EPR.LocGameData>
+  <EPR.LocDesktop>Desktop</EPR.LocDesktop>
+  <EPR.LocUserHome>User home</EPR.LocUserHome>
+  <EPR.LocCustom>Custom...</EPR.LocCustom>
+  <EPR.EnterPath>Enter path</EPR.EnterPath>
+  <EPR.BadFileName>Enter a valid file name.</EPR.BadFileName>
+  <EPR.BadDirectory>Enter a valid directory path.</EPR.BadDirectory>
+
+  <!-- Import dialog -->
+  <EPR.ImportTitle>Import Readouts</EPR.ImportTitle>
+  <EPR.ImportLocationLabel>Import location</EPR.ImportLocationLabel>
+  <EPR.FromClipboard>From Clipboard</EPR.FromClipboard>
+  <EPR.ClipboardEmpty>Clipboard is empty or does not contain a readout export.</EPR.ClipboardEmpty>
+  <EPR.ImportWarning>WARNING: This will REPLACE all current pools, groups, and thresholds. This affects every player in multiplayer.</EPR.ImportWarning>
+  <EPR.ImportParseFailed>Could not parse readout XML: {0}</EPR.ImportParseFailed>
+  <EPR.Back>Back</EPR.Back>
+  <EPR.DeleteFileConfirm>Delete the file &quot;{0}&quot;? This cannot be undone.</EPR.DeleteFileConfirm>
+
+  <!-- Shared preview listing -->
+  <EPR.ContentSummary>{0} pools, {1} groups</EPR.ContentSummary>
+  <EPR.PreviewPoolsHeader>Pools</EPR.PreviewPoolsHeader>
+  <EPR.PreviewGroupsHeader>Groups</EPR.PreviewGroupsHeader>
+  <EPR.PreviewPoolRow>{0} ({1} members)</EPR.PreviewPoolRow>
+  <EPR.PreviewGroupRow>{0} ({1} tiers, {2} slots)</EPR.PreviewGroupRow>
+  <EPR.PreviewNone>(none)</EPR.PreviewNone>
+</LanguageData>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" font-family="Arial, Helvetica, sans-serif">
+  <rect width="64" height="64" rx="6" fill="#111317"/>
+  <text x="32" y="33" fill="#e8e6e0" font-size="30" font-weight="bold" text-anchor="middle">ER</text>
+  <!-- One expanded group band: translucent container, colored stripe, three
+       resource squares with counter dashes (mirrors the in-game readout). -->
+  <g>
+    <rect x="8" y="41" width="48" height="15" rx="2" fill="#ffffff" fill-opacity="0.10"/>
+    <rect x="8" y="41" width="2.5" height="15" fill="#5ba8dc"/>
+    <!-- tier markers: two lit, one dim -->
+    <path d="M13 45.5 L16 47.75 L13 50 Z" fill="#e8e6e0"/>
+    <path d="M17 45.5 L20 47.75 L17 50 Z" fill="#e8e6e0" fill-opacity="0.35"/>
+    <!-- resource icons -->
+    <rect x="24" y="43.5" width="8" height="8" rx="1.5" fill="#b87333"/>
+    <rect x="35" y="43.5" width="8" height="8" rx="1.5" fill="#8a9aa5"/>
+    <rect x="46" y="43.5" width="8" height="8" rx="1.5" fill="#4d7c0f"/>
+    <!-- counters -->
+    <rect x="25.5" y="53" width="5" height="1.6" rx="0.8" fill="#c9c7c1"/>
+    <rect x="36.5" y="53" width="5" height="1.6" rx="0.8" fill="#c9c7c1"/>
+    <rect x="47.5" y="53" width="5" height="1.6" rx="0.8" fill="#c9c7c1"/>
+  </g>
+</svg>
