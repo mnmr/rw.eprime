@@ -59,4 +59,4 @@ Created with the help of Claude Code.
 
 ## License
 
-See [LICENSE](LICENSE).
+See [LICENSE](../LICENSE).
