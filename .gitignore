@@ -1,0 +1,14 @@
+# Game source/artwork, local profiles and saves must never be committed
+/Game/
+/Saves/
+/AutomationProfiles/
+
+# Specs and plans are intentionally untracked
+docs/superpowers/
+
+# Build output and scratch space
+bin/
+obj/
+temp/
+.vs/
+*.user
