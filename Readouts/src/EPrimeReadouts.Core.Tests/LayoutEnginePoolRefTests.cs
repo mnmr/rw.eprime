@@ -95,36 +95,41 @@ public class LayoutEnginePoolRefTests
     [Test]
     public async Task PoolRef_UnknownPool_Skipped_NormalMode()
     {
-        // No pools snapshot → #99 is unknown → no cells
+        // No pools snapshot → #99 is unknown → no slot; the identification
+        // band remains.
         string token = SlotToken.PoolToken(99);
         var model = ReadoutLayoutEngine.Build(Input(Group(1, token)));
 
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 
     [Test]
     public async Task PoolRef_NullSnapshot_Treated_As_Empty_NormalMode()
     {
-        // Pools = null → #1 unknown → skipped
+        // Pools = null → #1 unknown → no slot; the identification band remains.
         string token = SlotToken.PoolToken(PoolId);
         var model = ReadoutLayoutEngine.Build(Input(Group(1, token), pools: null));
 
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 
     [Test]
     public async Task PoolRef_ZeroMemberPool_Skipped_NormalMode()
     {
-        // Pool exists but has no members (empty category) → skipped in normal mode
+        // Pool exists but has no members (empty category) → no slot in normal
+        // mode; the identification band remains.
         var pool = new ResourcePool { Id = PoolId, Name = "Empty", Members = new List<string>() };
         var pools = PoolSnapshot.Build(new List<ResourcePool> { pool }, StaticResources.Catalog());
         string token = SlotToken.PoolToken(PoolId);
         var model = ReadoutLayoutEngine.Build(Input(Group(1, token), pools));
 
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 
     [Test]
@@ -143,13 +148,14 @@ public class LayoutEnginePoolRefTests
     [Test]
     public async Task PoolRef_HideFlagged_HiddenAtZeroSum()
     {
-        // ~#1 with no counts → hidden
+        // ~#1 with no counts → slot hidden; the identification band remains.
         var pools = StaticResources.MeatPool(PoolId);
         string token = "~" + SlotToken.PoolToken(PoolId); // "~#1"
         var model = ReadoutLayoutEngine.Build(Input(Group(1, token), pools));
 
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 
     [Test]

@@ -60,7 +60,10 @@ namespace EPrimeReadouts.UI
         // Dependencies: those keys and per-player depth/search/settings state.
         // Refresh policy: immediate on dependency changes; counts arrive via
         // GameRenderData's 204-tick publisher.
-        // Equality policy: unchanged dependencies preserve DrawModel identity.
+        // Equality policy: unchanged dependencies preserve DrawModel identity,
+        // and a rebuild whose content equals the published model also
+        // preserves it (RenderModelEquality), so no-op view-stamp bumps never
+        // invalidate the identity-keyed base pixel surface.
         // Teardown: ReleaseMap/Reset drops map and store-derived state.
         private static DrawModel? draw;
         private static Vector2 scroll;
@@ -89,11 +92,9 @@ namespace EPrimeReadouts.UI
         private static int graphicsEligibleFrame;
         private static int lastGraphicsFrame = -1;
         private static DrawModel? publishedGeometryDraw;
-        private static int publishedGeometryWidth;
-        private static int publishedGeometryHeight;
-        private static float publishedGeometryScroll = float.NaN;
         private static int publishedIconRevision = -1;
-        private static string? publishedHeaderKey;
+        private static PanelHeaderRevision publishedHeader;
+        private static bool publishedHeaderValid;
 
         // Cache contract:
         // Owner: process/current main readout panel.
@@ -119,9 +120,11 @@ namespace EPrimeReadouts.UI
         // group whose band is under the pointer, or -1. A transition bumps
         // the view stamp so the cached DrawModel rebuilds once per band
         // enter/leave, never per frame. Stability: band heights never vary
-        // with depth (collapse is horizontal), so expanding the hovered band
-        // cannot shift any band vertically, and an expanded band's footprint
-        // contains its collapsed footprint, so enter/leave cannot oscillate.
+        // with depth (collapse is horizontal) and band PRESENCE is
+        // depth-invariant (a group with no visible slots keeps its thin
+        // identification band when expanded), so expanding the hovered band
+        // cannot shift or remove any band, and an expanded band's footprint
+        // contains its collapsed footprint — enter/leave cannot oscillate.
         private static int hoveredGroupId = -1;
 
         private static void UpdateHoverState(ReadoutSettings settings)
@@ -200,11 +203,9 @@ namespace EPrimeReadouts.UI
             graphicsEligibleFrame = 0;
             lastGraphicsFrame = -1;
             publishedGeometryDraw = null;
-            publishedGeometryWidth = 0;
-            publishedGeometryHeight = 0;
-            publishedGeometryScroll = float.NaN;
             publishedIconRevision = -1;
-            publishedHeaderKey = null;
+            publishedHeader = default;
+            publishedHeaderValid = false;
         }
 
         internal static void ProcessPendingGraphics(Map map)
@@ -230,7 +231,7 @@ namespace EPrimeReadouts.UI
             {
                 ReadoutSettings settings = EPrimeReadoutsMod.Settings;
                 VisiblePanelGeometry geometry = CurrentGeometry(settings);
-                PanelHeaderBufferData header = CurrentHeader(settings);
+                PanelHeaderRevision header = CurrentHeaderRevision(settings);
                 if (!frameBuffers.BuildBack(
                     ticket, draw, geometry, header,
                     PanelVisualOptions.Default, UiVersion.Current,
@@ -274,20 +275,19 @@ namespace EPrimeReadouts.UI
             UpdateHoverState(settings);
             if (NeedsStructuralRebuild(store, map, width, renderData))
             {
-                Rebuild(store, map, width, renderData);
-                QueueBaseRebuild();
+                if (Rebuild(store, map, width, renderData))
+                    QueueBaseRebuild();
             }
             else if (!ReferenceEquals(builtCounts, renderData.Counts))
             {
                 bool refreshed = TryRefreshCounts(renderData);
                 if (!refreshed)
                 {
-                    Rebuild(store, map, width, renderData);
-                    QueueBaseRebuild();
+                    if (Rebuild(store, map, width, renderData))
+                        QueueBaseRebuild();
                 }
                 else QueueCountFrame();
             }
-            ObserveBufferInputs(settings);
 
             using (new GuiStateScope()) Draw(map, store, settings);
         }
@@ -296,9 +296,9 @@ namespace EPrimeReadouts.UI
         {
             bool repaint = Event.current.type == EventType.Repaint;
             if (repaint && !bufferedRendererDisabled)
-                frameBuffers.Swap();
+                bufferPipeline.TrySwapOnRepaint();
             bool buffered = !bufferedRendererDisabled
-                && frameBuffers.HasFront;
+                && frameBuffers.HasSurfaces;
 
             GenUI.DrawTextWinterShadow(
                 new Rect(256f, 512f, -256f, -512f));
@@ -315,7 +315,12 @@ namespace EPrimeReadouts.UI
 
             if (buffered && repaint)
             {
-                frameBuffers.Present(x, y);
+                // Scroll is presentation-only: it selects a pixel-snapped
+                // window into the cached content textures and never queues a
+                // rebuild.
+                frameBuffers.Present(x, y,
+                    scrolling ? scroll.y : 0f, contentH,
+                    CurrentGeometry(settings));
             }
 
             Text.Font = GameFont.Small;
@@ -611,7 +616,7 @@ namespace EPrimeReadouts.UI
                 graphicsEligibleFrame, Time.frameCount + 1);
         }
 
-        private static void QueueVisibleFrame()
+        private static void QueueHeaderFrame()
         {
             if (bufferedRendererDisabled) return;
             bufferPipeline.PublishCounts();
@@ -619,28 +624,25 @@ namespace EPrimeReadouts.UI
                 graphicsEligibleFrame, Time.frameCount + 1);
         }
 
+        /// Steady-state change detection: reference/struct field compares
+        /// only — no strings, collections, or geometry are built here.
         private static void ObserveBufferInputs(ReadoutSettings settings)
         {
             if (bufferedRendererDisabled || draw == null) return;
-            VisiblePanelGeometry geometry = CurrentGeometry(settings);
-            PanelHeaderBufferData header = CurrentHeader(settings);
+            PanelHeaderRevision header = CurrentHeaderRevision(settings);
             int iconRevision = IconScaleCache.Revision;
             bool baseChanged = !ReferenceEquals(publishedGeometryDraw, draw)
                 || publishedIconRevision != iconRevision;
-            bool visibleChanged = publishedGeometryWidth != geometry.Width
-                || publishedGeometryHeight != geometry.Height
-                || publishedGeometryScroll != geometry.ScrollY
-                || publishedHeaderKey != header.RevisionKey;
+            bool headerChanged = !publishedHeaderValid
+                || !publishedHeader.Equals(header);
 
             if (baseChanged) QueueBaseRebuild();
-            else if (visibleChanged) QueueVisibleFrame();
+            else if (headerChanged) QueueHeaderFrame();
 
             publishedGeometryDraw = draw;
-            publishedGeometryWidth = geometry.Width;
-            publishedGeometryHeight = geometry.Height;
-            publishedGeometryScroll = geometry.ScrollY;
             publishedIconRevision = iconRevision;
-            publishedHeaderKey = header.RevisionKey;
+            publishedHeader = header;
+            publishedHeaderValid = true;
         }
 
         private static VisiblePanelGeometry CurrentGeometry(
@@ -655,29 +657,27 @@ namespace EPrimeReadouts.UI
             int headerHeight = Mathf.CeilToInt(SearchRowH);
             int visibleContentHeight = Mathf.Max(
                 0, Mathf.CeilToInt(contentHeight));
-            float contentWidth = draw != null
-                ? draw.Model.TotalWidth : settings.panelWidth;
-            PanelSurfaceSizing surface = PanelSurfaceSizing.Create(
-                settings.panelWidth,
-                contentWidth,
-                headerHeight + visibleContentHeight,
-                Prefs.UIScale);
+            float scale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
             return new VisiblePanelGeometry(
-                surface,
+                settings.panelWidth,
                 headerHeight,
                 visibleContentHeight,
-                totalHeight > maxContentHeight ? scroll.y : 0f);
+                scale);
         }
 
-        private static PanelHeaderBufferData CurrentHeader(
+        private static PanelHeaderRevision CurrentHeaderRevision(
             ReadoutSettings settings) =>
-            new PanelHeaderBufferData(
+            new PanelHeaderRevision(
                 settings.showSearchFilter,
                 !settings.showSearchFilter
                     && settings.showModNameWhenNoSearch,
                 SearchText ?? "",
                 cachedTitleText ?? "",
-                cachedTitleWidth);
+                cachedTitleWidth,
+                settings.panelWidth,
+                Mathf.CeilToInt(SearchRowH),
+                UiVersion.Current,
+                Prefs.UIScale > 0f ? Prefs.UIScale : 1f);
 
         private static void DisableBufferedRenderer(string reason)
         {
@@ -739,7 +739,11 @@ namespace EPrimeReadouts.UI
             return true;
         }
 
-        private static void Rebuild(
+        /// Rebuilds the layout and publishes a resolved draw model. Returns
+        /// false when the rebuilt content equals the published model: the
+        /// existing model/draw identity is preserved (keeping the base pixel
+        /// surface and hit geometry valid) and no graphics rebuild is queued.
+        private static bool Rebuild(
             ReadoutStore store,
             Map map,
             float width,
@@ -786,12 +790,20 @@ namespace EPrimeReadouts.UI
                 AllowNegativeCounts = settings.showNegativeCounts,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
+                SearchableDefNames = GameResourceCatalog.SearchableDefNames,
                 Pools = renderData.Structure,
                 Metrics = PanelCellMetrics.Current,
             };
-            DrawModel next = DrawModel.Resolve(
-                ReadoutLayoutEngine.Build(input), renderData);
-            draw = next;
+            RenderModel nextModel = ReadoutLayoutEngine.Build(input);
+            bool changed = draw == null
+                || !RenderModelEquality.ContentEquals(draw.Model, nextModel);
+            if (changed)
+                draw = DrawModel.Resolve(nextModel, renderData);
+            else
+                // Equal content: keep the published model identity; only the
+                // snapshot reference behind tooltips needs refreshing (equal
+                // cells mean every count and text is already current).
+                draw!.RefreshCounts(renderData);
             builtInput = input;
             builtGroupsVersion = store.GroupsVersion;
             builtThresholdsVersion = store.ThresholdsVersion;
@@ -802,6 +814,7 @@ namespace EPrimeReadouts.UI
             builtPools = renderData.Structure;
             builtCounts = renderData.Counts;
             builtUiVersion = UiVersion.Current;
+            return changed;
         }
 
         private static void EnsurePresentationText()

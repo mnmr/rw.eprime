@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.5 — 2026-08-27
+
+- Changed: Performance improvements.
+
 ## 1.2.4 — 2026-08-26
 
 - Changed: Metadata updates.

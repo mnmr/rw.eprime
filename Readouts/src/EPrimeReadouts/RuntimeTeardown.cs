@@ -15,6 +15,8 @@ namespace EPrimeReadouts
             LevelStacks.Reset();
             GameResourceCatalog.Reset();
             GameResourceTree.Reset();
+            ReadoutStore.ResetCurrentCache();
+            EPrimeReadouts.Core.ReadoutLayoutEngine.ResetCaches();
             ReadoutPanel.Reset();
             IconTips.Reset();
             WrTips.Reset();

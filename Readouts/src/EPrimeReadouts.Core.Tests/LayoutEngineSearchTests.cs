@@ -42,6 +42,33 @@ public class LayoutEngineSearchTests
     }
 
     [Test]
+    public async Task SearchableUniverseSurfacesDefsAbsentFromCounts()
+    {
+        // The count snapshot carries no entry at all for Cloth (nothing on
+        // the map); the searchable universe must still surface it as a
+        // zero-count row so search does not depend on zero-seeded snapshots.
+        var input = Input("cloth");
+        input.SearchableDefNames = new List<string>
+            { "MealSimple", "MealFine", "Steel", "RawRice", "Cloth" };
+        var model = ReadoutLayoutEngine.Build(input);
+        await Assert.That(Icons(model)).Contains("Cloth");
+        var counter = model.Cells.First(c =>
+            c.Kind == CellKind.Counter && c.DefName == "Cloth");
+        await Assert.That(counter.Text).IsEqualTo("0");
+    }
+
+    [Test]
+    public async Task SearchableUniverseHideZeroStillHidesAbsentDefs()
+    {
+        var input = Input("cloth");
+        input.SearchHideZero = true;
+        input.SearchableDefNames = new List<string>
+            { "MealSimple", "MealFine", "Steel", "RawRice", "Cloth" };
+        var model = ReadoutLayoutEngine.Build(input);
+        await Assert.That(Icons(model)).DoesNotContain("Cloth");
+    }
+
+    [Test]
     public async Task GroupsStayVisibleWithMatchesHighlighted()
     {
         var model = ReadoutLayoutEngine.Build(Input("meal"));

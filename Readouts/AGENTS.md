@@ -29,7 +29,10 @@ verification commands. Where this file is silent, the root contract governs.
 | Per-map render data | Store/world identity and map identity |
 | Pool structure snapshot | `PoolsVersion`, immediately |
 | Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, the derived collection needs (storage-only and hide-forbidden count-basis options unioned with the stored count rules via `CountRulesVersion`) immediately, `PlannedWorkOptions` immediately (including while paused), and 204 elapsed game ticks; replace only when contents differ |
-| Main readout layout/draw model | Map, width, view state, `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity |
+| Main readout layout/draw model | Map, width, view state, `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity; a rebuild with content equal to the published model preserves model identity |
+| Base pixel surface | Draw-model identity, content dimensions, UI metric revision, icon scale revision, icon data revision, visual options; scroll offset and viewport height are presentation-only and never invalidate it |
+| Content glyph surface | Counter/label content (text, counts, threshold bands, cell rects), UI metric revision, content dimensions |
+| Header strip surface | Search visibility options, search text, title text and measured width, panel width, header height, UI metric revision, raster scale |
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity |
 | Pool display/list rows | Shared pool snapshot identity and relevant selection state |
 | Group assignment tree rows | Store/world identity, `GroupsVersion`, selected group and token, pool snapshot identity, shared filter revision, group expansion state, and language revision |

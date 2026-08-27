@@ -30,6 +30,11 @@ namespace EPrimeReadouts.Core
         public bool SearchHideForbidden;
         /// Per-def material already owed to planned work; null treated as empty.
         public IReadOnlyDictionary<string, PlannedWorkDebt>? Debts;
+        /// Complete searchable def universe (every player-acquirable counted
+        /// def), independent of what currently exists on the map, so search
+        /// can surface zero-count rows without the count snapshot carrying a
+        /// zero entry per def. Null falls back to iterating Counts keys.
+        public IReadOnlyList<string>? SearchableDefNames;
         /// Let a counter whose debt exceeds its stock show the overrun as a
         /// negative number instead of capping at zero.
         public bool AllowNegativeCounts;
@@ -71,6 +76,21 @@ namespace EPrimeReadouts.Core
         // Content inset: X is stripe + pad, Y is GroupPadY.
         private static float InsetX => LayoutMetrics.StripeW + LayoutMetrics.GroupPadX;
 
+        // Cache contract:
+        // Owner: process.
+        // Key: single-member defName (ordinal).
+        // Value: immutable one-element member list shared by every slot and
+        // search row referencing that def.
+        // Dependencies: none — the list content is the key itself, so entries
+        // never go stale; the population is bounded by distinct defNames laid
+        // out since the last reset.
+        // Refresh policy: lazy insert on first use.
+        // Equality policy: hits always return the identical list instance,
+        // which is what lets slot-hit member comparisons stay reference-based.
+        // Teardown: ResetCaches clears all entries; the game assembly calls it
+        // from global teardown so def sets from a previous mod list are not
+        // retained. Concurrent map because layout may run from test hosts and
+        // preview builders without a shared lock.
         private static readonly System.Collections.Concurrent.ConcurrentDictionary<
             string, IReadOnlyList<string>> singleMemberLists =
             new System.Collections.Concurrent.ConcurrentDictionary<
@@ -80,6 +100,10 @@ namespace EPrimeReadouts.Core
 
         private static IReadOnlyList<string> SingleMember(string member)
             => singleMemberLists.GetOrAdd(member, buildSingleMember);
+
+        /// Releases process-static layout caches. Idempotent; safe while no
+        /// layout is being built.
+        public static void ResetCaches() => singleMemberLists.Clear();
 
         // Columns for the Results section (wraps at panel width, capped).
         private static int ResultsColumns(LayoutInput input) =>
@@ -159,14 +183,26 @@ namespace EPrimeReadouts.Core
                 {
                     slots.Clear();
                     CollectVisible(group, input, slots);
-                    if (slots.Count == 0) continue;
                     if (y > 0f) y += LayoutMetrics.GroupGap;
-                    float containerW = GroupContainerWidth(slots.Count, input.Metrics);
-                    if (containerW > maxGroupW) maxGroupW = containerW;
                     int cellStart = model.Cells.Count;
                     int slotStart = model.SlotHits.Count;
                     int markerStart = model.MarkerHits.Count;
-                    y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
+                    if (slots.Count == 0)
+                    {
+                        // Band presence is depth-invariant: a group with no
+                        // visible slots keeps its thin identification band in
+                        // the expanded state exactly as it does collapsed.
+                        // Omitting it would remove the band under a hovering
+                        // pointer, shift the bands below, and oscillate the
+                        // hover-expansion state every frame.
+                        y = BuildCollapsedGroup(group, input, model, y, groupDisplayIndex);
+                    }
+                    else
+                    {
+                        float containerW = GroupContainerWidth(slots.Count, input.Metrics);
+                        if (containerW > maxGroupW) maxGroupW = containerW;
+                        y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
+                    }
                     RecordBand(model, cellStart, slotStart, markerStart);
                 }
             }
@@ -175,60 +211,30 @@ namespace EPrimeReadouts.Core
             return model;
         }
 
-        /// Updates count-derived cell payloads without rebuilding geometry.
-        /// Returns false when the new counts change which slots/groups are
-        /// present, or when active search makes result geometry count-dependent.
+        /// Updates count-derived cell payloads without rebuilding geometry, in
+        /// a single traversal: each token resolves once, and a slot whose sum
+        /// did not change is skipped entirely — its counter keeps its existing
+        /// text instance, so downstream content revisions observe identical
+        /// content. Returns false when the new counts change which slots are
+        /// present, or when active search makes result geometry
+        /// count-dependent; the model may then be partially refreshed and the
+        /// caller must discard it by rebuilding.
         public static bool TryRefreshCounts(LayoutInput input, RenderModel model)
         {
             if (input.EditorMode || SearchMatcher.IsActive(input.SearchText))
                 return false;
-            if (!HasSameVisibleSlots(input, model)) return false;
 
-            for (int bandIndex = 0; bandIndex < model.Bands.Count; bandIndex++)
-            {
-                RenderBand band = model.Bands[bandIndex];
-                int slotOffset = 0;
-                int sum = 0;
-                int cellEnd = band.CellStart + band.CellCount;
-                for (int cellIndex = band.CellStart;
-                     cellIndex < cellEnd;
-                     cellIndex++)
-                {
-                    RenderCell cell = model.Cells[cellIndex];
-                    if (cell.Kind == CellKind.Icon)
-                    {
-                        SlotHit hit = model.SlotHits[band.SlotStart + slotOffset];
-                        sum = SumMembers(input, hit.Token, hit.Members);
-                        cell.Count = sum;
-                        model.Cells[cellIndex] = cell;
-                    }
-                    else if (cell.Kind == CellKind.Counter)
-                    {
-                        cell.Count = sum;
-                        cell.Text = CountFormat.Compact(sum);
-                        cell.Band = CounterBand(
-                            input, SlotToken.Canonical(cell.Token!), sum);
-                        model.Cells[cellIndex] = cell;
-                        slotOffset++;
-                    }
-                }
-            }
-            return true;
-        }
-
-        private static bool HasSameVisibleSlots(
-            LayoutInput input, RenderModel model)
-        {
             int bandIndex = 0;
             for (int groupIndex = 0; groupIndex < input.Groups.Count; groupIndex++)
             {
                 ReadoutGroup group = input.Groups[groupIndex];
+                if (bandIndex >= model.Bands.Count) return false;
+                RenderBand band = model.Bands[bandIndex];
+                if (band.GroupId != group.Id) return false;
+
                 if (input.DepthOf(group) == 0)
                 {
-                    if (bandIndex >= model.Bands.Count
-                        || model.Bands[bandIndex].GroupId != group.Id
-                        || model.Bands[bandIndex].SlotCount != 0)
-                        return false;
+                    if (band.SlotCount != 0) return false;
                     bandIndex++;
                     continue;
                 }
@@ -247,43 +253,47 @@ namespace EPrimeReadouts.Core
                             continue;
                         if (!IsVisible(token, input, sum)) continue;
 
-                        if (bandIndex >= model.Bands.Count)
-                            return false;
-                        RenderBand band = model.Bands[bandIndex];
-                        if (band.GroupId != group.Id
-                            || visibleCount >= band.SlotCount
+                        if (visibleCount >= band.SlotCount
                             || !string.Equals(
                                 model.SlotHits[band.SlotStart + visibleCount].Token,
                                 token, StringComparison.Ordinal))
                             return false;
+                        RefreshSlotCells(input, model,
+                            model.SlotHits[band.SlotStart + visibleCount], sum);
                         visibleCount++;
                     }
                 }
 
-                if (visibleCount == 0)
-                {
-                    if (bandIndex < model.Bands.Count
-                        && model.Bands[bandIndex].GroupId == group.Id)
-                        return false;
-                    continue;
-                }
-                if (visibleCount != model.Bands[bandIndex].SlotCount)
-                    return false;
+                if (visibleCount != band.SlotCount) return false;
                 bandIndex++;
             }
             return bandIndex == model.Bands.Count;
         }
 
-        private static int SumMembers(
-            LayoutInput input, string token, IReadOnlyList<string> members)
+        /// Applies one slot's refreshed sum to its icon and counter cells.
+        /// An unchanged sum leaves both cells untouched — thresholds and count
+        /// rules are structural inputs, so with a fixed sum neither the text
+        /// nor the band tint can differ.
+        private static void RefreshSlotCells(
+            LayoutInput input, RenderModel model, SlotHit hit, int sum)
         {
-            ResolveBasis(input, SlotToken.Canonical(token),
-                out bool storageOnly, out bool hideForbidden);
-            int sum = 0;
-            for (int i = 0; i < members.Count; i++)
-                sum += EffectiveCount(input, members[i],
-                    storageOnly, hideForbidden);
-            return sum;
+            RenderCell icon = model.Cells[hit.CellIndex];
+            if (icon.Count != sum)
+            {
+                icon.Count = sum;
+                model.Cells[hit.CellIndex] = icon;
+            }
+            // Outside search mode the counter is always emitted directly
+            // after its icon cell (highlight cells exist only while
+            // searching, which refuses refresh above).
+            int counterIndex = hit.CellIndex + 1;
+            RenderCell counter = model.Cells[counterIndex];
+            if (counter.Count == sum) return;
+            counter.Count = sum;
+            counter.Text = CountFormat.Compact(sum);
+            counter.Band = CounterBand(
+                input, SlotToken.Canonical(counter.Token!), sum);
+            model.Cells[counterIndex] = counter;
         }
 
         private static void RecordBand(
@@ -766,12 +776,21 @@ namespace EPrimeReadouts.Core
         }
 
         /// A search hit resolved against the active filters; Count is the
-        /// displayed count under those filters.
+        /// displayed count under those filters. Label is prefetched at match
+        /// time so the sort comparator never resolves catalog labels.
         private struct ResultEntry
         {
             public string DefName;
+            public string Label;
             public int Count;
         }
+
+        private static readonly Comparison<ResultEntry> resultOrder = (a, b) =>
+        {
+            bool aZero = a.Count == 0, bZero = b.Count == 0;
+            if (aZero != bZero) return aZero ? 1 : -1;
+            return string.CompareOrdinal(a.Label, b.Label);
+        };
 
         // Results section: plain counted defNames, per-def counts. The count
         // basis is the search breakdown (stored + scattered stacks), narrowed
@@ -785,33 +804,24 @@ namespace EPrimeReadouts.Core
         private static float BuildResults(LayoutInput input, RenderModel model, float y)
         {
             var matches = new List<ResultEntry>();
-            foreach (var pair in input.Counts)
+            if (input.SearchableDefNames != null)
             {
-                if (!SearchMatcher.Matches(input.Catalog.LabelOf(pair.Key), input.SearchText))
-                    continue;
-                SearchCount search = ResolveSearchCount(input, pair.Key, pair.Value);
-                int basisTotal = input.SearchStorageOnly ? search.Stored : search.Total;
-                int basisUnforbidden = input.SearchStorageOnly
-                    ? search.StoredUnforbidden : search.Unforbidden;
-                // Presence rules read the physical stock; the displayed number
-                // then goes through the shared basis so planned-work debt is
-                // subtracted here exactly as it is on group slots.
-                if (input.SearchStorageOnly && basisTotal == 0) continue;
-                if (input.SearchHideForbidden && basisTotal > 0 && basisUnforbidden == 0)
-                    continue;
-                int count = CountBasis.Displayed(search,
-                    input.SearchStorageOnly, input.SearchHideForbidden,
-                    ResolveDebt(input, pair.Key), input.AllowNegativeCounts);
-                if (input.SearchHideZero && count == 0) continue;
-                matches.Add(new ResultEntry { DefName = pair.Key, Count = count });
+                // Candidate universe from the catalog: zero-count defs get a
+                // row without the count snapshot carrying zero entries.
+                IReadOnlyList<string> universe = input.SearchableDefNames;
+                for (int i = 0; i < universe.Count; i++)
+                {
+                    string defName = universe[i];
+                    input.Counts.TryGetValue(defName, out int raw);
+                    AddResultIfMatched(input, matches, defName, raw);
+                }
             }
-            matches.Sort((a, b) =>
+            else
             {
-                bool aZero = a.Count == 0, bZero = b.Count == 0;
-                if (aZero != bZero) return aZero ? 1 : -1;
-                return string.CompareOrdinal(
-                    input.Catalog.LabelOf(a.DefName), input.Catalog.LabelOf(b.DefName));
-            });
+                foreach (var pair in input.Counts)
+                    AddResultIfMatched(input, matches, pair.Key, pair.Value);
+            }
+            matches.Sort(resultOrder);
 
             var metrics = input.Metrics;
             float insetX = InsetX;
@@ -860,6 +870,29 @@ namespace EPrimeReadouts.Core
                 });
 
             return y + containerH;
+        }
+
+        private static void AddResultIfMatched(
+            LayoutInput input, List<ResultEntry> matches, string defName, int raw)
+        {
+            string label = input.Catalog.LabelOf(defName);
+            if (!SearchMatcher.Matches(label, input.SearchText)) return;
+            SearchCount search = ResolveSearchCount(input, defName, raw);
+            int basisTotal = input.SearchStorageOnly ? search.Stored : search.Total;
+            int basisUnforbidden = input.SearchStorageOnly
+                ? search.StoredUnforbidden : search.Unforbidden;
+            // Presence rules read the physical stock; the displayed number
+            // then goes through the shared basis so planned-work debt is
+            // subtracted here exactly as it is on group slots.
+            if (input.SearchStorageOnly && basisTotal == 0) return;
+            if (input.SearchHideForbidden && basisTotal > 0 && basisUnforbidden == 0)
+                return;
+            int count = CountBasis.Displayed(search,
+                input.SearchStorageOnly, input.SearchHideForbidden,
+                ResolveDebt(input, defName), input.AllowNegativeCounts);
+            if (input.SearchHideZero && count == 0) return;
+            matches.Add(new ResultEntry
+                { DefName = defName, Label = label, Count = count });
         }
 
         /// Search breakdown for one def; a null SearchCounts input falls back

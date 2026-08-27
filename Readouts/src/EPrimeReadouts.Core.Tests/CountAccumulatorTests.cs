@@ -34,20 +34,6 @@ public class CountAccumulatorTests
     }
 
     [Test]
-    public async Task ZeroRegistrationPublishesTheDefWithoutDisturbingTotals()
-    {
-        var accumulator = new CountAccumulator();
-        accumulator.AddZero("Chemfuel", defHash: 33);
-        accumulator.Add("Steel", defHash: 11, count: 40);
-        accumulator.AddZero("Steel", defHash: 11);
-
-        var snapshot = accumulator.ToSnapshot();
-
-        await Assert.That(snapshot.Counts["Chemfuel"]).IsEqualTo(0);
-        await Assert.That(snapshot.Counts["Steel"]).IsEqualTo(40);
-    }
-
-    [Test]
     public async Task EmptyAccumulatorProducesAnEmptySnapshot()
     {
         var snapshot = new CountAccumulator().ToSnapshot();

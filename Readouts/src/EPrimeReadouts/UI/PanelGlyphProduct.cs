@@ -18,6 +18,9 @@ namespace EPrimeReadouts.UI
         private readonly List<int> triangles = new List<int>();
 
         private Texture2D? texture;
+        private RenderTexture? working;
+        private int workingPixelWidth;
+        private int workingPixelHeight;
         private PanelTextRevision revision;
         private bool hasRevision;
 
@@ -61,12 +64,11 @@ namespace EPrimeReadouts.UI
                         draw, style, font, fontSize, sizing.RasterScale))
                     return false;
 
-                RenderTexture? working = null;
+                EnsureWorking(sizing.PixelWidth, sizing.PixelHeight);
+                if (working == null) return false;
                 Texture2D? replacement = null;
                 try
                 {
-                    working = backend.CreateWorkingSurface(
-                        sizing.PixelWidth, sizing.PixelHeight);
                     replacement = backend.CreatePublishedTexture(
                         sizing.PixelWidth, sizing.PixelHeight,
                         FilterMode.Point);
@@ -78,6 +80,8 @@ namespace EPrimeReadouts.UI
                         GL.LoadPixelMatrix(
                             0f, sizing.PixelWidth,
                             sizing.PixelHeight, 0f);
+                        // DrawFontQuadsToActive clears the reused target
+                        // itself before drawing.
                         backend.DrawFontQuadsToActive(
                             vertices, uvs, colors, triangles,
                             font.material);
@@ -99,34 +103,23 @@ namespace EPrimeReadouts.UI
                 }
                 finally
                 {
-                    PanelBufferBackend.ReleaseTexture(working);
                     PanelBufferBackend.ReleaseTexture(replacement);
                 }
             }
         }
 
-        internal bool CompositeVisibleInto(
-            Texture2D destination,
-            RimShared.Common.RectF visibleContent,
-            float destinationTop,
-            float rasterScale)
+        /// Presents the given pixel-snapped window onto the screen; the glyph
+        /// texture shares its dimensions with the base surface, so both use
+        /// the same window.
+        internal bool PresentWindow(
+            float screenX, float screenY, PanelPresentWindow window)
         {
-            if (texture == null || !hasRevision) return false;
-            int sourceX = Mathf.RoundToInt(
-                visibleContent.X * rasterScale);
-            int copyWidth = Mathf.RoundToInt(
-                visibleContent.W * rasterScale);
-            int copyHeight = Mathf.RoundToInt(
-                visibleContent.H * rasterScale);
-            int sourceY = texture.height - Mathf.RoundToInt(
-                (visibleContent.Y + visibleContent.H) * rasterScale);
-            int destinationY = destination.height - Mathf.RoundToInt(
-                (destinationTop + visibleContent.H) * rasterScale);
-            backend.CompositeOver(
-                destination, texture,
-                sourceX, sourceY,
-                0, destinationY,
-                copyWidth, copyHeight);
+            if (texture == null || !hasRevision || !window.Visible)
+                return false;
+            backend.Present(texture, new Rect(
+                    screenX, screenY,
+                    window.DestWidth, window.DestHeight),
+                new Rect(0f, window.UvY, 1f, window.UvHeight));
             return true;
         }
 
@@ -174,9 +167,25 @@ namespace EPrimeReadouts.UI
         internal void Release()
         {
             PanelBufferBackend.ReleaseTexture(texture);
+            PanelBufferBackend.ReleaseTexture(working);
             texture = null;
+            working = null;
+            workingPixelWidth = 0;
+            workingPixelHeight = 0;
             hasRevision = false;
             generator.Invalidate();
+        }
+
+        private void EnsureWorking(int pixelWidth, int pixelHeight)
+        {
+            if (working != null
+                && workingPixelWidth == pixelWidth
+                && workingPixelHeight == pixelHeight)
+                return;
+            PanelBufferBackend.ReleaseTexture(working);
+            working = backend.CreateWorkingSurface(pixelWidth, pixelHeight);
+            workingPixelWidth = pixelWidth;
+            workingPixelHeight = pixelHeight;
         }
 
         private static void RequestCharacters(

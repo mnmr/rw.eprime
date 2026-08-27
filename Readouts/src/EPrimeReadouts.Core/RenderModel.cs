@@ -66,6 +66,14 @@ namespace EPrimeReadouts.Core
 
     /// Complete draw plan for one panel width + state. The game assembly
     /// resolves DefNames to ThingDefs once and then only blits.
+    ///
+    /// Immutability is by specification, not type: after publication the ONLY
+    /// permitted mutation is ReadoutLayoutEngine.TryRefreshCounts updating
+    /// count-derived cell payloads (Count, Text, Band) on the main thread —
+    /// geometry, structure, hit lists, and band records never change on a
+    /// published model. Consumers keying caches on model identity treat that
+    /// count refresh as a separate published domain (the text content
+    /// revision), never as a base-geometry change.
     public sealed class RenderModel
     {
         public List<RenderCell> Cells = new List<RenderCell>();

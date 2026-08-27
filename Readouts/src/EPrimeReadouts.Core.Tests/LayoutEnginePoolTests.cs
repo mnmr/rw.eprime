@@ -58,10 +58,13 @@ public class LayoutEnginePoolTests
     [Test]
     public async Task HideFlaggedPoolHiddenAtZeroSum()
     {
-        // ~@MeatRaw with no counts → hidden
+        // ~@MeatRaw with no counts → slot hidden; the group keeps its thin
+        // identification band (band presence is depth-invariant).
         var model = ReadoutLayoutEngine.Build(Input(Group(1, "~@MeatRaw")));
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Counter)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 
     [Test]
@@ -93,10 +96,12 @@ public class LayoutEnginePoolTests
     [Test]
     public async Task UnknownCategoryTokenSkippedEntirely()
     {
-        // "@Nope" has no members in the catalog → skipped, no cells
+        // "@Nope" has no members in the catalog → no slot renders; the group
+        // keeps its thin identification band.
         var model = ReadoutLayoutEngine.Build(Input(Group(1, "@Nope")));
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
         await Assert.That(model.MarkerHits.Count).IsEqualTo(0);
-        await Assert.That(model.TotalHeight).IsEqualTo(0f);
+        await Assert.That(model.Bands.Count).IsEqualTo(1);
     }
 }

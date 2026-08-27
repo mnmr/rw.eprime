@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
-using RimShared.Common;
 using UnityEngine;
 using Verse;
 
@@ -13,6 +12,9 @@ namespace EPrimeReadouts.UI
 
         private readonly PanelBufferBackend backend;
         private Texture2D? texture;
+        private RenderTexture? working;
+        private int workingPixelWidth;
+        private int workingPixelHeight;
         private PanelBaseRevision revision;
         private bool hasRevision;
 
@@ -20,6 +22,9 @@ namespace EPrimeReadouts.UI
         {
             this.backend = backend;
         }
+
+        internal int PixelWidth => texture != null ? texture.width : 0;
+        internal int PixelHeight => texture != null ? texture.height : 0;
 
         internal bool Ensure(
             DrawModel draw,
@@ -36,12 +41,11 @@ namespace EPrimeReadouts.UI
                 || sizing.PixelHeight > SystemInfo.maxTextureSize)
                 return false;
 
-            RenderTexture? working = null;
+            EnsureWorking(sizing.PixelWidth, sizing.PixelHeight);
+            if (working == null) return false;
             Texture2D? replacement = null;
             try
             {
-                working = backend.CreateWorkingSurface(
-                    sizing.PixelWidth, sizing.PixelHeight);
                 replacement = backend.CreatePublishedTexture(
                     sizing.PixelWidth, sizing.PixelHeight,
                     FilterMode.Point);
@@ -60,31 +64,45 @@ namespace EPrimeReadouts.UI
             }
             finally
             {
-                PanelBufferBackend.ReleaseTexture(working);
                 PanelBufferBackend.ReleaseTexture(replacement);
             }
         }
 
-        internal bool DrawVisibleIntoActive(
-            Rect destination, RectF visibleContent, float rasterScale)
+        /// Presents the given pixel-snapped window onto the screen at the
+        /// destination origin.
+        internal bool PresentWindow(
+            float screenX, float screenY, PanelPresentWindow window)
         {
-            if (texture == null || !hasRevision) return false;
-            var uv = new Rect(
-                visibleContent.X * rasterScale / texture.width,
-                1f - (visibleContent.Y + visibleContent.H)
-                    * rasterScale / texture.height,
-                visibleContent.W * rasterScale / texture.width,
-                visibleContent.H * rasterScale / texture.height);
-            backend.DrawToActive(
-                Scale(destination, rasterScale), texture, uv, Color.white);
+            if (texture == null || !hasRevision || !window.Visible)
+                return false;
+            backend.Present(texture, new Rect(
+                    screenX, screenY,
+                    window.DestWidth, window.DestHeight),
+                new Rect(0f, window.UvY, 1f, window.UvHeight));
             return true;
         }
 
         internal void Release()
         {
             PanelBufferBackend.ReleaseTexture(texture);
+            PanelBufferBackend.ReleaseTexture(working);
             texture = null;
+            working = null;
+            workingPixelWidth = 0;
+            workingPixelHeight = 0;
             hasRevision = false;
+        }
+
+        private void EnsureWorking(int pixelWidth, int pixelHeight)
+        {
+            if (working != null
+                && workingPixelWidth == pixelWidth
+                && workingPixelHeight == pixelHeight)
+                return;
+            PanelBufferBackend.ReleaseTexture(working);
+            working = backend.CreateWorkingSurface(pixelWidth, pixelHeight);
+            workingPixelWidth = pixelWidth;
+            workingPixelHeight = pixelHeight;
         }
 
         private bool Render(
@@ -112,9 +130,14 @@ namespace EPrimeReadouts.UI
                         case CellKind.GroupBack:
                             DrawSolid(rect,
                                 CellRenderer.BackingColorFor(options));
+                            // Stripe width scales with the raster like every
+                            // other dimension; an unscaled width diverges from
+                            // the direct-render reference at fractional UI
+                            // scales.
                             DrawSolid(new Rect(
                                     rect.x, rect.y,
-                                    LayoutMetrics.StripeW, rect.height),
+                                    LayoutMetrics.StripeW * rasterScale,
+                                    rect.height),
                                 CellRenderer.StripeColorFor(cell.GroupIndex));
                             break;
                         case CellKind.Triangle:

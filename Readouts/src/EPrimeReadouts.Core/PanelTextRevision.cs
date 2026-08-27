@@ -2,20 +2,20 @@ using System;
 
 namespace EPrimeReadouts.Core
 {
-    /// Value key for the exact glyph pixels used by the buffered panel.
+    /// Value key for the exact content glyph pixels used by the buffered
+    /// panel. Header text lives on its own surface with its own revision, so
+    /// typing in the search field never invalidates the content glyphs.
     public readonly struct PanelTextRevision : IEquatable<PanelTextRevision>
     {
         private PanelTextRevision(
             int contentHash,
             int textCellCount,
-            int headerHash,
             int uiRevision,
             int width,
             int height)
         {
             ContentHash = contentHash;
             TextCellCount = textCellCount;
-            HeaderHash = headerHash;
             UiRevision = uiRevision;
             Width = width;
             Height = height;
@@ -23,14 +23,12 @@ namespace EPrimeReadouts.Core
 
         public int ContentHash { get; }
         public int TextCellCount { get; }
-        public int HeaderHash { get; }
         public int UiRevision { get; }
         public int Width { get; }
         public int Height { get; }
 
         public static PanelTextRevision Create(
             RenderModel model,
-            string headerText,
             int uiRevision,
             int width,
             int height)
@@ -53,14 +51,12 @@ namespace EPrimeReadouts.Core
                 hash = Mix(hash, cell.Rect.H.GetHashCode());
             }
             return new PanelTextRevision(
-                hash, count, StableStringHash(headerText),
-                uiRevision, width, height);
+                hash, count, uiRevision, width, height);
         }
 
         public bool Equals(PanelTextRevision other) =>
             ContentHash == other.ContentHash
             && TextCellCount == other.TextCellCount
-            && HeaderHash == other.HeaderHash
             && UiRevision == other.UiRevision
             && Width == other.Width
             && Height == other.Height;
@@ -73,7 +69,6 @@ namespace EPrimeReadouts.Core
             unchecked
             {
                 int hash = Mix(ContentHash, TextCellCount);
-                hash = Mix(hash, HeaderHash);
                 hash = Mix(hash, UiRevision);
                 hash = Mix(hash, Width);
                 return Mix(hash, Height);

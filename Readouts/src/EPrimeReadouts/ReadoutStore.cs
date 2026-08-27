@@ -31,7 +31,46 @@ namespace EPrimeReadouts
 
         public ReadoutStore(World world) : base(world) { }
 
-        public static ReadoutStore? Current => Find.World?.GetComponent<ReadoutStore>();
+        // Cache contract:
+        // Owner: process/current world.
+        // Key: the live World reference.
+        // Value: that world's ReadoutStore component.
+        // Dependencies: world identity only — the component list is fixed
+        // after world construction.
+        // Refresh policy: immediate on world identity change.
+        // Equality policy: same world reuses the cached store reference.
+        // Teardown: ResetCurrentCache clears both references on global
+        // teardown so a stale world is never retained.
+        private static World? currentWorld;
+        private static ReadoutStore? currentStore;
+
+        /// The current world's store without a per-call component-list scan;
+        /// called every OnGUI event.
+        public static ReadoutStore? Current
+        {
+            get
+            {
+                World? world = Find.World;
+                if (world == null)
+                {
+                    currentWorld = null;
+                    currentStore = null;
+                    return null;
+                }
+                if (!ReferenceEquals(world, currentWorld))
+                {
+                    currentStore = world.GetComponent<ReadoutStore>();
+                    currentWorld = world;
+                }
+                return currentStore;
+            }
+        }
+
+        internal static void ResetCurrentCache()
+        {
+            currentWorld = null;
+            currentStore = null;
+        }
 
         public int TakeGroupId() => nextGroupId++;
 

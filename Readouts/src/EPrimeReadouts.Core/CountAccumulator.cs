@@ -6,9 +6,13 @@ namespace EPrimeReadouts.Core
     /// Sums per-def count contributions from one or more sources (e.g. the
     /// level maps of a multi-floor stack) into a single RenderCountSnapshot.
     /// The fingerprint folds contributions commutatively, so it is stable for
-    /// identical contribution sets regardless of source order; snapshot
-    /// equality remains content-based either way. Publication is one-shot so
-    /// the owned dictionaries can transfer into the immutable snapshot.
+    /// identical contribution sets regardless of source order. It is a
+    /// diagnostic of the contribution stream only and MUST NOT be used as an
+    /// equality key or fast path: equal published contents can arise from
+    /// different contribution sets (two stacks of 2+3 versus one stack of 5),
+    /// which would falsely defeat the identity-preserving content comparison.
+    /// Publication is one-shot so the owned dictionaries can transfer into
+    /// the immutable snapshot.
     public sealed class CountAccumulator
     {
         private struct SearchTally
@@ -100,19 +104,6 @@ namespace EPrimeReadouts.Core
             unchecked
             {
                 fingerprint += (long)defHash * 31 + count;
-            }
-        }
-
-        /// Registers a def at zero without disturbing an existing total, so
-        /// extra counted defs always appear in the snapshot.
-        public void AddZero(string defName, int defHash)
-        {
-            EnsureWritable();
-            if (!counts.ContainsKey(defName))
-                counts[defName] = 0;
-            unchecked
-            {
-                fingerprint += defHash;
             }
         }
 

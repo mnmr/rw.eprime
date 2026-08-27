@@ -8,9 +8,9 @@ public class PanelTextRevisionTests
     public async Task EquivalentDisplayedTextReusesProductAcrossModels()
     {
         PanelTextRevision left = PanelTextRevision.Create(
-            Model("128", Band.Normal), "Readouts", 7, 140, 400);
+            Model("128", Band.Normal), 7, 140, 400);
         PanelTextRevision right = PanelTextRevision.Create(
-            Model("128", Band.Normal), "Readouts", 7, 140, 400);
+            Model("128", Band.Normal), 7, 140, 400);
 
         await Assert.That(left).IsEqualTo(right);
     }
@@ -19,9 +19,9 @@ public class PanelTextRevisionTests
     public async Task CounterTextInvalidatesProduct()
     {
         PanelTextRevision left = PanelTextRevision.Create(
-            Model("128", Band.Normal), "Readouts", 7, 140, 400);
+            Model("128", Band.Normal), 7, 140, 400);
         PanelTextRevision right = PanelTextRevision.Create(
-            Model("129", Band.Normal), "Readouts", 7, 140, 400);
+            Model("129", Band.Normal), 7, 140, 400);
 
         await Assert.That(left).IsNotEqualTo(right);
     }
@@ -30,26 +30,24 @@ public class PanelTextRevisionTests
     public async Task ThresholdTintInvalidatesProduct()
     {
         PanelTextRevision left = PanelTextRevision.Create(
-            Model("128", Band.Normal), "Readouts", 7, 140, 400);
+            Model("128", Band.Normal), 7, 140, 400);
         PanelTextRevision right = PanelTextRevision.Create(
-            Model("128", Band.Low), "Readouts", 7, 140, 400);
+            Model("128", Band.Low), 7, 140, 400);
 
         await Assert.That(left).IsNotEqualTo(right);
     }
 
     [Test]
-    [Arguments("Other", 7, 140, 400)]
-    [Arguments("Readouts", 8, 140, 400)]
-    [Arguments("Readouts", 7, 141, 400)]
-    [Arguments("Readouts", 7, 140, 401)]
-    public async Task HeaderUiAndDimensionsInvalidateProduct(
-        string header, int uiRevision, int width, int height)
+    [Arguments(8, 140, 400)]
+    [Arguments(7, 141, 400)]
+    [Arguments(7, 140, 401)]
+    public async Task UiRevisionAndDimensionsInvalidateProduct(
+        int uiRevision, int width, int height)
     {
         PanelTextRevision baseline = PanelTextRevision.Create(
-            Model("128", Band.Normal), "Readouts", 7, 140, 400);
+            Model("128", Band.Normal), 7, 140, 400);
         PanelTextRevision changed = PanelTextRevision.Create(
-            Model("128", Band.Normal), header,
-            uiRevision, width, height);
+            Model("128", Band.Normal), uiRevision, width, height);
 
         await Assert.That(changed).IsNotEqualTo(baseline);
     }

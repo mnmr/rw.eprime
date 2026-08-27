@@ -122,14 +122,19 @@ public class LayoutEngineCollapsedTests
     [Test]
     public async Task GroupColorIndexIsStableWhenEarlierGroupRendersNothing()
     {
-        // Group 1 renders no slots ("~Cloth" at zero count) and is skipped;
-        // group 2 must still get color index 1, not shift into slot 0.
+        // Group 1 renders no slots ("~Cloth" at zero count) and keeps only
+        // its identification band at index 0; group 2 must still get color
+        // index 1, not shift into slot 0.
         var input = Input(Group(1, "~Cloth"), Group(2, "Steel"));
         input.DepthOf = g => 1;
         var model = ReadoutLayoutEngine.Build(input);
         var backs = model.Cells.Where(c => c.Kind == CellKind.GroupBack).ToList();
-        await Assert.That(backs.Count).IsEqualTo(1);
-        await Assert.That(backs[0].GroupIndex).IsEqualTo(1);
+        await Assert.That(backs.Count).IsEqualTo(2);
+        await Assert.That(backs.Select(c => c.GroupIndex))
+            .IsEquivalentTo(new[] { 0, 1 });
+        // Only the group with content renders slots.
+        await Assert.That(model.SlotHits.Count).IsEqualTo(1);
+        await Assert.That(model.SlotHits[0].Token).IsEqualTo("Steel");
     }
 
     [Test]
@@ -145,12 +150,12 @@ public class LayoutEngineCollapsedTests
             .Where(c => c.Kind == CellKind.GroupBack).ToList();
         var expandedBacks = expanded.Cells
             .Where(c => c.Kind == CellKind.GroupBack).ToList();
-        // Collapsed renders both groups (indices 0 and 1); expanded renders
-        // only Steel's group, which keeps index 1.
+        // Both states render both groups (the empty group keeps its thin
+        // identification band when expanded) at unchanged color indices.
         await Assert.That(collapsedBacks.Select(c => c.GroupIndex))
             .IsEquivalentTo(new[] { 0, 1 });
         await Assert.That(expandedBacks.Select(c => c.GroupIndex))
-            .IsEquivalentTo(new[] { 1 });
+            .IsEquivalentTo(new[] { 0, 1 });
     }
 
     [Test]

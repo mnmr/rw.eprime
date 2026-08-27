@@ -48,15 +48,14 @@ namespace EPrimeReadouts
             CountAccumulator accumulator,
             CountSnapshotOptions options)
         {
+            // Zero-valued entries are skipped: consumers resolve a missing
+            // key as zero, and the search candidate universe comes from
+            // GameResourceCatalog.SearchableDefNames rather than zero-seeded
+            // snapshot entries. This keeps the published dictionary sized by
+            // what actually exists, not by the loaded def database.
             foreach (var pair in map.resourceCounter.AllCountedAmounts)
-                accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
-
-            int extraDefCount = GameResourceCatalog.ExtraCountedDefCount;
-            for (int i = 0; i < extraDefCount; i++)
-            {
-                ThingDef def = GameResourceCatalog.ExtraCountedDefAt(i);
-                accumulator.AddZero(def.defName, def.shortHash);
-            }
+                if (pair.Value != 0)
+                    accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
 
             // Stored pass, mirroring ResourceCounter.UpdateResourceCounts:
             // haul destinations, inner-of-minified, fresh, not fogged. Extra

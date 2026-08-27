@@ -217,7 +217,8 @@ public class LayoutEngineEditorTests
     [Test]
     public async Task NonEditor_ZeroCountHideFlaggedTokenIsExcluded()
     {
-        // Same token in non-editor mode disappears (contrast)
+        // Same token in non-editor mode renders no slot — only the group's
+        // thin identification band remains (band presence is depth-invariant).
         var normalInput = new LayoutInput
         {
             Groups = new List<ReadoutGroup> { Group(1, new[] { "~Cloth" }) },
@@ -227,7 +228,9 @@ public class LayoutEngineEditorTests
             Width = 140f,
         };
         var model = ReadoutLayoutEngine.Build(normalInput);
-        await Assert.That(model.Cells.Count).IsEqualTo(0);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Icon)).IsEqualTo(0);
+        await Assert.That(model.Cells.Count(c => c.Kind == CellKind.Counter)).IsEqualTo(0);
+        await Assert.That(model.SlotHits.Count).IsEqualTo(0);
     }
 
     // -----------------------------------------------------------------------

@@ -427,12 +427,12 @@ namespace EPrimeReadouts
                 return Usable(fixedDef, recipe, bill) ? fixedDef : null;
             }
 
+            // The ingredient filter's allowed set IS its def-level Allows
+            // check, so walking it (usually a handful of defs) replaces a
+            // full ThingDef-database scan per non-fixed ingredient.
             ThingDef? sole = null;
-            List<ThingDef> allDefs = DefDatabase<ThingDef>.AllDefsListForReading;
-            for (int i = 0; i < allDefs.Count; i++)
+            foreach (ThingDef def in filter.AllowedThingDefs)
             {
-                ThingDef def = allDefs[i];
-                if (!filter.Allows(def)) continue;
                 if (!Allowed(def, recipe, bill)) continue;
                 if (sole != null) return null;
                 sole = def;

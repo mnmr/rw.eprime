@@ -36,6 +36,36 @@ namespace EPrimeReadouts
         private static HashSet<ThingDef>? extraCountedDefSet;
 
         // Cache contract:
+        // Owner: process/loaded def set.
+        // Key: the loaded ThingDef database generation.
+        // Value: immutable defName list of every PlayerAcquirable def — the
+        // search-results candidate universe (vanilla counted defs plus the
+        // extra counted set), so count snapshots never need zero-seeded
+        // entries for search to surface absent defs.
+        // Dependencies: loaded defs only.
+        // Refresh policy: lazy once per loaded-def lifetime.
+        // Equality policy: the built list retains identity until teardown.
+        // Teardown: Reset clears all def-derived entries on global game teardown.
+        private static IReadOnlyList<string>? searchableDefNames;
+
+        internal static IReadOnlyList<string> SearchableDefNames
+        {
+            get
+            {
+                if (searchableDefNames != null) return searchableDefNames;
+                var names = new List<string>();
+                var allDefs = DefDatabase<ThingDef>.AllDefsListForReading;
+                for (int i = 0; i < allDefs.Count; i++)
+                {
+                    ThingDef def = allDefs[i];
+                    if (def.PlayerAcquirable) names.Add(def.defName);
+                }
+                searchableDefNames = names.AsReadOnly();
+                return searchableDefNames;
+            }
+        }
+
+        // Cache contract:
         // Owner: process/loaded def set and current presentation revision.
         // Key: loaded ThingDefs and UiVersion.LanguageCurrent.
         // Value: immutable All/Vanilla/user-mod picker options.
@@ -71,17 +101,6 @@ namespace EPrimeReadouts
         // Equality policy: metadata dictionary retains identity until teardown.
         // Teardown: Reset releases all entries on global game teardown.
         private static Dictionary<string, PickerMetadata>? pickerMetadata;
-
-        internal static int ExtraCountedDefCount
-        {
-            get { EnsureExtraCountedDefs(); return extraCountedDefs!.Length; }
-        }
-
-        internal static ThingDef ExtraCountedDefAt(int index)
-        {
-            EnsureExtraCountedDefs();
-            return extraCountedDefs![index];
-        }
 
         internal static bool IsExtraCountedDef(ThingDef def)
         {
@@ -254,6 +273,7 @@ namespace EPrimeReadouts
             categoryLabelLanguageVersion = -1;
             extraCountedDefs = null;
             extraCountedDefSet = null;
+            searchableDefNames = null;
             sourceChoices = null;
             sourceChoicesLanguageVersion = -1;
             pickerMetadata = null;
