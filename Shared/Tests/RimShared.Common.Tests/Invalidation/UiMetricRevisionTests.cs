@@ -1,0 +1,55 @@
+using RimShared.Common;
+
+namespace RimShared.Common.Tests;
+
+public class UiMetricRevisionTests
+{
+    [Test]
+    public async Task RevisionAdvancesOnlyWhenObservedTextMetricsChange()
+    {
+        var revision = new UiMetricRevision();
+
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        int unchanged = revision.Current;
+        revision.Observe(1.25f, disableTinyText: false, language: "English");
+        int rescaled = revision.Current;
+        revision.Observe(1.25f, disableTinyText: true, language: "English");
+
+        await Assert.That(unchanged).IsEqualTo(0);
+        await Assert.That(rescaled).IsEqualTo(1);
+        await Assert.That(revision.Current).IsEqualTo(2);
+    }
+
+    [Test]
+    public async Task LanguageChangeAdvancesPresentationRevision()
+    {
+        var revision = new UiMetricRevision();
+
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        int unchanged = revision.Current;
+        revision.Observe(1f, disableTinyText: false, language: "Danish");
+
+        await Assert.That(unchanged).IsEqualTo(0);
+        await Assert.That(revision.Current).IsEqualTo(1);
+    }
+
+    [Test]
+    public async Task LanguageRevisionIgnoresMetricOnlyChanges()
+    {
+        var property = typeof(UiMetricRevision).GetProperty("LanguageCurrent");
+        await Assert.That(property).IsNotNull();
+        if (property == null) return;
+
+        var revision = new UiMetricRevision();
+        revision.Observe(1f, disableTinyText: false, language: "English");
+        revision.Observe(1.25f, disableTinyText: false, language: "English");
+        revision.Observe(1.25f, disableTinyText: true, language: "English");
+        int afterMetricChanges = (int)property.GetValue(revision)!;
+        revision.Observe(1.25f, disableTinyText: true, language: "Danish");
+
+        await Assert.That(afterMetricChanges).IsEqualTo(0);
+        await Assert.That((int)property.GetValue(revision)!).IsEqualTo(1);
+    }
+}

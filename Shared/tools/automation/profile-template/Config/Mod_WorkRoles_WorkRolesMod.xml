@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="WorkRoles.WorkRolesSettings">
+		<skillColumns />
+		<collapsedGroups />
+		<collapsedRoleGroups />
+		<warnedPriorityMods>
+			<li>-633476771|eprime.pawnplanner</li>
+		</warnedPriorityMods>
+	</ModSettings>
+</SettingsBlock>

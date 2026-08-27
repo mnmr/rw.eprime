@@ -1,0 +1,22 @@
+D:\Code\RimWorld\Shared\Common\Caching\RevisionMemo.cs(13,51): warning CS8714: The type 'TKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\TickMemo.cs(28,51): warning CS8714: The type 'TKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\OwnerGenerationRegistry.cs(70,61): warning CS8714: The type 'TOwner' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TOwner' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\OwnerGenerationRegistry.cs(74,56): warning CS8714: The type 'TLookupKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TLookupKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\TickMemo.cs(29,28): warning CS8714: The type 'TKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\RevisionMemo.cs(14,28): warning CS8714: The type 'TKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\OwnerGenerationRegistry.cs(71,28): warning CS8714: The type 'TOwner' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TOwner' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\OwnerGenerationRegistry.cs(75,28): warning CS8714: The type 'TLookupKey' cannot be used as type parameter 'TKey' in the generic type or method 'Dictionary<TKey, TValue>'. Nullability of type argument 'TLookupKey' doesn't match 'notnull' constraint. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\RevisionMemo.cs(23,49): warning CS8601: Possible null reference assignment. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+D:\Code\RimWorld\Shared\Common\Caching\TickMemo.cs(51,49): warning CS8601: Possible null reference assignment. [D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\RimShared.Common.Tests.csproj]
+Running tests from D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\bin\Debug\net10.0\RimShared.Common.Tests.dll (net10.0|x64)
+D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\bin\Debug\net10.0\RimShared.Common.Tests.dll (net10.0|x64) passed (521ms)
+
+  In process file artifacts produced:
+    - D:\Code\RimWorld\Shared\Tests\RimShared.Common.Tests\bin\Debug\net10.0\TestResults\RimShared.Common.Tests-windows-net10.0-report.html
+
+Test run summary: Passed!
+  total: 266
+  failed: 0
+  succeeded: 266
+  skipped: 0
+  duration: 710ms
