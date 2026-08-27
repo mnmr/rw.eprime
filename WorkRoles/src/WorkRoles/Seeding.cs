@@ -1,0 +1,1094 @@
+using System.Collections.Generic;
+using System.Linq;
+using RimWorld;
+using Verse;
+using WorkRoles.Core;
+
+namespace WorkRoles
+{
+    public static class Seeding
+    {
+        public static void SeedIfNeeded()
+        {
+            var store = RoleStore.Current;
+            if (store == null || store.seeded) return;
+
+            var defs = DefDatabase<RoleDef>.AllDefsListForReading;
+            if (defs.Count == 0)
+            {
+                // Def-load failure (bad mod interaction). Leave 'seeded' unset so a
+                // fixed modlist seeds normally on the next load.
+                Log.Error("[WorkRoles] no RoleDefs loaded; seeding skipped and will retry next load");
+                return;
+            }
+
+            // Groups first, in authored order — roles then land in them by label.
+            foreach (var groupDef in DefDatabase<RoleGroupDef>.AllDefsListForReading
+                         .OrderBy(d => d.order))
+                if (SeededDefIdentity.GroupLabel(groupDef) is { Length: > 0 } groupLabel)
+                    RoleCommands.EnsureGroup(groupLabel);
+            foreach (var def in defs)
+                RoleCommands.CreateRoleFromDef(def);
+            store.seeded = true;
+            SeedTrainingPaths(store);
+
+            // Role ranks read as numbers; default vanilla's per-save "manual
+            // priorities" switch on at adoption. Applied once — turning it off
+            // in Options afterwards sticks. Direct write, not the SyncMethod:
+            // seeding already runs in the synced simulation on every client.
+            var playSettings = Current.Game?.playSettings;
+            if (playSettings != null && !playSettings.useWorkPriorities)
+            {
+                playSettings.useWorkPriorities = true;
+                foreach (var pawn in PawnsFinder.AllMapsWorldAndTemporary_Alive)
+                    if (pawn.Faction == Faction.OfPlayer && pawn.workSettings != null)
+                        pawn.workSettings.Notify_UseWorkPrioritiesChanged();
+            }
+
+            var generated = EnsureWorkTypeCoverage();
+
+            // Colony-majority reorder of roles eligible for the relaxed match
+            // (roles carrying a member type nothing else can carry, e.g. Basics
+            // with Allow Tool's urgent hauling): give such a role the entry
+            // order that agrees with the most colonists, so migration assigns
+            // the one role instead of splitting into singles. Computed before
+            // any assignment makes pawns managed or creates carrier roles.
+            var migrationRoles = MigrationRolesFromStore(store);
+            var relaxedRoles = MigrationPlanner.RelaxedMatchRoles(
+                migrationRoles, GameJobCatalog.Instance);
+            if (relaxedRoles.Count > 0)
+            {
+                var grids = new List<IReadOnlyDictionary<string, int>>();
+                foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
+                    if (pawn != null && (pawn.IsColonist || pawn.IsSlaveOfColony))
+                        grids.Add(CapablePriorities(pawn));
+                foreach (var (roleId, memberOrder) in MigrationPlanner.PreferredMemberOrders(
+                             migrationRoles, relaxedRoles, grids))
+                    ReorderRoleMembers(store, roleId, memberOrder);
+            }
+
+            int assigned = 0;
+            var failures = new List<string>();
+            int priorityDrops = 0;
+            int pawnMigrationFailures = 0;
+            string? firstFailure = null;
+            foreach (var pawn in PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive)
+            {
+                try
+                {
+                    // Capture the pre-migration grid: after the first assignment the
+                    // pawn is managed and priority reads answer from roles.
+                    var before = pawn.IsColonist || pawn.IsSlaveOfColony ? CapablePriorities(pawn) : null;
+                    if (!TryAssignRolesFromVanillaPriorities(pawn, relaxedRoles, generated)) continue;
+                    assigned++;
+
+                    // Self-check: every work type the pawn had enabled must survive
+                    // migration. Every visible giver-bearing type now has a carrier
+                    // (single-type role, relaxed multi-type match or generated
+                    // carrier role), so a drop is a catalog/planner bug.
+                    foreach (var pair in before!) // assignment succeeded, so the pawn was a colonist/slave and before was captured
+                    {
+                        if (pair.Value == 0) continue;
+                        // Giver-less work types (Patient, Bed rest) never rank in the
+                        // compiled order; they can't be checked this way.
+                        if (!GameJobCatalog.Instance.WorkGiversOf(pair.Key).Any()) continue;
+                        var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(pair.Key);
+                        // Invisible modded types can legitimately drop (no catch-all
+                        // role); the unused-jobs warning surfaces them instead.
+                        if (workType != null && !workType.visible) continue;
+                        if (workType != null && CompiledJobOrders.PriorityFor(pawn, workType) == 0)
+                        {
+                            priorityDrops++;
+                            firstFailure ??= $"{pawn.LabelShort}: lost {pair.Key} "
+                                + $"(was priority {pair.Value})";
+                            failures.Add("WR_SeedDropFailure".Translate(
+                                pawn.LabelShort, workType.labelShort ?? pair.Key, pair.Value));
+                        }
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    // One corrupt pawn must not abort migration for the rest.
+                    pawnMigrationFailures++;
+                    firstFailure ??= $"{pawn?.LabelShort ?? "unknown pawn"}: "
+                        + $"migration failed: {e}";
+                    failures.Add("WR_SeedPawnFailure".Translate(
+                        pawn?.LabelShort ?? "?", e.Message));
+                }
+            }
+
+            int failureCount = priorityDrops + pawnMigrationFailures;
+            if (failureCount > 0)
+            {
+                string priorityDropLabel = priorityDrops == 1
+                    ? "priority drop" : "priority drops";
+                string pawnFailureLabel = pawnMigrationFailures == 1
+                    ? "pawn migration exception" : "pawn migration exceptions";
+                Log.Error($"[WorkRoles] migration completed with {failureCount} "
+                    + $"failure{(failureCount == 1 ? "" : "s")}: "
+                    + $"{priorityDrops} {priorityDropLabel}, "
+                    + $"{pawnMigrationFailures} {pawnFailureLabel}. "
+                    + $"First failure: {firstFailure}");
+            }
+
+            Log.Message($"[WorkRoles] seeded {store.roles.Count} roles, assigned role sets to {assigned} pawns");
+            ShowSeedReport(store.roles.Count, assigned, generated, failures);
+        }
+
+        /// Runs only alongside role seeding (members resolve by RoleDef template):
+        /// older saves adopt training via Restore Defaults — auto-seeding there
+        /// could overwrite player-made training.
+        private static void SeedTrainingPaths(RoleStore store)
+        {
+            if (store.pathsSeeded) return;
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+                if (def.tuning?.training?.Count > 0)
+                    CreateTrainingFromDef(store, def);
+            store.pathsSeeded = true;
+        }
+
+        /// RoleDef reference -> live role: template link first, then a unique
+        /// case-insensitive match on the def's invariant seeded label.
+        private static Role? ResolvePathRole(RoleStore store, string? roleDefName)
+        {
+            if (roleDefName is not { Length: > 0 }) return null;
+            var role = store.RoleByTemplate(roleDefName);
+            if (role != null) return role;
+            string? label = SeededDefIdentity.RoleLabel(
+                DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName));
+            if (label is not { Length: > 0 }) return null;
+            Role? match = null;
+            foreach (var candidate in store.roles)
+                if (string.Equals(candidate.label, label, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    if (match != null) return null; // ambiguous: no match
+                    match = candidate;
+                }
+            return match;
+        }
+
+        /// Writes a def's training onto its live role, skipping entries whose
+        /// role is missing (DLC/mod gated). False when the owner is missing or
+        /// already owns training, fewer than 2 entries resolve (a 0-1 role
+        /// path is a no-op), the owner is not among them, or bands are invalid.
+        internal static bool CreateTrainingFromDef(RoleStore store, RoleDef def)
+        {
+            Role? owner = ResolvePathRole(store, def.defName);
+            if (owner == null || owner.trainingRoleIds.Count > 0) return false;
+            var roleIds = new List<int>();
+            var mins = new List<int>();
+            var maxes = new List<int>();
+            var unresolved = new List<string>();
+            foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
+            {
+                if (entry.role is not { Length: > 0 } roleDefName) continue;
+                var role = ResolvePathRole(store, roleDefName);
+                if (role == null) { unresolved.Add(roleDefName); continue; }
+                if (roleIds.Contains(role.id)) continue;
+                roleIds.Add(role.id);
+                mins.Add(entry.min);
+                maxes.Add(entry.max);
+            }
+            if (roleIds.Count < 2)
+            {
+                Log.Message($"[WorkRoles] training for '{owner.label}' not seeded: "
+                    + $"only {roleIds.Count} role(s) resolved (unresolved: {unresolved.ToCommaList()})");
+                return false;
+            }
+            if (!roleIds.Contains(owner.id)
+                || !SkillProgressionMath.Validate(roleIds.Count, mins, maxes))
+            {
+                // Load sanitize would silently drop it next session — refuse loudly.
+                Log.Warning($"[WorkRoles] RoleDef {def.defName}: invalid training; skipped");
+                return false;
+            }
+            owner.trainingRoleIds = roleIds;
+            owner.trainingMins = mins;
+            owner.trainingMaxes = maxes;
+            return true;
+        }
+
+        /// Once-per-save seeding summary. Adding the mod to an existing save
+        /// always reports (the player should see what migration did); a fresh
+        /// game only surfaces failures — seeding is the expected path there.
+        /// Client-local UI: the report strings are never stored or synced.
+        private static void ShowSeedReport(int roleCount, int assigned,
+            List<string> generated, List<string> failures)
+        {
+            bool newGame = Find.TickManager.TicksGame == 0;
+            if (newGame && failures.Count == 0) return;
+            var body = new System.Text.StringBuilder();
+            body.Append("WR_SeedReportBody".Translate(roleCount, assigned));
+            if (generated.Count > 0)
+                body.Append("\n\n").Append("WR_SeedReportGenerated".Translate(generated.ToCommaList()));
+            if (failures.Count > 0)
+            {
+                body.Append("\n\n<color=#ff6666>").Append("WR_SeedReportFailures".Translate());
+                foreach (var failure in failures)
+                    body.Append("\n  - ").Append(failure);
+                body.Append("</color>");
+            }
+            // Deferred like the SetPriority watcher: seeding runs during load,
+            // the dialog must appear once loading ends.
+            LongEventHandler.ExecuteWhenFinished(() =>
+                Find.WindowStack.Add(new Dialog_MessageBox(body.ToString(),
+                    title: "WR_SeedReportTitle".Translate())));
+        }
+
+        /// Derives a pawn's role set from its vanilla work priorities via the
+        /// Core MigrationPlanner (see its doc for the rules — the planner is
+        /// unit-tested against the shipped Roles.xml). Must read priorities BEFORE
+        /// assigning anything: an unmanaged pawn's GetPriority passes through to
+        /// vanilla values; the first assignment makes the pawn managed and reads
+        /// then return WorkRoles ranks. relaxedRoles is computed once per
+        /// migration by SeedIfNeeded so carrier roles created for earlier pawns
+        /// cannot change matching for later ones; a standalone call derives it
+        /// fresh. Carrier slots materialize a single-type role (reused by later
+        /// pawns through the normal single-role match); created labels are
+        /// reported through generatedRoleLabels.
+        public static bool TryAssignRolesFromVanillaPriorities(Pawn pawn,
+            ISet<int>? relaxedRoles = null, List<string>? generatedRoleLabels = null)
+        {
+            var store = RoleStore.Current;
+            if (store == null || !store.seeded) return false;
+            if (pawn == null || !(pawn.IsColonist || pawn.IsSlaveOfColony)) return false;
+            if (store.IsManaged(pawn)) return false;
+
+            var migrationRoles = MigrationRolesFromStore(store);
+            var slots = MigrationPlanner.PlanSlots(
+                migrationRoles,
+                CapablePriorities(pawn),
+                DefDatabase<WorkTypeDef>.AllDefsListForReading.Select(wt => wt.defName).ToList(),
+                GameJobCatalog.Instance,
+                relaxedRoles ?? MigrationPlanner.RelaxedMatchRoles(migrationRoles, GameJobCatalog.Instance),
+                CarrierEligible);
+            if (slots.Count == 0) return false;
+
+            foreach (var slot in slots)
+            {
+                int roleId = slot.RoleId;
+                if (slot.CarrierWorkType != null)
+                {
+                    var carrier = CreateCarrierRole(slot.CarrierWorkType);
+                    if (carrier == null) continue;
+                    generatedRoleLabels?.Add(carrier.label);
+                    roleId = carrier.id;
+                }
+                RoleCommands.AssignRoleDirect(pawn, roleId);
+            }
+            return store.IsManaged(pawn);
+        }
+
+        private static List<MigrationRole> MigrationRolesFromStore(RoleStore store) =>
+            store.roles.Select(r => new MigrationRole(r.id, MigratableEntries(r), r.blocker)).ToList();
+
+        /// Worth a generated carrier role: visible with at least one giver.
+        /// Invisible or giver-less types keep the legacy drop (the unused-jobs
+        /// warning surfaces them).
+        private static readonly System.Func<string, bool> CarrierEligible = workTypeDefName =>
+        {
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
+            return workType != null && workType.visible
+                && GameJobCatalog.Instance.WorkGiversOf(workTypeDefName).Count > 0;
+        };
+
+        /// A migrating pawn ranks this work type apart from every role that
+        /// carries it: materialize a dedicated single-type role. labelShort
+        /// names it ("Haul+" for both Allow Tool and Keyz' Allow Utilities).
+        private static Role? CreateCarrierRole(string workTypeDefName)
+        {
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(workTypeDefName);
+            if (workType == null) return null;
+            string label = workType.labelShort is { Length: > 0 }
+                ? workType.labelShort.CapitalizeFirst()
+                : SeededDefIdentity.WorkTypeRoleLabel(workType) ?? workType.defName;
+            var role = RoleCommands.CreateRoleDirect(label);
+            if (role == null) return null;
+            ApplyGeneratedColor(role, workType.defName);
+            RoleCommands.AddEntryDirect(role.id,
+                new JobEntry(JobEntryKind.WorkType, workType.defName));
+            role.minAge = RecsAdapter.MinUnlockAgeOf(role);
+            return role;
+        }
+
+        /// Rewrites a role's member work-type entries to the given order,
+        /// keeping each entry's slot. Adoption-time only: runs before the
+        /// player could have edited any role.
+        private static void ReorderRoleMembers(RoleStore store, int roleId, List<string> memberOrder)
+        {
+            var role = store.RoleById(roleId);
+            if (role == null) return;
+            var slots = new List<int>();
+            for (int i = 0; i < role.entries.Count; i++)
+                if (role.entries[i].Kind == JobEntryKind.WorkType
+                    && memberOrder.Contains(role.entries[i].DefName)) slots.Add(i);
+            if (slots.Count != memberOrder.Count) return;
+            for (int k = 0; k < slots.Count; k++)
+                role.entries[slots[k]] = new JobEntry(JobEntryKind.WorkType, memberOrder[k]);
+            CompiledJobOrders.InvalidateRole(roleId);
+            Log.Message($"[WorkRoles] adoption reordered '{role.label}' to match colony priorities: "
+                + memberOrder.ToCommaList());
+        }
+
+        /// Entries whose work type resolves and is visible: invisible modded
+        /// types (e.g. Allow Tool's FinishingOff) never appear in the vanilla
+        /// grid, so they must not disqualify a role's visible types as foreign.
+        private static IReadOnlyList<JobEntry> MigratableEntries(Role role) =>
+            role.entries.Where(e =>
+            {
+                var type = e.Kind == JobEntryKind.WorkType
+                    ? DefDatabase<WorkTypeDef>.GetNamedSilentFail(e.DefName)
+                    : DefDatabase<WorkGiverDef>.GetNamedSilentFail(e.DefName)?.workType;
+                return type != null && type.visible;
+            }).ToList();
+
+        /// The pawn's vanilla priorities for CAPABLE work types only (absent key =
+        /// incapable, value 0 = capable but unassigned).
+        private static Dictionary<string, int> CapablePriorities(Pawn pawn)
+        {
+            var workSettings = pawn.workSettings;
+            bool everWork = workSettings != null && workSettings.EverWork;
+            var priorities = new Dictionary<string, int>();
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                if (!pawn.WorkTypeIsDisabled(workType))
+                    priorities[workType.defName] = everWork ? workSettings!.GetPriority(workType) : 0; // everWork implies workSettings != null
+            return priorities;
+        }
+
+        /// Assigns only the auto-assign roles (Basics) — used for pawns joining
+        /// mid-game, mirroring vanilla's minimal auto-enable; vocational roles are the
+        /// player's call (the Recommended Roles panel covers it). Assignment
+        /// happens at the joining event itself (generation, faction change,
+        /// mutant revert) even for pawns not yet spawned or on the roster:
+        /// deferring on admission state would require process-local history
+        /// that neither survives a save/load nor stays identical across
+        /// multiplayer peers. Never-admitted preview pawns are instead dropped
+        /// by the persistence-anchor filter when the store is saved.
+        public static void TryAutoAssignBasics(Pawn pawn)
+        {
+            if (Current.ProgramState != ProgramState.Playing) return;
+            if (Scribe.mode != LoadSaveMode.Inactive) return;
+            var store = RoleStore.Current;
+            if (store == null || !store.seeded) return;
+            if (pawn == null) return;
+            if (!PawnRolePersistencePolicy.ShouldAutoAssign(
+                    isAlive: !pawn.Dead && !pawn.Destroyed,
+                    isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony))
+                return;
+            if (store.IsManaged(pawn)) return;
+
+            foreach (var role in store.roles)
+            {
+                if (role.autoAssign)
+                    RoleCommands.AssignRoleDirect(pawn, role.id);
+            }
+        }
+
+        /// A newly seen work type that RoleDefs declare (MayRequire compat
+        /// entries): inserted into each template-linked live role at the
+        /// template's position, so a mod added mid-save lands like a fresh
+        /// seed. Returns whether any role took the type.
+        private static bool RestoreTemplateEntries(
+            RoleStore store, WorkTypeDef workType, List<string> result)
+        {
+            bool restored = false;
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                var templateEntries = def.ParsedEntries();
+                int at = templateEntries.FindIndex(e =>
+                    e.Kind == JobEntryKind.WorkType && e.DefName == workType.defName);
+                if (at < 0) continue;
+                var role = store.RoleByTemplate(def.defName);
+                if (role == null || role.entries.Contains(templateEntries[at])) continue;
+                RoleCommands.AddEntryDirect(role.id, templateEntries[at],
+                    TemplatePlacement.AnchoredInsertIndex(role.entries, templateEntries, at));
+                result.Add(role.label);
+                restored = true;
+            }
+            return restored;
+        }
+
+        /// Stable string hash (FNV-1a): string.GetHashCode is not guaranteed
+        /// identical across runtimes, and seeded colors and def fingerprints
+        /// must match in MP.
+        internal static uint Fnv1a(string text)
+        {
+            uint hash = 2166136261u;
+            foreach (char c in text)
+            {
+                hash ^= c;
+                hash *= 16777619u;
+            }
+            return hash;
+        }
+
+        /// Palette colors only, chosen deterministically across MP clients:
+        /// the defName hashes (FNV-1a — stable, unlike string.GetHashCode) to
+        /// a hue snapped to the nearest palette color.
+        private static void ApplyGeneratedColor(Role role, string defName)
+        {
+            role.color = NearestPaletteColor(UnityEngine.Color.HSVToRGB(
+                Fnv1a(defName) % 360u / 360f, 0.5f, 0.55f));
+            role.hasCustomColor = true;
+        }
+
+        /// Snaps an arbitrary color to the nearest editor swatch (RGB distance)
+        /// — the exact values the palette grid highlights against, and a wider
+        /// gamut than the shipped PaletteDefs.
+        private static UnityEngine.Color NearestPaletteColor(UnityEngine.Color target)
+        {
+            var best = new UnityEngine.Color(0.200f, 0.255f, 0.333f);
+            float bestDist = float.MaxValue;
+            foreach (var swatch in SwatchPalette.Swatches)
+            {
+                float dr = swatch.r - target.r;
+                float dg = swatch.g - target.g;
+                float db = swatch.b - target.b;
+                float dist = dr * dr + dg * dg + db * db;
+                if (dist < bestDist)
+                {
+                    bestDist = dist;
+                    best = swatch;
+                }
+            }
+            return best;
+        }
+
+        /// Ensures every work type is reachable through some role: types declared
+        /// by RoleDef compat entries restore into their template roles, other
+        /// visible types get generated roles. Runs on every load; each work type
+        /// is processed once per save (store.knownWorkTypes), so removing a
+        /// restored entry or generated role sticks. Returns labels of changed roles.
+        public static List<string> EnsureWorkTypeCoverage()
+        {
+            var store = RoleStore.Current;
+            var result = new List<string>();
+            if (store == null || !store.seeded) return result;
+
+            var covered = CoveredWorkTypes(store);
+
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+            {
+                if (store.knownWorkTypes.Contains(workType.defName)) continue;
+
+                store.knownWorkTypes.Add(workType.defName);
+
+                if (covered.Contains(workType.defName)) continue;
+
+                if (RestoreTemplateEntries(store, workType, result)) continue;
+
+                if (workType.visible)
+                {
+                    string label = SeededDefIdentity.WorkTypeRoleLabel(workType)
+                        ?? workType.defName;
+                    var role = RoleCommands.CreateRoleDirect(label);
+                    if (role != null)
+                    {
+                        ApplyGeneratedColor(role, workType.defName);
+                        RoleCommands.AddEntryDirect(role.id, new WorkRoles.Core.JobEntry(WorkRoles.Core.JobEntryKind.WorkType, workType.defName));
+                        role.minAge = RecsAdapter.MinUnlockAgeOf(role);
+                        result.Add(role.label);
+                    }
+                }
+                // Invisible uncovered types stay uncovered (only marked known);
+                // the Roles tab's unused-jobs warning surfaces them.
+            }
+
+            // Return distinct labels in encounter order.
+            var seen = new HashSet<string>();
+            var distinct = new List<string>();
+            foreach (var label in result)
+                if (seen.Add(label))
+                    distinct.Add(label);
+            return distinct;
+        }
+
+        /// Saves from 1.1.2 and earlier can carry empty role sets (last role removed
+        /// or deleted), whose save-time fallback sync zeroed the pawn's real vanilla
+        /// priorities — the pawn idled with no work enabled. Drops the sets and
+        /// re-initializes any pawn the wipe left with nothing enabled. Runs in
+        /// FinalizeInit: map pawns aren't loaded yet at world PostLoadInit, and
+        /// ProgramState isn't Playing yet so EnableAndInitialize's auto-assign
+        /// postfix stays inert.
+        public static void SweepEmptyRoleSets()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            var empty = store.pawnSets
+                .Where(kv => kv.Value.assignments.Count == 0)
+                .Select(kv => kv.Key).ToList();
+            foreach (var pawn in empty)
+            {
+                store.UnmanagePawn(pawn);
+                var workSettings = pawn?.workSettings;
+                if (pawn == null || pawn.Destroyed || pawn.Dead
+                    || workSettings == null || !workSettings.EverWork) continue;
+                bool anyEnabled = DefDatabase<WorkTypeDef>.AllDefsListForReading
+                    .Any(wt => workSettings.GetPriority(wt) > 0);
+                if (!anyEnabled)
+                {
+                    workSettings.EnableAndInitialize();
+                    Log.Message($"[WorkRoles] restored work priorities of {pawn.LabelShort} (zeroed by empty role set)");
+                }
+            }
+        }
+
+        /// Union-only snapshot maintenance, every load: remember each giver ever
+        /// seen under a role's work-type entries, so jobs a mod later moves to a
+        /// different work type stay in the role (compile-time expansion in
+        /// CompiledJobOrders via JobOrderCompiler.WithMovedSnapshotGivers).
+        public static void RefreshWorkTypeSnapshots()
+        {
+            var store = RoleStore.Current;
+            if (store == null) return;
+            bool changed = false;
+            foreach (var role in store.roles)
+                foreach (var entry in role.entries)
+                {
+                    if (entry.Kind != JobEntryKind.WorkType) continue;
+                    if (!role.workTypeSnapshots.TryGetValue(entry.DefName, out var known))
+                        role.workTypeSnapshots[entry.DefName] = known = new List<string>();
+                    foreach (var giver in GameJobCatalog.Instance.WorkGiversOf(entry.DefName))
+                        if (!known.Contains(giver))
+                        {
+                            known.Add(giver);
+                            changed = true;
+                        }
+                }
+            if (changed) CompiledJobOrders.InvalidateAll();
+        }
+
+        /// Coverage math lives in Core (WorkTypeCoverage) with tests.
+        private static HashSet<string> CoveredWorkTypes(RoleStore store) =>
+            WorkTypeCoverage.CoveredWorkTypes(
+                store.roles.Select(r => ((IReadOnlyList<JobEntry>)r.entries, r.blocker)),
+                GameJobCatalog.Instance);
+
+        /// One selectable line in the Restore Defaults preview. Exactly one of the
+        /// payload fields is set: a missing template to recreate, an uncovered work
+        /// type to regenerate, a role whose snapshots gain moved vanilla givers,
+        /// a role whose group or color drifted from its def, a missing default
+        /// holder defaults, a missing training path, or the recommendation-order reset.
+        public class RestoreItem
+        {
+            public string label = null!;       // set at construction
+            /// What applying this item does (preview row tooltip).
+            public string explanation = null!; // set at construction
+            public string? templateDef;
+            public string? workType;
+            public int backfillRoleId = -1;
+            public int groupRoleId = -1;
+            public int colorRoleId = -1;
+            public int holderRoleId = -1;
+            public int entriesRoleId = -1;
+            public int paletteSnapRoleId = -1;
+            public string? pathDef;
+            public bool recommendationOrder;
+
+            /// Applying would undo a deliberate player change (drift/opt-out
+            /// types): the preview highlights these with a warning tint.
+            public bool UndoesUserChange =>
+                groupRoleId != -1 || colorRoleId != -1 || holderRoleId != -1
+                || entriesRoleId != -1 || paletteSnapRoleId != -1
+                || recommendationOrder;
+        }
+
+        /// The role's def-declared group differs from where it sits now, by
+        /// invariant seeded name (empty def group = Default).
+        private static bool GroupDrifted(RoleStore store, Role role, RoleDef def)
+        {
+            if (def.group.NullOrEmpty())
+                return role.groupId != RoleGroup.DefaultId;
+            var current = store.GroupById(role.groupId);
+            return current == null || !string.Equals(current.label,
+                SeededDefIdentity.GroupLabel(def),
+                System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string DefGroupLabel(RoleDef def) => def.group.NullOrEmpty()
+            ? "WR_GroupDefault".Translate().ToString()
+            : SeededDefIdentity.GroupLabel(def) ?? def.group ?? "";
+
+        /// The role's color differs from what its def resolves today.
+        private static bool ColorDrifted(Role role, RoleDef def)
+        {
+            var (has, color) = def.ResolvedColor();
+            if (has != role.hasCustomColor) return true;
+            return has && !role.color.IndistinguishableFrom(color);
+        }
+
+        private static readonly Dictionary<string, List<string>> NoSnapshots =
+            new Dictionary<string, List<string>>();
+
+        /// Def-derived entries (MayRequire filtering makes ParsedEntries
+        /// mod-list-current) plus explicit entries for vanilla givers that mods
+        /// moved out of the def's work types — so drift detection and entry
+        /// resets reproduce a fresh seed on the CURRENT mod list, and coverage
+        /// (nesting) keeps the moved jobs, which snapshots cannot provide.
+        internal static List<WorkRoles.Core.JobEntry> DefaultEntriesFor(RoleDef def)
+        {
+            var entries = def.ParsedEntries();
+            var moved = WorkTypeCoverage.MovedGivers(entries, NoSnapshots,
+                VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
+            if (moved != null)
+                foreach (var pair in moved)
+                {
+                    int insertAt = IndexAfterWorkTypeEntry(entries, pair.Key);
+                    foreach (var giver in pair.Value)
+                        entries.Insert(insertAt++, new WorkRoles.Core.JobEntry(
+                            WorkRoles.Core.JobEntryKind.WorkGiver, giver));
+                }
+            return entries;
+        }
+
+        /// Moved givers slot directly after the work-type entry they came from,
+        /// keeping their old first-claim position in the role's order.
+        private static int IndexAfterWorkTypeEntry(
+            List<WorkRoles.Core.JobEntry> entries, string workTypeDefName)
+        {
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i].Kind == WorkRoles.Core.JobEntryKind.WorkType
+                    && entries[i].DefName == workTypeDefName)
+                    return i + 1;
+            return entries.Count;
+        }
+
+        /// The role's job entries differ (content or order) from the def's
+        /// derived default.
+        private static bool EntriesDrifted(Role role, RoleDef def)
+        {
+            var expected = DefaultEntriesFor(def);
+            if (role.entries.Count != expected.Count) return true;
+            for (int i = 0; i < expected.Count; i++)
+                if (role.entries[i].Kind != expected[i].Kind
+                    || role.entries[i].DefName != expected[i].DefName)
+                    return true;
+            return false;
+        }
+
+        /// A legacy generated coverage role: single work-type entry whose
+        /// gerund still names the role, but carrying a pre-palette color.
+        private static bool IsOffPaletteGeneratedRole(Role role)
+        {
+            if (role.templateDefName != null || !role.hasCustomColor) return false;
+            if (role.entries.Count != 1
+                || role.entries[0].Kind != WorkRoles.Core.JobEntryKind.WorkType) return false;
+            var workType = DefDatabase<WorkTypeDef>.GetNamedSilentFail(role.entries[0].DefName);
+            if (workType == null) return false;
+            string label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst();
+            if (!string.Equals(role.label, label, System.StringComparison.OrdinalIgnoreCase))
+                return false;
+            foreach (var swatch in SwatchPalette.Swatches)
+                if (swatch.IndistinguishableFrom(role.color)) return false;
+            return true;
+        }
+
+        /// The role's assignment demand differs from its template's tuning.
+        private static bool HoldersDrifted(Role role, RoleDef def) =>
+            role.colonyMin != (def.tuning?.colonyMin ?? 0)
+            || role.coverage != (def.tuning?.coverage ?? 0);
+
+        /// Everything Restore Defaults could do right now: recreate missing
+        /// template roles and default training paths, regenerate coverage for work
+        /// types nothing covers, recover vanilla jobs that mods moved out of roles'
+        /// work types, return drifted roles to their def's group, color and holder policy, and
+        /// reset the recommendation order.
+        public static List<RestoreItem> ComputeRestoreItems()
+        {
+            var store = RoleStore.Current;
+            var result = new List<RestoreItem>();
+            if (store == null) return result;
+
+            // Coverage items come from LIVE roles only: a missing seeded def's
+            // work types stay listed, so declining its role item still offers a
+            // generated role. Applying both is safe — RestoreSelected creates
+            // roles first, then coverage skips types they cover.
+            var covered = CoveredWorkTypes(store);
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                if (store.RoleByTemplate(def.defName) != null) continue;
+                string seedLabel = SeededDefIdentity.RoleLabel(def)
+                    ?? def.defName;
+                bool labelTaken = store.roles.Any(r => string.Equals(r.label, seedLabel,
+                    System.StringComparison.OrdinalIgnoreCase));
+                result.Add(new RestoreItem
+                {
+                    label = labelTaken
+                        ? seedLabel + " " + "WR_RestoreDuplicateHint".Translate()
+                        : seedLabel,
+                    explanation = "WR_RestoreExplainRole".Translate(),
+                    templateDef = def.defName,
+                });
+            }
+            foreach (var workType in DefDatabase<WorkTypeDef>.AllDefsListForReading)
+                if (workType.visible && !covered.Contains(workType.defName))
+                    result.Add(new RestoreItem
+                    {
+                        label = (workType.gerundLabel ?? workType.labelShort ?? workType.defName).CapitalizeFirst(),
+                        explanation = "WR_RestoreExplainCoverage".Translate(),
+                        workType = workType.defName,
+                    });
+            foreach (var role in store.roles)
+            {
+                var moved = MovedVanillaGiversFor(role);
+                if (moved == null) continue;
+                int count = moved.Sum(kv => kv.Value.Count);
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreMovedJobs".Translate(role.label, count),
+                    explanation = "WR_RestoreExplainBackfill".Translate(count),
+                    backfillRoleId = role.id,
+                });
+            }
+            // Seeded roles whose job entries drifted from their def (older seed
+            // data or player edits); restoring resets the job list.
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !EntriesDrifted(role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreJobsItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainJobs".Translate(),
+                    entriesRoleId = role.id,
+                });
+            }
+            // Legacy generated coverage roles carrying pre-palette colors.
+            foreach (var role in store.roles)
+            {
+                if (!IsOffPaletteGeneratedRole(role)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreSnapColorItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainSnapColor".Translate(),
+                    paletteSnapRoleId = role.id,
+                });
+            }
+            // Seeded roles whose group drifted from their def; restoring moves
+            // them back (recreating the group if the player deleted it).
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !GroupDrifted(store, role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)),
+                    explanation = "WR_RestoreExplainGroup".Translate(DefGroupLabel(def)),
+                    groupRoleId = role.id,
+                });
+            }
+            // Seeded roles whose color drifted from their def; restoring recolors
+            // them back to the def's resolved color.
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !ColorDrifted(role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreColorItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainColor".Translate(),
+                    colorRoleId = role.id,
+                });
+            }
+            foreach (var role in store.roles)
+            {
+                var def = role.templateDefName == null ? null
+                    : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                if (def == null || !HoldersDrifted(role, def)) continue;
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreHoldersItem".Translate(role.label),
+                    explanation = "WR_RestoreExplainHolders".Translate(),
+                    holderRoleId = role.id,
+                });
+            }
+            // Default role training missing (deleted or pre-training save); a
+            // role that owns any training keeps it — the player's edits stay
+            // untouched. Training that would resolve < 2 entries even after
+            // the missing-role items apply is suppressed — it could never be
+            // created (perpetual no-ops).
+            foreach (var def in DefDatabase<RoleDef>.AllDefsListForReading)
+            {
+                if (!(def.tuning?.training?.Count > 0)) continue;
+                var owner = ResolvePathRole(store, def.defName);
+                if (owner != null && owner.trainingRoleIds.Count == 0
+                    && RestorablePathEntryCount(store, def) >= 2)
+                    result.Add(new RestoreItem
+                    {
+                        label = "WR_RestorePathItem".Translate(owner.label),
+                        explanation = "WR_RestoreExplainPath".Translate(),
+                        pathDef = def.defName,
+                    });
+            }
+            if (store.recommendationOrder.Count > 0)
+                result.Add(new RestoreItem
+                {
+                    label = "WR_RestoreRecOrder".Translate(),
+                    explanation = "WR_RestoreExplainRecOrder".Translate(),
+                    recommendationOrder = true,
+                });
+            return result;
+        }
+
+        /// Entries a Restore Defaults pass could resolve for this def's
+        /// training: live-resolvable roles plus missing seeded defs (offered
+        /// as their own restore items, which apply before training).
+        private static int RestorablePathEntryCount(RoleStore store, RoleDef def)
+        {
+            var counted = new HashSet<string>();
+            int count = 0;
+            foreach (var entry in def.tuning?.training ?? new List<RoleTrainingEntry>())
+            {
+                if (entry.role is not { Length: > 0 } roleDefName
+                    || !counted.Add(roleDefName)) continue;
+                if (ResolvePathRole(store, roleDefName) != null
+                    || (DefDatabase<RoleDef>.GetNamedSilentFail(roleDefName) != null
+                        && store.RoleByTemplate(roleDefName) == null))
+                    count++;
+            }
+            return count;
+        }
+
+        /// Moved-giver detection lives in Core (WorkTypeCoverage) with tests.
+        private static Dictionary<string, List<string>>? MovedVanillaGiversFor(Role role) =>
+            WorkTypeCoverage.MovedGivers(role.entries, role.workTypeSnapshots,
+                VanillaGiverBaseline.GiverWorkType, GameJobCatalog.Instance);
+
+        /// Each pawn's enabled assignments in order with copied coverage sets,
+        /// captured before restore mutates any role.
+        private static Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>>
+            CapturePawnCoverage(RoleStore store)
+        {
+            var result = new Dictionary<Pawn, List<(int, HashSet<string>)>>();
+            foreach (var pair in store.pawnSets)
+            {
+                var pawn = pair.Key;
+                var set = pair.Value;
+                if (pawn == null || set?.assignments == null) continue;
+                List<(int, HashSet<string>)>? roles = null;
+                foreach (var assignment in set.assignments)
+                {
+                    if (assignment == null) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role == null
+                        || !RoleActivation.IsActive(role.enabled, assignment.state)) continue;
+                    (roles ??= new List<(int, HashSet<string>)>())
+                        .Add((role.id, new HashSet<string>(role.Coverage())));
+                }
+                if (roles != null) result[pawn] = roles;
+            }
+            return result;
+        }
+
+        /// Assigns template roles that recover coverage a pawn lost to this
+        /// restore, inserted at the position of the role that previously carried
+        /// those jobs so compiled priorities stay stable. Coverage math only;
+        /// custom user roles are never auto-assigned.
+        private static void PreservePawnCoverage(RoleStore store,
+            Dictionary<Pawn, List<(int roleId, HashSet<string> coverage)>> prior)
+        {
+            var candidates = new List<(int roleId, IReadOnlyCollection<string> coverage)>();
+            foreach (var role in store.roles)
+                if (role != null && role.templateDefName != null && role.enabled && !role.blocker)
+                    candidates.Add((role.id, role.Coverage()));
+
+            List<Pawn>? touched = null;
+            foreach (var pair in prior)
+            {
+                var pawn = pair.Key;
+                if (!store.pawnSets.TryGetValue(pawn, out var set)
+                    || set?.assignments == null) continue;
+                var current = new HashSet<string>();
+                foreach (var assignment in set.assignments)
+                {
+                    if (assignment == null) continue;
+                    var role = store.RoleById(assignment.roleId);
+                    if (role != null
+                        && RoleActivation.IsActive(role.enabled, assignment.state))
+                        current.UnionWith(role.Coverage());
+                }
+                var lost = new HashSet<string>();
+                foreach (var (_, coverage) in pair.Value) lost.UnionWith(coverage);
+                lost.ExceptWith(current);
+                if (lost.Count == 0) continue;
+
+                foreach (int roleId in WorkRoles.Core.RestoreCoveragePlanner
+                             .RecoveryRoles(lost, candidates))
+                {
+                    if (set.assignments.Any(a => a?.roleId == roleId)) continue;
+                    set.assignments.Insert(RecoveryInsertIndex(store, set, pair.Value, roleId),
+                        new RoleAssignment { roleId = roleId });
+                    (touched ??= new List<Pawn>()).Add(pawn);
+                }
+            }
+            if (touched != null) CompiledJobOrders.InvalidateBatch(touched);
+        }
+
+        /// Position of the first still-assigned prior role whose old coverage
+        /// overlaps the recovery role's; the recovered jobs then rank where
+        /// their old carrier ranked. No overlap or carrier gone: append.
+        private static int RecoveryInsertIndex(RoleStore store, PawnRoleSet set,
+            List<(int roleId, HashSet<string> coverage)> prior, int recoveryRoleId)
+        {
+            var recovery = store.RoleById(recoveryRoleId);
+            if (recovery != null)
+                foreach (var (roleId, coverage) in prior)
+                {
+                    if (!coverage.Overlaps(recovery.Coverage())) continue;
+                    for (int i = 0; i < set.assignments.Count; i++)
+                        if (set.assignments[i]?.roleId == roleId) return i;
+                    break;
+                }
+            return set.assignments.Count;
+        }
+
+        /// Applies the selected restore items. Each application self-guards against
+        /// staleness (an already-present template, path name or covered work type
+        /// no-ops). Returns labels of what was actually restored.
+        public static List<string> RestoreSelected(RestoreSelection selection)
+        {
+            var store = RoleStore.Current;
+            var result = new List<string>();
+            if (store == null || selection == null) return result;
+            // Coverage snapshot before anything mutates: pawns keep their
+            // effective jobs when entry resets shrink a role.
+            var priorCoverage = CapturePawnCoverage(store);
+            var templateDefs = selection.templateDefs;
+            var workTypes = selection.workTypes;
+            var backfillRoleIds = selection.backfillRoleIds;
+            var pathDefs = selection.pathDefs;
+            var groupRoleIds = selection.groupRoleIds;
+            var colorRoleIds = selection.colorRoleIds;
+            var holderRoleIds = selection.holderRoleIds;
+
+            if (templateDefs != null)
+            {
+                var restored = new List<Role>();
+                foreach (var defName in templateDefs)
+                {
+                    if (store.RoleByTemplate(defName) != null) continue;
+                    var role = RoleCommands.CreateRoleFromDef(DefDatabase<RoleDef>.GetNamedSilentFail(defName));
+                    if (role != null) { result.Add(role.label); restored.Add(role); }
+                }
+            }
+
+            if (workTypes != null && workTypes.Count > 0)
+            {
+                var covered = CoveredWorkTypes(store);
+                store.knownWorkTypes.RemoveAll(wt => workTypes.Contains(wt) && !covered.Contains(wt));
+                result.AddRange(EnsureWorkTypeCoverage());
+            }
+
+            if (backfillRoleIds != null)
+                foreach (var roleId in backfillRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    if (role == null) continue;
+                    var moved = MovedVanillaGiversFor(role);
+                    if (moved == null) continue;
+                    foreach (var kv in moved)
+                    {
+                        if (!role.workTypeSnapshots.TryGetValue(kv.Key, out var known))
+                            role.workTypeSnapshots[kv.Key] = known = new List<string>();
+                        known.AddRange(kv.Value);
+                    }
+                    result.Add("WR_RestoreMovedJobs".Translate(role.label, moved.Sum(kv => kv.Value.Count)));
+                    CompiledJobOrders.InvalidateRole(roleId);
+                }
+
+            if (selection.entriesRoleIds != null && selection.entriesRoleIds.Count > 0)
+            {
+                foreach (var roleId in selection.entriesRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (role == null || def == null || !EntriesDrifted(role, def)) continue;
+                    role.entries = DefaultEntriesFor(def);
+                    // Stale union-only snapshots could resurrect removed givers.
+                    role.workTypeSnapshots.Clear();
+                    result.Add("WR_RestoreJobsItem".Translate(role.label));
+                    CompiledJobOrders.InvalidateRole(roleId);
+                }
+                RefreshWorkTypeSnapshots();
+            }
+
+            if (selection.paletteSnapRoleIds != null)
+                foreach (var roleId in selection.paletteSnapRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    if (role == null || !role.hasCustomColor) continue;
+                    role.color = NearestPaletteColor(role.color);
+                    result.Add(role.label);
+                }
+
+            PreservePawnCoverage(store, priorCoverage);
+
+            if (groupRoleIds != null)
+            {
+                bool anyMoved = false;
+                foreach (var roleId in groupRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (role == null || def == null || !GroupDrifted(store, role, def)) continue;
+                    RoleGroup? group = RoleCommands.EnsureGroup(
+                        SeededDefIdentity.GroupLabel(def));
+                    if (group == null) continue;
+                    role.groupId = group.id;
+                    result.Add("WR_RestoreGroupItem".Translate(role.label, DefGroupLabel(def)));
+                    anyMoved = true;
+                }
+                if (anyMoved) RoleCommands.SweepEmptyGroups();
+            }
+
+            if (colorRoleIds != null)
+                foreach (var roleId in colorRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (role == null || def == null || !ColorDrifted(role, def)) continue;
+                    var (has, color) = def.ResolvedColor();
+                    role.hasCustomColor = has;
+                    role.color = color;
+                    result.Add("WR_RestoreColorItem".Translate(role.label));
+                }
+
+            if (holderRoleIds != null)
+                foreach (var roleId in holderRoleIds)
+                {
+                    var role = store.RoleById(roleId);
+                    var def = role?.templateDefName == null ? null
+                        : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
+                    if (role == null || def == null || !HoldersDrifted(role, def)) continue;
+                    role.colonyMin = def.tuning?.colonyMin ?? 0;
+                    role.coverage = def.tuning?.coverage ?? 0;
+                    result.Add("WR_RestoreHoldersItem".Translate(role.label));
+                }
+
+            // After the roles: training members may have been restored just above.
+            if (pathDefs != null)
+                foreach (var defName in pathDefs)
+                {
+                    var def = DefDatabase<RoleDef>.GetNamedSilentFail(defName);
+                    if (def == null) continue;
+                    if (CreateTrainingFromDef(store, def))
+                        result.Add("WR_RestorePathItem".Translate(
+                            ResolvePathRole(store, def.defName)?.label ?? def.defName));
+                }
+
+            if (selection.recommendationOrder && store.recommendationOrder.Count > 0)
+            {
+                // Empty = the derived default order.
+                store.recommendationOrder = new List<int>();
+                result.Add("WR_RestoreRecOrder".Translate());
+            }
+            return result;
+        }
+    }
+}

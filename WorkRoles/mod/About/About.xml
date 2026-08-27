@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>WorkRoles</name>
+  <author>Morten Mertner</author>
+  <packageId>mnmr.workroles</packageId>
+  <modVersion>1.5.1</modVersion>
+  <url>https://github.com/mnmr/rw.workroles</url>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <incompatibleWith>
+    <li>fluffy.worktab</li>
+    <li>arof.fluffy.worktab</li>
+    <li>arof.fluffy.worktab.continued</li>
+    <li>natee.EnhancedWorkTab</li>
+  </incompatibleWith>
+  <description>
+WorkRoles allows you to set work priorities by assigning named roles to colonists, instead of fiddling with priority numbers.
+
+Key Features:
+- Easy Setup: Seeds ready-made roles (Doctor, Smith, Hauler, ...) covering every vanilla and DLC work type, then auto-assigns them to match your existing priorities.
+- Quickly Reprioritize: Toggle any role globally or per colonist without touching the underlying assignments.
+- Powerful UI: Easy to use, with options to group, sort and filter views. Key bindings for navigation, drag to assign roles.
+- Smart Recommendations: A per-colonist panel suggests roles from passions, genes, colony-best skills, training opportunities and colony needs. Apply per colonist or fix the whole colony with a preview.
+- Modded Jobs: Work types and jobs from other mods appear automatically, no compatibility patches needed.
+- Multiplayer Support: Fully RimWorld Multiplayer compatible.
+- Save Compatible: Safe to add (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
+
+This is far from a comprehensive list of features. Check the project README or Steam workshop page for additional details.
+
+Requires Harmony. Not compatible with other Work tab replacements or priority-setting mods.
+
+Check out my other mods: EPrime's Readouts and EPrime's Quality Jobs.
+  </description>
+</ModMetaData>

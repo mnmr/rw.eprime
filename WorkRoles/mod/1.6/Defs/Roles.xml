@@ -1,0 +1,908 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+  <!-- Role-list groups, in display order. -->
+  <WorkRoles.RoleGroupDef><defName>WS_GroupEssentials</defName><label>Essentials</label><order>1</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupFood</defName><label>Food</label><order>2</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupAnimals</defName><label>Animals</label><order>3</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupIndoors</defName><label>Indoors</label><order>4</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupOutdoors</defName><label>Outdoors</label><order>5</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupResearch</defName><label>Research</label><order>6</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupSocial</defName><label>Social</label><order>7</order></WorkRoles.RoleGroupDef>
+  <WorkRoles.RoleGroupDef><defName>WS_GroupMedical</defName><label>Medical</label><order>8</order></WorkRoles.RoleGroupDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_NoFirefighting</defName>
+    <label>Pyrophobe</label>
+    <iconPath>WorkRoles/RoleIcons/pyrophobe</iconPath>
+    <seedLabel>Pyrophobe</seedLabel>
+    <description>Blocker: colonists holding this role never fight fires, even when a later role (like Basics) includes firefighting.</description>
+    <blocker>true</blocker>
+    <recommendationSpecialRole>FireBlocker</recommendationSpecialRole>
+    <colorRef>rose-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Core</defName>
+    <label>Core</label>
+    <iconPath>WorkRoles/RoleIcons/core</iconPath>
+    <description>Emergency work every colonist must do: firefighting, being treated and rescuing.</description>
+    <autoAssign>true</autoAssign>
+    <colorRef>slate-700</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Firefighter</li>
+      <li>WorkType:Patient</li>
+      <li>WorkGiver:DoctorRescue</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Basics</defName>
+    <label>Basics</label>
+    <iconPath>WorkRoles/RoleIcons/basics</iconPath>
+    <description>Self-care and simple work every colonist should do.</description>
+    <autoAssign>true</autoAssign>
+    <colorRef>slate-600</colorRef>
+    <group>Essentials</group>
+    <!-- Sits below Doctor in vanilla's grid (bed rest 1200 vs doctoring 1300),
+         so emergencies (Core) rank above doctoring and this below. Compat
+         entries sit by naturalPriority (urgent hauling 1180/1170, between bed
+         rest 1200 and basic 1150); mods added mid-save are restored into live
+         roles by Seeding.EnsureWorkTypeCoverage. -->
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:PatientBedRest</li>
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:HaulingUrgent</li>
+      <li MayRequire="keyz182.KeyzAllowUtilities">WorkType:KAU_UrgentHaul</li>
+      <li>WorkType:BasicWorker</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Rescuer</defName>
+    <label>Rescuer</label>
+    <iconPath>WorkRoles/RoleIcons/rescuer</iconPath>
+    <description>Rescuing downed colonists.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Medical</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoctorRescue</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Doctor</defName>
+    <label>Doctor</label>
+    <iconPath>WorkRoles/RoleIcons/doctor</iconPath>
+    <description>Medical care for colonists, prisoners and animals.</description>
+    <colorRef>red-800</colorRef>
+    <group>Medical</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>25</coverage>
+      <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Nurse</role><max>5</max></li>
+        <li><role>WS_Medic</role><min>5</min><max>15</max></li>
+        <li><role>WS_Doctor</role><min>15</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Doctor</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Medic</defName>
+    <label>Medic</label>
+    <iconPath>WorkRoles/RoleIcons/medic</iconPath>
+    <description>Medical work except operating on colonists.</description>
+    <colorRef>red-900</colorRef>
+    <group>Medical</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoctorTendEmergency</li>
+      <li>WorkGiver:DoctorTendToHumanlikes</li>
+      <li>WorkGiver:DoctorTendToSelf</li>
+      <li>WorkGiver:DoctorTendToSelfEmergency</li>
+      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorTendToAnimals</li>
+      <li>WorkGiver:DoctorFeedAnimals</li>
+      <li>WorkGiver:VisitSickPawn</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
+      <li>WorkGiver:TakeToBedToOperate</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoctorTendToEntities</li>
+      <li>WorkGiver:DoBillsMedicalAnimalOperation</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Laborer</defName>
+    <label>Laborer</label>
+    <iconPath>WorkRoles/RoleIcons/basic</iconPath>
+    <description>Miscellaneous simple tasks.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:BasicWorker</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>WS_Childminder</defName>
+    <label>Caretaker</label>
+    <iconPath>WorkRoles/RoleIcons/childcare</iconPath>
+    <seedLabel>Caretaker</seedLabel>
+    <description>Childcare and teaching.</description>
+    <colorRef>cyan-700</colorRef>
+    <group>Social</group>
+    <!-- Needed work only while the colony has children; the adapter zeroes it otherwise. -->
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>1</colonyMin>
+      <coverage>10</coverage>
+      <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Jailor</role><max>4</max></li>
+        <li><role>WS_Warden</role><min>4</min></li>
+        <li><role>WS_Childminder</role><min>6</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Childcare</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Firefighter</defName>
+    <label>Firefighter</label>
+    <iconPath>WorkRoles/RoleIcons/firefighter</iconPath>
+    <description>Fighting fires.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Firefighter</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Patient</defName>
+    <label>Patient</label>
+    <iconPath>WorkRoles/RoleIcons/patient</iconPath>
+    <description>Accepting medical treatment.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Patient</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Bedrest</defName>
+    <label>Bedrest</label>
+    <iconPath>WorkRoles/RoleIcons/bedrest</iconPath>
+    <description>Resting in bed when ill or injured.</description>
+    <colorRef>slate-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:PatientBedRest</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Jailor</defName>
+    <label>Jailor</label>
+    <iconPath>WorkRoles/RoleIcons/jailor</iconPath>
+    <description>Prisoner handling except interrogation, enslavement and conversion: feeding, escorting, chatting, suppression, release and executions.</description>
+    <colorRef>cyan-900</colorRef>
+    <group>Social</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <!-- All Warden givers in vanilla order EXCEPT InterrogatePrisoner,
+         EnslavePrisoner and ConvertPrisoner; ChatWithPrisoner trains Social,
+         making this a real trainer toward Warden. -->
+    <entries>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExecuteEntity</li>
+      <li>WorkGiver:DoExecution</li>
+      <li>WorkGiver:ExecuteGuiltyColonist</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ExecuteSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:EmancipateSlave</li>
+      <li>WorkGiver:ReleasePrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ActivitySuppression</li>
+      <li>WorkGiver:TakePrisonerToBed</li>
+      <li>WorkGiver:FeedPrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:ImprisonSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:DeliverHemogenToPrisoner</li>
+      <li>WorkGiver:DeliverFoodToPrisoner</li>
+      <li MayRequire="Ludeon.RimWorld.Ideology">WorkGiver:SuppressSlave</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ReleaseEntity</li>
+      <li>WorkGiver:ChatWithPrisoner</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Warden</defName>
+    <label>Warden</label>
+    <iconPath>WorkRoles/RoleIcons/warden</iconPath>
+    <description>Prisoner interaction: recruitment, conversion, feeding and release.</description>
+    <colorRef>cyan-800</colorRef>
+    <group>Social</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Warden</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Grunt</defName>
+    <label>Grunt</label>
+    <iconPath>WorkRoles/RoleIcons/grunt</iconPath>
+    <description>Hauling and cleaning.</description>
+    <autoAssign>true</autoAssign>
+    <colorRef>stone-700</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Optional</category>
+      <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Hauling</li>
+      <li>WorkType:Cleaning</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Hauler</defName>
+    <label>Hauler</label>
+    <iconPath>WorkRoles/RoleIcons/hauling</iconPath>
+    <description>Hauling items.</description>
+    <colorRef>stone-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Optional</category>
+      <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Hauling</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Cleaner</defName>
+    <label>Cleaner</label>
+    <iconPath>WorkRoles/RoleIcons/cleaner</iconPath>
+    <description>Cleaning.</description>
+    <colorRef>stone-800</colorRef>
+    <group>Essentials</group>
+    <tuning>
+      <category>Optional</category>
+      <time>Opportunistic</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Cleaning</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Handler</defName>
+    <label>Handler</label>
+    <iconPath>WorkRoles/RoleIcons/handling</iconPath>
+    <description>Animal taming, training and slaughter.</description>
+    <colorRef>teal-800</colorRef>
+    <group>Animals</group>
+    <tuning>
+      <category>Normal</category>
+      <time>PartTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>false</championPenalty>
+      <training>
+        <li><role>WS_Herder</role><max>8</max></li>
+        <li><role>WS_Handler</role><min>8</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <!-- Finish-off (Allow Tool, Keyz' Allow Utilities) is handler's work too:
+           above Handling, so downed animals are dispatched first. -->
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:FinishingOff</li>
+      <li MayRequire="keyz182.KeyzAllowUtilities">WorkType:KAU_FinishingOff</li>
+      <li>WorkType:Handling</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Cook</defName>
+    <label>Cook</label>
+    <iconPath>WorkRoles/RoleIcons/cooking</iconPath>
+    <description>Meal preparation and butchering.</description>
+    <colorRef>green-700</colorRef>
+    <group>Food</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Butcher</role><max>8</max></li>
+        <li><role>WS_Brewer</role><max>8</max></li>
+        <li><role>WS_Cook</role><min>8</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Cooking</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Butcher</defName>
+    <label>Butcher</label>
+    <iconPath>WorkRoles/RoleIcons/butcher</iconPath>
+    <description>Butchering creatures.</description>
+    <colorRef>green-800</colorRef>
+    <group>Food</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoBillsButcherFlesh</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Brewer</defName>
+    <label>Brewer</label>
+    <iconPath>WorkRoles/RoleIcons/brewer</iconPath>
+    <description>Brewing wort at the brewery.</description>
+    <colorRef>green-800</colorRef>
+    <group>Food</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoBillsBrew</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Hunter</defName>
+    <label>Hunter</label>
+    <iconPath>WorkRoles/RoleIcons/hunting</iconPath>
+    <description>Hunting wild animals for food.</description>
+    <recommendationSpecialRole>Hunter</recommendationSpecialRole>
+    <colorRef>teal-700</colorRef>
+    <group>Animals</group>
+    <tuning>
+      <category>Optional</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <!-- Finish-off jobs (Allow Tool, Keyz' Allow Utilities) are hunter's work:
+           above Hunting, so downed prey is dispatched before new prey is engaged. -->
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:FinishingOff</li>
+      <li MayRequire="keyz182.KeyzAllowUtilities">WorkType:KAU_FinishingOff</li>
+      <li>WorkType:Hunting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Odyssey">
+    <defName>WS_Fisher</defName>
+    <label>Fisher</label>
+    <iconPath>WorkRoles/RoleIcons/fishing</iconPath>
+    <description>Fishing.</description>
+    <colorRef>teal-800</colorRef>
+    <group>Animals</group>
+    <tuning>
+      <category>Optional</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Fishing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Builder</defName>
+    <label>Builder</label>
+    <iconPath>WorkRoles/RoleIcons/construction</iconPath>
+    <description>Construction, repair and deconstruction.</description>
+    <colorRef>yellow-700</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Repairer</role><max>8</max></li>
+        <li><role>WS_Builder</role><min>8</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Construction</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Repairer</defName>
+    <label>Handyman</label>
+    <iconPath>WorkRoles/RoleIcons/handyman</iconPath>
+    <seedLabel>Handyman</seedLabel>
+    <description>All construction work except constructing new buildings.</description>
+    <colorRef>yellow-800</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:Repair</li>
+      <li>WorkGiver:FixBrokenDownBuilding</li>
+      <li>WorkGiver:Deconstruct</li>
+      <li>WorkGiver:DeconstructForBlueprint</li>
+      <li>WorkGiver:Uninstall</li>
+      <li>WorkGiver:FillIn</li>
+      <li>WorkGiver:ConstructRemoveFloors</li>
+      <li>WorkGiver:ConstructRemoveFoundations</li>
+      <li>WorkGiver:BuildRoofs</li>
+      <li>WorkGiver:RemoveRoofs</li>
+      <li>WorkGiver:ConstructDeliverResourcesToFrames</li>
+      <li>WorkGiver:ConstructDeliverResourcesToBlueprints</li>
+      <li>WorkGiver:ConstructSmoothWalls</li>
+      <li>WorkGiver:ConstructSmoothFloors</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Farmer</defName>
+    <label>Farmer</label>
+    <iconPath>WorkRoles/RoleIcons/growing</iconPath>
+    <description>Sowing, harvesting and plant cutting.</description>
+    <colorRef>lime-700</colorRef>
+    <group>Outdoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_PlantCutter</role><max>12</max></li>
+        <li><role>WS_Grower</role><min>4</min><max>12</max></li>
+        <li><role>WS_Farmer</role><min>12</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Growing</li>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Grower</defName>
+    <label>Grower</label>
+    <iconPath>WorkRoles/RoleIcons/growing</iconPath>
+    <description>Sowing and harvesting in growing zones.</description>
+    <colorRef>lime-800</colorRef>
+    <group>Outdoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Growing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_PlantCutter</defName>
+    <label>Plant Cutter</label>
+    <iconPath>WorkRoles/RoleIcons/plantcut</iconPath>
+    <description>Cutting and harvesting wild plants and trees.</description>
+    <colorRef>lime-800</colorRef>
+    <group>Outdoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:PlantCutting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Miner</defName>
+    <label>Miner</label>
+    <iconPath>WorkRoles/RoleIcons/mining</iconPath>
+    <description>Mining and drilling.</description>
+    <colorRef>sky-700</colorRef>
+    <group>Outdoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Mining</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Tailor</defName>
+    <label>Tailor</label>
+    <iconPath>WorkRoles/RoleIcons/tailoring</iconPath>
+    <description>Apparel creation.</description>
+    <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_Tailor</role><min>2</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Tailoring</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Smith</defName>
+    <label>Smith</label>
+    <iconPath>WorkRoles/RoleIcons/smithing</iconPath>
+    <description>Weapon and armor smithing.</description>
+    <colorRef>amber-700</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_Smith</role><min>4</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Smithing</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Fabricator</defName>
+    <label>Fabricator</label>
+    <iconPath>WorkRoles/RoleIcons/smithing</iconPath>
+    <description>Fabricating things at the fabrication bench.</description>
+    <colorRef>amber-800</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Fabricator</role><min>8</min></li>
+        <li><role>WS_Smith</role><min>4</min></li>
+        <li><role>WS_Crafter</role></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoBillsFabricationBench</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Crafter</defName>
+    <label>Crafter</label>
+    <iconPath>WorkRoles/RoleIcons/crafting</iconPath>
+    <description>General crafting: stonecutting, smelting, drugs and components.</description>
+    <colorRef>orange-700</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>2</colonyMin>
+      <coverage>15</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkType:Crafting</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Researcher</defName>
+    <label>Researcher</label>
+    <iconPath>WorkRoles/RoleIcons/researcher</iconPath>
+    <description>Research at a research bench.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <tuning>
+      <category>Optional</category>
+      <time>Opportunistic</time>
+      <colonyMin>3</colonyMin>
+      <coverage>20</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <preserveRecommendationOrder>true</preserveRecommendationOrder>
+    <entries>
+      <li>WorkType:Research</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Anomaly">
+    <defName>WS_DarkStudier</defName>
+    <label>Anomalist</label>
+    <iconPath>WorkRoles/RoleIcons/darkstudy</iconPath>
+    <seedLabel>Anomalist</seedLabel>
+    <description>Study of anomalous entities.</description>
+    <colorRef>slate-700</colorRef>
+    <group>Research</group>
+    <!-- The whole def is Anomaly-only, so this need is DLC-conditional for free. -->
+    <tuning>
+      <category>Optional</category>
+      <time>PartTime</time>
+      <colonyMin>1</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <preserveRecommendationOrder>true</preserveRecommendationOrder>
+    <entries>
+      <li>WorkType:DarkStudy</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Artist</defName>
+    <label>Artist</label>
+    <iconPath>WorkRoles/RoleIcons/art</iconPath>
+    <description>Sculpting and artwork.</description>
+    <colorRef>purple-700</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Optional</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>5</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Painter</role><max>8</max></li>
+        <li><role>WS_Artist</role><min>8</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkType:Art</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Nurse</defName>
+    <label>Nurse</label>
+    <iconPath>WorkRoles/RoleIcons/nurse</iconPath>
+    <description>Feeding, rescuing and visiting patients; emergency self-tending.</description>
+    <colorRef>red-900</colorRef>
+    <group>Medical</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoctorTendToSelfEmergency</li>
+      <li>WorkGiver:DoctorRescue</li>
+      <li>WorkGiver:DoctorFeedHumanlikes</li>
+      <li>WorkGiver:DoctorTendToAnimals</li>
+      <li>WorkGiver:DoctorFeedAnimals</li>
+      <li>WorkGiver:VisitSickPawn</li>
+      <li>WorkGiver:TakeToBedToOperate</li>
+      <li MayRequire="Ludeon.RimWorld.Biotech">WorkGiver:FeedHemogen</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:ExtractBioferrite</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_DrugMaker</defName>
+    <label>Drug Maker</label>
+    <iconPath>WorkRoles/RoleIcons/drugmaker</iconPath>
+    <description>Drug production at the drug lab and serum centrifuge.</description>
+    <colorRef>orange-800</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>10</coverage>
+      <championPenalty>true</championPenalty>
+      <training>
+        <li><role>WS_Researcher</role></li>
+        <li><role>WS_Crafter</role></li>
+        <li><role>WS_DrugMaker</role><min>12</min></li>
+      </training>
+    </tuning>
+    <entries>
+      <li>WorkGiver:DoBillsProduceDrugs</li>
+      <li MayRequire="Ludeon.RimWorld.Anomaly">WorkGiver:DoBillsSerumCentrifuge</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Painter</defName>
+    <label>Painter</label>
+    <iconPath>WorkRoles/RoleIcons/painter</iconPath>
+    <description>Painting and paint removal.</description>
+    <colorRef>purple-800</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>true</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:RemovePaintBuilding</li>
+      <li>WorkGiver:RemovePaintFloor</li>
+      <li>WorkGiver:PaintBuilding</li>
+      <li>WorkGiver:PaintFloor</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToBlueprints</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructDeliverResourcesToFrames</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_Art_ConstructFinishFrames</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+  <WorkRoles.RoleDef>
+    <defName>WS_Herder</defName>
+    <label>Herder</label>
+    <iconPath>WorkRoles/RoleIcons/handling</iconPath>
+    <description>Pen animal husbandry: penning, feeding, milking, shearing and slaughter.</description>
+    <colorRef>teal-900</colorRef>
+    <group>Animals</group>
+    <tuning>
+      <category>Normal</category>
+      <time>FullTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>0</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:TakeRoamingAnimalsToPen</li>
+      <li>WorkGiver:HandlingFeedPatientAnimals</li>
+      <li>WorkGiver:TakeToPen</li>
+      <!-- Finish-off (Allow Tool, Keyz' Allow Utilities) is herder's work too:
+           with Slaughter, so downed livestock is dispatched like designated slaughter. -->
+      <li MayRequire="UnlimitedHugs.AllowTool">WorkType:FinishingOff</li>
+      <li MayRequire="keyz182.KeyzAllowUtilities">WorkType:KAU_FinishingOff</li>
+      <li>WorkGiver:Slaughter</li>
+      <li>WorkGiver:ReleaseToWild</li>
+      <li>WorkGiver:Milk</li>
+      <li>WorkGiver:Shear</li>
+      <li MayRequire="OskarPotocki.VanillaFactionsExpanded.Core">WorkGiver:VEF_AnimalResource</li>
+      <li>WorkGiver:RebalanceAnimalsInPens</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
+</Defs>

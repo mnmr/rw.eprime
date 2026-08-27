@@ -1,0 +1,90 @@
+WorkRoles replaces the Work tab with role-based work management. No setup required, safe to remove if you don't like it.
+
+Instead of assigning priority numbers, you assign a set of ordered roles to colonists. A role is simply a named set of ordered jobs. Priorities are calculated and set automatically behind the scenes.
+
+[img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-drag-drop.png[/img]
+
+Set up a role once and hand it to any number of colonists. You can then adjust everyone by toggling or editing the role.
+
+[h1]Key Features[/h1]
+[list]
+[*][b]No Priorities:[/b] Roles are just ordered lists of jobs (whole work types like Cooking or single jobs like Smelting). Assigned roles combine into one clear work order: earlier roles win, and within a role, earlier jobs win.
+[*][b]No Setup:[/b] Seeds pre-made roles covering every vanilla and official DLC work type. Auto-assigns roles to match existing priorities.
+[*][b]Overlapping Roles:[/b] The same job can live in multiple roles, and a colonist can hold both. Assign [i]Emergency Harvester[/i] to half the colony at high priority but disabled, and when blight or a cold snap hits, one click re-tasks everyone to the fields.
+[img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-toggles.png[/img]
+[*][b]Easy Switching:[/b] Toggle any role globally or per colonist, without touching the underlying assignments. No more remembering what priorities colonists used to have.
+[*][b]Rules Engine:[/b] Configure roles to only be enabled at certain times of day or at specific locations (settlements, the gravship, caravans).
+[*][b]Bill Support:[/b] Configure work bills to be restricted to a particular role. Useful when a bill requires multiple skills, e.g. Leaf Roller (crafting + cooking) vs Drug Maker (crafting + intellectual).
+[*][b]Deep Job Control:[/b] The role editor provides a filterable job tree. Jobs within a role can be freely reordered. All of the seeded roles can be edited or removed.
+[*][b]Role Groups:[/b] Organize the role list into named, collapsible groups (drag to move or reorder). Roles with rules gather under Conditional Roles automatically.
+[*][b]Smart Recommendations:[/b] A per-colonist panel suggests roles from burning passions, gene aptitudes, colony-best skills, training opportunities and colony needs.
+[img]https://raw.githubusercontent.com/mnmr/rw.workroles/main/images/feature-advisor.png[/img]
+[*][b]Import/Export:[/b] Easily share or backup your role setup. Import allows overwrite or merge.
+[*][b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
+[*][b]Automation:[/b] You can enable automation in Options to have WorkRoles automatically manage role assignments for you.
+[/list]
+
+[h1]Worth Knowing[/h1]
+[list]
+[*][b]Seeded Roles:[/b] An initial role set is seeded into the game, covering all detected work types and jobs.
+[*][b]Combo Roles:[/b] Various roles (Basics, Farmer, Grunt) that combine multiple work types to make work assignment easier.
+[*][b]Composite Roles:[/b] Compose new roles from other roles to re-use your existing definitions.
+[*][b]Conditional Roles:[/b] Specify rules that govern at what times and/or location a role should be enabled.
+[*][b]Blocker Roles:[/b] Used to specify things that pawns will never do (for jobs in any subsequent role assignment).
+[*][b]Extra Roles:[/b] Training roles that enable role progression and convenience roles to make prioritization easier.
+[*][b]Modded Jobs:[/b] Jobs added by mods are unassigned by default; the role editor warns when a job isn't in any role. Jobs from AllowTool and Keyz' Allow Utilities are assigned to existing roles automatically.
+[/list]
+
+[h1]Recommendation Logic[/h1]
+[list]
+[*][b]Colony Needs:[/b] Keeps essential roles covered; configurable per role via recommendation tuning options.
+[*][b]Suggestions:[/b] Uses passions, genes, traits, skills/expertise and training paths; armed pawns also get skill-tiered Hunting recommendations.
+[*][b]Applying:[/b] Cherry-pick for one colonist or preview and apply colony-wide. Pin assignments that must stay untouched.
+[*][b]Protected:[/b] Conditional roles, pinned roles and blockers are never suggested, moved or removed.
+[*][b]Genetics:[/b] Fire-fearing pawns get Pyrophobe before Core.
+[*][b]Signal Visibility:[/b] Skill tooltips show every signal behind a recommendation verdict.
+[*][b]Full Spec:[/b] See [url=https://github.com/mnmr/rw.workroles#readme]README[/url] for full details.
+[/list]
+
+[h1]How It Works[/h1]
+[list]
+[*]Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
+[*]The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so pawn AI behaves exactly as it would with a hand-tuned priority grid.
+[*]Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+[*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
+[*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
+[/list]
+
+[h1]Compatibility[/h1]
+[list]
+[*][b]Save Compatible:[/b] Safe to add to existing saves (priorities convert to roles) and safe to remove (the vanilla Work tab comes back sensibly populated).
+[*][b]Vanilla Skills Expanded / Alpha Skills:[/b] Expertise and passions are recommendation signals.
+[*][b]More Than Capable:[/b] Hated work becomes an Awful recommendation signal and is flagged on assigned roles.
+[*][b]MultiFloors / Strata / As above, so below 2:[/b] Floors on a single tile are treated as one location.
+[*][b]Colony Groups:[/b] Pawn groups appear in the colonist table's Group dropdown.
+[*]Tested alongside Better Workbench Management, AllowTool, PUAH+, Common Sense, Achtung! and many others.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745]RimWorld Multiplayer[/url] compatible.
+[*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
+[/list]
+
+[h1]Known Incompatible[/h1]
+[list]
+[*][b]Work Tab Mods:[/b] Not compatible with other mods that replace the Work tab.
+[*][b]Priority-Setting Mods:[/b] Anything that uses SetPriority to control job priorities will not work with this mod (e.g. Free Will, PriorityMaster).
+[*]If you've tested and found WorkRoles to be incompatible with another mod, let me know so I can add it here.
+[/list]
+
+[h1]Check Out My Other Mods[/h1]
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092]EPrime's Readouts[/url]: A modern, compact resource readout with support for custom resource pools.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051]EPrime's Quality Jobs[/url]: Manage quality crafting and construction, so your items get the best possible quality.
+[/list]
+
+[h1]Disclaimer[/h1]
+Created with the help of Claude Code.
+
+[h1]Links[/h1]
+[list]
+[*]Source code (AGPL): [url=https://github.com/mnmr/rw.workroles]github.com/mnmr/rw.workroles[/url]
+[*]Bug reports: [url=https://github.com/mnmr/rw.workroles/issues]GitHub issues[/url]
+[/list]
