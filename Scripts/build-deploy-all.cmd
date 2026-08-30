@@ -4,7 +4,7 @@ rem Build (Release) and deploy every mod present. Skips missing folders, stops o
 rem Lives in scripts\; ROOT resolves to the workspace root one level up.
 for %%i in ("%~dp0..") do set ROOT=%%~fi\
 
-call :one PawnPlanner PawnPlanner.slnx || exit /b 1
+call :one Implanner Implanner.slnx || exit /b 1
 call :one QualityJobs QualityJobs.slnx || exit /b 1
 call :one Readouts EPrimeReadouts.slnx || exit /b 1
 call :one WorkRoles WorkRoles.slnx || exit /b 1

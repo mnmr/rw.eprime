@@ -188,7 +188,11 @@ namespace WorkRoles.UI
                 if (!Widgets.ButtonInvisible(frameRect)) continue;
                 if (!selected)
                     RoleCommands.SetRoleIcon(roleId, choice.Path);
+                // Close() runs PostClose immediately, which nulls the
+                // catalog reference; iterating further would dereference
+                // it. Stop after the pick.
                 Close();
+                return;
             }
         }
 

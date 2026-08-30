@@ -10,13 +10,14 @@ namespace WorkRoles.UI
 {
     public class MainTabWindow_WorkRoles : MainTabWindow
     {
-        private enum Tab { Colonists, Roles, Recommendations, Options }
+        private enum Tab { Colonists, Roles, Recommendations, Options, Help }
 
         private Tab curTab = Tab.Colonists;
         private readonly ColonistsTabView colonistsTab = new ColonistsTabView(ColonistsViewProfile.Colonists());
         private readonly RolesTabView rolesTab = new RolesTabView();
         private readonly RecommendationsTabView recommendationsTab = new RecommendationsTabView();
         private readonly OptionsTabView optionsTab = new OptionsTabView();
+        private readonly HelpTabView helpTab = new HelpTabView();
         private readonly System.Action drawGrip;
         private int observedLanguageRevision;
 
@@ -222,6 +223,11 @@ namespace WorkRoles.UI
                     if (curTab == Tab.Roles) rolesTab.CommitEdits();
                     curTab = Tab.Options;
                 }, () => curTab == Tab.Options),
+                new TabRecord("WR_HelpTab".Translate(), () =>
+                {
+                    if (curTab == Tab.Roles) rolesTab.CommitEdits();
+                    curTab = Tab.Help;
+                }, () => curTab == Tab.Help),
             };
             fixMyColonyLabel = "WR_FixMyColony".Translate().ToString();
             autoManagedLabel = "WR_AutoManaged".Translate().ToString();
@@ -233,6 +239,7 @@ namespace WorkRoles.UI
             rolesTab.InvalidateLanguageCaches();
             recommendationsTab.InvalidateLanguageCaches();
             optionsTab.InvalidateLanguageCaches();
+            helpTab.InvalidateLanguageCaches();
         }
 
         public override void PreOpen()
@@ -248,6 +255,7 @@ namespace WorkRoles.UI
             rolesTab.Reset();
             recommendationsTab.Reset();
             optionsTab.Reset();
+            helpTab.Reset();
             KeyOverride.Apply();
         }
 
@@ -267,6 +275,7 @@ namespace WorkRoles.UI
             rolesTab.ReleaseWindowData();
             recommendationsTab.ReleaseWindowData();
             optionsTab.ReleaseWindowData();
+            helpTab.ReleaseWindowData();
             WindowDataLifecycle.ReleaseShared();
             autoManagedGate.Reset();
             autoManagedSnapshot = false;
@@ -468,7 +477,8 @@ namespace WorkRoles.UI
             if (curTab == Tab.Colonists) colonistsTab.Draw(content);
             else if (curTab == Tab.Roles) rolesTab.Draw(content);
             else if (curTab == Tab.Recommendations) recommendationsTab.Draw(content);
-            else optionsTab.Draw(content);
+            else if (curTab == Tab.Options) optionsTab.Draw(content);
+            else helpTab.Draw(content);
 
             // A wheel event that survives the draw wasn't over any inner
             // scroll view (table, palette, stats): scroll the colonist table

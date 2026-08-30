@@ -14,8 +14,6 @@ namespace WorkRoles.Signals
     {
         private static readonly Dictionary<string, Texture2D?> IconCache =
             new Dictionary<string, Texture2D?>(StringComparer.Ordinal);
-        private static readonly HashSet<string> WarnedOfficialIcons =
-            new HashSet<string>(StringComparer.Ordinal);
 
         // Mirrors the skills grid's low-skill grey.
         private static readonly Color TableGrey = new Color(0.65f, 0.65f, 0.65f);
@@ -24,6 +22,10 @@ namespace WorkRoles.Signals
         // Vertical space between the head facts and the signals table.
         private const float TableGap = 16f;
 
+        // TODO: known official signals without icons (they render text-only):
+        // Ludeon.RimWorld:Trait:ShootingAccuracy and Ludeon.RimWorld:Trait:Nimble.
+        // Add icons or pick another decorator; view.OfficialMissingIcons still
+        // reports the full set when revisiting this.
         internal static List<Texture2D> ResolveIcons(SkillSignalView view)
         {
             var result = new List<Texture2D>(view.IconCandidates.Count);
@@ -32,12 +34,7 @@ namespace WorkRoles.Signals
                 Texture2D? texture = ResolveIcon(signal.Ui.IconKey);
                 if (texture != null)
                     result.Add(texture);
-                else
-                    WarnOfficialMissing(signal, signal.Ui.IconKey);
             }
-
-            foreach (PawnSignal signal in view.OfficialMissingIcons)
-                WarnOfficialMissing(signal, null);
             return result;
         }
 
@@ -365,18 +362,5 @@ namespace WorkRoles.Signals
 
         private static string Number(float? value) =>
             value.HasValue ? value.Value.ToString("0.##") : "?";
-
-        private static void WarnOfficialMissing(PawnSignal signal, string? iconKey)
-        {
-            if (!Prefs.DevMode || !SignalPresentationPolicy.IsOfficialPackage(signal.Source.PackageId))
-                return;
-            string identity = signal.Source.PackageId + ":" + signal.Source.Kind + ":" + signal.Source.DefName;
-            if (!WarnedOfficialIcons.Add(identity)) return;
-            string detail = string.IsNullOrWhiteSpace(iconKey)
-                ? "has no icon"
-                : "has unresolved icon '" + iconKey + "'";
-            Log.Warning("[WorkRoles] official signal " + identity + " " + detail
-                + "; add an icon or choose another decorator before shipping.");
-        }
     }
 }

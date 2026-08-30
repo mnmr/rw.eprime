@@ -24,6 +24,9 @@ namespace WorkRoles.UI
         public static readonly Texture2D DisplayOptions;
         public static readonly Texture2D PriorityGrid;
         public static readonly Texture2D Logo;
+        // Help tour completion medal (vanilla star-in-badge), tinted gold at
+        // draw time.
+        public static readonly Texture2D HelpMedal;
         // The vanilla tab atlas (TabRecord keeps its copy private); drawn by
         // WrTabs, never mutated.
         public static readonly Texture2D TabAtlas;
@@ -66,6 +69,8 @@ namespace WorkRoles.UI
             PriorityGrid = ContentFinder<Texture2D>.Get(
                 "WorkRoles/PriorityGrid");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
+            HelpMedal = ContentFinder<Texture2D>.Get(
+                "UI/Icons/UnwaveringlyLoyal");
             TabAtlas = ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas");
             EnsureRuntimeTextures();
             StartupTiming.Record("textures", sw.ElapsedMilliseconds);

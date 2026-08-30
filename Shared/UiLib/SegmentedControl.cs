@@ -14,17 +14,70 @@ namespace RimShared.UiLib
     /// leftmost segments by one pixel apiece. Logical-unit math left
     /// fractional physical paddings, so opposite sides of the box rendered
     /// unevenly under fractional UI scales.
+    /// Segment colors for SegmentedControl. Default matches the classic
+    /// neutral look; callers may supply an accent variant to make one
+    /// control stand out (frame colors stay shared).
+    public readonly struct SegmentedPalette
+    {
+        public SegmentedPalette(Color fillActive, Color fillInactive,
+            Color labelActive, Color labelInactive)
+        {
+            FillActive = fillActive;
+            FillInactive = fillInactive;
+            LabelActive = labelActive;
+            LabelInactive = labelInactive;
+        }
+
+        public Color FillActive { get; }
+        public Color FillInactive { get; }
+        public Color LabelActive { get; }
+        public Color LabelInactive { get; }
+
+        public static SegmentedPalette Default { get; } = new SegmentedPalette(
+            new Color(1f, 1f, 1f, 0.16f),
+            new Color(1f, 1f, 1f, 0.04f),
+            Color.white,
+            new Color(0.85f, 0.85f, 0.85f));
+    }
+
     public static class SegmentedControl
     {
         public static readonly Color PanelBackground = new Color(0.08f, 0.08f, 0.08f, 0.9f);
         public static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
-        private static readonly Color LabelActive = Color.white;
-        private static readonly Color LabelInactive = new Color(0.85f, 0.85f, 0.85f);
-        private static readonly Color FillActive = new Color(1f, 1f, 1f, 0.16f);
-        private static readonly Color FillInactive = new Color(1f, 1f, 1f, 0.04f);
+
+        /// Draws just the framed panel (background + one-device-pixel
+        /// outline, corners drawn once) and returns the pixel-snapped inner
+        /// content rect: inside the outline plus a one-device-pixel padding
+        /// ring, so content keeps the same clearance on every side at any UI
+        /// scale. Unlike Widgets.DrawBoxSolidWithOutline, edges never overlap
+        /// at the corners (overlapped translucent edges double their alpha
+        /// into visible dots).
+        public static Rect Panel(Rect rect)
+        {
+            float scale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
+            float left = Mathf.Round(rect.x * scale);
+            float top = Mathf.Round(rect.y * scale);
+            float right = Mathf.Round(rect.xMax * scale);
+            float bottom = Mathf.Round(rect.yMax * scale);
+
+            Widgets.DrawBoxSolid(
+                Logical(left, top, right - left, bottom - top, scale),
+                PanelBackground);
+            DrawEdges(left, top, right, bottom, scale);
+
+            const float Inset = 2f;   // outline + padding, in device pixels
+            return Logical(left + Inset, top + Inset,
+                Mathf.Max(1f, right - left - 2f * Inset),
+                Mathf.Max(1f, bottom - top - 2f * Inset), scale);
+        }
 
         /// Draws the framed row and returns the clicked segment index, or -1.
         public static int Row(Rect rect, string[] labels, int active)
+            => Row(rect, labels, active, SegmentedPalette.Default);
+
+        /// Row with caller-supplied segment colors.
+        public static int Row(Rect rect, string[] labels, int active,
+            in SegmentedPalette palette)
         {
             float scale = Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
             float left = Mathf.Round(rect.x * scale);
@@ -52,7 +105,7 @@ namespace RimShared.UiLib
             {
                 float width = segmentWidth + (i < widened ? 1f : 0f);
                 Rect segment = Logical(x, segmentTop, width, segmentHeight, scale);
-                if (Tab(segment, labels[i], i == active))
+                if (Tab(segment, labels[i], i == active, palette))
                     clicked = i;
                 x += width + 1f;
             }
@@ -62,17 +115,23 @@ namespace RimShared.UiLib
         /// One segment: filled when active, hover-highlighted otherwise.
         /// Returns true on click.
         public static bool Tab(Rect rect, string label, bool active)
+            => Tab(rect, label, active, SegmentedPalette.Default);
+
+        /// Segment with caller-supplied colors.
+        public static bool Tab(Rect rect, string label, bool active,
+            in SegmentedPalette palette)
         {
             GameFont font = Text.Font;
             TextAnchor anchor = Text.Anchor;
             Color color = GUI.color;
             try
             {
-                Widgets.DrawBoxSolid(rect, active ? FillActive : FillInactive);
+                Widgets.DrawBoxSolid(rect,
+                    active ? palette.FillActive : palette.FillInactive);
                 if (!active) Widgets.DrawHighlightIfMouseover(rect);
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleCenter;
-                GUI.color = active ? LabelActive : LabelInactive;
+                GUI.color = active ? palette.LabelActive : palette.LabelInactive;
                 Widgets.Label(rect, label);
                 return Widgets.ButtonInvisible(rect);
             }

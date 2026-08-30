@@ -13,10 +13,14 @@ namespace WorkRoles
         /// About.xml modVersion of the running mod (stamped on seeded roles).
         public static string? Version { get; private set; }
 
+        /// Mod installation root, for loose content such as Help topics.
+        public static string ContentRootDir { get; private set; } = "";
+
         public WorkRolesMod(ModContentPack content) : base(content)
         {
             var sw = System.Diagnostics.Stopwatch.StartNew();
             Version = content.ModMetaData?.ModVersion;
+            ContentRootDir = content.RootDir;
             Settings = GetSettings<WorkRolesSettings>();
             StartupTiming.Record("settings", sw.ElapsedMilliseconds);
 

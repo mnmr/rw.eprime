@@ -2,7 +2,9 @@
 param(
     [Parameter(Mandatory)][int]$X,
     [Parameter(Mandatory)][int]$Y,
-    [int]$WaitMilliseconds = 750
+    [int]$WaitMilliseconds = 750,
+    # Right mouse button instead of left (context menus, pin options).
+    [switch]$Right
 )
 
 . (Join-Path $PSScriptRoot 'automation-common.ps1')
@@ -24,11 +26,14 @@ Invoke-WithSharedGameWindow {
     [RimWorldSharedAutomation.Win32]::SetCursorPos(
         $screen.X, $screen.Y) | Out-Null
     Start-Sleep -Milliseconds 100
+    $down = if ($Right) { 0x0008 } else { 0x0002 }
+    $up = if ($Right) { 0x0010 } else { 0x0004 }
     [RimWorldSharedAutomation.Win32]::mouse_event(
-        0x0002, 0, 0, 0, [UIntPtr]::Zero)
+        $down, 0, 0, 0, [UIntPtr]::Zero)
     Start-Sleep -Milliseconds 50
     [RimWorldSharedAutomation.Win32]::mouse_event(
-        0x0004, 0, 0, 0, [UIntPtr]::Zero)
+        $up, 0, 0, 0, [UIntPtr]::Zero)
     Start-Sleep -Milliseconds $WaitMilliseconds
-    Write-Host "clicked client ($X,$Y) in shared pid $($process.Id)"
+    $button = if ($Right) { 'right-clicked' } else { 'clicked' }
+    Write-Host "$button client ($X,$Y) in shared pid $($process.Id)"
 }

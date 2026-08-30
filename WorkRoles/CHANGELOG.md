@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.2 — 2026-08-30
+
+- Added: Help tab with background and usage information.
+
 ## 1.5.1 — 2026-08-24
 
 - Fixed: Gracefully handle when tracked pawns become unavailable (e.g. optimized away). Narrowed tracking to only alive player-owned pawns.

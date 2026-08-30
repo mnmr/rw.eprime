@@ -62,6 +62,11 @@ namespace WorkRoles
         /// "<worldKey>|<packageId>" (per savegame, but player-side: world state
         /// writes from client-local calls would desync MP).
         public System.Collections.Generic.List<string> warnedPriorityMods = new System.Collections.Generic.List<string>();
+        /// Help tab: topic slugs this player has opened (drives the guided
+        /// tour checklist), and whether the completion chime already played.
+        /// Player knowledge, so it lives here and never in the savegame.
+        public System.Collections.Generic.List<string> helpTopicsRead = new System.Collections.Generic.List<string>();
+        public bool helpTourCelebrated;
 
         /// Per-player presentation command used by the Options UI. Returning
         /// false for a no-op keeps persistence and snapshot refresh exact.
@@ -119,12 +124,15 @@ namespace WorkRoles
             Scribe_Values.Look(ref windowWidth, "windowWidth", 0f);
             Scribe_Values.Look(ref windowHeight, "windowHeight", 0f);
             Scribe_Collections.Look(ref warnedPriorityMods, "warnedPriorityMods", LookMode.Value);
+            Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
+            Scribe_Values.Look(ref helpTourCelebrated, "helpTourCelebrated", false);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 skillColumns ??= new System.Collections.Generic.List<string>();
                 collapsedGroups ??= new System.Collections.Generic.List<string>();
                 collapsedRoleGroups ??= new System.Collections.Generic.List<string>();
                 warnedPriorityMods ??= new System.Collections.Generic.List<string>();
+                helpTopicsRead ??= new System.Collections.Generic.List<string>();
                 groupBy ??= "none";
                 sortColumn ??= "";
             }
@@ -134,6 +142,7 @@ namespace WorkRoles
                 collapsedGroups ??= new System.Collections.Generic.List<string>();
                 collapsedRoleGroups ??= new System.Collections.Generic.List<string>();
                 warnedPriorityMods ??= new System.Collections.Generic.List<string>();
+                helpTopicsRead ??= new System.Collections.Generic.List<string>();
             }
         }
     }

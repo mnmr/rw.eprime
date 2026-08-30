@@ -208,23 +208,31 @@ function Wait-ForSharedMapPixels {
             if ($Process.HasExited) {
                 throw 'shared game exited before rendering the map'
             }
+            # The bottom bar's dark background proves the game UI is up.
+            # Sample a 3x5 grid inside the bar: label glyphs and separators
+            # shift with UI scale, so single exact pixels are unreliable, but
+            # a third of a 15-point grid always lands on bar background at
+            # any scale. Poll fast; the whole point is to hand control to the
+            # caller the instant the game renders.
             $matchingPixels = 0
-            foreach ($probeX in 10, 100, 500, 1000, 1500) {
-                $probeGraphics.CopyFromScreen(
-                    $geometry.X + $probeX,
-                    $geometry.Y + $geometry.Height - 30,
-                    0, 0, $probeBitmap.Size)
-                $color = $probeBitmap.GetPixel(0, 0)
-                if ($color.R -ge 28 -and $color.R -le 38 -and
-                        $color.G -ge 38 -and $color.G -le 48 -and
-                        $color.B -ge 44 -and $color.B -le 54) {
-                    $matchingPixels++
+            foreach ($probeYOffset in 8, 16, 24) {
+                foreach ($probeX in 10, 100, 500, 1000, 1500) {
+                    $probeGraphics.CopyFromScreen(
+                        $geometry.X + $probeX,
+                        $geometry.Y + $geometry.Height - $probeYOffset,
+                        0, 0, $probeBitmap.Size)
+                    $color = $probeBitmap.GetPixel(0, 0)
+                    if ($color.R -ge 25 -and $color.R -le 41 -and
+                            $color.G -ge 35 -and $color.G -le 51 -and
+                            $color.B -ge 41 -and $color.B -le 57) {
+                        $matchingPixels++
+                    }
                 }
             }
-            if ($matchingPixels -ge 4) {
+            if ($matchingPixels -ge 5) {
                 return
             }
-            Start-Sleep -Seconds 2
+            Start-Sleep -Milliseconds 250
         } while ((Get-Date) -lt $Deadline)
     }
     finally {

@@ -192,6 +192,27 @@
   <WR_ResizeGripTip>Drag to resize the window (it can only grow from its content-fitted size). Double-click to return to automatic sizing.</WR_ResizeGripTip>
   <WR_RolesTab>Roles</WR_RolesTab>
 
+  <!-- ===== Help tab ===== -->
+  <WR_HelpTab>Help</WR_HelpTab>
+  <WR_HelpChapterStart>Start</WR_HelpChapterStart>
+  <WR_HelpChapterBasics>Basics</WR_HelpChapterBasics>
+  <WR_HelpChapterEditing>Editing Roles</WR_HelpChapterEditing>
+  <WR_HelpChapterOrganizing>Organizing</WR_HelpChapterOrganizing>
+  <WR_HelpChapterRecommendations>Recommendations</WR_HelpChapterRecommendations>
+  <WR_HelpChapterAdvanced>Advanced</WR_HelpChapterAdvanced>
+  <!-- Dev-mode only: re-read help topic files from disk -->
+  <WR_HelpReload>Reload</WR_HelpReload>
+  <!-- Chip labels used by the animated drag demo on the ordering topic -->
+  <WR_HelpDemoChipA>Doctor</WR_HelpDemoChipA>
+  <WR_HelpDemoChipB>Farmer</WR_HelpDemoChipB>
+  <WR_HelpDemoChipC>Hauler</WR_HelpDemoChipC>
+  <!-- Guided tour on the Start page -->
+  <WR_HelpTourHeader>Guided tour</WR_HelpTourHeader>
+  <!-- {0} = read count, {1} = total -->
+  <WR_HelpTourProgress>{0} of {1} topics read</WR_HelpTourProgress>
+  <WR_HelpTourComplete>You're Ready!</WR_HelpTourComplete>
+  <WR_HelpTourCompleteHint>You know the essentials. The chapters above cover everything else.</WR_HelpTourCompleteHint>
+
   <!-- ===== Colonists tab ===== -->
 
   <!-- Palette cluster labels (skill clusters use the skill's own label) -->
@@ -658,7 +679,7 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <WR_ConditionalRole>Conditional role</WR_ConditionalRole>
   <WR_ConditionalRoleTip>Conditional roles turn themselves on and off based on rules: active hours and location. A role is conditional whenever any rule is set.</WR_ConditionalRoleTip>
   <WR_AutoAssign>Auto-assign</WR_AutoAssign>
-  <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role, and recommendations always place auto-assign roles first.</WR_AutoAssignTip>
+  <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role.</WR_AutoAssignTip>
   <!-- Editor: custom color swatch row -->
   <WR_CustomSwatchEmpty>Empty slot: click to pick a custom color. Custom colors are shared across all roles.</WR_CustomSwatchEmpty>
   <WR_CustomSwatchTip>Click to use this color. Right-click to redefine the slot.</WR_CustomSwatchTip>
