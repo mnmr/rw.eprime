@@ -1,100 +1,93 @@
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
 namespace EPrimeReadouts.UI
 {
     /// Straight-alpha cached copy of the header row (gear, search field or
-    /// title). It is rebuilt only when its explicit PanelHeaderRevision
+    /// title). It is re-rendered only when its explicit PanelHeaderRevision
     /// changes, so typing in the search field re-renders this small strip and
-    /// nothing else.
+    /// nothing else; the publish flows through the channel's asynchronous
+    /// readback and the previous front keeps presenting until promotion.
     internal sealed class PanelHeaderSurface
     {
         private const float ClearColumnWidth = 22f;
 
         private readonly PanelBufferBackend backend;
-        private Texture2D? texture;
-        private RenderTexture? working;
-        private int workingPixelWidth;
-        private int workingPixelHeight;
-        private PanelHeaderRevision revision;
-        private bool hasRevision;
+        private readonly PanelSurfaceChannel channel;
+        private PanelHeaderRevision publishedRevision;
+        private bool hasPublished;
+        private PanelHeaderRevision pendingRevision;
+        private bool hasPending;
 
         internal PanelHeaderSurface(PanelBufferBackend backend)
         {
             this.backend = backend;
+            channel = new PanelSurfaceChannel(backend);
         }
 
-        internal bool Ensure(PanelHeaderRevision next, PanelGlyphProduct glyphs)
+        internal PanelSurfaceChannel Channel => channel;
+
+        internal SurfaceEnsureResult Ensure(
+            PanelHeaderRevision next, PanelGlyphProduct glyphs)
         {
-            if (hasRevision && revision.Equals(next)) return true;
-            if (!backend.IsAvailable) return false;
+            if (hasPending && pendingRevision.Equals(next))
+                return SurfaceEnsureResult.InFlight;
+            if (hasPublished && publishedRevision.Equals(next)
+                && !channel.HasWorkInFlight)
+                return SurfaceEnsureResult.Unchanged;
+            if (!backend.IsAvailable) return SurfaceEnsureResult.Failed;
             PanelSurfaceSizing sizing = PanelSurfaceSizing.Create(
                 next.HeaderWidth, next.HeaderWidth,
                 next.HeaderHeight, next.RasterScale);
             if (next.HeaderHeight <= 0
                 || sizing.PixelWidth > SystemInfo.maxTextureSize
                 || sizing.PixelHeight > SystemInfo.maxTextureSize)
-                return false;
+                return SurfaceEnsureResult.Failed;
 
-            EnsureWorking(sizing.PixelWidth, sizing.PixelHeight);
-            if (working == null) return false;
-            Texture2D? replacement = null;
-            try
-            {
-                replacement = backend.CreatePublishedTexture(
-                    sizing.PixelWidth, sizing.PixelHeight,
-                    FilterMode.Point);
-                if (!Render(next, glyphs, working, sizing.RasterScale))
-                    return false;
-                backend.Publish(working, replacement);
+            RenderTexture? working = channel.EnsureWorking(
+                sizing.PixelWidth, sizing.PixelHeight);
+            if (working == null) return SurfaceEnsureResult.Failed;
+            if (!Render(next, glyphs, working, sizing.RasterScale))
+                return SurfaceEnsureResult.Failed;
+            channel.RequestPublish();
+            pendingRevision = next;
+            hasPending = true;
+            return SurfaceEnsureResult.InFlight;
+        }
 
-                Texture2D? old = texture;
-                texture = replacement;
-                replacement = null;
-                revision = next;
-                hasRevision = true;
-                PanelBufferBackend.ReleaseTexture(old);
-                return true;
-            }
-            finally
-            {
-                PanelBufferBackend.ReleaseTexture(replacement);
-            }
+        internal void OnPromoted()
+        {
+            if (!channel.Promote()) return;
+            publishedRevision = pendingRevision;
+            hasPublished = true;
+            hasPending = false;
+        }
+
+        internal void OnAborted()
+        {
+            channel.Abandon();
+            hasPending = false;
         }
 
         internal bool Present(float screenX, float screenY)
         {
-            if (texture == null || !hasRevision) return false;
-            backend.Present(texture, new Rect(
+            Texture2D? front = channel.Front;
+            if (front == null || !hasPublished) return false;
+            backend.Present(front, new Rect(
                     screenX, screenY,
-                    texture.width / revision.RasterScale,
-                    texture.height / revision.RasterScale),
+                    front.width / publishedRevision.RasterScale,
+                    front.height / publishedRevision.RasterScale),
                 new Rect(0f, 0f, 1f, 1f));
             return true;
         }
 
         internal void Release()
         {
-            PanelBufferBackend.ReleaseTexture(texture);
-            PanelBufferBackend.ReleaseTexture(working);
-            texture = null;
-            working = null;
-            workingPixelWidth = 0;
-            workingPixelHeight = 0;
-            hasRevision = false;
-        }
-
-        private void EnsureWorking(int pixelWidth, int pixelHeight)
-        {
-            if (working != null
-                && workingPixelWidth == pixelWidth
-                && workingPixelHeight == pixelHeight)
-                return;
-            PanelBufferBackend.ReleaseTexture(working);
-            working = backend.CreateWorkingSurface(pixelWidth, pixelHeight);
-            workingPixelWidth = pixelWidth;
-            workingPixelHeight = pixelHeight;
+            channel.Release();
+            hasPublished = false;
+            hasPending = false;
         }
 
         private bool Render(
@@ -137,7 +130,7 @@ namespace EPrimeReadouts.UI
             PanelGlyphProduct glyphs,
             float rasterScale)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 GUIStyle style = Text.CurTextFieldStyle;

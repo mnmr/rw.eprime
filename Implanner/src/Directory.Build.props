@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <RimSharedRoot>$(MSBuildThisFileDirectory)..\..\Shared</RimSharedRoot>
+  </PropertyGroup>
+</Project>

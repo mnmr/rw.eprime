@@ -1,3 +1,5 @@
+using RimShared.Common;
+
 namespace WorkRoles.Core.Tests.Locations;
 
 public class RoleLocationValidityTests

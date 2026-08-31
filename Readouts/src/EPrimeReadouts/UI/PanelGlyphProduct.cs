@@ -7,52 +7,62 @@ using Verse;
 
 namespace EPrimeReadouts.UI
 {
-    /// Straight-alpha cached glyph surface for all content counters and labels.
+    /// Straight-alpha cached glyph surface for all content counters and
+    /// labels. Glyphs are drawn through the font material (the atlas carries
+    /// black RGB, so the sprite material would render them black) and the
+    /// channel publishes with coverage recovered from the red channel; the
+    /// previous front keeps presenting until the build promotes.
     internal sealed class PanelGlyphProduct
     {
         private readonly PanelBufferBackend backend;
+        private readonly PanelSurfaceChannel channel;
         private readonly TextGenerator generator = new TextGenerator();
         private readonly List<Vector3> vertices = new List<Vector3>();
         private readonly List<Vector2> uvs = new List<Vector2>();
         private readonly List<Color32> colors = new List<Color32>();
         private readonly List<int> triangles = new List<int>();
 
-        private Texture2D? texture;
-        private RenderTexture? working;
-        private int workingPixelWidth;
-        private int workingPixelHeight;
-        private PanelTextRevision revision;
-        private bool hasRevision;
+        private PanelTextRevision publishedRevision;
+        private bool hasPublished;
+        private PanelTextRevision pendingRevision;
+        private bool hasPending;
 
         internal PanelGlyphProduct(PanelBufferBackend backend)
         {
             this.backend = backend;
+            channel = new PanelSurfaceChannel(backend, coverageFromRed: true);
         }
 
-        internal bool Ensure(
+        internal PanelSurfaceChannel Channel => channel;
+
+        internal SurfaceEnsureResult Ensure(
             DrawModel draw,
             PanelTextRevision next,
             int width,
             int height,
             float rasterScale)
         {
-            if (hasRevision && revision.Equals(next)) return true;
+            if (hasPending && pendingRevision.Equals(next))
+                return SurfaceEnsureResult.InFlight;
+            if (hasPublished && publishedRevision.Equals(next)
+                && !channel.HasWorkInFlight)
+                return SurfaceEnsureResult.Unchanged;
             PanelSurfaceSizing sizing = PanelSurfaceSizing.Create(
                 width, width, height, rasterScale);
             if (!backend.IsAvailable
                 || width <= 0 || height <= 0
                 || sizing.PixelWidth > SystemInfo.maxTextureSize
                 || sizing.PixelHeight > SystemInfo.maxTextureSize)
-                return false;
+                return SurfaceEnsureResult.Failed;
 
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             using (TinyText.UseFont())
             {
                 GUIStyle style = Text.CurFontStyle;
                 Font? font = style.font ?? GUI.skin.font;
                 if (font == null || font.material == null
                     || font.material.mainTexture == null)
-                    return false;
+                    return SurfaceEnsureResult.Failed;
 
                 int fontSize = style.fontSize > 0
                     ? style.fontSize : font.fontSize;
@@ -62,50 +72,49 @@ namespace EPrimeReadouts.UI
                     style.fontStyle);
                 if (!BuildGeometry(
                         draw, style, font, fontSize, sizing.RasterScale))
-                    return false;
+                    return SurfaceEnsureResult.Failed;
 
-                EnsureWorking(sizing.PixelWidth, sizing.PixelHeight);
-                if (working == null) return false;
-                Texture2D? replacement = null;
+                RenderTexture? working = channel.EnsureWorking(
+                    sizing.PixelWidth, sizing.PixelHeight);
+                if (working == null) return SurfaceEnsureResult.Failed;
+                RenderTexture? previous = RenderTexture.active;
+                RenderTexture.active = working;
+                GL.PushMatrix();
                 try
                 {
-                    replacement = backend.CreatePublishedTexture(
-                        sizing.PixelWidth, sizing.PixelHeight,
-                        FilterMode.Point);
-                    RenderTexture? previous = RenderTexture.active;
-                    RenderTexture.active = working;
-                    GL.PushMatrix();
-                    try
-                    {
-                        GL.LoadPixelMatrix(
-                            0f, sizing.PixelWidth,
-                            sizing.PixelHeight, 0f);
-                        // DrawFontQuadsToActive clears the reused target
-                        // itself before drawing.
-                        backend.DrawFontQuadsToActive(
-                            vertices, uvs, colors, triangles,
-                            font.material);
-                    }
-                    finally
-                    {
-                        GL.PopMatrix();
-                        RenderTexture.active = previous;
-                    }
-                    backend.PublishFont(working, replacement);
-
-                    Texture2D? old = texture;
-                    texture = replacement;
-                    replacement = null;
-                    revision = next;
-                    hasRevision = true;
-                    PanelBufferBackend.ReleaseTexture(old);
-                    return true;
+                    GL.LoadPixelMatrix(
+                        0f, sizing.PixelWidth,
+                        sizing.PixelHeight, 0f);
+                    // DrawFontQuadsToActive clears the reused target itself
+                    // before drawing.
+                    backend.DrawFontQuadsToActive(
+                        vertices, uvs, colors, triangles,
+                        font.material);
                 }
                 finally
                 {
-                    PanelBufferBackend.ReleaseTexture(replacement);
+                    GL.PopMatrix();
+                    RenderTexture.active = previous;
                 }
+                channel.RequestPublish();
+                pendingRevision = next;
+                hasPending = true;
+                return SurfaceEnsureResult.InFlight;
             }
+        }
+
+        internal void OnPromoted()
+        {
+            if (!channel.Promote()) return;
+            publishedRevision = pendingRevision;
+            hasPublished = true;
+            hasPending = false;
+        }
+
+        internal void OnAborted()
+        {
+            channel.Abandon();
+            hasPending = false;
         }
 
         /// Presents the given pixel-snapped window onto the screen; the glyph
@@ -114,9 +123,10 @@ namespace EPrimeReadouts.UI
         internal bool PresentWindow(
             float screenX, float screenY, PanelPresentWindow window)
         {
-            if (texture == null || !hasRevision || !window.Visible)
+            Texture2D? front = channel.Front;
+            if (front == null || !hasPublished || !window.Visible)
                 return false;
-            backend.Present(texture, new Rect(
+            backend.Present(front, new Rect(
                     screenX, screenY,
                     window.DestWidth, window.DestHeight),
                 new Rect(0f, window.UvY, 1f, window.UvHeight));
@@ -133,7 +143,7 @@ namespace EPrimeReadouts.UI
             GUIStyle? styleOverride = null)
         {
             if (string.IsNullOrEmpty(text)) return true;
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Font = gameFont;
                 GUIStyle style = styleOverride ?? Text.CurFontStyle;
@@ -166,26 +176,10 @@ namespace EPrimeReadouts.UI
 
         internal void Release()
         {
-            PanelBufferBackend.ReleaseTexture(texture);
-            PanelBufferBackend.ReleaseTexture(working);
-            texture = null;
-            working = null;
-            workingPixelWidth = 0;
-            workingPixelHeight = 0;
-            hasRevision = false;
+            channel.Release();
+            hasPublished = false;
+            hasPending = false;
             generator.Invalidate();
-        }
-
-        private void EnsureWorking(int pixelWidth, int pixelHeight)
-        {
-            if (working != null
-                && workingPixelWidth == pixelWidth
-                && workingPixelHeight == pixelHeight)
-                return;
-            PanelBufferBackend.ReleaseTexture(working);
-            working = backend.CreateWorkingSurface(pixelWidth, pixelHeight);
-            workingPixelWidth = pixelWidth;
-            workingPixelHeight = pixelHeight;
         }
 
         private static void RequestCharacters(
@@ -312,12 +306,5 @@ namespace EPrimeReadouts.UI
 
         private static int ScaledFontSize(int fontSize, float rasterScale) =>
             Mathf.Max(1, Mathf.RoundToInt(fontSize * rasterScale));
-
-        private static Rect Scale(Rect rect, float scale) =>
-            new Rect(
-                rect.x * scale,
-                rect.y * scale,
-                rect.width * scale,
-                rect.height * scale);
     }
 }

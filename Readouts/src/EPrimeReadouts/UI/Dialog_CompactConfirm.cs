@@ -1,6 +1,7 @@
 using System;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -92,7 +93,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 float buttonY = inRect.yMax - ButtonH;
                 var bodyRect = new Rect(

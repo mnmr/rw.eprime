@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="Implanner.Core.Tests/Implanner.Core.Tests.csproj" />
+  <Project Path="Implanner.Core/Implanner.Core.csproj" />
+  <Project Path="Implanner/Implanner.csproj" />
+</Solution>

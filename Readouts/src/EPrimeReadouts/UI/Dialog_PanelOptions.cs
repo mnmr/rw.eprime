@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -23,7 +24,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
             var settings = EPrimeReadoutsMod.Settings;
             listing.Begin(inRect);

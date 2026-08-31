@@ -206,7 +206,7 @@ namespace EPrimeReadouts.UI
                 Event.current.type == EventType.Repaint, inputBlocked);
             if (!policy.DrawCells) return;
             draw.RefreshIconCacheIfNeeded();
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 var bands = draw.Model.Bands;
                 PanelBandRange visible = bands.Count == 0

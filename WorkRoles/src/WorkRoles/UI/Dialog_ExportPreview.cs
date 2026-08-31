@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -54,7 +55,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             EnsureTextCache();
             Text.Font = GameFont.Medium;
             Widgets.Label(new Rect(

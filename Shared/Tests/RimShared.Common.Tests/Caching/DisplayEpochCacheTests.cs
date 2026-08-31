@@ -1,6 +1,4 @@
-using EPrimeReadouts.Core;
-
-namespace EPrimeReadouts.Core.Tests;
+namespace RimShared.Common.Tests.Caching;
 
 public class DisplayEpochCacheTests
 {

@@ -89,7 +89,7 @@ namespace EPrimeReadouts.UI
             var store = ReadoutStore.Current;
             if (store == null) return;
 
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 EprDrag.Update();
 

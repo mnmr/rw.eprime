@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using QualityJobs.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 

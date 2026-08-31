@@ -1,4 +1,6 @@
 using EPrimeReadouts.Core;
+using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -8,16 +10,9 @@ namespace EPrimeReadouts.UI
     /// textures carry wildly different amounts of transparent padding (Cloth
     /// nearly fills its texture, Penoxycyline floats in empty space). Each
     /// def's uiIcon is measured once per physical-resolution/UI-scale epoch —
-    /// blitted at its effective display size, read back, alpha bounding box
-    /// computed — and the resulting factor normalizes the opaque content toward
-    /// a common coverage. Rendering only reads the cached value.
-    ///
-    /// [StaticConstructorOnStartup] satisfies the vanilla dev-mode scanner,
-    /// which flags any static Texture2D field regardless of lazy creation;
-    /// the static constructor only initializes plain collections, so running
-    /// it eagerly on the main thread is harmless. The readback texture itself
-    /// is still created lazily in Measure, on the main thread.
-    [StaticConstructorOnStartup]
+    /// alpha bounding box via the shared IconAlphaProbe — and the resulting
+    /// factor normalizes the opaque content toward a common coverage.
+    /// Rendering only reads the cached value.
     public static class IconScaleCache
     {
         private const byte AlphaThreshold = 24;
@@ -32,13 +27,16 @@ namespace EPrimeReadouts.UI
         //               changes; processed in bounded MapComponentUpdate batches,
         //               never measured by OnGUI. The first measurement failure
         //               disables further probes and publishes neutral scales.
-        // Equality policy: each def is measured at most once per display epoch.
+        // Equality policy: each def is measured at most once per display
+        //               epoch, and publishing a value equal to the one
+        //               consumers already observe (previous epoch's value, or
+        //               the neutral 1 fallback) does not advance Revision.
         // Teardown: world teardown preserves CPU measurements and the process
-        //           failure latch, and releases only the owned readback texture.
+        //           failure latch, and releases only the shared probe's
+        //           readback texture.
         private static readonly DisplayEpochCache<ThingDef, float> measurements =
             new DisplayEpochCache<ThingDef, float>();
         private static readonly FrameBatchGate processGate = new FrameBatchGate();
-        private static Texture2D? reader;
         private static int revision;
         private static bool measurementFailed;
 
@@ -81,8 +79,15 @@ namespace EPrimeReadouts.UI
                             + exception.Message);
                     }
                 }
+                // Consumers already render missing entries at neutral scale,
+                // so publishing a value equal to what ScaleFor reported is a
+                // no-op and must not advance the revision (it would force a
+                // full base-surface rebuild per measured def while the queue
+                // drains after load or a display-metric change).
+                float observed = measurements.TryGet(def, out float prior)
+                    ? prior : 1f;
                 measurements.Publish(def, scale);
-                unchecked { revision++; }
+                if (scale != observed) unchecked { revision++; }
             }
         }
 
@@ -93,68 +98,20 @@ namespace EPrimeReadouts.UI
 
             int sampleSize = Mathf.Max(1,
                 Mathf.RoundToInt(LayoutMetrics.IconSize * Prefs.UIScale));
-            EnsureReader(sampleSize);
+            IconAlphaBounds bounds =
+                IconAlphaProbe.Measure(tex, sampleSize, AlphaThreshold);
+            if (!bounds.HasOpaque) return 1f; // fully transparent — leave alone
 
-            var rt = RenderTexture.GetTemporary(sampleSize, sampleSize, 0,
-                RenderTextureFormat.ARGB32);
-            var prev = RenderTexture.active;
-            try
-            {
-                Graphics.Blit(tex, rt);
-                RenderTexture.active = rt;
-                reader!.ReadPixels(new Rect(0f, 0f, sampleSize, sampleSize), 0, 0, false);
-            }
-            finally
-            {
-                RenderTexture.active = prev;
-                RenderTexture.ReleaseTemporary(rt);
-            }
-
-            var pixels = reader!.GetRawTextureData<Color32>();
-            int minX = sampleSize, maxX = -1, minY = sampleSize, maxY = -1;
-            for (int y = 0; y < sampleSize; y++)
-            {
-                int row = y * sampleSize;
-                for (int x = 0; x < sampleSize; x++)
-                {
-                    if (pixels[row + x].a < AlphaThreshold) continue;
-                    if (x < minX) minX = x;
-                    if (x > maxX) maxX = x;
-                    if (y < minY) minY = y;
-                    if (y > maxY) maxY = y;
-                }
-            }
-            if (maxX < 0) return 1f; // fully transparent — leave alone
-
-            int opaqueExtent = Mathf.Max(
-                maxX - minX + 1, maxY - minY + 1);
             // Vanilla ThingIcon already applies the def's own draw scale; fold
             // it in so we correct what actually lands on screen.
             return IconScaleMath.CorrectionFor(
-                opaqueExtent, sampleSize, GenUI.IconDrawScale(def));
-        }
-
-        private static void EnsureReader(int sampleSize)
-        {
-            if (reader != null && reader.width == sampleSize
-                && reader.height == sampleSize) return;
-            if (reader != null) Object.Destroy(reader);
-            reader = new Texture2D(
-                sampleSize, sampleSize, TextureFormat.RGBA32, false);
+                bounds.OpaqueExtent, sampleSize, GenUI.IconDrawScale(def));
         }
 
         internal static void ReleaseGraphics()
         {
             processGate.Reset();
-            if (reader != null)
-            {
-                Texture2D owned = reader;
-                reader = null;
-                // World teardown may originate on a long-event worker thread;
-                // Unity objects must only be destroyed after returning to the
-                // main thread.
-                LongEventHandler.ExecuteWhenFinished(() => Object.Destroy(owned));
-            }
+            IconAlphaProbe.ReleaseReader();
         }
     }
 }

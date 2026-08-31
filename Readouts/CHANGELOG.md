@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.6 — 2026-08-31
+
+- Changed: Another round of performance improvements.
+
 ## 1.2.5 — 2026-08-27
 
 - Changed: Performance improvements.

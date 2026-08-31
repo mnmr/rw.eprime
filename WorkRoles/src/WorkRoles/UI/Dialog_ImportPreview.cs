@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -203,7 +204,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             ObservePreviewLanguageRevision();
             EnsureMergeRows();
             EnsureUiText();

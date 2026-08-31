@@ -101,7 +101,7 @@ namespace EPrimeReadouts.UI
                 width,
                 panelHeight);
 
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Widgets.DrawBoxSolidWithOutline(
                     panelRect, PanelBackground, PanelOutline);
@@ -133,7 +133,7 @@ namespace EPrimeReadouts.UI
         private static float FoldoutHeader(float x, float y, float width,
             string label, ref bool folded)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 var clickRect = new Rect(x, y, width, 22f);
                 Widgets.DrawHighlightIfMouseover(clickRect);
@@ -164,7 +164,7 @@ namespace EPrimeReadouts.UI
         internal static float SectionHeader(float x, float y, float width, string label,
             string? caption, ref bool folded, float clickableWidth = -1f, bool foldable = true)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
             Text.Font = GameFont.Small;
             var labelRect = new Rect(x, y, width, 22f);

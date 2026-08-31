@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Verse;
@@ -7,8 +8,12 @@ using Verse;
 namespace EPrimeReadouts.UI
 {
     /// Owns the color-space boundary between premultiplied composition targets
-    /// and straight-alpha published textures. The backend is unavailable unless
-    /// the exact runtime shader path passes a literal pixel round-trip probe.
+    /// and straight-alpha published textures. Publication reads the GPU result
+    /// back asynchronously (AsyncGPUReadback) so no build ever stalls the
+    /// pipeline; platforms without async readback fall back to a synchronous
+    /// read into the same buffers. The backend is unavailable unless the exact
+    /// runtime shader and publish path pass a literal pixel round-trip probe,
+    /// including readback row orientation.
     internal sealed class PanelBufferBackend
     {
         private static readonly Rect FullUv = new Rect(0f, 0f, 1f, 1f);
@@ -17,12 +22,18 @@ namespace EPrimeReadouts.UI
             new PanelBufferBackend();
 
         private Material? spriteMaterial;
-        private Mesh? fontMesh;
-        private Texture2D? reader;
+        private Mesh? glyphMesh;
+        private Texture2D? probeReader;
         private bool initializationAttempted;
         private bool available;
+        /// Probe-calibrated: whether async readback rows arrive top-down
+        /// relative to the synchronous ReadPixels convention.
+        private bool readbackFlipsRows;
 
         internal bool IsAvailable => available;
+
+        internal static bool AsyncReadbackSupported =>
+            SystemInfo.supportsAsyncGPUReadback;
 
         internal bool TryInitialize()
         {
@@ -40,8 +51,9 @@ namespace EPrimeReadouts.UI
                     color = Color.white,
                     hideFlags = HideFlags.HideAndDontSave,
                 };
-                if (!ValidateRoundTrip())
-                    return Disable("premultiplied pixel round-trip failed");
+                if (!ValidateRoundTrip(out string reason))
+                    return Disable(
+                        "pixel round-trip probe failed: " + reason);
 
                 available = true;
                 return true;
@@ -86,74 +98,76 @@ namespace EPrimeReadouts.UI
             return texture;
         }
 
-        internal void Publish(RenderTexture working, Texture2D destination)
+        /// Copies one completed asynchronous readback into the destination
+        /// texture's own CPU buffer, unpremultiplying in the same pass. Row
+        /// order is calibrated once by the probe against the synchronous
+        /// path, because platforms disagree on readback orientation.
+        /// coverageFromRed serves the glyph surface: the font shader's
+        /// straight-alpha blend squares destination alpha on a transparent
+        /// target, but RGB is the correct premultiplied result and every
+        /// buffered content tint has a red channel of one, so red recovers
+        /// coverage.
+        internal void PublishFromReadback(
+            AsyncGPUReadbackRequest request,
+            Texture2D destination,
+            bool coverageFromRed)
         {
-            EnsureReader(working.width, working.height);
-            RenderTexture? previous = RenderTexture.active;
-            RenderTexture.active = working;
-            try
+            int width = destination.width;
+            int height = destination.height;
+            NativeArray<Color32> source = request.GetData<Color32>();
+            NativeArray<Color32> target =
+                destination.GetRawTextureData<Color32>();
+            bool flip = readbackFlipsRows;
+            for (int row = 0; row < height; row++)
             {
-                reader!.ReadPixels(
-                    new Rect(0f, 0f, working.width, working.height),
-                    0, 0, recalculateMipMaps: false);
-                reader.Apply(updateMipmaps: false,
-                    makeNoLongerReadable: false);
+                int sourceRow = (flip ? height - 1 - row : row) * width;
+                int targetRow = row * width;
+                for (int column = 0; column < width; column++)
+                {
+                    Color32 pixel = source[sourceRow + column];
+                    byte coverage = coverageFromRed ? pixel.r : pixel.a;
+                    PixelRgba straight = Rgba32Math.Unpremultiply(
+                        pixel.r, pixel.g, pixel.b, coverage);
+                    target[targetRow + column] = new Color32(
+                        straight.R, straight.G, straight.B, straight.A);
+                }
             }
-            finally
-            {
-                RenderTexture.active = previous;
-            }
-
-            Color32[] pixels = reader!.GetPixels32();
-            for (int i = 0; i < pixels.Length; i++)
-            {
-                Color32 pixel = pixels[i];
-                PixelRgba straight = Rgba32Math.Unpremultiply(
-                    pixel.r, pixel.g, pixel.b, pixel.a);
-                pixels[i] = new Color32(
-                    straight.R, straight.G, straight.B, straight.A);
-            }
-            destination.SetPixels32(pixels);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
         }
 
-        /// GUI font atlases carry coverage in alpha and black RGB. RimWorld's
-        /// font shader emits the requested vertex color, but its straight-alpha
-        /// blend squares destination alpha on a transparent target. RGB is
-        /// nevertheless the correct premultiplied result; every buffered
-        /// content tint has a red channel of one, so red recovers coverage.
-        internal void PublishFont(
-            RenderTexture working, Texture2D destination)
+        /// Synchronous publish for platforms without async readback: reads the
+        /// working target directly into the destination's CPU buffer, then
+        /// unpremultiplies it in place. No intermediate reader texture exists.
+        /// See PublishFromReadback for the coverageFromRed contract.
+        internal static void PublishSync(
+            RenderTexture working,
+            Texture2D destination,
+            bool coverageFromRed)
         {
-            EnsureReader(working.width, working.height);
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = working;
             try
             {
-                reader!.ReadPixels(
+                destination.ReadPixels(
                     new Rect(0f, 0f, working.width, working.height),
                     0, 0, recalculateMipMaps: false);
-                reader.Apply(updateMipmaps: false,
-                    makeNoLongerReadable: false);
             }
             finally
             {
                 RenderTexture.active = previous;
             }
-
-            Color32[] pixels = reader!.GetPixels32();
+            NativeArray<Color32> pixels =
+                destination.GetRawTextureData<Color32>();
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color32 pixel = pixels[i];
-                byte coverage = pixel.r;
+                byte coverage = coverageFromRed ? pixel.r : pixel.a;
                 PixelRgba straight = Rgba32Math.Unpremultiply(
                     pixel.r, pixel.g, pixel.b, coverage);
                 pixels[i] = new Color32(
-                    straight.R, straight.G,
-                    straight.B, straight.A);
+                    straight.R, straight.G, straight.B, straight.A);
             }
-            destination.SetPixels32(pixels);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
         }
@@ -201,6 +215,13 @@ namespace EPrimeReadouts.UI
             => DrawQuadsToActive(
                 vertices, uvs, colors, texture, spriteMaterial);
 
+        /// Draws the content glyph mesh through the FONT material: GUI font
+        /// atlases carry coverage in alpha and black RGB, so the sprite
+        /// material (which multiplies by the atlas RGB) renders glyphs black.
+        /// RimWorld's font shader emits the requested vertex color and reads
+        /// only atlas alpha; its straight-alpha blend leaves squared alpha on
+        /// the transparent target, which the coverage-from-red publish
+        /// corrects.
         internal void DrawFontQuadsToActive(
             List<Vector3> vertices,
             List<Vector2> uvs,
@@ -211,20 +232,20 @@ namespace EPrimeReadouts.UI
             RenderTexture? target = RenderTexture.active;
             if (target == null)
                 throw new System.InvalidOperationException(
-                    "Buffered font target is unavailable.");
-            if (fontMesh == null)
+                    "Buffered glyph target is unavailable.");
+            if (glyphMesh == null)
             {
-                fontMesh = new Mesh
+                glyphMesh = new Mesh
                 {
                     name = "EPrimeReadouts.PanelGlyphMesh",
                     hideFlags = HideFlags.HideAndDontSave,
                 };
             }
-            fontMesh.Clear();
-            fontMesh.SetVertices(vertices);
-            fontMesh.SetUVs(0, uvs);
-            fontMesh.SetColors(colors);
-            fontMesh.SetTriangles(triangles, 0, calculateBounds: false);
+            glyphMesh.Clear();
+            glyphMesh.SetVertices(vertices);
+            glyphMesh.SetUVs(0, uvs);
+            glyphMesh.SetColors(colors);
+            glyphMesh.SetTriangles(triangles, 0, calculateBounds: false);
 
             var commands = new CommandBuffer
             {
@@ -249,7 +270,7 @@ namespace EPrimeReadouts.UI
                             target.height, 0f,
                             -1f, 1f));
                     commands.DrawMesh(
-                        fontMesh, Matrix4x4.identity, fontMaterial);
+                        glyphMesh, Matrix4x4.identity, fontMaterial);
                 }
                 Graphics.ExecuteCommandBuffer(commands);
             }
@@ -291,20 +312,6 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        internal static void Clear(RenderTexture target)
-        {
-            RenderTexture? previous = RenderTexture.active;
-            RenderTexture.active = target;
-            try
-            {
-                GL.Clear(clearDepth: true, clearColor: true, Color.clear);
-            }
-            finally
-            {
-                RenderTexture.active = previous;
-            }
-        }
-
         internal static void ReleaseTexture(Object? texture)
         {
             if (ReferenceEquals(texture, null)) return;
@@ -323,69 +330,145 @@ namespace EPrimeReadouts.UI
         {
             available = false;
             initializationAttempted = false;
-            ReleaseTexture(reader);
-            reader = null;
-            ReleaseTexture(fontMesh);
-            fontMesh = null;
+            ReleaseTexture(probeReader);
+            probeReader = null;
+            ReleaseTexture(glyphMesh);
+            glyphMesh = null;
             ReleaseTexture(spriteMaterial);
             spriteMaterial = null;
         }
 
-        private bool ValidateRoundTrip()
+        /// Validates the exact production pipeline on a 1x2 surface with two
+        /// distinct pixels so row order is observable. Stage one draws two
+        /// straight-alpha pixels through the sprite material and expects
+        /// exact premultiplication (accepting either platform row
+        /// convention). Stage two publishes synchronously as the reference,
+        /// then calibrates the asynchronous readback's row order against it.
+        /// Stage three presents the published texture over an opaque
+        /// destination and expects exact source-over on both rows.
+        private bool ValidateRoundTrip(out string reason)
         {
+            var pixelA = new PixelRgba(200, 100, 50, 128);
+            var pixelB = new PixelRgba(60, 180, 90, 200);
             var source = new Texture2D(
-                1, 1, TextureFormat.RGBA32, false, true)
+                1, 2, TextureFormat.RGBA32, false, true)
             {
                 filterMode = FilterMode.Point,
                 hideFlags = HideFlags.HideAndDontSave,
             };
             RenderTexture? working = null;
-            Texture2D? published = null;
+            Texture2D? syncPublished = null;
+            Texture2D? asyncPublished = null;
             RenderTexture? final = null;
             try
             {
-                var sourcePixel = new PixelRgba(200, 100, 50, 128);
+                source.SetPixel(0, 1, new Color32(
+                    pixelA.R, pixelA.G, pixelA.B, pixelA.A));
                 source.SetPixel(0, 0, new Color32(
-                    sourcePixel.R, sourcePixel.G,
-                    sourcePixel.B, sourcePixel.A));
+                    pixelB.R, pixelB.G, pixelB.B, pixelB.A));
                 source.Apply(false, false);
 
-                working = CreateWorkingSurface(1, 1);
+                working = CreateWorkingSurface(1, 2);
                 DrawProbe(working, source, Color.clear);
-                PixelRgba observedPremultiplied = ReadPixel(working);
-                PixelRgba expectedPremultiplied = Rgba32Math.Premultiply(
-                    sourcePixel.R, sourcePixel.G,
-                    sourcePixel.B, sourcePixel.A);
-                if (!Near(observedPremultiplied, expectedPremultiplied, 2))
+                PixelRgba observedTop = ReadPixel(working, top: true);
+                PixelRgba observedBottom = ReadPixel(working, top: false);
+                PixelRgba premultipliedA = Rgba32Math.Premultiply(
+                    pixelA.R, pixelA.G, pixelA.B, pixelA.A);
+                PixelRgba premultipliedB = Rgba32Math.Premultiply(
+                    pixelB.R, pixelB.G, pixelB.B, pixelB.A);
+                bool upright = Near(observedTop, premultipliedA, 2)
+                    && Near(observedBottom, premultipliedB, 2);
+                bool inverted = Near(observedTop, premultipliedB, 2)
+                    && Near(observedBottom, premultipliedA, 2);
+                if (!upright && !inverted)
+                {
+                    reason = "sprite draw did not premultiply";
                     return false;
+                }
 
-                published = CreatePublishedTexture(1, 1);
-                Publish(working, published);
-                PixelRgba observedStraight = ReadPixel(published);
-                PixelRgba expectedStraight = Rgba32Math.Unpremultiply(
-                    expectedPremultiplied.R, expectedPremultiplied.G,
-                    expectedPremultiplied.B, expectedPremultiplied.A);
-                if (!Near(observedStraight, expectedStraight, 2))
+                // Straight-alpha expectations follow the observed positions,
+                // so later stages are independent of the draw convention.
+                PixelRgba straightTop = Rgba32Math.Unpremultiply(
+                    observedTop.R, observedTop.G,
+                    observedTop.B, observedTop.A);
+                PixelRgba straightBottom = Rgba32Math.Unpremultiply(
+                    observedBottom.R, observedBottom.G,
+                    observedBottom.B, observedBottom.A);
+
+                syncPublished = CreatePublishedTexture(
+                    1, 2, FilterMode.Point);
+                PublishSync(working, syncPublished, coverageFromRed: false);
+                if (!Near(ReadPublished(syncPublished, top: true),
+                        straightTop, 2)
+                    || !Near(ReadPublished(syncPublished, top: false),
+                        straightBottom, 2))
+                {
+                    reason = "synchronous publish mismatch";
                     return false;
+                }
+
+                Texture2D presented = syncPublished;
+                if (AsyncReadbackSupported)
+                {
+                    AsyncGPUReadbackRequest request = AsyncGPUReadback.Request(
+                        working, 0, TextureFormat.RGBA32);
+                    request.WaitForCompletion();
+                    if (request.hasError)
+                    {
+                        reason = "asynchronous readback errored";
+                        return false;
+                    }
+                    asyncPublished = CreatePublishedTexture(
+                        1, 2, FilterMode.Point);
+                    readbackFlipsRows = false;
+                    PublishFromReadback(
+                        request, asyncPublished, coverageFromRed: false);
+                    if (!MatchesPublished(
+                        asyncPublished, straightTop, straightBottom))
+                    {
+                        readbackFlipsRows = true;
+                        PublishFromReadback(
+                            request, asyncPublished, coverageFromRed: false);
+                        if (!MatchesPublished(
+                            asyncPublished, straightTop, straightBottom))
+                        {
+                            reason = "asynchronous readback layout mismatch";
+                            return false;
+                        }
+                    }
+                    presented = asyncPublished;
+                }
 
                 var destination = new PixelRgba(20, 40, 80, 255);
-                final = CreateWorkingSurface(1, 1);
-                DrawProbe(final, published, new Color32(
+                final = CreateWorkingSurface(1, 2);
+                DrawProbe(final, presented, new Color32(
                     destination.R, destination.G,
                     destination.B, destination.A));
-                PixelRgba observedFinal = ReadPixel(final);
-                PixelRgba expectedFinal = Rgba32Math.SourceOver(
-                    expectedStraight, destination);
-                return Near(observedFinal, expectedFinal, 2);
+                if (!Near(ReadPixel(final, top: true),
+                        Rgba32Math.SourceOver(straightTop, destination), 3)
+                    || !Near(ReadPixel(final, top: false),
+                        Rgba32Math.SourceOver(straightBottom, destination), 3))
+                {
+                    reason = "present blend mismatch";
+                    return false;
+                }
+                reason = "";
+                return true;
             }
             finally
             {
                 ReleaseTexture(source);
                 ReleaseTexture(working);
-                ReleaseTexture(published);
+                ReleaseTexture(syncPublished);
+                ReleaseTexture(asyncPublished);
                 ReleaseTexture(final);
             }
         }
+
+        private static bool MatchesPublished(
+            Texture2D published, PixelRgba top, PixelRgba bottom) =>
+            Near(ReadPublished(published, top: true), top, 2)
+            && Near(ReadPublished(published, top: false), bottom, 2);
 
         private void DrawProbe(
             RenderTexture target, Texture texture, Color clear)
@@ -395,9 +478,9 @@ namespace EPrimeReadouts.UI
             GL.PushMatrix();
             try
             {
-                GL.LoadPixelMatrix(0f, 1f, 1f, 0f);
+                GL.LoadPixelMatrix(0f, 1f, 2f, 0f);
                 GL.Clear(clearDepth: true, clearColor: true, clear);
-                DrawToActive(new Rect(0f, 0f, 1f, 1f),
+                DrawToActive(new Rect(0f, 0f, 1f, 2f),
                     texture, Color.white);
             }
             finally
@@ -407,18 +490,25 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private PixelRgba ReadPixel(RenderTexture texture)
+        private PixelRgba ReadPixel(RenderTexture texture, bool top)
         {
-            EnsureReader(1, 1);
+            if (probeReader == null)
+            {
+                probeReader = new Texture2D(
+                    1, 2, TextureFormat.RGBA32, false, true)
+                {
+                    name = "EPrimeReadouts.PanelProbeReadback",
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+            }
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = texture;
             try
             {
-                reader!.ReadPixels(
-                    new Rect(0f, 0f, 1f, 1f), 0, 0, false);
-                reader.Apply(false, false);
-                Color32 pixel = reader.GetPixel(0, 0);
-                return new PixelRgba(pixel.r, pixel.g, pixel.b, pixel.a);
+                probeReader.ReadPixels(
+                    new Rect(0f, 0f, 1f, 2f), 0, 0, false);
+                probeReader.Apply(false, false);
+                return ReadPublished(probeReader, top);
             }
             finally
             {
@@ -426,31 +516,18 @@ namespace EPrimeReadouts.UI
             }
         }
 
-        private static PixelRgba ReadPixel(Texture2D texture)
+        private static PixelRgba ReadPublished(Texture2D texture, bool top)
         {
-            Color32 pixel = texture.GetPixel(0, 0);
+            Color32 pixel = texture.GetPixel(0, top ? 1 : 0);
             return new PixelRgba(pixel.r, pixel.g, pixel.b, pixel.a);
-        }
-
-        private void EnsureReader(int width, int height)
-        {
-            if (reader != null
-                && reader.width == width && reader.height == height) return;
-            ReleaseTexture(reader);
-            reader = new Texture2D(
-                width, height, TextureFormat.RGBA32, false, true)
-            {
-                name = "EPrimeReadouts.PanelReadback",
-                hideFlags = HideFlags.HideAndDontSave,
-            };
         }
 
         private bool Disable(string reason)
         {
             available = false;
             Log.Warning("[Readouts] Buffered renderer disabled: " + reason);
-            ReleaseTexture(reader);
-            reader = null;
+            ReleaseTexture(probeReader);
+            probeReader = null;
             ReleaseTexture(spriteMaterial);
             spriteMaterial = null;
             return false;

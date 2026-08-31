@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using HarmonyLib;
 using QualityJobs.UI;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;

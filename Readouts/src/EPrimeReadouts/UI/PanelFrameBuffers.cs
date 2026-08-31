@@ -26,19 +26,28 @@ namespace EPrimeReadouts.UI
     /// Coordinates the three cached straight-alpha surfaces the buffered
     /// panel presents each repaint: the count-independent base pixels, the
     /// content glyphs, and the header strip. Each surface owns its own
-    /// revision, so a change rebuilds exactly the surface it touched;
+    /// revision, so a change re-renders exactly the surface it touched;
     /// scrolling rebuilds nothing — presentation selects a pixel-snapped
-    /// window into the full-content textures. Layered straight-alpha
-    /// presentation is exact source-over (the backend probe validates that
-    /// blend), so the on-screen result equals the previously pre-composited
-    /// front buffer.
+    /// window into the full-content textures. Publishes complete through
+    /// asynchronous readback: the previous fronts keep presenting until every
+    /// changed surface's publish lands, then the whole set promotes
+    /// atomically between repaints, so presentation never mixes surfaces
+    /// from different builds and no build stalls the GPU pipeline.
     internal sealed class PanelFrameBuffers
     {
+        /// Publish failures are transient (a device reset can invalidate a
+        /// working target mid-readback); the build aborts and retries. This
+        /// many consecutive failures disable the buffered renderer.
+        private const int MaxConsecutivePublishFailures = 3;
+
         private readonly PanelBufferPipeline pipeline;
         private readonly PanelBaseSurface baseSurface;
         private readonly PanelGlyphProduct glyphProduct;
         private readonly PanelHeaderSurface headerSurface;
         private bool hasSurfaces;
+        private bool buildInFlight;
+        private BufferBuildTicket inFlightTicket;
+        private int consecutivePublishFailures;
 
         internal PanelFrameBuffers(
             PanelBufferPipeline pipeline,
@@ -51,6 +60,7 @@ namespace EPrimeReadouts.UI
         }
 
         internal bool HasSurfaces => hasSurfaces;
+        internal bool BuildInFlight => buildInFlight;
 
         internal bool BuildBack(
             BufferBuildTicket ticket,
@@ -70,22 +80,67 @@ namespace EPrimeReadouts.UI
                 draw.Model, contentWidth, contentHeight,
                 uiRevision, iconScaleRevision,
                 draw.IconDataRevision, options);
-            if (!baseSurface.Ensure(
-                    draw, options, baseRevision, geometry.RasterScale))
-                return false;
+            SurfaceEnsureResult baseResult = baseSurface.Ensure(
+                draw, options, baseRevision, geometry.RasterScale);
+            if (baseResult == SurfaceEnsureResult.Failed) return false;
 
             PanelTextRevision textRevision = PanelTextRevision.Create(
                 draw.Model, uiRevision, contentWidth, contentHeight);
-            if (!glyphProduct.Ensure(
+            SurfaceEnsureResult glyphResult = glyphProduct.Ensure(
                 draw, textRevision, contentWidth, contentHeight,
-                geometry.RasterScale))
-                return false;
+                geometry.RasterScale);
+            if (glyphResult == SurfaceEnsureResult.Failed) return false;
 
-            if (!headerSurface.Ensure(header, glyphProduct))
-                return false;
+            SurfaceEnsureResult headerResult = headerSurface.Ensure(
+                header, glyphProduct);
+            if (headerResult == SurfaceEnsureResult.Failed) return false;
 
-            pipeline.CompleteBuild(ticket);
+            if (baseResult == SurfaceEnsureResult.Unchanged
+                && glyphResult == SurfaceEnsureResult.Unchanged
+                && headerResult == SurfaceEnsureResult.Unchanged)
+            {
+                pipeline.CompleteBuild(ticket);
+                return true;
+            }
+            buildInFlight = true;
+            inFlightTicket = ticket;
+            return true;
+        }
+
+        /// Polls in-flight publishes once per frame. Returns false only when
+        /// repeated failures exhausted the retry budget and the buffered
+        /// renderer must disable itself.
+        internal bool PumpBuild()
+        {
+            if (!buildInFlight) return true;
+            SurfacePublishState baseState = baseSurface.Channel.Pump();
+            SurfacePublishState glyphState = glyphProduct.Channel.Pump();
+            SurfacePublishState headerState = headerSurface.Channel.Pump();
+            if (baseState == SurfacePublishState.Failed
+                || glyphState == SurfacePublishState.Failed
+                || headerState == SurfacePublishState.Failed)
+            {
+                AbortInFlight();
+                consecutivePublishFailures++;
+                return consecutivePublishFailures
+                    < MaxConsecutivePublishFailures;
+            }
+            if (baseState == SurfacePublishState.Pending
+                || glyphState == SurfacePublishState.Pending
+                || headerState == SurfacePublishState.Pending)
+                return true;
+
+            // Every changed surface is Ready (unchanged ones are Idle):
+            // promote the complete set between repaints so presentation
+            // never mixes surfaces from different builds.
+            baseSurface.OnPromoted();
+            glyphProduct.OnPromoted();
+            headerSurface.OnPromoted();
+            pipeline.CompleteBuild(inFlightTicket);
+            buildInFlight = false;
+            inFlightTicket = default;
             hasSurfaces = true;
+            consecutivePublishFailures = 0;
             return true;
         }
 
@@ -116,6 +171,19 @@ namespace EPrimeReadouts.UI
             glyphProduct.Release();
             headerSurface.Release();
             hasSurfaces = false;
+            buildInFlight = false;
+            inFlightTicket = default;
+            consecutivePublishFailures = 0;
+        }
+
+        private void AbortInFlight()
+        {
+            baseSurface.OnAborted();
+            glyphProduct.OnAborted();
+            headerSurface.OnAborted();
+            pipeline.AbortBuild(inFlightTicket);
+            buildInFlight = false;
+            inFlightTicket = default;
         }
     }
 }

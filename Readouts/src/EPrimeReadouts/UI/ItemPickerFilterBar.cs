@@ -32,7 +32,7 @@ namespace EPrimeReadouts.UI
             var sourceRect = new Rect(typeRect.xMax + Gap, controlY,
                 Mathf.Max(1f, rect.xMax - typeRect.xMax - Gap), ControlH);
 
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 GUI.color = EprStyle.CaptionText;
                 DrawFilterCaption(new Rect(

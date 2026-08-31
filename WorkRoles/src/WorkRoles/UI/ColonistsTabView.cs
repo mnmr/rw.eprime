@@ -1538,7 +1538,7 @@ namespace WorkRoles.UI
         private void DrawFilterRow(Rect rect, RoleStore store,
             FilterControlMetrics metrics)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             ColonistsChromeSnapshot chrome = ChromeSnapshot(store);
             const float SearchW = 140f;
             const float RoleBtnW = 135f;

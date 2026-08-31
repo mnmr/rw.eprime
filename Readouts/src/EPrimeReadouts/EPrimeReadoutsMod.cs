@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using EPrimeReadouts.UI;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -56,7 +57,7 @@ namespace EPrimeReadouts
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
             EnsureSettingsText();
             Listing_Standard listing = settingsListing;

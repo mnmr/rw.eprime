@@ -50,6 +50,18 @@ namespace EPrimeReadouts.Core
             return true;
         }
 
+        /// Abandons an in-flight build (e.g. an asynchronous publish failed)
+        /// without publishing anything: the pending generation stays ahead of
+        /// the front, so the next TryBeginBuild retries the same work, and
+        /// BaseDirty is preserved for that retry.
+        public void AbortBuild(BufferBuildTicket ticket)
+        {
+            if (ticket.Generation == 0
+                || ticket.Generation != buildingGeneration)
+                return;
+            buildingGeneration = 0;
+        }
+
         public void CompleteBuild(BufferBuildTicket ticket)
         {
             if (ticket.Generation == 0

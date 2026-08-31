@@ -118,7 +118,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
             if (Event.current.type == EventType.MouseDown)
                 RefreshClipboard();

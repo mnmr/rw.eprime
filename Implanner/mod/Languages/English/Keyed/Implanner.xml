@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <!-- All Implanner keys use the IMP_ prefix. -->
+
+  <!-- ===== Toolbar ===== -->
+  <IMP_ToolbarButtonTip>Open Implanner</IMP_ToolbarButtonTip>
+
+  <!-- ===== Main tabs ===== -->
+  <IMP_TabOverview>Overview</IMP_TabOverview>
+  <IMP_TabPlans>Plans</IMP_TabPlans>
+  <IMP_TabAutomation>Automation</IMP_TabAutomation>
+  <IMP_TabOptions>Options</IMP_TabOptions>
+
+  <!-- ===== Overview tab ===== -->
+  <IMP_ColColonist>Colonist</IMP_ColColonist>
+  <IMP_ColPlan>Plan</IMP_ColPlan>
+  <IMP_ColProgress>Progress</IMP_ColProgress>
+  <IMP_ColState>State</IMP_ColState>
+  <!-- Skill columns stay one letter to keep them narrow -->
+  <IMP_ColShooting>S</IMP_ColShooting>
+  <IMP_ColMelee>M</IMP_ColMelee>
+  <IMP_ColShootingTip>Shooting skill</IMP_ColShootingTip>
+  <IMP_ColMeleeTip>Melee skill</IMP_ColMeleeTip>
+  <IMP_ColPriority>Priority</IMP_ColPriority>
+  <!-- Implant order levels, first to last -->
+  <IMP_Priority0>First</IMP_Priority0>
+  <IMP_Priority1>High</IMP_Priority1>
+  <IMP_Priority2>Normal</IMP_Priority2>
+  <IMP_Priority3>Low</IMP_Priority3>
+  <IMP_Priority4>Last</IMP_Priority4>
+  <IMP_GroupByNone>No grouping</IMP_GroupByNone>
+  <IMP_GroupByLocation>By location</IMP_GroupByLocation>
+  <IMP_GroupByFaction>By faction</IMP_GroupByFaction>
+  <IMP_GroupByGender>By gender</IMP_GroupByGender>
+  <IMP_GroupByXenotype>By xenotype</IMP_GroupByXenotype>
+  <IMP_GroupByIdeo>By ideoligion</IMP_GroupByIdeo>
+  <IMP_NoPlan>None</IMP_NoPlan>
+  <IMP_ScopeAll>Everywhere</IMP_ScopeAll>
+  <IMP_ScopeCurrent>Current location</IMP_ScopeCurrent>
+  <IMP_ColonyOverview>Colony</IMP_ColonyOverview>
+  <!-- {0}=complete colonists, {1}=enlisted colonists -->
+  <IMP_AggregateColonists>Colonists: {0} / {1}</IMP_AggregateColonists>
+  <!-- {0}=blocker count -->
+  <IMP_AggregateBlockers>Blockers: {0}</IMP_AggregateBlockers>
+  <IMP_NextWork>Next</IMP_NextWork>
+  <IMP_ColonistDetails>Colonist details</IMP_ColonistDetails>
+  <IMP_NoSelection>Select a colonist to see remaining implants.</IMP_NoSelection>
+
+  <!-- ===== States ===== -->
+  <IMP_StateActive>Active</IMP_StateActive>
+  <IMP_StateComplete>Complete</IMP_StateComplete>
+  <IMP_StateBlocked>Blocked</IMP_StateBlocked>
+  <IMP_StateAway>Away</IMP_StateAway>
+  <IMP_StateRegressed>Regressed</IMP_StateRegressed>
+
+  <!-- ===== Goal statuses ===== -->
+  <IMP_GoalComplete>Complete</IMP_GoalComplete>
+  <IMP_GoalMissing>Missing</IMP_GoalMissing>
+  <!-- {0}=satisfied count, {1}=requested count -->
+  <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
+  <IMP_GoalBlockedAnatomy>Blocked: anatomy</IMP_GoalBlockedAnatomy>
+  <!-- Delivered once, later lost; awaiting explicit re-enlist -->
+  <IMP_GoalRegressed>Regressed</IMP_GoalRegressed>
+  <IMP_GoalReserved>Reserved</IMP_GoalReserved>
+  <IMP_GoalReady>Ready</IMP_GoalReady>
+  <!-- Implant reserved but the surgery batch is not complete yet -->
+  <IMP_GoalAwaitingBatch>Awaiting batch</IMP_GoalAwaitingBatch>
+  <IMP_GoalScheduled>Surgery scheduled</IMP_GoalScheduled>
+  <!-- Surgery deferred until bleeding and untreated injuries are handled -->
+  <IMP_GoalRecovering>Recovering</IMP_GoalRecovering>
+  <!-- {0}=effective minimum Medical skill -->
+  <IMP_GoalBlockedFloor>Blocked by doctor floor ({0})</IMP_GoalBlockedFloor>
+  <IMP_ReEnlist>Re-enlist</IMP_ReEnlist>
+
+  <!-- ===== Plans tab ===== -->
+  <IMP_PlansHeader>Plans</IMP_PlansHeader>
+  <IMP_AddPlan>New plan</IMP_AddPlan>
+  <IMP_PlanNameTitle>Plan name</IMP_PlanNameTitle>
+  <IMP_ExtendsPlan>Extends</IMP_ExtendsPlan>
+  <IMP_ExtendsNothing>Nothing</IMP_ExtendsNothing>
+  <!-- {0}=base plan name -->
+  <IMP_PlanExtends>extends {0}</IMP_PlanExtends>
+  <!-- Slot covered by a base plan but not re-selected in this plan -->
+  <IMP_Inherited>inherited</IMP_Inherited>
+  <!-- {0}=planned implant label this selection replaces (own conflicting
+       picks are deselected, inherited ones suppressed) -->
+  <IMP_Overrides>overrides {0}</IMP_Overrides>
+  <IMP_GroupImplants>Implants</IMP_GroupImplants>
+  <IMP_NoPlans>Create a plan to define an implant goal set.</IMP_NoPlans>
+  <!-- {0}=implant goal count (own + inherited) -->
+  <IMP_PlanCounts>{0} implants</IMP_PlanCounts>
+  <IMP_PlanColonists>{0} colonists</IMP_PlanColonists>
+  <IMP_Rename>Rename</IMP_Rename>
+  <IMP_DeletePlan>Delete plan</IMP_DeletePlan>
+  <!-- {0}=plan name -->
+  <IMP_DeletePlanConfirm>Delete plan "{0}"? Colonists assigned to it will lose their assignment, and plans extending it will stop inheriting.</IMP_DeletePlanConfirm>
+  <IMP_ImplantGroupOther>Other</IMP_ImplantGroupOther>
+
+  <!-- ===== Selection-tree tooltips ===== -->
+  <!-- {0}=value for all tip lines -->
+  <IMP_TipPartEfficiency>Part efficiency: {0}</IMP_TipPartEfficiency>
+  <IMP_TipCapacity>Body part: {0}</IMP_TipCapacity>
+
+  <!-- Picker region segments, in ImplantRegion order -->
+  <IMP_RegionLimbs>Limbs</IMP_RegionLimbs>
+  <IMP_RegionTorso>Torso</IMP_RegionTorso>
+  <IMP_RegionHead>Head</IMP_RegionHead>
+
+  <!-- ===== Plan rankings panel ===== -->
+  <IMP_RankTiersTitle>Implant tiers</IMP_RankTiersTitle>
+  <IMP_Help>Help</IMP_Help>
+  <IMP_RankTiersHelp>Implants can be grouped into 5 different tiers. Placement affects production ordering and surgery (depending on automation options).\n\nDrag to re-arrange items.</IMP_RankTiersHelp>
+  <!-- Right-aligned tier captions, five stars down to one -->
+  <IMP_TierHighest>Highest priority</IMP_TierHighest>
+  <IMP_TierHigh>High priority</IMP_TierHigh>
+  <IMP_TierMedium>Medium priority</IMP_TierMedium>
+  <IMP_TierNormal>Normal priority</IMP_TierNormal>
+  <IMP_TierLow>Low priority</IMP_TierLow>
+  <IMP_DragItemsHere>Drag implants here</IMP_DragItemsHere>
+
+  <!-- ===== Automation tab ===== -->
+  <IMP_OptEnable>Enable automation</IMP_OptEnable>
+  <IMP_OptSurgery>Surgery</IMP_OptSurgery>
+  <IMP_OptIteration>Iteration strategy</IMP_OptIteration>
+  <IMP_IterTier>One implant tier at a time</IMP_IterTier>
+  <IMP_IterColonist>One colonist at a time</IMP_IterColonist>
+  <IMP_OptManualFloor>Required medical skill for surgery bills</IMP_OptManualFloor>
+  <IMP_OptAutoFloor>Assign surgery bills to best available doctor</IMP_OptAutoFloor>
+  <!-- Implant items automation must leave in stock for manual use -->
+  <IMP_OptImplantReserves>Implant reservations</IMP_OptImplantReserves>
+  <IMP_AddImplantReserve>Add implant</IMP_AddImplantReserve>
+  <IMP_OptProduction>Production</IMP_OptProduction>
+  <IMP_OptAutoProduction>Automatically add crafting bills for missing implants</IMP_OptAutoProduction>
+  <IMP_OptConcurrency>Benches that may hold bills</IMP_OptConcurrency>
+  <IMP_OptIdleBenches>Only allow bill creation at idle benches</IMP_OptIdleBenches>
+  <IMP_OptProductionSkill>Required crafting skill for production bills</IMP_OptProductionSkill>
+  <IMP_OptIntermediaries>Allow production bills for missing intermediaries</IMP_OptIntermediaries>
+  <IMP_OptReserves>Keep in stock (after bill costs)</IMP_OptReserves>
+  <IMP_AutomationOffTitle>Automation is switched off</IMP_AutomationOffTitle>
+  <IMP_AutomationOffBody>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so rather than deliver half of every plan it hands the work back to you: no item reservations and no surgery scheduling.\n\nEverything else still works. Keep building plans, assign them, rank your implants — add operations yourself, and Implanner will track what has been delivered and what is still missing.</IMP_AutomationOffBody>
+
+  <!-- ===== Options tab ===== -->
+  <IMP_OptionsEmpty>Display options will appear here.</IMP_OptionsEmpty>
+
+  <!-- ===== Locations ===== -->
+  <IMP_ShipFallback>Gravship</IMP_ShipFallback>
+
+  <!-- ===== Mod settings ===== -->
+  <IMP_SettingsShowToolbarButton>Show toolbar button</IMP_SettingsShowToolbarButton>
+</LanguageData>

@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <RootNamespace>Implanner.Core</RootNamespace>
+    <!-- No pdbs in the shipped mod folder (the game assembly copies this project's output) -->
+    <DebugType Condition="'$(Configuration)' == 'Release'">none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(RimSharedRoot)\Common\**\*.cs" LinkBase="Shared" />
+  </ItemGroup>
+</Project>

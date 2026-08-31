@@ -1,4 +1,5 @@
 using System;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -34,7 +35,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
             float y = inRect.y;
 

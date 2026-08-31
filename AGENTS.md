@@ -180,6 +180,7 @@ Changes to these dependencies require updated behavioral tests in the same chang
 - Treat `OnGUI` as a multi-pass hot path. Layout, repaint, and input passes must be idempotent.
 - Authoritative state must not be mutated merely because `OnGUI` ran more than once.
 - Unity, Verse, and RimWorld objects must be accessed only on the main thread unless the API explicitly documents otherwise.
+- Every type declaring a static `Texture2D` (or other Unity asset) field MUST carry `[StaticConstructorOnStartup]`, and `ContentFinder<T>.Get` MUST run only from such a static constructor or later main-thread code. RimWorld initializes mod assemblies off the main thread and its startup scanner flags any static `Texture2D` field on an unmarked type, even lazily assigned ones. Prefer one shared `[StaticConstructorOnStartup]` texture holder per mod over scattering the attribute across UI classes.
 - Background work may use only detached immutable data. It must not touch maps, defs, Unity objects, or mutable game models.
 - Global GUI state must be restored after use, including `Text.Font`, `Text.Anchor`, `Text.WordWrap`, `GUI.color`, groups, clips, and generation scopes.
 - Use `try/finally` when an exception could otherwise leave global UI state or ownership scopes unbalanced.

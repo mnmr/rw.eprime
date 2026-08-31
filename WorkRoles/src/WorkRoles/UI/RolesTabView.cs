@@ -1186,7 +1186,7 @@ namespace WorkRoles.UI
             int uiVersion = UiVersion.Current;
             if (ageBandsMetricsUiVersion == uiVersion)
                 return ageBandsCaptionHeight;
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 ageBandsCaptionHeight = Mathf.Ceil(Text.LineHeight);

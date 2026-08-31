@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>EPrime's Implanner</name>
+  <author>Morten Mertner</author>
+  <packageId>EPrime.Implanner</packageId>
+  <modVersion>1.0.0</modVersion>
+  <url>https://github.com/mnmr/rw.eprime</url>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+  </loadAfter>
+  <description>
+Create plans for what bionic implants your colonists should get and track progress from a single overview page, with optional production and surgery automation. 
+
+Features:
+- Plans: Create plans of desired implants and assign them to colonists. Plans can extend and override other plans.
+- Conflict Aware: The plan editor knows which implants are mutually exclusive (derived from game data, mods included).
+- Overview: Assign plans to colonists and track progress, both colony-wide and per colonist.
+- Tiered Rollout: Implants can be arranged into tiers within a plan, so you can control what gets built and installed first.
+
+Automation:
+- Automated Production: Missing items are queued at your crafting benches automatically (when enabled).
+- Automated Surgery: Operations are scheduled when a batch is ready, gated to your best doctor or a skill floor.
+- Reservations: Prevents automation from depleting your resources or using all your implants.
+
+Compatibility:
+- Safe to add to existing saves.
+- Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
+- Modded Implants: Implants from other mods appear automatically, no compatibility patches needed.
+- Multi-floor mods (MultiFloors, Strata, As above so below II): planning and tracking work fully; automation stands down because medical bills cannot fetch ingredients across floors.
+- Multiplayer compatible.
+- Requires Harmony.
+
+Check Out My Other Mods:
+- EPrime's Readouts: Replaces the vanilla resource readout with customizable groups and a stylish, modern look.
+- EPrime's Quality Jobs: Manage quality crafting and construction, so your items get the best possible quality.
+- WorkRoles: Easily and intuitively manage work priorities by assigning named roles to colonists.
+  </description>
+</ModMetaData>

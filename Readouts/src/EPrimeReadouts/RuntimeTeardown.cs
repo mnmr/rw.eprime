@@ -54,7 +54,23 @@ namespace EPrimeReadouts
                 graphicsInitialized = true;
             }
             IconScaleCache.ProcessPending();
+            PrewarmRenderData();
             ReadoutPanel.ProcessPendingGraphics(map);
+        }
+
+        /// Refreshes the shared render snapshot from the game update so the
+        /// tick-boundary count pass runs here rather than inside the patched
+        /// ResourceReadoutOnGUI. Gates mirror the panel's own visibility
+        /// checks; when nothing is due the call is a snapshot-identity lookup.
+        private void PrewarmRenderData()
+        {
+            if (EPrimeReadoutsMod.Settings.useVanillaReadout) return;
+            if (Current.ProgramState != ProgramState.Playing) return;
+            if (!ReferenceEquals(map, Find.CurrentMap)) return;
+            if (!RimWorld.Planet.WorldRendererUtility.DrawingMap) return;
+            if (Find.MainTabsRoot.OpenTab == RimWorld.MainButtonDefOf.Menu) return;
+            ReadoutStore? store = ReadoutStore.Current;
+            if (store != null) GameRenderData.Get(map, store);
         }
 
         public override void MapRemoved()

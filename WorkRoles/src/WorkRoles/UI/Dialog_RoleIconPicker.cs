@@ -1,5 +1,6 @@
 using System;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -131,7 +132,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             if (WrEvent.SkipContentPass()) return;
             EnsureSnapshot();
 

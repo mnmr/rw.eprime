@@ -1,3 +1,4 @@
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -7,9 +8,11 @@ namespace QualityJobs.UI
     public static class WrText
     {
         /// Pixel-snapped 1px horizontal line, tinted by the ambient GUI.color:
-        /// an unsnapped hairline blurs (or doubles) at fractional UI scales.
+        /// an unsnapped hairline blurs (or doubles) at fractional UI scales,
+        /// so the geometry comes from the shared device-grid helper.
         public static void LineHorizontal(float x, float y, float length)
-            => GUI.DrawTexture(new Rect(x, y, length, 1f), BaseContent.WhiteTex);
+            => GUI.DrawTexture(PixelBox.HairlineHorizontal(x, y, length),
+                BaseContent.WhiteTex);
 
         /// Width that safely fits a single-line label at any UI scale, measured
         /// with the CURRENT font. Text.CalcSize measures in virtual units, but at

@@ -1,4 +1,5 @@
 using System.IO;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -74,7 +75,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             EnsureTextCache();
             if (Event.current.type == EventType.MouseDown)
                 WorkRolesGameComponent.RunOutsideOnGUI(

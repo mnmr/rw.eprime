@@ -1,4 +1,4 @@
-namespace EPrimeReadouts.Core
+namespace RimShared.Common
 {
     /// Allows one process-wide batch for each observed frame number. Multiple
     /// map components may call the owner during the same frame; only the first

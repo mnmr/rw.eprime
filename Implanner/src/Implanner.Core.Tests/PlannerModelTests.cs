@@ -1,0 +1,205 @@
+using Implanner.Core;
+
+namespace Implanner.Core.Tests;
+
+/// Behavioral coverage for the authoritative model: exact change reporting,
+/// no-op preservation (revisions must not advance), deterministic ids, and
+/// assignment lifecycle.
+public class PlannerModelTests
+{
+    // Tests run in parallel: the id source must be per-test, not static.
+    int nextId = 1;
+
+    PlannerModel NewModel() => new PlannerModel();
+
+    int TakeId() => nextId++;
+
+    [Test]
+    public async Task CreatePlanAllocatesSequentialIdsAndUniqueNames()
+    {
+        var model = NewModel();
+
+        var first = model.CreatePlan("Marines", TakeId);
+        var second = model.CreatePlan("Marines", TakeId);
+
+        await Assert.That(first!.Id).IsEqualTo(1);
+        await Assert.That(second!.Id).IsEqualTo(2);
+        await Assert.That(second.Name).IsEqualTo("Marines (2)");
+    }
+
+    [Test]
+    public async Task RenameToSameNameIsNoOp()
+    {
+        var model = NewModel();
+        var plan = model.CreatePlan("Marines", TakeId)!;
+
+        await Assert.That(model.RenamePlan(plan.Id, "Marines")).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.RenamePlan(plan.Id, "  Marines  ")).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.RenamePlan(plan.Id, "Snipers")).IsEqualTo(PlannerChange.Plans);
+    }
+
+    [Test]
+    public async Task DeletePlanClearsItsAssignmentsAndReportsBothDomains()
+    {
+        var model = NewModel();
+        var plan = model.CreatePlan("Marines", TakeId)!;
+        model.AssignPlan(pawnId: 42, plan.Id);
+
+        var change = model.DeletePlan(plan.Id);
+
+        await Assert.That(change).IsEqualTo(PlannerChange.Plans | PlannerChange.Assignments);
+        await Assert.That(model.AssignedPlan(42)).IsNull();
+    }
+
+    [Test]
+    public async Task DeleteUnassignedPlanReportsPlansOnly()
+    {
+        var model = NewModel();
+        var plan = model.CreatePlan("Marines", TakeId)!;
+
+        await Assert.That(model.DeletePlan(plan.Id)).IsEqualTo(PlannerChange.Plans);
+    }
+
+    /// Goal ids are allocated from a store-global counter so they stay
+    /// unique across plans (plan extension resolves goals by id).
+    [Test]
+    public async Task ImplantGoalIdsAreGloballyUniqueAndNeverReused()
+    {
+        var model = NewModel();
+        int nextGoal = 1;
+        int TakeGoalId() => nextGoal++;
+        var first = model.CreatePlan("Marines", TakeId)!;
+        var second = model.CreatePlan("Scouts", TakeId)!;
+        model.SetImplantSlot(first.Id, "BionicLeg", 0, true, TakeGoalId);
+        model.SetImplantSlot(second.Id, "BionicArm", 0, true, TakeGoalId);
+        model.RemoveImplant(first.Id, first.Implants[0].Id);
+        model.SetImplantSlot(first.Id, "BionicEye", 0, true, TakeGoalId);
+
+        await Assert.That(second.Implants[0].Id).IsEqualTo(2);
+        await Assert.That(first.Implants[0].Id).IsEqualTo(3);
+    }
+
+    [Test]
+    public async Task ImplantSlotToggleUpsertRemoveAndNoOp()
+    {
+        var model = NewModel();
+        int nextGoal = 1;
+        int TakeGoalId() => nextGoal++;
+        var plan = model.CreatePlan("Marines", TakeId)!;
+
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true, TakeGoalId)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, true, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+
+        // Ordinals stay sorted regardless of toggle order.
+        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
+
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false, TakeGoalId)).IsEqualTo(PlannerChange.None);
+
+        // Removing the last selected slot removes the goal entirely.
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(plan.Implants.Count).IsEqualTo(0);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false, TakeGoalId)).IsEqualTo(PlannerChange.None);
+    }
+
+    [Test]
+    public async Task RemoveImplantDropsTheWholeGoal()
+    {
+        var model = NewModel();
+        int nextGoal = 1;
+        int TakeGoalId() => nextGoal++;
+        var plan = model.CreatePlan("Marines", TakeId)!;
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true, TakeGoalId);
+        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true, TakeGoalId);
+        int goalId = plan.Implants[0].Id;
+
+        await Assert.That(model.RemoveImplant(plan.Id, goalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(plan.Implants.Count).IsEqualTo(0);
+        await Assert.That(model.RemoveImplant(plan.Id, goalId)).IsEqualTo(PlannerChange.None);
+    }
+
+    [Test]
+    public async Task AssignPlanIsExplicitAndNoOpSafe()
+    {
+        var model = NewModel();
+        var plan = model.CreatePlan("Marines", TakeId)!;
+
+        await Assert.That(model.AssignPlan(7, plan.Id)).IsEqualTo(PlannerChange.Assignments);
+        await Assert.That(model.AssignPlan(7, plan.Id)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.AssignPlan(7, 0)).IsEqualTo(PlannerChange.Assignments);
+        await Assert.That(model.AssignPlan(7, 0)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.AssignPlan(7, 999)).IsEqualTo(PlannerChange.None);
+    }
+
+    [Test]
+    public async Task PawnPriorityDefaultsToNormalAndNeverStoresDefaults()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.PriorityOf(7)).IsEqualTo(PlannerModel.PriorityNormal);
+        await Assert.That(model.SetPawnPriority(7, PlannerModel.PriorityNormal))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetPawnPriority(7, 0)).IsEqualTo(PlannerChange.Priorities);
+        await Assert.That(model.SetPawnPriority(7, 0)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetPawnPriority(7, PlannerModel.PriorityNormal))
+            .IsEqualTo(PlannerChange.Priorities);
+        await Assert.That(model.Priorities.Count).IsEqualTo(0);
+    }
+
+    [Test]
+    public async Task CleanupMissingDropsDeadPawnPriorities()
+    {
+        var model = NewModel();
+        model.SetPawnPriority(1, 0);
+        model.SetPawnPriority(2, 4);
+
+        var change = model.CleanupMissing(pawnExists: id => id != 2);
+
+        await Assert.That(change).IsEqualTo(PlannerChange.Priorities);
+        await Assert.That(model.PriorityOf(1)).IsEqualTo(0);
+        await Assert.That(model.PriorityOf(2)).IsEqualTo(PlannerModel.PriorityNormal);
+    }
+
+    [Test]
+    public async Task CleanupMissingDropsDeadPawnsAndPlans()
+    {
+        var model = NewModel();
+        var plan = model.CreatePlan("Marines", TakeId)!;
+        model.AssignPlan(1, plan.Id);
+        model.AssignPlan(2, plan.Id);
+        model.AddLoadedAssignment(3, 999); // plan gone from the save
+
+        var change = model.CleanupMissing(pawnExists: id => id != 2);
+
+        await Assert.That(change).IsEqualTo(PlannerChange.Assignments);
+        await Assert.That(model.AssignedPlan(1)).IsEqualTo(plan);
+        await Assert.That(model.AssignedPlan(2)).IsNull();
+        await Assert.That(model.AssignedPlan(3)).IsNull();
+    }
+
+    [Test]
+    public async Task OptionsToggleWithNoOpPreservation()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.SetAutomationPaused(false)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetAutomationPaused(true)).IsEqualTo(PlannerChange.Options);
+    }
+
+    [Test]
+    public async Task RevisionsBumpOnlyReportedDomains()
+    {
+        var revisions = new PlannerRevisions();
+
+        revisions.Bump(PlannerChange.Plans);
+
+        await Assert.That(revisions.Plans).IsEqualTo(1);
+        await Assert.That(revisions.Assignments).IsEqualTo(0);
+        await Assert.That(revisions.Version).IsEqualTo(1);
+
+        revisions.Bump(PlannerChange.None);
+
+        await Assert.That(revisions.Version).IsEqualTo(1);
+    }
+}

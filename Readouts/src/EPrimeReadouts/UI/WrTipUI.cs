@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -72,7 +73,7 @@ namespace EPrimeReadouts.UI
 
         public static void Draw(Rect bgRect, TipModel model)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 DrawGeometry(bgRect, Ensure(model, MaxContentWidth));
             }
@@ -80,7 +81,7 @@ namespace EPrimeReadouts.UI
 
         internal static void Draw(Rect bgRect, PreparedTip prepared)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 DrawGeometry(bgRect, prepared.geometry);
             }

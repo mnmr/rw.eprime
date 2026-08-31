@@ -1,19 +1,21 @@
-namespace WorkRoles.Core
+namespace RimShared.Common
 {
-    /// <summary>
+    /// Where a pawn currently is, for location-rule matching, serviceability,
+    /// and grouping.
+    public struct PawnPlace
+    {
+        public string? LocationId; // map id / ship id; null when off-map
+        public bool IsSettlement;  // a player settlement map
+        public bool IsShip;        // a gravship map not parked at a settlement
+        // Neither flag set: caravan or any non-home map.
+
+        /// A serviceable location can execute automation for pawns at it.
+        public bool IsServiceable => IsSettlement || IsShip;
+    }
+
     /// Derives a faction-relative place from cached faction-invariant map facts.
-    /// </summary>
     public static class FactionLocationClassifier
     {
-        public static PawnPlace Classify(string? locationId,
-            bool ownedByFaction,
-            bool spawnedViaGravship,
-            bool parentCanBePlayerHome,
-            bool parentIsSettlement,
-            bool hasGravEngine) => Classify(locationId, locationId,
-                ownedByFaction, spawnedViaGravship, parentCanBePlayerHome,
-                parentIsSettlement, hasGravEngine);
-
         public static PawnPlace Classify(
             string? mapLocationId,
             string? shipLocationId,

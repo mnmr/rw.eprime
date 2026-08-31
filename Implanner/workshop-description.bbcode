@@ -1,0 +1,63 @@
+Implanner plans, ranks, and automates colonist implants. Decide who should get which bionics, and the mod queues the crafting and schedules the surgeries to make it happen.
+
+Instead of micromanaging medical operations and crafting bills one at a time, you design implant plans - reusable lists of desired implants - and hand them to colonists. Implanner tracks per-colonist progress, shows what is blocking the next step, and (if you let it) runs the whole production-to-surgery pipeline for you.
+
+[h1]Key Features[/h1]
+[list]
+[*][b]Implant Plans:[/b] A plan is a reusable set of implant goals. Assign the same plan to any number of colonists, and edit it in a conflict-aware editor with an anatomy filter.
+[*][b]Plan Inheritance:[/b] A plan can extend another plan: a Soldier plan builds on your colony baseline, overriding only where it wants something better.
+[*][b]Conflict Aware:[/b] Which implants can coexist is derived from actual game data (mods included), mirroring the game's own surgery rules. Selecting a conflicting implant simply overrides the other - the click is the choice, and the editor tells you what gets replaced.
+[*][b]Star Rankings:[/b] Drag implants into star tiers to decide what matters most; within a tier you arrange the exact order. Rankings are yours alone - everything starts at three stars and the mod never rearranges them.
+[*][b]Overview Table:[/b] A colony-wide table of colonists with plan, progress, next operation and blockers, plus grouping, sorting and a per-colonist detail panel.
+[*][b]Automated Production:[/b] Implanner counts the implants your plans still need and queues crafting bills at your benches - as ordinary bills you can see and touch. Bills for no-longer-needed implants are cleaned up automatically.
+[*][b]Automated Surgery:[/b] Operations are scheduled when the implant is in stock and a capable doctor is available. Implant items are reserved so haulers and traders do not run off with them.
+[*][b]Doctor Skill Floor:[/b] By default the required surgeon skill tracks your best available doctor in each colony; turn auto off to set a manual minimum.
+[*][b]Implant Reserves:[/b] Hold a configurable number of each implant back from automation, so there is always stock for manual operations.
+[*][b]Multi-Colony:[/b] Plans are global; production, reservations and surgery run per colony, and colonists are matched to the colony they are actually at.
+[*][b]Modded Implants:[/b] Implants from other mods appear automatically, no compatibility patches needed. Works with any DLC mix - only content you actually have is offered.
+[*][b]Designed for Performance:[/b] Extensive caching, rendering from pre-calculated caches, scoped invalidation, no per-tick logic.
+[*][b]Multiplayer:[/b] Fully [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2606448745]RimWorld Multiplayer[/url] compatible - all automation is deterministic, so every client computes the same result.
+[/list]
+
+[h1]How Automation Works[/h1]
+[list]
+[*]Production works down your star tiers: by default Implanner finishes the current tier before starting the next, so top-ranked implants get built and installed first.
+[*]A crafting bill is only created when every ingredient keeps its configured reserve after the full cost of the bill. Baseline reserves ship for steel, plasteel, gold, components and advanced components; every reserve is overridable, including down to zero.
+[*]You control how many benches per colony Implanner may occupy, a minimum crafting skill for its bills, and whether it may only use idle benches.
+[*]With intermediates enabled, missing ingredients that are themselves craftable (components, drugs, and similar) are queued too.
+[*]When an implant is in stock, it is reserved for a specific colonist and the operation is added to their surgery list; your doctors take it from there.
+[*]An installed implant that already excludes the planned one counts as done: an archotech leg satisfies a bionic-leg goal instead of scheduling a pointless downgrade.
+[/list]
+
+[h1]Worth Knowing[/h1]
+[list]
+[*]Implanner is about implants only: weapons, apparel and utility gear are deliberately out of scope (the overview can display them, but nothing acts on them).
+[*]Only ordinary humanlike colonists are plannable; mutant-only implants such as the ghoul kit are excluded.
+[*]Automation options live in their own tab: iteration strategy, bench limits, skill requirements, resource reserves and implant reserves.
+[*]Everything the automation does is visible in the game as ordinary bills and surgery entries - there is no hidden machinery.
+[/list]
+
+[h1]Compatibility[/h1]
+[list]
+[*]Safe to add to existing saves: installed implants are recognized and count toward plan progress.
+[*]Multi-floor mods (MultiFloors, Strata, As above so below II): planning, rankings and progress tracking work fully; automation stands down, because medical bills cannot fetch ingredients across floors in those mods. Scheduling operations that can never complete would be worse.
+[*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
+[/list]
+
+Found a bug or an incompatible mod? Let me know in the comments.
+
+[h1]Check Out My Other Mods[/h1]
+[list]
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092]EPrime's Readouts[/url]: A modern, compact resource readout with support for custom resource pools.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051]EPrime's Quality Jobs[/url]: Manage quality crafting and construction, so your items get the best possible quality.
+[*][url=https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134]WorkRoles[/url]: Easily and intuitively manage work priorities by assigning named roles to colonists.
+[/list]
+
+[h1]Disclaimer[/h1]
+Created with the help of Claude Code.
+
+[h1]Links[/h1]
+[list]
+[*]Source code (AGPL): [url=https://github.com/mnmr/rw.eprime]github.com/mnmr/rw.eprime[/url]
+[*]Bug reports: [url=https://github.com/mnmr/rw.eprime/issues]GitHub issues[/url]
+[/list]

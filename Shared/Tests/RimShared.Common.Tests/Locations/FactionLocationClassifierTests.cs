@@ -1,23 +1,41 @@
-namespace WorkRoles.Core.Tests.Locations;
+namespace RimShared.Common.Tests.Locations;
 
 public class FactionLocationClassifierTests
 {
     [Test]
     public async Task PlayerOwnedSettlementIsClassifiedAsASettlement()
     {
-        var location = FactionLocationClassifier.Classify("17", ownedByFaction: true, spawnedViaGravship: false, parentCanBePlayerHome: true, parentIsSettlement: true, hasGravEngine: false);
+        var location = FactionLocationClassifier.Classify(
+            mapLocationId: "17",
+            shipLocationId: "17",
+            ownedByFaction: true,
+            spawnedViaGravship: false,
+            parentCanBePlayerHome: true,
+            parentIsSettlement: true,
+            hasGravEngine: false
+        );
 
         await Assert.That(location.IsSettlement).IsTrue();
         await Assert.That(location.IsShip).IsFalse();
+        await Assert.That(location.IsServiceable).IsTrue();
     }
 
     [Test]
     public async Task ForeignSettlementIsNotClassifiedAsAPlayerLocation()
     {
-        var location = FactionLocationClassifier.Classify("17", ownedByFaction: false, spawnedViaGravship: false, parentCanBePlayerHome: true, parentIsSettlement: true, hasGravEngine: false);
+        var location = FactionLocationClassifier.Classify(
+            mapLocationId: "17",
+            shipLocationId: "17",
+            ownedByFaction: false,
+            spawnedViaGravship: false,
+            parentCanBePlayerHome: true,
+            parentIsSettlement: true,
+            hasGravEngine: false
+        );
 
         await Assert.That(location.IsSettlement).IsFalse();
         await Assert.That(location.IsShip).IsFalse();
+        await Assert.That(location.IsServiceable).IsFalse();
     }
 
     [Test]
@@ -35,6 +53,7 @@ public class FactionLocationClassifierTests
 
         await Assert.That(location.IsShip).IsTrue();
         await Assert.That(location.LocationId).IsEqualTo("GravEngine42");
+        await Assert.That(location.IsServiceable).IsTrue();
     }
 
     [Test]

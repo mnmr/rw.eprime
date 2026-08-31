@@ -206,7 +206,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             EnsureChrome();
             RenameChromeSnapshot chrome = chromeSnapshot;
             GameFont oldFont = Text.Font;

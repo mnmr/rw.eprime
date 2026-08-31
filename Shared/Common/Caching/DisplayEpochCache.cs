@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EPrimeReadouts.Core
+namespace RimShared.Common
 {
     /// Physical display inputs that define one icon-measurement epoch.
     public readonly struct DisplayEpoch : IEquatable<DisplayEpoch>
@@ -22,7 +22,7 @@ namespace EPrimeReadouts.Core
             && Height == other.Height
             && UiScale.Equals(other.UiScale);
 
-        public override bool Equals(object obj) =>
+        public override bool Equals(object? obj) =>
             obj is DisplayEpoch other && Equals(other);
 
         public override int GetHashCode() =>
@@ -34,6 +34,7 @@ namespace EPrimeReadouts.Core
     /// until its replacement is published, avoiding visual popping while a
     /// bounded measurement queue catches up.
     public sealed class DisplayEpochCache<TKey, TValue>
+        where TKey : notnull
     {
         private readonly struct Entry
         {

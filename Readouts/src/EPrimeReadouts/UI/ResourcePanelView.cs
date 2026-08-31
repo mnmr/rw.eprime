@@ -1,5 +1,6 @@
 using System;
 using EPrimeReadouts.Core;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -108,7 +109,7 @@ namespace EPrimeReadouts.UI
 
         private static void DrawEmpty(Rect rect, string label)
         {
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleCenter;

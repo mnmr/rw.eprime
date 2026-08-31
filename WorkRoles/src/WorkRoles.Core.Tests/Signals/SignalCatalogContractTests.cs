@@ -102,7 +102,9 @@ Trait/Brawler=Ludeon.RimWorld|RimWorld
 Hediff/Inhumanized=Ludeon.RimWorld.Anomaly|Anomaly
 """;
 
-        await Assert.That(actualAttribution).IsEqualTo(expectedAttribution);
+        // The raw literal embeds the source file's line endings; normalize so
+        // the expectation is checkout-independent (the join above uses \n).
+        await Assert.That(actualAttribution).IsEqualTo(expectedAttribution.ReplaceLineEndings("\n"));
     }
 
     private static string Attribution(SignalSourceKind kind, string defName)

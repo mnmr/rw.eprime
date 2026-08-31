@@ -6,66 +6,74 @@ using Verse;
 namespace EPrimeReadouts.UI
 {
     /// Straight-alpha, count-independent copy of the complete content area.
-    /// It is rebuilt only when its explicit PanelBaseRevision changes.
+    /// It is re-rendered only when its explicit PanelBaseRevision changes;
+    /// the publish flows through the channel's asynchronous readback, and the
+    /// previous front keeps presenting until the build promotes.
     internal sealed class PanelBaseSurface
     {
-
         private readonly PanelBufferBackend backend;
-        private Texture2D? texture;
-        private RenderTexture? working;
-        private int workingPixelWidth;
-        private int workingPixelHeight;
-        private PanelBaseRevision revision;
-        private bool hasRevision;
+        private readonly PanelSurfaceChannel channel;
+        private PanelBaseRevision publishedRevision;
+        private bool hasPublished;
+        private PanelBaseRevision pendingRevision;
+        private bool hasPending;
 
         internal PanelBaseSurface(PanelBufferBackend backend)
         {
             this.backend = backend;
+            channel = new PanelSurfaceChannel(backend);
         }
 
-        internal int PixelWidth => texture != null ? texture.width : 0;
-        internal int PixelHeight => texture != null ? texture.height : 0;
+        internal PanelSurfaceChannel Channel => channel;
+        internal int PixelWidth => channel.FrontWidth;
+        internal int PixelHeight => channel.FrontHeight;
 
-        internal bool Ensure(
+        internal SurfaceEnsureResult Ensure(
             DrawModel draw,
             PanelVisualOptions options,
             PanelBaseRevision next,
             float rasterScale)
         {
-            if (hasRevision && revision.Equals(next)) return true;
-            if (!backend.IsAvailable) return false;
+            if (hasPending && pendingRevision.Equals(next))
+                return SurfaceEnsureResult.InFlight;
+            if (hasPublished && publishedRevision.Equals(next)
+                && !channel.HasWorkInFlight)
+                return SurfaceEnsureResult.Unchanged;
+            if (!backend.IsAvailable) return SurfaceEnsureResult.Failed;
             PanelSurfaceSizing sizing = PanelSurfaceSizing.Create(
                 next.Width, next.Width, next.Height, rasterScale);
             if (next.Width <= 0 || next.Height <= 0
                 || sizing.PixelWidth > SystemInfo.maxTextureSize
                 || sizing.PixelHeight > SystemInfo.maxTextureSize)
-                return false;
+                return SurfaceEnsureResult.Failed;
 
-            EnsureWorking(sizing.PixelWidth, sizing.PixelHeight);
-            if (working == null) return false;
-            Texture2D? replacement = null;
-            try
-            {
-                replacement = backend.CreatePublishedTexture(
-                    sizing.PixelWidth, sizing.PixelHeight,
-                    FilterMode.Point);
-                if (!Render(
-                        draw, options, working, sizing.RasterScale))
-                    return false;
-                backend.Publish(working, replacement);
+            RenderTexture? working = channel.EnsureWorking(
+                sizing.PixelWidth, sizing.PixelHeight);
+            if (working == null) return SurfaceEnsureResult.Failed;
+            if (!Render(draw, options, working, sizing.RasterScale))
+                return SurfaceEnsureResult.Failed;
+            channel.RequestPublish();
+            pendingRevision = next;
+            hasPending = true;
+            return SurfaceEnsureResult.InFlight;
+        }
 
-                Texture2D? old = texture;
-                texture = replacement;
-                replacement = null;
-                revision = next;
-                hasRevision = true;
-                PanelBufferBackend.ReleaseTexture(old);
-                return true;
-            }
-            finally
-            {
-                PanelBufferBackend.ReleaseTexture(replacement);
-            }
+        /// Called when the coordinating build promotes; adopts the pending
+        /// revision if this surface's publish was part of it.
+        internal void OnPromoted()
+        {
+            if (!channel.Promote()) return;
+            publishedRevision = pendingRevision;
+            hasPublished = true;
+            hasPending = false;
+        }
+
+        /// Called when the coordinating build aborts; the next build
+        /// re-renders this revision from scratch.
+        internal void OnAborted()
+        {
+            channel.Abandon();
+            hasPending = false;
         }
 
         /// Presents the given pixel-snapped window onto the screen at the
@@ -73,9 +81,10 @@ namespace EPrimeReadouts.UI
         internal bool PresentWindow(
             float screenX, float screenY, PanelPresentWindow window)
         {
-            if (texture == null || !hasRevision || !window.Visible)
+            Texture2D? front = channel.Front;
+            if (front == null || !hasPublished || !window.Visible)
                 return false;
-            backend.Present(texture, new Rect(
+            backend.Present(front, new Rect(
                     screenX, screenY,
                     window.DestWidth, window.DestHeight),
                 new Rect(0f, window.UvY, 1f, window.UvHeight));
@@ -84,25 +93,9 @@ namespace EPrimeReadouts.UI
 
         internal void Release()
         {
-            PanelBufferBackend.ReleaseTexture(texture);
-            PanelBufferBackend.ReleaseTexture(working);
-            texture = null;
-            working = null;
-            workingPixelWidth = 0;
-            workingPixelHeight = 0;
-            hasRevision = false;
-        }
-
-        private void EnsureWorking(int pixelWidth, int pixelHeight)
-        {
-            if (working != null
-                && workingPixelWidth == pixelWidth
-                && workingPixelHeight == pixelHeight)
-                return;
-            PanelBufferBackend.ReleaseTexture(working);
-            working = backend.CreateWorkingSurface(pixelWidth, pixelHeight);
-            workingPixelWidth = pixelWidth;
-            workingPixelHeight = pixelHeight;
+            channel.Release();
+            hasPublished = false;
+            hasPending = false;
         }
 
         private bool Render(
@@ -179,20 +172,6 @@ namespace EPrimeReadouts.UI
 
         private void DrawSolid(Rect rect, Color color) =>
             backend.DrawToActive(rect, BaseContent.WhiteTex, color);
-
-        private void DrawBorder(Rect rect, Color color, float rasterScale)
-        {
-            DrawSolid(new Rect(
-                rect.x, rect.y, rect.width, rasterScale), color);
-            DrawSolid(new Rect(
-                rect.x, rect.yMax - rasterScale,
-                rect.width, rasterScale), color);
-            DrawSolid(new Rect(
-                rect.x, rect.y, rasterScale, rect.height), color);
-            DrawSolid(new Rect(
-                rect.xMax - rasterScale, rect.y,
-                rasterScale, rect.height), color);
-        }
 
         private static Rect Scale(Rect rect, float scale) =>
             new Rect(

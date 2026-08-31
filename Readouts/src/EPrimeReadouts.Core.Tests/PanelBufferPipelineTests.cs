@@ -74,6 +74,44 @@ public class PanelBufferPipelineTests
     }
 
     [Test]
+    public async Task AbortedBuildPublishesNothingAndRetriesTheSameWork()
+    {
+        var pipeline = new PanelBufferPipeline();
+        pipeline.InvalidateBase();
+        pipeline.TryBeginBuild(out BufferBuildTicket ticket);
+
+        pipeline.AbortBuild(ticket);
+
+        // Nothing became presentable and the structural invalidation
+        // survives for the retry.
+        await Assert.That(pipeline.TrySwapOnRepaint()).IsFalse();
+        await Assert.That(pipeline.BaseDirty).IsTrue();
+        await Assert.That(pipeline.TryBeginBuild(out BufferBuildTicket retry))
+            .IsTrue();
+        await Assert.That(retry.Generation).IsEqualTo(ticket.Generation);
+        await Assert.That(retry.RebuildBase).IsTrue();
+
+        pipeline.CompleteBuild(retry);
+        await Assert.That(pipeline.TrySwapOnRepaint()).IsTrue();
+    }
+
+    [Test]
+    public async Task StaleAbortDoesNotCancelANewerBuild()
+    {
+        var pipeline = new PanelBufferPipeline();
+        pipeline.PublishCounts();
+        pipeline.TryBeginBuild(out BufferBuildTicket stale);
+        pipeline.AbortBuild(stale);
+        pipeline.PublishCounts();
+        pipeline.TryBeginBuild(out BufferBuildTicket active);
+
+        pipeline.AbortBuild(stale);
+
+        pipeline.CompleteBuild(active);
+        await Assert.That(pipeline.TrySwapOnRepaint()).IsTrue();
+    }
+
+    [Test]
     public async Task StaleBaseBuildDoesNotClearNewStructuralInvalidation()
     {
         var pipeline = new PanelBufferPipeline();

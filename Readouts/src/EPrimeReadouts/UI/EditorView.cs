@@ -126,7 +126,7 @@ namespace EPrimeReadouts.UI
                 || cachedNameUiVersion != UiVersion.Current
                 || cachedNameWidth < 0f))
             {
-                using (new GuiStateScope())
+                using (GuiStateScope.Capture())
                 {
                     Text.Font = GameFont.Medium;
                     cachedNameWidth = WrText.FitWidth(group.Name);
@@ -176,7 +176,7 @@ namespace EPrimeReadouts.UI
                     groupNameY
                         + (cachedNameRowHeight - cachedRenameSize) / 2f,
                     cachedRenameSize, cachedRenameSize);
-                using (new GuiStateScope())
+                using (GuiStateScope.Capture())
                 {
                     Text.Font = GameFont.Medium;
                     Text.Anchor = TextAnchor.MiddleLeft;
@@ -591,7 +591,7 @@ namespace EPrimeReadouts.UI
         private void EnsureRuleRow()
         {
             if (ruleRowUiVersion == UiVersion.Current) return;
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 ruleCaption = UiText.Get("EPR.CountRuleCaption");
                 ruleStorageLabel = UiText.Get("EPR.SearchStorageOnly");
@@ -638,7 +638,7 @@ namespace EPrimeReadouts.UI
         private ThresholdRowLayout EnsureThresholdRow()
         {
             if (thresholdRowUiVersion == UiVersion.Current) return thresholdRow;
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 // Labels render in Tiny, which RimWorld resolves to Small when
                 // tiny text is unavailable; measure whatever it resolves to.

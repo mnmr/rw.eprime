@@ -1,5 +1,6 @@
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 
@@ -147,7 +148,7 @@ namespace EPrimeReadouts.UI
                 Widgets.ThingIcon(
                     new Rect(rect.x + 2f, rect.y + 3f, IconW, IconW), row.IconDef);
 
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Anchor = TextAnchor.MiddleLeft;
                 Widgets.Label(new Rect(

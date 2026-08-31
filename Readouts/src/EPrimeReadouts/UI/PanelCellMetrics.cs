@@ -38,7 +38,7 @@ namespace EPrimeReadouts.UI
             get
             {
                 if (stamp == UiVersion.Current) return cached;
-                using (new GuiStateScope())
+                using (GuiStateScope.Capture())
                 {
                     // Resolves to Small when tiny text is unavailable; both
                     // FitWidth and LineHeight then measure the resolved font;

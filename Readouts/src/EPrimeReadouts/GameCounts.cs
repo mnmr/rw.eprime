@@ -12,6 +12,25 @@ namespace EPrimeReadouts
     /// level map in ascending level order so readouts show stack totals.
     public static class GameCounts
     {
+        private struct DefTally
+        {
+            public int ExtraStored;
+            public int StoredUnforbidden;
+            public int StoredForbidden;
+            public int ScatteredUnforbidden;
+            public int ScatteredForbidden;
+        }
+
+        // Reusable single-pass scratch buffer, not a cache: per-def stack
+        // tallies keyed by ThingDef identity so the per-thing hot loop never
+        // hashes defName strings; the flush converts each def to the Core
+        // snapshot's string keys exactly once. Owner: process, main thread
+        // only (count builders run from the game update/GUI path). Cleared
+        // after every map pass, so no Thing, Map, or per-save state is
+        // retained between passes.
+        private static readonly Dictionary<ThingDef, DefTally> tallies =
+            new Dictionary<ThingDef, DefTally>(IdentityComparer<ThingDef>.Instance);
+
         internal static RenderCountSnapshot BuildSnapshot(
             Map map,
             int tick,
@@ -57,54 +76,69 @@ namespace EPrimeReadouts
                 if (pair.Value != 0)
                     accumulator.Add(pair.Key.defName, pair.Key.shortHash, pair.Value);
 
-            // Stored pass, mirroring ResourceCounter.UpdateResourceCounts:
-            // haul destinations, inner-of-minified, fresh, not fogged. Extra
-            // counted defs feed the group-count basis exactly as vanilla's
-            // counter would if it knew them; every stored stack additionally
-            // feeds the search breakdown with its forbidden flag (read from
-            // the outer thing — a minified wrapper carries the comp).
-            var groups = map.haulDestinationManager.AllGroupsListForReading;
-            for (int i = 0; i < groups.Count; i++)
+            // Single stock pass over the haulable lister — a flat list scan —
+            // instead of re-walking every slot-group cell the way vanilla's
+            // ResourceCounter already did this boundary. Storedness is a
+            // haul-destination grid lookup per thing. Semantics match the
+            // former stored+scattered passes: extra counted defs in storage
+            // feed the group-count basis exactly as vanilla's counter would
+            // if it knew them, and every stack feeds the search breakdown
+            // with its disposition. The forbidden flag reads the outer thing
+            // (a minified wrapper carries the comp); freshness and fog read
+            // the inner. Known narrowing: a counted def that is storable but
+            // never haulable is absent from the lister and loses its search
+            // breakdown entry — its group count still comes from vanilla's
+            // AllCountedAmounts above.
+            bool includeScattered = options.IncludeScattered;
+            var things = map.listerThings.ThingsInGroup(
+                ThingRequestGroup.HaulableEver);
+            for (int i = 0; i < things.Count; i++)
             {
-                foreach (Thing held in groups[i].HeldThings)
+                Thing thing = things[i];
+                bool stored = thing.IsInAnyStorage();
+                if (!stored && !includeScattered) continue;
+                var inner = thing.GetInnerIfMinified();
+                bool extra = GameResourceCatalog.IsExtraCountedDef(inner.def);
+                if (!extra && !inner.def.CountAsResource) continue;
+                if (inner.IsNotFresh()) continue;
+                if (thing.Position.Fogged(map)) continue;
+                bool forbidden = options.InspectForbidden
+                    && thing.IsForbidden(Faction.OfPlayer);
+                tallies.TryGetValue(inner.def, out DefTally tally);
+                if (stored)
                 {
-                    var inner = held.GetInnerIfMinified();
-                    bool extra = GameResourceCatalog.IsExtraCountedDef(inner.def);
-                    if (!extra && !inner.def.CountAsResource) continue;
-                    if (inner.IsNotFresh()) continue;
-                    if (inner.SpawnedOrAnyParentSpawned && inner.PositionHeld.Fogged(inner.MapHeld))
-                        continue;
-                    if (extra)
-                        accumulator.Add(inner.def.defName, inner.def.shortHash, inner.stackCount);
-                    accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
-                        inner.stackCount, stored: true,
-                        forbidden: options.InspectForbidden
-                            && held.IsForbidden(Faction.OfPlayer));
+                    if (extra) tally.ExtraStored += inner.stackCount;
+                    if (forbidden) tally.StoredForbidden += inner.stackCount;
+                    else tally.StoredUnforbidden += inner.stackCount;
                 }
+                else if (forbidden) tally.ScatteredForbidden += inner.stackCount;
+                else tally.ScatteredUnforbidden += inner.stackCount;
+                tallies[inner.def] = tally;
             }
 
-            // Scattered pass: spawned haulables outside any slot group. It is
-            // omitted entirely for the storage-only basis; otherwise these
-            // stacks widen the shared count breakdown to map-wide totals.
-            if (options.IncludeScattered)
+            // Flush the def-keyed tallies into the string-keyed accumulator.
+            // Emission order does not matter: search tallies are additive and
+            // the fingerprint folds commutatively.
+            foreach (var pair in tallies)
             {
-                var things = map.listerThings.ThingsInGroup(
-                    ThingRequestGroup.HaulableEver);
-                for (int i = 0; i < things.Count; i++)
-                {
-                    Thing thing = things[i];
-                    if (thing.IsInAnyStorage()) continue;
-                    var inner = thing.GetInnerIfMinified();
-                    if (!inner.def.CountAsResource
-                        && !GameResourceCatalog.IsExtraCountedDef(inner.def)) continue;
-                    if (inner.IsNotFresh()) continue;
-                    if (thing.Position.Fogged(map)) continue;
-                    accumulator.AddSearch(inner.def.defName, inner.def.shortHash,
-                        inner.stackCount, stored: false,
-                        forbidden: options.InspectForbidden
-                            && thing.IsForbidden(Faction.OfPlayer));
-                }
+                ThingDef def = pair.Key;
+                DefTally tally = pair.Value;
+                if (tally.ExtraStored != 0)
+                    accumulator.Add(def.defName, def.shortHash, tally.ExtraStored);
+                if (tally.StoredUnforbidden != 0)
+                    accumulator.AddSearch(def.defName, def.shortHash,
+                        tally.StoredUnforbidden, stored: true, forbidden: false);
+                if (tally.StoredForbidden != 0)
+                    accumulator.AddSearch(def.defName, def.shortHash,
+                        tally.StoredForbidden, stored: true, forbidden: true);
+                if (tally.ScatteredUnforbidden != 0)
+                    accumulator.AddSearch(def.defName, def.shortHash,
+                        tally.ScatteredUnforbidden, stored: false, forbidden: false);
+                if (tally.ScatteredForbidden != 0)
+                    accumulator.AddSearch(def.defName, def.shortHash,
+                        tally.ScatteredForbidden, stored: false, forbidden: true);
             }
+            tallies.Clear();
 
             // The expensive bill/buildable walk has its own 1020-tick cache.
             // Replay its compact immutable result into every 204-tick stock

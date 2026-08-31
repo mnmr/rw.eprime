@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using RimShared.Common;
+using RimShared.UiLib;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core;
@@ -245,7 +246,7 @@ namespace WorkRoles.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            using var guiState = new GuiStateScope(capture: true);
+            using var guiState = GuiStateScope.Capture();
             EnsureRowsCurrent();
             if (ObservePreviewLanguageRevision())
                 titleText = "WR_RestoreDefaultsTitle".Translate();

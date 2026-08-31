@@ -1,16 +1,8 @@
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace WorkRoles.Core
 {
-    /// Where a pawn currently is, for location-rule matching.
-    public struct PawnPlace
-    {
-        public string? LocationId; // map id; null when off-map (caravan, world)
-        public bool IsSettlement;  // a player settlement map
-        public bool IsShip;        // a gravship map not parked at a settlement
-        // Neither flag set: caravan or any non-home map — the Caravans bucket.
-    }
-
     /// Role location rules: a restricted role carries tokens and is active
     /// wherever any token matches; no tokens means anywhere.
     public static class LocationRules

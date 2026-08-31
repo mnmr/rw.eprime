@@ -169,7 +169,9 @@ RepeatChampionDistinctPenalty=repeatChampionDistinctPenalty=40
 RepeatChampionOccasionalPenalty=repeatChampionOccasionalPenalty=20
 """;
 
-        await Assert.That(actualMetadata).IsEqualTo(expectedMetadata);
+        // The raw literal embeds the source file's line endings; normalize so
+        // the expectation is checkout-independent (production joins with \n).
+        await Assert.That(actualMetadata).IsEqualTo(expectedMetadata.ReplaceLineEndings("\n"));
         await Assert.That(descriptors.All(item => RecommendationsTuningOptions.Default.Get(item.Option) == item.DefaultValue)).IsTrue();
         await Assert.That(descriptors.All(item => !string.IsNullOrEmpty(item.SectionLabelKey) && !string.IsNullOrEmpty(item.LabelKey) && !string.IsNullOrEmpty(item.DescriptionKey))).IsTrue();
     }

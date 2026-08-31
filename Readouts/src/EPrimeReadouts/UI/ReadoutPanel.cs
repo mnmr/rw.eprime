@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using EPrimeReadouts.Core;
 using RimShared.Common;
+using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
 using Verse;
@@ -117,8 +118,8 @@ namespace EPrimeReadouts.UI
         public static void BumpView() => viewStamp++;
 
         // Hover-driven tier depth (expandOnHover), PER BAND: the id of the
-        // group whose band is under the pointer, or -1. A transition bumps
-        // the view stamp so the cached DrawModel rebuilds once per band
+        // group whose band is under the pointer, or -1. A transition changes
+        // this rebuild key so the cached DrawModel republishes once per band
         // enter/leave, never per frame. Stability: band heights never vary
         // with depth (collapse is horizontal) and band PRESENCE is
         // depth-invariant (a group with no visible slots keeps its thin
@@ -126,6 +127,42 @@ namespace EPrimeReadouts.UI
         // cannot shift or remove any band, and an expanded band's footprint
         // contains its collapsed footprint — enter/leave cannot oscillate.
         private static int hoveredGroupId = -1;
+        private static int builtHoverId = -1;
+
+        private readonly struct HoverVariant
+        {
+            internal HoverVariant(DrawModel draw, LayoutInput input)
+            {
+                Draw = draw;
+                Input = input;
+            }
+
+            internal readonly DrawModel Draw;
+            internal readonly LayoutInput Input;
+        }
+
+        // Cache contract:
+        // Owner: process/current main readout panel (same owner as draw).
+        // Key: hovered group id (-1 for none).
+        // Value: the resolved DrawModel and its LayoutInput as published for
+        //        that hover state; immutable except through the shared
+        //        count-refresh path, which only ever runs against entries
+        //        built from the current count snapshot.
+        // Dependencies: every non-hover rebuild input (domain revisions, view
+        //        stamp, map, width, UiVersion, pool snapshot identity) and
+        //        the count snapshot identity. Any of them changing clears the
+        //        cache; only pure hover transitions read it.
+        // Refresh policy: immediate — a non-hover input change clears all
+        //        entries before the rebuild publishes; a successful in-place
+        //        count refresh clears all entries except the active one
+        //        (siblings would hold stale counter text).
+        // Equality policy: a hover re-entry republishes the identical
+        //        DrawModel instance, so hit geometry and the identity-keyed
+        //        base surface revision keyed to it stay valid.
+        // Teardown: Reset/ReleaseMap clears entries; bounded by the number of
+        //        enabled groups plus the no-hover state.
+        private static readonly Dictionary<int, HoverVariant> hoverVariants =
+            new Dictionary<int, HoverVariant>();
 
         private static void UpdateHoverState(ReadoutSettings settings)
         {
@@ -156,11 +193,10 @@ namespace EPrimeReadouts.UI
                     }
                 }
             }
-            if (hovered != hoveredGroupId)
-            {
-                hoveredGroupId = hovered;
-                BumpView();
-            }
+            // A transition is picked up by NeedsStructuralRebuild through the
+            // builtHoverId compare; it deliberately does not bump the view
+            // stamp, so previously built hover variants stay reusable.
+            hoveredGroupId = hovered;
         }
 
         internal static void ReleaseMap(Map map)
@@ -193,6 +229,8 @@ namespace EPrimeReadouts.UI
             SearchText = "";
             viewStamp = 0;
             hoveredGroupId = -1;
+            builtHoverId = -1;
+            hoverVariants.Clear();
             hotDraw = null;
             hotVisible = false;
             frameBuffers.Release();
@@ -222,6 +260,15 @@ namespace EPrimeReadouts.UI
             if (!backend.TryInitialize())
             {
                 bufferedRendererDisabled = true;
+                return;
+            }
+            if (frameBuffers.BuildInFlight)
+            {
+                // Poll the asynchronous publishes; the completed set promotes
+                // atomically inside PumpBuild. New builds wait until then.
+                if (!frameBuffers.PumpBuild())
+                    DisableBufferedRenderer(
+                        "asynchronous surface publish failed repeatedly");
                 return;
             }
             if (!bufferPipeline.TryBeginBuild(
@@ -275,21 +322,46 @@ namespace EPrimeReadouts.UI
             UpdateHoverState(settings);
             if (NeedsStructuralRebuild(store, map, width, renderData))
             {
-                if (Rebuild(store, map, width, renderData))
+                // Pure hover transition (every other input identical,
+                // including the count snapshot): republish the variant built
+                // the last time this hover state was visible instead of
+                // rebuilding the layout. Any other change invalidates all
+                // variants before the rebuild publishes.
+                bool hoverOnly = NonHoverInputsUnchanged(
+                        store, map, width, renderData)
+                    && ReferenceEquals(builtCounts, renderData.Counts);
+                if (!hoverOnly) hoverVariants.Clear();
+                if (hoverOnly && hoverVariants.TryGetValue(
+                        hoveredGroupId, out HoverVariant variant))
+                {
+                    draw = variant.Draw;
+                    builtInput = variant.Input;
+                    builtHoverId = hoveredGroupId;
                     QueueBaseRebuild();
+                }
+                else
+                {
+                    if (Rebuild(store, map, width, renderData))
+                        QueueBaseRebuild();
+                    hoverVariants[builtHoverId] =
+                        new HoverVariant(draw!, builtInput!);
+                }
             }
             else if (!ReferenceEquals(builtCounts, renderData.Counts))
             {
                 bool refreshed = TryRefreshCounts(renderData);
                 if (!refreshed)
                 {
+                    hoverVariants.Clear();
                     if (Rebuild(store, map, width, renderData))
                         QueueBaseRebuild();
+                    hoverVariants[builtHoverId] =
+                        new HoverVariant(draw!, builtInput!);
                 }
                 else QueueCountFrame();
             }
 
-            using (new GuiStateScope()) Draw(map, store, settings);
+            using (GuiStateScope.Capture()) Draw(map, store, settings);
         }
 
         private static void Draw(Map map, ReadoutStore store, ReadoutSettings settings)
@@ -712,18 +784,22 @@ namespace EPrimeReadouts.UI
             Map map,
             float width,
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
-        {
-            if (draw == null
-                || builtGroupsVersion != store.GroupsVersion
-                || builtThresholdsVersion != store.ThresholdsVersion
-                || builtCountRulesVersion != store.CountRulesVersion
-                || builtStamp != viewStamp
-                || builtUiVersion != UiVersion.Current
-                || builtMap != map || builtWidth != width
-                || !ReferenceEquals(builtPools, renderData.Structure))
-                return true;
-            return false;
-        }
+            => !NonHoverInputsUnchanged(store, map, width, renderData)
+                || builtHoverId != hoveredGroupId;
+
+        private static bool NonHoverInputsUnchanged(
+            ReadoutStore store,
+            Map map,
+            float width,
+            RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
+            => draw != null
+                && builtGroupsVersion == store.GroupsVersion
+                && builtThresholdsVersion == store.ThresholdsVersion
+                && builtCountRulesVersion == store.CountRulesVersion
+                && builtStamp == viewStamp
+                && builtUiVersion == UiVersion.Current
+                && builtMap == map && builtWidth == width
+                && ReferenceEquals(builtPools, renderData.Structure);
 
         private static bool TryRefreshCounts(
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
@@ -736,6 +812,11 @@ namespace EPrimeReadouts.UI
                     builtInput, draw.Model)) return false;
             draw.RefreshCounts(renderData);
             builtCounts = renderData.Counts;
+            // The refresh mutated the active model's counter cells in place;
+            // sibling hover variants still carry the previous counts, so only
+            // the active entry survives.
+            hoverVariants.Clear();
+            hoverVariants[builtHoverId] = new HoverVariant(draw, builtInput);
             return true;
         }
 
@@ -814,6 +895,7 @@ namespace EPrimeReadouts.UI
             builtPools = renderData.Structure;
             builtCounts = renderData.Counts;
             builtUiVersion = UiVersion.Current;
+            builtHoverId = hoveredGroupId;
             return changed;
         }
 
@@ -822,7 +904,7 @@ namespace EPrimeReadouts.UI
             if (cachedTitleUiVersion == UiVersion.Current
                 && cachedTitleText != null) return;
             cachedTitleText = UiText.Get("EPR.Title");
-            using (new GuiStateScope())
+            using (GuiStateScope.Capture())
             {
                 Text.Font = GameFont.Small;
                 cachedTitleWidth = WrText.FitWidth(cachedTitleText) + 4f;
