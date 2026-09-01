@@ -66,6 +66,37 @@
        star-tier glyph run {1} and is dropped when the column is narrow -->
   <IMP_StripBatch>Implanting batch on {0}</IMP_StripBatch>
   <IMP_StripBatchStars>Implanting batch on {0} ({1})</IMP_StripBatchStars>
+  <!-- Strip column tooltips: a per-implant table under the column title
+       (badge = the column's percent) -->
+  <IMP_TipProduction>Production</IMP_TipProduction>
+  <IMP_TipSurgery>Surgery</IMP_TipSurgery>
+  <IMP_TipColTier>Tier</IMP_TipColTier>
+  <IMP_TipColItem>Item</IMP_TipColItem>
+  <IMP_TipColImplant>Implant</IMP_TipColImplant>
+  <!-- Production columns: items wanted by missing slots, free stock (not
+       held back, not reserved), reserved for a colonist's surgery, held
+       back for manual use, still to produce, pending in Implanner bills -->
+  <IMP_TipColNeeded>Needed</IMP_TipColNeeded>
+  <IMP_TipColFree>Free</IMP_TipColFree>
+  <IMP_TipColReserved>Reserved</IMP_TipColReserved>
+  <IMP_TipColHeldBack>Held back</IMP_TipColHeldBack>
+  <IMP_TipColQueued>Queued</IMP_TipColQueued>
+  <IMP_TipColCrafting>Crafting</IMP_TipColCrafting>
+  <IMP_TipColStatus>Status</IMP_TipColStatus>
+  <IMP_TipCovered>Covered</IMP_TipCovered>
+  <IMP_TipMaking>Making</IMP_TipMaking>
+  <IMP_TipMakingMaterials>Making materials</IMP_TipMakingMaterials>
+  <IMP_TipNoRecipe>No recipe</IMP_TipNoRecipe>
+  <!-- {0}=benches in scope holding an Implanner bill -->
+  <IMP_TipBenchesInUse>Benches with Implanner bills: {0}</IMP_TipBenchesInUse>
+  <!-- Surgery columns: planned slots, installed, and the missing ones by
+       pipeline stage (nothing held, item reserved, operation scheduled) -->
+  <IMP_TipColPlanned>Planned</IMP_TipColPlanned>
+  <IMP_TipColInstalled>Installed</IMP_TipColInstalled>
+  <IMP_TipColMissing>Missing</IMP_TipColMissing>
+  <IMP_TipColScheduled>Scheduled</IMP_TipColScheduled>
+  <!-- {0}..{4}=colonists per state -->
+  <IMP_TipColonistStates>Colonists: {0} waiting, {1} preparing, {2} operating, {3} done, {4} away</IMP_TipColonistStates>
   <!-- {0}=lowercase implant list, sentence capitalized in code -->
   <IMP_NextScheduled>Surgery scheduled for {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Colonist details</IMP_ColonistDetails>

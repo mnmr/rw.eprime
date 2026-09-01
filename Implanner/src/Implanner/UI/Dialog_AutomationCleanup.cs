@@ -100,7 +100,7 @@ namespace Implanner.UI
         private void BuildRows(ImplannerStore store)
         {
             var surgeryIds = new HashSet<string>(System.StringComparer.Ordinal);
-            foreach (KeyValuePair<int, Dictionary<string, string>> pawn
+            foreach (KeyValuePair<int, IReadOnlyDictionary<string, string>> pawn
                 in store.Model.OwnedBills)
                 foreach (KeyValuePair<string, string> record in pawn.Value)
                     surgeryIds.Add(record.Value);
@@ -175,10 +175,16 @@ namespace Implanner.UI
                     scrolls ? outer.width - 16f : outer.width, listHeight);
                 Text.WordWrap = false;
                 Widgets.BeginScrollView(outer, ref scroll, inner);
-                float y = 0f;
-                y += DrawGroup(inner.width, y, surgeryHeader, surgeryRows);
-                y += DrawGroup(inner.width, y, productionHeader, productionRows);
-                Widgets.EndScrollView();
+                try
+                {
+                    float y = 0f;
+                    y += DrawGroup(inner.width, y, surgeryHeader, surgeryRows);
+                    y += DrawGroup(inner.width, y, productionHeader, productionRows);
+                }
+                finally
+                {
+                    Widgets.EndScrollView();
+                }
                 Text.WordWrap = true;
 
                 var cancelRect = new Rect(inRect.x, inRect.yMax - BtnH, BtnW, BtnH);

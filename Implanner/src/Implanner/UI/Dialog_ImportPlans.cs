@@ -32,17 +32,30 @@ namespace Implanner.UI
         // ── Source stage state ───────────────────────────────────────────────
         // Cache contract:
         // Owner: one import window.
-        // Key: resolved directory string.
+        // Key: the picked location and custom directory text (the inputs
+        //   the resolved directory derives from), plus an explicit
+        //   invalidation flag.
         // Value: file entries with preformatted immutable display metadata.
-        // Dependencies: explicit directory changes/deletion refresh requests.
-        // Refresh policy: WindowUpdate only, never OnGUI.
-        // Equality policy: unchanged directory preserves list/entry identities.
+        // Dependencies: the key fields, and explicit invalidation after a
+        //   file deletion, on open, and on returning from the preview.
+        // Refresh policy: WindowUpdate only, never OnGUI; shell folders and
+        //   the filesystem are consulted only when the key moved or the
+        //   flag was raised.
+        // Equality policy: an unchanged key preserves list/entry identities
+        //   without a syscall.
         // Teardown: PreClose releases entries, XML and preview rows.
         private List<PlansFiles.Entry>? files;
-        private string? listedDir;  // directory the current file list came from
+        private Location filesLocation;
+        private string? filesCustomDir;
+        private bool filesValid;
         private Vector2 sourceScroll;
+
+        // Clipboard sampling: on open, when the game window regains focus
+        // (the player copied something elsewhere), and when the greyed
+        // "From clipboard" button is clicked. Never per event.
         private string? clip;
         private bool clipUsable;
+        private bool wasFocused;
 
         // ── Preview stage state ──────────────────────────────────────────────
         private string? pendingXml;
@@ -98,21 +111,32 @@ namespace Implanner.UI
         public override void PreOpen()
         {
             base.PreOpen();
-            files = null;   // force a fresh directory listing
+            InvalidateFiles();   // force a fresh directory listing
+            wasFocused = Application.isFocused;
             RefreshClipboard();
         }
 
         // ── Helpers ──────────────────────────────────────────────────────────
 
+        /// Raises the explicit refresh flag; the next WindowUpdate re-lists.
+        private void InvalidateFiles()
+        {
+            filesValid = false;
+        }
+
         /// Directory listing for the picked location, refreshed by WindowUpdate
-        /// when the directory changed or an explicit action invalidated it.
+        /// only when the location inputs changed or an explicit action
+        /// invalidated it.
         private void EnsureFiles()
         {
-            string dir = ResolvedDir();
-            if (files != null && string.Equals(dir, listedDir, StringComparison.Ordinal))
+            if (filesValid
+                && filesLocation == location
+                && string.Equals(filesCustomDir, customDir, StringComparison.Ordinal))
                 return;
-            listedDir = dir;
-            files = PlansFiles.ListFiles(dir);
+            filesLocation = location;
+            filesCustomDir = customDir;
+            filesValid = true;
+            files = PlansFiles.ListFiles(ResolvedDir());
             sourceScroll = Vector2.zero;
         }
 
@@ -120,6 +144,9 @@ namespace Implanner.UI
         {
             base.WindowUpdate();
             if (stage == Stage.Source) EnsureFiles();
+            bool focused = Application.isFocused;
+            if (focused && !wasFocused) RefreshClipboard();
+            wasFocused = focused;
         }
 
         private void RefreshClipboard()
@@ -149,6 +176,7 @@ namespace Implanner.UI
         public override void PreClose()
         {
             files = null;
+            filesValid = false;
             pendingXml = null;
             pendingRows = null;
             textRows = null;
@@ -166,9 +194,6 @@ namespace Implanner.UI
             {
                 UiVersion.ObserveCurrentMetrics();
                 PlanIoLabels.Ensure();
-
-                if (Event.current.type == EventType.MouseDown)
-                    RefreshClipboard();
 
                 if (stage == Stage.Source)
                     DrawSource(inRect);
@@ -189,6 +214,12 @@ namespace Implanner.UI
                 && clipUsable)
             {
                 TryEnterPreview(clip!); // clipUsable implies non-empty clip
+            }
+            else if (!clipUsable && Widgets.ButtonInvisible(clipRect, doMouseoverSound: false))
+            {
+                // A click on the greyed button re-samples the clipboard (an
+                // in-game copy never changes window focus).
+                RefreshClipboard();
             }
 
             // Location picker (no name field — a file is picked from the list).
@@ -262,7 +293,7 @@ namespace Implanner.UI
                                     Messages.Message(ex.Message,
                                         MessageTypeDefOf.RejectInput, historical: false);
                                 }
-                                files = null;   // force re-list next update
+                                InvalidateFiles();   // re-list next update
                             },
                             destructive: true));
                     }
@@ -349,7 +380,7 @@ namespace Implanner.UI
                 PlanIoLabels.Back))
             {
                 stage = Stage.Source;
-                files = null;   // re-list on return
+                InvalidateFiles();   // re-list on return
                 pendingXml = null;
                 pendingRows = null;
             }

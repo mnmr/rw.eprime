@@ -44,8 +44,19 @@ namespace Implanner
         private int iteration = (int)IterationStrategy.ImplantTier;
         private int manualDoctorFloor;
         private bool autoDoctorFloor = true;
-        // 0 = never seeded: FinishInit derives max(1, colonists / 10) once.
+        // Persisted as 0 until seeded: the first reconcile pass that sees a
+        // colonist derives max(1, colonists / 10) (old saves that already
+        // have colonists seed at load), and a player edit counts as seeded.
         private int surgeryConcurrency;
+        private bool surgeryConcurrencySeeded;
+
+        // Reconcile triggers travel with the save so a late-joining or
+        // resynced multiplayer client (which loads the host's state) runs
+        // exactly the passes the host runs. Set only by the synced command
+        // path (Bump), cleared by the pass; load-time code never sets them.
+        // Absent in older saves reads as false.
+        private bool pendingReconcile;
+        private bool pendingProductionPass;
         private bool countHospitalized = true;
         private bool autoProduction = true;
         private int productionConcurrency = PlannerModel.ConcurrencyDefault;
@@ -66,51 +77,109 @@ namespace Implanner
 
         public ImplannerStore(World world) : base(world)
         {
-            Model.SlotConflictResolver = ImplantConflicts.Resolver;
+            Model.SetSlotConflictResolver(ImplantConflicts.Resolver);
         }
 
         public static ImplannerStore? Current => Find.World?.GetComponent<ImplannerStore>();
 
         public int TakePlanId() => nextPlanId++;
 
-        public void Bump(PlannerChange change) => revisions.Bump(change);
+        /// Whether a synced command mutated the model since the last
+        /// reconcile pass: the next simulated tick runs one.
+        public bool PendingReconcile => pendingReconcile;
 
-        public override void FinalizeInit(bool fromLoad)
+        /// Whether a production-domain option changed since the last
+        /// production dispatch: the next reconcile pass dispatches early.
+        public bool PendingProductionPass => pendingProductionPass;
+
+        /// The synced command path: publishes the change and requests a
+        /// reconcile pass on the next simulated tick. The pass request is
+        /// unconditional: every client runs the same command, and a request
+        /// that depended on whether the command changed anything locally
+        /// could set the flag on one client only. Revisions still move only
+        /// for real changes.
+        public void Bump(PlannerChange change)
         {
-            base.FinalizeInit(fromLoad);
-            // Loaded saves finish their initialization from the PostLoadInit
-            // scribe pass instead: World.FinalizeInit runs mid-load, BEFORE
-            // PostLoadInit replaces Model with the loaded state — anything
-            // done to the model here would be silently discarded.
-            if (!fromLoad) FinishInit();
+            pendingReconcile = true;
+            if (change == PlannerChange.None) return;
+            revisions.Bump(change);
+            if ((change & PlannerChange.Production) != 0)
+                pendingProductionPass = true;
         }
+
+        /// The reconcile pass's own bookkeeping: published without
+        /// requesting another pass, so the pass's mutations never re-trigger
+        /// it on the following tick.
+        internal void PublishPass(PlannerChange change) => revisions.Bump(change);
+
+        internal void ClearPendingReconcile() => pendingReconcile = false;
+
+        internal void ClearPendingProductionPass() => pendingProductionPass = false;
+
+        /// The player set the cap explicitly: never seed over it.
+        internal void MarkSurgeryConcurrencySeeded() =>
+            surgeryConcurrencySeeded = true;
+
+        /// Seeds the concurrent-surgeries cap once from the colony size,
+        /// on the first pass that observes at least one authoritative
+        /// colonist while the persisted value is still the unseeded
+        /// sentinel. Runs inside the synchronized tick pass from the
+        /// pass's own colonist count, so every client seeds identically.
+        internal PlannerChange SeedSurgeryConcurrency(int colonists)
+        {
+            if (surgeryConcurrencySeeded || colonists <= 0)
+                return PlannerChange.None;
+            surgeryConcurrencySeeded = true;
+            return Model.SetSurgeryConcurrency(SeededSurgeryConcurrency(colonists));
+        }
+
+        private static int SeededSurgeryConcurrency(int colonists) =>
+            System.Math.Max(1, colonists / 10);
+
+        // World.FinalizeInit is deliberately not overridden. On a new game
+        // WorldGenerator.GenerateWorld calls it BEFORE
+        // Scenario.PostWorldGenerate creates the player faction, so
+        // Faction.OfPlayer logs "Could not find player faction" there; a
+        // fresh store has nothing to clean up and seeds surgery concurrency
+        // on the first reconcile pass that observes a colonist. Loaded saves
+        // finish their initialization from FinishInit, queued by the
+        // PostLoadInit scribe pass through LongEventHandler so it runs after
+        // maps finalize: World.FinalizeInit runs mid-load, BEFORE
+        // PostLoadInit replaces Model with the loaded state — anything done
+        // to the model there would be silently discarded.
 
         /// Deterministic lifecycle initialization on the fully hydrated
-        /// model: normalization must finish before revisions publish.
+        /// loaded model: normalization must finish before revisions
+        /// publish. Never mutates the model beyond the one-time concurrency
+        /// seed and never requests a reconcile pass — a joining client
+        /// loads the host's state and must not diverge from it (dead-pawn
+        /// entries are cleaned by the first synced pass, identically on
+        /// every client).
         private void FinishInit()
         {
-            Model.CleanupMissing(PawnExists);
-            // First init for this save (new game, or a save from before the
-            // option existed): seed the concurrent-surgeries cap from the
-            // colony size. Deterministic — every client counts the same
-            // authoritative colonist roster from the same save data.
-            if (surgeryConcurrency <= 0)
-            {
-                int colonists = ColonyScope.AllPlanableColonists(
-                    ColonyScope.AuthoritativeFaction).Count;
-                surgeryConcurrency = System.Math.Max(1, colonists / 10);
-                Model.SetSurgeryConcurrency(surgeryConcurrency);
-            }
-            Bump(PlannerChange.All);
+            // A save from before the option existed that already has
+            // colonists seeds at load (the same save data on every client);
+            // a new game has no colonists yet and seeds on the first
+            // reconcile pass that observes one.
+            if (!surgeryConcurrencySeeded)
+                SeedSurgeryConcurrency(ColonyScope.AllPlanableColonists(
+                    ColonyScope.AuthoritativeFaction).Count);
+            revisions.Bump(PlannerChange.All);
         }
 
-        private static bool PawnExists(int pawnId)
+        /// Drops model state of pawns that no longer exist anywhere (maps,
+        /// world, caravans, transporters, a gravship in flight; alive or
+        /// dead). One id set per call; the model probes it without further
+        /// allocation. Deterministic for the same game state, so the
+        /// reconcile pass runs it too and a joiner's loaded model converges
+        /// with the host's.
+        internal PlannerChange CleanupMissingPawns()
         {
-            List<Pawn> pawns = PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead;
+            var existing = new HashSet<int>();
+            List<Pawn> pawns = PawnsFinder.All_AliveOrDead;
             for (int i = 0; i < pawns.Count; i++)
-                if (pawns[i].thingIDNumber == pawnId)
-                    return true;
-            return false;
+                existing.Add(pawns[i].thingIDNumber);
+            return Model.CleanupMissing(existing.Contains);
         }
 
         public override void ExposeData()
@@ -211,7 +280,11 @@ namespace Implanner
                 iteration = (int)Model.Iteration;
                 manualDoctorFloor = Model.ManualDoctorFloor;
                 autoDoctorFloor = Model.AutoDoctorFloor;
-                surgeryConcurrency = Model.SurgeryConcurrency;
+                // The unseeded sentinel survives a save so the seed still
+                // happens once colonists exist.
+                surgeryConcurrency = surgeryConcurrencySeeded
+                    ? Model.SurgeryConcurrency
+                    : 0;
                 countHospitalized = Model.CountHospitalized;
                 autoProduction = Model.AutoProduction;
                 productionConcurrency = Model.ProductionConcurrency;
@@ -257,24 +330,26 @@ namespace Implanner
             Scribe_Values.Look(ref productionSkill, "productionSkill",
                 PlannerModel.ProductionSkillDefault);
             Scribe_Values.Look(ref allowIntermediaries, "allowIntermediaries", true);
+            Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
+            Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
-                Model = new PlannerModel
-                {
-                    SlotConflictResolver = ImplantConflicts.Resolver,
-                };
+                surgeryConcurrencySeeded = surgeryConcurrency > 0;
+                Model = new PlannerModel();
+                Model.SetSlotConflictResolver(ImplantConflicts.Resolver);
                 // Legacy goal-id map: saves written before natural goal
                 // identities persisted per-goal ids, and their reservation
                 // and bill keys use the retired "i{id}:{ordinal}" format.
-                // Collect id -> (plan index, kind) while loading so those
-                // keys can be rewritten once plan ids are final.
-                Dictionary<int, LegacyGoalRef>? legacyGoals = null;
+                // Collect id -> (plan index, kind) while loading; the index
+                // is stable through NormalizeLoadedIds (which replaces in
+                // place), so the final plan ids are read from it afterwards.
+                Dictionary<int, (int PlanIndex, string DefName)>? legacyByIndex = null;
                 if (planRecords != null)
                     foreach (PlanRecord record in planRecords)
                     {
                         Plan? plan = record.ToPlan(
-                            Model.Plans.Count, ref legacyGoals);
+                            Model.Plans.Count, ref legacyByIndex);
                         if (plan != null) Model.AddLoadedPlan(plan);
                     }
                 // Saves from builds that did not persist the plan-id counter
@@ -282,6 +357,17 @@ namespace Implanner
                 // live id: goal keys, assignments, and base links embed plan
                 // ids as identity.
                 Model.NormalizeLoadedIds(ref nextPlanId);
+                // Only now are plan ids final: a re-idded duplicate's legacy
+                // keys must migrate onto its NEW id (GoalKeys.MigrateLegacy).
+                Dictionary<int, LegacyGoalRef>? legacyGoals = null;
+                if (legacyByIndex != null)
+                {
+                    legacyGoals = new Dictionary<int, LegacyGoalRef>(legacyByIndex.Count);
+                    foreach (KeyValuePair<int, (int PlanIndex, string DefName)> pair
+                        in legacyByIndex)
+                        legacyGoals[pair.Key] = new LegacyGoalRef(
+                            Model.Plans[pair.Value.PlanIndex].Id, pair.Value.DefName);
+                }
                 if (assignmentPawnIds != null && assignmentPlanIds != null
                     && assignmentPawnIds.Count == assignmentPlanIds.Count)
                     for (int i = 0; i < assignmentPawnIds.Count; i++)
@@ -297,7 +383,7 @@ namespace Implanner
                     for (int i = 0; i < reservationItemIds.Count; i++)
                         if (!reservationGoalKeys[i].NullOrEmpty())
                         {
-                            string? key = MigrateGoalKey(
+                            string? key = GoalKeys.MigrateLegacy(
                                 reservationGoalKeys[i], legacyGoals);
                             if (key != null)
                                 Model.AddLoadedReservation(reservationItemIds[i],
@@ -333,7 +419,7 @@ namespace Implanner
                         if (!ownedBillGoalKeys[i].NullOrEmpty()
                             && !ownedBillIds[i].NullOrEmpty())
                         {
-                            string? key = MigrateGoalKey(
+                            string? key = GoalKeys.MigrateLegacy(
                                 ownedBillGoalKeys[i], legacyGoals);
                             if (key != null)
                                 Model.AddLoadedOwnedBill(ownedBillPawnIds[i],
@@ -402,25 +488,6 @@ namespace Implanner
             planIds.AddRange(values);
         }
 
-        /// Rewrites a legacy "i{goalId}:{ordinal}" key to the natural
-        /// "p{planId}:{defName}:{ordinal}" format using the owning plan
-        /// recorded in the save; an unmappable legacy key is dropped (its
-        /// goal no longer exists, so the reconciler would release it
-        /// anyway). Natural keys pass through unchanged. Runs after
-        /// NormalizeLoadedIds so the plan index resolves to the final id.
-        private string? MigrateGoalKey(
-            string key, Dictionary<int, LegacyGoalRef>? legacyGoals)
-        {
-            if (!GoalKeys.TryParseLegacyImplantSlot(
-                    key, out int goalId, out int ordinal))
-                return key;
-            if (legacyGoals == null
-                || !legacyGoals.TryGetValue(goalId, out LegacyGoalRef owner))
-                return null;
-            return GoalKeys.ImplantSlot(
-                Model.Plans[owner.PlanIndex].Id, owner.DefName, ordinal);
-        }
-
         private static void SortReservations(
             List<int> itemIds, List<int> pawnIds, List<string> goalKeys)
         {
@@ -440,21 +507,6 @@ namespace Implanner
             pawnIds.AddRange(pawns);
             goalKeys.AddRange(goals);
         }
-    }
-
-    /// A legacy goal id's owner: the loaded plan's list position (stable
-    /// through NormalizeLoadedIds, which replaces in place) and the implant
-    /// kind. Used only to migrate pre-natural-key reservation and bill keys.
-    public readonly struct LegacyGoalRef
-    {
-        public LegacyGoalRef(int planIndex, string defName)
-        {
-            PlanIndex = planIndex;
-            DefName = defName;
-        }
-
-        public int PlanIndex { get; }
-        public string DefName { get; }
     }
 
     /// IExposable projection of one Core Plan. The Core model stays free of
@@ -479,25 +531,25 @@ namespace Implanner
         }
 
         /// planIndex is the position the caller will load this plan into;
-        /// legacy goal ids found in the record register there so old keys
-        /// can be migrated once plan ids are final.
+        /// legacy goal ids found in the record register there (the index is
+        /// stable through NormalizeLoadedIds) so old keys can be migrated
+        /// once plan ids are final.
         public Plan? ToPlan(int planIndex,
-            ref Dictionary<int, LegacyGoalRef>? legacyGoals)
+            ref Dictionary<int, (int PlanIndex, string DefName)>? legacyGoals)
         {
             if (id <= 0 || string.IsNullOrEmpty(name)) return null;
-            var plan = new Plan(id, name) { BasePlanId = basePlanId };
+            var goals = new List<ImplantGoal>();
             if (implants != null)
                 foreach (ImplantRecord record in implants)
                 {
-                    ImplantGoal? goal = record.ToGoal(plan.Id);
+                    ImplantGoal? goal = record.ToGoal(id);
                     if (goal == null) continue;
-                    plan.Implants.Add(goal);
+                    goals.Add(goal);
                     if (record.LegacyId > 0)
-                        (legacyGoals ??= new Dictionary<int, LegacyGoalRef>())
-                            [record.LegacyId] = new LegacyGoalRef(
-                                planIndex, goal.ImplantDefName);
+                        (legacyGoals ??= new Dictionary<int, (int, string)>())
+                            [record.LegacyId] = (planIndex, goal.ImplantDefName);
                 }
-            return plan;
+            return new Plan(id, name, basePlanId, goals);
         }
 
         public void ExposeData()

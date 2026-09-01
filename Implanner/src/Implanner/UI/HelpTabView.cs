@@ -70,6 +70,22 @@ namespace Implanner.UI
         // use after ReleaseWindowData. Teardown: ReleaseWindowData clears.
         private HashSet<string>? readSlugs;
 
+        // Owner: window. Key: the chapter's topic array identity plus the
+        // read revision. Value: one bool per topic, true when read
+        // (immutable once built). Dependencies: the topic array and the
+        // read set. Refresh: immediate on the next read after either moves.
+        // Equality: an unchanged key reuses the array. Teardown:
+        // ReleaseWindowData clears.
+        private bool[]? topicReadFlags;
+        private HelpTopicData[]? topicReadFlagsTopics;
+        private int topicReadFlagsRevision = -1;
+        private int readRevision;
+
+        /// Slugs marked read during drawing and not yet persisted: the
+        /// settings file is written from WindowUpdate (and on close), never
+        /// inside a render pass, one write per batch.
+        private List<string>? pendingReadSlugs;
+
         public void Reset()
         {
             content.ObserveLanguage();
@@ -82,6 +98,10 @@ namespace Implanner.UI
             labelLanguageStamp = -1;
             titleHeightStamp = -1;
             readSlugs = null;
+            topicReadFlags = null;
+            topicReadFlagsTopics = null;
+            topicReadFlagsRevision = -1;
+            pendingReadSlugs = null;
             topicScroll = Vector2.zero;
             contentScroll = Vector2.zero;
         }
@@ -183,36 +203,41 @@ namespace Implanner.UI
             bool scrollbar = viewHeight > inner.height;
             var viewRect = new Rect(0f, 0f,
                 inner.width - (scrollbar ? 16f : 0f), viewHeight);
+            bool[] read = TopicReadFlags(topics);
             Widgets.BeginScrollView(inner, ref topicScroll, viewRect);
-            HashSet<string> read = ReadSlugs();
-            using (GuiStateScope.Capture())
+            try
             {
-                Text.Font = GameFont.Small;
-                Text.Anchor = TextAnchor.MiddleLeft;
-                Text.WordWrap = false;
-                Color plainColor = GUI.color;
-                for (int i = 0; i < topics.Length; i++)
+                using (GuiStateScope.Capture())
                 {
-                    var row = new Rect(0f, i * TopicRowHeight,
-                        viewRect.width, TopicRowHeight);
-                    if (i == selected)
-                        Widgets.DrawBoxSolid(row, TopicSelectedFill);
-                    else
-                        Widgets.DrawHighlightIfMouseover(row);
-                    var label = new Rect(row.x + 8f, row.y,
-                        row.width - 12f, row.height);
-                    GUI.color = read.Contains(topics[i].Entry.Slug)
-                        ? ReadTopicColor : plainColor;
-                    Widgets.Label(label, topics[i].ListTitle);
-                    GUI.color = plainColor;
-                    if (Widgets.ButtonInvisible(row) && i != selected)
+                    Text.Font = GameFont.Small;
+                    Text.Anchor = TextAnchor.MiddleLeft;
+                    Text.WordWrap = false;
+                    Color plainColor = GUI.color;
+                    for (int i = 0; i < topics.Length; i++)
                     {
-                        selectedSlugs[activeChapter] = topics[i].Entry.Slug;
-                        contentScroll = Vector2.zero;
+                        var row = new Rect(0f, i * TopicRowHeight,
+                            viewRect.width, TopicRowHeight);
+                        if (i == selected)
+                            Widgets.DrawBoxSolid(row, TopicSelectedFill);
+                        else
+                            Widgets.DrawHighlightIfMouseover(row);
+                        var label = new Rect(row.x + 8f, row.y,
+                            row.width - 12f, row.height);
+                        GUI.color = read[i] ? ReadTopicColor : plainColor;
+                        Widgets.Label(label, topics[i].ListTitle);
+                        GUI.color = plainColor;
+                        if (Widgets.ButtonInvisible(row) && i != selected)
+                        {
+                            selectedSlugs[activeChapter] = topics[i].Entry.Slug;
+                            contentScroll = Vector2.zero;
+                        }
                     }
                 }
             }
-            Widgets.EndScrollView();
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         private HashSet<string> ReadSlugs()
@@ -228,16 +253,49 @@ namespace Implanner.UI
             return readSlugs;
         }
 
-        /// Records that a topic was displayed. Persists per player, once per
-        /// new slug (event-boundary write, matching the fold-state toggle).
+        private bool[] TopicReadFlags(HelpTopicData[] topics)
+        {
+            if (topicReadFlags == null
+                || !ReferenceEquals(topicReadFlagsTopics, topics)
+                || topicReadFlagsRevision != readRevision)
+            {
+                HashSet<string> read = ReadSlugs();
+                var flags = new bool[topics.Length];
+                for (int i = 0; i < topics.Length; i++)
+                    flags[i] = read.Contains(topics[i].Entry.Slug);
+                topicReadFlags = flags;
+                topicReadFlagsTopics = topics;
+                topicReadFlagsRevision = readRevision;
+            }
+            return topicReadFlags;
+        }
+
+        /// Records that a topic was displayed: the view's read set updates
+        /// at once (the list tint follows this frame); the per-player
+        /// settings write is deferred to FlushPendingWrites.
         private void MarkTopicRead(string slug)
         {
             HashSet<string> read = ReadSlugs();
             if (!read.Add(slug)) return;
+            readRevision++;
+            (pendingReadSlugs ??= new List<string>()).Add(slug);
+        }
+
+        /// Persists topics marked read since the last flush, one settings
+        /// write per batch. Called from the dialog's WindowUpdate and on
+        /// close, never from a render pass.
+        internal void FlushPendingWrites()
+        {
+            List<string>? pending = pendingReadSlugs;
+            if (pending == null || pending.Count == 0) return;
             var settings = ImplannerMod.Settings;
-            if (settings == null) return;
-            settings.helpTopicsRead.Add(slug);
-            ImplannerMod.Instance.WriteSettings();
+            if (settings != null)
+            {
+                for (int i = 0; i < pending.Count; i++)
+                    settings.helpTopicsRead.Add(pending[i]);
+                ImplannerMod.Instance.WriteSettings();
+            }
+            pending.Clear();
         }
 
         private void DrawTopic(Rect rect, int chapterIndex,
@@ -262,8 +320,14 @@ namespace Implanner.UI
                 chapterIndex, topic, contentWidth);
             var viewRect = new Rect(0f, 0f, contentWidth, model.Height);
             Widgets.BeginScrollView(scrollOut, ref contentScroll, viewRect);
-            DrawModelItems(model, contentScroll.y, scrollOut.height);
-            Widgets.EndScrollView();
+            try
+            {
+                DrawModelItems(model, contentScroll.y, scrollOut.height);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
         private void DrawModelItems(

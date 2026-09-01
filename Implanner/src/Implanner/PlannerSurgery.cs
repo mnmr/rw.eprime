@@ -13,20 +13,15 @@ namespace Implanner
     /// scheduling after player bills, the automatic doctor-skill floor, and
     /// owned-bill lifecycle. Runs only from PlannerReconciler's synchronized
     /// tick path, consumes only authoritative synchronized state, and takes
-    /// all colony structure from the pass's ColonyIndex — no map or faction
-    /// resolution happens here.
+    /// all colony structure and per-pawn evaluations from the pass — no map
+    /// or faction resolution happens here.
     internal static class PlannerSurgery
     {
-        /// The doctor-floor evaluation boundary approved in AGENTS.md.
-        private static readonly FixedTickBoundaryGate floorBoundary =
-            new FixedTickBoundaryGate(1020);
-
-        internal static void Reset() => floorBoundary.Reset();
-
         internal static PlannerChange Reconcile(
-            ImplannerStore store, ColonyIndex index)
+            ImplannerStore store, ReconcilePass pass)
         {
             PlannerModel model = store.Model;
+            ColonyIndex index = pass.Index;
             var change = PlannerChange.None;
 
             // Lifecycle hygiene runs even while paused: floors of locations
@@ -38,9 +33,9 @@ namespace Implanner
 
             if (model.AutomationPaused) return change;
 
-            change |= EvaluateDoctorFloors(model, index);
-            change |= AllocateImplantItems(model, index);
-            change |= ScheduleOperations(model, index);
+            change |= EvaluateDoctorFloors(model, pass);
+            change |= AllocateImplantItems(model, pass);
+            change |= ScheduleOperations(model, pass);
             return change;
         }
 
@@ -53,15 +48,16 @@ namespace Implanner
                 ? pawn.skills?.GetSkill(SkillDefOf.Medicine)?.Level ?? 0
                 : -1;
 
-        /// Automatic doctor floor: at most every 1020 game ticks, publish
+        /// Automatic doctor floor: on the approved 1020-tick boundary
+        /// (PlannerReconciler.BoundaryTicks, pure tick arithmetic), publish
         /// each colony's CURRENT best eligible Medical skill — up, down, or
         /// cleared when the colony has no eligible doctor left.
         private static PlannerChange EvaluateDoctorFloors(
-            PlannerModel model, ColonyIndex index)
+            PlannerModel model, ReconcilePass pass)
         {
-            if (!model.AutoDoctorFloor) return PlannerChange.None;
-            if (!floorBoundary.Observe(Find.TickManager.TicksGame))
+            if (!model.AutoDoctorFloor || !pass.BoundaryHit)
                 return PlannerChange.None;
+            ColonyIndex index = pass.Index;
 
             var change = PlannerChange.None;
             var best = new Dictionary<string, int>(StringComparer.Ordinal);
@@ -124,8 +120,9 @@ namespace Implanner
         /// touched: automation holds (and releases excess holdings) until
         /// enough items exist.
         private static PlannerChange AllocateImplantItems(
-            PlannerModel model, ColonyIndex index)
+            PlannerModel model, ReconcilePass pass)
         {
+            ColonyIndex index = pass.Index;
             var change = PlannerChange.None;
 
             var reservedGoals = new HashSet<(int, string)>();
@@ -158,15 +155,10 @@ namespace Implanner
                 for (int i = 0; i < colony.PawnIds.Count; i++)
                 {
                     int pawnId = colony.PawnIds[i];
-                    Pawn pawn = index.PawnsById[pawnId];
-                    Plan? plan = model.AssignedPlan(pawnId);
-                    if (plan == null) continue;
-                    List<ImplantGoal> goals = model.EffectiveImplants(plan);
-                    if (goals.Count == 0) continue;
-                    List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                        pawn, goals);
-                    List<string> batch = SurgeryPlanner.ComputeBatch(
-                        missing, model, goals, model.Iteration);
+                    PawnEvaluation? evaluation = pass.Evaluate(pawnId);
+                    if (evaluation == null) continue;
+                    IReadOnlyList<ImplantGoal> goals = evaluation.Goals;
+                    List<string> batch = evaluation.Batch;
                     for (int k = 0; k < batch.Count; k++)
                     {
                         string key = batch[k];
@@ -188,17 +180,12 @@ namespace Implanner
                 if (work.Count == 0) continue;
                 SurgeryPlanner.Order(work, model.Iteration);
 
-                // This colony's unreserved implant stock; the index's item
-                // ids are pre-sorted, so allocation stays lowest-id first.
-                var stock = new List<Thing>();
-                for (int i = 0; i < colony.ItemIds.Count; i++)
-                {
-                    int itemId = colony.ItemIds[i];
-                    if (reservedItems.Contains(itemId)) continue;
-                    Thing thing = index.ItemsById[itemId];
-                    if (thing.IsForbidden(Faction.OfPlayer)) continue;
-                    stock.Add(thing);
-                }
+                // This colony's unreserved implant stock per kind, resolved
+                // on first demand; the index's ids are pre-sorted, so
+                // allocation stays lowest-id first, and each kind advances
+                // its own cursor as items are taken.
+                var stockByDef = new Dictionary<ThingDef, List<Thing>>();
+                var cursor = new Dictionary<ThingDef, int>();
 
                 for (int i = 0; i < work.Count; i++)
                 {
@@ -208,21 +195,42 @@ namespace Implanner
                     // allowance; surgery holds until more items exist.
                     bool capped = allowance.TryGetValue(required, out int left);
                     if (capped && left <= 0) continue;
-                    for (int s = 0; s < stock.Count; s++)
+                    if (!stockByDef.TryGetValue(required, out List<Thing> stock))
                     {
-                        Thing thing = stock[s];
-                        if (thing == null || thing.def != required) continue;
-                        change |= model.Reserve(
-                            thing.thingIDNumber, unit.PawnId, unit.GoalKey);
-                        reservedItems.Add(thing.thingIDNumber);
-                        reservedGoals.Add((unit.PawnId, unit.GoalKey));
-                        stock[s] = null!;
-                        if (capped) allowance[required] = left - 1;
-                        break;
+                        stock = FreeStock(colony, index, required, reservedItems);
+                        stockByDef.Add(required, stock);
                     }
+                    cursor.TryGetValue(required, out int at);
+                    if (at >= stock.Count) continue;
+                    Thing thing = stock[at];
+                    cursor[required] = at + 1;
+                    change |= model.Reserve(
+                        thing.thingIDNumber, unit.PawnId, unit.GoalKey);
+                    reservedItems.Add(thing.thingIDNumber);
+                    reservedGoals.Add((unit.PawnId, unit.GoalKey));
+                    if (capped) allowance[required] = left - 1;
                 }
             }
             return change;
+        }
+
+        /// The colony's unreserved, unforbidden items of one kind, ids
+        /// ascending.
+        private static List<Thing> FreeStock(Colony colony, ColonyIndex index,
+            ThingDef def, HashSet<int> reservedItems)
+        {
+            var stock = new List<Thing>();
+            List<int>? ids = colony.ItemIdsOf(def);
+            if (ids == null) return stock;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                int itemId = ids[i];
+                if (reservedItems.Contains(itemId)) continue;
+                Thing thing = index.ItemsById[itemId];
+                if (thing.IsForbidden(Faction.OfPlayer)) continue;
+                stock.Add(thing);
+            }
+            return stock;
         }
 
         /// Computes the per-kind allocation allowance at one colony under the
@@ -234,43 +242,38 @@ namespace Implanner
             Dictionary<ThingDef, int> allowance)
         {
             var change = PlannerChange.None;
-            var present = new Dictionary<ThingDef, int>();
-            var heldIds = new Dictionary<ThingDef, List<int>>();
-            for (int i = 0; i < colony.ItemIds.Count; i++)
-            {
-                int itemId = colony.ItemIds[i];
-                Thing thing = index.ItemsById[itemId];
-                if (!playerReserves.ContainsKey(thing.def)) continue;
-                if (thing.IsForbidden(Faction.OfPlayer)) continue;
-                present.TryGetValue(thing.def, out int count);
-                present[thing.def] = count + thing.stackCount;
-                if (!model.Reservations.ContainsKey(itemId)) continue;
-                if (!heldIds.TryGetValue(thing.def, out List<int> ids))
-                {
-                    ids = new List<int>();
-                    heldIds.Add(thing.def, ids);
-                }
-                ids.Add(itemId);
-            }
+            // Kinds are independent of one another, so the reserve map's
+            // iteration order cannot change the outcome.
             foreach (KeyValuePair<ThingDef, int> pair in playerReserves)
             {
-                present.TryGetValue(pair.Key, out int total);
-                int cap = Math.Max(0, total - pair.Value);
-                heldIds.TryGetValue(pair.Key, out List<int>? ids);
-                int held = ids?.Count ?? 0;
-                if (ids != null && held > cap)
-                {
-                    ids.Sort();
-                    for (int i = ids.Count - 1; i >= 0 && held > cap; i--, held--)
+                int total = 0;
+                List<int>? held = null;
+                List<int>? ids = colony.ItemIdsOf(pair.Key);
+                if (ids != null)
+                    for (int i = 0; i < ids.Count; i++)
                     {
-                        model.TryGetReservation(ids[i], out ItemReservation reservation);
-                        change |= model.ReleaseReservation(ids[i]);
-                        reservedItems.Remove(ids[i]);
+                        int itemId = ids[i];
+                        Thing thing = index.ItemsById[itemId];
+                        if (thing.IsForbidden(Faction.OfPlayer)) continue;
+                        total += thing.stackCount;
+                        if (model.Reservations.ContainsKey(itemId))
+                            (held ??= new List<int>()).Add(itemId);
+                    }
+                int cap = Math.Max(0, total - pair.Value);
+                int heldCount = held?.Count ?? 0;
+                if (held != null && heldCount > cap)
+                {
+                    // Ids arrive ascending from the index: newest first.
+                    for (int i = held.Count - 1; i >= 0 && heldCount > cap; i--, heldCount--)
+                    {
+                        model.TryGetReservation(held[i], out ItemReservation reservation);
+                        change |= model.ReleaseReservation(held[i]);
+                        reservedItems.Remove(held[i]);
                         reservedGoals.Remove(
                             (reservation.PawnId, reservation.GoalKey));
                     }
                 }
-                allowance[pair.Key] = cap - held;
+                allowance[pair.Key] = cap - heldCount;
             }
             return change;
         }
@@ -305,7 +308,7 @@ namespace Implanner
             var statuses = new Dictionary<string, SlotStatus>(StringComparer.Ordinal);
             PawnPlace place = ColonyScope.PlaceOf(pawn);
             effectiveFloor = model.EffectiveDoctorFloor(place.LocationId ?? "");
-            List<ImplantGoal> goals = model.EffectiveImplants(plan);
+            IReadOnlyList<ImplantGoal> goals = model.EffectiveImplants(plan);
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
@@ -348,7 +351,9 @@ namespace Implanner
             map = FloorMaps.Canonical(map);
             if (map == null) return 0;
             int best = 0;
-            List<Pawn> colonists = map.mapPawns.FreeColonists;
+            // Spawned only: a doctor sealed in a casket or pod cannot
+            // operate and must not raise the floor the UI reports.
+            List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < colonists.Count; i++)
             {
                 int skill = EligibleDoctorSkill(colonists[i]);
@@ -364,21 +369,53 @@ namespace Implanner
         /// user operations count as scheduled; deleted Implanner operations
         /// are recreated while goal and reservation remain valid.
         private static PlannerChange ScheduleOperations(
-            PlannerModel model, ColonyIndex index)
+            PlannerModel model, ReconcilePass pass)
         {
+            ColonyIndex index = pass.Index;
             var change = PlannerChange.None;
+
+            var pawnIds = new List<int>(model.Assignments.Keys);
+            pawnIds.Sort();
+
+            // Retract owned operations whose goal is no longer pursued
+            // (delivered, removed, or blocked) BEFORE counting the
+            // concurrency cap, so a pawn whose last record just went stale
+            // frees its slot in this pass. Away pawns keep any
+            // already-scheduled operations untouched.
+            for (int i = 0; i < pawnIds.Count; i++)
+            {
+                int pawnId = pawnIds[i];
+                if (index.ColonyOfPawn(pawnId) == null) continue;
+                PawnEvaluation? evaluation = pass.Evaluate(pawnId);
+                if (evaluation == null) continue;
+                IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
+                if (owned == null) continue;
+                List<string>? stale = null;
+                foreach (KeyValuePair<string, string> pair in owned)
+                    if (!evaluation.Missing.Contains(pair.Key))
+                        (stale ??= new List<string>()).Add(pair.Key);
+                if (stale == null) continue;
+                Pawn pawn = index.PawnsById[pawnId];
+                stale.Sort(StringComparer.Ordinal);
+                for (int k = 0; k < stale.Count; k++)
+                {
+                    Bill? bill = pass.FindBill(pawn.BillStack, owned[stale[k]]);
+                    if (bill != null) pawn.BillStack.Delete(bill);
+                    change |= model.RemoveOwnedBill(pawnId, stale[k]);
+                }
+            }
 
             var reservedItemByGoal = new Dictionary<(int, string), int>();
             foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
                 reservedItemByGoal[(pair.Value.PawnId, pair.Value.GoalKey)] = pair.Key;
 
-            // Concurrent-surgeries cap: colonists per colony that already
-            // hold Implanner operations. New colonists only start while the
-            // colony stays under SurgeryConcurrency; one already scheduled
-            // keeps completing its batch regardless.
+            // Concurrent-surgeries cap: colonists per colony that hold live
+            // Implanner operations after retraction. New colonists only
+            // start while the colony stays under SurgeryConcurrency; one
+            // already scheduled keeps completing its batch regardless.
             var plannedByColony = new Dictionary<string, int>();
             var countedPawns = new HashSet<int>();
-            foreach (KeyValuePair<int, Dictionary<string, string>> pair
+            foreach (KeyValuePair<int, IReadOnlyDictionary<string, string>> pair
                 in model.OwnedBills)
             {
                 if (pair.Value.Count == 0) continue;
@@ -415,24 +452,16 @@ namespace Implanner
                     }
                 }
 
-            var pawnIds = new List<int>(model.Assignments.Keys);
-            pawnIds.Sort();
             for (int i = 0; i < pawnIds.Count; i++)
             {
                 int pawnId = pawnIds[i];
-                if (!index.PawnsById.TryGetValue(pawnId, out Pawn pawn)) continue;
                 Colony? colony = index.ColonyOfPawn(pawnId);
-                // Away pawns receive no new surgery automation and keep any
-                // already-scheduled operations untouched.
+                // Away pawns receive no new surgery automation.
                 if (colony == null) continue;
-                Plan? plan = model.AssignedPlan(pawnId);
-                if (plan == null) continue;
-                List<ImplantGoal> goals = model.EffectiveImplants(plan);
-
-                List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    pawn, goals);
-                List<string> batch = SurgeryPlanner.ComputeBatch(
-                    missing, model, goals, model.Iteration);
+                PawnEvaluation? evaluation = pass.Evaluate(pawnId);
+                if (evaluation == null) continue;
+                Pawn pawn = index.PawnsById[pawnId];
+                List<string> batch = evaluation.Batch;
 
                 bool ready = batch.Count > 0;
                 for (int k = 0; ready && k < batch.Count; k++)
@@ -442,36 +471,15 @@ namespace Implanner
                         && index.SameColony(pawnId, itemId);
                 }
 
-                bool release = ready && HealthGate(pawn);
+                // Batch membership and health gate the RELEASE of new
+                // operations — an already-scheduled valid operation is
+                // never pulled back because the pawn got wounded or the
+                // batch grew.
+                if (!ready || !HealthGate(pawn)) continue;
                 int floor = model.EffectiveDoctorFloor(colony.LocationId);
 
-                // Retract owned operations only when their goal is no longer
-                // pursued (delivered, removed, or blocked). Batch
-                // membership and health gate the RELEASE of new operations —
-                // an already-scheduled valid operation is never pulled back
-                // because the pawn got wounded or the batch grew.
-                Dictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
-                if (owned != null)
-                {
-                    List<string>? stale = null;
-                    foreach (KeyValuePair<string, string> pair in owned)
-                        if (!missing.Contains(pair.Key))
-                            (stale ??= new List<string>()).Add(pair.Key);
-                    if (stale != null)
-                    {
-                        stale.Sort(StringComparer.Ordinal);
-                        for (int k = 0; k < stale.Count; k++)
-                        {
-                            Bill? bill = FindBillById(pawn, owned[stale[k]]);
-                            if (bill != null) pawn.BillStack.Delete(bill);
-                            change |= model.RemoveOwnedBill(pawnId, stale[k]);
-                        }
-                    }
-                }
-
-                if (!release) continue;
-
                 // The cap gates only colonists without scheduled operations.
+                IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
                 if (owned == null || owned.Count == 0)
                 {
                     plannedByColony.TryGetValue(
@@ -481,12 +489,15 @@ namespace Implanner
                 }
 
                 for (int k = 0; k < batch.Count; k++)
-                    change |= EnsureOperation(model, pawn, pawnId, goals,
-                        batch[k], floor);
+                    change |= EnsureOperation(model, pass, pawn, pawnId,
+                        evaluation.Goals, batch[k], floor);
             }
 
-            // Sweep records of pawns that lost their assignment or left play;
-            // a still-present pawn also loses the orphaned bills themselves.
+            // Sweep records of pawns that lost their assignment or left
+            // play entirely (no longer alive anywhere as our colonist); a
+            // still-present pawn also loses the orphaned bills themselves.
+            // A pawn merely away (caravan, transporter or gravship in
+            // flight, held in a casket) is present and keeps its records.
             var billPawns = new List<int>(model.OwnedBills.Keys);
             billPawns.Sort();
             for (int i = 0; i < billPawns.Count; i++)
@@ -494,7 +505,7 @@ namespace Implanner
                 int pawnId = billPawns[i];
                 bool present = index.PawnsById.TryGetValue(pawnId, out Pawn pawn);
                 if (model.AssignedPlan(pawnId) != null && present) continue;
-                Dictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
+                IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
                 if (owned == null) continue;
                 var keys = new List<string>(owned.Keys);
                 keys.Sort(StringComparer.Ordinal);
@@ -502,7 +513,7 @@ namespace Implanner
                 {
                     if (present)
                     {
-                        Bill? bill = FindBillById(pawn, owned[keys[k]]);
+                        Bill? bill = pass.FindBill(pawn.BillStack, owned[keys[k]]);
                         if (bill != null) pawn.BillStack.Delete(bill);
                     }
                     change |= model.RemoveOwnedBill(pawnId, keys[k]);
@@ -521,8 +532,8 @@ namespace Implanner
         }
 
         private static PlannerChange EnsureOperation(PlannerModel model,
-            Pawn pawn, int pawnId, IReadOnlyList<ImplantGoal> goals,
-            string goalKey, int floor)
+            ReconcilePass pass, Pawn pawn, int pawnId,
+            IReadOnlyList<ImplantGoal> goals, string goalKey, int floor)
         {
             if (!GoalKeys.TryResolveImplantSlot(
                     goals, goalKey, out ImplantGoal goal, out int ordinal))
@@ -537,7 +548,9 @@ namespace Implanner
             // Our recorded operation still stands: keep it, tracking the
             // effective doctor floor.
             string? recordedId = model.OwnedBill(pawnId, goalKey);
-            Bill? recorded = recordedId != null ? FindBillById(pawn, recordedId) : null;
+            Bill? recorded = recordedId != null
+                ? pass.FindBill(pawn.BillStack, recordedId)
+                : null;
             if (recorded is Bill_Medical mine
                 && mine.recipe == recipe && mine.Part == part)
             {
@@ -571,7 +584,7 @@ namespace Implanner
             bills.AddBill(bill);
             bill.Part = part;
             bill.allowedSkillRange = new IntRange(floor, PlannerModel.DoctorFloorMax);
-            return change | model.SetOwnedBill(pawnId, goalKey, bill.GetUniqueLoadID());
+            return change | model.SetOwnedBill(pawnId, goalKey, pass.BillId(bill));
         }
 
         /// The deterministic surgery recipe for an implant at a part: lowest
@@ -605,16 +618,6 @@ namespace Implanner
             if (pawn.Downed) return false;
             if (pawn.health.hediffSet.BleedRateTotal > 0f) return false;
             return !pawn.health.HasHediffsNeedingTend();
-        }
-
-        private static Bill? FindBillById(Pawn pawn, string billId)
-        {
-            BillStack bills = pawn.BillStack;
-            for (int i = 0; i < bills.Count; i++)
-                if (string.Equals(bills[i].GetUniqueLoadID(), billId,
-                        StringComparison.Ordinal))
-                    return bills[i];
-            return null;
         }
     }
 }

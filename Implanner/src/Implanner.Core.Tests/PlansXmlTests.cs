@@ -129,6 +129,11 @@ public class PlansXmlTests
                 + "<Slot>-1</Slot></Implant></Plan></ImplannerPlans>",
             "<ImplannerPlans><Plan Name=\"A\"><Implant Def=\"BionicArm\">"
                 + "<Slot>zero</Slot></Implant></Plan></ImplannerPlans>",
+            // A plan can never be its own base, directly or through a cycle.
+            "<ImplannerPlans><Plan Name=\"A\" Extends=\"A\"/></ImplannerPlans>",
+            "<ImplannerPlans><Plan Name=\"A\" Extends=\"B\"/>"
+                + "<Plan Name=\"B\" Extends=\"C\"/>"
+                + "<Plan Name=\"C\" Extends=\"A\"/></ImplannerPlans>",
             null,
             "",
         };
@@ -200,6 +205,35 @@ public class PlansXmlTests
         await Assert.That(PlansXml.TryImport(xml, out var all, out _)).IsTrue();
         await Assert.That(all.Count).IsEqualTo(2);
         await Assert.That(all[1].BasePlanId).IsEqualTo(1);
+    }
+
+    /// MayRequire lists every mod that must be active (ALL semantics): one
+    /// missing id skips the element. A plan whose implants are all skipped
+    /// still imports, as an empty plan.
+    [Test]
+    public async Task MayRequireWithSeveralIdsNeedsAllOfThem()
+    {
+        string xml =
+            "<ImplannerPlans><Plan Name=\"Modded\">"
+            + "<Implant Def=\"ArchoEye\" MayRequire=\"mod.a, mod.b\"><Slot>0</Slot></Implant>"
+            + "<Implant Def=\"ArchoArm\" MayRequire=\"mod.a\"><Slot>0</Slot></Implant>"
+            + "</Plan></ImplannerPlans>";
+
+        await Assert.That(PlansXml.TryImport(xml, out var onlyA, out _,
+            id => id == "mod.a")).IsTrue();
+        await Assert.That(onlyA.Count).IsEqualTo(1);
+        await Assert.That(onlyA[0].Implants.Count).IsEqualTo(1);
+        await Assert.That(onlyA[0].Implants[0].ImplantDefName).IsEqualTo("ArchoArm");
+
+        await Assert.That(PlansXml.TryImport(xml, out var both, out _,
+            id => id == "mod.a" || id == "mod.b")).IsTrue();
+        await Assert.That(both[0].Implants.Count).IsEqualTo(2);
+
+        await Assert.That(PlansXml.TryImport(xml, out var none, out _,
+            _ => false)).IsTrue();
+        await Assert.That(none.Count).IsEqualTo(1);
+        await Assert.That(none[0].Name).IsEqualTo("Modded");
+        await Assert.That(none[0].Implants.Count).IsEqualTo(0);
     }
 
     [Test]

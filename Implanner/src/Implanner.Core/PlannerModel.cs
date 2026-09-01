@@ -104,8 +104,11 @@ namespace Implanner.Core
             new Dictionary<string, int>(StringComparer.Ordinal);
         readonly Dictionary<string, int> implantReserves =
             new Dictionary<string, int>(StringComparer.Ordinal);
-        readonly Dictionary<int, Dictionary<string, string>> ownedBills =
-            new Dictionary<int, Dictionary<string, string>>();
+        // Every value is a Dictionary<string, string> created by this class;
+        // the read-only element type lets the map publish without copying
+        // (Dictionary is invariant), and the two mutators cast back.
+        readonly Dictionary<int, IReadOnlyDictionary<string, string>> ownedBills =
+            new Dictionary<int, IReadOnlyDictionary<string, string>>();
         readonly Dictionary<string, int> resourceReserves =
             new Dictionary<string, int>(StringComparer.Ordinal);
         readonly Dictionary<string, string> ownedProductionBills =
@@ -227,17 +230,15 @@ namespace Implanner.Core
             {
                 Plan plan = plans[p];
                 if (seenPlanIds.Add(plan.Id)) continue;
-                var replacement = new Plan(nextPlanId++, plan.Name)
-                {
-                    BasePlanId = plan.BasePlanId,
-                };
+                int newId = nextPlanId++;
+                var goals = new List<ImplantGoal>(plan.Implants.Count);
                 for (int i = 0; i < plan.Implants.Count; i++)
                 {
                     ImplantGoal goal = plan.Implants[i];
-                    replacement.Implants.Add(new ImplantGoal(
-                        replacement.Id, goal.ImplantDefName, goal.SlotOrdinals));
+                    goals.Add(new ImplantGoal(
+                        newId, goal.ImplantDefName, goal.SlotOrdinals));
                 }
-                plans[p] = replacement;
+                plans[p] = new Plan(newId, plan.Name, plan.BasePlanId, goals);
             }
         }
 
@@ -279,8 +280,14 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
+        /// The synced command carries the strategy as a plain int, so a
+        /// value outside the enum normalizes to the default exactly like
+        /// LoadOptions before the no-op comparison.
         public PlannerChange SetIteration(IterationStrategy iteration)
         {
+            iteration = iteration == IterationStrategy.Colonist
+                ? IterationStrategy.Colonist
+                : IterationStrategy.ImplantTier;
             if (Iteration == iteration) return PlannerChange.None;
             Iteration = iteration;
             return PlannerChange.Options;
@@ -302,7 +309,9 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
-        /// Deterministic load path.
+        /// Deterministic load path. Persisted values clamp exactly like the
+        /// setters; an iteration value outside the enum (a save from a
+        /// build with other strategies) falls back to the default.
         public void LoadOptions(bool automationPaused,
             IterationStrategy iteration, int manualDoctorFloor, bool autoDoctorFloor,
             int surgeryConcurrency, bool countHospitalized,
@@ -310,7 +319,9 @@ namespace Implanner.Core
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries)
         {
             AutomationPaused = automationPaused;
-            Iteration = iteration;
+            Iteration = iteration == IterationStrategy.Colonist
+                ? IterationStrategy.Colonist
+                : IterationStrategy.ImplantTier;
             ManualDoctorFloor = manualDoctorFloor < DoctorFloorMin ? DoctorFloorMin
                 : manualDoctorFloor > DoctorFloorMax ? DoctorFloorMax
                 : manualDoctorFloor;
@@ -390,7 +401,10 @@ namespace Implanner.Core
             return change;
         }
 
-        /// Deterministic load path: restores one order entry.
+        /// Deterministic load path: restores one order entry. Any value is
+        /// a valid position (consumers only compare positions), so nothing
+        /// is normalized; a stale entry for a kind no longer in its tier is
+        /// harmless and gets overwritten by the next ApplyTierOrder.
         public void AddLoadedImplantOrder(string defName, int order) =>
             implantOrder[defName] = order;
 
@@ -440,9 +454,13 @@ namespace Implanner.Core
             return PlannerChange.Surgery;
         }
 
-        /// Deterministic load path: restores one floor entry.
-        public void AddLoadedDoctorFloor(string colonyId, int floor) =>
-            doctorFloors[colonyId] = floor;
+        /// Deterministic load path: restores one floor entry, normalized
+        /// like SetDoctorFloor (clamped; zero stores nothing).
+        public void AddLoadedDoctorFloor(string colonyId, int floor)
+        {
+            if (floor > DoctorFloorMax) floor = DoctorFloorMax;
+            if (floor > 0) doctorFloors[colonyId] = floor;
+        }
 
         // ------------------------------------------- Implant reservations
 
@@ -481,9 +499,10 @@ namespace Implanner.Core
         /// Implanner-owned operation bills per pawn: goal key to the bill's
         /// stable unique load id. Only bookkeeping — the bill object itself
         /// is owned by the game.
-        public IReadOnlyDictionary<int, Dictionary<string, string>> OwnedBills => ownedBills;
+        public IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>> OwnedBills =>
+            ownedBills;
 
-        public Dictionary<string, string>? OwnedBillsFor(int pawnId) =>
+        public IReadOnlyDictionary<string, string>? OwnedBillsFor(int pawnId) =>
             ownedBills.TryGetValue(pawnId, out var bills) ? bills : null;
 
         public string? OwnedBill(int pawnId, string goalKey) =>
@@ -492,14 +511,19 @@ namespace Implanner.Core
                 ? billId
                 : null;
 
+        Dictionary<string, string> OwnedBillsOrCreate(int pawnId)
+        {
+            if (ownedBills.TryGetValue(pawnId, out var bills))
+                return (Dictionary<string, string>)bills;
+            var created = new Dictionary<string, string>(StringComparer.Ordinal);
+            ownedBills.Add(pawnId, created);
+            return created;
+        }
+
         /// Records a scheduled Implanner operation. Deterministic reconcile path.
         public PlannerChange SetOwnedBill(int pawnId, string goalKey, string billId)
         {
-            if (!ownedBills.TryGetValue(pawnId, out var bills))
-            {
-                bills = new Dictionary<string, string>(StringComparer.Ordinal);
-                ownedBills.Add(pawnId, bills);
-            }
+            Dictionary<string, string> bills = OwnedBillsOrCreate(pawnId);
             if (bills.TryGetValue(goalKey, out string existing)
                 && string.Equals(existing, billId, StringComparison.Ordinal))
                 return PlannerChange.None;
@@ -510,22 +534,15 @@ namespace Implanner.Core
         public PlannerChange RemoveOwnedBill(int pawnId, string goalKey)
         {
             if (!ownedBills.TryGetValue(pawnId, out var bills)
-                || !bills.Remove(goalKey))
+                || !((Dictionary<string, string>)bills).Remove(goalKey))
                 return PlannerChange.None;
             if (bills.Count == 0) ownedBills.Remove(pawnId);
             return PlannerChange.Surgery;
         }
 
         /// Deterministic load path: restores one owned-bill entry.
-        public void AddLoadedOwnedBill(int pawnId, string goalKey, string billId)
-        {
-            if (!ownedBills.TryGetValue(pawnId, out var bills))
-            {
-                bills = new Dictionary<string, string>(StringComparer.Ordinal);
-                ownedBills.Add(pawnId, bills);
-            }
-            bills[goalKey] = billId;
-        }
+        public void AddLoadedOwnedBill(int pawnId, string goalKey, string billId) =>
+            OwnedBillsOrCreate(pawnId)[goalKey] = billId;
 
         // ---------------------------------------------------- Production
 
@@ -729,7 +746,17 @@ namespace Implanner.Core
         /// Injected by the game layer from definition data, so it is
         /// identical on every multiplayer client; null disables conflict
         /// suppression (Core tests exercise it explicitly).
-        public Func<ImplantGoal, int, ImplantGoal, int, bool>? SlotConflictResolver;
+        public Func<ImplantGoal, int, ImplantGoal, int, bool>? SlotConflictResolver
+        {
+            get;
+            private set;
+        }
+
+        /// Wiring, not a mutation: the resolver is definition-derived and
+        /// set once when the store is constructed or hydrated.
+        public void SetSlotConflictResolver(
+            Func<ImplantGoal, int, ImplantGoal, int, bool>? resolver) =>
+            SlotConflictResolver = resolver;
 
         /// The plan's effective implant goals: its own goals first, then the
         /// base chain's, with an own selection overriding a base goal's
@@ -739,9 +766,12 @@ namespace Implanner.Core
         /// overridden disappears; a partially overridden goal keeps its id
         /// with the remaining slots, so its goal keys stay stable. Base links
         /// are set only at creation, so the chain cannot cycle; the visited
-        /// guard is cheap defense against corrupted data.
-        public List<ImplantGoal> EffectiveImplants(Plan plan)
+        /// guard is cheap defense against corrupted data. A plan without a
+        /// base has nothing to merge or suppress and answers with its own
+        /// (read-only) goal list, so the common case allocates nothing.
+        public IReadOnlyList<ImplantGoal> EffectiveImplants(Plan plan)
         {
+            if (plan.BasePlanId == 0) return plan.Implants;
             var result = new List<ImplantGoal>(plan.Implants);
             var covered = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
             for (int i = 0; i < plan.Implants.Count; i++)
@@ -820,7 +850,7 @@ namespace Implanner.Core
                 if (!string.Equals(plan.Implants[i].ImplantDefName,
                         implantDefName, StringComparison.Ordinal))
                     continue;
-                plan.Implants.RemoveAt(i);
+                plan.MutableImplants.RemoveAt(i);
                 return PlannerChange.Plans;
             }
             return PlannerChange.None;
@@ -854,15 +884,15 @@ namespace Implanner.Core
                     ordinals.Remove(slotOrdinal);
                 }
                 if (ordinals.Count == 0)
-                    plan.Implants.RemoveAt(i);
+                    plan.MutableImplants.RemoveAt(i);
                 else
-                    plan.Implants[i] = new ImplantGoal(plan.Id, implantDefName, ordinals);
+                    plan.MutableImplants[i] = new ImplantGoal(plan.Id, implantDefName, ordinals);
                 if (wanted)
                     RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
                 return PlannerChange.Plans;
             }
             if (!wanted) return PlannerChange.None;
-            plan.Implants.Add(new ImplantGoal(
+            plan.MutableImplants.Add(new ImplantGoal(
                 plan.Id, implantDefName, new List<int> { slotOrdinal }));
             RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
             return PlannerChange.Plans;
@@ -896,9 +926,9 @@ namespace Implanner.Core
                 }
                 if (!anyRemoved) continue;
                 if (surviving == null)
-                    plan.Implants.RemoveAt(i);
+                    plan.MutableImplants.RemoveAt(i);
                 else
-                    plan.Implants[i] = new ImplantGoal(
+                    plan.MutableImplants[i] = new ImplantGoal(
                         other.PlanId, other.ImplantDefName, surviving);
             }
         }
@@ -928,7 +958,9 @@ namespace Implanner.Core
         }
 
         /// Load-time cleanup: drops assignments to missing plans and pawns
-        /// that no longer exist, and detaches plans whose base plan is gone.
+        /// that no longer exist, detaches plans whose base plan is gone,
+        /// releases reservations of unassigned or missing pawns, and drops
+        /// owned-bill records only for pawns that no longer exist.
         /// Deterministic for the same inputs.
         public PlannerChange CleanupMissing(Func<int, bool> pawnExists)
         {
@@ -971,9 +1003,14 @@ namespace Implanner.Core
                 reservations.Remove(dead[i]);
             if (dead.Count > 0) change |= PlannerChange.Reservations;
 
+            // Owned-bill records are the only link to the Bill_Medical
+            // objects the game keeps on the pawn. Records of a pawn that
+            // still exists stay even without an assignment: the reconcile
+            // sweep deletes the bill object and the record together, while
+            // dropping the record here would strand the bill on the pawn.
             dead.Clear();
             foreach (var pair in ownedBills)
-                if (!pawnExists(pair.Key) || !assignments.ContainsKey(pair.Key))
+                if (!pawnExists(pair.Key))
                     dead.Add(pair.Key);
             dead.Sort();
             for (int i = 0; i < dead.Count; i++)
@@ -1014,14 +1051,16 @@ namespace Implanner.Core
                 Plan source = parsed[i];
                 string? name = CatalogNameRules.Unique(source.Name, plans, PlanNameOf);
                 if (name == null) continue; // cannot uniquify → skip, not fail
-                var plan = new Plan(takePlanId(), name);
+                int planId = takePlanId();
+                var goals = new List<ImplantGoal>(source.Implants.Count);
                 for (int g = 0; g < source.Implants.Count; g++)
                 {
                     ImplantGoal goal = source.Implants[g];
-                    plan.Implants.Add(new ImplantGoal(
-                        plan.Id, goal.ImplantDefName,
+                    goals.Add(new ImplantGoal(
+                        planId, goal.ImplantDefName,
                         new List<int>(goal.SlotOrdinals)));
                 }
+                var plan = new Plan(planId, name, 0, goals);
                 plans.Add(plan);
                 added.Add(plan);
                 addedBaseTempIds.Add(source.BasePlanId);

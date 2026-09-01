@@ -46,42 +46,17 @@ namespace Implanner.Core
     }
 
     /// Deterministic batch computation and iteration ordering for implant
-    /// automation. Pure: tier membership is supplied by the caller.
+    /// automation. Pure: tier membership derives from the model's star
+    /// rankings and the effective goal list.
     public static class SurgeryPlanner
     {
         /// The pawn's active batch. Colonist iteration: every missing key
         /// (the whole plan is one batch). Tier iteration: the keys of the
         /// active tier — the best tier (lowest index) with missing work.
-        public static List<string> ComputeBatch(
-            IReadOnlyList<string> missingKeys,
-            Func<string, int> tierOf,
-            IterationStrategy strategy)
-        {
-            var batch = new List<string>();
-            if (missingKeys.Count == 0) return batch;
-            if (strategy == IterationStrategy.Colonist)
-            {
-                for (int i = 0; i < missingKeys.Count; i++)
-                    batch.Add(missingKeys[i]);
-                return batch;
-            }
-            int active = int.MaxValue;
-            for (int i = 0; i < missingKeys.Count; i++)
-            {
-                int tier = tierOf(missingKeys[i]);
-                if (tier < active) active = tier;
-            }
-            for (int i = 0; i < missingKeys.Count; i++)
-                if (tierOf(missingKeys[i]) == active)
-                    batch.Add(missingKeys[i]);
-            return batch;
-        }
-
-        /// Allocation-free overload for the reconcile path: tier membership
-        /// derives from the goal key, the effective goal list, and the
-        /// model's star rankings, with no captured delegate. Unresolvable
-        /// keys sort into the worst tier, matching the delegate overload's
-        /// int.MaxValue convention.
+        /// Tier membership derives from the goal key, the effective goal
+        /// list, and the model's star rankings, with no captured delegate
+        /// (reconcile tick path). Unresolvable keys sort into the worst
+        /// tier (int.MaxValue), so they never join a ranked tier's batch.
         public static List<string> ComputeBatch(
             IReadOnlyList<string> missingKeys, PlannerModel model,
             IReadOnlyList<ImplantGoal> goals, IterationStrategy strategy)

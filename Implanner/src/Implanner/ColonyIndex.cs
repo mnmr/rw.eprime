@@ -7,15 +7,23 @@ namespace Implanner
 {
     /// One serviceable colony: the canonical ground map, every floor or
     /// pocket map that canonicalizes to it, the planable colonists held on
-    /// any of those maps, and the colony's spawned haulable items. All lists
-    /// are sorted by stable ids, so iteration is deterministic.
+    /// any of those maps, and the colony's spawned implant items by kind.
+    /// All lists are sorted by stable ids, so iteration is deterministic.
     internal sealed class Colony
     {
         internal Map CanonicalMap = null!;
         internal string LocationId = "";
         internal readonly List<Map> Maps = new List<Map>();
         internal readonly List<int> PawnIds = new List<int>();
-        internal readonly List<int> ItemIds = new List<int>();
+
+        /// Spawned implant items on the colony's maps, keyed by item def,
+        /// ids ascending. Only kinds the implant catalog can consume are
+        /// indexed; other haulables never matter to automation.
+        internal readonly Dictionary<ThingDef, List<int>> ItemIdsByDef =
+            new Dictionary<ThingDef, List<int>>();
+
+        internal List<int>? ItemIdsOf(ThingDef def) =>
+            ItemIdsByDef.TryGetValue(def, out List<int> ids) ? ids : null;
     }
 
     /// The reconciliation pass's single source of colony structure: which
@@ -31,12 +39,14 @@ namespace Implanner
         /// Sorted by canonical map id.
         internal readonly List<Colony> Colonies = new List<Colony>();
 
-        /// Every planable colonist, including pawns away from any colony
-        /// (caravans, non-serviceable maps).
+        /// Every planable colonist alive anywhere, including pawns away
+        /// from any colony (caravans, transporters in flight, a gravship in
+        /// flight, non-serviceable maps). Presence here means the pawn is
+        /// still ours: records are kept; only pawns at a colony get work.
         internal readonly Dictionary<int, Pawn> PawnsById =
             new Dictionary<int, Pawn>();
 
-        /// Every spawned haulable item on any colony map.
+        /// Every spawned implant item on any colony map.
         internal readonly Dictionary<int, Thing> ItemsById =
             new Dictionary<int, Thing>();
 
@@ -110,6 +120,11 @@ namespace Implanner
             }
             index.Colonies.Sort(ByCanonicalId);
             index.colonyOfCanonical.Clear();
+
+            // Only implant items matter: the kinds the catalog's surgeries
+            // consume, looked up per def through the map's def lister
+            // instead of walking every haulable thing.
+            List<ThingDef> itemDefs = ImplantItemDefs();
             for (int c = 0; c < index.Colonies.Count; c++)
             {
                 Colony colony = index.Colonies[c];
@@ -117,17 +132,27 @@ namespace Implanner
                 colony.Maps.Sort(ByMapId);
                 for (int m = 0; m < colony.Maps.Count; m++)
                 {
-                    List<Thing> haulables = colony.Maps[m].listerThings
-                        .ThingsInGroup(ThingRequestGroup.HaulableEver);
-                    for (int t = 0; t < haulables.Count; t++)
+                    ListerThings lister = colony.Maps[m].listerThings;
+                    for (int d = 0; d < itemDefs.Count; d++)
                     {
-                        Thing thing = haulables[t];
-                        index.ItemsById[thing.thingIDNumber] = thing;
-                        index.colonyOfItem[thing.thingIDNumber] = c;
-                        colony.ItemIds.Add(thing.thingIDNumber);
+                        List<Thing> things = lister.ThingsOfDef(itemDefs[d]);
+                        if (things.Count == 0) continue;
+                        if (!colony.ItemIdsByDef.TryGetValue(itemDefs[d], out List<int> ids))
+                        {
+                            ids = new List<int>(things.Count);
+                            colony.ItemIdsByDef.Add(itemDefs[d], ids);
+                        }
+                        for (int t = 0; t < things.Count; t++)
+                        {
+                            Thing thing = things[t];
+                            index.ItemsById[thing.thingIDNumber] = thing;
+                            index.colonyOfItem[thing.thingIDNumber] = c;
+                            ids.Add(thing.thingIDNumber);
+                        }
                     }
                 }
-                colony.ItemIds.Sort();
+                foreach (KeyValuePair<ThingDef, List<int>> pair in colony.ItemIdsByDef)
+                    pair.Value.Sort();
             }
 
             List<Pawn> colonists =
@@ -135,8 +160,17 @@ namespace Implanner
             for (int i = 0; i < colonists.Count; i++)
             {
                 Pawn pawn = colonists[i];
-                index.PawnsById[pawn.thingIDNumber] = pawn;
-                Map? canonical = FloorMaps.Canonical(pawn.MapHeld);
+                if (index.PawnsById.ContainsKey(pawn.thingIDNumber)) continue;
+                index.PawnsById.Add(pawn.thingIDNumber, pawn);
+                // Only a pawn automation can reach (spawned, or carried by
+                // a colonist) is placed at their map's colony; a pawn sealed
+                // in a casket, pod or landed transporter, or off every map
+                // (caravans, transporters and gravships in flight), is away:
+                // indexed so records are kept, at no colony so no work is
+                // scheduled and no doctor floor is derived from them.
+                Map? canonical = ColonyScope.IsOperable(pawn)
+                    ? FloorMaps.Canonical(pawn.MapHeld)
+                    : null;
                 if (canonical == null
                     || !index.colonyOfCanonical.TryGetValue(canonical, out int at))
                     continue;
@@ -148,6 +182,26 @@ namespace Implanner
 
             return index;
         }
+
+        /// The implant item kinds automation can consume, in defName
+        /// order: the catalog's spawnThingOnRemoved defs, deduplicated.
+        internal static List<ThingDef> ImplantItemDefs()
+        {
+            var defs = new List<ThingDef>();
+            var seen = new HashSet<ThingDef>();
+            IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                ThingDef? item = catalog[i].Def.spawnThingOnRemoved;
+                if (item != null && seen.Add(item))
+                    defs.Add(item);
+            }
+            defs.Sort(ByDefName);
+            return defs;
+        }
+
+        private static readonly Comparison<ThingDef> ByDefName =
+            static (a, b) => string.CompareOrdinal(a.defName, b.defName);
 
         private static readonly Comparison<Colony> ByCanonicalId =
             static (a, b) => a.CanonicalMap.uniqueID.CompareTo(b.CanonicalMap.uniqueID);

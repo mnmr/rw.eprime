@@ -68,6 +68,9 @@ namespace Implanner
         private sealed class LocationSnapshotEntry
         {
             internal int Stamp = -1;
+            // Labels come from translated parent labels and the ship
+            // fallback string, so the entry also observes the language.
+            internal int LanguageStamp = -1;
             internal LocationSnapshot? Snapshot;
         }
 
@@ -193,10 +196,13 @@ namespace Implanner
                 entry = new LocationSnapshotEntry();
                 locationSnapshots.Add(faction, entry);
             }
+            int language = UiVersion.LanguageCurrent;
             if (entry.Snapshot == null
-                || entry.Stamp != mapClassifications.Revision)
+                || entry.Stamp != mapClassifications.Revision
+                || entry.LanguageStamp != language)
             {
                 entry.Stamp = mapClassifications.Revision;
+                entry.LanguageStamp = language;
                 locationsMapCount = maps.Count;
                 List<GroupingInfo> rebuilt = BuildLocations(faction);
                 if (entry.Snapshot == null
@@ -249,10 +255,22 @@ namespace Implanner
                 shipLocationId!, label, isShip: true, isCaravan: false));
         }
 
+        /// Whether automation can reach the pawn where they are: spawned on
+        /// a map, or carried by another pawn (a rescue in progress). A pawn
+        /// sealed in a building (cryptosleep casket, biosculpter pod, landed
+        /// transporter) is alive and keeps every record, but is Away: it
+        /// can neither operate nor be operated on, and must not set the
+        /// doctor floor or take a surgery slot.
+        internal static bool IsOperable(Pawn pawn) =>
+            pawn.Spawned || pawn.ParentHolder is Pawn_CarryTracker;
+
         /// The pawn's place. Serviceable (settlement or ship) locations can
-        /// execute automation; everywhere else is Away.
+        /// execute automation; everywhere else, including inside a building
+        /// that holds the pawn, is Away.
         internal static PawnPlace PlaceOf(Pawn pawn) =>
-            pawn == null ? new PawnPlace() : PlaceOf(pawn.MapHeld, pawn.Faction);
+            pawn == null || !IsOperable(pawn)
+                ? new PawnPlace()
+                : PlaceOf(pawn.MapHeld, pawn.Faction);
 
         private static PawnPlace PlaceOf(Map? map, Faction? faction) =>
             PlaceOf(map, faction, out _, out _);
@@ -406,6 +424,7 @@ namespace Implanner
         /// are children and babies.
         internal static bool IsPlanableColonist(Pawn pawn, Faction faction) =>
             pawn?.Faction == faction
+            && !pawn.Dead
             && pawn.IsFreeColonist
             && !pawn.IsMutant
             && pawn.DevelopmentalStage == DevelopmentalStage.Adult;
@@ -414,24 +433,54 @@ namespace Implanner
         internal static List<Pawn> AllPlanableColonists() =>
             AllPlanableColonists(ViewFaction);
 
-        /// Every planable colonist in the world: spawned map pawns plus pawns
-        /// travelling in player caravans. Builder path only, never per-frame.
-        /// Deterministic paths pass AuthoritativeFaction.
+        /// Every planable colonist alive anywhere: pawns on any map, spawned
+        /// or held (carried, in a cryptosleep casket, inside a landed
+        /// transporter), plus pawns in player caravans, in transporters in
+        /// flight, and aboard a gravship in flight — the reach of
+        /// PawnsFinder.AllMapsCaravansAndTravellingTransporters_Alive,
+        /// filtered to planable colonists. Being alive but off every
+        /// serviceable map reads as Away (PlaceOf): state is kept, no new
+        /// work is issued. Builder path only, never per-frame. Deterministic
+        /// paths pass AuthoritativeFaction.
         internal static List<Pawn> AllPlanableColonists(Faction faction)
         {
             var result = new List<Pawn>();
             if (faction == null) return result;
-            foreach (var map in Find.Maps)
-                foreach (var pawn in map.mapPawns.AllPawnsSpawned)
-                    if (IsPlanableColonist(pawn, faction))
-                        result.Add(pawn);
-            foreach (var caravan in Find.WorldObjects.Caravans)
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
             {
+                // Spawned plus held (AllPawnsUnspawned walks the map's
+                // holder graph and already drops the dead).
+                List<Pawn> pawns = maps[m].mapPawns.AllPawns;
+                for (int i = 0; i < pawns.Count; i++)
+                    if (IsPlanableColonist(pawns[i], faction))
+                        result.Add(pawns[i]);
+            }
+            List<Caravan> caravans = Find.WorldObjects.Caravans;
+            for (int c = 0; c < caravans.Count; c++)
+            {
+                Caravan caravan = caravans[c];
                 if (caravan.Faction != faction) continue;
-                foreach (var pawn in caravan.PawnsListForReading)
+                List<Pawn> pawns = caravan.PawnsListForReading;
+                for (int i = 0; i < pawns.Count; i++)
+                    if (IsPlanableColonist(pawns[i], faction))
+                        result.Add(pawns[i]);
+            }
+            List<TravellingTransporters> transporters =
+                Find.WorldObjects.TravellingTransporters;
+            for (int t = 0; t < transporters.Count; t++)
+                foreach (Pawn pawn in transporters[t].Pawns)
                     if (IsPlanableColonist(pawn, faction))
                         result.Add(pawn);
-            }
+            // A gravship in flight holds its crew off every map; pawns
+            // still spawned somewhere (the ship has landed and the holder
+            // graph is being re-spawned) are already listed above.
+            Gravship? gravship = Find.CurrentGravship;
+            if (gravship != null)
+                foreach (Pawn pawn in gravship.Pawns)
+                    if (!pawn.SpawnedOrAnyParentSpawned
+                        && IsPlanableColonist(pawn, faction))
+                        result.Add(pawn);
             return result;
         }
     }

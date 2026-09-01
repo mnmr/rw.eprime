@@ -45,6 +45,14 @@ namespace Implanner.UI
             return width;
         }
 
+        /// The same fit measurement without the memo: for snapshot-generated
+        /// sentences (batch lines, plan names) that are measured once inside
+        /// their revision-gated builder and stored on the snapshot, so they
+        /// never grow the static key set above. The caller establishes
+        /// Text.Font first.
+        internal static float MeasureFitWidth(string text) =>
+            Mathf.Ceil(Text.CalcSize(text).x * 1.02f + 2f);
+
         internal static void Reset()
         {
             fitWidths.Clear();

@@ -3,8 +3,8 @@ using Implanner.Core;
 namespace Implanner.Core.Tests;
 
 /// Global implant star rankings: manual player choices with a three-star
-/// default. Stars clamp to 1–5, the default tier is stored sparsely, and
-/// tiers order best-first.
+/// default. Stars clamp to 1–5 and the default tier is stored sparsely
+/// (tier dispatch order is covered by SurgeryPlannerTests).
 public class StarRankingTests
 {
     [Test]
@@ -47,14 +47,6 @@ public class StarRankingTests
         await Assert.That(model.ImplantStarsOf("BionicArm"))
             .IsEqualTo(PlannerModel.DefaultStars);
         await Assert.That(model.ImplantStars.Count).IsEqualTo(0);
-    }
-
-    [Test]
-    public async Task TiersOrderBestFirst()
-    {
-        await Assert.That(StarRanking.TierOf(5)).IsEqualTo(0);
-        await Assert.That(StarRanking.TierOf(PlannerModel.DefaultStars)).IsEqualTo(2);
-        await Assert.That(StarRanking.TierOf(1)).IsEqualTo(4);
     }
 
     /// Dropping an implant at an exact position materializes the tier's

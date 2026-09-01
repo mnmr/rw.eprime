@@ -17,6 +17,18 @@ namespace Implanner
         /// and images from here.
         public static string ContentRootDir = "";
 
+        // Cache contract:
+        // Owner: process (the settings window has no instance state).
+        // Key: none (one label).
+        // Value: the translated toolbar-button setting label (immutable).
+        // Dependencies: UiVersion.LanguageCurrent.
+        // Refresh policy: immediate on the first draw after the language
+        //   revision moves.
+        // Equality policy: an unchanged revision reuses the string.
+        // Teardown: none needed (one bounded string for the process).
+        private static string showToolbarLabel = "";
+        private static int showToolbarLabelStamp = -1;
+
         public ImplannerMod(ModContentPack content) : base(content)
         {
             Instance = this;
@@ -29,10 +41,15 @@ namespace Implanner
 
         public override void DoSettingsWindowContents(Rect inRect)
         {
+            UiVersion.ObserveCurrentMetrics();
+            if (showToolbarLabelStamp != UiVersion.LanguageCurrent)
+            {
+                showToolbarLabelStamp = UiVersion.LanguageCurrent;
+                showToolbarLabel = "IMP_SettingsShowToolbarButton".Translate();
+            }
             var listing = new Listing_Standard();
             listing.Begin(inRect);
-            listing.CheckboxLabeled("IMP_SettingsShowToolbarButton".Translate(),
-                ref Settings.showToolbarButton);
+            listing.CheckboxLabeled(showToolbarLabel, ref Settings.showToolbarButton);
             listing.End();
         }
     }

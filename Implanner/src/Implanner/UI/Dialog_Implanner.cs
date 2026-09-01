@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Implanner.Core;
 using RimShared.UiLib;
 using RimWorld;
+using RimWorld.Planet;
 using UnityEngine;
 using Verse;
 using Plan = Implanner.Core.Plan;
@@ -27,7 +28,38 @@ namespace Implanner.UI
         private readonly OverviewState overview = new OverviewState();
         private readonly PlansState plans = new PlansState();
         private readonly AutomationState automation = new AutomationState();
+        private readonly AutomationTips automationTips = new AutomationTips();
         private readonly HelpTabView help = new HelpTabView();
+        private readonly StripTipSource productionTip =
+            new StripTipSource(StripTipKind.Production);
+        private readonly StripTipSource surgeryTip =
+            new StripTipSource(StripTipKind.Surgery);
+
+        // Cache contract:
+        // Owner: the Implanner dialog window.
+        // Key: Find.World identity.
+        // Value: the world's ImplannerStore component reference (or null
+        //   while no world is loaded).
+        // Dependencies: the current world only; the component lives as
+        //   long as its world.
+        // Refresh policy: immediate when the world reference changes
+        //   (checked once per WindowUpdate and on a null hit in OnGUI).
+        // Equality policy: the same world reuses the reference without a
+        //   component scan.
+        // Teardown: PostClose drops both references.
+        private ImplannerStore? store;
+        private World? storeWorld;
+
+        private ImplannerStore? EnsureStore()
+        {
+            World? world = Find.World;
+            if (!ReferenceEquals(world, storeWorld))
+            {
+                storeWorld = world;
+                store = world?.GetComponent<ImplannerStore>();
+            }
+            return store;
+        }
 
         private List<TabRecord>? tabs;
         private int tabsLanguageStamp = -1;
@@ -87,13 +119,22 @@ namespace Implanner.UI
         {
             base.PostClose();
             AnyOpen = false;
+            help.FlushPendingWrites();
             overview.Release();
             plans.Release();
             automation.Release();
+            automationTips.Release();
             help.ReleaseWindowData();
+            productionTip.Release();
+            surgeryTip.Release();
+            // The presenter's frozen tip and geometry belong to this
+            // window's hover session; idempotent.
+            StructuredTipPresenter.Reset();
             overviewFront = null;
             plansFront = null;
             automationFront = null;
+            store = null;
+            storeWorld = null;
             PlannerDrag.Cancel();
             tabs = null;
             tabsLanguageStamp = -1;
@@ -101,7 +142,7 @@ namespace Implanner.UI
 
         public override void DoWindowContents(Rect inRect)
         {
-            ImplannerStore? store = ImplannerStore.Current;
+            ImplannerStore? store = this.store ?? EnsureStore();
             if (store == null) return;
 
             // While the dialog is open, Tab cycles focus between its input
@@ -272,12 +313,32 @@ namespace Implanner.UI
         }
 
         /// Pending geometry applies between frames: mid-event windowRect
-        /// changes desync Layout from later passes.
+        /// changes desync Layout from later passes. The active tab's front
+        /// snapshot refreshes here too, so every pass of the coming frame
+        /// (Layout, the event, Repaint) draws one snapshot; a tab switched
+        /// mid-frame takes the null-fallback in its draw method once.
         public override void WindowUpdate()
         {
             base.WindowUpdate();
             if (pendingWindowRect.TryConsume(out Rect nextWindowRect))
                 windowRect = nextWindowRect;
+            help.FlushPendingWrites();
+            ImplannerStore? store = EnsureStore();
+            if (store == null) return;
+            UiVersion.ObserveCurrentMetrics();
+            // Builders read translated labels (priority names, No plan), so
+            // the label cache must be current before any snapshot rebuilds
+            // here: WindowUpdate runs before the first draw of a new window.
+            PlannerLabels.Ensure();
+            switch (curTab)
+            {
+                case Tab.Overview: overviewFront = overview.Current(store); break;
+                case Tab.Plans: plansFront = plans.Current(store); break;
+                case Tab.Automation:
+                    if (PlannerAutomation.Available)
+                        automationFront = automation.Current(store);
+                    break;
+            }
         }
 
         private void EnsureTabs()
@@ -303,11 +364,10 @@ namespace Implanner.UI
 
         private void DrawOverview(Rect rect, ImplannerStore store)
         {
-            // Snapshot refresh happens at the Repaint boundary; other passes
-            // reuse the front snapshot so all passes of one frame agree.
-            if (Event.current.type == EventType.Repaint || overviewFront == null)
-                overviewFront = overview.Current(store);
-            OverviewSnapshot snapshot = overviewFront;
+            // The front snapshot refreshes in WindowUpdate; the fallback
+            // covers only a tab switched mid-frame.
+            OverviewSnapshot snapshot = overviewFront ??= overview.Current(store);
+            OverviewData data = snapshot.Data;
 
             const float RightWidth = 300f;
             Rect left = new Rect(rect.x, rect.y, rect.width - RightWidth - Pad, rect.height);
@@ -317,19 +377,18 @@ namespace Implanner.UI
             // columns of three lines each.
             float stripHeight = Pad * 2f + 66f;
             Rect stripRect = new Rect(left.x, left.y, left.width, stripHeight);
-            DrawColonyStrip(stripRect, snapshot);
+            DrawColonyStrip(stripRect, data);
 
             // Location selector and group-by selector.
             Rect selectorRect = new Rect(left.x, stripRect.yMax + Pad, 240f, RowHeight);
-            int groupingIndex = IndexOfGrouping(snapshot);
-            string groupingLabel = groupingIndex >= 0
-                ? snapshot.GroupingLabels[groupingIndex]
+            string groupingLabel = data.GroupingIndex >= 0
+                ? data.GroupingLabels[data.GroupingIndex]
                 : "";
             if (Widgets.ButtonText(selectorRect, groupingLabel))
-                OpenGroupingMenu(snapshot);
+                OpenGroupingMenu(data);
             Rect groupByRect = new Rect(selectorRect.xMax + 8f, selectorRect.y, 180f, RowHeight);
             if (Widgets.ButtonText(groupByRect, snapshot.GroupByLabel))
-                OpenGroupByMenu(snapshot);
+                OpenGroupByMenu(data);
 
             // Colonist table takes the remaining left height; colonist
             // details the full right height.
@@ -343,9 +402,13 @@ namespace Implanner.UI
         /// the darker band fill — the colony (name, colonist count,
         /// automation chip), production (coverage percent, free-stock and
         /// queued counts, activity sentence), and surgery (installed
-        /// percent, installed units, active batch sentence).
-        private void DrawColonyStrip(Rect rect, OverviewSnapshot snapshot)
+        /// percent, installed units, active batch sentence). Hovering the
+        /// production or surgery column opens its per-implant breakdown
+        /// tooltip (StripTipSource).
+        private void DrawColonyStrip(Rect rect, OverviewData snapshot)
         {
+            productionTip.Offer(snapshot);
+            surgeryTip.Offer(snapshot);
             PlannerStyle.Panel(rect);
             Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 1f,
                 rect.width - 2f, rect.height - 2f), DetailHeaderFill);
@@ -369,6 +432,8 @@ namespace Implanner.UI
                 DrawAutomationChip(low, snapshot);
 
                 top.x = mid.x = low.x = body.x + colWidth + Pad;
+                StructuredTipPresenter.TipRegion(
+                    new Rect(top.x, body.y, colWidth, body.height), productionTip);
                 Widgets.Label(top, snapshot.ProductionTitleText);
                 GUI.color = PlannerStyle.CaptionText;
                 Widgets.Label(mid, snapshot.StockQueuedText);
@@ -383,6 +448,8 @@ namespace Implanner.UI
                 }
 
                 top.x = mid.x = low.x = body.x + (colWidth + Pad) * 2f;
+                StructuredTipPresenter.TipRegion(
+                    new Rect(top.x, body.y, colWidth, body.height), surgeryTip);
                 Widgets.Label(top, snapshot.SurgeryTitleText);
                 GUI.color = PlannerStyle.CaptionText;
                 Widgets.Label(mid, snapshot.UnitsText);
@@ -391,11 +458,11 @@ namespace Implanner.UI
                 {
                     // The tier stars sit at the end so they can be dropped
                     // when the column is too narrow for the full sentence
-                    // (measured via the shared width cache, never wrapped
-                    // or clipped).
+                    // (width measured at snapshot build, never wrapped or
+                    // clipped).
                     GUI.color = PlannerStyle.ActiveText;
                     Widgets.Label(low,
-                        WrText.FitWidth(snapshot.SurgeryBatchText) <= low.width
+                        snapshot.SurgeryBatchWidth <= low.width
                             ? snapshot.SurgeryBatchText
                             : snapshot.SurgeryBatchShortText);
                     GUI.color = Color.white;
@@ -413,14 +480,14 @@ namespace Implanner.UI
         private static readonly Color ChipOffOutline = new Color(0.62f, 0.62f, 0.62f, 0.40f);
 
         /// The strip's automation state chip: a status dot and label on a
-        /// tinted pill, sized to the label via the shared measurement cache.
-        private static void DrawAutomationChip(Rect row, OverviewSnapshot snapshot)
+        /// tinted pill, sized to the label's width measured at snapshot build.
+        private static void DrawAutomationChip(Rect row, OverviewData snapshot)
         {
             const float ChipHeight = 20f;
             const float DotSize = 8f;
             bool on = snapshot.AutomationOn;
             float width = Mathf.Min(row.width,
-                22f + WrText.FitWidth(snapshot.AutomationText) + 8f);
+                22f + snapshot.AutomationTextWidth + 8f);
             var chip = new Rect(row.x, row.y + (row.height - ChipHeight) / 2f,
                 width, ChipHeight);
             PixelBox.SolidWithOutline(chip,
@@ -435,26 +502,7 @@ namespace Implanner.UI
             GUI.color = Color.white;
         }
 
-        private int IndexOfGrouping(OverviewSnapshot snapshot)
-        {
-            GroupingOption? current = overview.Grouping;
-            if (current == null) return -1;
-            // By value, not reference: the All selection keeps its old
-            // instance across snapshot rebuilds (Revalidate only re-resolves
-            // named locations into the fresh options list).
-            for (int i = 0; i < snapshot.GroupingOptions.Count; i++)
-            {
-                GroupingOption option = snapshot.GroupingOptions[i];
-                if (option.Kind != current.Kind) continue;
-                if (option.Kind != GroupingKind.Location
-                    || string.Equals(option.LocationId, current.LocationId,
-                        System.StringComparison.Ordinal))
-                    return i;
-            }
-            return -1;
-        }
-
-        private void OpenGroupingMenu(OverviewSnapshot snapshot)
+        private void OpenGroupingMenu(OverviewData snapshot)
         {
             var options = new List<FloatMenuOption>();
             for (int i = 0; i < snapshot.GroupingOptions.Count; i++)
@@ -466,7 +514,7 @@ namespace Implanner.UI
             Find.WindowStack.Add(new FloatMenu(options));
         }
 
-        private void OpenGroupByMenu(OverviewSnapshot snapshot)
+        private void OpenGroupByMenu(OverviewData snapshot)
         {
             var options = new List<FloatMenuOption>();
             for (int i = 0; i < snapshot.GroupByKeys.Count; i++)
@@ -512,10 +560,10 @@ namespace Implanner.UI
                     PlannerLabels.ColColonist, OverviewColumn.Name, null);
                 DrawSortHeader(header.x + xShooting, header.y, SkillColWidth,
                     PlannerLabels.ColShooting, OverviewColumn.Shooting,
-                    PlannerLabels.ColShootingTip, alignRight: true);
+                    PlannerLabels.ColShootingTip, center: true);
                 DrawSortHeader(header.x + xMelee, header.y, SkillColWidth,
                     PlannerLabels.ColMelee, OverviewColumn.Melee,
-                    PlannerLabels.ColMeleeTip, alignRight: true);
+                    PlannerLabels.ColMeleeTip, center: true);
                 DrawSortHeader(header.x + xPlan, header.y, planWidth,
                     PlannerLabels.ColPlan, OverviewColumn.Plan, null);
                 DrawSortHeader(header.x + xProgress, header.y, progressWidth,
@@ -529,14 +577,17 @@ namespace Implanner.UI
             }
 
             // Visible rows: collapsed sections contribute their header only.
+            // The collapsed flags are resolved per row behind the fold
+            // revision, so no set lookup runs here.
+            bool[] collapsed = overview.CollapsedFlags(snapshot);
+            List<OverviewRow> rows = snapshot.Rows;
             int visible = 0;
             bool skipping = false;
-            for (int i = 0; i < snapshot.Rows.Count; i++)
+            for (int i = 0; i < rows.Count; i++)
             {
-                if (snapshot.Rows[i].Header)
+                if (rows[i].Header)
                 {
-                    skipping = overview.CollapsedTableGroups.Contains(
-                        snapshot.Rows[i].SectionKey);
+                    skipping = collapsed[i];
                     visible++;
                 }
                 else if (!skipping)
@@ -547,20 +598,39 @@ namespace Implanner.UI
                 rect.height - PlannerStyle.SectionHeaderHeight - 2f);
             Rect inner = new Rect(0f, 0f, contentWidth, visible * RowHeight);
             Widgets.BeginScrollView(outer, ref overviewScroll, inner);
-            float y = 0f;
-            skipping = false;
-            for (int i = 0; i < snapshot.Rows.Count; i++)
+            try
             {
-                OverviewRow row = snapshot.Rows[i];
+                DrawColonistRows(inner.width, rows, collapsed, nameWidth, planWidth,
+                    progressWidth, stateWidth, xName, xShooting, xMelee, xPlan,
+                    xProgress, xPriority, xState);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+        }
+
+        private void DrawColonistRows(float width, List<OverviewRow> rows,
+            bool[] collapsed, float nameWidth, float planWidth,
+            float progressWidth, float stateWidth, float xName, float xShooting,
+            float xMelee, float xPlan, float xProgress, float xPriority,
+            float xState)
+        {
+            float y = 0f;
+            bool skipping = false;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                OverviewRow row = rows[i];
                 if (row.Header)
                 {
-                    skipping = overview.CollapsedTableGroups.Contains(row.SectionKey);
-                    DrawTableGroupHeader(new Rect(0f, y, inner.width, RowHeight), row);
+                    skipping = collapsed[i];
+                    DrawTableGroupHeader(new Rect(0f, y, width, RowHeight), row,
+                        skipping);
                     y += RowHeight;
                     continue;
                 }
                 if (skipping) continue;
-                Rect rowRect = new Rect(0f, y, inner.width, RowHeight);
+                Rect rowRect = new Rect(0f, y, width, RowHeight);
                 y += RowHeight;
                 if (row.PawnId == overview.SelectedPawnId)
                     Widgets.DrawHighlightSelected(rowRect);
@@ -626,7 +696,6 @@ namespace Implanner.UI
                 if (Widgets.ButtonInvisible(selectRect))
                     overview.SelectedPawnId = row.PawnId;
             }
-            Widgets.EndScrollView();
         }
 
         /// A circular bright cutout with the def's icon centered on its
@@ -654,9 +723,8 @@ namespace Implanner.UI
 
         /// Grouped-colonist section header, WorkRoles-style: a full-row band
         /// with fold arrow and title; clicking anywhere toggles the section.
-        private void DrawTableGroupHeader(Rect rect, OverviewRow row)
+        private void DrawTableGroupHeader(Rect rect, OverviewRow row, bool collapsed)
         {
-            bool collapsed = overview.CollapsedTableGroups.Contains(row.SectionKey);
             Widgets.DrawBoxSolid(rect, new Color(1f, 1f, 1f, 0.06f));
             var arrowRect = new Rect(rect.x + CellPad,
                 rect.y + (rect.height - 18f) / 2f, 18f, 18f);
@@ -667,25 +735,22 @@ namespace Implanner.UI
             Text.Anchor = TextAnchor.UpperLeft;
             Widgets.DrawHighlightIfMouseover(rect);
             if (Widgets.ButtonInvisible(rect))
-            {
-                if (!overview.CollapsedTableGroups.Remove(row.SectionKey))
-                    overview.CollapsedTableGroups.Add(row.SectionKey);
-            }
+                overview.ToggleTableGroup(row.SectionKey);
         }
 
         /// A clickable column header; the active sort column shows a
         /// direction arrow after the label (bar-order Name shows none).
         private void DrawSortHeader(float x, float y, float width,
             string label, OverviewColumn column, string? tip,
-            bool alignRight = false)
+            bool center = false)
         {
             var cell = new Rect(x, y, width, 20f);
-            if (alignRight)
+            if (center)
             {
-                // Narrow value columns (S/M) sit their label over the
-                // right-leaning cell contents; the sort arrow flips to the
+                // Narrow value columns (S/M) center the label exactly like
+                // the value cells below; the sort arrow flips to the
                 // label's left where the free space is.
-                Text.Anchor = TextAnchor.MiddleRight;
+                Text.Anchor = TextAnchor.MiddleCenter;
                 Widgets.Label(cell, label);
                 Text.Anchor = TextAnchor.MiddleLeft;
             }
@@ -700,8 +765,8 @@ namespace Implanner.UI
                 bool up = column == OverviewColumn.Name
                     ? true
                     : !overview.SortDescending;
-                float arrowX = alignRight
-                    ? x + Mathf.Max(0f, width - Mathf.Min(labelWidth, width) - 14f)
+                float arrowX = center
+                    ? x + (width - Mathf.Min(labelWidth, width)) / 2f - 14f
                     : x + Mathf.Min(labelWidth, width - 14f) + 2f;
                 GUI.DrawTexture(new Rect(arrowX, y + 4f, 12f, 12f),
                     up ? TexButton.ReorderUp : TexButton.ReorderDown);
@@ -710,60 +775,90 @@ namespace Implanner.UI
                 overview.ClickColumn(column);
         }
 
-        private static readonly System.Func<OverviewRow, int> PriorityPayloadGetter =
-            static row => row.Priority;
+        // Distinct payload TYPES per paintable column. Vanilla keys the paint
+        // session on typeof(Payload) and matches options by payload value
+        // (Widgets.Dropdown: dropdownPainting_Type / object.Equals on the
+        // payload), so two int-payload columns would paint into each other:
+        // a plan drag over a Priority cell would set that pawn's priority to
+        // the plan id, and vice versa. A struct per column keeps the
+        // sessions apart; value equality is what the match needs.
+
+        /// Plan column payload: the plan id (0 = no plan).
+        private readonly struct PlanChoice : System.IEquatable<PlanChoice>
+        {
+            internal readonly int Id;
+            internal PlanChoice(int id) => Id = id;
+            public bool Equals(PlanChoice other) => Id == other.Id;
+            public override bool Equals(object obj) => obj is PlanChoice o && Equals(o);
+            public override int GetHashCode() => Id;
+        }
+
+        /// Priority column payload: the priority level (0 first, 4 last).
+        private readonly struct PriorityChoice : System.IEquatable<PriorityChoice>
+        {
+            internal readonly int Level;
+            internal PriorityChoice(int level) => Level = level;
+            public bool Equals(PriorityChoice other) => Level == other.Level;
+            public override bool Equals(object obj) => obj is PriorityChoice o && Equals(o);
+            public override int GetHashCode() => Level;
+        }
+
+        // Static cached delegates: the dropdown draws every row every frame
+        // and must not allocate on cache hits. The menu generators run on
+        // click, and while paint-dragging vanilla calls the generator once
+        // per hovered cell per pass (its option list is rebuilt to find the
+        // dragged payload); that cost is bounded to the drag's duration.
+        private static readonly System.Func<OverviewRow, PriorityChoice> PriorityPayloadGetter =
+            static row => new PriorityChoice(row.Priority);
 
         private static readonly
-            System.Func<OverviewRow, IEnumerable<Widgets.DropdownMenuElement<int>>>
+            System.Func<OverviewRow, IEnumerable<Widgets.DropdownMenuElement<PriorityChoice>>>
             PriorityMenuGenerator = GeneratePriorityMenu;
 
-        private static IEnumerable<Widgets.DropdownMenuElement<int>> GeneratePriorityMenu(
-            OverviewRow row)
+        private static IEnumerable<Widgets.DropdownMenuElement<PriorityChoice>>
+            GeneratePriorityMenu(OverviewRow row)
         {
             int pawnId = row.PawnId;
             for (int level = 0; level <= 4; level++)
             {
                 int captured = level;
-                yield return new Widgets.DropdownMenuElement<int>
+                yield return new Widgets.DropdownMenuElement<PriorityChoice>
                 {
                     option = new FloatMenuOption(PlannerLabels.PriorityLabel(captured),
                         () => PlannerCommands.SetPawnPriority(pawnId, captured)),
-                    payload = captured,
+                    payload = new PriorityChoice(captured),
                 };
             }
         }
 
-        // Static cached delegates: the dropdown draws every row every frame
-        // and must not allocate on cache hits. The menu generator itself runs
-        // only on click or while paint-dragging over a cell.
-        private static readonly System.Func<OverviewRow, int> PlanPayloadGetter =
-            static row => row.PlanId;
+        private static readonly System.Func<OverviewRow, PlanChoice> PlanPayloadGetter =
+            static row => new PlanChoice(row.PlanId);
 
         private static readonly
-            System.Func<OverviewRow, IEnumerable<Widgets.DropdownMenuElement<int>>>
+            System.Func<OverviewRow, IEnumerable<Widgets.DropdownMenuElement<PlanChoice>>>
             PlanMenuGenerator = GeneratePlanMenu;
 
-        private static IEnumerable<Widgets.DropdownMenuElement<int>> GeneratePlanMenu(
+        private static IEnumerable<Widgets.DropdownMenuElement<PlanChoice>> GeneratePlanMenu(
             OverviewRow row)
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) yield break;
             int pawnId = row.PawnId;
-            yield return new Widgets.DropdownMenuElement<int>
+            yield return new Widgets.DropdownMenuElement<PlanChoice>
             {
                 option = new FloatMenuOption(PlannerLabels.NoPlan,
                     () => PlannerCommands.AssignPlan(pawnId, 0)),
-                payload = 0,
+                payload = new PlanChoice(0),
             };
             IReadOnlyList<Plan> allPlans = store.Model.Plans;
             for (int i = 0; i < allPlans.Count; i++)
             {
                 int planId = allPlans[i].Id;
-                yield return new Widgets.DropdownMenuElement<int>
+                yield return new Widgets.DropdownMenuElement<PlanChoice>
                 {
                     option = new FloatMenuOption(allPlans[i].Name,
                         () => PlannerCommands.AssignPlan(pawnId, planId)),
-                    payload = planId,
+                    payload = new PlanChoice(planId),
                 };
             }
         }
@@ -843,6 +938,18 @@ namespace Implanner.UI
 
             Rect inner = new Rect(0f, 0f, alignedWidth, innerHeight);
             Widgets.BeginScrollView(outer, ref detailScroll, inner);
+            try
+            {
+                DrawDetailRows(inner.width, details);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+        }
+
+        private static void DrawDetailRows(float width, IReadOnlyList<DetailRow> details)
+        {
             float y = 0f;
             for (int i = 0; i < details.Count; i++)
             {
@@ -852,14 +959,14 @@ namespace Implanner.UI
                     if (i > 0) y += PlannerStyle.SectionGap;
                     float headerY = y;
                     if (row.Stars) GUI.color = PlannerStyle.TierStarColor;
-                    y += PlannerStyle.SectionHeader(0f, y, inner.width, row.Label);
+                    y += PlannerStyle.SectionHeader(0f, y, width, row.Label);
                     GUI.color = Color.white;
                     using (GuiStateScope.Capture())
                     {
                         Text.Font = GameFont.Small;
                         Text.Anchor = TextAnchor.MiddleRight;
                         GUI.color = PlannerStyle.HeaderText;
-                        Widgets.Label(new Rect(0f, headerY, inner.width, 20f),
+                        Widgets.Label(new Rect(0f, headerY, width, 20f),
                             row.StatusText);
                     }
                     continue;
@@ -874,16 +981,15 @@ namespace Implanner.UI
                 float detailTextY = y
                     + (CompactRowHeight - detailTextH) / 2f;
                 TinyText.Label(new Rect(0f, detailTextY,
-                    inner.width * 0.62f, detailTextH),
+                    width * 0.62f, detailTextH),
                     row.Label);
                 Text.Anchor = TextAnchor.MiddleRight;
-                TinyText.Label(new Rect(inner.width * 0.62f, detailTextY,
-                    inner.width * 0.38f, detailTextH), row.StatusText);
+                TinyText.Label(new Rect(width * 0.62f, detailTextY,
+                    width * 0.38f, detailTextH), row.StatusText);
                 Text.Anchor = TextAnchor.UpperLeft;
                 GUI.color = Color.white;
                 y += CompactRowHeight;
             }
-            Widgets.EndScrollView();
         }
 
         // ------------------------------------------------------------- Plans
@@ -906,9 +1012,9 @@ namespace Implanner.UI
 
         private void DrawPlans(Rect rect, ImplannerStore store)
         {
-            if (Event.current.type == EventType.Repaint || plansFront == null)
-                plansFront = plans.Current(store);
-            PlansSnapshot snapshot = plansFront;
+            // Refreshed in WindowUpdate; the fallback covers a mid-frame
+            // tab switch only.
+            PlansSnapshot snapshot = plansFront ??= plans.Current(store);
 
             const float ListWidth = 230f;
             float paneWidth = Mathf.Floor((rect.width - ListWidth - Pad * 2f) / 2f);
@@ -965,13 +1071,39 @@ namespace Implanner.UI
                 listHeight > outer.height ? outer.width - 16f : outer.width,
                 listHeight);
             Widgets.BeginScrollView(outer, ref planListScroll, inner);
+            try
+            {
+                DrawPlanCards(inner.width, cardHeight, nameH, captionH, snapshot);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+
+            // Bottom row: New plan beside compact Import/Export.
+            float shareWidth = Mathf.Floor(rect.width * 0.24f);
+            Rect addRect = new Rect(rect.x, frame.yMax + Pad,
+                rect.width - shareWidth * 2f - 8f, RowHeight);
+            if (Widgets.ButtonText(addRect, PlannerLabels.AddPlan))
+                Find.WindowStack.Add(new Dialog_NewPlan());
+            if (Widgets.ButtonText(new Rect(addRect.xMax + 4f, addRect.y,
+                    shareWidth, RowHeight), PlannerLabels.ImportPlans))
+                Find.WindowStack.Add(new Dialog_ImportPlans());
+            if (Widgets.ButtonText(new Rect(addRect.xMax + shareWidth + 8f,
+                    addRect.y, shareWidth, RowHeight), PlannerLabels.ExportPlans))
+                Find.WindowStack.Add(new Dialog_ExportPlans());
+        }
+
+        private void DrawPlanCards(float innerWidth, float cardHeight,
+            float nameH, float captionH, PlansSnapshot snapshot)
+        {
             using (GuiStateScope.Capture())
             {
                 Text.WordWrap = false;
                 // One logical pixel short of the clip edge: a device-grid
                 // right border rounded up at a fractional scale would land
                 // outside the scroll group's clip and vanish.
-                float cardWidth = inner.width - 1f;
+                float cardWidth = innerWidth - 1f;
                 float y = 0f;
                 for (int i = 0; i < snapshot.Plans.Count; i++)
                 {
@@ -991,13 +1123,11 @@ namespace Implanner.UI
                     {
                         // The base-plan link sits right-aligned on the name
                         // row (the caption row below has no room beside the
-                        // percent); the name clips against its measured
-                        // width, capped at half the card.
-                        float extendsWidth;
-                        using (TinyText.UseFont())
-                            extendsWidth = Mathf.Min(
-                                WrText.FitWidth(row.ExtendsText),
-                                textWidth * 0.5f);
+                        // percent); the name clips against its width
+                        // measured at snapshot build, capped at half the
+                        // card.
+                        float extendsWidth = Mathf.Min(
+                            row.ExtendsWidth, textWidth * 0.5f);
                         using (GuiStateScope.Capture())
                         {
                             Text.Anchor = TextAnchor.MiddleRight;
@@ -1040,20 +1170,6 @@ namespace Implanner.UI
                     y += cardHeight + CardGap;
                 }
             }
-            Widgets.EndScrollView();
-
-            // Bottom row: New plan beside compact Import/Export.
-            float shareWidth = Mathf.Floor(rect.width * 0.24f);
-            Rect addRect = new Rect(rect.x, frame.yMax + Pad,
-                rect.width - shareWidth * 2f - 8f, RowHeight);
-            if (Widgets.ButtonText(addRect, PlannerLabels.AddPlan))
-                Find.WindowStack.Add(new Dialog_NewPlan());
-            if (Widgets.ButtonText(new Rect(addRect.xMax + 4f, addRect.y,
-                    shareWidth, RowHeight), PlannerLabels.ImportPlans))
-                Find.WindowStack.Add(new Dialog_ImportPlans());
-            if (Widgets.ButtonText(new Rect(addRect.xMax + shareWidth + 8f,
-                    addRect.y, shareWidth, RowHeight), PlannerLabels.ExportPlans))
-                Find.WindowStack.Add(new Dialog_ExportPlans());
         }
 
         // --------------------------------------------- Plans: center column
@@ -1064,9 +1180,10 @@ namespace Implanner.UI
             Text.WordWrap = false;
             float y = rect.y;
 
-            // Header: plan name, rename icon, delete button.
+            // Header: plan name (width measured at snapshot build), rename
+            // icon, delete button.
             Text.Font = GameFont.Medium;
-            float nameWidth = WrText.FitWidth(snapshot.SelectedPlanName);
+            float nameWidth = snapshot.SelectedPlanNameWidth;
             Widgets.Label(new Rect(rect.x, y, nameWidth, 30f), snapshot.SelectedPlanName);
             Text.Font = GameFont.Small;
             Rect renameRect = new Rect(rect.x + nameWidth + 6f, y + 3f, 24f, 24f);
@@ -1102,14 +1219,23 @@ namespace Implanner.UI
             // widgets, def icons on leaves. The scroll gutter is reserved
             // only while the tree overflows.
             Rect outer = new Rect(rect.x, y, rect.width, rect.yMax - y);
-            float treeHeight = TreeVisibleHeight(snapshot.Tree, plans.CollapsedSections);
+            // Folded flags resolved per row behind the fold revision: no
+            // set lookup in the row loop.
+            bool[] folded = plans.FoldedFlags(snapshot);
+            float treeHeight = TreeVisibleHeight(snapshot.Tree, folded);
             Rect inner = new Rect(0f, 0f,
                 treeHeight > outer.height ? outer.width - 16f : outer.width,
                 treeHeight);
             Widgets.BeginScrollView(outer, ref pickerScroll, inner);
-            DrawTree(inner.width, snapshot.Tree, plans.CollapsedSections,
-                snapshot.SelectedPlanId);
-            Widgets.EndScrollView();
+            try
+            {
+                DrawTree(inner.width, snapshot.Tree, folded, plans,
+                    snapshot.SelectedPlanId);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
             Text.WordWrap = true;
         }
 
@@ -1117,14 +1243,10 @@ namespace Implanner.UI
         private const float TreeIndent = 11f;
         private const float TreeArrow = 18f;
 
-        /// The fold set holds COLLAPSED keys: every group starts expanded.
-        private static bool IsExpanded(HashSet<string> foldSet, string key) =>
-            !foldSet.Contains(key);
-
         /// Rows hidden inside folded subtrees contribute nothing. Pure
-        /// arithmetic over already-built rows.
-        private static float TreeVisibleHeight(List<PickerRow> tree,
-            HashSet<string> foldSet)
+        /// arithmetic over already-built rows and their resolved fold flags
+        /// (true = collapsed node; every group starts expanded).
+        private static float TreeVisibleHeight(List<PickerRow> tree, bool[] folded)
         {
             int visible = 0;
             int foldedDepth = -1;
@@ -1137,7 +1259,7 @@ namespace Implanner.UI
                     foldedDepth = -1;
                 }
                 visible++;
-                if (row.Node && !IsExpanded(foldSet, row.SectionKey))
+                if (folded[i])
                     foldedDepth = row.Depth;
             }
             return visible * TreeLine;
@@ -1152,7 +1274,7 @@ namespace Implanner.UI
         /// carry an "overrides X" caption — checking them deselects an own
         /// blocker (the command removes it) or suppresses an inherited one.
         private static void DrawTree(float width, List<PickerRow> tree,
-            HashSet<string> foldSet, int planId)
+            bool[] folded, PlansState state, int planId)
         {
             float y = 0f;
             int foldedDepth = -1;
@@ -1168,7 +1290,7 @@ namespace Implanner.UI
                 float x = row.Depth * TreeIndent;
                 if (row.Node)
                 {
-                    bool expanded = IsExpanded(foldSet, row.SectionKey);
+                    bool expanded = !folded[i];
                     Widgets.DrawHighlightIfMouseover(rowRect);
                     GUI.DrawTexture(
                         new Rect(x, y + (TreeLine - TreeArrow) / 2f, TreeArrow, TreeArrow),
@@ -1178,10 +1300,7 @@ namespace Implanner.UI
                         width - x - TreeArrow - 2f, TreeLine), row.Label);
                     Text.Anchor = TextAnchor.UpperLeft;
                     if (Widgets.ButtonInvisible(rowRect))
-                    {
-                        if (!foldSet.Remove(row.SectionKey))
-                            foldSet.Add(row.SectionKey);
-                    }
+                        state.ToggleSection(row.SectionKey);
                     if (!expanded) foldedDepth = row.Depth;
                     y += TreeLine;
                     continue;
@@ -1276,11 +1395,17 @@ namespace Implanner.UI
                 innerHeight > listRect.height ? body.width - 16f : body.width,
                 innerHeight);
             Widgets.BeginScrollView(listRect, ref rankingsScroll, inner);
-            float y = 0f;
-            for (int t = 0; t < snapshot.RankTiers.Length; t++)
-                y = DrawRankingTier(inner.width, y, snapshot.RankTiers[t], t,
-                    snapshot.SelectedPlanId);
-            Widgets.EndScrollView();
+            try
+            {
+                float y = 0f;
+                for (int t = 0; t < snapshot.RankTiers.Length; t++)
+                    y = DrawRankingTier(inner.width, y, snapshot.RankTiers[t], t,
+                        snapshot.SelectedPlanId);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
             Text.WordWrap = true;
         }
 
@@ -1405,9 +1530,10 @@ namespace Implanner.UI
         /// The Automation tab: the master enable toggle, then two columns —
         /// production (auto bills, bench limits, crafting skill,
         /// intermediaries, resource reserves) on the left and surgery
-        /// (iteration + doctor assignment) on the right. Shared scalars read
-        /// directly (no traversal); every control issues a synced command
-        /// and renders the resulting published state.
+        /// (iteration + doctor assignment) on the right. Every value drawn
+        /// comes from the automation snapshot; the click paths inside the
+        /// static stepper delegates read the live model once, issue a
+        /// synced command, and the next snapshot renders the published state.
         private void DrawAutomation(Rect rect, ImplannerStore store)
         {
             // A level mod stood automation down; none of these controls does
@@ -1418,13 +1544,14 @@ namespace Implanner.UI
                 return;
             }
 
-            if (Event.current.type == EventType.Repaint || automationFront == null)
-                automationFront = automation.Current(store);
-            AutomationSnapshot snapshot = automationFront;
-            PlannerModel model = store.Model;
+            // Refreshed in WindowUpdate; the fallback covers a mid-frame
+            // tab switch only.
+            AutomationSnapshot snapshot = automationFront ??= automation.Current(store);
+            automationTips.Ensure();
+            AutomationTips tips = automationTips;
 
-            float leftHeight = ProductionColumnHeight(model, snapshot);
-            float rightHeight = SurgeryColumnHeight(model, snapshot);
+            float leftHeight = ProductionColumnHeight(snapshot);
+            float rightHeight = SurgeryColumnHeight(snapshot);
             float innerHeight = RowHeight + Pad + Mathf.Max(leftHeight, rightHeight);
             // Symmetric layout: the scrollbar gutter is reserved only while
             // the content overflows, both columns share one width, and the
@@ -1435,46 +1562,52 @@ namespace Implanner.UI
             float columnWidth = Mathf.Floor((innerWidth - ColumnGap) / 2f);
             Rect inner = new Rect(0f, 0f, innerWidth, innerHeight);
             Widgets.BeginScrollView(rect, ref automationScroll, inner);
-            automation.ReserveFieldNames.Clear();
-
-            bool enabled = !model.AutomationPaused;
-            bool now = enabled;
-            var enableRect = new Rect(0f, 0f, columnWidth, RowHeight);
-            WrTips.Key("IMP_OptEnableTip").Region(enableRect);
-            Widgets.CheckboxLabeled(enableRect, PlannerLabels.OptEnable, ref now);
-            if (now != enabled)
+            try
             {
-                // Turning automation OFF goes through the hand-back dialog:
-                // the pause command is only issued from its OK (with the
-                // bill cleanup), so Cancel/ESC keeps automation on. With no
-                // owned bills it pauses directly.
-                if (now) PlannerCommands.SetAutomationPaused(false);
-                else Dialog_AutomationCleanup.ShowToTurnOffAutomation(store);
-            }
+                automation.ReserveFieldNames.Clear();
 
-            float top = RowHeight + Pad;
-            DrawProductionColumn(new Rect(0f, top, columnWidth, leftHeight),
-                model, snapshot);
-            DrawSurgeryColumn(new Rect(innerWidth - columnWidth, top,
-                columnWidth, rightHeight), model, snapshot);
-            Widgets.EndScrollView();
+                bool enabled = !snapshot.AutomationPaused;
+                bool now = enabled;
+                var enableRect = new Rect(0f, 0f, columnWidth, RowHeight);
+                tips.Enable.Region(enableRect);
+                Widgets.CheckboxLabeled(enableRect, PlannerLabels.OptEnable, ref now);
+                if (now != enabled)
+                {
+                    // Turning automation OFF goes through the hand-back
+                    // dialog: the pause command is only issued from its OK
+                    // (with the bill cleanup), so Cancel/ESC keeps automation
+                    // on. With no owned bills it pauses directly.
+                    if (now) PlannerCommands.SetAutomationPaused(false);
+                    else Dialog_AutomationCleanup.ShowToTurnOffAutomation(store);
+                }
+
+                float top = RowHeight + Pad;
+                DrawProductionColumn(new Rect(0f, top, columnWidth, leftHeight),
+                    snapshot, tips);
+                DrawSurgeryColumn(new Rect(innerWidth - columnWidth, top,
+                    columnWidth, rightHeight), store, snapshot, tips);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
         }
 
-        private void DrawSurgeryColumn(
-            Rect rect, PlannerModel model, AutomationSnapshot snapshot)
+        private void DrawSurgeryColumn(Rect rect, ImplannerStore store,
+            AutomationSnapshot snapshot, AutomationTips tips)
         {
             float width = rect.width;
             float y = rect.y;
             y += SectionHeader.Primary(rect.x, y, width,
                 PlannerLabels.OptSurgery) + 2f;
-            WrTips.Key("IMP_OptIterationTip").Region(
+            tips.Iteration.Region(
                 new Rect(rect.x, y, width, HeaderHeight + 2f + 30f));
             Widgets.Label(new Rect(rect.x, y, width, HeaderHeight),
                 PlannerLabels.OptIteration);
             y += HeaderHeight + 2f;
             // Display order: tier iteration (the default) first; map display
             // index to the persisted enum values.
-            int display = model.Iteration == IterationStrategy.ImplantTier ? 0 : 1;
+            int display = snapshot.IterationDisplayIndex;
             int clicked = SegmentedControl.Row(
                 new Rect(rect.x, y, width, 30f),
                 PlannerLabels.IterationModes, display);
@@ -1491,28 +1624,28 @@ namespace Implanner.UI
                     (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) - 1),
                 static () => PlannerCommands.SetSurgeryConcurrency(
                     (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) + 1),
-                WrTips.Key("IMP_OptSurgeryConcurrencyTip"));
+                tips.SurgeryConcurrency);
 
             // Nested: refines what the concurrency limit above counts.
-            bool hospitalized = model.CountHospitalized;
+            bool hospitalized = snapshot.CountHospitalized;
             bool nowHospitalized = hospitalized;
             var hospitalizedRect = new Rect(rect.x + 12f, y, width - 12f, RowHeight);
-            WrTips.Key("IMP_OptCountHospitalizedTip").Region(hospitalizedRect);
+            tips.CountHospitalized.Region(hospitalizedRect);
             Widgets.CheckboxLabeled(hospitalizedRect,
                 PlannerLabels.OptCountHospitalized, ref nowHospitalized);
             if (nowHospitalized != hospitalized)
                 PlannerCommands.SetCountHospitalized(nowHospitalized);
             y += RowHeight + 2f;
 
-            bool autoFloor = model.AutoDoctorFloor;
+            bool autoFloor = snapshot.AutoDoctorFloor;
             bool now = autoFloor;
             var autoFloorRect = new Rect(rect.x, y, width, RowHeight);
-            WrTips.Key("IMP_OptAutoFloorTip").Region(autoFloorRect);
+            tips.AutoFloor.Region(autoFloorRect);
             Widgets.CheckboxLabeled(autoFloorRect,
                 PlannerLabels.OptAutoFloor, ref now);
             if (now != autoFloor) PlannerCommands.SetAutoDoctorFloor(now);
             y += RowHeight + 2f;
-            if (!model.AutoDoctorFloor)
+            if (!snapshot.AutoDoctorFloor)
             {
                 // The manual minimum applies only while the automatic mode is
                 // off; it is seeded from the best doctor when auto is
@@ -1525,47 +1658,50 @@ namespace Implanner.UI
                         (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) - 1),
                     static () => PlannerCommands.SetManualDoctorFloor(
                         (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) + 1),
-                    WrTips.Key("IMP_OptManualFloorTip"));
+                    tips.ManualFloor);
             }
             y += Pad;
 
             // Implant reservations: stock held back for manual use; surgery
             // automation waits until items beyond these counts exist.
-            WrTips.Key("IMP_OptImplantReservesTip").Region(
+            tips.ImplantReserves.Region(
                 new Rect(rect.x, y, width, SectionHeader.SubHeight));
             y += SectionHeader.Sub(rect.x, y, width,
                 PlannerLabels.OptImplantReserves) + 2f;
-            for (int i = 0; i < snapshot.ImplantReserves.Count; i++)
+            List<ReserveRow> rows = snapshot.ImplantReserves;
+            string[] buffers = automation.ImplantBuffers;
+            for (int i = 0; i < rows.Count; i++)
             {
-                ReserveRow row = snapshot.ImplantReserves[i];
+                ReserveRow row = rows[i];
                 if (row.IconDef != null)
                     Widgets.DefIcon(new Rect(rect.x, y + 1f,
                         CompactRowHeight, CompactRowHeight), row.IconDef);
                 Widgets.Label(new Rect(rect.x + CompactRowHeight + 6f, y,
                     width - 148f, CompactRowHeight + 2f), row.Label);
-                // Buffer and control-name keys are precomputed on the row in
-                // the gated snapshot build: a steady render pass never
-                // concatenates strings.
-                if (!automation.ReserveBuffers.TryGetValue(row.BufferKey, out string buffer))
-                    buffer = row.Amount.ToStringCached();
+                // The control name is precomputed on the row and the edit
+                // buffer sits in a parallel array seeded with the snapshot:
+                // a steady render pass neither concatenates strings nor
+                // looks anything up.
+                string buffer = buffers[i];
                 int value = row.Amount;
                 automation.ReserveFieldNames.Add(row.FieldName);
-                GUI.SetNextControlName(row.FieldName);
-                NumericFieldRight(
-                    new Rect(rect.x + width - 118f, y, 90f, CompactRowHeight + 2f),
-                    ref value, ref buffer, 999f);
-                automation.ReserveBuffers[row.BufferKey] = buffer;
-                if (value != row.Amount)
-                    PlannerCommands.SetImplantReserve(row.DefName, value);
+                if (NumericField.DrawRightAligned(
+                        new Rect(rect.x + width - 118f, y, 90f, CompactRowHeight + 2f),
+                        row.FieldName, ref value, ref buffer, 0, 999))
+                {
+                    automation.StoreBuffer(buffers, i, row, buffer);
+                    if (value != row.Amount)
+                        PlannerCommands.SetImplantReserve(row.DefName, value);
+                }
                 if (Widgets.ButtonImage(new Rect(rect.x + width - 22f, y,
                         CompactRowHeight, CompactRowHeight), TexButton.Delete))
                     PlannerCommands.SetImplantReserve(row.DefName, 0);
                 y += CompactRowHeight + 4f;
             }
             var addReserveRect = new Rect(rect.x, y, Mathf.Min(200f, width), RowHeight);
-            WrTips.Key("IMP_AddImplantReserveTip").Region(addReserveRect);
+            tips.AddImplantReserve.Region(addReserveRect);
             if (Widgets.ButtonText(addReserveRect, PlannerLabels.AddImplantReserve))
-                OpenImplantReserveMenu(model);
+                OpenImplantReserveMenu(store.Model);
         }
 
         /// Catalog implants (with an item to hold back) not already listed,
@@ -1591,21 +1727,21 @@ namespace Implanner.UI
         }
 
         private void DrawProductionColumn(
-            Rect rect, PlannerModel model, AutomationSnapshot snapshot)
+            Rect rect, AutomationSnapshot snapshot, AutomationTips tips)
         {
             float width = rect.width;
             float y = rect.y;
             y += SectionHeader.Primary(rect.x, y, width,
                 PlannerLabels.OptProduction) + 2f;
-            bool autoProduction = model.AutoProduction;
+            bool autoProduction = snapshot.AutoProduction;
             bool now = autoProduction;
             var autoProductionRect = new Rect(rect.x, y, width, RowHeight);
-            WrTips.Key("IMP_OptAutoProductionTip").Region(autoProductionRect);
+            tips.AutoProduction.Region(autoProductionRect);
             Widgets.CheckboxLabeled(autoProductionRect,
                 PlannerLabels.OptAutoProduction, ref now);
             if (now != autoProduction) PlannerCommands.SetAutoProduction(now);
             y += RowHeight + 2f;
-            if (!model.AutoProduction) return;
+            if (!snapshot.AutoProduction) return;
 
             DrawStepperRow(rect.x, ref y, width, PlannerLabels.OptConcurrency,
                 snapshot.ConcurrencyText,
@@ -1613,12 +1749,12 @@ namespace Implanner.UI
                     (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) - 1),
                 static () => PlannerCommands.SetProductionConcurrency(
                     (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) + 1),
-                WrTips.Key("IMP_OptConcurrencyTip"));
+                tips.Concurrency);
 
-            bool idle = model.OnlyIdleBenches;
+            bool idle = snapshot.OnlyIdleBenches;
             now = idle;
             var idleRect = new Rect(rect.x, y, width, RowHeight);
-            WrTips.Key("IMP_OptIdleBenchesTip").Region(idleRect);
+            tips.IdleBenches.Region(idleRect);
             Widgets.CheckboxLabeled(idleRect,
                 PlannerLabels.OptIdleBenches, ref now);
             if (now != idle) PlannerCommands.SetOnlyIdleBenches(now);
@@ -1630,61 +1766,43 @@ namespace Implanner.UI
                     (ImplannerStore.Current?.Model.ProductionSkill ?? 0) - 1),
                 static () => PlannerCommands.SetProductionSkill(
                     (ImplannerStore.Current?.Model.ProductionSkill ?? 0) + 1),
-                WrTips.Key("IMP_OptProductionSkillTip"));
+                tips.ProductionSkill);
 
-            bool intermediaries = model.AllowIntermediaries;
+            bool intermediaries = snapshot.AllowIntermediaries;
             now = intermediaries;
             var intermediariesRect = new Rect(rect.x, y, width, RowHeight);
-            WrTips.Key("IMP_OptIntermediariesTip").Region(intermediariesRect);
+            tips.Intermediaries.Region(intermediariesRect);
             Widgets.CheckboxLabeled(intermediariesRect,
                 PlannerLabels.OptIntermediaries, ref now);
             if (now != intermediaries) PlannerCommands.SetAllowIntermediaries(now);
             y += RowHeight + 2f + Pad;
 
-            WrTips.Key("IMP_OptReservesTip").Region(
+            tips.Reserves.Region(
                 new Rect(rect.x, y, width, SectionHeader.SubHeight));
             y += SectionHeader.Sub(rect.x, y, width,
                 PlannerLabels.OptReserves) + 2f;
-            for (int i = 0; i < snapshot.Reserves.Count; i++)
+            List<ReserveRow> rows = snapshot.Reserves;
+            string[] buffers = automation.ResourceBuffers;
+            for (int i = 0; i < rows.Count; i++)
             {
-                ReserveRow row = snapshot.Reserves[i];
+                ReserveRow row = rows[i];
                 if (row.IconDef != null)
                     Widgets.DefIcon(new Rect(rect.x, y + 1f,
                         CompactRowHeight, CompactRowHeight), row.IconDef);
                 Widgets.Label(new Rect(rect.x + CompactRowHeight + 6f, y,
                     width - 120f, CompactRowHeight + 2f), row.Label);
-                if (!automation.ReserveBuffers.TryGetValue(
-                        row.BufferKey, out string buffer))
-                    buffer = row.Amount.ToStringCached();
+                string buffer = buffers[i];
                 int value = row.Amount;
                 automation.ReserveFieldNames.Add(row.FieldName);
-                GUI.SetNextControlName(row.FieldName);
-                NumericFieldRight(
-                    new Rect(rect.x + width - 90f, y, 90f, CompactRowHeight + 2f),
-                    ref value, ref buffer, 999999f);
-                automation.ReserveBuffers[row.BufferKey] = buffer;
-                if (value != row.Amount)
-                    PlannerCommands.SetResourceReserve(row.DefName, value);
+                if (NumericField.DrawRightAligned(
+                        new Rect(rect.x + width - 90f, y, 90f, CompactRowHeight + 2f),
+                        row.FieldName, ref value, ref buffer, 0, 999999))
+                {
+                    automation.StoreBuffer(buffers, i, row, buffer);
+                    if (value != row.Amount)
+                        PlannerCommands.SetResourceReserve(row.DefName, value);
+                }
                 y += CompactRowHeight + 4f;
-            }
-        }
-
-        /// A numeric entry field with right-aligned text, reading like a
-        /// number column. The shared text-field style is global GUI state,
-        /// so the alignment is restored through try/finally.
-        private static void NumericFieldRight(
-            Rect rect, ref int value, ref string buffer, float max)
-        {
-            GUIStyle style = Text.CurTextFieldStyle;
-            TextAnchor alignment = style.alignment;
-            style.alignment = TextAnchor.MiddleRight;
-            try
-            {
-                Widgets.TextFieldNumeric(rect, ref value, ref buffer, 0f, max);
-            }
-            finally
-            {
-                style.alignment = alignment;
             }
         }
 
@@ -1709,15 +1827,16 @@ namespace Implanner.UI
             y += HeaderHeight + 4f;
         }
 
-        /// Layout heights: pure arithmetic over the snapshot and shared
-        /// scalars (no traversal, no measurement).
-        private static float SurgeryColumnHeight(
-            PlannerModel model, AutomationSnapshot snapshot)
+        /// Layout heights: pure arithmetic over the snapshot (no traversal,
+        /// no measurement).
+        private static float SurgeryColumnHeight(AutomationSnapshot snapshot)
         {
             float height = SectionHeader.PrimaryHeight + 2f
                 + HeaderHeight + 2f + 30f + Pad                  // iteration
+                + HeaderHeight + 4f                              // concurrency
+                + RowHeight + 2f                                 // hospitalized
                 + RowHeight + 2f;                                // auto floor
-            if (!model.AutoDoctorFloor)
+            if (!snapshot.AutoDoctorFloor)
                 height += HeaderHeight + 4f;                     // manual skill
             height += Pad + SectionHeader.SubHeight + 2f         // reservations
                 + snapshot.ImplantReserves.Count * (CompactRowHeight + 4f)
@@ -1725,12 +1844,11 @@ namespace Implanner.UI
             return height;
         }
 
-        private static float ProductionColumnHeight(
-            PlannerModel model, AutomationSnapshot snapshot)
+        private static float ProductionColumnHeight(AutomationSnapshot snapshot)
         {
             float height = SectionHeader.PrimaryHeight + 2f
                 + RowHeight + 2f;                                // auto bills
-            if (model.AutoProduction)
+            if (snapshot.AutoProduction)
                 height += HeaderHeight + 4f                      // concurrency
                     + RowHeight + 2f                             // idle benches
                     + HeaderHeight + 4f                          // crafting skill

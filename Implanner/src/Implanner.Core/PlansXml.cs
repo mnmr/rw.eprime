@@ -117,8 +117,10 @@ namespace Implanner.Core
         /// Parses the XML format. Returns false with a short error on
         /// malformed XML, a missing &lt;ImplannerPlans&gt; root, a blank or
         /// duplicate plan name (trimmed, ordinal-ignore-case), an unknown
-        /// <c>Extends</c> target, or a negative/non-numeric slot ordinal;
-        /// failure is atomic (<paramref name="plans"/> comes back empty).
+        /// <c>Extends</c> target, an <c>Extends</c> chain that cycles
+        /// (including a plan extending itself), or a negative/non-numeric
+        /// slot ordinal; failure is atomic (<paramref name="plans"/> comes
+        /// back empty).
         /// Unknown elements and attributes are ignored for forward
         /// compatibility. Slot ordinals are deduplicated and sorted; an
         /// Implant without valid slots is dropped; a Plan without implants is
@@ -194,7 +196,8 @@ namespace Implanner.Core
                     return false;
                 }
 
-                var plan = new Plan(plans.Count + 1, name); // temp id, remapped on apply
+                int tempId = plans.Count + 1; // remapped on apply
+                var goals = new List<ImplantGoal>();
                 foreach (var implantEl in planEl.Elements("Implant"))
                 {
                     if (!ModsPresent(implantEl, isModActive)) continue;
@@ -219,12 +222,12 @@ namespace Implanner.Core
                     }
                     if (ordinals == null) continue; // no valid slots → drop implant
                     ordinals.Sort();
-                    plan.Implants.Add(new ImplantGoal(0, def, ordinals));
+                    goals.Add(new ImplantGoal(0, def, ordinals));
                 }
 
-                keptNames.Add(name, plan.Id);
+                keptNames.Add(name, tempId);
                 extendsNames.Add(((string)planEl.Attribute("Extends"))?.Trim());
-                plans.Add(plan);
+                plans.Add(new Plan(tempId, name, 0, goals));
             }
 
             // Second pass: resolve Extends names onto temp ids. A target
@@ -236,8 +239,7 @@ namespace Implanner.Core
                 if (extendsName == null || extendsName.Length == 0) continue;
                 if (keptNames.TryGetValue(extendsName, out int baseTempId))
                 {
-                    if (baseTempId != plans[i].Id) // self-extension degrades
-                        plans[i].BasePlanId = baseTempId;
+                    plans[i].BasePlanId = baseTempId;
                 }
                 else if (!skippedNames.Contains(extendsName))
                 {
@@ -247,7 +249,32 @@ namespace Implanner.Core
                 }
             }
 
+            // Third pass: the base chain must be acyclic. The model never
+            // creates a cycle (base links are chosen at creation from
+            // existing plans), so a payload that would import one — a plan
+            // extending itself, or A→B→…→A — is invalid as a whole.
+            for (int i = 0; i < plans.Count; i++)
+            {
+                if (!ChainCycles(plans, i)) continue;
+                error = "Base plan cycle at \"" + plans[i].Name + "\".";
+                plans.Clear();
+                return false;
+            }
+
             return true;
+        }
+
+        /// Walks the temp-id base chain from plan i (temp id = index + 1);
+        /// true when it returns to i. Bounded by the plan count.
+        static bool ChainCycles(List<Plan> plans, int i)
+        {
+            int baseId = plans[i].BasePlanId;
+            for (int steps = 0; baseId != 0 && steps < plans.Count; steps++)
+            {
+                if (baseId == plans[i].Id) return true;
+                baseId = plans[baseId - 1].BasePlanId;
+            }
+            return baseId == plans[i].Id;
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

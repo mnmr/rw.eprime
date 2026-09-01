@@ -16,7 +16,8 @@ every edit you make triggers an immediate extra pass:
 The colony summary at the top of the Overview tab shows all of this:
 whether automation is on, what production is crafting or waiting for,
 how many implants are in stock and still queued, and whose surgery batch
-is next.
+is next. Hover the production or surgery figures for a breakdown per
+implant, including what each item is waiting for.
 
 ![The colony summary with production and surgery status](colony-next.png)
 

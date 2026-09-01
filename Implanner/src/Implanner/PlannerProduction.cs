@@ -1,19 +1,17 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
-using RimShared.Common;
 using RimWorld;
 using Verse;
-using Plan = Implanner.Core.Plan;
 
 namespace Implanner
 {
     /// Production automation inside the deterministic reconciliation pass:
     /// crafting bills for implant items the colony still needs. Runs only
     /// from PlannerReconciler's synchronized tick path, consumes only
-    /// authoritative synchronized state, and takes all colony structure from
-    /// the pass's ColonyIndex, so every multiplayer client derives identical
-    /// bills.
+    /// authoritative synchronized state, and takes all colony structure and
+    /// per-pawn evaluations from the pass, so every multiplayer client
+    /// derives identical bills.
     ///
     /// Dispatch rules:
     /// - demand = missing (unblocked) implant slots on the
@@ -34,19 +32,15 @@ namespace Implanner
     /// - a bill whose item is no longer demanded at its colony is deleted.
     ///
     /// Cadence: the owner-approved 1020-game-tick boundary for resource-gated
-    /// production dispatch, plus an immediate pass after a production-domain
-    /// mutation (options edited). The pass's own bill bookkeeping is folded
-    /// into the observed revision by NotePassCompleted, so it never counts
-    /// as an option edit. Bill objects belong to the game; the model only
+    /// production dispatch (the pass's BoundaryHit, pure tick arithmetic),
+    /// plus an early dispatch on the pass after a production-domain
+    /// mutation (options edited) via the store's scribed
+    /// PendingProductionPass flag, which only the synced command path sets
+    /// and this phase clears — the pass's own bill bookkeeping publishes
+    /// without setting it. Bill objects belong to the game; the model only
     /// records which bills Implanner created.
     internal static class PlannerProduction
     {
-        /// The production dispatch boundary approved in AGENTS.md.
-        private static readonly FixedTickBoundaryGate boundary =
-            new FixedTickBoundaryGate(1020);
-        private static int observedProductionVersion = -1;
-        private static bool ranThisPass;
-
         // Cache contract:
         // Owner: process/loaded def set.
         // Key: implant item ThingDef identity.
@@ -60,26 +54,25 @@ namespace Implanner
         private static readonly Dictionary<ThingDef, RecipeDef?> productionRecipes =
             new Dictionary<ThingDef, RecipeDef?>();
 
+        // Cache contract:
+        // Owner: process/loaded def set.
+        // Key: RecipeDef identity.
+        // Value: the set of bench ThingDefs that can work the recipe (the
+        //   recipe's own recipeUsers plus every ThingDef listing it —
+        //   RecipeDef.AllRecipeUsers, which walks the whole ThingDef
+        //   database per call); immutable once built, observed defs never
+        //   mutated.
+        // Dependencies: the loaded definition set (static per session).
+        // Refresh policy: built lazily per recipe on first demand.
+        // Equality policy: entries never change within a session.
+        // Teardown: Reset clears the map (world teardown; defensive only).
+        private static readonly Dictionary<RecipeDef, HashSet<ThingDef>> recipeUsers =
+            new Dictionary<RecipeDef, HashSet<ThingDef>>();
+
         internal static void Reset()
         {
-            boundary.Reset();
-            observedProductionVersion = -1;
-            ranThisPass = false;
             productionRecipes.Clear();
-        }
-
-        /// Called by the reconciler AFTER it bumps the pass's aggregated
-        /// change: folds this pass's own bill bookkeeping into the observed
-        /// production revision so the next reconcile trigger does not
-        /// mistake it for a player option edit and re-run the full dispatch
-        /// scan ahead of the 1020-tick boundary. Nothing else can mutate the
-        /// store between the pass and this call — both run on the same tick
-        /// inside the same synchronized call stack.
-        internal static void NotePassCompleted(ImplannerStore store)
-        {
-            if (!ranThisPass) return;
-            ranThisPass = false;
-            observedProductionVersion = store.ProductionVersion;
+            recipeUsers.Clear();
         }
 
         /// The deterministic crafting recipe for an implant item: the lowest
@@ -103,17 +96,30 @@ namespace Implanner
             return best;
         }
 
+        /// The bench defs that can work the recipe, resolved once per
+        /// recipe per session. Builder path only.
+        private static HashSet<ThingDef> RecipeUsersOf(RecipeDef recipe)
+        {
+            if (recipeUsers.TryGetValue(recipe, out HashSet<ThingDef> users))
+                return users;
+            users = new HashSet<ThingDef>();
+            foreach (ThingDef user in recipe.AllRecipeUsers)
+                users.Add(user);
+            recipeUsers.Add(recipe, users);
+            return users;
+        }
+
         internal static PlannerChange Reconcile(
-            ImplannerStore store, ColonyIndex index)
+            ImplannerStore store, ReconcilePass pass)
         {
             PlannerModel model = store.Model;
             if (model.AutomationPaused || !model.AutoProduction)
                 return PlannerChange.None;
 
-            bool boundaryHit = boundary.Observe(Find.TickManager.TicksGame);
-            bool optionsDirty = store.ProductionVersion != observedProductionVersion;
-            if (!boundaryHit && !optionsDirty) return PlannerChange.None;
-            ranThisPass = true;
+            if (!pass.BoundaryHit && !store.PendingProductionPass)
+                return PlannerChange.None;
+            store.ClearPendingProductionPass();
+            ColonyIndex index = pass.Index;
 
             var change = PlannerChange.None;
 
@@ -141,11 +147,12 @@ namespace Implanner
                         list.Add(bench);
                         BillStack bills = bench.BillStack;
                         for (int i = 0; i < bills.Count; i++)
-                            if (bills[i] is Bill_Production production
-                                && model.OwnedProductionBills.ContainsKey(
-                                    production.GetUniqueLoadID()))
-                                resolvedBills[production.GetUniqueLoadID()] =
-                                    (production, colony.CanonicalMap);
+                        {
+                            if (!(bills[i] is Bill_Production production)) continue;
+                            string billId = pass.BillId(production);
+                            if (model.OwnedProductionBills.ContainsKey(billId))
+                                resolvedBills[billId] = (production, colony.CanonicalMap);
+                        }
                     }
                 }
             }
@@ -154,12 +161,18 @@ namespace Implanner
                     a.thingIDNumber.CompareTo(b.thingIDNumber));
 
             // Records whose bill no longer exists anywhere (completed bills
-            // delete themselves at repeat count zero) are forgotten.
+            // delete themselves at repeat count zero) are forgotten — but
+            // only when every bench is where it can be seen. While a
+            // gravship is in flight its benches are unspawned and held by
+            // the ship, so nothing is forgotten until it lands and the
+            // bills are visible again (a forgotten record would let demand
+            // queue a second bill on landing).
             var recordIds = new List<string>(model.OwnedProductionBills.Keys);
             recordIds.Sort(StringComparer.Ordinal);
-            for (int i = 0; i < recordIds.Count; i++)
-                if (!resolvedBills.ContainsKey(recordIds[i]))
-                    change |= model.RemoveOwnedProductionBill(recordIds[i]);
+            if (Find.CurrentGravship == null)
+                for (int i = 0; i < recordIds.Count; i++)
+                    if (!resolvedBills.ContainsKey(recordIds[i]))
+                        change |= model.RemoveOwnedProductionBill(recordIds[i]);
 
             // Demand per colony per item def, in items: missing slots
             // wanting the item.
@@ -169,15 +182,12 @@ namespace Implanner
             for (int i = 0; i < pawnIds.Count; i++)
             {
                 int pawnId = pawnIds[i];
-                if (!index.PawnsById.TryGetValue(pawnId, out Pawn pawn)) continue;
                 Colony? colony = index.ColonyOfPawn(pawnId);
                 if (colony == null) continue;
-                Plan? plan = model.AssignedPlan(pawnId);
-                if (plan == null) continue;
-                List<ImplantGoal> goals = model.EffectiveImplants(plan);
-                if (goals.Count == 0) continue;
-                List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    pawn, goals);
+                PawnEvaluation? evaluation = pass.Evaluate(pawnId);
+                if (evaluation == null) continue;
+                IReadOnlyList<ImplantGoal> goals = evaluation.Goals;
+                List<string> missing = evaluation.Missing;
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
@@ -202,13 +212,18 @@ namespace Implanner
             for (int c = 0; c < index.Colonies.Count; c++)
             {
                 Colony colony = index.Colonies[c];
-                for (int i = 0; i < colony.ItemIds.Count; i++)
+                foreach (KeyValuePair<ThingDef, List<int>> kind in colony.ItemIdsByDef)
                 {
-                    Thing thing = index.ItemsById[colony.ItemIds[i]];
-                    if (thing.IsForbidden(Faction.OfPlayer)) continue;
-                    var key = (colony.CanonicalMap, thing.def);
-                    stock.TryGetValue(key, out int count);
-                    stock[key] = count + thing.stackCount;
+                    int count = 0;
+                    List<int> ids = kind.Value;
+                    for (int i = 0; i < ids.Count; i++)
+                    {
+                        Thing thing = index.ItemsById[ids[i]];
+                        if (thing.IsForbidden(Faction.OfPlayer)) continue;
+                        count += thing.stackCount;
+                    }
+                    if (count > 0)
+                        stock[(colony.CanonicalMap, kind.Key)] = count;
                 }
             }
             Dictionary<ThingDef, int> playerReserves =
@@ -345,7 +360,7 @@ namespace Implanner
                 if (recipe == null || !recipe.AvailableNow) continue;
                 if (!ReservesAllow(model, index, colony, recipe, count)) continue;
                 Building_WorkTable? bench = FindFreeBench(
-                    benchesByColony, model, colony, recipe);
+                    benchesByColony, model, pass, colony, recipe);
                 if (bench == null) continue;
 
                 var bill = new Bill_Production(recipe)
@@ -358,7 +373,7 @@ namespace Implanner
                 bench.BillStack.AddBill(bill);
                 busyBenches[colony] = busy + 1;
                 change |= model.SetOwnedProductionBill(
-                    bill.GetUniqueLoadID(), item.defName);
+                    pass.BillId(bill), item.defName);
             }
 
             return change;
@@ -522,25 +537,21 @@ namespace Implanner
         /// and satisfied do-until-X bills leave the bench idle.
         private static Building_WorkTable? FindFreeBench(
             Dictionary<Map, List<Building_WorkTable>> benchesByColony,
-            PlannerModel model, Map colony, RecipeDef recipe)
+            PlannerModel model, ReconcilePass pass, Map colony, RecipeDef recipe)
         {
             if (!benchesByColony.TryGetValue(colony, out var benches)) return null;
-            // AllRecipeUsers covers both recipeUsers on the recipe and
-            // recipes listed on the bench def.
-            var users = new HashSet<ThingDef>();
-            foreach (ThingDef user in recipe.AllRecipeUsers)
-                users.Add(user);
+            HashSet<ThingDef> users = RecipeUsersOf(recipe);
             for (int i = 0; i < benches.Count; i++)
             {
                 Building_WorkTable bench = benches[i];
                 if (!users.Contains(bench.def))
                     continue;
                 BillStack bills = bench.BillStack;
-                if (bills.Count >= 15) continue;
+                if (bills.Count >= BillStack.MaxCount) continue;
                 bool blocked = false;
                 for (int b = 0; b < bills.Count && !blocked; b++)
                     blocked = model.OwnedProductionBills.ContainsKey(
-                            bills[b].GetUniqueLoadID())
+                            pass.BillId(bills[b]))
                         || (model.OnlyIdleBenches && bills[b].ShouldDoNow());
                 if (!blocked) return bench;
             }

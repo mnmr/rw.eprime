@@ -18,6 +18,9 @@ namespace Implanner.UI
         /// on the card's name row (the caption row has no room beside the
         /// percent); empty otherwise.
         internal string ExtendsText = "";
+        /// Fit width of ExtendsText in the effective Tiny font, measured at
+        /// build; 0 while there is no base plan.
+        internal float ExtendsWidth;
 
         /// Aggregate delivery progress of the enlisted colonists (satisfied
         /// over total units, 0..1; 0 while nobody is enlisted).
@@ -70,6 +73,8 @@ namespace Implanner.UI
         internal List<PlanListRow> Plans = new List<PlanListRow>();
         internal int SelectedPlanId;
         internal string SelectedPlanName = "";
+        /// Medium-font fit width of SelectedPlanName, measured at build.
+        internal float SelectedPlanNameWidth;
 
         internal List<PickerRow> Tree = new List<PickerRow>();
 
@@ -99,10 +104,12 @@ namespace Implanner.UI
         //   (ExternalPawnFacts.Revision), the implant catalog and conflict
         //   facts (language revision folded into UiVersion.Current; conflict
         //   facts are def-derived and static per session), the selection,
-        //   and the filter segments.
-        // Refresh policy: immediate on the next Repaint read after a key
-        //   component moves; command bumps make structural edits visible
-        //   while paused.
+        //   and the filter segments. The plan-name and "extends" widths are
+        //   measured here (the language and metric revisions are inside
+        //   UiVersion.Current).
+        // Refresh policy: immediate on the next Current read (from the
+        //   dialog's WindowUpdate) after a key component moves; command
+        //   bumps make structural edits visible while paused.
         // Equality policy: rebuilds replace the snapshot.
         // Teardown: Release() drops the snapshot.
         private PlansSnapshot? snapshot;
@@ -115,6 +122,20 @@ namespace Implanner.UI
         private int selectionStamp = -1;
         private int regionStamp = -1;
 
+        // Cache contract (folded-node flags):
+        // Owner: the Implanner dialog window.
+        // Key: the plans snapshot identity plus the fold revision.
+        // Value: one bool per tree row, true for a collapsed node
+        //   (immutable once built).
+        // Dependencies: the snapshot's tree and the collapsed-section set.
+        // Refresh policy: immediate on the next read after either moves.
+        // Equality policy: an unchanged key reuses the array.
+        // Teardown: Release() drops it.
+        private bool[]? foldedFlags;
+        private PlansSnapshot? foldedFlagsSnapshot;
+        private int foldedFlagsRevision = -1;
+        private int foldRevision;
+
         internal int SelectedPlanId;
 
         /// Region filter segment, in ImplantRegion order (Limbs, Torso,
@@ -125,13 +146,16 @@ namespace Implanner.UI
         /// Session view state: COLLAPSED tree node keys — every group starts
         /// expanded (the trees mostly fit on screen). Folding only skips
         /// drawing already-built rows; it is not a snapshot dependency.
-        internal readonly HashSet<string> CollapsedSections =
+        private readonly HashSet<string> collapsedSections =
             new HashSet<string>(StringComparer.Ordinal);
 
         internal void Release()
         {
             snapshot = null;
             owner = null;
+            foldedFlags = null;
+            foldedFlagsSnapshot = null;
+            foldedFlagsRevision = -1;
             uiStamp = -1;
             plansStamp = -1;
             rankingsStamp = -1;
@@ -141,7 +165,36 @@ namespace Implanner.UI
             regionStamp = -1;
         }
 
-        /// Called on the Repaint pass only.
+        /// Node click: folds or unfolds the group.
+        internal void ToggleSection(string sectionKey)
+        {
+            if (!collapsedSections.Remove(sectionKey))
+                collapsedSections.Add(sectionKey);
+            foldRevision++;
+        }
+
+        /// One flag per tree row: a collapsed node. Rebuilt only when the
+        /// snapshot or the fold set changed; the draw pass indexes it.
+        internal bool[] FoldedFlags(PlansSnapshot current)
+        {
+            if (foldedFlags == null
+                || !ReferenceEquals(foldedFlagsSnapshot, current)
+                || foldedFlagsRevision != foldRevision)
+            {
+                List<PickerRow> tree = current.Tree;
+                var flags = new bool[tree.Count];
+                for (int i = 0; i < tree.Count; i++)
+                    flags[i] = tree[i].Node
+                        && collapsedSections.Contains(tree[i].SectionKey);
+                foldedFlags = flags;
+                foldedFlagsSnapshot = current;
+                foldedFlagsRevision = foldRevision;
+            }
+            return foldedFlags;
+        }
+
+        /// Called from the dialog's WindowUpdate (never inside a render
+        /// pass) so every pass of a frame draws one snapshot.
         internal PlansSnapshot Current(ImplannerStore store)
         {
             if (snapshot == null
@@ -178,6 +231,20 @@ namespace Implanner.UI
             SelectedPlanId = selected?.Id ?? 0;
             result.SelectedPlanId = SelectedPlanId;
             result.SelectedPlanName = selected?.Name ?? "";
+            // Measured inside the UiVersion-gated build (Text.Font is
+            // established first) so the draw pass reads stored widths.
+            GameFont font = Text.Font;
+            Text.Font = GameFont.Medium;
+            try
+            {
+                result.SelectedPlanNameWidth = result.SelectedPlanName.Length > 0
+                    ? WrText.MeasureFitWidth(result.SelectedPlanName)
+                    : 0f;
+            }
+            finally
+            {
+                Text.Font = font;
+            }
 
             // Enlisted colonists per plan: the same pawn set and evaluation
             // the overview uses, so the card counts and bars never disagree
@@ -203,7 +270,7 @@ namespace Implanner.UI
                 Plan plan = plans[i];
                 // The counter is total selected slots (two bionic legs are
                 // two implants), not distinct implant kinds.
-                List<ImplantGoal> planGoals = model.EffectiveImplants(plan);
+                IReadOnlyList<ImplantGoal> planGoals = model.EffectiveImplants(plan);
                 int slotCount = 0;
                 for (int g = 0; g < planGoals.Count; g++)
                     slotCount += planGoals[g].Count;
@@ -223,7 +290,7 @@ namespace Implanner.UI
                 Plan? basePlan = plan.BasePlanId != 0
                     ? model.PlanById(plan.BasePlanId)
                     : null;
-                result.Plans.Add(new PlanListRow
+                var row = new PlanListRow
                 {
                     PlanId = plan.Id,
                     Name = plan.Name,
@@ -233,7 +300,13 @@ namespace Implanner.UI
                         : "",
                     Progress = total == 0 ? 0f : (float)satisfied / total,
                     PercentText = total == 0 ? "" : (satisfied * 100 / total) + "%",
-                });
+                };
+                if (row.ExtendsText.Length > 0)
+                {
+                    using (RimShared.UiLib.TinyText.UseFont())
+                        row.ExtendsWidth = WrText.MeasureFitWidth(row.ExtendsText);
+                }
+                result.Plans.Add(row);
             }
 
             if (selected == null)
@@ -260,7 +333,7 @@ namespace Implanner.UI
             // The effective goal set (post override/conflict suppression):
             // inherited slots get their marker, and any effective slot a
             // candidate conflicts with names the choice the click replaces.
-            List<ImplantGoal> effective = model.EffectiveImplants(selected);
+            IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(selected);
             var inherited = new HashSet<(string, int)>();
             var plannedSlots = new List<(string Def, int Ordinal)>();
             for (int i = 0; i < effective.Count; i++)

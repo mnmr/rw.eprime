@@ -11,12 +11,8 @@ public class PlanEvaluatorTests
 {
     static readonly IReadOnlyList<InstalledImplant> NoImplants = Array.Empty<InstalledImplant>();
 
-    static Plan ImplantPlan(params ImplantGoal[] goals)
-    {
-        var plan = new Plan(1, "Test");
-        plan.Implants.AddRange(goals);
-        return plan;
-    }
+    static Plan ImplantPlan(params ImplantGoal[] goals) =>
+        new Plan(1, "Test", 0, new List<ImplantGoal>(goals));
 
     static PlanEvaluation Evaluate(
         Plan plan,
@@ -278,6 +274,42 @@ public class PlanEvaluatorTests
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
             contexts, sameSlotExclusive: Occupying);
         await Assert.That(missing).IsEquivalentTo(new[] { "p1:BionicLeg:0" });
+    }
+
+    /// An inherited goal evaluates exactly like an own goal but keeps its
+    /// base plan's identity: a superior occupant satisfies its left leg,
+    /// and the missing right leg is keyed by the BASE plan's id.
+    [Test]
+    public async Task InheritedGoalsSubstituteAndKeyByTheirBasePlan()
+    {
+        var model = new PlannerModel();
+        int next = 1;
+        var basePlan = model.CreatePlan("Base", () => next++)!;
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", 1, true);
+        var derived = model.CreatePlan("Derived", () => next++, basePlan.Id)!;
+        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
+        IReadOnlyList<ImplantGoal> goals = model.EffectiveImplants(derived);
+        var installed = new[]
+        {
+            new InstalledImplant("ArchotechLeg", "Leg/Left", 1.5f),
+        };
+        var contexts = new[]
+        {
+            new ImplantContext(new[] { "Shoulder/Left", "Shoulder/Right" }, 1.25f),
+            new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
+        };
+
+        var result = PlanEvaluator.Evaluate(goals, installed, contexts,
+            away: false, sameSlotExclusive: Occupying);
+        var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
+            contexts, sameSlotExclusive: Occupying);
+
+        await Assert.That(result.Implants[0].Missing).IsEqualTo(1);
+        await Assert.That(result.Implants[1].Satisfied).IsEqualTo(1);
+        await Assert.That(result.Implants[1].Missing).IsEqualTo(1);
+        await Assert.That(missing).IsEquivalentTo(
+            new[] { "p2:BionicArm:0", "p1:BionicLeg:1" });
     }
 
     [Test]

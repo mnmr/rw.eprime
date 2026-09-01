@@ -57,16 +57,6 @@ namespace Implanner
                 planId, implantDefName, slotOrdinal, wanted));
         }
 
-        /// Ranks an implant kind (stars 1–5). Rankings are the player's
-        /// manual preference order; three stars is the default tier.
-        [SyncMethod]
-        public static void SetImplantStars(string implantDefName, int stars)
-        {
-            ImplannerStore? store = ImplannerStore.Current;
-            if (store == null) return;
-            store.Bump(store.Model.SetImplantStars(implantDefName, stars));
-        }
-
         /// Drops an implant kind into a star tier at an exact position:
         /// before the anchor kind, or at the tier's end when the anchor is
         /// empty. The target tier's complete sequence is materialized here
@@ -105,6 +95,8 @@ namespace Implanner
             store.Bump(model.ApplyTierOrder(stars, tier));
         }
 
+        /// iteration travels as the enum's numeric value; the model setter
+        /// normalizes anything outside the enum to the default.
         [SyncMethod]
         public static void SetIteration(int iteration)
         {
@@ -207,7 +199,7 @@ namespace Implanner
             pawnIds.Sort();
             for (int p = 0; p < pawnIds.Count; p++)
             {
-                Dictionary<string, string>? owned =
+                IReadOnlyDictionary<string, string>? owned =
                     model.OwnedBillsFor(pawnIds[p]);
                 if (owned == null) continue;
                 var goalKeys = new List<string>(owned.Keys);
@@ -256,12 +248,13 @@ namespace Implanner
         }
 
         /// colonists 1–20: how many colonists per colony may have surgeries
-        /// planned at once.
+        /// planned at once. An explicit choice ends the colony-size seeding.
         [SyncMethod]
         public static void SetSurgeryConcurrency(int colonists)
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
+            store.MarkSurgeryConcurrencySeeded();
             store.Bump(store.Model.SetSurgeryConcurrency(colonists));
         }
 

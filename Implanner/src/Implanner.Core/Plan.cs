@@ -35,22 +35,38 @@ namespace Implanner.Core
     /// own plus the base chain's, with its own selections overriding
     /// overlapping slots (PlannerModel.EffectiveImplants). The base link is
     /// chosen at creation and only cleared when the base plan disappears, so
-    /// the chain can never form a cycle.
+    /// the chain can never form a cycle. Only the model (same assembly)
+    /// mutates a plan; everything outside Core sees read-only state.
     public sealed class Plan
     {
+        readonly List<ImplantGoal> implants;
+
         public Plan(int id, string name)
+            : this(id, name, 0, new List<ImplantGoal>())
+        {
+        }
+
+        /// Hydration path (load, import parsing): builds a fully populated
+        /// plan in one step. Takes ownership of <paramref name="goals"/>:
+        /// the caller must not retain or mutate the list afterwards.
+        public Plan(int id, string name, int basePlanId, List<ImplantGoal> goals)
         {
             Id = id;
             Name = name;
-            Implants = new List<ImplantGoal>();
+            BasePlanId = basePlanId;
+            implants = goals;
         }
 
         public int Id { get; }
-        public string Name { get; set; }
+        public string Name { get; internal set; }
 
         /// The plan this plan extends; 0 = none.
-        public int BasePlanId { get; set; }
+        public int BasePlanId { get; internal set; }
 
-        public List<ImplantGoal> Implants { get; }
+        /// The plan's own goals (inherited goals live only in the effective
+        /// list). Read-only outside Core; the model edits MutableImplants.
+        public IReadOnlyList<ImplantGoal> Implants => implants;
+
+        internal List<ImplantGoal> MutableImplants => implants;
     }
 }

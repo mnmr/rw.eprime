@@ -66,6 +66,21 @@ public class ImplantConflictTests
         await Assert.That(ImplantConflictRules.Conflicts(armorskin, fireskin)).IsTrue();
     }
 
+    /// The game checks each recipe's incompatible tags against the OTHER
+    /// hediff's tags, so a declaration on one side alone excludes the
+    /// pair in both surgery orders.
+    [Test]
+    public async Task OneSidedTagDeclarationConflictsBothWays()
+    {
+        var armorskin = Facts("ArmorskinGland", replacement: false, record: 7,
+            tags: new[] { "SkinGland" }, incompatible: new[] { "SkinGland" });
+        var moddedGland = Facts("ModdedGland", replacement: false, record: 7,
+            tags: new[] { "SkinGland" });
+
+        await Assert.That(ImplantConflictRules.Conflicts(armorskin, moddedGland)).IsTrue();
+        await Assert.That(ImplantConflictRules.Conflicts(moddedGland, armorskin)).IsTrue();
+    }
+
     [Test]
     public async Task ReplacementConflictsWithGoalsInItsSubtree()
     {
@@ -93,7 +108,8 @@ public class ImplantConflictTests
     [Test]
     public async Task SelectingAConflictingSlotDeselectsThePreviousOwnPick()
     {
-        var model = new PlannerModel { SlotConflictResolver = StomachResolver };
+        var model = new PlannerModel();
+        model.SetSlotConflictResolver(StomachResolver);
         int nextPlan = 1;
         var plan = model.CreatePlan("Test", () => nextPlan++)!;
         model.SetImplantSlot(plan.Id, "NuclearStomach", 0, true);
@@ -108,10 +124,49 @@ public class ImplantConflictTests
         await Assert.That(plan.Implants[1].ImplantDefName).IsEqualTo("DetoxifierStomach");
     }
 
+    /// Per-leg stand-in: a bionic leg replaces the leg a knee spike mounts
+    /// on, so the two kinds conflict only at the same ordinal.
+    static bool LegResolver(ImplantGoal a, int ordA, ImplantGoal b, int ordB) =>
+        ordA == ordB
+        && ((a.ImplantDefName == "BionicLeg" && b.ImplantDefName == "KneeSpike")
+            || (a.ImplantDefName == "KneeSpike" && b.ImplantDefName == "BionicLeg"));
+
+    /// A conflicting pick removes only the slots it excludes: the knee
+    /// spike keeps its other leg when the first bionic leg is picked, and
+    /// disappears entirely once the second leg (added to the EXISTING
+    /// bionic-leg goal) takes that slot too. Unrelated goals are untouched.
+    [Test]
+    public async Task ConflictingPicksRemoveOnlyTheExcludedSlots()
+    {
+        var model = new PlannerModel();
+        model.SetSlotConflictResolver(LegResolver);
+        int nextPlan = 1;
+        var plan = model.CreatePlan("Test", () => nextPlan++)!;
+        model.SetImplantSlot(plan.Id, "KneeSpike", 0, true);
+        model.SetImplantSlot(plan.Id, "KneeSpike", 1, true);
+        model.SetImplantSlot(plan.Id, "BionicEye", 0, true);
+
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
+
+        await Assert.That(plan.Implants.Count).IsEqualTo(3);
+        await Assert.That(plan.Implants[0].ImplantDefName).IsEqualTo("KneeSpike");
+        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 1 });
+        await Assert.That(plan.Implants[2].ImplantDefName).IsEqualTo("BionicLeg");
+
+        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true);
+
+        await Assert.That(plan.Implants.Count).IsEqualTo(2);
+        await Assert.That(plan.Implants[0].ImplantDefName).IsEqualTo("BionicEye");
+        await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0 });
+        await Assert.That(plan.Implants[1].ImplantDefName).IsEqualTo("BionicLeg");
+        await Assert.That(plan.Implants[1].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
+    }
+
     [Test]
     public async Task DerivedPlanChoiceSuppressesConflictingInheritedGoal()
     {
-        var model = new PlannerModel { SlotConflictResolver = StomachResolver };
+        var model = new PlannerModel();
+        model.SetSlotConflictResolver(StomachResolver);
         int nextPlan = 1;
         var basePlan = model.CreatePlan("Base", () => nextPlan++)!;
         model.SetImplantSlot(basePlan.Id, "NuclearStomach", 0, true);
@@ -119,7 +174,7 @@ public class ImplantConflictTests
         var derived = model.CreatePlan("Derived", () => nextPlan++, basePlan.Id)!;
         model.SetImplantSlot(derived.Id, "DetoxifierStomach", 0, true);
 
-        List<ImplantGoal> effective = model.EffectiveImplants(derived);
+        IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(derived);
 
         // The derived stomach wins; the unrelated eye still inherits.
         await Assert.That(effective.Count).IsEqualTo(2);

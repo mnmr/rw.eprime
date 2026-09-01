@@ -13,6 +13,10 @@ namespace Implanner.Patches
     {
         public static void Postfix()
         {
+            // Window-level statics: the mouseover-readout suppression flag
+            // and any implant drag in progress must not outlive the world.
+            Dialog_Implanner.AnyOpen = false;
+            PlannerDrag.Cancel();
             ColonyScope.ReleaseSnapshot();
             Catalogs.Release();
             WrText.Reset();

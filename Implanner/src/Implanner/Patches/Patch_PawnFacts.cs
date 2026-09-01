@@ -6,15 +6,24 @@ using Verse;
 namespace Implanner.Patches
 {
     /// The reliable event seams for Implanner evaluation and gear-display
-    /// inputs: apparel and equipment tracker changes, hediff add/remove, and
-    /// roster membership. Each bumps the facts revision only for pawns that
-    /// could be enlisted, keeping the boundary work minimal.
+    /// inputs: apparel and equipment tracker changes, implant hediff
+    /// add/remove, and roster membership. Each bumps the facts revision only
+    /// for humanlike player-faction pawns (the only pawns that can be
+    /// enlisted), and the hediff seam only for implant-class hediffs (the
+    /// exact filter PawnProjection evaluates: countsAsAddedPartOrImplant),
+    /// so animal wounds, bloodloss and the like never invalidate anything.
     internal static class PawnFactsTransitions
     {
         internal static void BumpFor(Pawn? pawn)
         {
-            if (pawn?.Faction?.IsPlayer == true)
+            if (pawn?.Faction?.IsPlayer == true && pawn.RaceProps.Humanlike)
                 ExternalPawnFacts.Bump();
+        }
+
+        internal static void BumpForHediff(Pawn? pawn, Hediff? hediff)
+        {
+            if (hediff?.def.countsAsAddedPartOrImplant == true)
+                BumpFor(pawn);
         }
     }
 
@@ -50,15 +59,15 @@ namespace Implanner.Patches
         typeof(Hediff), typeof(BodyPartRecord), typeof(DamageInfo?), typeof(DamageWorker.DamageResult))]
     public static class Patch_HediffAdded_PawnFacts
     {
-        public static void Postfix(Pawn ___pawn) =>
-            PawnFactsTransitions.BumpFor(___pawn);
+        public static void Postfix(Pawn ___pawn, Hediff hediff) =>
+            PawnFactsTransitions.BumpForHediff(___pawn, hediff);
     }
 
     [HarmonyPatch(typeof(Pawn_HealthTracker), nameof(Pawn_HealthTracker.RemoveHediff))]
     public static class Patch_HediffRemoved_PawnFacts
     {
-        public static void Postfix(Pawn ___pawn) =>
-            PawnFactsTransitions.BumpFor(___pawn);
+        public static void Postfix(Pawn ___pawn, Hediff hediff) =>
+            PawnFactsTransitions.BumpForHediff(___pawn, hediff);
     }
 
     /// Roster membership: spawn, despawn, faction change, caravan moves.

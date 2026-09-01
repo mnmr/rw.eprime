@@ -216,6 +216,54 @@ public class PlannerModelTests
         await Assert.That(model.SetAutomationPaused(true)).IsEqualTo(PlannerChange.Options);
     }
 
+    /// Persisted option values outside their ranges (hand-edited saves,
+    /// values from a build with other bounds) load clamped exactly like
+    /// the setters clamp them; an unknown iteration strategy falls back to
+    /// the default. Loaded doctor floors normalize the same way: zero
+    /// stores nothing, above-max clamps.
+    [Test]
+    public async Task LoadedOptionsAndFloorsClampLikeTheSetters()
+    {
+        var model = NewModel();
+
+        model.LoadOptions(automationPaused: false,
+            iteration: (IterationStrategy)7, manualDoctorFloor: 99,
+            autoDoctorFloor: true, surgeryConcurrency: 0,
+            countHospitalized: true, autoProduction: true,
+            productionConcurrency: 99, onlyIdleBenches: true,
+            productionSkill: -3, allowIntermediaries: true);
+        model.AddLoadedDoctorFloor("home", 0);
+        model.AddLoadedDoctorFloor("ship", 25);
+
+        await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
+        await Assert.That(model.ManualDoctorFloor).IsEqualTo(PlannerModel.DoctorFloorMax);
+        await Assert.That(model.SurgeryConcurrency).IsEqualTo(PlannerModel.SurgeryConcurrencyMin);
+        await Assert.That(model.ProductionConcurrency).IsEqualTo(PlannerModel.ConcurrencyMax);
+        await Assert.That(model.ProductionSkill).IsEqualTo(PlannerModel.DoctorFloorMin);
+        await Assert.That(model.DoctorFloors.ContainsKey("home")).IsFalse();
+        await Assert.That(model.DoctorFloorOf("ship")).IsEqualTo(PlannerModel.DoctorFloorMax);
+    }
+
+    /// The synced iteration command carries the strategy as a plain int:
+    /// a value outside the enum (a client on a build with other
+    /// strategies) must normalize to the default exactly like the load
+    /// path, never be stored raw, and never report a change when the
+    /// model already holds the default.
+    [Test]
+    public async Task SetIterationNormalizesUnknownValuesToTheDefault()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.SetIteration((IterationStrategy)7))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
+
+        model.SetIteration(IterationStrategy.Colonist);
+        await Assert.That(model.SetIteration((IterationStrategy)(-1)))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
+    }
+
     [Test]
     public async Task RevisionsBumpOnlyReportedDomains()
     {

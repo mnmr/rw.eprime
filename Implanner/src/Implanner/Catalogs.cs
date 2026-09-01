@@ -149,11 +149,16 @@ namespace Implanner
             // Every implant a surgery recipe can add to a humanlike body part.
             var parts = new Dictionary<HediffDef, HashSet<BodyPartDef>>();
             var surgeries = new Dictionary<HediffDef, List<RecipeDef>>();
+            // Implant items each surgery consumes, collected in the same
+            // walk so the purchase-only test is a lookup rather than a
+            // rescan of every recipe per candidate.
+            var implantItems = new Dictionary<HediffDef, List<ThingDef>>();
             List<RecipeDef> recipes = DefDatabase<RecipeDef>.AllDefsListForReading;
             for (int i = 0; i < recipes.Count; i++)
             {
                 RecipeDef recipe = recipes[i];
                 if (recipe.addsHediff == null || !recipe.IsSurgery) continue;
+                CollectImplantItems(recipe, implantItems);
                 if (recipe.appliedOnFixedBodyParts.NullOrEmpty()) continue;
                 if (!IsPlannable(recipe.addsHediff)) continue;
                 if (!parts.TryGetValue(recipe.addsHediff, out HashSet<BodyPartDef> set))
@@ -172,7 +177,7 @@ namespace Implanner
             var result = new List<ImplantCatalogEntry>();
             foreach (KeyValuePair<HediffDef, HashSet<BodyPartDef>> pair in parts)
             {
-                if (IsPurchaseOnly(pair.Key, producible)) continue;
+                if (IsPurchaseOnly(pair.Key, producible, implantItems)) continue;
                 var fixedParts = new List<BodyPartDef>(pair.Value);
                 fixedParts.Sort(ByDefName);
                 float efficiency = pair.Key.addedPartProps?.partEfficiency ?? 1f;
@@ -260,32 +265,40 @@ namespace Implanner
             return producible;
         }
 
+        /// Records the tech-hediff items a surgery recipe's ingredient
+        /// filters allow against the hediff it adds.
+        private static void CollectImplantItems(RecipeDef recipe,
+            Dictionary<HediffDef, List<ThingDef>> implantItems)
+        {
+            List<IngredientCount>? ingredients = recipe.ingredients;
+            if (ingredients == null) return;
+            for (int g = 0; g < ingredients.Count; g++)
+                foreach (ThingDef ingredient in ingredients[g].filter.AllowedThingDefs)
+                {
+                    if (!ingredient.isTechHediff) continue;
+                    if (!implantItems.TryGetValue(recipe.addsHediff, out List<ThingDef> items))
+                    {
+                        items = new List<ThingDef>();
+                        implantItems.Add(recipe.addsHediff, items);
+                    }
+                    items.Add(ingredient);
+                }
+        }
+
         /// Purchase-only implants (archotech parts, joywire-class trader
         /// goods, and modded equivalents) are not shared plan goals: the
         /// implant item its surgery consumes cannot be produced by any
         /// recipe. Implants whose surgeries consume no identifiable implant
         /// item stay included.
-        private static bool IsPurchaseOnly(HediffDef def, HashSet<ThingDef> producible)
+        private static bool IsPurchaseOnly(HediffDef def, HashSet<ThingDef> producible,
+            Dictionary<HediffDef, List<ThingDef>> implantItems)
         {
-            bool foundItem = false;
-            List<RecipeDef> recipes = DefDatabase<RecipeDef>.AllDefsListForReading;
-            for (int i = 0; i < recipes.Count; i++)
-            {
-                RecipeDef recipe = recipes[i];
-                if (recipe.addsHediff != def || !recipe.IsSurgery) continue;
-                if (recipe.ingredients == null) continue;
-                for (int g = 0; g < recipe.ingredients.Count; g++)
-                {
-                    foreach (ThingDef ingredient in recipe.ingredients[g].filter.AllowedThingDefs)
-                    {
-                        if (!ingredient.isTechHediff) continue;
-                        foundItem = true;
-                        if (producible.Contains(ingredient))
-                            return false;
-                    }
-                }
-            }
-            return foundItem;
+            if (!implantItems.TryGetValue(def, out List<ThingDef> items))
+                return false;
+            for (int i = 0; i < items.Count; i++)
+                if (producible.Contains(items[i]))
+                    return false;
+            return true;
         }
 
         /// The canonical slot enumeration on the reference body: FixedParts

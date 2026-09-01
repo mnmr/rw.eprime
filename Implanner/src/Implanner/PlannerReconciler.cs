@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
-using RimShared.Common;
 using RimWorld;
 using Verse;
 using Plan = Implanner.Core.Plan;
@@ -16,22 +15,25 @@ namespace Implanner
     /// mutations from the same tick.
     ///
     /// Cadence: the owner-approved 1020-game-tick boundary for game-derived
-    /// drift (implant and stock changes), plus an immediate next-tick pass
-    /// after any synced store mutation (user edits stay correctness-fresh,
-    /// including while paused). One pass at most per tick.
+    /// drift (implant and stock changes), plus a pass on the next simulated
+    /// tick after any synced store mutation (the store's scribed
+    /// PendingReconcile flag, set by the command path and cleared here).
+    /// Both triggers derive only from synced state — tick arithmetic and a
+    /// flag that travels with the save — so a late-joining client never
+    /// runs a pass the host does not. Ticks do not advance while the game
+    /// is paused, so a paused edit reconciles on the first tick after
+    /// unpausing. One pass at most per tick.
     internal static class PlannerReconciler
     {
-        private static readonly FixedTickBoundaryGate boundary =
-            new FixedTickBoundaryGate(1020);
-        private static int observedStoreVersion = -1;
+        /// The reconciliation boundary approved in AGENTS.md, shared by the
+        /// doctor-floor publish and production dispatch.
+        internal const int BoundaryTicks = 1020;
+
         private static bool stoodDown;
 
         internal static void Reset()
         {
-            boundary.Reset();
-            observedStoreVersion = -1;
             stoodDown = false;
-            PlannerSurgery.Reset();
             PlannerProduction.Reset();
         }
 
@@ -48,12 +50,9 @@ namespace Implanner
                 return;
             }
 
-            bool boundaryHit = boundary.Observe(Find.TickManager.TicksGame);
-            bool storeDirty = store.Version != observedStoreVersion;
-            if (!boundaryHit && !storeDirty) return;
-            Reconcile(store);
-            // Include this pass's own mutations so the next tick is clean.
-            observedStoreVersion = store.Version;
+            bool boundaryHit = Find.TickManager.TicksGame % BoundaryTicks == 0;
+            if (!boundaryHit && !store.PendingReconcile) return;
+            Reconcile(store, boundaryHit);
         }
 
         /// Hands the colony back to the player: every reservation is released
@@ -78,7 +77,7 @@ namespace Implanner
             billPawnIds.Sort();
             for (int i = 0; i < billPawnIds.Count; i++)
             {
-                Dictionary<string, string>? owned =
+                IReadOnlyDictionary<string, string>? owned =
                     model.OwnedBillsFor(billPawnIds[i]);
                 if (owned == null) continue;
                 var goalKeys = new List<string>(owned.Keys);
@@ -95,7 +94,9 @@ namespace Implanner
             for (int i = 0; i < productionBillIds.Count; i++)
                 change |= model.RemoveOwnedProductionBill(productionBillIds[i]);
 
-            store.Bump(change);
+            store.PublishPass(change);
+            store.ClearPendingReconcile();
+            store.ClearPendingProductionPass();
             if (change != PlannerChange.None)
                 Log.Message("[Implanner] Released " + itemIds.Count
                     + " reservation(s) and dropped " + billPawnIds.Count
@@ -104,21 +105,24 @@ namespace Implanner
                     + "with " + PlannerAutomation.BlockedBy + " active.");
         }
 
-        private static void Reconcile(ImplannerStore store)
+        private static void Reconcile(ImplannerStore store, bool boundaryHit)
         {
             PlannerModel model = store.Model;
             var change = PlannerChange.None;
 
+            // Converge first: state of pawns that no longer exist anywhere
+            // is dropped before anything reads the model, so a client that
+            // loaded the host's save derives the same model the host holds.
+            change |= store.CleanupMissingPawns();
+
             // The pass's single source of colony structure, colonists, and
             // items — canonicalization and faction resolution happen only
-            // inside the index.
+            // inside the index — plus the per-pawn evaluations every phase
+            // shares.
             ColonyIndex index = ColonyIndex.Build();
+            var pass = new ReconcilePass(model, index, boundaryHit);
 
-            // Effective goal lists resolved once per plan for the whole pass.
-            var effectiveByPlan = new Dictionary<int, List<ImplantGoal>>();
-
-            // Active-batch key sets resolved lazily, once per reserving pawn.
-            var batchByPawn = new Dictionary<int, HashSet<string>>();
+            change |= store.SeedSurgeryConcurrency(index.PawnsById.Count);
 
             // Reservation lifecycle: release-and-report. A reservation exists
             // only while its goal is in the pawn's ACTIVE batch AND the pawn
@@ -127,20 +131,18 @@ namespace Implanner
             // (tier iteration moved on, or a stale cross-tier holding from
             // an older version), goal removed, pawn gone, item destroyed,
             // forbidden, taken, or the pawn now settled at a different
-            // colony — releases it. A pawn merely away (caravan, mission)
-            // keeps its reservations: it may return, and re-allocation on
-            // return is automatic either way.
+            // colony — releases it. A pawn merely away (caravan, mission,
+            // in flight) keeps its reservations: it may return, and
+            // re-allocation on return is automatic either way.
             var reservationIds = new List<int>(model.Reservations.Keys);
             reservationIds.Sort();
             for (int i = 0; i < reservationIds.Count; i++)
             {
                 int itemId = reservationIds[i];
                 model.TryGetReservation(itemId, out ItemReservation reservation);
-                Plan? plan = model.AssignedPlan(reservation.PawnId);
-                bool valid = plan != null
-                    && index.PawnsById.TryGetValue(reservation.PawnId, out Pawn pawn)
-                    && ActiveBatchKeys(model, effectiveByPlan, batchByPawn,
-                        pawn, plan!).Contains(reservation.GoalKey)
+                PawnEvaluation? evaluation = pass.Evaluate(reservation.PawnId);
+                bool valid = evaluation != null
+                    && evaluation.BatchKeys.Contains(reservation.GoalKey)
                     && index.ItemsById.TryGetValue(itemId, out Thing item)
                     && !item.IsForbidden(Faction.OfPlayer)
                     && index.PawnMayCollect(reservation.PawnId, itemId);
@@ -148,48 +150,13 @@ namespace Implanner
                     change |= model.ReleaseReservation(itemId);
             }
 
-            change |= PlannerSurgery.Reconcile(store, index);
-            change |= PlannerProduction.Reconcile(store, index);
+            change |= PlannerSurgery.Reconcile(store, pass);
+            change |= PlannerProduction.Reconcile(store, pass);
 
-            store.Bump(change);
-            // The production boundary tracks its own domain revision; fold
-            // this pass's just-bumped bill bookkeeping into its observation
-            // so the next reconcile trigger does not read the pass's own
-            // mutations as a player edit and re-dispatch early.
-            PlannerProduction.NotePassCompleted(store);
-        }
-
-        private static List<ImplantGoal> EffectiveGoals(PlannerModel model,
-            Dictionary<int, List<ImplantGoal>> memo, Plan plan)
-        {
-            if (!memo.TryGetValue(plan.Id, out List<ImplantGoal> goals))
-            {
-                goals = model.EffectiveImplants(plan);
-                memo.Add(plan.Id, goals);
-            }
-            return goals;
-        }
-
-        /// The pawn's active-batch goal-slot keys (the batch ComputeBatch
-        /// selects from the currently missing slots under the iteration
-        /// strategy), projected once per pawn per pass. Batch membership
-        /// implies missing, so this is the single reservation-validity set.
-        private static HashSet<string> ActiveBatchKeys(PlannerModel model,
-            Dictionary<int, List<ImplantGoal>> goalsMemo,
-            Dictionary<int, HashSet<string>> memo, Pawn pawn, Plan plan)
-        {
-            int pawnId = pawn.thingIDNumber;
-            if (!memo.TryGetValue(pawnId, out HashSet<string> keys))
-            {
-                List<ImplantGoal> goals = EffectiveGoals(model, goalsMemo, plan);
-                keys = new HashSet<string>(
-                    SurgeryPlanner.ComputeBatch(
-                        PawnProjection.MissingImplantSlotKeys(pawn, goals),
-                        model, goals, model.Iteration),
-                    StringComparer.Ordinal);
-                memo.Add(pawnId, keys);
-            }
-            return keys;
+            // The pass's own mutations publish without requesting another
+            // pass, and the request that triggered this one is consumed.
+            store.PublishPass(change);
+            store.ClearPendingReconcile();
         }
     }
 }

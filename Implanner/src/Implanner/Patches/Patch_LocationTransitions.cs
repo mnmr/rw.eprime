@@ -8,16 +8,17 @@ namespace Implanner.Patches
     // Copied from WorkRoles and adapted (an intentional independent copy).
 
     /// Map classification is a snapshot input. Invalidate on the exact
-    /// transitions that can change it; never poll map state.
+    /// transitions that can change it; never poll map state. The
+    /// classification cache publishes ColonyScope.LocationRevision, which
+    /// is the dependency location-aware snapshots gate on; the UI metric
+    /// revision is deliberately left alone (it would clear text-width,
+    /// tooltip, and help caches that do not depend on locations).
     internal static class LocationTransitions
     {
         internal static void Invalidate(Map map)
         {
             if (map != null)
-            {
                 ColonyScope.InvalidateClassification(map);
-                UiVersion.Bump();
-            }
         }
     }
 
@@ -107,20 +108,12 @@ namespace Implanner.Patches
     [HarmonyPatch(typeof(Game), nameof(Game.AddMap))]
     public static class Patch_Game_AddMap_Locations
     {
-        public static void Postfix()
-        {
-            ColonyScope.InvalidateMapSet();
-            UiVersion.Bump();
-        }
+        public static void Postfix() => ColonyScope.InvalidateMapSet();
     }
 
     [HarmonyPatch(typeof(Game), nameof(Game.DeinitAndRemoveMap))]
     public static class Patch_Game_RemoveMap_Locations
     {
-        public static void Postfix()
-        {
-            ColonyScope.InvalidateMapSet();
-            UiVersion.Bump();
-        }
+        public static void Postfix() => ColonyScope.InvalidateMapSet();
     }
 }

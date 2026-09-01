@@ -6,60 +6,93 @@ namespace Implanner.Core.Tests;
 
 /// Surgery batch computation and iteration ordering, and the missing-slot
 /// derivation the scheduler consumes. Batching is implied by the iteration
-/// strategy: colonist iteration = whole plan, family iteration = one star
-/// tier.
+/// strategy: colonist iteration = whole plan, tier iteration = one star
+/// tier, best tier first.
 public class SurgeryPlannerTests
 {
-    [Test]
-    public async Task ColonistIterationBatchesTheWholePlan()
+    /// One plan ranking three kinds across the star tiers (5, default 3,
+    /// 1) plus a key no goal resolves. Missing keys are listed in
+    /// deliberately shuffled order so batch membership, not list order,
+    /// is what the assertions prove.
+    static PlannerModel RankedModel(out List<ImplantGoal> goals, out string[] missing)
     {
-        var missing = new[] { "i1:0", "i1:1", "i2:0" };
-
-        var batch = SurgeryPlanner.ComputeBatch(missing,
-            key => key.StartsWith("i1", StringComparison.Ordinal) ? 0 : 1,
-            IterationStrategy.Colonist);
-
-        await Assert.That(batch).IsEquivalentTo(new[] { "i1:0", "i1:1", "i2:0" });
+        var model = new PlannerModel();
+        model.SetImplantStars("BionicLeg", 5);
+        model.SetImplantStars("PowerClaw", 1);
+        goals = new List<ImplantGoal>
+        {
+            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+            new ImplantGoal(1, "BionicLeg", new[] { 0, 1 }),
+            new ImplantGoal(1, "PowerClaw", new[] { 0 }),
+        };
+        missing = new[]
+        {
+            "p1:PowerClaw:0", "p1:BionicEye:0", "p9:Unknown:0",
+            "p1:BionicLeg:1", "p1:BionicLeg:0",
+        };
+        return model;
     }
 
     [Test]
-    public async Task FamilyIterationBatchesOnlyTheBestTier()
+    public async Task ColonistIterationBatchesTheWholePlan()
     {
-        // The active tier is the best (lowest index) with missing work —
-        // it wins even when listed later.
-        var missing = new[] { "i2:0", "i1:0", "i1:1" };
+        var model = RankedModel(out var goals, out string[] missing);
 
-        var batch = SurgeryPlanner.ComputeBatch(missing,
-            key => key.StartsWith("i1", StringComparison.Ordinal) ? 0 : 1,
-            IterationStrategy.ImplantTier);
+        var batch = SurgeryPlanner.ComputeBatch(missing, model, goals,
+            IterationStrategy.Colonist);
 
-        await Assert.That(batch).IsEquivalentTo(new[] { "i1:0", "i1:1" });
+        await Assert.That(batch).IsEquivalentTo(missing);
+    }
+
+    /// Tier iteration dispatches the best tier with missing work first:
+    /// five stars, then the three-star default, then one star. A key that
+    /// resolves to no goal sorts behind every ranked tier and never joins a
+    /// better tier's batch.
+    [Test]
+    public async Task TierIterationDispatchesTiersBestFirstAndUnresolvableKeysLast()
+    {
+        var model = RankedModel(out var goals, out string[] missing);
+        var remaining = new List<string>(missing);
+        var dispatched = new List<string[]>();
+        while (remaining.Count > 0)
+        {
+            List<string> batch = SurgeryPlanner.ComputeBatch(remaining, model, goals,
+                IterationStrategy.ImplantTier);
+            dispatched.Add(batch.ToArray());
+            for (int i = 0; i < batch.Count; i++) remaining.Remove(batch[i]);
+        }
+
+        await Assert.That(dispatched.Count).IsEqualTo(4);
+        await Assert.That(dispatched[0]).IsEquivalentTo(new[] { "p1:BionicLeg:1", "p1:BionicLeg:0" });
+        await Assert.That(dispatched[1]).IsEquivalentTo(new[] { "p1:BionicEye:0" });
+        await Assert.That(dispatched[2]).IsEquivalentTo(new[] { "p1:PowerClaw:0" });
+        await Assert.That(dispatched[3]).IsEquivalentTo(new[] { "p9:Unknown:0" });
     }
 
     [Test]
     public async Task IterationStrategiesProduceVisiblyDifferentDeterministicResults()
     {
         // Pawn 1 needs tier-1 work, pawn 2 needs tier-0 work. Colonist
-        // iteration serves pawn 1 first; family iteration serves tier 0
+        // iteration serves pawn 1 first; tier iteration serves tier 0
         // (pawn 2) first.
         var items = new List<SurgeryWorkItem>
         {
-            new SurgeryWorkItem(2, PlannerModel.PriorityNormal, 0, "i3:0"),
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 1, "i1:0"),
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "i2:0"),
+            new SurgeryWorkItem(2, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 1, "p1:BionicEye:0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicArm:0"),
         };
 
         var colonist = new List<SurgeryWorkItem>(items);
         SurgeryPlanner.Order(colonist, IterationStrategy.Colonist);
-        await Assert.That(colonist[0].GoalKey).IsEqualTo("i2:0");
-        await Assert.That(colonist[1].GoalKey).IsEqualTo("i1:0");
-        await Assert.That(colonist[2].GoalKey).IsEqualTo("i3:0");
+        await Assert.That(colonist[0].GoalKey).IsEqualTo("p1:BionicArm:0");
+        await Assert.That(colonist[1].GoalKey).IsEqualTo("p1:BionicEye:0");
+        await Assert.That(colonist[2].GoalKey).IsEqualTo("p1:BionicLeg:0");
 
-        var family = new List<SurgeryWorkItem>(items);
-        SurgeryPlanner.Order(family, IterationStrategy.ImplantTier);
-        await Assert.That(family[0].GoalKey).IsEqualTo("i2:0");
-        await Assert.That(family[1].GoalKey).IsEqualTo("i3:0");
-        await Assert.That(family[2].GoalKey).IsEqualTo("i1:0");
+        var tier = new List<SurgeryWorkItem>(items);
+        SurgeryPlanner.Order(tier, IterationStrategy.ImplantTier);
+        await Assert.That(tier[0].GoalKey).IsEqualTo("p1:BionicArm:0");
+        await Assert.That(tier[1].GoalKey).IsEqualTo("p1:BionicLeg:0");
+        await Assert.That(tier[2].GoalKey).IsEqualTo("p1:BionicEye:0");
     }
 
     [Test]
@@ -67,8 +100,8 @@ public class SurgeryPlannerTests
     {
         var items = new List<SurgeryWorkItem>
         {
-            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "i1:0"),
-            new SurgeryWorkItem(9, PlannerModel.PriorityFirst, 0, "i2:0"),
+            new SurgeryWorkItem(1, PlannerModel.PriorityNormal, 0, "p1:BionicLeg:0"),
+            new SurgeryWorkItem(9, PlannerModel.PriorityFirst, 0, "p1:BionicArm:0"),
         };
 
         SurgeryPlanner.Order(items, IterationStrategy.Colonist);
@@ -81,9 +114,11 @@ public class SurgeryPlannerTests
     [Test]
     public async Task MissingSlotKeysSkipBlockedAndOccupiedSlots()
     {
-        var plan = new Plan(1, "Test");
-        plan.Implants.Add(new ImplantGoal(1, "BionicLeg", new[] { 0, 1, 2 }));
-        plan.Implants.Add(new ImplantGoal(1, "BionicEye", new[] { 0 }));
+        var plan = new Plan(1, "Test", 0, new List<ImplantGoal>
+        {
+            new ImplantGoal(1, "BionicLeg", new[] { 0, 1, 2 }),
+            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+        });
         var contexts = new[]
         {
             // Ordinal 2 does not exist on this body: blocked, never demanded.
