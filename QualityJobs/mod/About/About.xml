@@ -27,7 +27,12 @@ Quality Jobs lets everyone work on unfinished items, but only qualified colonist
 
 Safe to add/remove mid-save (but when removing you must use the settings option to disable the mod, otherwise unfinished bill items will have to be cancelled).
 Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
-Multiplayer compatible. 
+Multiplayer compatible.
 Requires Harmony.
+
+Check Out My Other Mods:
+- EPrime's Readouts: A modern, compact resource readout with support for custom resource pools.
+- WorkRoles: Easily and intuitively manage work priorities by assigning named roles to colonists.
+- EPrime's Implanner: Plan, track and optionally automate the rollouts of bionic implants.
   </description>
 </ModMetaData>

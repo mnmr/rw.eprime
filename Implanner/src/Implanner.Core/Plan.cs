@@ -8,16 +8,20 @@ namespace Implanner.Core
     /// leg" is ordinal 0 and "right leg" ordinal 1 on any body that has both.
     public sealed class ImplantGoal
     {
-        public ImplantGoal(int id, string implantDefName, IReadOnlyList<int> slotOrdinals)
+        public ImplantGoal(int planId, string implantDefName, IReadOnlyList<int> slotOrdinals)
         {
-            Id = id;
+            PlanId = planId;
             ImplantDefName = implantDefName;
             SlotOrdinals = slotOrdinals;
         }
 
-        /// Globally stable per save (allocated from the store counter);
-        /// never reused after deletion, so goal keys survive plan extension.
-        public int Id { get; }
+        /// The owning plan. A goal's identity is natural — (PlanId,
+        /// ImplantDefName) — because a plan holds at most one goal per
+        /// implant kind (SetImplantSlot merges ordinals into it). No id is
+        /// ever allocated, so goal keys cannot collide and re-adding the
+        /// same pick reproduces the same identity. In an effective goal
+        /// list an inherited goal keeps its base plan's id.
+        public int PlanId { get; }
         public string ImplantDefName { get; }
 
         /// Sorted, deduplicated, never empty (a goal with no slots is removed).

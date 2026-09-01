@@ -89,6 +89,7 @@ These are mods I've checked for compatibility:
 
 - [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092): a modern, compact resource readout with support for custom resource pools.
 - [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051): manage quality crafting and construction, so your items get the best possible quality.
+- [EPrime's Implanner](https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932): plan, track and optionally automate the rollouts of bionic implants.
 
 ## Building from source
 

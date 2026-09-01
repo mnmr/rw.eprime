@@ -46,6 +46,7 @@ namespace WorkRoles
                 if (ms >= 100)
                     slow.Append(slow.Length > 0 ? ", " : " [").Append($"{type.Name} {ms}ms");
             }
+            Patches.Patch_MultiFloorsWorkScan.Install(harmony);
             StartupTiming.Record(
                 "harmony patching" + (slow.Length > 0 ? slow.Append("]").ToString() : ""),
                 sw.ElapsedMilliseconds - patchStart);

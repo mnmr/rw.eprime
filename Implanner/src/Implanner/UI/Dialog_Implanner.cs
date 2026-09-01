@@ -14,7 +14,7 @@ namespace Implanner.UI
     /// published state.
     public class Dialog_Implanner : Window
     {
-        private enum Tab { Overview, Plans, Automation, Options }
+        private enum Tab { Overview, Plans, Automation, Help }
 
         // Session-scoped view state: survives close/reopen, never persisted.
         private static Tab curTab = Tab.Overview;
@@ -27,6 +27,7 @@ namespace Implanner.UI
         private readonly OverviewState overview = new OverviewState();
         private readonly PlansState plans = new PlansState();
         private readonly AutomationState automation = new AutomationState();
+        private readonly HelpTabView help = new HelpTabView();
 
         private List<TabRecord>? tabs;
         private int tabsLanguageStamp = -1;
@@ -79,6 +80,7 @@ namespace Implanner.UI
         {
             base.PreOpen();
             AnyOpen = true;
+            help.Reset();
         }
 
         public override void PostClose()
@@ -88,6 +90,7 @@ namespace Implanner.UI
             overview.Release();
             plans.Release();
             automation.Release();
+            help.ReleaseWindowData();
             overviewFront = null;
             plansFront = null;
             automationFront = null;
@@ -152,7 +155,7 @@ namespace Implanner.UI
                     case Tab.Overview: DrawOverview(content, store); break;
                     case Tab.Plans: DrawPlans(content, store); break;
                     case Tab.Automation: DrawAutomation(content, store); break;
-                    default: DrawOptionsPlaceholder(content); break;
+                    default: help.Draw(content); break;
                 }
                 if (curTab != Tab.Plans) PlannerDrag.Cancel();
                 DrawDragGhost();
@@ -289,8 +292,8 @@ namespace Implanner.UI
                     static () => curTab = Tab.Plans, () => curTab == Tab.Plans),
                 new TabRecord(PlannerLabels.TabAutomation,
                     static () => curTab = Tab.Automation, () => curTab == Tab.Automation),
-                new TabRecord(PlannerLabels.TabOptions,
-                    static () => curTab = Tab.Options, () => curTab == Tab.Options),
+                new TabRecord(PlannerLabels.TabHelp,
+                    static () => curTab = Tab.Help, () => curTab == Tab.Help),
             };
         }
 
@@ -310,40 +313,133 @@ namespace Implanner.UI
             Rect left = new Rect(rect.x, rect.y, rect.width - RightWidth - Pad, rect.height);
             Rect right = new Rect(left.xMax + Pad, rect.y, RightWidth, rect.height);
 
+            // Colony summary strip above the controls and table: three
+            // columns of three lines each.
+            float stripHeight = Pad * 2f + 66f;
+            Rect stripRect = new Rect(left.x, left.y, left.width, stripHeight);
+            DrawColonyStrip(stripRect, snapshot);
+
             // Location selector and group-by selector.
-            Rect selectorRect = new Rect(left.x, left.y, 240f, RowHeight);
+            Rect selectorRect = new Rect(left.x, stripRect.yMax + Pad, 240f, RowHeight);
             int groupingIndex = IndexOfGrouping(snapshot);
             string groupingLabel = groupingIndex >= 0
                 ? snapshot.GroupingLabels[groupingIndex]
                 : "";
             if (Widgets.ButtonText(selectorRect, groupingLabel))
                 OpenGroupingMenu(snapshot);
-            Rect groupByRect = new Rect(selectorRect.xMax + 8f, left.y, 180f, RowHeight);
+            Rect groupByRect = new Rect(selectorRect.xMax + 8f, selectorRect.y, 180f, RowHeight);
             if (Widgets.ButtonText(groupByRect, snapshot.GroupByLabel))
                 OpenGroupByMenu(snapshot);
 
-            // Colonist table.
+            // Colonist table takes the remaining left height; colonist
+            // details the full right height.
             Rect tableRect = new Rect(left.x, selectorRect.yMax + Pad, left.width,
-                left.height - RowHeight - Pad * 2f);
+                left.yMax - selectorRect.yMax - Pad);
             DrawColonistTable(tableRect, snapshot);
+            DrawColonistDetails(right, snapshot);
+        }
 
-            // Right side: the Colony panel sized to its content, colonist
-            // details taking the rest.
-            float colonyHeight = Pad * 2f + 32f + RowHeight + 4f
-                + PlannerStyle.SectionHeaderHeight
-                + snapshot.NextWork.Count * CompactRowHeight;
-            Rect colonyRect = new Rect(right.x, right.y, right.width, colonyHeight);
-            Rect detailRect = new Rect(right.x, colonyRect.yMax + Pad, right.width,
-                right.height - colonyHeight - Pad);
-            DrawColonyOverview(colonyRect, snapshot);
-            DrawColonistDetails(detailRect, snapshot);
+        /// The colony summary strip: three equal columns of three lines on
+        /// the darker band fill — the colony (name, colonist count,
+        /// automation chip), production (coverage percent, free-stock and
+        /// queued counts, activity sentence), and surgery (installed
+        /// percent, installed units, active batch sentence).
+        private void DrawColonyStrip(Rect rect, OverviewSnapshot snapshot)
+        {
+            PlannerStyle.Panel(rect);
+            Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 1f,
+                rect.width - 2f, rect.height - 2f), DetailHeaderFill);
+            Rect body = rect.ContractedBy(Pad);
+            float colWidth = (body.width - Pad * 2f) / 3f;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = false;
+                float lineH = Mathf.Max(22f,
+                    Mathf.Ceil(Text.LineHeightOf(GameFont.Small)));
+
+                var top = new Rect(body.x, body.y, colWidth, lineH);
+                var mid = new Rect(body.x, body.y + 22f, colWidth, lineH);
+                var low = new Rect(body.x, body.y + 44f, colWidth, lineH);
+                Widgets.Label(top, snapshot.ColonyLabelText);
+                GUI.color = PlannerStyle.CaptionText;
+                Widgets.Label(mid, snapshot.StatsText);
+                GUI.color = Color.white;
+                DrawAutomationChip(low, snapshot);
+
+                top.x = mid.x = low.x = body.x + colWidth + Pad;
+                Widgets.Label(top, snapshot.ProductionTitleText);
+                GUI.color = PlannerStyle.CaptionText;
+                Widgets.Label(mid, snapshot.StockQueuedText);
+                GUI.color = Color.white;
+                if (snapshot.ProductionSubText.Length > 0)
+                {
+                    GUI.color = snapshot.ProductionSubActive
+                        ? PlannerStyle.ActiveText
+                        : PlannerStyle.CaptionText;
+                    Widgets.Label(low, snapshot.ProductionSubText);
+                    GUI.color = Color.white;
+                }
+
+                top.x = mid.x = low.x = body.x + (colWidth + Pad) * 2f;
+                Widgets.Label(top, snapshot.SurgeryTitleText);
+                GUI.color = PlannerStyle.CaptionText;
+                Widgets.Label(mid, snapshot.UnitsText);
+                GUI.color = Color.white;
+                if (snapshot.SurgeryBatchText.Length > 0)
+                {
+                    // The tier stars sit at the end so they can be dropped
+                    // when the column is too narrow for the full sentence
+                    // (measured via the shared width cache, never wrapped
+                    // or clipped).
+                    GUI.color = PlannerStyle.ActiveText;
+                    Widgets.Label(low,
+                        WrText.FitWidth(snapshot.SurgeryBatchText) <= low.width
+                            ? snapshot.SurgeryBatchText
+                            : snapshot.SurgeryBatchShortText);
+                    GUI.color = Color.white;
+                }
+            }
+        }
+
+        // Automation chip palette, mirroring WorkRoles' auto-managed
+        // indicator; the off state swaps the green tones for muted gray.
+        private static readonly Color ChipOnText = new Color(0.55f, 0.8f, 0.45f);
+        private static readonly Color ChipOnFill = new Color(0.10f, 0.16f, 0.09f, 0.95f);
+        private static readonly Color ChipOnOutline = new Color(0.55f, 0.8f, 0.45f, 0.65f);
+        private static readonly Color ChipOffText = new Color(0.62f, 0.62f, 0.62f);
+        private static readonly Color ChipOffFill = new Color(0.13f, 0.13f, 0.13f, 0.95f);
+        private static readonly Color ChipOffOutline = new Color(0.62f, 0.62f, 0.62f, 0.40f);
+
+        /// The strip's automation state chip: a status dot and label on a
+        /// tinted pill, sized to the label via the shared measurement cache.
+        private static void DrawAutomationChip(Rect row, OverviewSnapshot snapshot)
+        {
+            const float ChipHeight = 20f;
+            const float DotSize = 8f;
+            bool on = snapshot.AutomationOn;
+            float width = Mathf.Min(row.width,
+                22f + WrText.FitWidth(snapshot.AutomationText) + 8f);
+            var chip = new Rect(row.x, row.y + (row.height - ChipHeight) / 2f,
+                width, ChipHeight);
+            PixelBox.SolidWithOutline(chip,
+                on ? ChipOnFill : ChipOffFill,
+                on ? ChipOnOutline : ChipOffOutline);
+            GUI.color = on ? ChipOnText : ChipOffText;
+            GUI.DrawTexture(new Rect(chip.x + 8f,
+                chip.y + (ChipHeight - DotSize) / 2f, DotSize, DotSize),
+                Patches.ImplannerTex.CircleFill);
+            Widgets.Label(new Rect(chip.x + 22f, chip.y,
+                chip.width - 24f, ChipHeight), snapshot.AutomationText);
+            GUI.color = Color.white;
         }
 
         private int IndexOfGrouping(OverviewSnapshot snapshot)
         {
             GroupingOption? current = overview.Grouping;
             if (current == null) return -1;
-            // By value, not reference: All/Current selections keep their old
+            // By value, not reference: the All selection keeps its old
             // instance across snapshot rebuilds (Revalidate only re-resolves
             // named locations into the fresh options list).
             for (int i = 0; i < snapshot.GroupingOptions.Count; i++)
@@ -416,10 +512,10 @@ namespace Implanner.UI
                     PlannerLabels.ColColonist, OverviewColumn.Name, null);
                 DrawSortHeader(header.x + xShooting, header.y, SkillColWidth,
                     PlannerLabels.ColShooting, OverviewColumn.Shooting,
-                    PlannerLabels.ColShootingTip);
+                    PlannerLabels.ColShootingTip, alignRight: true);
                 DrawSortHeader(header.x + xMelee, header.y, SkillColWidth,
                     PlannerLabels.ColMelee, OverviewColumn.Melee,
-                    PlannerLabels.ColMeleeTip);
+                    PlannerLabels.ColMeleeTip, alignRight: true);
                 DrawSortHeader(header.x + xPlan, header.y, planWidth,
                     PlannerLabels.ColPlan, OverviewColumn.Plan, null);
                 DrawSortHeader(header.x + xProgress, header.y, progressWidth,
@@ -504,7 +600,7 @@ namespace Implanner.UI
                 {
                     Rect barRect = new Rect(xProgress, rowRect.y + 5f,
                         progressWidth - 12f, RowHeight - 10f);
-                    Widgets.FillableBar(barRect, row.Progress);
+                    PlannerStyle.ProgressBar(barRect, row.Progress);
                     Text.Anchor = TextAnchor.MiddleCenter;
                     float progressTextH = Mathf.Max(
                         barRect.height, TinyText.LineHeight);
@@ -580,10 +676,21 @@ namespace Implanner.UI
         /// A clickable column header; the active sort column shows a
         /// direction arrow after the label (bar-order Name shows none).
         private void DrawSortHeader(float x, float y, float width,
-            string label, OverviewColumn column, string? tip)
+            string label, OverviewColumn column, string? tip,
+            bool alignRight = false)
         {
             var cell = new Rect(x, y, width, 20f);
-            Widgets.Label(cell, label);
+            if (alignRight)
+            {
+                // Narrow value columns (S/M) sit their label over the
+                // right-leaning cell contents; the sort arrow flips to the
+                // label's left where the free space is.
+                Text.Anchor = TextAnchor.MiddleRight;
+                Widgets.Label(cell, label);
+                Text.Anchor = TextAnchor.MiddleLeft;
+            }
+            else
+                Widgets.Label(cell, label);
             if (tip != null && Mouse.IsOver(cell))
                 TooltipHandler.TipRegion(cell, tip);
             if (overview.SortColumn == column
@@ -593,8 +700,10 @@ namespace Implanner.UI
                 bool up = column == OverviewColumn.Name
                     ? true
                     : !overview.SortDescending;
-                GUI.DrawTexture(new Rect(x + Mathf.Min(labelWidth, width - 14f) + 2f,
-                    y + 4f, 12f, 12f),
+                float arrowX = alignRight
+                    ? x + Mathf.Max(0f, width - Mathf.Min(labelWidth, width) - 14f)
+                    : x + Mathf.Min(labelWidth, width - 14f) + 2f;
+                GUI.DrawTexture(new Rect(arrowX, y + 4f, 12f, 12f),
                     up ? TexButton.ReorderUp : TexButton.ReorderDown);
             }
             if (Widgets.ButtonInvisible(cell))
@@ -659,38 +768,12 @@ namespace Implanner.UI
             }
         }
 
-        private void DrawColonyOverview(Rect rect, OverviewSnapshot snapshot)
-        {
-            Widgets.DrawMenuSection(rect);
-            Rect body = rect.ContractedBy(Pad);
-            float y = body.y;
-            Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(body.x, y, body.width, 30f), PlannerLabels.ColonyOverview);
-            Text.Anchor = TextAnchor.UpperRight;
-            Widgets.Label(new Rect(body.x, y, body.width, 30f), snapshot.PercentText);
-            Text.Anchor = TextAnchor.UpperLeft;
-            y += 32f;
-            Text.Font = GameFont.Small;
-            Widgets.Label(new Rect(body.x, y, body.width, RowHeight), snapshot.StatsText);
-            Text.Anchor = TextAnchor.UpperRight;
-            Widgets.Label(new Rect(body.x, y, body.width, RowHeight), snapshot.BlockersText);
-            Text.Anchor = TextAnchor.UpperLeft;
-            y += RowHeight + 4f;
-            y += PlannerStyle.SectionHeader(body.x, y, body.width, PlannerLabels.NextWork);
-            for (int i = 0; i < snapshot.NextWork.Count && y + CompactRowHeight <= body.yMax; i++)
-            {
-                Widgets.Label(new Rect(body.x, y, body.width, CompactRowHeight),
-                    snapshot.NextWork[i]);
-                y += CompactRowHeight;
-            }
-            Text.Font = GameFont.Small;
-        }
-
         private void DrawColonistDetails(Rect rect, OverviewSnapshot snapshot)
         {
-            Widgets.DrawMenuSection(rect);
+            PlannerStyle.Panel(rect);
             Rect body = rect.ContractedBy(Pad);
-            IReadOnlyList<DetailRow> details = overview.Details(snapshot);
+            IReadOnlyList<DetailRow> details =
+                overview.Details(snapshot, body.width);
             bool hasSelection = overview.DetailTitle.Length > 0;
 
             int headerCount = 0;
@@ -701,32 +784,58 @@ namespace Implanner.UI
                 + (details.Count - headerCount) * CompactRowHeight
                 + (headerCount > 0 ? (headerCount - 1) * PlannerStyle.SectionGap : 0f);
 
-            Rect outer = new Rect(body.x, body.y + 34f, body.width, body.height - 34f);
-            // The scroll gutter is reserved only when the content overflows;
-            // the header's percent right-aligns with the content edge either
-            // way.
+            // Header block: name and percent plus one status sentence, on a
+            // darker band that separates it from the sections below. The
+            // header spans the full body width regardless of whether the
+            // list below reserves a scroll gutter.
+            float contentH = 30f
+                + (hasSelection ? overview.DetailStatusHeight : 0f);
+            float outerTop = hasSelection ? contentH + 14f : 34f;
+            if (hasSelection)
+            {
+                float bandH = Pad + contentH + 5f;
+                Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 1f,
+                    rect.width - 2f, bandH), DetailHeaderFill);
+                Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 1f + bandH,
+                    rect.width - 2f, rect.height - 2f - bandH),
+                    PlannerStyle.PanelTint);
+                // The divider between the two halves: one device pixel in
+                // the outer border color.
+                Widgets.DrawBoxSolid(PixelBox.HairlineHorizontal(
+                    rect.x + 1f, rect.y + 1f + bandH, rect.width - 2f),
+                    SegmentedControl.PanelOutline);
+            }
+            else
+                Widgets.DrawBoxSolid(new Rect(rect.x + 1f, rect.y + 1f,
+                    rect.width - 2f, rect.height - 2f), PlannerStyle.PanelTint);
+
+            Rect outer = new Rect(body.x, body.y + outerTop,
+                body.width, body.height - outerTop);
             bool scrolls = innerHeight > outer.height;
             float alignedWidth = scrolls ? body.width - ScrollGutter : body.width;
 
             Text.Font = GameFont.Medium;
-            Widgets.Label(new Rect(body.x, body.y, alignedWidth, 30f),
+            Widgets.Label(new Rect(body.x, body.y, body.width, 30f),
                 hasSelection ? overview.DetailTitle : PlannerLabels.ColonistDetails);
             Text.Anchor = TextAnchor.UpperRight;
-            Widgets.Label(new Rect(body.x, body.y, alignedWidth, 30f),
+            Widgets.Label(new Rect(body.x, body.y, body.width, 30f),
                 overview.DetailPercent);
             Text.Anchor = TextAnchor.UpperLeft;
             Text.Font = GameFont.Small;
-            if (overview.DetailHasRegression)
+            if (hasSelection)
             {
-                Rect reEnlistRect = new Rect(
-                    body.x + alignedWidth - 190f, body.y + 2f, 100f, 24f);
-                if (Widgets.ButtonText(reEnlistRect, PlannerLabels.ReEnlist))
-                    PlannerCommands.ReEnlist(overview.SelectedPawnId);
+                using (GuiStateScope.Capture())
+                {
+                    Text.WordWrap = true;
+                    GUI.color = PlannerStyle.HeaderText;
+                    Widgets.Label(new Rect(body.x, body.y + 30f, body.width,
+                        overview.DetailStatusHeight), overview.DetailStatusText);
+                }
             }
             if (details.Count == 0)
             {
                 GUI.color = Color.gray;
-                Widgets.Label(new Rect(body.x, body.y + 34f, body.width, RowHeight),
+                Widgets.Label(new Rect(body.x, body.y + outerTop, body.width, RowHeight),
                     PlannerLabels.NoSelection);
                 GUI.color = Color.white;
                 return;
@@ -742,7 +851,9 @@ namespace Implanner.UI
                 {
                     if (i > 0) y += PlannerStyle.SectionGap;
                     float headerY = y;
+                    if (row.Stars) GUI.color = PlannerStyle.TierStarColor;
                     y += PlannerStyle.SectionHeader(0f, y, inner.width, row.Label);
+                    GUI.color = Color.white;
                     using (GuiStateScope.Capture())
                     {
                         Text.Font = GameFont.Small;
@@ -754,16 +865,16 @@ namespace Implanner.UI
                     continue;
                 }
                 GUI.color = row.Satisfied ? Color.white
-                    : row.Blocked ? new Color(1f, 0.55f, 0.4f)
-                    : row.Muted ? PlannerStyle.CaptionText
-                    : new Color(1f, 0.85f, 0.4f);
+                    : row.Blocked ? PlannerStyle.BlockedText
+                    : row.Active ? PlannerStyle.ActiveText
+                    : PlannerStyle.PendingText;
                 Text.Anchor = TextAnchor.MiddleLeft;
                 float detailTextH = Mathf.Max(
                     CompactRowHeight, TinyText.LineHeight);
                 float detailTextY = y
                     + (CompactRowHeight - detailTextH) / 2f;
-                TinyText.Label(new Rect(8f, detailTextY,
-                    inner.width * 0.62f - 8f, detailTextH),
+                TinyText.Label(new Rect(0f, detailTextY,
+                    inner.width * 0.62f, detailTextH),
                     row.Label);
                 Text.Anchor = TextAnchor.MiddleRight;
                 TinyText.Label(new Rect(inner.width * 0.62f, detailTextY,
@@ -824,8 +935,9 @@ namespace Implanner.UI
 
         // ----------------------------------------------- Plans: left column
 
-        /// The plan list as cards: name, counts caption with a right-aligned
-        /// percent, and a thin delivery-progress bar, framed by the shared
+        /// The plan list as cards: name with the base-plan link right-aligned
+        /// beside it, counts caption with a right-aligned percent, and a
+        /// thin delivery-progress bar, framed by the shared
         /// device-pixel-snapped panel box (the old logical-unit DrawBox
         /// border covered one-or-two physical pixels at fractional UI
         /// scales). Card geometry derives from the active fonts' measured
@@ -874,8 +986,31 @@ namespace Implanner.UI
 
                     float textWidth = card.width - CardPad * 2f;
                     Text.Anchor = TextAnchor.MiddleLeft;
+                    float nameWidth = textWidth;
+                    if (row.ExtendsText.Length > 0)
+                    {
+                        // The base-plan link sits right-aligned on the name
+                        // row (the caption row below has no room beside the
+                        // percent); the name clips against its measured
+                        // width, capped at half the card.
+                        float extendsWidth;
+                        using (TinyText.UseFont())
+                            extendsWidth = Mathf.Min(
+                                WrText.FitWidth(row.ExtendsText),
+                                textWidth * 0.5f);
+                        using (GuiStateScope.Capture())
+                        {
+                            Text.Anchor = TextAnchor.MiddleRight;
+                            GUI.color = PlannerStyle.CaptionText;
+                            TinyText.Label(new Rect(
+                                card.xMax - CardPad - extendsWidth,
+                                card.y + 4f, extendsWidth, nameH),
+                                row.ExtendsText);
+                        }
+                        nameWidth = textWidth - extendsWidth - 6f;
+                    }
                     Widgets.Label(new Rect(card.x + CardPad, card.y + 4f,
-                        textWidth, nameH), row.Name);
+                        nameWidth, nameH), row.Name);
 
                     float captionY = card.y + 4f + nameH;
                     GUI.color = PlannerStyle.CaptionText;
@@ -907,9 +1042,18 @@ namespace Implanner.UI
             }
             Widgets.EndScrollView();
 
-            Rect addRect = new Rect(rect.x, frame.yMax + Pad, rect.width, RowHeight);
+            // Bottom row: New plan beside compact Import/Export.
+            float shareWidth = Mathf.Floor(rect.width * 0.24f);
+            Rect addRect = new Rect(rect.x, frame.yMax + Pad,
+                rect.width - shareWidth * 2f - 8f, RowHeight);
             if (Widgets.ButtonText(addRect, PlannerLabels.AddPlan))
                 Find.WindowStack.Add(new Dialog_NewPlan());
+            if (Widgets.ButtonText(new Rect(addRect.xMax + 4f, addRect.y,
+                    shareWidth, RowHeight), PlannerLabels.ImportPlans))
+                Find.WindowStack.Add(new Dialog_ImportPlans());
+            if (Widgets.ButtonText(new Rect(addRect.xMax + shareWidth + 8f,
+                    addRect.y, shareWidth, RowHeight), PlannerLabels.ExportPlans))
+                Find.WindowStack.Add(new Dialog_ExportPlans());
         }
 
         // --------------------------------------------- Plans: center column
@@ -1092,12 +1236,8 @@ namespace Implanner.UI
 
         // -------------------------------------- Plans: ranking right column
 
-        /// Tier headers are symbols, not translations.
-        private static readonly string[] TierStars =
-            { "★★★★★", "★★★★",
-              "★★★", "★★", "★" };
-        private static readonly Color TierStarColor = new Color(1f, 0.9f, 0.5f);
         private static readonly Color DropTargetFill = new Color(1f, 1f, 1f, 0.08f);
+        private static readonly Color DetailHeaderFill = new Color(0f, 0f, 0f, 0.25f);
 
         /// The plan's ranking panel: a title, a collapsible help section
         /// explaining the star classification, then one combined list with
@@ -1108,7 +1248,7 @@ namespace Implanner.UI
         private void DrawPlanRankings(Rect rect, PlansSnapshot snapshot)
         {
             Text.WordWrap = false;
-            Widgets.DrawMenuSection(rect);
+            PlannerStyle.ShadedPanel(rect);
             Rect body = rect.ContractedBy(Pad);
 
             Text.Font = GameFont.Medium;
@@ -1172,8 +1312,9 @@ namespace Implanner.UI
 
             using (GuiStateScope.Capture())
             {
-                GUI.color = TierStarColor;
-                PlannerStyle.SectionHeader(0f, y, width, TierStars[tier]);
+                GUI.color = PlannerStyle.TierStarColor;
+                PlannerStyle.SectionHeader(0f, y, width,
+                    PlannerStyle.TierStars[tier]);
                 Text.Font = GameFont.Small;
                 Text.Anchor = TextAnchor.MiddleRight;
                 GUI.color = PlannerStyle.CaptionText;
@@ -1242,7 +1383,7 @@ namespace Implanner.UI
 
             if (Widgets.ButtonImage(deleteRect, TexButton.Delete))
             {
-                PlannerCommands.RemoveImplant(planId, row.GoalId);
+                PlannerCommands.RemoveImplant(planId, row.DefName);
                 return;
             }
 
@@ -1298,9 +1439,18 @@ namespace Implanner.UI
 
             bool enabled = !model.AutomationPaused;
             bool now = enabled;
-            Widgets.CheckboxLabeled(new Rect(0f, 0f, columnWidth, RowHeight),
-                PlannerLabels.OptEnable, ref now);
-            if (now != enabled) PlannerCommands.SetAutomationPaused(!now);
+            var enableRect = new Rect(0f, 0f, columnWidth, RowHeight);
+            WrTips.Key("IMP_OptEnableTip").Region(enableRect);
+            Widgets.CheckboxLabeled(enableRect, PlannerLabels.OptEnable, ref now);
+            if (now != enabled)
+            {
+                // Turning automation OFF goes through the hand-back dialog:
+                // the pause command is only issued from its OK (with the
+                // bill cleanup), so Cancel/ESC keeps automation on. With no
+                // owned bills it pauses directly.
+                if (now) PlannerCommands.SetAutomationPaused(false);
+                else Dialog_AutomationCleanup.ShowToTurnOffAutomation(store);
+            }
 
             float top = RowHeight + Pad;
             DrawProductionColumn(new Rect(0f, top, columnWidth, leftHeight),
@@ -1317,6 +1467,8 @@ namespace Implanner.UI
             float y = rect.y;
             y += SectionHeader.Primary(rect.x, y, width,
                 PlannerLabels.OptSurgery) + 2f;
+            WrTips.Key("IMP_OptIterationTip").Region(
+                new Rect(rect.x, y, width, HeaderHeight + 2f + 30f));
             Widgets.Label(new Rect(rect.x, y, width, HeaderHeight),
                 PlannerLabels.OptIteration);
             y += HeaderHeight + 2f;
@@ -1332,9 +1484,31 @@ namespace Implanner.UI
                     : (int)IterationStrategy.Colonist);
             y += 30f + Pad;
 
+            DrawStepperRow(rect.x, ref y, width,
+                PlannerLabels.OptSurgeryConcurrency,
+                snapshot.SurgeryConcurrencyText,
+                static () => PlannerCommands.SetSurgeryConcurrency(
+                    (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) - 1),
+                static () => PlannerCommands.SetSurgeryConcurrency(
+                    (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) + 1),
+                WrTips.Key("IMP_OptSurgeryConcurrencyTip"));
+
+            // Nested: refines what the concurrency limit above counts.
+            bool hospitalized = model.CountHospitalized;
+            bool nowHospitalized = hospitalized;
+            var hospitalizedRect = new Rect(rect.x + 12f, y, width - 12f, RowHeight);
+            WrTips.Key("IMP_OptCountHospitalizedTip").Region(hospitalizedRect);
+            Widgets.CheckboxLabeled(hospitalizedRect,
+                PlannerLabels.OptCountHospitalized, ref nowHospitalized);
+            if (nowHospitalized != hospitalized)
+                PlannerCommands.SetCountHospitalized(nowHospitalized);
+            y += RowHeight + 2f;
+
             bool autoFloor = model.AutoDoctorFloor;
             bool now = autoFloor;
-            Widgets.CheckboxLabeled(new Rect(rect.x, y, width, RowHeight),
+            var autoFloorRect = new Rect(rect.x, y, width, RowHeight);
+            WrTips.Key("IMP_OptAutoFloorTip").Region(autoFloorRect);
+            Widgets.CheckboxLabeled(autoFloorRect,
                 PlannerLabels.OptAutoFloor, ref now);
             if (now != autoFloor) PlannerCommands.SetAutoDoctorFloor(now);
             y += RowHeight + 2f;
@@ -1350,12 +1524,15 @@ namespace Implanner.UI
                     static () => PlannerCommands.SetManualDoctorFloor(
                         (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) - 1),
                     static () => PlannerCommands.SetManualDoctorFloor(
-                        (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) + 1));
+                        (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) + 1),
+                    WrTips.Key("IMP_OptManualFloorTip"));
             }
             y += Pad;
 
             // Implant reservations: stock held back for manual use; surgery
             // automation waits until items beyond these counts exist.
+            WrTips.Key("IMP_OptImplantReservesTip").Region(
+                new Rect(rect.x, y, width, SectionHeader.SubHeight));
             y += SectionHeader.Sub(rect.x, y, width,
                 PlannerLabels.OptImplantReserves) + 2f;
             for (int i = 0; i < snapshot.ImplantReserves.Count; i++)
@@ -1385,9 +1562,9 @@ namespace Implanner.UI
                     PlannerCommands.SetImplantReserve(row.DefName, 0);
                 y += CompactRowHeight + 4f;
             }
-            if (Widgets.ButtonText(
-                    new Rect(rect.x, y, Mathf.Min(200f, width), RowHeight),
-                    PlannerLabels.AddImplantReserve))
+            var addReserveRect = new Rect(rect.x, y, Mathf.Min(200f, width), RowHeight);
+            WrTips.Key("IMP_AddImplantReserveTip").Region(addReserveRect);
+            if (Widgets.ButtonText(addReserveRect, PlannerLabels.AddImplantReserve))
                 OpenImplantReserveMenu(model);
         }
 
@@ -1422,7 +1599,9 @@ namespace Implanner.UI
                 PlannerLabels.OptProduction) + 2f;
             bool autoProduction = model.AutoProduction;
             bool now = autoProduction;
-            Widgets.CheckboxLabeled(new Rect(rect.x, y, width, RowHeight),
+            var autoProductionRect = new Rect(rect.x, y, width, RowHeight);
+            WrTips.Key("IMP_OptAutoProductionTip").Region(autoProductionRect);
+            Widgets.CheckboxLabeled(autoProductionRect,
                 PlannerLabels.OptAutoProduction, ref now);
             if (now != autoProduction) PlannerCommands.SetAutoProduction(now);
             y += RowHeight + 2f;
@@ -1433,11 +1612,14 @@ namespace Implanner.UI
                 static () => PlannerCommands.SetProductionConcurrency(
                     (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) - 1),
                 static () => PlannerCommands.SetProductionConcurrency(
-                    (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) + 1));
+                    (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) + 1),
+                WrTips.Key("IMP_OptConcurrencyTip"));
 
             bool idle = model.OnlyIdleBenches;
             now = idle;
-            Widgets.CheckboxLabeled(new Rect(rect.x, y, width, RowHeight),
+            var idleRect = new Rect(rect.x, y, width, RowHeight);
+            WrTips.Key("IMP_OptIdleBenchesTip").Region(idleRect);
+            Widgets.CheckboxLabeled(idleRect,
                 PlannerLabels.OptIdleBenches, ref now);
             if (now != idle) PlannerCommands.SetOnlyIdleBenches(now);
             y += RowHeight + 2f;
@@ -1447,15 +1629,20 @@ namespace Implanner.UI
                 static () => PlannerCommands.SetProductionSkill(
                     (ImplannerStore.Current?.Model.ProductionSkill ?? 0) - 1),
                 static () => PlannerCommands.SetProductionSkill(
-                    (ImplannerStore.Current?.Model.ProductionSkill ?? 0) + 1));
+                    (ImplannerStore.Current?.Model.ProductionSkill ?? 0) + 1),
+                WrTips.Key("IMP_OptProductionSkillTip"));
 
             bool intermediaries = model.AllowIntermediaries;
             now = intermediaries;
-            Widgets.CheckboxLabeled(new Rect(rect.x, y, width, RowHeight),
+            var intermediariesRect = new Rect(rect.x, y, width, RowHeight);
+            WrTips.Key("IMP_OptIntermediariesTip").Region(intermediariesRect);
+            Widgets.CheckboxLabeled(intermediariesRect,
                 PlannerLabels.OptIntermediaries, ref now);
             if (now != intermediaries) PlannerCommands.SetAllowIntermediaries(now);
             y += RowHeight + 2f + Pad;
 
+            WrTips.Key("IMP_OptReservesTip").Region(
+                new Rect(rect.x, y, width, SectionHeader.SubHeight));
             y += SectionHeader.Sub(rect.x, y, width,
                 PlannerLabels.OptReserves) + 2f;
             for (int i = 0; i < snapshot.Reserves.Count; i++)
@@ -1503,11 +1690,13 @@ namespace Implanner.UI
 
         /// A label with -/value/+ controls right-aligned on one row. The
         /// label sits flush at x — indentation is the CALLER's statement of
-        /// dependency, not this row's default.
+        /// dependency, not this row's default. The optional tip covers the
+        /// whole row through the shared tooltip presenter.
         private static void DrawStepperRow(float x, ref float y, float width,
             string label, string valueText,
-            System.Action decrement, System.Action increment)
+            System.Action decrement, System.Action increment, WrTip? tip = null)
         {
+            tip?.Region(new Rect(x, y, width, HeaderHeight));
             Widgets.Label(new Rect(x, y + 2f, width - 90f, HeaderHeight),
                 label);
             if (Widgets.ButtonText(new Rect(x + width - 86f, y, 24f, HeaderHeight), "-"))
@@ -1571,17 +1760,5 @@ namespace Implanner.UI
             }
         }
 
-        // ----------------------------------------------------------- Options
-
-        /// Reserved for display options; nothing ships here yet.
-        private static void DrawOptionsPlaceholder(Rect rect)
-        {
-            using (GuiStateScope.Capture())
-            {
-                GUI.color = PlannerStyle.CaptionText;
-                Widgets.Label(new Rect(rect.x, rect.y, rect.width, RowHeight),
-                    PlannerLabels.OptionsEmpty);
-            }
-        }
     }
 }

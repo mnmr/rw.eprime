@@ -9,7 +9,7 @@
   <IMP_TabOverview>Overview</IMP_TabOverview>
   <IMP_TabPlans>Plans</IMP_TabPlans>
   <IMP_TabAutomation>Automation</IMP_TabAutomation>
-  <IMP_TabOptions>Options</IMP_TabOptions>
+  <IMP_TabHelp>Help</IMP_TabHelp>
 
   <!-- ===== Overview tab ===== -->
   <IMP_ColColonist>Colonist</IMP_ColColonist>
@@ -36,41 +36,70 @@
   <IMP_GroupByIdeo>By ideoligion</IMP_GroupByIdeo>
   <IMP_NoPlan>None</IMP_NoPlan>
   <IMP_ScopeAll>Everywhere</IMP_ScopeAll>
-  <IMP_ScopeCurrent>Current location</IMP_ScopeCurrent>
-  <IMP_ColonyOverview>Colony</IMP_ColonyOverview>
+  <!-- Colony summary strip -->
+  <!-- {0}=colony or grouping name -->
+  <IMP_StripColony>Colony: {0}</IMP_StripColony>
   <!-- {0}=complete colonists, {1}=enlisted colonists -->
   <IMP_AggregateColonists>Colonists: {0} / {1}</IMP_AggregateColonists>
-  <!-- {0}=blocker count -->
-  <IMP_AggregateBlockers>Blockers: {0}</IMP_AggregateBlockers>
-  <IMP_NextWork>Next</IMP_NextWork>
+  <!-- Automation state chip -->
+  <IMP_StripAutomationOn>Automation on</IMP_StripAutomationOn>
+  <IMP_StripAutomationOff>Automation off</IMP_StripAutomationOff>
+  <!-- {0}=percent of missing implant items covered by stock -->
+  <IMP_StripProduction>Production: {0}%</IMP_StripProduction>
+  <!-- {0}=needed implant items in stock and not reserved, {1}=items still
+       to produce -->
+  <IMP_StripStock>{0} in stock, {1} queued</IMP_StripStock>
+  <!-- {0}=lowercase item label, sentence capitalized in code -->
+  <IMP_StripMaking>Making {0}</IMP_StripMaking>
+  <!-- Intermediary bills running for {0}=lowercase implant item label -->
+  <IMP_StripMakingFor>Making materials for {0}</IMP_StripMakingFor>
+  <!-- {0}=lowercase item or ingredient label, sentence capitalized in code -->
+  <IMP_StripWaiting>Waiting for {0}</IMP_StripWaiting>
+  <IMP_StripNothingToCraft>Nothing to craft</IMP_StripNothingToCraft>
+  <!-- Bills are ready to place but every capable workbench is occupied -->
+  <IMP_StripWaitingBench>Waiting for workbench</IMP_StripWaitingBench>
+  <!-- {0}=overall installed-implants percent -->
+  <IMP_StripSurgery>Surgery: {0}%</IMP_StripSurgery>
+  <!-- {0}=installed implant slots, {1}=planned implant slots -->
+  <IMP_StripInstalled>{0} / {1} implants installed</IMP_StripInstalled>
+  <!-- {0}=next colonist name; the Stars variant appends the batch's
+       star-tier glyph run {1} and is dropped when the column is narrow -->
+  <IMP_StripBatch>Implanting batch on {0}</IMP_StripBatch>
+  <IMP_StripBatchStars>Implanting batch on {0} ({1})</IMP_StripBatchStars>
+  <!-- {0}=lowercase implant list, sentence capitalized in code -->
+  <IMP_NextScheduled>Surgery scheduled for {0}</IMP_NextScheduled>
   <IMP_ColonistDetails>Colonist details</IMP_ColonistDetails>
+  <!-- {0}=lowercase implant list, sentence capitalized in code -->
+  <IMP_DetailCollecting>Collecting {0}</IMP_DetailCollecting>
   <IMP_NoSelection>Select a colonist to see remaining implants.</IMP_NoSelection>
 
+  <!-- ===== Welcome dialog (shown once per player per save) ===== -->
+  <IMP_WelcomeTitle>EPrime's Implanner</IMP_WelcomeTitle>
+  <IMP_WelcomeBody>Implanner plans colonist implants and optionally automates the work needed to produce and install them.</IMP_WelcomeBody>
+  <IMP_WelcomeFind>Open Implanner with this button in the toolbar at the bottom right of the screen, next to the view toggles.</IMP_WelcomeFind>
+  <IMP_WelcomeTakeMeThere>Take me there now</IMP_WelcomeTakeMeThere>
+
   <!-- ===== States ===== -->
-  <IMP_StateActive>Active</IMP_StateActive>
-  <IMP_StateComplete>Complete</IMP_StateComplete>
-  <IMP_StateBlocked>Blocked</IMP_StateBlocked>
+  <IMP_StateWaiting>Waiting</IMP_StateWaiting>
+  <IMP_StatePreparing>Preparing</IMP_StatePreparing>
+  <IMP_StateOperating>Operating</IMP_StateOperating>
+  <IMP_StateDone>Done</IMP_StateDone>
   <IMP_StateAway>Away</IMP_StateAway>
-  <IMP_StateRegressed>Regressed</IMP_StateRegressed>
 
   <!-- ===== Goal statuses ===== -->
   <IMP_GoalComplete>Complete</IMP_GoalComplete>
   <IMP_GoalMissing>Missing</IMP_GoalMissing>
   <!-- {0}=satisfied count, {1}=requested count -->
   <IMP_GoalPartial>{0} / {1}</IMP_GoalPartial>
-  <IMP_GoalBlockedAnatomy>Blocked: anatomy</IMP_GoalBlockedAnatomy>
-  <!-- Delivered once, later lost; awaiting explicit re-enlist -->
-  <IMP_GoalRegressed>Regressed</IMP_GoalRegressed>
+  <!-- Reserved covers both a claimed item still being gathered and one on
+       site whose surgery batch is not complete yet -->
   <IMP_GoalReserved>Reserved</IMP_GoalReserved>
   <IMP_GoalReady>Ready</IMP_GoalReady>
-  <!-- Implant reserved but the surgery batch is not complete yet -->
-  <IMP_GoalAwaitingBatch>Awaiting batch</IMP_GoalAwaitingBatch>
   <IMP_GoalScheduled>Surgery scheduled</IMP_GoalScheduled>
   <!-- Surgery deferred until bleeding and untreated injuries are handled -->
   <IMP_GoalRecovering>Recovering</IMP_GoalRecovering>
   <!-- {0}=effective minimum Medical skill -->
   <IMP_GoalBlockedFloor>Blocked by doctor floor ({0})</IMP_GoalBlockedFloor>
-  <IMP_ReEnlist>Re-enlist</IMP_ReEnlist>
 
   <!-- ===== Plans tab ===== -->
   <IMP_PlansHeader>Plans</IMP_PlansHeader>
@@ -85,7 +114,6 @@
   <!-- {0}=planned implant label this selection replaces (own conflicting
        picks are deselected, inherited ones suppressed) -->
   <IMP_Overrides>overrides {0}</IMP_Overrides>
-  <IMP_GroupImplants>Implants</IMP_GroupImplants>
   <IMP_NoPlans>Create a plan to define an implant goal set.</IMP_NoPlans>
   <!-- {0}=implant goal count (own + inherited) -->
   <IMP_PlanCounts>{0} implants</IMP_PlanCounts>
@@ -122,6 +150,8 @@
   <IMP_OptEnable>Enable automation</IMP_OptEnable>
   <IMP_OptSurgery>Surgery</IMP_OptSurgery>
   <IMP_OptIteration>Iteration strategy</IMP_OptIteration>
+  <IMP_OptSurgeryConcurrency>Concurrent surgeries</IMP_OptSurgeryConcurrency>
+  <IMP_OptCountHospitalized>Count hospitalized pawns</IMP_OptCountHospitalized>
   <IMP_IterTier>One implant tier at a time</IMP_IterTier>
   <IMP_IterColonist>One colonist at a time</IMP_IterColonist>
   <IMP_OptManualFloor>Required medical skill for surgery bills</IMP_OptManualFloor>
@@ -136,11 +166,64 @@
   <IMP_OptProductionSkill>Required crafting skill for production bills</IMP_OptProductionSkill>
   <IMP_OptIntermediaries>Allow production bills for missing intermediaries</IMP_OptIntermediaries>
   <IMP_OptReserves>Keep in stock (after bill costs)</IMP_OptReserves>
+  <!-- Hand-back dialog shown when the player clicks the master switch off -->
+  <IMP_CleanupTitle>Turn off automation?</IMP_CleanupTitle>
+  <IMP_CleanupBody>Implanner created these bills. OK turns automation off and removes the checked bills. Unchecked bills stay in place and are picked up again when automation is switched back on. Reserved implant items are released either way. Cancel keeps automation on.</IMP_CleanupBody>
   <IMP_AutomationOffTitle>Automation is switched off</IMP_AutomationOffTitle>
-  <IMP_AutomationOffBody>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so rather than deliver half of every plan it hands the work back to you: no item reservations and no surgery scheduling.\n\nEverything else still works. Keep building plans, assign them, rank your implants — add operations yourself, and Implanner will track what has been delivered and what is still missing.</IMP_AutomationOffBody>
+  <IMP_AutomationOffBody>{0} spreads this colony across several levels. Implanner cannot carry an implant or an operation across a level boundary, so it stops reserving items and scheduling surgeries rather than deliver half of every plan.\n\nEverything else still works. Keep building plans, assign them, and rank your implants. Add operations yourself and Implanner will track what is installed and what is still missing.</IMP_AutomationOffBody>
 
-  <!-- ===== Options tab ===== -->
-  <IMP_OptionsEmpty>Display options will appear here.</IMP_OptionsEmpty>
+  <!-- ===== Automation tooltips ===== -->
+  <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
+  <IMP_OptIterationTip>The order automation works through missing implants.\n\nOne implant tier at a time: everyone receives the highest-tier implants first, then work moves down the tier list.\n\nOne colonist at a time: finish one colonist's whole plan before starting the next. Colonist priority on the Overview tab decides who goes first.</IMP_OptIterationTip>
+  <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
+  <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptCountHospitalizedTip>Pawns lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>
+  <IMP_OptManualFloorTip>The minimum Medicine skill a doctor needs to perform Implanner surgeries. Bills wait until a doctor at or above this level is available. The value starts from your current best doctor when automatic assignment is switched off.</IMP_OptManualFloorTip>
+  <IMP_OptImplantReservesTip>Implants held back for manual use. Automation only reserves stock beyond these counts, so you always keep this many of each listed implant free for emergency surgery or trade. Production does not count held-back items as available, and keeps crafting until automation can proceed without them.</IMP_OptImplantReservesTip>
+  <IMP_AddImplantReserveTip>Pick an implant to hold back from automation.</IMP_AddImplantReserveTip>
+  <IMP_OptAutoProductionTip>Missing implants get crafting bills automatically. Implanner counts what plans still need at each colony, subtracts stock and bills already queued, and places bills at capable benches. Bills it created are removed again when the need disappears.</IMP_OptAutoProductionTip>
+  <IMP_OptConcurrencyTip>How many benches per colony may hold Implanner crafting bills at once, one bill per bench. More benches craft implants in parallel, but your crafters spend more of their time on implants and less on everything else.</IMP_OptConcurrencyTip>
+  <IMP_OptIdleBenchesTip>Only benches with no work waiting receive new Implanner bills. Your own production queues keep priority and implant crafting fills the gaps. Turn this off to let implant bills queue up behind your own.</IMP_OptIdleBenchesTip>
+  <IMP_OptProductionSkillTip>The minimum Crafting skill for Implanner production bills. Higher values keep expensive components away from low-skill crafters; lower values let more colonists help. Bills wait until a qualifying crafter picks them up.</IMP_OptProductionSkillTip>
+  <IMP_OptIntermediariesTip>When an implant bill cannot be paid because an ingredient such as components is missing, Implanner may queue a bill for that ingredient too, if it is a craftable manufactured item. Shortfalls are followed down the whole production chain. Raw resources such as steel are never crafted; you still have to gather them yourself.</IMP_OptIntermediariesTip>
+  <IMP_OptReservesTip>Resource floors for automatic crafting. A bill is only created when the colony would still have at least this much of every ingredient left after paying the bill's full cost. Raise a number to protect a stockpile; set it to zero to let production spend freely.</IMP_OptReservesTip>
+
+  <!-- ===== Help tab ===== -->
+  <IMP_HelpChapterBasics>Basics</IMP_HelpChapterBasics>
+  <IMP_HelpChapterPlans>Plans</IMP_HelpChapterPlans>
+  <IMP_HelpChapterAutomation>Automation</IMP_HelpChapterAutomation>
+  <IMP_HelpChapterSharing>Sharing</IMP_HelpChapterSharing>
+  <IMP_HelpReload>Reload</IMP_HelpReload>
+
+  <!-- ===== Import / export ===== -->
+  <IMP_Import>Import</IMP_Import>
+  <IMP_Export>Export</IMP_Export>
+  <IMP_ExportPlansTitle>Export plans</IMP_ExportPlansTitle>
+  <IMP_ImportPlansTitle>Import plans</IMP_ImportPlansTitle>
+  <!-- {0}=plan count, {1}=implant goal count -->
+  <IMP_ExportSummary>{0} plans, {1} implants</IMP_ExportSummary>
+  <!-- {0}=implant goal count -->
+  <IMP_PlanGoalCount>{0} implants</IMP_PlanGoalCount>
+  <IMP_CopyClipboard>Copy to clipboard</IMP_CopyClipboard>
+  <IMP_FromClipboard>From clipboard</IMP_FromClipboard>
+  <IMP_Save>Save</IMP_Save>
+  <IMP_Cancel>Cancel</IMP_Cancel>
+  <IMP_Back>Back</IMP_Back>
+  <IMP_ImportAddNote>Imported plans are added next to your existing plans; nothing is replaced. A name that is already taken gets a number.</IMP_ImportAddNote>
+  <IMP_LocGameData>Implanner folder</IMP_LocGameData>
+  <IMP_LocDesktop>Desktop</IMP_LocDesktop>
+  <IMP_LocUserHome>Home folder</IMP_LocUserHome>
+  <IMP_LocCustom>Custom folder</IMP_LocCustom>
+  <IMP_EnterPath>Folder:</IMP_EnterPath>
+  <IMP_BadFileName>Enter a valid file name.</IMP_BadFileName>
+  <IMP_BadDirectory>Enter a valid folder.</IMP_BadDirectory>
+  <!-- {0}=path or error text -->
+  <IMP_SavedTo>Plans saved to {0}</IMP_SavedTo>
+  <IMP_SaveFailed>Could not save: {0}</IMP_SaveFailed>
+  <IMP_ReadFailed>Could not read the file: {0}</IMP_ReadFailed>
+  <IMP_ImportInvalid>Not a valid Implanner plans export: {0}</IMP_ImportInvalid>
+  <IMP_DeleteFileConfirm>Delete "{0}"?</IMP_DeleteFileConfirm>
+  <IMP_NoFiles>No exported plan files here yet.</IMP_NoFiles>
 
   <!-- ===== Locations ===== -->
   <IMP_ShipFallback>Gravship</IMP_ShipFallback>

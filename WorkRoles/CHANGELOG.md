@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.5.3 — 2026-08-31
+
+- Added: Detection and warning logic when pawns are doing jobs they are not assigned to. This can help players identify when incompatible mods are installed.
+- Fixed: MultiFloors was not using the vanilla job lists, causing it to issue jobs to pawns that they were not assigned to. WorkRoles now overwrites the MultiFloor behavior to prevent this.
+
 ## 1.5.2 — 2026-08-30
 
 - Added: Help tab with background and usage information.

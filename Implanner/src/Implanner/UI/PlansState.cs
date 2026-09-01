@@ -11,8 +11,13 @@ namespace Implanner.UI
         internal int PlanId;
         internal string Name = "";
 
-        /// "N implants · M colonists" plus the base-plan link when present.
+        /// "N implants · M colonists".
         internal string CountsText = "";
+
+        /// "Extends {base}" when the plan has a base, drawn right-aligned
+        /// on the card's name row (the caption row has no room beside the
+        /// percent); empty otherwise.
+        internal string ExtendsText = "";
 
         /// Aggregate delivery progress of the enlisted colonists (satisfied
         /// over total units, 0..1; 0 while nobody is enlisted).
@@ -52,7 +57,6 @@ namespace Implanner.UI
     /// editor's ranking panel, resolved for drawing.
     internal sealed class RankedRow
     {
-        internal int GoalId;
         internal string DefName = "";
         internal string Label = "";
         internal ThingDef? IconDef;
@@ -209,8 +213,7 @@ namespace Implanner.UI
                 for (int p = 0; planPawns != null && p < planPawns.Count; p++)
                 {
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        planPawns[p], planGoals, away: false,
-                        model.LatchesFor(planPawns[p].thingIDNumber));
+                        planPawns[p], planGoals, away: false);
                     satisfied += evaluation.SatisfiedUnits;
                     total += evaluation.TotalUnits;
                 }
@@ -220,13 +223,14 @@ namespace Implanner.UI
                 Plan? basePlan = plan.BasePlanId != 0
                     ? model.PlanById(plan.BasePlanId)
                     : null;
-                if (basePlan != null)
-                    counts += " · " + "IMP_PlanExtends".Translate(basePlan.Name);
                 result.Plans.Add(new PlanListRow
                 {
                     PlanId = plan.Id,
                     Name = plan.Name,
                     CountsText = counts,
+                    ExtendsText = basePlan != null
+                        ? "IMP_PlanExtends".Translate(basePlan.Name).ToString()
+                        : "",
                     Progress = total == 0 ? 0f : (float)satisfied / total,
                     PercentText = total == 0 ? "" : (satisfied * 100 / total) + "%",
                 });
@@ -262,7 +266,7 @@ namespace Implanner.UI
             for (int i = 0; i < effective.Count; i++)
             {
                 ImplantGoal goal = effective[i];
-                bool own = OwnGoal(selected, goal.Id) != null;
+                bool own = goal.PlanId == selected.Id;
                 for (int j = 0; j < goal.SlotOrdinals.Count; j++)
                 {
                     var slot = (goal.ImplantDefName, goal.SlotOrdinals[j]);
@@ -353,7 +357,6 @@ namespace Implanner.UI
                     Catalogs.ImplantByDefName(goal.ImplantDefName);
                 var row = new RankedRow
                 {
-                    GoalId = goal.Id,
                     DefName = goal.ImplantDefName,
                     Label = entry?.Label ?? goal.ImplantDefName,
                     IconDef = entry?.Def.spawnThingOnRemoved,
@@ -383,14 +386,6 @@ namespace Implanner.UI
             for (int i = 0; i < tiers.Length; i++)
                 tiers[i] = new List<RankedRow>();
             return tiers;
-        }
-
-        private static ImplantGoal? OwnGoal(Plan plan, int goalId)
-        {
-            for (int i = 0; i < plan.Implants.Count; i++)
-                if (plan.Implants[i].Id == goalId)
-                    return plan.Implants[i];
-            return null;
         }
 
         private static ImplantGoal? FindGoal(Plan plan, string defName)

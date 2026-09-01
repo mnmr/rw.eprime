@@ -20,7 +20,9 @@ namespace Implanner.UI
         internal static string TabOverview = "";
         internal static string TabPlans = "";
         internal static string TabAutomation = "";
-        internal static string TabOptions = "";
+        internal static string TabHelp = "";
+        internal static string ImportPlans = "";
+        internal static string ExportPlans = "";
         internal static string ColColonist = "";
         internal static string ColPlan = "";
         internal static string ColProgress = "";
@@ -30,8 +32,6 @@ namespace Implanner.UI
         internal static string ColShootingTip = "";
         internal static string ColMeleeTip = "";
         internal static string ColPriority = "";
-        internal static string ColonyOverview = "";
-        internal static string NextWork = "";
         internal static string ColonistDetails = "";
         internal static string NoSelection = "";
         internal static string AddPlan = "";
@@ -39,7 +39,6 @@ namespace Implanner.UI
         internal static string Rename = "";
         internal static string DeletePlan = "";
         internal static string NoPlan = "";
-        internal static string ReEnlist = "";
         internal static string OptEnable = "";
         private static readonly string[] priorityLabels = new string[5];
 
@@ -50,7 +49,6 @@ namespace Implanner.UI
                 : priorityLabels[2];
 
         internal static string PlansHeader = "";
-        internal static string GroupImplants = "";
         internal static string PlanNameTitle = "";
         internal static string ExtendsPlan = "";
         internal static string ExtendsNothing = "";
@@ -58,6 +56,8 @@ namespace Implanner.UI
         internal static string OptSurgery = "";
         internal static string OptIteration = "";
         internal static string OptManualFloor = "";
+        internal static string OptSurgeryConcurrency = "";
+        internal static string OptCountHospitalized = "";
         internal static string OptAutoFloor = "";
         internal static string OptImplantReserves = "";
         internal static string AddImplantReserve = "";
@@ -69,7 +69,6 @@ namespace Implanner.UI
         internal static string OptIntermediaries = "";
         internal static string OptReserves = "";
         internal static string DragItemsHere = "";
-        internal static string OptionsEmpty = "";
         internal static string Help = "";
         internal static string RankTiersTitle = "";
         internal static string RankTiersHelp = "";
@@ -99,7 +98,9 @@ namespace Implanner.UI
             TabOverview = "IMP_TabOverview".Translate();
             TabPlans = "IMP_TabPlans".Translate();
             TabAutomation = "IMP_TabAutomation".Translate();
-            TabOptions = "IMP_TabOptions".Translate();
+            TabHelp = "IMP_TabHelp".Translate();
+            ImportPlans = "IMP_Import".Translate();
+            ExportPlans = "IMP_Export".Translate();
             ColColonist = "IMP_ColColonist".Translate();
             ColPlan = "IMP_ColPlan".Translate();
             ColProgress = "IMP_ColProgress".Translate();
@@ -109,8 +110,6 @@ namespace Implanner.UI
             ColShootingTip = "IMP_ColShootingTip".Translate();
             ColMeleeTip = "IMP_ColMeleeTip".Translate();
             ColPriority = "IMP_ColPriority".Translate();
-            ColonyOverview = "IMP_ColonyOverview".Translate();
-            NextWork = "IMP_NextWork".Translate();
             ColonistDetails = "IMP_ColonistDetails".Translate();
             NoSelection = "IMP_NoSelection".Translate();
             AddPlan = "IMP_AddPlan".Translate();
@@ -118,7 +117,6 @@ namespace Implanner.UI
             Rename = "IMP_Rename".Translate();
             DeletePlan = "IMP_DeletePlan".Translate();
             NoPlan = "IMP_NoPlan".Translate();
-            ReEnlist = "IMP_ReEnlist".Translate();
             OptEnable = "IMP_OptEnable".Translate();
             AutomationOffTitle = "IMP_AutomationOffTitle".Translate();
             AutomationOffBody =
@@ -126,7 +124,6 @@ namespace Implanner.UI
             for (int i = 0; i < priorityLabels.Length; i++)
                 priorityLabels[i] = ("IMP_Priority" + i).Translate();
             PlansHeader = "IMP_PlansHeader".Translate();
-            GroupImplants = "IMP_GroupImplants".Translate();
             PlanNameTitle = "IMP_PlanNameTitle".Translate();
             ExtendsPlan = "IMP_ExtendsPlan".Translate();
             ExtendsNothing = "IMP_ExtendsNothing".Translate();
@@ -134,6 +131,8 @@ namespace Implanner.UI
             OptSurgery = "IMP_OptSurgery".Translate();
             OptIteration = "IMP_OptIteration".Translate();
             OptManualFloor = "IMP_OptManualFloor".Translate();
+            OptSurgeryConcurrency = "IMP_OptSurgeryConcurrency".Translate();
+            OptCountHospitalized = "IMP_OptCountHospitalized".Translate();
             OptAutoFloor = "IMP_OptAutoFloor".Translate();
             OptImplantReserves = "IMP_OptImplantReserves".Translate();
             AddImplantReserve = "IMP_AddImplantReserve".Translate();
@@ -145,7 +144,6 @@ namespace Implanner.UI
             OptIntermediaries = "IMP_OptIntermediaries".Translate();
             OptReserves = "IMP_OptReserves".Translate();
             DragItemsHere = "IMP_DragItemsHere".Translate();
-            OptionsEmpty = "IMP_OptionsEmpty".Translate();
             Help = "IMP_Help".Translate();
             RankTiersTitle = "IMP_RankTiersTitle".Translate();
             RankTiersHelp = "IMP_RankTiersHelp".Translate();

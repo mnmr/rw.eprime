@@ -60,63 +60,92 @@ public class PlannerModelTests
         await Assert.That(model.DeletePlan(plan.Id)).IsEqualTo(PlannerChange.Plans);
     }
 
-    /// Goal ids are allocated from a store-global counter so they stay
-    /// unique across plans (plan extension resolves goals by id).
+    /// A goal's identity is natural — the owning plan plus the implant
+    /// kind — so removing and re-adding a pick reproduces the exact same
+    /// goal keys with no allocation involved.
     [Test]
-    public async Task ImplantGoalIdsAreGloballyUniqueAndNeverReused()
+    public async Task RemovingAndReAddingAPickReproducesItsIdentity()
     {
         var model = NewModel();
-        int nextGoal = 1;
-        int TakeGoalId() => nextGoal++;
-        var first = model.CreatePlan("Marines", TakeId)!;
-        var second = model.CreatePlan("Scouts", TakeId)!;
-        model.SetImplantSlot(first.Id, "BionicLeg", 0, true, TakeGoalId);
-        model.SetImplantSlot(second.Id, "BionicArm", 0, true, TakeGoalId);
-        model.RemoveImplant(first.Id, first.Implants[0].Id);
-        model.SetImplantSlot(first.Id, "BionicEye", 0, true, TakeGoalId);
+        var plan = model.CreatePlan("Marines", TakeId)!;
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
+        string before = GoalKeys.ImplantSlot(plan.Implants[0], 0);
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, false);
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
 
-        await Assert.That(second.Implants[0].Id).IsEqualTo(2);
-        await Assert.That(first.Implants[0].Id).IsEqualTo(3);
+        await Assert.That(GoalKeys.ImplantSlot(plan.Implants[0], 0))
+            .IsEqualTo(before);
+        await Assert.That(plan.Implants[0].PlanId).IsEqualTo(plan.Id);
     }
 
     [Test]
     public async Task ImplantSlotToggleUpsertRemoveAndNoOp()
     {
         var model = NewModel();
-        int nextGoal = 1;
-        int TakeGoalId() => nextGoal++;
         var plan = model.CreatePlan("Marines", TakeId)!;
 
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true, TakeGoalId)).IsEqualTo(PlannerChange.None);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, true, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, true)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, true)).IsEqualTo(PlannerChange.Plans);
 
         // Ordinals stay sorted regardless of toggle order.
         await Assert.That(plan.Implants[0].SlotOrdinals).IsEquivalentTo(new[] { 0, 1 });
 
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false, TakeGoalId)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 1, false)).IsEqualTo(PlannerChange.None);
 
         // Removing the last selected slot removes the goal entirely.
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false, TakeGoalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false)).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(0);
-        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false, TakeGoalId)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetImplantSlot(plan.Id, "BionicArm", 0, false)).IsEqualTo(PlannerChange.None);
     }
 
     [Test]
     public async Task RemoveImplantDropsTheWholeGoal()
     {
         var model = NewModel();
-        int nextGoal = 1;
-        int TakeGoalId() => nextGoal++;
         var plan = model.CreatePlan("Marines", TakeId)!;
-        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true, TakeGoalId);
-        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true, TakeGoalId);
-        int goalId = plan.Implants[0].Id;
+        model.SetImplantSlot(plan.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(plan.Id, "BionicLeg", 1, true);
 
-        await Assert.That(model.RemoveImplant(plan.Id, goalId)).IsEqualTo(PlannerChange.Plans);
+        await Assert.That(model.RemoveImplant(plan.Id, "BionicLeg")).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(0);
-        await Assert.That(model.RemoveImplant(plan.Id, goalId)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.RemoveImplant(plan.Id, "BionicLeg")).IsEqualTo(PlannerChange.None);
+    }
+
+    [Test]
+    public async Task SurgeryConcurrencyClampsAndPreservesNoOps()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.SurgeryConcurrency).IsEqualTo(1);
+        await Assert.That(model.SetSurgeryConcurrency(3))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SetSurgeryConcurrency(3))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetSurgeryConcurrency(99))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SurgeryConcurrency)
+            .IsEqualTo(PlannerModel.SurgeryConcurrencyMax);
+        await Assert.That(model.SetSurgeryConcurrency(0))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SurgeryConcurrency)
+            .IsEqualTo(PlannerModel.SurgeryConcurrencyMin);
+    }
+
+    [Test]
+    public async Task CountHospitalizedTogglesAndPreservesNoOps()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.CountHospitalized).IsTrue();
+        await Assert.That(model.SetCountHospitalized(true))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetCountHospitalized(false))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.CountHospitalized).IsFalse();
+        await Assert.That(model.SetCountHospitalized(false))
+            .IsEqualTo(PlannerChange.None);
     }
 
     [Test]

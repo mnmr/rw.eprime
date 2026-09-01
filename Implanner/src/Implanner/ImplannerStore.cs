@@ -15,7 +15,6 @@ namespace Implanner
     {
         public PlannerModel Model = new PlannerModel();
         private int nextPlanId = 1;
-        private int nextGoalId = 1;
 
         // Scribe staging buffers; live only between ExposeData passes.
         private List<PlanRecord>? planRecords;
@@ -23,8 +22,6 @@ namespace Implanner
         private List<int>? assignmentPlanIds;
         private List<int>? priorityPawnIds;
         private List<int>? priorityLevels;
-        private List<int>? latchPawnIds;
-        private List<string>? latchKeyBlobs;   // comma-joined sorted goal keys
         private List<int>? reservationItemIds;
         private List<int>? reservationPawnIds;
         private List<string>? reservationGoalKeys;
@@ -47,6 +44,9 @@ namespace Implanner
         private int iteration = (int)IterationStrategy.ImplantTier;
         private int manualDoctorFloor;
         private bool autoDoctorFloor = true;
+        // 0 = never seeded: FinishInit derives max(1, colonists / 10) once.
+        private int surgeryConcurrency;
+        private bool countHospitalized = true;
         private bool autoProduction = true;
         private int productionConcurrency = PlannerModel.ConcurrencyDefault;
         private bool onlyIdleBenches = true;
@@ -73,10 +73,6 @@ namespace Implanner
 
         public int TakePlanId() => nextPlanId++;
 
-        /// Goal ids are globally unique per save so goal keys stay stable
-        /// across plan extension.
-        public int TakeGoalId() => nextGoalId++;
-
         public void Bump(PlannerChange change) => revisions.Bump(change);
 
         public override void FinalizeInit(bool fromLoad)
@@ -94,6 +90,17 @@ namespace Implanner
         private void FinishInit()
         {
             Model.CleanupMissing(PawnExists);
+            // First init for this save (new game, or a save from before the
+            // option existed): seed the concurrent-surgeries cap from the
+            // colony size. Deterministic — every client counts the same
+            // authoritative colonist roster from the same save data.
+            if (surgeryConcurrency <= 0)
+            {
+                int colonists = ColonyScope.AllPlanableColonists(
+                    ColonyScope.AuthoritativeFaction).Count;
+                surgeryConcurrency = System.Math.Max(1, colonists / 10);
+                Model.SetSurgeryConcurrency(surgeryConcurrency);
+            }
             Bump(PlannerChange.All);
         }
 
@@ -110,7 +117,6 @@ namespace Implanner
         {
             base.ExposeData();
             Scribe_Values.Look(ref nextPlanId, "nextPlanId", 1);
-            Scribe_Values.Look(ref nextGoalId, "nextGoalId", 1);
 
             if (Scribe.mode == LoadSaveMode.Saving)
             {
@@ -135,17 +141,6 @@ namespace Implanner
                     priorityLevels.Add(pair.Value);
                 }
                 SortAssignments(priorityPawnIds, priorityLevels);
-
-                latchPawnIds = new List<int>();
-                latchKeyBlobs = new List<string>();
-                foreach (KeyValuePair<int, HashSet<string>> pair in Model.Latches)
-                {
-                    var keys = new List<string>(pair.Value);
-                    keys.Sort(System.StringComparer.Ordinal);
-                    latchPawnIds.Add(pair.Key);
-                    latchKeyBlobs.Add(string.Join(",", keys));
-                }
-                SortParallel(latchPawnIds, latchKeyBlobs);
 
                 reservationItemIds = new List<int>();
                 reservationPawnIds = new List<int>();
@@ -216,6 +211,8 @@ namespace Implanner
                 iteration = (int)Model.Iteration;
                 manualDoctorFloor = Model.ManualDoctorFloor;
                 autoDoctorFloor = Model.AutoDoctorFloor;
+                surgeryConcurrency = Model.SurgeryConcurrency;
+                countHospitalized = Model.CountHospitalized;
                 autoProduction = Model.AutoProduction;
                 productionConcurrency = Model.ProductionConcurrency;
                 onlyIdleBenches = Model.OnlyIdleBenches;
@@ -228,8 +225,6 @@ namespace Implanner
             Scribe_Collections.Look(ref assignmentPlanIds, "assignmentPlans", LookMode.Value);
             Scribe_Collections.Look(ref priorityPawnIds, "priorityPawns", LookMode.Value);
             Scribe_Collections.Look(ref priorityLevels, "priorityLevels", LookMode.Value);
-            Scribe_Collections.Look(ref latchPawnIds, "latchPawns", LookMode.Value);
-            Scribe_Collections.Look(ref latchKeyBlobs, "latchKeys", LookMode.Value);
             Scribe_Collections.Look(ref reservationItemIds, "reservationItems", LookMode.Value);
             Scribe_Collections.Look(ref reservationPawnIds, "reservationPawns", LookMode.Value);
             Scribe_Collections.Look(ref reservationGoalKeys, "reservationGoals", LookMode.Value);
@@ -253,6 +248,8 @@ namespace Implanner
                 (int)IterationStrategy.ImplantTier);
             Scribe_Values.Look(ref manualDoctorFloor, "manualDoctorFloor", 0);
             Scribe_Values.Look(ref autoDoctorFloor, "autoDoctorFloor", true);
+            Scribe_Values.Look(ref surgeryConcurrency, "surgeryConcurrency", 0);
+            Scribe_Values.Look(ref countHospitalized, "countHospitalized", true);
             Scribe_Values.Look(ref autoProduction, "autoProduction", true);
             Scribe_Values.Look(ref productionConcurrency, "productionConcurrency",
                 PlannerModel.ConcurrencyDefault);
@@ -267,12 +264,24 @@ namespace Implanner
                 {
                     SlotConflictResolver = ImplantConflicts.Resolver,
                 };
+                // Legacy goal-id map: saves written before natural goal
+                // identities persisted per-goal ids, and their reservation
+                // and bill keys use the retired "i{id}:{ordinal}" format.
+                // Collect id -> (plan index, kind) while loading so those
+                // keys can be rewritten once plan ids are final.
+                Dictionary<int, LegacyGoalRef>? legacyGoals = null;
                 if (planRecords != null)
                     foreach (PlanRecord record in planRecords)
                     {
-                        Plan? plan = record.ToPlan();
+                        Plan? plan = record.ToPlan(
+                            Model.Plans.Count, ref legacyGoals);
                         if (plan != null) Model.AddLoadedPlan(plan);
                     }
+                // Saves from builds that did not persist the plan-id counter
+                // (or that carry a duplicated plan id) must never reissue a
+                // live id: goal keys, assignments, and base links embed plan
+                // ids as identity.
+                Model.NormalizeLoadedIds(ref nextPlanId);
                 if (assignmentPawnIds != null && assignmentPlanIds != null
                     && assignmentPawnIds.Count == assignmentPlanIds.Count)
                     for (int i = 0; i < assignmentPawnIds.Count; i++)
@@ -281,19 +290,19 @@ namespace Implanner
                     && priorityPawnIds.Count == priorityLevels.Count)
                     for (int i = 0; i < priorityPawnIds.Count; i++)
                         Model.AddLoadedPriority(priorityPawnIds[i], priorityLevels[i]);
-                if (latchPawnIds != null && latchKeyBlobs != null
-                    && latchPawnIds.Count == latchKeyBlobs.Count)
-                    for (int i = 0; i < latchPawnIds.Count; i++)
-                        Model.AddLoadedLatches(latchPawnIds[i],
-                            latchKeyBlobs[i]?.Split(',') ?? System.Array.Empty<string>());
                 if (reservationItemIds != null && reservationPawnIds != null
                     && reservationGoalKeys != null
                     && reservationItemIds.Count == reservationPawnIds.Count
                     && reservationItemIds.Count == reservationGoalKeys.Count)
                     for (int i = 0; i < reservationItemIds.Count; i++)
                         if (!reservationGoalKeys[i].NullOrEmpty())
-                            Model.AddLoadedReservation(reservationItemIds[i],
-                                reservationPawnIds[i], reservationGoalKeys[i]);
+                        {
+                            string? key = MigrateGoalKey(
+                                reservationGoalKeys[i], legacyGoals);
+                            if (key != null)
+                                Model.AddLoadedReservation(reservationItemIds[i],
+                                    reservationPawnIds[i], key);
+                        }
                 if (implantStarDefs != null && implantStarLevels != null
                     && implantStarDefs.Count == implantStarLevels.Count)
                     for (int i = 0; i < implantStarDefs.Count; i++)
@@ -323,8 +332,13 @@ namespace Implanner
                     for (int i = 0; i < ownedBillPawnIds.Count; i++)
                         if (!ownedBillGoalKeys[i].NullOrEmpty()
                             && !ownedBillIds[i].NullOrEmpty())
-                            Model.AddLoadedOwnedBill(ownedBillPawnIds[i],
-                                ownedBillGoalKeys[i], ownedBillIds[i]);
+                        {
+                            string? key = MigrateGoalKey(
+                                ownedBillGoalKeys[i], legacyGoals);
+                            if (key != null)
+                                Model.AddLoadedOwnedBill(ownedBillPawnIds[i],
+                                    key, ownedBillIds[i]);
+                        }
                 if (reserveDefs != null && reserveAmounts != null
                     && reserveDefs.Count == reserveAmounts.Count)
                     for (int i = 0; i < reserveDefs.Count; i++)
@@ -340,6 +354,7 @@ namespace Implanner
                                 productionBillIds[i], productionBillDefs[i]);
                 Model.LoadOptions(automationPaused,
                     (IterationStrategy)iteration, manualDoctorFloor, autoDoctorFloor,
+                    surgeryConcurrency, countHospitalized,
                     autoProduction, productionConcurrency,
                     onlyIdleBenches, productionSkill, allowIntermediaries);
                 // Deferred so maps and pawns are fully loaded when existence
@@ -355,8 +370,6 @@ namespace Implanner
                 assignmentPlanIds = null;
                 priorityPawnIds = null;
                 priorityLevels = null;
-                latchPawnIds = null;
-                latchKeyBlobs = null;
                 reservationItemIds = null;
                 reservationPawnIds = null;
                 reservationGoalKeys = null;
@@ -389,15 +402,23 @@ namespace Implanner
             planIds.AddRange(values);
         }
 
-        private static void SortParallel(List<int> ids, List<string> values)
+        /// Rewrites a legacy "i{goalId}:{ordinal}" key to the natural
+        /// "p{planId}:{defName}:{ordinal}" format using the owning plan
+        /// recorded in the save; an unmappable legacy key is dropped (its
+        /// goal no longer exists, so the reconciler would release it
+        /// anyway). Natural keys pass through unchanged. Runs after
+        /// NormalizeLoadedIds so the plan index resolves to the final id.
+        private string? MigrateGoalKey(
+            string key, Dictionary<int, LegacyGoalRef>? legacyGoals)
         {
-            int[] keys = ids.ToArray();
-            string[] payload = values.ToArray();
-            System.Array.Sort(keys, payload);
-            ids.Clear();
-            values.Clear();
-            ids.AddRange(keys);
-            values.AddRange(payload);
+            if (!GoalKeys.TryParseLegacyImplantSlot(
+                    key, out int goalId, out int ordinal))
+                return key;
+            if (legacyGoals == null
+                || !legacyGoals.TryGetValue(goalId, out LegacyGoalRef owner))
+                return null;
+            return GoalKeys.ImplantSlot(
+                Model.Plans[owner.PlanIndex].Id, owner.DefName, ordinal);
         }
 
         private static void SortReservations(
@@ -421,6 +442,21 @@ namespace Implanner
         }
     }
 
+    /// A legacy goal id's owner: the loaded plan's list position (stable
+    /// through NormalizeLoadedIds, which replaces in place) and the implant
+    /// kind. Used only to migrate pre-natural-key reservation and bill keys.
+    public readonly struct LegacyGoalRef
+    {
+        public LegacyGoalRef(int planIndex, string defName)
+        {
+            PlanIndex = planIndex;
+            DefName = defName;
+        }
+
+        public int PlanIndex { get; }
+        public string DefName { get; }
+    }
+
     /// IExposable projection of one Core Plan. The Core model stays free of
     /// Scribe; records exist only during save/load.
     public class PlanRecord : IExposable
@@ -442,15 +478,24 @@ namespace Implanner
                 implants.Add(new ImplantRecord(goal));
         }
 
-        public Plan? ToPlan()
+        /// planIndex is the position the caller will load this plan into;
+        /// legacy goal ids found in the record register there so old keys
+        /// can be migrated once plan ids are final.
+        public Plan? ToPlan(int planIndex,
+            ref Dictionary<int, LegacyGoalRef>? legacyGoals)
         {
             if (id <= 0 || string.IsNullOrEmpty(name)) return null;
             var plan = new Plan(id, name) { BasePlanId = basePlanId };
             if (implants != null)
                 foreach (ImplantRecord record in implants)
                 {
-                    ImplantGoal? goal = record.ToGoal();
-                    if (goal != null) plan.Implants.Add(goal);
+                    ImplantGoal? goal = record.ToGoal(plan.Id);
+                    if (goal == null) continue;
+                    plan.Implants.Add(goal);
+                    if (record.LegacyId > 0)
+                        (legacyGoals ??= new Dictionary<int, LegacyGoalRef>())
+                            [record.LegacyId] = new LegacyGoalRef(
+                                planIndex, goal.ImplantDefName);
                 }
             return plan;
         }
@@ -466,6 +511,8 @@ namespace Implanner
 
     public class ImplantRecord : IExposable
     {
+        // Read for legacy-key migration only; new saves omit it (goals
+        // carry natural identities and no longer persist an id).
         private int id;
         private string implantDef = "";
         private List<int>? slots;
@@ -474,23 +521,24 @@ namespace Implanner
 
         public ImplantRecord(ImplantGoal goal)
         {
-            id = goal.Id;
             implantDef = goal.ImplantDefName;
             slots = new List<int>(goal.SlotOrdinals);
         }
 
-        public ImplantGoal? ToGoal()
+        internal int LegacyId => id;
+
+        public ImplantGoal? ToGoal(int planId)
         {
             if (string.IsNullOrEmpty(implantDef)) return null;
             List<int>? ordinals = slots;
             if (ordinals == null || ordinals.Count == 0) return null;
             ordinals.Sort();
-            return new ImplantGoal(id, implantDef, ordinals);
+            return new ImplantGoal(planId, implantDef, ordinals);
         }
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref id, "id");
+            Scribe_Values.Look(ref id, "id", 0);
             Scribe_Values.Look(ref implantDef, "implantDef", "");
             Scribe_Collections.Look(ref slots, "slots", LookMode.Value);
         }

@@ -136,8 +136,10 @@ public class PlanEvaluatorTests
     }
 
     [Test]
-    public async Task SlotBeyondApplicableAnatomyIsBlocked()
+    public async Task ImpossibleSlotsAreExcludedFromTheTarget()
     {
+        // The body has one shoulder; the second selected slot can never be
+        // installed, so it neither completes nor counts as missing.
         var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", BothSlots));
         var contexts = new[]
         {
@@ -146,14 +148,36 @@ public class PlanEvaluatorTests
 
         var result = Evaluate(plan, implantContexts: contexts);
 
-        await Assert.That(result.Implants[0].Blocked).IsEqualTo(1);
+        await Assert.That(result.Implants[0].Requested).IsEqualTo(1);
         await Assert.That(result.Implants[0].Missing).IsEqualTo(1);
-        await Assert.That(result.Implants[0].Blocker).IsEqualTo(GoalBlocker.Anatomy);
+        await Assert.That(result.TotalUnits).IsEqualTo(1);
+        await Assert.That(result.State).IsEqualTo(PawnPlanState.Active);
     }
 
     [Test]
-    public async Task SatisfiedSlotsPublishTheirGoalKeys()
+    public async Task AWhollyImpossiblePlanCountsAsComplete()
     {
+        // No applicable anatomy at all: zero target, full progress, and the
+        // colonist never shows as having outstanding work.
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicArm", FirstSlot));
+        var contexts = new[]
+        {
+            new ImplantContext(System.Array.Empty<string>(), 1.25f),
+        };
+
+        var result = Evaluate(plan, implantContexts: contexts);
+
+        await Assert.That(result.Implants[0].Requested).IsEqualTo(0);
+        await Assert.That(result.TotalUnits).IsEqualTo(0);
+        await Assert.That(result.Progress).IsEqualTo(1f);
+        await Assert.That(result.State).IsEqualTo(PawnPlanState.Complete);
+    }
+
+    [Test]
+    public async Task SatisfiedSlotConsumesItsImplantExactlyOnce()
+    {
+        // One installed leg covers exactly one of the two selected slots:
+        // the other stays demanded.
         var plan = ImplantPlan(new ImplantGoal(3, "BionicLeg", BothSlots));
         var installed = new[]
         {
@@ -164,9 +188,10 @@ public class PlanEvaluatorTests
             new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
         };
 
-        var result = Evaluate(plan, installed, contexts);
+        var missing = PlanEvaluator.MissingImplantSlotKeys(
+            plan.Implants, installed, contexts);
 
-        await Assert.That(result.SatisfiedGoalKeys).IsEquivalentTo(new[] { "i3:0" });
+        await Assert.That(missing).IsEquivalentTo(new[] { "p3:BionicLeg:1" });
     }
 
     // Same-slot exclusivity stand-ins for the game-side conflict facts:
@@ -185,7 +210,7 @@ public class PlanEvaluatorTests
         var goals = new[]
         {
             new ImplantGoal(1, "Neurocalculator", FirstSlot),
-            new ImplantGoal(2, "CircadianAssistant", FirstSlot),
+            new ImplantGoal(1, "CircadianAssistant", FirstSlot),
         };
         var installed = new[]
         {
@@ -198,15 +223,15 @@ public class PlanEvaluatorTests
         };
 
         var result = PlanEvaluator.Evaluate(goals, installed, contexts,
-            away: false, latchedKeys: null, sameSlotExclusive: Coexisting);
+            away: false, sameSlotExclusive: Coexisting);
         await Assert.That(result.Implants[0].IsComplete).IsTrue();
         await Assert.That(result.Implants[1].Missing).IsEqualTo(1);
         await Assert.That(result.State).IsEqualTo(PawnPlanState.Active);
-        await Assert.That(result.SatisfiedGoalKeys).IsEquivalentTo(new[] { "i1:0" });
 
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
-            contexts, latchedKeys: null, sameSlotExclusive: Coexisting);
-        await Assert.That(missing).IsEquivalentTo(new[] { "i2:0" });
+            contexts, sameSlotExclusive: Coexisting);
+        await Assert.That(missing).IsEquivalentTo(
+            new[] { "p1:CircadianAssistant:0" });
     }
 
     [Test]
@@ -227,11 +252,11 @@ public class PlanEvaluatorTests
         };
 
         var result = PlanEvaluator.Evaluate(goals, installed, contexts,
-            away: false, latchedKeys: null, sameSlotExclusive: Occupying);
+            away: false, sameSlotExclusive: Occupying);
         await Assert.That(result.Implants[0].IsComplete).IsTrue();
 
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
-            contexts, latchedKeys: null, sameSlotExclusive: Occupying);
+            contexts, sameSlotExclusive: Occupying);
         await Assert.That(missing).IsEmpty();
     }
 
@@ -251,8 +276,8 @@ public class PlanEvaluatorTests
         };
 
         var missing = PlanEvaluator.MissingImplantSlotKeys(goals, installed,
-            contexts, latchedKeys: null, sameSlotExclusive: Occupying);
-        await Assert.That(missing).IsEquivalentTo(new[] { "i1:0" });
+            contexts, sameSlotExclusive: Occupying);
+        await Assert.That(missing).IsEquivalentTo(new[] { "p1:BionicLeg:0" });
     }
 
     [Test]

@@ -25,14 +25,15 @@ namespace WorkRoles.Patches
     /// labels even when a transition does not replace the job. The tracker
     /// ignores everything while no WorkRoles window is open. StartJob also
     /// stamps the issue-time rank baseline that reconciliation compares against
-    /// when role state changes.
+    /// when role state changes, and feeds the giver-bypass watcher.
     [HarmonyPatch(typeof(Pawn_JobTracker), nameof(Pawn_JobTracker.StartJob))]
     public static class Patch_JobTracker_StartJob
     {
-        public static void Postfix(Pawn ___pawn)
+        public static void Postfix(Pawn ___pawn, Job newJob)
         {
             ActivityTracker.NotifyJobChanged(___pawn);
             JobRankBaseline.NotifyJobStarted(___pawn);
+            GiverBypassWatcher.OnJobStarted(___pawn, newJob);
         }
     }
 

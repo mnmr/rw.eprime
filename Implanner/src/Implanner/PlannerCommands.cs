@@ -41,11 +41,11 @@ namespace Implanner
         }
 
         [SyncMethod]
-        public static void RemoveImplant(int planId, int goalId)
+        public static void RemoveImplant(int planId, string implantDefName)
         {
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
-            store.Bump(store.Model.RemoveImplant(planId, goalId));
+            store.Bump(store.Model.RemoveImplant(planId, implantDefName));
         }
 
         [SyncMethod]
@@ -54,42 +54,7 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
             store.Bump(store.Model.SetImplantSlot(
-                planId, implantDefName, slotOrdinal, wanted, store.TakeGoalId));
-        }
-
-        /// Re-enlist: returns exactly the pawn's no-longer-satisfied
-        /// delivered-once goals to the pipeline. Satisfaction is derived
-        /// inside the synced command from authoritative state and definition
-        /// data, so every client clears the identical keys.
-        [SyncMethod]
-        public static void ReEnlist(int pawnId)
-        {
-            ImplannerStore? store = ImplannerStore.Current;
-            if (store == null) return;
-            Plan? plan = store.Model.AssignedPlan(pawnId);
-            HashSet<string>? latched = store.Model.LatchesFor(pawnId);
-            if (plan == null || latched == null || latched.Count == 0) return;
-            Pawn? pawn = null;
-            // Synced command: resolve pawns with the authoritative faction,
-            // never the local client's view faction.
-            List<Pawn> colonists = ColonyScope.AllPlanableColonists(
-                ColonyScope.AuthoritativeFaction);
-            for (int i = 0; i < colonists.Count; i++)
-                if (colonists[i].thingIDNumber == pawnId)
-                {
-                    pawn = colonists[i];
-                    break;
-                }
-            if (pawn == null) return;
-            List<ImplantGoal> goals = store.Model.EffectiveImplants(plan);
-            PlanEvaluation evaluation = PawnProjection.Evaluate(
-                pawn, goals, away: false, latched);
-            var unsatisfied = new List<string>();
-            foreach (string key in latched)
-                if (!evaluation.SatisfiedGoalKeys.Contains(key))
-                    unsatisfied.Add(key);
-            unsatisfied.Sort(System.StringComparer.Ordinal);
-            store.Bump(store.Model.ReEnlist(pawnId, unsatisfied));
+                planId, implantDefName, slotOrdinal, wanted));
         }
 
         /// Ranks an implant kind (stars 1–5). Rankings are the player's
@@ -208,6 +173,106 @@ namespace Implanner
             store.Bump(store.Model.SetAutomationPaused(paused));
         }
 
+        /// Hands queued automation work back to the player when the master
+        /// switch turns off (issued by the cleanup dialog's OK, right after
+        /// the pause command): deletes the
+        /// listed Implanner-owned bills from the game, drops their records,
+        /// and releases every item reservation. Unlisted bills keep their
+        /// bill objects AND records, so re-enabling automation resumes
+        /// managing them without duplicating operations. billIds is a
+        /// newline-joined list of bill load ids — a plain string keeps the
+        /// sync payload trivially serialization-safe.
+        [SyncMethod]
+        public static void CleanupAutomation(string billIds)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            PlannerModel model = store.Model;
+            var remove = new HashSet<string>(System.StringComparer.Ordinal);
+            foreach (string id in billIds.Split('\n'))
+                if (id.Length > 0)
+                    remove.Add(id);
+            var change = PlannerChange.None;
+
+            // Reservations release unconditionally: with automation off
+            // nothing consumes them, and they silently lock stock.
+            var itemIds = new List<int>(model.Reservations.Keys);
+            itemIds.Sort();
+            for (int i = 0; i < itemIds.Count; i++)
+                change |= model.ReleaseReservation(itemIds[i]);
+
+            // Listed records drop even when the bill object is already gone
+            // (completed or player-deleted while the dialog was open).
+            var pawnIds = new List<int>(model.OwnedBills.Keys);
+            pawnIds.Sort();
+            for (int p = 0; p < pawnIds.Count; p++)
+            {
+                Dictionary<string, string>? owned =
+                    model.OwnedBillsFor(pawnIds[p]);
+                if (owned == null) continue;
+                var goalKeys = new List<string>(owned.Keys);
+                goalKeys.Sort(System.StringComparer.Ordinal);
+                for (int k = 0; k < goalKeys.Count; k++)
+                    if (remove.Contains(owned[goalKeys[k]]))
+                        change |= model.RemoveOwnedBill(pawnIds[p], goalKeys[k]);
+            }
+            var productionIds = new List<string>(model.OwnedProductionBills.Keys);
+            productionIds.Sort(System.StringComparer.Ordinal);
+            for (int i = 0; i < productionIds.Count; i++)
+                if (remove.Contains(productionIds[i]))
+                    change |= model.RemoveOwnedProductionBill(productionIds[i]);
+
+            DeleteBillObjects(remove);
+            store.Bump(change);
+        }
+
+        /// Deletes bill objects by load id wherever automation places them:
+        /// colonist worktables and planable colonists' operation lists.
+        /// Idempotent — missing bills are simply not found.
+        private static void DeleteBillObjects(HashSet<string> ids)
+        {
+            if (ids.Count == 0) return;
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Building> buildings =
+                    maps[m].listerBuildings.allBuildingsColonist;
+                for (int b = 0; b < buildings.Count; b++)
+                    if (buildings[b] is Building_WorkTable bench)
+                        DeleteFromStack(bench.BillStack, ids);
+            }
+            List<Pawn> pawns = ColonyScope.AllPlanableColonists(
+                ColonyScope.AuthoritativeFaction);
+            for (int i = 0; i < pawns.Count; i++)
+                DeleteFromStack(pawns[i].BillStack, ids);
+        }
+
+        private static void DeleteFromStack(BillStack? stack, HashSet<string> ids)
+        {
+            if (stack == null) return;
+            for (int i = stack.Count - 1; i >= 0; i--)
+                if (ids.Contains(stack[i].GetUniqueLoadID()))
+                    stack.Delete(stack[i]);
+        }
+
+        /// colonists 1–20: how many colonists per colony may have surgeries
+        /// planned at once.
+        [SyncMethod]
+        public static void SetSurgeryConcurrency(int colonists)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetSurgeryConcurrency(colonists));
+        }
+
+        [SyncMethod]
+        public static void SetCountHospitalized(bool enabled)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetCountHospitalized(enabled));
+        }
+
         [SyncMethod]
         public static void SetAutoProduction(bool enabled)
         {
@@ -272,6 +337,23 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
             store.Bump(store.Model.AssignPlan(pawnId, planId));
+        }
+
+        /// Additive plan import. The raw XML is the sync payload: every
+        /// client re-parses and re-applies it deterministically (identical
+        /// input plus identical id-allocator state), and a payload that fails
+        /// validation applies nothing anywhere. Names are uniquified against
+        /// existing plans; nothing is overwritten.
+        [SyncMethod]
+        public static void ImportPlans(string xml)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            if (!Core.PlansXml.TryImport(xml, out var parsed, out _,
+                    ModRequirements.IsModActive))
+                return;
+            store.Bump(store.Model.ImportPlans(
+                parsed, store.TakePlanId));
         }
     }
 }

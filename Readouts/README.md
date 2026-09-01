@@ -52,6 +52,7 @@ dotnet test src\EPrimeReadouts.slnx
 
 - [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051): manage quality crafting and construction, so your items get the best possible quality.
 - [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134): easily and intuitively manage work priorities by assigning named roles to colonists.
+- [EPrime's Implanner](https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932): plan, track and optionally automate the rollouts of bionic implants.
 
 ## Disclaimer
 

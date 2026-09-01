@@ -16,8 +16,6 @@ namespace Implanner.Core
         Assignments = 2,
         /// Per-pawn implant priorities.
         Priorities = 4,
-        /// Delivery latches (delivered-once goals).
-        Latches = 8,
         /// Item reservations binding stored implant items to designated pawns.
         Reservations = 16,
         /// Shared automation options (pause, iteration strategy, doctor-floor
@@ -31,7 +29,7 @@ namespace Implanner.Core
         /// Production automation: options, resource reserves, and owned
         /// production-bill records.
         Production = 256,
-        All = Plans | Assignments | Priorities | Latches | Reservations
+        All = Plans | Assignments | Priorities | Reservations
             | Options | Rankings | Surgery | Production,
     }
 
@@ -43,7 +41,6 @@ namespace Implanner.Core
         public int Plans { get; private set; }
         public int Assignments { get; private set; }
         public int Priorities { get; private set; }
-        public int Latches { get; private set; }
         public int Reservations { get; private set; }
         public int Options { get; private set; }
         public int Rankings { get; private set; }
@@ -57,7 +54,6 @@ namespace Implanner.Core
             if ((change & PlannerChange.Plans) != 0) Plans = unchecked(Plans + 1);
             if ((change & PlannerChange.Assignments) != 0) Assignments = unchecked(Assignments + 1);
             if ((change & PlannerChange.Priorities) != 0) Priorities = unchecked(Priorities + 1);
-            if ((change & PlannerChange.Latches) != 0) Latches = unchecked(Latches + 1);
             if ((change & PlannerChange.Reservations) != 0) Reservations = unchecked(Reservations + 1);
             if ((change & PlannerChange.Options) != 0) Options = unchecked(Options + 1);
             if ((change & PlannerChange.Rankings) != 0) Rankings = unchecked(Rankings + 1);
@@ -99,7 +95,6 @@ namespace Implanner.Core
         readonly List<Plan> plans = new List<Plan>();
         readonly Dictionary<int, int> assignments = new Dictionary<int, int>();
         readonly Dictionary<int, int> priorities = new Dictionary<int, int>();
-        readonly Dictionary<int, HashSet<string>> latches = new Dictionary<int, HashSet<string>>();
         readonly Dictionary<int, ItemReservation> reservations = new Dictionary<int, ItemReservation>();
         readonly Dictionary<string, int> implantStars =
             new Dictionary<string, int>(StringComparer.Ordinal);
@@ -133,6 +128,38 @@ namespace Implanner.Core
         /// Whether the automatic doctor-skill floor (per-colony high-water
         /// mark of the best eligible Medical skill) is active. On by default.
         public bool AutoDoctorFloor { get; private set; } = true;
+
+        /// How many colonists per colony may have Implanner surgeries
+        /// planned at once (1–20). Seeded at first init from colony size:
+        /// max(1, colonists / 10).
+        public const int SurgeryConcurrencyMin = 1;
+        public const int SurgeryConcurrencyMax = 20;
+        public int SurgeryConcurrency { get; private set; } = 1;
+
+        public PlannerChange SetSurgeryConcurrency(int colonists)
+        {
+            colonists = ClampSurgeryConcurrency(colonists);
+            if (SurgeryConcurrency == colonists) return PlannerChange.None;
+            SurgeryConcurrency = colonists;
+            return PlannerChange.Options;
+        }
+
+        static int ClampSurgeryConcurrency(int colonists) =>
+            colonists < SurgeryConcurrencyMin ? SurgeryConcurrencyMin
+            : colonists > SurgeryConcurrencyMax ? SurgeryConcurrencyMax
+            : colonists;
+
+        /// Whether pawns lying in medical beds or downed awaiting treatment
+        /// occupy concurrent-surgery slots too, so new Implanner surgeries
+        /// wait while the hospital is busy. On by default.
+        public bool CountHospitalized { get; private set; } = true;
+
+        public PlannerChange SetCountHospitalized(bool enabled)
+        {
+            if (CountHospitalized == enabled) return PlannerChange.None;
+            CountHospitalized = enabled;
+            return PlannerChange.Options;
+        }
 
         /// Whether missing implant items get crafting bills automatically.
         /// On by default: automation works out of the box.
@@ -182,69 +209,36 @@ namespace Implanner.Core
         public void AddLoadedPriority(int pawnId, int level) =>
             priorities[pawnId] = level;
 
-        // ------------------------------------------------ Delivery latches
-
-        /// Latched (delivered-once) goal keys per pawn. A latched goal is
-        /// never re-pursued; later loss shows as Regressed until an explicit
-        /// re-enlist.
-        public IReadOnlyDictionary<int, HashSet<string>> Latches => latches;
-
-        public bool IsLatched(int pawnId, string goalKey) =>
-            latches.TryGetValue(pawnId, out var keys) && keys.Contains(goalKey);
-
-        public HashSet<string>? LatchesFor(int pawnId) =>
-            latches.TryGetValue(pawnId, out var keys) ? keys : null;
-
-        /// Latches a goal the moment it is first observed satisfied.
-        /// Deterministic reconcile path; idempotent.
-        public PlannerChange Latch(int pawnId, string goalKey)
+        /// Deterministic load normalization. Plan ids are identity (goal
+        /// keys, assignments, and base links embed them), so they must stay
+        /// unique per save. Saves written before the id counter was
+        /// persisted load with the counter default below existing ids;
+        /// without this, the next created plan reuses a live id. Clamps the
+        /// counter above every loaded id, then re-ids any duplicated plan
+        /// (first occurrence keeps its id, so stale references resolve to
+        /// one deterministic owner); a re-idded plan's goals are restamped
+        /// with the new owning id.
+        public void NormalizeLoadedIds(ref int nextPlanId)
         {
-            if (!latches.TryGetValue(pawnId, out var keys))
+            for (int p = 0; p < plans.Count; p++)
+                if (plans[p].Id >= nextPlanId) nextPlanId = plans[p].Id + 1;
+            var seenPlanIds = new HashSet<int>();
+            for (int p = 0; p < plans.Count; p++)
             {
-                keys = new HashSet<string>(StringComparer.Ordinal);
-                latches.Add(pawnId, keys);
+                Plan plan = plans[p];
+                if (seenPlanIds.Add(plan.Id)) continue;
+                var replacement = new Plan(nextPlanId++, plan.Name)
+                {
+                    BasePlanId = plan.BasePlanId,
+                };
+                for (int i = 0; i < plan.Implants.Count; i++)
+                {
+                    ImplantGoal goal = plan.Implants[i];
+                    replacement.Implants.Add(new ImplantGoal(
+                        replacement.Id, goal.ImplantDefName, goal.SlotOrdinals));
+                }
+                plans[p] = replacement;
             }
-            return keys.Add(goalKey) ? PlannerChange.Latches : PlannerChange.None;
-        }
-
-        /// Re-enlist: clears exactly the given (no longer satisfied) latched
-        /// goals, returning them to the normal pipeline.
-        public PlannerChange ReEnlist(int pawnId, IReadOnlyList<string> unsatisfiedKeys)
-        {
-            if (!latches.TryGetValue(pawnId, out var keys)) return PlannerChange.None;
-            bool changed = false;
-            for (int i = 0; i < unsatisfiedKeys.Count; i++)
-                changed |= keys.Remove(unsatisfiedKeys[i]);
-            if (keys.Count == 0) latches.Remove(pawnId);
-            return changed ? PlannerChange.Latches : PlannerChange.None;
-        }
-
-        /// Drops latch keys that no longer correspond to a goal slot of the
-        /// pawn's effective goal list (goal removed or plan switched).
-        /// Deterministic; takes the goal list directly so the repeated tick
-        /// path allocates no per-pawn closure.
-        public PlannerChange PruneLatches(int pawnId, IReadOnlyList<ImplantGoal> goals)
-        {
-            if (!latches.TryGetValue(pawnId, out var keys)) return PlannerChange.None;
-            List<string>? dead = null;
-            foreach (string key in keys)
-                if (!GoalKeys.Contains(goals, key))
-                    (dead ??= new List<string>()).Add(key);
-            if (dead == null) return PlannerChange.None;
-            dead.Sort(StringComparer.Ordinal);
-            for (int i = 0; i < dead.Count; i++)
-                keys.Remove(dead[i]);
-            if (keys.Count == 0) latches.Remove(pawnId);
-            return PlannerChange.Latches;
-        }
-
-        /// Deterministic load path: restores one pawn's latch set.
-        public void AddLoadedLatches(int pawnId, IReadOnlyList<string> keys)
-        {
-            var set = new HashSet<string>(StringComparer.Ordinal);
-            for (int i = 0; i < keys.Count; i++)
-                set.Add(keys[i]);
-            if (set.Count > 0) latches[pawnId] = set;
         }
 
         // -------------------------------------------------- Reservations
@@ -311,6 +305,7 @@ namespace Implanner.Core
         /// Deterministic load path.
         public void LoadOptions(bool automationPaused,
             IterationStrategy iteration, int manualDoctorFloor, bool autoDoctorFloor,
+            int surgeryConcurrency, bool countHospitalized,
             bool autoProduction, int productionConcurrency,
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries)
         {
@@ -320,6 +315,8 @@ namespace Implanner.Core
                 : manualDoctorFloor > DoctorFloorMax ? DoctorFloorMax
                 : manualDoctorFloor;
             AutoDoctorFloor = autoDoctorFloor;
+            SurgeryConcurrency = ClampSurgeryConcurrency(surgeryConcurrency);
+            CountHospitalized = countHospitalized;
             AutoProduction = autoProduction;
             ProductionConcurrency = ClampConcurrency(productionConcurrency);
             OnlyIdleBenches = onlyIdleBenches;
@@ -776,7 +773,7 @@ namespace Implanner.Core
                     if (remaining == null) continue;
                     ImplantGoal effective = allRemain
                         ? goal
-                        : new ImplantGoal(goal.Id, goal.ImplantDefName, remaining);
+                        : new ImplantGoal(goal.PlanId, goal.ImplantDefName, remaining);
                     result.Add(effective);
                     CoverSlots(covered, effective);
                 }
@@ -813,13 +810,16 @@ namespace Implanner.Core
         }
 
         /// Removes an implant goal with all its selected slots.
-        public PlannerChange RemoveImplant(int planId, int goalId)
+        public PlannerChange RemoveImplant(int planId, string implantDefName)
         {
             var plan = PlanById(planId);
-            if (plan == null) return PlannerChange.None;
+            if (plan == null || string.IsNullOrEmpty(implantDefName))
+                return PlannerChange.None;
             for (int i = 0; i < plan.Implants.Count; i++)
             {
-                if (plan.Implants[i].Id != goalId) continue;
+                if (!string.Equals(plan.Implants[i].ImplantDefName,
+                        implantDefName, StringComparison.Ordinal))
+                    continue;
                 plan.Implants.RemoveAt(i);
                 return PlannerChange.Plans;
             }
@@ -830,10 +830,8 @@ namespace Implanner.Core
         /// selected slot removes the goal; adding a slot first deselects any
         /// of the plan's own slots it can never coexist with (the click IS
         /// the choice — the previous pick is not kept as a dead goal).
-        /// takeGoalId supplies the store's globally unique goal-id counter
-        /// for a newly created goal.
         public PlannerChange SetImplantSlot(int planId, string implantDefName,
-            int slotOrdinal, bool wanted, Func<int> takeGoalId)
+            int slotOrdinal, bool wanted)
         {
             var plan = PlanById(planId);
             if (plan == null || string.IsNullOrEmpty(implantDefName) || slotOrdinal < 0)
@@ -858,14 +856,14 @@ namespace Implanner.Core
                 if (ordinals.Count == 0)
                     plan.Implants.RemoveAt(i);
                 else
-                    plan.Implants[i] = new ImplantGoal(existing.Id, implantDefName, ordinals);
+                    plan.Implants[i] = new ImplantGoal(plan.Id, implantDefName, ordinals);
                 if (wanted)
                     RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
                 return PlannerChange.Plans;
             }
             if (!wanted) return PlannerChange.None;
             plan.Implants.Add(new ImplantGoal(
-                takeGoalId(), implantDefName, new List<int> { slotOrdinal }));
+                plan.Id, implantDefName, new List<int> { slotOrdinal }));
             RemoveConflictingSlots(plan, implantDefName, slotOrdinal);
             return PlannerChange.Plans;
         }
@@ -877,7 +875,7 @@ namespace Implanner.Core
         {
             var resolver = SlotConflictResolver;
             if (resolver == null) return;
-            var added = new ImplantGoal(0, implantDefName, new[] { slotOrdinal });
+            var added = new ImplantGoal(plan.Id, implantDefName, new[] { slotOrdinal });
             for (int i = plan.Implants.Count - 1; i >= 0; i--)
             {
                 ImplantGoal other = plan.Implants[i];
@@ -901,7 +899,7 @@ namespace Implanner.Core
                     plan.Implants.RemoveAt(i);
                 else
                     plan.Implants[i] = new ImplantGoal(
-                        other.Id, other.ImplantDefName, surviving);
+                        other.PlanId, other.ImplantDefName, surviving);
             }
         }
 
@@ -961,17 +959,8 @@ namespace Implanner.Core
                 priorities.Remove(dead[i]);
             if (dead.Count > 0) change |= PlannerChange.Priorities;
 
-            // Latches and reservations follow their pawn's existence and
-            // assignment; the reconciler owns finer-grained lifecycle.
-            dead.Clear();
-            foreach (var pair in latches)
-                if (!pawnExists(pair.Key) || !assignments.ContainsKey(pair.Key))
-                    dead.Add(pair.Key);
-            dead.Sort();
-            for (int i = 0; i < dead.Count; i++)
-                latches.Remove(dead[i]);
-            if (dead.Count > 0) change |= PlannerChange.Latches;
-
+            // Reservations follow their pawn's existence and assignment;
+            // the reconciler owns finer-grained lifecycle.
             dead.Clear();
             foreach (var pair in reservations)
                 if (!pawnExists(pair.Value.PawnId)
@@ -995,6 +984,62 @@ namespace Implanner.Core
 
         /// Deterministic load/import path: adds a fully hydrated plan.
         public void AddLoadedPlan(Plan plan) => plans.Add(plan);
+
+        /// Additive import of a PlansXml payload: appends the parsed plans
+        /// with fresh ids, uniquifying names against existing plans
+        /// (CatalogNameRules), and remapping the payload's TEMPORARY base
+        /// link ids (see PlansXml's temp-id contract) onto the new ids.
+        /// Validates before the first mutation; invalid input returns None
+        /// with the model untouched — never a half-applied payload. A plan
+        /// whose name cannot be uniquified is skipped (its dependents lose
+        /// their base link, matching plan deletion), not a failure.
+        /// Deterministic for identical input and allocator state.
+        public PlannerChange ImportPlans(List<Plan> parsed, Func<int> takePlanId)
+        {
+            if (parsed == null || parsed.Count == 0) return PlannerChange.None;
+
+            // Pre-validate defensively (TryImport already guarantees this):
+            // every parsed plan must exist and carry a non-blank name.
+            for (int i = 0; i < parsed.Count; i++)
+                if (parsed[i] == null
+                    || string.IsNullOrEmpty(parsed[i].Name?.Trim()))
+                    return PlannerChange.None;
+
+            // First pass: create real plans and goals; record temp → real.
+            var tempToReal = new Dictionary<int, int>();
+            var added = new List<Plan>();
+            var addedBaseTempIds = new List<int>();
+            for (int i = 0; i < parsed.Count; i++)
+            {
+                Plan source = parsed[i];
+                string? name = CatalogNameRules.Unique(source.Name, plans, PlanNameOf);
+                if (name == null) continue; // cannot uniquify → skip, not fail
+                var plan = new Plan(takePlanId(), name);
+                for (int g = 0; g < source.Implants.Count; g++)
+                {
+                    ImplantGoal goal = source.Implants[g];
+                    plan.Implants.Add(new ImplantGoal(
+                        plan.Id, goal.ImplantDefName,
+                        new List<int>(goal.SlotOrdinals)));
+                }
+                plans.Add(plan);
+                added.Add(plan);
+                addedBaseTempIds.Add(source.BasePlanId);
+                tempToReal[source.Id] = plan.Id;
+            }
+
+            // Second pass: remap base links. A temp base id whose plan was
+            // skipped resolves to 0 (no base).
+            for (int i = 0; i < added.Count; i++)
+            {
+                int baseTempId = addedBaseTempIds[i];
+                if (baseTempId != 0
+                    && tempToReal.TryGetValue(baseTempId, out int realBaseId))
+                    added[i].BasePlanId = realBaseId;
+            }
+
+            return added.Count > 0 ? PlannerChange.Plans : PlannerChange.None;
+        }
 
         /// Deterministic load path: restores one assignment.
         public void AddLoadedAssignment(int pawnId, int planId) =>

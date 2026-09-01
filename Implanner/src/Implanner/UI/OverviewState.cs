@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.UiLib;
 using RimWorld;
 using RimWorld.Planet;
+using UnityEngine;
 using Verse;
 using Plan = Implanner.Core.Plan;
 
@@ -17,6 +19,22 @@ namespace Implanner.UI
         Melee = 4,
         Priority = 5,
         State = 6,
+    }
+
+    /// Colonist pipeline status for the State column, in sort order: active
+    /// pipeline stages first, then the terminal and waiting-on-world states.
+    internal enum ColonistStatus
+    {
+        /// Implants are missing but no item is reserved for this colonist yet.
+        Waiting = 0,
+        /// Collecting the batch: at least one item is reserved for them.
+        Preparing = 1,
+        /// Surgery scheduled: an Implanner operation bill is on their list.
+        Operating = 2,
+        /// Every planned implant is installed.
+        Done = 3,
+        /// Off traveling; automation waits.
+        Away = 4,
     }
 
     /// One colonist row (or grouping header) fully resolved for drawing. The
@@ -36,7 +54,7 @@ namespace Implanner.UI
         internal string PlanName = "";
         internal float Progress;
         internal string ProgressText = "";
-        internal PawnPlanState State;
+        internal ColonistStatus State;
         internal string StateText = "";
         internal string? GroupingId;
         internal PlanEvaluation? Evaluation;
@@ -62,7 +80,11 @@ namespace Implanner.UI
         internal string StatusText = "";   // items: status; headers: progress
         internal bool Satisfied;
         internal bool Blocked;
-        internal bool Muted;
+        /// Automation is actively moving this implant: reserved, ready, or
+        /// scheduled (drawn in the blue active tone).
+        internal bool Active;
+        /// Header rows only: the label is a star-tier glyph run, drawn gold.
+        internal bool Stars;
     }
 
     internal sealed class OverviewSnapshot
@@ -73,10 +95,28 @@ namespace Implanner.UI
         internal List<string> GroupByLabels = new List<string>();
         internal string GroupByLabel = "";
         internal List<OverviewRow> Rows = new List<OverviewRow>();
-        internal string PercentText = "";
+        /// Colony summary strip texts, three lines per column: the colony
+        /// (name, colonist count, automation chip), production (item-stock
+        /// coverage percent, free-stock/queued counts, one activity
+        /// sentence), and surgery (installed percent, installed units, the
+        /// active batch sentence). Empty sentence = nothing to report.
+        internal string ColonyLabelText = "";
         internal string StatsText = "";
-        internal string BlockersText = "";
-        internal List<string> NextWork = new List<string>();
+        internal bool AutomationOn;
+        internal string AutomationText = "";
+        internal string ProductionTitleText = "";
+        internal string StockQueuedText = "";
+        internal string ProductionSubText = "";
+        /// Whether the production sentence reports active work (a crafting
+        /// bill in progress) rather than a blocked ingredient.
+        internal bool ProductionSubActive;
+        internal string SurgeryTitleText = "";
+        internal string UnitsText = "";
+        /// The active batch sentence with the tier stars at the end, and a
+        /// starless variant the strip falls back to when the full line
+        /// would not fit its column (the line never wraps or clips).
+        internal string SurgeryBatchText = "";
+        internal string SurgeryBatchShortText = "";
     }
 
     /// Overview tab presentation state. Owned by the dialog; dies with it.
@@ -99,7 +139,11 @@ namespace Implanner.UI
         //   view selections, and UI metrics for labels. The informational
         //   Shooting/Melee columns are SAMPLED at rebuild by design (no
         //   skill-change seam exists): the window collects its data when a
-        //   dependency moves or it reopens, and displays that snapshot.
+        //   dependency moves or it reopens, and displays that snapshot. The
+        //   strip's production column samples item stock, bench bills, and
+        //   ingredient resource counts at rebuild the same way (bill
+        //   creation/removal bumps store.Version, so automation activity
+        //   still refreshes it promptly).
         // Refresh policy: immediate on the next Repaint read after any key
         //   component moves; structural edits are visible while paused
         //   because commands bump store revisions immediately.
@@ -132,6 +176,7 @@ namespace Implanner.UI
         private List<DetailRow>? detailRows;
         private OverviewSnapshot? detailSnapshot;
         private int detailPawnId = -1;
+        private float detailWidth = -1f;
 
         internal GroupingOption? Grouping;
         internal int SelectedPawnId = -1;
@@ -150,9 +195,14 @@ namespace Implanner.UI
         internal string DetailTitle { get; private set; } = "";
         internal string DetailPercent { get; private set; } = "";
 
-        /// The selected colonist has regressed goals: the details panel
-        /// offers the explicit re-enlist command.
-        internal bool DetailHasRegression { get; private set; }
+        /// Header line under the name: one sentence combining the
+        /// colonist's pipeline status with the implants involved
+        /// ("Surgery scheduled for bionic leg", "Collecting bionic arm x2"),
+        /// or the bare status word when automation holds nothing for them.
+        /// The height is the sentence's measured wrapped height at the
+        /// panel's body width (measured on rebuild only, never clipped).
+        internal string DetailStatusText { get; private set; } = "";
+        internal float DetailStatusHeight { get; private set; } = 22f;
 
         internal void Release()
         {
@@ -233,15 +283,20 @@ namespace Implanner.UI
             return snapshot;
         }
 
-        internal IReadOnlyList<DetailRow> Details(OverviewSnapshot current)
+        /// width is the panel body width the header sentence wraps at; a
+        /// width change re-measures (it is part of the cache key).
+        internal IReadOnlyList<DetailRow> Details(
+            OverviewSnapshot current, float width)
         {
             if (detailRows == null
                 || !ReferenceEquals(detailSnapshot, current)
-                || detailPawnId != SelectedPawnId)
+                || detailPawnId != SelectedPawnId
+                || detailWidth != width)
             {
-                detailRows = BuildDetails(current);
+                detailRows = BuildDetails(current, width);
                 detailSnapshot = current;
                 detailPawnId = SelectedPawnId;
+                detailWidth = width;
             }
             return detailRows;
         }
@@ -262,7 +317,8 @@ namespace Implanner.UI
                     caravan.LabelCap, isShip: false, isCaravan: true));
             }
             result.GroupingOptions = LocationGrouping.BuildOptions(infos);
-            Grouping = LocationGrouping.Revalidate(Grouping, result.GroupingOptions);
+            Grouping = LocationGrouping.Revalidate(Grouping,
+                result.GroupingOptions, ColonyScope.CurrentLocationId());
             for (int i = 0; i < result.GroupingOptions.Count; i++)
                 result.GroupingLabels.Add(LabelOf(result.GroupingOptions[i]));
             var locationLabels = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -271,20 +327,26 @@ namespace Implanner.UI
 
             BuildGroupByOptions(result);
 
-            string currentId = ColonyScope.CurrentLocationId();
             GroupingOption grouping = Grouping!;
 
             // Pawns in colonist-bar order (the Name column's default order).
             List<Pawn> pawns = InBarOrder(ColonyScope.AllPlanableColonists());
 
             var rows = new List<OverviewRow>();
-            int complete = 0, total = 0, blockedGoals = 0;
+            int complete = 0, total = 0;
             int unitsSatisfied = 0, unitsTotal = 0;
+
+            // Pawns automation currently holds a reservation for, resolved
+            // once for the whole pass (drives Waiting vs Preparing).
+            var reservedPawns = new HashSet<int>();
+            foreach (KeyValuePair<int, ItemReservation> pair
+                in store.Model.Reservations)
+                reservedPawns.Add(pair.Value.PawnId);
             for (int i = 0; i < pawns.Count; i++)
             {
                 Pawn pawn = pawns[i];
                 string? pawnGroupingId = ColonyScope.GroupingIdOf(pawn);
-                if (!LocationGrouping.Matches(grouping, pawnGroupingId, currentId))
+                if (!LocationGrouping.Matches(grouping, pawnGroupingId))
                     continue;
 
                 var row = new OverviewRow
@@ -313,39 +375,47 @@ namespace Implanner.UI
                 {
                     bool away = !ColonyScope.PlaceOf(pawn).IsServiceable;
                     List<ImplantGoal> goals = store.Model.EffectiveImplants(plan);
-                    PlanEvaluation evaluation = PawnProjection.Evaluate(pawn, goals, away,
-                        store.Model.LatchesFor(pawn.thingIDNumber));
+                    PlanEvaluation evaluation = PawnProjection.Evaluate(pawn, goals, away);
                     row.Goals = goals;
                     row.PlanId = plan.Id;
                     row.PlanName = plan.Name;
                     row.Progress = evaluation.Progress;
                     row.ProgressText = evaluation.SatisfiedUnits + " / " + evaluation.TotalUnits;
-                    row.State = evaluation.State;
-                    row.StateText = StateText(evaluation.State);
+                    row.State = StatusOf(evaluation.State,
+                        pawn.thingIDNumber, store, reservedPawns);
+                    row.StateText = StateText(row.State);
                     row.Evaluation = evaluation;
 
                     total++;
                     if (evaluation.State == PawnPlanState.Complete) complete++;
-                    blockedGoals += CountBlockers(evaluation);
                     unitsSatisfied += evaluation.SatisfiedUnits;
                     unitsTotal += evaluation.TotalUnits;
                 }
                 rows.Add(row);
             }
 
-            // Next-work mirrors the reconciler's dispatch order: implant work
-            // in the configured traversal order across pawns.
-            var byPriority = new List<OverviewRow>(rows);
-            byPriority.Sort(ByPriorityThenBar);
-            AddImplantNextWork(result.NextWork, byPriority, store);
+            BuildSurgeryBatch(result, rows, store);
+            BuildProductionSummary(result, rows, store, total);
 
             SortRows(rows);
             ApplyGrouping(result, rows, locationLabels);
 
-            result.PercentText = unitsTotal == 0 ? ""
-                : (unitsSatisfied * 100 / unitsTotal) + "%";
+            result.ColonyLabelText =
+                "IMP_StripColony".Translate(LabelOf(Grouping!)).ToString();
             result.StatsText = "IMP_AggregateColonists".Translate(complete, total);
-            result.BlockersText = "IMP_AggregateBlockers".Translate(blockedGoals);
+            // The chip reflects the effective master state: the player's
+            // switch, and the level-mod stand-down that overrides it.
+            result.AutomationOn = !store.Model.AutomationPaused
+                && PlannerAutomation.Available;
+            result.AutomationText = (result.AutomationOn
+                ? "IMP_StripAutomationOn"
+                : "IMP_StripAutomationOff").Translate().ToString();
+            int percent = unitsTotal == 0 ? 0
+                : unitsSatisfied * 100 / unitsTotal;
+            result.SurgeryTitleText =
+                "IMP_StripSurgery".Translate(percent).ToString();
+            result.UnitsText = "IMP_StripInstalled".Translate(
+                unitsSatisfied, unitsTotal).ToString();
             return result;
         }
 
@@ -411,12 +481,6 @@ namespace Implanner.UI
             int result = string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
             return result != 0 ? result : a.BarIndex.CompareTo(b.BarIndex);
         }
-
-        private static readonly Comparison<OverviewRow> ByPriorityThenBar = (a, b) =>
-        {
-            int result = a.Priority.CompareTo(b.Priority);
-            return result != 0 ? result : a.BarIndex.CompareTo(b.BarIndex);
-        };
 
         private void BuildGroupByOptions(OverviewSnapshot result)
         {
@@ -521,51 +585,433 @@ namespace Implanner.UI
             }
         }
 
-        private static int CountBlockers(PlanEvaluation evaluation)
+        /// The strip's surgery activity line. Automation installs one batch
+        /// into one colonist at a time: order all pending implant work with
+        /// the reconciler's own dispatch comparer (iteration strategy and
+        /// star tiers), take the first item's pawn as that colonist, and
+        /// name them with the dispatch tier's star run at the end
+        /// ("Implanting batch on Twiggy (★★★)"). Empty when no batch is
+        /// pending or surgery automation is off (the master switch, or a
+        /// level-mod stand-down — surgery has no separate toggle).
+        private static void BuildSurgeryBatch(
+            OverviewSnapshot result, List<OverviewRow> rows, ImplannerStore store)
         {
-            int blocked = 0;
-            for (int g = 0; g < evaluation.Implants.Length; g++)
-                blocked += evaluation.Implants[g].Blocked;
-            return blocked;
-        }
-
-        private const int MaxNextWork = 3;
-
-        /// Implant work ordered by the configured iteration strategy and star
-        /// tiers across pawns — the reconciler's own dispatch comparer, so
-        /// the list never diverges from automation.
-        private static void AddImplantNextWork(
-            List<string> next, List<OverviewRow> byPriority, ImplannerStore store)
-        {
+            if (store.Model.AutomationPaused || !PlannerAutomation.Available)
+                return;
             var work = new List<SurgeryWorkItem>();
-            var labels = new Dictionary<string, string>(StringComparer.Ordinal);
-            for (int i = 0; i < byPriority.Count; i++)
+            var rowByPawn = new Dictionary<int, OverviewRow>();
+            for (int i = 0; i < rows.Count; i++)
             {
-                OverviewRow row = byPriority[i];
+                OverviewRow row = rows[i];
                 if (row.Evaluation == null || row.Goals == null) continue;
                 for (int g = 0; g < row.Evaluation.Implants.Length; g++)
                 {
                     if (row.Evaluation.Implants[g].Missing <= 0) continue;
                     ImplantGoal goal = row.Goals[g];
-                    string key = "i" + goal.Id;
                     work.Add(new SurgeryWorkItem(row.PawnId, row.Priority,
                         StarRanking.TierOf(
                             store.Model.ImplantStarsOf(goal.ImplantDefName)),
-                        key));
-                    labels[row.PawnId + "|" + key] = row.Name + ": " + ImplantLabel(goal);
+                        GoalKeys.GoalToken(goal)));
+                    rowByPawn[row.PawnId] = row;
                 }
             }
+            if (work.Count == 0) return;
             SurgeryPlanner.Order(work, store.Model.Iteration);
-            for (int i = 0; i < work.Count && next.Count < MaxNextWork; i++)
-                next.Add(labels[work[i].PawnId + "|" + work[i].GoalKey]);
+            OverviewRow next = rowByPawn[work[0].PawnId];
+            List<ImplantGoal> goals = next.Goals!;
+
+            List<string> missing =
+                PawnProjection.MissingImplantSlotKeys(next.Pawn, goals);
+            List<string> batch = SurgeryPlanner.ComputeBatch(
+                missing, store.Model, goals, store.Model.Iteration);
+            if (batch.Count == 0) return;
+            result.SurgeryBatchText = "IMP_StripBatchStars".Translate(
+                next.Name, PlannerStyle.TierStars[work[0].Tier]).ToString();
+            result.SurgeryBatchShortText =
+                "IMP_StripBatch".Translate(next.Name).ToString();
         }
 
-        private List<DetailRow> BuildDetails(OverviewSnapshot current)
+        /// The strip's production column: how much of the item shortfall
+        /// behind the scope's missing implant slots is already covered by
+        /// unforbidden stock (minus the player's hold-back reserves), plus
+        /// one sentence about production — the best-ranked implant-item bill
+        /// automation owns ("Making bionic arm"), intermediary-only chain
+        /// work attributed to its implant ("Making materials for bionic
+        /// arm"), or what the top
+        /// uncovered item truly waits on — the shortfall walked down the
+        /// production chain to the first ingredient automation cannot craft
+        /// for itself ("Waiting for plasteel"). A short craftable
+        /// intermediary is never reported while intermediary production is
+        /// active: automation will queue it. Waits name only ingredients or
+        /// bench capacity, never a final product; "Nothing to craft" covers
+        /// full coverage and uncraftable remainders, and the line stays
+        /// blank entirely while production automation is off.
+        /// Stock, bench bills, and resource counts are sampled at rebuild
+        /// like the Next section's readiness; ranking and blocking mirror
+        /// PlannerProduction's own dispatch rules.
+        private void BuildProductionSummary(OverviewSnapshot result,
+            List<OverviewRow> rows, ImplannerStore store, int planAssigned)
+        {
+            PlannerModel model = store.Model;
+
+            // Item shortfall per kind: every missing implant slot in scope
+            // wants one item of the implant's removal def.
+            var needed = new Dictionary<ThingDef, int>();
+            int neededTotal = 0;
+            for (int i = 0; i < rows.Count; i++)
+            {
+                OverviewRow row = rows[i];
+                if (row.Evaluation == null || row.Goals == null) continue;
+                for (int g = 0; g < row.Evaluation.Implants.Length; g++)
+                {
+                    int missing = row.Evaluation.Implants[g].Missing;
+                    if (missing <= 0) continue;
+                    ThingDef? item = Catalogs.ImplantByDefName(
+                        row.Goals[g].ImplantDefName)?.Def.spawnThingOnRemoved;
+                    if (item == null) continue;
+                    needed.TryGetValue(item, out int count);
+                    needed[item] = count + missing;
+                    neededTotal += missing;
+                }
+            }
+
+            // Maps in scope: serviceable locations matching the grouping.
+            var maps = new List<Map>();
+            List<Map> allMaps = Find.Maps;
+            for (int m = 0; m < allMaps.Count; m++)
+            {
+                string? locationId = ColonyScope.LocationId(allMaps[m]);
+                if (locationId != null
+                    && LocationGrouping.Matches(Grouping!, locationId))
+                    maps.Add(allMaps[m]);
+            }
+
+            // Unforbidden stock of wanted items, less the player's hold-back
+            // reserves (production keeps crafting past held-back items, so
+            // they do not count as produced here either). Items automation
+            // has reserved for a colonist's surgery count toward coverage —
+            // they exist and need no production — but not toward the free
+            // in-stock number.
+            var stock = new Dictionary<ThingDef, int>();
+            var reservedStock = new Dictionary<ThingDef, int>();
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Thing> haulables = maps[m].listerThings.ThingsInGroup(
+                    ThingRequestGroup.HaulableEver);
+                for (int i = 0; i < haulables.Count; i++)
+                {
+                    Thing thing = haulables[i];
+                    if (!needed.ContainsKey(thing.def)
+                        || thing.IsForbidden(RimWorld.Faction.OfPlayer))
+                        continue;
+                    stock.TryGetValue(thing.def, out int count);
+                    stock[thing.def] = count + thing.stackCount;
+                    if (model.Reservations.ContainsKey(thing.thingIDNumber))
+                    {
+                        reservedStock.TryGetValue(thing.def, out int reserved);
+                        reservedStock[thing.def] = reserved + thing.stackCount;
+                    }
+                }
+            }
+            Dictionary<ThingDef, int> holdBack =
+                PlannerSurgery.ImplantItemReserves(model);
+            int covered = 0, freeStock = 0;
+            foreach (KeyValuePair<ThingDef, int> pair in needed)
+            {
+                stock.TryGetValue(pair.Key, out int have);
+                if (holdBack.TryGetValue(pair.Key, out int held))
+                    have = System.Math.Max(0, have - held);
+                stock[pair.Key] = have;
+                int usable = System.Math.Min(pair.Value, have);
+                covered += usable;
+                reservedStock.TryGetValue(pair.Key, out int reserved);
+                freeStock += System.Math.Max(0, usable - reserved);
+            }
+
+            int percent = neededTotal == 0
+                ? (planAssigned > 0 ? 100 : 0)
+                : covered * 100 / neededTotal;
+            result.ProductionTitleText =
+                "IMP_StripProduction".Translate(percent).ToString();
+            result.StockQueuedText = "IMP_StripStock".Translate(
+                freeStock, neededTotal - covered).ToString();
+
+            // The activity line reports only what production automation is
+            // actually doing; while it is off (master switch, production
+            // option, or a level-mod stand-down) the line stays blank.
+            bool producing = model.AutoProduction && !model.AutomationPaused
+                && PlannerAutomation.Available;
+            if (!producing) return;
+
+            // Dispatch rank per item (best owning implant's star tier, then
+            // the player-arranged tier position), mirroring PlannerProduction.
+            var rankByItem = new Dictionary<ThingDef, (int Tier, int Order)>();
+            IReadOnlyList<ImplantCatalogEntry> catalog = Catalogs.Implants();
+            for (int i = 0; i < catalog.Count; i++)
+            {
+                ThingDef? produced = catalog[i].Def.spawnThingOnRemoved;
+                if (produced == null) continue;
+                string hediff = catalog[i].Def.defName;
+                var rank = (StarRanking.TierOf(model.ImplantStarsOf(hediff)),
+                    model.ImplantOrderOf(hediff));
+                if (!rankByItem.TryGetValue(produced, out var existing)
+                    || rank.CompareTo(existing) < 0)
+                    rankByItem[produced] = rank;
+            }
+
+            // Uncovered implant items in dispatch order — the subjects the
+            // activity line may talk about. Intermediaries never headline:
+            // "Making" names implant items only, and chain work is
+            // attributed to the implant item it serves.
+            var uncovered = new List<ThingDef>();
+            foreach (KeyValuePair<ThingDef, int> pair in needed)
+            {
+                stock.TryGetValue(pair.Key, out int have);
+                if (have < pair.Value) uncovered.Add(pair.Key);
+            }
+            uncovered.Sort((a, b) =>
+            {
+                var maxRank = (int.MaxValue, int.MaxValue);
+                if (!rankByItem.TryGetValue(a, out var rankA)) rankA = maxRank;
+                if (!rankByItem.TryGetValue(b, out var rankB)) rankB = maxRank;
+                int rank = rankA.CompareTo(rankB);
+                if (rank != 0) return rank;
+                return string.CompareOrdinal(a.defName, b.defName);
+            });
+
+            // Active work: the best-ranked owned bill producing an implant
+            // item. Owned bills for anything else are intermediary chain
+            // work (components, smelted steel) queued in service of an
+            // implant bill that could not be paid yet.
+            ThingDef? making = null;
+            var makingRank = (int.MaxValue, int.MaxValue);
+            bool chainWork = false;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Building> buildings =
+                    maps[m].listerBuildings.allBuildingsColonist;
+                for (int b = 0; b < buildings.Count; b++)
+                {
+                    if (!(buildings[b] is Building_WorkTable bench)) continue;
+                    BillStack bills = bench.BillStack;
+                    for (int i = 0; i < bills.Count; i++)
+                    {
+                        if (!(bills[i] is Bill_Production bill)
+                            || !model.OwnedProductionBills.ContainsKey(
+                                bill.GetUniqueLoadID()))
+                            continue;
+                        ThingDef? produced = bill.recipe.ProducedThingDef;
+                        if (produced == null) continue;
+                        if (!needed.ContainsKey(produced))
+                        {
+                            chainWork = true;
+                            continue;
+                        }
+                        if (!rankByItem.TryGetValue(produced, out var rank))
+                            rank = (int.MaxValue, int.MaxValue);
+                        if (making != null
+                            && (rank.CompareTo(makingRank) > 0
+                                || (rank.CompareTo(makingRank) == 0
+                                    && string.CompareOrdinal(produced.defName,
+                                        making.defName) >= 0)))
+                            continue;
+                        making = produced;
+                        makingRank = rank;
+                    }
+                }
+            }
+            if (making != null)
+            {
+                result.ProductionSubText =
+                    "IMP_StripMaking".Translate(making.label).CapitalizeFirst();
+                result.ProductionSubActive = true;
+                return;
+            }
+            if (chainWork)
+            {
+                // Only intermediary bills are running: attribute them to the
+                // implant item they bootstrap ("Making materials for bionic
+                // arm"). No craftable target left means the demand behind
+                // them vanished; the next pass deletes the bills.
+                ThingDef? target = FirstCraftableUncovered(uncovered, needed,
+                    stock);
+                if (target != null)
+                {
+                    result.ProductionSubText = "IMP_StripMakingFor"
+                        .Translate(target.label).CapitalizeFirst();
+                    result.ProductionSubActive = true;
+                }
+                return;
+            }
+
+            if (covered >= neededTotal)
+            {
+                result.ProductionSubText =
+                    "IMP_StripNothingToCraft".Translate().ToString();
+                return;
+            }
+
+            // Nothing crafting yet: derive the wait from the best-ranked
+            // uncovered item production can actually craft. Production only
+            // ever waits on ingredients or bench capacity, never on the
+            // final product — a blocked fixed ingredient names the wait,
+            // otherwise the bill simply has no bench yet. When no uncovered
+            // item is craftable at all, production has nothing to do.
+            for (int i = 0; i < uncovered.Count; i++)
+            {
+                ThingDef item = uncovered[i];
+                RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
+                if (recipe == null || !recipe.AvailableNow) continue;
+                stock.TryGetValue(item, out int have);
+                int crafts = ProductionMath.CraftsNeeded(needed[item], have, 0,
+                    PlannerProduction.OutputCount(recipe, item));
+                if (crafts <= 0) continue;
+                var visited = new HashSet<ThingDef> { item };
+                ThingDef? blocker = FindBlockingIngredient(model, maps,
+                    recipe, crafts, model.AllowIntermediaries, visited, 0);
+                result.ProductionSubText = blocker != null
+                    ? "IMP_StripWaiting".Translate(blocker.label)
+                        .CapitalizeFirst()
+                    : "IMP_StripWaitingBench".Translate().ToString();
+                return;
+            }
+            result.ProductionSubText =
+                "IMP_StripNothingToCraft".Translate().ToString();
+        }
+
+        /// The best-ranked uncovered implant item with an available recipe
+        /// and crafts outstanding; null when nothing craftable remains.
+        private static ThingDef? FirstCraftableUncovered(
+            List<ThingDef> uncovered, Dictionary<ThingDef, int> needed,
+            Dictionary<ThingDef, int> stock)
+        {
+            for (int i = 0; i < uncovered.Count; i++)
+            {
+                ThingDef item = uncovered[i];
+                RecipeDef? recipe = PlannerProduction.ProductionRecipeFor(item);
+                if (recipe == null || !recipe.AvailableNow) continue;
+                stock.TryGetValue(item, out int have);
+                if (ProductionMath.CraftsNeeded(needed[item], have, 0,
+                        PlannerProduction.OutputCount(recipe, item)) > 0)
+                    return item;
+            }
+            return null;
+        }
+
+        /// The first fixed ingredient down the recipe's production chain
+        /// that blocks crafting and that automation cannot resolve itself:
+        /// short of its reserve after the bill's cost, and either outside
+        /// intermediary production or not a craftable manufactured item
+        /// (the dispatcher's whitelist — raw resources are always a real
+        /// wait). With intermediary production active, a short craftable
+        /// manufactured ingredient recurses into its own recipe instead
+        /// (once per resource, depth-capped like the dispatcher's own
+        /// expansion); null when automation will handle every shortfall on
+        /// its own.
+        private static ThingDef? FindBlockingIngredient(PlannerModel model,
+            List<Map> maps, RecipeDef recipe, int crafts,
+            bool intermediaries, HashSet<ThingDef> visited, int depth)
+        {
+            const int MaxDepth = 8;
+            List<IngredientCount>? ingredients = recipe.ingredients;
+            if (ingredients == null) return null;
+            for (int i = 0; i < ingredients.Count; i++)
+            {
+                IngredientCount ingredient = ingredients[i];
+                if (!ingredient.IsFixedIngredient) continue;
+                ThingDef def = ingredient.FixedIngredient;
+                int cost = (int)System.Math.Ceiling(
+                    ingredient.GetBaseCount() * crafts);
+                int available = 0;
+                for (int m = 0; m < maps.Count; m++)
+                    available += maps[m].resourceCounter.GetCount(def);
+                int reserve = model.ResourceReserveOf(def.defName);
+                if (available - cost >= reserve) continue;
+                RecipeDef? subRecipe =
+                    intermediaries && depth < MaxDepth
+                    && PlannerProduction.IsManufactured(def)
+                    && visited.Add(def)
+                        ? PlannerProduction.ProductionRecipeFor(def)
+                        : null;
+                if (subRecipe == null) return def;
+                int output = PlannerProduction.OutputCount(subRecipe, def);
+                if (output <= 0) return def;
+                int shortfall = cost + reserve - available;
+                ThingDef? blocker = FindBlockingIngredient(model, maps,
+                    subRecipe, (shortfall + output - 1) / output,
+                    intermediaries, visited, depth + 1);
+                if (blocker != null) return blocker;
+            }
+            return null;
+        }
+
+        /// The header sentence: what automation is doing for the colonist
+        /// right now (scheduled implants while Operating, reserved implants
+        /// while Preparing), or the bare status word.
+        private static string DetailStatus(OverviewRow selected,
+            List<ImplantGoal> goals, ImplannerStore store,
+            Dictionary<string, bool> reservedByGoal)
+        {
+            switch (selected.State)
+            {
+                case ColonistStatus.Operating:
+                {
+                    Dictionary<string, string>? bills =
+                        store.Model.OwnedBillsFor(selected.PawnId);
+                    if (bills != null && bills.Count > 0)
+                        return "IMP_NextScheduled".Translate(
+                            KindList(goals, bills.Keys)).CapitalizeFirst();
+                    break;
+                }
+                case ColonistStatus.Preparing:
+                    if (reservedByGoal.Count > 0)
+                        return "IMP_DetailCollecting".Translate(
+                            KindList(goals, reservedByGoal.Keys)).CapitalizeFirst();
+                    break;
+            }
+            return StateText(selected.State);
+        }
+
+        /// Deterministic lowercase "label, label x2" list over goal-slot keys.
+        private static string KindList(
+            List<ImplantGoal> goals, IEnumerable<string> keys)
+        {
+            var sorted = new List<string>(keys);
+            sorted.Sort(StringComparer.Ordinal);
+            var order = new List<string>();
+            var counts = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (int i = 0; i < sorted.Count; i++)
+            {
+                if (!GoalKeys.TryResolveImplantSlot(goals, sorted[i],
+                        out ImplantGoal goal, out _))
+                    continue;
+                if (counts.TryGetValue(goal.ImplantDefName, out int n))
+                    counts[goal.ImplantDefName] = n + 1;
+                else
+                {
+                    counts[goal.ImplantDefName] = 1;
+                    order.Add(goal.ImplantDefName);
+                }
+            }
+            var text = new System.Text.StringBuilder();
+            for (int i = 0; i < order.Count; i++)
+            {
+                if (i > 0) text.Append(", ");
+                ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(order[i]);
+                text.Append(entry?.Def.label ?? order[i]);
+                if (counts[order[i]] > 1)
+                    text.Append(" x").Append(counts[order[i]]);
+            }
+            return text.ToString();
+        }
+
+        private List<DetailRow> BuildDetails(OverviewSnapshot current, float width)
         {
             var rows = new List<DetailRow>();
             DetailTitle = "";
             DetailPercent = "";
-            DetailHasRegression = false;
+            DetailStatusText = "";
+            DetailStatusHeight = 22f;
             OverviewRow? selected = null;
             for (int i = 0; i < current.Rows.Count; i++)
                 if (!current.Rows[i].Header && current.Rows[i].PawnId == SelectedPawnId)
@@ -582,13 +1028,23 @@ namespace Implanner.UI
             PlanEvaluation evaluation = selected.Evaluation;
             DetailTitle = selected.Name;
             DetailPercent = (int)(evaluation.Progress * 100f) + "%";
-            DetailHasRegression = selected.State == PawnPlanState.Regressed
-                || HasAnyRegression(evaluation);
 
             // Reservations for this colonist, with readiness (item present on
             // the pawn's map and unforbidden → ready for surgery).
             var reservedByGoal = new Dictionary<string, bool>(StringComparer.Ordinal);
             BuildReservationStates(selected.Pawn, store!, reservedByGoal);
+
+            DetailStatusText = DetailStatus(
+                selected, goals, store!, reservedByGoal);
+            // The sentence never clips: the header band grows to its
+            // wrapped height (measured here, on rebuild only).
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.WordWrap = true;
+                DetailStatusHeight = Mathf.Max(22f,
+                    Mathf.Ceil(Text.CalcHeight(DetailStatusText, width)));
+            }
 
             // Implants, with their surgery-pipeline position (awaiting
             // batch, scheduled, recovering, blocked by doctor floor) derived
@@ -599,27 +1055,25 @@ namespace Implanner.UI
                 surgery = PlannerSurgery.PresentationFor(
                     store!.Model, selected.Pawn, plan, reservedByGoal,
                     out effectiveFloor);
-            int implantSatisfied = 0, implantTotal = 0, implantHeader = -1;
+            // Per-goal rows with their grouping keys resolved once. The
+            // panel reads in the order automation delivers: tier iteration
+            // groups by star tier with the player-arranged position within,
+            // colonist iteration groups by anatomy region with labels A-Z.
+            PlannerModel model = store!.Model;
+            bool byTier = model.Iteration == IterationStrategy.ImplantTier;
+            var entries = new List<DetailEntry>(evaluation.Implants.Length);
             for (int g = 0; g < evaluation.Implants.Length; g++)
             {
                 GoalResult goal = evaluation.Implants[g];
-                if (implantHeader < 0)
-                {
-                    implantHeader = rows.Count;
-                    rows.Add(new DetailRow
-                    {
-                        Header = true,
-                        Label = "IMP_GroupImplants".Translate(),
-                    });
-                }
-                implantSatisfied += goal.Satisfied;
-                implantTotal += goal.Requested;
+                // A wholly impossible pick (no applicable anatomy on this
+                // body) is outside the colonist's target: not listed.
+                if (goal.Requested == 0) continue;
                 ImplantGoal implantGoal = goals[g];
                 var pipeline = PlannerSurgery.SlotStatus.None;
                 string? reservedKey = null;
                 for (int j = 0; j < implantGoal.SlotOrdinals.Count; j++)
                 {
-                    string key = GoalKeys.ImplantSlot(implantGoal.Id, implantGoal.SlotOrdinals[j]);
+                    string key = GoalKeys.ImplantSlot(implantGoal, implantGoal.SlotOrdinals[j]);
                     if (reservedKey == null && reservedByGoal.ContainsKey(key))
                         reservedKey = key;
                     if (surgery != null
@@ -628,33 +1082,107 @@ namespace Implanner.UI
                         pipeline = slot;
                 }
                 string statusText =
-                    goal.IsComplete || (goal.Regressed > 0 && goal.Missing == 0)
-                    || pipeline == PlannerSurgery.SlotStatus.None
+                    goal.IsComplete || pipeline == PlannerSurgery.SlotStatus.None
                     ? GoalStatusText(goal, reservedByGoal, reservedKey)
                     : SurgeryStatusText(pipeline, effectiveFloor);
-                rows.Add(new DetailRow
+                ImplantCatalogEntry? entry =
+                    Catalogs.ImplantByDefName(implantGoal.ImplantDefName);
+                entries.Add(new DetailEntry
                 {
-                    Label = ImplantLabel(implantGoal),
-                    StatusText = statusText,
-                    Satisfied = goal.IsComplete,
-                    Blocked = goal.Blocked > 0
-                        || pipeline == PlannerSurgery.SlotStatus.BlockedByFloor,
-                    Muted = goal.Regressed > 0,
+                    Row = new DetailRow
+                    {
+                        Label = ImplantLabel(implantGoal),
+                        StatusText = statusText,
+                        Satisfied = goal.IsComplete,
+                        Blocked = pipeline
+                            == PlannerSurgery.SlotStatus.BlockedByFloor,
+                        Active = !goal.IsComplete
+                            && (reservedKey != null
+                                || (pipeline != PlannerSurgery.SlotStatus.None
+                                    && pipeline != PlannerSurgery.SlotStatus
+                                        .BlockedByFloor)),
+                    },
+                    Satisfied = goal.Satisfied,
+                    Requested = goal.Requested,
+                    Group = byTier
+                        ? StarRanking.TierOf(
+                            model.ImplantStarsOf(implantGoal.ImplantDefName))
+                        : (int)(entry?.Region ?? ImplantRegion.Torso),
+                    SortLabel = entry?.Label ?? implantGoal.ImplantDefName,
+                    DefName = implantGoal.ImplantDefName,
+                    Order = model.ImplantOrderOf(implantGoal.ImplantDefName),
                 });
             }
-            if (implantHeader >= 0)
-                rows[implantHeader].StatusText = implantSatisfied + " / " + implantTotal;
+            entries.Sort(byTier ? ByTierThenPosition : ByRegionThenLabel);
+
+            string[] groupLabels =
+                byTier ? PlannerStyle.TierStars : RegionGroupLabels();
+            int group = -1, headerIndex = -1, sat = 0, total = 0;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                DetailEntry entry = entries[i];
+                if (entry.Group != group)
+                {
+                    if (headerIndex >= 0)
+                        rows[headerIndex].StatusText = sat + " / " + total;
+                    group = entry.Group;
+                    sat = 0;
+                    total = 0;
+                    headerIndex = rows.Count;
+                    rows.Add(new DetailRow
+                    {
+                        Header = true,
+                        Label = groupLabels[group],
+                        Stars = byTier,
+                    });
+                }
+                sat += entry.Satisfied;
+                total += entry.Requested;
+                rows.Add(entry.Row);
+            }
+            if (headerIndex >= 0)
+                rows[headerIndex].StatusText = sat + " / " + total;
 
             return rows;
         }
 
-        private static bool HasAnyRegression(PlanEvaluation evaluation)
+        /// One computed detail row plus the keys the strategy-dependent
+        /// grouping and ordering need.
+        private struct DetailEntry
         {
-            for (int i = 0; i < evaluation.Implants.Length; i++)
-                if (evaluation.Implants[i].Regressed > 0)
-                    return true;
-            return false;
+            public DetailRow Row;
+            public int Satisfied;
+            public int Requested;
+            public int Group;        // tier index or ImplantRegion ordinal
+            public string SortLabel;
+            public string DefName;
+            public int Order;        // player-arranged tier position
         }
+
+        private static readonly Comparison<DetailEntry> ByRegionThenLabel = (a, b) =>
+        {
+            int c = a.Group.CompareTo(b.Group);
+            if (c != 0) return c;
+            c = string.Compare(a.SortLabel, b.SortLabel,
+                StringComparison.OrdinalIgnoreCase);
+            return c != 0 ? c : string.CompareOrdinal(a.DefName, b.DefName);
+        };
+
+        private static readonly Comparison<DetailEntry> ByTierThenPosition = (a, b) =>
+        {
+            int c = a.Group.CompareTo(b.Group);
+            if (c != 0) return c;
+            c = a.Order.CompareTo(b.Order);
+            return c != 0 ? c : string.CompareOrdinal(a.DefName, b.DefName);
+        };
+
+        private static string[] RegionGroupLabels() => new[]
+        {
+            "IMP_RegionLimbs".Translate().ToString(),
+            "IMP_RegionTorso".Translate().ToString(),
+            "IMP_RegionHead".Translate().ToString(),
+        };
+
 
         /// goalKey → the reserved item is ready (spawned somewhere on the
         /// pawn's colony map stack, unforbidden) — the same collectability
@@ -711,19 +1239,11 @@ namespace Implanner.UI
             Dictionary<string, bool> reservedByGoal, string? goalKey)
         {
             if (goal.IsComplete) return "IMP_GoalComplete".Translate();
-            if (goal.Regressed > 0 && goal.Missing == 0)
-                return "IMP_GoalRegressed".Translate();
             if (goalKey != null && reservedByGoal.TryGetValue(goalKey, out bool ready))
                 return (ready ? "IMP_GoalReady" : "IMP_GoalReserved").Translate();
-            switch (goal.Blocker)
-            {
-                case GoalBlocker.Anatomy:
-                    return "IMP_GoalBlockedAnatomy".Translate();
-                default:
-                    return goal.Satisfied > 0
-                        ? "IMP_GoalPartial".Translate(goal.Satisfied, goal.Requested)
-                        : "IMP_GoalMissing".Translate();
-            }
+            return goal.Satisfied > 0
+                ? "IMP_GoalPartial".Translate(goal.Satisfied, goal.Requested)
+                : "IMP_GoalMissing".Translate();
         }
 
         private static string SurgeryStatusText(
@@ -738,27 +1258,46 @@ namespace Implanner.UI
                 case PlannerSurgery.SlotStatus.Recovering:
                     return "IMP_GoalRecovering".Translate();
                 default:
-                    return "IMP_GoalAwaitingBatch".Translate();
+                    // AwaitingBatch: the item is in stock and allocated to
+                    // this colonist; surgery waits for the rest of the
+                    // batch. To the player that is simply Reserved.
+                    return "IMP_GoalReserved".Translate();
             }
         }
 
-        private static string StateText(PawnPlanState state)
+        /// Maps evaluation state plus the authoritative reservation and
+        /// owned-bill bookkeeping onto the colonist's pipeline status.
+        private static ColonistStatus StatusOf(PawnPlanState state,
+            int pawnId, ImplannerStore store, HashSet<int> reservedPawns)
         {
             switch (state)
             {
-                case PawnPlanState.Complete: return "IMP_StateComplete".Translate();
-                case PawnPlanState.Blocked: return "IMP_StateBlocked".Translate();
-                case PawnPlanState.Away: return "IMP_StateAway".Translate();
-                case PawnPlanState.Regressed: return "IMP_StateRegressed".Translate();
-                default: return "IMP_StateActive".Translate();
+                case PawnPlanState.Complete: return ColonistStatus.Done;
+                case PawnPlanState.Away: return ColonistStatus.Away;
+            }
+            Dictionary<string, string>? bills = store.Model.OwnedBillsFor(pawnId);
+            if (bills != null && bills.Count > 0) return ColonistStatus.Operating;
+            return reservedPawns.Contains(pawnId)
+                ? ColonistStatus.Preparing
+                : ColonistStatus.Waiting;
+        }
+
+        private static string StateText(ColonistStatus status)
+        {
+            switch (status)
+            {
+                case ColonistStatus.Preparing: return "IMP_StatePreparing".Translate();
+                case ColonistStatus.Operating: return "IMP_StateOperating".Translate();
+                case ColonistStatus.Done: return "IMP_StateDone".Translate();
+                case ColonistStatus.Away: return "IMP_StateAway".Translate();
+                default: return "IMP_StateWaiting".Translate();
             }
         }
 
         private static string LabelOf(GroupingOption option)
         {
             if (option.Kind == GroupingKind.All) return "IMP_ScopeAll".Translate();
-            if (option.Kind != GroupingKind.CurrentLocation) return option.Label ?? "";
-            return "IMP_ScopeCurrent".Translate();
+            return option.Label ?? "";
         }
     }
 }

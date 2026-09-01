@@ -22,10 +22,17 @@ namespace Implanner.Patches
         private static LoadedLanguage? tipLanguage;
         private static string? tip;
 
+        // Last drawn rect, used to pick the hover texture on the NEXT pass:
+        // Icon() only reveals its rect after drawing, and toolbar-restyling
+        // mods may relocate it, so predicting the rect up front is
+        // unreliable. One frame of hover lag is imperceptible.
+        private static Rect lastIconRect;
+
         internal static void ResetPresentation()
         {
             tipLanguage = null;
             tip = null;
+            lastIconRect = default;
         }
 
         public static void Postfix(WidgetRow row, bool worldView)
@@ -53,7 +60,14 @@ namespace Implanner.Patches
             if (phase > 0.01f && phase < CellPitch - 0.01f)
                 row.Gap(CellPitch - phase);
 
-            Rect iconRect = row.Icon(ImplannerTex.ToolbarButton, tip);
+            // Drawn through row.Icon, the same primitive the vanilla toggles
+            // use, consuming the standard cell (icon + gap). The hover
+            // texture is picked from the previous pass's rect.
+            Texture2D tex = Mouse.IsOver(lastIconRect)
+                ? ImplannerTex.ToolbarButtonHover
+                : ImplannerTex.ToolbarButton;
+            Rect iconRect = row.Icon(tex, tip);
+            lastIconRect = iconRect;
             if (Widgets.ButtonInvisible(iconRect))
             {
                 Dialog_Implanner? open =
@@ -70,9 +84,15 @@ namespace Implanner.Patches
     [StaticConstructorOnStartup]
     internal static class ImplannerTex
     {
-        // Placeholder until the mod ships its own art.
+        /// Toolbar button: the preview's upgrade machine, exported by
+        /// assets/export-assets.ps1 (128x128, drawn by WidgetRow in the
+        /// standard 24x24 virtual cell). The hover variant is a uniformly
+        /// brightened render swapped in by Patch_PlaySettings on mouse-over.
         internal static readonly Texture2D ToolbarButton =
-            ContentFinder<Texture2D>.Get("UI/Commands/Draft");
+            ContentFinder<Texture2D>.Get("EPrimeImplanner/ToolbarButton");
+
+        internal static readonly Texture2D ToolbarButtonHover =
+            ContentFinder<Texture2D>.Get("EPrimeImplanner/ToolbarButtonHover");
 
         /// Solid circle used as the gear icon's backdrop in the table.
         internal static readonly Texture2D CircleFill =

@@ -9,6 +9,7 @@ Monorepo for my [RimWorld](https://rimworldgame.com/) mods and the shared librar
 | [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092) | A modern, compact resource readout with display groups, tiers and custom resource pools. | [README](Readouts/README.md) |
 | [EPrime's Quality Jobs](https://steamcommunity.com/sharedfiles/filedetails/?id=3776722051) | Manage quality crafting and construction, so your items get the best possible quality. | [README](QualityJobs/README.md) |
 | [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134) | Replaces the Work tab with role-based work management. | [README](WorkRoles/README.md) |
+| [EPrime's Implanner](https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932) | Plan, track and optionally automate the rollouts of bionic implants. | [README](Implanner/README.md) |
 
 Each mod folder is self-contained and follows the same layout:
 

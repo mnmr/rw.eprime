@@ -3,7 +3,7 @@
   <name>WorkRoles</name>
   <author>Morten Mertner</author>
   <packageId>mnmr.workroles</packageId>
-  <modVersion>1.5.2</modVersion>
+  <modVersion>1.5.3</modVersion>
   <url>https://github.com/mnmr/rw.workroles</url>
   <supportedVersions>
     <li>1.6</li>
@@ -40,6 +40,6 @@ This is far from a comprehensive list of features. Check the project README or S
 
 Requires Harmony. Not compatible with other Work tab replacements or priority-setting mods.
 
-Check out my other mods: EPrime's Readouts and EPrime's Quality Jobs.
+Check out my other mods: EPrime's Readouts, EPrime's Quality Jobs and EPrime's Implanner.
   </description>
 </ModMetaData>

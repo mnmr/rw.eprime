@@ -25,6 +25,7 @@ namespace Implanner.UI
     internal sealed class AutomationSnapshot
     {
         internal string ManualFloorText = "";
+        internal string SurgeryConcurrencyText = "";
         internal string ConcurrencyText = "";
         internal string ProductionSkillText = "";
         internal List<ReserveRow> Reserves = new List<ReserveRow>();
@@ -128,6 +129,7 @@ namespace Implanner.UI
             var result = new AutomationSnapshot();
             PlannerModel model = store.Model;
             result.ManualFloorText = model.ManualDoctorFloor.ToStringCached();
+            result.SurgeryConcurrencyText = model.SurgeryConcurrency.ToStringCached();
             result.ConcurrencyText = model.ProductionConcurrency.ToStringCached();
             result.ProductionSkillText = model.ProductionSkill.ToStringCached();
             BuildReserves(model, result.Reserves);

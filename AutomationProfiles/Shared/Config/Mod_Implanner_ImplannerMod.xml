@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="Implanner.ImplannerSettings">
+		<helpTopicsRead />
+		<welcomeShownSaves>
+			<li>-633476771</li>
+		</welcomeShownSaves>
+	</ModSettings>
+</SettingsBlock>

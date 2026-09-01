@@ -75,7 +75,8 @@ namespace Implanner
         /// Editor labels for the canonical slot enumeration on the reference
         /// human body (FixedParts order, then body record order): ordinal i is
         /// SlotLabels[i]. Never empty; bodies without the part get one
-        /// unlabeled slot so the goal stays selectable and shows as blocked.
+        /// unlabeled slot so the goal stays selectable (evaluation excludes
+        /// impossible slots from the colonist's target).
         internal List<string> SlotLabels { get; }
     }
 

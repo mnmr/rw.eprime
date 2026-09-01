@@ -10,9 +10,8 @@ namespace Implanner.Core
 
     public enum GroupingKind
     {
-        All,             // every enlisted pawn, including travellers
-        CurrentLocation, // whatever location the player is looking at
-        Location,        // one specific settlement, ship, or caravan
+        All,      // every enlisted pawn, including travellers
+        Location, // one specific settlement, ship, or caravan
     }
 
     /// A named settlement, ship, or caravan in the grouping catalog.
@@ -36,7 +35,7 @@ namespace Implanner.Core
     {
         public GroupingKind Kind;
         public string? LocationId; // set for Kind == Location
-        public string? Label;      // set for Kind == Location; All/Current translate game-side
+        public string? Label;      // set for Kind == Location; All translates game-side
     }
 
     /// Grouping selection over enlisted pawns by location.
@@ -45,14 +44,14 @@ namespace Implanner.Core
         /// Caravan location ids use this prefix; map/ship ids never do.
         public const string CaravanPrefix = "caravan:";
 
-        /// The grouping menu: All, Current Location, then ships A-Z,
-        /// settlements A-Z, caravans A-Z.
+        /// The grouping menu: All, then ships A-Z, settlements A-Z,
+        /// caravans A-Z. Every location appears under its own name; the
+        /// viewed location is the default selection, not a separate entry.
         public static List<GroupingOption> BuildOptions(IReadOnlyList<GroupingInfo> locations)
         {
             var options = new List<GroupingOption>
             {
                 new GroupingOption { Kind = GroupingKind.All },
-                new GroupingOption { Kind = GroupingKind.CurrentLocation },
             };
             options.AddRange(locations
                 .OrderBy(l => l.IsCaravan)
@@ -70,25 +69,27 @@ namespace Implanner.Core
 
         /// Whether a pawn falls inside the grouping. Pawns nowhere (no map,
         /// no caravan) only appear under All.
-        public static bool Matches(GroupingOption option, string? pawnLocationId, string currentLocationId)
+        public static bool Matches(GroupingOption option, string? pawnLocationId)
         {
-            switch (option.Kind)
-            {
-                case GroupingKind.All: return true;
-                case GroupingKind.CurrentLocation: return pawnLocationId != null && pawnLocationId == currentLocationId;
-                default: return pawnLocationId != null && pawnLocationId == option.LocationId;
-            }
+            if (option.Kind == GroupingKind.All) return true;
+            return pawnLocationId != null && pawnLocationId == option.LocationId;
         }
 
-        /// Re-resolves a selection against current options: locations that
-        /// disappeared (abandoned settlement, arrived caravan) fall back to
-        /// Current Location.
-        public static GroupingOption Revalidate(GroupingOption? option, IReadOnlyList<GroupingOption> options)
+        /// Re-resolves a selection against current options. No selection
+        /// yet, and locations that disappeared (abandoned settlement,
+        /// arrived caravan), resolve to the location the player is
+        /// currently viewing, falling back to All when the viewed map is
+        /// not a listed location.
+        public static GroupingOption Revalidate(GroupingOption? option,
+            IReadOnlyList<GroupingOption> options, string currentLocationId)
         {
-            if (option == null) return options.First(o => o.Kind == GroupingKind.CurrentLocation);
-            if (option.Kind != GroupingKind.Location) return option;
-            return options.FirstOrDefault(o => o.Kind == GroupingKind.Location && o.LocationId == option.LocationId)
-                ?? options.First(o => o.Kind == GroupingKind.CurrentLocation);
+            if (option != null && option.Kind == GroupingKind.All) return option;
+            string? wanted = option?.LocationId ?? currentLocationId;
+            return options.FirstOrDefault(o => o.Kind == GroupingKind.Location
+                    && o.LocationId == wanted)
+                ?? options.FirstOrDefault(o => o.Kind == GroupingKind.Location
+                    && o.LocationId == currentLocationId)
+                ?? options.First(o => o.Kind == GroupingKind.All);
         }
     }
 }

@@ -9,20 +9,20 @@ using Plan = Implanner.Core.Plan;
 namespace Implanner
 {
     /// The deterministic tick-boundary reconciliation pass (the store's third
-    /// mutation class): delivery latches, reservation lifecycle, and implant
-    /// surgery automation. Runs inside the synchronized tick path only,
+    /// mutation class): reservation lifecycle and implant surgery
+    /// automation. Runs inside the synchronized tick path only,
     /// consumes only authoritative synchronized state and deterministic tick
     /// arithmetic, so every multiplayer client derives the identical
     /// mutations from the same tick.
     ///
-    /// Cadence: the canonical 204-game-tick boundary for game-derived drift
-    /// (implant and stock changes), plus an immediate next-tick pass after
-    /// any synced store mutation (user edits stay correctness-fresh,
+    /// Cadence: the owner-approved 1020-game-tick boundary for game-derived
+    /// drift (implant and stock changes), plus an immediate next-tick pass
+    /// after any synced store mutation (user edits stay correctness-fresh,
     /// including while paused). One pass at most per tick.
     internal static class PlannerReconciler
     {
         private static readonly FixedTickBoundaryGate boundary =
-            new FixedTickBoundaryGate(204);
+            new FixedTickBoundaryGate(1020);
         private static int observedStoreVersion = -1;
         private static bool stoodDown;
 
@@ -87,11 +87,20 @@ namespace Implanner
                     change |= model.RemoveOwnedBill(billPawnIds[i], goalKeys[k]);
             }
 
+            // Production records drop the same way: the bill objects stay on
+            // their benches for the player, but nothing owns them anymore.
+            var productionBillIds =
+                new List<string>(model.OwnedProductionBills.Keys);
+            productionBillIds.Sort(StringComparer.Ordinal);
+            for (int i = 0; i < productionBillIds.Count; i++)
+                change |= model.RemoveOwnedProductionBill(productionBillIds[i]);
+
             store.Bump(change);
             if (change != PlannerChange.None)
                 Log.Message("[Implanner] Released " + itemIds.Count
                     + " reservation(s) and dropped " + billPawnIds.Count
-                    + " owned-operation record(s): automation is unavailable "
+                    + " owned-operation and " + productionBillIds.Count
+                    + " production-bill record(s): automation is unavailable "
                     + "with " + PlannerAutomation.BlockedBy + " active.");
         }
 
@@ -105,36 +114,22 @@ namespace Implanner
             // inside the index.
             ColonyIndex index = ColonyIndex.Build();
 
-            var assignedPawnIds = new List<int>(model.Assignments.Keys);
-            assignedPawnIds.Sort();
-
             // Effective goal lists resolved once per plan for the whole pass.
             var effectiveByPlan = new Dictionary<int, List<ImplantGoal>>();
 
-            // Evaluate every assigned, present pawn; latch deliveries.
-            for (int i = 0; i < assignedPawnIds.Count; i++)
-            {
-                int pawnId = assignedPawnIds[i];
-                if (!index.PawnsById.TryGetValue(pawnId, out Pawn pawn)) continue;
-                Plan? plan = model.AssignedPlan(pawnId);
-                if (plan == null) continue;
-                List<ImplantGoal> goals = EffectiveGoals(model, effectiveByPlan, plan);
-                change |= model.PruneLatches(pawnId, goals);
-                bool away = index.ColonyOfPawn(pawnId) == null;
-                PlanEvaluation evaluation = PawnProjection.Evaluate(
-                    pawn, goals, away, model.LatchesFor(pawnId));
-                List<string> satisfied = evaluation.SatisfiedGoalKeys;
-                for (int k = 0; k < satisfied.Count; k++)
-                    change |= model.Latch(pawnId, satisfied[k]);
-            }
+            // Active-batch key sets resolved lazily, once per reserving pawn.
+            var batchByPawn = new Dictionary<int, HashSet<string>>();
 
             // Reservation lifecycle: release-and-report. A reservation exists
-            // only while its goal is actively pursued AND the pawn can still
-            // collect the item; anything else — delivered (latched), goal
-            // removed, pawn gone, item destroyed, forbidden, taken, or the
-            // pawn now settled at a different colony — releases it. A pawn
-            // merely away (caravan, mission) keeps its reservations: it may
-            // return, and re-allocation on return is automatic either way.
+            // only while its goal is in the pawn's ACTIVE batch AND the pawn
+            // can still collect the item; anything else — delivered (the
+            // slot is no longer missing), outside the batch being worked
+            // (tier iteration moved on, or a stale cross-tier holding from
+            // an older version), goal removed, pawn gone, item destroyed,
+            // forbidden, taken, or the pawn now settled at a different
+            // colony — releases it. A pawn merely away (caravan, mission)
+            // keeps its reservations: it may return, and re-allocation on
+            // return is automatic either way.
             var reservationIds = new List<int>(model.Reservations.Keys);
             reservationIds.Sort();
             for (int i = 0; i < reservationIds.Count; i++)
@@ -143,10 +138,9 @@ namespace Implanner
                 model.TryGetReservation(itemId, out ItemReservation reservation);
                 Plan? plan = model.AssignedPlan(reservation.PawnId);
                 bool valid = plan != null
-                    && index.PawnsById.ContainsKey(reservation.PawnId)
-                    && GoalKeys.Contains(
-                        EffectiveGoals(model, effectiveByPlan, plan!), reservation.GoalKey)
-                    && !model.IsLatched(reservation.PawnId, reservation.GoalKey)
+                    && index.PawnsById.TryGetValue(reservation.PawnId, out Pawn pawn)
+                    && ActiveBatchKeys(model, effectiveByPlan, batchByPawn,
+                        pawn, plan!).Contains(reservation.GoalKey)
                     && index.ItemsById.TryGetValue(itemId, out Thing item)
                     && !item.IsForbidden(Faction.OfPlayer)
                     && index.PawnMayCollect(reservation.PawnId, itemId);
@@ -174,6 +168,28 @@ namespace Implanner
                 memo.Add(plan.Id, goals);
             }
             return goals;
+        }
+
+        /// The pawn's active-batch goal-slot keys (the batch ComputeBatch
+        /// selects from the currently missing slots under the iteration
+        /// strategy), projected once per pawn per pass. Batch membership
+        /// implies missing, so this is the single reservation-validity set.
+        private static HashSet<string> ActiveBatchKeys(PlannerModel model,
+            Dictionary<int, List<ImplantGoal>> goalsMemo,
+            Dictionary<int, HashSet<string>> memo, Pawn pawn, Plan plan)
+        {
+            int pawnId = pawn.thingIDNumber;
+            if (!memo.TryGetValue(pawnId, out HashSet<string> keys))
+            {
+                List<ImplantGoal> goals = EffectiveGoals(model, goalsMemo, plan);
+                keys = new HashSet<string>(
+                    SurgeryPlanner.ComputeBatch(
+                        PawnProjection.MissingImplantSlotKeys(pawn, goals),
+                        model, goals, model.Iteration),
+                    StringComparer.Ordinal);
+                memo.Add(pawnId, keys);
+            }
+            return keys;
         }
     }
 }

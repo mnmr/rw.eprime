@@ -13,10 +13,15 @@ namespace Implanner
         public static ImplannerMod Instance = null!;
         public static ImplannerSettings Settings = null!;
 
+        /// The mod's install directory; the Help tab loads its topic files
+        /// and images from here.
+        public static string ContentRootDir = "";
+
         public ImplannerMod(ModContentPack content) : base(content)
         {
             Instance = this;
             Settings = GetSettings<ImplannerSettings>();
+            ContentRootDir = content.RootDir;
             new Harmony("EPrime.Implanner").PatchAll();
         }
 

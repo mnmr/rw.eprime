@@ -95,6 +95,7 @@ Core is netstandard2.0 with no game references so its tests run anywhere.
 
 - [EPrime's Readouts](https://steamcommunity.com/sharedfiles/filedetails/?id=3769342092): a modern, compact resource readout with support for custom resource pools.
 - [WorkRoles](https://steamcommunity.com/sharedfiles/filedetails/?id=3760146134): easily and intuitively manage work priorities by assigning named roles to colonists.
+- [EPrime's Implanner](https://steamcommunity.com/sharedfiles/filedetails/?id=3793988932): plan, track and optionally automate the rollouts of bionic implants.
 
 ## Disclaimer
 

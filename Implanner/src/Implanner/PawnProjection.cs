@@ -13,28 +13,27 @@ namespace Implanner
     internal static class PawnProjection
     {
         internal static PlanEvaluation Evaluate(Pawn pawn,
-            IReadOnlyList<ImplantGoal> goals, bool away,
-            HashSet<string>? latchedKeys = null)
+            IReadOnlyList<ImplantGoal> goals, bool away)
         {
             Project(pawn, goals,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.Evaluate(
-                goals, installed, implantContexts, away, latchedKeys,
+                goals, installed, implantContexts, away,
                 ImplantConflicts.SameSlotExclusive);
         }
 
         /// The implant slots surgery automation still has to deliver for this
-        /// pawn (unlatched, unblocked, not satisfied by the evaluator's
-        /// one-to-one matching).
+        /// pawn (unblocked, not satisfied by the evaluator's one-to-one
+        /// matching).
         internal static List<string> MissingImplantSlotKeys(
-            Pawn pawn, IReadOnlyList<ImplantGoal> goals, HashSet<string>? latchedKeys)
+            Pawn pawn, IReadOnlyList<ImplantGoal> goals)
         {
             Project(pawn, goals,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.MissingImplantSlotKeys(
-                goals, installed, implantContexts, latchedKeys,
+                goals, installed, implantContexts,
                 ImplantConflicts.SameSlotExclusive);
         }
 

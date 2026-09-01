@@ -16,7 +16,7 @@ namespace Implanner
     /// bills.
     ///
     /// Dispatch rules:
-    /// - demand = missing (unlatched, unblocked) implant slots on the
+    /// - demand = missing (unblocked) implant slots on the
     ///   colony's assigned pawns needing the item, minus unforbidden stock,
     ///   minus the pending output of Implanner-owned production bills;
     ///   demand and stock are items, bills are crafts, and
@@ -24,7 +24,13 @@ namespace Implanner
     /// - a bill is created only when, for every fixed ingredient, stock minus
     ///   the bill's full cost stays at or above the player's reserve;
     /// - at most ProductionConcurrency benches per colony hold Implanner
-    ///   bills, one bill per bench, best deficit (defName order) first;
+    ///   bills, one bill per bench, ordered by star tier, then the
+    ///   player-arranged tier position, then defName;
+    /// - the bench cap is also the planning horizon: only the first
+    ///   ProductionConcurrency deficit kinds per colony (in that order) are
+    ///   planned per pass — production may build ahead of the surgery
+    ///   batch, but never computes further ahead than the bill cap, so
+    ///   intermediary expansion and reserve checks stay bounded;
     /// - a bill whose item is no longer demanded at its colony is deleted.
     ///
     /// Cadence: the owner-approved 1020-game-tick boundary for resource-gated
@@ -171,7 +177,7 @@ namespace Implanner
                 List<ImplantGoal> goals = model.EffectiveImplants(plan);
                 if (goals.Count == 0) continue;
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    pawn, goals, model.LatchesFor(pawnId));
+                    pawn, goals);
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
@@ -274,6 +280,23 @@ namespace Implanner
                 return string.CompareOrdinal(a.Item.defName, b.Item.defName);
             });
 
+            // Planning horizon: everything past the first ProductionConcurrency
+            // kinds per colony cannot receive a bench this pass, so it is not
+            // planned at all — later kinds enter as earlier ones complete.
+            // Demand stays complete above: bill cancellation must still see
+            // every wanted kind, and repeat counts cover the full demand of
+            // the kinds that ARE planned.
+            var plannedPerColony = new Dictionary<Map, int>();
+            int kept = 0;
+            for (int i = 0; i < deficits.Count; i++)
+            {
+                plannedPerColony.TryGetValue(deficits[i].Colony, out int taken);
+                if (taken >= model.ProductionConcurrency) continue;
+                plannedPerColony[deficits[i].Colony] = taken + 1;
+                deficits[kept++] = deficits[i];
+            }
+            deficits.RemoveRange(kept, deficits.Count - kept);
+
             // Intermediaries: a deficit blocked by an ingredient shortfall
             // may spawn bills for the missing craftable ingredients, walked
             // to full depth (the vanilla tree is shallow — components and
@@ -284,8 +307,8 @@ namespace Implanner
                     intermediaryNeeds);
 
             // Cancel owned bills whose item is no longer needed at their
-            // colony (plan edits, latching, or delivery removed the demand,
-            // or the intermediary shortfall resolved).
+            // colony (plan edits or delivery removed the demand, or the
+            // intermediary shortfall resolved).
             for (int i = 0; i < recordIds.Count; i++)
             {
                 string billId = recordIds[i];
@@ -416,9 +439,26 @@ namespace Implanner
             }
         }
 
+        /// Whether intermediary production may craft this ingredient:
+        /// manufactured items only (the Manufactured thing category —
+        /// components, advanced components, and modded kin). Raw resources
+        /// never receive bills, no matter what recycling or smelting recipe
+        /// could produce them: a steel shortfall is the player's to mine or
+        /// trade, never a slag-smelting bill.
+        internal static bool IsManufactured(ThingDef def)
+        {
+            List<ThingCategoryDef>? categories = def.thingCategories;
+            if (categories == null) return false;
+            for (int i = 0; i < categories.Count; i++)
+                for (ThingCategoryDef? c = categories[i]; c != null; c = c.parent)
+                    if (c == ThingCategoryDefOf.Manufactured)
+                        return true;
+            return false;
+        }
+
         /// Adds each fixed-ingredient shortfall (the bill's cost plus the
         /// resource's reserve beyond current stock) to the per-resource
-        /// amounts, queueing craftable resources for expansion.
+        /// amounts, queueing craftable MANUFACTURED resources for expansion.
         private static void AccumulateShortfalls(PlannerModel model,
             ColonyIndex index, Map colony, RecipeDef? recipe, int crafts,
             Dictionary<(Map, ThingDef), int> amounts,
@@ -435,7 +475,8 @@ namespace Implanner
                 int shortfall = needed + model.ResourceReserveOf(def.defName)
                     - ColonyResourceCount(index, colony, def);
                 if (shortfall <= 0) continue;
-                if (ProductionRecipeFor(def) == null) continue;
+                if (!IsManufactured(def) || ProductionRecipeFor(def) == null)
+                    continue;
                 var key = (colony, def);
                 amounts.TryGetValue(key, out int existing);
                 amounts[key] = existing + shortfall;
@@ -451,7 +492,8 @@ namespace Implanner
                 return string.CompareOrdinal(a.Item2.defName, b.Item2.defName);
             };
 
-        private static int OutputCount(RecipeDef recipe, ThingDef def)
+        /// Items of def one craft of the recipe yields. Builder path only.
+        internal static int OutputCount(RecipeDef recipe, ThingDef def)
         {
             List<ThingDefCountClass>? products = recipe.products;
             if (products == null) return 0;

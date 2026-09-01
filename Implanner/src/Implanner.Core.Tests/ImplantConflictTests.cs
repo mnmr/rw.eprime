@@ -94,13 +94,13 @@ public class ImplantConflictTests
     public async Task SelectingAConflictingSlotDeselectsThePreviousOwnPick()
     {
         var model = new PlannerModel { SlotConflictResolver = StomachResolver };
-        int nextPlan = 1, nextGoal = 1;
+        int nextPlan = 1;
         var plan = model.CreatePlan("Test", () => nextPlan++)!;
-        model.SetImplantSlot(plan.Id, "NuclearStomach", 0, true, () => nextGoal++);
-        model.SetImplantSlot(plan.Id, "BionicEye", 0, true, () => nextGoal++);
+        model.SetImplantSlot(plan.Id, "NuclearStomach", 0, true);
+        model.SetImplantSlot(plan.Id, "BionicEye", 0, true);
 
         var change = model.SetImplantSlot(
-            plan.Id, "DetoxifierStomach", 0, true, () => nextGoal++);
+            plan.Id, "DetoxifierStomach", 0, true);
 
         await Assert.That(change).IsEqualTo(PlannerChange.Plans);
         await Assert.That(plan.Implants.Count).IsEqualTo(2);
@@ -112,12 +112,12 @@ public class ImplantConflictTests
     public async Task DerivedPlanChoiceSuppressesConflictingInheritedGoal()
     {
         var model = new PlannerModel { SlotConflictResolver = StomachResolver };
-        int nextPlan = 1, nextGoal = 1;
+        int nextPlan = 1;
         var basePlan = model.CreatePlan("Base", () => nextPlan++)!;
-        model.SetImplantSlot(basePlan.Id, "NuclearStomach", 0, true, () => nextGoal++);
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true, () => nextGoal++);
+        model.SetImplantSlot(basePlan.Id, "NuclearStomach", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
         var derived = model.CreatePlan("Derived", () => nextPlan++, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "DetoxifierStomach", 0, true, () => nextGoal++);
+        model.SetImplantSlot(derived.Id, "DetoxifierStomach", 0, true);
 
         List<ImplantGoal> effective = model.EffectiveImplants(derived);
 

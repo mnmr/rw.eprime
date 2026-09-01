@@ -105,6 +105,8 @@ namespace WorkRoles
             int now = Find.TickManager.TicksGame;
             if (PrioritySetWatcher.HasPendingWarning)
                 PrioritySetWatcher.ShowPendingWarning(now);
+            if (GiverBypassWatcher.HasPendingWarning)
+                GiverBypassWatcher.ShowPendingWarning();
             if (worldHourBoundary.Observe(GenTicks.TicksAbs))
                 CompiledJobOrders.InvalidateWorldTimeRuled();
         }

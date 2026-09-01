@@ -112,9 +112,13 @@ namespace Implanner
             return result;
         }
 
-        /// Reserves stored implant items for missing goal slots, ordered by
-        /// the configured traversal (family order and batching, per-pawn
-        /// priority). Each colony is visited exactly once (the index folds a
+        /// Reserves stored implant items for the missing goal slots of each
+        /// pawn's ACTIVE batch only, ordered by the configured traversal
+        /// (family order and batching, per-pawn priority). Slots outside the
+        /// active batch never allocate — a stock-starved batch must not let
+        /// later tiers hoover up reservations the player still has free use
+        /// of (they would read "Awaiting batch" while the real work is
+        /// elsewhere). Each colony is visited exactly once (the index folds a
         /// map stack into one colony), one colony never spends another's
         /// stock, and stock the player reserved for manual use is never
         /// touched: automation holds (and releases excess holdings) until
@@ -160,10 +164,12 @@ namespace Implanner
                     List<ImplantGoal> goals = model.EffectiveImplants(plan);
                     if (goals.Count == 0) continue;
                     List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                        pawn, goals, model.LatchesFor(pawnId));
-                    for (int k = 0; k < missing.Count; k++)
+                        pawn, goals);
+                    List<string> batch = SurgeryPlanner.ComputeBatch(
+                        missing, model, goals, model.Iteration);
+                    for (int k = 0; k < batch.Count; k++)
                     {
-                        string key = missing[k];
+                        string key = batch[k];
                         if (reservedGoals.Contains((pawnId, key))) continue;
                         if (!GoalKeys.TryResolveImplantSlot(
                                 goals, key, out ImplantGoal goal, out _))
@@ -303,7 +309,7 @@ namespace Implanner
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                pawn, goals, model.LatchesFor(pawn.thingIDNumber));
+                pawn, goals);
             if (missing.Count == 0) return statuses;
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, model, goals, model.Iteration);
@@ -366,6 +372,49 @@ namespace Implanner
             foreach (KeyValuePair<int, ItemReservation> pair in model.Reservations)
                 reservedItemByGoal[(pair.Value.PawnId, pair.Value.GoalKey)] = pair.Key;
 
+            // Concurrent-surgeries cap: colonists per colony that already
+            // hold Implanner operations. New colonists only start while the
+            // colony stays under SurgeryConcurrency; one already scheduled
+            // keeps completing its batch regardless.
+            var plannedByColony = new Dictionary<string, int>();
+            var countedPawns = new HashSet<int>();
+            foreach (KeyValuePair<int, Dictionary<string, string>> pair
+                in model.OwnedBills)
+            {
+                if (pair.Value.Count == 0) continue;
+                Colony? billColony = index.ColonyOfPawn(pair.Key);
+                if (billColony == null) continue;
+                plannedByColony.TryGetValue(billColony.LocationId, out int n);
+                plannedByColony[billColony.LocationId] = n + 1;
+                countedPawns.Add(pair.Key);
+            }
+
+            // Hospitalized pawns occupy slots too when the option is on:
+            // anyone humanlike lying in a medical bed, or downed and
+            // needing medical rest, keeps the hospital and its doctors
+            // busy — new Implanner surgeries wait for room.
+            if (model.CountHospitalized)
+                for (int c = 0; c < index.Colonies.Count; c++)
+                {
+                    Colony hospitalColony = index.Colonies[c];
+                    for (int m = 0; m < hospitalColony.Maps.Count; m++)
+                    {
+                        IReadOnlyList<Pawn> mapPawns =
+                            hospitalColony.Maps[m].mapPawns.AllPawnsSpawned;
+                        for (int p = 0; p < mapPawns.Count; p++)
+                        {
+                            Pawn occupant = mapPawns[p];
+                            if (!occupant.RaceProps.Humanlike) continue;
+                            if (countedPawns.Contains(occupant.thingIDNumber))
+                                continue;
+                            if (!IsHospitalized(occupant)) continue;
+                            plannedByColony.TryGetValue(
+                                hospitalColony.LocationId, out int n);
+                            plannedByColony[hospitalColony.LocationId] = n + 1;
+                        }
+                    }
+                }
+
             var pawnIds = new List<int>(model.Assignments.Keys);
             pawnIds.Sort();
             for (int i = 0; i < pawnIds.Count; i++)
@@ -381,7 +430,7 @@ namespace Implanner
                 List<ImplantGoal> goals = model.EffectiveImplants(plan);
 
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    pawn, goals, model.LatchesFor(pawnId));
+                    pawn, goals);
                 List<string> batch = SurgeryPlanner.ComputeBatch(
                     missing, model, goals, model.Iteration);
 
@@ -397,7 +446,7 @@ namespace Implanner
                 int floor = model.EffectiveDoctorFloor(colony.LocationId);
 
                 // Retract owned operations only when their goal is no longer
-                // pursued (delivered, latched, removed, or blocked). Batch
+                // pursued (delivered, removed, or blocked). Batch
                 // membership and health gate the RELEASE of new operations —
                 // an already-scheduled valid operation is never pulled back
                 // because the pawn got wounded or the batch grew.
@@ -421,6 +470,15 @@ namespace Implanner
                 }
 
                 if (!release) continue;
+
+                // The cap gates only colonists without scheduled operations.
+                if (owned == null || owned.Count == 0)
+                {
+                    plannedByColony.TryGetValue(
+                        colony.LocationId, out int planned);
+                    if (planned >= model.SurgeryConcurrency) continue;
+                    plannedByColony[colony.LocationId] = planned + 1;
+                }
 
                 for (int k = 0; k < batch.Count; k++)
                     change |= EnsureOperation(model, pawn, pawnId, goals,
@@ -451,6 +509,15 @@ namespace Implanner
                 }
             }
             return change;
+        }
+
+        /// Lying in a medical bed, or downed and needing medical rest: the
+        /// pawn occupies the hospital (and usually a doctor).
+        private static bool IsHospitalized(Pawn pawn)
+        {
+            Building_Bed? bed = pawn.CurrentBed();
+            if (bed != null && bed.Medical) return true;
+            return pawn.Downed && HealthAIUtility.ShouldSeekMedicalRest(pawn);
         }
 
         private static PlannerChange EnsureOperation(PlannerModel model,

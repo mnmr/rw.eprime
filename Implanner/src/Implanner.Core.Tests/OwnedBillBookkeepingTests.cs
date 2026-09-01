@@ -3,7 +3,7 @@ using Implanner.Core;
 namespace Implanner.Core.Tests;
 
 /// Implanner-owned operation-bill bookkeeping: exact change reporting and
-/// lifecycle cleanup alongside latches and reservations.
+/// lifecycle cleanup alongside reservations.
 public class OwnedBillBookkeepingTests
 {
     [Test]

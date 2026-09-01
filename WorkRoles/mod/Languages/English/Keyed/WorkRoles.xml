@@ -358,6 +358,14 @@ This notice is shown once per mod per savegame.</WR_SetPriorityBlockedBody>
   <!-- Work-type slot in the notice when a mod tried to disable ALL work -->
   <WR_AllWork>all work</WR_AllWork>
 
+  <!-- Excluded-giver job notice; {0} = pawn name, {1} = job name -->
+  <WR_GiverBypassTitle>A job bypassed the role lists</WR_GiverBypassTitle>
+  <WR_GiverBypassBody>{0} started the job "{1}", but no role assigned to them includes that job.
+
+WorkRoles gives each managed colonist their job list through the standard game methods. Another mod appears to select work using its own list, which skips role restrictions. Colonists may sometimes perform work outside their roles while that mod is active.
+
+The job was not interrupted. This notice is shown once per savegame.</WR_GiverBypassBody>
+
   <!-- Change preview dialog -->
   <WR_Apply>Apply</WR_Apply>
   <WR_Cancel>Cancel</WR_Cancel>

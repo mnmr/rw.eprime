@@ -20,23 +20,18 @@ public class ReservationLifecycleTests
     }
 
     [Test]
-    public async Task CleanupDropsLatchesAndReservationsOfUnassignedPawns()
+    public async Task CleanupDropsReservationsOfUnassignedPawns()
     {
         var model = new PlannerModel();
         int next = 1;
         var plan = model.CreatePlan("Test", () => next++)!;
         model.AssignPlan(7, plan.Id);
-        model.Latch(7, "i1:0");
-        model.Latch(9, "i1:0");            // pawn 9 has no assignment
         model.Reserve(100, 7, "i1:0");
-        model.Reserve(101, 9, "i1:0");
+        model.Reserve(101, 9, "i1:0");     // pawn 9 has no assignment
 
         var change = model.CleanupMissing(pawnExists: _ => true);
 
-        await Assert.That((change & PlannerChange.Latches) != 0).IsTrue();
         await Assert.That((change & PlannerChange.Reservations) != 0).IsTrue();
-        await Assert.That(model.IsLatched(7, "i1:0")).IsTrue();
-        await Assert.That(model.IsLatched(9, "i1:0")).IsFalse();
         await Assert.That(model.TryGetReservation(100, out _)).IsTrue();
         await Assert.That(model.TryGetReservation(101, out _)).IsFalse();
     }

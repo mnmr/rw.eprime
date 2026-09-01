@@ -2,27 +2,14 @@ using System.Collections.Generic;
 
 namespace Implanner.Core
 {
-    /// Why an unsatisfied goal cannot currently be pursued. None means the
-    /// goal is missing but eligible.
-    public enum GoalBlocker
-    {
-        None = 0,
-        /// Requested anatomy does not exist on this pawn (or not enough of it).
-        Anatomy = 1,
-    }
-
     /// Aggregate pawn state for the overview table. Away is decided game-side
-    /// and overrides evaluation. Blocked means nothing unsatisfied is
-    /// currently actionable; Active means at least one goal is; Regressed
-    /// means only delivered-once goals that were later lost remain, awaiting
-    /// an explicit re-enlist.
+    /// and overrides evaluation. Active means at least one possible slot is
+    /// still missing.
     public enum PawnPlanState
     {
         Active = 0,
         Complete = 1,
-        Blocked = 2,
-        Away = 3,
-        Regressed = 4,
+        Away = 2,
     }
 
     /// One installed implant as projected from the pawn's hediffs. SlotKey
@@ -57,31 +44,23 @@ namespace Implanner.Core
         public float Efficiency { get; }
     }
 
-    /// Evaluation result for one goal. Counts partition the requested amount:
-    /// Satisfied + Missing + Blocked + Regressed == Requested. Regressed
-    /// units were delivered once (latched) and later lost; they are not
-    /// actionable work until an explicit re-enlist.
+    /// Evaluation result for one goal, parallel to the evaluated goal list
+    /// by index. Requested counts only the slots this body can take:
+    /// impossible slots (missing anatomy or missing mod content) are
+    /// excluded from the target entirely, so Satisfied + Missing ==
+    /// Requested and a wholly impossible goal contributes nothing.
     public readonly struct GoalResult
     {
-        public GoalResult(int goalId, int requested, int satisfied, int missing,
-            int blocked, GoalBlocker blocker, int regressed = 0)
+        public GoalResult(int requested, int satisfied, int missing)
         {
-            GoalId = goalId;
             Requested = requested;
             Satisfied = satisfied;
             Missing = missing;
-            Blocked = blocked;
-            Blocker = blocker;
-            Regressed = regressed;
         }
 
-        public int GoalId { get; }
         public int Requested { get; }
         public int Satisfied { get; }
         public int Missing { get; }
-        public int Blocked { get; }
-        public GoalBlocker Blocker { get; }
-        public int Regressed { get; }
 
         public bool IsComplete => Satisfied == Requested;
     }
@@ -90,23 +69,18 @@ namespace Implanner.Core
     public sealed class PlanEvaluation
     {
         public PlanEvaluation(GoalResult[] implants, PawnPlanState state,
-            int satisfiedUnits, int totalUnits, List<string> satisfiedGoalKeys)
+            int satisfiedUnits, int totalUnits)
         {
             Implants = implants;
             State = state;
             SatisfiedUnits = satisfiedUnits;
             TotalUnits = totalUnits;
-            SatisfiedGoalKeys = satisfiedGoalKeys;
         }
 
         public GoalResult[] Implants { get; }
         public PawnPlanState State { get; }
         public int SatisfiedUnits { get; }
         public int TotalUnits { get; }
-
-        /// Goal keys currently satisfied (sorted): the delivery observations
-        /// the latch model consumes, and the complement re-enlist needs.
-        public List<string> SatisfiedGoalKeys { get; }
 
         /// 0..1; an empty Plan counts as complete.
         public float Progress => TotalUnits == 0 ? 1f : (float)SatisfiedUnits / TotalUnits;

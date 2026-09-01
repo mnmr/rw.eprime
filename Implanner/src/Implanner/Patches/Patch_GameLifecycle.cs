@@ -16,6 +16,7 @@ namespace Implanner.Patches
             ColonyScope.ReleaseSnapshot();
             Catalogs.Release();
             WrText.Reset();
+            WrTips.Reset();
             PlannerLabels.Reset();
             PlannerTips.Reset();
             GearIconMetrics.ReleaseGraphics();

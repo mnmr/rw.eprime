@@ -79,31 +79,29 @@ public class SurgeryPlannerTests
     }
 
     [Test]
-    public async Task MissingSlotKeysSkipBlockedLatchedAndOccupiedSlots()
+    public async Task MissingSlotKeysSkipBlockedAndOccupiedSlots()
     {
         var plan = new Plan(1, "Test");
         plan.Implants.Add(new ImplantGoal(1, "BionicLeg", new[] { 0, 1, 2 }));
-        plan.Implants.Add(new ImplantGoal(2, "BionicEye", new[] { 0 }));
+        plan.Implants.Add(new ImplantGoal(1, "BionicEye", new[] { 0 }));
         var contexts = new[]
         {
             // Ordinal 2 does not exist on this body: blocked, never demanded.
             new ImplantContext(new[] { "Leg/Left", "Leg/Right" }, 1.25f),
             new ImplantContext(new[] { "Eye/Left" }, 1.25f),
         };
-        // Left leg already holds a sufficient (superior) part.
+        // Left leg already holds a sufficient (superior) part; the eye and
+        // right leg stay demanded — a lost implant simply becomes missing
+        // again and is re-pursued automatically.
         var installed = new[]
         {
             new InstalledImplant("ArchotechLeg", "Leg/Left", 1.5f),
         };
-        // The eye was delivered once and later lost: latched, not re-pursued.
-        var latched = new HashSet<string>(StringComparer.Ordinal)
-        {
-            GoalKeys.ImplantSlot(2, 0),
-        };
 
         var missing = PlanEvaluator.MissingImplantSlotKeys(
-            plan.Implants, installed, contexts, latched);
+            plan.Implants, installed, contexts);
 
-        await Assert.That(missing).IsEquivalentTo(new[] { "i1:1" });
+        await Assert.That(missing).IsEquivalentTo(
+            new[] { "p1:BionicLeg:1", "p1:BionicEye:0" });
     }
 }

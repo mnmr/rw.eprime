@@ -1,20 +1,57 @@
+using System;
 using System.Collections.Generic;
 
 namespace Implanner.Core
 {
-    /// Stable per-plan goal identities used by delivery latches, reservations
-    /// and owned bills. Keys survive save/load and plan edits that do not
-    /// recreate the goal (child ids are never reused). The composer and the
-    /// parsers live together: the wire format is a save-file contract, and
-    /// every consumer must interpret it identically.
+    /// Stable goal-slot identities used by reservations and owned bills.
+    /// A goal's identity is natural — the owning plan plus the implant kind
+    /// (one goal per kind per plan by construction) — so keys cannot
+    /// collide, need no allocation, and survive removing and re-adding the
+    /// same pick. The composer and the parsers live together: the wire
+    /// format is a save-file contract, and every consumer must interpret it
+    /// identically.
     public static class GoalKeys
     {
-        /// One selected implant slot.
-        public static string ImplantSlot(int goalId, int ordinal) =>
-            "i" + goalId + ":" + ordinal;
+        /// One selected implant slot: "p[planId]:[defName]:[ordinal]".
+        public static string ImplantSlot(ImplantGoal goal, int ordinal) =>
+            ImplantSlot(goal.PlanId, goal.ImplantDefName, ordinal);
 
-        /// Parses "i[goalId]:[ordinal]"; false for any other shape.
-        public static bool TryParseImplantSlot(
+        public static string ImplantSlot(
+            int planId, string implantDefName, int ordinal) =>
+            "p" + planId + ":" + implantDefName + ":" + ordinal;
+
+        /// Goal-level token (no slot) for deterministic ordering and
+        /// grouping of whole goals; never persisted.
+        public static string GoalToken(ImplantGoal goal) =>
+            "p" + goal.PlanId + ":" + goal.ImplantDefName;
+
+        /// Parses "p[planId]:[defName]:[ordinal]"; false for any other
+        /// shape, including the retired legacy format (see
+        /// TryParseLegacyImplantSlot). Def names cannot contain ':'
+        /// (RimWorld validates def names), so the first and last separator
+        /// bound the def name.
+        public static bool TryParseImplantSlot(string key,
+            out int planId, out string implantDefName, out int ordinal)
+        {
+            planId = 0;
+            implantDefName = "";
+            ordinal = -1;
+            if (key == null || key.Length < 6 || key[0] != 'p') return false;
+            int first = key.IndexOf(':');
+            int last = key.LastIndexOf(':');
+            if (first < 2 || last <= first + 1 || last >= key.Length - 1)
+                return false;
+            if (!int.TryParse(key.Substring(1, first - 1), out planId))
+                return false;
+            if (!int.TryParse(key.Substring(last + 1), out ordinal))
+                return false;
+            implantDefName = key.Substring(first + 1, last - first - 1);
+            return true;
+        }
+
+        /// Parses the retired "i[goalId]:[ordinal]" format so loading can
+        /// migrate keys persisted before goals carried natural identities.
+        public static bool TryParseLegacyImplantSlot(
             string key, out int goalId, out int ordinal)
         {
             goalId = 0;
@@ -28,15 +65,20 @@ namespace Implanner.Core
         }
 
         /// Whether the effective goal list still contains the exact goal slot
-        /// a latch or reservation key refers to.
+        /// a reservation key refers to.
         public static bool Contains(IReadOnlyList<ImplantGoal> goals, string key)
         {
-            if (!TryParseImplantSlot(key, out int goalId, out int ordinal))
+            if (!TryParseImplantSlot(key,
+                    out int planId, out string defName, out int ordinal))
                 return false;
             for (int i = 0; i < goals.Count; i++)
             {
-                if (goals[i].Id != goalId) continue;
-                IReadOnlyList<int> ordinals = goals[i].SlotOrdinals;
+                ImplantGoal goal = goals[i];
+                if (goal.PlanId != planId
+                    || !string.Equals(goal.ImplantDefName, defName,
+                        StringComparison.Ordinal))
+                    continue;
+                IReadOnlyList<int> ordinals = goal.SlotOrdinals;
                 for (int j = 0; j < ordinals.Count; j++)
                     if (ordinals[j] == ordinal)
                         return true;
@@ -52,10 +94,13 @@ namespace Implanner.Core
             string key, out ImplantGoal goal, out int ordinal)
         {
             goal = null!;
-            if (!TryParseImplantSlot(key, out int goalId, out ordinal))
+            if (!TryParseImplantSlot(key,
+                    out int planId, out string defName, out ordinal))
                 return false;
             for (int i = 0; i < goals.Count; i++)
-                if (goals[i].Id == goalId)
+                if (goals[i].PlanId == planId
+                    && string.Equals(goals[i].ImplantDefName, defName,
+                        StringComparison.Ordinal))
                 {
                     goal = goals[i];
                     return true;

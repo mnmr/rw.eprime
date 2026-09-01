@@ -152,6 +152,7 @@ namespace WorkRoles.Patches
         public static void Postfix(Pawn __instance, bool __state)
         {
             CompiledJobOrders.Invalidate(__instance);
+            Patch_MultiFloorsWorkScan.NotifyDestroyed(__instance);
             PawnLocationTracker.NotifyDestroyed(__instance);
             JobRankBaseline.NotifyDestroyed(__instance);
             RoleStore.Current?.pawnSets.Remove(__instance);
@@ -169,6 +170,7 @@ namespace WorkRoles.Patches
         public static void Postfix()
         {
             PrioritySetWatcher.ReleaseForTeardown();
+            GiverBypassWatcher.ReleaseForTeardown();
             WorkRolesGameComponent.ReleaseForTeardown();
             ActivityTracker.ReleaseForTeardown();
             BillRoleTransfer.ReleaseForTeardown();
@@ -181,6 +183,7 @@ namespace WorkRoles.Patches
             DefinitionReloadCoordinator.ReleaseForTeardown();
             UI.RoleClipboard.Clear();
             CompiledJobOrders.ReleaseForTeardown();
+            Patch_MultiFloorsWorkScan.ReleaseForTeardown();
             PriorityGridFacts.ReleaseForTeardown();
             JobRankBaseline.ReleaseForTeardown();
             FloorMaps.ReleaseForTeardown();

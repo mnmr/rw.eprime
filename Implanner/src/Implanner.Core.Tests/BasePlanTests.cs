@@ -9,23 +9,21 @@ namespace Implanner.Core.Tests;
 public class BasePlanTests
 {
     int nextPlan = 1;
-    int nextGoal = 1;
 
     int TakePlanId() => nextPlan++;
-    int TakeGoalId() => nextGoal++;
 
     [Test]
     public async Task EffectiveGoalsMergeOwnAndInheritedWithOwnOverriding()
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 0, true, TakeGoalId);
-        model.SetImplantSlot(basePlan.Id, "BionicLeg", 1, true, TakeGoalId);
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true, TakeGoalId);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(basePlan.Id, "BionicLeg", 1, true);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
         // Re-include the left leg (ordinal 0) as an own goal.
-        model.SetImplantSlot(derived.Id, "BionicLeg", 0, true, TakeGoalId);
-        model.SetImplantSlot(derived.Id, "BionicArm", 0, true, TakeGoalId);
+        model.SetImplantSlot(derived.Id, "BionicLeg", 0, true);
+        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
 
         List<ImplantGoal> effective = model.EffectiveImplants(derived);
 
@@ -35,8 +33,9 @@ public class BasePlanTests
         await Assert.That(effective[0].ImplantDefName).IsEqualTo("BionicLeg");
         await Assert.That(effective[0].SlotOrdinals).IsEquivalentTo(new[] { 0 });
         await Assert.That(effective[1].ImplantDefName).IsEqualTo("BionicArm");
-        // The inherited leg goal keeps its base goal id but loses ordinal 0.
-        await Assert.That(effective[2].Id).IsEqualTo(basePlan.Implants[0].Id);
+        // The inherited leg goal keeps its base plan identity but loses
+        // ordinal 0.
+        await Assert.That(effective[2].PlanId).IsEqualTo(basePlan.Id);
         await Assert.That(effective[2].SlotOrdinals).IsEquivalentTo(new[] { 1 });
         await Assert.That(effective[3].ImplantDefName).IsEqualTo("BionicEye");
 
@@ -49,14 +48,14 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true, TakeGoalId);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicEye", 0, true, TakeGoalId);
+        model.SetImplantSlot(derived.Id, "BionicEye", 0, true);
 
         List<ImplantGoal> effective = model.EffectiveImplants(derived);
 
         await Assert.That(effective.Count).IsEqualTo(1);
-        await Assert.That(effective[0].Id).IsEqualTo(derived.Implants[0].Id);
+        await Assert.That(effective[0].PlanId).IsEqualTo(derived.Id);
     }
 
     [Test]
@@ -64,9 +63,9 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var grandBase = model.CreatePlan("A", TakePlanId)!;
-        model.SetImplantSlot(grandBase.Id, "BionicEye", 0, true, TakeGoalId);
+        model.SetImplantSlot(grandBase.Id, "BionicEye", 0, true);
         var middle = model.CreatePlan("B", TakePlanId, grandBase.Id)!;
-        model.SetImplantSlot(middle.Id, "BionicArm", 0, true, TakeGoalId);
+        model.SetImplantSlot(middle.Id, "BionicArm", 0, true);
         var leaf = model.CreatePlan("C", TakePlanId, middle.Id)!;
 
         List<ImplantGoal> effective = model.EffectiveImplants(leaf);
@@ -91,9 +90,9 @@ public class BasePlanTests
     {
         var model = new PlannerModel();
         var basePlan = model.CreatePlan("Base", TakePlanId)!;
-        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true, TakeGoalId);
+        model.SetImplantSlot(basePlan.Id, "BionicEye", 0, true);
         var derived = model.CreatePlan("Derived", TakePlanId, basePlan.Id)!;
-        model.SetImplantSlot(derived.Id, "BionicArm", 0, true, TakeGoalId);
+        model.SetImplantSlot(derived.Id, "BionicArm", 0, true);
 
         model.DeletePlan(basePlan.Id);
 
