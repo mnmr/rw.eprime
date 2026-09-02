@@ -1605,16 +1605,15 @@ namespace Implanner.UI
             Widgets.Label(new Rect(rect.x, y, width, HeaderHeight),
                 PlannerLabels.OptIteration);
             y += HeaderHeight + 2f;
-            // Display order: tier iteration (the default) first; map display
-            // index to the persisted enum values.
+            // Display order: tier batching (the default) first; the snapshot
+            // table maps display index to the persisted enum values.
             int display = snapshot.IterationDisplayIndex;
             int clicked = SegmentedControl.Row(
                 new Rect(rect.x, y, width, 30f),
                 PlannerLabels.IterationModes, display);
             if (clicked >= 0 && clicked != display)
-                PlannerCommands.SetIteration(clicked == 0
-                    ? (int)IterationStrategy.ImplantTier
-                    : (int)IterationStrategy.Colonist);
+                PlannerCommands.SetIteration(
+                    (int)AutomationSnapshot.IterationByDisplay[clicked]);
             y += 30f + Pad;
 
             DrawStepperRow(rect.x, ref y, width,

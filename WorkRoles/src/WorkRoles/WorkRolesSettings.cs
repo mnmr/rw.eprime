@@ -3,6 +3,9 @@ using WorkRoles.Core;
 
 namespace WorkRoles
 {
+    /// What a colonist-table chip shows. The grid/stack layout is the
+    /// separate chipGrid preference; the retired combined values
+    /// (CompactGrid, IconsGrid) load through the codec as display + grid.
     public enum ChipDisplay
     {
         Normal = 0,
@@ -10,8 +13,6 @@ namespace WorkRoles
         // Retains Minimal's legacy ordinal; the persistence codec also maps
         // the former textual name to this icon mode.
         Icons = 2,
-        CompactGrid = 3,
-        IconsGrid = 4,
     }
     public enum ColonistOrder { ColonistBar, Alphabetical }
     /// Hidden is retired (kept so older persisted settings still parse); it
@@ -31,6 +32,12 @@ namespace WorkRoles
     public class WorkRolesSettings : ModSettings
     {
         public ChipDisplay chipDisplay = ChipDisplay.Normal;
+        /// Colonist table chips in equal-width grid columns (false = stacked
+        /// at their natural widths).
+        public bool chipGrid;
+        /// Full-name grid chips: how many letters the column is sized for
+        /// (names longer than that fade out).
+        public GridNamePreference chipGridNames = GridNamePreference.Automatic;
         public ColonistOrder colonistOrder = ColonistOrder.ColonistBar;
         /// Skill columns (defNames), so the table reopens exactly as it was closed.
         public System.Collections.Generic.List<string> skillColumns = new System.Collections.Generic.List<string>();
@@ -105,9 +112,18 @@ namespace WorkRoles
             var persistedChipDisplay =
                 ChipDisplayPreferenceCodec.Encode((int)chipDisplay);
             Scribe_Values.Look(ref persistedChipDisplay, "chipDisplay", "Normal");
+            Scribe_Values.Look(ref chipGrid, "chipGrid", false);
+            Scribe_Values.Look(ref chipGridNames, "chipGridNames",
+                GridNamePreference.Automatic);
             if (Scribe.mode == LoadSaveMode.LoadingVars)
-                chipDisplay = (ChipDisplay)ChipDisplayPreferenceCodec.Decode(
-                    persistedChipDisplay);
+            {
+                ChipDisplayPreference loaded = ChipDisplayPreferenceCodec.Decode(
+                    persistedChipDisplay, chipGrid);
+                chipDisplay = (ChipDisplay)loaded.Mode;
+                chipGrid = loaded.Grid;
+                if (!System.Enum.IsDefined(typeof(GridNamePreference), chipGridNames))
+                    chipGridNames = GridNamePreference.Automatic;
+            }
             Scribe_Values.Look(ref colonistOrder, "colonistOrder", ColonistOrder.ColonistBar);
             Scribe_Collections.Look(ref skillColumns, "skillColumns", LookMode.Value);
             Scribe_Values.Look(ref groupBy, "groupBy", "none");

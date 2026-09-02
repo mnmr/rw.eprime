@@ -9,8 +9,8 @@ to move it.
 
 Tiers steer automation:
 
-- Implants in better tiers are reserved and delivered first (only when
-  tier batching is enabled).
+- Implants in better tiers are reserved and delivered first under the
+  default iteration strategy (see [surgery options](topic:surgery-options)).
 - Production queues crafting for better tiers first.
 
 Rankings are never changed automatically. Every implant starts at three

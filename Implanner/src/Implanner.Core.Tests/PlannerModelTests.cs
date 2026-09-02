@@ -262,6 +262,12 @@ public class PlannerModelTests
         await Assert.That(model.SetIteration((IterationStrategy)(-1)))
             .IsEqualTo(PlannerChange.Options);
         await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
+
+        await Assert.That(model.SetIteration(IterationStrategy.Asap))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.Asap);
+        await Assert.That(model.SetIteration(IterationStrategy.Asap))
+            .IsEqualTo(PlannerChange.None);
     }
 
     [Test]

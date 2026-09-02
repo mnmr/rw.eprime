@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using RimShared.Common;
 using UnityEngine;
 using Verse;
 using WorkRoles.Core.Help;
@@ -127,9 +128,21 @@ namespace WorkRoles.UI
                 width = Text.CalcSize(markup).x;
                 // Synthesized bold/italic glyphs render a couple of pixels
                 // wider than CalcSize reports (same drift WrText.FitWidth
-                // absorbs); an exact-fit rect clips the last glyph.
+                // absorbs); an exact-fit rect clips the last glyph. CJK
+                // text is measured one glyph at a time and the glyphs that
+                // share a line merge into one drawn string, so a per-glyph
+                // constant or ceil would pile up into a visible gap after
+                // every styled run. Glyphs keep only the proportional drift;
+                // the per-string constant is added to the draw rect once in
+                // BuildDrawModel (StyledDrawSlack).
                 if (!ReferenceEquals(markup, word))
-                    width = Mathf.Ceil(width * 1.02f + 2f);
+                {
+                    bool glyph = word.Length == 1
+                        && LineBreakRules.IsCharacterBreakable(word[0]);
+                    width = glyph
+                        ? width * 1.02f
+                        : Mathf.Ceil(width * 1.02f + 2f);
+                }
             }
             finally
             {
@@ -385,6 +398,13 @@ namespace WorkRoles.UI
         private static readonly HelpLayoutMetrics DefaultMetrics =
             new HelpLayoutMetrics();
 
+        /// <summary>Extra draw-rect width for styled (bold/italic) text so
+        /// the synthesized glyph overhang is not clipped. Draw rects only:
+        /// layout advance already carries the per-word pad for Latin words
+        /// and deliberately not for merged CJK glyph runs (see
+        /// HelpTextMeasurer.WordWidth).</summary>
+        private const float StyledDrawSlack = 2f;
+
         private HelpDrawModel BuildDrawModel(HelpTopicLayout layout)
         {
             int count = layout.Items.Length;
@@ -422,6 +442,8 @@ namespace WorkRoles.UI
                         built.Kinds[i] = HelpDrawModel.KindLink;
                         built.Texts[i] = HelpTextMeasurer.Markup(
                             item.Text, item.Font, item.Style);
+                        if (!ReferenceEquals(built.Texts[i], item.Text))
+                            built.Rects[i].width += StyledDrawSlack;
                         break;
                     case HelpItemKind.ListMarker:
                         built.Kinds[i] = HelpDrawModel.KindMarker;
@@ -431,6 +453,8 @@ namespace WorkRoles.UI
                         built.Kinds[i] = HelpDrawModel.KindText;
                         built.Texts[i] = HelpTextMeasurer.Markup(
                             item.Text, item.Font, item.Style);
+                        if (!ReferenceEquals(built.Texts[i], item.Text))
+                            built.Rects[i].width += StyledDrawSlack;
                         break;
                 }
             }

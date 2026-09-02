@@ -183,8 +183,9 @@
   <IMP_OptIteration>Iteration strategy</IMP_OptIteration>
   <IMP_OptSurgeryConcurrency>Concurrent surgeries</IMP_OptSurgeryConcurrency>
   <IMP_OptCountHospitalized>Count hospitalized pawns</IMP_OptCountHospitalized>
-  <IMP_IterTier>One implant tier at a time</IMP_IterTier>
-  <IMP_IterColonist>One colonist at a time</IMP_IterColonist>
+  <IMP_IterTier>Tier batching</IMP_IterTier>
+  <IMP_IterColonist>Full sets</IMP_IterColonist>
+  <IMP_IterAsap>ASAP</IMP_IterAsap>
   <IMP_OptManualFloor>Required medical skill for surgery bills</IMP_OptManualFloor>
   <IMP_OptAutoFloor>Assign surgery bills to best available doctor</IMP_OptAutoFloor>
   <!-- Implant items automation must leave in stock for manual use -->
@@ -205,7 +206,7 @@
 
   <!-- ===== Automation tooltips ===== -->
   <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
-  <IMP_OptIterationTip>The order automation works through missing implants.\n\nOne implant tier at a time: everyone receives the highest-tier implants first, then work moves down the tier list.\n\nOne colonist at a time: finish one colonist's whole plan before starting the next. Colonist priority on the Overview tab decides who goes first.</IMP_OptIterationTip>
+  <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go to melee fighters first, then to the best crafter or researcher.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Pawns lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>

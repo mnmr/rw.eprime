@@ -147,12 +147,13 @@ namespace WorkRoles.UI
         private sealed class RoleFacts
         {
             internal RoleFacts(RoleChipRenderData chip, bool enabled,
-                string abbreviation, Texture2D? icon,
-                HashSet<string> coverage)
+                string abbreviation, int gridPrefixRequirement,
+                Texture2D? icon, HashSet<string> coverage)
             {
                 Chip = chip;
                 Enabled = enabled;
                 Abbreviation = abbreviation;
+                GridPrefixRequirement = gridPrefixRequirement;
                 Icon = icon;
                 Coverage = coverage;
             }
@@ -160,6 +161,10 @@ namespace WorkRoles.UI
             internal RoleChipRenderData Chip { get; }
             internal bool Enabled { get; }
             internal string Abbreviation { get; }
+            /// Fewest leading characters keeping this label distinct from
+            /// every other role label (depends on the other labels, hence
+            /// compared explicitly).
+            internal int GridPrefixRequirement { get; }
             internal Texture2D? Icon { get; }
             internal HashSet<string> Coverage { get; }
 
@@ -168,6 +173,7 @@ namespace WorkRoles.UI
                 && Chip.ContentEquals(other.Chip)
                 && string.Equals(Abbreviation, other.Abbreviation,
                     StringComparison.Ordinal)
+                && GridPrefixRequirement == other.GridPrefixRequirement
                 && ReferenceEquals(Icon, other.Icon)
                 && Coverage.SetEquals(other.Coverage);
         }
@@ -242,13 +248,17 @@ namespace WorkRoles.UI
             bool forceNewOwnedSnapshots)
         {
             var labels = new List<(int id, string label)>(store.roles.Count);
+            var plainLabels = new List<string>(store.roles.Count);
             for (int i = 0; i < store.roles.Count; i++)
             {
                 Role role = store.roles[i];
                 labels.Add((role.id, role.label));
+                plainLabels.Add(role.label);
             }
             Dictionary<int, string> abbreviations =
                 RoleAbbreviations.Build(labels);
+            int[] gridPrefixRequirements =
+                GridLabelTruncation.RequiredPrefixLengths(plainLabels);
 
             var roles = new Dictionary<int, RoleFacts>(store.roles.Count);
             var detachedChips = new Dictionary<int, RoleChipRenderData>(
@@ -265,7 +275,8 @@ namespace WorkRoles.UI
                     RoleIconPresentationCatalog.For(role.id);
                 detachedChips[role.id] = chip;
                 roles[role.id] = new RoleFacts(chip,
-                    role.enabled, abbreviation, icon.Texture,
+                    role.enabled, abbreviation, gridPrefixRequirements[i],
+                    icon.Texture,
                     new HashSet<string>(role.Coverage(),
                         StringComparer.Ordinal));
                 roleOptions.Add(new ColonistRoleFilterOption(role.id,
@@ -454,6 +465,13 @@ namespace WorkRoles.UI
         internal string? AbbreviationFor(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts)
                 ? facts.Abbreviation : null;
+
+        /// Fewest leading characters keeping the role's label distinct from
+        /// the other roles (before the player's floor); full-name grid chips
+        /// truncate to it. One for unknown roles: nothing to collide with.
+        internal int GridPrefixRequirementFor(int roleId) =>
+            roles.TryGetValue(roleId, out RoleFacts facts)
+                ? facts.GridPrefixRequirement : 1;
 
         internal Texture2D? IconFor(int roleId) =>
             roles.TryGetValue(roleId, out RoleFacts facts)

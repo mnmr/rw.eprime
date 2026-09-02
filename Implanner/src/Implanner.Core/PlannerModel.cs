@@ -119,10 +119,18 @@ namespace Implanner.Core
         public bool AutomationPaused { get; private set; }
 
         /// Automation iteration strategy: one star tier at a time (the
-        /// default, matching the plan editor's tier ordering) or one
-        /// colonist at a time (whole plan per batch).
+        /// default, matching the plan editor's tier ordering), one
+        /// colonist at a time (whole plan per batch), or ASAP (no batch:
+        /// stock flows to the best candidate and is scheduled at once).
         public IterationStrategy Iteration { get; private set; } =
             IterationStrategy.ImplantTier;
+
+        /// A strategy outside the enum (a save or client from a build with
+        /// other strategies) falls back to the default.
+        static IterationStrategy NormalizeIteration(IterationStrategy iteration) =>
+            iteration == IterationStrategy.Colonist || iteration == IterationStrategy.Asap
+                ? iteration
+                : IterationStrategy.ImplantTier;
 
         /// Player-set minimum Medical skill for Implanner operations (0–20).
         /// Applies only while the automatic floor is off.
@@ -285,9 +293,7 @@ namespace Implanner.Core
         /// LoadOptions before the no-op comparison.
         public PlannerChange SetIteration(IterationStrategy iteration)
         {
-            iteration = iteration == IterationStrategy.Colonist
-                ? IterationStrategy.Colonist
-                : IterationStrategy.ImplantTier;
+            iteration = NormalizeIteration(iteration);
             if (Iteration == iteration) return PlannerChange.None;
             Iteration = iteration;
             return PlannerChange.Options;
@@ -319,9 +325,7 @@ namespace Implanner.Core
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries)
         {
             AutomationPaused = automationPaused;
-            Iteration = iteration == IterationStrategy.Colonist
-                ? IterationStrategy.Colonist
-                : IterationStrategy.ImplantTier;
+            Iteration = NormalizeIteration(iteration);
             ManualDoctorFloor = manualDoctorFloor < DoctorFloorMin ? DoctorFloorMin
                 : manualDoctorFloor > DoctorFloorMax ? DoctorFloorMax
                 : manualDoctorFloor;

@@ -25,9 +25,25 @@ namespace Implanner.UI
     internal sealed class AutomationSnapshot
     {
         internal bool AutomationPaused;
-        /// Display index of the iteration segment: 0 = tier iteration (the
-        /// default, listed first), 1 = colonist.
+        /// Display index of the iteration segment (see IterationByDisplay).
         internal int IterationDisplayIndex;
+
+        /// Segment display order, parallel to PlannerLabels.IterationModes:
+        /// tier batching (the default) first, full sets, then ASAP. The
+        /// dialog maps a clicked segment back through this table.
+        internal static readonly IterationStrategy[] IterationByDisplay =
+        {
+            IterationStrategy.ImplantTier,
+            IterationStrategy.Colonist,
+            IterationStrategy.Asap,
+        };
+
+        internal static int DisplayIndexOf(IterationStrategy strategy)
+        {
+            for (int i = 0; i < IterationByDisplay.Length; i++)
+                if (IterationByDisplay[i] == strategy) return i;
+            return 0;
+        }
         internal bool AutoDoctorFloor;
         internal bool CountHospitalized;
         internal bool AutoProduction;
@@ -206,7 +222,7 @@ namespace Implanner.UI
             PlannerModel model = store.Model;
             result.AutomationPaused = model.AutomationPaused;
             result.IterationDisplayIndex =
-                model.Iteration == IterationStrategy.ImplantTier ? 0 : 1;
+                AutomationSnapshot.DisplayIndexOf(model.Iteration);
             result.AutoDoctorFloor = model.AutoDoctorFloor;
             result.CountHospitalized = model.CountHospitalized;
             result.AutoProduction = model.AutoProduction;

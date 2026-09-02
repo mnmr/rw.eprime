@@ -133,16 +133,12 @@ namespace WorkRoles.UI
             display != ChipDisplay.Normal;
 
         internal static bool UsesIcons(ChipDisplay display) =>
-            display == ChipDisplay.Icons || display == ChipDisplay.IconsGrid;
+            display == ChipDisplay.Icons;
 
-        internal static bool UsesGrid(ChipDisplay display) =>
-            display == ChipDisplay.CompactGrid
-            || display == ChipDisplay.IconsGrid;
-
+        /// Initials replace the label in the condensed displays (icons fall
+        /// back to them when a role has no icon).
         internal static bool NeedsAbbreviation(ChipDisplay display) =>
-            display == ChipDisplay.Compact
-            || display == ChipDisplay.CompactGrid
-            || UsesIcons(display);
+            display == ChipDisplay.Compact || UsesIcons(display);
 
         private static float LabelGap(ChipDisplay display) =>
             Condensed(display) ? 2f : 4f;
@@ -216,40 +212,78 @@ namespace WorkRoles.UI
         private static float PadFor(ChipDisplay display) =>
             Condensed(display) ? 2f : PadX;
 
+        /// shortLabel: the text the width is measured from instead of the
+        /// role label when given: initials for the condensed displays (kept
+        /// at least two letters wide), or the sizing prefix of a cut
+        /// full-name grid chip, whose fadeAllowance reserves the fade region
+        /// after it.
         public static float WidthFor(Role role, bool showRemove,
-            ChipDisplay display = ChipDisplay.Normal, string? abbrev = null, bool pinned = false,
+            ChipDisplay display = ChipDisplay.Normal, string? shortLabel = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool forcedOn = false, bool verdictSlot = false,
-            Texture2D? icon = null)
+            Texture2D? icon = null, bool fadeAllowance = false)
             => WidthFor(RoleChipRenderData.From(role), showRemove, display,
-                abbrev, pinned, warningSeverity, forcedOn, verdictSlot, icon);
+                shortLabel, pinned, warningSeverity, forcedOn, verdictSlot, icon,
+                fadeAllowance);
 
         internal static float WidthFor(RoleChipRenderData role, bool showRemove,
-            ChipDisplay display = ChipDisplay.Normal, string? abbrev = null,
+            ChipDisplay display = ChipDisplay.Normal, string? shortLabel = null,
             bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool forcedOn = false, bool verdictSlot = false,
-            Texture2D? icon = null)
+            Texture2D? icon = null, bool fadeAllowance = false)
         {
             GameFont oldFont = Text.Font;
             try
             {
                 Text.Font = GameFont.Small;
-                float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
-                    verdictSlot);
                 float labelW = UsesIcons(display) && icon != null
                     ? RoleIconSize
-                    : NeedsAbbreviation(display) && abbrev != null
-                        ? System.Math.Max(WrText.FitWidth(abbrev), WrText.FitWidth("MM"))
-                        : WrText.FitWidth(role.Label);
-                return labelW + LeftInset(band, display)
-                    + RightInset(showRemove, display);
+                    : shortLabel == null
+                        ? WrText.FitWidth(role.Label)
+                    : Condensed(display)
+                        ? System.Math.Max(WrText.FitWidth(shortLabel), WrText.FitWidth("MM"))
+                        : WrText.FitWidth(shortLabel)
+                            + (fadeAllowance ? ChipUI.LabelFadeWidth : 0f);
+                return labelW + LabelInsets(role, showRemove, display, pinned,
+                    warningSeverity, forcedOn, verdictSlot);
             }
             finally
             {
                 Text.Font = oldFont;
             }
         }
+
+        /// Small-font fit width of a label, for a chip snapshot that must
+        /// know whether its name overruns its room at draw time.
+        /// Builder-only.
+        internal static float SmallFitWidth(string text)
+        {
+            GameFont oldFont = Text.Font;
+            try
+            {
+                Text.Font = GameFont.Small;
+                return WrText.FitWidth(text);
+            }
+            finally
+            {
+                Text.Font = oldFont;
+            }
+        }
+
+        /// Horizontal space a chip spends outside its label: the marker band
+        /// with its edge and label gaps, and the remove slot. Subtracting it
+        /// from a grid column width gives the label room of that chip.
+        internal static float LabelInsets(RoleChipRenderData role,
+            bool showRemove, ChipDisplay display, bool pinned,
+            RoleAssignmentWarningSeverity warningSeverity, bool forcedOn,
+            bool verdictSlot)
+        {
+            float band = MarkerBand(role, pinned, warningSeverity, forcedOn,
+                verdictSlot);
+            return LeftInset(band, display) + RightInset(showRemove, display);
+        }
+
 
         /// Band chip: role colors/label like a normal chip, plus inner grip
         /// bars at both ends and the X inset past the right grip. Display-only.
@@ -284,24 +318,30 @@ namespace WorkRoles.UI
         /// forcedOn: draws the Claim marker; the assignment overrides the
         /// role's global off.
         public static ChipClick Draw(Rect rect, Role role, ChipStyle style, bool showRemove, Pawn? dragSource, Action? onClick,
-            bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string? abbrev = null, bool pinned = false,
+            bool interactive = true, ChipDisplay display = ChipDisplay.Normal, string? shortLabel = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
             int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
-            RoleChipVerdict verdict = default, Texture2D? icon = null)
+            RoleChipVerdict verdict = default, Texture2D? icon = null,
+            float fadeLabelWidth = 0f)
             => Draw(rect, RoleChipRenderData.From(role), style, showRemove,
-                dragSource, onClick, interactive, display, abbrev, pinned,
+                dragSource, onClick, interactive, display, shortLabel, pinned,
                 warningSeverity, paint, activeOutline, strikes, forcedOn,
-                verdict, icon);
+                verdict, icon, fadeLabelWidth);
 
+        /// fadeLabelWidth: the role label's own fit width (SmallFitWidth)
+        /// for a full-name grid chip. The whole label is drawn, clipped to
+        /// its room with its tail faded when that width overruns it;
+        /// shortLabel is then only the sizing text and is not drawn.
         internal static ChipClick Draw(Rect rect, RoleChipRenderData role,
             ChipStyle style, bool showRemove, Pawn? dragSource, Action? onClick,
             bool interactive = true, ChipDisplay display = ChipDisplay.Normal,
-            string? abbrev = null, bool pinned = false,
+            string? shortLabel = null, bool pinned = false,
             RoleAssignmentWarningSeverity warningSeverity = RoleAssignmentWarningSeverity.None,
             bool paint = true, bool activeOutline = false,
             int strikes = RoleChipStrikes.PawnOff, bool forcedOn = false,
-            RoleChipVerdict verdict = default, Texture2D? icon = null)
+            RoleChipVerdict verdict = default, Texture2D? icon = null,
+            float fadeLabelWidth = 0f)
         {
             if (paint)
             {
@@ -332,8 +372,8 @@ namespace WorkRoles.UI
                 float rightInset = RightInset(showRemove, display);
                 string? label = UsesIcons(display) && icon != null
                     ? null
-                    : NeedsAbbreviation(display) && abbrev != null
-                        ? abbrev : role.Label;
+                    : fadeLabelWidth > 0f ? role.Label
+                    : shortLabel ?? role.Label;
                 var spec = new ChipSpec
                 {
                     Bg = bg,
@@ -346,6 +386,7 @@ namespace WorkRoles.UI
                     LabelInsetRight = rightInset,
                     StrikeCount = style == ChipStyle.Disabled
                         ? strikes : RoleChipStrikes.None,
+                    FadeLabelWidth = label != null ? fadeLabelWidth : 0f,
                 };
                 ChipUI.Draw(rect, in spec);
 

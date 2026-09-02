@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimWorld;
 using Verse;
 
 namespace Implanner
@@ -46,6 +47,20 @@ namespace Implanner
             contexts = new ImplantContext[goals.Count];
             for (int i = 0; i < goals.Count; i++)
                 contexts[i] = BuildImplantContext(pawn, goals[i]);
+        }
+
+        /// The pawn facts the ASAP candidate ranking reads: move speed,
+        /// whether the equipped weapon is a melee weapon, and Intellectual
+        /// plus Crafting. Sampled once per pawn per reconcile pass or
+        /// snapshot build, never per work item.
+        internal static SurgeryCandidate CandidateOf(Pawn pawn)
+        {
+            SkillRecord? intellectual = pawn.skills?.GetSkill(SkillDefOf.Intellectual);
+            SkillRecord? crafting = pawn.skills?.GetSkill(SkillDefOf.Crafting);
+            return new SurgeryCandidate(
+                pawn.GetStatValue(StatDefOf.MoveSpeed),
+                pawn.equipment?.Primary?.def.IsMeleeWeapon ?? false,
+                (intellectual?.Level ?? 0) + (crafting?.Level ?? 0));
         }
 
         /// The pawn body part a goal slot ordinal denotes, following the same

@@ -150,6 +150,10 @@ namespace Implanner
                         allowance);
 
                 // Pending work on this colony's pawns, traversal-ordered.
+                // ASAP ranks candidates on live pawn facts (move speed,
+                // weapon, skills), sampled once per pawn with pending work;
+                // the batch strategies never read them.
+                bool asap = model.Iteration == IterationStrategy.Asap;
                 var work = new List<SurgeryWorkItem>();
                 var requiredItemDef = new Dictionary<(int, string), ThingDef>();
                 for (int i = 0; i < colony.PawnIds.Count; i++)
@@ -159,6 +163,9 @@ namespace Implanner
                     if (evaluation == null) continue;
                     IReadOnlyList<ImplantGoal> goals = evaluation.Goals;
                     List<string> batch = evaluation.Batch;
+                    int priority = model.PriorityOf(pawnId);
+                    SurgeryCandidate candidate = default;
+                    bool sampled = !asap;
                     for (int k = 0; k < batch.Count; k++)
                     {
                         string key = batch[k];
@@ -170,11 +177,15 @@ namespace Implanner
                             Catalogs.ImplantByDefName(goal.ImplantDefName);
                         ThingDef? item = entry?.Def.spawnThingOnRemoved;
                         if (item == null) continue;
+                        if (!sampled)
+                        {
+                            candidate = PawnProjection.CandidateOf(index.PawnsById[pawnId]);
+                            sampled = true;
+                        }
                         requiredItemDef[(pawnId, key)] = item;
-                        work.Add(new SurgeryWorkItem(pawnId,
-                            model.PriorityOf(pawnId),
+                        work.Add(new SurgeryWorkItem(pawnId, priority,
                             StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)),
-                            key));
+                            key, goal.ImplantDefName, entry!.Limb, candidate));
                     }
                 }
                 if (work.Count == 0) continue;
@@ -317,11 +328,13 @@ namespace Implanner
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, model, goals, model.Iteration);
 
-            bool batchReady = batch.Count > 0;
-            for (int i = 0; batchReady && i < batch.Count; i++)
-                batchReady = reservationReadiness.TryGetValue(batch[i], out bool ready)
-                    && ready;
-            bool gated = batchReady && !HealthGate(pawn);
+            var ready = new bool[batch.Count];
+            for (int i = 0; i < batch.Count; i++)
+                ready[i] = reservationReadiness.TryGetValue(batch[i], out bool keyReady)
+                    && keyReady;
+            List<string> releasable = SurgeryPlanner.Releasable(
+                batch, ready, model.Iteration);
+            bool gated = releasable.Count > 0 && !HealthGate(pawn);
             bool floorBlocked = effectiveFloor > BestMedicalSkill(pawn.MapHeld);
 
             for (int i = 0; i < missing.Count; i++)
@@ -337,7 +350,7 @@ namespace Implanner
                 if (!reservationReadiness.TryGetValue(key, out bool keyReady)
                     || !keyReady)
                     continue;
-                statuses[key] = gated && batch.Contains(key)
+                statuses[key] = gated && releasable.Contains(key)
                     ? SlotStatus.Recovering
                     : SlotStatus.AwaitingBatch;
             }
@@ -365,7 +378,8 @@ namespace Implanner
         /// Batch-gated operation scheduling: once every implant in the pawn's
         /// active batch is physically reserved at the pawn's colony and the
         /// pawn is eligible, all still-missing Implanner operations are
-        /// appended as one contiguous block after existing bills. Matching
+        /// appended as one contiguous block after existing bills (ASAP
+        /// appends whatever is reserved on site right away). Matching
         /// user operations count as scheduled; deleted Implanner operations
         /// are recreated while goal and reservation remain valid.
         private static PlannerChange ScheduleOperations(
@@ -462,20 +476,26 @@ namespace Implanner
                 if (evaluation == null) continue;
                 Pawn pawn = index.PawnsById[pawnId];
                 List<string> batch = evaluation.Batch;
+                if (batch.Count == 0) continue;
 
-                bool ready = batch.Count > 0;
-                for (int k = 0; ready && k < batch.Count; k++)
+                // A key is ready when its reserved item exists at the pawn's
+                // colony. The batch strategies release the whole batch only
+                // once every key is ready; ASAP releases every ready key.
+                var ready = new bool[batch.Count];
+                for (int k = 0; k < batch.Count; k++)
                 {
-                    ready = reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
+                    ready[k] = reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
                         && index.ItemsById.ContainsKey(itemId)
                         && index.SameColony(pawnId, itemId);
                 }
+                List<string> releasable = SurgeryPlanner.Releasable(
+                    batch, ready, model.Iteration);
 
                 // Batch membership and health gate the RELEASE of new
                 // operations — an already-scheduled valid operation is
                 // never pulled back because the pawn got wounded or the
                 // batch grew.
-                if (!ready || !HealthGate(pawn)) continue;
+                if (releasable.Count == 0 || !HealthGate(pawn)) continue;
                 int floor = model.EffectiveDoctorFloor(colony.LocationId);
 
                 // The cap gates only colonists without scheduled operations.
@@ -488,9 +508,9 @@ namespace Implanner
                     plannedByColony[colony.LocationId] = planned + 1;
                 }
 
-                for (int k = 0; k < batch.Count; k++)
+                for (int k = 0; k < releasable.Count; k++)
                     change |= EnsureOperation(model, pass, pawn, pawnId,
-                        evaluation.Goals, batch[k], floor);
+                        evaluation.Goals, releasable[k], floor);
             }
 
             // Sweep records of pawns that lost their assignment or left

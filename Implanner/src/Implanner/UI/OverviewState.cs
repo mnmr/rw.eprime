@@ -839,20 +839,34 @@ namespace Implanner.UI
         {
             if (store.Model.AutomationPaused || !PlannerAutomation.Available)
                 return;
+            // ASAP ranks candidates on live pawn facts, sampled once per
+            // colonist with missing work (builder path, same facts the
+            // reconciler reads).
+            bool asap = store.Model.Iteration == IterationStrategy.Asap;
             var work = new List<SurgeryWorkItem>();
             var rowByPawn = new Dictionary<int, OverviewRow>();
             for (int i = 0; i < rows.Count; i++)
             {
                 OverviewRow row = rows[i];
                 if (row.Evaluation == null || row.Goals == null) continue;
+                SurgeryCandidate candidate = default;
+                bool sampled = !asap;
                 for (int g = 0; g < row.Evaluation.Implants.Length; g++)
                 {
                     if (row.Evaluation.Implants[g].Missing <= 0) continue;
                     ImplantGoal goal = row.Goals[g];
+                    if (!sampled)
+                    {
+                        candidate = PawnProjection.CandidateOf(row.Pawn);
+                        sampled = true;
+                    }
+                    ImplantCatalogEntry? entry =
+                        Catalogs.ImplantByDefName(goal.ImplantDefName);
                     work.Add(new SurgeryWorkItem(row.PawnId, row.Priority,
                         StarRanking.TierOf(
                             store.Model.ImplantStarsOf(goal.ImplantDefName)),
-                        GoalKeys.GoalToken(goal)));
+                        GoalKeys.GoalToken(goal), goal.ImplantDefName,
+                        entry?.Limb ?? LimbKind.None, candidate));
                     rowByPawn[row.PawnId] = row;
                 }
             }
@@ -1428,7 +1442,8 @@ namespace Implanner.UI
             // Per-goal rows with their grouping keys resolved once. The
             // panel reads in the order automation delivers: tier iteration
             // groups by star tier with the player-arranged position within,
-            // colonist iteration groups by anatomy region with labels A-Z.
+            // colonist and ASAP iteration group by anatomy region with
+            // labels A-Z.
             PlannerModel model = store!.Model;
             bool byTier = model.Iteration == IterationStrategy.ImplantTier;
             var entries = new List<DetailEntry>(evaluation.Implants.Length);

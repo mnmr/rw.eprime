@@ -24,6 +24,25 @@ public class HelpMarkdownTests
     }
 
     [Test]
+    public async Task SoftLineBreaksBetweenCjkCharactersJoinWithoutASpace()
+    {
+        // A translator wrapping Japanese source must not get a visible gap
+        // mid-sentence; the space is still inserted next to Latin text.
+        var doc = HelpMarkdown.Parse(
+            "日本語の\n" +
+            "文章です。\n" +
+            "and then\n" +
+            "English.\n" +
+            "\n" +
+            "- 箇条書きの\n" +
+            "  続き\n");
+
+        await Assert.That(Dump(doc)).IsEqualTo(
+            "P 日本語の文章です。 and then English.\n" +
+            "* 箇条書きの続き");
+    }
+
+    [Test]
     public async Task MissingFrontMatterYieldsAnEmptyTitleAndKeepsAllContent()
     {
         var doc = HelpMarkdown.Parse("Just text.");

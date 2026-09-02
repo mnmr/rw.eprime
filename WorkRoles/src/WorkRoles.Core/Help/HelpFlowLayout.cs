@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using RimShared.Common;
 
 namespace WorkRoles.Core.Help
 {
@@ -136,10 +137,13 @@ namespace WorkRoles.Core.Help
     }
 
     /// <summary>
-    /// Word-level flow layout for a resolved help document: wraps at spaces,
-    /// keeps space-free style joins on one line, indents list items past
-    /// their markers, and scales images down to the content width. All
-    /// output geometry is deterministic data; rendering draws it by index.
+    /// Word-level flow layout for a resolved help document: wraps at spaces
+    /// and between CJK glyphs (see <see cref="LineBreakRules"/>), keeps
+    /// space-free Latin style joins on one line, merges adjacent same-styled
+    /// glyphs that land on one line into a single draw item, indents list
+    /// items past their markers, and scales images down to the content
+    /// width. All output geometry is deterministic data; rendering draws it
+    /// by index.
     /// </summary>
     public static class HelpFlowLayout
     {
@@ -295,10 +299,15 @@ namespace WorkRoles.Core.Help
                     if (segment.ClusterBreakAfter) break;
                 }
 
+                // A glyph break carries no gap; only a source space does.
+                bool gapBefore = clusterStart > 0
+                    && segments[clusterStart - 1].GapAfter;
+                bool adjacent = false;
                 if (x > indent)
                 {
-                    float spaceWidth = measurer.SpaceWidth(
-                        font, segments[clusterStart].Style);
+                    float spaceWidth = gapBefore
+                        ? measurer.SpaceWidth(font, segments[clusterStart].Style)
+                        : 0f;
                     if (x + spaceWidth + clusterWidth > width)
                     {
                         lineY += FlushLine(items, line, lineY,
@@ -308,6 +317,7 @@ namespace WorkRoles.Core.Help
                     else
                     {
                         x += spaceWidth;
+                        adjacent = !gapBefore;
                     }
                 }
 
@@ -319,7 +329,7 @@ namespace WorkRoles.Core.Help
                         : segment.Target.Length > 0
                             ? HelpItemKind.TopicLink
                             : HelpItemKind.Text;
-                    line.Add(new LineItem
+                    AddLineItem(line, new LineItem
                     {
                         Kind = kind,
                         Text = segment.IsImage ? segment.Target : segment.Text,
@@ -329,7 +339,7 @@ namespace WorkRoles.Core.Help
                         Width = segment.Width,
                         Height = segment.IsImage
                             ? segment.ImageHeight : lineHeight,
-                    });
+                    }, adjacent || i > clusterStart);
                     x += segment.Width;
                 }
                 anyLine = true;
@@ -338,6 +348,34 @@ namespace WorkRoles.Core.Help
             segments.Clear();
             if (!anyLine) return lineY + lineHeight;   // empty block
             return lineY + FlushLine(items, line, lineY, font, lineHeight);
+        }
+
+        /// <summary>Appends a line item, extending the previous item instead
+        /// when the two touch (no gap between them) and share kind, style,
+        /// and target. Character-broken CJK text arrives one glyph per
+        /// segment; without this merge every glyph would be its own draw
+        /// call. Widths add, which is exact for the unkerned CJK glyphs that
+        /// produce adjacency.</summary>
+        private static void AddLineItem(
+            List<LineItem> line, LineItem item, bool adjacent)
+        {
+            if (adjacent && line.Count > 0)
+            {
+                LineItem last = line[line.Count - 1];
+                bool mergeable = last.Kind == item.Kind
+                    && item.Kind != HelpItemKind.Image
+                    && item.Kind != HelpItemKind.ListMarker
+                    && last.Style == item.Style
+                    && last.Target == item.Target;
+                if (mergeable)
+                {
+                    last.Text += item.Text;
+                    last.Width += item.Width;
+                    line[line.Count - 1] = last;
+                    return;
+                }
+            }
+            line.Add(item);
         }
 
         /// <summary>Emits the buffered line, centering shorter items in the
@@ -384,9 +422,12 @@ namespace WorkRoles.Core.Help
         }
 
         /// <summary>
-        /// Splits a block's runs into word segments. Line breaks are allowed
-        /// only where the source had a space; adjacent same-styled words
-        /// without a space merge into one segment.
+        /// Splits a block's runs into segments. Latin words break only where
+        /// the source had a space (a gap break); adjacent same-styled words
+        /// without a space merge into one segment. Character-breakable CJK
+        /// glyphs each end a segment with a gapless break, except that a
+        /// line-start-forbidden glyph joins the segment before it and a
+        /// line-end-forbidden glyph keeps the following glyph attached.
         /// </summary>
         private static void Tokenize(HelpRun[] runs, List<Segment> segments)
         {
@@ -414,8 +455,12 @@ namespace WorkRoles.Core.Help
                 int wordStart = -1;
                 for (int j = 0; j <= text.Length; j++)
                 {
-                    bool isSpace = j == text.Length || text[j] == ' ';
-                    if (!isSpace)
+                    bool atEnd = j == text.Length;
+                    char c = atEnd ? ' ' : text[j];
+                    bool isSpace = LineBreakRules.IsSpace(c);
+                    bool isGlyph = !isSpace
+                        && LineBreakRules.IsCharacterBreakable(c);
+                    if (!isSpace && !isGlyph)
                     {
                         if (wordStart < 0) wordStart = j;
                         continue;
@@ -426,9 +471,19 @@ namespace WorkRoles.Core.Help
                             text.Substring(wordStart, j - wordStart),
                             run.Style, target);
                         wordStart = -1;
+                        if (isGlyph) MarkBreak(segments, gap: false);
                     }
-                    if (j < text.Length && segments.Count > 0)
-                        MarkBreak(segments);
+                    if (isSpace)
+                    {
+                        if (!atEnd && segments.Count > 0)
+                            MarkBreak(segments, gap: true);
+                        continue;
+                    }
+                    if (LineBreakRules.ForbidsLineStart(c))
+                        UnmarkGlyphBreak(segments);
+                    AppendWord(segments, c.ToString(), run.Style, target);
+                    if (!LineBreakRules.ForbidsLineEnd(c))
+                        MarkBreak(segments, gap: false);
                 }
             }
         }
@@ -455,10 +510,23 @@ namespace WorkRoles.Core.Help
             });
         }
 
-        private static void MarkBreak(List<Segment> segments)
+        private static void MarkBreak(List<Segment> segments, bool gap)
         {
             Segment last = segments[segments.Count - 1];
             last.ClusterBreakAfter = true;
+            last.GapAfter = gap;
+            segments[segments.Count - 1] = last;
+        }
+
+        /// <summary>Retracts a gapless glyph break so a line-start-forbidden
+        /// glyph stays with its predecessor. A space-gap break is kept: the
+        /// author put whitespace there on purpose.</summary>
+        private static void UnmarkGlyphBreak(List<Segment> segments)
+        {
+            if (segments.Count == 0) return;
+            Segment last = segments[segments.Count - 1];
+            if (!last.ClusterBreakAfter || last.GapAfter) return;
+            last.ClusterBreakAfter = false;
             segments[segments.Count - 1] = last;
         }
 
@@ -468,7 +536,11 @@ namespace WorkRoles.Core.Help
             public HelpRunStyle Style;
             public string Target;
             public float Width;
+            /// <summary>A line may break after this segment.</summary>
             public bool ClusterBreakAfter;
+            /// <summary>The break after this segment came from a source
+            /// space and renders one space advance when not wrapped.</summary>
+            public bool GapAfter;
             public bool IsImage;
             public float ImageHeight;
         }

@@ -18,6 +18,10 @@ namespace WorkRoles.UI
         public bool Grips;         // inner band-resize grips at both ends
         public float LabelInsetLeft, LabelInsetRight; // computed by composers (markers etc.)
         public int StrikeCount;    // RoleChipStrikes pattern: 1 pawn, 2 global, 3 both
+        /// The label's own fit width when it may overrun its room: the text
+        /// is then clipped to the room and its tail fades into the fill.
+        /// Zero draws the label plainly.
+        public float FadeLabelWidth;
     }
 
     /// Core chip renderer + the shared geometry (remove slot, grip zones).
@@ -28,6 +32,14 @@ namespace WorkRoles.UI
         // 1px of chip surface outside each grip zone: edge grabs stop landing
         // on the chip outline.
         public const float BandOuterPad = 1f;
+        /// Width of the fade over a clipped label's tail; a chip sized for a
+        /// cut name reserves it after the sizing prefix so the letters in
+        /// the fade are extra glimpses, not the ones the size promised.
+        public const float LabelFadeWidth = 12f;
+        // The fade runs past the label room into the gap before the remove
+        // slot, and stays clear of the outline at the top and bottom.
+        private const float LabelFadeOverhang = 4f;
+        private const float LabelFadeEdgeInset = 2f;
 
         // Grip bars: two 1px verticals centered in a handle zone.
         private static readonly Color GripColor = new Color(1f, 1f, 1f, 0.45f);
@@ -95,7 +107,26 @@ namespace WorkRoles.UI
             Text.WordWrap = false;
             GUI.color = spec.LabelColor;
             if (spec.Label != null)
-                Widgets.Label(labelRect, spec.Label);
+            {
+                if (spec.FadeLabelWidth > labelRect.width)
+                {
+                    // The whole name, clipped by the group to its room plus
+                    // the overhang, its tail faded into the chip fill.
+                    GUI.BeginGroup(new Rect(labelRect.x, labelRect.y,
+                        labelRect.width + LabelFadeOverhang, labelRect.height));
+                    Widgets.Label(new Rect(0f, 0f, spec.FadeLabelWidth,
+                        labelRect.height), spec.Label);
+                    GUI.EndGroup();
+                    GUI.color = spec.Bg;
+                    GUI.DrawTexture(new Rect(
+                        labelRect.xMax + LabelFadeOverhang - LabelFadeWidth,
+                        labelRect.y + LabelFadeEdgeInset, LabelFadeWidth,
+                        labelRect.height - 2f * LabelFadeEdgeInset),
+                        WorkRolesTex.LabelFade);
+                }
+                else
+                    Widgets.Label(labelRect, spec.Label);
+            }
             else if (spec.Icon != null)
             {
                 float size = Mathf.Min(20f,

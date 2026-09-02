@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.5.4 — 2026-09-02
+
+- Changed: Moved grid/stack chip layout to be a toggle separate from the chip display mode.
+- Fixed: Help topics now wrap CJK text between characters (with kinsoku rules and gapless soft line joins) instead of only at spaces.
+
 ## 1.5.3 — 2026-08-31
 
 - Added: Detection and warning logic when pawns are doing jobs they are not assigned to. This can help players identify when incompatible mods are installed.

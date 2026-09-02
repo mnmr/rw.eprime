@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RimShared.Common;
 
 namespace WorkRoles.Core.Help
 {
@@ -124,9 +125,8 @@ namespace WorkRoles.Core.Help
             void Flush()
             {
                 if (pendingLines.Count == 0) return;
-                string joined = string.Join(" ", pendingLines.ToArray());
                 blocks.Add(new HelpBlock(pendingKind, pendingLevel,
-                    ParseInline(joined), ""));
+                    ParseInline(JoinSoftLines(pendingLines)), ""));
                 pendingLines.Clear();
                 pendingKind = HelpBlockKind.Paragraph;
                 pendingLevel = 0;
@@ -196,6 +196,28 @@ namespace WorkRoles.Core.Help
             Flush();
 
             return new HelpDocument(title, blocks.ToArray());
+        }
+
+        /// <summary>
+        /// Joins the source lines of one block with a space, as markdown
+        /// does, except between two character-breakable (CJK) glyphs where
+        /// a space would render as a visible gap mid-sentence.
+        /// </summary>
+        private static string JoinSoftLines(List<string> lines)
+        {
+            if (lines.Count == 1) return lines[0];
+            var joined = new StringBuilder(lines[0]);
+            for (int i = 1; i < lines.Count; i++)
+            {
+                string next = lines[i];
+                bool glyphJoin = joined.Length > 0 && next.Length > 0
+                    && LineBreakRules.IsCharacterBreakable(
+                        joined[joined.Length - 1])
+                    && LineBreakRules.IsCharacterBreakable(next[0]);
+                if (!glyphJoin) joined.Append(' ');
+                joined.Append(next);
+            }
+            return joined.ToString();
         }
 
         /// <summary>

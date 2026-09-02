@@ -25,7 +25,8 @@ namespace Implanner
         internal ImplantCatalogEntry(HediffDef def, string label, float efficiency,
             List<BodyPartDef> fixedParts, string groupLabel, List<string> slotLabels,
             List<BodyPartRecord> slotRecords, List<RecipeDef> surgeryRecipes,
-            bool isReplacement, ImplantRegion region, List<string> incompatibleTags)
+            bool isReplacement, ImplantRegion region, LimbKind limb,
+            List<string> incompatibleTags)
         {
             Def = def;
             Label = label;
@@ -37,6 +38,7 @@ namespace Implanner
             SurgeryRecipes = surgeryRecipes;
             IsReplacement = isReplacement;
             Region = region;
+            Limb = limb;
             IncompatibleTags = incompatibleTags;
         }
 
@@ -56,6 +58,11 @@ namespace Implanner
         /// The anatomy region of the entry's targeted parts (classified on
         /// the reference body).
         internal ImplantRegion Region { get; }
+
+        /// The limb family of the targeted parts (leg or arm by the body
+        /// part tags the game's own Moving and Manipulation capacities
+        /// read), for the ASAP candidate ranking.
+        internal LimbKind Limb { get; }
 
         /// Union of the surgery recipes' incompatibleWithHediffTags: hediff
         /// tags that block this implant on a part carrying them (the vanilla
@@ -195,7 +202,7 @@ namespace Implanner
                     pair.Key, pair.Key.LabelCap.ToString(), efficiency,
                     fixedParts, groupLabel, slotLabels, slotRecords,
                     surgeryRecipes, IsReplacement(surgeryRecipes),
-                    ClassifyRegion(slotRecords),
+                    ClassifyRegion(slotRecords), ClassifyLimb(slotRecords),
                     IncompatibleTagsOf(surgeryRecipes)));
             }
             result.Sort(ByGroupThenLabel);
@@ -357,6 +364,21 @@ namespace Implanner
                 if (HasTag(def, LimbTags[i]))
                     return true;
             return false;
+        }
+
+        /// Leg when the targeted part or an ancestor carries a Moving limb
+        /// tag, arm for a Manipulation limb tag (the first three and last
+        /// three entries of LimbTags); anything else has no limb family.
+        private static LimbKind ClassifyLimb(List<BodyPartRecord> slotRecords)
+        {
+            BodyPartRecord? record = slotRecords.Count > 0 ? slotRecords[0] : null;
+            for (BodyPartRecord? walk = record; walk != null; walk = walk.parent)
+            {
+                for (int i = 0; i < LimbTags.Length; i++)
+                    if (HasTag(walk.def, LimbTags[i]))
+                        return i < 3 ? LimbKind.Leg : LimbKind.Arm;
+            }
+            return LimbKind.None;
         }
 
         private static bool HasTag(BodyPartDef def, string tagDefName)

@@ -208,6 +208,59 @@ public class HelpFlowLayoutTests
             "H=20");
     }
 
+    [Test]
+    public async Task CjkTextBreaksBetweenCharactersAndMergesRunsPerLine()
+    {
+        // No spaces in Japanese or Korean: every character is a break
+        // opportunity, glyphs that land on one line draw as one item, and
+        // the ideographic space behaves like an ordinary space (10 gap).
+        var doc = HelpMarkdown.Parse(
+            "日本語のテキスト\n" +
+            "\n" +
+            "日本　語\n" +
+            "\n" +
+            "한국어텍스트");
+
+        string dump = Dump(Layout(doc, width: 50f));
+
+        await Assert.That(dump).IsEqualTo(
+            "T(0,0,50) 日本語のテ\n" +
+            "T(0,20,30) キスト\n" +
+            "T(0,48,20) 日本\n" +
+            "T(30,48,10) 語\n" +
+            "T(0,76,50) 한국어텍스\n" +
+            "T(0,96,10) 트\n" +
+            "H=116");
+    }
+
+    [Test]
+    public async Task KinsokuGluesPunctuationAndLatinWordsStayWhole()
+    {
+        // Line-start-forbidden 。 and 」 glue to the previous glyph, the
+        // opening 「 glues to the next one; a Latin word inside Japanese
+        // stays whole and may break on either side without a space. Topic
+        // links keep their target through the per-line merge.
+        var doc = HelpMarkdown.Parse(
+            "ああああ。いい「うう」\n" +
+            "\n" +
+            "設定をSettingsで開く\n" +
+            "\n" +
+            "[設定](topic:settings)を開く");
+
+        string dump = Dump(Layout(doc, width: 50f));
+
+        await Assert.That(dump).IsEqualTo(
+            "T(0,0,50) ああああ。\n" +
+            "T(0,20,40) いい「う\n" +
+            "T(0,40,20) う」\n" +
+            "T(0,68,30) 設定を\n" +
+            "T(0,88,80) Settings\n" +
+            "T(0,108,30) で開く\n" +
+            "L(0,136,20>settings) 設定\n" +
+            "T(20,136,30) を開く\n" +
+            "H=156");
+    }
+
     private static HelpTopicLayout Layout(HelpDocument doc, float width,
         HelpFlowLayout.ImageSizeResolver? imageSize = null)
     {

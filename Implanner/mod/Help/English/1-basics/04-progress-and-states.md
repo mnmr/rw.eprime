@@ -6,7 +6,7 @@ The State column condenses each colonist into one word:
 - **Waiting**: implants are missing, but no item is reserved for this
   colonist yet.
 - **Preparing**: items are reserved and being collected for the
-  colonist's next surgery batch.
+  colonist's next surgery.
 - **Operating**: surgery is scheduled on the colonist's bill list.
 - **Done**: every planned implant is installed.
 - **Away**: the colonist is off traveling; automation waits.

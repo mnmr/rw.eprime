@@ -7,16 +7,31 @@ public class ChipDisplayPreferenceCodecTests
     [Test]
     public async Task LegacyMinimalLoadsAsIcons()
     {
-        await Assert.That(ChipDisplayPreferenceCodec.Decode("Minimal"))
-            .IsEqualTo(2);
+        ChipDisplayPreference loaded =
+            ChipDisplayPreferenceCodec.Decode("Minimal", persistedGrid: false);
+
+        await Assert.That(loaded.Mode).IsEqualTo(2);
+        await Assert.That(loaded.Grid).IsFalse();
+    }
+
+    [Test]
+    [Arguments("CompactGrid", 1)]
+    [Arguments("IconsGrid", 2)]
+    public async Task LegacyGridModesLoadAsTheirDisplayWithGridOn(
+        string persisted, int expectedMode)
+    {
+        ChipDisplayPreference loaded =
+            ChipDisplayPreferenceCodec.Decode(persisted, persistedGrid: false);
+
+        await Assert.That(loaded.Mode).IsEqualTo(expectedMode);
+        await Assert.That(loaded.Grid).IsTrue();
     }
 
     [Test]
     [Arguments(0, "Normal")]
     [Arguments(1, "Compact")]
     [Arguments(2, "Icons")]
-    [Arguments(3, "CompactGrid")]
-    [Arguments(4, "IconsGrid")]
+    [Arguments(7, "Normal")]
     public async Task SavesCanonicalName(int value, string expected)
     {
         await Assert.That(ChipDisplayPreferenceCodec.Encode(value))
@@ -24,17 +39,20 @@ public class ChipDisplayPreferenceCodecTests
     }
 
     [Test]
-    [Arguments("Normal", 0)]
-    [Arguments("Compact", 1)]
-    [Arguments("Icons", 2)]
-    [Arguments("CompactGrid", 3)]
-    [Arguments("IconsGrid", 4)]
-    [Arguments("unknown", 0)]
-    [Arguments(null, 0)]
-    public async Task LoadsKnownNamesAndDefaultsInvalidValues(
-        string? persisted, int expected)
+    [Arguments("Normal", false, 0, false)]
+    [Arguments("Normal", true, 0, true)]
+    [Arguments("Compact", true, 1, true)]
+    [Arguments("Icons", false, 2, false)]
+    [Arguments("unknown", true, 0, true)]
+    [Arguments(null, false, 0, false)]
+    public async Task LoadsKnownNamesWithTheSeparateGridFlag(
+        string? persisted, bool persistedGrid, int expectedMode,
+        bool expectedGrid)
     {
-        await Assert.That(ChipDisplayPreferenceCodec.Decode(persisted))
-            .IsEqualTo(expected);
+        ChipDisplayPreference loaded =
+            ChipDisplayPreferenceCodec.Decode(persisted, persistedGrid);
+
+        await Assert.That(loaded.Mode).IsEqualTo(expectedMode);
+        await Assert.That(loaded.Grid).IsEqualTo(expectedGrid);
     }
 }

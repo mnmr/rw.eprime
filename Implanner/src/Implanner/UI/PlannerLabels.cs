@@ -85,11 +85,11 @@ namespace Implanner.UI
         /// session (PlannerAutomation).
         internal static string AutomationOffBody = "";
 
-        /// Segment labels in DISPLAY order — tier iteration (the default)
-        /// first, colonist second; the dialog maps display index to
-        /// IterationStrategy. Cached array so render passes hand SegmentedRow
-        /// a stable reference.
-        internal static readonly string[] IterationModes = new string[2];
+        /// Segment labels in DISPLAY order — tier batching (the default)
+        /// first, full sets, then ASAP; parallel to
+        /// AutomationSnapshot.IterationByDisplay. Cached array so render
+        /// passes hand SegmentedRow a stable reference.
+        internal static readonly string[] IterationModes = new string[3];
 
         internal static void Ensure()
         {
@@ -157,6 +157,7 @@ namespace Implanner.UI
             TierPriorities[4] = "IMP_TierLow".Translate();
             IterationModes[0] = "IMP_IterTier".Translate();
             IterationModes[1] = "IMP_IterColonist".Translate();
+            IterationModes[2] = "IMP_IterAsap".Translate();
         }
 
         internal static void Reset() => stamp = -1;

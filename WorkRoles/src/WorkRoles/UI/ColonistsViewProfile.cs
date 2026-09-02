@@ -28,6 +28,10 @@ namespace WorkRoles.UI
         public Action<List<string>> SetSkillColumns = null!;
         public Func<ChipDisplay> GetTableChips = null!;
         public Action<ChipDisplay> SetTableChips = null!;
+        public Func<bool> GetTableGrid = null!;
+        public Action<bool> SetTableGrid = null!;
+        public Func<GridNamePreference> GetTableGridNames = null!;
+        public Action<GridNamePreference> SetTableGridNames = null!;
 
         /// Optional panels: the skill-columns UI and the stats-panel
         /// recommendation section.
@@ -51,6 +55,11 @@ namespace WorkRoles.UI
             SetSkillColumns = v => Persist(s => s.skillColumns = v),
             GetTableChips = () => WorkRolesMod.Settings?.chipDisplay ?? ChipDisplay.Normal,
             SetTableChips = v => Persist(s => s.chipDisplay = v),
+            GetTableGrid = () => WorkRolesMod.Settings?.chipGrid ?? false,
+            SetTableGrid = v => Persist(s => s.chipGrid = v),
+            GetTableGridNames = () => WorkRolesMod.Settings?.chipGridNames
+                ?? GridNamePreference.Automatic,
+            SetTableGridNames = v => Persist(s => s.chipGridNames = v),
             ShowSkills = true,
             ShowRecommendations = true,
         };

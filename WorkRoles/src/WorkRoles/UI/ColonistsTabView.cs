@@ -418,7 +418,7 @@ namespace WorkRoles.UI
             // Fixed left columns: portrait | gap | name | gap | copy | gap | paste | gap | [+] | gap | trailing
             float fixedLeft = PortraitSize + 6f + NameWidth + 2f + IconButton + 2f + IconButton + 8f + IconButton + 4f + 16f;
             float widestStrip = 0f;
-            bool grid = RoleChipUI.UsesGrid(TableChips);
+            bool grid = TableGrid;
             for (int i = 0; i < pawns.Count; i++)
             {
                 ColonistChipSequenceSnapshot sequence = chipSequences[pawns[i]];
@@ -468,12 +468,13 @@ namespace WorkRoles.UI
         }
 
         private float TableChipWidth(RoleChipRenderData role,
-            string? abbreviation, bool pinned, bool forcedOn,
+            string? shortLabel, bool fadeAllowance, bool pinned, bool forcedOn,
             RoleCapabilityPresentation capability, Texture2D? icon) =>
             RoleChipUI.WidthFor(role, showRemove: true, TableChips,
-                abbreviation, pinned, capability.WarningSeverity, forcedOn,
+                shortLabel, pinned, capability.WarningSeverity, forcedOn,
                 // Suitability is meaningless for blockers: no verdict slot.
-                verdictSlot: ColonistVerdicts && !role.Blocker, icon: icon);
+                verdictSlot: ColonistVerdicts && !role.Blocker, icon: icon,
+                fadeAllowance: fadeAllowance);
 
         /// The roles-column width used by both desired-height measurement and
         /// live table layout.
@@ -486,7 +487,7 @@ namespace WorkRoles.UI
         {
             float x = 0f, y = 0f;
             int line = 0;
-            bool grid = RoleChipUI.UsesGrid(TableChips);
+            bool grid = TableGrid;
             for (int i = 0; i < sequence.Count; i++)
             {
                 ColonistChipSourceSnapshot source = sequence.ChipAt(i);
@@ -503,7 +504,7 @@ namespace WorkRoles.UI
                         new Rect(x, y, w, RoleChipUI.Height), line,
                         source.Capability, source.GlobalEnabled, source.State,
                         source.Pinned, source.Suppressed,
-                        source.Abbreviation, source.Icon,
+                        source.ShortLabel, source.FadeLabelWidth, source.Icon,
                         RoleTip(source.RenderData.RoleId,
                             RoleTipContext.AssignmentChip, pawn),
                         source.PinToggleLabel, source.Verdict));
@@ -623,8 +624,7 @@ namespace WorkRoles.UI
                 List<ColonistsScopeMenuOption> scopeOptions,
                 bool hasSettings, string displayLabel,
                 string normalChipsLabel, string compactChipsLabel,
-                string iconsChipsLabel, string compactGridChipsLabel,
-                string iconsGridChipsLabel, string skillsLabel,
+                string iconsChipsLabel, string skillsLabel,
                 string groupKey, string groupLabel)
             {
                 Catalog = catalog;
@@ -649,8 +649,6 @@ namespace WorkRoles.UI
                 NormalChipsLabel = normalChipsLabel;
                 CompactChipsLabel = compactChipsLabel;
                 IconsChipsLabel = iconsChipsLabel;
-                CompactGridChipsLabel = compactGridChipsLabel;
-                IconsGridChipsLabel = iconsGridChipsLabel;
                 SkillsLabel = skillsLabel;
                 GroupKey = groupKey;
                 GroupLabel = groupLabel;
@@ -680,8 +678,6 @@ namespace WorkRoles.UI
             internal string NormalChipsLabel { get; }
             internal string CompactChipsLabel { get; }
             internal string IconsChipsLabel { get; }
-            internal string CompactGridChipsLabel { get; }
-            internal string IconsGridChipsLabel { get; }
             internal string SkillsLabel { get; }
             internal string GroupKey { get; }
             internal string GroupLabel { get; }
@@ -713,10 +709,6 @@ namespace WorkRoles.UI
                     || !Same(NormalChipsLabel, other.NormalChipsLabel)
                     || !Same(CompactChipsLabel, other.CompactChipsLabel)
                     || !Same(IconsChipsLabel, other.IconsChipsLabel)
-                    || !Same(CompactGridChipsLabel,
-                        other.CompactGridChipsLabel)
-                    || !Same(IconsGridChipsLabel,
-                        other.IconsGridChipsLabel)
                     || !Same(SkillsLabel, other.SkillsLabel)
                     || !Same(GroupKey, other.GroupKey)
                     || !Same(GroupLabel, other.GroupLabel)) return false;
@@ -860,12 +852,6 @@ namespace WorkRoles.UI
                     ? "✓ " : "") + "WR_ChipsCompact".Translate();
                 string checkIcons = (chipDisplay == ChipDisplay.Icons
                     ? "✓ " : "") + "WR_ChipsIcons".Translate();
-                string checkCompactGrid =
-                    (chipDisplay == ChipDisplay.CompactGrid ? "✓ " : "")
-                    + "WR_ChipsCompactGrid".Translate();
-                string checkIconsGrid =
-                    (chipDisplay == ChipDisplay.IconsGrid ? "✓ " : "")
-                    + "WR_ChipsIconsGrid".Translate();
                 int skillCount = rosterState.SkillColumns.Count;
                 string skillsLabel = skillCount == 0
                     ? "WR_SkillsButton".Translate().ToString()
@@ -886,8 +872,8 @@ namespace WorkRoles.UI
                     scopeLabel, scopeWidth, scopeOptions,
                     hasSettings,
                     "WR_DisplayButton".Translate().ToString(),
-                    checkNormal, checkCompact, checkIcons, checkCompactGrid,
-                    checkIconsGrid, skillsLabel, groupKey, groupLabel);
+                    checkNormal, checkCompact, checkIcons, skillsLabel,
+                    groupKey, groupLabel);
             }
             finally
             {
@@ -1620,11 +1606,30 @@ namespace WorkRoles.UI
             // world state.
             if (chrome.HasSettings)
             {
+                // Chip layout toggle: shows the active layout's face (grid
+                // columns or the stacked brick wall); a click flips it.
+                var layoutRect = new Rect(rect.xMax - FilterInputH, y,
+                    FilterInputH, FilterInputH);
+                bool grid = TableGrid;
+                WrTips.Key(grid ? "WR_ChipLayoutGridTip"
+                    : "WR_ChipLayoutStackTip").Region(layoutRect);
+                var layoutEvent = Event.current;
+                if (layoutEvent.type == EventType.MouseDown
+                    && layoutEvent.button == 1
+                    && layoutRect.Contains(layoutEvent.mousePosition))
+                {
+                    layoutEvent.Use();
+                    OpenGridNamesMenu();
+                }
+                else if (DrawChipLayoutToggle(layoutRect,
+                        grid ? WorkRolesTex.ChipGrid : WorkRolesTex.ChipStack))
+                    profile.SetTableGrid(!grid);
+
                 const float DisplayBtnW = 90f;
-                var displayRect = new Rect(rect.xMax - DisplayBtnW, y,
+                var displayRect = new Rect(layoutRect.x - 4f - DisplayBtnW, y,
                     DisplayBtnW, FilterInputH);
                 DrawControlCaption(new Rect(displayRect.x, rect.y,
-                    displayRect.width, metrics.CaptionVisualHeight),
+                    rect.xMax - displayRect.x, metrics.CaptionVisualHeight),
                     chrome.RoleDisplayCaption, metrics);
                 WrTips.Key("WR_ColonistRoleDisplayTip").Region(displayRect);
                 if (Widgets.ButtonText(displayRect, chrome.DisplayLabel))
@@ -1725,11 +1730,54 @@ namespace WorkRoles.UI
                     () => profile.SetTableChips(ChipDisplay.Compact)),
                 new FloatMenuOption(chrome.IconsChipsLabel,
                     () => profile.SetTableChips(ChipDisplay.Icons)),
-                new FloatMenuOption(chrome.CompactGridChipsLabel,
-                    () => profile.SetTableChips(ChipDisplay.CompactGrid)),
-                new FloatMenuOption(chrome.IconsGridChipsLabel,
-                    () => profile.SetTableChips(ChipDisplay.IconsGrid)),
             }));
+        }
+
+        /// Right-click menu of the layout toggle: how much of a full name a
+        /// grid chip's column is sized for. Labels are built here, on the
+        /// click, never during steady rendering.
+        private void OpenGridNamesMenu()
+        {
+            GridNamePreference current = TableGridNames;
+            Find.WindowStack.Add(new FloatMenu(new List<FloatMenuOption>
+            {
+                GridNamesOption("WR_GridNamesAutomatic".Translate(),
+                    GridNamePreference.Automatic, current),
+                GridNamesOption("WR_GridNamesShort".Translate(),
+                    GridNamePreference.Short, current),
+                GridNamesOption("WR_GridNamesMedium".Translate(),
+                    GridNamePreference.Medium, current),
+                GridNamesOption("WR_GridNamesLong".Translate(),
+                    GridNamePreference.Long, current),
+                GridNamesOption("WR_GridNamesFull".Translate(),
+                    GridNamePreference.Full, current),
+            }));
+        }
+
+        private FloatMenuOption GridNamesOption(string label,
+            GridNamePreference preference, GridNamePreference current) =>
+            new FloatMenuOption((preference == current ? "✓ " : "") + label,
+                () => profile.SetTableGridNames(preference));
+
+        // Icon inset inside the vanilla button frame.
+        private const float ChipLayoutIconPad = 4f;
+
+        /// A vanilla-framed image button: the button atlas as the frame, the
+        /// face inset and tinted on hover like Widgets.ButtonImage.
+        private static bool DrawChipLayoutToggle(Rect rect, Texture2D face)
+        {
+            Widgets.DrawAtlas(rect, Widgets.ButtonBGAtlas);
+            Color oldColor = GUI.color;
+            try
+            {
+                GUI.color = Mouse.IsOver(rect) ? GenUI.MouseoverColor : Color.white;
+                GUI.DrawTexture(rect.ContractedBy(ChipLayoutIconPad), face);
+            }
+            finally
+            {
+                GUI.color = oldColor;
+            }
+            return Widgets.ButtonInvisible(rect);
         }
 
         private void OpenSkillColumnsMenu(ColonistsChromeSnapshot chrome)
@@ -1774,11 +1822,18 @@ namespace WorkRoles.UI
         }
 
         private ChipDisplay TableChips => profile.GetTableChips();
+        private bool TableGrid => profile.GetTableGrid();
+        private GridNamePreference TableGridNames => profile.GetTableGridNames();
 
-        /// Chip-display key for row caches: mode plus the verdict toggle, since
-        /// the verdict slot changes every table chip's width.
+        /// Chip-display key for row caches: display, the grid layout, the
+        /// grid name size, and the verdict toggle (the verdict slot changes
+        /// every table chip's width).
         private int TableDisplayKey =>
-            ((int)TableChips << 1) | (ColonistVerdicts ? 1 : 0);
+            ((int)TableGridNames << 4) | ((int)TableChips << 2)
+            | (TableGrid ? 2 : 0) | (ColonistVerdicts ? 1 : 0);
+
+        private static ChipDisplay DisplayOfKey(int key) =>
+            (ChipDisplay)((key >> 2) & 3);
 
         // Trailing air so the last decorator never sits flush against the
         // neighbouring column or the chip strip.
@@ -3004,7 +3059,8 @@ namespace WorkRoles.UI
             internal ColonistChipSourceSnapshot(RoleChipRenderData renderData,
                 float width, RoleCapabilityPresentation capability,
                 bool globalEnabled, AssignmentState state, bool pinned,
-                bool suppressed, string? abbreviation, Texture2D? icon,
+                bool suppressed, string? shortLabel, float fadeLabelWidth,
+                Texture2D? icon,
                 string pinToggleLabel, RoleChipVerdict verdict)
             {
                 RenderData = renderData;
@@ -3014,7 +3070,8 @@ namespace WorkRoles.UI
                 State = state;
                 Pinned = pinned;
                 Suppressed = suppressed;
-                Abbreviation = abbreviation;
+                ShortLabel = shortLabel;
+                FadeLabelWidth = fadeLabelWidth;
                 Icon = icon;
                 PinToggleLabel = pinToggleLabel;
                 Verdict = verdict;
@@ -3027,7 +3084,12 @@ namespace WorkRoles.UI
             internal AssignmentState State { get; }
             internal bool Pinned { get; }
             internal bool Suppressed { get; }
-            internal string? Abbreviation { get; }
+            /// Initials drawn instead of the label, or for a cut full-name
+            /// grid chip the sizing prefix its width was measured from.
+            internal string? ShortLabel { get; }
+            /// Full-name grid chips: the whole label's fit width, so the
+            /// draw pass can clip and fade a name wider than its room.
+            internal float FadeLabelWidth { get; }
             internal Texture2D? Icon { get; }
             internal string PinToggleLabel { get; }
             internal RoleChipVerdict Verdict { get; }
@@ -3039,8 +3101,9 @@ namespace WorkRoles.UI
                     || GlobalEnabled != other.GlobalEnabled
                     || State != other.State || Pinned != other.Pinned
                     || Suppressed != other.Suppressed
-                    || !string.Equals(Abbreviation, other.Abbreviation,
+                    || !string.Equals(ShortLabel, other.ShortLabel,
                         System.StringComparison.Ordinal)
+                    || FadeLabelWidth != other.FadeLabelWidth
                     || !ReferenceEquals(Icon, other.Icon)
                     || !string.Equals(PinToggleLabel, other.PinToggleLabel,
                         System.StringComparison.Ordinal)) return false;
@@ -3111,9 +3174,10 @@ namespace WorkRoles.UI
         }
 
         // Owner: Colonists window. Key: RoleStore/catalog identity, pawn-scope
-        // stamp, chip-display mode, verdict preference, and recommendation tuning.
+        // stamp, chip display, grid layout, verdict preference, and
+        // recommendation tuning (TableDisplayKey carries the three preferences).
         // Value: immutable width-independent detached chip sequences per listed
-        // pawn plus the aggregate widest assigned-chip width for grid modes.
+        // pawn plus the aggregate widest assigned-chip width for the grid layout.
         // Dependencies: assignments, role presentation and icon textures,
         // capability/rules, verdicts, external pawn facts, language, definitions,
         // and every key component.
@@ -3180,6 +3244,8 @@ namespace WorkRoles.UI
             string unpinLabel = "WR_UnpinAssignment".Translate().ToString();
             float unwrappedWidth = 0f;
             ChipDisplay display = TableChips;
+            bool gridNames = TableGrid && display == ChipDisplay.Normal;
+            GridNamePreference gridNamePreference = TableGridNames;
             for (int i = 0; i < capacity; i++)
             {
                 RoleAssignment assignment = set!.assignments[i]; // capacity > 0 implies a set
@@ -3189,19 +3255,39 @@ namespace WorkRoles.UI
                 RoleCapabilityPresentation capability =
                     roleCapabilityState.PresentationFor(pawn, role,
                         PawnListStamp, ExternalSnapshotFor(pawn));
-                string? abbreviation = RoleChipUI.NeedsAbbreviation(display)
-                    ? catalog.AbbreviationFor(assignment.roleId) : null;
+                // Condensed displays show initials. Full names in grid
+                // columns size the column from a prefix of the name (the
+                // player's size, or the distinct prefix for Automatic) plus
+                // the fade region; the chip draws the whole name and fades
+                // whatever overruns its room.
+                bool cut = false;
+                string? shortLabel = null;
+                if (RoleChipUI.NeedsAbbreviation(display))
+                    shortLabel = catalog.AbbreviationFor(assignment.roleId);
+                else if (gridNames)
+                {
+                    int prefix = GridLabelTruncation.PrefixLengthFor(
+                        catalog.GridPrefixRequirementFor(assignment.roleId),
+                        gridNamePreference);
+                    cut = GridLabelTruncation.IsCut(renderData.Label, prefix);
+                    if (cut)
+                        shortLabel = GridLabelTruncation.SizingPrefix(
+                            renderData.Label, prefix);
+                }
                 Texture2D? icon = RoleChipUI.UsesIcons(display)
                     ? catalog.IconFor(assignment.roleId) : null;
                 bool forcedOn = assignment.state == AssignmentState.ForceOn;
-                float width = TableChipWidth(renderData, abbreviation,
+                float width = TableChipWidth(renderData, shortLabel, cut,
                     assignment.pinned, forcedOn, capability, icon);
+                float fadeLabelWidth = gridNames
+                    ? RoleChipUI.SmallFitWidth(renderData.Label) : 0f;
                 bool chipEnabled = RoleActivation.IsActive(role.enabled,
                     assignment.state);
                 chips.Add(new ColonistChipSourceSnapshot(renderData, width,
                     capability, role.enabled, assignment.state,
                     assignment.pinned,
-                    chipEnabled && !RulesPass(role, pawn), abbreviation,
+                    chipEnabled && !RulesPass(role, pawn), shortLabel,
+                    fadeLabelWidth,
                     icon, assignment.pinned ? unpinLabel : pinLabel,
                     renderData.Blocker ? default(RoleChipVerdict)
                         : VerdictFrom(verdicts, assignment.roleId)));
@@ -3230,7 +3316,8 @@ namespace WorkRoles.UI
             internal RoleChipLayout(RoleChipRenderData renderData, Rect rect,
                 int line, RoleCapabilityPresentation capability,
                 bool globalEnabled, AssignmentState state, bool pinned,
-                bool suppressed, string? abbreviation, Texture2D? icon,
+                bool suppressed, string? shortLabel, float fadeLabelWidth,
+                Texture2D? icon,
                 StructuredTip? tooltip, string pinToggleLabel,
                 RoleChipVerdict verdict)
             {
@@ -3242,7 +3329,8 @@ namespace WorkRoles.UI
                 State = state;
                 Pinned = pinned;
                 Suppressed = suppressed;
-                Abbreviation = abbreviation;
+                ShortLabel = shortLabel;
+                FadeLabelWidth = fadeLabelWidth;
                 Icon = icon;
                 Tooltip = tooltip;
                 PinToggleLabel = pinToggleLabel;
@@ -3257,7 +3345,8 @@ namespace WorkRoles.UI
             internal AssignmentState State { get; }
             internal bool Pinned { get; }
             internal bool Suppressed { get; }
-            internal string? Abbreviation { get; }
+            internal string? ShortLabel { get; }
+            internal float FadeLabelWidth { get; }
             internal Texture2D? Icon { get; }
             internal StructuredTip? Tooltip { get; }
             internal string PinToggleLabel { get; }
@@ -3508,7 +3597,7 @@ namespace WorkRoles.UI
             stripWidth = Mathf.Max(300f, stripWidth);
             ScopeCacheStamp stamp = PawnListStamp;
             int display = TableDisplayKey;
-            ChipDisplay chipDisplay = (ChipDisplay)(display >> 1);
+            ChipDisplay chipDisplay = DisplayOfKey(display);
             int tuningRevision = store.RecommendationTuningRevision;
             int definitionRevision = DefinitionReloadCoordinator.Revision;
             int skillColumnsRevision = rosterState.SkillColumnsRevision;
@@ -3905,7 +3994,7 @@ namespace WorkRoles.UI
                 var click = RoleChipUI.Draw(chipRect, chip.RenderData, style,
                     showRemove: true, dragSource: row.Pawn,
                     onClick: onClick,
-                    display: row.ChipDisplay, abbrev: chip.Abbreviation,
+                    display: row.ChipDisplay, shortLabel: chip.ShortLabel,
                     pinned: chip.Pinned,
                     warningSeverity: capability.WarningSeverity,
                     activeOutline: style == ChipStyle.Normal
@@ -3913,7 +4002,8 @@ namespace WorkRoles.UI
                     strikes: RoleChipStrikes.Count(
                         chip.GlobalEnabled, chip.State),
                     forcedOn: chip.State == AssignmentState.ForceOn,
-                    verdict: chip.Verdict, icon: chip.Icon);
+                    verdict: chip.Verdict, icon: chip.Icon,
+                    fadeLabelWidth: chip.FadeLabelWidth);
                 if (click == ChipClick.Remove)
                     RoleCommands.RemoveRoleFromPawn(
                         row.Pawn, chip.RenderData.RoleId);

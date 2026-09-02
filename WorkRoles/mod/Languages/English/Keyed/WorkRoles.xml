@@ -295,7 +295,15 @@ Lists colonists whose assigned non-blocker roles contain this job. This checks r
   <WR_ColonistScopeTip>Chooses which colony locations supply colonists to the table. Current location follows the active map; Everywhere includes settlements, caravans, and a traveling gravship.</WR_ColonistScopeTip>
   <WR_ColonistGroupTip>Divides the visible colonists into sections using the selected characteristic. Grouping does not change which colonists match the filters; section headers can be collapsed.</WR_ColonistGroupTip>
   <WR_ColonistSkillColumnsTip>Selects up to three skill columns for the table. Click a skill header to sort by it, or click its X to remove the column.</WR_ColonistSkillColumnsTip>
-  <WR_ColonistRoleDisplayTip>Chooses how assigned role chips are drawn in the colonist table: full names, initials, or icons, with natural or equal-width grid spacing. This is a per-player display setting.</WR_ColonistRoleDisplayTip>
+  <WR_ColonistRoleDisplayTip>Chooses what assigned role chips show in the colonist table: full names, initials, or icons. The button beside it switches between stacked chips and grid columns. This is a per-player display setting.</WR_ColonistRoleDisplayTip>
+  <WR_ChipLayoutGridTip>Chips are aligned in equal-width grid columns. Long full names fade out at the chip edge, getting extra room only where similar role names need it; the tooltip shows the whole name. Click to stack chips at their natural widths. Right-click to choose how much of each name the columns fit.</WR_ChipLayoutGridTip>
+  <WR_ChipLayoutStackTip>Chips are stacked at their natural widths. Click to align them in equal-width grid columns. Right-click to choose how much of each name grid columns fit.</WR_ChipLayoutStackTip>
+  <!-- Layout button right-click menu: how much of a full name a grid chip keeps -->
+  <WR_GridNamesAutomatic>Automatic</WR_GridNamesAutomatic>
+  <WR_GridNamesShort>Short</WR_GridNamesShort>
+  <WR_GridNamesMedium>Medium</WR_GridNamesMedium>
+  <WR_GridNamesLong>Long</WR_GridNamesLong>
+  <WR_GridNamesFull>Full</WR_GridNamesFull>
   <WR_ColonistClearFiltersTip>Clears the colonist-name search and the assigned-role and covered-job filters. The location scope, grouping, skill columns, and role display stay unchanged.</WR_ColonistClearFiltersTip>
   <WR_FilterAllRoles>All roles</WR_FilterAllRoles>
   <!-- {0} = scope name (location or Everywhere/Current location) -->
@@ -320,8 +328,6 @@ Lists colonists whose assigned non-blocker roles contain this job. This checks r
   <WR_ChipsNormal>Chips: Full names</WR_ChipsNormal>
   <WR_ChipsCompact>Chips: Initials</WR_ChipsCompact>
   <WR_ChipsIcons>Chips: Icons</WR_ChipsIcons>
-  <WR_ChipsCompactGrid>Chips: Initials (grid)</WR_ChipsCompactGrid>
-  <WR_ChipsIconsGrid>Chips: Icons (grid)</WR_ChipsIconsGrid>
   <WR_OrderSuffixBar>(Tab order)</WR_OrderSuffixBar>
   <WR_OrderSuffixAZ>(A-Z)</WR_OrderSuffixAZ>
   <WR_DisplayButton>Display</WR_DisplayButton>

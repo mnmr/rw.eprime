@@ -111,6 +111,78 @@ public class SurgeryPlannerTests
         await Assert.That(items[0].PawnId).IsEqualTo(9);
     }
 
+    /// ASAP has no batch gate: every missing key is the batch, and each
+    /// implant kind in stock goes to the best candidate. Priority still
+    /// wins outright; at equal priority legs go to the slowest colonist
+    /// and arms to a melee fighter, then to the better crafter or
+    /// researcher; anything else falls back to colonist id.
+    [Test]
+    public async Task AsapRanksCandidatesPerImplantKindAtEqualPriority()
+    {
+        var model = RankedModel(out var goals, out string[] missing);
+        await Assert.That(SurgeryPlanner.ComputeBatch(missing, model, goals,
+            IterationStrategy.Asap)).IsEquivalentTo(missing);
+
+        // Tank: slow melee brawler, low skills. Scout: fast, ranged, high
+        // skills. Smith: medium speed, ranged, best skills, lowest id.
+        var tank = new SurgeryCandidate(3.2f, hasMeleeWeapon: true, armSkills: 4);
+        var scout = new SurgeryCandidate(5.1f, hasMeleeWeapon: false, armSkills: 18);
+        var smith = new SurgeryCandidate(4.6f, hasMeleeWeapon: false, armSkills: 24);
+        var items = new List<SurgeryWorkItem>
+        {
+            Item(7, PlannerModel.PriorityNormal, "BionicLeg", LimbKind.Leg, scout),
+            Item(7, PlannerModel.PriorityNormal, "BionicArm", LimbKind.Arm, scout),
+            Item(7, PlannerModel.PriorityNormal, "BionicEye", LimbKind.None, scout),
+            Item(5, PlannerModel.PriorityNormal, "BionicLeg", LimbKind.Leg, tank),
+            Item(5, PlannerModel.PriorityNormal, "BionicArm", LimbKind.Arm, tank),
+            Item(5, PlannerModel.PriorityNormal, "BionicEye", LimbKind.None, tank),
+            Item(2, PlannerModel.PriorityNormal, "BionicLeg", LimbKind.Leg, smith),
+            Item(2, PlannerModel.PriorityNormal, "BionicArm", LimbKind.Arm, smith),
+            Item(2, PlannerModel.PriorityNormal, "BionicEye", LimbKind.None, smith),
+            // A first-priority colonist outranks every ranking rule.
+            Item(9, PlannerModel.PriorityFirst, "BionicLeg", LimbKind.Leg, scout),
+        };
+
+        SurgeryPlanner.Order(items, IterationStrategy.Asap);
+
+        await Assert.That(PawnsFor(items, "BionicLeg")).IsEquivalentTo(new[] { 9, 5, 2, 7 });
+        await Assert.That(PawnsFor(items, "BionicArm")).IsEquivalentTo(new[] { 5, 2, 7 });
+        await Assert.That(PawnsFor(items, "BionicEye")).IsEquivalentTo(new[] { 2, 5, 7 });
+    }
+
+    /// Batch strategies release a colonist's operations only once the
+    /// whole batch is reserved on site; ASAP releases whatever is ready.
+    [Test]
+    public async Task AsapReleasesReadyKeysWhileBatchStrategiesWaitForTheWholeBatch()
+    {
+        var batch = new List<string> { "p1:BionicLeg:0", "p1:BionicLeg:1", "p1:BionicArm:0" };
+        var ready = new[] { true, false, true };
+
+        await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.ImplantTier))
+            .IsEmpty();
+        await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.Colonist))
+            .IsEmpty();
+        await Assert.That(SurgeryPlanner.Releasable(batch, ready, IterationStrategy.Asap))
+            .IsEquivalentTo(new[] { "p1:BionicLeg:0", "p1:BionicArm:0" });
+
+        var allReady = new[] { true, true, true };
+        await Assert.That(SurgeryPlanner.Releasable(batch, allReady, IterationStrategy.ImplantTier))
+            .IsEquivalentTo(batch);
+    }
+
+    static SurgeryWorkItem Item(int pawnId, int priority, string kind,
+        LimbKind limb, SurgeryCandidate candidate) =>
+        new SurgeryWorkItem(pawnId, priority, StarRanking.TierOf(3),
+            "p1:" + kind + ":0", kind, limb, candidate);
+
+    static List<int> PawnsFor(List<SurgeryWorkItem> items, string kind)
+    {
+        var pawns = new List<int>();
+        for (int i = 0; i < items.Count; i++)
+            if (items[i].ImplantDefName == kind) pawns.Add(items[i].PawnId);
+        return pawns;
+    }
+
     [Test]
     public async Task MissingSlotKeysSkipBlockedAndOccupiedSlots()
     {

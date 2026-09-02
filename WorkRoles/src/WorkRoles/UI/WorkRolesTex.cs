@@ -23,6 +23,10 @@ namespace WorkRoles.UI
         public static readonly Texture2D RoleIconPlaceholder;
         public static readonly Texture2D DisplayOptions;
         public static readonly Texture2D PriorityGrid;
+        // Chip layout toggle faces: equal-width grid columns, or chips
+        // stacked at natural widths (a brick wall). White, tinted at draw.
+        public static readonly Texture2D ChipGrid;
+        public static readonly Texture2D ChipStack;
         public static readonly Texture2D Logo;
         // Help tour completion medal (vanilla star-in-badge), tinted gold at
         // draw time.
@@ -48,6 +52,10 @@ namespace WorkRoles.UI
         // the panel width at draw time; bilinear sampling makes it smooth
         // where stacked 1px strips banded.
         public static Texture2D ScrollEdgeFade { get; private set; } = null!;
+        // 1px-tall white ramp, transparent at the left edge and opaque at
+        // the right, tinted with a chip's fill at draw time to fade out a
+        // clipped label's tail (ChipUI.FadeLabelWidth).
+        public static Texture2D LabelFade { get; private set; } = null!;
 
         static WorkRolesTex()
         {
@@ -68,6 +76,8 @@ namespace WorkRoles.UI
             DisplayOptions = ContentFinder<Texture2D>.Get("UI/Icons/Options/OptionsUI");
             PriorityGrid = ContentFinder<Texture2D>.Get(
                 "WorkRoles/PriorityGrid");
+            ChipGrid = ContentFinder<Texture2D>.Get("WorkRoles/ChipGrid");
+            ChipStack = ContentFinder<Texture2D>.Get("WorkRoles/ChipStack");
             Logo = ContentFinder<Texture2D>.Get("WorkRoles/Logo");
             HelpMedal = ContentFinder<Texture2D>.Get(
                 "UI/Icons/UnwaveringlyLoyal");
@@ -81,6 +91,7 @@ namespace WorkRoles.UI
             if (Circle == null) Circle = MakeCircle(32);
             if (Star == null) Star = MakeStar(32);
             if (ScrollEdgeFade == null) ScrollEdgeFade = MakeScrollEdgeFade(20);
+            if (LabelFade == null) LabelFade = MakeLabelFade(32);
         }
 
         internal static void ReleaseForTeardown()
@@ -88,9 +99,11 @@ namespace WorkRoles.UI
             if (Circle != null) UnityEngine.Object.Destroy(Circle);
             if (Star != null) UnityEngine.Object.Destroy(Star);
             if (ScrollEdgeFade != null) UnityEngine.Object.Destroy(ScrollEdgeFade);
+            if (LabelFade != null) UnityEngine.Object.Destroy(LabelFade);
             Circle = null!; // cleared at teardown; rebuilt by EnsureRuntimeTextures
             Star = null!;
             ScrollEdgeFade = null!;
+            LabelFade = null!;
         }
 
         /// 32px so a 16px draw stays anti-aliased at UI scales above 1.
@@ -160,6 +173,22 @@ namespace WorkRoles.UI
             tex.Apply();
             tex.wrapMode = TextureWrapMode.Clamp;
             tex.name = "WorkRolesStar";
+            return tex;
+        }
+
+        /// Horizontal alpha ramp, white, 0 at the left column and 1 at the
+        /// right; bilinear so a 12px draw stays smooth.
+        private static Texture2D MakeLabelFade(int steps)
+        {
+            var tex = new Texture2D(steps, 1, TextureFormat.RGBA32, mipChain: false)
+            {
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                name = "WorkRolesLabelFade",
+            };
+            for (int x = 0; x < steps; x++)
+                tex.SetPixel(x, 0, new Color(1f, 1f, 1f, x / (float)(steps - 1)));
+            tex.Apply();
             return tex;
         }
 
