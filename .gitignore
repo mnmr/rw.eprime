@@ -11,6 +11,7 @@
 # Game source/artwork, local profiles and saves must never be committed
 /Game/
 /Saves/
+/Automation/
 
 # Automation profile: commit the curated Config baseline, ignore runtime artifacts
 /AutomationProfiles/Shared/Saves/

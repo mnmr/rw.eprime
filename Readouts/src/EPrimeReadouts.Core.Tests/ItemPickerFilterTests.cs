@@ -52,6 +52,36 @@ public class ItemPickerFilterTests
     }
 
     [Test]
+    public async Task QueryMatchingACategoryLabelShowsEveryEligibleItemInsideIt()
+    {
+        var root = new ResourceTreeNode { Id = "Manufactured", Label = "manufactured", Poolable = true };
+        root.DefNames.AddRange(new[] { "Steel", "ModShelf", "Unstorable" });
+        var child = new ResourceTreeNode { Id = "Components", Label = "components" };
+        child.DefNames.Add("ModComponent");
+        root.Children.Add(child);
+        var other = new ResourceTreeNode { Id = "Other", Label = "other" };
+        other.DefNames.Add("ResourceOnly");
+        var tree = new List<ResourceTreeNode> { root, other };
+
+        var rows = ResourceTreeFlattener.Flatten(
+            tree,
+            new HashSet<string>(),
+            new ItemTreeFilter("manufact", ItemPickerType.AllStorableItems, ItemSourceIds.All),
+            Catalog());
+
+        await Assert.That(string.Join(",", rows.Select(row => row.IsCategory ? row.Id : row.DefName)))
+            .IsEqualTo("Manufactured,Components,ModComponent,Steel,ModShelf");
+        await Assert.That(string.Join(",", rows[0].MatchingDefNames)).IsEqualTo("ModComponent,Steel,ModShelf");
+
+        var resourcesFromMod = ResourceTreeFlattener.Flatten(
+            tree,
+            new HashSet<string>(),
+            new ItemTreeFilter("manufact", ItemPickerType.Resources, "author.mod"),
+            Catalog());
+        await Assert.That(DefNames(resourcesFromMod)).IsEqualTo("ModComponent");
+    }
+
+    [Test]
     public async Task EmptyFilteredResultDoesNotChangeSavedExpansionState()
     {
         var expanded = new HashSet<string> { "Items" };

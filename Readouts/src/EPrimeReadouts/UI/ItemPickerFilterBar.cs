@@ -16,21 +16,38 @@ namespace EPrimeReadouts.UI
         private const float ClearW = 20f;
         private const float ControlH = 24f;
         private const float BottomGap = 8f;
+        /// Horizontal room a dropdown button keeps around its label so the
+        /// text never touches the border (matches the tooltip threshold).
+        private const float ButtonPad = 16f;
+        /// The search field may shrink to this share of the bar when a
+        /// button label needs the room.
+        private const float SearchMinShare = 0.15f;
 
         internal static void Draw(Rect rect, ItemPickerState state,
             string controlName, Action changed)
         {
             ResolvedTinyTextMetrics metrics = EprStyle.TinyTextMetrics;
             float captionH = metrics.LineHeight;
-            float searchAreaW = Mathf.Floor(rect.width * 0.30f);
+
+            string typeLabel = state.Type == ItemPickerType.Resources
+                ? UiText.Get("EPR.Resources")
+                : UiText.Get("EPR.AllStorableItems");
+            IReadOnlyList<ItemSourceOption> sources = GameResourceCatalog.Instance.SourceChoices();
+            string sourceLabel = SourceLabel(sources, state.SourceId);
+            ItemPickerFilterBarWidths widths = ItemPickerFilterBarLayout.Solve(
+                rect.width,
+                Gap,
+                Mathf.Floor(rect.width * SearchMinShare),
+                WrText.FitWidth(typeLabel) + ButtonPad,
+                WrText.FitWidth(sourceLabel) + ButtonPad);
+
+            float searchAreaW = widths.Search;
             float pickerAreaX = rect.x + searchAreaW + Gap;
-            float pickerAreaW = Mathf.Max(0f, rect.xMax - pickerAreaX);
-            float pickerW = Mathf.Max(1f, pickerAreaW - Gap);
-            float typeW = pickerW * 0.45f;
+            float typeW = Mathf.Max(1f, widths.Type);
             float controlY = rect.y + captionH;
             var typeRect = new Rect(pickerAreaX, controlY, typeW, ControlH);
             var sourceRect = new Rect(typeRect.xMax + Gap, controlY,
-                Mathf.Max(1f, rect.xMax - typeRect.xMax - Gap), ControlH);
+                Mathf.Max(1f, widths.Source), ControlH);
 
             using (GuiStateScope.Capture())
             {
@@ -81,9 +98,6 @@ namespace EPrimeReadouts.UI
                 }
             }
 
-            string typeLabel = state.Type == ItemPickerType.Resources
-                ? UiText.Get("EPR.Resources")
-                : UiText.Get("EPR.AllStorableItems");
             if (Widgets.ButtonText(typeRect, typeLabel))
             {
                 var options = new List<FloatMenuOption>(2)
@@ -95,11 +109,9 @@ namespace EPrimeReadouts.UI
                 };
                 Find.WindowStack.Add(new FloatMenu(options));
             }
-            if (WrText.FitWidth(typeLabel) > typeRect.width - 16f)
+            if (WrText.FitWidth(typeLabel) > typeRect.width - ButtonPad)
                 TooltipHandler.TipRegion(typeRect, typeLabel);
 
-            IReadOnlyList<ItemSourceOption> sources = GameResourceCatalog.Instance.SourceChoices();
-            string sourceLabel = SourceLabel(sources, state.SourceId);
             if (Widgets.ButtonText(sourceRect, sourceLabel))
             {
                 var options = new List<FloatMenuOption>(sources.Count);
@@ -117,7 +129,7 @@ namespace EPrimeReadouts.UI
                 }
                 Find.WindowStack.Add(new FloatMenu(options));
             }
-            if (WrText.FitWidth(sourceLabel) > sourceRect.width - 16f)
+            if (WrText.FitWidth(sourceLabel) > sourceRect.width - ButtonPad)
                 TooltipHandler.TipRegion(sourceRect, sourceLabel);
         }
 

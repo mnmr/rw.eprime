@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.2.7 — 2026-09-03
+
+- Added: Search filter now also matches category labels (and implicitly all nested items).
+
 ## 1.2.6 — 2026-08-31
 
 - Changed: Another round of performance improvements.
