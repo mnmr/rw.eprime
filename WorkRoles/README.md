@@ -39,7 +39,7 @@ Each colonist's ordered roles compile into one strict job order: earlier (enable
 
 Everything is computed when assignments or roles change, then cached — no per-tick patches. Conditional roles (time or location rules) additionally recompute exactly at hour boundaries and whenever a colonist changes location.
 
-Emergency-flagged jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+Emergency-flagged jobs (firefighting, urgent tending, going to bed for emergency treatment) go to the game's emergency work pass, which interrupts sleep, meals and any other job, when one of the colonist's first five enabled roles covers them; later roles run them in their normal position. An Options tab switch restores the older behavior where any covering role sends them to the emergency pass.
 
 Other mods that read priorities get the values WorkRoles computed; priority *writes* are owned by WorkRoles for managed pawns — which is why priority-setting mods don't mix. The mod continuously mirrors role priorities into vanilla's 0–4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
 

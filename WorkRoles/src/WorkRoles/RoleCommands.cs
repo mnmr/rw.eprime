@@ -186,12 +186,13 @@ namespace WorkRoles
         }
 
         /// Emergency pass membership rule: every claimed emergency job, or
-        /// vanilla's top-tier rule. Compiled orders change for every pawn.
+        /// only those claimed by the leading roles in the row. Compiled orders
+        /// change for every pawn.
         [SyncMethod]
-        public static void SetVanillaEmergencyRule(bool value)
+        public static void SetRolePriorityEmergencyRule(bool value)
         {
-            if (Store == null || Store.vanillaEmergencyRule == value) return;
-            Store.vanillaEmergencyRule = value;
+            if (Store == null || Store.rolePriorityEmergencyRule == value) return;
+            Store.rolePriorityEmergencyRule = value;
             CompiledJobOrders.InvalidateAll();
         }
 

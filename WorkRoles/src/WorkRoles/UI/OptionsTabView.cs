@@ -63,11 +63,11 @@ namespace WorkRoles.UI
                 RoleCommands.SetReportVanillaPriorities(vanillaNew);
 
             StructuredTipPresenter.TipRegion(emergencyRect, snapshot.EmergencyRuleTip);
-            bool emergencyNew = snapshot.VanillaEmergencyRule;
+            bool emergencyNew = snapshot.RolePriorityEmergencyRule;
             Widgets.CheckboxLabeled(
                 emergencyRect, snapshot.EmergencyRuleLabel, ref emergencyNew);
-            if (emergencyNew != snapshot.VanillaEmergencyRule)
-                RoleCommands.SetVanillaEmergencyRule(emergencyNew);
+            if (emergencyNew != snapshot.RolePriorityEmergencyRule)
+                RoleCommands.SetRolePriorityEmergencyRule(emergencyNew);
 
             // Per-save automation: the hourly auto-optimize schedule is shared
             // world state (AutoOptimizer runs in the synced simulation), so

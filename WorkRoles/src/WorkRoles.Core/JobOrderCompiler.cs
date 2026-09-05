@@ -93,47 +93,37 @@ namespace WorkRoles.Core
             // Default rule: role membership already decides WHETHER a pawn does
             // emergency work (omission = off), so every emergency-flagged job
             // present goes to the emergency list — no priority gate. The
-            // per-save vanilla rule (ApplyVanillaEmergencyRule) narrows this.
+            // per-save role-priority rule (ApplyRolePriorityEmergencyRule)
+            // narrows this.
             foreach (var giver in result.AllInOrder)
                 (catalog.IsEmergency(giver) ? result.Emergency : result.Normal).Add(giver);
             return result;
         }
 
-        /// Repartitions Normal/Emergency by vanilla's rule
-        /// (Pawn_WorkSettings.CacheWorkGiversInOrder): the tier is the best
-        /// vanilla priority among the compiled work types that carry any
-        /// ordinary job in the catalog (a type with only emergency jobs never
-        /// sets it); an emergency job stays in the emergency pass only when its
-        /// type's vanilla priority is at or better than the tier, otherwise it
-        /// runs as ordinary work at its compiled position. Types missing from
-        /// <paramref name="vanillaPriorities"/> fall back to their raw rank.
-        public static void ApplyVanillaEmergencyRule(
+        /// How many leading enabled roles in a colonist's row keep their
+        /// emergency jobs in the game's emergency pass under the
+        /// role-priority rule. Row position is what the player sets and sees,
+        /// unlike the vanilla projection, which spreads numbers across 1-4 on
+        /// its own.
+        public const int EmergencyRoleLimit = 5;
+
+        /// Repartitions Normal/Emergency by row position: an emergency job
+        /// stays in the emergency pass only when the slice that claimed it is
+        /// among the first <paramref name="emergencySliceCount"/> compiled
+        /// slices; later claims run it as ordinary work at its compiled
+        /// position. The caller maps the leading roles to a slice count
+        /// (a composite contributes one slice per live member).
+        public static void ApplyRolePriorityEmergencyRule(
             CompiledOrder order,
             IJobCatalog catalog,
-            IReadOnlyDictionary<string, int> vanillaPriorities)
+            int emergencySliceCount)
         {
-            int PriorityOf(string workType) =>
-                vanillaPriorities.TryGetValue(workType, out int vanilla)
-                    ? vanilla
-                    : order.WorkTypePriorities[workType];
-
-            int tier = int.MaxValue;
-            foreach (var pair in order.WorkTypePriorities)
-            {
-                bool ordinary = false;
-                foreach (string giver in catalog.WorkGiversOf(pair.Key))
-                    if (!catalog.IsEmergency(giver)) { ordinary = true; break; }
-                if (!ordinary) continue;
-                int priority = PriorityOf(pair.Key);
-                if (priority < tier) tier = priority;
-            }
-
             order.Normal.Clear();
             order.Emergency.Clear();
             foreach (string giver in order.AllInOrder)
             {
                 bool emergencyPass = catalog.IsEmergency(giver)
-                    && PriorityOf(catalog.WorkTypeOf(giver)) <= tier;
+                    && order.ClaimedBySlice[giver] < emergencySliceCount;
                 (emergencyPass ? order.Emergency : order.Normal).Add(giver);
             }
         }

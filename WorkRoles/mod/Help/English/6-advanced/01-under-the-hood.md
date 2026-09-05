@@ -9,11 +9,10 @@ patches, no per-frame work.
 Everything recomputes when assignments or roles change, then sits in a
 cache. Conditional roles additionally refresh at hour boundaries and when
 a colonist changes location. Emergency jobs like firefighting go through
-the game's emergency work pass whenever an enabled role covers them. With
-"Emergency jobs interrupt only at top priority" on, only jobs whose work
-type's vanilla number is as good as or better than the colonist's best
-number for ordinary work use that pass; the rest run in their normal
-position.
+the game's emergency work pass when one of the colonist's first five
+enabled roles covers them; the rest run in their normal position. With
+"Only the first 5 roles interrupt for emergencies" off, every covered
+emergency job uses that pass.
 
 WorkRoles keeps vanilla's priority storage populated from your roles
 (mapped onto the familiar 0 to 4 range while the vanilla-range option is

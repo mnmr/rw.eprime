@@ -24,15 +24,15 @@ assignment; the chip leaves the row.
 
 RimWorld keeps a separate list for emergency jobs: firefighting, urgent
 tending and going to bed for emergency treatment. Jobs on that list
-interrupt sleep, meals and any other job. By default every emergency job
-covered by an enabled role goes on that list, regardless of where the
-role sits in the row.
+interrupt sleep, meals and any other job. By default an emergency job
+goes on that list only when one of the colonist's first five enabled
+roles covers it. Emergency jobs from later roles run in their normal
+position. A colonist with Core first and Doctor as their sixth role still
+interrupts any job for a fire, but treats urgent tending as ordinary
+doctor work at its position in the row. Moving Core down the row past the
+fifth position turns firefighting into ordinary work for that colonist
+too.
 
-The Options tab offers vanilla's rule instead: "Emergency jobs interrupt
-only at top priority". With it on, an emergency job interrupts everything
-only when its work type's number in the priority grid (the 0-4 mapping)
-is as good as or better than the colonist's best number for ordinary
-work. Otherwise the job runs in its normal position. A colonist whose
-grid shows Firefighter and Hauling at 1 and Doctor at 3 still interrupts
-any job for a fire, but treats urgent tending as ordinary doctor work at
-its position in the row.
+The Options tab switch "Only the first 5 roles interrupt for emergencies"
+turns this off. Then every emergency job covered by an enabled role goes
+on the list, regardless of where the role sits in the row.

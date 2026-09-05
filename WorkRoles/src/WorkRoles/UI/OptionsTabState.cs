@@ -28,7 +28,7 @@ namespace WorkRoles.UI
             StructuredTip autoOptimizeTip,
             bool numeric,
             bool vanillaRange,
-            bool vanillaEmergencyRule,
+            bool rolePriorityEmergencyRule,
             bool autoOptimize,
             bool skillCaptions,
             bool colonistVerdicts,
@@ -56,7 +56,7 @@ namespace WorkRoles.UI
             AutoOptimizeTip = autoOptimizeTip;
             Numeric = numeric;
             VanillaRange = vanillaRange;
-            VanillaEmergencyRule = vanillaEmergencyRule;
+            RolePriorityEmergencyRule = rolePriorityEmergencyRule;
             AutoOptimize = autoOptimize;
             SkillCaptions = skillCaptions;
             ColonistVerdicts = colonistVerdicts;
@@ -87,7 +87,7 @@ namespace WorkRoles.UI
         internal StructuredTip AutoOptimizeTip { get; }
         internal bool Numeric { get; }
         internal bool VanillaRange { get; }
-        internal bool VanillaEmergencyRule { get; }
+        internal bool RolePriorityEmergencyRule { get; }
         internal bool AutoOptimize { get; }
         internal bool SkillCaptions { get; }
         internal bool ColonistVerdicts { get; }
@@ -132,7 +132,7 @@ namespace WorkRoles.UI
             && AutoOptimizeTip.ContentEquals(other.AutoOptimizeTip)
             && Numeric == other.Numeric
             && VanillaRange == other.VanillaRange
-            && VanillaEmergencyRule == other.VanillaEmergencyRule
+            && RolePriorityEmergencyRule == other.RolePriorityEmergencyRule
             && AutoOptimize == other.AutoOptimize
             && SkillCaptions == other.SkillCaptions
             && ColonistVerdicts == other.ColonistVerdicts
@@ -206,7 +206,7 @@ namespace WorkRoles.UI
             int ui = UiVersion.Current;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool vanillaRange = store?.reportVanillaPriorities ?? true;
-            bool emergencyRule = store?.vanillaEmergencyRule ?? false;
+            bool emergencyRule = store?.rolePriorityEmergencyRule ?? true;
             bool autoOptimize = store?.autoOptimize ?? false;
             PaletteMode paletteGrouping =
                 settings?.paletteMode == PaletteMode.Groups

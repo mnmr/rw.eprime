@@ -600,6 +600,11 @@ namespace WorkRoles
             var store = RoleStore.Current;
             var roleEntries = new List<(IReadOnlyList<JobEntry> entries, bool blocker)>();
             List<int>? activeRoleIds = null;
+            // Slices contributed by the first EmergencyRoleLimit active roles
+            // in row order (a composite counts once, whatever its member
+            // count), for the per-save role-priority emergency rule.
+            int emergencySliceCount = 0;
+            int activeAssignments = 0;
             if (store != null && store.pawnSets.TryGetValue(pawn, out var set))
             {
                 foreach (var assignment in set.assignments)
@@ -609,11 +614,13 @@ namespace WorkRoles
                         || !RoleActivation.IsActive(role.enabled, assignment.state)
                         || !RoleRules.Pass(role, pawn)) continue;
                     activeRoleIds ??= new List<int>();
+                    bool leadingRole = ++activeAssignments <= JobOrderCompiler.EmergencyRoleLimit;
                     if (!role.composite)
                     {
                         activeRoleIds.Add(role.id);
                         roleEntries.Add((JobOrderCompiler.WithMovedSnapshotGivers(
                             role.entries, role.workTypeSnapshots, GameJobCatalog.Instance), role.blocker));
+                        if (leadingRole) emergencySliceCount = roleEntries.Count;
                         continue;
                     }
                     // Composite: one slice per live member, member order, all
@@ -640,6 +647,7 @@ namespace WorkRoles
                         activeRoleIds.Add(role.id);
                         roleEntries.Add((EmptyEntries, role.blocker));
                     }
+                    if (leadingRole) emergencySliceCount = roleEntries.Count;
                 }
             }
 
@@ -647,9 +655,9 @@ namespace WorkRoles
                 roleEntries, GameJobCatalog.Instance, pawn, PawnCanDoJob);
             var buckets = JobOrderCompiler.ToVanillaPriorities(compiled.WorkTypePriorities,
                 ProjectionMetadata());
-            if (store?.vanillaEmergencyRule == true)
-                JobOrderCompiler.ApplyVanillaEmergencyRule(
-                    compiled, GameJobCatalog.Instance, buckets);
+            if (store?.rolePriorityEmergencyRule == true)
+                JobOrderCompiler.ApplyRolePriorityEmergencyRule(
+                    compiled, GameJobCatalog.Instance, emergencySliceCount);
             int defCount = DefDatabase<WorkTypeDef>.DefCount;
 
             var entry = new Entry

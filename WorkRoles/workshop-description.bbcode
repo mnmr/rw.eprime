@@ -50,7 +50,7 @@ Set up a role once and hand it to any number of colonists. You can then adjust e
 [list]
 [*]Each colonist's ordered roles compile into one strict job order: earlier (enabled) roles win, and within a role, earlier jobs win; a job that appears in several of a colonist's roles keeps its earliest position.
 [*]The compiled order is fed to the game through the same lists vanilla's job selection already consumes, so pawn AI behaves exactly as it would with a hand-tuned priority grid.
-[*]Emergency jobs (firefighting, urgent tending) go to the game's emergency work pass when any assigned role covers them.
+[*]Emergency jobs (firefighting, urgent tending, going to bed for emergency treatment) interrupt everything (by default, only when in any of the first five enabled role assignments, with an option to always allow interruptions).
 [*]Other mods that read priorities get the values WorkRoles computed; priority writes are owned by WorkRoles for managed pawns (which is why priority-setting mods don't mix).
 [*]Role priorities are continuously mirrored into vanilla's 0-4 priority map, so uninstalling hands the vanilla Work tab back with your roles converted to priorities.
 [/list]
