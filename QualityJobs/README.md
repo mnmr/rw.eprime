@@ -20,6 +20,9 @@ master crafter do the final touch — this mod automates the entire loop.
 - Automatic dispatch: the best qualifying pawn gets a one-shot pawn-restricted
   "Finish …" bill; the bill cleans itself up. If the
   working crafter already qualifies, they finish directly with no interruption.
+  By default the finisher takes the finish job ahead of all other work except
+  firefighting, medical care, rescue and bed rest; a global option can limit
+  it to first place within its own work type instead.
 - Shared unfinished work: idle unfinished items no longer lock their bill to
   the original crafter — anyone can continue them (also rescues items whose
   creator died, a long-standing vanilla annoyance).

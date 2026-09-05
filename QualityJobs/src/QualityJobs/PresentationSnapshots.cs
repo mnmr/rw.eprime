@@ -16,6 +16,7 @@ namespace QualityJobs
         internal readonly int TargetQuality;
         internal readonly int ProductCap;
         internal readonly bool ShareUnfinishedWork;
+        internal readonly bool HighPriorityFinish;
         internal readonly bool ManageNewConstruction;
         internal readonly int ConstructionMinSkill;
         internal readonly bool ConstructionRequireInspired;
@@ -33,6 +34,7 @@ namespace QualityJobs
             TargetQuality = store.targetQualityDefault;
             ProductCap = store.productCapDefault;
             ShareUnfinishedWork = store.shareUnfinishedWork;
+            HighPriorityFinish = store.highPriorityFinish;
             ManageNewConstruction = store.manageNewConstructionDefault;
             ConstructionMinSkill = store.constructionMinSkillDefault;
             ConstructionRequireInspired = store.constructionRequireInspiredDefault;
@@ -50,6 +52,7 @@ namespace QualityJobs
                && TargetQuality == store.targetQualityDefault
                && ProductCap == store.productCapDefault
                && ShareUnfinishedWork == store.shareUnfinishedWork
+               && HighPriorityFinish == store.highPriorityFinish
                && ManageNewConstruction == store.manageNewConstructionDefault
                && ConstructionMinSkill == store.constructionMinSkillDefault
                && ConstructionRequireInspired

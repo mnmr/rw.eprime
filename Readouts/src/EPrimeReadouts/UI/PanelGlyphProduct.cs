@@ -133,6 +133,9 @@ namespace EPrimeReadouts.UI
             return true;
         }
 
+        /// Draws text through the sprite material: the atlas RGB multiplies
+        /// the vertex color, so this suits dark text on a light field (the
+        /// search box) and nothing else.
         internal bool DrawTextIntoActive(
             string? text,
             Rect rect,
@@ -142,36 +145,80 @@ namespace EPrimeReadouts.UI
             float rasterScale,
             GUIStyle? styleOverride = null)
         {
-            if (string.IsNullOrEmpty(text)) return true;
+            if (text == null || text.Length == 0) return true;
             using (GuiStateScope.Capture())
             {
-                Text.Font = gameFont;
-                GUIStyle style = styleOverride ?? Text.CurFontStyle;
-                Font? font = style.font ?? GUI.skin.font;
-                if (font == null || font.material == null
-                    || font.material.mainTexture == null)
-                    return false;
-                int fontSize = style.fontSize > 0
-                    ? style.fontSize : font.fontSize;
-                font.RequestCharactersInTexture(
-                    text, ScaledFontSize(fontSize, rasterScale),
-                    style.fontStyle);
-                vertices.Clear();
-                uvs.Clear();
-                colors.Clear();
-                triangles.Clear();
-                Rect padded = PaddedRect(rect, style.padding);
-                var settings = Settings(
-                    style, font, fontSize, padded.size,
-                    anchor, color, rasterScale);
-                if (!generator.Populate(text, settings)) return false;
-                AppendGenerated(padded, generator.verts, rasterScale);
+                Font? font = BuildText(
+                    text, rect, gameFont, anchor, color,
+                    rasterScale, styleOverride);
+                if (font == null) return false;
                 if (vertices.Count != 0)
                     backend.DrawQuadsToActive(
                         vertices, uvs, colors,
                         font.material.mainTexture);
                 return true;
             }
+        }
+
+        /// Draws light text through the FONT material into the active
+        /// target, which it clears first. The target must belong to a
+        /// coverage-from-red channel and the color's red channel must be one;
+        /// see PanelBufferBackend.DrawFontQuadsToActive.
+        internal bool DrawFontTextIntoActive(
+            string? text,
+            Rect rect,
+            GameFont gameFont,
+            TextAnchor anchor,
+            Color color,
+            float rasterScale)
+        {
+            using (GuiStateScope.Capture())
+            {
+                Font? font = BuildText(
+                    text ?? "", rect, gameFont, anchor, color,
+                    rasterScale, null);
+                if (font == null) return false;
+                backend.DrawFontQuadsToActive(
+                    vertices, uvs, colors, triangles, font.material);
+                return true;
+            }
+        }
+
+        /// Fills the quad buffers with one text run placed in content pixels;
+        /// returns the font whose material and atlas the quads index, or null
+        /// when the font cannot be drawn. Callers hold a GuiStateScope.
+        private Font? BuildText(
+            string text,
+            Rect rect,
+            GameFont gameFont,
+            TextAnchor anchor,
+            Color color,
+            float rasterScale,
+            GUIStyle? styleOverride)
+        {
+            Text.Font = gameFont;
+            GUIStyle style = styleOverride ?? Text.CurFontStyle;
+            Font? font = style.font ?? GUI.skin.font;
+            if (font == null || font.material == null
+                || font.material.mainTexture == null)
+                return null;
+            vertices.Clear();
+            uvs.Clear();
+            colors.Clear();
+            triangles.Clear();
+            if (text.Length == 0) return font;
+            int fontSize = style.fontSize > 0
+                ? style.fontSize : font.fontSize;
+            font.RequestCharactersInTexture(
+                text, ScaledFontSize(fontSize, rasterScale),
+                style.fontStyle);
+            Rect padded = PaddedRect(rect, style.padding);
+            var settings = Settings(
+                style, font, fontSize, padded.size,
+                anchor, color, rasterScale);
+            if (!generator.Populate(text, settings)) return null;
+            AppendGenerated(padded, generator.verts, rasterScale);
+            return font;
         }
 
         internal void Release()

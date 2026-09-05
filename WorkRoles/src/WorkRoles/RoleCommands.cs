@@ -185,6 +185,16 @@ namespace WorkRoles
             Store.reportVanillaPriorities = value;
         }
 
+        /// Emergency pass membership rule: every claimed emergency job, or
+        /// vanilla's top-tier rule. Compiled orders change for every pawn.
+        [SyncMethod]
+        public static void SetVanillaEmergencyRule(bool value)
+        {
+            if (Store == null || Store.vanillaEmergencyRule == value) return;
+            Store.vanillaEmergencyRule = value;
+            CompiledJobOrders.InvalidateAll();
+        }
+
         /// Hourly automatic Fix My Colony on or off (AutoOptimizer).
         [SyncMethod]
         public static void SetAutoOptimize(bool value)

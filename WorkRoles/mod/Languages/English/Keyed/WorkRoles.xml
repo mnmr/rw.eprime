@@ -18,6 +18,11 @@
   <WR_OptVanillaRangeTipWhat>WorkRoles orders work by unique priorities (sequential numbers starting with 1).</WR_OptVanillaRangeTipWhat>
   <WR_OptVanillaRangeTipOff>Other mods see those priorities as-is</WR_OptVanillaRangeTipOff>
   <WR_OptVanillaRangeTipOn>Priorities are mapped onto vanilla's 0-4 range</WR_OptVanillaRangeTipOn>
+  <WR_OptEmergencyRule>Emergency jobs interrupt only at top priority</WR_OptEmergencyRule>
+  <WR_OptEmergencyRuleTipWhat>Decides which emergency jobs (firefighting, urgent tending and going to bed for emergency treatment) may interrupt sleep, meals and any other job, per savegame.</WR_OptEmergencyRuleTipWhat>
+  <WR_OptEmergencyRuleTipOff>Every emergency job in an enabled role interrupts the colonist's current job</WR_OptEmergencyRuleTipOff>
+  <WR_OptEmergencyRuleTipOn>An emergency job interrupts only when its work type's number is as good as or better than the colonist's best number for ordinary work; otherwise it runs in its normal position</WR_OptEmergencyRuleTipOn>
+  <WR_OptEmergencyRuleTipWhy>Vanilla's own rule, using the 0-4 mapping: a colonist with Doctor at 3 and Hauling at 1 hauls before tending urgent patients.</WR_OptEmergencyRuleTipWhy>
   <WR_AutomationSection>Automation Settings</WR_AutomationSection>
   <WR_OptAutoOptimize>Auto-optimize colonies every in-game hour</WR_OptAutoOptimize>
   <WR_OptAutoOptimizeTipWhat>Runs Fix My Colony automatically for each colony and applies the changes, per savegame.</WR_OptAutoOptimizeTipWhat>

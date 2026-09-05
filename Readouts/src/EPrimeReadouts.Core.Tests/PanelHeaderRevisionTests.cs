@@ -39,6 +39,27 @@ public class PanelHeaderRevisionTests
     }
 
     [Test]
+    public async Task SurfaceGrowsPastThePanelWidthOnlyForATitleThatNeedsIt()
+    {
+        // Title after the 26-unit gear column: 26 + 120 = 146 > 140.
+        var wideTitle = new PanelHeaderRevision(
+            false, true, "", "EPrime's Readouts", 120f, 140f, 26, 7, 1f);
+        await Assert.That(wideTitle.SurfaceWidth).IsEqualTo(146f);
+
+        var narrowTitle = new PanelHeaderRevision(
+            false, true, "", "Readouts", 60f, 140f, 26, 7, 1f);
+        await Assert.That(narrowTitle.SurfaceWidth).IsEqualTo(140f);
+
+        // The search field and the empty header always fit the panel.
+        var search = new PanelHeaderRevision(
+            true, false, "steel", "EPrime's Readouts", 120f, 140f, 26, 7, 1f);
+        await Assert.That(search.SurfaceWidth).IsEqualTo(140f);
+        var plain = new PanelHeaderRevision(
+            false, false, "", "EPrime's Readouts", 120f, 140f, 26, 7, 1f);
+        await Assert.That(plain.SurfaceWidth).IsEqualTo(140f);
+    }
+
+    [Test]
     public async Task NullStringsNormalizeToEmpty()
     {
         var left = new PanelHeaderRevision(

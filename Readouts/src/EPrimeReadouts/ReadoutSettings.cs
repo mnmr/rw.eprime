@@ -39,6 +39,18 @@ namespace EPrimeReadouts
         /// Sub-option of expandOnHover: idle shows 0 tiers (bands only) and
         /// hover shows the configured tiers, never more.
         public bool collapseWhenIdle;
+        /// Draw the panel from cached surfaces (the buffered renderer). Off
+        /// draws every frame directly: the compatibility escape hatch for a
+        /// GPU or driver whose surfaces come back blank.
+        public bool bufferedRendering = true;
+        /// Keep the game's categorized-readout toggle in the toolbar. While
+        /// kept, that toggle (Prefs.ResourceReadoutCategorized) shows or
+        /// hides the bands; off leaves only the gear and the search field.
+        public bool keepReadoutToggle;
+        /// Tier layout of an expanded group, whether cycled or hovered:
+        /// false puts every visible tier on the band's single row, true
+        /// gives each tier its own row and grows the band downward.
+        public bool verticalTiers;
         /// Planned-work reservations. All default off: a fresh install shows
         /// the same numbers it always did until the player opts in.
         /// Subtract ingredients outstanding bill iterations will consume.
@@ -51,10 +63,20 @@ namespace EPrimeReadouts
         /// Scale reservations by the rework a Quality Jobs quality target
         /// implies. Inert while that mod is absent.
         public bool qualityJobsRework;
+        /// Help tab: topic slugs this player has opened. Player knowledge,
+        /// so it lives here and never in the savegame.
+        public List<string> helpTopicsRead = new List<string>();
+        /// Saves (world persistent random values) whose one-time welcome
+        /// dialog this player has already seen.
+        public List<string> welcomeShownSaves = new List<string>();
 
         public override void ExposeData()
         {
             base.ExposeData();
+            Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
+            if (helpTopicsRead == null) helpTopicsRead = new List<string>();
+            Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
+            if (welcomeShownSaves == null) welcomeShownSaves = new List<string>();
             Scribe_Values.Look(ref useVanillaReadout, "useVanillaReadout", false);
             Scribe_Values.Look(ref offsetX, "offsetX", 7f);
             Scribe_Values.Look(ref offsetY, "offsetY", 7f);
@@ -74,6 +96,9 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref selectJumpCamera, "selectJumpCamera", true);
             Scribe_Values.Look(ref expandOnHover, "expandOnHover", false);
             Scribe_Values.Look(ref collapseWhenIdle, "collapseWhenIdle", false);
+            Scribe_Values.Look(ref verticalTiers, "verticalTiers", false);
+            Scribe_Values.Look(ref bufferedRendering, "bufferedRendering", true);
+            Scribe_Values.Look(ref keepReadoutToggle, "keepReadoutToggle", false);
             Scribe_Values.Look(ref reserveForBills, "reserveForBills", false);
             Scribe_Values.Look(ref reserveForBuildables, "reserveForBuildables", false);
             Scribe_Values.Look(ref showNegativeCounts, "showNegativeCounts", false);

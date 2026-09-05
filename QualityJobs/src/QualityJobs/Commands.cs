@@ -107,6 +107,15 @@ namespace QualityJobs
             store.NotifyShareChanged();
         }
 
+        [SyncMethod]
+        public static void SetHighPriorityFinish(bool value)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || store.highPriorityFinish == value) return;
+            store.highPriorityFinish = value;
+            store.NotifyHighPriorityFinishChanged();
+        }
+
         /// Resolves the first-install migration for bills that were explicitly
         /// quarantined before play began. Closing the dialog is the safe decline
         /// path: bills remain unmanaged while unfinished-work sharing continues.

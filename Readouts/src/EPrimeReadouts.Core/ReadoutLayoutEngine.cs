@@ -41,6 +41,11 @@ namespace EPrimeReadouts.Core
         public float Width = 140f;
         public IResourceCatalog Catalog = null!; // Required input; set by every builder.
         public bool EditorMode;
+        /// Tier layout for an expanded group. False (horizontal): every
+        /// visible tier's slots share the band's single row. True
+        /// (vertical): each visible tier gets its own icon+counter row and
+        /// the band grows downward to fit them.
+        public bool VerticalTiers;
         /// Font-resolved cell geometry; default reproduces the tiny-font
         /// baseline. See CellMetrics.
         public CellMetrics Metrics;
@@ -71,6 +76,7 @@ namespace EPrimeReadouts.Core
             public int Sum;
             public string? IconDefName;   // icon defName (pool snapshot icon for #tokens; first member otherwise)
             public string? HighlightName; // pool name (for #tokens) or null (use member labels for @tokens)
+            public int Tier;              // owning tier index (vertical layout groups rows by it)
         }
 
         // Content inset: X is stripe + pad, Y is GroupPadY.
@@ -199,7 +205,9 @@ namespace EPrimeReadouts.Core
                     }
                     else
                     {
-                        float containerW = GroupContainerWidth(slots.Count, input.Metrics);
+                        int columns = input.VerticalTiers
+                            ? WidestRow(slots) : slots.Count;
+                        float containerW = GroupContainerWidth(columns, input.Metrics);
                         if (containerW > maxGroupW) maxGroupW = containerW;
                         y = BuildGroup(group, input, model, slots, y, searching, groupDisplayIndex, containerW);
                     }
@@ -461,9 +469,48 @@ namespace EPrimeReadouts.Core
                         Sum = sum,
                         IconDefName = iconDefName,
                         HighlightName = highlightName,
+                        Tier = t,
                     });
                 }
             }
+        }
+
+        /// Slot count of the most populated tier row (vertical layout width).
+        private static int WidestRow(List<ResolvedSlot> slots)
+        {
+            int widest = 0;
+            int rowStart = 0;
+            while (rowStart < slots.Count)
+            {
+                int rowEnd = RowEnd(slots, rowStart);
+                if (rowEnd - rowStart > widest) widest = rowEnd - rowStart;
+                rowStart = rowEnd;
+            }
+            return widest;
+        }
+
+        /// Index one past the last slot sharing the tier of slots[rowStart].
+        private static int RowEnd(List<ResolvedSlot> slots, int rowStart)
+        {
+            int tier = slots[rowStart].Tier;
+            int end = rowStart + 1;
+            while (end < slots.Count && slots[end].Tier == tier) end++;
+            return end;
+        }
+
+        /// Number of tier rows an expanded band shows: one per tier that has
+        /// at least one visible slot (vertical), or exactly one (horizontal).
+        private static int RowCount(List<ResolvedSlot> slots, bool vertical)
+        {
+            if (!vertical) return 1;
+            int rows = 0;
+            int rowStart = 0;
+            while (rowStart < slots.Count)
+            {
+                rows++;
+                rowStart = RowEnd(slots, rowStart);
+            }
+            return rows;
         }
 
         private static bool IsVisible(
@@ -509,8 +556,12 @@ namespace EPrimeReadouts.Core
             List<ResolvedSlot> slots, float yTop, bool searching, int groupDisplayIndex,
             float containerW)
         {
-            // Single row always: one icon+counter row pair.
-            float containerH = 2f * LayoutMetrics.GroupPadY + input.Metrics.RowPairH;
+            // Horizontal: one icon+counter row pair. Vertical: one row pair
+            // per tier that has something to show, a TierRowGap apart.
+            int rows = RowCount(slots, input.VerticalTiers);
+            float contentH = rows * input.Metrics.RowPairH
+                + (rows - 1) * LayoutMetrics.TierRowGap;
+            float containerH = 2f * LayoutMetrics.GroupPadY + contentH;
 
             // GroupBack cell spans the computed container width — emitted FIRST
             model.Cells.Add(new RenderCell
@@ -521,9 +572,12 @@ namespace EPrimeReadouts.Core
                 Rect = new RectF(0f, yTop, containerW, containerH),
             });
 
-            // Emit marker triangles (inset by stripe+pad on X, GroupPadY on Y).
-            // Tiers visible only through hover expansion (beyond the
-            // configured depth) show HoverLit instead of Lit.
+            // Emit marker triangles (inset by stripe+pad on X, GroupPadY on Y),
+            // centered on the FIRST row: a band that grows downward keeps its
+            // markers where they were, so expanding or hovering never moves
+            // the thing the player is about to click. Tiers visible only
+            // through hover expansion (beyond the configured depth) show
+            // HoverLit instead of Lit.
             int depth = Markers.ClampDepth(group.TierCount, input.DepthOf(group));
             int configured = -1;
             if (input.ConfiguredDepthOf != null)
@@ -543,35 +597,53 @@ namespace EPrimeReadouts.Core
                 {
                     Kind = CellKind.Triangle,
                     Triangle = state,
-                    Rect = MarkerRect(
-                        insetX, insetY, input.Metrics.RowPairH, i),
+                    Rect = MarkerRect(insetX, insetY, input.Metrics.RowPairH, i),
                 });
             }
 
             // The leading rail is clickable even though only 11px is reserved
-            // between the inset and the first resource cell.
+            // between the inset and the first resource cell; it spans every
+            // row so the whole band edge cycles the depth.
             model.MarkerHits.Add(new MarkerHit
             {
                 GroupId = group.Id,
-                Rect = MarkerHitRect(insetY, input.Metrics.RowPairH),
+                Rect = MarkerHitRect(insetY, contentH),
             });
 
-            // Build the icon/counter row, inset (single row, no wrapping)
-            BuildGroupGrid(model, slots, input, insetY, highlightMatches: searching);
+            // Build the icon/counter rows, inset. Slots stay in tier order
+            // across rows so count refreshes walk them the same way.
+            if (!input.VerticalTiers)
+            {
+                BuildGroupGrid(model, slots, 0, slots.Count, input, insetY,
+                    highlightMatches: searching);
+            }
+            else
+            {
+                float rowY = insetY;
+                int rowStart = 0;
+                while (rowStart < slots.Count)
+                {
+                    int rowEnd = RowEnd(slots, rowStart);
+                    BuildGroupGrid(model, slots, rowStart, rowEnd - rowStart,
+                        input, rowY, highlightMatches: searching);
+                    rowY += input.Metrics.RowPairH + LayoutMetrics.TierRowGap;
+                    rowStart = rowEnd;
+                }
+            }
 
             return yTop + containerH;
         }
 
-        // All group slots rendered on a single row — no wrapping.
+        // One row of group slots, columns from the left — no wrapping.
         private static void BuildGroupGrid(RenderModel model, List<ResolvedSlot> slots,
-            LayoutInput input, float yInset, bool highlightMatches)
+            int start, int count, LayoutInput input, float yInset, bool highlightMatches)
         {
             var metrics = input.Metrics;
             float insetX = InsetX;
             float y = yInset;
-            for (int c = 0; c < slots.Count; c++)
+            for (int c = 0; c < count; c++)
             {
-                var slot = slots[c];
+                var slot = slots[start + c];
                 // Icon defName: snapshot icon for pool refs, first member otherwise.
                 // May be null for empty pools in editor mode — cell still gets emitted.
                 string? iconDefName = slot.IconDefName;

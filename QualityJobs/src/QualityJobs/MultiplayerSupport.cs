@@ -38,6 +38,7 @@ namespace QualityJobs
             sync.Bind(ref v.autoBest);
             sync.Bind(ref v.constructionAutoBest);
             sync.Bind(ref v.targetQuality);
+            sync.Bind(ref v.highPriorityFinish);
         }
 
         /// Field-by-field worker for the API bill-creation payload. Do not move

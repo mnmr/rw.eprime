@@ -20,6 +20,11 @@ namespace EPrimeReadouts.Core
         public const float CounterOverlap = 2f;
         // Combined height of one icon+counter row pair.
         public const float RowPairH = IconRowH + CounterRowH - CounterOverlap;
+        // Vertical tier layout: empty space between one tier's counter row
+        // and the next tier's icon row. A counter sits tight under its own
+        // icon (it even overlaps it), so this larger gap is what makes each
+        // counter read as belonging to the icon above rather than below.
+        public const float TierRowGap = 3f;
         public const float GroupGap = 2f;
         public const float LabelRowH = 20f;
         public const float StripeW = 3f;      // colored band on a container's left edge

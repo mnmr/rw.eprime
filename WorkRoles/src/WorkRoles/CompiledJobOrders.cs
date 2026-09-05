@@ -647,6 +647,9 @@ namespace WorkRoles
                 roleEntries, GameJobCatalog.Instance, pawn, PawnCanDoJob);
             var buckets = JobOrderCompiler.ToVanillaPriorities(compiled.WorkTypePriorities,
                 ProjectionMetadata());
+            if (store?.vanillaEmergencyRule == true)
+                JobOrderCompiler.ApplyVanillaEmergencyRule(
+                    compiled, GameJobCatalog.Instance, buckets);
             int defCount = DefDatabase<WorkTypeDef>.DefCount;
 
             var entry = new Entry

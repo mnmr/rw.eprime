@@ -15,6 +15,7 @@ namespace QualityJobs
         public bool defaultRequireSpecialist = false;
         public int defaultProductCap = 10;
         public bool defaultShareUnfinishedWork = true;
+        public bool defaultHighPriorityFinish = true;
         public bool defaultAutoBest = false;
         public int defaultTargetQuality = 0; // 0 = any quality accepted
 
@@ -40,6 +41,7 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultRequireSpecialist, "defaultRequireSpecialist", false);
             Scribe_Values.Look(ref defaultProductCap, "defaultProductCap", 10);
             Scribe_Values.Look(ref defaultShareUnfinishedWork, "defaultShareUnfinishedWork", true);
+            Scribe_Values.Look(ref defaultHighPriorityFinish, "defaultHighPriorityFinish", true);
             Scribe_Values.Look(ref defaultAutoBest, "defaultAutoBest", false);
             Scribe_Values.Look(ref defaultTargetQuality, "defaultTargetQuality", 0);
             Scribe_Values.Look(ref showToolbarButton, "showToolbarButton", true);

@@ -24,6 +24,12 @@ namespace WorkRoles
         /// World state, not a mod setting: other mods consume the values in
         /// sim-relevant code, so MP clients must agree.
         public bool reportVanillaPriorities = true;
+        /// Emergency jobs interrupt everything only when their work type sits
+        /// in the colonist's top priority tier (vanilla's rule, applied to the
+        /// projection); off keeps every claimed emergency job in the emergency
+        /// pass. World state: it changes compiled job orders, so MP clients
+        /// must agree.
+        public bool vanillaEmergencyRule;
         /// Hourly automatic Fix My Colony (AutoOptimizer). World state, not a
         /// mod setting: the schedule mutates shared assignments from
         /// deterministic tick code, so MP clients must agree it is on.
@@ -316,6 +322,7 @@ namespace WorkRoles
                 pawnSets.Remove(pawn);
                 PawnLocationTracker.NotifyUnmanaged(pawn);
                 CompiledJobOrders.RemoveCached(pawn);
+                Patches.Patch_MultiFloorsWorkScan.NotifyUnmanaged(pawn);
                 requestUiInvalidation();
                 return true;
             }
@@ -333,6 +340,7 @@ namespace WorkRoles
                     pawnSets.Remove(pawn);
                     PawnLocationTracker.NotifyUnmanaged(pawn);
                     CompiledJobOrders.RemoveCached(pawn);
+                    Patches.Patch_MultiFloorsWorkScan.NotifyUnmanaged(pawn);
                 },
                 notifyVanilla: () => workSettings!.Notify_UseWorkPrioritiesChanged(), // invoked only when hasVanillaWorkSettings
                 invalidateUi: requestUiInvalidation);
@@ -541,6 +549,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref seeded, "seeded");
             Scribe_Values.Look(ref pathsSeeded, "pathsSeeded");
             Scribe_Values.Look(ref reportVanillaPriorities, "reportVanillaPriorities", true);
+            Scribe_Values.Look(ref vanillaEmergencyRule, "vanillaEmergencyRule");
             Scribe_Values.Look(ref autoOptimize, "autoOptimize");
             Scribe_Collections.Look(ref recommendationOrder, "recommendationOrder", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.LoadingVars && recommendationOrder == null)

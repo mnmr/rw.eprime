@@ -456,6 +456,30 @@ namespace QualityJobs
                 y += CheckboxH + RowGap;
             }
 
+            // High-priority finish toggle: same dual pattern as sharing.
+            if (Current.Game == null)
+            {
+                Rect highRow = new Rect(bodyX, y, colW, CheckboxH);
+                Widgets.CheckboxLabeled(highRow, SettingsLabels.HighPriorityFinish!, ref Settings.defaultHighPriorityFinish);
+                WrTips.Key("QJ_SettingsHighPriorityFinishTip").Region(highRow);
+                y += CheckboxH + RowGap;
+            }
+            else
+            {
+                QualityJobsStore? store = QualityJobsStore.Active;
+                if (store != null)
+                {
+                    Rect highRow = new Rect(bodyX, y, colW, CheckboxH);
+                    StoreSettingsSnapshot snapshot = store.SettingsPresentation;
+                    bool high = snapshot.HighPriorityFinish;
+                    Widgets.CheckboxLabeled(highRow, SettingsLabels.HighPriorityFinish!, ref high);
+                    WrTips.Key("QJ_SettingsHighPriorityFinishTip").Region(highRow);
+                    if (high != snapshot.HighPriorityFinish)
+                        Commands.SetHighPriorityFinish(high);
+                }
+                y += CheckboxH + RowGap;
+            }
+
             // Toolbar button toggle: a per-player presentation preference, so
             // it binds the global Settings field directly in every state.
             {
@@ -620,6 +644,7 @@ namespace QualityJobs
             public static string? AutoBest;
             public static string? UnlimitedHint;
             public static string? ShareWork;
+            public static string? HighPriorityFinish;
             public static string? ShowToolbarButton;
             public static string? NoGameLoaded;
             public static string? EnabledNote;
@@ -660,6 +685,7 @@ namespace QualityJobs
                 AutoBest             = "QJ_AutoBest".Translate();
                 UnlimitedHint        = "QJ_SettingsUnlimitedHint".Translate();
                 ShareWork            = "QJ_SettingsShareWork".Translate();
+                HighPriorityFinish   = "QJ_SettingsHighPriorityFinish".Translate();
                 ShowToolbarButton    = "QJ_SettingsShowToolbarButton".Translate();
                 NoGameLoaded         = "QJ_NoGameLoaded".Translate();
                 EnabledNote          = "QJ_SettingsEnabledNote".Translate();

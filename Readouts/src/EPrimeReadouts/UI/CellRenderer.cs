@@ -195,12 +195,17 @@ namespace EPrimeReadouts.UI
             => DrawDirect(draw, viewportTop, viewportBottom, inputBlocked,
                 PanelVisualOptions.Default);
 
+        /// drawText false leaves counters and labels to a glyph renderer that
+        /// draws them after the caller's group ends (see PanelDirectGlyphs);
+        /// the IMGUI labels here are the fallback when no font material is
+        /// available.
         public static void DrawDirect(
             DrawModel draw,
             float viewportTop,
             float viewportBottom,
             bool inputBlocked,
-            PanelVisualOptions options)
+            PanelVisualOptions options,
+            bool drawText = true)
         {
             PanelRenderPolicy policy = PanelRenderPolicy.For(
                 Event.current.type == EventType.Repaint, inputBlocked);
@@ -227,6 +232,7 @@ namespace EPrimeReadouts.UI
                     }
                 }
 
+                if (!drawText) return;
                 using (TinyText.UseFont())
                 {
                     TextAnchor textAnchor = Text.Anchor;

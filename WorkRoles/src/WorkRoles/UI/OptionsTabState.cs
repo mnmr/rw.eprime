@@ -10,6 +10,7 @@ namespace WorkRoles.UI
             string compatibilityHeader,
             string numericLabel,
             string rangeLabel,
+            string emergencyRuleLabel,
             string automationHeader,
             string autoOptimizeLabel,
             string displayHeader,
@@ -23,9 +24,11 @@ namespace WorkRoles.UI
             float paletteGroupingControlWidth,
             StructuredTip numericTip,
             StructuredTip rangeTip,
+            StructuredTip emergencyRuleTip,
             StructuredTip autoOptimizeTip,
             bool numeric,
             bool vanillaRange,
+            bool vanillaEmergencyRule,
             bool autoOptimize,
             bool skillCaptions,
             bool colonistVerdicts,
@@ -35,6 +38,7 @@ namespace WorkRoles.UI
             CompatibilityHeader = compatibilityHeader;
             NumericLabel = numericLabel;
             RangeLabel = rangeLabel;
+            EmergencyRuleLabel = emergencyRuleLabel;
             AutomationHeader = automationHeader;
             AutoOptimizeLabel = autoOptimizeLabel;
             DisplayHeader = displayHeader;
@@ -48,9 +52,11 @@ namespace WorkRoles.UI
             PaletteGroupingControlWidth = paletteGroupingControlWidth;
             NumericTip = numericTip;
             RangeTip = rangeTip;
+            EmergencyRuleTip = emergencyRuleTip;
             AutoOptimizeTip = autoOptimizeTip;
             Numeric = numeric;
             VanillaRange = vanillaRange;
+            VanillaEmergencyRule = vanillaEmergencyRule;
             AutoOptimize = autoOptimize;
             SkillCaptions = skillCaptions;
             ColonistVerdicts = colonistVerdicts;
@@ -61,6 +67,7 @@ namespace WorkRoles.UI
         internal string CompatibilityHeader { get; }
         internal string NumericLabel { get; }
         internal string RangeLabel { get; }
+        internal string EmergencyRuleLabel { get; }
         internal string AutomationHeader { get; }
         internal string AutoOptimizeLabel { get; }
         internal string DisplayHeader { get; }
@@ -76,9 +83,11 @@ namespace WorkRoles.UI
         internal float PaletteGroupingControlWidth { get; }
         internal StructuredTip NumericTip { get; }
         internal StructuredTip RangeTip { get; }
+        internal StructuredTip EmergencyRuleTip { get; }
         internal StructuredTip AutoOptimizeTip { get; }
         internal bool Numeric { get; }
         internal bool VanillaRange { get; }
+        internal bool VanillaEmergencyRule { get; }
         internal bool AutoOptimize { get; }
         internal bool SkillCaptions { get; }
         internal bool ColonistVerdicts { get; }
@@ -92,6 +101,8 @@ namespace WorkRoles.UI
             && string.Equals(NumericLabel, other.NumericLabel,
                 System.StringComparison.Ordinal)
             && string.Equals(RangeLabel, other.RangeLabel,
+                System.StringComparison.Ordinal)
+            && string.Equals(EmergencyRuleLabel, other.EmergencyRuleLabel,
                 System.StringComparison.Ordinal)
             && string.Equals(AutomationHeader, other.AutomationHeader,
                 System.StringComparison.Ordinal)
@@ -117,9 +128,11 @@ namespace WorkRoles.UI
                 == other.PaletteGroupingControlWidth
             && NumericTip.ContentEquals(other.NumericTip)
             && RangeTip.ContentEquals(other.RangeTip)
+            && EmergencyRuleTip.ContentEquals(other.EmergencyRuleTip)
             && AutoOptimizeTip.ContentEquals(other.AutoOptimizeTip)
             && Numeric == other.Numeric
             && VanillaRange == other.VanillaRange
+            && VanillaEmergencyRule == other.VanillaEmergencyRule
             && AutoOptimize == other.AutoOptimize
             && SkillCaptions == other.SkillCaptions
             && ColonistVerdicts == other.ColonistVerdicts
@@ -144,11 +157,11 @@ namespace WorkRoles.UI
         // Key: RoleStore identity, WorkRolesSettings identity,
         // LanguageChangeCoordinator.Revision, UiVersion.Current (the palette
         // grouping control width is a text measurement), the palette grouping
-        // value, and the exact seven boolean values displayed by the tab.
+        // value, and the exact eight boolean values displayed by the tab.
         // Value: immutable OptionsRenderSnapshot containing translated chrome,
         // structured tips, measured control geometry, and detached values.
         // Dependencies: language, UI metrics, manual-priority mode, reported
-        // priority range, the auto-optimize schedule toggle, the palette
+        // priority range, the emergency rule, the auto-optimize schedule toggle, the palette
         // grouping preference, and the four client-local display preferences.
         // Refresh: immediate when an exact key input changes, including paused
         // synced execution and local preference edits.
@@ -162,6 +175,7 @@ namespace WorkRoles.UI
         private int uiRevision = -1;
         private bool builtNumeric;
         private bool builtVanillaRange;
+        private bool builtEmergencyRule;
         private bool builtAutoOptimize;
         private int builtPaletteGrouping = -1;
         private bool builtSkillCaptions;
@@ -192,6 +206,7 @@ namespace WorkRoles.UI
             int ui = UiVersion.Current;
             bool numeric = Current.Game?.playSettings?.useWorkPriorities ?? false;
             bool vanillaRange = store?.reportVanillaPriorities ?? true;
+            bool emergencyRule = store?.vanillaEmergencyRule ?? false;
             bool autoOptimize = store?.autoOptimize ?? false;
             PaletteMode paletteGrouping =
                 settings?.paletteMode == PaletteMode.Groups
@@ -209,6 +224,7 @@ namespace WorkRoles.UI
                 && uiRevision == ui
                 && builtNumeric == numeric
                 && builtVanillaRange == vanillaRange
+                && builtEmergencyRule == emergencyRule
                 && builtAutoOptimize == autoOptimize
                 && builtPaletteGrouping == (int)paletteGrouping
                 && builtSkillCaptions == skillCaptions
@@ -233,6 +249,17 @@ namespace WorkRoles.UI
                     "WR_OptVanillaRangeTipOff".Translate())
                 .Fact("WR_TipOn".Translate(),
                     "WR_OptVanillaRangeTipOn".Translate());
+            string emergencyRuleLabel = "WR_OptEmergencyRule".Translate();
+            var emergencyRuleModel = new TipModel { Title = emergencyRuleLabel };
+            emergencyRuleModel.AddSection().Text(
+                "WR_OptEmergencyRuleTipWhat".Translate());
+            emergencyRuleModel.AddSection()
+                .Fact("WR_TipOff".Translate(),
+                    "WR_OptEmergencyRuleTipOff".Translate())
+                .Fact("WR_TipOn".Translate(),
+                    "WR_OptEmergencyRuleTipOn".Translate());
+            emergencyRuleModel.AddSection().Text(
+                "WR_OptEmergencyRuleTipWhy".Translate(), dim: true);
             string autoOptimizeLabel = "WR_OptAutoOptimize".Translate();
             var autoOptimizeModel = new TipModel { Title = autoOptimizeLabel };
             autoOptimizeModel.AddSection().Text(
@@ -274,6 +301,7 @@ namespace WorkRoles.UI
                 "WR_CompatSection".Translate(),
                 numericLabel,
                 rangeLabel,
+                emergencyRuleLabel,
                 "WR_AutomationSection".Translate(),
                 autoOptimizeLabel,
                 "WR_DisplaySection".Translate(),
@@ -287,9 +315,11 @@ namespace WorkRoles.UI
                 paletteControlWidth,
                 new StructuredTip("options:numeric", numericModel),
                 new StructuredTip("options:vanilla-range", rangeModel),
+                new StructuredTip("options:emergency-rule", emergencyRuleModel),
                 new StructuredTip("options:auto-optimize", autoOptimizeModel),
                 numeric,
                 vanillaRange,
+                emergencyRule,
                 autoOptimize,
                 skillCaptions,
                 colonistVerdicts,
@@ -304,6 +334,7 @@ namespace WorkRoles.UI
             uiRevision = ui;
             builtNumeric = numeric;
             builtVanillaRange = vanillaRange;
+            builtEmergencyRule = emergencyRule;
             builtAutoOptimize = autoOptimize;
             builtPaletteGrouping = (int)paletteGrouping;
             builtSkillCaptions = skillCaptions;

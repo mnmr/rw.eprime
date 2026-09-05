@@ -1,5 +1,14 @@
 ﻿# Changelog
 
+## 1.5.6 — 2026-09-05
+
+- Added: An option to control how WorkRoles populates the emergency list (jobs that can interrupt sleep, meals and other jobs).
+- Fixed: Improved compatibility with MultiFloors' prioritized work scanner.
+
+## 1.5.5 — 2026-09-04
+
+- Changed: Improved the logic WorkRoles uses to detect jobs that bypass the role system.
+
 ## 1.5.4 — 2026-09-02
 
 - Changed: Moved grid/stack chip layout to be a toggle separate from the chip display mode.

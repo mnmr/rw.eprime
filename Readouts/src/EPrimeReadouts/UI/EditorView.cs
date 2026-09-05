@@ -581,9 +581,17 @@ namespace EPrimeReadouts.UI
         private readonly string[] ruleStateLabels = new string[3];
         private float ruleLabelW;
         private float ruleRowW;
+        private float ruleRowMinW;
 
         /// Horizontal padding inside one segment around its caption.
         private const float SegmentPadX = 12f;
+
+        /// Least padding a segment keeps before the row gives up on sitting
+        /// beside its label and moves under it.
+        private const float SegmentMinPadX = 4f;
+
+        /// Gap between a rule label and its selector.
+        private const float RuleGapX = 8f;
 
         /// Vertical padding above each section caption in the options body.
         private const float CaptionPadTop = 16f;
@@ -610,25 +618,33 @@ namespace EPrimeReadouts.UI
                     stateW = Mathf.Max(stateW, WrText.FitWidth(ruleStateLabels[i]));
                 ruleRowW = ruleStateLabels.Length * (stateW + 2f * SegmentPadX)
                     + 2f * 2f + (ruleStateLabels.Length - 1);
+                ruleRowMinW = ruleStateLabels.Length * (stateW + 2f * SegmentMinPadX)
+                    + 2f * 2f + (ruleStateLabels.Length - 1);
             }
             ruleRowUiVersion = UiVersion.Current;
         }
 
         /// One override row: Small label on the left, a right-aligned
-        /// three-segment selector (Default / Always On / Always Off).
-        /// Segment indices are BasisOverride ordinals. Returns the
-        /// (possibly changed) state.
+        /// three-segment selector (Default / Always On / Always Off). A
+        /// panel too narrow for both narrows the selector, then drops it to
+        /// the line below the label; the label is never covered. Segment
+        /// indices are BasisOverride ordinals. Returns the (possibly
+        /// changed) state.
         private BasisOverride DrawRuleRow(
             Rect rect, ref float y, string label, BasisOverride state)
         {
             const float ControlH = 24f;
+            RuleRowLayout layout = RuleRowLayout.Solve(
+                rect.width, ruleLabelW, ruleRowW, ruleRowMinW, RuleGapX);
             TextAnchor anchor = Text.Anchor;
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             Widgets.Label(new Rect(rect.x, y, ruleLabelW, ControlH), label);
             Text.Anchor = anchor;
+            if (layout.Stacked) y += ControlH + 2f;
             int clicked = SegmentedControl.Row(
-                new Rect(rect.xMax - ruleRowW, y, ruleRowW, ControlH),
+                new Rect(rect.xMax - layout.SelectorWidth, y,
+                    layout.SelectorWidth, ControlH),
                 ruleStateLabels, (int)state);
             if (clicked >= 0) state = (BasisOverride)clicked;
             y += ControlH + 2f;

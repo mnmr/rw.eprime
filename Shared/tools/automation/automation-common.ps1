@@ -32,8 +32,14 @@ namespace RimWorldSharedAutomation {
     [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
     [DllImport("user32.dll")] public static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
     [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
+    [DllImport("user32.dll")] public static extern bool GetCursorInfo(ref CURSORINFO info);
+    [DllImport("user32.dll")] public static extern bool GetIconInfo(IntPtr icon, out ICONINFO info);
+    [DllImport("user32.dll")] public static extern bool DrawIconEx(IntPtr hdc, int x, int y, IntPtr icon, int width, int height, uint step, IntPtr brush, uint flags);
+    [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr handle);
     [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
     [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
+    [StructLayout(LayoutKind.Sequential)] public struct CURSORINFO { public int Size; public int Flags; public IntPtr Cursor; public POINT ScreenPos; }
+    [StructLayout(LayoutKind.Sequential)] public struct ICONINFO { public bool IsIcon; public int HotspotX, HotspotY; public IntPtr Mask, Color; }
   }
 }
 "@

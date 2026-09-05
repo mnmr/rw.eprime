@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.1.0 — 2026-09-04
+
+- Added: Global option to control finisher job priority. The default is now to finish the job ahead of most other work.
+
+## 1.0.9 — 2026-09-04
+
+- Fixed: Dispatched finishers could drop the unfinished item mid-haul: the revert sweep treated an item carried by the finisher as lost, deleted the finish bill, and restarted the loop.
+
 ## 1.0.8 — 2026-08-24
 
 - Changed: Improved API surface and some internal optimizations.

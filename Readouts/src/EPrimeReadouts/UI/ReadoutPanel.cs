@@ -120,12 +120,16 @@ namespace EPrimeReadouts.UI
         // Hover-driven tier depth (expandOnHover), PER BAND: the id of the
         // group whose band is under the pointer, or -1. A transition changes
         // this rebuild key so the cached DrawModel republishes once per band
-        // enter/leave, never per frame. Stability: band heights never vary
-        // with depth (collapse is horizontal) and band PRESENCE is
+        // enter/leave, never per frame. Stability: band PRESENCE is
         // depth-invariant (a group with no visible slots keeps its thin
-        // identification band when expanded), so expanding the hovered band
-        // cannot shift or remove any band, and an expanded band's footprint
-        // contains its collapsed footprint — enter/leave cannot oscillate.
+        // identification band when expanded), and an expanded band's
+        // footprint contains its collapsed footprint — with the horizontal
+        // tier layout heights never vary with depth, and with the vertical
+        // layout the hovered band only grows DOWNWARD from its unchanged
+        // top edge, so the pointer that expanded it stays inside it and
+        // enter/leave cannot oscillate. Bands below a vertically expanded
+        // band shift down; the pointer is not over them while it stays in
+        // the expanded band.
         private static int hoveredGroupId = -1;
         private static int builtHoverId = -1;
 
@@ -228,27 +232,75 @@ namespace EPrimeReadouts.UI
             searchFieldFocused = false;
             SearchText = "";
             viewStamp = 0;
+            bandsHidden = false;
             hoveredGroupId = -1;
             builtHoverId = -1;
             hoverVariants.Clear();
             hotDraw = null;
             hotVisible = false;
+            directGlyphs.Release();
+            glyphsDirect = false;
+            ReleaseSurfaces();
+            bufferedRendererDisabled = false;
+            lastGraphicsFrame = -1;
+        }
+
+        /// Drops every cached surface and the publication bookkeeping so the
+        /// next eligible frame rebuilds from scratch. Used by global teardown
+        /// and when the player turns cached rendering off; the direct
+        /// renderer takes over until surfaces exist again.
+        private static void ReleaseSurfaces()
+        {
             frameBuffers.Release();
             bufferPipeline = new PanelBufferPipeline();
             frameBuffers = new PanelFrameBuffers(
                 bufferPipeline, PanelBufferBackend.Shared);
-            bufferedRendererDisabled = false;
             graphicsEligibleFrame = 0;
-            lastGraphicsFrame = -1;
+            presentFailures = 0;
             publishedGeometryDraw = null;
             publishedIconRevision = -1;
             publishedHeader = default;
             publishedHeaderValid = false;
         }
 
+        /// Consecutive repaints on which the cached surfaces existed but
+        /// could not be presented. Each such frame falls back to direct
+        /// drawing; this many in a row retire the buffered renderer.
+        private static int presentFailures;
+        private const int MaxPresentFailures = 3;
+
+        /// Whether the toolbar's kept readout toggle currently hides the
+        /// bands (the toggle is the game's own categorized-readout
+        /// preference). A change is a view-state change and bumps the view
+        /// stamp, so the layout rebuilds without groups or with them again.
+        private static bool bandsHidden;
+
+        private static bool BandsHiddenNow(ReadoutSettings settings) =>
+            settings.keepReadoutToggle && !Prefs.ResourceReadoutCategorized;
+
+        private static void ObserveBandsHidden(ReadoutSettings settings)
+        {
+            bool hidden = BandsHiddenNow(settings);
+            if (hidden == bandsHidden) return;
+            bandsHidden = hidden;
+            BumpView();
+        }
+
+        /// The player's buffered-rendering switch, observed once per OnGUI.
+        /// Turning it off releases the surfaces at once; turning it back on
+        /// lets the update gate rebuild them.
+        private static void ObserveBufferingOption(ReadoutSettings settings)
+        {
+            if (settings.bufferedRendering) return;
+            if (!frameBuffers.HasSurfaces && !frameBuffers.BuildInFlight) return;
+            ReleaseSurfaces();
+        }
+
         internal static void ProcessPendingGraphics(Map map)
         {
-            if (bufferedRendererDisabled || draw == null
+            if (bufferedRendererDisabled
+                || !EPrimeReadoutsMod.Settings.bufferedRendering
+                || draw == null
                 || !ReferenceEquals(map, builtMap)
                 || !ReferenceEquals(map, Find.CurrentMap)
                 || Time.frameCount < graphicsEligibleFrame
@@ -319,6 +371,8 @@ namespace EPrimeReadouts.UI
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData =
                 GameRenderData.Get(map, store);
 
+            ObserveBufferingOption(settings);
+            ObserveBandsHidden(settings);
             UpdateHoverState(settings);
             if (NeedsStructuralRebuild(store, map, width, renderData))
             {
@@ -370,6 +424,7 @@ namespace EPrimeReadouts.UI
             if (repaint && !bufferedRendererDisabled)
                 bufferPipeline.TrySwapOnRepaint();
             bool buffered = !bufferedRendererDisabled
+                && settings.bufferedRendering
                 && frameBuffers.HasSurfaces;
 
             GenUI.DrawTextWinterShadow(
@@ -385,20 +440,35 @@ namespace EPrimeReadouts.UI
             bool scrolling = totalH > maxContentH;
             float contentH = scrolling ? maxContentH : totalH;
 
+            // Direct drawing covers every frame the cached surfaces do not:
+            // before they exist, and any repaint on which presenting them
+            // fails. A failed present never leaves the panel blank.
+            bool direct = !buffered;
             if (buffered && repaint)
             {
                 // Scroll is presentation-only: it selects a pixel-snapped
                 // window into the cached content textures and never queues a
                 // rebuild.
-                frameBuffers.Present(x, y,
+                bool presented = frameBuffers.Present(x, y,
                     scrolling ? scroll.y : 0f, contentH,
                     CurrentGeometry(settings));
+                if (presented)
+                {
+                    presentFailures = 0;
+                }
+                else
+                {
+                    direct = true;
+                    if (++presentFailures >= MaxPresentFailures)
+                        DisableBufferedRenderer(
+                            "cached surfaces could not be presented");
+                }
             }
 
             Text.Font = GameFont.Small;
             DrawSearchRow(
                 new Rect(x, y, width, SearchRowH),
-                drawStable: !buffered);
+                drawStable: direct);
             y += SearchRowH;
 
             var outRect = new Rect(x, y, contentW, contentH);
@@ -414,11 +484,18 @@ namespace EPrimeReadouts.UI
             {
                 float viewportTop = scrolling ? scroll.y : 0f;
                 float viewportBottom = viewportTop + contentH;
-                if (!buffered)
+                if (direct)
                 {
+                    // Glyphs go to the screen after the group ends, from the
+                    // same generated geometry the buffered surface uses;
+                    // IMGUI labels remain the fallback without a font
+                    // material.
+                    glyphsDirect = repaint && directGlyphs.Ensure(
+                        draw, UiVersion.Current, RasterScale());
                     CellRenderer.DrawDirect(
                         draw, viewportTop, viewportBottom,
-                        inputBlocked, PanelVisualOptions.Default);
+                        inputBlocked, PanelVisualOptions.Default,
+                        drawText: !glyphsDirect);
                 }
                 HandleContentInput(
                     store, viewportTop, viewportBottom);
@@ -428,6 +505,10 @@ namespace EPrimeReadouts.UI
                 if (scrolling) Widgets.EndScrollView();
                 else Widgets.EndGroup();
             }
+            if (direct && glyphsDirect)
+                directGlyphs.Draw(
+                    new Vector2(x, y - (scrolling ? scroll.y : 0f)),
+                    outRect, RasterScale());
 
             EnsureHotRects(x, settings.offsetY, y, outRect, scroll.y);
 
@@ -447,10 +528,18 @@ namespace EPrimeReadouts.UI
             bool repaint = evt.type == EventType.Repaint;
             bool drawGear = drawStable || !repaint
                 || gearRect.Contains(evt.mousePosition);
+            // A directly drawn gear carries the direct-renderer tint; the
+            // buffered surface draws its own white gear.
+            Color gearTint = drawStable ? DirectGearTint : Color.white;
             if (inputBlocked && drawStable)
+            {
+                GUI.color = gearTint;
                 GUI.DrawTexture(gearRect, ReadoutTextures.Gear);
+                GUI.color = Color.white;
+            }
             else if (!inputBlocked && drawGear
-                && Widgets.ButtonImage(gearRect, ReadoutTextures.Gear))
+                && Widgets.ButtonImage(gearRect, ReadoutTextures.Gear,
+                    gearTint, GenUI.MouseoverColor))
                 Find.WindowStack.Add(new Dialog_ReadoutConfig());
 
             if (!settings.showSearchFilter)
@@ -461,7 +550,7 @@ namespace EPrimeReadouts.UI
                     // Width measured once (Small font) — never per frame; the
                     // label rect fits the text exactly so it cannot wrap.
                     Text.Anchor = TextAnchor.MiddleLeft;
-                    GUI.color = EprStyle.HeaderText;
+                    GUI.color = EprStyle.PanelTitleText;
                     Widgets.Label(new Rect(rect.x + 26f, rect.y, cachedTitleWidth, rect.height),
                         cachedTitleText);
                     GUI.color = Color.white;
@@ -760,6 +849,34 @@ namespace EPrimeReadouts.UI
                 "[Readouts] Buffered renderer disabled: " + reason);
         }
 
+        /// The fault ladder's first step: retires the buffered renderer for
+        /// the session so the panel draws directly. Returns false when it
+        /// was already off (disabled, retired, or switched off by the
+        /// player), which tells the caller to take the next step.
+        internal static bool RetireBufferedRenderer(string reason)
+        {
+            if (bufferedRendererDisabled
+                || !EPrimeReadoutsMod.Settings.bufferedRendering)
+                return false;
+            DisableBufferedRenderer(reason);
+            return true;
+        }
+
+        /// Direct-mode glyph renderer (see its cache contract). Whether the
+        /// current repaint draws its text through it is decided inside the
+        /// content group and consumed right after the group ends.
+        private static readonly PanelDirectGlyphs directGlyphs =
+            new PanelDirectGlyphs();
+        private static bool glyphsDirect;
+
+        private static float RasterScale() =>
+            Prefs.UIScale > 0f ? Prefs.UIScale : 1f;
+
+        /// Gear tint while the panel is drawn directly, so a screenshot tells
+        /// which renderer produced it: white gear means buffered surfaces,
+        /// amber gear means the direct renderer.
+        private static readonly Color DirectGearTint = new Color(1f, 0.82f, 0.55f);
+
         /// Anything not consumed by a control inside the panel must not leak
         /// to the map (clicks would select things, wheel would zoom).
         private static void ConsumeStrayEvents()
@@ -832,7 +949,10 @@ namespace EPrimeReadouts.UI
         {
             var settings = EPrimeReadoutsMod.Settings;
             var groups = store.Model.InDisplayOrder();
-            groups.RemoveAll(g => !(settings.enabledGroups.TryGetValue(store.DepthKey(g.Id), out bool on)
+            // With the toolbar toggle off, the panel keeps only its header
+            // (and search results): no groups enter the layout at all.
+            if (bandsHidden) groups.Clear();
+            else groups.RemoveAll(g => !(settings.enabledGroups.TryGetValue(store.DepthKey(g.Id), out bool on)
                 ? on : g.DefaultEnabled));
             var input = new LayoutInput
             {
@@ -869,6 +989,7 @@ namespace EPrimeReadouts.UI
                 // view stamp instead of invalidating counts.
                 Debts = renderData.Counts.Debts,
                 AllowNegativeCounts = settings.showNegativeCounts,
+                VerticalTiers = settings.verticalTiers,
                 Width = width,
                 Catalog = GameResourceCatalog.Instance,
                 SearchableDefNames = GameResourceCatalog.SearchableDefNames,

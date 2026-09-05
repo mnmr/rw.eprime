@@ -27,6 +27,12 @@ namespace EPrimeReadouts.UI
             ContentFinder<Texture2D>.Get("EPrimeReadouts/ModIcon", false)
             ?? BaseContent.BadTex;
 
+        /// The vanilla tab atlas (TabRecord keeps its copy private); drawn by
+        /// the shared TabStrip, never mutated.
+        public static readonly Texture2D TabAtlas =
+            ContentFinder<Texture2D>.Get("UI/Widgets/TabAtlas", false)
+            ?? BaseContent.BadTex;
+
         private static Texture2D MakeTriangle(int w, int h)
         {
             var tex = new Texture2D(w, h, TextureFormat.RGBA32, false);

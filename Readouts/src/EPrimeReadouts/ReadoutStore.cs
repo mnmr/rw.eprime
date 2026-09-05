@@ -138,6 +138,19 @@ namespace EPrimeReadouts
         public override void FinalizeInit(bool fromLoad)
         {
             base.FinalizeInit(fromLoad);
+            // Vanilla runs World.FinalizeInit BEFORE Scribe.loader
+            // .FinalizeLoading, so on a load the PostLoadInit pass that
+            // rebuilds Model has not happened yet: cleanup, migration, and
+            // the depth-key prune would all see an empty model, and the
+            // prune would drop every depth and enabled-group key of the
+            // save being loaded. Defer the whole pass until the load event
+            // has finished; a new game has its model ready and runs it now.
+            if (fromLoad) LongEventHandler.ExecuteWhenFinished(FinishInit);
+            else FinishInit();
+        }
+
+        private void FinishInit()
+        {
             Model.CleanupMissing(TokenValid, MemberValid);
             // Migration: convert legacy @Category tokens → #poolId. Run before seeding
             // so pre-A4 saves convert; after CleanupMissing so only valid tokens remain.

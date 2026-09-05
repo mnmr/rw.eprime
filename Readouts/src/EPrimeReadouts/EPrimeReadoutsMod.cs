@@ -15,6 +15,10 @@ namespace EPrimeReadouts
         /// The mod's content pack — used to locate shipped data files (Seed/).
         public static ModContentPack? ContentPack;
 
+        /// The mod's install directory; the Help tab loads its topic files
+        /// and images from here and the welcome dialog its preview art.
+        public static string ContentRootDir = "";
+
         // Cache contract:
         // Owner: this Mod/settings-window instance.
         // Key: language revision plus the four displayed integer setting values.
@@ -37,6 +41,7 @@ namespace EPrimeReadouts
         {
             Settings = GetSettings<ReadoutSettings>();
             ContentPack = content;
+            ContentRootDir = content.RootDir;
             var harmony = new Harmony("mnmr.eprimereadouts");
             MouseFocusTextField.Initialize(harmony);
             harmony.PatchAll();
@@ -73,6 +78,10 @@ namespace EPrimeReadouts
             Settings.panelWidth = listing.Slider(Settings.panelWidth, 80f, 400f);
             listing.Label(bottomMarginLabel);
             Settings.bottomMargin = listing.Slider(Settings.bottomMargin, 0f, 500f);
+            // Also on the editor's Options tab; repeated here so a player
+            // whose panel renders blank can reach it without the panel.
+            listing.CheckboxLabeled(UiText.Get("EPR.BufferedRendering"),
+                ref Settings.bufferedRendering, UiText.Get("EPR.BufferedRenderingTip"));
             }
             finally
             {

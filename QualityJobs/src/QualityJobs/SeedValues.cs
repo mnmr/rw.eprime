@@ -38,6 +38,7 @@ namespace QualityJobs
         public bool autoBest;
         public bool constructionAutoBest;
         public int targetQuality;
+        public bool highPriorityFinish;
 
         /// Parameterless ctor required by [SyncWorker(shouldConstruct = true)].
         public SeedValues() { }
@@ -61,6 +62,7 @@ namespace QualityJobs
                 autoBest = s.defaultAutoBest,
                 constructionAutoBest = s.defaultConstructionAutoBest,
                 targetQuality = s.defaultTargetQuality,
+                highPriorityFinish = s.defaultHighPriorityFinish,
             };
     }
 }

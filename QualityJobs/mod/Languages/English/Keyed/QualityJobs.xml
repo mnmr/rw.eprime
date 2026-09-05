@@ -46,6 +46,8 @@
   <QJ_SettingsFinisherSkillTip>Only pawns at or above this skill level may perform the finishing touch; other pawns may do the earlier work.\n\nWhen Auto-adjust finisher skill is checked, this value is kept as the manual default but is not used.</QJ_SettingsFinisherSkillTip>
   <QJ_SettingsShareWork>Share unfinished work</QJ_SettingsShareWork>
   <QJ_SettingsShareWorkTip>Checked: Unfinished items are unlocked so any allowed pawn can continue work that someone else started.\n\nUnchecked: Vanilla behavior, where an unfinished item stays bound to the pawn who started it.</QJ_SettingsShareWorkTip>
+  <QJ_SettingsHighPriorityFinish>Use high-priority job for finishers</QJ_SettingsHighPriorityFinish>
+  <QJ_SettingsHighPriorityFinishTip>Checked: A colonist chosen to finish an item takes that job the next time they look for work, before every other kind of work except firefighting, medical care, rescuing and bed rest. Their current job is not interrupted.\n\nUnchecked: The finish job is the first job within its work type, but work types the colonist ranks higher still come first.</QJ_SettingsHighPriorityFinishTip>
   <QJ_SettingsDefaultCap>Default unfinished stock cap: {0}</QJ_SettingsDefaultCap>
   <QJ_SettingsDefaultCapTip>Sets the default maximum number of unfinished items for each product. All bills producing the same item share the cap.\n\nBills stop starting new items when the cap is reached; in-progress items may still finish. 0 means unlimited.</QJ_SettingsDefaultCapTip>
   <QJ_SettingsUnlimitedHint>0 = unlimited</QJ_SettingsUnlimitedHint>

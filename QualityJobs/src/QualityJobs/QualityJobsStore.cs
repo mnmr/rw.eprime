@@ -92,6 +92,21 @@ namespace QualityJobs
         public int targetQualityDefault;
         public int productCapDefault;
         public bool shareUnfinishedWork;
+        // Dispatched finishers take the finish job ahead of the work-giver
+        // list (Patch_FinisherPriority). Synced per save: job choice is
+        // simulation, so a client-local toggle would desync multiplayer.
+        public bool highPriorityFinish;
+
+        // Cache contract — Owner: this per-save store. Key: none. Value: count
+        // of Dispatched entries plus Dispatched plans. Dependencies: entry and
+        // plan state mutations, all of which pass through NotifyEntriesChanged,
+        // NotifyPlanStateChanged, or NotifyPlanStructureChanged; load
+        // normalization recounts. Refresh: immediate at those notifications.
+        // Equality: n/a. Teardown: dies with the store; disable clears it
+        // through the same notifications. Lets the per-job-search prefix exit
+        // on one integer read when nobody is dispatched.
+        private int dispatchedFinisherCount;
+        internal bool HasDispatchedFinishers => dispatchedFinisherCount != 0;
 
         // Per-save construction defaults (seeded from global defaults; dual-pattern §11).
         public bool manageNewConstructionDefault;
@@ -527,6 +542,21 @@ namespace QualityJobs
             RequestReconcile();
         }
 
+        internal void NotifyHighPriorityFinishChanged()
+        {
+            PublishSettingsPresentation();
+        }
+
+        private void RecountDispatchedFinishers()
+        {
+            int count = 0;
+            for (int i = 0; i < entries.Count; i++)
+                if (entries[i].state == WorkItemState.Dispatched) count++;
+            for (int i = 0; i < plans.Count; i++)
+                if (plans[i].state == ConstructionPlanState.Dispatched) count++;
+            dispatchedFinisherCount = count;
+        }
+
         internal void NotifyPlanConfigurationChanged()
         {
             PublishPlanPresentations(rebuildOverlays: false);
@@ -537,12 +567,14 @@ namespace QualityJobs
 
         internal void NotifyPlanStateChanged()
         {
+            RecountDispatchedFinishers();
             PublishPlanPresentations(rebuildOverlays: false);
             Bump(ref PlanStatusRevision);
         }
 
         internal void NotifyPlanStructureChanged()
         {
+            RecountDispatchedFinishers();
             PublishPlanPresentations(rebuildOverlays: true);
             InvalidateManagedJobs();
             Bump(ref PlanStatusRevision);
@@ -550,6 +582,7 @@ namespace QualityJobs
 
         internal void NotifyEntriesChanged()
         {
+            RecountDispatchedFinishers();
             Bump(ref BillStatusRevision);
         }
 
@@ -1326,6 +1359,7 @@ namespace QualityJobs
                 targetQualityDefault = s.defaultTargetQuality;
                 productCapDefault = s.defaultProductCap;
                 shareUnfinishedWork = s.defaultShareUnfinishedWork;
+                highPriorityFinish = s.defaultHighPriorityFinish;
                 manageNewConstructionDefault = s.defaultManageNewConstruction;
                 constructionMinSkillDefault = s.defaultConstructionMinSkill;
                 constructionRequireInspiredDefault = s.defaultConstructionRequireInspired;
@@ -1446,6 +1480,7 @@ namespace QualityJobs
             targetQualityDefault = v.targetQuality;
             productCapDefault = v.productCap;
             shareUnfinishedWork = v.share;
+            highPriorityFinish = v.highPriorityFinish;
             manageNewConstructionDefault = v.manageNewConstruction;
             constructionMinSkillDefault = v.constructionMinSkill;
             constructionRequireInspiredDefault = v.constructionRequireInspired;
@@ -1987,6 +2022,7 @@ namespace QualityJobs
             }
             pendingCopyActive = false;
             RebuildEntryIndex();
+            RecountDispatchedFinishers();
         }
 
         private void RebuildEntryIndex()
@@ -2022,6 +2058,7 @@ namespace QualityJobs
             Scribe_Values.Look(ref targetQualityDefault, "targetQualityDefault", 0);
             Scribe_Values.Look(ref productCapDefault, "productCapDefault", 10);
             Scribe_Values.Look(ref shareUnfinishedWork, "shareUnfinishedWork", true);
+            Scribe_Values.Look(ref highPriorityFinish, "highPriorityFinish", true);
             Scribe_Values.Look(ref manageNewConstructionDefault, "manageNewConstructionDefault", false);
             Scribe_Values.Look(ref constructionMinSkillDefault, "constructionMinSkillDefault", 15);
             Scribe_Values.Look(ref constructionRequireInspiredDefault, "constructionRequireInspiredDefault", false);

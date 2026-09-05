@@ -539,33 +539,45 @@ namespace QualityJobs
             return best;
         }
 
+        /// Spec §4 revert triggers, decided by DispatchRevertPolicy. The item
+        /// fact is MapHeld, not Spawned: while the finisher carries the item
+        /// from storage to the bench it is despawned but still on the map, and
+        /// reverting there deletes the bill under the running job, which drops
+        /// the item and restarts the loop.
         public static bool DispatchInvalid(QualityJobsStore store, WorkItemEntry e)
         {
-            if (e.uft == null || !e.uft.Spawned) return true;
-            if (e.finisher == null || e.finisher.Dead || e.finisher.Destroyed
-                || !e.finisher.Spawned || e.finisher.Downed) return true;
-            if (e.finishBill == null || e.finishBill.DeletedOrDereferenced) return true;
-            // Spec §4: required inspiration lost or work type disabled → revert early
-            // instead of letting the finisher walk over and bounce off the gate.
-            RecipeDef? recipe = e.uft?.Recipe;
-            if (recipe != null && e.finisher != null)
-            {
-                ResumeCondition condition = ConditionFor(store, e);
-                WorkTypeDef? workType = WorkTypeForRecipe(recipe);
-                CandidateFacts facts = FactsFor(e.finisher, recipe, workType);
-                if (!facts.WorkTypeEnabled) return true;
-                if (AutoBestFor(store, e))
-                {
-                    // Auto spec §2.4: revert when the dispatched finisher is no
-                    // longer colony-wide top (someone surpassed them mid-walk).
-                    BuildAutoPool(recipe, workType);
-                    bool stillBest = FinisherSelector.WorkerPassesAutoGate(facts, poolBuffer, condition);
-                    ClearAutoPool();
-                    if (!stillBest) return true;
-                }
-                else if (!condition.IsSatisfiedBy(facts)) return true;
-            }
-            return false;
+            UnfinishedThing? uft = e.uft;
+            Pawn? finisher = e.finisher;
+            bool finisherAvailable = finisher != null && !finisher.Dead
+                && !finisher.Destroyed && finisher.Spawned && !finisher.Downed;
+            bool itemOnFinisherMap = uft != null && !uft.Destroyed
+                && finisherAvailable && uft.MapHeld == finisher!.Map;
+            bool finishBillAlive = e.finishBill != null
+                && !e.finishBill.DeletedOrDereferenced;
+            bool finisherQualifies = finisherAvailable && uft != null
+                && FinisherQualifies(store, e, finisher!, uft.Recipe);
+            return DispatchRevertPolicy.ShouldRevert(itemOnFinisherMap,
+                finisherAvailable, finishBillAlive, finisherQualifies);
+        }
+
+        /// Spec §4: required inspiration lost or work type disabled → revert
+        /// early instead of letting the finisher walk over and bounce off the
+        /// gate. A recipe-less item has no gate to fail.
+        private static bool FinisherQualifies(QualityJobsStore store, WorkItemEntry e,
+            Pawn finisher, RecipeDef? recipe)
+        {
+            if (recipe == null) return true;
+            ResumeCondition condition = ConditionFor(store, e);
+            WorkTypeDef? workType = WorkTypeForRecipe(recipe);
+            CandidateFacts facts = FactsFor(finisher, recipe, workType);
+            if (!facts.WorkTypeEnabled) return false;
+            if (!AutoBestFor(store, e)) return condition.IsSatisfiedBy(facts);
+            // Auto spec §2.4: revert when the dispatched finisher is no longer
+            // colony-wide top (someone surpassed them mid-walk).
+            BuildAutoPool(recipe, workType);
+            bool stillBest = FinisherSelector.WorkerPassesAutoGate(facts, poolBuffer, condition);
+            ClearAutoPool();
+            return stillBest;
         }
 
         /// Dispatched -> Paused (spec §4 revert).

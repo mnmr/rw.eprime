@@ -240,6 +240,60 @@ public class JobOrderCompilerTests
         await Assert.That(Flat(result.Normal)).IsEqualTo("TendPatients,HaulGeneral");
     }
 
+    /// Vanilla's rule: an emergency job stays in the emergency pass only when
+    /// its work type sits in the colonist's top priority tier, the best
+    /// vanilla number among work types that also carry ordinary jobs.
+    [Test]
+    public async Task VanillaEmergencyRuleKeepsOnlyTopTierJobsInTheEmergencyPass()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Firefighter", "FightFires")
+            .WithWorkType("Patient", "PatientGoToBedEmergencyTreatment", "PatientGoToBedTreatment")
+            .WithWorkType("Hauling", "HaulGeneral")
+            .WithWorkType("Doctor", "TendEmergency", "TendPatients")
+            .WithEmergency("FightFires", "PatientGoToBedEmergencyTreatment", "TendEmergency");
+        // Core, then Hauler, then Doctor as the colonist's last role.
+        var roles = Roles([WT("Firefighter"), WT("Patient")], [WT("Hauling")], [WT("Doctor")]);
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        Dictionary<string, int> vanilla = new()
+        {
+            ["Firefighter"] = 1,
+            ["Patient"] = 1,
+            ["Hauling"] = 1,
+            ["Doctor"] = 4,
+        };
+
+        JobOrderCompiler.ApplyVanillaEmergencyRule(result, catalog, vanilla);
+
+        // Patient sets the tier at 1 (it has an ordinary job); Doctor at 4 is
+        // outside it, so urgent tending waits its turn behind hauling.
+        await Assert.That(Flat(result.Emergency)).IsEqualTo("FightFires,PatientGoToBedEmergencyTreatment");
+        await Assert.That(Flat(result.Normal)).IsEqualTo("PatientGoToBedTreatment,HaulGeneral,TendEmergency,TendPatients");
+    }
+
+    [Test]
+    public async Task VanillaEmergencyRuleLetsBuildingAboveCoreDemoteFirefighting()
+    {
+        var catalog = new FakeCatalog()
+            .WithWorkType("Construction", "ConstructFinishFrames")
+            .WithWorkType("Firefighter", "FightFires")
+            .WithEmergency("FightFires");
+        var roles = Roles([WT("Construction")], [WT("Firefighter")]);
+        var result = JobOrderCompiler.Compile(roles, catalog, _ => true);
+        Dictionary<string, int> vanilla = new()
+        {
+            ["Construction"] = 1,
+            ["Firefighter"] = 2,
+        };
+
+        JobOrderCompiler.ApplyVanillaEmergencyRule(result, catalog, vanilla);
+
+        // Firefighter carries only emergency jobs, so it can never set the
+        // tier itself: Construction at 1 does, and fires wait behind building.
+        await Assert.That(result.Emergency).IsEmpty();
+        await Assert.That(Flat(result.Normal)).IsEqualTo("ConstructFinishFrames,FightFires");
+    }
+
     /// Vanilla replays priority numbers ascending, each left-to-right over the
     /// Work-tab columns; replaying the projected numbers must reproduce the
     /// internal rank order.

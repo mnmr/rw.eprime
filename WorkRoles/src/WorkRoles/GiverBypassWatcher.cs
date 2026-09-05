@@ -1,6 +1,7 @@
 using RimWorld;
 using Verse;
 using Verse.AI;
+using WorkRoles.Core;
 
 namespace WorkRoles
 {
@@ -38,6 +39,7 @@ namespace WorkRoles
         {
             var giver = job?.workGiverDef;
             if (giver == null || job!.playerForced || pending != null) return;
+            if (GiverBypassPolicy.IsExemptGiver(giver.defName)) return;
             var world = Find.World;
             if (world == null) return;
             int worldId = world.info.persistentRandomValue;

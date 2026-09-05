@@ -41,19 +41,44 @@
   <EPR.HelpResources>Browse resources and defined resource pools to add them to the selected group.&#10;&#10;Click an entry to append it to the group, or drag it to place it in a specific tier slot. Assigned entries are dimmed and marked; right-click them or click their checkmark to remove them.</EPR.HelpResources>
   <EPR.HelpEditor>This panel shows you the tiers of the currently selected group.&#10;&#10;A group can have up to three display tiers. A new tier automatically becomes available when the previous tier is non-empty.&#10;&#10;Click or drag items from the panel on the right to add them to the selected group.&#10;&#10;Click a slot to set display options. Right-click a slot to clear the assignment. Drag items to re-arrange inside or between tiers.</EPR.HelpEditor>
   <EPR.Options>Options</EPR.Options>
+  <EPR.Overview>Overview</EPR.Overview>
+
+  <!-- ===== Help tab ===== -->
+  <EPR.HelpChapterBasics>Basics</EPR.HelpChapterBasics>
+  <EPR.HelpChapterGroups>Groups</EPR.HelpChapterGroups>
+  <EPR.HelpChapterPools>Resource Pools</EPR.HelpChapterPools>
+  <EPR.HelpChapterOptions>Options</EPR.HelpChapterOptions>
+  <EPR.HelpReload>Reload</EPR.HelpReload>
+
+  <!-- ===== Welcome dialog (shown once per player per save) ===== -->
+  <EPR.WelcomeTitle>EPrime's Readouts</EPR.WelcomeTitle>
+  <EPR.WelcomeBody>Readouts replaces the resource readout in the top left corner with groups you configure. Each group holds up to three tiers of resources or resource pools, and its counters change color at the thresholds you set.</EPR.WelcomeBody>
+  <EPR.WelcomeFind>Open the editor with the gear button at the top of the readout panel. The Options tab holds the display options and the Help tab explains the rest.</EPR.WelcomeFind>
+  <EPR.WelcomeTakeMeThere>Take me there now</EPR.WelcomeTakeMeThere>
+
   <EPR.ShowSearchFilter>Show search filter</EPR.ShowSearchFilter>
   <EPR.SearchHideZero>Hide zero-count results</EPR.SearchHideZero>
   <EPR.SearchStorageOnly>Only count items in storage</EPR.SearchStorageOnly>
   <EPR.SearchStorageOnlyTip>When enabled, only counts eligible, non-rotten items in stockpile zones or storage buildings such as shelves. Loose map items elsewhere on the map are excluded. Items carried by pawns, held in inventories or containers, or hidden in unrevealed areas are never counted. Forbidden items are included unless “Ignore forbidden items” is also enabled.</EPR.SearchStorageOnlyTip>
   <EPR.SearchHideForbidden>Ignore forbidden items</EPR.SearchHideForbidden>
   <EPR.SelectJumpCamera>Jump camera to clicked resource</EPR.SelectJumpCamera>
+  <EPR.DisplayOptions>Display Options</EPR.DisplayOptions>
+  <EPR.KeepReadoutToggle>Keep the readout toggle in the toolbar</EPR.KeepReadoutToggle>
+  <EPR.KeepReadoutToggleTip>Keeps the game's own resource readout button in the toolbar at the bottom right. Clicking it then shows or hides the groups; with the groups hidden the panel keeps only the gear and the search field.</EPR.KeepReadoutToggleTip>
+  <EPR.CompatibilityOptions>Compatibility</EPR.CompatibilityOptions>
+  <EPR.BufferedRendering>Buffered panel rendering</EPR.BufferedRendering>
+  <EPR.BufferedRenderingTip>Draws the panel from buffered images, so an unchanged panel costs almost nothing per frame. Turn it off if the panel shows up blank or garbled on your system. The panel is then drawn directly every frame, and its gear turns amber to mark it.</EPR.BufferedRenderingTip>
+  <EPR.TierLayoutOptions>Tier layout</EPR.TierLayoutOptions>
+  <EPR.TierLayoutHorizontal>Horizontal</EPR.TierLayoutHorizontal>
+  <EPR.TierLayoutVertical>Vertical</EPR.TierLayoutVertical>
+  <EPR.TierLayoutTip>How an expanded group shows its extra tiers, whether you cycled them with the triangles or hovered. Horizontal adds them to the right on the same row. Vertical gives each tier its own row and makes the band taller.</EPR.TierLayoutTip>
   <EPR.ExpandOnHover>Expand on hover</EPR.ExpandOnHover>
   <EPR.CollapseWhenIdle>Collapse when not hovering</EPR.CollapseWhenIdle>
   <EPR.ShowModName>Show mod name</EPR.ShowModName>
   <EPR.CountOptions>Count Options</EPR.CountOptions>
   <EPR.PlannedWorkOptions>Planned Work</EPR.PlannedWorkOptions>
   <EPR.ReserveForBills>Reserve resources for bill items</EPR.ReserveForBills>
-  <EPR.ReserveForBillsTip>Subtracts the ingredients your outstanding bills still have to consume. A bill only reserves an ingredient it can be satisfied by in exactly one way — "any leather" and similar open choices reserve nothing.</EPR.ReserveForBillsTip>
+  <EPR.ReserveForBillsTip>Subtracts the ingredients your outstanding bills still have to consume. A bill only reserves an ingredient it can be satisfied by in exactly one way. "Any leather" and similar open choices reserve nothing.</EPR.ReserveForBillsTip>
   <EPR.ReserveForBuildables>Reserve resources for buildables</EPR.ReserveForBuildables>
   <EPR.ReserveForBuildablesTip>Subtracts the materials your blueprints and part-built frames still need. Materials already hauled into a frame are not counted again, and forbidden blueprints are ignored.</EPR.ReserveForBuildablesTip>
   <EPR.ShowNegativeCounts>Show overruns as negative numbers</EPR.ShowNegativeCounts>

@@ -22,6 +22,17 @@ Drops work across rows too: drag a chip onto another colonist to move the
 assignment. Click the trash can icon inside a chip to remove the
 assignment; the chip leaves the row.
 
-Note that RimWorld has a separate priority list for emergency jobs
-(firefighting and urgent tending). These will run first whenever an
-enabled role covers them, regardless of where the role assignment sits.
+RimWorld keeps a separate list for emergency jobs: firefighting, urgent
+tending and going to bed for emergency treatment. Jobs on that list
+interrupt sleep, meals and any other job. By default every emergency job
+covered by an enabled role goes on that list, regardless of where the
+role sits in the row.
+
+The Options tab offers vanilla's rule instead: "Emergency jobs interrupt
+only at top priority". With it on, an emergency job interrupts everything
+only when its work type's number in the priority grid (the 0-4 mapping)
+is as good as or better than the colonist's best number for ordinary
+work. Otherwise the job runs in its normal position. A colonist whose
+grid shows Firefighter and Hauling at 1 and Doctor at 3 still interrupts
+any job for a fire, but treats urgent tending as ordinary doctor work at
+its position in the row.

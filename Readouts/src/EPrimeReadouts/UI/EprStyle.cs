@@ -50,6 +50,10 @@ namespace EPrimeReadouts.UI
         internal static readonly Color PanelBackground = new Color(0.08f, 0.08f, 0.08f, 0.9f);
         internal static readonly Color PanelOutline = new Color(1f, 1f, 1f, 0.15f);
         internal static readonly Color HeaderText = new Color(0.85f, 0.85f, 0.85f);
+        /// The mod name in the panel header. Pure white on purpose: the
+        /// buffered header recovers glyph coverage from the red channel, so
+        /// the direct path uses the same color to stay identical.
+        internal static readonly Color PanelTitleText = Color.white;
         internal static readonly Color HeaderRule = new Color(1f, 1f, 1f, 0.25f);
         internal static readonly Color CaptionText = new Color(0.60f, 0.62f, 0.64f);
         internal static readonly Color SelectionTint = new Color(1f, 0.95f, 0.55f);

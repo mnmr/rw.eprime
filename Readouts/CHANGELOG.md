@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.3.0 — 2026-09-04
+
+- Added: Integrated Help and a welcome dialog.
+- Added: Options tab with new display options (expand direction and a toggle for the toolbar button behavior).
+- Added: Logic to fall back to non-buffered rendering or vanilla readout on failures. Debug option to force non-buffered rendering, at a performance cost.
+
 ## 1.2.7 — 2026-09-03
 
 - Added: Search filter now also matches category labels (and implicitly all nested items).

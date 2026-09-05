@@ -18,6 +18,7 @@ namespace EPrimeReadouts
             ReadoutStore.ResetCurrentCache();
             EPrimeReadouts.Core.ReadoutLayoutEngine.ResetCaches();
             ReadoutPanel.Reset();
+            Patch_ResourceReadout.ResetFaults();
             IconTips.Reset();
             WrTips.Reset();
             WrText.Reset();

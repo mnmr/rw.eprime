@@ -37,6 +37,8 @@ namespace WorkRoles.UI
             y += 34f;
             var rangeRect = new Rect(flowX, y, flowW, 28f);
             y += 34f;
+            var emergencyRect = new Rect(flowX, y, flowW, 28f);
+            y += 34f;
             var automationHeader = new Rect(flowX, y + 8f, flowW, 28f);
             y += 8f + 32f;
             var autoOptimizeRect = new Rect(flowX, y, flowW, 28f);
@@ -59,6 +61,13 @@ namespace WorkRoles.UI
                 rangeRect, snapshot.RangeLabel, ref vanillaNew);
             if (vanillaNew != snapshot.VanillaRange)
                 RoleCommands.SetReportVanillaPriorities(vanillaNew);
+
+            StructuredTipPresenter.TipRegion(emergencyRect, snapshot.EmergencyRuleTip);
+            bool emergencyNew = snapshot.VanillaEmergencyRule;
+            Widgets.CheckboxLabeled(
+                emergencyRect, snapshot.EmergencyRuleLabel, ref emergencyNew);
+            if (emergencyNew != snapshot.VanillaEmergencyRule)
+                RoleCommands.SetVanillaEmergencyRule(emergencyNew);
 
             // Per-save automation: the hourly auto-optimize schedule is shared
             // world state (AutoOptimizer runs in the synced simulation), so

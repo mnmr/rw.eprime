@@ -40,6 +40,19 @@ namespace EPrimeReadouts.Core
         public int UiRevision { get; }
         public float RasterScale { get; }
 
+        /// Left edge of the title (or search field): gear column plus gap.
+        public const float TitleX = 26f;
+
+        /// Width the rendered header strip needs. The search field always
+        /// fits the panel, but the title keeps its measured width, so a
+        /// narrow panel lets the strip grow past the panel edge instead of
+        /// clipping the last letters. Bands already extend past the panel
+        /// width the same way.
+        public float SurfaceWidth =>
+            !ShowSearch && ShowTitle && TitleX + TitleWidth > HeaderWidth
+                ? TitleX + TitleWidth
+                : HeaderWidth;
+
         public bool Equals(PanelHeaderRevision other) =>
             ShowSearch == other.ShowSearch
             && ShowTitle == other.ShowTitle

@@ -115,7 +115,7 @@ namespace EPrimeReadouts.UI
             if (!buildInFlight) return true;
             SurfacePublishState baseState = baseSurface.Channel.Pump();
             SurfacePublishState glyphState = glyphProduct.Channel.Pump();
-            SurfacePublishState headerState = headerSurface.Channel.Pump();
+            SurfacePublishState headerState = headerSurface.Pump();
             if (baseState == SurfacePublishState.Failed
                 || glyphState == SurfacePublishState.Failed
                 || headerState == SurfacePublishState.Failed)

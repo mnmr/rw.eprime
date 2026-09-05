@@ -90,12 +90,52 @@ namespace WorkRoles.Core
                     result.WorkTypePriorities[workType] = ++nextRank;
             }
 
-            // Role membership already decides WHETHER a pawn does emergency work
-            // (omission = off), so every emergency-flagged job present goes to the
-            // emergency list — no priority gate.
+            // Default rule: role membership already decides WHETHER a pawn does
+            // emergency work (omission = off), so every emergency-flagged job
+            // present goes to the emergency list — no priority gate. The
+            // per-save vanilla rule (ApplyVanillaEmergencyRule) narrows this.
             foreach (var giver in result.AllInOrder)
                 (catalog.IsEmergency(giver) ? result.Emergency : result.Normal).Add(giver);
             return result;
+        }
+
+        /// Repartitions Normal/Emergency by vanilla's rule
+        /// (Pawn_WorkSettings.CacheWorkGiversInOrder): the tier is the best
+        /// vanilla priority among the compiled work types that carry any
+        /// ordinary job in the catalog (a type with only emergency jobs never
+        /// sets it); an emergency job stays in the emergency pass only when its
+        /// type's vanilla priority is at or better than the tier, otherwise it
+        /// runs as ordinary work at its compiled position. Types missing from
+        /// <paramref name="vanillaPriorities"/> fall back to their raw rank.
+        public static void ApplyVanillaEmergencyRule(
+            CompiledOrder order,
+            IJobCatalog catalog,
+            IReadOnlyDictionary<string, int> vanillaPriorities)
+        {
+            int PriorityOf(string workType) =>
+                vanillaPriorities.TryGetValue(workType, out int vanilla)
+                    ? vanilla
+                    : order.WorkTypePriorities[workType];
+
+            int tier = int.MaxValue;
+            foreach (var pair in order.WorkTypePriorities)
+            {
+                bool ordinary = false;
+                foreach (string giver in catalog.WorkGiversOf(pair.Key))
+                    if (!catalog.IsEmergency(giver)) { ordinary = true; break; }
+                if (!ordinary) continue;
+                int priority = PriorityOf(pair.Key);
+                if (priority < tier) tier = priority;
+            }
+
+            order.Normal.Clear();
+            order.Emergency.Clear();
+            foreach (string giver in order.AllInOrder)
+            {
+                bool emergencyPass = catalog.IsEmergency(giver)
+                    && PriorityOf(catalog.WorkTypeOf(giver)) <= tier;
+                (emergencyPass ? order.Emergency : order.Normal).Add(giver);
+            }
         }
 
         /// Indexes of entries with no effect under first-claim-wins: a giver
