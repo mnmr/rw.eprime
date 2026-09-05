@@ -13,7 +13,10 @@ namespace Implanner
     /// gates, never during rendering.
     internal static class PawnProjection
     {
-        internal static PlanEvaluation Evaluate(Pawn pawn,
+        /// model supplies the option-driven kind exclusivity (mod
+        /// compatibility) as its once-allocated delegate, beside the
+        /// definition-derived same-slot gate.
+        internal static PlanEvaluation Evaluate(PlannerModel model, Pawn pawn,
             IReadOnlyList<ImplantGoal> goals, bool away)
         {
             Project(pawn, goals,
@@ -21,21 +24,21 @@ namespace Implanner
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.Evaluate(
                 goals, installed, implantContexts, away,
-                ImplantConflicts.SameSlotExclusive);
+                ImplantConflicts.SameSlotExclusive, model.KindsExclusiveDelegate);
         }
 
         /// The implant slots surgery automation still has to deliver for this
         /// pawn (unblocked, not satisfied by the evaluator's one-to-one
         /// matching).
         internal static List<string> MissingImplantSlotKeys(
-            Pawn pawn, IReadOnlyList<ImplantGoal> goals)
+            PlannerModel model, Pawn pawn, IReadOnlyList<ImplantGoal> goals)
         {
             Project(pawn, goals,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.MissingImplantSlotKeys(
                 goals, installed, implantContexts,
-                ImplantConflicts.SameSlotExclusive);
+                ImplantConflicts.SameSlotExclusive, model.KindsExclusiveDelegate);
         }
 
         /// The shared projection prologue: both evaluation entry points must
@@ -63,6 +66,30 @@ namespace Implanner
                 (intellectual?.Level ?? 0) + (crafting?.Level ?? 0));
         }
 
+        /// The implant item a goal slot still needs delivered, or null when
+        /// none: an in-place upgrade whose base (or any kind below it in
+        /// the chain) already sits on the slot part needs only the upgrade
+        /// surgery's ordinary ingredients. Shared by reservation, surgery
+        /// release, production demand, and the strip so they never
+        /// disagree. Allocation-free: reached from the reconcile tick path.
+        internal static ThingDef? RequiredItem(
+            Pawn pawn, ImplantCatalogEntry entry, int ordinal)
+        {
+            ThingDef? item = entry.Def.spawnThingOnRemoved;
+            if (item == null || entry.UpgradesFrom == null) return item;
+            BodyPartRecord? part = ResolveSlotPart(pawn, entry, ordinal);
+            if (part == null) return item;
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            for (int i = 0; i < hediffs.Count; i++)
+            {
+                Hediff hediff = hediffs[i];
+                if (hediff.Part != part || hediff.def == entry.Def) continue;
+                if (Catalogs.UpgradeChainContains(entry, hediff.def.defName))
+                    return null;
+            }
+            return item;
+        }
+
         /// The pawn body part a goal slot ordinal denotes, following the same
         /// canonical enumeration as BuildImplantContext; null when the pawn's
         /// body lacks that slot.
@@ -84,6 +111,18 @@ namespace Implanner
             return null;
         }
 
+        /// Whether an installed hediff kind is an implant Implanner tracks:
+        /// the game's own implant flag, or any catalog kind regardless of
+        /// the flag (Bionic modularity's modules set
+        /// countsAsAddedPartOrImplant false to avoid doubled mood effects,
+        /// yet they are surgeries the plan installs and must count as
+        /// delivered). The same filter gates the facts revision
+        /// (Patch_PawnFacts), so evaluation and invalidation agree.
+        /// Dictionary lookup only: reached from hediff add/remove patches.
+        internal static bool IsTrackedImplant(HediffDef def) =>
+            def.countsAsAddedPartOrImplant
+            || Catalogs.ImplantByDefName(def.defName) != null;
+
         private static List<InstalledImplant> BuildInstalledImplants(Pawn pawn)
         {
             var result = new List<InstalledImplant>();
@@ -92,7 +131,7 @@ namespace Implanner
             for (int i = 0; i < hediffs.Count; i++)
             {
                 Hediff hediff = hediffs[i];
-                if (hediff.Part == null || !hediff.def.countsAsAddedPartOrImplant)
+                if (hediff.Part == null || !IsTrackedImplant(hediff.def))
                     continue;
                 result.Add(new InstalledImplant(
                     hediff.def.defName,

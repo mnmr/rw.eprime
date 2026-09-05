@@ -63,6 +63,9 @@ namespace Implanner
         private bool onlyIdleBenches = true;
         private int productionSkill = PlannerModel.ProductionSkillDefault;
         private bool allowIntermediaries = true;
+        private bool allowMultipleBladders = true;
+        private bool allowMultipleHygieneEnhancers = true;
+        private bool showPurchaseOnly;
 
         private readonly PlannerRevisions revisions = new PlannerRevisions();
 
@@ -291,6 +294,9 @@ namespace Implanner
                 onlyIdleBenches = Model.OnlyIdleBenches;
                 productionSkill = Model.ProductionSkill;
                 allowIntermediaries = Model.AllowIntermediaries;
+                allowMultipleBladders = Model.AllowMultipleBladders;
+                allowMultipleHygieneEnhancers = Model.AllowMultipleHygieneEnhancers;
+                showPurchaseOnly = Model.ShowPurchaseOnly;
             }
 
             Scribe_Collections.Look(ref planRecords, "plans", LookMode.Deep);
@@ -330,6 +336,10 @@ namespace Implanner
             Scribe_Values.Look(ref productionSkill, "productionSkill",
                 PlannerModel.ProductionSkillDefault);
             Scribe_Values.Look(ref allowIntermediaries, "allowIntermediaries", true);
+            Scribe_Values.Look(ref allowMultipleBladders, "allowMultipleBladders", true);
+            Scribe_Values.Look(ref allowMultipleHygieneEnhancers,
+                "allowMultipleHygieneEnhancers", true);
+            Scribe_Values.Look(ref showPurchaseOnly, "showPurchaseOnly", false);
             Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
             Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
 
@@ -442,7 +452,9 @@ namespace Implanner
                     (IterationStrategy)iteration, manualDoctorFloor, autoDoctorFloor,
                     surgeryConcurrency, countHospitalized,
                     autoProduction, productionConcurrency,
-                    onlyIdleBenches, productionSkill, allowIntermediaries);
+                    onlyIdleBenches, productionSkill, allowIntermediaries,
+                    allowMultipleBladders, allowMultipleHygieneEnhancers,
+                    showPurchaseOnly);
                 // Deferred so maps and pawns are fully loaded when existence
                 // checks run; executes before play begins on every client.
                 LongEventHandler.ExecuteWhenFinished(FinishInit);

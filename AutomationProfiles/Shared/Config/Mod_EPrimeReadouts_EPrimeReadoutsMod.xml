@@ -4,36 +4,30 @@
 		<dialogW>1220</dialogW>
 		<dialogH>789</dialogH>
 		<helpGroupsFolded>True</helpGroupsFolded>
-		<expandOnHover>False</expandOnHover>
-		<collapseWhenIdle>False</collapseWhenIdle>
-		<verticalTiers>False</verticalTiers>
-		<showSearchFilter>False</showSearchFilter>
-		<showModNameWhenNoSearch>True</showModNameWhenNoSearch>
-		<searchStorageOnly>False</searchStorageOnly>
-		<searchHideForbidden>True</searchHideForbidden>
+		<expandOnHover>True</expandOnHover>
 		<reserveForBills>True</reserveForBills>
 		<reserveForBuildables>True</reserveForBuildables>
-		<showNegativeCounts>False</showNegativeCounts>
+		<showNegativeCounts>True</showNegativeCounts>
 		<qualityJobsRework>True</qualityJobsRework>
 		<tierDepths>
 			<keys>
-				<li>-633476771:1</li>
-				<li>-633476771:2</li>
-				<li>-633476771:3</li>
-				<li>-633476771:4</li>
-				<li>-633476771:5</li>
-				<li>-633476771:6</li>
-				<li>-633476771:7</li>
-				<li>-633476771:8</li>
+				<li>2145844421:7</li>
+				<li>2145844421:6</li>
+				<li>2145844421:5</li>
+				<li>2145844421:4</li>
+				<li>2145844421:3</li>
+				<li>2145844421:2</li>
+				<li>2145844421:1</li>
+				<li>-376674967:7</li>
 			</keys>
 			<values>
-				<li>1</li>
-				<li>1</li>
-				<li>1</li>
 				<li>2</li>
-				<li>1</li>
+				<li>3</li>
 				<li>2</li>
-				<li>1</li>
+				<li>2</li>
+				<li>2</li>
+				<li>3</li>
+				<li>3</li>
 				<li>1</li>
 			</values>
 		</tierDepths>

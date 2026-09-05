@@ -35,5 +35,8 @@
 			<keys />
 			<values />
 		</enabledGroups>
+		<welcomeShownSaves>
+			<li>-633476771</li>
+		</welcomeShownSaves>
 	</ModSettings>
 </SettingsBlock>

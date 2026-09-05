@@ -172,6 +172,70 @@ namespace Implanner.Core
             return PlannerChange.Options;
         }
 
+        /// Mod compatibility: whether bladder implants from different mods
+        /// (ImplantCompatibility.BladderImplants) may be planned and
+        /// installed side by side, as the game allows. Off treats them as
+        /// one slot: picking one overrides the others, and an installed
+        /// bladder of any kind fills a bladder goal. On by default.
+        public bool AllowMultipleBladders { get; private set; } = true;
+
+        /// The same option for the hygiene enhancer pair
+        /// (ImplantCompatibility.HygieneEnhancerImplants).
+        public bool AllowMultipleHygieneEnhancers { get; private set; } = true;
+
+        public PlannerChange SetAllowMultipleBladders(bool allowed)
+        {
+            if (AllowMultipleBladders == allowed) return PlannerChange.None;
+            AllowMultipleBladders = allowed;
+            return PlannerChange.Options;
+        }
+
+        public PlannerChange SetAllowMultipleHygieneEnhancers(bool allowed)
+        {
+            if (AllowMultipleHygieneEnhancers == allowed) return PlannerChange.None;
+            AllowMultipleHygieneEnhancers = allowed;
+            return PlannerChange.Options;
+        }
+
+        /// Catalog: whether the picker lists implants whose item no recipe
+        /// can craft (archotech parts and kin without a crafting mod). Off
+        /// by default; picker visibility only — goals already holding such
+        /// kinds keep working from stock either way.
+        public bool ShowPurchaseOnly { get; private set; }
+
+        public PlannerChange SetShowPurchaseOnly(bool shown)
+        {
+            if (ShowPurchaseOnly == shown) return PlannerChange.None;
+            ShowPurchaseOnly = shown;
+            return PlannerChange.Options;
+        }
+
+        bool AllowsMultiple(CompatGroup group) =>
+            group == CompatGroup.Bladder ? AllowMultipleBladders
+            : group == CompatGroup.HygieneEnhancer ? AllowMultipleHygieneEnhancers
+            : true;
+
+        /// Whether two implant KINDS exclude each other by player option
+        /// alone, independent of anatomy: both in one curated group whose
+        /// "allow multiple" option is off. Same-kind pairs never count.
+        public bool KindsExclusive(string defA, string defB)
+        {
+            if (string.Equals(defA, defB, StringComparison.Ordinal)) return false;
+            CompatGroup group = ImplantCompatibility.GroupOf(defA);
+            return group != CompatGroup.None
+                && ImplantCompatibility.GroupOf(defB) == group
+                && !AllowsMultiple(group);
+        }
+
+        /// KindsExclusive as a delegate allocated once: the evaluator is
+        /// reached from the reconcile tick path, which must not allocate.
+        public Func<string, string, bool> KindsExclusiveDelegate { get; }
+
+        public PlannerModel()
+        {
+            KindsExclusiveDelegate = KindsExclusive;
+        }
+
         /// Whether missing implant items get crafting bills automatically.
         /// On by default: automation works out of the box.
         public bool AutoProduction { get; private set; } = true;
@@ -322,9 +386,14 @@ namespace Implanner.Core
             IterationStrategy iteration, int manualDoctorFloor, bool autoDoctorFloor,
             int surgeryConcurrency, bool countHospitalized,
             bool autoProduction, int productionConcurrency,
-            bool onlyIdleBenches, int productionSkill, bool allowIntermediaries)
+            bool onlyIdleBenches, int productionSkill, bool allowIntermediaries,
+            bool allowMultipleBladders, bool allowMultipleHygieneEnhancers,
+            bool showPurchaseOnly)
         {
             AutomationPaused = automationPaused;
+            AllowMultipleBladders = allowMultipleBladders;
+            AllowMultipleHygieneEnhancers = allowMultipleHygieneEnhancers;
+            ShowPurchaseOnly = showPurchaseOnly;
             Iteration = NormalizeIteration(iteration);
             ManualDoctorFloor = manualDoctorFloor < DoctorFloorMin ? DoctorFloorMin
                 : manualDoctorFloor > DoctorFloorMax ? DoctorFloorMax
@@ -775,11 +844,12 @@ namespace Implanner.Core
         /// (read-only) goal list, so the common case allocates nothing.
         public IReadOnlyList<ImplantGoal> EffectiveImplants(Plan plan)
         {
-            if (plan.BasePlanId == 0) return plan.Implants;
-            var result = new List<ImplantGoal>(plan.Implants);
+            IReadOnlyList<ImplantGoal> own = OwnEffective(plan);
+            if (plan.BasePlanId == 0) return own;
+            var result = new List<ImplantGoal>(own);
             var covered = new Dictionary<string, HashSet<int>>(StringComparer.Ordinal);
-            for (int i = 0; i < plan.Implants.Count; i++)
-                CoverSlots(covered, plan.Implants[i]);
+            for (int i = 0; i < own.Count; i++)
+                CoverSlots(covered, own[i]);
 
             var visited = new HashSet<int> { plan.Id };
             int baseId = plan.BasePlanId;
@@ -816,19 +886,66 @@ namespace Implanner.Core
             return result;
         }
 
+        /// The plan's own goals under the mod compatibility options: goals
+        /// of kinds an option makes exclusive keep only the first picked
+        /// (plan order). Picks made while an option was on, or imported,
+        /// stay stored so switching the option back on restores them;
+        /// while it is off every consumer (evaluator, automation, picker,
+        /// cards) sees one kind per group. The unchanged case returns the
+        /// plan's own read-only list.
+        IReadOnlyList<ImplantGoal> OwnEffective(Plan plan)
+        {
+            IReadOnlyList<ImplantGoal> own = plan.Implants;
+            if (AllowMultipleBladders && AllowMultipleHygieneEnhancers) return own;
+            List<ImplantGoal>? kept = null;
+            for (int i = 0; i < own.Count; i++)
+            {
+                ImplantGoal goal = own[i];
+                // Before any exclusion every earlier goal is kept, so the
+                // prefix of the own list stands in for the kept list.
+                IReadOnlyList<ImplantGoal> earlier = kept ?? own;
+                int earlierCount = kept?.Count ?? i;
+                bool excluded = false;
+                for (int j = 0; j < earlierCount && !excluded; j++)
+                    excluded = KindsExclusive(
+                        earlier[j].ImplantDefName, goal.ImplantDefName);
+                if (excluded)
+                {
+                    if (kept == null)
+                    {
+                        kept = new List<ImplantGoal>(own.Count);
+                        for (int j = 0; j < i; j++) kept.Add(own[j]);
+                    }
+                }
+                else
+                {
+                    kept?.Add(goal);
+                }
+            }
+            return kept ?? own;
+        }
+
         bool ConflictsWithAccepted(
             List<ImplantGoal> accepted, ImplantGoal goal, int ordinal)
         {
-            var resolver = SlotConflictResolver;
-            if (resolver == null) return false;
             for (int i = 0; i < accepted.Count; i++)
             {
                 ImplantGoal other = accepted[i];
                 for (int j = 0; j < other.SlotOrdinals.Count; j++)
-                    if (resolver(other, other.SlotOrdinals[j], goal, ordinal))
+                    if (SlotsConflict(other, other.SlotOrdinals[j], goal, ordinal))
                         return true;
             }
             return false;
+        }
+
+        /// The complete planned-slot conflict rule: the definition-derived
+        /// resolver (when injected) plus the option-driven kind
+        /// exclusivity, so every conflict consumer agrees.
+        bool SlotsConflict(ImplantGoal a, int ordinalA, ImplantGoal b, int ordinalB)
+        {
+            var resolver = SlotConflictResolver;
+            return (resolver != null && resolver(a, ordinalA, b, ordinalB))
+                || KindsExclusive(a.ImplantDefName, b.ImplantDefName);
         }
 
         static void CoverSlots(
@@ -907,8 +1024,6 @@ namespace Implanner.Core
         /// disappears. Reverse iteration keeps removal order-safe.
         void RemoveConflictingSlots(Plan plan, string implantDefName, int slotOrdinal)
         {
-            var resolver = SlotConflictResolver;
-            if (resolver == null) return;
             var added = new ImplantGoal(plan.Id, implantDefName, new[] { slotOrdinal });
             for (int i = plan.Implants.Count - 1; i >= 0; i--)
             {
@@ -921,7 +1036,7 @@ namespace Implanner.Core
                 for (int j = 0; j < other.SlotOrdinals.Count; j++)
                 {
                     int ordinal = other.SlotOrdinals[j];
-                    if (resolver(added, slotOrdinal, other, ordinal))
+                    if (SlotsConflict(added, slotOrdinal, other, ordinal))
                     {
                         anyRemoved = true;
                         continue;

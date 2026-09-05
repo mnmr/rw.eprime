@@ -10,8 +10,9 @@ namespace Implanner.Patches
     /// add/remove, and roster membership. Each bumps the facts revision only
     /// for humanlike player-faction pawns (the only pawns that can be
     /// enlisted), and the hediff seam only for implant-class hediffs (the
-    /// exact filter PawnProjection evaluates: countsAsAddedPartOrImplant),
-    /// so animal wounds, bloodloss and the like never invalidate anything.
+    /// exact filter PawnProjection evaluates: the game's implant flag or a
+    /// catalog kind, PawnProjection.IsTrackedImplant), so animal wounds,
+    /// bloodloss and the like never invalidate anything.
     internal static class PawnFactsTransitions
     {
         internal static void BumpFor(Pawn? pawn)
@@ -22,7 +23,7 @@ namespace Implanner.Patches
 
         internal static void BumpForHediff(Pawn? pawn, Hediff? hediff)
         {
-            if (hediff?.def.countsAsAddedPartOrImplant == true)
+            if (hediff != null && PawnProjection.IsTrackedImplant(hediff.def))
                 BumpFor(pawn);
         }
     }

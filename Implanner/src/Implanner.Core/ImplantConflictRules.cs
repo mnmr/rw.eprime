@@ -11,7 +11,8 @@ namespace Implanner.Core
     {
         public PlannedSlotFacts(string defName, bool isReplacement,
             int slotRecord, IReadOnlyList<int> slotAncestors,
-            IReadOnlyList<string> tags, IReadOnlyList<string> incompatibleTags)
+            IReadOnlyList<string> tags, IReadOnlyList<string> incompatibleTags,
+            IReadOnlyList<string> removeWithTags, bool mountsOnArtificialParts)
         {
             DefName = defName;
             IsReplacement = isReplacement;
@@ -19,6 +20,8 @@ namespace Implanner.Core
             SlotAncestors = slotAncestors;
             Tags = tags;
             IncompatibleTags = incompatibleTags;
+            RemoveWithTags = removeWithTags;
+            MountsOnArtificialParts = mountsOnArtificialParts;
         }
 
         public string DefName { get; }
@@ -38,6 +41,17 @@ namespace Implanner.Core
 
         /// Union of the surgery recipes' incompatibleWithHediffTags.
         public IReadOnlyList<string> IncompatibleTags { get; }
+
+        /// HediffDef.removeWithTags: installing this implant removes every
+        /// hediff anywhere on the pawn whose tags contain one of these.
+        public IReadOnlyList<string> RemoveWithTags { get; }
+
+        /// The implant's surgery worker does not inherit vanilla's refusal
+        /// of parts that are, or sit under, an artificial part
+        /// (Recipe_InstallImplant.GetPartsToApplyOn): modded module workers
+        /// derived straight from Recipe_Surgery, which exist to mount ON a
+        /// bionic limb. Always false for replacements.
+        public bool MountsOnArtificialParts { get; }
     }
 
     /// Deterministic implant-combination rules, mirroring what the game's
@@ -46,9 +60,15 @@ namespace Implanner.Core
     /// - Recipe_InstallImplant refuses a part that is, or sits under, an
     ///   artificial part (PartOrAnyAncestorHasDirectlyAddedParts), and
     ///   refuses a part carrying a hediff whose tags match the recipe's
-    ///   incompatibleWithHediffTags (the skin-gland mechanism).
+    ///   incompatibleWithHediffTags (the skin-gland mechanism). A worker
+    ///   that does not inherit that refusal (MountsOnArtificialParts) may
+    ///   mount on a replacement, so installing the replacement first
+    ///   leaves both in place.
     /// - Recipe_InstallArtificialBodyPart restores the part first, destroying
     ///   every hediff mounted on it or on its children.
+    /// - Hediff.PostAdd removes every hediff anywhere on the pawn whose tags
+    ///   contain one of the new hediff's removeWithTags (exact match; the
+    ///   mechanite-strain mechanism of modded content).
     ///
     /// Two planned slots therefore conflict when only one of them can ever be
     /// present, whatever the surgery order.
@@ -56,21 +76,34 @@ namespace Implanner.Core
     {
         public static bool Conflicts(PlannedSlotFacts a, PlannedSlotFacts b)
         {
+            // Mutual removal: whichever is installed last destroys the other,
+            // on any part. One-sided removal is not a conflict — installing
+            // the remover first leaves both in place.
+            if (RemovalClash(a.RemoveWithTags, b.Tags)
+                && RemovalClash(b.RemoveWithTags, a.Tags))
+                return true;
             if (a.SlotRecord == b.SlotRecord)
             {
-                // One part per slot: a replacement occupies the slot, and an
-                // implant cannot mount on an added part (nor survive the
-                // replacement being installed after it).
-                if (a.IsReplacement || b.IsReplacement) return true;
+                // One part per slot: a replacement occupies the slot, and a
+                // vanilla-style implant cannot mount on an added part (nor
+                // survive the replacement being installed after it). A
+                // module worker without that refusal mounts on the
+                // replacement, so the pair coexists in the right order.
+                if (a.IsReplacement && b.IsReplacement) return true;
+                if (a.IsReplacement && !b.MountsOnArtificialParts) return true;
+                if (b.IsReplacement && !a.MountsOnArtificialParts) return true;
                 // Same-part implants coexist (multiple brain implants) unless
                 // either recipe declares the other's hediff tags incompatible.
                 return TagsClash(a.IncompatibleTags, b.Tags)
                     || TagsClash(b.IncompatibleTags, a.Tags);
             }
             // A replacement clears its whole subtree: anything planned on a
-            // descendant slot can never coexist with it.
-            if (a.IsReplacement && IsAncestorOf(a.SlotRecord, b)) return true;
-            if (b.IsReplacement && IsAncestorOf(b.SlotRecord, a)) return true;
+            // descendant slot can never coexist with it, unless it mounts on
+            // artificial parts and simply goes in afterwards.
+            if (a.IsReplacement && !b.MountsOnArtificialParts
+                && IsAncestorOf(a.SlotRecord, b)) return true;
+            if (b.IsReplacement && !a.MountsOnArtificialParts
+                && IsAncestorOf(b.SlotRecord, a)) return true;
             return false;
         }
 
@@ -80,6 +113,17 @@ namespace Implanner.Core
             for (int i = 0; i < ancestors.Count; i++)
                 if (ancestors[i] == record)
                     return true;
+            return false;
+        }
+
+        /// Removal tags match exactly (Hediff.PostAdd uses List.Contains).
+        static bool RemovalClash(
+            IReadOnlyList<string> removeWith, IReadOnlyList<string> tags)
+        {
+            for (int i = 0; i < removeWith.Count; i++)
+                for (int j = 0; j < tags.Count; j++)
+                    if (string.Equals(removeWith[i], tags[j], StringComparison.Ordinal))
+                        return true;
             return false;
         }
 

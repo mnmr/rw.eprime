@@ -8,8 +8,9 @@ namespace Implanner
 {
     /// Game-side adapter for the Core implant-conflict rules: extracts one
     /// PlannedSlotFacts per catalog slot (reference-body record identity and
-    /// ancestry, hediff tags, recipe incompatibility tags) and answers
-    /// whether two planned slots can never coexist. Builder path only.
+    /// ancestry, hediff tags, recipe incompatibility tags, hediff removal
+    /// tags) and answers whether two planned slots can never coexist.
+    /// Builder path only.
     // Cache contract:
     // Owner: process.
     // Key: implant defName (facts array indexed by slot ordinal).
@@ -40,7 +41,9 @@ namespace Implanner
         /// Whether an INSTALLED implant kind excludes installing a planned
         /// kind on the same anatomy instance — the evaluator's substitution
         /// gate: an artificial part occupies its slot (nothing can be
-        /// mounted on or swapped under it without destroying it), and
+        /// mounted on or swapped under it without destroying it, except a
+        /// module whose worker mounts on artificial parts: that goal stays
+        /// installable, so the bionic never stands in for it), and
         /// recipe/hediff tag clashes are mutually exclusive; everything else
         /// coexists, so a joywire never satisfies a neurocalculator goal.
         /// Cached static delegate: reached from the reconcile tick path via
@@ -52,8 +55,16 @@ namespace Implanner
                 // Temporarily missing goal content evaluates as blocked
                 // anatomy elsewhere; keep the historical permissive answer.
                 if (goal == null) return true;
+                // The goal upgrades the installed kind in place (or a kind
+                // below it in the chain): still installable there, so the
+                // base never stands in for its upgrade.
+                if (goal.UpgradesFrom != null
+                    && !string.Equals(installedDef, goalDef, StringComparison.Ordinal)
+                    && Catalogs.UpgradeChainContains(goal, installedDef))
+                    return false;
                 InstalledFacts installed = InstalledFactsOf(installedDef);
-                if (installed.OccupiesPart || goal.IsReplacement) return true;
+                if (installed.OccupiesPart) return !goal.MountsOnArtificialParts;
+                if (goal.IsReplacement) return true;
                 List<string>? goalTags = goal.Def.tags;
                 return ImplantConflictRules.TagsClash(
                         goal.IncompatibleTags, installed.Tags)
@@ -140,6 +151,11 @@ namespace Implanner
             IReadOnlyList<string> tags = defTags != null && defTags.Count > 0
                 ? defTags
                 : NoTags;
+            List<string>? defRemoveWith = entry.Def.removeWithTags;
+            IReadOnlyList<string> removeWith =
+                defRemoveWith != null && defRemoveWith.Count > 0
+                    ? defRemoveWith
+                    : NoTags;
             var slots = new PlannedSlotFacts?[entry.SlotRecords.Count];
             for (int i = 0; i < entry.SlotRecords.Count; i++)
             {
@@ -151,7 +167,8 @@ namespace Implanner
                     ancestors.Add(body.GetIndexOfPart(parent));
                 slots[i] = new PlannedSlotFacts(defName, entry.IsReplacement,
                     body.GetIndexOfPart(record), ancestors,
-                    tags, entry.IncompatibleTags);
+                    tags, entry.IncompatibleTags, removeWith,
+                    entry.MountsOnArtificialParts);
             }
             return slots;
         }

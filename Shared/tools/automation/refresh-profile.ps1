@@ -2,10 +2,86 @@
 param(
     [string]$SourceSaveDirectory =
         'C:\Users\morte\AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Saves',
-    [string]$SavePattern = 'Fisso-NAM*.rws'
+    [string]$SavePattern = 'Fisso-NAM*.rws',
+    # Name of a mod set under modsets\<name>.txt: extra installed mods
+    # spliced into the save's own ordered list at named anchors. The result
+    # is an order-preserving superset, which the dev-mode autostart loader
+    # accepts with a logged mismatch only (no dialog). Omit to restore the
+    # exact save list.
+    [string]$ModSet = ''
 )
 
 . (Join-Path $PSScriptRoot 'automation-common.ps1')
+
+function Get-InstalledPackageIds {
+    $ids = New-Object 'Collections.Generic.HashSet[string]' (
+        [StringComparer]::OrdinalIgnoreCase)
+    $roots = @(
+        'C:\Program Files (x86)\Steam\steamapps\workshop\content\294100',
+        'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\Mods'
+    )
+    foreach ($root in $roots) {
+        if (-not (Test-Path -LiteralPath $root -PathType Container)) { continue }
+        Get-ChildItem -LiteralPath $root -Directory | ForEach-Object {
+            $about = Join-Path $_.FullName 'About\About.xml'
+            if (-not (Test-Path -LiteralPath $about -PathType Leaf)) { return }
+            try {
+                [xml]$meta = Get-Content -LiteralPath $about -Raw
+                $id = [string]$meta.ModMetaData.packageId
+                if ($id) { $ids.Add($id.Trim()) | Out-Null }
+            }
+            catch { }
+        }
+    }
+    return $ids
+}
+
+# Builds the active mod list for a mod set: the save's ids in their saved
+# order with each set group inserted at its anchor. Throws on an unknown
+# anchor, a missing installed mod, or a line before the first anchor.
+function Build-ModSetList {
+    param(
+        [Parameter(Mandatory)][string[]]$SaveModIds,
+        [Parameter(Mandatory)][string]$SetPath
+    )
+    $installed = Get-InstalledPackageIds
+    $result = New-Object 'Collections.Generic.List[string]'
+    $result.AddRange([string[]]$SaveModIds)
+    $insertAt = -1
+    foreach ($raw in Get-Content -LiteralPath $SetPath) {
+        $line = ($raw -split '#')[0].Trim()
+        if (-not $line) { continue }
+        if ($line -match '^(?i)(after|before)\s+(\S+)$') {
+            $anchor = $Matches[2]
+            $index = -1
+            for ($i = 0; $i -lt $result.Count; $i++) {
+                if ([string]::Equals($result[$i], $anchor,
+                        [StringComparison]::OrdinalIgnoreCase)) { $index = $i; break }
+            }
+            if ($index -lt 0) { throw "mod set anchor '$anchor' is not in the save's mod list" }
+            $insertAt = if ($Matches[1] -ieq 'after') { $index + 1 } else { $index }
+            continue
+        }
+        if ($insertAt -lt 0) { throw "mod set line '$line' appears before any anchor" }
+        if (-not $installed.Contains($line)) {
+            throw "mod set package '$line' is not installed (workshop or Mods folder)"
+        }
+        $already = $false
+        foreach ($existing in $result) {
+            if ([string]::Equals($existing, $line, [StringComparison]::OrdinalIgnoreCase)) {
+                $already = $true; break
+            }
+        }
+        if ($already) { continue }
+        # ModsConfig ids must be lower case: the game lower-cases the id it
+        # is asked about (ModsConfig.IsActive) but not the stored list, so a
+        # mixed-case entry activates the mod yet fails every other mod's
+        # IfModActive load-folder condition that names it.
+        $result.Insert($insertAt, $line.ToLowerInvariant())
+        $insertAt++
+    }
+    return $result.ToArray()
+}
 
 function Copy-VerifiedFile {
     param(
@@ -126,12 +202,35 @@ if ($canonicalHash -ne $autostartHash) {
     throw 'canonical and autostart save hashes differ'
 }
 
+# The template config (verified above to equal the save's list) is the
+# baseline; a mod set rewrites only the profile's copy of ModsConfig.xml.
+$activeMods = $saveModIds
+if ($ModSet) {
+    $setPath = Join-Path $PSScriptRoot ('modsets\' + $ModSet + '.txt')
+    if (-not (Test-Path -LiteralPath $setPath -PathType Leaf)) {
+        throw "mod set does not exist: $setPath"
+    }
+    $activeMods = @(Build-ModSetList -SaveModIds $saveModIds -SetPath $setPath)
+    $profileModsConfigPath = Join-Path $profileConfig 'ModsConfig.xml'
+    [xml]$profileModsConfig = Get-Content -LiteralPath $profileModsConfigPath -Raw
+    $activeNode = $profileModsConfig.ModsConfigData.SelectSingleNode('activeMods')
+    $activeNode.RemoveAll()
+    foreach ($id in $activeMods) {
+        $li = $profileModsConfig.CreateElement('li')
+        $li.InnerText = $id
+        $activeNode.AppendChild($li) | Out-Null
+    }
+    $profileModsConfig.Save($profileModsConfigPath)
+    Write-Host "mod set '$ModSet' applied: $($activeMods.Count - $saveModIds.Count) extra mod(s)"
+}
+
 $state = [ordered]@{
     sourceSave = $sourceSave.FullName
     sourceLastWriteTimeUtc = $sourceSave.LastWriteTimeUtc.ToString('o')
     sourceLength = $sourceSave.Length
     sha256 = $autostartHash
-    activeMods = $saveModIds
+    modSet = $ModSet
+    activeMods = $activeMods
 }
 $state | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath `
     (Join-Path $script:AutomationProfilePath 'profile-state.json') -Encoding utf8

@@ -1,0 +1,18 @@
+# Mod set: the implant mods Implanner documents, layered over the save's
+# own list by refresh-profile.ps1 -ModSet implanner-mods. Each "after" or
+# "before" line names an anchor already in the save's list; the package
+# ids that follow are spliced there in the order written. The save's own
+# mods keep their order, so the result is a superset the autostart loader
+# accepts without any mismatch dialog.
+
+# Frameworks load right after the expansions.
+after ludeon.rimworld.odyssey
+OskarPotocki.VanillaFactionsExpanded.Core
+EBSG.Framework
+
+# Content mods load after the frameworks and before the EPrime mods.
+before mnmr.workroles
+Dubwise.DubsBadHygiene
+FrozenSnowFox.AdvancedBionicsExpansion
+lts.I
+MrKociak.YABEMBionicModularity

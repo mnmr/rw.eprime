@@ -8,7 +8,7 @@
   <screenWidth>1920</screenWidth>
   <screenHeight>1080</screenHeight>
   <fullscreen>False</fullscreen>
-  <uiScale>1.0</uiScale>
+  <uiScale>1.25</uiScale>
   <customCursorEnabled>True</customCursorEnabled>
   <hatsOnlyOnMap>False</hatsOnlyOnMap>
   <plantWindSway>True</plantWindSway>
@@ -66,4 +66,3 @@
   <simulateNotOwningBiotech>False</simulateNotOwningBiotech>
   <simulateNotOwningAnomaly>False</simulateNotOwningAnomaly>
 </PrefsData>
-

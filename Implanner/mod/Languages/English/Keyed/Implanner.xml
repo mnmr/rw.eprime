@@ -9,6 +9,7 @@
   <IMP_TabOverview>Overview</IMP_TabOverview>
   <IMP_TabPlans>Plans</IMP_TabPlans>
   <IMP_TabAutomation>Automation</IMP_TabAutomation>
+  <IMP_TabOptions>Options</IMP_TabOptions>
   <IMP_TabHelp>Help</IMP_TabHelp>
 
   <!-- ===== Overview tab ===== -->
@@ -154,6 +155,11 @@
   <!-- {0}=plan name -->
   <IMP_DeletePlanConfirm>Delete plan "{0}"? Colonists assigned to it will lose their assignment, and plans extending it will stop inheriting.</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>Other</IMP_ImplantGroupOther>
+  <!-- Requirement dialog: a slot the game only offers on an artificial part.
+       {0}=implant label, {1}=slot anatomy label -->
+  <IMP_ReqTitle>Requirements</IMP_ReqTitle>
+  <IMP_ReqBody>{0} can only be installed on an artificial {1}. Choose the replacement to add to the plan along with it:</IMP_ReqBody>
+  <IMP_ReqConfirm>Add to plan</IMP_ReqConfirm>
 
   <!-- ===== Selection-tree tooltips ===== -->
   <!-- {0}=value for all tip lines -->
@@ -198,6 +204,13 @@
   <IMP_OptProductionSkill>Required crafting skill for production bills</IMP_OptProductionSkill>
   <IMP_OptIntermediaries>Allow production bills for missing intermediaries</IMP_OptIntermediaries>
   <IMP_OptReserves>Keep in stock (after bill costs)</IMP_OptReserves>
+
+  <!-- ===== Options tab ===== -->
+  <IMP_OptModCompat>Mod compatibility</IMP_OptModCompat>
+  <IMP_OptAllowMultipleBladders>Allow multiple bladder implants</IMP_OptAllowMultipleBladders>
+  <IMP_OptAllowMultipleHygieneEnhancers>Allow multiple hygiene enhancers</IMP_OptAllowMultipleHygieneEnhancers>
+  <IMP_OptCatalog>Catalog</IMP_OptCatalog>
+  <IMP_OptShowPurchaseOnly>Show purchase-only implants</IMP_OptShowPurchaseOnly>
   <!-- Hand-back dialog shown when the player clicks the master switch off -->
   <IMP_CleanupTitle>Turn off automation?</IMP_CleanupTitle>
   <IMP_CleanupBody>Implanner created these bills. OK turns automation off and removes the checked bills. Unchecked bills stay in place and are picked up again when automation is switched back on. Reserved implant items are released either way. Cancel keeps automation on.</IMP_CleanupBody>
@@ -213,6 +226,13 @@
   <IMP_OptManualFloorTip>The minimum Medicine skill a doctor needs to perform Implanner surgeries. Bills wait until a doctor at or above this level is available. The value starts from your current best doctor when automatic assignment is switched off.</IMP_OptManualFloorTip>
   <IMP_OptImplantReservesTip>Implants held back for manual use. Automation only reserves stock beyond these counts, so you always keep this many of each listed implant free for emergency surgery or trade. Production does not count held-back items as available, and keeps crafting until automation can proceed without them.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Pick an implant to hold back from automation.</IMP_AddImplantReserveTip>
+  <!-- ===== Options tooltips ===== -->
+  <!-- {0}=newline-separated "implant (mod)" lines for the loaded implants of the group -->
+  <IMP_OptAllowMultipleBladdersTip>Bladder implants from different mods are separate implants to the game, so a colonist can carry several at once and their effects stack. Switch this off to treat them as one slot: picking one in a plan overrides the others, and a colonist who already has any of the implants below counts as done. Nothing is ever removed.\n\nAffected implants:\n{0}</IMP_OptAllowMultipleBladdersTip>
+  <IMP_OptAllowMultipleHygieneEnhancersTip>Hygiene enhancers from different mods are separate implants to the game, so a colonist can carry several at once and their effects stack. Switch this off to treat them as one slot: picking one in a plan overrides the others, and a colonist who already has any of the implants below counts as done. Nothing is ever removed.\n\nAffected implants:\n{0}</IMP_OptAllowMultipleHygieneEnhancersTip>
+  <!-- {0}=newline-separated "implant (mod)" lines for the loaded purchase-only implants -->
+  <IMP_OptShowPurchaseOnlyTip>Lists implants whose item no workbench can craft, such as archotech parts. They only arrive through trade, quests or salvage. Switch this on to plan them anyway. Automation reserves the item as soon as it is in stock and installs it with the next batch; a missing one never holds up the other implants. A mod that adds a crafting recipe makes the implant an ordinary one automatically.\n\nAffected implants:\n{0}</IMP_OptShowPurchaseOnlyTip>
+  <IMP_OptCompatNoneLoaded>None of the affected implants are loaded.</IMP_OptCompatNoneLoaded>
   <IMP_OptAutoProductionTip>Missing implants get crafting bills automatically. Implanner counts what plans still need at each colony, subtracts stock and bills already queued, and places bills at capable benches. Bills it created are removed again when the need disappears.</IMP_OptAutoProductionTip>
   <IMP_OptConcurrencyTip>How many benches per colony may hold Implanner crafting bills at once, one bill per bench. More benches craft implants in parallel, but your crafters spend more of their time on implants and less on everything else.</IMP_OptConcurrencyTip>
   <IMP_OptIdleBenchesTip>Only benches with no work waiting receive new Implanner bills. Your own production queues keep priority and implant crafting fills the gaps. Turn this off to let implant bills queue up behind your own.</IMP_OptIdleBenchesTip>
@@ -225,6 +245,7 @@
   <IMP_HelpChapterPlans>Plans</IMP_HelpChapterPlans>
   <IMP_HelpChapterAutomation>Automation</IMP_HelpChapterAutomation>
   <IMP_HelpChapterSharing>Sharing</IMP_HelpChapterSharing>
+  <IMP_HelpChapterMods>Mods</IMP_HelpChapterMods>
   <IMP_HelpReload>Reload</IMP_HelpReload>
 
   <!-- ===== Import / export ===== -->

@@ -26,8 +26,12 @@ namespace Implanner
             List<BodyPartDef> fixedParts, string groupLabel, List<string> slotLabels,
             List<BodyPartRecord> slotRecords, List<RecipeDef> surgeryRecipes,
             bool isReplacement, ImplantRegion region, LimbKind limb,
-            List<string> incompatibleTags)
+            List<string> incompatibleTags, bool mountsOnArtificialParts,
+            bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly)
         {
+            RequiresArtificialPart = requiresArtificialPart;
+            UpgradesFrom = upgradesFrom;
+            PurchaseOnly = purchaseOnly;
             Def = def;
             Label = label;
             Efficiency = efficiency;
@@ -40,6 +44,7 @@ namespace Implanner
             Region = region;
             Limb = limb;
             IncompatibleTags = incompatibleTags;
+            MountsOnArtificialParts = mountsOnArtificialParts;
         }
 
         internal HediffDef Def { get; }
@@ -52,8 +57,44 @@ namespace Implanner
         /// occupies rather than something mounted on it. Read from the
         /// surgery's own worker class, which is the distinction RimWorld
         /// itself draws: Recipe_InstallArtificialBodyPart swaps the part out,
-        /// Recipe_InstallImplant leaves it in place.
+        /// Recipe_InstallImplant leaves it in place. A hediff with
+        /// addedPartProps counts too whatever its worker: the game treats it
+        /// as an added part once installed (in-place upgrades).
         internal bool IsReplacement { get; }
+
+        /// True when at least one surgery recipe's worker inherits neither
+        /// vanilla install worker, so it carries no refusal of parts that
+        /// are or sit under an artificial part: modded module workers
+        /// (Bionic modularity's Recipe_InstallModule derives straight from
+        /// Recipe_Surgery) mount ON a bionic limb. Always false for
+        /// replacements.
+        internal bool MountsOnArtificialParts { get; }
+
+        /// A mounts-on-artificial kind whose every surgery uses such a
+        /// worker (no vanilla implant recipe that could take a natural
+        /// part): the game only ever offers it on a replacement, so the
+        /// picker asks which replacement to plan alongside it. Inferred
+        /// from the recipe set (Bionic modularity ships limb modules with
+        /// the module worker only, organ modules with both).
+        internal bool RequiresArtificialPart { get; }
+
+        /// The kind this entry upgrades in place, or null. An upgrade's
+        /// surgery (Integrated Implants' "modularize bionic eye":
+        /// removesHediff = the base, addsHediff = this kind, no fixed body
+        /// parts; the worker targets wherever the base sits) is only ever
+        /// offered on a part carrying the base, so automation installs the
+        /// base first when the colonist lacks it, then upgrades. The entry
+        /// inherits the base's anatomy and is a replacement like it, so the
+        /// two exclude each other in plans: picking the upgrade supersedes
+        /// the base.
+        internal string? UpgradesFrom { get; }
+
+        /// The implant item its surgery consumes cannot be produced by any
+        /// recipe (archotech parts and kin without a crafting mod): only
+        /// trade, quests or salvage supply it. Listed in the picker only
+        /// while PlannerModel.ShowPurchaseOnly is on; automation treats its
+        /// slots as optional so a batch never waits for it.
+        internal bool PurchaseOnly { get; }
 
         /// The anatomy region of the entry's targeted parts (classified on
         /// the reference body).
@@ -151,6 +192,21 @@ namespace Implanner
                 : null;
         }
 
+        /// Whether the kind is the entry itself or sits anywhere below it
+        /// in its upgrade chain (the base it upgrades, that base's base, and
+        /// so on). Allocation-free: reached from the reconcile tick path.
+        internal static bool UpgradeChainContains(ImplantCatalogEntry entry, string defName)
+        {
+            ImplantCatalogEntry? walk = entry;
+            for (int guard = 0; walk != null && guard < 8; guard++)
+            {
+                if (string.Equals(walk.Def.defName, defName, StringComparison.Ordinal))
+                    return true;
+                walk = walk.UpgradesFrom != null ? ImplantByDefName(walk.UpgradesFrom) : null;
+            }
+            return false;
+        }
+
         private static List<ImplantCatalogEntry> BuildImplants()
         {
             // Every implant a surgery recipe can add to a humanlike body part.
@@ -160,13 +216,29 @@ namespace Implanner
             // walk so the purchase-only test is a lookup rather than a
             // rescan of every recipe per candidate.
             var implantItems = new Dictionary<HediffDef, List<ThingDef>>();
+            // In-place upgrades: a surgery that removes one implant kind and
+            // adds another with no fixed parts of its own (the worker
+            // targets wherever the removed kind sits).
+            var upgrades = new Dictionary<HediffDef, List<RecipeDef>>();
             List<RecipeDef> recipes = DefDatabase<RecipeDef>.AllDefsListForReading;
             for (int i = 0; i < recipes.Count; i++)
             {
                 RecipeDef recipe = recipes[i];
                 if (recipe.addsHediff == null || !recipe.IsSurgery) continue;
                 CollectImplantItems(recipe, implantItems);
-                if (recipe.appliedOnFixedBodyParts.NullOrEmpty()) continue;
+                if (recipe.appliedOnFixedBodyParts.NullOrEmpty())
+                {
+                    if (recipe.removesHediff != null && IsPlannable(recipe.addsHediff))
+                    {
+                        if (!upgrades.TryGetValue(recipe.addsHediff, out List<RecipeDef> list))
+                        {
+                            list = new List<RecipeDef>();
+                            upgrades.Add(recipe.addsHediff, list);
+                        }
+                        list.Add(recipe);
+                    }
+                    continue;
+                }
                 if (!IsPlannable(recipe.addsHediff)) continue;
                 if (!parts.TryGetValue(recipe.addsHediff, out HashSet<BodyPartDef> set))
                 {
@@ -184,7 +256,7 @@ namespace Implanner
             var result = new List<ImplantCatalogEntry>();
             foreach (KeyValuePair<HediffDef, HashSet<BodyPartDef>> pair in parts)
             {
-                if (IsPurchaseOnly(pair.Key, producible, implantItems)) continue;
+                bool purchaseOnly = IsPurchaseOnly(pair.Key, producible, implantItems);
                 var fixedParts = new List<BodyPartDef>(pair.Value);
                 fixedParts.Sort(ByDefName);
                 float efficiency = pair.Key.addedPartProps?.partEfficiency ?? 1f;
@@ -198,15 +270,64 @@ namespace Implanner
                 if (!AnyHumanRecipe(surgeryRecipes)) continue;
                 BuildSlots(referenceBody, fixedParts,
                     out List<string> slotLabels, out List<BodyPartRecord> slotRecords);
+                bool replacement = IsReplacement(surgeryRecipes)
+                    || pair.Key.addedPartProps != null;
+                bool mounts = !replacement && MountsOnArtificialParts(surgeryRecipes);
                 result.Add(new ImplantCatalogEntry(
                     pair.Key, pair.Key.LabelCap.ToString(), efficiency,
                     fixedParts, groupLabel, slotLabels, slotRecords,
-                    surgeryRecipes, IsReplacement(surgeryRecipes),
+                    surgeryRecipes, replacement,
                     ClassifyRegion(slotRecords), ClassifyLimb(slotRecords),
-                    IncompatibleTagsOf(surgeryRecipes)));
+                    IncompatibleTagsOf(surgeryRecipes), mounts,
+                    mounts && !AnyVanillaImplantRecipe(surgeryRecipes), null,
+                    purchaseOnly));
             }
+            AddUpgrades(result, upgrades, producible, implantItems);
             result.Sort(ByGroupThenLabel);
             return result;
+        }
+
+        /// One entry per in-place upgrade whose base kind is itself in the
+        /// catalog (an upgrade of an excluded base is excluded with it, and
+        /// an upgrade of a purchase-only base is purchase-only itself): the
+        /// base's anatomy, the upgrade's own efficiency, and only the
+        /// upgrade surgeries. Several upgrade surgeries for one kind take
+        /// the base of the lowest recipe defName. Runs once per build after
+        /// the base entries exist, in defName order, so the result is
+        /// deterministic.
+        private static void AddUpgrades(List<ImplantCatalogEntry> result,
+            Dictionary<HediffDef, List<RecipeDef>> upgrades,
+            HashSet<ThingDef> producible,
+            Dictionary<HediffDef, List<ThingDef>> implantItems)
+        {
+            if (upgrades.Count == 0) return;
+            var byDef = new Dictionary<HediffDef, ImplantCatalogEntry>();
+            for (int i = 0; i < result.Count; i++)
+                byDef[result[i].Def] = result[i];
+            var kinds = new List<HediffDef>(upgrades.Keys);
+            kinds.Sort((a, b) => string.CompareOrdinal(a.defName, b.defName));
+            for (int k = 0; k < kinds.Count; k++)
+            {
+                HediffDef def = kinds[k];
+                if (byDef.ContainsKey(def)) continue; // also installable directly
+                List<RecipeDef> surgeryRecipes = upgrades[def];
+                surgeryRecipes.Sort(ByRecipeDefName);
+                if (!AnyHumanRecipe(surgeryRecipes)) continue;
+                if (!byDef.TryGetValue(surgeryRecipes[0].removesHediff,
+                        out ImplantCatalogEntry baseEntry))
+                    continue;
+                float efficiency = def.addedPartProps?.partEfficiency ?? 1f;
+                result.Add(new ImplantCatalogEntry(
+                    def, def.LabelCap.ToString(), efficiency,
+                    baseEntry.FixedParts, baseEntry.GroupLabel,
+                    baseEntry.SlotLabels, baseEntry.SlotRecords,
+                    surgeryRecipes, isReplacement: true,
+                    baseEntry.Region, baseEntry.Limb,
+                    IncompatibleTagsOf(surgeryRecipes),
+                    mountsOnArtificialParts: false, requiresArtificialPart: false,
+                    baseEntry.Def.defName,
+                    baseEntry.PurchaseOnly || IsPurchaseOnly(def, producible, implantItems)));
+            }
         }
 
         private static readonly Comparison<RecipeDef> ByRecipeDefName =
@@ -219,6 +340,37 @@ namespace Implanner
                 Type? worker = surgeryRecipes[i].workerClass;
                 if (worker != null
                     && typeof(Recipe_InstallArtificialBodyPart).IsAssignableFrom(worker))
+                    return true;
+            }
+            return false;
+        }
+
+        /// Whether any surgery recipe's worker sits outside both vanilla
+        /// install workers: such a worker never inherited
+        /// Recipe_InstallImplant's added-part refusal, so the game lets it
+        /// target an artificial part (verified for Bionic modularity's
+        /// Recipe_InstallModule : Recipe_Surgery).
+        private static bool MountsOnArtificialParts(List<RecipeDef> surgeryRecipes)
+        {
+            for (int i = 0; i < surgeryRecipes.Count; i++)
+            {
+                Type? worker = surgeryRecipes[i].workerClass;
+                if (worker != null
+                    && !typeof(Recipe_InstallImplant).IsAssignableFrom(worker)
+                    && !typeof(Recipe_InstallArtificialBodyPart).IsAssignableFrom(worker))
+                    return true;
+            }
+            return false;
+        }
+
+        /// Whether any surgery recipe uses vanilla's implant worker (or a
+        /// derivative), which accepts natural parts.
+        private static bool AnyVanillaImplantRecipe(List<RecipeDef> surgeryRecipes)
+        {
+            for (int i = 0; i < surgeryRecipes.Count; i++)
+            {
+                Type? worker = surgeryRecipes[i].workerClass;
+                if (worker != null && typeof(Recipe_InstallImplant).IsAssignableFrom(worker))
                     return true;
             }
             return false;
@@ -293,10 +445,11 @@ namespace Implanner
         }
 
         /// Purchase-only implants (archotech parts, joywire-class trader
-        /// goods, and modded equivalents) are not shared plan goals: the
-        /// implant item its surgery consumes cannot be produced by any
-        /// recipe. Implants whose surgeries consume no identifiable implant
-        /// item stay included.
+        /// goods, and modded equivalents): the implant item its surgery
+        /// consumes cannot be produced by any recipe. Listed behind the
+        /// ShowPurchaseOnly option and never able to hold a batch up.
+        /// Implants whose surgeries consume no identifiable implant item
+        /// are ordinary.
         private static bool IsPurchaseOnly(HediffDef def, HashSet<ThingDef> producible,
             Dictionary<HediffDef, List<ThingDef>> implantItems)
         {

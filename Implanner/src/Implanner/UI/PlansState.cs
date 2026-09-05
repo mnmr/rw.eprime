@@ -1,6 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Implanner.Core;
+using RimShared.Common;
+using RimShared.UiLib;
+using UnityEngine;
 using Verse;
 using Plan = Implanner.Core.Plan;
 
@@ -54,6 +57,78 @@ namespace Implanner.UI
         /// one — the click IS the choice.
         internal string OverridesLabel = "";
         internal int Ordinal;            // leaves: slot ordinal
+
+        /// Small-font fit width of Label, measured at build: the caption
+        /// slot takes whatever room the label leaves on the row.
+        internal float LabelWidth;
+
+        /// For a slot the game only offers on an artificial part
+        /// (ImplantCatalogEntry.RequiresArtificialPart) that the plan does
+        /// not yet cover: the replacements that would host it, one of which
+        /// the requirement dialog adds alongside the pick. Null when no
+        /// requirement is missing or none is expressible.
+        internal List<RequirementCandidate>? Requirement;
+
+        /// The slot's anatomy label for the requirement dialog.
+        internal string RequirementSlot = "";
+    }
+
+    /// A replacement that would satisfy a slot's artificial-part
+    /// requirement; the dialog offers the candidates as a pick-one list.
+    internal sealed class RequirementCandidate
+    {
+        internal string DefName = "";
+        internal int Ordinal;
+        internal string Label = "";
+    }
+
+    /// A leaf row's right-aligned caption ("overrides X" or "inherited")
+    /// fitted to the row width the picker draws at: the display text (the
+    /// tail behind an ellipsis when the slot is too narrow), its width, and
+    /// the full text for the tooltip a truncated caption shows.
+    internal readonly struct PickerCaption
+    {
+        internal PickerCaption(string text, float width, string full)
+        {
+            Text = text;
+            Width = width;
+            Full = full;
+        }
+
+        /// Null for nodes and plain slots (no caption).
+        internal readonly string? Text;
+        internal readonly float Width;
+        internal readonly string Full;
+        internal bool Truncated => !ReferenceEquals(Text, Full);
+    }
+
+    /// The selection tree's row geometry, shared by the fitting stage and
+    /// the renderer so both derive the caption slot from the same numbers.
+    /// Vanilla storage-filter style: 22px lines, 11px indent per level,
+    /// 18px fold arrows.
+    internal static class PickerGeometry
+    {
+        internal const float Line = 22f;
+        internal const float Indent = 11f;
+        internal const float Arrow = 18f;
+
+        /// Row-right inset the checkbox column occupies (20px box, 6px
+        /// margin, 6px gap to the caption).
+        internal const float CheckboxZone = 32f;
+
+        /// Breathing room between the label and its caption.
+        internal const float LabelCaptionGap = 8f;
+
+        internal static float LabelX(int depth) => depth * Indent + Arrow + 2f;
+
+        /// The widest caption a row allows: exactly the room the label
+        /// leaves. The caption reserves nothing; the label always shows in
+        /// full and the caption expands into whatever remains.
+        internal static float CaptionMax(float rowWidth, int depth, float labelWidth)
+        {
+            float available = rowWidth - LabelX(depth) - CheckboxZone;
+            return Mathf.Max(0f, available - labelWidth - LabelCaptionGap);
+        }
     }
 
     /// One of the selected plan's own implants inside a star tier of the
@@ -90,8 +165,11 @@ namespace Implanner.UI
         // Cache contract:
         // Owner: the Implanner dialog window.
         // Key: UiVersion.Current, store identity, PlansVersion,
-        //   RankingsVersion, AssignmentsVersion, ExternalPawnFacts.Revision,
-        //   the selected plan id, and the region filter segment.
+        //   RankingsVersion, AssignmentsVersion, OptionsVersion (the mod
+        //   compatibility options feed the override captions and the
+        //   catalog option filters purchase-only rows),
+        //   ExternalPawnFacts.Revision, the selected plan id, and the
+        //   region filter segment.
         // Value: an immutable plans snapshot (list cards with enlisted
         //   counts and aggregate delivery progress, the filtered implant
         //   selection tree resolved against the selected plan, its base
@@ -118,6 +196,7 @@ namespace Implanner.UI
         private int plansStamp = -1;
         private int rankingsStamp = -1;
         private int assignmentsStamp = -1;
+        private int optionsStamp = -1;
         private int factsStamp = -1;
         private int selectionStamp = -1;
         private int regionStamp = -1;
@@ -135,6 +214,22 @@ namespace Implanner.UI
         private PlansSnapshot? foldedFlagsSnapshot;
         private int foldedFlagsRevision = -1;
         private int foldRevision;
+
+        // Cache contract (fitted captions):
+        // Owner: the Implanner dialog window.
+        // Key: the plans snapshot identity plus the tree row width.
+        // Value: one caption per tree row, parallel to the snapshot's tree
+        //   (immutable once built): display text, width, and the full text.
+        // Dependencies: the snapshot's rows (override/inherited captions
+        //   and the label widths measured at build; the UI metric and
+        //   language revisions sit inside the snapshot key) and the row
+        //   width the picker draws at (window size, scrollbar gutter).
+        // Refresh policy: immediate on the next read after either moves.
+        // Equality policy: an unchanged key reuses the array.
+        // Teardown: Release() drops it.
+        private PickerCaption[]? captions;
+        private PlansSnapshot? captionsSnapshot;
+        private float captionsWidth = -1f;
 
         internal int SelectedPlanId;
 
@@ -156,10 +251,14 @@ namespace Implanner.UI
             foldedFlags = null;
             foldedFlagsSnapshot = null;
             foldedFlagsRevision = -1;
+            captions = null;
+            captionsSnapshot = null;
+            captionsWidth = -1f;
             uiStamp = -1;
             plansStamp = -1;
             rankingsStamp = -1;
             assignmentsStamp = -1;
+            optionsStamp = -1;
             factsStamp = -1;
             selectionStamp = -1;
             regionStamp = -1;
@@ -193,6 +292,59 @@ namespace Implanner.UI
             return foldedFlags;
         }
 
+        /// One caption per tree row, fitted to the row width the picker
+        /// draws at. Rebuilt only when the snapshot or the width changed
+        /// (a window resize, or the scroll gutter appearing); the draw
+        /// pass indexes it. Measures Tiny text inside this gate only.
+        internal PickerCaption[] Captions(PlansSnapshot current, float rowWidth)
+        {
+            if (captions == null
+                || !ReferenceEquals(captionsSnapshot, current)
+                || captionsWidth != rowWidth)
+            {
+                captions = FitCaptions(current.Tree, rowWidth);
+                captionsSnapshot = current;
+                captionsWidth = rowWidth;
+            }
+            return captions;
+        }
+
+        /// Static delegate for the truncation search: the candidates are
+        /// transient strings, so they bypass the (font, text) memo.
+        private static readonly Func<string, float> MeasureFit =
+            WrText.MeasureFitWidth;
+
+        private static PickerCaption[] FitCaptions(List<PickerRow> tree, float rowWidth)
+        {
+            var result = new PickerCaption[tree.Count];
+            using (TinyText.UseFont())
+            {
+                for (int i = 0; i < tree.Count; i++)
+                {
+                    PickerRow row = tree[i];
+                    if (row.Node) continue;
+                    string full = row.OverridesLabel.Length > 0 ? row.OverridesLabel
+                        : row.Inherited ? PlannerLabels.Inherited
+                        : "";
+                    if (full.Length == 0) continue;
+                    float max = PickerGeometry.CaptionMax(rowWidth, row.Depth, row.LabelWidth);
+                    // Full captions repeat across rows ("inherited", the
+                    // same blocker), so the memo carries them.
+                    float width = WrText.FitWidth(full);
+                    string text = full;
+                    if (width > max)
+                    {
+                        text = TailTruncation.Fit(full, max, MeasureFit, out width);
+                        // Not even the ellipsis and one character fit: the
+                        // row has no room, so the caption is omitted.
+                        if (width > max) continue;
+                    }
+                    result[i] = new PickerCaption(text, width, full);
+                }
+            }
+            return result;
+        }
+
         /// Called from the dialog's WindowUpdate (never inside a render
         /// pass) so every pass of a frame draws one snapshot.
         internal PlansSnapshot Current(ImplannerStore store)
@@ -203,6 +355,7 @@ namespace Implanner.UI
                 || plansStamp != store.PlansVersion
                 || rankingsStamp != store.RankingsVersion
                 || assignmentsStamp != store.AssignmentsVersion
+                || optionsStamp != store.OptionsVersion
                 || factsStamp != ExternalPawnFacts.Revision
                 || selectionStamp != SelectedPlanId
                 || regionStamp != Region)
@@ -213,6 +366,7 @@ namespace Implanner.UI
                 plansStamp = store.PlansVersion;
                 rankingsStamp = store.RankingsVersion;
                 assignmentsStamp = store.AssignmentsVersion;
+                optionsStamp = store.OptionsVersion;
                 factsStamp = ExternalPawnFacts.Revision;
                 selectionStamp = SelectedPlanId;
                 regionStamp = Region;
@@ -280,7 +434,7 @@ namespace Implanner.UI
                 for (int p = 0; planPawns != null && p < planPawns.Count; p++)
                 {
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        planPawns[p], planGoals, away: false);
+                        model, planPawns[p], planGoals, away: false);
                     satisfied += evaluation.SatisfiedUnits;
                     total += evaluation.TotalUnits;
                 }
@@ -320,8 +474,11 @@ namespace Implanner.UI
             return result;
         }
 
-        private bool PassesFilters(ImplantCatalogEntry entry) =>
-            entry.Region == (ImplantRegion)Region;
+        /// The region segment, and purchase-only kinds only while the
+        /// catalog option shows them.
+        private bool PassesFilters(ImplantCatalogEntry entry, bool showPurchaseOnly) =>
+            entry.Region == (ImplantRegion)Region
+            && (showPurchaseOnly || !entry.PurchaseOnly);
 
         /// Builds the filtered selection tree: one node per body-part group
         /// (the catalog's GroupLabel), then the group's implant slots as
@@ -335,6 +492,7 @@ namespace Implanner.UI
             // candidate conflicts with names the choice the click replaces.
             IReadOnlyList<ImplantGoal> effective = model.EffectiveImplants(selected);
             var inherited = new HashSet<(string, int)>();
+            var planned = new HashSet<(string, int)>();
             var plannedSlots = new List<(string Def, int Ordinal)>();
             for (int i = 0; i < effective.Count; i++)
             {
@@ -344,63 +502,145 @@ namespace Implanner.UI
                 {
                     var slot = (goal.ImplantDefName, goal.SlotOrdinals[j]);
                     plannedSlots.Add(slot);
+                    planned.Add(slot);
                     if (!own) inherited.Add(slot);
                 }
             }
 
             IReadOnlyList<ImplantCatalogEntry> implants = Catalogs.Implants();
             List<PickerRow> tree = result.Tree;
+            // Host replacements per anatomy instance, resolved once per
+            // build for the module rows that need them.
+            var hosts = new Dictionary<BodyPartRecord, List<RequirementCandidate>>();
             string? lastGroup = null;
+            bool showPurchaseOnly = model.ShowPurchaseOnly;
+            // Leaf labels are measured here (Small font established first)
+            // so the caption fitting stage never measures them per width.
+            GameFont font = Text.Font;
+            Text.Font = GameFont.Small;
+            try
+            {
+                for (int i = 0; i < implants.Count; i++)
+                {
+                    ImplantCatalogEntry entry = implants[i];
+                    if (!PassesFilters(entry, showPurchaseOnly)) continue;
+                    if (!string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
+                    {
+                        lastGroup = entry.GroupLabel;
+                        tree.Add(new PickerRow
+                        {
+                            Depth = 0,
+                            Node = true,
+                            SectionKey = "t|" + entry.GroupLabel,
+                            Label = entry.GroupLabel,
+                        });
+                    }
+                    ImplantGoal? goal = FindGoal(selected, entry.Def.defName);
+                    for (int ordinal = 0; ordinal < entry.SlotLabels.Count; ordinal++)
+                    {
+                        string slotLabel = entry.SlotLabels[ordinal];
+                        bool own = goal != null && HasOrdinal(goal, ordinal);
+                        var row = new PickerRow
+                        {
+                            Depth = 1,
+                            DefName = entry.Def.defName,
+                            Ordinal = ordinal,
+                            IconDef = entry.Def.spawnThingOnRemoved,
+                            Label = entry.SlotLabels.Count > 1 && slotLabel.Length > 0
+                                ? entry.Label + " (" + slotLabel + ")"
+                                : entry.Label,
+                            Selected = own,
+                            Inherited = !own
+                                && inherited.Contains((entry.Def.defName, ordinal)),
+                        };
+                        row.LabelWidth = WrText.FitWidth(row.Label);
+                        if (!own)
+                        {
+                            string overridden = FirstConflictLabel(
+                                model, plannedSlots, entry.Def.defName, ordinal);
+                            if (overridden.Length > 0)
+                                row.OverridesLabel =
+                                    "IMP_Overrides".Translate(overridden);
+                            if (entry.RequiresArtificialPart)
+                            {
+                                BodyPartRecord? record = entry.SlotRecords[ordinal];
+                                List<RequirementCandidate>? candidates = record != null
+                                    ? HostsOf(implants, hosts, record, showPurchaseOnly)
+                                    : null;
+                                if (candidates != null && candidates.Count > 0
+                                    && !AnyPlanned(planned, candidates))
+                                {
+                                    row.Requirement = candidates;
+                                    row.RequirementSlot = slotLabel;
+                                }
+                            }
+                        }
+                        tree.Add(row);
+                    }
+                }
+            }
+            finally
+            {
+                Text.Font = font;
+            }
+        }
+
+        /// The replacements able to host a module on the given anatomy
+        /// instance: catalog replacements targeting that record which carry
+        /// the modular mark (ModCompatibility.IsModularReplacement), under
+        /// the same purchase-only filter as the picker rows, cheapest
+        /// efficiency first so the dialog's default is the plain bionic.
+        /// Shared per record within one build; immutable once built.
+        private static List<RequirementCandidate> HostsOf(
+            IReadOnlyList<ImplantCatalogEntry> implants,
+            Dictionary<BodyPartRecord, List<RequirementCandidate>> hosts,
+            BodyPartRecord record, bool showPurchaseOnly)
+        {
+            if (hosts.TryGetValue(record, out List<RequirementCandidate> known))
+                return known;
+            var candidates = new List<RequirementCandidate>();
+            var efficiencies = new List<float>();
             for (int i = 0; i < implants.Count; i++)
             {
                 ImplantCatalogEntry entry = implants[i];
-                if (!PassesFilters(entry)) continue;
-                if (!string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
+                if (!entry.IsReplacement || !ModCompatibility.IsModularReplacement(entry.Def))
+                    continue;
+                if (entry.PurchaseOnly && !showPurchaseOnly) continue;
+                for (int ordinal = 0; ordinal < entry.SlotRecords.Count; ordinal++)
                 {
-                    lastGroup = entry.GroupLabel;
-                    tree.Add(new PickerRow
+                    if (entry.SlotRecords[ordinal] != record) continue;
+                    // Insertion keeps efficiency ascending, then label order
+                    // (the catalog list is already label-sorted).
+                    int at = candidates.Count;
+                    while (at > 0 && efficiencies[at - 1] > entry.Efficiency) at--;
+                    candidates.Insert(at, new RequirementCandidate
                     {
-                        Depth = 0,
-                        Node = true,
-                        SectionKey = "t|" + entry.GroupLabel,
-                        Label = entry.GroupLabel,
-                    });
-                }
-                ImplantGoal? goal = FindGoal(selected, entry.Def.defName);
-                for (int ordinal = 0; ordinal < entry.SlotLabels.Count; ordinal++)
-                {
-                    string slotLabel = entry.SlotLabels[ordinal];
-                    bool own = goal != null && HasOrdinal(goal, ordinal);
-                    var row = new PickerRow
-                    {
-                        Depth = 1,
                         DefName = entry.Def.defName,
                         Ordinal = ordinal,
-                        IconDef = entry.Def.spawnThingOnRemoved,
-                        Label = entry.SlotLabels.Count > 1 && slotLabel.Length > 0
-                            ? entry.Label + " (" + slotLabel + ")"
-                            : entry.Label,
-                        Selected = own,
-                        Inherited = !own
-                            && inherited.Contains((entry.Def.defName, ordinal)),
-                    };
-                    if (!own)
-                    {
-                        string overridden = FirstConflictLabel(
-                            plannedSlots, entry.Def.defName, ordinal);
-                        if (overridden.Length > 0)
-                            row.OverridesLabel =
-                                "IMP_Overrides".Translate(overridden);
-                    }
-                    tree.Add(row);
+                        Label = entry.Label,
+                    });
+                    efficiencies.Insert(at, entry.Efficiency);
                 }
             }
+            hosts.Add(record, candidates);
+            return candidates;
+        }
+
+        private static bool AnyPlanned(
+            HashSet<(string, int)> planned, List<RequirementCandidate> candidates)
+        {
+            for (int i = 0; i < candidates.Count; i++)
+                if (planned.Contains((candidates[i].DefName, candidates[i].Ordinal)))
+                    return true;
+            return false;
         }
 
         /// The label of the first planned slot the candidate can never
         /// coexist with, or empty. Same-kind slots never conflict (they are
         /// the same goal's other slots or a re-include of an inherited one).
-        private static string FirstConflictLabel(
+        /// Definition-derived conflicts plus the model's option-driven kind
+        /// exclusivity: the same rule the synced command applies.
+        private static string FirstConflictLabel(PlannerModel model,
             List<(string Def, int Ordinal)> slots, string defName, int ordinal)
         {
             for (int i = 0; i < slots.Count; i++)
@@ -408,7 +648,8 @@ namespace Implanner.UI
                 (string otherDef, int otherOrdinal) = slots[i];
                 if (string.Equals(otherDef, defName, StringComparison.Ordinal))
                     continue;
-                if (!ImplantConflicts.Conflicts(otherDef, otherOrdinal, defName, ordinal))
+                if (!ImplantConflicts.Conflicts(otherDef, otherOrdinal, defName, ordinal)
+                    && !model.KindsExclusive(otherDef, defName))
                     continue;
                 ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(otherDef);
                 return entry?.Label ?? otherDef;

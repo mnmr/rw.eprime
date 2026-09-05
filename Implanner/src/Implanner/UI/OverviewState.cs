@@ -607,7 +607,8 @@ namespace Implanner.UI
                             store.Model.EffectiveImplants(plan));
                         goalsByPlan.Add(plan.Id, goals);
                     }
-                    PlanEvaluation evaluation = PawnProjection.Evaluate(pawn, goals, away);
+                    PlanEvaluation evaluation = PawnProjection.Evaluate(
+                        store.Model, pawn, goals, away);
                     row.Goals = goals;
                     row.PlanId = plan.Id;
                     row.PlanName = plan.Name;
@@ -876,9 +877,10 @@ namespace Implanner.UI
             IReadOnlyList<ImplantGoal> goals = next.Goals!;
 
             List<string> missing =
-                PawnProjection.MissingImplantSlotKeys(next.Pawn, goals);
+                PawnProjection.MissingImplantSlotKeys(store.Model, next.Pawn, goals);
             List<string> batch = SurgeryPlanner.ComputeBatch(
-                missing, store.Model, goals, store.Model.Iteration);
+                missing, store.Model, goals, store.Model.Iteration,
+                PlannerSurgery.OptionalFlags(next.Pawn, goals, missing));
             if (batch.Count == 0) return;
             result.SurgeryBatchText = "IMP_StripBatchStars".Translate(
                 next.Name, PlannerStyle.TierStars[work[0].Tier]).ToString();
@@ -937,23 +939,32 @@ namespace Implanner.UI
             PlannerModel model = store.Model;
 
             // Item shortfall per kind: every missing implant slot in scope
-            // wants one item of the implant's removal def.
+            // wants one item of the implant's removal def, except an
+            // upgrade over its installed base, which wants none (the same
+            // per-slot rule reservation and production apply).
             var needed = new Dictionary<ThingDef, int>();
             int neededTotal = 0;
             for (int i = 0; i < rows.Count; i++)
             {
                 OverviewRow row = rows[i];
                 if (row.Evaluation == null || row.Goals == null) continue;
-                for (int g = 0; g < row.Evaluation.Implants.Length; g++)
+                if (row.Evaluation.State == PawnPlanState.Complete) continue;
+                List<string> missing = PawnProjection.MissingImplantSlotKeys(
+                    model, row.Pawn, row.Goals);
+                for (int k = 0; k < missing.Count; k++)
                 {
-                    int missing = row.Evaluation.Implants[g].Missing;
-                    if (missing <= 0) continue;
-                    ThingDef? item = Catalogs.ImplantByDefName(
-                        row.Goals[g].ImplantDefName)?.Def.spawnThingOnRemoved;
+                    if (!GoalKeys.TryResolveImplantSlot(
+                            row.Goals, missing[k], out ImplantGoal goal, out int ordinal))
+                        continue;
+                    ImplantCatalogEntry? entry =
+                        Catalogs.ImplantByDefName(goal.ImplantDefName);
+                    ThingDef? item = entry != null
+                        ? PawnProjection.RequiredItem(row.Pawn, entry, ordinal)
+                        : null;
                     if (item == null) continue;
                     needed.TryGetValue(item, out int count);
-                    needed[item] = count + missing;
-                    neededTotal += missing;
+                    needed[item] = count + 1;
+                    neededTotal++;
                 }
             }
 

@@ -18,18 +18,24 @@ namespace Implanner.Core
         /// only valid for such occupants — a coexisting implant never
         /// satisfies another kind's goal. Null allows any same-slot
         /// substitute (conflict-blind callers and tests).
+        /// kindsExclusive answers whether two implant kinds are one slot by
+        /// player option (PlannerModel.KindsExclusive): such an installed
+        /// kind substitutes for the goal even though game data lets them
+        /// coexist, so automation never adds the second kind. Null means no
+        /// option-driven exclusivity.
         public static PlanEvaluation Evaluate(
             IReadOnlyList<ImplantGoal> goals,
             IReadOnlyList<InstalledImplant> installedImplants,
             IReadOnlyList<ImplantContext> implantContexts,
             bool away,
-            Func<string, string, bool>? sameSlotExclusive = null)
+            Func<string, string, bool>? sameSlotExclusive = null,
+            Func<string, string, bool>? kindsExclusive = null)
         {
             if (implantContexts.Count != goals.Count)
                 throw new ArgumentException("implant context count mismatch", nameof(implantContexts));
 
             var slotSatisfied = MatchSlots(goals, installedImplants,
-                implantContexts, sameSlotExclusive);
+                implantContexts, sameSlotExclusive, kindsExclusive);
             var implants = AccountGoals(goals, implantContexts, slotSatisfied);
             ComputeUnits(implants, out int satisfiedUnits, out int totalUnits);
             var state = DeriveState(implants, away);
@@ -45,12 +51,13 @@ namespace Implanner.Core
             IReadOnlyList<ImplantGoal> goals,
             IReadOnlyList<InstalledImplant> installed,
             IReadOnlyList<ImplantContext> implantContexts,
-            Func<string, string, bool>? sameSlotExclusive = null)
+            Func<string, string, bool>? sameSlotExclusive = null,
+            Func<string, string, bool>? kindsExclusive = null)
         {
             if (implantContexts.Count != goals.Count)
                 throw new ArgumentException("implant context count mismatch", nameof(implantContexts));
             var slotSatisfied = MatchSlots(goals, installed, implantContexts,
-                sameSlotExclusive);
+                sameSlotExclusive, kindsExclusive);
             var keys = new List<string>();
             for (int i = 0; i < goals.Count; i++)
             {
@@ -87,7 +94,8 @@ namespace Implanner.Core
             IReadOnlyList<ImplantGoal> goals,
             IReadOnlyList<InstalledImplant> installed,
             IReadOnlyList<ImplantContext> contexts,
-            Func<string, string, bool>? sameSlotExclusive)
+            Func<string, string, bool>? sameSlotExclusive,
+            Func<string, string, bool>? kindsExclusive)
         {
             var consumed = new bool[installed.Count];
             var slotSatisfied = new bool[goals.Count][];
@@ -128,7 +136,8 @@ namespace Implanner.Core
             // excludes installing the requested implant there (a manually
             // installed archotech leg satisfies a bionic-leg goal because the
             // goal cannot be installed over it; a coexisting brain implant
-            // never satisfies a different brain implant's goal).
+            // never satisfies a different brain implant's goal). Kinds the
+            // player's options declare one slot substitute the same way.
             for (int i = 0; i < goals.Count; i++)
             {
                 var goal = goals[i];
@@ -155,7 +164,9 @@ namespace Implanner.Core
                         if (candidate.Efficiency < context.Efficiency)
                             continue;
                         if (sameSlotExclusive != null
-                            && !sameSlotExclusive(candidate.ImplantDefName, goal.ImplantDefName))
+                            && !sameSlotExclusive(candidate.ImplantDefName, goal.ImplantDefName)
+                            && !(kindsExclusive != null
+                                && kindsExclusive(candidate.ImplantDefName, goal.ImplantDefName)))
                             continue;
                         if (pick < 0 || candidate.Efficiency < installed[pick].Efficiency)
                             pick = s;

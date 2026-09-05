@@ -30,6 +30,48 @@ public class PlanEvaluatorTests
     static readonly int[] BothSlots = { 0, 1 };
     static readonly int[] FirstSlot = { 0 };
 
+    static bool BladdersExclusive(string a, string b) =>
+        a != b && a.EndsWith("Bladder") && b.EndsWith("Bladder");
+
+    /// Modded bladder implants coexist by game data, so an installed
+    /// advanced bladder never substitutes for a bionic-bladder goal on its
+    /// own. With the "allow multiple bladders" option off the kinds are one
+    /// slot: the installed advanced bladder satisfies the goal, and a
+    /// colonist who already carries both keeps both, with the exact match
+    /// counted once and nothing scheduled for removal.
+    [Test]
+    public async Task OptionDrivenExclusiveKindSatisfiesTheGoalSlot()
+    {
+        var plan = ImplantPlan(new ImplantGoal(1, "BionicBladder", FirstSlot));
+        var torso = new[] { "Torso" };
+        var contexts = new[] { new ImplantContext(torso, 1f) };
+        var advancedOnly = new[]
+        {
+            new InstalledImplant("FSFAdvBionicBladder", "Torso", 1f),
+        };
+
+        PlanEvaluation allowed = PlanEvaluator.Evaluate(plan.Implants, advancedOnly,
+            contexts, away: false, Coexisting);
+        await Assert.That(allowed.Implants[0].Missing).IsEqualTo(1);
+
+        PlanEvaluation exclusive = PlanEvaluator.Evaluate(plan.Implants, advancedOnly,
+            contexts, away: false, Coexisting, BladdersExclusive);
+        await Assert.That(exclusive.Implants[0].IsComplete).IsTrue();
+        await Assert.That(PlanEvaluator.MissingImplantSlotKeys(plan.Implants,
+            advancedOnly, contexts, Coexisting, BladdersExclusive)).IsEmpty();
+
+        var both = new[]
+        {
+            new InstalledImplant("FSFAdvBionicBladder", "Torso", 1f),
+            new InstalledImplant("BionicBladder", "Torso", 1f),
+        };
+        PlanEvaluation carried = PlanEvaluator.Evaluate(plan.Implants, both,
+            contexts, away: false, Coexisting, BladdersExclusive);
+        await Assert.That(carried.SatisfiedUnits).IsEqualTo(1);
+        await Assert.That(carried.TotalUnits).IsEqualTo(1);
+        await Assert.That(carried.State).IsEqualTo(PawnPlanState.Complete);
+    }
+
     [Test]
     public async Task ExactImplantMatchesBeforeSuperiorSubstitute()
     {

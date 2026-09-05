@@ -166,20 +166,25 @@ namespace Implanner
                     int priority = model.PriorityOf(pawnId);
                     SurgeryCandidate candidate = default;
                     bool sampled = !asap;
+                    Pawn pawn = index.PawnsById[pawnId];
                     for (int k = 0; k < batch.Count; k++)
                     {
                         string key = batch[k];
                         if (reservedGoals.Contains((pawnId, key))) continue;
                         if (!GoalKeys.TryResolveImplantSlot(
-                                goals, key, out ImplantGoal goal, out _))
+                                goals, key, out ImplantGoal goal, out int ordinal))
                             continue;
                         ImplantCatalogEntry? entry =
                             Catalogs.ImplantByDefName(goal.ImplantDefName);
-                        ThingDef? item = entry?.Def.spawnThingOnRemoved;
+                        // A slot needing no item (an upgrade over its
+                        // installed base) is ready without a reservation.
+                        ThingDef? item = entry != null
+                            ? PawnProjection.RequiredItem(pawn, entry, ordinal)
+                            : null;
                         if (item == null) continue;
                         if (!sampled)
                         {
-                            candidate = PawnProjection.CandidateOf(index.PawnsById[pawnId]);
+                            candidate = PawnProjection.CandidateOf(pawn);
                             sampled = true;
                         }
                         requiredItemDef[(pawnId, key)] = item;
@@ -323,17 +328,19 @@ namespace Implanner
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                pawn, goals);
+                model, pawn, goals);
             if (missing.Count == 0) return statuses;
             List<string> batch = SurgeryPlanner.ComputeBatch(
-                missing, model, goals, model.Iteration);
+                missing, model, goals, model.Iteration,
+                OptionalFlags(pawn, goals, missing));
 
             var ready = new bool[batch.Count];
             for (int i = 0; i < batch.Count; i++)
-                ready[i] = reservationReadiness.TryGetValue(batch[i], out bool keyReady)
-                    && keyReady;
+                ready[i] = NeedsNoItem(pawn, goals, batch[i])
+                    || (reservationReadiness.TryGetValue(batch[i], out bool keyReady)
+                        && keyReady);
             List<string> releasable = SurgeryPlanner.Releasable(
-                batch, ready, model.Iteration);
+                batch, ready, model.Iteration, OptionalFlags(pawn, goals, batch));
             bool gated = releasable.Count > 0 && !HealthGate(pawn);
             bool floorBlocked = effectiveFloor > BestMedicalSkill(pawn.MapHeld);
 
@@ -347,14 +354,50 @@ namespace Implanner
                         : SlotStatus.Scheduled;
                     continue;
                 }
-                if (!reservationReadiness.TryGetValue(key, out bool keyReady)
-                    || !keyReady)
+                if (!NeedsNoItem(pawn, goals, key)
+                    && (!reservationReadiness.TryGetValue(key, out bool keyReady)
+                        || !keyReady))
                     continue;
                 statuses[key] = gated && releasable.Contains(key)
                     ? SlotStatus.Recovering
                     : SlotStatus.AwaitingBatch;
             }
             return statuses;
+        }
+
+        /// One flag per key: the slot's item cannot be crafted by the colony
+        /// (a purchase-only implant), so the key rides along with every
+        /// batch and never holds a release up (SurgeryPlanner). A slot
+        /// needing no item is never optional. Pass-scoped allocation.
+        internal static bool[] OptionalFlags(
+            Pawn pawn, IReadOnlyList<ImplantGoal> goals, List<string> keys)
+        {
+            var flags = new bool[keys.Count];
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (!GoalKeys.TryResolveImplantSlot(
+                        goals, keys[i], out ImplantGoal goal, out int ordinal))
+                    continue;
+                ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
+                if (entry == null) continue;
+                ThingDef? item = PawnProjection.RequiredItem(pawn, entry, ordinal);
+                flags[i] = item != null
+                    && PlannerProduction.ProductionRecipeFor(item) == null;
+            }
+            return flags;
+        }
+
+        /// Whether the slot needs no implant item delivered (an upgrade over
+        /// its installed base): such a key is ready without a reservation.
+        private static bool NeedsNoItem(
+            Pawn pawn, IReadOnlyList<ImplantGoal> goals, string key)
+        {
+            if (!GoalKeys.TryResolveImplantSlot(
+                    goals, key, out ImplantGoal goal, out int ordinal))
+                return false;
+            ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
+            return entry != null
+                && PawnProjection.RequiredItem(pawn, entry, ordinal) == null;
         }
 
         /// The best Medical skill among doctors on the pawn's map; what the
@@ -479,17 +522,20 @@ namespace Implanner
                 if (batch.Count == 0) continue;
 
                 // A key is ready when its reserved item exists at the pawn's
-                // colony. The batch strategies release the whole batch only
-                // once every key is ready; ASAP releases every ready key.
+                // colony, or when it needs no item at all. The batch
+                // strategies release the whole batch only once every key is
+                // ready; ASAP releases every ready key.
                 var ready = new bool[batch.Count];
                 for (int k = 0; k < batch.Count; k++)
                 {
-                    ready[k] = reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
-                        && index.ItemsById.ContainsKey(itemId)
-                        && index.SameColony(pawnId, itemId);
+                    ready[k] = NeedsNoItem(pawn, evaluation.Goals, batch[k])
+                        || (reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
+                            && index.ItemsById.ContainsKey(itemId)
+                            && index.SameColony(pawnId, itemId));
                 }
                 List<string> releasable = SurgeryPlanner.Releasable(
-                    batch, ready, model.Iteration);
+                    batch, ready, model.Iteration,
+                    OptionalFlags(pawn, evaluation.Goals, batch));
 
                 // Batch membership and health gate the RELEASE of new
                 // operations — an already-scheduled valid operation is
@@ -563,6 +609,16 @@ namespace Implanner
             BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
             if (part == null) return PlannerChange.None;
             RecipeDef? recipe = SelectRecipe(entry, pawn, part);
+            // An in-place upgrade is offered only over its base: while the
+            // part lacks it, the step to schedule is the base's own install
+            // (down the chain), under the same goal key. The upgrade surgery
+            // follows on a later pass once the base is in.
+            for (ImplantCatalogEntry? step = entry;
+                recipe == null && step != null && step.UpgradesFrom != null;)
+            {
+                step = Catalogs.ImplantByDefName(step.UpgradesFrom);
+                if (step != null) recipe = SelectRecipe(step, pawn, part);
+            }
             if (recipe == null) return PlannerChange.None;
 
             // Our recorded operation still stands: keep it, tracking the
@@ -608,7 +664,9 @@ namespace Implanner
         }
 
         /// The deterministic surgery recipe for an implant at a part: lowest
-        /// defName among the currently available candidates.
+        /// defName among the currently available candidates. A recipe with
+        /// no fixed parts (an in-place upgrade) is judged by its worker's
+        /// part filter alone.
         private static RecipeDef? SelectRecipe(
             ImplantCatalogEntry entry, Pawn pawn, BodyPartRecord part)
         {
@@ -616,14 +674,27 @@ namespace Implanner
             for (int i = 0; i < recipes.Count; i++)
             {
                 RecipeDef recipe = recipes[i];
-                if (recipe.appliedOnFixedBodyParts == null
-                    || !recipe.appliedOnFixedBodyParts.Contains(part.def))
+                if (recipe.appliedOnFixedBodyParts != null
+                    && !recipe.appliedOnFixedBodyParts.Contains(part.def))
                     continue;
                 if (!recipe.AvailableNow || !recipe.AvailableOnNow(pawn, part))
                     continue;
+                // The worker's own part filter is where vanilla refuses an
+                // artificial part and where module workers demand one: a
+                // bill for a part the recipe cannot apply to would never
+                // complete, so the goal waits instead.
+                if (!WorkerAppliesTo(recipe, pawn, part)) continue;
                 return recipe;
             }
             return null;
+        }
+
+        private static bool WorkerAppliesTo(RecipeDef recipe, Pawn pawn, BodyPartRecord part)
+        {
+            foreach (BodyPartRecord candidate in recipe.Worker.GetPartsToApplyOn(pawn, recipe))
+                if (candidate == part)
+                    return true;
+            return false;
         }
 
         /// Retry and release gating: surgery is released only when the pawn

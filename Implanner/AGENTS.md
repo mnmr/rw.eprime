@@ -42,11 +42,35 @@ detaches its children.
 
 Implant-combination validity is derived from definition data only, mirroring
 the game's surgery workers (verified in RimWorld source): one part per slot
-(replacements occupy it and implants cannot mount on added parts),
-replacements clear their subtree, and `incompatibleWithHediffTags` versus
-`HediffDef.tags` excludes same-part implants (skin glands). The pure rules
+(replacements occupy it and implants cannot mount on added parts, except
+kinds whose surgery worker inherits neither vanilla install worker and so
+never had that refusal: `ImplantCatalogEntry.MountsOnArtificialParts`,
+verified for Bionic modularity's `Recipe_InstallModule : Recipe_Surgery`,
+which mounts modules ON a bionic limb; such a pair coexists and the bionic
+never stands in for the module goal), replacements clear their subtree
+(again except mounts-on-artificial kinds), `incompatibleWithHediffTags` versus
+`HediffDef.tags` excludes same-part implants (skin glands), and mutual
+`HediffDef.removeWithTags` versus `tags` excludes a pair anywhere on the
+body (`Hediff.PostAdd` removes the tagged hediff pawn-wide, exact-match;
+modded mechanite strains). One-sided removal is not a conflict: installing
+the remover first leaves both in place. The pure rules
 live in `Implanner.Core.ImplantConflictRules`; `ImplantConflicts` extracts
 the facts from the catalog and injects `PlannerModel.SlotConflictResolver`.
+Curated exceptions (owner, 2026-09-05): the modded bladder implants and
+hygiene enhancers (`ImplantCompatibility`, groups `Bladder` and
+`HygieneEnhancer`: Dubs Bad Hygiene and FSF Advanced Bionics Expansion) are
+untagged torso implants the game stacks freely. The Options-domain
+`PlannerModel.AllowMultipleBladders` / `AllowMultipleHygieneEnhancers`
+(default on, scribed `allowMultipleBladders` / `allowMultipleHygieneEnhancers`,
+synced `SetAllowMultiple*`) switched off make the group exclusive by kind
+(`PlannerModel.KindsExclusive`), honored everywhere: the command and the
+picker captions apply it beside the resolver; `EffectiveImplants` keeps only
+the first-picked kind of a group per plan (picks stay stored, so switching
+back on restores them); and the evaluator's substitution gate accepts an
+installed kind of the group for the goal (`KindsExclusiveDelegate`, allocated
+once per model since the reconcile tick reaches it), so automation never
+installs the second kind while a colonist who already carries both keeps
+both. Nothing is ever removed. Shown on the Options tab (`OptionsState`).
 Evaluation substitution follows the same data: an installed implant
 satisfies another kind's goal slot only when it actually EXCLUDES
 installing the requested implant there (artificial-part occupancy or tag
@@ -54,10 +78,55 @@ conflict, `ImplantConflicts.SameSlotExclusive`) and meets the efficiency
 floor — a manually installed archotech leg satisfies a bionic-leg goal,
 while coexisting same-part implants (brain implants) never satisfy each
 other's goals.
+In-place upgrades (owner, 2026-09-05; Integrated Implants' "modularize
+bionic X" surgeries: `removesHediff` = the base kind, `addsHediff` = the
+modular kind, no fixed body parts, worker `LTS_Recipe_ReplaceHediff`
+targeting wherever the base sits) are catalog entries of their own
+(`ImplantCatalogEntry.UpgradesFrom`, built by `Catalogs.AddUpgrades` only
+when the base kind is in the catalog): the base's anatomy, the upgrade's own
+efficiency and item (its `spawnThingOnRemoved`, the base item), and a
+replacement since the hediff has `addedPartProps` (`IsReplacement` now also
+reads that). Consequences, all data-driven: the upgrade and its base exclude
+each other in plans (picking the upgrade supersedes the base); an installed
+base never stands in for its upgrade goal (`SameSlotExclusive` walks
+`Catalogs.UpgradeChainContains`); `PawnProjection.RequiredItem` answers
+null for a slot whose part already carries a chain member, so reservation,
+surgery release (`NeedsNoItem`), production demand and the strip all skip
+the item; and `EnsureOperation` schedules the base's own install under the
+upgrade's goal key while the part lacks it, then the upgrade surgery on a
+later pass (`SelectRecipe` accepts recipes without fixed parts on the
+worker's part filter alone). Integrated Implants' module items (EBSG
+item-use, no surgery) stay outside the catalog by construction.
+
+Purchase-only kinds (owner, 2026-09-05): the catalog keeps every kind whose
+surgery item no recipe produces, flagged `ImplantCatalogEntry.PurchaseOnly`
+(an upgrade inherits its base's flag). The Options-domain
+`PlannerModel.ShowPurchaseOnly` (default off, scribed `showPurchaseOnly`,
+synced `SetShowPurchaseOnly`, Options tab "Catalog" section) governs picker
+and reserve-menu visibility only; goals holding such kinds keep working from
+stock. Their slots are "optional" to batching (`PlannerSurgery.OptionalFlags`
+→ `SurgeryPlanner.ComputeBatch`/`Releasable`): they join every batch so
+stock is used at once, never decide the active tier while craftable work
+remains, and never block a release — a missing archotech leg holds up
+nothing else. A mod adding a crafting recipe makes the kind ordinary
+automatically (the producible set is data).
 The click IS the choice: selecting a conflicting slot deselects an own
 blocker inside the synced command (`SetImplantSlot`) and suppresses an
 inherited one in `EffectiveImplants` — the editor annotates such slots with
-"overrides X" rather than disabling them. Mutant-only implants (ghoul kit)
+"overrides X" rather than disabling them. A kind whose every surgery uses a
+mounts-on-artificial worker (`ImplantCatalogEntry.RequiresArtificialPart`,
+inferred from the recipe set: Bionic modularity limb modules) is offered by
+the game only on a replacement; ticking such a slot while the plan's
+effective goals hold no host replacement for that anatomy instance opens
+`Dialog_ImplantRequirements` (owner, 2026-09-05) listing the hosts
+(catalog replacements on the record carrying Bionic modularity's
+`DefExtension_ModularHediff`, matched by type name in
+`ModCompatibility.IsModularReplacement`; every replacement when that mod is
+absent; purchase-only hosts only while `ShowPurchaseOnly` is on, the same
+filter as the picker rows), cheapest efficiency first. Confirm issues two ordinary
+`SetImplantSlot` commands (host, then the slot); Cancel/ESC issues nothing,
+so the row simply keeps its published state. The candidates are resolved
+into the plans snapshot (`PickerRow.Requirement`), never in the draw pass. Mutant-only implants (ghoul kit)
 are excluded from the catalog: only ordinary humanlikes are plannable.
 
 ## Project boundaries
@@ -83,6 +152,7 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Location snapshots (`ColonyScope.locationSnapshots`) | `LocationRevision`, map-set membership, faction identity, language; equal rebuilds preserve snapshot identity |
 | Floor-map canonicalization (`FloorMaps.cache`) | Hash of live map ids; `ReleaseForTeardown` on map-set invalidation and world teardown |
 | Implant catalog (`Catalogs.implants`) | Loaded definition set (static per session) + `UiVersion.LanguageCurrent`; `Release` on world teardown |
+| Modular-host extension type (`ModCompatibility.modularExtension`) | Loaded assembly set (static per session); resolved once by type name; no teardown (process-lifetime immutable fact) |
 | Implant conflict facts (`ImplantConflicts.facts`) | Loaded definition set (static per session; label-free, so deliberately not language-gated); `Release` via `Catalogs.Release` |
 | Production recipes (`PlannerProduction.productionRecipes`) | Loaded definition set (static per session); entries never change; `Reset` on world teardown (defensive) |
 | Recipe bench users (`PlannerProduction.recipeUsers`) | Loaded definition set (static per session); entries never change; `Reset` on world teardown (defensive) |
@@ -91,10 +161,13 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 | Strip column tooltips (`StripTipSource`, one per column) | Overview data identity (the data carries the per-item production rows and per-kind surgery rows, built by `OverviewState` from the same stock, bill, reservation, and evaluation scans as the strip texts; `Implanner.Core.StripBreakdown` does the pipeline partition and dispatch ordering); the tip model is assembled only when a hover session opens and frozen for that session by `StructuredTipPresenter`; window-owned, released on close |
 | Automation snapshot (`AutomationState`) | `UiVersion.Current`, store identity + `OptionsVersion` + `SurgeryVersion` (implant reserves live in the Surgery domain) + `ProductionVersion`; carries the master switch, iteration, doctor-floor/hospitalized and production flags so the tab never reads the live model; reserve-row set derives from the baseline-reserve table and the implant catalog; reserve edit buffers are arrays parallel to the rows, reseeded on rebuild from the durable per-key dictionary; window-owned, released on close |
 | Automation tooltip holder (`AutomationTips`) | `UiVersion.Current` (the `WrTips` registry clears on it); window-owned, released on close |
+| Options snapshot (`OptionsState`) | `UiVersion.Current`, store identity + `OptionsVersion`; carries the mod compatibility and catalog flags so the tab never reads the live model; rebuilt from `WindowUpdate`; window-owned, released on close |
+| Options tooltip holder (`OptionsTips`) | `UiVersion.Current` (the `WrTips` registry clears on it); each tip's argument (the affected loaded implants with their mod names, `ModCompatibility.TipLines` / `PurchaseOnlyTipLines`) is resolved here since the definition set is static per session and the language sits inside the revision; window-owned, released on close |
 | Colonist detail rows (`OverviewState.detailRows`) | Overview data identity + selected pawn id + panel body width (the header sentence wraps, so its height is measured at rebuild and the width is part of the key); grouping follows the iteration strategy (tier headers with player-arranged order, or anatomy-region headers A-Z), and the header carries the pipeline status plus a Collecting/Implanting summary derived from reservations and owned operation bills — all inputs (options, rankings, reservations, surgery) already inside the data's `Version` dependency; live map state is sampled at rebuild by design (reserved-item readiness, best eligible doctor behind the floor gate, the Recovering health gate); the facts revision moves only for implant hediffs, so Recovering refreshes on the next store `Version` or facts bump |
 | Fold and read flags (`OverviewState.CollapsedFlags`, `PlansState.FoldedFlags`, `HelpTabView` topic flags) | Owning snapshot/topic-array identity + fold/read revision; parallel `bool[]` so draw loops never hash; window-owned |
 | Store reference (`Dialog_Implanner`) | `Find.World` identity, resolved in `WindowUpdate`; window-owned, cleared on close |
-| Plans snapshot (`PlansState`) | `UiVersion.Current`, store identity + `PlansVersion` (structure, goals, base links) + `RankingsVersion` (tier placement) + `AssignmentsVersion` (card colonist counts) + `ExternalPawnFacts.Revision` (card progress aggregates over installed implants and roster), selected plan id, and the anatomy-region filter segment; conflict facts folded in (def-derived, static per session); plan-name (Medium) and extends-caption (Tiny) widths measured at rebuild; rebuilt from `WindowUpdate`; window-owned, released on close |
+| Plans snapshot (`PlansState`) | `UiVersion.Current`, store identity + `PlansVersion` (structure, goals, base links) + `RankingsVersion` (tier placement) + `AssignmentsVersion` (card colonist counts) + `OptionsVersion` (the mod compatibility option feeds override captions) + `ExternalPawnFacts.Revision` (card progress aggregates over installed implants and roster), selected plan id, and the anatomy-region filter segment; conflict facts folded in (def-derived, static per session); plan-name (Medium), extends-caption (Tiny) and picker leaf-label (Small) widths measured at rebuild; rebuilt from `WindowUpdate`; window-owned, released on close |
+| Picker captions (`PlansState.Captions`) | Plans snapshot identity + the tree row width the picker draws at (window size, scroll gutter); one "overrides X" / "inherited" caption per row fitted to exactly the room its label leaves (the caption reserves nothing; omitted when not even an ellipsis fits), tail-truncated behind an ellipsis via `RimShared.Common.TailTruncation` when it cannot fit, carrying the full text for the hover tooltip; Tiny measurements happen only inside this gate; window-owned, released on close |
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves; `Reset` on world teardown |
 | Translated labels (`PlannerLabels`) | `UiVersion.LanguageCurrent`; `Reset` on world teardown |
 | Toolbar tooltip (`Patch_PlaySettings.tip`) | Active language object; `ResetPresentation` on world teardown |
@@ -111,7 +184,9 @@ are excluded from the catalog: only ordinary humanlikes are plannable.
 `ExternalPawnFacts.Revision` advances only via the `Patch_PawnFacts` event
 seams, for humanlike player-faction pawns only: apparel/equipment tracker
 changes (for the display-only gear column), implant hediff add/remove
-(`countsAsAddedPartOrImplant`, the same filter `PawnProjection` applies),
+(`PawnProjection.IsTrackedImplant`: `countsAsAddedPartOrImplant` or any
+catalog kind, since Bionic modularity's modules clear the flag; the same
+filter `PawnProjection` applies when projecting installed implants),
 pawn spawn/despawn/faction change, caravan membership.
 
 Changes to these dependencies require updated behavioral tests in the same change.
@@ -121,7 +196,7 @@ Changes to these dependencies require updated behavioral tests in the same chang
 - `ImplannerStore` (a `WorldComponent` wrapping the Core `PlannerModel`) is the authoritative per-save state; it also owns the deterministic plan-id counter (goals carry natural identities and need none). Loading clamps the counter above every loaded plan id and repairs duplicated plan ids deterministically (`PlannerModel.NormalizeLoadedIds`).
 - Only `PlannerCommands` and deterministic `ImplannerStore` lifecycle code may mutate the shared model.
 - **Plan import/export** (`Implanner.Core.PlansXml` + `PlannerCommands.ImportPlans`): the raw export XML is the sync payload; every client re-parses and applies it deterministically, validation happens before the first mutation (invalid payloads apply nothing anywhere), import is strictly additive with names uniquified via `CatalogNameRules`, save-local ids never travel (base links travel as plan names, plan ids re-allocated from the store counter, goals taking natural identity from the applied plan), and modded implants carry vanilla-style `MayRequire` attributes honored on import. Help content ships as markdown under `mod/Help/<language>/<chapter>/<NN>-<slug>.md` with images in `mod/Help/Images` (native resolution, clipped to fit the content width — never scaled down).
-- **Approved third mutation class:** deterministic tick-boundary reconciliation, implemented by `PlannerReconciler`, `PlannerSurgery`, and `PlannerProduction` (reservation lifecycle, tier-ordered implant-item allocation under the iteration strategy, batch-gated operation scheduling and owned-bill lifecycle, the automatic doctor-skill floor at its approved 1020-tick boundary, and resource-gated production-bill dispatch at its approved 1020-tick boundary). It runs inside the synchronized tick path from `ImplannerGameComponent.GameComponentTick` — never from OnGUI or render code — and consumes only authoritative synchronized state and deterministic tick arithmetic, so every multiplayer client derives the identical mutation from the same tick. All colony structure (map stacks, colonists, items) comes from the pass-scoped `ColonyIndex`, which resolves floor/pocket-map canonicalization and factions in one place using `ColonyScope.AuthoritativeFaction` (`Faction.OfPlayer`); `ColonyScope.ViewFaction` (`MP.RealPlayerFaction`) is presentation-only and must never feed a synced mutation. Presence (record retention) means alive anywhere: spawned or held on a map, in a caravan, in a travelling transporter, or aboard a gravship in flight. Being AT a colony (`ColonyScope.IsOperable`) additionally requires the pawn to be spawned or carried by another pawn: a pawn sealed in a casket, pod or landed transporter, or off every serviceable map, is Away, keeps its records, receives no work, takes no surgery slot, and never sets a doctor floor. Production records are never forgotten while a gravship is in flight. A reservation is released when its pawn is present at a DIFFERENT colony than the item (medical ingredient searches never leave the patient's map stack); a pawn merely away keeps its reservations. There is no delivered-once latch or regressed state (owner, 2026-08-31): a lost implant simply becomes missing again and is re-pursued automatically — a player deliberately removing implants turns automation off first.
+- **Approved third mutation class:** deterministic tick-boundary reconciliation, implemented by `PlannerReconciler`, `PlannerSurgery`, and `PlannerProduction` (reservation lifecycle, tier-ordered implant-item allocation under the iteration strategy, batch-gated operation scheduling and owned-bill lifecycle (a bill is created only for a recipe whose worker's own part filter, `GetPartsToApplyOn`, accepts the slot part, so module workers demanding a bionic and vanilla workers refusing one simply leave the goal waiting), the automatic doctor-skill floor at its approved 1020-tick boundary, and resource-gated production-bill dispatch at its approved 1020-tick boundary). It runs inside the synchronized tick path from `ImplannerGameComponent.GameComponentTick` — never from OnGUI or render code — and consumes only authoritative synchronized state and deterministic tick arithmetic, so every multiplayer client derives the identical mutation from the same tick. All colony structure (map stacks, colonists, items) comes from the pass-scoped `ColonyIndex`, which resolves floor/pocket-map canonicalization and factions in one place using `ColonyScope.AuthoritativeFaction` (`Faction.OfPlayer`); `ColonyScope.ViewFaction` (`MP.RealPlayerFaction`) is presentation-only and must never feed a synced mutation. Presence (record retention) means alive anywhere: spawned or held on a map, in a caravan, in a travelling transporter, or aboard a gravship in flight. Being AT a colony (`ColonyScope.IsOperable`) additionally requires the pawn to be spawned or carried by another pawn: a pawn sealed in a casket, pod or landed transporter, or off every serviceable map, is Away, keeps its records, receives no work, takes no surgery slot, and never sets a doctor floor. Production records are never forgotten while a gravship is in flight. A reservation is released when its pawn is present at a DIFFERENT colony than the item (medical ingredient searches never leave the patient's map stack); a pawn merely away keeps its reservations. There is no delivered-once latch or regressed state (owner, 2026-08-31): a lost implant simply becomes missing again and is re-pursued automatically — a player deliberately removing implants turns automation off first.
 - **Production dispatch rules** (`PlannerProduction`): demand and stock are measured in items while bills are measured in crafts — `Implanner.Core.ProductionMath.CraftsNeeded` is the single conversion point, so multi-output recipes never over-queue; demand counts missing implant slots per colony; a bill is created only when every fixed ingredient keeps its reserve after the bill's full cost (baseline reserves: advanced components 5, components 20, gold 100, plasteel 500, steel 2000; player-overridable per resource, including to zero; the options UI always lists the baseline resources plus every discovered implant ingredient, so absent DLC/mod defs simply never appear); at most `ProductionConcurrency` benches per colony hold Implanner bills (one per bench; with `OnlyIdleBenches` a bench qualifies only when none of its bills currently wants work per `Bill.ShouldDoNow` — suspended bills and satisfied do-until-X bills leave it idle); bills carry `ProductionSkill` as their minimum skill; with `AllowIntermediaries`, ingredient shortfalls expand to full depth through the (shallow) production tree with a once-per-resource guard and a depth cap for modded cycles — expansion is whitelisted to manufactured items (the `Manufactured` thing category: components, advanced components, modded kin); raw resources never receive bills regardless of recycling or smelting recipes that could produce them; bills for no-longer-needed items are deleted; completed bills self-remove and their records are swept. Bill objects belong to the game — the model records only their load ids.
 - **Iteration** defaults to one star tier at a time (`IterationStrategy.ImplantTier`, "Tier batching"), matching the plan editor's tier panel; the automation UI lists it first and maps display order onto the persisted enum values (`AutomationSnapshot.IterationByDisplay`). "Full sets" (`Colonist`) batches the whole plan per colonist. "ASAP" (`Asap`) has no batch gate: the batch is every missing key, `SurgeryPlanner.Releasable` schedules whatever is reserved on site instead of waiting for the whole batch, and stock of each implant kind is allocated by priority and then the candidate ranking (`SurgeryCandidate`, sampled once per pawn per pass by `PawnProjection.CandidateOf` inside the synchronized tick pass): legs to the slowest colonist by MoveSpeed, arms to a melee-weapon holder first and then the higher Intellectual plus Crafting sum, anything else by pawn id. The ranking applies to ASAP only: under a batch strategy it would split a scarce tier's stock across colonists and stall every batch. Limb family comes from the targeted part's Moving/Manipulation body part tags (`ImplantCatalogEntry.Limb`). **SurgeryConcurrency** (1–20, Options domain) caps how many colonists per colony hold Implanner-scheduled operations at once; only colonists without scheduled operations are gated, ids in deterministic order take the free slots, and the value seeds once per save on the first reconcile pass that observes an authoritative colonist (old saves that already have colonists seed at load) to max(1, colonist count / 10); an explicit player edit ends seeding (scribed 0 = unseeded sentinel, preserved across saves until seeded). With **CountHospitalized** (on by default, Options domain) humanlike pawns lying in a medical bed or downed and needing medical rest occupy cap slots too (deduplicated against owned-bill holders); the check reads live map state inside the synchronized tick pass, which is deterministic across clients.
 - **Doctor floor** modes are exclusive: while `AutoDoctorFloor` is on (the default) each colony's floor tracks its CURRENT best eligible doctor — published up, down, or cleared at the 1020-tick boundary, with no player-facing per-colony state; the manual minimum applies only while auto is off and is seeded from the best currently eligible doctor inside the synced disable command.

@@ -15,7 +15,7 @@ namespace Implanner.UI
     /// published state.
     public class Dialog_Implanner : Window
     {
-        private enum Tab { Overview, Plans, Automation, Help }
+        private enum Tab { Overview, Plans, Automation, Options, Help }
 
         // Session-scoped view state: survives close/reopen, never persisted.
         private static Tab curTab = Tab.Overview;
@@ -29,6 +29,8 @@ namespace Implanner.UI
         private readonly PlansState plans = new PlansState();
         private readonly AutomationState automation = new AutomationState();
         private readonly AutomationTips automationTips = new AutomationTips();
+        private readonly OptionsState options = new OptionsState();
+        private readonly OptionsTips optionsTips = new OptionsTips();
         private readonly HelpTabView help = new HelpTabView();
         private readonly StripTipSource productionTip =
             new StripTipSource(StripTipKind.Production);
@@ -124,6 +126,8 @@ namespace Implanner.UI
             plans.Release();
             automation.Release();
             automationTips.Release();
+            options.Release();
+            optionsTips.Release();
             help.ReleaseWindowData();
             productionTip.Release();
             surgeryTip.Release();
@@ -133,6 +137,7 @@ namespace Implanner.UI
             overviewFront = null;
             plansFront = null;
             automationFront = null;
+            optionsFront = null;
             store = null;
             storeWorld = null;
             PlannerDrag.Cancel();
@@ -196,6 +201,7 @@ namespace Implanner.UI
                     case Tab.Overview: DrawOverview(content, store); break;
                     case Tab.Plans: DrawPlans(content, store); break;
                     case Tab.Automation: DrawAutomation(content, store); break;
+                    case Tab.Options: DrawOptions(content, store); break;
                     default: help.Draw(content); break;
                 }
                 if (curTab != Tab.Plans) PlannerDrag.Cancel();
@@ -338,6 +344,7 @@ namespace Implanner.UI
                     if (PlannerAutomation.Available)
                         automationFront = automation.Current(store);
                     break;
+                case Tab.Options: optionsFront = options.Current(store); break;
             }
         }
 
@@ -353,6 +360,8 @@ namespace Implanner.UI
                     static () => curTab = Tab.Plans, () => curTab == Tab.Plans),
                 new TabRecord(PlannerLabels.TabAutomation,
                     static () => curTab = Tab.Automation, () => curTab == Tab.Automation),
+                new TabRecord(PlannerLabels.TabOptions,
+                    static () => curTab = Tab.Options, () => curTab == Tab.Options),
                 new TabRecord(PlannerLabels.TabHelp,
                     static () => curTab = Tab.Help, () => curTab == Tab.Help),
             };
@@ -1016,11 +1025,18 @@ namespace Implanner.UI
             // tab switch only.
             PlansSnapshot snapshot = plansFront ??= plans.Current(store);
 
+            // The picker carries the longest text (implant labels plus
+            // their override captions), so it takes the larger share of
+            // the room beside the plan list; the tier panel's rows are
+            // icon, label, count and a button.
             const float ListWidth = 230f;
-            float paneWidth = Mathf.Floor((rect.width - ListWidth - Pad * 2f) / 2f);
+            const float RankingsShare = 0.4f;
+            float paneRoom = rect.width - ListWidth - Pad * 2f;
+            float rankingsWidth = Mathf.Floor(paneRoom * RankingsShare);
             Rect list = new Rect(rect.x, rect.y, ListWidth, rect.height);
-            Rect center = new Rect(list.xMax + Pad, rect.y, paneWidth, rect.height);
-            Rect rankingsCol = new Rect(center.xMax + Pad, rect.y, paneWidth, rect.height);
+            Rect center = new Rect(list.xMax + Pad, rect.y,
+                paneRoom - rankingsWidth, rect.height);
+            Rect rankingsCol = new Rect(center.xMax + Pad, rect.y, rankingsWidth, rect.height);
 
             DrawPlanList(list, snapshot);
 
@@ -1226,10 +1242,14 @@ namespace Implanner.UI
             Rect inner = new Rect(0f, 0f,
                 treeHeight > outer.height ? outer.width - 16f : outer.width,
                 treeHeight);
+            // Captions fitted to this row width behind their own gate
+            // (snapshot identity + width): a resize or a scroll gutter
+            // appearing re-fits them, an unchanged frame indexes them.
+            PickerCaption[] captions = plans.Captions(snapshot, inner.width);
             Widgets.BeginScrollView(outer, ref pickerScroll, inner);
             try
             {
-                DrawTree(inner.width, snapshot.Tree, folded, plans,
+                DrawTree(inner.width, snapshot.Tree, folded, captions, plans,
                     snapshot.SelectedPlanId);
             }
             finally
@@ -1239,9 +1259,9 @@ namespace Implanner.UI
             Text.WordWrap = true;
         }
 
-        private const float TreeLine = 22f;
-        private const float TreeIndent = 11f;
-        private const float TreeArrow = 18f;
+        private const float TreeLine = PickerGeometry.Line;
+        private const float TreeIndent = PickerGeometry.Indent;
+        private const float TreeArrow = PickerGeometry.Arrow;
 
         /// Rows hidden inside folded subtrees contribute nothing. Pure
         /// arithmetic over already-built rows and their resolved fold flags
@@ -1273,8 +1293,11 @@ namespace Implanner.UI
         /// as this plan's own goal; slots conflicting with a planned goal
         /// carry an "overrides X" caption — checking them deselects an own
         /// blocker (the command removes it) or suppresses an inherited one.
+        /// Captions arrive fitted to the row width (parallel to the tree);
+        /// a truncated one keeps its end and shows the full text as a
+        /// tooltip when hovered, in place of the implant tooltip.
         private static void DrawTree(float width, List<PickerRow> tree,
-            bool[] folded, PlansState state, int planId)
+            bool[] folded, PickerCaption[] captions, PlansState state, int planId)
         {
             float y = 0f;
             int foldedDepth = -1;
@@ -1306,34 +1329,46 @@ namespace Implanner.UI
                     continue;
                 }
 
+                PickerCaption caption = captions[i];
+                float labelX = x + TreeArrow + 2f;
+                float labelRight = rowRect.xMax - PickerGeometry.CheckboxZone;
+                Rect captionRect = default;
+                if (caption.Text != null)
+                {
+                    captionRect = new Rect(labelRight - caption.Width, y,
+                        caption.Width, TreeLine);
+                    labelRight = captionRect.x - PickerGeometry.LabelCaptionGap;
+                }
                 if (Mouse.IsOver(rowRect))
                 {
                     Widgets.DrawHighlight(rowRect);
-                    // Tooltip content builds lazily for the hovered row only
-                    // and is cached per definition.
-                    string? tip = ImplantTip(row.DefName);
-                    if (tip != null)
-                        TooltipHandler.TipRegion(rowRect, tip);
+                    if (caption.Truncated && Mouse.IsOver(captionRect))
+                    {
+                        TooltipHandler.TipRegion(captionRect, caption.Full);
+                    }
+                    else
+                    {
+                        // Tooltip content builds lazily for the hovered row
+                        // only and is cached per definition.
+                        string? tip = ImplantTip(row.DefName);
+                        if (tip != null)
+                            TooltipHandler.TipRegion(rowRect, tip);
+                    }
                 }
-                bool overrides = row.OverridesLabel.Length > 0;
-                float labelX = x + TreeArrow + 2f;
                 if (row.IconDef != null)
                     Widgets.DefIcon(new Rect(x, y + 2f, TreeLine - 4f, TreeLine - 4f),
                         row.IconDef);
                 Text.Anchor = TextAnchor.MiddleLeft;
-                Widgets.Label(new Rect(labelX, y, width - labelX - 176f, TreeLine),
-                    row.Label);
-                string caption = overrides ? row.OverridesLabel
-                    : row.Inherited ? PlannerLabels.Inherited
-                    : "";
-                if (caption.Length > 0)
+                Widgets.Label(new Rect(labelX, y,
+                    Mathf.Max(0f, labelRight - labelX), TreeLine), row.Label);
+                if (caption.Text != null)
                 {
                     using (GuiStateScope.Capture())
                     {
                         Text.Anchor = TextAnchor.MiddleRight;
-                        GUI.color = overrides ? OverrideText : PlannerStyle.CaptionText;
-                        TinyText.Label(new Rect(rowRect.xMax - 176f, y, 144f, TreeLine),
-                            caption);
+                        GUI.color = row.OverridesLabel.Length > 0
+                            ? OverrideText : PlannerStyle.CaptionText;
+                        TinyText.Label(captionRect, caption.Text);
                     }
                 }
                 Text.Anchor = TextAnchor.UpperLeft;
@@ -1342,7 +1377,18 @@ namespace Implanner.UI
                 Widgets.Checkbox(new Vector2(rowRect.xMax - 26f, y + 1f),
                     ref now, 20f, disabled: false, paintable: true);
                 if (now != row.Selected)
-                    PlannerCommands.SetImplantSlot(planId, row.DefName, row.Ordinal, now);
+                {
+                    // A slot the game only offers on an artificial part the
+                    // plan does not cover yet: the requirement dialog picks
+                    // the host replacement and adds both, or nothing. The
+                    // row keeps drawing the published (unchecked) state
+                    // until the commands land.
+                    if (now && row.Requirement != null)
+                        Find.WindowStack.Add(new Dialog_ImplantRequirements(
+                            planId, row, row.Requirement));
+                    else
+                        PlannerCommands.SetImplantSlot(planId, row.DefName, row.Ordinal, now);
+                }
                 y += TreeLine;
             }
         }
@@ -1714,6 +1760,7 @@ namespace Implanner.UI
             {
                 ImplantCatalogEntry entry = catalog[i];
                 if (entry.Def.spawnThingOnRemoved == null) continue;
+                if (entry.PurchaseOnly && !model.ShowPurchaseOnly) continue;
                 string defName = entry.Def.defName;
                 if (model.ImplantReserveOf(defName) > 0) continue;
                 options.Add(new FloatMenuOption(entry.Label,
@@ -1877,5 +1924,60 @@ namespace Implanner.UI
             }
         }
 
+        // ----------------------------------------------------------- Options
+
+        private OptionsSnapshot? optionsFront;
+
+        /// The Options tab: settings that shape plans rather than
+        /// automation. Mod compatibility holds the curated cross-mod rules
+        /// the game's data cannot express; Catalog holds what the picker
+        /// lists. Laid out in one column of the automation tab's column
+        /// width.
+        private void DrawOptions(Rect rect, ImplannerStore store)
+        {
+            // Refreshed in WindowUpdate; the fallback covers a mid-frame
+            // tab switch only.
+            OptionsSnapshot snapshot = optionsFront ??= options.Current(store);
+            optionsTips.Ensure();
+            OptionsTips tips = optionsTips;
+
+            float width = Mathf.Floor((rect.width - ColumnGap) / 2f);
+            float y = rect.y;
+            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptModCompat) + 2f;
+            DrawOptionToggle(rect.x, ref y, width, PlannerLabels.OptAllowMultipleBladders,
+                snapshot.AllowMultipleBladders, tips.AllowMultipleBladders,
+                SetAllowMultipleBladders);
+            DrawOptionToggle(rect.x, ref y, width,
+                PlannerLabels.OptAllowMultipleHygieneEnhancers,
+                snapshot.AllowMultipleHygieneEnhancers, tips.AllowMultipleHygieneEnhancers,
+                SetAllowMultipleHygieneEnhancers);
+            y += Pad;
+
+            y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptCatalog) + 2f;
+            DrawOptionToggle(rect.x, ref y, width, PlannerLabels.OptShowPurchaseOnly,
+                snapshot.ShowPurchaseOnly, tips.ShowPurchaseOnly, SetShowPurchaseOnly);
+        }
+
+        // Cached static delegates: the toggle rows take the command by
+        // reference so the steady pass never creates one.
+        private static readonly System.Action<bool> SetAllowMultipleBladders =
+            PlannerCommands.SetAllowMultipleBladders;
+        private static readonly System.Action<bool> SetAllowMultipleHygieneEnhancers =
+            PlannerCommands.SetAllowMultipleHygieneEnhancers;
+        private static readonly System.Action<bool> SetShowPurchaseOnly =
+            PlannerCommands.SetShowPurchaseOnly;
+
+        /// A labeled checkbox row over a tip region; a change issues the
+        /// synced command and the next snapshot renders the published state.
+        private static void DrawOptionToggle(float x, ref float y, float width,
+            string label, bool value, WrTip tip, System.Action<bool> command)
+        {
+            bool now = value;
+            var rowRect = new Rect(x, y, width, RowHeight);
+            tip.Region(rowRect);
+            Widgets.CheckboxLabeled(rowRect, label, ref now);
+            if (now != value) command(now);
+            y += RowHeight + 2f;
+        }
     }
 }

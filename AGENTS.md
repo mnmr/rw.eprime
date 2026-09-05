@@ -365,7 +365,12 @@ for a human to review. Source-text tests are not allowed.
   `Fisso-NAM*.rws` from the player's save directory as a read-only source into
   the canonical repository save and the shared profile's `Saves\Autostart.rws`,
   verifies SHA-256 equality, and verifies that `ModsConfig.xml` exactly matches
-  the save's ordered mod list.
+  the save's ordered mod list. `refresh-profile.ps1 -ModSet <name>` then
+  layers the installed extra mods listed in `modsets\<name>.txt` into the
+  profile's copy at named anchors (an order-preserving superset, which the
+  dev-mode autostart loader accepts with a logged mismatch only); a plain
+  refresh restores the exact list. Mod sets are the only sanctioned way to
+  test with mods the save does not carry.
 - The shared preference baseline is windowed 1920x1080 at UI scale 1.25, paused
   on load, with `adaptiveTrainingEnabled=False` and `runInBackground=True`.
   Change a copy only for a test that explicitly exercises another display

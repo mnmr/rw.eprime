@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.1.0 — 2026-09-05
+
+- Added: Support for (FSF) Advanced Bionics Expansion, Integrated Implants and Bionic Modularity mods.
+- Added: Options to control mutual exclusivity of bladder implants and hygiene enhancers (DBH, FSF ABE)
+- Changed: Option to allow purchase-only items (archotech implants) in plans.
+- Fixed: Plans layout makes better use of window space and provides tooltips for text that might truncate.
+
 ## 1.0.3 — 2026-09-02
 
 - Added: Surgery gained an iteration strategy (ASAP) that doesn't batch implant surgeries.

@@ -134,6 +134,17 @@ public class PlannerModelTests
     }
 
     [Test]
+    public async Task ShowPurchaseOnlyIsOffByDefaultAndPreservesNoOps()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.ShowPurchaseOnly).IsFalse();
+        await Assert.That(model.SetShowPurchaseOnly(false)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetShowPurchaseOnly(true)).IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.ShowPurchaseOnly).IsTrue();
+    }
+
+    [Test]
     public async Task CountHospitalizedTogglesAndPreservesNoOps()
     {
         var model = NewModel();
@@ -231,7 +242,9 @@ public class PlannerModelTests
             autoDoctorFloor: true, surgeryConcurrency: 0,
             countHospitalized: true, autoProduction: true,
             productionConcurrency: 99, onlyIdleBenches: true,
-            productionSkill: -3, allowIntermediaries: true);
+            productionSkill: -3, allowIntermediaries: true,
+            allowMultipleBladders: false, allowMultipleHygieneEnhancers: false,
+            showPurchaseOnly: true);
         model.AddLoadedDoctorFloor("home", 0);
         model.AddLoadedDoctorFloor("ship", 25);
 
@@ -240,6 +253,9 @@ public class PlannerModelTests
         await Assert.That(model.SurgeryConcurrency).IsEqualTo(PlannerModel.SurgeryConcurrencyMin);
         await Assert.That(model.ProductionConcurrency).IsEqualTo(PlannerModel.ConcurrencyMax);
         await Assert.That(model.ProductionSkill).IsEqualTo(PlannerModel.DoctorFloorMin);
+        await Assert.That(model.AllowMultipleBladders).IsFalse();
+        await Assert.That(model.AllowMultipleHygieneEnhancers).IsFalse();
+        await Assert.That(model.ShowPurchaseOnly).IsTrue();
         await Assert.That(model.DoctorFloors.ContainsKey("home")).IsFalse();
         await Assert.That(model.DoctorFloorOf("ship")).IsEqualTo(PlannerModel.DoctorFloorMax);
     }

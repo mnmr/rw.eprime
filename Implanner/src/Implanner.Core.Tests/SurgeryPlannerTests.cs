@@ -170,6 +170,58 @@ public class SurgeryPlannerTests
             .IsEquivalentTo(batch);
     }
 
+    /// Purchase-only implants (no crafting recipe, so the colony cannot
+    /// make the item) never hold a batch up: they join every batch so
+    /// stock is used the moment it exists, the active tier is chosen by
+    /// the craftable keys alone (a purchase-only-only remainder still
+    /// becomes the active tier), an unready one never blocks release, and
+    /// a ready one releases together with the rest.
+    [Test]
+    public async Task PurchaseOnlyKeysNeverHoldUpTheBatch()
+    {
+        var model = new PlannerModel();
+        model.SetImplantStars("BionicLeg", 5);
+        model.SetImplantStars("ArchotechLeg", 5);
+        var goals = new List<ImplantGoal>
+        {
+            new ImplantGoal(1, "ArchotechLeg", new[] { 0 }),
+            new ImplantGoal(1, "BionicLeg", new[] { 1 }),
+            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+        };
+        string[] missing = { "p1:ArchotechLeg:0", "p1:BionicLeg:1", "p1:BionicEye:0" };
+        bool[] optional = { true, false, false };
+
+        List<string> batch = SurgeryPlanner.ComputeBatch(
+            missing, model, goals, IterationStrategy.ImplantTier, optional);
+        await Assert.That(batch).IsEquivalentTo(new[] { "p1:ArchotechLeg:0", "p1:BionicLeg:1" });
+
+        bool[] batchOptional = { true, false };
+        await Assert.That(SurgeryPlanner.Releasable(batch, new[] { false, true },
+            IterationStrategy.ImplantTier, batchOptional)).IsEquivalentTo(new[] { "p1:BionicLeg:1" });
+        await Assert.That(SurgeryPlanner.Releasable(batch, new[] { true, true },
+            IterationStrategy.ImplantTier, batchOptional)).IsEquivalentTo(batch);
+        await Assert.That(SurgeryPlanner.Releasable(batch, new[] { true, false },
+            IterationStrategy.Colonist, batchOptional)).IsEmpty();
+
+        // The bionic leg delivered: the active tier moves down to the eye
+        // while the archotech leg still rides along.
+        string[] later = { "p1:ArchotechLeg:0", "p1:BionicEye:0" };
+        await Assert.That(SurgeryPlanner.ComputeBatch(later, model, goals,
+            IterationStrategy.ImplantTier, new[] { true, false }))
+            .IsEquivalentTo(later);
+
+        // Only the purchase-only key left: it is the batch, and it is
+        // released as soon as stock makes it ready.
+        string[] last = { "p1:ArchotechLeg:0" };
+        List<string> lastBatch = SurgeryPlanner.ComputeBatch(last, model, goals,
+            IterationStrategy.ImplantTier, new[] { true });
+        await Assert.That(lastBatch).IsEquivalentTo(last);
+        await Assert.That(SurgeryPlanner.Releasable(lastBatch, new[] { false },
+            IterationStrategy.ImplantTier, new[] { true })).IsEmpty();
+        await Assert.That(SurgeryPlanner.Releasable(lastBatch, new[] { true },
+            IterationStrategy.ImplantTier, new[] { true })).IsEquivalentTo(last);
+    }
+
     static SurgeryWorkItem Item(int pawnId, int priority, string kind,
         LimbKind limb, SurgeryCandidate candidate) =>
         new SurgeryWorkItem(pawnId, priority, StarRanking.TierOf(3),

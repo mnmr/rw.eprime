@@ -188,14 +188,18 @@ namespace Implanner
                 if (evaluation == null) continue;
                 IReadOnlyList<ImplantGoal> goals = evaluation.Goals;
                 List<string> missing = evaluation.Missing;
+                Pawn pawn = index.PawnsById[pawnId];
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
-                            goals, missing[k], out ImplantGoal goal, out _))
+                            goals, missing[k], out ImplantGoal goal, out int ordinal))
                         continue;
                     ImplantCatalogEntry? entry =
                         Catalogs.ImplantByDefName(goal.ImplantDefName);
-                    ThingDef? item = entry?.Def.spawnThingOnRemoved;
+                    // An upgrade over its installed base wants no item.
+                    ThingDef? item = entry != null
+                        ? PawnProjection.RequiredItem(pawn, entry, ordinal)
+                        : null;
                     if (item == null || ProductionRecipeFor(item) == null) continue;
                     var key = (colony.CanonicalMap, item);
                     demand.TryGetValue(key, out int count);

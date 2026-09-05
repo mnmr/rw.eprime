@@ -216,6 +216,7 @@ namespace Implanner.UI
             new HelpChapter("2-plans", "IMP_HelpChapterPlans"),
             new HelpChapter("3-automation", "IMP_HelpChapterAutomation"),
             new HelpChapter("4-sharing", "IMP_HelpChapterSharing"),
+            new HelpChapter("5-mods", "IMP_HelpChapterMods"),
         };
 
         private readonly HelpTopicData[]?[] chapters =

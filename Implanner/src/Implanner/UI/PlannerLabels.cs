@@ -68,6 +68,12 @@ namespace Implanner.UI
         internal static string OptProductionSkill = "";
         internal static string OptIntermediaries = "";
         internal static string OptReserves = "";
+        internal static string TabOptions = "";
+        internal static string OptModCompat = "";
+        internal static string OptAllowMultipleBladders = "";
+        internal static string OptAllowMultipleHygieneEnhancers = "";
+        internal static string OptCatalog = "";
+        internal static string OptShowPurchaseOnly = "";
         internal static string DragItemsHere = "";
         internal static string Help = "";
         internal static string RankTiersTitle = "";
@@ -143,6 +149,13 @@ namespace Implanner.UI
             OptProductionSkill = "IMP_OptProductionSkill".Translate();
             OptIntermediaries = "IMP_OptIntermediaries".Translate();
             OptReserves = "IMP_OptReserves".Translate();
+            TabOptions = "IMP_TabOptions".Translate();
+            OptModCompat = "IMP_OptModCompat".Translate();
+            OptAllowMultipleBladders = "IMP_OptAllowMultipleBladders".Translate();
+            OptAllowMultipleHygieneEnhancers =
+                "IMP_OptAllowMultipleHygieneEnhancers".Translate();
+            OptCatalog = "IMP_OptCatalog".Translate();
+            OptShowPurchaseOnly = "IMP_OptShowPurchaseOnly".Translate();
             DragItemsHere = "IMP_DragItemsHere".Translate();
             Help = "IMP_Help".Translate();
             RankTiersTitle = "IMP_RankTiersTitle".Translate();

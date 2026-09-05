@@ -104,9 +104,17 @@ namespace Implanner.Core
         /// captured delegate (reconcile tick path). Unresolvable keys sort
         /// into the worst tier (int.MaxValue), so they never join a ranked
         /// tier's batch.
+        ///
+        /// optional (parallel to missingKeys, null = none) marks keys whose
+        /// item the colony cannot craft (purchase-only implants): they never
+        /// decide the active tier — the craftable keys do, and only when no
+        /// craftable key is missing does the best optional tier become
+        /// active — and they join every batch, so stock that turns up is
+        /// used at once without holding anything else back.
         public static List<string> ComputeBatch(
             IReadOnlyList<string> missingKeys, PlannerModel model,
-            IReadOnlyList<ImplantGoal> goals, IterationStrategy strategy)
+            IReadOnlyList<ImplantGoal> goals, IterationStrategy strategy,
+            bool[]? optional = null)
         {
             var batch = new List<string>();
             if (missingKeys.Count == 0) return batch;
@@ -118,13 +126,22 @@ namespace Implanner.Core
             }
             var tiers = new int[missingKeys.Count];
             int active = int.MaxValue;
+            int activeOptional = int.MaxValue;
             for (int i = 0; i < missingKeys.Count; i++)
             {
                 tiers[i] = TierOfKey(model, goals, missingKeys[i]);
-                if (tiers[i] < active) active = tiers[i];
+                if (optional != null && optional[i])
+                {
+                    if (tiers[i] < activeOptional) activeOptional = tiers[i];
+                }
+                else if (tiers[i] < active)
+                {
+                    active = tiers[i];
+                }
             }
+            if (active == int.MaxValue) active = activeOptional;
             for (int i = 0; i < missingKeys.Count; i++)
-                if (tiers[i] == active)
+                if (tiers[i] == active || (optional != null && optional[i]))
                     batch.Add(missingKeys[i]);
             return batch;
         }
@@ -139,10 +156,11 @@ namespace Implanner.Core
         /// The batch keys whose operations may be released now. The batch
         /// strategies release the whole batch only once every key is ready
         /// (reserved on site), so several implants share one anesthetic
-        /// sleep; ASAP releases every ready key at once. ready is parallel
-        /// to batch.
+        /// sleep; ASAP releases every ready key at once. ready and optional
+        /// (null = none) are parallel to batch: an optional key (purchase-
+        /// only item) never blocks the release and goes along when ready.
         public static List<string> Releasable(List<string> batch, bool[] ready,
-            IterationStrategy strategy)
+            IterationStrategy strategy, bool[]? optional = null)
         {
             var result = new List<string>();
             if (strategy == IterationStrategy.Asap)
@@ -153,9 +171,9 @@ namespace Implanner.Core
             }
             if (batch.Count == 0) return result;
             for (int i = 0; i < batch.Count; i++)
-                if (!ready[i]) return result;
+                if (!ready[i] && !(optional != null && optional[i])) return result;
             for (int i = 0; i < batch.Count; i++)
-                result.Add(batch[i]);
+                if (ready[i]) result.Add(batch[i]);
             return result;
         }
 

@@ -3,7 +3,7 @@
   <name>EPrime's Implanner</name>
   <author>Morten Mertner</author>
   <packageId>EPrime.Implanner</packageId>
-  <modVersion>1.0.3</modVersion>
+  <modVersion>1.1.0</modVersion>
   <url>https://github.com/mnmr/rw.eprime</url>
   <supportedVersions>
     <li>1.6</li>
@@ -35,7 +35,7 @@ Automation:
 Compatibility:
 - Safe to add to existing saves.
 - Designed for performance: cached rendering, no per-frame work, event- and interval-driven logic.
-- Modded Implants: Implants from other mods appear automatically, no compatibility patches needed.
+- Modded Implants: Implants from other mods appear automatically. Custom support for FSF Advanced Bionics Expansion, Dubs Bad Hygiene, Integrated Implants and Bionic modularity.
 - Multi-floor mods (MultiFloors, Strata, As above so below II): planning and tracking work fully; automation stands down because medical bills cannot fetch ingredients across floors.
 - Multiplayer compatible.
 - Requires Harmony.

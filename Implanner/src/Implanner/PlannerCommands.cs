@@ -266,6 +266,34 @@ namespace Implanner
             store.Bump(store.Model.SetCountHospitalized(enabled));
         }
 
+        /// Mod compatibility: whether bladder implants from different mods
+        /// may be planned and installed side by side.
+        [SyncMethod]
+        public static void SetAllowMultipleBladders(bool allowed)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetAllowMultipleBladders(allowed));
+        }
+
+        /// Mod compatibility: the same for hygiene enhancers.
+        [SyncMethod]
+        public static void SetAllowMultipleHygieneEnhancers(bool allowed)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetAllowMultipleHygieneEnhancers(allowed));
+        }
+
+        /// Catalog: whether the picker lists purchase-only implants.
+        [SyncMethod]
+        public static void SetShowPurchaseOnly(bool shown)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetShowPurchaseOnly(shown));
+        }
+
         [SyncMethod]
         public static void SetAutoProduction(bool enabled)
         {

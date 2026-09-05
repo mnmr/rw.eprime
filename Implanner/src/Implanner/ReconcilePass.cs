@@ -81,9 +81,10 @@ namespace Implanner
                 {
                     IReadOnlyList<ImplantGoal> goals = EffectiveGoals(plan);
                     List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                        pawn, goals);
+                        Model, pawn, goals);
                     List<string> batch = SurgeryPlanner.ComputeBatch(
-                        missing, Model, goals, Model.Iteration);
+                        missing, Model, goals, Model.Iteration,
+                        PlannerSurgery.OptionalFlags(pawn, goals, missing));
                     built = new PawnEvaluation(plan, goals, missing, batch);
                 }
             }
