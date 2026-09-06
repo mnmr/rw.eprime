@@ -86,9 +86,11 @@ namespace EPrimeReadouts
             // with its disposition. The forbidden flag reads the outer thing
             // (a minified wrapper carries the comp); freshness and fog read
             // the inner. Known narrowing: a counted def that is storable but
-            // never haulable is absent from the lister and loses its search
-            // breakdown entry — its group count still comes from vanilla's
-            // AllCountedAmounts above.
+            // never haulable is absent from the lister and gets no search
+            // breakdown entry; consumers resolve it through
+            // RenderCountSnapshot.SearchCountOf, which falls back to the
+            // vanilla AllCountedAmounts figure above as stored and
+            // unforbidden.
             bool includeScattered = options.IncludeScattered;
             var things = map.listerThings.ThingsInGroup(
                 ThingRequestGroup.HaulableEver);

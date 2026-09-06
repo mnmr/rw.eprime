@@ -130,6 +130,24 @@ namespace EPrimeReadouts.Core
         public IReadOnlyList<PlannedWorkEntry> PlannedWork => plannedWork;
         public long Fingerprint { get; }
 
+        /// Search breakdown for one def. A def the stack pass never saw but
+        /// the game still counts (a storable item that is never haulable is
+        /// absent from the haulable lister) falls back to its raw count as
+        /// stored and unforbidden, so it never displays as zero merely for
+        /// lacking a breakdown; a def in neither map is zero.
+        public SearchCount SearchCountOf(string defName)
+        {
+            if (searchCounts.TryGetValue(defName, out SearchCount search))
+                return search;
+            counts.TryGetValue(defName, out int raw);
+            return FromRawCount(raw);
+        }
+
+        /// The breakdown a raw count stands in for: every stack stored and
+        /// unforbidden. Shared by the layout engine's own fallback.
+        public static SearchCount FromRawCount(int raw)
+            => new SearchCount(raw, raw, raw, raw);
+
         /// Debt for one def, defaulting to nothing owed.
         public PlannedWorkDebt DebtOf(string defName)
             => debts.TryGetValue(defName, out PlannedWorkDebt debt)

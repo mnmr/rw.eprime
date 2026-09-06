@@ -123,4 +123,26 @@ public class LayoutEngineCountBasisTests
             Input(Group("Steel"), null, storageOnly: true, hideForbidden: true));
         await Assert.That(Counter(model).Count).IsEqualTo(120);
     }
+
+    [Test]
+    public async Task DefAbsentFromBreakdownFallsBackToItsRawCount()
+    {
+        // The breakdown covers other defs only: Steel is counted by the
+        // game (raw 120) but never entered the stack pass, which is what a
+        // storable-but-never-haulable counted item looks like. Its slot
+        // and its pool sum must show the raw count, not zero.
+        var breakdown = new Dictionary<string, SearchCount>
+        {
+            ["Meat_Cow"] = new SearchCount(50, 30, 50, 30),
+        };
+        var slot = ReadoutLayoutEngine.Build(
+            Input(Group("Steel"), breakdown, storageOnly: true, hideForbidden: true));
+        await Assert.That(Counter(slot).Count).IsEqualTo(120);
+
+        var pooled = Input(Group("#1"), breakdown, storageOnly: true);
+        pooled.Pools = StaticResources.MeatPool();
+        var pool = ReadoutLayoutEngine.Build(pooled);
+        // Cow from the breakdown (30 stored) plus Chicken's raw 10.
+        await Assert.That(Counter(pool).Count).IsEqualTo(40);
+    }
 }

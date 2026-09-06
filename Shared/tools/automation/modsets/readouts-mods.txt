@@ -1,0 +1,14 @@
+# Mod set: the content mods behind the Readouts "modded resources are not
+# counted" report, layered over the save's own list by
+# refresh-profile.ps1 -ModSet readouts-mods. Vanilla Expanded Framework is
+# the shared dependency; the three content mods follow it in their own
+# declared order. Argonic Core must precede Expanded Materials - Masonry:
+# without it Masonry's patches drop the vanilla stone chunk defs and the
+# save no longer loads.
+
+after ludeon.rimworld.odyssey
+OskarPotocki.VanillaFactionsExpanded.Core
+Argon.CoreLib
+VanillaExpanded.VCookE
+Argon.ExpandedMaterials.Stones
+Argon.ExpandedMaterials.Masonry

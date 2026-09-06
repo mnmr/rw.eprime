@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.1 — 2026-09-06
+
+- Fixed: A bug introduced in 1.2.6 could cause non-haulable modded items to not be counted correctly.
+
 ## 1.3.0 — 2026-09-04
 
 - Added: Integrated Help and a welcome dialog.

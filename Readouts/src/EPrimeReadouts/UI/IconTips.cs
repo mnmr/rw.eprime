@@ -281,21 +281,18 @@ namespace EPrimeReadouts.UI
                     var memberDef = DefDatabase<ThingDef>.GetNamedSilentFail(poolMembers[m]);
                     if (memberDef == null) continue;
                     // Same narrowed basis as the slot sums (CountBasis), so
-                    // the breakdown always adds up to the badge. An empty
-                    // breakdown map falls back to the raw counts, mirroring
+                    // the breakdown always adds up to the badge; the
+                    // snapshot's per-def fallback to the raw count mirrors
                     // ReadoutLayoutEngine.ResolveSearchCount.
                     int memberCount = 0;
                     if (state.RenderData != null)
                     {
                         var counts = state.RenderData.Counts;
-                        if (counts.SearchCounts.Count == 0)
-                            counts.Counts.TryGetValue(memberDef.defName, out memberCount);
-                        else if (counts.SearchCounts.TryGetValue(
-                            memberDef.defName, out SearchCount search))
-                            memberCount = CountBasis.Displayed(search,
-                                basisStorageOnly, basisHideForbidden,
-                                counts.DebtOf(memberDef.defName).Total,
-                                settings.showNegativeCounts);
+                        memberCount = CountBasis.Displayed(
+                            counts.SearchCountOf(memberDef.defName),
+                            basisStorageOnly, basisHideForbidden,
+                            counts.DebtOf(memberDef.defName).Total,
+                            settings.showNegativeCounts);
                     }
                     if (memberCount == 0) continue;
                     memberLabels.Add(memberDef.LabelCap);
@@ -505,15 +502,8 @@ namespace EPrimeReadouts.UI
             bool hideForbidden,
             string defName)
         {
-            if (counts.SearchCounts.Count == 0)
-            {
-                counts.Counts.TryGetValue(defName, out int raw);
-                return raw;
-            }
-            return counts.SearchCounts.TryGetValue(
-                       defName, out SearchCount search)
-                ? CountBasis.Displayed(search, storageOnly, hideForbidden)
-                : 0;
+            return CountBasis.Displayed(
+                counts.SearchCountOf(defName), storageOnly, hideForbidden);
         }
 
         internal static void Reset()

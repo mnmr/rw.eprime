@@ -967,16 +967,17 @@ namespace EPrimeReadouts.Core
                 { DefName = defName, Label = label, Count = count });
         }
 
-        /// Search breakdown for one def; a null SearchCounts input falls back
-        /// to the group-count basis with every stack stored and unforbidden.
+        /// Search breakdown for one def. A def missing from the breakdown
+        /// (or a null SearchCounts input) falls back to the group-count basis
+        /// with every stack stored and unforbidden, matching
+        /// RenderCountSnapshot.SearchCountOf so slots and tooltips agree.
         private static SearchCount ResolveSearchCount(
             LayoutInput input, string defName, int fallbackCount)
         {
-            if (input.SearchCounts == null)
-                return new SearchCount(fallbackCount, fallbackCount,
-                    fallbackCount, fallbackCount);
-            input.SearchCounts.TryGetValue(defName, out SearchCount search);
-            return search;
+            if (input.SearchCounts != null
+                && input.SearchCounts.TryGetValue(defName, out SearchCount search))
+                return search;
+            return RenderCountSnapshot.FromRawCount(fallbackCount);
         }
 
         private static void BuildResultsGrid(LayoutInput input, RenderModel model,
