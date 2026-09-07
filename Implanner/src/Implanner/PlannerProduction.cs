@@ -367,13 +367,8 @@ namespace Implanner
                     benchesByColony, model, pass, colony, recipe);
                 if (bench == null) continue;
 
-                var bill = new Bill_Production(recipe)
-                {
-                    repeatMode = BillRepeatModeDefOf.RepeatCount,
-                    repeatCount = count,
-                    allowedSkillRange = new IntRange(
-                        model.ProductionSkill, PlannerModel.DoctorFloorMax),
-                };
+                Bill_Production bill = MakeBill(recipe, count,
+                    new IntRange(model.ProductionSkill, PlannerModel.DoctorFloorMax));
                 bench.BillStack.AddBill(bill);
                 busyBenches[colony] = busy + 1;
                 change |= model.SetOwnedProductionBill(
@@ -381,6 +376,27 @@ namespace Implanner
             }
 
             return change;
+        }
+
+        /// The game's bill object for one Implanner production bill: a
+        /// fixed number of crafts at the configured minimum skill. The class
+        /// comes from the game's own factory (BillUtility.MakeNewBill, what
+        /// the bench UI uses): a recipe with an unfinishedThingDef — every
+        /// vanilla bionic through BodyPartBionicBase's recipeMaker, both
+        /// component recipes, most modded bionics — needs a
+        /// Bill_ProductionWithUft, because Toils_Recipe.MakeUnfinishedThingIfNeeded
+        /// casts the job's bill to it the moment the crafter starts; a plain
+        /// Bill_Production throws InvalidCastException there and the job
+        /// ends (reported 2026-09-07, reproduced in-game on Make_BionicArm).
+        /// Every class the factory returns derives from Bill_Production.
+        internal static Bill_Production MakeBill(
+            RecipeDef recipe, int crafts, IntRange skillRange)
+        {
+            var bill = (Bill_Production)recipe.MakeNewBill();
+            bill.repeatMode = BillRepeatModeDefOf.RepeatCount;
+            bill.repeatCount = crafts;
+            bill.allowedSkillRange = skillRange;
+            return bill;
         }
 
         private static readonly Comparison<(Map Colony, ThingDef Item, int Count)>

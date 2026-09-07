@@ -170,6 +170,8 @@
   <IMP_RegionLimbs>Limbs</IMP_RegionLimbs>
   <IMP_RegionTorso>Torso</IMP_RegionTorso>
   <IMP_RegionHead>Head</IMP_RegionHead>
+  <!-- Shown in the picker while a search matches nothing -->
+  <IMP_NoMatchingImplants>No implants match the search.</IMP_NoMatchingImplants>
 
   <!-- ===== Plan rankings panel ===== -->
   <IMP_RankTiersTitle>Implant tiers</IMP_RankTiersTitle>
@@ -220,9 +222,9 @@
   <!-- ===== Automation tooltips ===== -->
   <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
   <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go to melee fighters first, then to the best crafter or researcher.</IMP_OptIterationTip>
-  <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
+  <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go. Nobody can operate on themselves, so the best doctor's own surgeries go to the next best doctor.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
   <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists.</IMP_OptSurgeryConcurrencyTip>
-  <IMP_OptCountHospitalizedTip>Pawns lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>
+  <IMP_OptCountHospitalizedTip>Colonists and slaves lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Prisoners, guests and visiting patients from other factions never take up a slot. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>
   <IMP_OptManualFloorTip>The minimum Medicine skill a doctor needs to perform Implanner surgeries. Bills wait until a doctor at or above this level is available. The value starts from your current best doctor when automatic assignment is switched off.</IMP_OptManualFloorTip>
   <IMP_OptImplantReservesTip>Implants held back for manual use. Automation only reserves stock beyond these counts, so you always keep this many of each listed implant free for emergency surgery or trade. Production does not count held-back items as available, and keeps crafting until automation can proceed without them.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Pick an implant to hold back from automation.</IMP_AddImplantReserveTip>

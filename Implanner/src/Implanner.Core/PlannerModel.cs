@@ -497,6 +497,21 @@ namespace Implanner.Core
         public int EffectiveDoctorFloor(string colonyId) =>
             AutoDoctorFloor ? DoctorFloorOf(colonyId) : ManualDoctorFloor;
 
+        /// The floor one patient's OWN operations enforce. Nobody operates
+        /// on themselves, so a floor that only the patient meets would wait
+        /// forever: while the automatic mode is on and the patient is (one
+        /// of) the colony's best doctors, the floor is the best OTHER
+        /// eligible doctor's skill instead — a peer of equal skill leaves it
+        /// unchanged, and no other doctor clears it. The manual minimum is
+        /// the player's explicit choice and is never lowered. Skills are
+        /// eligible Medical levels, negative for pawns who are not doctors.
+        public int PatientDoctorFloor(string colonyId, int patientSkill, int bestOtherSkill)
+        {
+            int floor = EffectiveDoctorFloor(colonyId);
+            if (!AutoDoctorFloor || patientSkill < floor) return floor;
+            return Math.Min(floor, Math.Max(0, bestOtherSkill));
+        }
+
         /// Publishes a colony's current best doctor skill — up, down, or
         /// gone (zero removes the entry). Deterministic reconcile path.
         public PlannerChange SetDoctorFloor(string colonyId, int skill)

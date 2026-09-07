@@ -1,3 +1,4 @@
+using RimShared.Common.Help;
 using WorkRoles.Core.Help;
 
 namespace WorkRoles.Core.Tests.Help;

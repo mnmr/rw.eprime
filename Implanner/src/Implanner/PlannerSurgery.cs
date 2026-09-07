@@ -323,7 +323,11 @@ namespace Implanner
         {
             var statuses = new Dictionary<string, SlotStatus>(StringComparer.Ordinal);
             PawnPlace place = ColonyScope.PlaceOf(pawn);
-            effectiveFloor = model.EffectiveDoctorFloor(place.LocationId ?? "");
+            // The patient never operates on themselves: the floor and the
+            // blocked check both look at the OTHER doctors on the map.
+            int bestOther = BestMedicalSkill(pawn.MapHeld, pawn);
+            effectiveFloor = model.PatientDoctorFloor(place.LocationId ?? "",
+                EligibleDoctorSkill(pawn), bestOther);
             IReadOnlyList<ImplantGoal> goals = model.EffectiveImplants(plan);
             if (goals.Count == 0) return statuses;
 
@@ -342,7 +346,7 @@ namespace Implanner
             List<string> releasable = SurgeryPlanner.Releasable(
                 batch, ready, model.Iteration, OptionalFlags(pawn, goals, batch));
             bool gated = releasable.Count > 0 && !HealthGate(pawn);
-            bool floorBlocked = effectiveFloor > BestMedicalSkill(pawn.MapHeld);
+            bool floorBlocked = effectiveFloor > bestOther;
 
             for (int i = 0; i < missing.Count; i++)
             {
@@ -402,7 +406,9 @@ namespace Implanner
 
         /// The best Medical skill among doctors on the pawn's map; what the
         /// effective floor is compared against when naming a floor blocker.
-        private static int BestMedicalSkill(Map? map)
+        /// The best eligible doctor's skill on the map, leaving out the
+        /// patient (nobody operates on themselves); 0 with no other doctor.
+        private static int BestMedicalSkill(Map? map, Pawn patient)
         {
             map = FloorMaps.Canonical(map);
             if (map == null) return 0;
@@ -412,6 +418,7 @@ namespace Implanner
             List<Pawn> colonists = map.mapPawns.FreeColonistsSpawned;
             for (int i = 0; i < colonists.Count; i++)
             {
+                if (ReferenceEquals(colonists[i], patient)) continue;
                 int skill = EligibleDoctorSkill(colonists[i]);
                 if (skill > best) best = skill;
             }
@@ -484,10 +491,15 @@ namespace Implanner
             }
 
             // Hospitalized pawns occupy slots too when the option is on:
-            // anyone humanlike lying in a medical bed, or downed and
-            // needing medical rest, keeps the hospital and its doctors
-            // busy — new Implanner surgeries wait for room.
+            // a colony-owned humanlike (colonist or slave) lying in a
+            // medical bed, or downed and needing medical rest, keeps the
+            // hospital and its doctors busy — new Implanner surgeries wait
+            // for room. Other factions' patients (prisoners, guests, the
+            // Hospital mod's paying visitors) never take a slot: a colony
+            // running a hospital would otherwise never get under the cap.
             if (model.CountHospitalized)
+            {
+                Faction ownFaction = ColonyScope.AuthoritativeFaction;
                 for (int c = 0; c < index.Colonies.Count; c++)
                 {
                     Colony hospitalColony = index.Colonies[c];
@@ -499,6 +511,7 @@ namespace Implanner
                         {
                             Pawn occupant = mapPawns[p];
                             if (!occupant.RaceProps.Humanlike) continue;
+                            if (occupant.Faction != ownFaction) continue;
                             if (countedPawns.Contains(occupant.thingIDNumber))
                                 continue;
                             if (!IsHospitalized(occupant)) continue;
@@ -508,6 +521,7 @@ namespace Implanner
                         }
                     }
                 }
+            }
 
             for (int i = 0; i < pawnIds.Count; i++)
             {
@@ -542,7 +556,7 @@ namespace Implanner
                 // never pulled back because the pawn got wounded or the
                 // batch grew.
                 if (releasable.Count == 0 || !HealthGate(pawn)) continue;
-                int floor = model.EffectiveDoctorFloor(colony.LocationId);
+                int floor = PatientFloor(model, index, colony, pawn, pawnId);
 
                 // The cap gates only colonists without scheduled operations.
                 IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
@@ -586,6 +600,27 @@ namespace Implanner
                 }
             }
             return change;
+        }
+
+        /// The floor this patient's operations enforce: the colony floor,
+        /// or the runner-up doctor's skill when the patient is the colony's
+        /// best doctor, since nobody operates on themselves
+        /// (PlannerModel.PatientDoctorFloor). The colony's pawns are the
+        /// index's operable colonists, the same set the automatic floor is
+        /// derived from, so the two never disagree about who can operate.
+        private static int PatientFloor(PlannerModel model, ColonyIndex index,
+            Colony colony, Pawn patient, int patientId)
+        {
+            int bestOther = -1;
+            for (int i = 0; i < colony.PawnIds.Count; i++)
+            {
+                int otherId = colony.PawnIds[i];
+                if (otherId == patientId) continue;
+                int skill = EligibleDoctorSkill(index.PawnsById[otherId]);
+                if (skill > bestOther) bestOther = skill;
+            }
+            return model.PatientDoctorFloor(colony.LocationId,
+                EligibleDoctorSkill(patient), bestOther);
         }
 
         /// Lying in a medical bed, or downed and needing medical rest: the

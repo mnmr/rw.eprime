@@ -92,12 +92,18 @@ public class LayoutEngineSearchTests
         await Assert.That(model.Cells.Any(c => c.Kind == CellKind.Label)).IsFalse();
     }
 
+    /// A single character already searches (owner, 2026-09-07): "m" lists
+    /// both meals in the results and highlights the grouped one.
     [Test]
-    public async Task SingleCharacterSearchShowsNoResultsOrHighlights()
+    public async Task SingleCharacterSearchShowsResultsAndHighlights()
     {
         var model = ReadoutLayoutEngine.Build(Input("m"));
-        await Assert.That(model.Cells.Any(c => c.Kind == CellKind.Label)).IsFalse();
-        await Assert.That(model.Cells.Any(c => c.Kind == CellKind.Highlight)).IsFalse();
+        var labels = model.Cells.Where(c => c.Kind == CellKind.Label).ToList();
+        await Assert.That(labels[0].Text).IsEqualTo(ReadoutLayoutEngine.ResultsLabelKey);
+        await Assert.That(Icons(model)).IsEqualTo("MealFine,MealSimple,MealSimple,Steel");
+        var highlights = model.Cells.Where(c => c.Kind == CellKind.Highlight).ToList();
+        await Assert.That(highlights.Count).IsEqualTo(1);
+        await Assert.That(highlights[0].DefName).IsEqualTo("MealSimple");
     }
 
     /// Groupless input whose counted defs all match the query; labels default

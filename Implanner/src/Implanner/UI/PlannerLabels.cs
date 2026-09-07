@@ -53,6 +53,7 @@ namespace Implanner.UI
         internal static string ExtendsPlan = "";
         internal static string ExtendsNothing = "";
         internal static string Inherited = "";
+        internal static string NoMatchingImplants = "";
         internal static string OptSurgery = "";
         internal static string OptIteration = "";
         internal static string OptManualFloor = "";
@@ -134,6 +135,7 @@ namespace Implanner.UI
             ExtendsPlan = "IMP_ExtendsPlan".Translate();
             ExtendsNothing = "IMP_ExtendsNothing".Translate();
             Inherited = "IMP_Inherited".Translate();
+            NoMatchingImplants = "IMP_NoMatchingImplants".Translate();
             OptSurgery = "IMP_OptSurgery".Translate();
             OptIteration = "IMP_OptIteration".Translate();
             OptManualFloor = "IMP_OptManualFloor".Translate();

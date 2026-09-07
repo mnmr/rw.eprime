@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using RimShared.Common;
+using RimShared.Common.Help;
 using UnityEngine;
 using Verse;
-using WorkRoles.Core.Help;
 
 namespace WorkRoles.UI
 {

@@ -12,13 +12,15 @@ public class SearchMatcherTests
         await Assert.That(SearchMatcher.IsActive("ab")).IsTrue();
     }
 
+    /// A single character already searches; padding whitespace is ignored.
     [Test]
-    public async Task QueryShorterThanMinLengthIsInactive()
+    public async Task SingleCharacterQueryIsActive()
     {
-        await Assert.That(SearchMatcher.IsActive("a")).IsFalse();
-        await Assert.That(SearchMatcher.IsActive(" a ")).IsFalse();
+        await Assert.That(SearchMatcher.IsActive("a")).IsTrue();
+        await Assert.That(SearchMatcher.IsActive(" a ")).IsTrue();
         await Assert.That(SearchMatcher.IsActive(" ab ")).IsTrue();
-        await Assert.That(SearchMatcher.Matches("simple meal", "m")).IsFalse();
+        await Assert.That(SearchMatcher.Matches("simple meal", "m")).IsTrue();
+        await Assert.That(SearchMatcher.Matches("steel", "m")).IsFalse();
     }
 
     [Test]

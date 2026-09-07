@@ -4,8 +4,10 @@ namespace RimShared.Common
 {
     public static class SearchMatcher
     {
-        /// Queries shorter than this (after trimming) do not filter or match.
-        public const int MinQueryLength = 2;
+        /// Queries shorter than this (after trimming) do not filter or match:
+        /// a single character already searches (owner, 2026-09-07); only
+        /// whitespace is inactive.
+        public const int MinQueryLength = 1;
 
         public static bool IsActive(string? query)
         {

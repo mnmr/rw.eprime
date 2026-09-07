@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Implanner.Core;
 using RimShared.Common;
 using RimShared.UiLib;
+using RimWorld;
 using UnityEngine;
 using Verse;
 using Plan = Implanner.Core.Plan;
@@ -151,7 +152,15 @@ namespace Implanner.UI
         /// Medium-font fit width of SelectedPlanName, measured at build.
         internal float SelectedPlanNameWidth;
 
+        /// The tree: region-filtered body-part groups with their slots, or,
+        /// while a search is active, one flat list of the matching slots
+        /// across every region (no nodes, every row at depth 0).
         internal List<PickerRow> Tree = new List<PickerRow>();
+
+        /// The normalized search the tree was built for: empty while the
+        /// grouped region view is showing.
+        internal string Query = "";
+        internal bool Searching => Query.Length > 0;
 
         /// One combined ranking list over the plan's own implants (inherited
         /// goals are not listed unless explicitly re-included). Index 0 =
@@ -168,13 +177,15 @@ namespace Implanner.UI
         //   RankingsVersion, AssignmentsVersion, OptionsVersion (the mod
         //   compatibility options feed the override captions and the
         //   catalog option filters purchase-only rows),
-        //   ExternalPawnFacts.Revision, the selected plan id, and the
-        //   region filter segment.
+        //   ExternalPawnFacts.Revision, the selected plan id, the region
+        //   filter segment, and the active search query (the widget text
+        //   normalized by SearchMatcher: trimmed, empty when blank).
         // Value: an immutable plans snapshot (list cards with enlisted
         //   counts and aggregate delivery progress, the filtered implant
         //   selection tree resolved against the selected plan, its base
-        //   chain and the conflict facts, the ranking tiers over the plan's
-        //   own implants).
+        //   chain and the conflict facts — or, while a search is active,
+        //   one flat region-free result list — and the ranking tiers over
+        //   the plan's own implants).
         // Dependencies: plan structure, content and base links
         //   (PlansVersion), the implant star rankings (RankingsVersion),
         //   pawn-to-plan assignments (AssignmentsVersion), installed
@@ -182,9 +193,9 @@ namespace Implanner.UI
         //   (ExternalPawnFacts.Revision), the implant catalog and conflict
         //   facts (language revision folded into UiVersion.Current; conflict
         //   facts are def-derived and static per session), the selection,
-        //   and the filter segments. The plan-name and "extends" widths are
-        //   measured here (the language and metric revisions are inside
-        //   UiVersion.Current).
+        //   the filter segments, and the search query. The plan-name and
+        //   "extends" widths are measured here (the language and metric
+        //   revisions are inside UiVersion.Current).
         // Refresh policy: immediate on the next Current read (from the
         //   dialog's WindowUpdate) after a key component moves; command
         //   bumps make structural edits visible while paused.
@@ -200,6 +211,32 @@ namespace Implanner.UI
         private int factsStamp = -1;
         private int selectionStamp = -1;
         private int regionStamp = -1;
+        private string queryStamp = "";
+
+        /// The vanilla search field (icon, clear button, Escape unfocuses
+        /// and is consumed so the dialog stays open, a click elsewhere
+        /// unfocuses). Its text is view state read only through
+        /// ActiveQuery; the snapshot carries the normalized query.
+        internal readonly QuickSearchWidget Search = new QuickSearchWidget();
+
+        /// The widget text last normalized and its normalized form, so a
+        /// frame whose text is unchanged neither trims nor allocates.
+        private string rawQuery = "";
+        private string activeQuery = "";
+
+        /// The search the tree should be built for: the widget text
+        /// trimmed while SearchMatcher considers it active (any non-blank
+        /// text), empty otherwise.
+        private string ActiveQuery()
+        {
+            string raw = Search.filter.Text ?? "";
+            if (!string.Equals(raw, rawQuery, StringComparison.Ordinal))
+            {
+                rawQuery = raw;
+                activeQuery = SearchMatcher.IsActive(raw) ? raw.Trim() : "";
+            }
+            return activeQuery;
+        }
 
         // Cache contract (folded-node flags):
         // Owner: the Implanner dialog window.
@@ -262,6 +299,10 @@ namespace Implanner.UI
             factsStamp = -1;
             selectionStamp = -1;
             regionStamp = -1;
+            queryStamp = "";
+            rawQuery = "";
+            activeQuery = "";
+            Search.Reset();
         }
 
         /// Node click: folds or unfolds the group.
@@ -349,6 +390,7 @@ namespace Implanner.UI
         /// pass) so every pass of a frame draws one snapshot.
         internal PlansSnapshot Current(ImplannerStore store)
         {
+            string query = ActiveQuery();
             if (snapshot == null
                 || uiStamp != UiVersion.Current
                 || !ReferenceEquals(owner, store)
@@ -358,9 +400,10 @@ namespace Implanner.UI
                 || optionsStamp != store.OptionsVersion
                 || factsStamp != ExternalPawnFacts.Revision
                 || selectionStamp != SelectedPlanId
-                || regionStamp != Region)
+                || regionStamp != Region
+                || !string.Equals(queryStamp, query, StringComparison.Ordinal))
             {
-                snapshot = Build(store);
+                snapshot = Build(store, query);
                 uiStamp = UiVersion.Current;
                 owner = store;
                 plansStamp = store.PlansVersion;
@@ -370,13 +413,14 @@ namespace Implanner.UI
                 factsStamp = ExternalPawnFacts.Revision;
                 selectionStamp = SelectedPlanId;
                 regionStamp = Region;
+                queryStamp = query;
             }
             return snapshot;
         }
 
-        private PlansSnapshot Build(ImplannerStore store)
+        private PlansSnapshot Build(ImplannerStore store, string query)
         {
-            var result = new PlansSnapshot();
+            var result = new PlansSnapshot { Query = query };
             PlannerModel model = store.Model;
             IReadOnlyList<Plan> plans = model.Plans;
 
@@ -474,19 +518,24 @@ namespace Implanner.UI
             return result;
         }
 
-        /// The region segment, and purchase-only kinds only while the
-        /// catalog option shows them.
-        private bool PassesFilters(ImplantCatalogEntry entry, bool showPurchaseOnly) =>
-            entry.Region == (ImplantRegion)Region
+        /// The region segment (every region while a search is active), and
+        /// purchase-only kinds only while the catalog option shows them.
+        private bool PassesFilters(ImplantCatalogEntry entry, bool showPurchaseOnly,
+            bool searching) =>
+            (searching || entry.Region == (ImplantRegion)Region)
             && (showPurchaseOnly || !entry.PurchaseOnly);
 
         /// Builds the filtered selection tree: one node per body-part group
         /// (the catalog's GroupLabel), then the group's implant slots as
         /// leaves. Base-plan coverage shows as an inherited marker, and
         /// slots that can never coexist with an own goal are blocked with
-        /// the blocker's name.
+        /// the blocker's name. A search is global: the region segment is
+        /// ignored, no group nodes are emitted, and every slot whose label
+        /// or body-part group matches lands in one flat depth-0 list.
         private void BuildTree(PlannerModel model, Plan selected, PlansSnapshot result)
         {
+            string query = result.Query;
+            bool searching = result.Searching;
             // The effective goal set (post override/conflict suppression):
             // inherited slots get their marker, and any effective slot a
             // candidate conflicts with names the choice the click replaces.
@@ -523,8 +572,9 @@ namespace Implanner.UI
                 for (int i = 0; i < implants.Count; i++)
                 {
                     ImplantCatalogEntry entry = implants[i];
-                    if (!PassesFilters(entry, showPurchaseOnly)) continue;
-                    if (!string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
+                    if (!PassesFilters(entry, showPurchaseOnly, searching)) continue;
+                    if (!searching
+                        && !string.Equals(lastGroup, entry.GroupLabel, StringComparison.Ordinal))
                     {
                         lastGroup = entry.GroupLabel;
                         tree.Add(new PickerRow
@@ -535,20 +585,28 @@ namespace Implanner.UI
                             Label = entry.GroupLabel,
                         });
                     }
+                    // The body-part group matches for every slot of the
+                    // entry; resolved once, before the per-slot labels.
+                    bool groupMatches = searching
+                        && SearchMatcher.Matches(entry.GroupLabel, query);
                     ImplantGoal? goal = FindGoal(selected, entry.Def.defName);
                     for (int ordinal = 0; ordinal < entry.SlotLabels.Count; ordinal++)
                     {
                         string slotLabel = entry.SlotLabels[ordinal];
+                        string label = entry.SlotLabels.Count > 1 && slotLabel.Length > 0
+                            ? entry.Label + " (" + slotLabel + ")"
+                            : entry.Label;
+                        if (searching && !groupMatches
+                            && !SearchMatcher.Matches(label, query))
+                            continue;
                         bool own = goal != null && HasOrdinal(goal, ordinal);
                         var row = new PickerRow
                         {
-                            Depth = 1,
+                            Depth = searching ? 0 : 1,
                             DefName = entry.Def.defName,
                             Ordinal = ordinal,
                             IconDef = entry.Def.spawnThingOnRemoved,
-                            Label = entry.SlotLabels.Count > 1 && slotLabel.Length > 0
-                                ? entry.Label + " (" + slotLabel + ")"
-                                : entry.Label,
+                            Label = label,
                             Selected = own,
                             Inherited = !own
                                 && inherited.Contains((entry.Def.defName, ordinal)),

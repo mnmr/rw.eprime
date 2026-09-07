@@ -31,7 +31,7 @@ namespace Implanner.UI
         private readonly AutomationTips automationTips = new AutomationTips();
         private readonly OptionsState options = new OptionsState();
         private readonly OptionsTips optionsTips = new OptionsTips();
-        private readonly HelpTabView help = new HelpTabView();
+        private readonly HelpTabView help = new HelpTabView(ImplannerHelpHost.Instance);
         private readonly StripTipSource productionTip =
             new StripTipSource(StripTipKind.Production);
         private readonly StripTipSource surgeryTip =
@@ -1220,21 +1220,53 @@ namespace Implanner.UI
             }
             y += 34f;
 
-            // Catalog filter: anatomy region, clustering mutually blocking
-            // slots in one view. A presentation filter over the picker; it
-            // never changes plan content.
-            int clickedRegion = SegmentedControl.Row(
-                new Rect(rect.x, y, rect.width, 28f),
-                PlannerLabels.ImplantRegions, plans.Region);
-            if (clickedRegion >= 0 && clickedRegion != plans.Region)
+            // Catalog filters: the anatomy region segments, clustering
+            // mutually blocking slots in one view, beside the vanilla search
+            // field. Presentation filters over the picker; they never change
+            // plan content. A search is global: the snapshot then carries a
+            // flat region-free result list, the segments show no selection,
+            // and clicking one ends the search and shows that region.
+            bool searching = snapshot.Searching;
+            float searchWidth = Mathf.Floor(rect.width * SearchShare);
+            var segmentRect = new Rect(rect.x, y,
+                rect.width - searchWidth - Pad, 28f);
+            int clickedRegion = SegmentedControl.Row(segmentRect,
+                PlannerLabels.ImplantRegions, searching ? -1 : plans.Region);
+            if (clickedRegion >= 0 && (searching || clickedRegion != plans.Region))
+            {
                 plans.Region = clickedRegion;
+                plans.Search.Reset();
+            }
+            plans.Search.noResultsMatched = searching && snapshot.Tree.Count == 0;
+            plans.Search.OnGUI(new Rect(segmentRect.xMax + Pad,
+                y + (28f - QuickSearchWidget.WidgetHeight) / 2f,
+                searchWidth, QuickSearchWidget.WidgetHeight));
             y += 28f + 6f;
+
+            // A new result list starts at the top: the grouped view's
+            // scroll offset means nothing in it (and vice versa).
+            if (!string.Equals(pickerQuery, snapshot.Query, System.StringComparison.Ordinal))
+            {
+                pickerQuery = snapshot.Query;
+                pickerScroll = Vector2.zero;
+            }
 
             // The selection tree, rendered in the vanilla storage-filter
             // style: 22px lines, 11px indent per level, triangle fold
             // widgets, def icons on leaves. The scroll gutter is reserved
             // only while the tree overflows.
             Rect outer = new Rect(rect.x, y, rect.width, rect.yMax - y);
+            if (searching && snapshot.Tree.Count == 0)
+            {
+                using (GuiStateScope.Capture())
+                {
+                    GUI.color = PlannerStyle.CaptionText;
+                    Text.Anchor = TextAnchor.MiddleCenter;
+                    Widgets.Label(outer, PlannerLabels.NoMatchingImplants);
+                }
+                Text.WordWrap = true;
+                return;
+            }
             // Folded flags resolved per row behind the fold revision: no
             // set lookup in the row loop.
             bool[] folded = plans.FoldedFlags(snapshot);
@@ -1262,6 +1294,13 @@ namespace Implanner.UI
         private const float TreeLine = PickerGeometry.Line;
         private const float TreeIndent = PickerGeometry.Indent;
         private const float TreeArrow = PickerGeometry.Arrow;
+
+        /// The search field's share of the filter row; the region
+        /// segments take the rest.
+        private const float SearchShare = 0.4f;
+
+        /// The snapshot query the picker scroll offset belongs to.
+        private string? pickerQuery;
 
         /// Rows hidden inside folded subtrees contribute nothing. Pure
         /// arithmetic over already-built rows and their resolved fold flags

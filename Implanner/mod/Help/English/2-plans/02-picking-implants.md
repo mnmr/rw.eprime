@@ -7,11 +7,16 @@ and every mod, grouped by the body part they target.
 ![The implant picker with region filter and slot checkboxes](picker-tree.png)
 
 - The **Limbs / Torso / Head** row filters the list to one body region.
+- The search field beside it looks across every region. Typing shows one
+  flat list of the implants and body parts that match. Clear the field or
+  click a region to return to the grouped view.
 - Paired parts get one entry per side: a bionic leg (left) and a bionic
   leg (right) are separate picks.
 - Tick a checkbox to add the slot to the plan. Click and drag across
   checkboxes to select a whole run of slots.
 - Hover any entry for its stats and market value.
+
+![The picker search showing every leg implant in one flat list](picker-search.png)
 
 Downgrades such as peg legs cannot be planned. Implants with a drawback
 or a narrow use are also left out: joywire, painstopper, power claw and

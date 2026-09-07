@@ -24,11 +24,14 @@ Colonist priority on the Overview tab always decides who goes first.
 
 **Concurrent surgeries** caps how many colonists per colony can have
 operations scheduled at the same time. It starts at one per ten
-colonists. With **Count hospitalized pawns** on, pawns lying in medical
-beds or downed and awaiting treatment take up slots too, so new implant
-surgeries wait until the hospital has room.
+colonists. With **Count hospitalized pawns** on, colonists and slaves
+lying in medical beds or downed and awaiting treatment take up slots too,
+so new implant surgeries wait until the hospital has room. Prisoners,
+guests and patients visiting from other factions never take up a slot.
 
 **Assign surgery bills to best available doctor** (on by default)
 restricts Implanner surgery bills to the most skilled doctor at each
 colony. The restriction follows the best doctor as colonists arrive and
-leave. Switch it off to set a fixed minimum Medicine skill instead.
+leave. Nobody can operate on themselves, so the best doctor's own
+surgeries go to the next best doctor. Switch it off to set a fixed
+minimum Medicine skill instead.

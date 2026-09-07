@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.1.2 — 2026-09-07
+
+- Fixed: Production bills were created incorrectly.
+
+## 1.1.1 — 2026-09-07
+
+- Added: Search input filter for implants.
+- Fixed: Hospitalized pawns now only includes the colony's own members (slaves included). Prisoners, guests and patients are not included.
+- Fixed: Surgery for the best doctor now gets assigned to the 2nd best doctor (preventing a soft-lock due to self-surgery).
+- Fixed: CJK text wrapping support for help content.
+
 ## 1.1.0 — 2026-09-05
 
 - Added: Support for (FSF) Advanced Bionics Expansion, Integrated Implants and Bionic Modularity mods.

@@ -1,7 +1,7 @@
 ---
 title: Searching
 ---
-Type at least two characters in the search field at the top of the panel to find any resource, whether it sits in a group or not:
+Type in the search field at the top of the panel to find any resource, whether it sits in a group or not:
 
 ![Search results for "meal"](search-results.png)
 
