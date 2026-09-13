@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <LangVersion>10</LangVersion>
+    <Nullable>enable</Nullable>
+    <OutputPath>../../mod/1.6/Assemblies/</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <DebugType>none</DebugType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.*" />
+    <PackageReference Include="Lib.Harmony" Version="2.*" ExcludeAssets="runtime" />
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <ProjectReference Include="../RimWorld.Automation.Core/RimWorld.Automation.Core.csproj" />
+    <Reference Include="System.Runtime.Serialization" />
+  </ItemGroup>
+</Project>

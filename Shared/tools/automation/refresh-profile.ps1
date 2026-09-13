@@ -7,7 +7,7 @@ param(
     # spliced into the save's own ordered list at named anchors. The result
     # is an order-preserving superset, which the dev-mode autostart loader
     # accepts with a logged mismatch only (no dialog). Omit to restore the
-    # exact save list.
+    # save list plus the shared automation runtime.
     [string]$ModSet = ''
 )
 
@@ -204,13 +204,15 @@ if ($canonicalHash -ne $autostartHash) {
 
 # The template config (verified above to equal the save's list) is the
 # baseline; a mod set rewrites only the profile's copy of ModsConfig.xml.
-$activeMods = $saveModIds
+$activeMods = @(Build-ModSetList -SaveModIds $saveModIds -SetPath (Join-Path $PSScriptRoot 'modsets\automation-runtime.txt'))
 if ($ModSet) {
     $setPath = Join-Path $PSScriptRoot ('modsets\' + $ModSet + '.txt')
     if (-not (Test-Path -LiteralPath $setPath -PathType Leaf)) {
         throw "mod set does not exist: $setPath"
     }
-    $activeMods = @(Build-ModSetList -SaveModIds $saveModIds -SetPath $setPath)
+    $activeMods = @(Build-ModSetList -SaveModIds $activeMods -SetPath $setPath)
+}
+if ($activeMods.Count -ne $saveModIds.Count) {
     $profileModsConfigPath = Join-Path $profileConfig 'ModsConfig.xml'
     [xml]$profileModsConfig = Get-Content -LiteralPath $profileModsConfigPath -Raw
     $activeNode = $profileModsConfig.ModsConfigData.SelectSingleNode('activeMods')
@@ -221,7 +223,7 @@ if ($ModSet) {
         $activeNode.AppendChild($li) | Out-Null
     }
     $profileModsConfig.Save($profileModsConfigPath)
-    Write-Host "mod set '$ModSet' applied: $($activeMods.Count - $saveModIds.Count) extra mod(s)"
+    Write-Host "automation runtime enabled; optional mod set '$ModSet'; $($activeMods.Count - $saveModIds.Count) extra mod(s)"
 }
 
 $state = [ordered]@{

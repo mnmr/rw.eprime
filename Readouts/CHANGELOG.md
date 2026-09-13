@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.3 — 2026-09-13
+
+- Fixed: Hidden developer windows could block readout hover expansion, tooltips, and controls after developer mode was disabled.
+
 ## 1.3.2 — 2026-09-09
 
 - Fixed: Render output could disappear after waking computer from sleep.

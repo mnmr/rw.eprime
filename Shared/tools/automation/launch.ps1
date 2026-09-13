@@ -1,100 +1,46 @@
 [CmdletBinding()]
 param([int]$TimeoutMinutes = 12)
-
 . (Join-Path $PSScriptRoot 'automation-common.ps1')
-
-$required = @(
+$hostExecutable = Join-Path $script:AutomationRepositoryRoot 'Shared\Automation\src\RimWorld.Automation.Host\bin\Release\net10.0-windows\RimWorld.Automation.Host.exe'
+foreach ($path in @($hostExecutable, $script:RimWorldExecutable,
     (Join-Path $script:AutomationProfilePath 'Config\Prefs.xml'),
     (Join-Path $script:AutomationProfilePath 'Config\ModsConfig.xml'),
-    (Join-Path $script:AutomationProfilePath 'Saves\Autostart.rws')
-)
-foreach ($path in $required) {
-    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
-        throw "shared profile is not ready; run refresh-profile.ps1 (missing $path)"
-    }
+    (Join-Path $script:AutomationProfilePath 'Saves\Autostart.rws'))) {
+    if (-not (Test-Path -LiteralPath $path -PathType Leaf)) { throw "Automation is not ready: $path. Build, deploy, and refresh the shared profile first." }
 }
-if (-not (Test-Path -LiteralPath $script:RimWorldExecutable -PathType Leaf)) {
-    throw "RimWorld executable does not exist: $script:RimWorldExecutable"
-}
-
-$existing = @(Get-AllRimWorldProcessInfo)
-if ($existing.Count -ne 0) {
-    throw "refusing to launch while $($existing.Count) RimWorld process(es) exist"
-}
-
-$desktopState = Get-DesktopState
-$started = Get-Date
-$deadline = $started.AddMinutes($TimeoutMinutes)
+if (@(Get-AllRimWorldProcessInfo).Count -ne 0) { throw 'Refusing to launch while another RimWorld process exists.' }
+[xml]$config = Get-Content (Join-Path $script:AutomationProfilePath 'Config\ModsConfig.xml') -Raw
+if (@($config.ModsConfigData.activeMods.li) -notcontains 'eprime.sharedautomation') { throw 'Refresh the shared profile to enable its automation runtime.' }
 $runToken = 'rimworld-shared-' + [Guid]::NewGuid().ToString('N')
-$process = $null
+$deadline = (Get-Date).AddMinutes($TimeoutMinutes)
+$arguments = '"' + $script:RimWorldExecutable + '" "' + $script:AutomationProfilePath + '" ' + $runToken + ' "' + $script:RimWorldPlayerLog + '"'
+$hostProcess = Start-Process -FilePath $hostExecutable -ArgumentList $arguments -WindowStyle Hidden -PassThru
 try {
-    $arguments = '-savedatafolder="' + $script:AutomationProfilePath +
-        '" -automationtoken=' + $runToken
-    $process = Start-Process -FilePath $script:RimWorldExecutable `
-        -ArgumentList $arguments -PassThru
-
-    $logReady = $false
     do {
-        $process.Refresh()
-        if ($process.HasExited) {
-            throw 'shared game exited before loading the save'
-        }
-        $matches = @(Get-SharedRimWorldProcessInfo)
-        if ($matches.Count -ne 1 -or
-                $matches[0].ProcessId -ne $process.Id) {
-            throw "shared process identity mismatch for pid $($process.Id)"
-        }
-        if (Test-Path -LiteralPath $script:RimWorldPlayerLog -PathType Leaf) {
-            $logInfo = Get-Item -LiteralPath $script:RimWorldPlayerLog
-            if ($logInfo.LastWriteTime -ge $started) {
-                $content = Read-TextFileWhileOpen $script:RimWorldPlayerLog
-                $runIndex = $content.IndexOf(
-                    $runToken, [StringComparison]::Ordinal)
-                $loadIndex = if ($runIndex -lt 0) { -1 } else {
-                    $content.IndexOf(
-                        'Loading game from file Autostart with mods:',
-                        $runIndex, [StringComparison]::Ordinal)
-                }
-                if ($loadIndex -ge 0) {
-                    $afterLoad = $content.Substring($loadIndex)
-                    if ($afterLoad -match '(?m)^SaveableFromNode exception:' -or
-                            $afterLoad -match '(?m)^Exception while loading') {
-                        throw 'shared save logged a load exception; inspect Player.log'
-                    }
-                    $logReady = $afterLoad -match
-                        '(?m)^Unloading \d+ Unused Serialized files'
+        if ($hostProcess.HasExited) { throw "Isolated game host exited; inspect $script:RimWorldPlayerLog.host-error.txt" }
+        $processes = @(Get-SharedRimWorldProcessInfo)
+        if ($processes.Count -gt 1) { throw 'More than one shared-profile game exists.' }
+        if ($processes.Count -eq 1 -and $processes[0].CommandLine.Contains($runToken)) {
+            $content = if (Test-Path $script:RimWorldPlayerLog) { Read-TextFileWhileOpen $script:RimWorldPlayerLog } else { '' }
+            if ($content.Contains($runToken) -and $content -match '(?m)^SaveableFromNode exception:|^Exception while loading|SharedAutomation.*Exception|^Crash!!!|Could not execute post-long-event action\. Exception:') {
+                throw 'The isolated game logged an automation or save-load failure; inspect its Player.log.'
+            }
+            if ($content.Contains($runToken) -and $content.Contains('[SharedAutomation] ready for background commands')) {
+                $state = Invoke-SharedGameCommand @{ command = 'status' }
+                if ($state.ready) {
+                    if ($state.width -ne 1920 -or $state.height -ne 1080) { throw "Unexpected game frame: $($state.width)x$($state.height)" }
+                    Save-SharedGameCapture 'launch-ready.png' | Out-Null
+                    Write-Host "shared game ready in background pid=$($state.processId) profile=$script:AutomationProfilePath"
+                    exit 0
                 }
             }
         }
-        if (-not $logReady) {
-            Start-Sleep -Seconds 2
-        }
-    } while (-not $logReady -and (Get-Date) -lt $deadline)
-    if (-not $logReady) {
-        throw 'shared save did not reach the generic load-complete marker before the deadline'
-    }
-
-    Invoke-WithSharedGameWindow {
-        param($focusedProcess, $handle)
-        Wait-ForSharedMapPixels $focusedProcess $handle $deadline
-    }
-    Write-Host "shared game ready pid=$($process.Id) token=$runToken"
-    Write-Host "profile=$script:AutomationProfilePath"
-}
-catch {
-    if ($null -ne $process) {
-        $process.Refresh()
-        if (-not $process.HasExited) {
-            $matches = @(Get-SharedRimWorldProcessInfo)
-            if ($matches.Count -eq 1 -and
-                    $matches[0].ProcessId -eq $process.Id) {
-                Stop-Process -Id $process.Id -Force
-            }
-        }
-    }
+        Start-Sleep -Seconds 2
+    } while ((Get-Date) -lt $deadline)
+    throw 'Shared game did not become ready before the deadline.'
+} catch {
+    $processes = @(Get-SharedRimWorldProcessInfo)
+    if ($processes.Count -eq 1 -and $processes[0].CommandLine.Contains($runToken)) { Stop-Process -Id $processes[0].ProcessId -Force }
+    if (-not $hostProcess.HasExited) { Stop-Process -Id $hostProcess.Id -Force }
     throw
 }
-finally {
-    Restore-DesktopState $desktopState
-}
-

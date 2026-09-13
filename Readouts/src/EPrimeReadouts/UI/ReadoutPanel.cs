@@ -375,8 +375,9 @@ namespace EPrimeReadouts.UI
             ReadoutSettings settings = EPrimeReadoutsMod.Settings;
             EnsurePresentationText();
             float width = settings.panelWidth;
-            inputBlocked = Find.WindowStack.GetWindowAt(
-                Event.current.mousePosition) != null;
+            inputBlocked = PanelInput.HasBlockingWindow(
+                Find.WindowStack, Event.current.mousePosition,
+                Prefs.DevMode, Find.UIRoot.screenshotMode.Active);
 
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData =
                 GameRenderData.Get(map, store);
@@ -546,8 +547,8 @@ namespace EPrimeReadouts.UI
                 GUI.color = Color.white;
             }
             else if (!inputBlocked && drawGear
-                && Widgets.ButtonImage(gearRect, ReadoutTextures.Gear,
-                    gearTint, GenUI.MouseoverColor))
+                && PanelInput.ButtonImage(gearRect, ReadoutTextures.Gear,
+                    gearTint))
                 Find.WindowStack.Add(new Dialog_ReadoutConfig());
 
             if (!settings.showSearchFilter)
@@ -621,7 +622,8 @@ namespace EPrimeReadouts.UI
             if (inputBlocked && drawStable)
                 GUI.DrawTexture(clearRect, TexButton.CloseXSmall);
             else if (!inputBlocked && drawClear
-                && Widgets.ButtonImage(clearRect, TexButton.CloseXSmall))
+                && PanelInput.ButtonImage(clearRect, TexButton.CloseXSmall,
+                    Color.white))
             {
                 SearchText = "";
                 BumpView();
@@ -733,7 +735,7 @@ namespace EPrimeReadouts.UI
                 var rect = new Rect(
                     hit.Rect.X, hit.Rect.Y, hit.Rect.W, hit.Rect.H);
                 Widgets.DrawHighlight(rect);
-                WrTips.Key("EPR.CycleTip").Region(rect);
+                StructuredTipPresenter.PresentHovered(WrTips.Key("EPR.CycleTip"));
             }
         }
 

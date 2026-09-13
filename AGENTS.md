@@ -391,8 +391,9 @@ for a human to review. Source-text tests are not allowed.
   the save's ordered mod list. `refresh-profile.ps1 -ModSet <name>` then
   layers the installed extra mods listed in `modsets\<name>.txt` into the
   profile's copy at named anchors (an order-preserving superset, which the
-  dev-mode autostart loader accepts with a logged mismatch only); a plain
-  refresh restores the exact list. Mod sets are the only sanctioned way to
+  dev-mode autostart loader accepts with a logged mismatch only). Every refresh
+  includes the shared automation runtime mod set; a plain refresh restores the
+  save's exact ordered list plus that runtime. Mod sets are the only sanctioned way to
   test with mods the save does not carry.
 - The shared preference baseline is windowed 1920x1080 at UI scale 1.25, paused
   on load, with `adaptiveTrainingEnabled=False` and `runInBackground=True`.
@@ -408,7 +409,7 @@ for a human to review. Source-text tests are not allowed.
 - Build, deploy, and restart the game before testing. A successful build does
   not update the installed mod, and an already-running game retains its loaded
   assemblies.
-- Before focusing, driving, closing, or restarting RimWorld, identify the test
+- Before driving, closing, or restarting RimWorld, identify the test
   process by its full command line and exact isolated-profile path. Require at
   most one match and never act on unrelated RimWorld processes.
 - The disposable game process must remain open only while input, capture, or
@@ -419,9 +420,11 @@ for a human to review. Source-text tests are not allowed.
   `Player.log` for save-load completion, mod errors, or an explicit test marker.
   Fixed sleeps may be a bounded fallback but must not be the only readiness
   check.
-- Send input only after focusing the verified test window. Preserve and restore
-  the prior foreground window and cursor position, and account for the
-  difference between client coordinates and the outer window rectangle.
+- Launch through the shared private-desktop host and send input through its
+  process/token-scoped automation pipe. Never switch to that desktop, focus the
+  game on the user's desktop, move the hardware cursor, or send global keyboard
+  or mouse input. There is no foreground-input fallback. Coordinates are physical
+  pixels within the rendered game frame; captures come from the game renderer.
 - Make visual scenes deterministic before comparing them: pause simulation when
   possible, keep camera and UI scale fixed, and capture only the exact game
   window rather than the desktop or unrelated applications.

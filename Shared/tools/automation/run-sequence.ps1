@@ -1,213 +1,73 @@
 [CmdletBinding()]
-param(
-    # Path to an action script: one action per line, '#' comments allowed.
-    #   click X Y [waitMs]     left click at client coords (default 500ms)
-    #   drag X1 Y1 X2 Y2 [waitMs]  left-button drag (default 500ms)
-    #   rclick X Y [waitMs]    right click
-    #   hover X Y [waitMs]     move cursor only (default 900ms, for tooltips)
-    #   capture NAME [cursor]  screenshot the window; 'cursor' composites the
-    #                          visible mouse cursor into the image (help
-    #                          images), otherwise the pixels are cursor-free
-    #   scroll X Y NOTCHES     wheel notches at client coords (+up / -down)
-    #   type TEXT              send keystrokes to the focused control (SendKeys
-#                          syntax; the rest of the line is the text)
-#   sleep MS               plain wait
-    [Parameter(Mandatory)][string]$File
-)
-
+param([Parameter(Mandatory)][string]$File)
 . (Join-Path $PSScriptRoot 'automation-common.ps1')
-Add-Type -AssemblyName System.Windows.Forms
-
-# The whole sequence runs inside ONE focus session: the player's desktop is
-# taken exactly once, the actions run back to back with no per-command
-# focus/restore churn, and analysis of the captures happens offline
-# afterwards. Never interleave inspection with a running sequence.
-if (-not (Test-Path -LiteralPath $File -PathType Leaf)) {
-    throw "action file not found: $File"
-}
+# Coordinates are physical pixels within the 1920x1080 game frame. Commands
+# affect only the isolated game. No foreground session or desktop input exists.
+if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Action file not found: $File" }
 $actions = @(Get-Content -LiteralPath $File | ForEach-Object {
-    $line = ($_ -split '#')[0].Trim()
+    $line = $_.Trim()
+    # Whole-line comments and trailing comments are supported; literal text keeps #.
+    if ($line -notmatch '^type\s') { $line = (($line -split '#', 2)[0].Trim() -replace '\s+', ' ') }
     if ($line) { $line }
 })
-$captureDirectory = Join-Path $script:AutomationProfilePath 'Captures'
-New-Item -ItemType Directory -Path $captureDirectory -Force | Out-Null
-
-Invoke-WithSharedGameWindow {
-    param($process, $handle)
-    $geometry = Get-SharedWindowGeometry $handle
-
-    function Set-CursorClient([int]$x, [int]$y) {
-        if ($x -lt 0 -or $x -ge $geometry.Width -or
-                $y -lt 0 -or $y -ge $geometry.Height) {
-            throw "client coordinate ($x,$y) is outside $($geometry.Width)x$($geometry.Height)"
-        }
-        $point = New-Object RimWorldSharedAutomation.Win32+POINT
-        $point.X = $x
-        $point.Y = $y
-        if (-not [RimWorldSharedAutomation.Win32]::ClientToScreen(
-                $handle, [ref]$point)) {
-            throw 'could not translate coordinates to the screen'
-        }
-        [RimWorldSharedAutomation.Win32]::SetCursorPos(
-            $point.X, $point.Y) | Out-Null
-        Start-Sleep -Milliseconds 80
+# Validate the whole action file before dispatch; omitted coordinates must never
+# silently become (0,0), and an invalid delay must not execute its preceding click.
+foreach ($action in $actions) {
+    $valid = switch -Regex ($action) {
+        '^(click|rclick|hover) \d+ \d+( \d+)?$' { $true; break }
+        '^drag \d+ \d+ \d+ \d+( \d+)?$' { $true; break }
+        '^scroll \d+ \d+ -?\d+$' { $true; break }
+        '^type\s+.+$' { $true; break }
+        '^capture [^\\/:*?"<>|\s]+( cursor)?$' { $true; break }
+        '^sleep \d+$' { $true; break }
+        default { $false }
     }
-
-    # CopyFromScreen never includes the hardware cursor. Draw the cursor the
-    # game currently shows at its hotspot-corrected client position; the
-    # process is DPI aware, so cursor and window coordinates share pixels.
-    function Add-CursorToCapture($graphics, $geometry) {
-        $info = New-Object RimWorldSharedAutomation.Win32+CURSORINFO
-        $info.Size = [Runtime.InteropServices.Marshal]::SizeOf($info)
-        if (-not [RimWorldSharedAutomation.Win32]::GetCursorInfo([ref]$info)) {
-            return
-        }
-        if (($info.Flags -band 1) -eq 0 -or $info.Cursor -eq [IntPtr]::Zero) {
-            return
-        }
-        $icon = New-Object RimWorldSharedAutomation.Win32+ICONINFO
-        if (-not [RimWorldSharedAutomation.Win32]::GetIconInfo(
-                $info.Cursor, [ref]$icon)) {
-            return
-        }
-        try {
-            $hdc = $graphics.GetHdc()
-            try {
-                [RimWorldSharedAutomation.Win32]::DrawIconEx(
-                    $hdc,
-                    $info.ScreenPos.X - $geometry.X - $icon.HotspotX,
-                    $info.ScreenPos.Y - $geometry.Y - $icon.HotspotY,
-                    $info.Cursor, 0, 0, 0, [IntPtr]::Zero, 3) | Out-Null
-            }
-            finally { $graphics.ReleaseHdc($hdc) }
-        }
-        finally {
-            if ($icon.Mask -ne [IntPtr]::Zero) {
-                [RimWorldSharedAutomation.Win32]::DeleteObject($icon.Mask) | Out-Null
-            }
-            if ($icon.Color -ne [IntPtr]::Zero) {
-                [RimWorldSharedAutomation.Win32]::DeleteObject($icon.Color) | Out-Null
-            }
+    if (-not $valid) { throw "Malformed action: $action" }
+    $parts = -split $action
+    if ($parts[0] -notin 'capture', 'type') {
+        for ($i = 1; $i -lt $parts.Count; $i++) {
+            $number = 0
+            if (-not [int]::TryParse($parts[$i], [ref]$number)) { throw "Invalid integer in action: $action" }
         }
     }
-
-    function Send-Button([int]$down, [int]$up) {
-        [RimWorldSharedAutomation.Win32]::mouse_event(
-            $down, 0, 0, 0, [UIntPtr]::Zero)
-        Start-Sleep -Milliseconds 50
-        [RimWorldSharedAutomation.Win32]::mouse_event(
-            $up, 0, 0, 0, [UIntPtr]::Zero)
+    if ($parts[0] -eq 'scroll' -and [Math]::Abs([long]$parts[3]) -gt 100) { throw 'Scroll is limited to 100 notches.' }
+    if ($parts[0] -eq 'capture') {
+        $extension = [IO.Path]::GetExtension($parts[1])
+        if ($extension -and $extension -ine '.png') { throw 'Capture name must use the PNG extension.' }
     }
-
-    foreach ($action in $actions) {
-        $parts = -split $action
-        switch ($parts[0]) {
-            'drag' {
-                $startX = [int]$parts[1]
-                $startY = [int]$parts[2]
-                $endX = [int]$parts[3]
-                $endY = [int]$parts[4]
-                Set-CursorClient $startX $startY
-                [RimWorldSharedAutomation.Win32]::mouse_event(
-                    0x0002, 0, 0, 0, [UIntPtr]::Zero)
-                try {
-                    Start-Sleep -Milliseconds 100
-                    for ($step = 1; $step -le 8; $step++) {
-                        Set-CursorClient ([int]($startX + ($endX - $startX) * $step / 8)) `
-                            ([int]($startY + ($endY - $startY) * $step / 8))
-                    }
-                }
-                finally {
-                    [RimWorldSharedAutomation.Win32]::mouse_event(
-                        0x0004, 0, 0, 0, [UIntPtr]::Zero)
-                }
-                $wait = if ($parts.Count -ge 6) { [int]$parts[5] } else { 500 }
-                Start-Sleep -Milliseconds $wait
-            }
-            'click' {
-                Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
-                Send-Button 0x0002 0x0004
-                $wait = if ($parts.Count -ge 4) { [int]$parts[3] } else { 500 }
-                Start-Sleep -Milliseconds $wait
-            }
-            'rclick' {
-                Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
-                Send-Button 0x0008 0x0010
-                $wait = if ($parts.Count -ge 4) { [int]$parts[3] } else { 500 }
-                Start-Sleep -Milliseconds $wait
-            }
-            'hover' {
-                Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
-                $wait = if ($parts.Count -ge 4) { [int]$parts[3] } else { 900 }
-                Start-Sleep -Milliseconds $wait
-            }
-            'capture' {
-                $name = $parts[1]
-                if ([IO.Path]::GetExtension($name) -eq '') { $name += '.png' }
-                $outputPath = Join-Path $captureDirectory $name
-                $bitmap = New-Object System.Drawing.Bitmap(
-                    $geometry.Width, $geometry.Height)
-                try {
-                    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-                    try {
-                        $graphics.CopyFromScreen(
-                            $geometry.X, $geometry.Y, 0, 0, $bitmap.Size)
-                        if ($parts.Count -ge 3 -and $parts[2] -eq 'cursor') {
-                            Add-CursorToCapture $graphics $geometry
-                        }
-                    }
-                    finally { $graphics.Dispose() }
-                    $bitmap.Save($outputPath,
-                        [System.Drawing.Imaging.ImageFormat]::Png)
-                }
-                finally { $bitmap.Dispose() }
-                Write-Host "captured $name"
-            }
-            'drag' {
-                # drag X1 Y1 X2 Y2 [waitMs]: press at A, glide, release at B.
-                Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
-                [RimWorldSharedAutomation.Win32]::mouse_event(
-                    0x0002, 0, 0, 0, [UIntPtr]::Zero)
-                Start-Sleep -Milliseconds 120
-                for ($step = 1; $step -le 8; $step++) {
-                    $x = [int]([int]$parts[1] +
-                        ([int]$parts[3] - [int]$parts[1]) * $step / 8)
-                    $y = [int]([int]$parts[2] +
-                        ([int]$parts[4] - [int]$parts[2]) * $step / 8)
-                    Set-CursorClient $x $y
-                    Start-Sleep -Milliseconds 40
-                }
-                Start-Sleep -Milliseconds 150
-                [RimWorldSharedAutomation.Win32]::mouse_event(
-                    0x0004, 0, 0, 0, [UIntPtr]::Zero)
-                $wait = if ($parts.Count -ge 6) { [int]$parts[5] } else { 500 }
-                Start-Sleep -Milliseconds $wait
-            }
-            'scroll' {
-                Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
-                $notches = [int]$parts[3]
-                # mouse_event takes the wheel delta as an unsigned DWORD; a
-                # negative notch travels as its two's-complement bit pattern.
-                $step = if ($notches -ge 0) { [uint32]120 } else { [uint32](0x100000000 - 120) }
-                for ($i = 0; $i -lt [Math]::Abs($notches); $i++) {
-                    [RimWorldSharedAutomation.Win32]::mouse_event(
-                        0x0800, 0, 0, $step, [UIntPtr]::Zero)
-                    Start-Sleep -Milliseconds 60
-                }
-                Start-Sleep -Milliseconds 300
-            }
-            'type' {
-                $text = ($action -split '\s+', 2)[1]
-                [System.Windows.Forms.SendKeys]::SendWait($text)
-                Start-Sleep -Milliseconds 400
-            }
-            'sleep' {
-                Start-Sleep -Milliseconds ([int]$parts[1])
-            }
-            default {
-                throw "unknown action: $action"
-            }
-        }
+    $delay = switch ($parts[0]) {
+        { $_ -in 'click', 'rclick', 'hover' } { if ($parts.Count -eq 4) { [long]$parts[3] } }
+        'drag' { if ($parts.Count -eq 6) { [long]$parts[5] } }
+        'sleep' { [long]$parts[1] }
     }
-    Write-Host "sequence complete: $($actions.Count) actions in pid $($process.Id)"
+    if ($null -ne $delay -and $delay -gt 60000) { throw 'Action wait must be between 0 and 60000 milliseconds.' }
 }
+foreach ($action in $actions) {
+    $parts = -split $action
+    $wait = 0
+    switch ($parts[0]) {
+        { $_ -in 'click', 'rclick', 'hover' } {
+            $command = if ($parts[0] -eq 'hover') { 'hover' } else { 'click' }
+            Invoke-SharedGameCommand @{command=$command; x=[int]$parts[1]; y=[int]$parts[2]; button=[int]($parts[0] -eq 'rclick')} | Out-Null
+            $wait = if ($parts.Count -ge 4) { [int]$parts[3] } elseif ($command -eq 'hover') { 900 } else { 500 }
+        }
+        'drag' {
+            Invoke-SharedGameCommand @{command='drag'; x=[int]$parts[1]; y=[int]$parts[2]; x2=[int]$parts[3]; y2=[int]$parts[4]} | Out-Null
+            $wait = if ($parts.Count -ge 6) { [int]$parts[5] } else { 500 }
+        }
+        'scroll' {
+            Invoke-SharedGameCommand @{command='scroll'; x=[int]$parts[1]; y=[int]$parts[2]; notches=[int]$parts[3]} | Out-Null
+            $wait = 300
+        }
+        'type' {
+            Invoke-SharedGameCommand @{command='type'; text=($action -split '\s+', 2)[1]} | Out-Null
+            $wait = 400
+        }
+        'capture' { Save-SharedGameCapture $parts[1] -Cursor:($parts.Count -ge 3 -and $parts[2] -eq 'cursor') | Out-Null }
+        'sleep' { $wait = [int]$parts[1] }
+        default { throw "Unknown action: $action" }
+    }
+    if ($wait -lt 0 -or $wait -gt 60000) { throw 'Action wait must be between 0 and 60000 milliseconds.' }
+    if ($wait -gt 0) { Start-Sleep -Milliseconds $wait }
+}
+Write-Host "sequence complete: $($actions.Count) actions"

@@ -1,269 +1,99 @@
-Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-
-$script:AutomationRepositoryRoot = [IO.Path]::GetFullPath(
-    (Join-Path $PSScriptRoot '..\..\..'))
-$script:AutomationProfilePath = Join-Path $script:AutomationRepositoryRoot `
-    'AutomationProfiles\Shared'
-$script:RimWorldExecutable = `
-    'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64.exe'
-$script:RimWorldPlayerLog = Join-Path ([Environment]::GetFolderPath('UserProfile')) `
-    'AppData\LocalLow\Ludeon Studios\RimWorld by Ludeon Studios\Player.log'
-
-Add-Type -AssemblyName System.Drawing
-if ($null -eq ('RimWorldSharedAutomation.Win32' -as [type])) {
-    Add-Type -TypeDefinition @"
-using System;
-using System.Runtime.InteropServices;
-namespace RimWorldSharedAutomation {
-  public static class Win32 {
-    [DllImport("user32.dll")] public static extern bool SetProcessDPIAware();
-    [DllImport("user32.dll")] public static extern bool GetClientRect(IntPtr h, out RECT r);
-    [DllImport("user32.dll")] public static extern bool ClientToScreen(IntPtr h, ref POINT p);
-    [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")] public static extern bool SetForegroundWindow(IntPtr h);
-    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint processId);
-    [DllImport("user32.dll")] public static extern bool AttachThreadInput(uint first, uint second, bool attach);
-    [DllImport("user32.dll")] public static extern bool BringWindowToTop(IntPtr h);
-    [DllImport("user32.dll")] public static extern IntPtr SetActiveWindow(IntPtr h);
-    [DllImport("user32.dll")] public static extern IntPtr SetFocus(IntPtr h);
-    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int command);
-    [DllImport("user32.dll")] public static extern bool GetCursorPos(out POINT p);
-    [DllImport("user32.dll")] public static extern bool SetCursorPos(int x, int y);
-    [DllImport("user32.dll")] public static extern void mouse_event(uint flags, uint dx, uint dy, uint data, UIntPtr extra);
-    [DllImport("kernel32.dll")] public static extern uint GetCurrentThreadId();
-    [DllImport("user32.dll")] public static extern bool GetCursorInfo(ref CURSORINFO info);
-    [DllImport("user32.dll")] public static extern bool GetIconInfo(IntPtr icon, out ICONINFO info);
-    [DllImport("user32.dll")] public static extern bool DrawIconEx(IntPtr hdc, int x, int y, IntPtr icon, int width, int height, uint step, IntPtr brush, uint flags);
-    [DllImport("gdi32.dll")] public static extern bool DeleteObject(IntPtr handle);
-    [StructLayout(LayoutKind.Sequential)] public struct RECT { public int Left, Top, Right, Bottom; }
-    [StructLayout(LayoutKind.Sequential)] public struct POINT { public int X, Y; }
-    [StructLayout(LayoutKind.Sequential)] public struct CURSORINFO { public int Size; public int Flags; public IntPtr Cursor; public POINT ScreenPos; }
-    [StructLayout(LayoutKind.Sequential)] public struct ICONINFO { public bool IsIcon; public int HotspotX, HotspotY; public IntPtr Mask, Color; }
-  }
-}
-"@
-}
-[RimWorldSharedAutomation.Win32]::SetProcessDPIAware() | Out-Null
+$script:AutomationRepositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
+$script:AutomationProfilePath = Join-Path $script:AutomationRepositoryRoot 'AutomationProfiles\Shared'
+$script:RimWorldExecutable = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64.exe'
+$script:RimWorldPlayerLog = Join-Path $script:AutomationProfilePath 'Player.log'
 
 function Test-SharedProfileCommandLine {
-    param([AllowNull()][string]$CommandLine)
-
-    if ([string]::IsNullOrWhiteSpace($CommandLine)) {
-        return $false
-    }
-    $escapedPath = [regex]::Escape($script:AutomationProfilePath)
-    $pattern = '(?i)(?:^|\s)-savedatafolder=(?:"' + $escapedPath +
-        '"|' + $escapedPath + ')(?=\s|$)'
-    return [regex]::IsMatch($CommandLine, $pattern)
+    param([string]$CommandLine)
+    $path = [regex]::Escape($script:AutomationProfilePath)
+    return $CommandLine -match ('(?i)(?:^|\s)-savedatafolder=(?:"' + $path + '"|' + $path + ')(?=\s|$)')
 }
-
-function Get-AllRimWorldProcessInfo {
-    return @(Get-CimInstance Win32_Process -Filter "Name = 'RimWorldWin64.exe'")
-}
-
-function Get-SharedRimWorldProcessInfo {
-    return @(Get-AllRimWorldProcessInfo | Where-Object {
-        Test-SharedProfileCommandLine $_.CommandLine
-    })
-}
-
+function Get-AllRimWorldProcessInfo { @(Get-CimInstance Win32_Process -Filter "name = 'RimWorldWin64.exe'") }
+function Get-SharedRimWorldProcessInfo { @(Get-AllRimWorldProcessInfo | Where-Object { Test-SharedProfileCommandLine $_.CommandLine }) }
 function Assert-NoSharedRimWorldProcess {
-    $matches = @(Get-SharedRimWorldProcessInfo)
-    if ($matches.Count -ne 0) {
-        throw "shared automation profile is in use by $($matches.Count) RimWorld process(es)"
-    }
+    if (@(Get-SharedRimWorldProcessInfo).Count -ne 0) { throw 'Stop the shared-profile game before changing its runtime or profile.' }
 }
-
 function Get-ExactlyOneSharedRimWorldProcessInfo {
     $matches = @(Get-SharedRimWorldProcessInfo)
-    if ($matches.Count -ne 1) {
-        throw "expected one RimWorld process for $script:AutomationProfilePath; found $($matches.Count)"
-    }
+    if ($matches.Count -ne 1) { throw "Expected exactly one shared-profile game; found $($matches.Count)." }
     return $matches[0]
 }
-
-function Get-DesktopState {
-    $cursor = New-Object RimWorldSharedAutomation.Win32+POINT
-    [RimWorldSharedAutomation.Win32]::GetCursorPos([ref]$cursor) | Out-Null
-    return [pscustomobject]@{
-        Foreground = [RimWorldSharedAutomation.Win32]::GetForegroundWindow()
-        CursorX = $cursor.X
-        CursorY = $cursor.Y
-    }
-}
-
-function Restore-DesktopState {
-    param([Parameter(Mandatory)]$State)
-
-    if ($State.Foreground -ne [IntPtr]::Zero) {
-        [RimWorldSharedAutomation.Win32]::SetForegroundWindow(
-            $State.Foreground) | Out-Null
-    }
-    [RimWorldSharedAutomation.Win32]::SetCursorPos(
-        $State.CursorX, $State.CursorY) | Out-Null
-}
-
-function Get-SharedWindowGeometry {
-    param([Parameter(Mandatory)][IntPtr]$Handle)
-
-    $client = New-Object RimWorldSharedAutomation.Win32+RECT
-    if (-not [RimWorldSharedAutomation.Win32]::GetClientRect(
-            $Handle, [ref]$client)) {
-        throw 'could not read the shared game client rectangle'
-    }
-    $origin = New-Object RimWorldSharedAutomation.Win32+POINT
-    if (-not [RimWorldSharedAutomation.Win32]::ClientToScreen(
-            $Handle, [ref]$origin)) {
-        throw 'could not resolve the shared game client origin'
-    }
-    $width = $client.Right - $client.Left
-    $height = $client.Bottom - $client.Top
-    if ($width -le 0 -or $height -le 0) {
-        throw "invalid shared game client rectangle ${width}x${height}"
-    }
-    return [pscustomobject]@{
-        X = $origin.X
-        Y = $origin.Y
-        Width = $width
-        Height = $height
-    }
-}
-
-function Invoke-WithSharedGameWindow {
-    param([Parameter(Mandatory)][scriptblock]$Action)
-
-    $match = Get-ExactlyOneSharedRimWorldProcessInfo
-    $process = Get-Process -Id $match.ProcessId
-    $handle = $process.MainWindowHandle
-    if ($handle -eq [IntPtr]::Zero) {
-        throw 'shared RimWorld process has no main window'
-    }
-
-    $desktopState = Get-DesktopState
-    $shell = $null
-    try {
-        $shell = New-Object -ComObject WScript.Shell
-        $focused = $false
-        for ($attempt = 0; $attempt -lt 10 -and -not $focused; $attempt++) {
-            [RimWorldSharedAutomation.Win32]::ShowWindow($handle, 9) | Out-Null
-            $shell.AppActivate($process.Id) | Out-Null
-            $foregroundHandle = [RimWorldSharedAutomation.Win32]::GetForegroundWindow()
-            [uint32]$foregroundPid = 0
-            [uint32]$foregroundThread = `
-                [RimWorldSharedAutomation.Win32]::GetWindowThreadProcessId(
-                    $foregroundHandle, [ref]$foregroundPid)
-            [uint32]$targetPid = 0
-            [uint32]$targetThread = `
-                [RimWorldSharedAutomation.Win32]::GetWindowThreadProcessId(
-                    $handle, [ref]$targetPid)
-            [uint32]$currentThread = `
-                [RimWorldSharedAutomation.Win32]::GetCurrentThreadId()
-            [RimWorldSharedAutomation.Win32]::AttachThreadInput(
-                $currentThread, $foregroundThread, $true) | Out-Null
-            [RimWorldSharedAutomation.Win32]::AttachThreadInput(
-                $currentThread, $targetThread, $true) | Out-Null
-            try {
-                [RimWorldSharedAutomation.Win32]::BringWindowToTop($handle) | Out-Null
-                [RimWorldSharedAutomation.Win32]::SetActiveWindow($handle) | Out-Null
-                [RimWorldSharedAutomation.Win32]::SetFocus($handle) | Out-Null
-                [RimWorldSharedAutomation.Win32]::SetForegroundWindow($handle) | Out-Null
-            }
-            finally {
-                [RimWorldSharedAutomation.Win32]::AttachThreadInput(
-                    $currentThread, $targetThread, $false) | Out-Null
-                [RimWorldSharedAutomation.Win32]::AttachThreadInput(
-                    $currentThread, $foregroundThread, $false) | Out-Null
-            }
-            Start-Sleep -Milliseconds 50
-            $foregroundHandle = [RimWorldSharedAutomation.Win32]::GetForegroundWindow()
-            [uint32]$foregroundPid = 0
-            [RimWorldSharedAutomation.Win32]::GetWindowThreadProcessId(
-                $foregroundHandle, [ref]$foregroundPid) | Out-Null
-            $focused = $foregroundPid -eq $process.Id
-        }
-        if (-not $focused) {
-            throw "shared game pid $($process.Id) is not foreground (foreground pid $foregroundPid)"
-        }
-        return & $Action $process $handle
-    }
-    finally {
-        Restore-DesktopState $desktopState
-        if ($null -ne $shell) {
-            [Runtime.InteropServices.Marshal]::FinalReleaseComObject($shell) | Out-Null
-        }
-    }
-}
-
-function Wait-ForSharedMapPixels {
-    param(
-        [Parameter(Mandatory)][Diagnostics.Process]$Process,
-        [Parameter(Mandatory)][IntPtr]$Handle,
-        [datetime]$Deadline = (Get-Date).AddMinutes(12)
-    )
-
-    $geometry = Get-SharedWindowGeometry $Handle
-    if ($geometry.Width -ne 1920 -or $geometry.Height -ne 1080) {
-        throw "shared profile requires a 1920x1080 client; got $($geometry.Width)x$($geometry.Height)"
-    }
-    $probeBitmap = New-Object System.Drawing.Bitmap(1, 1)
-    $probeGraphics = [System.Drawing.Graphics]::FromImage($probeBitmap)
-    try {
-        do {
-            $Process.Refresh()
-            if ($Process.HasExited) {
-                throw 'shared game exited before rendering the map'
-            }
-            # The bottom bar's dark background proves the game UI is up.
-            # Sample a 3x5 grid inside the bar: label glyphs and separators
-            # shift with UI scale, so single exact pixels are unreliable, but
-            # a third of a 15-point grid always lands on bar background at
-            # any scale. Poll fast; the whole point is to hand control to the
-            # caller the instant the game renders.
-            $matchingPixels = 0
-            foreach ($probeYOffset in 8, 16, 24) {
-                foreach ($probeX in 10, 100, 500, 1000, 1500) {
-                    $probeGraphics.CopyFromScreen(
-                        $geometry.X + $probeX,
-                        $geometry.Y + $geometry.Height - $probeYOffset,
-                        0, 0, $probeBitmap.Size)
-                    $color = $probeBitmap.GetPixel(0, 0)
-                    if ($color.R -ge 25 -and $color.R -le 41 -and
-                            $color.G -ge 35 -and $color.G -le 51 -and
-                            $color.B -ge 41 -and $color.B -le 57) {
-                        $matchingPixels++
-                    }
-                }
-            }
-            if ($matchingPixels -ge 5) {
-                return
-            }
-            Start-Sleep -Milliseconds 250
-        } while ((Get-Date) -lt $Deadline)
-    }
-    finally {
-        $probeGraphics.Dispose()
-        $probeBitmap.Dispose()
-    }
-    throw 'shared game did not render the map UI before the deadline'
-}
-
 function Read-TextFileWhileOpen {
-    param([Parameter(Mandatory)][string]$Path)
-
-    $stream = [IO.File]::Open(
-        $Path, [IO.FileMode]::Open, [IO.FileAccess]::Read,
-        [IO.FileShare]::ReadWrite)
+    param([string]$Path)
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::ReadWrite)
+    $reader = [IO.StreamReader]::new($stream)
+    try { return $reader.ReadToEnd() } finally { $reader.Dispose() }
+}
+function Read-AutomationBytes {
+    param([IO.Stream]$Stream, [int]$Count, [Threading.CancellationToken]$CancellationToken)
+    $buffer = [byte[]]::new($Count)
+    $offset = 0
+    while ($offset -lt $Count) {
+        $read = $Stream.ReadAsync($buffer, $offset, $Count - $offset, $CancellationToken).GetAwaiter().GetResult()
+        if ($read -eq 0) { throw 'Automation connection closed before its reply completed.' }
+        $offset += $read
+    }
+    return ,$buffer
+}
+function Invoke-SharedGameCommand {
+    param([Parameter(Mandatory)][hashtable]$Command, [int]$ConnectTimeoutMilliseconds = 5000)
+    # Exact process and fresh launch token on every request. No stale endpoint files.
+    $process = Get-ExactlyOneSharedRimWorldProcessInfo
+    if ($process.CommandLine -notmatch '(?:^|\s)-automationtoken=(rimworld-shared-[a-f0-9]{32})(?=\s|$)') {
+        throw 'Shared game has no background session token; restart with launch.ps1.'
+    }
+    $pipeName = "rimworld-automation-$($process.ProcessId)-$($Matches[1])"
+    $connection = [IO.Pipes.NamedPipeClientStream]::new('.', $pipeName, [IO.Pipes.PipeDirection]::InOut, [IO.Pipes.PipeOptions]::Asynchronous)
+    $deadline = [Threading.CancellationTokenSource]::new(35000)
     try {
-        $reader = New-Object IO.StreamReader($stream)
+        $connection.Connect($ConnectTimeoutMilliseconds)
+        $data = [Text.Encoding]::UTF8.GetBytes(($Command | ConvertTo-Json -Compress))
+        if ($data.Length -gt 65536) { throw 'Automation request exceeds 64 KiB.' }
+        $header = [BitConverter]::GetBytes([int]$data.Length)
+        $connection.WriteAsync($header, 0, 4, $deadline.Token).GetAwaiter().GetResult()
+        $connection.WriteAsync($data, 0, $data.Length, $deadline.Token).GetAwaiter().GetResult()
+        $connection.Flush()
+        # Both peers have deadlines, including a stalled or suspended game process.
+        # There is deliberately no desktop-input fallback.
+        $header = Read-AutomationBytes $connection 4 $deadline.Token
+        $size = [BitConverter]::ToInt32($header, 0)
+        if ($size -lt 2 -or $size -gt 67108864) { throw 'Invalid automation reply size.' }
+        $reply = [Text.Encoding]::UTF8.GetString((Read-AutomationBytes $connection $size $deadline.Token)) | ConvertFrom-Json
+        if (-not $reply.ok) { throw "Game automation failed: $($reply.error)" }
+        if ($reply.processId -ne $process.ProcessId) { throw 'Automation reply process identity mismatch.' }
+        return $reply
+    } finally { $connection.Dispose(); $deadline.Dispose() }
+}
+function Save-SharedGameCapture {
+    param([Parameter(Mandatory)][string]$OutName, [switch]$Cursor)
+    if ([IO.Path]::GetExtension($OutName) -eq '') { $OutName += '.png' }
+    if ([IO.Path]::GetFileName($OutName) -cne $OutName -or [IO.Path]::GetExtension($OutName) -ine '.png') {
+        throw 'Capture name must be a PNG filename without a directory.'
+    }
+    $reply = Invoke-SharedGameCommand @{ command = 'capture' }
+    $directory = Join-Path $script:AutomationProfilePath 'Captures'
+    New-Item -ItemType Directory -Path $directory -Force | Out-Null
+    $destination = Join-Path $directory $OutName
+    [IO.File]::WriteAllBytes($destination, [Convert]::FromBase64String($reply.png))
+    if ($Cursor) {
+        # Fixed documentation arrow at the virtual pointer; never the hardware cursor.
+        Add-Type -AssemblyName System.Drawing
+        $bitmap = [Drawing.Bitmap]::new($destination)
+        $copy = [Drawing.Bitmap]::new($bitmap)
+        $bitmap.Dispose()
+        $graphics = [Drawing.Graphics]::FromImage($copy)
         try {
-            return $reader.ReadToEnd()
-        }
-        finally {
-            $reader.Dispose()
-        }
+            $points = [Drawing.Point[]]@(
+                [Drawing.Point]::new($reply.x, $reply.y), [Drawing.Point]::new($reply.x, $reply.y + 20),
+                [Drawing.Point]::new($reply.x + 5, $reply.y + 15), [Drawing.Point]::new($reply.x + 10, $reply.y + 24),
+                [Drawing.Point]::new($reply.x + 14, $reply.y + 22), [Drawing.Point]::new($reply.x + 9, $reply.y + 13),
+                [Drawing.Point]::new($reply.x + 16, $reply.y + 13))
+            $graphics.FillPolygon([Drawing.Brushes]::White, $points)
+            $graphics.DrawPolygon([Drawing.Pens]::Black, $points)
+            $copy.Save($destination, [Drawing.Imaging.ImageFormat]::Png)
+        } finally { $graphics.Dispose(); $copy.Dispose() }
     }
-    finally {
-        $stream.Dispose()
-    }
+    Write-Host "captured $destination"
+    return $destination
 }

@@ -1,0 +1,3 @@
+# Always layered into the disposable shared profile by refresh-profile.ps1.
+after ludeon.rimworld
+eprime.sharedautomation
