@@ -39,10 +39,6 @@ namespace EPrimeReadouts
         /// Sub-option of expandOnHover: idle shows 0 tiers (bands only) and
         /// hover shows the configured tiers, never more.
         public bool collapseWhenIdle;
-        /// Draw the panel from cached surfaces (the buffered renderer). Off
-        /// draws every frame directly: the compatibility escape hatch for a
-        /// GPU or driver whose surfaces come back blank.
-        public bool bufferedRendering = true;
         /// Keep the game's categorized-readout toggle in the toolbar. While
         /// kept, that toggle (Prefs.ResourceReadoutCategorized) shows or
         /// hides the bands; off leaves only the gear and the search field.
@@ -97,7 +93,8 @@ namespace EPrimeReadouts
             Scribe_Values.Look(ref expandOnHover, "expandOnHover", false);
             Scribe_Values.Look(ref collapseWhenIdle, "collapseWhenIdle", false);
             Scribe_Values.Look(ref verticalTiers, "verticalTiers", false);
-            Scribe_Values.Look(ref bufferedRendering, "bufferedRendering", true);
+            // Ignore the retired bufferedRendering preference in older files;
+            // rendering now chooses buffering or fault fallback automatically.
             Scribe_Values.Look(ref keepReadoutToggle, "keepReadoutToggle", false);
             Scribe_Values.Look(ref reserveForBills, "reserveForBills", false);
             Scribe_Values.Look(ref reserveForBuildables, "reserveForBuildables", false);

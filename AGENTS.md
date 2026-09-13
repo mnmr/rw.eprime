@@ -104,7 +104,7 @@ If the dependency set cannot be named precisely, the cache must not be introduce
 - Use the narrowest domain revision available. A catch-all version is forbidden when a domain-specific revision can express the dependency.
 - No-op mutations must not advance any revision.
 - Multi-domain mutations must report and bump only the domains they actually changed.
-- Structural and user-authored configuration edits must become visible immediately, including while paused.
+- Structural and user-authored configuration edits must become visible immediately, including while paused, when the change can be detected or notified without adding per-frame or per-tick model polling. Performance takes precedence over immediate presentation updates: when no such mechanism is available, use an approved game-tick refresh boundary, allowing visibility to wait until that boundary even if simulation must resume first.
 - An active tooltip display session is intentionally frozen: it must retain the content and geometry captured when the session began, even if those dependencies change. The changed dependencies must be observed when the tooltip is reopened or a different token starts a new display session.
 - Correctness-sensitive invalidation must never be delayed to satisfy a throttle.
 - Dynamic game-derived data such as resource counts must be tick-throttled.
@@ -309,6 +309,29 @@ behavior may instead use a documented targeted reproduction before the fix and
 manual verification afterward. Do not introduce production seams or
 source-text tests solely to satisfy this requirement.
 
+Core features MUST be proven working end to end by in-game automation (see
+**Automated in-game testing**) before they are described as complete. Unit
+tests, a clean build, and the feature's own UI showing the expected state are
+not proof; the observable outcome the player cares about is. Proof is
+proportionate to what is new:
+
+- A new feature that depends on a game mechanic or rendering technique the
+  mod has not used before (a bill class, a job, a designation, a Harmony
+  seam, a texture or shader path) needs in-game proof of its outcome.
+- A feature that hands objects to the game (bills, jobs, designations,
+  things) is proven only when the game has been observed CONSUMING them: a
+  pawn completing the bill, not merely the bill appearing on the bench.
+  Creating such objects MUST go through the game's own factory or the exact
+  construction the game's own UI uses (found in Game/src, e.g.
+  `BillUtility.MakeNewBill`), never a bare constructor chosen by type name.
+  Implanner's production bills shipped as plain `Bill_Production` and every
+  craft failed at the bench for the feature's whole life (2026-09-07).
+- Modifying one feature or UI panel does not require re-verifying every
+  other feature, and a minor change to a proven feature does not require
+  re-proving what is already known. Verify the changed behavior at the
+  narrowest boundary that shows it, and rerun in-game proof when the change
+  touches the mechanic that earlier proof relied on.
+
 Test count is not a goal and must never be used as evidence of behavioral
 quality. A smaller scenario test that exposes the complete interaction is
 preferred over many isolated tests that merely reproduce implementation
@@ -343,7 +366,7 @@ Cache tests must prove, where applicable:
 - the tick immediately before the refresh boundary reuses data;
 - the configured refresh tick rebuilds data;
 - equal refreshed contents preserve identity;
-- structural edits update immediately while paused;
+- structural edits update immediately while paused when detection or notification is available without per-frame or per-tick model polling; otherwise, the approved game-tick refresh boundary updates the cached data;
 - an active tooltip display session remains unchanged across dependency changes, and reopening it observes those changes;
 - language and definition reloads invalidate measurement-dependent geometry;
 - width changes invalidate wrapped measurements without invalidating unrelated data;
@@ -421,6 +444,7 @@ A change is not complete until all applicable items are true:
 
 - New cache dependencies and teardown behavior are documented beside the cache.
 - Applicable regression tests were observed failing before the production fix. Runtime-only behavior has documented reproduction and verification results.
+- A core feature, or a feature relying on a mechanic the mod has not used before, was proven working end to end by an in-game automation run against the shared profile, with the run's log or captures kept under `<mod>\temp\`. Minor changes to proven features verify only the changed behavior.
 - Relevant focused tests pass.
 - The complete repository test suite passes.
 - The repository builds with zero warnings and zero errors.

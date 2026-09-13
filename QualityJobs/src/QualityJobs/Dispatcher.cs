@@ -212,7 +212,8 @@ namespace QualityJobs
                 && p.workSettings.WorkIsActive(WorkTypeDefOf.Construction);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, RoleOffsetOf(p),
                 workEnabled, meetsRecipeSkillRequirements: true,
-                XpMilliOf(p, SkillDefOf.Construction));
+                XpMilliOf(p, SkillDefOf.Construction),
+                QualityBonusStats.For(p, SkillDefOf.Construction));
         }
 
         /// Construction finisher (spec §10): same deterministic ranking as
@@ -283,7 +284,8 @@ namespace QualityJobs
                 || (p.workSettings != null && p.workSettings.WorkIsActive(workType));
             bool meetsSkill = recipe.PawnSatisfiesSkillRequirements(p);
             return new CandidateFacts(p.thingIDNumber, skill, inspired, roleOffset,
-                workEnabled, meetsSkill, XpMilliOf(p, recipe.workSkill));
+                workEnabled, meetsSkill, XpMilliOf(p, recipe.workSkill),
+                QualityBonusStats.For(p, recipe.workSkill));
         }
 
         public static int SkillOf(Pawn p, RecipeDef recipe)
@@ -523,6 +525,12 @@ namespace QualityJobs
         public static Pawn? ResolveAutoBestFacts(RecipeDef? recipe,
             bool requireInspired, bool requireSpecialist,
             out int skill, out bool inspired, out int roleOffset)
+            => ResolveAutoBestFacts(recipe, requireInspired, requireSpecialist,
+                out skill, out inspired, out roleOffset, out _);
+
+        public static Pawn? ResolveAutoBestFacts(RecipeDef? recipe,
+            bool requireInspired, bool requireSpecialist,
+            out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli)
         {
             var poolCondition = new ResumeCondition(0, requireInspired, requireSpecialist);
             Pawn? best = AutoBestForDisplay(recipe, poolCondition);
@@ -531,11 +539,14 @@ namespace QualityJobs
                 skill = 0;
                 inspired = false;
                 roleOffset = 0;
+                qualityBonusMilli = 0;
                 return null;
             }
             skill = recipe != null ? SkillOf(best, recipe) : ConstructionSkillOf(best);
             inspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
             roleOffset = RoleOffsetOf(best);
+            qualityBonusMilli = QualityBonusStats.For(best,
+                recipe == null ? SkillDefOf.Construction : recipe.workSkill);
             return best;
         }
 

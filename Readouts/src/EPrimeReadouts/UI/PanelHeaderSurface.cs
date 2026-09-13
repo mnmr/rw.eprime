@@ -37,6 +37,13 @@ namespace EPrimeReadouts.UI
                 backend, coverageFromRed: true);
         }
 
+        internal bool HasLostTarget => channel.HasLostTarget
+            || titleChannel.HasLostTarget;
+
+        internal bool RestoreAfterTargetLoss() =>
+            channel.RestoreAfterTargetLoss()
+            && titleChannel.RestoreAfterTargetLoss();
+
         internal SurfaceEnsureResult Ensure(
             PanelHeaderRevision next, PanelGlyphProduct glyphs)
         {

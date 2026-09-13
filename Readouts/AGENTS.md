@@ -31,7 +31,7 @@ verification commands. Where this file is silent, the root contract governs.
 | Resource-count snapshot | Canonical map identity (the MultiFloors ground map when the map belongs to a level stack), the map-set stamp while MultiFloors is active, the derived collection needs (storage-only and hide-forbidden count-basis options unioned with the stored count rules via `CountRulesVersion`) immediately, `PlannedWorkOptions` immediately (including while paused), and 204 elapsed game ticks; replace only when contents differ |
 | Main readout layout/draw model | Map, width, view state (per-player depths, search text, the display options including the tier layout option, and the kept toolbar toggle's hidden-bands state derived from `Prefs.ResourceReadoutCategorized`, all routed through the view stamp), `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity; a rebuild with content equal to the published model preserves model identity |
 | Hover model variants (per hovered group id) | Every non-hover draw-model input above plus count snapshot identity, immediately (any such change clears all variants; a successful in-place count refresh keeps only the active variant); a pure hover transition republishes the stored DrawModel identity instead of rebuilding |
-| Base pixel surface | Draw-model identity, content dimensions, UI metric revision, icon scale revision, icon data revision, visual options; scroll offset and viewport height are presentation-only and never invalidate it. The per-player cached-rendering switch (`ReadoutSettings.bufferedRendering`) gates every cached surface: off releases them at once and the direct renderer draws every frame; a repaint whose cached presentation fails also draws directly, and three consecutive failures retire the buffered renderer for the session |
+| Base pixel surface | Draw-model identity, content dimensions, UI metric revision, icon scale revision, icon data revision, visual options; scroll offset and viewport height are presentation-only and never invalidate it. Buffered rendering is selected automatically when supported; the retired per-player buffering preference is ignored. A repaint whose cached presentation fails draws directly, and three consecutive failures retire the buffered renderer for the session |
 | Content glyph surface | Counter/label content (text, counts, threshold bands, cell rects), UI metric revision, content dimensions |
 | Direct glyph geometry (`PanelDirectGlyphs`) | Draw-model identity, the same text revision as the glyph surface, and the raster scale (`Prefs.UIScale`); scroll and panel position only translate the cached quads by a pixel-snapped origin; released on panel reset |
 | Header strip surface | Search visibility options, search text, title text and measured width, panel width, header height, UI metric revision, raster scale. The mod-name title rides a second coverage-from-red channel drawn through the font material (the sprite material renders atlas glyphs black); both channels publish from one Ensure and promote together |
@@ -48,6 +48,18 @@ verification commands. Where this file is silent, the root contract governs.
 | Welcome dialog assets (`Dialog_ReadoutsWelcome`) | About/Preview.png loaded from disk plus translated strings and wrapped-text measurements, all resolved once in `PreOpen` (language cannot change while open); window-owned, texture destroyed in `PostClose`; shown once per player per save via `ReadoutSettings.welcomeShownSaves` keyed by the world's persistent random value |
 
 Changes to these dependencies require updated behavioral tests in the same change.
+
+All buffered pixel surfaces also depend on their native render targets
+remaining created. The main-thread graphics update checks every channel,
+including the header title, before the build/publish gate. A lost target
+re-uploads every published front from its retained CPU pixels and cancels any
+in-flight publish immediately, including while paused. Lost working targets
+are recreated, and pending changes retry through the existing build gate.
+Published front, count, pool, and layout snapshot identities are retained;
+failed target restoration falls back to direct rendering. Runtime regression:
+release the working targets with unchanged model revisions, erase only the
+published GPU pixels, and verify automatic recovery both idle and during a
+pending publish.
 
 ## Fault ladder
 

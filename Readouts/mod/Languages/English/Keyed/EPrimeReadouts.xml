@@ -65,9 +65,6 @@
   <EPR.DisplayOptions>Display Options</EPR.DisplayOptions>
   <EPR.KeepReadoutToggle>Keep the readout toggle in the toolbar</EPR.KeepReadoutToggle>
   <EPR.KeepReadoutToggleTip>Keeps the game's own resource readout button in the toolbar at the bottom right. Clicking it then shows or hides the groups; with the groups hidden the panel keeps only the gear and the search field.</EPR.KeepReadoutToggleTip>
-  <EPR.CompatibilityOptions>Compatibility</EPR.CompatibilityOptions>
-  <EPR.BufferedRendering>Buffered panel rendering</EPR.BufferedRendering>
-  <EPR.BufferedRenderingTip>Draws the panel from buffered images, so an unchanged panel costs almost nothing per frame. Turn it off if the panel shows up blank or garbled on your system. The panel is then drawn directly every frame, and its gear turns amber to mark it.</EPR.BufferedRenderingTip>
   <EPR.TierLayoutOptions>Tier layout</EPR.TierLayoutOptions>
   <EPR.TierLayoutHorizontal>Horizontal</EPR.TierLayoutHorizontal>
   <EPR.TierLayoutVertical>Vertical</EPR.TierLayoutVertical>

@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.2 — 2026-09-09
+
+- Fixed: Render output could disappear after waking computer from sleep.
+
 ## 1.3.1 — 2026-09-06
 
 - Fixed: A bug introduced in 1.2.6 could cause non-haulable modded items to not be counted correctly.

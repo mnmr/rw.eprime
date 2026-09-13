@@ -85,6 +85,16 @@ namespace EPrimeReadouts.UI
 
         // Buffered presentation owns no Unity resources until the main-thread
         // update gate builds its first inactive frame.
+        // Owner: current panel/world/map; key: published draw/header/text
+        // revisions, dimensions, UI/icon metrics and visual options.
+        // Value: owned GPU surfaces, immutable between complete publications.
+        // Dependencies: those inputs plus the channels' native target lifetime.
+        // Refresh: staged main-thread builds; native target loss re-uploads the
+        // published CPU pixels immediately, even while paused, and cancels any
+        // interrupted readback before retrying pending work.
+        // Equality: unchanged inputs and live targets retain the surface set;
+        // device loss preserves those fronts and the CPU snapshot identities.
+        // Teardown: reset/map release or automatic fault fallback releases surfaces.
         private static PanelBufferPipeline bufferPipeline =
             new PanelBufferPipeline();
         private static PanelFrameBuffers frameBuffers = new PanelFrameBuffers(
@@ -246,9 +256,8 @@ namespace EPrimeReadouts.UI
         }
 
         /// Drops every cached surface and the publication bookkeeping so the
-        /// next eligible frame rebuilds from scratch. Used by global teardown
-        /// and when the player turns cached rendering off; the direct
-        /// renderer takes over until surfaces exist again.
+        /// next eligible frame rebuilds from scratch. Used by global teardown;
+        /// the direct renderer takes over until surfaces exist again.
         private static void ReleaseSurfaces()
         {
             frameBuffers.Release();
@@ -286,20 +295,9 @@ namespace EPrimeReadouts.UI
             BumpView();
         }
 
-        /// The player's buffered-rendering switch, observed once per OnGUI.
-        /// Turning it off releases the surfaces at once; turning it back on
-        /// lets the update gate rebuild them.
-        private static void ObserveBufferingOption(ReadoutSettings settings)
-        {
-            if (settings.bufferedRendering) return;
-            if (!frameBuffers.HasSurfaces && !frameBuffers.BuildInFlight) return;
-            ReleaseSurfaces();
-        }
-
         internal static void ProcessPendingGraphics(Map map)
         {
             if (bufferedRendererDisabled
-                || !EPrimeReadoutsMod.Settings.bufferedRendering
                 || draw == null
                 || !ReferenceEquals(map, builtMap)
                 || !ReferenceEquals(map, Find.CurrentMap)
@@ -308,26 +306,38 @@ namespace EPrimeReadouts.UI
                 return;
             lastGraphicsFrame = Time.frameCount;
 
-            PanelBufferBackend backend = PanelBufferBackend.Shared;
-            if (!backend.TryInitialize())
-            {
-                bufferedRendererDisabled = true;
-                return;
-            }
-            if (frameBuffers.BuildInFlight)
-            {
-                // Poll the asynchronous publishes; the completed set promotes
-                // atomically inside PumpBuild. New builds wait until then.
-                if (!frameBuffers.PumpBuild())
-                    DisableBufferedRenderer(
-                        "asynchronous surface publish failed repeatedly");
-                return;
-            }
-            if (!bufferPipeline.TryBeginBuild(
-                out BufferBuildTicket ticket)) return;
-
             try
             {
+                if (frameBuffers.HasLostTarget)
+                {
+                    // Check before the unchanged-generation and pending-readback
+                    // gates: neither notices a GPU interruption on its own.
+                    if (!frameBuffers.RestoreAfterTargetLoss())
+                    {
+                        DisableBufferedRenderer(
+                            "lost render targets could not be restored");
+                        return;
+                    }
+                }
+
+                PanelBufferBackend backend = PanelBufferBackend.Shared;
+                if (!backend.TryInitialize())
+                {
+                    bufferedRendererDisabled = true;
+                    return;
+                }
+                if (frameBuffers.BuildInFlight)
+                {
+                    // Poll the asynchronous publishes; the completed set promotes
+                    // atomically inside PumpBuild. New builds wait until then.
+                    if (!frameBuffers.PumpBuild())
+                        DisableBufferedRenderer(
+                            "asynchronous surface publish failed repeatedly");
+                    return;
+                }
+                if (!bufferPipeline.TryBeginBuild(
+                    out BufferBuildTicket ticket)) return;
+
                 ReadoutSettings settings = EPrimeReadoutsMod.Settings;
                 VisiblePanelGeometry geometry = CurrentGeometry(settings);
                 PanelHeaderRevision header = CurrentHeaderRevision(settings);
@@ -343,7 +353,7 @@ namespace EPrimeReadouts.UI
             catch (System.Exception exception)
             {
                 DisableBufferedRenderer(
-                    "buffer build threw " + exception.GetType().Name
+                    "buffer update threw " + exception.GetType().Name
                     + ": " + exception.Message);
             }
         }
@@ -371,7 +381,6 @@ namespace EPrimeReadouts.UI
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData =
                 GameRenderData.Get(map, store);
 
-            ObserveBufferingOption(settings);
             ObserveBandsHidden(settings);
             UpdateHoverState(settings);
             if (NeedsStructuralRebuild(store, map, width, renderData))
@@ -424,7 +433,6 @@ namespace EPrimeReadouts.UI
             if (repaint && !bufferedRendererDisabled)
                 bufferPipeline.TrySwapOnRepaint();
             bool buffered = !bufferedRendererDisabled
-                && settings.bufferedRendering
                 && frameBuffers.HasSurfaces;
 
             GenUI.DrawTextWinterShadow(
@@ -851,13 +859,10 @@ namespace EPrimeReadouts.UI
 
         /// The fault ladder's first step: retires the buffered renderer for
         /// the session so the panel draws directly. Returns false when it
-        /// was already off (disabled, retired, or switched off by the
-        /// player), which tells the caller to take the next step.
+        /// was already disabled, which tells the caller to take the next step.
         internal static bool RetireBufferedRenderer(string reason)
         {
-            if (bufferedRendererDisabled
-                || !EPrimeReadoutsMod.Settings.bufferedRendering)
-                return false;
+            if (bufferedRendererDisabled) return false;
             DisableBufferedRenderer(reason);
             return true;
         }

@@ -31,7 +31,9 @@ namespace QualityJobs.Core
         /// <param name="skillLevel">Crafter skill 0..20; clamped to range.</param>
         /// <param name="inspired">Whether the pawn has an active Inspired_Creativity inspiration.</param>
         /// <param name="roleOffset">Ideology role quality offset in levels (0 when no role).</param>
-        public static double[] Distribution(int skillLevel, bool inspired, int roleOffset)
+        /// <param name="qualityBonusMilli">Post-roll upgrade bonus in thousandths of a level.</param>
+        public static double[] Distribution(int skillLevel, bool inspired, int roleOffset,
+            int qualityBonusMilli = 0)
         {
             if (skillLevel < 0) skillLevel = 0;
             if (skillLevel > 20) skillLevel = 20;
@@ -52,13 +54,19 @@ namespace QualityJobs.Core
 
             // Apply inspiration (+2) and role offset, clamped to Legendary (6).
             int shift = (inspired ? 2 : 0) + roleOffset;
+            int bonus = QualityBonus.Normalize(qualityBonusMilli);
+            int wholeBonus = bonus / QualityBonus.Scale;
+            double extraChance = (double)(bonus % QualityBonus.Scale) / QualityBonus.Scale;
             var result = new double[7];
             for (int k = 0; k <= 5; k++)
             {
                 int target = k + shift;
                 if (target < 0) target = 0;
                 if (target > 6) target = 6;
-                result[target] += afterReroll[k];
+                // VSE applies its bonus after vanilla inspiration/role shifts.
+                target = Math.Min(6, target + wholeBonus);
+                result[target] += afterReroll[k] * (1.0 - extraChance);
+                result[Math.Min(6, target + 1)] += afterReroll[k] * extraChance;
             }
             return result;
         }

@@ -27,7 +27,9 @@ commands. Where this file is silent, the root contract governs.
 | Bill dialog status | `QualityJobsStore.BillStatusRevision`; entry/count/sharing/configuration changes and external pawn facts |
 | Construction dialog status | `QualityJobsStore.PlanStatusRevision`; plan configuration/state/map changes and external pawn facts |
 | Expected-attempt API memos | Complete configuration in `AttemptsKey`; external pawn-facts revision only for auto-best keys; store identity teardown |
-| External pawn facts | Immediate work-priority, skill-level, inspiration, ideology, and role events; 250-tick `ResponsivenessInterval` fallback for XP progress and unpatched facts |
+| External pawn facts | Immediate work-priority, skill-level, inspiration, ideology, and role events; 250-tick `ResponsivenessInterval` fallback for XP progress, final VSE quality stat values (expertise levels/settings/modifiers), and other unpatched facts; no additional polling while paused |
+| Optional VSE stat definitions (`QualityBonusStats`) | The three quality StatDef identities; startup and `ManagedRecipes.Invalidate` definition reload; no pawn/map/world references retained |
+| Pawn-specific odds (`OddsRows`) | Skill, inspiration, role offset, and normalized post-roll quality bonus; bonus values observed through the external pawn-facts revision; equal keys preserve row identity |
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
 | Stock-cap counts | UFT spawn/despawn events keyed by map identity; `FixedTickBoundaryGate(2500)` audit fallback |
 | Idle-UFT pooling and dispatch health | Spawn/despawn-maintained UFT index; immediate/next-component-tick reconcile for commands and pause events; explicitly named `ResponsivenessInterval(250)` fallback |

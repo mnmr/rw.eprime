@@ -31,7 +31,6 @@ namespace EPrimeReadouts.UI
                 {
                     DrawCountOptions(left, settings);
                     DrawPlannedWorkOptions(left, settings);
-                    DrawCompatibilityOptions(left, settings);
                 }
                 finally
                 {
@@ -142,19 +141,6 @@ namespace EPrimeReadouts.UI
             }
 
             DrawTierLayoutRow(listing, settings);
-        }
-
-        private static void DrawCompatibilityOptions(
-            Listing_Standard listing, ReadoutSettings settings)
-        {
-            SectionHeader(listing, "EPR.CompatibilityOptions");
-
-            // The panel observes the switch on its next draw: off releases
-            // the cached surfaces and draws directly, on rebuilds them.
-            bool buffered = settings.bufferedRendering;
-            if (CheckboxRow(listing, "EPR.BufferedRendering",
-                    "EPR.BufferedRenderingTip", ref buffered))
-                EPrimeReadoutsMod.Persist(s => s.bufferedRendering = buffered);
         }
 
         /// Reused label slots for the tier layout segmented row, so the

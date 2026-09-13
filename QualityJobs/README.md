@@ -47,6 +47,13 @@ master crafter do the final touch — this mod automates the entire loop.
 
 **General**
 
+- Vanilla Skills Expanded support: construction, crafting, and art quality
+  bonuses count when choosing the best finisher and predicting their quality
+  odds. Speed expertises do not receive a quality preference. The integration
+  activates automatically when the corresponding stats are present.
+- Expertise changes use the existing 250-game-tick refresh fallback. An edit
+  made while paused becomes visible after play resumes unless another relevant
+  change already triggers a refresh; no extra frame or tick polling is added.
 - Not a cheat: quality is still rolled by the pawn who finishes the work,
   exactly as vanilla rules dictate — the mod just helps ensure that pawn is
   someone with a high success rate.

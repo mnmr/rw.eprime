@@ -1201,20 +1201,22 @@ namespace QualityJobs
             out double probability)
         {
             int skillGate = condition.MinSkill;
+            targetQuality = ConfigurationLimits.Quality(targetQuality);
             if (autoBest
                 && Dispatcher.ResolveAutoBestFacts(recipe,
                     condition.RequireInspired, condition.RequireSpecialist,
-                    out int resolvedSkill, out _, out _) != null)
+                    out int resolvedSkill, out bool inspired, out int roleOffset,
+                    out int qualityBonusMilli) != null)
+            {
                 skillGate = resolvedSkill;
-            var gate = new ResumeCondition(
-                skillGate, condition.RequireInspired,
-                condition.RequireSpecialist);
-            targetQuality = ConfigurationLimits.Quality(targetQuality);
-            probability = GateOdds.SuccessChanceFor(
-                gate, targetQuality);
+                var finisher = new CandidateFacts(0, resolvedSkill, inspired,
+                    roleOffset, true, false, 0, qualityBonusMilli);
+                probability = GateOdds.SuccessChanceFor(finisher, targetQuality);
+            }
+            else probability = GateOdds.SuccessChanceFor(condition, targetQuality);
             return new QualityJobSettings(
-                skillGate, gate.RequireInspired,
-                gate.RequireSpecialist, autoBest,
+                skillGate, condition.RequireInspired,
+                condition.RequireSpecialist, autoBest,
                 (QualityCategory)targetQuality);
         }
 

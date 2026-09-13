@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.5.7 — 2026-09-08
+
+- Fixed: Changed when auto-assigned roles are assigned to new pawns to prevent a mod conflict.
+
 ## 1.5.6 — 2026-09-05
 
 - Added: An option to control how WorkRoles populates the emergency list (jobs that can interrupt sleep, meals and other jobs).

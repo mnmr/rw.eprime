@@ -18,9 +18,13 @@ namespace QualityJobs.Core
         /// <summary>XP progress toward the next level as fixed-point milli (0-999);
         /// rank tie-break only. 0 for mechs and skill-less pawns.</summary>
         public readonly int XpMilli;
+        /// <summary>Post-roll quality bonus in thousandths of a quality level;
+        /// 250 means a 25% chance of +1. Zero when no compatible stat exists.</summary>
+        public readonly int QualityBonusMilli;
 
         public CandidateFacts(int id, int skill, bool inspired, int roleOffset,
-            bool workTypeEnabled, bool meetsRecipeSkillRequirements, int xpMilli = 0)
+            bool workTypeEnabled, bool meetsRecipeSkillRequirements, int xpMilli = 0,
+            int qualityBonusMilli = 0)
         {
             Id = id;
             Skill = skill;
@@ -29,6 +33,7 @@ namespace QualityJobs.Core
             WorkTypeEnabled = workTypeEnabled;
             MeetsRecipeSkillRequirements = meetsRecipeSkillRequirements;
             XpMilli = xpMilli;
+            QualityBonusMilli = QualityBonus.Normalize(qualityBonusMilli);
         }
     }
 }

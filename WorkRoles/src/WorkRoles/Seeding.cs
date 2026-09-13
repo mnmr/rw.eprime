@@ -368,12 +368,16 @@ namespace WorkRoles
         {
             if (Current.ProgramState != ProgramState.Playing) return;
             if (Scribe.mode != LoadSaveMode.Inactive) return;
+            if (pawn == null) return;
+            if (!pawn.IsColonist && !pawn.IsSlaveOfColony) return;
             var store = RoleStore.Current;
             if (store == null || !store.seeded) return;
-            if (pawn == null) return;
+            // Modded pawns can initialize work settings in PostMake, before
+            // PawnGenerator creates the health tracker required by pawn.Dead.
+            if (pawn.health == null) return;
             if (!PawnRolePersistencePolicy.ShouldAutoAssign(
                     isAlive: !pawn.Dead && !pawn.Destroyed,
-                    isColonyMember: pawn.IsColonist || pawn.IsSlaveOfColony))
+                    isColonyMember: true))
                 return;
             if (store.IsManaged(pawn)) return;
 

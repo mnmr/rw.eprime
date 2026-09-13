@@ -36,8 +36,10 @@ namespace QualityJobs.UI
         private readonly Listing_Standard listing = new Listing_Standard();
         private BillPresentationSnapshot? presentation;
 
-        // Odds caches — keyed (minSkill, inspired, roleOffset); rebuilt on mismatch.
-        // Owner: dialog (transient). Dependencies: condition fields only.
+        // Odds caches — keyed (minSkill, inspired, roleOffset, qualityBonusMilli).
+        // Owner: dialog (transient). Dependencies: condition/resolved pawn facts;
+        // quality bonuses refresh with ExternalPawnFactsRevision (250-tick fallback).
+        // Equality: equal keys preserve OddsRows identity; refresh on key mismatch.
         // Teardown: dies with the window.
         private OddsRows? thresholdOdds;
         private OddsRows? bestOdds;
@@ -51,6 +53,7 @@ namespace QualityJobs.UI
         private int cachedBestSkill;
         private bool cachedBestInspired;
         private int cachedBestRoleOffset;
+        private int cachedBestQualityBonusMilli;
         private bool cachedBestValid; // false = no eligible pawn found
 
         // Auto current-best cache (auto spec §5).
@@ -66,6 +69,7 @@ namespace QualityJobs.UI
         private int cachedAutoSkill;
         private bool cachedAutoInspired;
         private int cachedAutoRoleOffset;
+        private int cachedAutoQualityBonusMilli;
         private bool cachedAutoValid;
         private string? _autoBestCurrentLabel;
 
@@ -522,9 +526,9 @@ namespace QualityJobs.UI
                 // Auto mode (auto spec §5): the Config column shows the odds of
                 // the pawn the gate currently demands.
                 if (thresholdOdds == null || !thresholdOdds.Matches(
-                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset))
+                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset, cachedAutoQualityBonusMilli))
                     thresholdOdds = OddsRows.Build(
-                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset);
+                        cachedAutoSkill, cachedAutoInspired, cachedAutoRoleOffset, cachedAutoQualityBonusMilli);
                 return thresholdOdds;
             }
             // Auto mode with NO eligible colonist (cachedAutoValid false) falls
@@ -543,7 +547,8 @@ namespace QualityJobs.UI
             // store's external pawn-facts revision moves.
             //
             // Cache contract — Owner: dialog (transient). Key: none.
-            // Value: cached pawn stats (skill, inspired, roleOffset) + valid flag.
+            // Value: cached pawn stats (skill, inspired, roleOffset,
+            // qualityBonusMilli) + valid flag.
             // Dependencies: current colonist pool. Refresh: revision-gated.
             // Equality: Matches() on new stats preserves bestOdds identity.
             // Teardown: dies with the window.
@@ -579,6 +584,7 @@ namespace QualityJobs.UI
             cachedBestSkill = Dispatcher.SkillOf(best, presentation!.Recipe);
             cachedBestInspired = best.InspirationDef == InspirationDefOf.Inspired_Creativity;
             cachedBestRoleOffset = Dispatcher.RoleOffsetOf(best);
+            cachedBestQualityBonusMilli = QualityBonusStats.For(best, presentation!.Recipe.workSkill);
             cachedBestValid = true;
             return EnsureBestOddsFromCache();
         }
@@ -586,8 +592,8 @@ namespace QualityJobs.UI
         private OddsRows EnsureBestOddsFromCache()
         {
             if (bestOdds == null
-                || !bestOdds.Matches(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset))
-                bestOdds = OddsRows.Build(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset);
+                || !bestOdds.Matches(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset, cachedBestQualityBonusMilli))
+                bestOdds = OddsRows.Build(cachedBestSkill, cachedBestInspired, cachedBestRoleOffset, cachedBestQualityBonusMilli);
             return bestOdds;
         }
 
@@ -602,7 +608,7 @@ namespace QualityJobs.UI
 
             Pawn? best = Dispatcher.ResolveAutoBestFacts(presentation!.Recipe,
                 requireInspired, requireSpecialist,
-                out int skill, out bool inspired, out int roleOffset);
+                out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -621,6 +627,7 @@ namespace QualityJobs.UI
                 cachedAutoRoleOffset = roleOffset;
                 _autoBestCurrentLabel = "QJ_AutoBestCurrent".Translate(best.LabelShort);
             }
+            cachedAutoQualityBonusMilli = qualityBonusMilli;
             cachedAutoValid = true;
         }
 

@@ -62,6 +62,23 @@ namespace EPrimeReadouts.UI
         internal bool HasSurfaces => hasSurfaces;
         internal bool BuildInFlight => buildInFlight;
 
+        // A loss in any channel can affect the entire published set and any
+        // pending readback. A non-null front alone cannot prove GPU validity.
+        internal bool HasLostTarget => baseSurface.Channel.HasLostTarget
+            || glyphProduct.Channel.HasLostTarget
+            || headerSurface.HasLostTarget;
+
+        internal bool RestoreAfterTargetLoss()
+        {
+            // Discard readbacks from before the interruption, keeping pending
+            // model changes queued for retry and the published front revisions
+            // intact. The front CPU pixels remain a complete, coherent set.
+            if (buildInFlight) AbortInFlight();
+            return baseSurface.Channel.RestoreAfterTargetLoss()
+                && glyphProduct.Channel.RestoreAfterTargetLoss()
+                && headerSurface.RestoreAfterTargetLoss();
+        }
+
         internal bool BuildBack(
             BufferBuildTicket ticket,
             DrawModel draw,

@@ -183,8 +183,10 @@ namespace QualityJobs.UI
         // Owner: dialog instance. Teardown: dies with the window.
         private string[]? oddsRowLabels;
 
-        // Odds rows — keyed (minSkill, inspired, roleOffset); rebuilt on mismatch.
-        // Owner: dialog (transient). Dependencies: condition fields only.
+        // Odds rows — keyed (minSkill, inspired, roleOffset, qualityBonusMilli).
+        // Owner: dialog (transient). Dependencies: condition/resolved pawn facts;
+        // bonuses refresh with ExternalPawnFactsRevision (250-tick fallback).
+        // Equality: equal keys preserve OddsRows identity; refresh on key mismatch.
         // Teardown: dies with the window.
         private OddsRows? odds;
 
@@ -200,6 +202,7 @@ namespace QualityJobs.UI
         private int cachedAutoSkill;
         private bool cachedAutoInspired;
         private int cachedAutoRoleOffset;
+        private int cachedAutoQualityBonusMilli;
         private bool cachedAutoValid;
         private string? autoBestCurrentLabel;
 
@@ -408,6 +411,7 @@ namespace QualityJobs.UI
                 int roleOffset = requireSpecialist ? 1 : 0;
                 int oddsSkill = minSkill;
                 bool oddsInspired = requireInspired;
+                int qualityBonusMilli = 0;
                 if (autoBest && cachedAutoValid)
                 {
                     // Auto mode (auto spec §5): odds show the pawn the gate
@@ -416,9 +420,10 @@ namespace QualityJobs.UI
                     oddsSkill = cachedAutoSkill;
                     oddsInspired = cachedAutoInspired;
                     roleOffset = cachedAutoRoleOffset;
+                    qualityBonusMilli = cachedAutoQualityBonusMilli;
                 }
-                if (odds == null || !odds.Matches(oddsSkill, oddsInspired, roleOffset))
-                    odds = OddsRows.Build(oddsSkill, oddsInspired, roleOffset);
+                if (odds == null || !odds.Matches(oddsSkill, oddsInspired, roleOffset, qualityBonusMilli))
+                    odds = OddsRows.Build(oddsSkill, oddsInspired, roleOffset, qualityBonusMilli);
 
                 // Odds rows: Legendary down to Good, then "Normal or worse"
                 // (bottom three qualities collapsed — OddsRows display order).
@@ -757,7 +762,7 @@ namespace QualityJobs.UI
             autoBestFactsRevision = revision;
             Pawn? best = Dispatcher.ResolveAutoBestFacts(null,
                 requireInspired, requireSpecialist,
-                out int skill, out bool inspired, out int roleOffset);
+                out int skill, out bool inspired, out int roleOffset, out int qualityBonusMilli);
             if (best == null)
             {
                 cachedAutoValid = false;
@@ -776,6 +781,7 @@ namespace QualityJobs.UI
                 cachedAutoRoleOffset = roleOffset;
                 autoBestCurrentLabel = "QJ_AutoBestCurrent".Translate(best.LabelShort);
             }
+            cachedAutoQualityBonusMilli = qualityBonusMilli;
             cachedAutoValid = true;
         }
 

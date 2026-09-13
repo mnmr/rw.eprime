@@ -78,10 +78,6 @@ namespace EPrimeReadouts
             Settings.panelWidth = listing.Slider(Settings.panelWidth, 80f, 400f);
             listing.Label(bottomMarginLabel);
             Settings.bottomMargin = listing.Slider(Settings.bottomMargin, 0f, 500f);
-            // Also on the editor's Options tab; repeated here so a player
-            // whose panel renders blank can reach it without the panel.
-            listing.CheckboxLabeled(UiText.Get("EPR.BufferedRendering"),
-                ref Settings.bufferedRendering, UiText.Get("EPR.BufferedRenderingTip"));
             }
             finally
             {

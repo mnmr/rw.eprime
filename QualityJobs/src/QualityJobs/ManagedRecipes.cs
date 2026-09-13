@@ -34,6 +34,7 @@ namespace QualityJobs
             // dependency. Clear it so WorkTypeForRecipe re-resolves after a reload.
             Dispatcher.InvalidateWorkTypeCache();
             FinishWorkGivers.Invalidate();
+            QualityBonusStats.Refresh();
             QualityJobsStore.Active?.NotifyDefinitionsChanged();
         }
 

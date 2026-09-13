@@ -1,0 +1,5 @@
+# Optional quality-stat integration, layered over the canonical save.
+after ludeon.rimworld.odyssey
+OskarPotocki.VanillaFactionsExpanded.Core
+before mnmr.workroles
+vanillaexpanded.skills

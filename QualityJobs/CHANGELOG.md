@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.1 — 2026-09-10
+
+- Added: Support for Vanilla Skills Expanded (quality expertise) for finisher selection for construction, crafting, and art.
+
 ## 1.1.0 — 2026-09-04
 
 - Added: Global option to control finisher job priority. The default is now to finish the job ahead of most other work.

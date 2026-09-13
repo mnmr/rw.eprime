@@ -55,6 +55,29 @@ namespace EPrimeReadouts.UI
         internal int FrontHeight => front != null ? front.height : 0;
         internal bool HasWorkInFlight => publishPending || backReady;
 
+        // IsCreated must be observed before the revision/build gate. A
+        // suspend/device reset does not change any CPU model revision, and
+        // checking only in EnsureWorking leaves an idle cache stale forever.
+        // ReferenceEquals distinguishes an unused channel from a destroyed
+        // Unity object, which compares equal to null but also needs recovery.
+        internal bool HasLostTarget => !ReferenceEquals(working, null)
+            && (working == null || !working.IsCreated());
+
+        /// Called for every channel after any target signals device loss.
+        /// Published textures deliberately retain readable CPU pixels: upload
+        /// those exact pixels again instead of rerasterizing an unchanged
+        /// surface. The working target is always redrawn before its next
+        /// publish, so newly created (undefined) pixels are never presented.
+        internal bool RestoreAfterTargetLoss()
+        {
+            if (working == null && !ReferenceEquals(working, null)) return false;
+            if (working != null && !working.IsCreated() && !working.Create())
+                return false;
+            if (front != null)
+                front.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            return true;
+        }
+
         /// The render target for the next build, recreated only when the
         /// requested pixel size changes and re-created in place after a
         /// device reset dropped it.
