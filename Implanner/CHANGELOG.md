@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.3 — 2026-09-13
+
+- Added: Option to configure what the upper skill limit of the game is (for mod compatibility).
+- Fixed: Removed the upper skill limit for bills (fixes an incompatibility with mods like Endless Growth).
+
 ## 1.1.2 — 2026-09-07
 
 - Fixed: Production bills were created incorrectly.

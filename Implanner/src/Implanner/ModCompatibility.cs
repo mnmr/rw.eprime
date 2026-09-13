@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using RimWorld;
 using Verse;
 
 namespace Implanner
@@ -11,6 +12,40 @@ namespace Implanner
     /// part. Builder path only.
     internal static class ModCompatibility
     {
+        // Cache contract:
+        // Owner: process/loaded assembly set.
+        // Key: Endless Growth's CommonPatches type and GetMaxLevelForBill method.
+        // Value: immutable callable, or null when unavailable; never the maximum.
+        // Dependencies: loaded assemblies (fixed for the session).
+        // Refresh policy: resolve once on the first owned-bill reconciliation.
+        // Equality policy: reuse the same delegate for the session.
+        // Teardown: process lifetime; retains no world, pawn, bill or Unity asset.
+        private static Func<int>? endlessGrowthBillMaximum;
+        private static bool endlessGrowthBillMaximumResolved;
+
+        /// Older Implanner bills overwrote the constructor's modded maximum
+        /// with 20. Restore only that legacy bound, using the same provider as
+        /// Endless Growth's bill constructors. Called only for owned bills in
+        /// deterministic reconciliation; no UI preference enters eligibility.
+        internal static void RepairBillSkillMaximum(Bill bill)
+        {
+            if (bill.allowedSkillRange.max != 20) return;
+            if (!endlessGrowthBillMaximumResolved)
+            {
+                Type? type = GenTypes.GetTypeInAnyAssembly(
+                    "SlimeSenpai.EndlessGrowth.CommonPatches");
+                var method = type?.GetMethod("GetMaxLevelForBill",
+                    System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static,
+                    null, Type.EmptyTypes, null);
+                if (method != null && method.ReturnType == typeof(int))
+                    endlessGrowthBillMaximum = (Func<int>)Delegate.CreateDelegate(
+                        typeof(Func<int>), method);
+                endlessGrowthBillMaximumResolved = true;
+            }
+            if (endlessGrowthBillMaximum != null)
+                bill.allowedSkillRange.max = Math.Max(20, endlessGrowthBillMaximum());
+        }
+
         // Cache contract:
         // Owner: process.
         // Key: none.

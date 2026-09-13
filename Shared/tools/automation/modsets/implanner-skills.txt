@@ -1,0 +1,3 @@
+# Endless Growth compatibility verification, using only the shared profile.
+before eprime.implanner
+SlimeSenpai.EndlessGrowth

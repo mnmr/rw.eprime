@@ -67,6 +67,30 @@ public class DoctorFloorTests
         await Assert.That(model.PatientDoctorFloor("home", 12, 7)).IsEqualTo(9);
     }
 
+    /// Extended skills must keep the best doctor distinct from the runner-up,
+    /// including after loading and when the best doctor becomes the patient.
+    [Test]
+    public async Task ExtendedSkillsPreserveDoctorSelectionAcrossGrowthAndLoad()
+    {
+        var model = new PlannerModel();
+        model.AddLoadedDoctorFloor("home", 40);
+        model.AddLoadedDoctorFloor("ship", 75);
+
+        await Assert.That(model.PatientDoctorFloor("home", -1, 40)).IsEqualTo(40);
+        await Assert.That(model.PatientDoctorFloor("home", 40, 30)).IsEqualTo(30);
+        await Assert.That(model.PatientDoctorFloor("ship", -1, 75)).IsEqualTo(75);
+        await Assert.That(model.SetDoctorFloor("home", 40)).IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetDoctorFloor("home", 41)).IsEqualTo(PlannerChange.Surgery);
+        await Assert.That(model.PatientDoctorFloor("home", 30, 41)).IsEqualTo(41);
+        await Assert.That(model.SetDoctorFloor("home", 30)).IsEqualTo(PlannerChange.Surgery);
+        await Assert.That(model.PatientDoctorFloor("home", 30, 18)).IsEqualTo(18);
+
+        model.SetManualDoctorFloor(35);
+        model.SetAutoDoctorFloor(false);
+        await Assert.That(model.PatientDoctorFloor("home", 40, 30)).IsEqualTo(35);
+        await Assert.That(model.SetManualDoctorFloor(35)).IsEqualTo(PlannerChange.None);
+    }
+
     [Test]
     public async Task SurgeryOptionSettersPreserveNoOps()
     {
@@ -79,7 +103,7 @@ public class DoctorFloorTests
             .IsEqualTo(PlannerChange.Options);
         await Assert.That(model.SetManualDoctorFloor(0)).IsEqualTo(PlannerChange.None);
         await Assert.That(model.SetManualDoctorFloor(25)).IsEqualTo(PlannerChange.Options);
-        await Assert.That(model.ManualDoctorFloor).IsEqualTo(20);
+        await Assert.That(model.ManualDoctorFloor).IsEqualTo(25);
         // Auto is the default; only switching it off reports a change.
         await Assert.That(model.SetAutoDoctorFloor(true)).IsEqualTo(PlannerChange.None);
         await Assert.That(model.SetAutoDoctorFloor(false)).IsEqualTo(PlannerChange.Options);

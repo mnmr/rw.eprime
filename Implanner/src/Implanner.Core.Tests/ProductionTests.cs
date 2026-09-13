@@ -101,7 +101,8 @@ public class ProductionTests
         await Assert.That(model.SetProductionSkill(PlannerModel.ProductionSkillDefault))
             .IsEqualTo(PlannerChange.None);
         await Assert.That(model.SetProductionSkill(25)).IsEqualTo(PlannerChange.Production);
-        await Assert.That(model.ProductionSkill).IsEqualTo(20);
+        await Assert.That(model.ProductionSkill).IsEqualTo(25);
+        await Assert.That(model.SetProductionSkill(25)).IsEqualTo(PlannerChange.None);
     }
 
     /// Demand and stock are items; bills are crafts. A multi-output recipe

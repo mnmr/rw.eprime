@@ -151,7 +151,10 @@ namespace Implanner
                             if (!(bills[i] is Bill_Production production)) continue;
                             string billId = pass.BillId(production);
                             if (model.OwnedProductionBills.ContainsKey(billId))
+                            {
+                                ModCompatibility.RepairBillSkillMaximum(production);
                                 resolvedBills[billId] = (production, colony.CanonicalMap);
+                            }
                         }
                     }
                 }
@@ -367,8 +370,7 @@ namespace Implanner
                     benchesByColony, model, pass, colony, recipe);
                 if (bench == null) continue;
 
-                Bill_Production bill = MakeBill(recipe, count,
-                    new IntRange(model.ProductionSkill, PlannerModel.DoctorFloorMax));
+                Bill_Production bill = MakeBill(recipe, count, model.ProductionSkill);
                 bench.BillStack.AddBill(bill);
                 busyBenches[colony] = busy + 1;
                 change |= model.SetOwnedProductionBill(
@@ -390,12 +392,12 @@ namespace Implanner
         /// ends (reported 2026-09-07, reproduced in-game on Make_BionicArm).
         /// Every class the factory returns derives from Bill_Production.
         internal static Bill_Production MakeBill(
-            RecipeDef recipe, int crafts, IntRange skillRange)
+            RecipeDef recipe, int crafts, int minimumSkill)
         {
             var bill = (Bill_Production)recipe.MakeNewBill();
             bill.repeatMode = BillRepeatModeDefOf.RepeatCount;
             bill.repeatCount = crafts;
-            bill.allowedSkillRange = skillRange;
+            bill.allowedSkillRange.min = minimumSkill;
             return bill;
         }
 

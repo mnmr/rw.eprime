@@ -31,6 +31,9 @@ namespace Implanner.UI
         private readonly AutomationTips automationTips = new AutomationTips();
         private readonly OptionsState options = new OptionsState();
         private readonly OptionsTips optionsTips = new OptionsTips();
+        private readonly SkillSliderState skillSliders = new SkillSliderState();
+        private SkillSliderSnapshot? skillSliderFront;
+        private bool skillSliderSettingsDirty;
         private readonly HelpTabView help = new HelpTabView(ImplannerHelpHost.Instance);
         private readonly StripTipSource productionTip =
             new StripTipSource(StripTipKind.Production);
@@ -128,6 +131,13 @@ namespace Implanner.UI
             automationTips.Release();
             options.Release();
             optionsTips.Release();
+            skillSliders.Release();
+            skillSliderFront = null;
+            if (skillSliderSettingsDirty)
+            {
+                ImplannerMod.Instance.WriteSettings();
+                skillSliderSettingsDirty = false;
+            }
             help.ReleaseWindowData();
             productionTip.Release();
             surgeryTip.Release();
@@ -336,6 +346,8 @@ namespace Implanner.UI
             // the label cache must be current before any snapshot rebuilds
             // here: WindowUpdate runs before the first draw of a new window.
             PlannerLabels.Ensure();
+            if (curTab == Tab.Automation || curTab == Tab.Options)
+                skillSliderFront = skillSliders.Current();
             switch (curTab)
             {
                 case Tab.Overview: overviewFront = overview.Current(store); break;
@@ -1634,9 +1646,10 @@ namespace Implanner.UI
             AutomationSnapshot snapshot = automationFront ??= automation.Current(store);
             automationTips.Ensure();
             AutomationTips tips = automationTips;
+            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current();
 
-            float leftHeight = ProductionColumnHeight(snapshot);
-            float rightHeight = SurgeryColumnHeight(snapshot);
+            float leftHeight = ProductionColumnHeight(snapshot, slider.RowHeight);
+            float rightHeight = SurgeryColumnHeight(snapshot, slider.RowHeight);
             float innerHeight = RowHeight + Pad + Mathf.Max(leftHeight, rightHeight);
             // Symmetric layout: the scrollbar gutter is reserved only while
             // the content overflows, both columns share one width, and the
@@ -1735,14 +1748,10 @@ namespace Implanner.UI
                 // off; it is seeded from the best doctor when auto is
                 // switched off. The indent is meaningful nesting: this row
                 // exists only under the toggle above it.
-                DrawStepperRow(rect.x + 12f, ref y, width - 12f,
-                    PlannerLabels.OptManualFloor,
-                    snapshot.ManualFloorText,
-                    static () => PlannerCommands.SetManualDoctorFloor(
-                        (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) - 1),
-                    static () => PlannerCommands.SetManualDoctorFloor(
-                        (ImplannerStore.Current?.Model.ManualDoctorFloor ?? 0) + 1),
-                    tips.ManualFloor);
+                int floor = DrawSkillSliderRow(rect.x + 12f, ref y, width - 12f,
+                    PlannerLabels.OptManualFloor, snapshot.ManualFloorText,
+                    snapshot.ManualFloor, 0, skillSliderFront!.Maximum, 1, tips.ManualFloor);
+                if (floor != snapshot.ManualFloor) PlannerCommands.SetManualDoctorFloor(floor);
             }
             y += Pad;
 
@@ -1845,13 +1854,10 @@ namespace Implanner.UI
             if (now != idle) PlannerCommands.SetOnlyIdleBenches(now);
             y += RowHeight + 2f;
 
-            DrawStepperRow(rect.x, ref y, width, PlannerLabels.OptProductionSkill,
-                snapshot.ProductionSkillText,
-                static () => PlannerCommands.SetProductionSkill(
-                    (ImplannerStore.Current?.Model.ProductionSkill ?? 0) - 1),
-                static () => PlannerCommands.SetProductionSkill(
-                    (ImplannerStore.Current?.Model.ProductionSkill ?? 0) + 1),
-                tips.ProductionSkill);
+            int skill = DrawSkillSliderRow(rect.x, ref y, width,
+                PlannerLabels.OptProductionSkill, snapshot.ProductionSkillText,
+                snapshot.ProductionSkill, 0, skillSliderFront!.Maximum, 1, tips.ProductionSkill);
+            if (skill != snapshot.ProductionSkill) PlannerCommands.SetProductionSkill(skill);
 
             bool intermediaries = snapshot.AllowIntermediaries;
             now = intermediaries;
@@ -1914,7 +1920,7 @@ namespace Implanner.UI
 
         /// Layout heights: pure arithmetic over the snapshot (no traversal,
         /// no measurement).
-        private static float SurgeryColumnHeight(AutomationSnapshot snapshot)
+        private static float SurgeryColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
         {
             float height = SectionHeader.PrimaryHeight + 2f
                 + HeaderHeight + 2f + 30f + Pad                  // iteration
@@ -1922,21 +1928,21 @@ namespace Implanner.UI
                 + RowHeight + 2f                                 // hospitalized
                 + RowHeight + 2f;                                // auto floor
             if (!snapshot.AutoDoctorFloor)
-                height += HeaderHeight + 4f;                     // manual skill
+                height += skillRowHeight + 4f;                   // manual skill
             height += Pad + SectionHeader.SubHeight + 2f         // reservations
                 + snapshot.ImplantReserves.Count * (CompactRowHeight + 4f)
                 + RowHeight;                                     // add button
             return height;
         }
 
-        private static float ProductionColumnHeight(AutomationSnapshot snapshot)
+        private static float ProductionColumnHeight(AutomationSnapshot snapshot, float skillRowHeight)
         {
             float height = SectionHeader.PrimaryHeight + 2f
                 + RowHeight + 2f;                                // auto bills
             if (snapshot.AutoProduction)
                 height += HeaderHeight + 4f                      // concurrency
                     + RowHeight + 2f                             // idle benches
-                    + HeaderHeight + 4f                          // crafting skill
+                    + skillRowHeight + 4f                        // crafting skill
                     + RowHeight + 2f                             // intermediaries
                     + Pad + SectionHeader.SubHeight + 2f         // keep-in-stock
                     + snapshot.Reserves.Count * (CompactRowHeight + 4f);
@@ -1979,6 +1985,7 @@ namespace Implanner.UI
             OptionsSnapshot snapshot = optionsFront ??= options.Current(store);
             optionsTips.Ensure();
             OptionsTips tips = optionsTips;
+            SkillSliderSnapshot slider = skillSliderFront ??= skillSliders.Current();
 
             float width = Mathf.Floor((rect.width - ColumnGap) / 2f);
             float y = rect.y;
@@ -1990,6 +1997,14 @@ namespace Implanner.UI
                 PlannerLabels.OptAllowMultipleHygieneEnhancers,
                 snapshot.AllowMultipleHygieneEnhancers, tips.AllowMultipleHygieneEnhancers,
                 SetAllowMultipleHygieneEnhancers);
+            int maximum = DrawSkillSliderRow(rect.x, ref y, width,
+                PlannerLabels.OptSkillSliderMaximum, slider.MaximumText,
+                slider.Maximum, 20, 100, 10, tips.SkillSliderMaximum);
+            if (maximum != slider.Maximum)
+            {
+                ImplannerMod.Settings.skillSliderMaximum = maximum;
+                skillSliderSettingsDirty = true;
+            }
             y += Pad;
 
             y += SectionHeader.Primary(rect.x, y, width, PlannerLabels.OptCatalog) + 2f;
@@ -2005,6 +2020,33 @@ namespace Implanner.UI
             PlannerCommands.SetAllowMultipleHygieneEnhancers;
         private static readonly System.Action<bool> SetShowPurchaseOnly =
             PlannerCommands.SetShowPurchaseOnly;
+
+        private int DrawSkillSliderRow(float x, ref float y, float width,
+            string label, string valueText, int value, int minimum, int maximum,
+            int step, WrTip tip)
+        {
+            SkillSliderSnapshot slider = skillSliderFront!;
+            float height = slider.RowHeight;
+            tip.Region(new Rect(x, y, width, height));
+            int selected;
+            using (GuiStateScope.Capture())
+            {
+                Text.Font = GameFont.Small;
+                Text.Anchor = TextAnchor.MiddleLeft;
+                Text.WordWrap = false;
+                Widgets.Label(new Rect(x, y, width - 202f, height), label);
+                // No slider label: vanilla measures its label on every draw.
+                // Passing the stored value through preserves values above a
+                // newly lowered UI bound until the player actually edits them.
+                selected = Mathf.RoundToInt(Widgets.HorizontalSlider(
+                    new Rect(x + width - 194f, y, 146f, height), value,
+                    minimum, maximum, middleAlignment: true, roundTo: step));
+                Text.Anchor = TextAnchor.MiddleRight;
+                Widgets.Label(new Rect(x + width - 42f, y, 42f, height), valueText);
+            }
+            y += height + 4f;
+            return selected;
+        }
 
         /// A labeled checkbox row over a tip region; a change issues the
         /// synced command and the next snapshot renders the published state.

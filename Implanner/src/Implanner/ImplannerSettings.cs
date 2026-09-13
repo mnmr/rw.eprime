@@ -11,6 +11,10 @@ namespace Implanner
         // save).
         public bool showToolbarButton = true;
 
+        /// Presentation only: upper bound of the Medical/Crafting sliders.
+        /// Does not clamp stored thresholds or participate in automation.
+        public int skillSliderMaximum = 20;
+
         /// Fold state of the plan editor's tier-panel help section.
         public bool helpPlanTiersFolded;
 
@@ -28,6 +32,9 @@ namespace Implanner
         {
             base.ExposeData();
             Scribe_Values.Look(ref showToolbarButton, "showToolbarButton", true);
+            Scribe_Values.Look(ref skillSliderMaximum, "skillSliderMaximum", 20);
+            skillSliderMaximum = System.Math.Max(20,
+                System.Math.Min(100, skillSliderMaximum / 10 * 10));
             Scribe_Values.Look(ref helpPlanTiersFolded, "helpPlanTiersFolded", false);
             Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
             Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);

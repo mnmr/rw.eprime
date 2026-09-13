@@ -49,6 +49,8 @@ namespace Implanner.UI
         internal bool AutoProduction;
         internal bool OnlyIdleBenches;
         internal bool AllowIntermediaries;
+        internal int ManualFloor;
+        internal int ProductionSkill;
         internal string ManualFloorText = "";
         internal string SurgeryConcurrencyText = "";
         internal string ConcurrencyText = "";
@@ -228,6 +230,8 @@ namespace Implanner.UI
             result.AutoProduction = model.AutoProduction;
             result.OnlyIdleBenches = model.OnlyIdleBenches;
             result.AllowIntermediaries = model.AllowIntermediaries;
+            result.ManualFloor = model.ManualDoctorFloor;
+            result.ProductionSkill = model.ProductionSkill;
             result.ManualFloorText = model.ManualDoctorFloor.ToStringCached();
             result.SurgeryConcurrencyText = model.SurgeryConcurrency.ToStringCached();
             result.ConcurrencyText = model.ProductionConcurrency.ToStringCached();

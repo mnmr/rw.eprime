@@ -2,6 +2,7 @@
 param(
     # Path to an action script: one action per line, '#' comments allowed.
     #   click X Y [waitMs]     left click at client coords (default 500ms)
+    #   drag X1 Y1 X2 Y2 [waitMs]  left-button drag (default 500ms)
     #   rclick X Y [waitMs]    right click
     #   hover X Y [waitMs]     move cursor only (default 900ms, for tooltips)
     #   capture NAME [cursor]  screenshot the window; 'cursor' composites the
@@ -101,6 +102,28 @@ Invoke-WithSharedGameWindow {
     foreach ($action in $actions) {
         $parts = -split $action
         switch ($parts[0]) {
+            'drag' {
+                $startX = [int]$parts[1]
+                $startY = [int]$parts[2]
+                $endX = [int]$parts[3]
+                $endY = [int]$parts[4]
+                Set-CursorClient $startX $startY
+                [RimWorldSharedAutomation.Win32]::mouse_event(
+                    0x0002, 0, 0, 0, [UIntPtr]::Zero)
+                try {
+                    Start-Sleep -Milliseconds 100
+                    for ($step = 1; $step -le 8; $step++) {
+                        Set-CursorClient ([int]($startX + ($endX - $startX) * $step / 8)) `
+                            ([int]($startY + ($endY - $startY) * $step / 8))
+                    }
+                }
+                finally {
+                    [RimWorldSharedAutomation.Win32]::mouse_event(
+                        0x0004, 0, 0, 0, [UIntPtr]::Zero)
+                }
+                $wait = if ($parts.Count -ge 6) { [int]$parts[5] } else { 500 }
+                Start-Sleep -Milliseconds $wait
+            }
             'click' {
                 Set-CursorClient ([int]$parts[1]) ([int]$parts[2])
                 Send-Button 0x0002 0x0004

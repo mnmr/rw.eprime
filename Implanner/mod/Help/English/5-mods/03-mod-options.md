@@ -3,9 +3,15 @@ title: Mod options
 ---
 ![The Options tab with the Mod compatibility and Catalog sections](options-tab.png)
 
-The Options tab holds the settings that shape plans. Automation settings
-live on the Automation tab. All of them are shared by everyone in a
-multiplayer game.
+The Options tab holds plan compatibility settings and the skill-slider
+display range. Automation settings live on the Automation tab. Plan and
+automation settings are shared by everyone in a multiplayer game.
+
+**Maximum skill slider value** sets the upper end of the Medical and Crafting
+sliders, from 20 to 100 in steps of 10. The default is 20. Increase it to
+choose higher minimum skills when using a mod such as Endless Growth.
+This is a personal display preference: changing it leaves existing minimums,
+automatic doctor selection and bill eligibility unchanged.
 
 ![Hovering an option lists the implants it affects and their mods](options-bladder-tip.png)
 

@@ -77,7 +77,6 @@ namespace Implanner.Core
 
         /// Doctor-floor skill bounds.
         public const int DoctorFloorMin = 0;
-        public const int DoctorFloorMax = 20;
 
         /// Every implant sits at three stars until the player moves it;
         /// rankings are manual choices, never derived.
@@ -132,7 +131,7 @@ namespace Implanner.Core
                 ? iteration
                 : IterationStrategy.ImplantTier;
 
-        /// Player-set minimum Medical skill for Implanner operations (0–20).
+        /// Player-set minimum Medical skill for Implanner operations.
         /// Applies only while the automatic floor is off.
         public int ManualDoctorFloor { get; private set; }
 
@@ -247,7 +246,7 @@ namespace Implanner.Core
         /// currently hold no bills at all. On by default.
         public bool OnlyIdleBenches { get; private set; } = true;
 
-        /// Minimum crafting skill Implanner production bills demand (0–20).
+        /// Minimum crafting skill Implanner production bills demand.
         public int ProductionSkill { get; private set; } = ProductionSkillDefault;
 
         /// Whether a production bill blocked by an ingredient shortfall may
@@ -366,7 +365,6 @@ namespace Implanner.Core
         public PlannerChange SetManualDoctorFloor(int level)
         {
             if (level < DoctorFloorMin) level = DoctorFloorMin;
-            if (level > DoctorFloorMax) level = DoctorFloorMax;
             if (ManualDoctorFloor == level) return PlannerChange.None;
             ManualDoctorFloor = level;
             return PlannerChange.Options;
@@ -395,9 +393,7 @@ namespace Implanner.Core
             AllowMultipleHygieneEnhancers = allowMultipleHygieneEnhancers;
             ShowPurchaseOnly = showPurchaseOnly;
             Iteration = NormalizeIteration(iteration);
-            ManualDoctorFloor = manualDoctorFloor < DoctorFloorMin ? DoctorFloorMin
-                : manualDoctorFloor > DoctorFloorMax ? DoctorFloorMax
-                : manualDoctorFloor;
+            ManualDoctorFloor = ClampSkill(manualDoctorFloor);
             AutoDoctorFloor = autoDoctorFloor;
             SurgeryConcurrency = ClampSurgeryConcurrency(surgeryConcurrency);
             CountHospitalized = countHospitalized;
@@ -518,7 +514,6 @@ namespace Implanner.Core
         {
             if (string.IsNullOrEmpty(colonyId)) return PlannerChange.None;
             if (skill < DoctorFloorMin) skill = DoctorFloorMin;
-            if (skill > DoctorFloorMax) skill = DoctorFloorMax;
             if (DoctorFloorOf(colonyId) == skill) return PlannerChange.None;
             if (skill == 0)
                 doctorFloors.Remove(colonyId);
@@ -546,7 +541,6 @@ namespace Implanner.Core
         /// like SetDoctorFloor (clamped; zero stores nothing).
         public void AddLoadedDoctorFloor(string colonyId, int floor)
         {
-            if (floor > DoctorFloorMax) floor = DoctorFloorMax;
             if (floor > 0) doctorFloors[colonyId] = floor;
         }
 
@@ -726,9 +720,7 @@ namespace Implanner.Core
                 : benches;
 
         static int ClampSkill(int level) =>
-            level < DoctorFloorMin ? DoctorFloorMin
-                : level > DoctorFloorMax ? DoctorFloorMax
-                : level;
+            level < DoctorFloorMin ? DoctorFloorMin : level;
 
         /// Deterministic load path: restores one reserve override (which may
         /// be an explicit zero overriding a baseline default).

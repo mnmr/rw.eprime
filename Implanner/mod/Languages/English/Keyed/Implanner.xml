@@ -209,6 +209,8 @@
 
   <!-- ===== Options tab ===== -->
   <IMP_OptModCompat>Mod compatibility</IMP_OptModCompat>
+  <IMP_OptSkillSliderMaximum>Maximum skill slider value</IMP_OptSkillSliderMaximum>
+  <IMP_OptSkillSliderMaximumTip>Sets the upper end of the Medical and Crafting sliders. Existing skill requirements and automatic doctor selection are unaffected.</IMP_OptSkillSliderMaximumTip>
   <IMP_OptAllowMultipleBladders>Allow multiple bladder implants</IMP_OptAllowMultipleBladders>
   <IMP_OptAllowMultipleHygieneEnhancers>Allow multiple hygiene enhancers</IMP_OptAllowMultipleHygieneEnhancers>
   <IMP_OptCatalog>Catalog</IMP_OptCatalog>

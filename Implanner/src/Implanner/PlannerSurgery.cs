@@ -454,12 +454,18 @@ namespace Implanner
                 if (evaluation == null) continue;
                 IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
                 if (owned == null) continue;
+                Pawn pawn = index.PawnsById[pawnId];
                 List<string>? stale = null;
                 foreach (KeyValuePair<string, string> pair in owned)
+                {
                     if (!evaluation.Missing.Contains(pair.Key))
                         (stale ??= new List<string>()).Add(pair.Key);
+                    else if (pass.FindBill(pawn.BillStack, pair.Value) is Bill_Medical bill)
+                        // Retained operations may be outside the active batch
+                        // or waiting on health/stock; repair before those gates.
+                        ModCompatibility.RepairBillSkillMaximum(bill);
+                }
                 if (stale == null) continue;
-                Pawn pawn = index.PawnsById[pawnId];
                 stale.Sort(StringComparer.Ordinal);
                 for (int k = 0; k < stale.Count; k++)
                 {
@@ -666,8 +672,7 @@ namespace Implanner
                 && mine.recipe == recipe && mine.Part == part)
             {
                 if (mine.allowedSkillRange.min != floor)
-                    mine.allowedSkillRange = new IntRange(
-                        floor, mine.allowedSkillRange.max);
+                    mine.allowedSkillRange.min = floor;
                 return PlannerChange.None;
             }
             var change = PlannerChange.None;
@@ -694,7 +699,7 @@ namespace Implanner
             var bill = new Bill_Medical(recipe, null);
             bills.AddBill(bill);
             bill.Part = part;
-            bill.allowedSkillRange = new IntRange(floor, PlannerModel.DoctorFloorMax);
+            bill.allowedSkillRange.min = floor;
             return change | model.SetOwnedBill(pawnId, goalKey, pass.BillId(bill));
         }
 

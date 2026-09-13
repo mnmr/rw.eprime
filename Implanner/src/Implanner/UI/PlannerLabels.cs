@@ -71,6 +71,7 @@ namespace Implanner.UI
         internal static string OptReserves = "";
         internal static string TabOptions = "";
         internal static string OptModCompat = "";
+        internal static string OptSkillSliderMaximum = "";
         internal static string OptAllowMultipleBladders = "";
         internal static string OptAllowMultipleHygieneEnhancers = "";
         internal static string OptCatalog = "";
@@ -153,6 +154,7 @@ namespace Implanner.UI
             OptReserves = "IMP_OptReserves".Translate();
             TabOptions = "IMP_TabOptions".Translate();
             OptModCompat = "IMP_OptModCompat".Translate();
+            OptSkillSliderMaximum = "IMP_OptSkillSliderMaximum".Translate();
             OptAllowMultipleBladders = "IMP_OptAllowMultipleBladders".Translate();
             OptAllowMultipleHygieneEnhancers =
                 "IMP_OptAllowMultipleHygieneEnhancers".Translate();

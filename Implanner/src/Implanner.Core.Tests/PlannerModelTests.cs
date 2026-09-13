@@ -231,7 +231,7 @@ public class PlannerModelTests
     /// values from a build with other bounds) load clamped exactly like
     /// the setters clamp them; an unknown iteration strategy falls back to
     /// the default. Loaded doctor floors normalize the same way: zero
-    /// stores nothing, above-max clamps.
+    /// stores nothing, extended skill levels survive loading.
     [Test]
     public async Task LoadedOptionsAndFloorsClampLikeTheSetters()
     {
@@ -249,7 +249,7 @@ public class PlannerModelTests
         model.AddLoadedDoctorFloor("ship", 25);
 
         await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
-        await Assert.That(model.ManualDoctorFloor).IsEqualTo(PlannerModel.DoctorFloorMax);
+        await Assert.That(model.ManualDoctorFloor).IsEqualTo(99);
         await Assert.That(model.SurgeryConcurrency).IsEqualTo(PlannerModel.SurgeryConcurrencyMin);
         await Assert.That(model.ProductionConcurrency).IsEqualTo(PlannerModel.ConcurrencyMax);
         await Assert.That(model.ProductionSkill).IsEqualTo(PlannerModel.DoctorFloorMin);
@@ -257,7 +257,7 @@ public class PlannerModelTests
         await Assert.That(model.AllowMultipleHygieneEnhancers).IsFalse();
         await Assert.That(model.ShowPurchaseOnly).IsTrue();
         await Assert.That(model.DoctorFloors.ContainsKey("home")).IsFalse();
-        await Assert.That(model.DoctorFloorOf("ship")).IsEqualTo(PlannerModel.DoctorFloorMax);
+        await Assert.That(model.DoctorFloorOf("ship")).IsEqualTo(25);
     }
 
     /// The synced iteration command carries the strategy as a plain int:

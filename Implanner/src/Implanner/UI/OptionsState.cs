@@ -1,7 +1,57 @@
 using Implanner.Core;
+using RimShared.UiLib;
+using UnityEngine;
+using Verse;
 
 namespace Implanner.UI
 {
+    internal sealed class SkillSliderSnapshot
+    {
+        internal readonly int Maximum;
+        internal readonly string MaximumText;
+        internal readonly float TextHeight;
+        internal float RowHeight => Mathf.Max(24f, TextHeight);
+
+        internal SkillSliderSnapshot(int maximum, float textHeight)
+        {
+            Maximum = maximum;
+            MaximumText = maximum.ToStringCached();
+            TextHeight = textHeight;
+        }
+    }
+
+    internal sealed class SkillSliderState
+    {
+        // Cache contract:
+        // Owner: dialog window; shared by Options and both skill controls.
+        // Key/dependencies: UiVersion.Current and the local slider maximum.
+        // Value: immutable presentation bounds, value text and Small line box.
+        // Refresh policy: immediate in WindowUpdate; gated tab-switch fallback.
+        // Equality policy: unchanged or equal rebuilt contents preserve identity.
+        // Teardown: Release on window close; owns no game resources.
+        private SkillSliderSnapshot? snapshot;
+        private int uiStamp = -1;
+
+        internal SkillSliderSnapshot Current()
+        {
+            int maximum = ImplannerMod.Settings.skillSliderMaximum;
+            if (snapshot == null || snapshot.Maximum != maximum || uiStamp != UiVersion.Current)
+            {
+                using (GuiStateScope.Capture())
+                {
+                    Text.Font = GameFont.Small;
+                    float height = Mathf.Ceil(Text.LineHeight);
+                    if (snapshot == null || snapshot.Maximum != maximum || snapshot.TextHeight != height)
+                        snapshot = new SkillSliderSnapshot(maximum, height);
+                }
+                uiStamp = UiVersion.Current;
+            }
+            return snapshot;
+        }
+
+        internal void Release() { snapshot = null; uiStamp = -1; }
+    }
+
     internal sealed class OptionsSnapshot
     {
         /// Mod compatibility: modded bladder implants planned and
@@ -89,6 +139,7 @@ namespace Implanner.UI
         internal WrTip AllowMultipleBladders = null!;
         internal WrTip AllowMultipleHygieneEnhancers = null!;
         internal WrTip ShowPurchaseOnly = null!;
+        internal WrTip SkillSliderMaximum = null!;
 
         /// Called after the window observed the current UI metrics.
         internal void Ensure()
@@ -103,13 +154,14 @@ namespace Implanner.UI
                 ModCompatibility.TipLines(ImplantCompatibility.HygieneEnhancerImplants));
             ShowPurchaseOnly = WrTips.Key("IMP_OptShowPurchaseOnlyTip",
                 ModCompatibility.PurchaseOnlyTipLines());
+            SkillSliderMaximum = WrTips.Key("IMP_OptSkillSliderMaximumTip");
         }
 
         internal void Release()
         {
             stamp = -1;
             AllowMultipleBladders = AllowMultipleHygieneEnhancers = null!;
-            ShowPurchaseOnly = null!;
+            ShowPurchaseOnly = SkillSliderMaximum = null!;
         }
     }
 }
