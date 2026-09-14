@@ -326,32 +326,36 @@ namespace QualityJobs
         /// benches for this recipe.
         ///
         /// Memo cache — Owner: process (def-derived only). Key: RecipeDef identity.
-        /// Value: WorkTypeDef? (nullable; null = no bench giver found). Dependencies:
+        /// Value: WorkGiverDef? (nullable; null = no bench giver found). The def is
+        /// externally owned; its current workType is read when requested. Dependencies:
         /// def database contents (stable after startup; ManagedRecipes.Invalidate()
         /// calls InvalidateWorkTypeCache() to clear this when a definition reload
         /// occurs). Refresh: lazy on first call per recipe; cleared by
         /// InvalidateWorkTypeCache(). Equality: n/a (single value per key).
         /// Teardown/reset: InvalidateWorkTypeCache clears all def references.
         /// Cache hits are plain Dictionary lookups — no allocation.
-        private static readonly Dictionary<RecipeDef, WorkTypeDef?> s_workTypeCache =
-            new Dictionary<RecipeDef, WorkTypeDef?>();
+        private static readonly Dictionary<RecipeDef, WorkGiverDef?> s_workTypeCache =
+            new Dictionary<RecipeDef, WorkGiverDef?>();
 
         /// Clears the recipe→workType memo cache. Called by ManagedRecipes.Invalidate()
         /// after a definition reload so both caches stay coherent.
         public static void InvalidateWorkTypeCache() => s_workTypeCache.Clear();
 
         public static WorkTypeDef? WorkTypeForRecipe(RecipeDef recipe)
+            => WorkGiverForRecipe(recipe)?.workType;
+
+        internal static WorkGiverDef? WorkGiverForRecipe(RecipeDef recipe)
         {
-            if (s_workTypeCache.TryGetValue(recipe, out WorkTypeDef? cached))
+            if (s_workTypeCache.TryGetValue(recipe, out WorkGiverDef? cached))
                 return cached;
             List<WorkGiverDef> givers = DefDatabase<WorkGiverDef>.AllDefsListForReading;
-            WorkTypeDef? result = null;
+            WorkGiverDef? result = null;
             foreach (ThingDef benchDef in recipe.AllRecipeUsers)
                 for (int i = 0; i < givers.Count; i++)
                     if (givers[i].fixedBillGiverDefs != null
                         && givers[i].fixedBillGiverDefs.Contains(benchDef))
                     {
-                        result = givers[i].workType;
+                        result = givers[i];
                         goto done;
                     }
             done:

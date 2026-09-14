@@ -42,6 +42,19 @@ namespace RimShared.Common
 
         public int Count => entries.Count;
 
+        /// Reports when counts were actually built, including equal rebuilds.
+        /// Does not acquire a snapshot, refresh data, or change cache identity.
+        public bool TryGetLastCountRefreshTick(TKey key, out int tick)
+        {
+            if (entries.TryGetValue(key, out Entry? entry))
+            {
+                tick = entry.LastCountRefreshTick;
+                return true;
+            }
+            tick = default;
+            return false;
+        }
+
         public RenderDataCache(int countRefreshInterval)
             : this(countRefreshInterval, EqualityComparer<TCounts>.Default)
         {

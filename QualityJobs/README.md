@@ -23,6 +23,10 @@ master crafter do the final touch — this mod automates the entire loop.
   By default the finisher takes the finish job ahead of all other work except
   firefighting, medical care, rescue and bed rest; a global option can limit
   it to first place within its own work type instead.
+- High-priority finishing ignores the category holding the finisher task;
+  the pawn must have the finished item's work category enabled.
+  With high priority disabled, finishers retain their original work scope
+  until moved; a moved finisher can complete any eligible assigned item or frame.
 - Shared unfinished work: idle unfinished items no longer lock their bill to
   the original crafter — anyone can continue them (also rescues items whose
   creator died, a long-standing vanilla annoyance).

@@ -4,6 +4,34 @@ namespace RimShared.Common.Tests;
 
 public class RenderDataCacheTests
 {
+    [Test]
+    public async Task RefreshTimestampTracksWorkEvenWhenSnapshotIdentityIsPreserved()
+    {
+        var cache = new RenderDataCache<string, int, string, string>(204);
+        await Assert.That(cache.TryGetLastCountRefreshTick("a", out _)).IsFalse();
+        var first = cache.Get("a", 1, 100, () => "structure", () => "equal");
+        cache.Get("b", 1, 200, () => "other", () => "equal");
+        await Assert.That(cache.TryGetLastCountRefreshTick("a", out int firstTick)).IsTrue();
+        await Assert.That(firstTick).IsEqualTo(100);
+        var unchanged = cache.Get("a", 2, 303, () => "changed", () => "equal");
+        cache.TryGetLastCountRefreshTick("a", out int before);
+        await Assert.That(before).IsEqualTo(100);
+        var refreshed = cache.Get("a", 2, 304, () => "unused", () => "equal");
+        await Assert.That(refreshed).IsSameReferenceAs(unchanged);
+        cache.TryGetLastCountRefreshTick("a", out int after);
+        await Assert.That(after).IsEqualTo(304);
+        cache.TryGetLastCountRefreshTick("b", out int other);
+        await Assert.That(other).IsEqualTo(200);
+        cache.InvalidateCounts("a");
+        cache.Get("a", 2, 305, () => "unused", () => "equal");
+        cache.TryGetLastCountRefreshTick("a", out int forced);
+        await Assert.That(forced).IsEqualTo(305);
+        cache.Remove("a");
+        await Assert.That(cache.TryGetLastCountRefreshTick("a", out _)).IsFalse();
+        cache.Clear();
+        await Assert.That(cache.TryGetLastCountRefreshTick("b", out _)).IsFalse();
+    }
+
     private sealed class BuildState
     {
         public string Prefix = null!; // Assigned by each test that uses it.

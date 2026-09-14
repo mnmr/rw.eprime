@@ -27,6 +27,7 @@ namespace EPrimeReadouts.UI
         internal PanelSurfaceChannel Channel => channel;
         internal int PixelWidth => channel.FrontWidth;
         internal int PixelHeight => channel.FrontHeight;
+        internal bool CanPresent => hasPublished && channel.Front != null;
 
         internal SurfaceEnsureResult Ensure(
             DrawModel draw,
@@ -50,9 +51,10 @@ namespace EPrimeReadouts.UI
             RenderTexture? working = channel.EnsureWorking(
                 sizing.PixelWidth, sizing.PixelHeight);
             if (working == null) return SurfaceEnsureResult.Failed;
-            if (!Render(draw, options, working, sizing.RasterScale))
+            if (!Render(draw, options, working, sizing.RasterScale,
+                    out bool requiresCoverage))
                 return SurfaceEnsureResult.Failed;
-            channel.RequestPublish();
+            channel.RequestPublish(requiresCoverage);
             pendingRevision = next;
             hasPending = true;
             return SurfaceEnsureResult.InFlight;
@@ -84,11 +86,10 @@ namespace EPrimeReadouts.UI
             Texture2D? front = channel.Front;
             if (front == null || !hasPublished || !window.Visible)
                 return false;
-            backend.Present(front, new Rect(
+            return backend.Present(front, new Rect(
                     screenX, screenY,
                     window.DestWidth, window.DestHeight),
                 new Rect(0f, window.UvY, 1f, window.UvHeight));
-            return true;
         }
 
         internal void Release()
@@ -102,8 +103,10 @@ namespace EPrimeReadouts.UI
             DrawModel draw,
             PanelVisualOptions options,
             RenderTexture working,
-            float rasterScale)
+            float rasterScale,
+            out bool requiresCoverage)
         {
+            requiresCoverage = false;
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = working;
             GL.PushMatrix();
@@ -121,6 +124,15 @@ namespace EPrimeReadouts.UI
                     switch (cell.Kind)
                     {
                         case CellKind.GroupBack:
+                            // The solid stripe guarantees coverage when at
+                            // least one physical pixel lies inside the target.
+                            // Arbitrary icon artwork can be fully transparent;
+                            // its presence alone must not reject a blank layer.
+                            if (Mathf.Min(rect.x + LayoutMetrics.StripeW * rasterScale,
+                                    working.width) - Mathf.Max(rect.x, 0f) >= 1f
+                                && Mathf.Min(rect.yMax, working.height)
+                                    - Mathf.Max(rect.y, 0f) >= 1f)
+                                requiresCoverage = true;
                             DrawSolid(rect,
                                 CellRenderer.BackingColorFor(options));
                             // Stripe width scales with the raster like every

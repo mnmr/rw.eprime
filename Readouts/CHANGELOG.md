@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.4 — 2026-09-14
+
+- Added: Periodic rendering health checks and automatic buffer recovery to address disappearing readouts.
+
 ## 1.3.3 — 2026-09-13
 
 - Fixed: Hidden developer windows could block readout hover expansion, tooltips, and controls after developer mode was disabled.

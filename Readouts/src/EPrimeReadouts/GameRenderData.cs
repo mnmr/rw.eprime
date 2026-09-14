@@ -62,6 +62,10 @@ namespace EPrimeReadouts
         private static readonly RenderDataCache<Map, int, PoolSnapshot, RenderCountSnapshot>
             cache = NewCache();
 
+        internal static bool TryGetLastCountRefreshTick(Map map, out int tick)
+            => cache.TryGetLastCountRefreshTick(
+                LevelStacks.CanonicalOrSelf(map)!, out tick);
+
         internal static RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> Get(
             Map map,
             ReadoutStore store)

@@ -9,8 +9,8 @@ namespace EPrimeReadouts.UI
 {
     /// Owns the color-space boundary between premultiplied composition targets
     /// and straight-alpha published textures. Publication reads the GPU result
-    /// back asynchronously (AsyncGPUReadback) so no build ever stalls the
-    /// pipeline; platforms without async readback fall back to a synchronous
+    /// back asynchronously (AsyncGPUReadback), avoiding a synchronous GPU wait;
+    /// platforms without async readback fall back to a synchronous
     /// read into the same buffers. The backend is unavailable unless the exact
     /// runtime shader and publish path pass a literal pixel round-trip probe,
     /// including readback row orientation.
@@ -30,20 +30,22 @@ namespace EPrimeReadouts.UI
         /// relative to the synchronous ReadPixels convention.
         private bool readbackFlipsRows;
 
-        internal bool IsAvailable => available;
+        internal bool IsAvailable => available && spriteMaterial != null;
 
         internal static bool AsyncReadbackSupported =>
             SystemInfo.supportsAsyncGPUReadback;
 
         internal bool TryInitialize()
         {
-            if (initializationAttempted) return available;
+            if (initializationAttempted) return IsAvailable;
             initializationAttempted = true;
             try
             {
                 Shader shader = Shader.Find("Sprites/Default");
                 if (shader == null)
                     return Disable("Sprites/Default shader was not found");
+                if (!shader.isSupported)
+                    return Disable("Sprites/Default shader is unsupported");
 
                 spriteMaterial = new Material(shader)
                 {
@@ -107,16 +109,33 @@ namespace EPrimeReadouts.UI
         /// target, but RGB is the correct premultiplied result and every
         /// buffered content tint has a red channel of one, so red recovers
         /// coverage.
-        internal void PublishFromReadback(
+        /// Coverage is accumulated during the existing conversion, with no
+        /// second pixel scan or additional GPU transfer. The builder declares
+        /// whether visible output is required; intentionally empty layers
+        /// remain valid. A rejected back never uploads or replaces the front.
+        internal bool PublishFromReadback(
             AsyncGPUReadbackRequest request,
             Texture2D destination,
-            bool coverageFromRed)
+            bool coverageFromRed,
+            bool requiresCoverage = false)
+            => PublishFromReadback(request, destination, coverageFromRed,
+                requiresCoverage, out _);
+
+        internal bool PublishFromReadback(
+            AsyncGPUReadbackRequest request, Texture2D destination,
+            bool coverageFromRed, bool requiresCoverage,
+            out PanelTextureSample sample)
         {
+            sample = default;
             int width = destination.width;
             int height = destination.height;
             NativeArray<Color32> source = request.GetData<Color32>();
             NativeArray<Color32> target =
                 destination.GetRawTextureData<Color32>();
+            if (source.Length != target.Length) return false;
+            int observedCoverage = 0;
+            int sampleIndex = 0;
+            PixelRgba samplePixel = default;
             bool flip = readbackFlipsRows;
             for (int row = 0; row < height; row++)
             {
@@ -126,25 +145,43 @@ namespace EPrimeReadouts.UI
                 {
                     Color32 pixel = source[sourceRow + column];
                     byte coverage = coverageFromRed ? pixel.r : pixel.a;
+                    observedCoverage |= coverage;
                     PixelRgba straight = Rgba32Math.Unpremultiply(
                         pixel.r, pixel.g, pixel.b, coverage);
                     target[targetRow + column] = new Color32(
                         straight.R, straight.G, straight.B, straight.A);
+                    if (straight.A > samplePixel.A)
+                    {
+                        samplePixel = straight;
+                        sampleIndex = targetRow + column;
+                    }
                 }
             }
+            if (requiresCoverage && observedCoverage == 0) return false;
+            sample = new PanelTextureSample(sampleIndex, width, height, samplePixel);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
+            return true;
         }
 
         /// Synchronous publish for platforms without async readback: reads the
         /// working target directly into the destination's CPU buffer, then
         /// unpremultiplies it in place. No intermediate reader texture exists.
         /// See PublishFromReadback for the coverageFromRed contract.
-        internal static void PublishSync(
+        internal static bool PublishSync(
             RenderTexture working,
             Texture2D destination,
-            bool coverageFromRed)
+            bool coverageFromRed,
+            bool requiresCoverage = false)
+            => PublishSync(working, destination, coverageFromRed,
+                requiresCoverage, out _);
+
+        internal static bool PublishSync(
+            RenderTexture working, Texture2D destination,
+            bool coverageFromRed, bool requiresCoverage,
+            out PanelTextureSample sample)
         {
+            sample = default;
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = working;
             try
@@ -159,25 +196,39 @@ namespace EPrimeReadouts.UI
             }
             NativeArray<Color32> pixels =
                 destination.GetRawTextureData<Color32>();
+            int observedCoverage = 0;
+            int sampleIndex = 0;
+            PixelRgba samplePixel = default;
             for (int i = 0; i < pixels.Length; i++)
             {
                 Color32 pixel = pixels[i];
                 byte coverage = coverageFromRed ? pixel.r : pixel.a;
+                observedCoverage |= coverage;
                 PixelRgba straight = Rgba32Math.Unpremultiply(
                     pixel.r, pixel.g, pixel.b, coverage);
                 pixels[i] = new Color32(
                     straight.R, straight.G, straight.B, straight.A);
+                if (straight.A > samplePixel.A)
+                {
+                    samplePixel = straight;
+                    sampleIndex = i;
+                }
             }
+            if (requiresCoverage && observedCoverage == 0) return false;
+            sample = new PanelTextureSample(sampleIndex,
+                destination.width, destination.height, samplePixel);
             destination.Apply(updateMipmaps: false,
                 makeNoLongerReadable: false);
+            return true;
         }
 
-        internal void Present(Texture2D texture, Rect rect, Rect uv)
+        internal bool Present(Texture2D texture, Rect rect, Rect uv)
         {
-            if (!available || spriteMaterial == null) return;
+            if (!IsAvailable || texture == null) return false;
             Graphics.DrawTexture(
                 rect, texture, uv,
                 0, 0, 0, 0, Color.white, spriteMaterial);
+            return true;
         }
 
         internal void DrawToActive(
@@ -320,6 +371,9 @@ namespace EPrimeReadouts.UI
             // destruction remains on the main-thread completion gate.
             LongEventHandler.ExecuteWhenFinished(() =>
             {
+                // A lost native object still has a managed wrapper. Recovery
+                // may retire it after Unity has already destroyed the resource.
+                if (owned == null) return;
                 if (owned is RenderTexture renderTexture)
                     renderTexture.Release();
                 Object.Destroy(owned);

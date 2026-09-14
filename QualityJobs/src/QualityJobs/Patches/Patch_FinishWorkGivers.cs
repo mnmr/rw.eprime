@@ -120,6 +120,9 @@ namespace QualityJobs.Patches
                     gerund  = gerund,
                     giverClass        = typeof(WorkGiver_FinishQualityWork),
                     workType          = wt,
+                    // Preserve vanilla ordering until a category mod moves the
+                    // giver; its mutable workType is scheduling metadata only.
+                    modExtensions     = new List<DefModExtension> { new FinisherWorkScope(wt) },
                     priorityInType    = ourPriority,
                     requiredCapacities = new List<PawnCapacityDef> { PawnCapacityDefOf.Manipulation },
                     // scanThings = true (default), scanCells = false (default).

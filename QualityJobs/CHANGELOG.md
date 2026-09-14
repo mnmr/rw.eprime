@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.2 — 2026-09-14
+
+- Fixed: Allow finisher jobs to be moved to another work type (for better mod interop). Note: high-priority finishing still bypasses job priorities and runs before any normal work.
+
 ## 1.1.1 — 2026-09-10
 
 - Added: Support for Vanilla Skills Expanded (quality expertise) for finisher selection for construction, crafting, and art.

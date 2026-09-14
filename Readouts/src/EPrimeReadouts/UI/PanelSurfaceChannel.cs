@@ -42,6 +42,20 @@ namespace EPrimeReadouts.UI
         private AsyncGPUReadbackRequest request;
         private bool publishPending;
         private bool backReady;
+        // Owner: this channel's in-flight publication. Key/dependencies: the
+        // working pixels and the builder's visible-geometry expectation for
+        // this build only. Value: immutable expectation until Pump completes.
+        // Refresh: RequestPublish; equality: no separate cached artifact.
+        // Teardown: Abandon/Release discard all pending publication state.
+        private bool requiresCoverage;
+        private bool publishFailed;
+        // Owner/key: this channel's front/back publication. Value: immutable
+        // UV and expected premultiplied pixel. Dependencies: exact converted
+        // pixels and physical dimensions. Refresh: existing publish conversion;
+        // equality: promoted with its texture, never independently refreshed.
+        // Teardown: Release clears samples along with the owned textures.
+        private PanelTextureSample frontSample;
+        private PanelTextureSample backSample;
 
         internal PanelSurfaceChannel(
             PanelBufferBackend backend, bool coverageFromRed = false)
@@ -51,6 +65,7 @@ namespace EPrimeReadouts.UI
         }
 
         internal Texture2D? Front => front;
+        internal PanelTextureSample FrontSample => frontSample;
         internal int FrontWidth => front != null ? front.width : 0;
         internal int FrontHeight => front != null ? front.height : 0;
         internal bool HasWorkInFlight => publishPending || backReady;
@@ -99,8 +114,12 @@ namespace EPrimeReadouts.UI
         /// this issues a readback request and returns immediately; otherwise
         /// the back texture is filled synchronously and sits ready for
         /// promotion.
-        internal void RequestPublish()
+        internal void RequestPublish(bool requiresCoverage)
         {
+            this.requiresCoverage = requiresCoverage;
+            publishPending = false;
+            backReady = false;
+            publishFailed = true;
             if (working == null) return;
             EnsureBack(working.width, working.height);
             if (back == null) return;
@@ -109,13 +128,13 @@ namespace EPrimeReadouts.UI
                 request = AsyncGPUReadback.Request(
                     working, 0, TextureFormat.RGBA32);
                 publishPending = true;
-                backReady = false;
+                publishFailed = false;
             }
             else
             {
-                PanelBufferBackend.PublishSync(working, back, coverageFromRed);
-                publishPending = false;
-                backReady = true;
+                backReady = PanelBufferBackend.PublishSync(
+                    working, back, coverageFromRed, requiresCoverage, out backSample);
+                publishFailed = !backReady;
             }
         }
 
@@ -124,13 +143,16 @@ namespace EPrimeReadouts.UI
         /// with a fresh build.
         internal SurfacePublishState Pump()
         {
+            if (publishFailed) return SurfacePublishState.Failed;
             if (backReady) return SurfacePublishState.Ready;
             if (!publishPending) return SurfacePublishState.Idle;
             if (!request.done) return SurfacePublishState.Pending;
             publishPending = false;
             if (request.hasError || back == null)
                 return SurfacePublishState.Failed;
-            backend.PublishFromReadback(request, back, coverageFromRed);
+            if (!backend.PublishFromReadback(
+                    request, back, coverageFromRed, requiresCoverage, out backSample))
+                return SurfacePublishState.Failed;
             backReady = true;
             return SurfacePublishState.Ready;
         }
@@ -144,6 +166,7 @@ namespace EPrimeReadouts.UI
             Texture2D? previous = front;
             front = back;
             back = previous;
+            frontSample = backSample;
             backReady = false;
             return true;
         }
@@ -153,6 +176,8 @@ namespace EPrimeReadouts.UI
         {
             publishPending = false;
             backReady = false;
+            publishFailed = false;
+            requiresCoverage = false;
         }
 
         internal void Release()
@@ -163,8 +188,9 @@ namespace EPrimeReadouts.UI
             working = null;
             front = null;
             back = null;
-            publishPending = false;
-            backReady = false;
+            frontSample = default;
+            backSample = default;
+            Abandon();
         }
 
         private void EnsureBack(int pixelWidth, int pixelHeight)

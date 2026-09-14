@@ -32,7 +32,8 @@ namespace EPrimeReadouts.UI
     /// asynchronous readback: the previous fronts keep presenting until every
     /// changed surface's publish lands, then the whole set promotes
     /// atomically between repaints, so presentation never mixes surfaces
-    /// from different builds and no build stalls the GPU pipeline.
+    /// from different builds. Platforms without async readback publish
+    /// synchronously through the same validation and promotion path.
     internal sealed class PanelFrameBuffers
     {
         /// Publish failures are transient (a device reset can invalidate a
@@ -41,6 +42,7 @@ namespace EPrimeReadouts.UI
         private const int MaxConsecutivePublishFailures = 3;
 
         private readonly PanelBufferPipeline pipeline;
+        private readonly PanelBufferBackend backend;
         private readonly PanelBaseSurface baseSurface;
         private readonly PanelGlyphProduct glyphProduct;
         private readonly PanelHeaderSurface headerSurface;
@@ -54,6 +56,7 @@ namespace EPrimeReadouts.UI
             PanelBufferBackend backend)
         {
             this.pipeline = pipeline;
+            this.backend = backend;
             baseSurface = new PanelBaseSurface(backend);
             glyphProduct = new PanelGlyphProduct(backend);
             headerSurface = new PanelHeaderSurface(backend);
@@ -61,6 +64,22 @@ namespace EPrimeReadouts.UI
 
         internal bool HasSurfaces => hasSurfaces;
         internal bool BuildInFlight => buildInFlight;
+        internal long PublicationVersion { get; private set; }
+        internal bool CanPresent => hasSurfaces && backend.IsAvailable
+            && baseSurface.CanPresent && glyphProduct.CanPresent
+            && headerSurface.CanPresent;
+
+        internal PanelSurfaceChannel? HealthChannel(int index)
+        {
+            switch (index)
+            {
+                case 0: return baseSurface.Channel;
+                case 1: return glyphProduct.Channel;
+                case 2: return headerSurface.Channel;
+                case 3: return headerSurface.VisibleTitleChannel;
+                default: return null;
+            }
+        }
 
         // A loss in any channel can affect the entire published set and any
         // pending readback. A non-null front alone cannot prove GPU validity.
@@ -74,6 +93,7 @@ namespace EPrimeReadouts.UI
             // model changes queued for retry and the published front revisions
             // intact. The front CPU pixels remain a complete, coherent set.
             if (buildInFlight) AbortInFlight();
+            PublicationVersion++;
             return baseSurface.Channel.RestoreAfterTargetLoss()
                 && glyphProduct.Channel.RestoreAfterTargetLoss()
                 && headerSurface.RestoreAfterTargetLoss();
@@ -88,6 +108,10 @@ namespace EPrimeReadouts.UI
             int uiRevision,
             int iconScaleRevision)
         {
+            // Own the ticket before any layer starts an asynchronous publish,
+            // so a later layer's failure can abort the complete partial build.
+            buildInFlight = true;
+            inFlightTicket = ticket;
             draw.RefreshIconCacheIfNeeded();
             int contentWidth = Mathf.Max(
                 1, Mathf.CeilToInt(draw.Model.TotalWidth));
@@ -117,10 +141,10 @@ namespace EPrimeReadouts.UI
                 && headerResult == SurfaceEnsureResult.Unchanged)
             {
                 pipeline.CompleteBuild(ticket);
+                buildInFlight = false;
+                inFlightTicket = default;
                 return true;
             }
-            buildInFlight = true;
-            inFlightTicket = ticket;
             return true;
         }
 
@@ -157,6 +181,7 @@ namespace EPrimeReadouts.UI
             buildInFlight = false;
             inFlightTicket = default;
             hasSurfaces = true;
+            PublicationVersion++;
             consecutivePublishFailures = 0;
             return true;
         }
@@ -170,20 +195,24 @@ namespace EPrimeReadouts.UI
             float viewportHeight,
             VisiblePanelGeometry geometry)
         {
-            if (!hasSurfaces) return false;
+            // Validate the complete set before drawing any layer: missing
+            // base dimensions must not look like a deliberately empty viewport,
+            // and a partial cached draw must not double-blend with the fallback.
+            if (!CanPresent) return false;
             if (!headerSurface.Present(screenX, screenY)) return false;
             PanelPresentWindow window = PanelPresentWindow.Create(
                 baseSurface.PixelWidth, baseSurface.PixelHeight,
                 geometry.RasterScale, scrollY, viewportHeight);
             if (!window.Visible) return true;
             float contentTop = screenY + geometry.HeaderHeight;
-            baseSurface.PresentWindow(screenX, contentTop, window);
-            glyphProduct.PresentWindow(screenX, contentTop, window);
-            return true;
+            return baseSurface.PresentWindow(screenX, contentTop, window)
+                && glyphProduct.PresentWindow(screenX, contentTop, window);
         }
 
         internal void Release()
         {
+            CancelBuild();
+            PublicationVersion++;
             baseSurface.Release();
             glyphProduct.Release();
             headerSurface.Release();
@@ -191,6 +220,11 @@ namespace EPrimeReadouts.UI
             buildInFlight = false;
             inFlightTicket = default;
             consecutivePublishFailures = 0;
+        }
+
+        internal void CancelBuild()
+        {
+            if (buildInFlight) AbortInFlight();
         }
 
         private void AbortInFlight()

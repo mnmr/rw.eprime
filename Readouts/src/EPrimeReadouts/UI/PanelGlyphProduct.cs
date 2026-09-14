@@ -34,6 +34,7 @@ namespace EPrimeReadouts.UI
         }
 
         internal PanelSurfaceChannel Channel => channel;
+        internal bool CanPresent => hasPublished && channel.Front != null;
 
         internal SurfaceEnsureResult Ensure(
             DrawModel draw,
@@ -96,7 +97,8 @@ namespace EPrimeReadouts.UI
                     GL.PopMatrix();
                     RenderTexture.active = previous;
                 }
-                channel.RequestPublish();
+                channel.RequestPublish(HasVisibleGeometry(
+                    sizing.PixelWidth, sizing.PixelHeight));
                 pendingRevision = next;
                 hasPending = true;
                 return SurfaceEnsureResult.InFlight;
@@ -126,11 +128,39 @@ namespace EPrimeReadouts.UI
             Texture2D? front = channel.Front;
             if (front == null || !hasPublished || !window.Visible)
                 return false;
-            backend.Present(front, new Rect(
+            return backend.Present(front, new Rect(
                     screenX, screenY,
                     window.DestWidth, window.DestHeight),
                 new Rect(0f, window.UvY, 1f, window.UvHeight));
-            return true;
+        }
+
+        /// Called only by a surface builder, immediately after generating its
+        /// geometry. Empty/whitespace runs, degenerate quads and clipped text
+        /// do not promise visible pixels. Require a whole glyph inside the
+        /// target: a clipped sliver might contain only transparent padding.
+        /// No font/atlas reads are needed.
+        internal bool HasVisibleGeometry(int width, int height)
+        {
+            for (int i = 0; i + 3 < vertices.Count; i += 4)
+            {
+                if (colors[i].r == 0 || colors[i].a == 0) continue;
+                float left = vertices[i].x;
+                float right = left;
+                float top = vertices[i].y;
+                float bottom = top;
+                for (int j = 1; j < 4; j++)
+                {
+                    Vector3 point = vertices[i + j];
+                    left = Mathf.Min(left, point.x);
+                    right = Mathf.Max(right, point.x);
+                    top = Mathf.Min(top, point.y);
+                    bottom = Mathf.Max(bottom, point.y);
+                }
+                if (left >= 0f && right <= width && right - left >= 1f
+                    && top >= 0f && bottom <= height && bottom - top >= 1f)
+                    return true;
+            }
+            return false;
         }
 
         /// Draws text through the sprite material: the atlas RGB multiplies

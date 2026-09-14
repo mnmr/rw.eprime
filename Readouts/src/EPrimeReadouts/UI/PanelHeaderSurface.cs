@@ -39,6 +39,12 @@ namespace EPrimeReadouts.UI
 
         internal bool HasLostTarget => channel.HasLostTarget
             || titleChannel.HasLostTarget;
+        internal bool CanPresent => hasPublished && channel.Front != null
+            && (!ShowsTitle(publishedRevision) || titleChannel.Front != null);
+
+        internal PanelSurfaceChannel Channel => channel;
+        internal PanelSurfaceChannel? VisibleTitleChannel =>
+            hasPublished && ShowsTitle(publishedRevision) ? titleChannel : null;
 
         internal bool RestoreAfterTargetLoss() =>
             channel.RestoreAfterTargetLoss()
@@ -70,7 +76,8 @@ namespace EPrimeReadouts.UI
             if (working == null) return SurfaceEnsureResult.Failed;
             if (!Render(next, glyphs, working, sizing.RasterScale))
                 return SurfaceEnsureResult.Failed;
-            channel.RequestPublish();
+            // The gear is always present, even with search and title hidden.
+            channel.RequestPublish(requiresCoverage: true);
             if (ShowsTitle(next))
             {
                 RenderTexture? titleWorking = titleChannel.EnsureWorking(
@@ -79,7 +86,8 @@ namespace EPrimeReadouts.UI
                 if (!RenderTitle(
                         next, glyphs, titleWorking, sizing.RasterScale))
                     return SurfaceEnsureResult.Failed;
-                titleChannel.RequestPublish();
+                titleChannel.RequestPublish(glyphs.HasVisibleGeometry(
+                    sizing.PixelWidth, sizing.PixelHeight));
             }
             pendingRevision = next;
             hasPending = true;
@@ -124,16 +132,16 @@ namespace EPrimeReadouts.UI
         internal bool Present(float screenX, float screenY)
         {
             Texture2D? front = channel.Front;
-            if (front == null || !hasPublished) return false;
+            if (!CanPresent || front == null) return false;
             var rect = new Rect(
                 screenX, screenY,
                 front.width / publishedRevision.RasterScale,
                 front.height / publishedRevision.RasterScale);
             var uv = new Rect(0f, 0f, 1f, 1f);
-            backend.Present(front, rect, uv);
+            if (!backend.Present(front, rect, uv)) return false;
             Texture2D? title = titleChannel.Front;
-            if (title != null && ShowsTitle(publishedRevision))
-                backend.Present(title, rect, uv);
+            if (ShowsTitle(publishedRevision))
+                return title != null && backend.Present(title, rect, uv);
             return true;
         }
 

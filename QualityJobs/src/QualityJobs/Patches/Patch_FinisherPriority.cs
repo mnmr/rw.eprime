@@ -38,9 +38,14 @@ namespace QualityJobs.Patches
             {
                 WorkGiverDef def = givers[i];
                 if (!(def.Worker is WorkGiver_FinishQualityWork giver)) continue;
+                // High-priority finishing ignores the giver's category. Keep
+                // pawn/capacity gates; the scanner checks the target's work type.
+                if (!WorkGiverGates.PawnCanUseWorkGiver(pawn, giver,
+                    checkShouldSkip: false, checkWorkType: false))
+                    continue;
                 finish = giver.TryIssueDirectly(store, pawn);
                 if (finish == null) continue;
-                finishDef = def;
+                finishDef = finish.workGiverDef;
                 break;
             }
             if (finish == null || finishDef == null) return true;
@@ -52,7 +57,6 @@ namespace QualityJobs.Patches
                 return false;
             }
 
-            finish.workGiverDef = finishDef;
             __result = new ThinkResult(finish, __instance, finishDef.tagToGive);
             return false;
         }

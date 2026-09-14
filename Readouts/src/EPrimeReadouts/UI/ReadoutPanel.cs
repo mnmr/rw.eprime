@@ -107,6 +107,26 @@ namespace EPrimeReadouts.UI
         private static PanelHeaderRevision publishedHeader;
         private static bool publishedHeaderValid;
 
+        // Owner/key: current panel and map. Value: one tick schedule, bounded
+        // repair episode, tiny asynchronous probe, and optional inactive
+        // replacement buffers. Dependencies: actual count refresh tick, last
+        // buffer work tick, publication identity/version and detected failures.
+        // Refresh: every 204 game ticks, >=30 ticks after count/buffer work
+        // and >=30 ticks before the next known count refresh;
+        // fault recovery and its verification proceed immediately while paused.
+        // Equality: checks/repairs preserve CPU snapshots; healthy steady state
+        // never allocates or rebuilds a surface. Teardown: ReleaseSurfaces/reset
+        // or retirement releases both buffer sets and the probe's owned target.
+        private static PanelHealthSchedule healthSchedule =
+            new PanelHealthSchedule(GameRenderData.CountRefreshIntervalTicks);
+        private static PanelBufferRecovery bufferRecovery = new PanelBufferRecovery();
+        private static PanelTextureHealth textureHealth = new PanelTextureHealth(PanelBufferBackend.Shared);
+        private static PanelFrameBuffers? replacementBuffers;
+        private static int lastBufferWorkTick;
+        private static bool recoveryNeeded;
+        private static bool recoveryWarningLogged;
+        private static string recoveryReason = "buffered presentation failed";
+
         // Cache contract:
         // Owner: process/current main readout panel.
         // Key: draw-model identity, panel position/viewport, and scroll offset.
@@ -260,6 +280,9 @@ namespace EPrimeReadouts.UI
         /// the direct renderer takes over until surfaces exist again.
         private static void ReleaseSurfaces()
         {
+            textureHealth.Release();
+            replacementBuffers?.Release();
+            replacementBuffers = null;
             frameBuffers.Release();
             bufferPipeline = new PanelBufferPipeline();
             frameBuffers = new PanelFrameBuffers(
@@ -270,11 +293,20 @@ namespace EPrimeReadouts.UI
             publishedIconRevision = -1;
             publishedHeader = default;
             publishedHeaderValid = false;
+            healthSchedule = new PanelHealthSchedule(GameRenderData.CountRefreshIntervalTicks);
+            bufferRecovery = new PanelBufferRecovery();
+            textureHealth = new PanelTextureHealth(PanelBufferBackend.Shared);
+            // Reset also runs while Current.Game is absent during load. The
+            // first main-thread build supplies the real tick before checking.
+            lastBufferWorkTick = 0;
+            recoveryNeeded = false;
+            recoveryWarningLogged = false;
+            recoveryReason = "buffered presentation failed";
         }
 
         /// Consecutive repaints on which the cached surfaces existed but
         /// could not be presented. Each such frame falls back to direct
-        /// drawing; this many in a row retire the buffered renderer.
+        /// drawing; this many in a row request recovery on the update thread.
         private static int presentFailures;
         private const int MaxPresentFailures = 3;
 
@@ -301,6 +333,10 @@ namespace EPrimeReadouts.UI
                 || draw == null
                 || !ReferenceEquals(map, builtMap)
                 || !ReferenceEquals(map, Find.CurrentMap)
+                || EPrimeReadoutsMod.Settings.useVanillaReadout
+                || Current.ProgramState != ProgramState.Playing
+                || !RimWorld.Planet.WorldRendererUtility.DrawingMap
+                || Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu
                 || Time.frameCount < graphicsEligibleFrame
                 || lastGraphicsFrame == Time.frameCount)
                 return;
@@ -308,54 +344,135 @@ namespace EPrimeReadouts.UI
 
             try
             {
-                if (frameBuffers.HasLostTarget)
+                TextureHealthResult health = textureHealth.TakeResult(frameBuffers);
+                if (health == TextureHealthResult.Failed)
+                    RequestBufferRecovery("published texture/material sample failed");
+                else if (health == TextureHealthResult.Healthy)
+                    bufferRecovery.ConfirmHealthy();
+
+                if (recoveryNeeded)
                 {
-                    // Check before the unchanged-generation and pending-readback
-                    // gates: neither notices a GPU interruption on its own.
-                    if (!frameBuffers.RestoreAfterTargetLoss())
-                    {
-                        DisableBufferedRenderer(
-                            "lost render targets could not be restored");
-                        return;
-                    }
+                    RecoverBufferedRenderer();
+                    return;
                 }
 
                 PanelBufferBackend backend = PanelBufferBackend.Shared;
-                if (!backend.TryInitialize())
+                PanelFrameBuffers active = replacementBuffers ?? frameBuffers;
+                if (!backend.TryInitialize() || active.HasLostTarget
+                    || (replacementBuffers == null && frameBuffers.HasSurfaces
+                        && !frameBuffers.CanPresent))
                 {
-                    bufferedRendererDisabled = true;
+                    RequestBufferRecovery("buffer backend, target, or front is unavailable");
                     return;
                 }
-                if (frameBuffers.BuildInFlight)
+                if (active.BuildInFlight)
                 {
                     // Poll the asynchronous publishes; the completed set promotes
                     // atomically inside PumpBuild. New builds wait until then.
-                    if (!frameBuffers.PumpBuild())
-                        DisableBufferedRenderer(
-                            "asynchronous surface publish failed repeatedly");
+                    if (!active.PumpBuild())
+                        RequestBufferRecovery("surface readback or coverage validation failed repeatedly");
+                    if (!active.BuildInFlight)
+                    {
+                        lastBufferWorkTick = Find.TickManager.TicksGame;
+                        if (replacementBuffers != null && active.HasSurfaces)
+                        {
+                            frameBuffers.Release();
+                            frameBuffers = active;
+                            replacementBuffers = null;
+                        }
+                    }
                     return;
                 }
                 if (!bufferPipeline.TryBeginBuild(
-                    out BufferBuildTicket ticket)) return;
+                    out BufferBuildTicket ticket))
+                {
+                    if (!frameBuffers.HasSurfaces || textureHealth.Pending) return;
+                    // No synchronous periodic readback on unsupported hardware.
+                    // Existing creation/material/coverage checks still operate.
+                    if (!PanelBufferBackend.AsyncReadbackSupported)
+                    {
+                        if (frameBuffers.CanPresent) bufferRecovery.ConfirmHealthy();
+                        return;
+                    }
+                    bool due = bufferRecovery.IsActive;
+                    if (!due && GameRenderData.TryGetLastCountRefreshTick(map, out int countsTick))
+                        due = healthSchedule.TryBegin(Find.TickManager.TicksGame,
+                            countsTick, lastBufferWorkTick);
+                    if (due && !textureHealth.Begin(frameBuffers))
+                        RequestBufferRecovery("texture health check could not be submitted");
+                    return;
+                }
 
+                lastBufferWorkTick = Find.TickManager.TicksGame;
                 ReadoutSettings settings = EPrimeReadoutsMod.Settings;
                 VisiblePanelGeometry geometry = CurrentGeometry(settings);
                 PanelHeaderRevision header = CurrentHeaderRevision(settings);
-                if (!frameBuffers.BuildBack(
+                if (!active.BuildBack(
                     ticket, draw, geometry, header,
                     PanelVisualOptions.Default, UiVersion.Current,
                     IconScaleCache.Revision))
                 {
-                    DisableBufferedRenderer(
-                        "a required icon, font, or buffer path is unsupported");
+                    active.CancelBuild();
+                    RequestBufferRecovery("a required icon, font, or buffer path is unsupported");
                 }
             }
             catch (System.Exception exception)
             {
-                DisableBufferedRenderer(
-                    "buffer update threw " + exception.GetType().Name
-                    + ": " + exception.Message);
+                if (!recoveryWarningLogged)
+                {
+                    recoveryWarningLogged = true;
+                    Log.Warning("[Readouts] Buffered update failed; attempting recovery: "
+                        + exception.GetType().Name + ": " + exception.Message);
+                }
+                RequestBufferRecovery("buffer update threw an exception");
             }
+        }
+
+        private static void RequestBufferRecovery(string reason)
+        {
+            recoveryNeeded = true;
+            recoveryReason = reason;
+        }
+
+        private static void RecoverBufferedRenderer()
+        {
+            recoveryNeeded = false;
+            presentFailures = 0;
+            BufferRepair repair = bufferRecovery.NextRepair();
+            if (repair == BufferRepair.Exhausted)
+            {
+                DisableBufferedRenderer("buffer recovery attempts were exhausted: " + recoveryReason);
+                return;
+            }
+            if (!recoveryWarningLogged)
+            {
+                recoveryWarningLogged = true;
+                Log.Warning("[Readouts] Attempting buffered recovery: " + recoveryReason);
+            }
+            // A repair invalidates any earlier sample, including callbacks
+            // arriving after a map reset. No GPU wait is needed for disposal.
+            textureHealth.Release();
+            textureHealth = new PanelTextureHealth(PanelBufferBackend.Shared);
+            frameBuffers.CancelBuild();
+            replacementBuffers?.Release();
+            replacementBuffers = null;
+            lastBufferWorkTick = Find.TickManager.TicksGame;
+            PanelBufferBackend backend = PanelBufferBackend.Shared;
+            if (repair != BufferRepair.Reupload)
+            {
+                backend.Release();
+                if (!backend.TryInitialize()) { recoveryNeeded = true; return; }
+            }
+            if (repair == BufferRepair.RebuildSurfaces)
+            {
+                // Keep the existing fronts until an independently rebuilt set
+                // has passed normal publication/coverage validation.
+                replacementBuffers = new PanelFrameBuffers(bufferPipeline, backend);
+                bufferPipeline.InvalidateBase();
+                return;
+            }
+            if (!frameBuffers.RestoreAfterTargetLoss() || !frameBuffers.CanPresent)
+                recoveryNeeded = true;
         }
 
         public static void OnGUI()
@@ -469,8 +586,11 @@ namespace EPrimeReadouts.UI
                 {
                     direct = true;
                     if (++presentFailures >= MaxPresentFailures)
-                        DisableBufferedRenderer(
-                            "cached surfaces could not be presented");
+                    {
+                        if (!bufferRecovery.IsActive)
+                            RequestBufferRecovery("cached surfaces could not be presented");
+                        presentFailures = 0;
+                    }
                 }
             }
 
@@ -854,6 +974,9 @@ namespace EPrimeReadouts.UI
         {
             if (bufferedRendererDisabled) return;
             bufferedRendererDisabled = true;
+            textureHealth.Release();
+            replacementBuffers?.Release();
+            replacementBuffers = null;
             frameBuffers.Release();
             Log.Warning(
                 "[Readouts] Buffered renderer disabled: " + reason);
@@ -954,6 +1077,7 @@ namespace EPrimeReadouts.UI
             float width,
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot> renderData)
         {
+            if (!ReferenceEquals(builtMap, map)) ReleaseSurfaces();
             var settings = EPrimeReadoutsMod.Settings;
             var groups = store.Model.InDisplayOrder();
             // With the toolbar toggle off, the panel keeps only its header
