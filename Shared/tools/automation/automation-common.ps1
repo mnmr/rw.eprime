@@ -1,23 +1,17 @@
-$ErrorActionPreference = 'Stop'
-$script:AutomationRepositoryRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\..'))
-$script:AutomationProfilePath = Join-Path $script:AutomationRepositoryRoot 'AutomationProfiles\Shared'
-$script:RimWorldExecutable = 'C:\Program Files (x86)\Steam\steamapps\common\RimWorld\RimWorldWin64.exe'
-$script:RimWorldPlayerLog = Join-Path $script:AutomationProfilePath 'Player.log'
-
-function Test-SharedProfileCommandLine {
-    param([string]$CommandLine)
-    $path = [regex]::Escape($script:AutomationProfilePath)
-    return $CommandLine -match ('(?i)(?:^|\s)-savedatafolder=(?:"' + $path + '"|' + $path + ')(?=\s|$)')
-}
-function Get-AllRimWorldProcessInfo { @(Get-CimInstance Win32_Process -Filter "name = 'RimWorldWin64.exe'") }
-function Get-SharedRimWorldProcessInfo { @(Get-AllRimWorldProcessInfo | Where-Object { Test-SharedProfileCommandLine $_.CommandLine }) }
+param([string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID)
+. (Join-Path $PSScriptRoot 'run-common.ps1')
+$script:AutomationRunId = ''
+$script:AutomationProfilePath = $null
+$script:RimWorldPlayerLog = $null
+if ($RunId) { Set-AutomationRun $RunId }
+function Get-SharedRimWorldProcessInfo { Get-RunProcesses (Get-SelectedRun) }
 function Assert-NoSharedRimWorldProcess {
-    if (@(Get-SharedRimWorldProcessInfo).Count -ne 0) { throw 'Stop the shared-profile game before changing its runtime or profile.' }
+    if (@(Get-SharedRimWorldProcessInfo).Count -ne 0) { throw 'This run is already active.' }
 }
 function Get-ExactlyOneSharedRimWorldProcessInfo {
-    $matches = @(Get-SharedRimWorldProcessInfo)
-    if ($matches.Count -ne 1) { throw "Expected exactly one shared-profile game; found $($matches.Count)." }
-    return $matches[0]
+    $processes = @(Get-SharedRimWorldProcessInfo)
+    if ($processes.Count -ne 1) { throw "Expected exactly one game for the selected run; found $($processes.Count)." }
+    return $processes[0]
 }
 function Read-TextFileWhileOpen {
     param([string]$Path)
@@ -62,6 +56,7 @@ function Invoke-SharedGameCommand {
         $reply = [Text.Encoding]::UTF8.GetString((Read-AutomationBytes $connection $size $deadline.Token)) | ConvertFrom-Json
         if (-not $reply.ok) { throw "Game automation failed: $($reply.error)" }
         if ($reply.processId -ne $process.ProcessId) { throw 'Automation reply process identity mismatch.' }
+        Update-RunActivity $Command.command ([bool]$reply.ready)
         return $reply
     } finally { $connection.Dispose(); $deadline.Dispose() }
 }

@@ -1,55 +1,26 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$File,
-    [Parameter(Mandatory)][string]$EvidenceDirectory
+    [Parameter(Mandatory)][string]$EvidenceDirectory,
+    [string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID
 )
-. (Join-Path $PSScriptRoot 'automation-common.ps1')
+. (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
 if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Action file not found: $File" }
 Assert-NoSharedRimWorldProcess
 New-Item -ItemType Directory -Path $EvidenceDirectory -Force | Out-Null
-Add-Type @'
-using System;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
-using System.Threading;
-public static class SharedForegroundAudit {
-    [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
-    [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr window, out uint processId);
-    static readonly HashSet<uint> seen = new HashSet<uint>();
-    static volatile bool stop;
-    static Thread thread;
-    public static void Start() {
-        seen.Clear(); stop = false;
-        thread = new Thread(() => {
-            while (!stop) {
-                GetWindowThreadProcessId(GetForegroundWindow(), out uint processId);
-                lock (seen) seen.Add(processId);
-                Thread.Sleep(10);
-            }
-        });
-        thread.IsBackground = true; thread.Start();
-    }
-    public static uint[] Finish() {
-        stop = true; thread.Join();
-        lock (seen) { var result = new uint[seen.Count]; seen.CopyTo(result); return result; }
-    }
-}
-'@
+. (Join-Path $PSScriptRoot 'foreground-audit.ps1')
 [SharedForegroundAudit]::Start()
 $testProcessId = $null
+$launched = $false
 try {
-    & (Join-Path $PSScriptRoot 'launch.ps1')
+    & (Join-Path $PSScriptRoot 'launch.ps1') -RunId $RunId
+    $launched = $true
     $testProcessId = (Invoke-SharedGameCommand @{ command = 'status' }).processId
-    & (Join-Path $PSScriptRoot 'run-sequence.ps1') -File $File
+    & (Join-Path $PSScriptRoot 'run-sequence.ps1') -File $File -RunId $RunId
 } finally {
     # Keep the audit running through shutdown, too.
     try {
-        if ($testProcessId) {
-            $running = @(Get-SharedRimWorldProcessInfo)
-            if ($running.Count -eq 1 -and $running[0].ProcessId -eq $testProcessId) {
-                & (Join-Path $PSScriptRoot 'stop.ps1')
-            }
-        }
+        if ($launched) { & (Join-Path $PSScriptRoot 'stop.ps1') -RunId $RunId }
     }
     finally {
         $seen = [SharedForegroundAudit]::Finish()

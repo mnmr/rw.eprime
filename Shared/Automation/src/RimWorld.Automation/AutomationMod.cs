@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using HarmonyLib;
+using RimWorld.Automation.Core;
 using UnityEngine;
 using Verse;
 
@@ -9,6 +10,9 @@ namespace RimWorld.Automation;
 public sealed class AutomationMod : Mod
 {
     internal static string Token = "";
+    // Process launch metadata, captured from the actual ModContentPack. It is
+    // immutable for this process and does not retain a game/world/map owner.
+    internal static string RootDirectory = "";
     internal static Harmony? Patches;
     private static readonly Action InitializeAction = Initialize;
 
@@ -20,10 +24,9 @@ public sealed class AutomationMod : Mod
             if (argument.StartsWith("-savedatafolder=", StringComparison.OrdinalIgnoreCase)) profile = argument.Substring(16).Trim('"');
             if (argument.StartsWith("-automationtoken=rimworld-shared-", StringComparison.Ordinal)) Token = argument.Substring(17);
         }
-        const string canonicalProfile = @"D:\Code\RimWorld\AutomationProfiles\Shared";
-        if (string.IsNullOrEmpty(profile) || !string.Equals(Path.GetFullPath(profile).TrimEnd('\\'), canonicalProfile, StringComparison.OrdinalIgnoreCase)
-            || Token.Length != 48 || !Guid.TryParseExact(Token.Substring(16), "N", out _))
+        if (!RunIdentity.Matches(profile, Token))
         { Token = ""; return; }
+        RootDirectory = content.RootDir;
         LongEventHandler.ExecuteWhenFinished(InitializeAction);
     }
 
@@ -35,6 +38,7 @@ public sealed class AutomationMod : Mod
         try
         {
             Patches.PatchAll(typeof(AutomationMod).Assembly);
+            AutomationAudio.Mute();
             owner = new GameObject("Shared Automation");
             UnityEngine.Object.DontDestroyOnLoad(owner);
             owner.AddComponent<AutomationRunner>();

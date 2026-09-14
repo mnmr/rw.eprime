@@ -1,6 +1,6 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$OutName, [switch]$WaitForRenderedMap, [switch]$KeepCursor)
-. (Join-Path $PSScriptRoot 'automation-common.ps1')
+param([Parameter(Mandatory)][string]$OutName, [switch]$WaitForRenderedMap, [switch]$KeepCursor, [string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID)
+. (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
 if ($WaitForRenderedMap) {
     $deadline = (Get-Date).AddSeconds(30)
     do {

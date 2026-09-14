@@ -56,4 +56,6 @@ dotnet build -c Release src/QualityJobs.slnx --no-restore
 dotnet test src/QualityJobs.Core.Tests --no-restore
 ```
 
-Building never deploys: in-game verification requires `pwsh scripts/deploy.ps1` and a game restart.
+Building never deploys. Automated verification requires creating a fresh managed
+run after building, following the root contract; creation deploys its copies.
+Player installation deployment uses `pwsh scripts/deploy.ps1` and a game restart.

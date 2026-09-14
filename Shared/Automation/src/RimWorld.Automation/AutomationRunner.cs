@@ -148,6 +148,8 @@ public sealed class AutomationRunner : MonoBehaviour
         ok = true, processId = Process.GetCurrentProcess().Id,
         ready = GenScene.InPlayScene && Current.ProgramState == ProgramState.Playing && Find.CurrentMap != null && !LongEventHandler.AnyEventNowOrWaiting,
         width = Screen.width, height = Screen.height, uiScale = Prefs.UIScale,
+        audioVolume = AudioListener.volume, runtimeAssembly = typeof(AutomationRunner).Assembly.Location,
+        runtimeModRoot = AutomationMod.RootDirectory,
         x = Mathf.RoundToInt(Pointer.x), y = Mathf.RoundToInt(Pointer.y)
     };
 

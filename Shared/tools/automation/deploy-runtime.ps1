@@ -1,8 +1,11 @@
 [CmdletBinding()]
 param()
 
-. (Join-Path $PSScriptRoot 'automation-common.ps1')
-Assert-NoSharedRimWorldProcess
+. (Join-Path $PSScriptRoot 'run-common.ps1')
+$script:RimWorldExecutable = Join-Path $script:InstalledGameRoot 'RimWorldWin64.exe'
+if (@(Get-AllRimWorldProcessInfo | Where-Object { $_.ExecutablePath -ieq $script:RimWorldExecutable }).Count -ne 0) {
+    throw 'Stop the installed game before replacing its runtime. Managed runs use independent copies.'
+}
 $source = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..\..\Automation\mod'))
 $destination = Join-Path (Split-Path $script:RimWorldExecutable -Parent) 'Mods\SharedAutomation'
 if (-not (Test-Path (Join-Path $source '1.6\Assemblies\RimWorld.Automation.dll'))) {

@@ -2,6 +2,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using RimWorld.Automation.Core;
 
 namespace RimWorld.Automation.Host;
 
@@ -45,6 +47,7 @@ internal static class Program
     [DllImport("kernel32.dll", SetLastError = true)] private static extern bool AssignProcessToJobObject(IntPtr job, IntPtr process);
     [DllImport("kernel32.dll", SetLastError = true)] private static extern uint ResumeThread(IntPtr thread);
     [DllImport("kernel32.dll")] private static extern bool TerminateProcess(IntPtr process, uint code);
+    [DllImport("kernel32.dll")] private static extern bool GetExitCodeProcess(IntPtr process, out uint code);
 
     private static void Main(string[] arguments)
     {
@@ -53,12 +56,48 @@ internal static class Program
         IntPtr desktop = IntPtr.Zero;
         IntPtr job = IntPtr.Zero;
         ProcessInfo process = default;
+        FileStream? lease = null;
+        bool ownsRun = false;
+        DateTime startedUtc = DateTime.UtcNow;
+        void Publish(string state, uint? exitCode = null)
+        {
+            string path = Path.Combine(profile, "host.json");
+            string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, JsonSerializer.Serialize(new {
+                    state, token, hostProcessId = Environment.ProcessId, gameProcessId = process.Id,
+                    startedUtc, heartbeatUtc = DateTime.UtcNow, exitCode
+                }));
+                File.Move(temporary, path, true);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        }
         try
         {
-            if (!string.Equals(Path.GetFullPath(profile).TrimEnd('\\'), @"D:\Code\RimWorld\AutomationProfiles\Shared", StringComparison.OrdinalIgnoreCase)
-                || token.Length != 48 || !token.StartsWith("rimworld-shared-", StringComparison.Ordinal)
-                || !Guid.TryParseExact(token.Substring(16), "N", out _))
-                throw new InvalidOperationException("The host requires the canonical isolated profile and a fresh session token.");
+            if (!RunIdentity.Matches(profile, token)
+                || !string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(Path.GetFullPath(log), Path.Combine(profile, "Player.log"), StringComparison.OrdinalIgnoreCase))
+                throw new InvalidOperationException("The host requires a managed run and its matching session token/executable/log.");
+            for (DirectoryInfo? parent = new DirectoryInfo(profile); parent != null; parent = parent.Parent)
+                if ((parent.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("Run ancestors cannot be links.");
+            if (!File.Exists(Path.Combine(profile, "run.json")) || File.Exists(Path.Combine(profile, "removing.json")))
+                throw new InvalidOperationException("Run is not prepared or is being removed.");
+            // Discovery briefly probes the lease. Retry sharing violations so
+            // an observation racing startup cannot abort a valid run.
+            DateTime lockDeadline = DateTime.UtcNow.AddSeconds(2);
+            while (lease == null)
+            {
+                try { lease = new FileStream(Path.Combine(profile, "run.lock"), FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None); }
+                catch (IOException error) when ((error.HResult & 0xffff) is 32 or 33 && DateTime.UtcNow < lockDeadline)
+                { Thread.Sleep(10); }
+            }
+            // Single-use runs prevent old commands from targeting a replacement
+            // process with reused profile/token metadata after a restart.
+            using (var once = new FileStream(Path.Combine(profile, "started.json"), FileMode.CreateNew, FileAccess.Write, FileShare.Read))
+                JsonSerializer.Serialize(once, new { token, startedUtc });
+            ownsRun = true;
+            Publish("starting");
             // The test process receives its own Win32 desktop. Never call
             // SwitchDesktop or attach input queues to the user's desktop.
             string name = "RimWorld-" + token;
@@ -78,12 +117,19 @@ internal static class Program
             if (!AssignProcessToJobObject(job, process.Process)) throw new Win32Exception();
             if (ResumeThread(process.Thread) == uint.MaxValue) throw new Win32Exception();
             CloseHandle(process.Thread); process.Thread = IntPtr.Zero;
-            WaitForSingleObject(process.Process, uint.MaxValue);
+            do { Publish("running"); } while (WaitForSingleObject(process.Process, 5000) == 258);
+            if (!GetExitCodeProcess(process.Process, out uint exitCode)) throw new Win32Exception();
+            Publish(exitCode == 0 ? "stopped" : "failed", exitCode);
         }
         catch (Exception error)
         {
             if (process.Process != IntPtr.Zero) TerminateProcess(process.Process, 1);
-            File.WriteAllText(log + ".host-error.txt", error.ToString());
+            // A rejected second host must never overwrite the live run's status.
+            if (ownsRun)
+            {
+                File.WriteAllText(log + ".host-error.txt", error.ToString());
+                Publish("failed");
+            }
         }
         finally
         {
@@ -91,6 +137,7 @@ internal static class Program
             if (process.Process != IntPtr.Zero) CloseHandle(process.Process);
             if (job != IntPtr.Zero) CloseHandle(job);
             if (desktop != IntPtr.Zero) CloseDesktop(desktop);
+            lease?.Dispose();
         }
     }
     private static string Quote(string value)

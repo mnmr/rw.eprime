@@ -1,6 +1,6 @@
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$File)
-. (Join-Path $PSScriptRoot 'automation-common.ps1')
+param([Parameter(Mandatory)][string]$File, [string]$RunId = $env:RIMWORLD_AUTOMATION_RUN_ID)
+. (Join-Path $PSScriptRoot 'automation-common.ps1') -RunId $RunId
 # Coordinates are physical pixels within the 1920x1080 game frame. Commands
 # affect only the isolated game. No foreground session or desktop input exists.
 if (-not (Test-Path -LiteralPath $File -PathType Leaf)) { throw "Action file not found: $File" }

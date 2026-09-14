@@ -29,6 +29,9 @@ public sealed class Reply
     [DataMember] public int width;
     [DataMember] public int height;
     [DataMember] public float uiScale;
+    [DataMember] public float audioVolume;
+    [DataMember] public string runtimeAssembly = "";
+    [DataMember] public string runtimeModRoot = "";
     [DataMember] public int x;
     [DataMember] public int y;
     [DataMember] public string png = "";

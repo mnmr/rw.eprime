@@ -19,7 +19,9 @@
 /AutomationProfiles/Shared/ArchitectIcons/
 /AutomationProfiles/Shared/profile-state.json
 /AutomationProfiles/Shared/Player.log*
+/AutomationProfiles/Shared/Runs/
 /Shared/Automation/mod/1.6/Assemblies/
+/Shared/Automation/temp/
 /AutomationProfiles/Shared/Config/Knowledge.xml
 /AutomationProfiles/Shared/Config/LastPlayedVersion.txt
 /AutomationProfileArchive/
