@@ -16,7 +16,16 @@ namespace WorkRoles.UI
         /// needs no confirmation and issues the command directly.
         internal System.Action? showAutoOptimizeEnablePreview;
 
-        public void Reset() => state.Reset();
+        /// Fixed flow height below (headers, rows and gaps); the tab scrolls
+        /// when a screen-sized minimum window is shorter than that.
+        private const float ContentHeight = 436f;
+        private Vector2 scroll;
+
+        public void Reset()
+        {
+            scroll = Vector2.zero;
+            state.Reset();
+        }
 
         internal void ReleaseWindowData() => Reset();
 
@@ -28,9 +37,25 @@ namespace WorkRoles.UI
             if (store == null) return;
             OptionsRenderSnapshot snapshot = state.Snapshot(store);
 
-            float flowX = rect.x + 16f;
-            float flowW = Mathf.Min(rect.width - 32f, 640f);
-            float y = rect.y + 12f;
+            float viewW = rect.width - 16f;
+            Widgets.BeginScrollView(rect, ref scroll,
+                new Rect(0f, 0f, viewW, ContentHeight));
+            try
+            {
+                DrawFlow(store, snapshot, viewW);
+            }
+            finally
+            {
+                Widgets.EndScrollView();
+            }
+        }
+
+        private void DrawFlow(RoleStore store, OptionsRenderSnapshot snapshot,
+            float viewW)
+        {
+            const float flowX = 16f;
+            float flowW = Mathf.Min(viewW - 32f, 640f);
+            float y = 12f;
             var compatHeader = new Rect(flowX, y, flowW, 28f);
             y += 32f;
             var numericRect = new Rect(flowX, y, flowW, 28f);

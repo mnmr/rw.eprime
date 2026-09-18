@@ -44,7 +44,13 @@ namespace WorkRoles.UI
         }
 
         private Vector2 paletteScroll;
-        private Pawn? selectedPawn;
+        // Explorer-style row selection (view-local, never synced). The stats
+        // panel, palette verdicts, copy/paste and Fix My Colony follow the
+        // single selection only; palette Shift/Ctrl+Shift/Alt-click assign to
+        // every selected colonist.
+        private readonly ListSelection<Pawn> selection = new ListSelection<Pawn>();
+        private readonly List<Pawn> selectionScratch = new List<Pawn>();
+        private Pawn? selectedPawn => selection.Single;
 
         // Our own table renderer: a fixed header row above a scroll view of
         // group sections and per-pawn rows (chip strips make row heights vary).
@@ -102,6 +108,13 @@ namespace WorkRoles.UI
         private bool focusSearch;
 
         private const float PaletteMaxHeight = 260f;   // palette scrolls beyond this
+        /// One cluster line: the least the palette keeps when the window is
+        /// too short for everything.
+        private static float PaletteMinHeight =>
+            MinimumClusterLabelH + 2f + RoleChipUI.Height;
+        /// Header plus three rows: what the table keeps before the palette
+        /// starts giving up height.
+        private static float TableMinHeight => TableHeaderH + 3f * RowHeight;
         /// The first palette row is a caption whose line box carries roughly
         /// this much top leading before the first ink pixel. The panel's top
         /// inset is reduced by it so the visual gap to the caption matches the
@@ -128,10 +141,10 @@ namespace WorkRoles.UI
         /// keeps a tighter 6px so the caption hugs the panel edge.
         private const float PalettePanelPadding = 8f;
         private const float PalettePanelTopPadding = 6f;
-        /// Design width: fixed chrome (tab strip + FMC button, filter row, editor
-        /// swatch grid) fits at this size, so it doubles as the window's min width.
-        internal const float DefaultWidth = 1010f;
-        private const float DefaultHeight = 684f;
+        /// Fallback sizes without a store or map: the window's design floor
+        /// (vanilla's 1024x768 minimum screen, less the bottom bar).
+        internal const float DefaultWidth = MainTabWindow_WorkRoles.DesignScreenWidth;
+        private const float DefaultHeight = MainTabWindow_WorkRoles.DesignScreenHeight - 35f;
 
         private const float PortraitDisplaySize = 96f;
         // Locked-height stats panel (see TODO review note): the smaller frame
@@ -163,7 +176,7 @@ namespace WorkRoles.UI
         {
             paletteScroll = Vector2.zero;
             tableScroll = Vector2.zero;
-            selectedPawn = null;
+            selection.Clear();
             // Opening adopts the player's in-game pawn selection (when listed)
             // and scrolls the selection into view centered.
             pendingSelectFromGame = true;
@@ -291,7 +304,7 @@ namespace WorkRoles.UI
             activityState.Release();
             selectedPanelState.Release();
 
-            selectedPawn = null;
+            selection.Clear();
             recommendationState.ReleaseSnapshots();
             InvalidateRoleVerdicts();
 
@@ -529,23 +542,40 @@ namespace WorkRoles.UI
                 for (int i = 0; i < gameSelection.Count; i++)
                     if (ContainsPawn(pawns, gameSelection[i]))
                     {
-                        selectedPawn = gameSelection[i];
+                        selection.Click(gameSelection[i]);
                         break;
                     }
             }
-            if (selectedPawn == null
-                || !ContainsPawn(pawns, selectedPawn))
-                selectedPawn = pawns.Count > 0 ? pawns[0] : null;
+            // Departed pawns drop out; the rest of a multi-selection survives.
+            selection.Retain(pawns);
+            if (selection.Count == 0 && pawns.Count > 0)
+                selection.Click(pawns[0]);
 
-            float statsPanelH = StatsPanelHeight(selectedPawn);
-            float tableBottom = rect.yMax - statsPanelH - StatsPanelMargin;
-            float paletteH = PaletteHeight(store,
-                rect.width - PalettePanelPadding * 2f - 16f);
-            float palettePanelH = paletteH + PalettePanelTopPadding
-                + PalettePanelPadding - PaletteCaptionInkAllowance;
+            // A multi-selection has no stats panel: the table takes its space.
+            bool multiSelected = selection.Count > 1;
+            float statsPanelH = multiSelected ? 0f : StatsPanelHeight(selectedPawn);
+            float tableBottom = multiSelected
+                ? rect.yMax
+                : rect.yMax - statsPanelH - StatsPanelMargin;
             FilterControlMetrics filterMetrics = FilterMetrics();
+            // Vertical budget: the filter row and stats panel are fixed, the
+            // palette yields first (down to one scrolling line) and the table
+            // takes the rest. A window shorter than all of that (screen-sized
+            // minimum at high UI scales) ends with a header-only table rather
+            // than a negative viewport.
+            const float PalettePanelChrome = PalettePanelTopPadding
+                + PalettePanelPadding - PaletteCaptionInkAllowance;
+            float fixedH = 8f + filterMetrics.RowHeight + 4f
+                + (rect.yMax - tableBottom);
+            float paletteRoom = rect.height - fixedH - TableMinHeight
+                - PalettePanelChrome;
+            float paletteH = Mathf.Min(PaletteHeight(store,
+                    rect.width - PalettePanelPadding * 2f - 16f),
+                Mathf.Max(PaletteMinHeight, paletteRoom));
+            float palettePanelH = paletteH + PalettePanelChrome;
             float filterTop = rect.y + palettePanelH + 8f;
             float tableTop = filterTop + filterMetrics.RowHeight + 4f;
+            if (tableBottom < tableTop) tableBottom = tableTop;
 
             DrawPalettePanel(new Rect(rect.x, rect.y, rect.width,
                 palettePanelH), store);
@@ -554,7 +584,11 @@ namespace WorkRoles.UI
                 filterMetrics.RowHeight), store, filterMetrics);
             DrawPawnTable(new Rect(rect.x, tableTop, rect.width,
                 tableBottom - tableTop), store);
-            DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin, rect.width, statsPanelH), store);
+            if (!multiSelected)
+                DrawStatsPanel(new Rect(rect.x, tableBottom + StatsPanelMargin,
+                    rect.width, Mathf.Clamp(
+                        rect.yMax - tableBottom - StatsPanelMargin,
+                        0f, statsPanelH)), store);
 
             RoleChipUI.DrawDragGhost();
             RoleDrag.ResolveMouseUp();
@@ -1252,9 +1286,11 @@ namespace WorkRoles.UI
         private PaletteTipSnapshot? paletteLayoutTips;
         private PaletteLayoutSnapshot? paletteSnapshot;
 
-        /// The verdict slot is reserved only while a colonist is selected, so
-        /// an empty scope keeps chip labels flush like the toggle-off state.
-        private bool PaletteVerdictSlots => PaletteVerdicts && selectedPawn != null;
+        /// The verdict slot is reserved only while colonists are selected, so
+        /// an empty scope keeps chip labels flush like the toggle-off state. A
+        /// multi-selection keeps the slot (no palette reflow) but shows no
+        /// verdicts, since they belong to one colonist.
+        private bool PaletteVerdictSlots => PaletteVerdicts && selection.Count > 0;
 
         private PaletteLayoutSnapshot PaletteLayout(RoleStore store,
             float rowWidth)
@@ -1317,7 +1353,8 @@ namespace WorkRoles.UI
         private PaletteVerdictSnapshot? EnsurePaletteVerdicts(
             PaletteLayoutSnapshot layout)
         {
-            if (!PaletteVerdictSlots)
+            Pawn? verdictPawn = selectedPawn;
+            if (!PaletteVerdictSlots || verdictPawn == null)
             {
                 paletteVerdictSnapshot = null;
                 paletteVerdictPawn = null;
@@ -1326,14 +1363,14 @@ namespace WorkRoles.UI
             }
             ScopeCacheStamp stamp = PawnListStamp;
             if (paletteVerdictLayoutRevision == paletteLayoutRevision
-                && paletteVerdictPawn == selectedPawn
+                && paletteVerdictPawn == verdictPawn
                 && paletteVerdictScopeStamp == stamp
                 && paletteVerdictSnapshot != null
                 && paletteVerdictSnapshot.Count == layout.ChipCount)
                 return paletteVerdictSnapshot;
             var verdictList = new List<RoleChipVerdict>(layout.ChipCount);
             Dictionary<int, (RoleChipVerdict Badge, SignalBucket Bucket)>? verdicts =
-                VerdictsFor(selectedPawn!); // PaletteVerdictSlots implies a selection
+                VerdictsFor(verdictPawn);
             for (int i = 0; i < layout.ChipCount; i++)
             {
                 PaletteChipSnapshot chip = layout.ChipAt(i);
@@ -1345,7 +1382,7 @@ namespace WorkRoles.UI
                 || !paletteVerdictSnapshot.ContentEquals(rebuilt))
                 paletteVerdictSnapshot = rebuilt;
             paletteVerdictLayoutRevision = paletteLayoutRevision;
-            paletteVerdictPawn = selectedPawn;
+            paletteVerdictPawn = verdictPawn;
             paletteVerdictScopeStamp = stamp;
             return paletteVerdictSnapshot;
         }
@@ -1426,28 +1463,20 @@ namespace WorkRoles.UI
                     && chipRect.Contains(pressEvent.mousePosition))
                 {
                     int capturedId = role.Chip.RoleId;
-                    // Shift-click appends the role to the selected colonist; plain
-                    // click keeps toggling the role globally.
+                    // Modified clicks assign the role to the selected colonists
+                    // (Shift: last, Ctrl+Shift: after Basics, Alt: where the
+                    // recommendations would put it); a plain click keeps
+                    // toggling the role globally.
                     onClick = () =>
                     {
-                        if (Event.current != null && Event.current.shift)
-                        {
-                            // TryGetValue, not SetFor: pawnSets is synced world
-                            // state — a read-only check must not create entries
-                            // locally outside the synced command.
-                            var target = selectedPawn;
-                            var checkStore = RoleStore.Current;
-                            if (target != null && checkStore != null)
-                            {
-                                checkStore.pawnSets.TryGetValue(target, out var targetSet);
-                                if (targetSet == null || !targetSet.assignments.Any(a => a.roleId == capturedId))
-                                    RoleCommands.AssignRole(target, capturedId);
-                            }
-                        }
+                        Event click = Event.current;
+                        if (click != null && click.alt)
+                            AssignToSelection(capturedId, PalettePlacement.Recommended);
+                        else if (click != null && click.shift)
+                            AssignToSelection(capturedId, click.control
+                                ? PalettePlacement.AfterBasics : PalettePlacement.Last);
                         else
-                        {
                             RoleCommands.ToggleRoleGlobal(capturedId);
-                        }
                     };
                 }
                 var click = RoleChipUI.Draw(chipRect, role.Chip,
@@ -2110,6 +2139,8 @@ namespace WorkRoles.UI
                 case RoleTipContext.Palette:
                     actions.Action("WR_ActClick".Translate(), "WR_ActPaletteClick".Translate())
                         .Action("WR_ActShiftClick".Translate(), "WR_ActPaletteShiftClick".Translate())
+                        .Action("WR_ActCtrlShiftClick".Translate(), "WR_ActPaletteCtrlShiftClick".Translate())
+                        .Action("WR_ActAltClick".Translate(), "WR_ActPaletteAltClick".Translate())
                         .Action("WR_ActDrag".Translate(), "WR_ActPaletteDrag".Translate());
                     break;
                 case RoleTipContext.TreeRow:
@@ -2307,6 +2338,8 @@ namespace WorkRoles.UI
             DrawTableHeader(new Rect(rect.x, rect.y,
                 tableGeometry.HeaderWidth, TableHeaderH), store,
                 tableGeometry);
+            // No room below the header: nothing to scroll or lay out.
+            if (outRect.height <= 0f) return;
 
             float totalH = tableRowLayout?.ContentExtent ?? 0f;
             Widgets.BeginScrollView(outRect, ref tableScroll,
@@ -2696,7 +2729,7 @@ namespace WorkRoles.UI
                 // Snapped and one device pixel taller than the row so both
                 // hairline separators sit on highlighted background (the
                 // unsnapped quad missed the top one by rasterization phase).
-                if (pawn == selectedPawn)
+                if (selection.Contains(pawn))
                     Widgets.DrawHighlightSelected(
                         PixelBox.RowHighlightSpan(rect));
                 else if (Mouse.IsOver(rect))
@@ -2758,6 +2791,13 @@ namespace WorkRoles.UI
             if (WR_KeyBindingDefOf.WR_PrevPage.KeyDownEvent) return PageMove(-1);
             if (WR_KeyBindingDefOf.WR_NextPage.KeyDownEvent) return PageMove(+1);
 
+            // Ctrl+A selects every listed colonist, collapsed groups included.
+            if (ev.control && ev.keyCode == KeyCode.A)
+            {
+                selection.SelectAll(FlattenSections(AllSections()));
+                return true;
+            }
+
             if (ev.control && ev.keyCode == KeyCode.C && selectedPawn != null)
             {
                 store.pawnSets.TryGetValue(selectedPawn, out var toCopy);
@@ -2798,6 +2838,84 @@ namespace WorkRoles.UI
             return result;
         }
 
+        /// Every section, collapsed or not (Ctrl+A spans the whole table).
+        private List<ColonistSectionSnapshot> AllSections()
+        {
+            ColonistSectionsSnapshot sections =
+                rosterState.Sections(RoleStore.Current!); // callers verified the store
+            var result = new List<ColonistSectionSnapshot>(sections.Count);
+            for (int i = 0; i < sections.Count; i++)
+                result.Add(sections.SectionAt(i));
+            return result;
+        }
+
+        /// A click on a row's name or skill cell, with Explorer modifiers:
+        /// Shift ranges from the anchor, Ctrl toggles, Ctrl+Shift adds a range.
+        private void RowClick(Pawn pawn)
+        {
+            Event click = Event.current;
+            if (click.shift)
+                selection.Range(pawn, FlattenSections(NavSections()),
+                    additive: click.control);
+            else if (click.control)
+                selection.Toggle(pawn);
+            else
+                selection.Click(pawn);
+        }
+
+        private enum PalettePlacement { Last, AfterBasics, Recommended }
+
+        /// Assigns a palette role to every selected colonist (skipping those
+        /// who already hold it), one synced command per colonist in list
+        /// order. After Basics uses the recommendation-order positions (after
+        /// Basics, or the last role ranked at or before it); Recommended asks
+        /// the keyed engine plan where the role would rise for that colonist.
+        private void AssignToSelection(int roleId, PalettePlacement placement)
+        {
+            RoleStore? store = RoleStore.Current;
+            if (store == null || selection.Count == 0) return;
+            Dictionary<int, long>? positions = null;
+            int leadRoleId = -1;
+            long leadPosition = long.MinValue;
+            if (placement == PalettePlacement.AfterBasics)
+            {
+                positions = Ordering.BasePositions(RecsAdapter.RoleViewsOf(store),
+                    RecsAdapter.ResolvedRecommendationOrder(store));
+                Role? lead = store.RoleByTemplate("WS_Basics")
+                    ?? store.RoleByTemplate("WS_Core");
+                if (lead != null && positions.TryGetValue(lead.id, out long at))
+                {
+                    leadRoleId = lead.id;
+                    leadPosition = at;
+                }
+            }
+            selectionScratch.Clear();
+            selection.CopyOrdered(ListedPawns(), selectionScratch);
+            var existing = new List<int>();
+            for (int i = 0; i < selectionScratch.Count; i++)
+            {
+                Pawn pawn = selectionScratch[i];
+                // TryGetValue, not SetFor: pawnSets is synced world state; a
+                // read-only check must not create entries outside the command.
+                store.pawnSets.TryGetValue(pawn, out PawnRoleSet? set);
+                existing.Clear();
+                if (set != null)
+                    for (int a = 0; a < set.assignments.Count; a++)
+                        existing.Add(set.assignments[a].roleId);
+                if (existing.Contains(roleId)) continue;
+                int index = placement switch
+                {
+                    PalettePlacement.AfterBasics => RolePlacement.AfterLeadingIndex(
+                        existing, leadRoleId, positions!, leadPosition),
+                    PalettePlacement.Recommended => recommendationState.PlacementIndex(
+                        pawn, existing, roleId, PawnListStamp, ExternalSnapshotFor),
+                    _ => -1,
+                };
+                RoleCommands.AssignRole(pawn, roleId, index);
+            }
+            selectionScratch.Clear();
+        }
+
         private static List<Pawn> FlattenSections(
             List<ColonistSectionSnapshot> sections)
         {
@@ -2816,7 +2934,8 @@ namespace WorkRoles.UI
         {
             List<Pawn> order = FlattenSections(NavSections());
             if (order.Count == 0) return true;
-            int idx = selectedPawn != null ? order.IndexOf(selectedPawn) : -1;
+            Pawn? focus = selection.Focus;
+            int idx = focus != null ? order.IndexOf(focus) : -1;
             int target = idx < 0
                 ? (delta > 0 ? 0 : order.Count - 1)
                 : Mathf.Clamp(idx + delta, 0, order.Count - 1);
@@ -2835,7 +2954,7 @@ namespace WorkRoles.UI
             if (!ignoreGroups && rosterState.Sections(
                     RoleStore.Current!).Grouped) // HandleKey verified the store
                 for (int i = 0; i < sections.Count; i++)
-                    if (sections[i].Contains(selectedPawn!)) // null selection never matches
+                    if (sections[i].Contains(selection.Focus!)) // null focus never matches
                     {
                         pool = sections[i].CopyPawns();
                         break;
@@ -2854,15 +2973,16 @@ namespace WorkRoles.UI
             if (rosterState.Sections(RoleStore.Current!).Grouped // HandleKey verified the store
                 && sections.Count > 1)
             {
-                int gi = sections.FindIndex(s => s.Contains(selectedPawn!)); // null selection never matches
+                int gi = sections.FindIndex(s => s.Contains(selection.Focus!)); // null focus never matches
                 if (gi < 0) gi = dir > 0 ? -1 : sections.Count;
                 gi = Mathf.Clamp(gi + dir, 0, sections.Count - 1);
                 Select(sections[gi].PawnAt(0));
                 return true;
             }
-            int idx = selectedPawn == null
+            Pawn? focus = selection.Focus;
+            int idx = focus == null
                 ? 0
-                : Mathf.Max(0, order.IndexOf(selectedPawn));
+                : Mathf.Max(0, order.IndexOf(focus));
             float view = Mathf.Max(100f, lastTableViewH);
             int target = idx;
             float used = 0f;
@@ -2882,9 +3002,15 @@ namespace WorkRoles.UI
                 metrics.BlockHeight, StripHeightFor(pawn));
         }
 
+        /// Keyboard move of the cursor: Shift extends the range from the
+        /// anchor, otherwise the cursor row becomes the single selection.
         private void Select(Pawn pawn)
         {
-            selectedPawn = pawn;
+            if (Event.current.shift)
+                selection.Range(pawn, FlattenSections(NavSections()),
+                    additive: false);
+            else
+                selection.Click(pawn);
             EnsureSelectedVisible();
         }
 
@@ -2905,10 +3031,11 @@ namespace WorkRoles.UI
         /// (collapsed group) or the layout is not built yet.
         private void CenterSelectedRow()
         {
-            if (tableRowLayout == null || selectedPawn == null) return;
+            Pawn? focus = selection.Focus;
+            if (tableRowLayout == null || focus == null) return;
             for (int i = 0; i < tableLayoutRows.Count; i++)
             {
-                if (tableLayoutRows[i].Pawn != selectedPawn) continue;
+                if (tableLayoutRows[i].Pawn != focus) continue;
                 float top = tableRowLayout.OffsetOf(i);
                 float height = tableRowLayout.ExtentOf(i);
                 tableScroll.y = Mathf.Max(0f,
@@ -2924,6 +3051,7 @@ namespace WorkRoles.UI
             ColonistSectionsSnapshot sections =
                 rosterState.Sections(RoleStore.Current!); // HandleKey verified the store
             bool grouped = sections.Grouped;
+            Pawn? focus = selection.Focus;
             float y = 0f, top = -1f, bottom = -1f;
             for (int sectionIndex = 0; sectionIndex < sections.Count;
                     sectionIndex++)
@@ -2940,7 +3068,7 @@ namespace WorkRoles.UI
                 {
                     Pawn pawn = section.PawnAt(pawnIndex);
                     float rowH = RowHeightOf(pawn);
-                    if (pawn == selectedPawn) { top = y; bottom = y + rowH; }
+                    if (pawn == focus) { top = y; bottom = y + rowH; }
                     y += rowH;
                 }
             }
@@ -2969,7 +3097,13 @@ namespace WorkRoles.UI
             var portraitRect = new Rect(rect.x,
                 rect.y + (rect.height - PortraitSize) / 2f,
                 PortraitSize, PortraitSize);
-            GUI.DrawTexture(portraitRect, row.Portrait);
+            // Vanilla's per-frame portrait API (as the colonist bar uses it):
+            // a keyed lookup that re-renders a dirty portrait in place and
+            // keeps the texture out of the one-second expiry pool. A stored
+            // texture reference would go stale or be recycled for another pawn.
+            if (Event.current.type == EventType.Repaint)
+                GUI.DrawTexture(portraitRect, PortraitsCache.Get(row.Pawn,
+                    new Vector2(PortraitSize, PortraitSize), Rot4.South));
 
             // The name and caption line boxes stack as one block, centered on
             // whole pixels: each box keeps its full line height (a shorter box
@@ -3034,7 +3168,7 @@ namespace WorkRoles.UI
             if (Mouse.IsOver(selectRect))
                 PawnTip(row.Pawn).Region(selectRect);
             if (Widgets.ButtonInvisible(selectRect))
-                selectedPawn = row.Pawn;
+                RowClick(row.Pawn);
 
             var copyRect = new Rect(nameRect.xMax + 2f,
                 rect.y + (rect.height - IconButton) / 2f,
@@ -3420,7 +3554,7 @@ namespace WorkRoles.UI
             private readonly ColonistSkillCellSnapshot[] skills;
 
             internal ColonistRowSnapshot(Pawn pawn,
-                Texture portrait, string label, Color nameColor,
+                string label, Color nameColor,
                 bool isColonist, bool downed, ChipDisplay chipDisplay,
                 string copiedToast, int activityRevision, int activeRoleId,
                 ColonistChipSequenceSnapshot sequence,
@@ -3431,7 +3565,6 @@ namespace WorkRoles.UI
                 LineBoxes = lineBoxes;
                 this.sequence = sequence;
                 Pawn = pawn;
-                Portrait = portrait;
                 Label = label;
                 NameColor = nameColor;
                 IsColonist = isColonist;
@@ -3447,7 +3580,6 @@ namespace WorkRoles.UI
             }
 
             internal Pawn Pawn { get; }
-            internal Texture Portrait { get; }
             internal string Label { get; }
             internal Color NameColor { get; }
             internal bool IsColonist { get; }
@@ -3568,8 +3700,8 @@ namespace WorkRoles.UI
         // revision. Value:
         // immutable ColonistRowSnapshot projections, including the resolved
         // chip display mode; producer-owned assignment/chip/skill buffers are
-        // hidden behind indexed access, while game-owned portraits are stable
-        // references never mutated here.
+        // hidden behind indexed access. Portraits are not snapshotted: the
+        // draw pass fetches them through vanilla's per-frame PortraitsCache.
         // Dependencies: role/assignment UiVersion, pawn scope, external pawn
         // facts, activity and definition revisions, display mode, width, configured skill
         // columns, recommendation tuning, the skill-caption toggle, font
@@ -3637,8 +3769,6 @@ namespace WorkRoles.UI
             string label = pawn.LabelShortCap;
             ColonistStatsSnapshot stats = statsState.Snapshot(pawn);
             var entry = new ColonistRowSnapshot(pawn,
-                PortraitsCache.Get(pawn,
-                    new Vector2(PortraitSize, PortraitSize), Rot4.South),
                 label,
                 pawn.IsSlave ? PawnNameColorUtility.PawnNameColorOf(pawn) : Color.white,
                 pawn.IsColonist,
@@ -3864,7 +3994,7 @@ namespace WorkRoles.UI
                 Text.Anchor = TextAnchor.MiddleLeft;
                 // Skill cells select like the name cell: the whole row should
                 // act as one click target outside interactive chips/buttons.
-                if (Widgets.ButtonInvisible(cell)) selectedPawn = row.Pawn;
+                if (Widgets.ButtonInvisible(cell)) RowClick(row.Pawn);
                 if (skill.Disabled)
                 {
                     GUI.color = WrStyle.DisabledText;
@@ -4178,11 +4308,15 @@ namespace WorkRoles.UI
             if (Widgets.ButtonInvisible(portraitFrameRect))
                 CenterSelectedRow();
             // Portrait centered in the taller frame, nudged 8px below center.
-            GUI.DrawTexture(
-                new Rect(rect.x,
-                    portraitFrameRect.y + (PortraitFrameH - portraitBoxSize) / 2f + 8f,
-                    portraitBoxSize, portraitBoxSize),
-                chrome.Portrait);
+            // Fetched per repaint from vanilla's portrait cache (see
+            // DrawColonistCell for why it is never stored in a snapshot).
+            if (Event.current.type == EventType.Repaint)
+                GUI.DrawTexture(
+                    new Rect(rect.x,
+                        portraitFrameRect.y + (PortraitFrameH - portraitBoxSize) / 2f + 8f,
+                        portraitBoxSize, portraitBoxSize),
+                    PortraitsCache.Get(selected.Pawn,
+                        new Vector2(portraitBoxSize, portraitBoxSize), Rot4.South));
 
             // Name tag centered on the frame's top border, drawn after the
             // portrait so it overlays both the border and any portrait bleed.

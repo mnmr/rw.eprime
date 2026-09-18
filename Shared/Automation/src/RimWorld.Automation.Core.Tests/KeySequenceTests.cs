@@ -23,6 +23,15 @@ public class KeySequenceTests
     }
 
     [Test]
+    public async Task ClickModifiersParseCombinationsAndRejectUnknownNames()
+    {
+        await Assert.That(KeySequence.ParseModifiers("")).IsEqualTo(KeyModifiers.None);
+        await Assert.That(KeySequence.ParseModifiers("ctrl+shift")).IsEqualTo(KeyModifiers.Control | KeyModifiers.Shift);
+        await Assert.That(KeySequence.ParseModifiers("Alt")).IsEqualTo(KeyModifiers.Alt);
+        await Assert.That(() => KeySequence.ParseModifiers("meta")).Throws<FormatException>();
+    }
+
+    [Test]
     public async Task InvalidOrUnboundedSequencesAreRejectedBeforeAnyInputIsReturned()
     {
         foreach (var text in new[] { "abc{UNKNOWN}", "abc{LEFT 1000000}", "^(abc", "abc^", "abc)", "abc{ENTER" })

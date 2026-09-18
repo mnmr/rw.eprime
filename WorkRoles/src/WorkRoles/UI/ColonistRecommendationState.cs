@@ -28,6 +28,10 @@ namespace WorkRoles.UI
         // preserves list identity. Teardown: Reset/ReleaseSnapshots drops
         // plans, suitability, and all previews.
         private List<PawnFixPlan>? plans;
+        // The engine plan behind `plans` and its pawn order, kept for
+        // PlacementIndex; both share the plan key and teardown.
+        private RecommendationPlan? recommendations;
+        private List<Pawn>? planPawns;
         private readonly Dictionary<Pawn, Dictionary<int, SignalBucket>> planSuitability =
             new Dictionary<Pawn, Dictionary<int, SignalBucket>>();
         private RoleStore? planOwner;
@@ -62,6 +66,8 @@ namespace WorkRoles.UI
         internal void Reset()
         {
             plans = null;
+            recommendations = null;
+            planPawns = null;
             planSuitability.Clear();
             planOwner = null;
             planStamp = ScopeCacheStamp.Invalid;
@@ -73,6 +79,8 @@ namespace WorkRoles.UI
         internal void InvalidatePlan()
         {
             plans = null;
+            recommendations = null;
+            planPawns = null;
             planSuitability.Clear();
             ClearPreview();
         }
@@ -123,6 +131,19 @@ namespace WorkRoles.UI
                 plans = BuildColonyFixPlan(store, map, externalSnapshot);
             }
             return plans;
+        }
+
+        /// Where the engine would let a hand-added role rise in the pawn's
+        /// current order (see RecommendationPlan.PlacementIndex); -1 (append)
+        /// when the pawn is not in the keyed plan.
+        internal int PlacementIndex(Pawn pawn, IReadOnlyList<int> existing, int roleId,
+            ScopeCacheStamp stamp, Func<Pawn, PawnExternalSnapshot> externalSnapshot)
+        {
+            Plans(pawn, stamp, externalSnapshot);
+            if (recommendations == null || planPawns == null) return -1;
+            int pawnIndex = planPawns.IndexOf(pawn);
+            return pawnIndex < 0 ? -1
+                : recommendations.PlacementIndex(pawnIndex, existing, roleId);
         }
 
         internal ColonistRecommendationRenderSnapshot RenderSnapshot(
@@ -381,6 +402,8 @@ namespace WorkRoles.UI
         {
             var result = new List<PawnFixPlan>();
             planSuitability.Clear();
+            this.recommendations = null;
+            planPawns = null;
             if (store == null) return result;
             List<Pawn> pawns = MapColonists(map);
             ColonyView colony = RecsAdapter.BuildColonyView(
@@ -389,6 +412,8 @@ namespace WorkRoles.UI
                 colony,
                 store.recommendationTuning
                     ?? RecommendationsTuningOptions.Default);
+            this.recommendations = recommendations;
+            planPawns = pawns;
             // Targets and changed flags come from the shared planner so the
             // preview shows exactly what AutoOptimizer would apply.
             IReadOnlyList<PawnFixTarget> fixTargets =

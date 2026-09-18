@@ -12,9 +12,12 @@ $actions = @(Get-Content -LiteralPath $File | ForEach-Object {
 })
 # Validate the whole action file before dispatch; omitted coordinates must never
 # silently become (0,0), and an invalid delay must not execute its preceding click.
+$modifierPattern = '(shift|ctrl|alt)(\+(shift|ctrl|alt))*'
 foreach ($action in $actions) {
     $valid = switch -Regex ($action) {
         '^(click|rclick|hover) \d+ \d+( \d+)?$' { $true; break }
+        "^(click|rclick) $modifierPattern \d+ \d+( \d+)?$" { $true; break }
+        "^drag $modifierPattern \d+ \d+ \d+ \d+( \d+)?$" { $true; break }
         '^drag \d+ \d+ \d+ \d+( \d+)?$' { $true; break }
         '^scroll \d+ \d+ -?\d+$' { $true; break }
         '^type\s+.+$' { $true; break }
@@ -24,6 +27,10 @@ foreach ($action in $actions) {
     }
     if (-not $valid) { throw "Malformed action: $action" }
     $parts = -split $action
+    # Optional held-modifier word right after the verb: "click shift 100 200".
+    if ($parts[0] -in 'click', 'rclick', 'drag' -and $parts[1] -match "^$modifierPattern$") {
+        $parts = @($parts[0]) + $parts[2..($parts.Count - 1)]
+    }
     if ($parts[0] -notin 'capture', 'type') {
         for ($i = 1; $i -lt $parts.Count; $i++) {
             $number = 0
@@ -44,15 +51,20 @@ foreach ($action in $actions) {
 }
 foreach ($action in $actions) {
     $parts = -split $action
+    $modifiers = ''
+    if ($parts[0] -in 'click', 'rclick', 'drag' -and $parts[1] -match "^$modifierPattern$") {
+        $modifiers = $parts[1]
+        $parts = @($parts[0]) + $parts[2..($parts.Count - 1)]
+    }
     $wait = 0
     switch ($parts[0]) {
         { $_ -in 'click', 'rclick', 'hover' } {
             $command = if ($parts[0] -eq 'hover') { 'hover' } else { 'click' }
-            Invoke-SharedGameCommand @{command=$command; x=[int]$parts[1]; y=[int]$parts[2]; button=[int]($parts[0] -eq 'rclick')} | Out-Null
+            Invoke-SharedGameCommand @{command=$command; x=[int]$parts[1]; y=[int]$parts[2]; button=[int]($parts[0] -eq 'rclick'); modifiers=$modifiers} | Out-Null
             $wait = if ($parts.Count -ge 4) { [int]$parts[3] } elseif ($command -eq 'hover') { 900 } else { 500 }
         }
         'drag' {
-            Invoke-SharedGameCommand @{command='drag'; x=[int]$parts[1]; y=[int]$parts[2]; x2=[int]$parts[3]; y2=[int]$parts[4]} | Out-Null
+            Invoke-SharedGameCommand @{command='drag'; x=[int]$parts[1]; y=[int]$parts[2]; x2=[int]$parts[3]; y2=[int]$parts[4]; modifiers=$modifiers} | Out-Null
             $wait = if ($parts.Count -ge 6) { [int]$parts[5] } else { 500 }
         }
         'scroll' {

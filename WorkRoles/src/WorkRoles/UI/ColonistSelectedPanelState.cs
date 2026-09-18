@@ -27,22 +27,20 @@ namespace WorkRoles.UI
 
     internal sealed class ColonistSelectedChromeSnapshot
     {
-        internal ColonistSelectedChromeSnapshot(Texture portrait, string label,
+        internal ColonistSelectedChromeSnapshot(string label,
             float nameTagWidth, Color nameColor)
         {
-            Portrait = portrait;
             Label = label;
             NameTagWidth = nameTagWidth;
             NameColor = nameColor;
         }
 
-        internal Texture Portrait { get; }
         internal string Label { get; }
         internal float NameTagWidth { get; }
         internal Color NameColor { get; }
 
         internal bool ContentEquals(ColonistSelectedChromeSnapshot other) =>
-            other != null && ReferenceEquals(Portrait, other.Portrait)
+            other != null
             && string.Equals(Label, other.Label, StringComparison.Ordinal)
             && NameTagWidth == other.NameTagWidth
             && NameColor.r == other.NameColor.r
@@ -135,10 +133,11 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: RoleStore and selected Pawn reference
         // identity. Value: one immutable panel snapshot composed from separately
         // invalidated chrome, activity, and trait snapshots; producer-owned trait
-        // buffers never escape, while portrait textures are stable game-owned
-        // assets that this cache never mutates or releases. Dependencies: chrome
-        // and traits use the pawn's ExternalPawnFacts revision (plus language and
-        // portrait dimensions); activity uses ActivityTracker.RevisionOf(pawn),
+        // buffers never escape. The portrait is not part of the snapshot: the
+        // draw pass fetches it from vanilla's per-frame PortraitsCache.
+        // Dependencies: chrome and traits use the pawn's ExternalPawnFacts
+        // revision (plus language and the portrait-width name-tag clamp);
+        // activity uses ActivityTracker.RevisionOf(pawn),
         // UiVersion.Current and definition revision for claiming-role changes,
         // the shared detached role catalog, language, and slot width. Refresh:
         // immediate on the next panel
@@ -279,8 +278,6 @@ namespace WorkRoles.UI
                 Text.Font = previousFont;
             }
             return new ColonistSelectedChromeSnapshot(
-                PortraitsCache.Get(pawn,
-                    new Vector2(portraitSize, portraitSize), Rot4.South),
                 label, nameTagWidth,
                 pawn.IsSlave
                     ? PawnNameColorUtility.PawnNameColorOf(pawn)

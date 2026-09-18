@@ -17,6 +17,8 @@ public sealed class Command
     [DataMember] public int notches;
     [DataMember] public string text = "";
     [DataMember] public bool cursor;
+    // Held modifier keys for click/drag: "shift", "ctrl", "alt" joined by '+'.
+    [DataMember] public string modifiers = "";
 }
 
 [DataContract]

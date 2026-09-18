@@ -11,6 +11,15 @@ commands. Where this file is silent, the root contract governs.
 - `src/WorkRoles` owns game integration, persistence, patches, rendering, and UI.
 - `src/WorkRoles.Core.Tests` owns executable behavioral and regression tests.
 
+## Layout floor
+
+- The design floor is vanilla's minimum screen, 1024x768 logical
+  (`ResolutionUtility.MinResolutionWidth/Height`). Smaller screens are not
+  supported. The main window never shrinks below 1024x733 (the floor less the
+  35px bottom bar), manual or automatic; every tab must render and scroll at
+  that size. Verify layout changes at 1920x1080 and above with a logical
+  1024x768 case (for example 2048x1536 at UI scale 2.0) in a managed run.
+
 ## Canonical refresh boundaries
 
 - Time-driven invalidation must fire on computed game-tick boundaries, never on per-frame or per-tick polling.
@@ -22,7 +31,7 @@ commands. Where this file is silent, the root contract governs.
 |---|---|
 | Compiled job orders per pawn (`CompiledJobOrders`) | `UiVersion.Current`; role, pawn-lifecycle, and location-rule invalidations; the per-save emergency rule toggle (`InvalidateAll`); a member-role edit also invalidates every composite bundling it and that composite's holders (depth-1 reverse scan in `InvalidateRole`); mid-operation evictions defer reconciles to the next game-component tick |
 | Pawn signal snapshot (`PawnSignalSnapshotCache`) | Explicit invalidation via `ExternalPawnFacts`; generation cleared on window open and release; live skill XP intentionally not a dependency |
-| External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded |
+| External pawn facts (`ExternalPawnFacts.Revisions`) | Per-pawn revision on location/lifecycle change, name/trait presentation change, and downed/undowned transition; `InvalidateAll` on language or definition reload; role and assignment mutations deliberately excluded; `PortraitsCache.SetDirty` deliberately excluded (vanilla dirties portraits on every job start, and portraits are drawn through `PortraitsCache.Get` per repaint instead of being snapshotted) |
 | Colonist stats snapshots (`ColonistStatsState`) | `ExternalPawnFacts.Revisions` (`Current`, `FullGeneration`, per-pawn), refreshed at the window's Repaint boundary; presentations stamped by `UiVersion.Current`, RoleStore identity, and `RecommendationTuningRevision` |
 | Roles list display (`RolesListState`) | `UiVersion.Current`, `ColonyScope.LocationRevision`, collapse revision, nested/search/job-filter state, language change |
 | Priority grid column cache (`Dialog_PriorityGrid`) | `LanguageChangeCoordinator.Revision` + `DefinitionReloadCoordinator.Revision` via `RevisionPairGate`; sort state discarded on rebuild; pawn rows fixed at dialog construction |

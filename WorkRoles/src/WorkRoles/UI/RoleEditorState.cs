@@ -321,6 +321,7 @@ namespace WorkRoles.UI
             float jobWidth = (halfWidth - 8f - removeWidth - 8f) * 0.55f;
             IReadOnlyCollection<int> deadEntries = DeadEntryIndexes(role);
             var entryRows = new List<RoleEntryRowSnapshot>(role.entries.Count);
+            var entryList = new List<JobEntry>(role.entries);
             for (int i = 0; i < role.entries.Count; i++)
             {
                 JobEntry entry = role.entries[i];
@@ -343,7 +344,7 @@ namespace WorkRoles.UI
             var entries = new RoleEntriesSnapshot(role.id,
                 "WR_SelectedJobs".Translate().ToString(),
                 "WR_TypeColumn".Translate().ToString(),
-                "WR_JobColumn".Translate().ToString(), entryRows);
+                "WR_JobColumn".Translate().ToString(), entryRows, entryList);
 
             RoleCoveragePresentation coverage = Coverage(store);
             (string typeDefName, string? giverDefName)? target = null;
@@ -395,6 +396,7 @@ namespace WorkRoles.UI
             RoleStore store, bool nested)
         {
             var members = new List<CompositeMemberRow>(role.memberRoleIds.Count);
+            var memberIds = new List<int>(role.memberRoleIds.Count);
             foreach (int memberId in role.memberRoleIds)
             {
                 Role? member = store.RoleById(memberId);
@@ -402,6 +404,7 @@ namespace WorkRoles.UI
                 members.Add(new CompositeMemberRow(member.id, member.label,
                     member.hasCustomColor, member.color, member.blocker,
                     member.enabled));
+                memberIds.Add(member.id);
             }
             var candidates = new List<CompositeCandidateRow>();
             foreach (RoleSection section in RolesListState.BuildSections(store, nested))
@@ -432,7 +435,7 @@ namespace WorkRoles.UI
                 "WR_AvailableRoles".Translate().ToString(),
                 "WR_NoMembersHint".Translate().ToString(),
                 "WR_NoCandidatesHint".Translate().ToString(),
-                members, candidates);
+                members, memberIds, candidates);
         }
 
         private static List<RoleLocationOptionSnapshot> BuildLocationOptions(
@@ -971,7 +974,8 @@ namespace WorkRoles.UI
 
         internal RoleCompositeSnapshot(int roleId, string membersTitle,
             string candidatesTitle, string noMembersHint, string noCandidatesHint,
-            List<CompositeMemberRow> members, List<CompositeCandidateRow> candidates)
+            List<CompositeMemberRow> members, List<int> memberIds,
+            List<CompositeCandidateRow> candidates)
         {
             RoleId = roleId;
             MembersTitle = membersTitle;
@@ -979,8 +983,13 @@ namespace WorkRoles.UI
             NoMembersHint = noMembersHint;
             NoCandidatesHint = noCandidatesHint;
             this.members = members;
+            MemberIds = memberIds;
             this.candidates = candidates;
         }
+
+        /// Member role ids parallel to the member rows; the panel's selection
+        /// is keyed by these and pruned against this list by identity.
+        internal IReadOnlyList<int> MemberIds { get; }
 
         internal int RoleId { get; }
         internal string MembersTitle { get; }
@@ -1233,14 +1242,19 @@ namespace WorkRoles.UI
 
         internal RoleEntriesSnapshot(int roleId, string title,
             string typeColumn, string jobColumn,
-            List<RoleEntryRowSnapshot> rows)
+            List<RoleEntryRowSnapshot> rows, List<JobEntry> entries)
         {
             RoleId = roleId;
             Title = title;
             TypeColumn = typeColumn;
             JobColumn = jobColumn;
             this.rows = rows;
+            Entries = entries;
         }
+
+        /// Entries parallel to the rows; the panel's selection is keyed by
+        /// these and pruned against this list by identity.
+        internal IReadOnlyList<JobEntry> Entries { get; }
 
         internal int RoleId { get; }
         internal string Title { get; }

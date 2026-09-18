@@ -19,6 +19,23 @@ public readonly struct KeyStroke
 // Parsing completes before dispatch so malformed input cannot partially type a command.
 public static class KeySequence
 {
+    /// Modifier keys held during a mouse command: "shift", "ctrl"/"control",
+    /// "alt", joined by '+'; empty means none.
+    public static KeyModifiers ParseModifiers(string? text)
+    {
+        KeyModifiers result = KeyModifiers.None;
+        if (string.IsNullOrWhiteSpace(text)) return result;
+        foreach (string part in text!.Split('+'))
+            result |= part.Trim().ToLowerInvariant() switch
+            {
+                "shift" => KeyModifiers.Shift,
+                "ctrl" or "control" => KeyModifiers.Control,
+                "alt" => KeyModifiers.Alt,
+                _ => throw new FormatException("Unsupported modifier: " + part)
+            };
+        return result;
+    }
+
     public static KeyStroke[] Parse(string text)
     {
         if (text == null || text.Length > 8192) throw new FormatException("Key sequence is missing or too long.");

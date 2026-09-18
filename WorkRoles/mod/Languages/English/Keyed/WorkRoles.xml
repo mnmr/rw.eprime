@@ -269,11 +269,15 @@
   <!-- Action tokens (shared) and per-context descriptions -->
   <WR_ActClick>Click</WR_ActClick>
   <WR_ActShiftClick>Shift-click</WR_ActShiftClick>
+  <WR_ActCtrlShiftClick>Ctrl+Shift-click</WR_ActCtrlShiftClick>
+  <WR_ActAltClick>Alt-click</WR_ActAltClick>
   <WR_ActDrag>Drag</WR_ActDrag>
   <WR_ActRightClick>Right-click</WR_ActRightClick>
   <WR_ActX>X</WR_ActX>
   <WR_ActPaletteClick>Toggle the role globally</WR_ActPaletteClick>
-  <WR_ActPaletteShiftClick>Assign to the selected colonist</WR_ActPaletteShiftClick>
+  <WR_ActPaletteShiftClick>Assign to the selected colonists, last</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Assign to the selected colonists, right after Basics</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteAltClick>Assign to the selected colonists where the recommendation engine ranks it</WR_ActPaletteAltClick>
   <WR_ActPaletteDrag>Assign to a colonist</WR_ActPaletteDrag>
   <WR_ActTreeClick>Select for editing</WR_ActTreeClick>
   <WR_ActTreeDrag>Reorder or move between groups</WR_ActTreeDrag>
@@ -625,6 +629,11 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_AllJobs>All jobs</WR_AllJobs>
   <WR_CoveredByTypeTip>Covered by the work type. Click to give this job its own (reorderable) entry.</WR_CoveredByTypeTip>
   <WR_AddAllJobs>Add all jobs (individually, reorderable)</WR_AddAllJobs>
+  <!-- Multi-selection in the ordered lists; {0} = selected row count -->
+  <WR_SelectedRows>{0} selected</WR_SelectedRows>
+  <WR_MoveSelectedUpTip>Move the selected rows up one step. Click a row to select it, Shift-click to select a range, Ctrl-click to add or remove one row.</WR_MoveSelectedUpTip>
+  <WR_MoveSelectedDownTip>Move the selected rows down one step.</WR_MoveSelectedDownTip>
+  <WR_RemoveSelectedTip>Remove the selected rows.</WR_RemoveSelectedTip>
 
   <!-- Tooltip for a missing def; {0} = def name -->
   <WR_MissingDef>{0} is not present with the current mod list (inactive until its mod returns).</WR_MissingDef>

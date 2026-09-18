@@ -313,6 +313,34 @@ namespace WorkRoles.Core.Recs
             while (changed);
         }
 
+        /// One bubble pass for a single appended role, using the same swap
+        /// rule as OrderByScore, so a hand-added role lands where the engine
+        /// would let it rise without moving anything else.
+        internal int PlacementIndex(
+            EngineContext facts,
+            int pawnIndex,
+            IReadOnlyDictionary<int, long> positions,
+            RecommendationFormulaEngine formulas,
+            IReadOnlyList<int> existing,
+            int roleId)
+        {
+            int at = existing.Count;
+            if (IsOrderingBarrier(facts, pawnIndex, roleId)) return at;
+            int score = OrderingScore(facts, pawnIndex, roleId, formulas);
+            while (at > 0)
+            {
+                int left = existing[at - 1];
+                if (IsOrderingBarrier(facts, pawnIndex, left)
+                    || CompareOrderingRoles(
+                        facts, pawnIndex, roleId, left, score,
+                        OrderingScore(facts, pawnIndex, left, formulas),
+                        positions) >= 0)
+                    break;
+                at--;
+            }
+            return at;
+        }
+
         private bool IsOrderingBarrier(
             EngineContext facts,
             int pawnIndex,
@@ -577,6 +605,12 @@ namespace WorkRoles.Core.Recs
         private readonly Dictionary<int, RoleRecommendationExplanation>[]
             explanationsByPawn;
         private readonly RecommendationTargetAssignment[] targetAssignments;
+        // Retained for PlacementIndex: the run's facts, formulas, positions and
+        // per-pawn drafts, all immutable once the plan is published.
+        private readonly EngineContext facts;
+        private readonly RecommendationFormulaEngine formulas;
+        private readonly IReadOnlyDictionary<int, long> positions;
+        private readonly PawnDraft[] drafts;
 
         private RecommendationPlan(
             int[][] rolesByPawn,
@@ -584,14 +618,32 @@ namespace WorkRoles.Core.Recs
             int[] activatedPathCountsByPawn,
             Dictionary<int, RoleRecommendationExplanation>[]
                 explanationsByPawn,
-            RecommendationTargetAssignment[] targetAssignments)
+            RecommendationTargetAssignment[] targetAssignments,
+            EngineContext facts,
+            RecommendationFormulaEngine formulas,
+            IReadOnlyDictionary<int, long> positions,
+            PawnDraft[] drafts)
         {
             this.rolesByPawn = rolesByPawn;
             this.pathsByPawn = pathsByPawn;
             this.activatedPathCountsByPawn = activatedPathCountsByPawn;
             this.explanationsByPawn = explanationsByPawn;
             this.targetAssignments = targetAssignments;
+            this.facts = facts;
+            this.formulas = formulas;
+            this.positions = positions;
+            this.drafts = drafts;
         }
+
+        /// Where a role the player adds by hand lands in the pawn's current
+        /// assignment order: appended, then moved ahead of every role it
+        /// outranks under the ordering score and tie-breaks this plan used,
+        /// stopping at an ordering barrier (pinned, rule-bound, blocker or
+        /// preserved-order roles). The other roles keep their places; unknown
+        /// roles append.
+        public int PlacementIndex(int pawnIndex, IReadOnlyList<int> existing, int roleId)
+            => drafts[pawnIndex].PlacementIndex(
+                facts, pawnIndex, positions, formulas, existing, roleId);
 
         public int PawnCount => rolesByPawn.Length;
         public int RoleCountAt(int pawnIndex) => rolesByPawn[pawnIndex].Length;
@@ -737,7 +789,11 @@ namespace WorkRoles.Core.Recs
                 pathsByPawn,
                 activatedPathCountsByPawn,
                 explanations,
-                targetAssignments);
+                targetAssignments,
+                facts,
+                formulas,
+                positions,
+                drafts);
         }
 
         private static RecommendationTargetAssignment[] BuildTargetAssignments(

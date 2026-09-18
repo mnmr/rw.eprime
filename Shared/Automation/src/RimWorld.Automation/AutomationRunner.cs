@@ -183,8 +183,15 @@ public sealed class AutomationRunner : MonoBehaviour
         ValidatePoint(command.x, command.y);
         if (command.button < 0 || command.button > 2) throw new ArgumentOutOfRangeException("button");
         var point = new Vector2(command.x, command.y);
+        // Held modifiers ride every event of the gesture, so both the press
+        // and the release (where deferred click handlers run) observe them.
+        KeyModifiers held = KeySequence.ParseModifiers(command.modifiers);
+        EventModifiers mouseModifiers = EventModifiers.None;
+        if ((held & KeyModifiers.Shift) != 0) mouseModifiers |= EventModifiers.Shift;
+        if ((held & KeyModifiers.Control) != 0) mouseModifiers |= EventModifiers.Control;
+        if ((held & KeyModifiers.Alt) != 0) mouseModifiers |= EventModifiers.Alt;
         Event MouseEvent(EventType type, Vector2 position, Vector2 delta = default) => new Event
-        { type = type, mousePosition = position, button = command.button, delta = delta, clickCount = 1 };
+        { type = type, mousePosition = position, button = command.button, delta = delta, clickCount = 1, modifiers = mouseModifiers };
         switch (command.command)
         {
             case "hover": return new[] { MouseEvent(EventType.MouseMove, point) };
@@ -229,8 +236,8 @@ public sealed class AutomationRunner : MonoBehaviour
     {
         if (TargetWindow != null && !TargetWindow.IsOpen) TargetWindow = null;
         Pointer = input.mousePosition;
-        if (input.type == EventType.MouseDown) { HeldButton = LastButton = input.button; DownFrame = Time.frameCount; }
-        if (input.type == EventType.MouseUp) { HeldButton = -1; LastButton = input.button; UpFrame = Time.frameCount; }
+        if (input.type == EventType.MouseDown) { HeldButton = LastButton = input.button; DownFrame = Time.frameCount; Modifiers = input.modifiers; }
+        if (input.type == EventType.MouseUp) { HeldButton = -1; LastButton = input.button; UpFrame = Time.frameCount; Modifiers = EventModifiers.None; }
         if (input.type == EventType.KeyDown) { Key = input.keyCode; Modifiers = input.modifiers; KeyDownFrame = Time.frameCount; }
         if (input.type == EventType.KeyUp) { Key = input.keyCode; Modifiers = EventModifiers.None; KeyUpFrame = Time.frameCount; }
         PendingEvent = input;

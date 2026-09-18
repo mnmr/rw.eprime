@@ -23,6 +23,11 @@ namespace WorkRoles.UI
         private int observedLanguageRevision;
 
         private const float TabHeight = 32f;
+        /// Top-right action buttons: one 130px button on every tab that has
+        /// one, plus two 90px import/export buttons on Roles (8px gaps).
+        private const float ActionBtnW = 130f;
+        private const float IoBtnW = 90f;
+        private const float ActionClusterW = ActionBtnW + 2f * (8f + IoBtnW);
         // Between TabRecord's normal white and its hover yellow.
         private static readonly Color ActiveTabLabelColor = new Color(1f, 0.95f, 0.55f);
         private static readonly Color AutoManagedColor =
@@ -49,25 +54,31 @@ namespace WorkRoles.UI
 
         public override Vector2 RequestedTabSize => TargetSize();
 
-        /// Width floors at the design width (fixed chrome overlaps below it) and
-        /// grows with the widest chip strip; whichever tab wants more height wins
-        /// (small colonies would otherwise cramp the Roles tab). Both capped at
-        /// the screen.
+        /// Width floors at the design width and grows with the widest chip
+        /// strip; whichever tab wants more height wins (small colonies would
+        /// otherwise cramp the Roles tab). Both floored at the design minimum
+        /// and capped at the screen.
         private Vector2 TargetSize()
         {
+            Vector2 min = MinManualSize;
             float w = Mathf.Clamp(colonistsTab.DesiredWidth() + 200f,
-                ColonistsTabView.DefaultWidth, Verse.UI.screenWidth);
-            float h = Mathf.Min(
+                min.x, Verse.UI.screenWidth);
+            float h = Mathf.Clamp(
                 Mathf.Max(colonistsTab.DesiredHeight(), rolesTab.DesiredHeight()),
-                Verse.UI.screenHeight - 35f);
+                min.y, Verse.UI.screenHeight - 35f);
             return new Vector2(w, h);
         }
 
-        /// Player-sized floor: well below the content-fit TargetSize so the
-        /// grip can shrink the window (tab contents scroll internally). Width
-        /// keeps the design floor — fixed chrome overlaps below it.
-        private static Vector2 MinManualSize =>
-            new Vector2(ColonistsTabView.DefaultWidth, 480f);
+        /// The design floor is vanilla's minimum screen, 1024x768 logical
+        /// (ResolutionUtility.MinResolutionWidth/Height): smaller screens are
+        /// not supported, and the window never shrinks below the whole width
+        /// and the height left above the 35px bottom bar. Tab contents scroll
+        /// internally at this size.
+        internal const float DesignScreenWidth = 1024f;
+        internal const float DesignScreenHeight = 768f;
+        private const float BottomBarHeight = 35f;
+        private static Vector2 MinManualSize => new Vector2(
+            DesignScreenWidth, DesignScreenHeight - BottomBarHeight);
 
         /// Re-applies the persisted size each open, clamped between the manual
         /// minimums and the screen; bottom-left anchor holds.
@@ -409,20 +420,25 @@ namespace WorkRoles.UI
             // the normal white and the hover yellow).
             for (int i = 0; i < tabs!.Count; i++) // ObserveLanguageRevision built the list this pass
                 tabs[i].labelColor = i == (int)curTab ? ActiveTabLabelColor : (Color?)null;
-            WrTabs.DrawTabs(content, tabs);
+            // The strip stops short of the per-tab action buttons at the top
+            // right (widest cluster: Import, Export, Restore Defaults on the
+            // Roles tab), so narrow windows shrink the tabs instead of
+            // burying the last ones under the buttons.
+            var tabStrip = new Rect(content.x, content.y,
+                content.width - ActionClusterW - 8f, content.height);
+            WrTabs.DrawTabs(tabStrip, tabs);
             // Vanilla leaves the menu-section top border visible under the
             // active tab. Overpaint its span with the section fill so the
             // active tab connects seamlessly to the content (geometry mirrors
             // WrTabs: tabWidth capped at 200, 10px horizontal overlap).
             float tabWidth = Mathf.Min(200f,
-                (content.width + (tabs.Count - 1) * 10f) / tabs.Count);
+                (tabStrip.width + (tabs.Count - 1) * 10f) / tabs.Count);
             float activeTabX = content.x + (int)curTab * (tabWidth - 10f);
             Widgets.DrawBoxSolid(new Rect(activeTabX + 1f, content.y, tabWidth - 2f, 2f),
                 Widgets.MenuSectionBGFillColor);
 
             // Per-tab action button in the window's top-right corner, beside the tab
             // strip: Fix My Colony on Colonists, Restore Defaults on Roles.
-            const float ActionBtnW = 130f;
             const float ActionBtnH = 28f;
             float btnY = inRect.y + (TabHeight - ActionBtnH) / 2f;
             var actionRect = new Rect(inRect.xMax - ActionBtnW, btnY, ActionBtnW, ActionBtnH);
@@ -457,7 +473,6 @@ namespace WorkRoles.UI
                         Find.WindowStack.Add(new Dialog_RestorePreview(items));
                 }
 
-                const float IoBtnW = 90f;
                 var exportRect = new Rect(actionRect.x - 8f - IoBtnW, btnY, IoBtnW, ActionBtnH);
                 WrTips.Key("WR_ExportTip", RoleIO.ExportFile).Region(exportRect);
                 if (Widgets.ButtonText(exportRect, exportLabel))

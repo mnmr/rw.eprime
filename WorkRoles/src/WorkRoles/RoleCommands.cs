@@ -999,6 +999,28 @@ namespace WorkRoles
             ReconcileHolders(roleId);
         }
 
+        /// Editor multi-selection: one step up (delta -1) or down (+1) for
+        /// every selected entry, as a single synced command.
+        [SyncMethod]
+        public static void MoveEntries(int roleId, List<int> indices, int delta)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.composite || indices == null
+                || !ListEdits.MoveSelected(role.entries, indices, delta)) return;
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
+        [SyncMethod]
+        public static void RemoveEntries(int roleId, List<int> indices)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.composite || indices == null
+                || !ListEdits.RemoveAt(role.entries, indices)) return;
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
         // ----- Composite members -----
 
         /// Membership follows the CompositeRoles policy. UI checks run before
@@ -1039,6 +1061,26 @@ namespace WorkRoles
             int memberId = role.memberRoleIds[from];
             role.memberRoleIds.RemoveAt(from);
             role.memberRoleIds.Insert(to, memberId);
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
+        [SyncMethod]
+        public static void MoveCompositeMembers(int roleId, List<int> indices, int delta)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.composite || indices == null
+                || !ListEdits.MoveSelected(role.memberRoleIds, indices, delta)) return;
+            CompiledJobOrders.InvalidateRole(roleId);
+            ReconcileHolders(roleId);
+        }
+
+        [SyncMethod]
+        public static void RemoveCompositeMembers(int roleId, List<int> indices)
+        {
+            var role = FindRole(roleId);
+            if (role == null || !role.composite || indices == null
+                || !ListEdits.RemoveAt(role.memberRoleIds, indices)) return;
             CompiledJobOrders.InvalidateRole(roleId);
             ReconcileHolders(roleId);
         }

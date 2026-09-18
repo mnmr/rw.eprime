@@ -174,6 +174,22 @@ namespace WorkRoles.UI
         // inputs for roles that don't have any yet (never scribed, never synced).
         private readonly HashSet<int> rulesRevealed = new HashSet<int>();
 
+        // Explorer-style row selection in the ordered lists (Selected Jobs,
+        // Member Roles): view-local, cleared when the edited role changes and
+        // pruned against each published snapshot. With more than one row
+        // selected the per-row buttons dim and the header actions take over.
+        private readonly ListSelection<JobEntry> entrySelection = new ListSelection<JobEntry>();
+        private readonly ListSelection<int> memberSelection = new ListSelection<int>();
+        private static readonly Color DisabledButtonColor = new Color(1f, 1f, 1f, 0.3f);
+        // A row click is a press and release on the same row within the drag
+        // threshold, so reorder drags never change the selection.
+        private const float RowClickSlopSquared = 36f;
+        private Vector2 rowPressPos;
+        private bool rowPressed;
+        private string selectedCountCaption = string.Empty;
+        private int selectedCountCaptionFor = -1;
+        private enum SelectionAction { None, Up, Down, Remove }
+
         public RolesTabView()
         {
             entryReorderCallbacks =
@@ -233,6 +249,8 @@ namespace WorkRoles.UI
             CommitEdits();
             selectedRoleId = id;
             scrollJobTreeToSelection = true;
+            entrySelection.Clear();
+            memberSelection.Clear();
         }
 
         /// Editing a role ended (selection change, tab switch, window close):
@@ -251,6 +269,9 @@ namespace WorkRoles.UI
         public void Reset()
         {
             listScroll = entriesScroll = treeScroll = Vector2.zero;
+            entrySelection.Clear();
+            memberSelection.Clear();
+            rowPressed = false;
             listState.Reset();
             editorState.Reset();
             selectedRoleId = -1;
@@ -907,7 +928,18 @@ namespace WorkRoles.UI
                     + 2f + SkillsRowH,
                 CheckRowH * 4f);
             bool rulesShown = header.RulesShown;
-            float TopBoxHeight = Mathf.Max(swatchGridH, leftContentH)
+            float swatchGridW = SwatchCols * (SwatchSize + SwatchGap) - SwatchGap;
+            // An editor too narrow for the left rows beside the swatch grid
+            // (screen-sized minimum windows) stacks the grid under them
+            // instead of letting the two halves overlap.
+            const float LeftMinWidth = 400f;
+            const float StackGap = 8f;
+            bool stacked = rect.width
+                < swatchGridW + LeftMinWidth + TopBoxPadding * 2f;
+            float contentH = stacked
+                ? leftContentH + StackGap + swatchGridH
+                : Mathf.Max(swatchGridH, leftContentH);
+            float TopBoxHeight = contentH
                 + (rulesShown ? RulesRowGap + RulesSectionH : 0f)
                 + TopBoxPadding * 2f;
 
@@ -915,11 +947,13 @@ namespace WorkRoles.UI
             Widgets.DrawBoxSolidWithOutline(
                 topBox, WrStyle.PanelBackground, WrStyle.PanelOutline);
 
-            float swatchGridW = SwatchCols * (SwatchSize + SwatchGap) - SwatchGap;
-
-            // RIGHT half: swatch grid, right-aligned inside box
-            float swatchStartX = topBox.xMax - TopBoxPadding - swatchGridW;
-            float swatchStartY = topBox.y + TopBoxPadding;
+            // RIGHT half: swatch grid, right-aligned inside box (or under the
+            // left rows when stacked)
+            float swatchStartX = stacked
+                ? topBox.x + TopBoxPadding
+                : topBox.xMax - TopBoxPadding - swatchGridW;
+            float swatchStartY = topBox.y + TopBoxPadding
+                + (stacked ? leftContentH + StackGap : 0f);
             // Only the first color match carries the selection outline, so
             // legacy duplicate palette entries cannot all light up.
             bool selectionMarked = false;
@@ -1002,8 +1036,9 @@ namespace WorkRoles.UI
             }
 
             // LEFT half: three rows — name+pencil, "Assigned to", colonist names
-            // The name's container is 50% of the framed box's full width.
-            float leftContainerW = topBox.width / 2f;
+            // The name's container is 50% of the framed box's full width, or
+            // all of it when the swatch grid sits below.
+            float leftContainerW = stacked ? topBox.width : topBox.width / 2f;
             float leftX = topBox.x + TopBoxPadding;
             // Usable width within the left container (inset from left padding, right edge = box centre)
             float leftW = leftContainerW - TopBoxPadding;
@@ -1091,8 +1126,7 @@ namespace WorkRoles.UI
 
             // Expanding section (full box width): rules while the conditional-role
             // opt-in is on.
-            float sectionY = topBox.y + TopBoxPadding + Mathf.Max(swatchGridH, leftContentH)
-                + RulesRowGap;
+            float sectionY = topBox.y + TopBoxPadding + contentH + RulesRowGap;
             if (rulesShown)
                 DrawRulesSection(new Rect(leftX, sectionY,
                     topBox.width - TopBoxPadding * 2f, RulesSectionH), model);
@@ -1645,9 +1679,87 @@ namespace WorkRoles.UI
 
         // ----- Selected Jobs: two-column table with drag reorder + up/down buttons -----
 
+        /// True on the mouse-up that completes a click on `row` (press and
+        /// release on the row, no drag). Buttons inside the row consume their
+        /// own press, so they never register as a row click.
+        private bool RowClicked(Rect row)
+        {
+            Event ev = Event.current;
+            if (ev.type == EventType.MouseDown && ev.button == 0
+                && row.Contains(ev.mousePosition))
+            {
+                rowPressPos = ev.mousePosition;
+                rowPressed = true;
+                return false;
+            }
+            if (ev.type == EventType.MouseUp && ev.button == 0 && rowPressed
+                && row.Contains(ev.mousePosition)
+                && (ev.mousePosition - rowPressPos).sqrMagnitude <= RowClickSlopSquared)
+            {
+                rowPressed = false;
+                ev.Use();
+                return true;
+            }
+            return false;
+        }
+
+        /// Explorer modifiers for a row click: Shift ranges from the anchor,
+        /// Ctrl toggles, Ctrl+Shift adds a range.
+        private static void ApplyRowClick<T>(ListSelection<T> selection, T item,
+            IReadOnlyList<T> order) where T : notnull
+        {
+            Event click = Event.current;
+            if (click.shift) selection.Range(item, order, additive: click.control);
+            else if (click.control) selection.Toggle(item);
+            else selection.Click(item);
+        }
+
+        /// Multi-selection actions (up, down, remove) aligned with the per-row
+        /// button columns, preceded by a "{n} selected" caption.
+        private SelectionAction DrawSelectionActions(float rightEdge, float y, int count)
+        {
+            if (selectedCountCaptionFor != count)
+            {
+                selectedCountCaption = "WR_SelectedRows".Translate(count).ToString();
+                selectedCountCaptionFor = count;
+            }
+            float removeX = rightEdge - IconButton - 2f;
+            float downX = removeX - IconButton - 2f;
+            float upX = downX - IconButton - 2f;
+            var upRect = new Rect(upX, y, IconButton, IconButton);
+            var downRect = new Rect(downX, y, IconButton, IconButton);
+            var removeRect = new Rect(removeX, y, IconButton, IconButton);
+            var captionRect = new Rect(upX - 8f - 120f, y, 120f, IconButton);
+            GUI.color = WrStyle.DimText;
+            Text.Anchor = TextAnchor.MiddleRight;
+            Widgets.Label(captionRect, selectedCountCaption);
+            GUI.color = Color.white;
+            Text.Anchor = TextAnchor.UpperLeft;
+            SelectionAction result = SelectionAction.None;
+            WrTips.Key("WR_MoveSelectedUpTip").Region(upRect);
+            if (Widgets.ButtonImage(upRect, TexButton.ReorderUp)) result = SelectionAction.Up;
+            WrTips.Key("WR_MoveSelectedDownTip").Region(downRect);
+            if (Widgets.ButtonImage(downRect, TexButton.ReorderDown)) result = SelectionAction.Down;
+            WrTips.Key("WR_RemoveSelectedTip").Region(removeRect);
+            if (Widgets.ButtonImage(removeRect, TexButton.Delete)) result = SelectionAction.Remove;
+            return result;
+        }
+
+        /// Ascending indices of the selected rows (click path only).
+        private static List<int> SelectedIndices<T>(ListSelection<T> selection,
+            IReadOnlyList<T> order) where T : notnull
+        {
+            var indices = new List<int>(selection.Count);
+            for (int i = 0; i < order.Count; i++)
+                if (selection.Contains(order[i])) indices.Add(i);
+            return indices;
+        }
+
         private void DrawEntries(Rect rect, RoleEditorSnapshot model)
         {
             RoleEntriesSnapshot entries = model.Entries!; // non-composite editor only
+            entrySelection.Retain(entries.Entries);
+            bool multi = entrySelection.Count > 1;
             // Same visible-gap correction as the Available Jobs header.
             WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing, rect.width - 8f, 28f),
                 entries.Title);
@@ -1669,6 +1781,21 @@ namespace WorkRoles.UI
 
             var scrollRect = new Rect(rect.x + 8f, headerY + 24f, rect.width - 8f, rect.height - 28f - 4f - 24f);
             float contentHeight = entries.Count * RowHeight;
+
+            if (multi)
+            {
+                SelectionAction action = DrawSelectionActions(
+                    scrollRect.xMax - 16f, headerY, entrySelection.Count);
+                if (action != SelectionAction.None)
+                {
+                    List<int> indices = SelectedIndices(entrySelection, entries.Entries);
+                    if (action == SelectionAction.Remove)
+                        RoleCommands.RemoveEntries(model.RoleId, indices);
+                    else
+                        RoleCommands.MoveEntries(model.RoleId, indices,
+                            action == SelectionAction.Up ? -1 : 1);
+                }
+            }
 
             if (Event.current.type == EventType.Repaint)
             {
@@ -1696,7 +1823,8 @@ namespace WorkRoles.UI
                 bool dragging = ReorderableWidget.Reorderable(entriesReorderableGroupId, row, useRightButton: false, highlightDragged: true);
                 if (row.y > cullBottom || row.y < cullTop) continue;
 
-                if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
+                if (entrySelection.Contains(entry)) Widgets.DrawHighlightSelected(row);
+                else if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
 
                 RoleEntryPresentation presentation =
                     publishedRow.Presentation;
@@ -1748,15 +1876,24 @@ namespace WorkRoles.UI
                 int capturedI = i;
                 int capturedRoleId = model.RoleId;
 
-                if (i > 0 && Widgets.ButtonImage(new Rect(upX, btnY, IconButton, IconButton), TexButton.ReorderUp))
+                // Row buttons act on their own row only; they dim and go inert
+                // while several rows are selected (the header actions apply).
+                Color buttonColor = multi ? DisabledButtonColor : Color.white;
+                if (i > 0 && Widgets.ButtonImage(new Rect(upX, btnY, IconButton, IconButton),
+                        TexButton.ReorderUp, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.MoveEntry(capturedRoleId, capturedI, capturedI - 1);
                 if (i < entries.Count - 1
-                    && Widgets.ButtonImage(new Rect(downX, btnY,
-                        IconButton, IconButton), TexButton.ReorderDown))
+                    && Widgets.ButtonImage(new Rect(downX, btnY, IconButton, IconButton),
+                        TexButton.ReorderDown, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.MoveEntry(capturedRoleId, capturedI, capturedI + 1);
-                if (Widgets.ButtonImage(new Rect(removeX, btnY, IconButton, IconButton), TexButton.Delete))
+                if (Widgets.ButtonImage(new Rect(removeX, btnY, IconButton, IconButton),
+                        TexButton.Delete, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.RemoveEntry(capturedRoleId, capturedI);
+
+                if (RowClicked(row))
+                    ApplyRowClick(entrySelection, entry, entries.Entries);
             }
+            if (Event.current.rawType == EventType.MouseUp) rowPressed = false;
             }
             finally
             {
@@ -2178,6 +2315,8 @@ namespace WorkRoles.UI
         private void DrawCompositeMembers(Rect rect, RoleEditorSnapshot model)
         {
             RoleCompositeSnapshot composite = model.Composite!; // composite editor only
+            memberSelection.Retain(composite.MemberIds);
+            bool multi = memberSelection.Count > 1;
             WrText.HeaderLabel(new Rect(rect.x + 8f, rect.y + WrText.MediumTopBearing,
                 rect.width - 8f, 28f), composite.MembersTitle);
             var scrollRect = new Rect(rect.x + 8f, rect.y + 28f + 4f,
@@ -2190,6 +2329,20 @@ namespace WorkRoles.UI
                 return;
             }
             float contentHeight = composite.MemberCount * RowHeight;
+            if (multi)
+            {
+                SelectionAction action = DrawSelectionActions(
+                    scrollRect.xMax - 16f, rect.y + 4f, memberSelection.Count);
+                if (action != SelectionAction.None)
+                {
+                    List<int> indices = SelectedIndices(memberSelection, composite.MemberIds);
+                    if (action == SelectionAction.Remove)
+                        RoleCommands.RemoveCompositeMembers(model.RoleId, indices);
+                    else
+                        RoleCommands.MoveCompositeMembers(model.RoleId, indices,
+                            action == SelectionAction.Up ? -1 : 1);
+                }
+            }
             if (Event.current.type == EventType.Repaint)
             {
                 membersReorderableGroupId = ReorderableWidget.NewGroup(
@@ -2214,7 +2367,8 @@ namespace WorkRoles.UI
                     membersReorderableGroupId, row, useRightButton: false,
                     highlightDragged: true);
                 if (row.y > cullBottom || row.y < cullTop) continue;
-                if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
+                if (memberSelection.Contains(memberRow.RoleId)) Widgets.DrawHighlightSelected(row);
+                else if (Mouse.IsOver(row) && !dragging) Widgets.DrawHighlight(row);
                 DrawCompositeRoleRow(row, memberRow, buttonsReserve);
 
                 float btnY = row.y + (RowHeight - IconButton) / 2f;
@@ -2223,16 +2377,22 @@ namespace WorkRoles.UI
                 float upX = downX - IconButton - 2f;
                 int capturedI = i;
                 int capturedRoleId = model.RoleId;
-                if (i > 0 && Widgets.ButtonImage(
-                        new Rect(upX, btnY, IconButton, IconButton), TexButton.ReorderUp))
+                Color buttonColor = multi ? DisabledButtonColor : Color.white;
+                if (i > 0 && Widgets.ButtonImage(new Rect(upX, btnY, IconButton, IconButton),
+                        TexButton.ReorderUp, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.MoveCompositeMember(capturedRoleId, capturedI, capturedI - 1);
                 if (i < composite.MemberCount - 1 && Widgets.ButtonImage(
-                        new Rect(downX, btnY, IconButton, IconButton), TexButton.ReorderDown))
+                        new Rect(downX, btnY, IconButton, IconButton),
+                        TexButton.ReorderDown, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.MoveCompositeMember(capturedRoleId, capturedI, capturedI + 1);
-                if (Widgets.ButtonImage(
-                        new Rect(removeX, btnY, IconButton, IconButton), TexButton.Delete))
+                if (Widgets.ButtonImage(new Rect(removeX, btnY, IconButton, IconButton),
+                        TexButton.Delete, buttonColor, buttonColor, !multi) && !multi)
                     RoleCommands.RemoveCompositeMember(capturedRoleId, capturedI);
+
+                if (RowClicked(row))
+                    ApplyRowClick(memberSelection, memberRow.RoleId, composite.MemberIds);
             }
+            if (Event.current.rawType == EventType.MouseUp) rowPressed = false;
             }
             finally
             {

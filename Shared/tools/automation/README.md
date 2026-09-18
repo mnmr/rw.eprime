@@ -89,7 +89,10 @@ capture final
 ```
 
 `click`, `rclick`, `hover`, and `drag` accept an optional final wait. A drag holds
-the left button until release at the destination. Scroll notches are signed
+the left button until release at the destination. `click`, `rclick` and `drag`
+accept a held-modifier word right after the verb (`click shift 100 470`,
+`click ctrl+shift 707 318`, `drag alt 10 10 50 50`); the modifiers ride every
+event of that gesture and are released with the button. Scroll notches are signed
 (positive scrolls up). `type` accepts literal Unicode text plus SendKeys-style
 `^` Control, `+` Shift, `%` Alt, modifier groups such as `^(ac)`, named keys such
 as `{ENTER}`, `{TAB}`, `{SPACE}`, `{BACKSPACE}`, `{LEFT 2}`, and `{F12}`. Escape

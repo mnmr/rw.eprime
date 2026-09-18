@@ -76,9 +76,16 @@ namespace WorkRoles.Patches
 
     /// Pawn presentation is projected into cached roster/selected-panel
     /// snapshots. These event patches feed the existing per-pawn external-facts
-    /// revision so name, trait, and portrait changes publish immediately without
+    /// revision so name, trait, and downed changes publish immediately without
     /// render-time polling or fingerprints. Trait comparisons are exact and the
     /// revision check coalesces nested recalculation calls to one invalidation.
+    /// Portraits are deliberately NOT an invalidation source: vanilla marks a
+    /// pawn's portrait dirty on every job start (JobDriver.SetInitialPosture)
+    /// and every hediff change, so hooking PortraitsCache.SetDirty rebuilt the
+    /// whole window several times per second while unpaused. Portrait render
+    /// textures are fetched through PortraitsCache.Get at draw time instead,
+    /// which is also what keeps them alive (vanilla pools textures unused for
+    /// a second) and re-renders them when dirty.
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.Name), MethodType.Setter)]
     public static class Patch_Pawn_SetName_Presentation
     {
@@ -98,13 +105,25 @@ namespace WorkRoles.Patches
         }
     }
 
-    [HarmonyPatch(typeof(PortraitsCache), nameof(PortraitsCache.SetDirty))]
-    public static class Patch_PortraitsCache_SetDirty_Presentation
+    /// The colonist row strikes through downed pawns; both transitions are
+    /// rare, explicit health events.
+    [HarmonyPatch(typeof(Pawn_HealthTracker), "MakeDowned")]
+    public static class Patch_PawnHealthTracker_MakeDowned_Presentation
     {
-        public static void Postfix(Pawn pawn)
+        public static void Postfix(Pawn ___pawn)
         {
-            if (ExternalPawnFacts.IsRelevant(pawn))
-                ExternalPawnFacts.Invalidate(pawn);
+            if (ExternalPawnFacts.IsRelevant(___pawn))
+                ExternalPawnFacts.Invalidate(___pawn);
+        }
+    }
+
+    [HarmonyPatch(typeof(Pawn_HealthTracker), "MakeUndowned")]
+    public static class Patch_PawnHealthTracker_MakeUndowned_Presentation
+    {
+        public static void Postfix(Pawn ___pawn)
+        {
+            if (ExternalPawnFacts.IsRelevant(___pawn))
+                ExternalPawnFacts.Invalidate(___pawn);
         }
     }
 
