@@ -92,11 +92,34 @@ namespace WorkRoles.UI
                 ?? throw new ArgumentNullException(nameof(skillSortValue));
         }
 
-        internal string Search { get; set; } = "";
-        internal int RoleFilterId { get; set; } = -1;
+        private string search = "";
+        private int roleFilterId = -1;
+        private string? jobFilterDefName;
+
+        /// Advances whenever the search, role, job, or location filter
+        /// changes value (the search field writes back every frame, so only
+        /// real changes count). The view clears its row selection on a new
+        /// revision that hides any selected colonist, so a selected colonist
+        /// can never be filtered out of view.
+        internal int FilterRevision { get; private set; }
+
+        internal string Search
+        {
+            get => search;
+            set { if (!string.Equals(search, value, StringComparison.Ordinal)) { search = value; FilterRevision++; } }
+        }
+        internal int RoleFilterId
+        {
+            get => roleFilterId;
+            set { if (roleFilterId != value) { roleFilterId = value; FilterRevision++; } }
+        }
         /// Work-giver defName; pawns pass when an assigned non-blocker role's
         /// coverage contains it.
-        internal string? JobFilterDefName { get; set; }
+        internal string? JobFilterDefName
+        {
+            get => jobFilterDefName;
+            set { if (!string.Equals(jobFilterDefName, value, StringComparison.Ordinal)) { jobFilterDefName = value; FilterRevision++; } }
+        }
         internal bool FiltersActive =>
             !string.IsNullOrWhiteSpace(Search) || RoleFilterId != -1
             || JobFilterDefName != null;
@@ -241,6 +264,7 @@ namespace WorkRoles.UI
         {
             if (scope != null && value != null && SameScope(scope, value)) return;
             scope = value;
+            FilterRevision++;
             InvalidatePawnSnapshot();
         }
 

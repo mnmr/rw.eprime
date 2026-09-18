@@ -86,7 +86,7 @@ namespace WorkRoles.Core.Recs
         public bool Capable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (!WithinAgeLimits(pawn, role)
+            if (pawn.Incapacitated || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
@@ -98,7 +98,7 @@ namespace WorkRoles.Core.Recs
         public bool FullyCapable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (!WithinAgeLimits(pawn, role)
+            if (pawn.Incapacitated || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
@@ -449,8 +449,11 @@ namespace WorkRoles.Core.Recs
             return bucket;
         }
 
+        /// An incapacitated pawn's pins never count as holders: the colony's
+        /// need must be met by colonists who can actually work.
         public bool HasProtectedDirectAssignment(int pawnIndex, int roleId)
         {
+            if (Colony.Pawns[pawnIndex].Incapacitated) return false;
             IReadOnlyList<AssignmentView> existing =
                 Colony.Pawns[pawnIndex].Existing;
             RoleView? role = RoleOf(roleId);

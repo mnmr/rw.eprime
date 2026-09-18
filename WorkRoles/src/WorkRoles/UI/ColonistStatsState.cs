@@ -71,9 +71,10 @@ namespace WorkRoles.UI
         // Owner: Colonists window. Key: (Pawn, SkillDef). Value: immutable skill
         // render presentation with stable external texture references.
         // Dependencies: UiVersion presentation stamp, language, current RoleStore
-        // identity and RecommendationTuningRevision, and the current external
-        // pawn snapshot. Refresh: lazy on first presentation read after
-        // invalidation. Equality: exact key hits preserve presentation identity.
+        // identity and RecommendationTuningRevision, and the pawn's own external
+        // capture. Refresh: lazy on first presentation read after invalidation;
+        // a partial external refresh evicts only the changed pawns' entries.
+        // Equality: exact key hits preserve presentation identity.
         // Teardown: InvalidatePresentations/ReleaseSnapshots clears the table.
         private readonly Dictionary<(Pawn pawn, SkillDef skill), ColonistSkillPresentation>
             presentations =
@@ -100,7 +101,8 @@ namespace WorkRoles.UI
         {
             PawnSignalSnapshotCache.Clear();
             externalSnapshots.Clear();
-            RefreshExternalSnapshot(pawns);
+            RefreshExternalSnapshot(pawns, out _);
+            InvalidatePresentations();
         }
 
         internal void InvalidateLanguageCaches()
@@ -116,16 +118,56 @@ namespace WorkRoles.UI
             InvalidatePresentations();
         }
 
+        /// Pawns whose capture was replaced or removed by the latest partial
+        /// refresh; empty after a full generation. Producer-owned buffer.
+        private readonly List<Pawn> changedPawns = new List<Pawn>();
+        private readonly List<(Pawn pawn, SkillDef skill)> presentationKeyBuffer =
+            new List<(Pawn, SkillDef)>();
+
+        internal IReadOnlyList<Pawn> ChangedPawns => changedPawns;
+
         /// Reconciles the external cohort at the window's Repaint boundary.
-        /// Unaffected owner snapshots survive targeted invalidations.
-        internal bool RefreshExternalSnapshot(IEnumerable<Pawn> pawns)
+        /// Unaffected owner snapshots and their derived presentations survive
+        /// targeted invalidations; <paramref name="fullGeneration"/> reports
+        /// a language/definition-style refresh that replaced everything.
+        internal bool RefreshExternalSnapshot(IEnumerable<Pawn> pawns,
+            out bool fullGeneration)
         {
-            if (!externalSnapshots.Refresh(pawns, ExternalPawnFacts.Revisions))
+            if (!externalSnapshots.Refresh(pawns, ExternalPawnFacts.Revisions,
+                    changedPawns, out fullGeneration))
                 return false;
 
+            // Widest-cell widths aggregate every pawn: always recomputed.
             rosterCellWidths.Clear();
-            InvalidatePresentations();
+            if (fullGeneration)
+            {
+                InvalidatePresentations();
+                return true;
+            }
+            for (int i = 0; i < changedPawns.Count; i++)
+                InvalidatePresentationsFor(changedPawns[i]);
             return true;
+        }
+
+        /// Drops the (pawn, skill) presentations and the selected-pawn stats
+        /// projection of one pawn. A bounded key scan at the explicit refresh
+        /// boundary; never on a draw path.
+        private void InvalidatePresentationsFor(Pawn pawn)
+        {
+            presentationKeyBuffer.Clear();
+            foreach (KeyValuePair<(Pawn pawn, SkillDef skill), ColonistSkillPresentation> pair
+                in presentations)
+                if (ReferenceEquals(pair.Key.pawn, pawn))
+                    presentationKeyBuffer.Add(pair.Key);
+            for (int i = 0; i < presentationKeyBuffer.Count; i++)
+                presentations.Remove(presentationKeyBuffer[i]);
+            presentationKeyBuffer.Clear();
+            if (ReferenceEquals(statsPawn, pawn))
+            {
+                statsStamp = -1;
+                statsPawn = null;
+                stats = null;
+            }
         }
 
         private static ExternalCapture CaptureExternal(Pawn pawn)

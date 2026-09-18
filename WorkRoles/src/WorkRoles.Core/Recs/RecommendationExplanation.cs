@@ -35,6 +35,9 @@ namespace WorkRoles.Core.Recs
         /// A composite substituted in for a consecutive in-order run of its
         /// members after planning; BundledMembers carries their explanations.
         Bundled,
+        /// The pawn is downed: every existing assignment is kept as-is and
+        /// nothing they hold counts toward colony needs.
+        Incapacitated,
     }
 
     /// Why a role a pawn holds was not recommended. Pick-outcome reasons are

@@ -40,11 +40,26 @@ namespace RimShared.Common
 
         public bool Refresh(IEnumerable<TOwner> owners,
             OwnerInvalidationRevisions<TOwner> revisions)
+            => Refresh(owners, revisions, null, out _);
+
+        /// <summary>
+        /// Refreshes and reports what a partial refresh touched, so consumers
+        /// keyed per owner can evict exactly those owners. <paramref name="changedOwners"/>
+        /// receives every owner whose published snapshot was replaced or
+        /// removed; it is left empty for a full generation, which
+        /// <paramref name="fullGeneration"/> reports instead.
+        /// </summary>
+        public bool Refresh(IEnumerable<TOwner> owners,
+            OwnerInvalidationRevisions<TOwner> revisions,
+            List<TOwner>? changedOwners, out bool fullGeneration)
         {
             if (revisions == null) throw new ArgumentNullException(nameof(revisions));
+            fullGeneration = false;
+            changedOwners?.Clear();
             if (!NeedsRefresh(revisions)) return false;
 
             bool full = observedFullGeneration != revisions.FullGeneration;
+            fullGeneration = full;
 
             cohort.Clear();
             if (owners != null)
@@ -61,7 +76,10 @@ namespace RimShared.Common
                         if (!snapshots.TryGetValue(owner, out TSnapshot? published)
                             || !EqualityComparer<TSnapshot>.Default.Equals(
                                 published, rebuilt))
+                        {
                             snapshots[owner] = rebuilt;
+                            if (!full) changedOwners?.Add(owner);
+                        }
                         observedOwnerRevisions[owner] = ownerRevision;
                     }
                 }
@@ -75,6 +93,7 @@ namespace RimShared.Common
                 TOwner owner = removalBuffer[i];
                 snapshots.Remove(owner);
                 observedOwnerRevisions.Remove(owner);
+                if (!full) changedOwners?.Add(owner);
             }
             removalBuffer.Clear();
             cohort.Clear();

@@ -460,6 +460,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecDecisionFire>Fire fear requires the firefighting blocker.</WR_RecDecisionFire>
   <WR_RecDecisionRetained>Existing unskilled role retained.</WR_RecDecisionRetained>
   <WR_RecDecisionProtected>Existing protected assignment retained.</WR_RecDecisionProtected>
+  <WR_RecDecisionIncapacitated>This colonist is downed. Their roles are kept as they are and do not count toward colony needs until they recover.</WR_RecDecisionIncapacitated>
   <WR_RecDecisionNever>This role is configured to receive no recommendations.</WR_RecDecisionNever>
   <WR_RecDecisionControlledByTraining>Controlled by {0}: assigned through its training path, not on its own.</WR_RecDecisionControlledByTraining>
   <WR_RecDecisionDisabled>This role is disabled.</WR_RecDecisionDisabled>

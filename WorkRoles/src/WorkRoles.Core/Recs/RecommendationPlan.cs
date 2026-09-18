@@ -784,6 +784,8 @@ namespace WorkRoles.Core.Recs
                 BuildExplanations(
                     facts, drafts, formulas, targetAssignments);
             SubstituteComposites(facts, rolesByPawn, explanations);
+            KeepIncapacitatedAssignments(colony, rolesByPawn, pathsByPawn,
+                activatedPathCountsByPawn, explanations);
             return new RecommendationPlan(
                 rolesByPawn,
                 pathsByPawn,
@@ -794,6 +796,40 @@ namespace WorkRoles.Core.Recs
                 formulas,
                 positions,
                 drafts);
+        }
+
+        /// An incapacitated pawn was no candidate and no holder during the
+        /// run; publish their existing assignments unchanged (so nothing is
+        /// applied to them) with one explanation per role saying why.
+        private static void KeepIncapacitatedAssignments(
+            ColonyView colony,
+            int[][] rolesByPawn,
+            int[][] pathsByPawn,
+            int[] activatedPathCountsByPawn,
+            Dictionary<int, RoleRecommendationExplanation>[] explanationsByPawn)
+        {
+            for (int pawnIndex = 0; pawnIndex < colony.Pawns.Count; pawnIndex++)
+            {
+                PawnView pawn = colony.Pawns[pawnIndex];
+                if (!pawn.Incapacitated) continue;
+                var kept = new int[pawn.Existing.Count];
+                var explanations = new Dictionary<int, RoleRecommendationExplanation>();
+                for (int index = 0; index < kept.Length; index++)
+                {
+                    int roleId = pawn.Existing[index].RoleId;
+                    kept[index] = roleId;
+                    explanations[roleId] = new RoleRecommendationExplanation
+                    {
+                        RoleId = roleId,
+                        Recommended = true,
+                        SpecialPickReason = SpecialPickReason.Incapacitated,
+                    };
+                }
+                rolesByPawn[pawnIndex] = kept;
+                pathsByPawn[pawnIndex] = System.Array.Empty<int>();
+                activatedPathCountsByPawn[pawnIndex] = 0;
+                explanationsByPawn[pawnIndex] = explanations;
+            }
         }
 
         private static RecommendationTargetAssignment[] BuildTargetAssignments(

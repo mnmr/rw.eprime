@@ -136,6 +136,8 @@ namespace WorkRoles.UI
                         return "WR_RecDecisionRetained".Translate();
                     case SpecialPickReason.Protected:
                         return "WR_RecDecisionProtected".Translate();
+                    case SpecialPickReason.Incapacitated:
+                        return "WR_RecDecisionIncapacitated".Translate();
                     default:
                         return "WR_RecDecisionRecommended".Translate();
                 }

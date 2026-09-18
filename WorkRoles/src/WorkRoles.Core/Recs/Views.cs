@@ -24,6 +24,11 @@ namespace WorkRoles.Core.Recs
         public bool HasRangedWeapon;
         public int ShootingLevel;
         public bool FireFear;
+        /// Downed (comatose, in pain shock, unable to move): the pawn cannot
+        /// work right now. The engine never recommends roles to them, never
+        /// counts what they hold toward colony needs, and publishes their
+        /// existing assignments untouched for when they recover.
+        public bool Incapacitated;
         public List<AssignmentView> Existing = new List<AssignmentView>();
     }
 

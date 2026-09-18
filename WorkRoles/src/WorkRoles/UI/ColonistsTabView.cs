@@ -50,6 +50,7 @@ namespace WorkRoles.UI
         // every selected colonist.
         private readonly ListSelection<Pawn> selection = new ListSelection<Pawn>();
         private readonly List<Pawn> selectionScratch = new List<Pawn>();
+        private int selectionFilterRevision;
         private Pawn? selectedPawn => selection.Single;
 
         // Our own table renderer: a fixed header row above a scroll view of
@@ -271,28 +272,82 @@ namespace WorkRoles.UI
             // generation. External integrations are not polled, but anything
             // they expose is re-read as part of that explicit generation.
             ColonyGroupsDataSource.InvalidateSnapshot();
-            if (!statsState.RefreshExternalSnapshot(rosterState.SnapshotPawns())) return;
+            if (!statsState.RefreshExternalSnapshot(rosterState.SnapshotPawns(),
+                    out bool fullGeneration)) return;
 
-            // A command can bump UiVersion during an input pass, allowing one
-            // of these consumers to rebuild before the next Layout installs
-            // the new external generation. Clear them after installation so
-            // no pre-refresh result can carry the new revision stamp.
+            // Colony-wide consumers read every pawn (plan, verdicts, best-fit
+            // tips, aggregate widths and sizes, ordering, row geometry) and
+            // rebuild on any refresh. A command can bump UiVersion during an
+            // input pass, allowing one of them to rebuild before the next
+            // Layout installs the new external generation; clearing after
+            // installation means no pre-refresh result carries the new stamp.
             recommendationState.InvalidatePlan();
-            roleCapabilityState.Invalidate();
             rosterState.InvalidateSnapshotConsumers();
             InvalidateRoleVerdicts();
             sizeStamp = ScopeCacheStamp.Invalid;
             skillColumnsWidthStamp = ScopeCacheStamp.Invalid;
-            chipLayouts.Clear();
-            chipLayoutStamp = ScopeCacheStamp.Invalid;
             chipSequenceStamp = ScopeCacheStamp.Invalid;
-            roleTipCache.Clear();
-            roleTipStamp = ScopeCacheStamp.Invalid;
             unchecked { paletteTipExternalGeneration++; }
             unchecked { tableHeaderExternalGeneration++; }
-            rulesPassCache.Clear();
-            rulesPassStamp = ScopeCacheStamp.Invalid;
             InvalidateTableLayout();
+
+            if (fullGeneration)
+            {
+                roleCapabilityState.Invalidate();
+                chipLayouts.Clear();
+                chipLayoutStamp = ScopeCacheStamp.Invalid;
+                roleTipCache.Clear();
+                roleTipStamp = ScopeCacheStamp.Invalid;
+                rulesPassCache.Clear();
+                rulesPassStamp = ScopeCacheStamp.Invalid;
+                return;
+            }
+
+            // Per-pawn consumers follow only the pawns whose capture changed.
+            // Rows of other pawns whose chip sequence still changes (a
+            // colony-relative verdict, for instance) are evicted when the
+            // sequences rebuild, see EnsureChipSequences.
+            IReadOnlyList<Pawn> changed = statsState.ChangedPawns;
+            for (int i = 0; i < changed.Count; i++)
+                EvictPawn(changed[i]);
+            // Tree-row tips list best-fit colonists, so every pawn-less tip
+            // depends on every pawn.
+            RemoveRoleTips(null);
+        }
+
+        /// Drops every per-pawn cache entry the row and its tooltips derive
+        /// from the pawn's external capture.
+        private void EvictPawn(Pawn pawn)
+        {
+            chipLayouts.Remove(pawn);
+            roleCapabilityState.InvalidatePawn(pawn);
+            RemoveRoleTips(pawn);
+            rulesPassKeyBuffer.Clear();
+            foreach (KeyValuePair<(int roleId, Pawn pawn), bool> pair in rulesPassCache)
+                if (ReferenceEquals(pair.Key.pawn, pawn))
+                    rulesPassKeyBuffer.Add(pair.Key);
+            for (int i = 0; i < rulesPassKeyBuffer.Count; i++)
+                rulesPassCache.Remove(rulesPassKeyBuffer[i]);
+            rulesPassKeyBuffer.Clear();
+        }
+
+        private readonly List<(int roleId, Pawn pawn)> rulesPassKeyBuffer =
+            new List<(int, Pawn)>();
+        private readonly List<(int roleId, RoleTipContext context, Pawn? pawn)> roleTipKeyBuffer =
+            new List<(int, RoleTipContext, Pawn?)>();
+
+        /// Drops the role tips built for one pawn (null: the pawn-less tree
+        /// and palette contexts). Bounded key scans at refresh boundaries.
+        private void RemoveRoleTips(Pawn? pawn)
+        {
+            roleTipKeyBuffer.Clear();
+            foreach (KeyValuePair<(int roleId, RoleTipContext context, Pawn? pawn), RoleTipEntry> pair
+                in roleTipCache)
+                if (ReferenceEquals(pair.Key.pawn, pawn))
+                    roleTipKeyBuffer.Add(pair.Key);
+            for (int i = 0; i < roleTipKeyBuffer.Count; i++)
+                roleTipCache.Remove(roleTipKeyBuffer[i]);
+            roleTipKeyBuffer.Clear();
         }
 
         /// Window close: drop pawn-keyed snapshots so a save unloaded while the
@@ -546,10 +601,31 @@ namespace WorkRoles.UI
                         break;
                     }
             }
+            // A filter change (search, role, job, location) that hides any
+            // selected colonist clears the whole selection; a selection that
+            // stays fully visible is kept. Collapsed groups are not a filter.
+            if (selectionFilterRevision != rosterState.FilterRevision)
+            {
+                selectionFilterRevision = rosterState.FilterRevision;
+                selectionScratch.Clear();
+                selection.CopyOrdered(FlattenSections(AllSections()), selectionScratch);
+                if (selectionScratch.Count != selection.Count) selection.Clear();
+                selectionScratch.Clear();
+            }
             // Departed pawns drop out; the rest of a multi-selection survives.
             selection.Retain(pawns);
-            if (selection.Count == 0 && pawns.Count > 0)
-                selection.Click(pawns[0]);
+            if (selection.Count == 0)
+            {
+                // The first row that passes the filters, not the first
+                // scoped pawn, so the fallback is always a visible row.
+                ColonistSectionsSnapshot sections = rosterState.Sections(store);
+                for (int i = 0; i < sections.Count; i++)
+                    if (sections.SectionAt(i).Count > 0)
+                    {
+                        selection.Click(sections.SectionAt(i).PawnAt(0));
+                        break;
+                    }
+            }
 
             // A multi-selection has no stats panel: the table takes its space.
             bool multiSelected = selection.Count > 1;
@@ -1925,18 +2001,33 @@ namespace WorkRoles.UI
             return skillColumnsWidthCache;
         }
 
-        // Owner: Colonists window. Key: role id, context, optional Pawn identity,
-        // and activity plus definition revisions within the pawn-scope stamp.
-        // Value: immutable
-        // StructuredTip models. Dependencies: UiVersion, pawn-list revision,
-        // language, definitions, role/assignment facts, pawn activity where applicable, and
-        // the tip registry epoch (a cleared registry ignores older tips, so an
-        // epoch-stale hit rebuilds). Refresh: lazy on a key miss; the whole
-        // table clears on stamp change. Equality: exact key hits preserve tip
-        // identity. Teardown: ReleaseSnapshots/language invalidation clears all
-        // tips and the stamp.
-        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn? pawn, int activityRevision), StructuredTip> roleTipCache
-            = new Dictionary<(int, RoleTipContext, Pawn?, int), StructuredTip>();
+        private readonly struct RoleTipEntry
+        {
+            internal RoleTipEntry(int activityRevision, StructuredTip tip)
+            {
+                ActivityRevision = activityRevision;
+                Tip = tip;
+            }
+
+            internal int ActivityRevision { get; }
+            internal StructuredTip Tip { get; }
+        }
+
+        // Owner: Colonists window. Key: role id, context, and optional Pawn
+        // identity within the pawn-scope stamp; the entry records the activity
+        // revision it was built at so a job transition replaces the entry in
+        // place (the table stays bounded by roles x contexts x pawns). Value:
+        // immutable StructuredTip models. Dependencies: UiVersion, pawn-list
+        // revision, language, definitions, role/assignment facts, the pawn's
+        // external capture (assignment context) or every listed pawn's capture
+        // (pawn-less contexts list best fits), pawn activity where applicable,
+        // and the tip registry epoch. Refresh: lazy on a key miss or stale
+        // activity revision; the whole table clears on stamp change, a partial
+        // external refresh evicts the changed pawns' and the pawn-less entries.
+        // Equality: exact key hits preserve tip identity. Teardown:
+        // ReleaseSnapshots/language invalidation clears all tips and the stamp.
+        private readonly Dictionary<(int roleId, RoleTipContext context, Pawn? pawn), RoleTipEntry> roleTipCache
+            = new Dictionary<(int, RoleTipContext, Pawn?), RoleTipEntry>();
         private ScopeCacheStamp roleTipStamp = ScopeCacheStamp.Invalid;
         private int roleTipTuningRevision = -1;
         private int roleTipDefinitionRevision = -1;
@@ -1967,18 +2058,20 @@ namespace WorkRoles.UI
             // transition (revision bump) must produce a fresh tip.
             int activityRevision = context == RoleTipContext.AssignmentChip && pawn != null
                 ? ActivityTracker.RevisionOf(pawn) : 0;
-            var key = (roleId, context, pawn, activityRevision);
-            if (!roleTipCache.TryGetValue(key, out StructuredTip tip))
+            var key = (roleId, context, pawn);
+            if (!roleTipCache.TryGetValue(key, out RoleTipEntry entry)
+                || entry.ActivityRevision != activityRevision)
             {
                 Role? role = store.RoleById(roleId);
                 if (role == null) return null;
                 int pawnId = pawn?.thingIDNumber ?? -1;
-                roleTipCache[key] = tip = new StructuredTip(
+                entry = new RoleTipEntry(activityRevision, new StructuredTip(
                     $"role:{roleId}:{context}:{pawnId}:{activityRevision}",
-                    BuildRoleTip(store, role, context, pawn));
+                    BuildRoleTip(store, role, context, pawn)));
+                roleTipCache[key] = entry;
             }
             roleTipStamp = PawnListStamp;
-            return tip;
+            return entry.Tip;
         }
 
         private TipModel BuildRoleTip(RoleStore store, Role role, RoleTipContext context, Pawn? pawn)
@@ -3354,6 +3447,14 @@ namespace WorkRoles.UI
                         out ColonistChipSequenceSnapshot previous)
                     && previous.ContentEquals(candidate))
                     candidate = previous;
+                else
+                {
+                    // The row and its chip tips embed this sequence (verdicts,
+                    // capability, states): a changed sequence retires them
+                    // even when the pawn's own capture did not change.
+                    chipLayouts.Remove(pawn);
+                    RemoveRoleTips(pawn);
+                }
                 rebuilt[pawn] = candidate;
             }
             chipSequences = rebuilt;
@@ -3706,11 +3807,11 @@ namespace WorkRoles.UI
         // facts, activity and definition revisions, display mode, width, configured skill
         // columns, recommendation tuning, the skill-caption toggle, font
         // line boxes/tiny-font support, and
-        // language. Refresh: immediate on
-        // scope/key change and targeted per pawn on activity change. Equality:
-        // exact keys preserve row identity.
-        // Teardown: ReleaseSnapshots/language or external-snapshot invalidation
-        // clears all rows and backing buffers.
+        // language. Refresh: immediate on scope/key change; targeted per pawn
+        // on activity change, on that pawn's external capture change, and on
+        // its chip sequence changing identity. Equality: exact keys preserve
+        // row identity. Teardown: ReleaseSnapshots/language or full external
+        // invalidation clears all rows and backing buffers.
         private readonly Dictionary<Pawn, ColonistRowSnapshot> chipLayouts =
             new Dictionary<Pawn, ColonistRowSnapshot>();
         private RoleStore? chipLayoutOwner;
@@ -3755,12 +3856,14 @@ namespace WorkRoles.UI
                 chipLayoutCaptions = captions;
                 chipLayoutTextMetrics = textMetrics;
             }
+            // Sequences first: their rebuild evicts rows whose chips changed,
+            // so a hit below is current. Stamp-gated, a few comparisons.
+            EnsureChipSequences(store);
             int activityRevision = ActivityTracker.RevisionOf(pawn);
             if (chipLayouts.TryGetValue(pawn, out ColonistRowSnapshot cached)
                 && cached.ActivityRevision == activityRevision)
                 return cached;
-            ColonistChipSequenceSnapshot sequence =
-                ChipSequenceFor(pawn, store);
+            ColonistChipSequenceSnapshot sequence = chipSequences[pawn];
             var layout = new List<RoleChipLayout>();
             float height = sequence.Count == 0
                 ? RoleChipUI.Height

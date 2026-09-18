@@ -34,7 +34,8 @@ namespace WorkRoles.UI
 
     /// <summary>
     /// View-owned capability snapshot cache. Scope changes invalidate by stamp;
-    /// mutable pawn signals and language changes explicitly invalidate the owner.
+    /// language changes invalidate the whole owner, and a targeted external
+    /// refresh invalidates only the changed pawns' entries.
     /// </summary>
     internal sealed class ColonistRoleCapabilityState
     {
@@ -68,6 +69,23 @@ namespace WorkRoles.UI
         {
             presentations.Clear();
             stamp = ScopeCacheStamp.Invalid;
+        }
+
+        private readonly List<(Pawn pawn, int roleId)> keyBuffer =
+            new List<(Pawn, int)>();
+
+        /// Drops one pawn's entries after a targeted external refresh; a
+        /// bounded key scan at that refresh boundary, never on a draw path.
+        internal void InvalidatePawn(Pawn pawn)
+        {
+            keyBuffer.Clear();
+            foreach (KeyValuePair<(Pawn pawn, int roleId), RoleCapabilityPresentation> pair
+                in presentations)
+                if (ReferenceEquals(pair.Key.pawn, pawn))
+                    keyBuffer.Add(pair.Key);
+            for (int i = 0; i < keyBuffer.Count; i++)
+                presentations.Remove(keyBuffer[i]);
+            keyBuffer.Clear();
         }
 
         private static RoleCapabilityPresentation Build(

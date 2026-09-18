@@ -188,6 +188,7 @@ namespace WorkRoles
                 HasRangedWeapon = facts.HasRangedWeapon,
                 ShootingLevel = facts.ShootingLevel,
                 FireFear = facts.FireFear,
+                Incapacitated = facts.Incapacitated,
                 SkillLevels = new Dictionary<string, int>(facts.SkillLevels),
                 CapableWorkTypes = new HashSet<string>(facts.CapableWorkTypes),
             };
@@ -216,6 +217,9 @@ namespace WorkRoles
                 AgeLimitsApply = AgeLimitsApplyTo(pawn),
                 HasRangedWeapon = pawn.equipment?.Primary?.def?.IsRangedWeapon == true,
                 ShootingLevel = pawn.skills?.GetSkill(SkillDefOf.Shooting)?.Level ?? 0,
+                // Downed covers coma, pain shock, and immobility; the
+                // MakeDowned/MakeUndowned patches refresh this snapshot.
+                Incapacitated = pawn.Downed,
                 FireFear = pawn.genes != null
                     && pawn.genes.GenesListForReading.Any(g =>
                         FireFearGenes.Contains(g.def.defName)),

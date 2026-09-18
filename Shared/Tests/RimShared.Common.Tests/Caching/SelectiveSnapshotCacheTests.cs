@@ -30,6 +30,47 @@ public class SelectiveSnapshotCacheTests
     }
 
     [Test]
+    public async Task PartialRefreshReportsReplacedAndDepartedOwnersOnly()
+    {
+        var changed = new Owner("changed");
+        var untouched = new Owner("untouched");
+        var equal = new Owner("equal");
+        var departed = new Owner("departed");
+        var arrived = new Owner("arrived");
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        var cache = new SelectiveSnapshotCache<Owner, Snapshot>(owner =>
+            new Snapshot(owner == changed ? owner.Name + revisions.RevisionOf(owner) : owner.Name));
+        cache.Refresh([changed, untouched, equal, departed], revisions);
+
+        revisions.Invalidate(changed);
+        revisions.Invalidate(equal);
+        var reported = new List<Owner>();
+        bool refreshed = cache.Refresh([changed, untouched, equal, arrived], revisions, reported, out bool full);
+
+        await Assert.That(refreshed).IsTrue();
+        await Assert.That(full).IsFalse();
+        // Replaced, arrived and departed owners; not the untouched one, and
+        // not the owner whose rebuilt snapshot equalled the published one.
+        await Assert.That(reported).IsEquivalentTo([changed, arrived, departed]);
+    }
+
+    [Test]
+    public async Task FullRefreshReportsTheGenerationInsteadOfOwners()
+    {
+        var owner = new Owner("owner");
+        var revisions = new OwnerInvalidationRevisions<Owner>();
+        var cache = new SelectiveSnapshotCache<Owner, Snapshot>(item => new Snapshot(item.Name + revisions.Current));
+        cache.Refresh([owner], revisions);
+
+        revisions.InvalidateAll();
+        var reported = new List<Owner>();
+        cache.Refresh([owner], revisions, reported, out bool full);
+
+        await Assert.That(full).IsTrue();
+        await Assert.That(reported).IsEmpty();
+    }
+
+    [Test]
     public async Task FullInvalidationRebuildsEveryCurrentOwner()
     {
         var first = new Owner("first");
