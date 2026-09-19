@@ -1,7 +1,9 @@
 ---
 title: Colonist panel
 ---
-The bottom panel belongs to the selected colonist:
+The colonist panel at the bottom of the Colonists tab belongs to the
+selected colonist. It is hidden while [several colonists](topic:assigning)
+are selected and returns when you click a single one:
 
 ![The colonist detail panel](colonist-stats.png)
 

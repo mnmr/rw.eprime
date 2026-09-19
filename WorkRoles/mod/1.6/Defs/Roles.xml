@@ -713,6 +713,28 @@
     </entries>
   </WorkRoles.RoleDef>
 
+  <WorkRoles.RoleDef MayRequire="Ludeon.RimWorld.Biotech">
+    <defName>WS_Mechanitor</defName>
+    <label>Mechanitor</label>
+    <iconPath>WorkRoles/RoleIcons/robot-head</iconPath>
+    <description>Repairing mechanoids, gestating new ones and encoding subcores. Recommended only to colonists with a mechlink.</description>
+    <recommendationSpecialRole>Mechanitor</recommendationSpecialRole>
+    <colorRef>sky-800</colorRef>
+    <group>Indoors</group>
+    <tuning>
+      <category>Important</category>
+      <time>PartTime</time>
+      <colonyMin>0</colonyMin>
+      <coverage>100</coverage>
+      <championPenalty>false</championPenalty>
+    </tuning>
+    <entries>
+      <li>WorkGiver:RepairMech</li>
+      <li>WorkGiver:DoBillsMechGestator</li>
+      <li>WorkGiver:DoBillsSubcoreEncoder</li>
+    </entries>
+  </WorkRoles.RoleDef>
+
   <WorkRoles.RoleDef>
     <defName>WS_Crafter</defName>
     <label>Crafter</label>

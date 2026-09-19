@@ -2155,7 +2155,7 @@ namespace WorkRoles.UI
 
             if (context != RoleTipContext.AssignmentChip)
             {
-                List<string>? fits = BestFits(skills);
+                List<string>? fits = BestFits(role, skills);
                 if (fits != null && fits.Count > 0)
                 {
                     // Tier lines share the value column; only the first row
@@ -2311,12 +2311,20 @@ namespace WorkRoles.UI
         /// are broken by skill level. At most six names, grouped into one
         /// value-column line per tier ("Exceptional: A, B"); trailing names
         /// drop into the final "+N more" until every line fits unwrapped.
-        private List<string>? BestFits(List<SkillDef> skills)
+        /// Colonists the engine could never pick (downed, or lacking the
+        /// mechlink a Mechanitor role requires) are left out.
+        private List<string>? BestFits(Role role, List<SkillDef> skills)
         {
             if (skills.Count == 0) return null;
+            bool mechanitorOnly = role.templateDefName != null
+                && DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName)
+                    ?.recommendationSpecialRole == RecommendationSpecialRoleKind.Mechanitor;
             var ranked = new List<(string label, SignalBucket bucket, int level)>();
             foreach (var pawn in ListedPawns())
             {
+                PawnView pawnFacts = ExternalSnapshotFor(pawn).RecommendationFacts;
+                if (pawnFacts.Incapacitated || mechanitorOnly && !pawnFacts.IsMechanitor)
+                    continue;
                 var candidates = new List<SkillBucketCandidate>(skills.Count);
                 foreach (var skill in skills)
                 {

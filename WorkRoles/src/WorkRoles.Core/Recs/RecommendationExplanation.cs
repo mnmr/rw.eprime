@@ -47,6 +47,7 @@ namespace WorkRoles.Core.Recs
     {
         None,
         Incapable,
+        NotMechanitor,
         HunterRequirementsNotMet,
         AwfulSignal,
         WeakSignal,

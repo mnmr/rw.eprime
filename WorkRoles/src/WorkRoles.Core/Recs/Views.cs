@@ -29,6 +29,8 @@ namespace WorkRoles.Core.Recs
         /// counts what they hold toward colony needs, and publishes their
         /// existing assignments untouched for when they recover.
         public bool Incapacitated;
+        /// Has a mechlink: the only pawns who can repair or gestate mechs.
+        public bool IsMechanitor;
         public List<AssignmentView> Existing = new List<AssignmentView>();
     }
 
@@ -84,6 +86,9 @@ namespace WorkRoles.Core.Recs
         public int CoveragePercent;
         public bool Available = true;
         public bool Enabled = true;
+        /// Only mechanitors are capable of this role (the game gates its
+        /// jobs on the mechlink, not on a work type).
+        public bool RequiresMechanitor;
 
         /// The complete immutable work-facts projection; every work, skill,
         /// and gate read below derives from it.

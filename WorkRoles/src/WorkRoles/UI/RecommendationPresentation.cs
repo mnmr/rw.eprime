@@ -157,6 +157,8 @@ namespace WorkRoles.UI
                     return "WR_RecDecisionNever".Translate();
                 case PickRejectReason.Incapable:
                     return "WR_RecDecisionIncapable".Translate();
+                case PickRejectReason.NotMechanitor:
+                    return "WR_RecDecisionNotMechanitor".Translate();
                 case PickRejectReason.HunterRequirementsNotMet:
                     return "WR_RecDecisionHunterRequirements".Translate();
                 case PickRejectReason.AwfulSignal:

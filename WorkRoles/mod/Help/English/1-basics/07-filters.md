@@ -20,3 +20,6 @@ count under the place they left from.
 Filters combine, and the clear button that appears once anything is
 active resets the search and the role and job filters while leaving
 location, grouping, and display choices alone.
+
+A filter never hides a selected colonist. When one would, the selection
+is cleared and the first colonist still listed is selected instead.

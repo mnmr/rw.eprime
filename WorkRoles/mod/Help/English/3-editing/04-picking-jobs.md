@@ -14,10 +14,19 @@ some of its jobs are in.
 
 Selections land in the ordered list on the right:
 
-![The selected jobs list](selected-jobs.png)
+![The Selected Jobs list](selected-jobs.png)
 
-A work-type entry covers all of its jobs, including ones other mods add
+A work-type row covers all of its jobs, including ones other mods add
 later. Jobs picked individually get their own rows and can be dragged
 into any order, which is exactly the [priority order](topic:ordering)
-holders will use. A dimmed entry adds nothing new (everything it covers
+holders will use. A dimmed row adds nothing new (everything it covers
 is already claimed above it); move it up or remove it.
+
+To move or remove several rows at once, select them first: click a row,
+Shift-click another to select everything between the two, or Ctrl-click
+to add or remove single rows. The header shows how many rows are
+selected and gains move and remove buttons for the whole selection. The
+buttons on the rows themselves are inactive until a single row is
+selected again:
+
+![Three selected rows with the header buttons](selected-jobs-multi.png)

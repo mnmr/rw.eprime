@@ -299,6 +299,11 @@ namespace WorkRoles.Core.Recs
             if (!role.Enabled || !role.Available
                 || role.HasRules || role.Blocker)
                 return;
+            if (!EngineContext.MeetsMechanitorRequirement(pawn, role))
+            {
+                explanation.RejectReason = PickRejectReason.NotMechanitor;
+                return;
+            }
             if (!facts.MeetsCapabilityRequirement(pawnIndex, role))
             {
                 explanation.RejectReason = PickRejectReason.Incapable;

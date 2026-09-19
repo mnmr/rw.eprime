@@ -1,5 +1,13 @@
 ﻿# Changelog
 
+## 1.6.0 — 2026-09-19
+
+- Added: Multi-select in colonist table (with support for shift/ctrl-click modifiers and Ctrl-A to select all).
+- Changed: When multiple colonists are selected, hide the bottom panel (skills and recommendations) and palette indicators.
+- Changed: Added Mechanitor role to the default role set.
+- Fixed: Performance improvements (per-pawn invalidation).
+- Fixed: Window layout issues at very low resolutions.
+
 ## 1.5.7 — 2026-09-08
 
 - Fixed: Changed when auto-assigned roles are assigned to new pawns to prevent a mod conflict.

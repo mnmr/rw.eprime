@@ -13,3 +13,6 @@ full outdoor package.
 House rules: members must be regular roles without hour or location
 rules, and a composite cannot contain another composite. Editing a member
 role updates every composite bundling it.
+
+Several rows in the Member Roles list can be selected, moved and removed
+at once, the same way as in the [Selected Jobs list](topic:picking-jobs).

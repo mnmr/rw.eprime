@@ -9,6 +9,9 @@ namespace WorkRoles.Core.Recs
         None,
         Hunter,
         FireBlocker,
+        /// Only mechanitors (mechlink implant) are eligible; otherwise an
+        /// ordinary demand-planned role.
+        Mechanitor,
     }
 
     /// Detached role facts supplied by game and offline adapters. Job-derived
@@ -214,6 +217,8 @@ namespace WorkRoles.Core.Recs
                 CoveragePercent = source.Coverage,
                 Available = source.Available,
                 Enabled = source.Enabled,
+                RequiresMechanitor = source.SpecialRole
+                    == RecommendationSpecialRoleKind.Mechanitor,
                 WorkSpec = spec,
             };
         }

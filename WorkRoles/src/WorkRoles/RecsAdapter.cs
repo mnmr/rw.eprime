@@ -189,6 +189,7 @@ namespace WorkRoles
                 ShootingLevel = facts.ShootingLevel,
                 FireFear = facts.FireFear,
                 Incapacitated = facts.Incapacitated,
+                IsMechanitor = facts.IsMechanitor,
                 SkillLevels = new Dictionary<string, int>(facts.SkillLevels),
                 CapableWorkTypes = new HashSet<string>(facts.CapableWorkTypes),
             };
@@ -220,6 +221,9 @@ namespace WorkRoles
                 // Downed covers coma, pain shock, and immobility; the
                 // MakeDowned/MakeUndowned patches refresh this snapshot.
                 Incapacitated = pawn.Downed,
+                // Biotech-aware (false without the DLC); a mechlink hediff
+                // change refreshes the snapshot like any other hediff.
+                IsMechanitor = MechanitorUtility.IsMechanitor(pawn),
                 FireFear = pawn.genes != null
                     && pawn.genes.GenesListForReading.Any(g =>
                         FireFearGenes.Contains(g.def.defName)),

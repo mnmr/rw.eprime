@@ -17,6 +17,7 @@ namespace WorkRoles.Core.Recs
             "WS_Core",
             "WS_Doctor",
             "WS_Basics",
+            "WS_Mechanitor",
             "WS_Childminder",
             "WS_Warden",
             "WS_Handler",

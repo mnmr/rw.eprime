@@ -275,8 +275,8 @@
   <WR_ActRightClick>Right-click</WR_ActRightClick>
   <WR_ActX>X</WR_ActX>
   <WR_ActPaletteClick>Toggle the role globally</WR_ActPaletteClick>
-  <WR_ActPaletteShiftClick>Assign to the selected colonists, last</WR_ActPaletteShiftClick>
-  <WR_ActPaletteCtrlShiftClick>Assign to the selected colonists, right after Basics</WR_ActPaletteCtrlShiftClick>
+  <WR_ActPaletteShiftClick>Assign to the selected colonists at the end of the row</WR_ActPaletteShiftClick>
+  <WR_ActPaletteCtrlShiftClick>Assign to the selected colonists right after Basics</WR_ActPaletteCtrlShiftClick>
   <WR_ActPaletteAltClick>Assign to the selected colonists where the recommendation engine ranks it</WR_ActPaletteAltClick>
   <WR_ActPaletteDrag>Assign to a colonist</WR_ActPaletteDrag>
   <WR_ActTreeClick>Select for editing</WR_ActTreeClick>
@@ -467,6 +467,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_RecDecisionUnavailable>This role's work is unavailable until its research is finished.</WR_RecDecisionUnavailable>
   <WR_RecDecisionExcluded>This role is managed by rules and excluded from ordinary recommendations.</WR_RecDecisionExcluded>
   <WR_RecDecisionIncapable>This pawn is incapable of this role's work.</WR_RecDecisionIncapable>
+  <WR_RecDecisionNotMechanitor>This colonist has no mechlink, so they cannot do mechanitor work.</WR_RecDecisionNotMechanitor>
   <WR_RecDecisionHunterRequirements>This pawn does not carry a ranged weapon.</WR_RecDecisionHunterRequirements>
   <WR_RecDecisionAwful>An Awful signal disqualifies this pawn.</WR_RecDecisionAwful>
   <WR_RecDecisionCovered>Covered by recommended role: {0}.</WR_RecDecisionCovered>

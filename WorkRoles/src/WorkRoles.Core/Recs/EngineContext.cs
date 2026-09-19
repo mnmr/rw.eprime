@@ -86,7 +86,8 @@ namespace WorkRoles.Core.Recs
         public bool Capable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (pawn.Incapacitated || !WithinAgeLimits(pawn, role)
+            if (pawn.Incapacitated || !MeetsMechanitorRequirement(pawn, role)
+                || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
@@ -98,7 +99,8 @@ namespace WorkRoles.Core.Recs
         public bool FullyCapable(int pawnIndex, RoleView role)
         {
             PawnView pawn = Colony.Pawns[pawnIndex];
-            if (pawn.Incapacitated || !WithinAgeLimits(pawn, role)
+            if (pawn.Incapacitated || !MeetsMechanitorRequirement(pawn, role)
+                || !WithinAgeLimits(pawn, role)
                 || !MeetsExplicitRequiredSkills(pawnIndex, role)) return false;
             IReadOnlyList<string> workTypes = role.WorkTypes;
             for (int index = 0; index < workTypes.Count; index++)
@@ -126,6 +128,9 @@ namespace WorkRoles.Core.Recs
                     return false;
             return true;
         }
+
+        public static bool MeetsMechanitorRequirement(PawnView pawn, RoleView role) =>
+            !role.RequiresMechanitor || pawn.IsMechanitor;
 
         private static bool WithinAgeLimits(PawnView pawn, RoleView role) =>
             !pawn.AgeLimitsApply

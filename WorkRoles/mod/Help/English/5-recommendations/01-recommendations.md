@@ -14,9 +14,12 @@ for every role:
 
 ![Best fits in a palette tooltip](palette-tooltip.png)
 
-Hunter gets special handling: recommended to anyone carrying a ranged
-weapon (hunting trains Shooting), placed earlier for poor shots and later
-for sharpshooters whose time is worth more elsewhere.
+Two roles get special handling. Hunter is recommended to anyone carrying
+a ranged weapon (hunting trains Shooting), placed earlier for poor shots
+and later for sharpshooters whose time is worth more elsewhere.
+Mechanitor is recommended only to colonists with a mechlink, however
+good the other crafters are, and its Best fits list follows the same
+rule.
 
 The engine suggests; applying is yours, one role at a time
 ([cherry-picking](topic:cherry-picking)) or wholesale
