@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.3 — 2026-09-20
+
+- Fixed: Turning off QJ for an existing item did not always revert to vanilla behavior.
+
 ## 1.1.2 — 2026-09-14
 
 - Fixed: Allow finisher jobs to be moved to another work type (for better mod interop). Note: high-priority finishing still bypasses job priorities and runs before any normal work.

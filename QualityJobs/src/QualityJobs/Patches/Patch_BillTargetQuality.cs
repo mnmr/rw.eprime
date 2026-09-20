@@ -54,8 +54,10 @@ namespace QualityJobs.Patches
 
             CompQuality? comp = __result.TryGetComp<CompQuality>();
             if (comp == null) return;
-            if (!RetryDecision.ShouldRetry((QualityLevel)(int)comp.Quality,
-                    (QualityLevel)target)) return;
+            // Unmanaged bills complete vanilla-style: a stored target quality
+            // (per bill or the per-save default) must not keep remaking items.
+            if (!RetryDecision.ShouldRetry(store.ConfigFor(targetBill).Managed,
+                    (QualityLevel)(int)comp.Quality, (QualityLevel)target)) return;
 
             // Multiple products from one iteration mark the same (bill, tick)
             // pair idempotently. Completion consumes it once.

@@ -87,8 +87,8 @@ namespace QualityJobs.Patches
 
             CompQuality? comp = built.TryGetComp<CompQuality>();
             if (comp == null
-                || !RetryDecision.ShouldRetry((QualityLevel)(int)comp.Quality,
-                        (QualityLevel)plan.minQuality))
+                || !RetryDecision.ShouldRetry(managed: true, // a plan exists only while managed
+                        (QualityLevel)(int)comp.Quality, (QualityLevel)plan.minQuality))
             {
                 store.RemovePlan(plan); // accepted — plan complete
                 return;
