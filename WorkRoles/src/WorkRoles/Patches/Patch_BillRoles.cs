@@ -60,6 +60,116 @@ namespace WorkRoles.Patches
         }
     }
 
+    /// Surgery bills have no config dialog, so their health-tab row carries the
+    /// worker choice ("Any worker / Role: X") itself. Vanilla's label wraps in
+    /// the narrow operations column and its second line reaches into the row's
+    /// 29..53 band, so the row grows by vanilla's own per-bill status line
+    /// (StatusString non-empty + StatusLineMinHeight, as Bill_Production does
+    /// for "Paused"). Vanilla centres its info button in the area below the
+    /// first line (Bill.DoConfigInterface: yMin += 29, then the centre); the
+    /// worker button takes the same centre line to its left, and its own label
+    /// is truncated to the button width. The surgery text is never altered.
+    [HarmonyPatch(typeof(Bill), "StatusString", MethodType.Getter)]
+    public static class Patch_Bill_StatusString
+    {
+        public static void Postfix(Bill __instance, ref string __result)
+        {
+            if (__instance is Bill_Medical && RoleStore.Current != null && __result.NullOrEmpty())
+                __result = " "; // non-empty so the band exists; draws nothing visible
+        }
+    }
+
+    [HarmonyPatch(typeof(Bill), "StatusLineMinHeight", MethodType.Getter)]
+    public static class Patch_Bill_StatusLineMinHeight
+    {
+        public static void Postfix(Bill __instance, ref float __result)
+        {
+            if (__instance is Bill_Medical && RoleStore.Current != null
+                && __result < Patch_Bill_DoConfigInterface.BandHeight)
+                __result = Patch_Bill_DoConfigInterface.BandHeight;
+        }
+    }
+
+    /// Draws the worker button on the info button's centre line. The rect
+    /// argument is read only for its extents (vanilla shifts its yMin by 29f
+    /// while drawing); the centre is recomputed from vanilla's constant.
+    [HarmonyPatch(typeof(Bill), "DoConfigInterface")]
+    public static class Patch_Bill_DoConfigInterface
+    {
+        internal const float BandHeight = 24f;
+        /// Vanilla: the config area starts 29f down; the info button is 24f
+        /// square and ends 12f before the right edge; 4f gap before it.
+        private const float ConfigTop = 29f, LabelLeft = 28f, InfoButtonReserve = 40f;
+        /// ButtonText's own horizontal text padding.
+        private const float ButtonTextPadding = 10f;
+
+        // Cache contract. Owner: process. Key: (font, button label, button
+        // width in whole pixels). Value: the truncated button label string
+        // (immutable). Dependencies: UiVersion.Current (UI scale / tiny-font
+        // preference) via the stamp; language changes alter the key text and
+        // also clear through WindowDataLifecycle.ReleaseShared. Refresh:
+        // immediate on stamp mismatch. Equality: strings; identity irrelevant.
+        // Teardown: ReleaseShared (window close, world unload, language change).
+        private static readonly Dictionary<(GameFont, string, int), string> buttonLabels
+            = new Dictionary<(GameFont, string, int), string>();
+        private static int stamp = -1;
+
+        public static void Postfix(Bill __instance, Rect rect)
+        {
+            if (!(__instance is Bill_Medical bill) || RoleStore.Current == null) return;
+            float centerY = (ConfigTop + rect.yMax) / 2f;
+            var buttonRect = new Rect(LabelLeft, centerY - BandHeight / 2f,
+                rect.xMax - LabelLeft - InfoButtonReserve, BandHeight);
+            var role = BillRoles.RestrictionFor(bill);
+            string label = role == null
+                ? "AnyWorker".Translate()
+                : "WR_BillRoleOption".Translate(role.label);
+            if (Widgets.ButtonText(buttonRect, ButtonLabel(label, buttonRect.width - ButtonTextPadding)))
+                Find.WindowStack.Add(new FloatMenu(WorkerOptions(bill)));
+            UI.WrTips.Key("WR_SurgeryWorkerRoleTip").Region(buttonRect);
+        }
+
+        private static string ButtonLabel(string label, float width)
+        {
+            if (stamp != UiVersion.Current)
+            {
+                buttonLabels.Clear();
+                stamp = UiVersion.Current;
+            }
+            var key = (Text.Font, label, (int)width);
+            if (!buttonLabels.TryGetValue(key, out string result))
+            {
+                // Same drift margin as WrText.FitWidth so a fractional UI scale
+                // cannot wrap a label that measured as fitting.
+                result = UI.WrText.FitWidth(label) <= width ? label : label.Truncate((width - 2f) / 1.02f);
+                buttonLabels[key] = result;
+            }
+            return result;
+        }
+
+        internal static void Clear()
+        {
+            buttonLabels.Clear();
+            stamp = -1;
+        }
+
+        /// Built on click only: "Any worker" clears the restriction; eligible roles set it.
+        private static List<FloatMenuOption> WorkerOptions(Bill bill)
+        {
+            var options = new List<FloatMenuOption>
+            {
+                new FloatMenuOption("AnyWorker".Translate(), () => RoleCommands.SetBillRole(bill, -1))
+            };
+            foreach (var role in BillRoles.EligibleRoles(bill))
+            {
+                int roleId = role.id;
+                options.Add(new FloatMenuOption("WR_BillRoleOption".Translate(role.label),
+                    () => RoleCommands.SetBillRole(bill, roleId)));
+            }
+            return options;
+        }
+    }
+
     /// Bill copy-paste carries the role restriction to the clone.
     [HarmonyPatch(typeof(Bill), nameof(Bill.Clone))]
     public static class Patch_Bill_Clone

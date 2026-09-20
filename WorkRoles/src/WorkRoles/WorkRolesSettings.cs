@@ -33,11 +33,15 @@ namespace WorkRoles
     {
         public ChipDisplay chipDisplay = ChipDisplay.Normal;
         /// Colonist table chips in equal-width grid columns (false = stacked
-        /// at their natural widths).
-        public bool chipGrid;
+        /// at their natural widths). New installs start in the grid with
+        /// Medium columns; the field initializers are the new-install
+        /// defaults, while ExposeData keeps the older stacked/Automatic
+        /// fallbacks so an existing settings file that omitted those values
+        /// (the game skips values equal to the fallback) loads unchanged.
+        public bool chipGrid = true;
         /// Full-name grid chips: how many letters the column is sized for
         /// (names longer than that fade out).
-        public GridNamePreference chipGridNames = GridNamePreference.Automatic;
+        public GridNamePreference chipGridNames = GridNamePreference.Medium;
         public ColonistOrder colonistOrder = ColonistOrder.ColonistBar;
         /// Skill columns (defNames), so the table reopens exactly as it was closed.
         public System.Collections.Generic.List<string> skillColumns = new System.Collections.Generic.List<string>();

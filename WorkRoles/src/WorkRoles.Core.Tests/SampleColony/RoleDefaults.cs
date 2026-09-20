@@ -15,6 +15,7 @@ public static class RoleDefaults
         public int Coverage;
         public List<string> RequiredSkills = new();
         public List<(string Role, int Min, int Max)> Training = new();
+        public bool PreserveRecommendationOrder;
     }
 
     public static readonly IReadOnlyDictionary<string, DefTuning> ByDefName = Load();
@@ -28,7 +29,10 @@ public static class RoleDefaults
             string? defName = def.Element("defName")?.Value;
             if (defName == null)
                 continue;
-            var tuning = new DefTuning();
+            var tuning = new DefTuning
+            {
+                PreserveRecommendationOrder = BoolOf(def.Element("preserveRecommendationOrder"), false),
+            };
             XElement? values = def.Element("tuning");
             if (values != null)
             {

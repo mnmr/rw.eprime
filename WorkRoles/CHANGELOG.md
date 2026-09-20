@@ -5,6 +5,7 @@
 - Added: Multi-select in colonist table (with support for shift/ctrl-click modifiers and Ctrl-A to select all).
 - Changed: When multiple colonists are selected, hide the bottom panel (skills and recommendations) and palette indicators.
 - Changed: Added Mechanitor role to the default role set.
+- Changed: Default display mode for new installs is now Grid Medium.
 - Fixed: Performance improvements (per-pawn invalidation).
 - Fixed: Window layout issues at very low resolutions.
 

@@ -55,10 +55,10 @@ namespace WorkRoles.UI
             SetSkillColumns = v => Persist(s => s.skillColumns = v),
             GetTableChips = () => WorkRolesMod.Settings?.chipDisplay ?? ChipDisplay.Normal,
             SetTableChips = v => Persist(s => s.chipDisplay = v),
-            GetTableGrid = () => WorkRolesMod.Settings?.chipGrid ?? false,
+            GetTableGrid = () => WorkRolesMod.Settings?.chipGrid ?? true,
             SetTableGrid = v => Persist(s => s.chipGrid = v),
             GetTableGridNames = () => WorkRolesMod.Settings?.chipGridNames
-                ?? GridNamePreference.Automatic,
+                ?? GridNamePreference.Medium,
             SetTableGridNames = v => Persist(s => s.chipGridNames = v),
             ShowSkills = true,
             ShowRecommendations = true,

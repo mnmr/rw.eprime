@@ -15,6 +15,7 @@ namespace WorkRoles.UI
             ColonistsTabView.InvalidateSharedLanguageCaches();
             ColonyScope.ReleaseSnapshot();
             WrText.ClearFitWidthCache();
+            Patches.Patch_Bill_DoConfigInterface.Clear();
             WrToast.Clear();
         }
     }

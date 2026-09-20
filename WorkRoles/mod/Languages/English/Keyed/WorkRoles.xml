@@ -762,6 +762,8 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- {0} = role label; used in the worker dropdown and as its button label -->
   <WR_BillRoleOption>Role: {0}</WR_BillRoleOption>
   <WR_BillWorkerRoleTip>Only colonists actively holding this role work this bill; a conditional role applies its rules (e.g. active hours). Selecting a worker clears the role restriction and vice versa.</WR_BillWorkerRoleTip>
+  <!-- Surgery bill row (health tab, Operations): the worker button under the bill label -->
+  <WR_SurgeryWorkerRoleTip>Who may perform this operation. Any worker means no role restriction. A role limits the operation to colonists actively holding that role; a conditional role applies its rules (e.g. active hours).</WR_SurgeryWorkerRoleTip>
 
   <!-- ===== Shared / dialogs ===== -->
 

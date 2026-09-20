@@ -719,6 +719,10 @@
     <iconPath>WorkRoles/RoleIcons/robot-head</iconPath>
     <description>Repairing mechanoids, gestating new ones and encoding subcores. Recommended only to colonists with a mechlink.</description>
     <recommendationSpecialRole>Mechanitor</recommendationSpecialRole>
+    <!-- Eligibility is the mechlink, not a skill, so the role keeps its
+         recommendation-order slot (right after Basics) instead of competing
+         on crafting score with the mechanitor's champion roles. -->
+    <preserveRecommendationOrder>true</preserveRecommendationOrder>
     <colorRef>sky-800</colorRef>
     <group>Indoors</group>
     <tuning>

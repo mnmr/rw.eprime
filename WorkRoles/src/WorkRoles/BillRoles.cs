@@ -11,8 +11,10 @@ namespace WorkRoles
     public static class BillRoles
     {
         /// Roles that make sense for this bill: those providing a bill-doing work
-        /// giver that serves the bill's bench and matches the recipe's required
-        /// giver work type — either the giver itself or its whole work type.
+        /// giver that serves the bill's giver (a bench, or the patient pawn for
+        /// surgery, judged by vanilla's own ThingIsUsableBillGiver) and matches
+        /// the recipe's required giver work type — either the giver itself or
+        /// its whole work type.
         public static List<Role> EligibleRoles(Bill bill)
         {
             var result = new List<Role>();
@@ -24,7 +26,7 @@ namespace WorkRoles
             foreach (var def in DefDatabase<WorkGiverDef>.AllDefsListForReading)
             {
                 if (def.giverClass == null || !typeof(WorkGiver_DoBill).IsAssignableFrom(def.giverClass)) continue;
-                if (def.fixedBillGiverDefs == null || !def.fixedBillGiverDefs.Contains(bench.def)) continue;
+                if (!(def.Worker is WorkGiver_DoBill giver) || !giver.ThingIsUsableBillGiver(bench)) continue;
                 if (bill!.recipe.requiredGiverWorkType != null && bill.recipe.requiredGiverWorkType != def.workType) continue; // bench != null implies bill != null
                 givers.Add(def);
             }
