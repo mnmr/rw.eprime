@@ -45,7 +45,7 @@ try {
         if ($processes.Count -gt 1) { throw 'Multiple games claimed the same run.' }
         if ($processes.Count -eq 1) {
             $content = if (Test-Path -LiteralPath $script:RimWorldPlayerLog) { Read-TextFileWhileOpen $script:RimWorldPlayerLog } else { '' }
-            if ($content.Contains($runToken) -and $content -match '(?m)^SaveableFromNode exception:|^Exception while loading|SharedAutomation.*Exception|^Crash!!!|Could not execute post-long-event action\. Exception:') {
+            if ($content.Contains($runToken) -and $content -match '(?m)^SaveableFromNode exception:|^Exception while loading|SharedAutomation.*Exception|^Crash!!!|Could not execute post-long-event action\. Exception:|^Could not find (?:game|world) XML node\.|^Called InitSaving\(\) but current mode is') {
                 throw 'The run logged an automation or save-load failure; inspect its Player.log.'
             }
             if ($content.Contains($runToken) -and $content.Contains('[SharedAutomation] ready for background commands')) {

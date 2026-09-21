@@ -42,7 +42,7 @@ verification commands. Where this file is silent, the root contract governs.
 | Direct glyph geometry (`PanelDirectGlyphs`) | Draw-model identity, the same text revision as the glyph surface, and the raster scale (`Prefs.UIScale`); scroll and panel position only translate the cached quads by a pixel-snapped origin; released on panel reset |
 | Header strip surface | Search visibility options, search text, title text and measured width, panel width, header height, UI metric revision, raster scale. The mod-name title rides a second coverage-from-red channel drawn through the font material (the sprite material renders atlas glyphs black); both channels publish from one Ensure and promote together |
 | Published texture sample | Exact published pixels and physical dimensions; strongest-coverage pixel selected during the existing conversion, expected premultiplied output and UV promoted with the front. Empty layers use a clear sample. No scan is performed at check time |
-| Texture health result | Panel/map owner, frame-buffer owner and publication version, visible title, sample metadata and presentation material; sample up to four actual fronts through that material into an owned 4x1 target, then compare asynchronous readback with a two-byte rounding tolerance. Old owners/versions cannot initiate recovery; panel reset/retirement defers target destruction until an outstanding read completes |
+| Texture health result | Panel/map owner, frame-buffer owner and publication version, visible title, sample metadata and the presentation call; sample up to four actual fronts through that call onto an owned opaque-black 4x1 target, then compare asynchronous readback with a two-byte rounding tolerance. Old owners/versions cannot initiate recovery; panel reset/retirement defers target destruction until an outstanding read completes |
 | Editor bands | Selected group, width, `GroupsVersion`, `ThresholdsVersion`, `CountRulesVersion`, pool snapshot identity, count snapshot identity |
 | Pool display/list rows | Shared pool snapshot identity and relevant selection state |
 | Group assignment tree rows | Store/world identity, `GroupsVersion`, selected group and token, pool snapshot identity, shared filter revision, group expansion state, and language revision |
@@ -70,9 +70,21 @@ published GPU pixels, and verify automatic recovery both idle and during a
 pending publish.
 
 Presentation preflights the complete required front set (including the title
-only when shown) and the owned sprite material before submitting any layer.
-Missing base dimensions are a presentation failure, not an empty viewport.
-Every surface propagates backend presentation failure to the direct fallback.
+only when shown) and the backend before submitting any layer. Missing base
+dimensions are a presentation failure, not an empty viewport. Every surface
+propagates backend presentation failure to the direct fallback.
+
+Screen presentation MUST use Unity's built-in GUI blit material (the
+material-less `Graphics.DrawTexture` overload with its neutral 0.5 tint), which
+is `ZTest Always` like every vanilla IMGUI draw. The owned sprite material
+depth-tests (`Sprites/Default` declares no `ZTest`), and RimWorld never resets the
+backbuffer depth at GUI time, so any near-depth write (observed after a
+window-surface round trip such as minimize/restore on Linux) would hide every
+depth-tested draw for the rest of the process while every offscreen check stayed
+green; save/reload cannot clear it. The sprite material is only the premultiplied
+compositor for offscreen targets, which have no depth buffer. Runtime regression:
+write near depth across the backbuffer during OnGUI, then stop; the panel must
+remain visible (`temp/linux-minimize`).
 
 Surface publication validates coverage during its existing pixel conversion,
 on both asynchronous and synchronous paths. Each gated builder declares when
@@ -84,10 +96,13 @@ publish retry/fallback path. This checks newly built output only; it does not
 detect later corruption of a published GPU texture or final-screen occlusion.
 Runtime regressions must cover lost base/glyph/title fronts and material,
 blank required publications, legitimate empty layers, and rejected replacement
-preservation. The periodic material-path check additionally detects corruption
+preservation. The periodic presentation-path check additionally detects corruption
 at the sampled published pixels. It cannot prove every texel or final-screen
-visibility. It submits no synchronous periodic readback on platforms without
-async readback support; creation, material and publication checks remain active.
+visibility (depth, clipping, occlusion); the screen-presentation rule above is
+what protects final-screen visibility. It submits no synchronous periodic readback
+on platforms without async readback support (OpenGL Core, RimWorld's default on
+Linux), so there is no periodic check there at all; creation, material and
+publication checks remain active.
 
 Recovery first re-uploads retained front pixels and recreates lost working
 targets; then recreates the owned backend/material and re-uploads; then builds
@@ -105,6 +120,10 @@ retained CPU pixels, material/front/working-target loss, persistent corruption,
 in-flight publication interruption, stale results, reset during a pending
 check, title visibility, and unsupported async readback. Normal GPU request
 completion is required; a driver-stalled request has no forced timeout.
+
+The periodic health check, the recovery ladder and lost-target restoration are
+scheduled for retirement; see `FOLLOWUP.md` before touching or removing any of
+them (it lists what goes, what stays and why, and how to verify).
 
 ## Fault ladder
 

@@ -222,12 +222,21 @@ namespace EPrimeReadouts.UI
             return true;
         }
 
+        /// Screen presentation goes through Unity's own GUI blit material (the
+        /// shader every vanilla IMGUI draw uses: ZTest Always, straight-alpha
+        /// source-over). The owned sprite material depth-tests (Sprites/Default
+        /// declares no ZTest) and RimWorld never resets the backbuffer depth at
+        /// GUI time, so a single near-depth write (a window-surface round trip
+        /// on Linux) would hide every depth-tested draw for the rest of the
+        /// process while every offscreen check stayed green. The sprite
+        /// material remains the premultiplied compositor for offscreen targets.
+        /// The material-less overload's neutral modulation is 0.5 per channel.
+        private static readonly Color NeutralTint = new Color(0.5f, 0.5f, 0.5f, 0.5f);
+
         internal bool Present(Texture2D texture, Rect rect, Rect uv)
         {
             if (!IsAvailable || texture == null) return false;
-            Graphics.DrawTexture(
-                rect, texture, uv,
-                0, 0, 0, 0, Color.white, spriteMaterial);
+            Graphics.DrawTexture(rect, texture, uv, 0, 0, 0, 0, NeutralTint);
             return true;
         }
 
@@ -497,7 +506,7 @@ namespace EPrimeReadouts.UI
                 final = CreateWorkingSurface(1, 2);
                 DrawProbe(final, presented, new Color32(
                     destination.R, destination.G,
-                    destination.B, destination.A));
+                    destination.B, destination.A), present: true);
                 if (!Near(ReadPixel(final, top: true),
                         Rgba32Math.SourceOver(straightTop, destination), 3)
                     || !Near(ReadPixel(final, top: false),
@@ -524,8 +533,11 @@ namespace EPrimeReadouts.UI
             Near(ReadPublished(published, top: true), top, 2)
             && Near(ReadPublished(published, top: false), bottom, 2);
 
+        /// Stage one composes through the sprite material; stage three draws
+        /// through the actual screen presentation call.
         private void DrawProbe(
-            RenderTexture target, Texture texture, Color clear)
+            RenderTexture target, Texture2D texture, Color clear,
+            bool present = false)
         {
             RenderTexture? previous = RenderTexture.active;
             RenderTexture.active = target;
@@ -534,8 +546,9 @@ namespace EPrimeReadouts.UI
             {
                 GL.LoadPixelMatrix(0f, 1f, 2f, 0f);
                 GL.Clear(clearDepth: true, clearColor: true, clear);
-                DrawToActive(new Rect(0f, 0f, 1f, 2f),
-                    texture, Color.white);
+                var rect = new Rect(0f, 0f, 1f, 2f);
+                if (present) Graphics.DrawTexture(rect, texture, FullUv, 0, 0, 0, 0, NeutralTint);
+                else DrawToActive(rect, texture, Color.white);
             }
             finally
             {

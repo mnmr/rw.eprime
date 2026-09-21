@@ -8,12 +8,15 @@ namespace EPrimeReadouts.UI
 {
     internal enum TextureHealthResult { Idle, Pending, Healthy, Failed, Stale }
 
-    /// Samples actual published textures through the same material used to
-    /// present the panel. This detects erased samples or a broken sprite path,
-    /// not corruption elsewhere in a texture or final-screen clipping/occlusion.
+    /// Samples actual published textures through the same call used to present
+    /// the panel, onto an opaque black target. This detects erased samples or a
+    /// broken presentation path, not corruption elsewhere in a texture and not
+    /// final-screen state (depth, clipping, occlusion), which the offscreen
+    /// target cannot reproduce.
     internal sealed class PanelTextureHealth
     {
         private const int SampleCount = 4;
+        private static readonly Color32 OpaqueBlack = new Color32(0, 0, 0, 255);
         private readonly PanelBufferBackend backend;
         private readonly Action<AsyncGPUReadbackRequest> completed;
         // Owner: this panel health checker. Key: captured frame-buffer owner
@@ -59,11 +62,11 @@ namespace EPrimeReadouts.UI
                 try
                 {
                     GL.LoadPixelMatrix(0f, SampleCount, 1f, 0f);
-                    GL.Clear(true, true, Color.clear);
+                    GL.Clear(true, true, Color.black);
                     for (int i = 0; i < SampleCount; i++)
                     {
                         PanelSurfaceChannel? channel = buffers.HealthChannel(i);
-                        expected[i] = channel == null ? default : channel.FrontSample.Expected;
+                        expected[i] = channel == null ? OpaqueBlack : channel.FrontSample.Expected;
                         if (channel == null) continue; // hidden title
                         Texture2D? front = channel.Front;
                         if (front == null || !backend.Present(front,

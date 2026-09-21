@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.6.1 — 2026-09-20
+
+- Added: Button on surgery bills to allow setting a role filter.
+
 ## 1.6.0 — 2026-09-19
 
 - Added: Multi-select in colonist table (with support for shift/ctrl-click modifiers and Ctrl-A to select all).

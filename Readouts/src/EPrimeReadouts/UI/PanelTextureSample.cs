@@ -14,12 +14,12 @@ namespace EPrimeReadouts.UI
             Expected = new Color32(
                 (byte)((pixel.R * pixel.A + 127) / 255),
                 (byte)((pixel.G * pixel.A + 127) / 255),
-                (byte)((pixel.B * pixel.A + 127) / 255), pixel.A);
+                (byte)((pixel.B * pixel.A + 127) / 255), 255);
         }
 
         internal Rect Uv { get; }
-        // Sprites/Default presents straight-alpha input as premultiplied
-        // source-over. The check draws onto clear, so this is its output.
+        // Straight-alpha source-over onto opaque black: premultiplied colour,
+        // opaque alpha. The health check clears its target to that background.
         internal Color32 Expected { get; }
     }
 }

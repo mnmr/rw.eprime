@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.3.5 — 2026-09-20
+
+- Fixed: Possible fix for readout vanishing after minimize/restore on Linux (GPU depth test).
+
 ## 1.3.4 — 2026-09-14
 
 - Added: Periodic rendering health checks and automatic buffer recovery to address disappearing readouts.
