@@ -139,23 +139,29 @@ namespace EPrimeReadouts.Core
             }
         }
 
-        /// Toggles only the defs matching the active picker filter. A complete
-        /// category scope retains the compact @Category representation;
-        /// partial scopes remain explicit so hidden defs are never changed.
-        public static List<string> ToggleCategoryScope(List<string> members, string categoryDefName,
-            IReadOnlyList<string> scopedDefs, IResourceCatalog catalog)
+        /// Brings one def to the requested selection; already there is a copy
+        /// of the unchanged list. Returns a NEW list.
+        public static List<string> SetDef(List<string> members, string defName,
+            bool selected, IResourceCatalog catalog)
+            => IsSelected(members, defName, catalog) == selected
+                ? new List<string>(members)
+                : ToggleDef(members, defName, catalog);
+
+        /// Brings the defs matching the active picker filter to the requested
+        /// selection. A complete category scope keeps the compact @Category
+        /// representation; partial scopes remain explicit so hidden defs are
+        /// never changed. Returns a NEW list.
+        public static List<string> SetCategoryScope(List<string> members, string categoryDefName,
+            IReadOnlyList<string> scopedDefs, bool selected, IResourceCatalog catalog)
         {
             if (SameSet(scopedDefs, catalog.CountedDefsIn(categoryDefName)))
-                return ToggleCategory(members, categoryDefName, catalog);
+                return (CategoryState(members, categoryDefName, catalog) == TriState.On) == selected
+                    ? new List<string>(members)
+                    : ToggleCategory(members, categoryDefName, catalog);
 
-            bool turnOff = ScopeState(members, scopedDefs, catalog) == TriState.On;
             var result = new List<string>(members);
             foreach (var defName in scopedDefs)
-            {
-                bool isSelected = IsSelected(result, defName, catalog);
-                if ((turnOff && isSelected) || (!turnOff && !isSelected))
-                    result = ToggleDef(result, defName, catalog);
-            }
+                result = SetDef(result, defName, selected, catalog);
             return result;
         }
 

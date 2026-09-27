@@ -195,10 +195,10 @@ public class PoolTriStateTests
             .With("Meat_Alpaca", "alpaca meat")
             .WithCategory("MeatRaw", "raw meat", "Meat_Cow", "Meat_Chicken", "Meat_Alpaca");
 
-        var removed = PoolTriState.ToggleCategoryScope(
-            Members("@MeatRaw"), "MeatRaw", new[] { "Meat_Cow" }, catalog);
-        var added = PoolTriState.ToggleCategoryScope(
-            Members(), "MeatRaw", new[] { "Meat_Cow" }, catalog);
+        var removed = PoolTriState.SetCategoryScope(
+            Members("@MeatRaw"), "MeatRaw", new[] { "Meat_Cow" }, selected: false, catalog);
+        var added = PoolTriState.SetCategoryScope(
+            Members(), "MeatRaw", new[] { "Meat_Cow" }, selected: true, catalog);
 
         await Assert.That(string.Join(",", removed)).IsEqualTo("Meat_Chicken,Meat_Alpaca");
         await Assert.That(string.Join(",", added)).IsEqualTo("Meat_Cow");

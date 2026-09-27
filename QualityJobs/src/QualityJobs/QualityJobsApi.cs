@@ -8,14 +8,20 @@ using Verse;
 namespace QualityJobs
 {
     /// <summary>
-    /// Cached, read-only integration surface for other mods plus the one
-    /// supported command for creating a managed production bill. Callers must
-    /// use this surface from RimWorld's main thread because its identity handles
+    /// Cached, read-only integration surface for other mods plus the supported
+    /// commands for creating and managing production bills. Callers must use
+    /// this surface from RimWorld's main thread because its identity handles
     /// are live game objects.
     /// </summary>
     public static class QualityJobsApi
     {
-        public const int ApiVersion = 1;
+        /// <summary>
+        /// 1: GetManagedJobs and CreateQualityBill. 2: adds ManageBill and
+        /// UnmanageBill; every version 1 member is unchanged. Callers binding
+        /// by reflection read this constant and require at least 2 before
+        /// looking up the version 2 methods.
+        /// </summary>
+        public const int ApiVersion = 2;
 
         /// <summary>
         /// Returns the currently published immutable snapshot. Cache hits do no
@@ -103,6 +109,125 @@ namespace QualityJobs
             });
             return new CreateQualityBillResult(CreateQualityBillStatus.Success);
         }
+
+        /// <summary>
+        /// Places a caller-created bill under Quality Jobs management with an
+        /// explicit target quality (API version 2).
+        /// <para>Writes only the bill's managed flag and target quality, both
+        /// pinned so later per-save default edits cannot undo them. The skill
+        /// gate, inspiration, specialist, and auto-best settings keep following
+        /// the per-save defaults (or the bill's existing overrides): the
+        /// finisher gate is Quality Jobs' own. Quality Jobs never reads or
+        /// writes <c>bill.allowedSkillRange</c>, so a minimum skill the caller
+        /// set still limits who may start the bill; Quality Jobs never lowers
+        /// it. A caller that wants only Quality Jobs to decide who works the
+        /// bill leaves that range open.</para>
+        /// <para>A managed bill is paused at completion for a crafter who
+        /// fails the gate (target quality 0 still gates on skill), counts
+        /// toward the per-product unfinished-item cap, and, in RepeatCount
+        /// mode, retries below-target results: the below-target product stays
+        /// spawned like any finished product, and the bill keeps its repeat
+        /// count, so it stays alive and makes the item again.</para>
+        /// <para>Success means the synced command was issued; Multiplayer may
+        /// apply it after this call returns. Repeating an identical request
+        /// changes nothing.</para>
+        /// </summary>
+        /// <param name="targetQuality">0 (Awful, any quality accepted) to 6
+        /// (Legendary), as <c>(int)QualityCategory</c>.</param>
+        /// <returns>
+        /// <see cref="BillManagementStatus.Success"/>,
+        /// <see cref="BillManagementStatus.QualityJobsInactive"/>,
+        /// <see cref="BillManagementStatus.InvalidBill"/>,
+        /// <see cref="BillManagementStatus.BillUnavailable"/>,
+        /// <see cref="BillManagementStatus.UnsupportedRecipe"/>, or
+        /// <see cref="BillManagementStatus.InvalidTargetQuality"/>. Nothing
+        /// changes unless the status is Success.
+        /// </returns>
+        public static BillManagementStatus ManageBill(
+            Bill_ProductionWithUft bill, int targetQuality)
+        {
+            BillManagementStatus status = Validate(bill, out string? billId);
+            if (status != BillManagementStatus.Success) return status;
+            if (!BillManagement.IsValidTargetQuality(targetQuality))
+                return BillManagementStatus.InvalidTargetQuality;
+            Commands.ManageBillFromApi(billId!, targetQuality);
+            return BillManagementStatus.Success;
+        }
+
+        /// <summary>
+        /// Hands a bill back to vanilla behaviour (API version 2): no
+        /// completion gate, no finisher dispatch, no below-target retry, no
+        /// unfinished-item cap. The unmanaged state is pinned, so it also
+        /// overrides the per-save "manage new bills" default for this bill.
+        /// Unfinished items of this bill that the gate had paused or
+        /// dispatched are released to a vanilla crafter. Any stored target
+        /// quality is kept but unused while the bill is unmanaged.
+        /// Success means the synced command was issued; repeating it changes
+        /// nothing.
+        /// </summary>
+        /// <returns>
+        /// <see cref="BillManagementStatus.Success"/>,
+        /// <see cref="BillManagementStatus.QualityJobsInactive"/>,
+        /// <see cref="BillManagementStatus.InvalidBill"/>,
+        /// <see cref="BillManagementStatus.BillUnavailable"/>, or
+        /// <see cref="BillManagementStatus.UnsupportedRecipe"/> (Quality Jobs
+        /// never manages that recipe, so the bill already behaves vanilla).
+        /// Nothing changes unless the status is Success.
+        /// </returns>
+        public static BillManagementStatus UnmanageBill(Bill_ProductionWithUft bill)
+        {
+            BillManagementStatus status = Validate(bill, out string? billId);
+            if (status != BillManagementStatus.Success) return status;
+            Commands.UnmanageBillFromApi(billId!);
+            return BillManagementStatus.Success;
+        }
+
+        private static BillManagementStatus Validate(
+            Bill_ProductionWithUft? bill, out string? billId)
+        {
+            billId = null;
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null) return BillManagementStatus.QualityJobsInactive;
+            if (bill == null || store.IsFinishBill(bill))
+                return BillManagementStatus.InvalidBill;
+            // billStack first: vanilla DeletedOrDereferenced dereferences it,
+            // and a bill that was never added to a stack has none.
+            if (bill.billStack?.billGiver is not Thing giver
+                || bill.DeletedOrDereferenced
+                || !giver.Spawned
+                || !bill.billStack.Bills.Contains(bill))
+                return BillManagementStatus.BillUnavailable;
+            if (!ManagedRecipes.IsManagedRecipe(bill.recipe))
+                return BillManagementStatus.UnsupportedRecipe;
+            billId = BillIds.IdOf(bill);
+            return BillManagementStatus.Success;
+        }
+    }
+
+    /// <summary>Result of QualityJobsApi.ManageBill and UnmanageBill (API
+    /// version 2). Nothing changes unless the status is Success.</summary>
+    public enum BillManagementStatus
+    {
+        /// <summary>The synced command was issued. Multiplayer may apply it
+        /// after the call returns.</summary>
+        Success = 0,
+        /// <summary>No Quality Jobs store in the current game: no game is
+        /// loaded, or Quality Jobs is disabled for this save.</summary>
+        QualityJobsInactive = 1,
+        /// <summary>The bill is null, or is one of Quality Jobs' own one-shot
+        /// finish bills.</summary>
+        InvalidBill = 2,
+        /// <summary>The bill is deleted, or is not on the bill stack of a
+        /// spawned bill giver.</summary>
+        BillUnavailable = 3,
+        /// <summary>Quality Jobs does not manage the recipe: it makes no
+        /// unfinished item, its product has no quality, or an ingredient
+        /// decides that quality rather than the crafter (Vanilla Genetics
+        /// Expanded genoframes). Keep the bill's own skill limits.</summary>
+        UnsupportedRecipe = 4,
+        /// <summary>ManageBill only: the target quality is outside 0
+        /// (Awful) to 6 (Legendary).</summary>
+        InvalidTargetQuality = 5,
     }
 
     /// <summary>Immutable published collection of all active managed work.</summary>

@@ -16,10 +16,54 @@ public class ImplantConflictTests
 
     static PlannedSlotFacts Facts(string defName, bool replacement, int record,
         int[]? ancestors = null, string[]? tags = null, string[]? incompatible = null,
-        string[]? removeWith = null, bool mountsOnArtificial = false)
+        string[]? removeWith = null, bool mountsOnArtificial = false,
+        bool wipesPart = false)
         => new PlannedSlotFacts(defName, replacement, record,
             ancestors ?? NoAncestors, tags ?? NoTags, incompatible ?? NoTags,
-            removeWith ?? NoTags, mountsOnArtificial);
+            removeWith ?? NoTags, mountsOnArtificial, wipesPart);
+
+    /// Vanilla Genetics Expanded's install worker restores the whole part
+    /// before adding its hediff, even for its implant-class kinds (neuron
+    /// reinforcement, muffalo skin), which the game does not treat as an
+    /// artificial part: a brain implant installed AFTER neuron
+    /// reinforcement stays, one installed before it is pushed out. Order
+    /// decides, so the pair is no conflict; two wiping kinds on one part
+    /// push each other out in every order, and a real replacement (the
+    /// hibernation module replaces the brain) excludes both. A wiper
+    /// higher up the body only clears what went in before it.
+    [Test]
+    public async Task PartWipingImplantsCoexistWithImplantsInstalledAfterThem()
+    {
+        var neuron = Facts("GR_NeuronReinforcement", replacement: false, record: 3,
+            wipesPart: true);
+        var circadian = Facts("CircadianAssistant", replacement: false, record: 3);
+        var hibernation = Facts("GR_HibernationModule", replacement: true, record: 3);
+        var muffaloSkin = Facts("GR_MuffaloSkin", replacement: false, record: 7,
+            wipesPart: true);
+        var thrumboSkin = Facts("GR_ThrumboSkin", replacement: false, record: 7,
+            wipesPart: true);
+        var underSternum = Facts("RibImplant", replacement: false, record: 8,
+            ancestors: new[] { 7, 0 });
+
+        await Assert.That(ImplantConflictRules.Conflicts(neuron, circadian)).IsFalse();
+        await Assert.That(ImplantConflictRules.Conflicts(circadian, neuron)).IsFalse();
+        await Assert.That(ImplantConflictRules.Conflicts(neuron, hibernation)).IsTrue();
+        await Assert.That(ImplantConflictRules.Conflicts(muffaloSkin, thrumboSkin)).IsTrue();
+        await Assert.That(ImplantConflictRules.Conflicts(muffaloSkin, underSternum)).IsFalse();
+
+        // Evaluation substitution follows the same rule: an installed
+        // neuron reinforcement never stands in for a circadian assistant
+        // goal (they coexist), while two part-wipers compete for the part.
+        await Assert.That(ImplantConflictRules.CompeteForSlot(
+            replacesA: false, wipesA: true, mountsA: false,
+            replacesB: false, wipesB: false, mountsB: false)).IsFalse();
+        await Assert.That(ImplantConflictRules.CompeteForSlot(
+            replacesA: false, wipesA: true, mountsA: false,
+            replacesB: false, wipesB: true, mountsB: false)).IsTrue();
+        await Assert.That(ImplantConflictRules.CompeteForSlot(
+            replacesA: true, wipesA: true, mountsA: false,
+            replacesB: false, wipesB: false, mountsB: false)).IsTrue();
+    }
 
     /// Bionic modularity modules: their surgery worker does not inherit
     /// vanilla's refusal of artificial parts (they exist to mount ON a

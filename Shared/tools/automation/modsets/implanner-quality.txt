@@ -1,0 +1,15 @@
+# Mod set: Implanner quality support. Vanilla Genetics Expanded (hybrid
+# implants, genoframe quality), Quality Bionics Remastered (quality on
+# bionics), Elite Bionics Framework, and FSF Advanced Bionics Expansion
+# (implants declaring Elite Bionics Framework HP bonuses).
+
+# Frameworks load right after the expansions.
+after ludeon.rimworld.odyssey
+oskarpotocki.vanillafactionsexpanded.core
+v1024.ebframework
+
+# Content mods load before the EPrime mods.
+before mnmr.workroles
+vanillaexpanded.vgeneticse
+assassinsbro.qualitybionicsremastered
+frozensnowfox.advancedbionicsexpansion

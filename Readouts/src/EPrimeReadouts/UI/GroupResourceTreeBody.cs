@@ -218,14 +218,7 @@ namespace EPrimeReadouts.UI
                         || !checkRect.Contains(Event.current.mousePosition))))
                 return;
 
-            ReadoutGroup? group = ReadoutStore.Current?.Model.GroupById(groupId);
-            if (group != null)
-            {
-                List<List<string>> tiers = TierOps.Clone(group.Tiers);
-                if (TierOps.Remove(tiers, token))
-                    ReadoutCommands.SetGroupLayout(
-                        group.Id, TierBlobCodec.Encode(tiers));
-            }
+            ReadoutCommands.RemoveGroupSlot(groupId, token);
             if (string.Equals(
                 owner.selectedCanonical,
                 SlotToken.Canonical(token),
@@ -238,16 +231,9 @@ namespace EPrimeReadouts.UI
             Dialog_ReadoutConfig owner)
         {
             ReadoutGroup? group = ReadoutStore.Current?.Model.GroupById(groupId);
-            if (group == null) return;
+            if (group == null || TierOps.Contains(group.Tiers, token)) return;
 
-            List<List<string>> tiers = TierOps.Clone(group.Tiers);
-            int tier = tiers.Count == 0 ? 0 : tiers.Count - 1;
-            if (tier < tiers.Count
-                && tiers[tier].Count >= TierOps.MaxSlotsPerTier)
-                tier++;
-            if (!TierOps.Add(tiers, token, tier, -1)) return;
-
-            ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
+            ReadoutCommands.AddGroupSlot(groupId, token, -1, -1);
             owner.selectedCanonical = SlotToken.Canonical(token);
         }
 

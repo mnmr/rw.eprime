@@ -15,11 +15,14 @@ namespace Implanner
     {
         /// model supplies the option-driven kind exclusivity (mod
         /// compatibility) as its once-allocated delegate, beside the
-        /// definition-derived same-slot gate.
+        /// definition-derived same-slot gate. minQuality is the assigned
+        /// plan's minimum item quality: a different installed kind stands in
+        /// for a goal only when it is at least as good as the goal's implant
+        /// at that quality.
         internal static PlanEvaluation Evaluate(PlannerModel model, Pawn pawn,
-            IReadOnlyList<ImplantGoal> goals, bool away)
+            IReadOnlyList<ImplantGoal> goals, bool away, int minQuality)
         {
-            Project(pawn, goals,
+            Project(pawn, goals, minQuality,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.Evaluate(
@@ -31,9 +34,10 @@ namespace Implanner
         /// pawn (unblocked, not satisfied by the evaluator's one-to-one
         /// matching).
         internal static List<string> MissingImplantSlotKeys(
-            PlannerModel model, Pawn pawn, IReadOnlyList<ImplantGoal> goals)
+            PlannerModel model, Pawn pawn, IReadOnlyList<ImplantGoal> goals,
+            int minQuality)
         {
-            Project(pawn, goals,
+            Project(pawn, goals, minQuality,
                 out List<InstalledImplant> installed,
                 out ImplantContext[] implantContexts);
             return PlanEvaluator.MissingImplantSlotKeys(
@@ -44,12 +48,36 @@ namespace Implanner
         /// The shared projection prologue: both evaluation entry points must
         /// feed PlanEvaluator identical inputs.
         private static void Project(Pawn pawn, IReadOnlyList<ImplantGoal> goals,
+            int minQuality,
             out List<InstalledImplant> installed, out ImplantContext[] contexts)
         {
             installed = BuildInstalledImplants(pawn);
             contexts = new ImplantContext[goals.Count];
             for (int i = 0; i < goals.Count; i++)
-                contexts[i] = BuildImplantContext(pawn, goals[i]);
+                contexts[i] = BuildImplantContext(pawn, goals[i], minQuality);
+        }
+
+        /// The lowest item quality this plan accepts for the entry: the
+        /// plan's minimum for an item that carries a quality, any otherwise.
+        internal static int PlanMinimumFor(ImplantCatalogEntry entry, int planMinQuality) =>
+            ImplantQualities.HasQuality(entry.Def.spawnThingOnRemoved)
+                ? planMinQuality
+                : ImplantQuality.Lowest;
+
+        /// The lowest item quality this slot takes (ImplantQuality
+        /// .MinimumAcceptable): the plan's minimum, raised until the
+        /// implant leaves the part no worse than it is now, so an implant
+        /// worse than a healthy part never replaces it but may replace a
+        /// missing or damaged one. ImplantQuality.None when no quality
+        /// qualifies. Reconcile passes and snapshot builders only.
+        internal static int MinimumAcceptableQuality(Pawn pawn,
+            ImplantCatalogEntry entry, BodyPartRecord part, int planMinQuality)
+        {
+            float current = entry.IsReplacement
+                ? PawnCapacityUtility.CalculatePartEfficiency(pawn.health.hediffSet, part)
+                : 1f;
+            return ImplantQuality.MinimumAcceptable(ImplantQualities.AfterInstall(entry),
+                current, PlanMinimumFor(entry, planMinQuality));
         }
 
         /// The pawn facts the ASAP candidate ranking reads: move speed,
@@ -136,7 +164,7 @@ namespace Implanner
                 result.Add(new InstalledImplant(
                     hediff.def.defName,
                     body.GetIndexOfPart(hediff.Part).ToStringCached(),
-                    hediff.def.addedPartProps?.partEfficiency ?? 1f));
+                    ImplantQualities.InstalledEfficiency(hediff)));
             }
             return result;
         }
@@ -145,7 +173,8 @@ namespace Implanner
         /// order. Goal slot ordinals index this list; it must stay in
         /// lockstep with Catalogs.BuildSlotLabels, which enumerates the same
         /// way on the reference body for the editor.
-        private static ImplantContext BuildImplantContext(Pawn pawn, ImplantGoal goal)
+        private static ImplantContext BuildImplantContext(Pawn pawn, ImplantGoal goal,
+            int minQuality)
         {
             ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
             if (entry == null)
@@ -163,7 +192,15 @@ namespace Implanner
                 for (int r = 0; r < records.Count; r++)
                     slots.Add(body.GetIndexOfPart(records[r]).ToStringCached());
             }
-            return new ImplantContext(slots, entry.Efficiency);
+            // The substitution floor is the goal's implant as automation
+            // would install it on a healthy part: the plan's minimum
+            // quality, raised until it is no worse than natural (an Awful
+            // bionic arm is never the bar a prosthetic has to clear).
+            float[] byQuality = ImplantQualities.AfterInstall(entry);
+            int floorMinimum = PlanMinimumFor(entry, minQuality);
+            int floorQuality = ImplantQuality.MinimumAcceptable(byQuality, 1f, floorMinimum);
+            return new ImplantContext(slots, byQuality[
+                floorQuality != ImplantQuality.None ? floorQuality : floorMinimum]);
         }
     }
 }

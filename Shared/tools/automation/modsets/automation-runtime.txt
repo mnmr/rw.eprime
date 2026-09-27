@@ -1,3 +1,11 @@
 # Always layered into the disposable shared profile by refresh-profile.ps1.
 after ludeon.rimworld
 eprime.sharedautomation
+
+# RimBridgeServer (Workshop 3727949765): state/layout queries via bridge.ps1.
+after brrainz.harmony
+brrainz.rimbridgeserver
+
+# Test-irrelevant UI that steals keyboard focus on load (owner, 2026-09-27).
+# It stores nothing in the save, and autostart loads skip the mismatch check.
+remove dubwise.dubsmintminimap

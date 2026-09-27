@@ -2,6 +2,7 @@
 <LanguageData>
   <QJ_FinishBillLabel>Finish {0} ({1})</QJ_FinishBillLabel>
   <QJ_AtStockCap>unfinished stock cap reached</QJ_AtStockCap>
+  <QJ_UnfinishedWorkWaiting>this bill's unfinished item is waiting to be resumed</QJ_UnfinishedWorkWaiting>
   <QJ_QualityPanelTitle>Quality Jobs</QJ_QualityPanelTitle>
   <QJ_ManageBill>Manage this bill</QJ_ManageBill>
   <QJ_FinisherSkill>Finisher skill: {0}</QJ_FinisherSkill>
@@ -71,4 +72,10 @@
   <QJ_FinishGiverLabel>finish quality work</QJ_FinishGiverLabel>
   <QJ_FinishGiverVerb>finish</QJ_FinishGiverVerb>
   <QJ_FinishGiverGerund>finishing quality work</QJ_FinishGiverGerund>
+
+  <!-- ===== Welcome dialog (shown once per player per save) ===== -->
+  <QJ_WelcomeTitle>EPrime's Quality Jobs</QJ_WelcomeTitle>
+  <QJ_WelcomeBody>Quality Jobs lets any colonist work on an unfinished item or building, but only a colonist who meets the requirements you set may finish it, because the finisher alone decides the quality. It works for crafting bills and for construction.</QJ_WelcomeBody>
+  <QJ_WelcomeFind>Open the Quality Jobs settings with this button beside the view toggles in the lower right corner of the screen. The bill window for a quality item has a Quality Jobs section, and a selected blueprint or frame of a quality building has a Quality Job button.</QJ_WelcomeFind>
+  <QJ_WelcomeTakeMeThere>Take me there now</QJ_WelcomeTakeMeThere>
 </LanguageData>

@@ -29,8 +29,11 @@ namespace Implanner.Core
         /// Production automation: options, resource reserves, and owned
         /// production-bill records.
         Production = 256,
+        /// Benches the player designated for Implanner production, with
+        /// the bills that were suspended before designation.
+        Benches = 512,
         All = Plans | Assignments | Priorities | Reservations
-            | Options | Rankings | Surgery | Production,
+            | Options | Rankings | Surgery | Production | Benches,
     }
 
     /// Narrow domain revisions published by the store. Consumers depend on
@@ -46,6 +49,7 @@ namespace Implanner.Core
         public int Rankings { get; private set; }
         public int Surgery { get; private set; }
         public int Production { get; private set; }
+        public int Benches { get; private set; }
 
         public void Bump(PlannerChange change)
         {
@@ -59,6 +63,7 @@ namespace Implanner.Core
             if ((change & PlannerChange.Rankings) != 0) Rankings = unchecked(Rankings + 1);
             if ((change & PlannerChange.Surgery) != 0) Surgery = unchecked(Surgery + 1);
             if ((change & PlannerChange.Production) != 0) Production = unchecked(Production + 1);
+            if ((change & PlannerChange.Benches) != 0) Benches = unchecked(Benches + 1);
         }
     }
 
@@ -85,7 +90,7 @@ namespace Implanner.Core
         /// Production concurrency bounds and default (benches that may hold
         /// bills).
         public const int ConcurrencyMin = 1;
-        public const int ConcurrencyMax = 10;
+        public const int ConcurrencyMax = 50;
         public const int ConcurrencyDefault = 3;
 
         /// Default minimum crafting skill for production bills.
@@ -112,6 +117,12 @@ namespace Implanner.Core
             new Dictionary<string, int>(StringComparer.Ordinal);
         readonly Dictionary<string, string> ownedProductionBills =
             new Dictionary<string, string>(StringComparer.Ordinal);
+        readonly Dictionary<int, IReadOnlyList<string>> designatedBenches =
+            new Dictionary<int, IReadOnlyList<string>>();
+        readonly Dictionary<string, int> productionBillQualities =
+            new Dictionary<string, int>(StringComparer.Ordinal);
+        readonly Dictionary<int, IReadOnlyList<ReinstallRecord>> reinstalls =
+            new Dictionary<int, IReadOnlyList<ReinstallRecord>>();
 
         /// Master automation switch (reservations, surgery scheduling, and
         /// production). Presentation keeps updating while paused.
@@ -168,6 +179,21 @@ namespace Implanner.Core
         {
             if (CountHospitalized == enabled) return PlannerChange.None;
             CountHospitalized = enabled;
+            return PlannerChange.Options;
+        }
+
+        /// Whether better implant items go to higher-priority colonists
+        /// (owner, 2026-09-27): new installs take the lowest quality their
+        /// slot accepts, and better items move to higher-priority colonists,
+        /// swapping reservations or replacing an installed implant
+        /// (QualityRebalance). Off by default: each slot takes the best
+        /// item it accepts in rollout order.
+        public bool UpgradeByPriority { get; private set; }
+
+        public PlannerChange SetUpgradeByPriority(bool enabled)
+        {
+            if (UpgradeByPriority == enabled) return PlannerChange.None;
+            UpgradeByPriority = enabled;
             return PlannerChange.Options;
         }
 
@@ -254,6 +280,10 @@ namespace Implanner.Core
         /// default.
         public bool AllowIntermediaries { get; private set; } = true;
 
+        /// Whether production bills go to designated benches only. Off by
+        /// default: designated benches are preferred, others still serve.
+        public bool OnlyDesignatedBenches { get; private set; }
+
         public IReadOnlyList<Plan> Plans => plans;
 
         /// Pawn id (stable per-save thing id number) to plan id.
@@ -309,7 +339,8 @@ namespace Implanner.Core
                     goals.Add(new ImplantGoal(
                         newId, goal.ImplantDefName, goal.SlotOrdinals));
                 }
-                plans[p] = new Plan(newId, plan.Name, plan.BasePlanId, goals);
+                plans[p] = new Plan(newId, plan.Name, plan.BasePlanId, goals,
+                    plan.MinQuality);
             }
         }
 
@@ -386,8 +417,11 @@ namespace Implanner.Core
             bool autoProduction, int productionConcurrency,
             bool onlyIdleBenches, int productionSkill, bool allowIntermediaries,
             bool allowMultipleBladders, bool allowMultipleHygieneEnhancers,
-            bool showPurchaseOnly)
+            bool showPurchaseOnly, bool onlyDesignatedBenches,
+            bool upgradeByPriority = false)
         {
+            UpgradeByPriority = upgradeByPriority;
+            OnlyDesignatedBenches = onlyDesignatedBenches;
             AutomationPaused = automationPaused;
             AllowMultipleBladders = allowMultipleBladders;
             AllowMultipleHygieneEnhancers = allowMultipleHygieneEnhancers;
@@ -650,9 +684,9 @@ namespace Implanner.Core
         /// values that differ from the baseline).
         public IReadOnlyDictionary<string, int> ResourceReserves => resourceReserves;
 
-        /// Minimum stock the colony keeps of a resource: a production bill is
-        /// created only when the ingredient stock minus the bill's full cost
-        /// stays at or above the reserve.
+        /// Minimum stock the colony keeps of a resource: a production bill
+        /// covers only the crafts the stock pays for while staying at or
+        /// above the reserve (ProductionMath.AffordableCrafts).
         public int ResourceReserveOf(string defName)
         {
             if (defName == null) return 0;
@@ -697,6 +731,13 @@ namespace Implanner.Core
         {
             if (AllowIntermediaries == enabled) return PlannerChange.None;
             AllowIntermediaries = enabled;
+            return PlannerChange.Production;
+        }
+
+        public PlannerChange SetOnlyDesignatedBenches(bool enabled)
+        {
+            if (OnlyDesignatedBenches == enabled) return PlannerChange.None;
+            OnlyDesignatedBenches = enabled;
             return PlannerChange.Production;
         }
 
@@ -748,14 +789,154 @@ namespace Implanner.Core
             return PlannerChange.Production;
         }
 
-        public PlannerChange RemoveOwnedProductionBill(string billId) =>
-            billId != null && ownedProductionBills.Remove(billId)
-                ? PlannerChange.Production
+        public PlannerChange RemoveOwnedProductionBill(string billId)
+        {
+            if (billId == null || !ownedProductionBills.Remove(billId))
+                return PlannerChange.None;
+            productionBillQualities.Remove(billId);
+            return PlannerChange.Production;
+        }
+
+        /// The quality a production bill is set up to deliver (Quality Jobs
+        /// manages it at that target, or its ingredient filter allows only
+        /// genoframes of that tier and up), or ProductionQueue.UnknownQuality
+        /// without such a promise.
+        public int ProductionBillQualityOf(string billId) =>
+            productionBillQualities.TryGetValue(billId, out int quality)
+                ? quality
+                : ProductionQueue.UnknownQuality;
+
+        /// Records a recorded bill's quality promise; bills Implanner does
+        /// not own carry none.
+        public PlannerChange SetProductionBillQuality(string billId, int quality)
+        {
+            if (billId == null || !ownedProductionBills.ContainsKey(billId))
+                return PlannerChange.None;
+            if (ProductionBillQualityOf(billId) == quality) return PlannerChange.None;
+            if (quality == ProductionQueue.UnknownQuality)
+                productionBillQualities.Remove(billId);
+            else
+                productionBillQualities[billId] = quality;
+            return PlannerChange.Production;
+        }
+
+        /// Deterministic load path: restores one production-bill record
+        /// with its quality promise (UnknownQuality for none).
+        public void AddLoadedProductionBill(string billId, string itemDefName,
+            int quality = ProductionQueue.UnknownQuality)
+        {
+            ownedProductionBills[billId] = itemDefName;
+            if (quality != ProductionQueue.UnknownQuality)
+                productionBillQualities[billId] = quality;
+        }
+
+        // ---------------------------------------------- Designated benches
+
+        /// Benches the player reserved for Implanner production, keyed by the
+        /// bench's stable thing id, each with the load ids of the bills that
+        /// were already suspended when it was designated (normalized:
+        /// distinct, ordinal order). Only bookkeeping — the bench and its
+        /// bills belong to the game; a release resumes every bill except
+        /// these.
+        public IReadOnlyDictionary<int, IReadOnlyList<string>> DesignatedBenches =>
+            designatedBenches;
+
+        public bool IsBenchDesignated(int benchId) =>
+            designatedBenches.ContainsKey(benchId);
+
+        public bool WasSuspendedAtDesignation(int benchId, string billId)
+        {
+            if (!designatedBenches.TryGetValue(benchId, out IReadOnlyList<string> ids))
+                return false;
+            for (int i = 0; i < ids.Count; i++)
+                if (string.Equals(ids[i], billId, StringComparison.Ordinal))
+                    return true;
+            return false;
+        }
+
+        /// Designates a bench, remembering the bills that were suspended
+        /// before Implanner took it. Designating twice keeps the first
+        /// record: by then Implanner has suspended everything itself.
+        public PlannerChange DesignateBench(int benchId,
+            IEnumerable<string> suspendedBillIds)
+        {
+            if (designatedBenches.ContainsKey(benchId)) return PlannerChange.None;
+            designatedBenches.Add(benchId, NormalizeBillIds(suspendedBillIds));
+            return PlannerChange.Benches;
+        }
+
+        public PlannerChange ReleaseBench(int benchId) =>
+            designatedBenches.Remove(benchId)
+                ? PlannerChange.Benches
                 : PlannerChange.None;
 
-        /// Deterministic load path: restores one production-bill record.
-        public void AddLoadedProductionBill(string billId, string itemDefName) =>
-            ownedProductionBills[billId] = itemDefName;
+        /// Drops designations of benches not in the live set (deconstructed
+        /// or destroyed). Deterministic; takes the set directly so the tick
+        /// path allocates no delegate.
+        public PlannerChange PruneDesignatedBenches(HashSet<int> liveBenches)
+        {
+            List<int>? dead = null;
+            foreach (int benchId in designatedBenches.Keys)
+                if (!liveBenches.Contains(benchId))
+                    (dead ??= new List<int>()).Add(benchId);
+            if (dead == null) return PlannerChange.None;
+            for (int i = 0; i < dead.Count; i++)
+                designatedBenches.Remove(dead[i]);
+            return PlannerChange.Benches;
+        }
+
+        /// Deterministic load path: restores one designation, normalized
+        /// like DesignateBench.
+        public void AddLoadedDesignatedBench(int benchId, IEnumerable<string> suspendedBillIds) =>
+            designatedBenches[benchId] = NormalizeBillIds(suspendedBillIds);
+
+        static string[] NormalizeBillIds(IEnumerable<string> ids)
+        {
+            var list = new List<string>();
+            foreach (string id in ids)
+                if (!string.IsNullOrEmpty(id) && !list.Contains(id))
+                    list.Add(id);
+            list.Sort(StringComparer.Ordinal);
+            return list.ToArray();
+        }
+
+        /// Implanner bills one bench may hold: the one being crafted and the
+        /// next, already queued when the first completes.
+        public const int BillsPerBench = 2;
+
+        /// The bench a new one-craft production bill goes to, from the
+        /// benches that can work its recipe (in thing-id order), or -1.
+        /// Designated benches come first and skip the idle rule — their own
+        /// bills are suspended, and one slipped in since the last pass does
+        /// not disqualify them; the rest follow unless only designated
+        /// benches may be used. Within each group a bench without Implanner
+        /// bills wins over a second bill on a busy one (benches work in
+        /// parallel), then the lowest id; a bench without Implanner bills
+        /// qualifies only while mayStartBench (the colony is under its
+        /// bench limit), and a bench holding BillsPerBench is full.
+        public int ChooseProductionBench(IReadOnlyList<BenchCandidate> benches,
+            bool mayStartBench)
+        {
+            int best = -1;
+            int bestRank = int.MaxValue;
+            for (int i = 0; i < benches.Count; i++)
+            {
+                BenchCandidate bench = benches[i];
+                if (bench.ImplannerBills >= BillsPerBench) continue;
+                if (bench.ImplannerBills == 0 && !mayStartBench) continue;
+                bool designated = IsBenchDesignated(bench.Id);
+                if (!designated && (OnlyDesignatedBenches
+                        || (OnlyIdleBenches && bench.HasOtherWork)))
+                    continue;
+                int rank = (designated ? 0 : BillsPerBench) + bench.ImplannerBills;
+                if (rank < bestRank)
+                {
+                    best = bench.Id;
+                    bestRank = rank;
+                }
+            }
+            return best;
+        }
 
         // ---------------------------------------------------------- Plans
 
@@ -770,18 +951,35 @@ namespace Implanner.Core
         public Plan? AssignedPlan(int pawnId) =>
             assignments.TryGetValue(pawnId, out int planId) ? PlanById(planId) : null;
 
-        /// Creates a plan, optionally extending an existing one. A missing
-        /// base id is dropped rather than failing the creation.
+        /// Creates a plan, optionally extending an existing one, whose
+        /// minimum quality it starts with. A missing base id is dropped
+        /// rather than failing the creation.
         public Plan? CreatePlan(string? preferredName, Func<int> takePlanId,
             int basePlanId = 0)
         {
             string? name = CatalogNameRules.Unique(preferredName, plans, PlanNameOf);
             if (name == null) return null;
             var plan = new Plan(takePlanId(), name);
-            if (basePlanId != 0 && PlanById(basePlanId) != null)
+            Plan? basePlan = basePlanId != 0 ? PlanById(basePlanId) : null;
+            if (basePlan != null)
+            {
                 plan.BasePlanId = basePlanId;
+                plan.MinQuality = basePlan.MinQuality;
+            }
             plans.Add(plan);
             return plan;
+        }
+
+        /// Sets the lowest item quality the plan installs (clamped to
+        /// Awful..Legendary).
+        public PlannerChange SetPlanMinQuality(int planId, int quality)
+        {
+            Plan? plan = PlanById(planId);
+            if (plan == null) return PlannerChange.None;
+            quality = ImplantQuality.Clamp(quality);
+            if (plan.MinQuality == quality) return PlannerChange.None;
+            plan.MinQuality = quality;
+            return PlannerChange.Plans;
         }
 
         static readonly Func<Plan, string> PlanNameOf = p => p.Name;
@@ -1117,12 +1315,25 @@ namespace Implanner.Core
                 priorities.Remove(dead[i]);
             if (dead.Count > 0) change |= PlannerChange.Priorities;
 
-            // Reservations follow their pawn's existence and assignment;
-            // the reconciler owns finer-grained lifecycle.
+            // Reinstall records follow their pawn's existence only: an
+            // implant pushed out goes back whatever happened to the plan.
+            dead.Clear();
+            foreach (var pair in reinstalls)
+                if (!pawnExists(pair.Key))
+                    dead.Add(pair.Key);
+            dead.Sort();
+            for (int i = 0; i < dead.Count; i++)
+                reinstalls.Remove(dead[i]);
+            if (dead.Count > 0) change |= PlannerChange.Surgery;
+
+            // Reservations follow their pawn's existence and assignment
+            // (a reinstall keeps its item without a plan); the reconciler
+            // owns finer-grained lifecycle.
             dead.Clear();
             foreach (var pair in reservations)
                 if (!pawnExists(pair.Value.PawnId)
-                    || !assignments.ContainsKey(pair.Value.PawnId))
+                    || (!assignments.ContainsKey(pair.Value.PawnId)
+                        && !HasReinstall(pair.Value.PawnId, pair.Value.GoalKey)))
                     dead.Add(pair.Key);
             dead.Sort();
             for (int i = 0; i < dead.Count; i++)
@@ -1186,7 +1397,7 @@ namespace Implanner.Core
                         planId, goal.ImplantDefName,
                         new List<int>(goal.SlotOrdinals)));
                 }
-                var plan = new Plan(planId, name, 0, goals);
+                var plan = new Plan(planId, name, 0, goals, source.MinQuality);
                 plans.Add(plan);
                 added.Add(plan);
                 addedBaseTempIds.Add(source.BasePlanId);
@@ -1209,5 +1420,174 @@ namespace Implanner.Core
         /// Deterministic load path: restores one assignment.
         public void AddLoadedAssignment(int pawnId, int planId) =>
             assignments[pawnId] = planId;
+
+        // ------------------------------------------------------ Reinstalls
+
+        /// Implants a part-wiping surgery pushes out of a pawn (Vanilla
+        /// Genetics Expanded's neuron reinforcement clears the brain), per
+        /// pawn: recorded when the wiping operation is scheduled, woken once
+        /// the wiper is installed, each dropped when its implant is back.
+        /// Only bookkeeping; the items and bills belong to the game.
+        public IReadOnlyDictionary<int, IReadOnlyList<ReinstallRecord>> Reinstalls =>
+            reinstalls;
+
+        public IReadOnlyList<ReinstallRecord>? ReinstallsFor(int pawnId) =>
+            reinstalls.TryGetValue(pawnId, out IReadOnlyList<ReinstallRecord> records)
+                ? records
+                : null;
+
+        /// Records what the wiper's operation will push out, replacing any
+        /// earlier pending (not yet active) records of the same wiper.
+        public PlannerChange SetPendingReinstalls(int pawnId, string wiperKey,
+            IReadOnlyList<ReinstallRecord> records)
+        {
+            var kept = new List<ReinstallRecord>();
+            var previous = new List<ReinstallRecord>();
+            IReadOnlyList<ReinstallRecord>? existing = ReinstallsFor(pawnId);
+            if (existing != null)
+                for (int i = 0; i < existing.Count; i++)
+                {
+                    ReinstallRecord record = existing[i];
+                    if (!record.Active && string.Equals(record.WiperKey, wiperKey,
+                            StringComparison.Ordinal))
+                        previous.Add(record);
+                    else
+                        kept.Add(record);
+                }
+            var added = new List<ReinstallRecord>(records.Count);
+            for (int i = 0; i < records.Count; i++)
+                added.Add(new ReinstallRecord(wiperKey, records[i].ImplantDefName,
+                    records[i].PartIndex, records[i].Quality, active: false));
+            if (SameRecords(previous, added)) return PlannerChange.None;
+            kept.AddRange(added);
+            StoreReinstalls(pawnId, kept);
+            return PlannerChange.Surgery;
+        }
+
+        /// The wiper is installed: its records now ask for surgery.
+        public PlannerChange ActivateReinstalls(int pawnId, string wiperKey) =>
+            RewriteReinstalls(pawnId, wiperKey, byWiper: true, activate: true);
+
+        /// The wiper's operation is gone without having run: nothing was
+        /// pushed out, so its pending records go.
+        public PlannerChange DropReinstalls(int pawnId, string wiperKey) =>
+            RewriteReinstalls(pawnId, wiperKey, byWiper: true, activate: false);
+
+        /// The implant is back (or can never return): its record goes.
+        public PlannerChange RemoveReinstall(int pawnId, string key) =>
+            RewriteReinstalls(pawnId, key, byWiper: false, activate: false);
+
+        /// Whether the key names an active reinstall of the pawn: such a
+        /// key holds reservations and operation bills like a plan goal.
+        public bool IsActiveReinstall(int pawnId, string key) =>
+            FindReinstall(pawnId, key, activeOnly: true);
+
+        /// Whether the key names any reinstall record of the pawn, pending
+        /// or active: an upgrade reserves its item before the removal runs,
+        /// and that reservation lives as long as the record.
+        public bool HasReinstall(int pawnId, string key) =>
+            FindReinstall(pawnId, key, activeOnly: false);
+
+        bool FindReinstall(int pawnId, string key, bool activeOnly)
+        {
+            IReadOnlyList<ReinstallRecord>? records = ReinstallsFor(pawnId);
+            if (records == null) return false;
+            for (int i = 0; i < records.Count; i++)
+                if ((records[i].Active || !activeOnly)
+                    && string.Equals(records[i].Key, key, StringComparison.Ordinal))
+                    return true;
+            return false;
+        }
+
+        /// Deterministic load path: restores one record.
+        public void AddLoadedReinstall(int pawnId, ReinstallRecord record)
+        {
+            var list = new List<ReinstallRecord>();
+            IReadOnlyList<ReinstallRecord>? existing = ReinstallsFor(pawnId);
+            if (existing != null) list.AddRange(existing);
+            list.Add(record);
+            reinstalls[pawnId] = list.ToArray();
+        }
+
+        /// Matching records are activated (activate) or removed: the pending
+        /// records of a wiper (byWiper), or the record with the given key.
+        PlannerChange RewriteReinstalls(int pawnId, string match, bool byWiper,
+            bool activate)
+        {
+            IReadOnlyList<ReinstallRecord>? existing = ReinstallsFor(pawnId);
+            if (existing == null) return PlannerChange.None;
+            var result = new List<ReinstallRecord>(existing.Count);
+            bool changed = false;
+            for (int i = 0; i < existing.Count; i++)
+            {
+                ReinstallRecord record = existing[i];
+                bool matches = byWiper
+                    ? !record.Active && string.Equals(record.WiperKey, match,
+                        StringComparison.Ordinal)
+                    : string.Equals(record.Key, match, StringComparison.Ordinal);
+                if (!matches)
+                {
+                    result.Add(record);
+                    continue;
+                }
+                changed = true;
+                if (activate)
+                    result.Add(new ReinstallRecord(record.WiperKey,
+                        record.ImplantDefName, record.PartIndex, record.Quality,
+                        active: true));
+            }
+            if (!changed) return PlannerChange.None;
+            StoreReinstalls(pawnId, result);
+            return PlannerChange.Surgery;
+        }
+
+        void StoreReinstalls(int pawnId, List<ReinstallRecord> records)
+        {
+            if (records.Count == 0) reinstalls.Remove(pawnId);
+            else reinstalls[pawnId] = records.ToArray();
+        }
+
+        static bool SameRecords(List<ReinstallRecord> a, List<ReinstallRecord> b)
+        {
+            if (a.Count != b.Count) return false;
+            for (int i = 0; i < a.Count; i++)
+                if (!string.Equals(a[i].Key, b[i].Key, StringComparison.Ordinal)
+                    || a[i].Quality != b[i].Quality)
+                    return false;
+            return true;
+        }
+    }
+
+    /// One implant a part-wiping surgery pushes out, to be installed again
+    /// on the same part once the wiper is in. Immutable.
+    public readonly struct ReinstallRecord
+    {
+        public ReinstallRecord(string wiperKey, string implantDefName, int partIndex,
+            int quality, bool active)
+        {
+            WiperKey = wiperKey;
+            ImplantDefName = implantDefName;
+            PartIndex = partIndex;
+            Quality = quality;
+            Active = active;
+        }
+
+        /// The key of the operation that takes the implant out: a part
+        /// wiper's goal key, or an upgrade's removal (GoalKeys.Upgrade).
+        public string WiperKey { get; }
+        public string ImplantDefName { get; }
+
+        /// The body part's record index on the pawn's body.
+        public int PartIndex { get; }
+
+        /// The pushed-out item's quality, or -1 without one; the same
+        /// quality is preferred when the item is taken back.
+        public int Quality { get; }
+
+        /// False until the wiper is installed.
+        public bool Active { get; }
+
+        /// The key reservations and operation bills use for this record.
+        public string Key => GoalKeys.Reinstall(ImplantDefName, PartIndex);
     }
 }

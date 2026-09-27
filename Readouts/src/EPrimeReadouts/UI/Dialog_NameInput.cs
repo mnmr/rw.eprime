@@ -35,6 +35,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            TextInputCapture.Observe();
             using (GuiStateScope.Capture())
             {
             float y = inRect.y;

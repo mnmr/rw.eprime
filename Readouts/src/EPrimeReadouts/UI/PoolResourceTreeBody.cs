@@ -216,17 +216,8 @@ namespace EPrimeReadouts.UI
             bool adds = row.State != TriState.On;
             if (MultiCheckboxClicked(checkboxRect, row.State, adds))
             {
-                ResourcePool? pool = ReadoutStore.Current?.Model.PoolById(builtPoolId);
-                if (pool != null)
-                {
-                    List<string> newMembers = PoolTriState.ToggleCategoryScope(
-                        pool.Members,
-                        row.Id,
-                        row.MatchingDefNames,
-                        GameResourceCatalog.Instance);
-                    ReadoutCommands.SetPoolMembers(
-                        pool.Id, PoolMembersCodec.Encode(newMembers));
-                }
+                ReadoutCommands.SetPoolCategoryScopeSelected(builtPoolId, row.Id,
+                    PoolMembersCodec.Encode(row.MatchingDefNames), adds);
             }
 
             var labelRect = new Rect(
@@ -258,14 +249,7 @@ namespace EPrimeReadouts.UI
             bool adds = row.State != TriState.On;
             if (MultiCheckboxClicked(checkboxRect, row.State, adds))
             {
-                ResourcePool? pool = ReadoutStore.Current?.Model.PoolById(builtPoolId);
-                if (pool != null)
-                {
-                    List<string> newMembers = PoolTriState.ToggleDef(
-                        pool.Members, row.DefName, GameResourceCatalog.Instance);
-                    ReadoutCommands.SetPoolMembers(
-                        pool.Id, PoolMembersCodec.Encode(newMembers));
-                }
+                ReadoutCommands.SetPoolMemberSelected(builtPoolId, row.DefName, adds);
             }
 
             Widgets.ThingIcon(

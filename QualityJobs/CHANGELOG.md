@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.1.4 — 2026-09-27
+
+- Added: Support for Craft with Color (dye matters) and Vanilla Genetics Expanded (genoframe recipes are left alone).
+- Added: API v2 adds ManageBill/UnmanageBill (to allow Implanner or other mods to create quality jobs).
+- Fixed: Unmanaging a bill now releases unfinished items so they can be completed.
+- Fixed: Bills were not blocked while an unfinished item was being carried to storage, which could cause another item to get started for the same bill.
+
 ## 1.1.3 — 2026-09-20
 
 - Fixed: Turning off QJ for an existing item did not always revert to vanilla behavior.

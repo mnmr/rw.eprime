@@ -10,9 +10,13 @@ namespace QualityJobs.Patches
     /// counter. Quality is rolled inside vanilla's GenRecipe.PostProcessProduct,
     /// so a postfix there sees the final value.
     ///
-    /// Scope: bills in RepeatCount mode only. TargetCount ("do until you have
-    /// X") already filters counted items by quality range in vanilla, and
-    /// Forever never stops.
+    /// Scope: managed recipes (ManagedRecipes) with bills in RepeatCount mode
+    /// only. TargetCount ("do until you have X") already filters counted items
+    /// by quality range in vanilla, and Forever never stops.
+    ///
+    /// A retry does not remove the below-target product: it stays spawned
+    /// like any finished product, and the bill keeps its repeat count, so the
+    /// bill stays alive and makes the item again.
     ///
     /// One-shot finish bills resolve target-quality configuration from their
     /// SOURCE bill, but mark the executing temporary bill so the completion
@@ -48,6 +52,10 @@ namespace QualityJobs.Patches
             }
 
             if (targetBill.repeatMode != BillRepeatModeDefOf.RepeatCount) return;
+            // Only managed recipes retry: an unmanaged recipe has no Quality
+            // Jobs bill section, and an ingredient-quality recipe (VGE
+            // genoframes) would only burn its ingredient on every remake.
+            if (!ManagedRecipes.IsManagedRecipe(targetBill.recipe)) return;
 
             int target = store.TargetQualityFor(targetBill);
             if (target <= 0) return;

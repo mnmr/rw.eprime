@@ -53,6 +53,8 @@ namespace EPrimeReadouts.Core
                 if (!string.Equals(left.Token, right.Token, StringComparison.Ordinal)
                     || !RectEquals(left.Rect, right.Rect)
                     || left.CellIndex != right.CellIndex
+                    || left.StorageOnly != right.StorageOnly
+                    || left.HideForbidden != right.HideForbidden
                     || !MembersEqual(left.Members, right.Members))
                     return false;
             }

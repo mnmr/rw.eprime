@@ -88,6 +88,7 @@ namespace WorkRoles
                     category = role.category,
                     time = role.time,
                     championPenalty = role.championPenalty,
+                    partialCapability = role.partialCapability,
                     minAge = role.minAge,
                     maxAge = role.maxAge,
                     colonyMin = role.colonyMin,
@@ -469,6 +470,7 @@ namespace WorkRoles
             private readonly RoleCategory category;
             private readonly RoleTime time;
             private readonly bool championPenalty;
+            private readonly bool partialCapability;
             private readonly int minAge;
             private readonly int maxAge;
             private readonly int colonyMin;
@@ -500,6 +502,7 @@ namespace WorkRoles
                 category = role.category;
                 time = role.time;
                 championPenalty = role.championPenalty;
+                partialCapability = role.partialCapability;
                 minAge = role.minAge;
                 maxAge = role.maxAge;
                 colonyMin = role.colonyMin;
@@ -532,6 +535,7 @@ namespace WorkRoles
                 && category == other.category
                 && time == other.time
                 && championPenalty == other.championPenalty
+                && partialCapability == other.partialCapability
                 && minAge == other.minAge
                 && maxAge == other.maxAge
                 && colonyMin == other.colonyMin
@@ -767,6 +771,7 @@ namespace WorkRoles
                     target.category = row.role.category;
                     target.time = row.role.time;
                     target.championPenalty = row.role.championPenalty;
+                    target.partialCapability = row.role.partialCapability;
                     // Pre-minAge files carry -1; the migration below derives it.
                     target.minAge = row.role.minAge < 0
                         ? -1 : Mathf.Clamp(row.role.minAge, 0, 18);

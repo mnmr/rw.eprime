@@ -1,0 +1,5 @@
+# Craft with Color compatibility (dyed bills swap bill.recipe for a runtime
+# clone), layered over the canonical save.
+before mnmr.workroles
+kathanon.FloatSubMenu
+kathanon.CraftWithColor

@@ -72,6 +72,16 @@ namespace Implanner.Core
 
         public SurgeryWorkItem(int pawnId, int pawnPriority, int tier, string goalKey,
             string implantDefName, LimbKind limb, SurgeryCandidate candidate)
+            : this(pawnId, pawnPriority, tier, goalKey, implantDefName, limb,
+                candidate, int.MaxValue)
+        {
+        }
+
+        /// position: the kind's player-arranged place within its star tier
+        /// (PlannerModel.ImplantOrderOf); unordered kinds use int.MaxValue.
+        public SurgeryWorkItem(int pawnId, int pawnPriority, int tier, string goalKey,
+            string implantDefName, LimbKind limb, SurgeryCandidate candidate,
+            int position)
         {
             PawnId = pawnId;
             PawnPriority = pawnPriority;
@@ -80,6 +90,7 @@ namespace Implanner.Core
             ImplantDefName = implantDefName;
             Limb = limb;
             Candidate = candidate;
+            Position = position;
         }
 
         public int PawnId { get; }
@@ -89,6 +100,7 @@ namespace Implanner.Core
         public string ImplantDefName { get; }
         public LimbKind Limb { get; }
         public SurgeryCandidate Candidate { get; }
+        public int Position { get; }
     }
 
     /// Deterministic batch computation and iteration ordering for implant
@@ -111,10 +123,17 @@ namespace Implanner.Core
         /// craftable key is missing does the best optional tier become
         /// active — and they join every batch, so stock that turns up is
         /// used at once without holding anything else back.
+        ///
+        /// precededBy (parallel to missingKeys, null = none) names, per key,
+        /// the index of a missing part-wiping key whose install would push
+        /// this key's implant out (Vanilla Genetics Expanded's neuron
+        /// reinforcement over a brain implant), or -1. The wiper joins every
+        /// batch that holds a key it precedes, whatever its own tier, so it
+        /// can go in first.
         public static List<string> ComputeBatch(
             IReadOnlyList<string> missingKeys, PlannerModel model,
             IReadOnlyList<ImplantGoal> goals, IterationStrategy strategy,
-            bool[]? optional = null)
+            bool[]? optional = null, int[]? precededBy = null)
         {
             var batch = new List<string>();
             if (missingKeys.Count == 0) return batch;
@@ -124,6 +143,7 @@ namespace Implanner.Core
                     batch.Add(missingKeys[i]);
                 return batch;
             }
+            var members = new bool[missingKeys.Count];
             var tiers = new int[missingKeys.Count];
             int active = int.MaxValue;
             int activeOptional = int.MaxValue;
@@ -141,7 +161,13 @@ namespace Implanner.Core
             }
             if (active == int.MaxValue) active = activeOptional;
             for (int i = 0; i < missingKeys.Count; i++)
-                if (tiers[i] == active || (optional != null && optional[i]))
+                members[i] = tiers[i] == active || (optional != null && optional[i]);
+            if (precededBy != null)
+                for (int i = 0; i < missingKeys.Count; i++)
+                    if (members[i] && precededBy[i] >= 0)
+                        members[precededBy[i]] = true;
+            for (int i = 0; i < missingKeys.Count; i++)
+                if (members[i])
                     batch.Add(missingKeys[i]);
             return batch;
         }
@@ -159,29 +185,36 @@ namespace Implanner.Core
         /// sleep; ASAP releases every ready key at once. ready and optional
         /// (null = none) are parallel to batch: an optional key (purchase-
         /// only item) never blocks the release and goes along when ready.
+        /// held (null = none) marks keys waiting for a part wiper that goes
+        /// in first: they neither block the release nor go along, and are
+        /// released on a later pass once the wiper is installed.
         public static List<string> Releasable(List<string> batch, bool[] ready,
-            IterationStrategy strategy, bool[]? optional = null)
+            IterationStrategy strategy, bool[]? optional = null, bool[]? held = null)
         {
             var result = new List<string>();
             if (strategy == IterationStrategy.Asap)
             {
                 for (int i = 0; i < batch.Count; i++)
-                    if (ready[i]) result.Add(batch[i]);
+                    if (ready[i] && !(held != null && held[i])) result.Add(batch[i]);
                 return result;
             }
             if (batch.Count == 0) return result;
             for (int i = 0; i < batch.Count; i++)
-                if (!ready[i] && !(optional != null && optional[i])) return result;
+                if (!ready[i] && !(optional != null && optional[i])
+                    && !(held != null && held[i]))
+                    return result;
             for (int i = 0; i < batch.Count; i++)
-                if (ready[i]) result.Add(batch[i]);
+                if (ready[i] && !(held != null && held[i])) result.Add(batch[i]);
             return result;
         }
 
-        /// Orders pending implant work for dispatch and the next-work list.
-        /// Colonist iteration: pawn (priority, id) outranks tier; tier
-        /// iteration: tier outranks pawn; ASAP: priority, then within one
-        /// implant kind the candidate ranking. Ties break on stable
-        /// identifiers.
+        /// Orders pending implant work: the surgery rollout order, which
+        /// stock allocation and production both follow. Colonist
+        /// iteration: pawn (priority, id) outranks tier; tier iteration:
+        /// tier outranks pawn; ASAP: priority, then within one implant kind
+        /// the candidate ranking. Within one pawn's tier the plan-ranked
+        /// order applies (the player-arranged position). Ties break on
+        /// stable identifiers.
         public static void Order(List<SurgeryWorkItem> items, IterationStrategy strategy)
         {
             items.Sort(strategy == IterationStrategy.ImplantTier ? ByTierThenPawn
@@ -197,6 +230,8 @@ namespace Implanner.Core
             if (c != 0) return c;
             c = a.Tier.CompareTo(b.Tier);
             if (c != 0) return c;
+            c = a.Position.CompareTo(b.Position);
+            if (c != 0) return c;
             return string.CompareOrdinal(a.GoalKey, b.GoalKey);
         };
 
@@ -207,6 +242,8 @@ namespace Implanner.Core
             c = a.PawnPriority.CompareTo(b.PawnPriority);
             if (c != 0) return c;
             c = a.PawnId.CompareTo(b.PawnId);
+            if (c != 0) return c;
+            c = a.Position.CompareTo(b.Position);
             if (c != 0) return c;
             return string.CompareOrdinal(a.GoalKey, b.GoalKey);
         };
@@ -221,6 +258,8 @@ namespace Implanner.Core
             int c = a.PawnPriority.CompareTo(b.PawnPriority);
             if (c != 0) return c;
             c = a.Tier.CompareTo(b.Tier);
+            if (c != 0) return c;
+            c = a.Position.CompareTo(b.Position);
             if (c != 0) return c;
             c = string.CompareOrdinal(a.ImplantDefName, b.ImplantDefName);
             if (c != 0) return c;

@@ -31,21 +31,23 @@ namespace EPrimeReadouts.Core
         public string? IconDefName;
     }
 
-    /// Serializes a pool's member list as a comma-joined blob.
-    /// '@' is safe (never appears in defNames); ',' never in defNames.
-    /// Mirrors TierBlobCodec's single-level join.
+    /// Serializes a pool's member list as a comma-joined blob, escaping ','
+    /// '|' and '\' inside member text exactly like TierBlobCodec, so any text
+    /// round-trips. Blobs written before escaping contain no backslash and
+    /// decode unchanged.
     public static class PoolMembersCodec
     {
-        public static string Encode(List<string>? members)
+        public static string Encode(IReadOnlyList<string>? members)
         {
             if (members == null || members.Count == 0) return "";
             var sb = new StringBuilder();
             bool first = true;
-            foreach (var m in members)
+            for (int i = 0; i < members.Count; i++)
             {
+                string m = members[i];
                 if (string.IsNullOrEmpty(m)) continue;
                 if (!first) sb.Append(',');
-                sb.Append(m);
+                BlobText.AppendEscaped(sb, m);
                 first = false;
             }
             return sb.ToString();
@@ -55,8 +57,18 @@ namespace EPrimeReadouts.Core
         {
             var list = new List<string>();
             if (blob == null || blob.Length == 0) return list;
-            foreach (var part in blob.Split(','))
-                if (part.Length > 0) list.Add(part);
+            var token = new StringBuilder();
+            for (int i = 0; i < blob.Length; i++)
+            {
+                char c = blob[i];
+                if (c == '\\')
+                {
+                    if (++i < blob.Length) token.Append(blob[i]);
+                }
+                else if (c == ',') BlobText.Flush(token, list);
+                else token.Append(c);
+            }
+            BlobText.Flush(token, list);
             return list;
         }
     }

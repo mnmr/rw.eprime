@@ -22,6 +22,7 @@ namespace Implanner.UI
         internal WrTip Iteration = null!;
         internal WrTip SurgeryConcurrency = null!;
         internal WrTip CountHospitalized = null!;
+        internal WrTip UpgradeByPriority = null!;
         internal WrTip AutoFloor = null!;
         internal WrTip ManualFloor = null!;
         internal WrTip ImplantReserves = null!;
@@ -29,6 +30,7 @@ namespace Implanner.UI
         internal WrTip AutoProduction = null!;
         internal WrTip Concurrency = null!;
         internal WrTip IdleBenches = null!;
+        internal WrTip DesignatedBenches = null!;
         internal WrTip ProductionSkill = null!;
         internal WrTip Intermediaries = null!;
         internal WrTip Reserves = null!;
@@ -43,6 +45,7 @@ namespace Implanner.UI
             Iteration = WrTips.Key("IMP_OptIterationTip");
             SurgeryConcurrency = WrTips.Key("IMP_OptSurgeryConcurrencyTip");
             CountHospitalized = WrTips.Key("IMP_OptCountHospitalizedTip");
+            UpgradeByPriority = WrTips.Key("IMP_OptUpgradeByPriorityTip");
             AutoFloor = WrTips.Key("IMP_OptAutoFloorTip");
             ManualFloor = WrTips.Key("IMP_OptManualFloorTip");
             ImplantReserves = WrTips.Key("IMP_OptImplantReservesTip");
@@ -50,6 +53,7 @@ namespace Implanner.UI
             AutoProduction = WrTips.Key("IMP_OptAutoProductionTip");
             Concurrency = WrTips.Key("IMP_OptConcurrencyTip");
             IdleBenches = WrTips.Key("IMP_OptIdleBenchesTip");
+            DesignatedBenches = WrTips.Key("IMP_OptDesignatedBenchesTip");
             ProductionSkill = WrTips.Key("IMP_OptProductionSkillTip");
             Intermediaries = WrTips.Key("IMP_OptIntermediariesTip");
             Reserves = WrTips.Key("IMP_OptReservesTip");
@@ -58,9 +62,9 @@ namespace Implanner.UI
         internal void Release()
         {
             stamp = -1;
-            Enable = Iteration = SurgeryConcurrency = CountHospitalized = null!;
+            Enable = Iteration = SurgeryConcurrency = CountHospitalized = UpgradeByPriority = null!;
             AutoFloor = ManualFloor = ImplantReserves = AddImplantReserve = null!;
-            AutoProduction = Concurrency = IdleBenches = null!;
+            AutoProduction = Concurrency = IdleBenches = DesignatedBenches = null!;
             ProductionSkill = Intermediaries = Reserves = null!;
         }
     }

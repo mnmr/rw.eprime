@@ -143,7 +143,7 @@ namespace WorkRoles.UI
         private const float PalettePanelPadding = 8f;
         private const float PalettePanelTopPadding = 6f;
         /// Fallback sizes without a store or map: the window's design floor
-        /// (vanilla's 1024x768 minimum screen, less the bottom bar).
+        /// less the bottom bar (the window caps them at the screen).
         internal const float DefaultWidth = MainTabWindow_WorkRoles.DesignScreenWidth;
         private const float DefaultHeight = MainTabWindow_WorkRoles.DesignScreenHeight - 35f;
 

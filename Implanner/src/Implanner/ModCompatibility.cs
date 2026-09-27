@@ -7,9 +7,10 @@ using Verse;
 namespace Implanner
 {
     /// Game-side mod-compatibility bridges: the tooltip text for the
-    /// curated "Allow multiple ..." options, and the Bionic modularity
+    /// curated "Allow multiple ..." options, the Bionic modularity
     /// "modular replacement" mark a module worker demands on its host
-    /// part. Builder path only.
+    /// part, and the curated part-clearing surgery workers. Builder path
+    /// only.
     internal static class ModCompatibility
     {
         // Cache contract:
@@ -77,6 +78,34 @@ namespace Implanner
             for (int i = 0; i < extensions.Count; i++)
                 if (extensions[i] != null && extensions[i].GetType() == modularExtension)
                     return true;
+            return false;
+        }
+
+        /// Surgery workers known to restore the part (and everything under
+        /// it) before adding their hediff, exactly like vanilla's
+        /// Recipe_InstallArtificialBodyPart, without deriving from it.
+        /// Matched by full type name, no assembly reference. Owner-approved
+        /// curated entry (2026-09-26): Vanilla Genetics Expanded's worker
+        /// derives straight from Recipe_Surgery, which would otherwise read
+        /// as a module worker mounting on artificial parts.
+        private static readonly string[] PartClearingWorkers =
+        {
+            "GeneticRim.Recipe_InstallGeneticBodyPart",
+        };
+
+        /// Whether a surgery worker restores the part before installing:
+        /// vanilla's artificial-part worker and its derivatives, or a
+        /// curated modded equivalent. Definition data only (a worker type
+        /// per recipe), so every multiplayer client answers alike.
+        internal static bool ClearsPart(Type? worker)
+        {
+            if (worker == null) return false;
+            if (typeof(Recipe_InstallArtificialBodyPart).IsAssignableFrom(worker))
+                return true;
+            for (Type? walk = worker; walk != null; walk = walk.BaseType)
+                for (int i = 0; i < PartClearingWorkers.Length; i++)
+                    if (walk.FullName == PartClearingWorkers[i])
+                        return true;
             return false;
         }
 

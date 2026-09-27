@@ -123,6 +123,7 @@ namespace WorkRoles
                     // Tuning lives on the role (seeded from the def, migrated
                     // on load); unmigrated roles fall back to defaults.
                     ChampionPenalty = role.championPenalty,
+                    PartialCapability = role.partialCapability,
                     Category = role.category,
                     Time = role.time,
                     MinAge = role.minAge < 0 ? 0 : role.minAge,

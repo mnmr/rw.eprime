@@ -105,6 +105,20 @@ namespace Implanner
                     + "with " + PlannerAutomation.BlockedBy + " active.");
         }
 
+        /// Whether a reserved item still meets its goal's plan minimum
+        /// quality (items without quality always do).
+        private static bool MeetsPlanMinimum(PawnEvaluation evaluation,
+            string goalKey, Thing item)
+        {
+            if (!GoalKeys.TryResolveImplantSlot(evaluation.Goals, goalKey,
+                    out ImplantGoal goal, out _))
+                return true;
+            ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
+            return entry == null
+                || ImplantQualities.QualityOf(item)
+                    >= PawnProjection.PlanMinimumFor(entry, evaluation.Plan.MinQuality);
+        }
+
         private static void Reconcile(ImplannerStore store, bool boundaryHit)
         {
             PlannerModel model = store.Model;
@@ -119,7 +133,7 @@ namespace Implanner
             // items — canonicalization and faction resolution happen only
             // inside the index — plus the per-pawn evaluations every phase
             // shares.
-            ColonyIndex index = ColonyIndex.Build();
+            ColonyIndex index = ColonyIndex.Build(model);
             var pass = new ReconcilePass(model, index, boundaryHit);
 
             change |= store.SeedSurgeryConcurrency(index.PawnsById.Count);
@@ -133,24 +147,34 @@ namespace Implanner
             // forbidden, taken, or the pawn now settled at a different
             // colony — releases it. A pawn merely away (caravan, mission,
             // in flight) keeps its reservations: it may return, and
-            // re-allocation on return is automatic either way.
+            // re-allocation on return is automatic either way. An item below
+            // the plan's minimum quality (the player raised it) is released
+            // too. A pushed-out implant's reservation, or an upgrade's item,
+            // lives as long as its reinstall record, whatever the plan says.
             var reservationIds = new List<int>(model.Reservations.Keys);
             reservationIds.Sort();
             for (int i = 0; i < reservationIds.Count; i++)
             {
                 int itemId = reservationIds[i];
                 model.TryGetReservation(itemId, out ItemReservation reservation);
-                PawnEvaluation? evaluation = pass.Evaluate(reservation.PawnId);
-                bool valid = evaluation != null
-                    && evaluation.BatchKeys.Contains(reservation.GoalKey)
+                bool reinstall = model.HasReinstall(
+                    reservation.PawnId, reservation.GoalKey);
+                PawnEvaluation? evaluation = reinstall
+                    ? null
+                    : pass.Evaluate(reservation.PawnId);
+                bool valid = (reinstall
+                        || (evaluation != null
+                            && evaluation.BatchKeys.Contains(reservation.GoalKey)))
                     && index.ItemsById.TryGetValue(itemId, out Thing item)
                     && !item.IsForbidden(Faction.OfPlayer)
-                    && index.PawnMayCollect(reservation.PawnId, itemId);
+                    && index.PawnMayCollect(reservation.PawnId, itemId)
+                    && (reinstall || MeetsPlanMinimum(evaluation!, reservation.GoalKey, item));
                 if (!valid)
                     change |= model.ReleaseReservation(itemId);
             }
 
             change |= PlannerSurgery.Reconcile(store, pass);
+            change |= PlannerBenches.Reconcile(store, pass);
             change |= PlannerProduction.Reconcile(store, pass);
 
             // The pass's own mutations publish without requesting another

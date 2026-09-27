@@ -1,3 +1,4 @@
+using System.IO;
 using RimShared.UiLib;
 using RimWorld;
 using UnityEngine;
@@ -40,6 +41,7 @@ namespace WorkRoles.UI
         private string saveLabel = null!;
         private readonly System.Action savePendingAction;
         private string? pendingSavePath;
+        private bool overwriteConfirmed;
 
         public override Vector2 InitialSize => new Vector2(680f, 660f);
 
@@ -169,7 +171,23 @@ namespace WorkRoles.UI
         {
             string? path = pendingSavePath;
             pendingSavePath = null;
+            bool confirmed = overwriteConfirmed;
+            overwriteConfirmed = false;
             if (path == null) return;
+            // Checked at save time, not from the path cache, so a file that
+            // appeared after the name was typed is still caught.
+            if (!confirmed && File.Exists(path))
+            {
+                Find.WindowStack.Add(new Dialog_SmallConfirm(
+                    "WR_ExportOverwriteConfirm".Translate(path),
+                    () =>
+                    {
+                        pendingSavePath = path;
+                        overwriteConfirmed = true;
+                        WorkRolesGameComponent.RunOutsideOnGUI(savePendingAction);
+                    }));
+                return;
+            }
             string? error = RoleIO.SaveTo(path, xml);
             if (error == null)
             {

@@ -1,0 +1,18 @@
+# Mod set: implanner-quality plus Pickle, for Implanner's in-game quality
+# scenarios (Gherkin features run by Pickle on the Fisso fixture).
+
+# Test runner right after Harmony.
+after brrainz.harmony
+rimworks.rimlogging
+rimworks.pickle
+
+# Frameworks load right after the expansions.
+after ludeon.rimworld.odyssey
+oskarpotocki.vanillafactionsexpanded.core
+v1024.ebframework
+
+# Content mods load before the EPrime mods.
+before mnmr.workroles
+vanillaexpanded.vgeneticse
+assassinsbro.qualitybionicsremastered
+frozensnowfox.advancedbionicsexpansion

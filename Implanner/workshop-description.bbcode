@@ -21,9 +21,9 @@ Instead of micromanaging medical operations and crafting bills one at a time, yo
 
 [h1]How Automation Works[/h1]
 [list]
-[*]Production works down your star tiers: by default Implanner finishes the current tier before starting the next, so top-ranked implants get built and installed first.
-[*]A crafting bill is only created when every ingredient keeps its configured reserve after the full cost of the bill. Baseline reserves ship for steel, plasteel, gold, components and advanced components; every reserve is overridable, including down to zero.
-[*]You control how many benches per colony Implanner may occupy, a minimum crafting skill for its bills, and whether it may only use idle benches.
+[*]Production follows plan tiers as well as how you've configured surgery rollout, so that implants are produced in the order they're needed.
+[*]Every crafting bill is for a single item and a single bench gets at most two Implanner bills. Queued bills are cancelled if the resource reservations drop below the configured values.
+[*]You can limit how many benches Implanner may use, or designate benches for exclusive Implanner use.
 [*]With intermediates enabled, missing ingredients that are themselves craftable (components, drugs, and similar) are queued too.
 [*]When an implant is in stock, it is reserved for a specific colonist and the operation is added to their surgery list; your doctors take it from there.
 [*]An installed implant that already excludes the planned one counts as done: an archotech leg satisfies a bionic-leg goal instead of scheduling a pointless downgrade.
@@ -34,13 +34,14 @@ Instead of micromanaging medical operations and crafting bills one at a time, yo
 [*]Implanner is about implants only: weapons, apparel and utility gear are deliberately out of scope (the overview can display them, but nothing acts on them).
 [*]Only ordinary humanlike colonists are plannable; mutant-only implants such as the ghoul kit are excluded.
 [*]Automation options live in their own tab: iteration strategy, bench limits, skill requirements, resource reserves and implant reserves.
-[*]Everything the automation does is visible in the game as ordinary bills and surgery entries - there is no hidden machinery.
+[*]Everything the automation does is visible in the game as ordinary bills and surgery entries (no hidden machinery).
 [/list]
 
 [h1]Compatibility[/h1]
 [list]
 [*]Safe to add to existing saves: installed implants are recognized and count toward plan progress.
-[*]Multi-floor mods (MultiFloors, Strata, As above so below II): planning, rankings and progress tracking work fully; automation stands down, because medical bills cannot fetch ingredients across floors in those mods. Scheduling operations that can never complete would be worse.
+[*]Supports Quality Bionics Remastered (qualify modifiers for implants) and Vanilla Genetics Expanded (hybrid implants with quality). Plans can specify quality targets. Integrates with EPrime's Quality Jobs to create bills for items with quality.
+[*]Multi-floor mods (MultiFloors, Strata, As above so below II): planning, rankings and progress tracking work fully; automation stands down, because medical bills cannot fetch ingredients across floors in those mods.
 [*]Requires [url=https://steamcommunity.com/sharedfiles/filedetails/?id=2009463077]Harmony[/url].
 [/list]
 

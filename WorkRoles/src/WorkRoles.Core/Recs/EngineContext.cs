@@ -110,9 +110,10 @@ namespace WorkRoles.Core.Recs
         }
 
         /// The any/all capability policy is derived once by the spec builder;
-        /// eligibility stays level-free (content gates are readiness facts).
+        /// the player's partial-capability opt-in relaxes All to Any.
+        /// Eligibility stays level-free (content gates are readiness facts).
         public bool MeetsCapabilityRequirement(int pawnIndex, RoleView role) =>
-            role.WorkSpec.CapabilityRequirement
+            role.PartialCapability || role.WorkSpec.CapabilityRequirement
                 == RoleWorkCapabilityRequirement.Any
                 ? Capable(pawnIndex, role)
                 : FullyCapable(pawnIndex, role);
@@ -391,9 +392,12 @@ namespace WorkRoles.Core.Recs
             IReadOnlyList<RoleSkillFact> required = RequiredSkills(role);
             if (required.Count > 0)
             {
+                // A disabled primary skill vetoes unless the player accepted
+                // partial capability; the next enabled skill then decides.
                 RoleSkillFact primaryRequired = required[0];
                 if (!pawn.SkillLevels.ContainsKey(
                         primaryRequired.SkillDefName)
+                        && !role.PartialCapability
                     || pawn.SignalBuckets.TryGetValue(
                         primaryRequired.SkillDefName,
                         out SignalBucket primaryBucket)

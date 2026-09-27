@@ -72,7 +72,8 @@ namespace WorkRoles.UI
         // line height, language generation via explicit invalidation). Value:
         // one immutable
         // RecRoleDetailSnapshot (single slot: the accordion expands one panel).
-        // Dependencies: the role's category/time/championPenalty, explicit
+        // Dependencies: the role's category/time/championPenalty/
+        // partialCapability, the work spec's capability requirement, explicit
         // required-skill gates, job-derived Used/Trained facts, holder scales
         // and training paths, detached role-chip and add-menu projections,
         // skill/enum labels, language, GameFont.Small widths/line height, and
@@ -791,29 +792,53 @@ namespace WorkRoles.UI
             if (showTraining)
                 paths.Add(BuildPathView(store, role));
 
-            detail = new RecRoleDetailSnapshot(
-                roleId,
-                "WR_RecClassificationSection".Translate().ToString(),
-                "WR_RecSkillsSection".Translate().ToString(),
-                "WR_RecScalingSection".Translate().ToString(),
+            Text.Font = GameFont.Small;
+            RecOptionPicker categoryPicker = BuildOptionPicker(
                 "WR_RoleCategoryLabel".Translate().ToString(),
-                (int)role.category,
+                "WR_RoleCategoryTip",
                 new[]
                 {
                     "WR_RoleCategoryOptional".Translate().ToString(),
                     "WR_RoleCategoryNormal".Translate().ToString(),
                     "WR_RoleCategoryImportant".Translate().ToString(),
                 },
+                halfWidth);
+            RecOptionPicker timePicker = BuildOptionPicker(
                 "WR_RoleTimeLabel".Translate().ToString(),
-                (int)role.time,
+                "WR_RoleTimeTip",
                 new[]
                 {
                     "WR_RoleTimePartTime".Translate().ToString(),
                     "WR_RoleTimeFullTime".Translate().ToString(),
                     "WR_RoleTimeOpportunistic".Translate().ToString(),
                 },
+                halfWidth);
+            float stepperCaptionWidth = Mathf.Max(0f,
+                halfWidth - NumericStepperUI.ControlsReserve);
+            string colonyMinCaption =
+                "WR_RoleColonyMinLabel".Translate().ToString();
+            string colonyMinShown = FitLabel(colonyMinCaption,
+                stepperCaptionWidth);
+            string coverageCaption =
+                "WR_RoleCoverageLabel".Translate().ToString();
+            string coverageShown = FitLabel(coverageCaption,
+                stepperCaptionWidth);
+
+            detail = new RecRoleDetailSnapshot(
+                roleId,
+                "WR_RecClassificationSection".Translate().ToString(),
+                "WR_RecSkillsSection".Translate().ToString(),
+                "WR_RecScalingSection".Translate().ToString(),
+                (int)role.category, categoryPicker,
+                (int)role.time, timePicker,
                 "WR_ChampionPenalty".Translate().ToString(),
                 role.championPenalty,
+                "WR_PartialCapability".Translate().ToString(),
+                role.partialCapability,
+                // Unskilled and hunting roles already accept partial
+                // capability: shown checked and locked.
+                workSpec.CapabilityRequirement
+                    == RoleWorkCapabilityRequirement.Any,
                 captionWidth, derivedRowHeight, requiredRowHeight,
                 requiredSkillWidth, requiredRemoveX, requiredRemoveWidth,
                 requiredAddX,
@@ -829,10 +854,14 @@ namespace WorkRoles.UI
                 requiredChips, requiredHeight,
                 present,
                 addSkillLabel, addSkillWidth,
-                "WR_RoleColonyMinLabel".Translate().ToString(),
+                colonyMinShown,
+                TruncatedCaptionTip(colonyMinCaption, colonyMinShown,
+                    "WR_RoleColonyMinTip"),
                 role.colonyMin,
                 role.colonyMin.ToString(CultureInfo.InvariantCulture),
-                "WR_RoleCoverageLabel".Translate().ToString(),
+                coverageShown,
+                TruncatedCaptionTip(coverageCaption, coverageShown,
+                    "WR_RoleCoverageTip"),
                 role.coverage,
                 role.coverage.ToString(CultureInfo.InvariantCulture),
                 "WR_TrainingSection".Translate().ToString(),
@@ -844,6 +873,65 @@ namespace WorkRoles.UI
         /// One derived row, with each comma-separated skill carrying a cached
         /// local draw/hit rectangle. Widths and strings are built only behind
         /// the detail snapshot's explicit revision/width invalidation gate.
+        // Horizontal label room inside a segment cell, and the gap between
+        // cells (mirrors DrawOptionSegments).
+        private const float SegmentTextPad = 4f;
+        private const float SegmentGap = 2f;
+
+        /// Segment widths follow the measured labels at narrow widths; labels
+        /// that still cannot fit truncate and the block tip lists them whole.
+        private static RecOptionPicker BuildOptionPicker(string caption,
+            string tipKey, string[] options, float width)
+        {
+            int count = options.Length;
+            var desired = new float[count];
+            for (int i = 0; i < count; i++)
+                desired[i] = WrText.FitWidth(options[i]) + SegmentTextPad;
+            float[] widths = SegmentWidthLayout.Allocate(desired,
+                Mathf.Max(0f, width - (count - 1) * SegmentGap));
+            var labels = new string[count];
+            var xs = new float[count];
+            bool truncated = false;
+            float x = 0f;
+            for (int i = 0; i < count; i++)
+            {
+                xs[i] = x;
+                x += widths[i] + SegmentGap;
+                labels[i] = FitLabel(options[i], widths[i] - SegmentTextPad);
+                truncated |= !ReferenceEquals(labels[i], options[i]);
+            }
+            StructuredTip? tip = null;
+            if (truncated)
+            {
+                var model = new TipModel();
+                model.AddSection().Text(tipKey.Translate().Resolve());
+                model.AddSection().Text(string.Join(", ", options), dim: true);
+                tip = new StructuredTip("rec:picker:" + tipKey, model);
+            }
+            return new RecOptionPicker(caption, labels, xs, widths, tip);
+        }
+
+        /// The full-caption tip for a truncated stepper caption; null when
+        /// the caption fits and the plain keyed tip applies.
+        private static StructuredTip? TruncatedCaptionTip(string caption,
+            string shown, string tipKey)
+        {
+            if (ReferenceEquals(caption, shown)) return null;
+            var model = new TipModel();
+            model.AddSection().Text(caption);
+            model.AddSection().Text(tipKey.Translate().Resolve());
+            return new StructuredTip("rec:caption:" + tipKey, model);
+        }
+
+        /// The label itself when it fits (same reference), else truncated
+        /// with FitWidth's drift margin so the result cannot wrap or clip.
+        private static string FitLabel(string label, float width)
+        {
+            if (WrText.FitWidth(label) <= width) return label;
+            float room = (width - 2f) / 1.02f;
+            return room > 0f ? label.Truncate(room) : string.Empty;
+        }
+
         private static void LayoutInlineSkillChips(
             List<RecSkillChip> chips, float width, float rowHeight)
         {
@@ -1470,6 +1558,35 @@ namespace WorkRoles.UI
         internal Rect Rect { get; }
     }
 
+    /// One segmented classification picker: caption plus fitted segment
+    /// labels and column-local cell geometry.
+    internal sealed class RecOptionPicker
+    {
+        internal RecOptionPicker(string caption, string[] labels,
+            float[] xs, float[] widths, StructuredTip? tip)
+        {
+            Caption = caption;
+            this.labels = labels;
+            this.xs = xs;
+            this.widths = widths;
+            Tip = tip;
+        }
+
+        private readonly string[] labels;
+        private readonly float[] xs;
+        private readonly float[] widths;
+
+        internal string Caption { get; }
+        internal int Count => labels.Length;
+        /// Possibly truncated; picker-position order (0 = leftmost).
+        internal string LabelAt(int index) => labels[index];
+        internal float XAt(int index) => xs[index];
+        internal float WidthAt(int index) => widths[index];
+        /// Keyed tip plus the full labels when any label was truncated;
+        /// null uses the plain keyed tip.
+        internal StructuredTip? Tip { get; }
+    }
+
     internal sealed class RecRoleDetailSnapshot
     {
         private readonly List<RecSkillChip> workTypeChips;
@@ -1483,11 +1600,11 @@ namespace WorkRoles.UI
         internal RecRoleDetailSnapshot(int roleId,
             string classificationHeader, string skillsHeader,
             string scalingHeader,
-            string categoryCaption, int categoryValue,
-            IReadOnlyList<string> categoryOptions,
-            string timeCaption, int timeValue,
-            IReadOnlyList<string> timeOptions,
+            int categoryValue, RecOptionPicker categoryPicker,
+            int timeValue, RecOptionPicker timePicker,
             string championLabel, bool championPenalty,
+            string partialCapabilityLabel, bool partialCapability,
+            bool partialCapabilityLocked,
             float skillCaptionWidth, float derivedSkillRowHeight,
             float requiredSkillRowHeight, float requiredSkillWidth,
             float requiredRemoveX, float requiredRemoveWidth,
@@ -1504,8 +1621,10 @@ namespace WorkRoles.UI
             float requiredHeight,
             HashSet<string> presentSkills, string addSkillLabel,
             float addSkillWidth,
-            string colonyMinCaption, int colonyMin, string colonyMinLabel,
-            string coverageCaption, int coverage, string coverageLabel,
+            string colonyMinCaption, StructuredTip? colonyMinTip,
+            int colonyMin, string colonyMinLabel,
+            string coverageCaption, StructuredTip? coverageTip,
+            int coverage, string coverageLabel,
             string trainingHeader, bool showTrainingSection,
             List<RecPathView> paths)
         {
@@ -1513,14 +1632,15 @@ namespace WorkRoles.UI
             ClassificationHeader = classificationHeader;
             SkillsHeader = skillsHeader;
             ScalingHeader = scalingHeader;
-            CategoryCaption = categoryCaption;
             CategoryValue = categoryValue;
-            CategoryOptions = categoryOptions;
-            TimeCaption = timeCaption;
+            CategoryPicker = categoryPicker;
             TimeValue = timeValue;
-            TimeOptions = timeOptions;
+            TimePicker = timePicker;
             ChampionLabel = championLabel;
             ChampionPenalty = championPenalty;
+            PartialCapabilityLabel = partialCapabilityLabel;
+            PartialCapability = partialCapability;
+            PartialCapabilityLocked = partialCapabilityLocked;
             SkillCaptionWidth = skillCaptionWidth;
             DerivedSkillRowHeight = derivedSkillRowHeight;
             RequiredSkillRowHeight = requiredSkillRowHeight;
@@ -1547,9 +1667,11 @@ namespace WorkRoles.UI
             AddSkillLabel = addSkillLabel;
             AddSkillWidth = addSkillWidth;
             ColonyMinCaption = colonyMinCaption;
+            ColonyMinTip = colonyMinTip;
             ColonyMin = colonyMin;
             ColonyMinLabel = colonyMinLabel;
             CoverageCaption = coverageCaption;
+            CoverageTip = coverageTip;
             Coverage = coverage;
             CoverageLabel = coverageLabel;
             TrainingHeader = trainingHeader;
@@ -1561,15 +1683,17 @@ namespace WorkRoles.UI
         internal string ClassificationHeader { get; }
         internal string SkillsHeader { get; }
         internal string ScalingHeader { get; }
-        internal string CategoryCaption { get; }
         internal int CategoryValue { get; }
-        /// Segment labels in picker-position order (0 = leftmost).
-        internal IReadOnlyList<string> CategoryOptions { get; }
-        internal string TimeCaption { get; }
+        internal RecOptionPicker CategoryPicker { get; }
         internal int TimeValue { get; }
-        internal IReadOnlyList<string> TimeOptions { get; }
+        internal RecOptionPicker TimePicker { get; }
         internal string ChampionLabel { get; }
         internal bool ChampionPenalty { get; }
+        internal string PartialCapabilityLabel { get; }
+        /// The stored opt-in; ignored while locked.
+        internal bool PartialCapability { get; }
+        /// The role already accepts partial capability (unskilled or hunting).
+        internal bool PartialCapabilityLocked { get; }
         internal float SkillCaptionWidth { get; }
         internal float DerivedSkillRowHeight { get; }
         internal float RequiredSkillRowHeight { get; }
@@ -1600,10 +1724,14 @@ namespace WorkRoles.UI
         internal bool HasSkill(string defName) => presentSkills.Contains(defName);
         internal string AddSkillLabel { get; }
         internal float AddSkillWidth { get; }
+        /// Stepper captions, truncated to fit; their tips carry the full
+        /// caption (null when it fits).
         internal string ColonyMinCaption { get; }
+        internal StructuredTip? ColonyMinTip { get; }
         internal int ColonyMin { get; }
         internal string ColonyMinLabel { get; }
         internal string CoverageCaption { get; }
+        internal StructuredTip? CoverageTip { get; }
         internal int Coverage { get; }
         internal string CoverageLabel { get; }
         internal string TrainingHeader { get; }

@@ -27,7 +27,11 @@ namespace EPrimeReadouts
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            store.Model.CreateGroup(store.TakeGroupId(), name);
+            // A concurrent create in MP may have taken the name first; the
+            // second one is dropped identically on every client.
+            string normalized = ReadoutGroupNames.Normalize(name);
+            if (!store.Model.CanUseGroupName(normalized)) return;
+            store.Model.CreateGroup(store.TakeGroupId(), normalized);
             store.Bump(ReadoutChange.Groups);
         }
 
@@ -58,12 +62,44 @@ namespace EPrimeReadouts
                 store.Bump(ReadoutChange.Groups);
         }
 
+        // Slot and pool-member edits carry their intent, never the resulting
+        // layout: in MP a second click is built before the first lands, and a
+        // full-state command would overwrite it (see ReadoutModel intent edits).
+
+        /// tier -1 appends to the last tier (the next one when full).
         [SyncMethod]
-        public static void SetGroupLayout(int id, string tierBlob)
+        public static void AddGroupSlot(int groupId, string token, int tier, int slot)
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            if (store.Model.SetTiers(id, TierBlobCodec.Decode(tierBlob)))
+            if (store.Model.AddGroupSlot(groupId, token, tier, slot))
+                store.Bump(ReadoutChange.Groups);
+        }
+
+        [SyncMethod]
+        public static void RemoveGroupSlot(int groupId, string token)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null) return;
+            if (store.Model.RemoveGroupSlot(groupId, token))
+                store.Bump(ReadoutChange.Groups);
+        }
+
+        [SyncMethod]
+        public static void MoveGroupSlot(int groupId, string token, int toTier, int toSlot)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null) return;
+            if (store.Model.MoveGroupSlot(groupId, token, toTier, toSlot))
+                store.Bump(ReadoutChange.Groups);
+        }
+
+        [SyncMethod]
+        public static void SetGroupSlotShowWhenZero(int groupId, string token, bool show)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null) return;
+            if (store.Model.SetGroupSlotShowWhenZero(groupId, token, show))
                 store.Bump(ReadoutChange.Groups);
         }
 
@@ -76,19 +112,26 @@ namespace EPrimeReadouts
                 store.Bump(ReadoutChange.Thresholds);
         }
 
-        /// Per-token count-basis override. The states travel as BasisOverride
-        /// ordinals (0 inherit, 1 force on, 2 force off) so the command needs
-        /// only primitives; out-of-range values are rejected on every client.
-        /// A fully-inherit rule clears the entry.
+        /// Per-token count-basis override, one option per command so a quick
+        /// edit of the other option is never overwritten. The state travels
+        /// as a BasisOverride ordinal (0 inherit, 1 force on, 2 force off);
+        /// out-of-range values are rejected on every client. A fully-inherit
+        /// rule clears the entry.
         [SyncMethod]
-        public static void SetCountRule(string token, int storageOnly, int hideForbidden)
+        public static void SetCountRuleStorageOnly(string token, int state)
         {
             var store = ReadoutStore.Current;
-            if (store == null) return;
-            if (storageOnly < 0 || storageOnly > 2) return;
-            if (hideForbidden < 0 || hideForbidden > 2) return;
-            if (store.Model.SetCountRule(token, new CountRule(
-                    (BasisOverride)storageOnly, (BasisOverride)hideForbidden)))
+            if (store == null || state < 0 || state > 2) return;
+            if (store.Model.SetCountRuleStorageOnly(token, (BasisOverride)state))
+                store.Bump(ReadoutChange.CountRules);
+        }
+
+        [SyncMethod]
+        public static void SetCountRuleHideForbidden(string token, int state)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null || state < 0 || state > 2) return;
+            if (store.Model.SetCountRuleHideForbidden(token, (BasisOverride)state))
                 store.Bump(ReadoutChange.CountRules);
         }
 
@@ -151,11 +194,26 @@ namespace EPrimeReadouts
         }
 
         [SyncMethod]
-        public static void SetPoolMembers(int id, string membersBlob)
+        public static void SetPoolMemberSelected(int poolId, string defName, bool selected)
         {
             var store = ReadoutStore.Current;
             if (store == null) return;
-            if (store.Model.SetPoolMembers(id, PoolMembersCodec.Decode(membersBlob)))
+            if (store.Model.SetPoolMemberSelected(poolId, defName, selected,
+                    GameResourceCatalog.Instance))
+                store.Bump(ReadoutChange.Pools);
+        }
+
+        /// The scoped defs are the picker's filtered rows at click time,
+        /// passed explicitly so every client changes the same defs.
+        [SyncMethod]
+        public static void SetPoolCategoryScopeSelected(int poolId,
+            string categoryDefName, string scopedDefsBlob, bool selected)
+        {
+            var store = ReadoutStore.Current;
+            if (store == null) return;
+            if (store.Model.SetPoolCategoryScopeSelected(poolId, categoryDefName,
+                    PoolMembersCodec.Decode(scopedDefsBlob), selected,
+                    GameResourceCatalog.Instance))
                 store.Bump(ReadoutChange.Pools);
         }
 

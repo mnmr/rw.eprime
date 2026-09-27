@@ -29,6 +29,9 @@ lying in medical beds or downed and awaiting treatment take up slots too,
 so new implant surgeries wait until the hospital has room. Prisoners,
 guests and patients visiting from other factions never take up a slot.
 
+**Give the best implants to high-priority colonists** appears when a mod
+gives implants a quality. See [minimum quality](topic:minimum-quality).
+
 **Assign surgery bills to best available doctor** (on by default)
 restricts Implanner surgery bills to the most skilled doctor at each
 colony. The restriction follows the best doctor as colonists arrive and

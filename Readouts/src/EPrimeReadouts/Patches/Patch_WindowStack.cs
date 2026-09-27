@@ -8,7 +8,8 @@ namespace EPrimeReadouts.Patches
     /// them, including Input-polled camera dolly — returns false while
     /// WindowStack.AnySearchWidgetFocused is true. Vanilla only consults the
     /// CommonSearchWidget of open windows; the readout's search field lives
-    /// outside the window stack, so it reports through the same gate here.
+    /// outside the window stack, so it reports through the same gate here,
+    /// as do the mod's dialog text fields (which are not QuickSearchWidgets).
     /// Typed characters then reach only the text field, never game shortcuts.
     [HarmonyPatch(typeof(WindowStack), nameof(WindowStack.AnySearchWidgetFocused),
         MethodType.Getter)]
@@ -16,7 +17,9 @@ namespace EPrimeReadouts.Patches
     {
         public static void Postfix(ref bool __result)
         {
-            if (!__result) __result = ReadoutPanel.SearchFieldCapturesInput;
+            if (!__result)
+                __result = ReadoutPanel.SearchFieldCapturesInput
+                    || TextInputCapture.Active;
         }
     }
 }

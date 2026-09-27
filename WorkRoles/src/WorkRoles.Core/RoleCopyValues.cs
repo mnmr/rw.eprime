@@ -21,6 +21,7 @@ namespace WorkRoles.Core
         public RoleCategory Category { get; set; }
         public RoleTime Time { get; set; }
         public bool ChampionPenalty { get; set; } = true;
+        public bool PartialCapability { get; set; }
         public int MinAge { get; set; }
         public int MaxAge { get; set; }
         public int ColonyMin { get; set; }
@@ -58,6 +59,7 @@ namespace WorkRoles.Core
                 Category = Category,
                 Time = Time,
                 ChampionPenalty = ChampionPenalty,
+                PartialCapability = PartialCapability,
                 MinAge = MinAge,
                 MaxAge = MaxAge,
                 ColonyMin = ColonyMin,

@@ -284,6 +284,15 @@ namespace WorkRoles
             UiVersion.Bump();
         }
 
+        [SyncMethod]
+        public static void SetRolePartialCapability(int roleId, bool value)
+        {
+            var role = FindRole(roleId);
+            if (role == null || role.partialCapability == value) return;
+            role.partialCapability = value;
+            UiVersion.Bump();
+        }
+
         /// Both age gates in one synced command: a band click can move both.
         [SyncMethod]
         public static void SetRoleAgeRange(int roleId, int minValue, int maxValue)
@@ -759,6 +768,7 @@ namespace WorkRoles
                 Category = source.category,
                 Time = source.time,
                 ChampionPenalty = source.championPenalty,
+                PartialCapability = source.partialCapability,
                 MinAge = source.minAge,
                 MaxAge = source.maxAge,
                 ColonyMin = source.colonyMin,
@@ -787,6 +797,7 @@ namespace WorkRoles
                 category = values.Category,
                 time = values.Time,
                 championPenalty = values.ChampionPenalty,
+                partialCapability = values.PartialCapability,
                 minAge = values.MinAge,
                 maxAge = values.MaxAge,
                 colonyMin = values.ColonyMin,

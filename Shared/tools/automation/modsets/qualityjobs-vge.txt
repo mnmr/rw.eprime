@@ -1,0 +1,13 @@
+# Mod set: Vanilla Genetics Expanded (genoframe-quality implants) and
+# Quality Bionics Remastered (CompQuality on bionics) for Quality Jobs'
+# ingredient-quality exclusion and API v2 proofs.
+
+# Frameworks load right after the expansions.
+after ludeon.rimworld.odyssey
+OskarPotocki.VanillaFactionsExpanded.Core
+V1024.EBFramework
+
+# Content mods load before the EPrime mods.
+before mnmr.workroles
+VanillaExpanded.VGeneticsE
+assassinsbro.qualitybionicsremastered

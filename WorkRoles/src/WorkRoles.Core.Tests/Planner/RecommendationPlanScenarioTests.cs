@@ -59,6 +59,39 @@ public class RecommendationPlanScenarioTests
     }
 
     [Test]
+    public async Task PartialCapabilityLetsASkilledRoleAcceptAPawnWhoCanDoSomeOfItsWork()
+    {
+        // A shared idle-work role: mining (primary), stonecutting and
+        // cleaning. Pawn 0 cannot craft, pawn 2 cannot mine, and pawn 1 can
+        // do none of the role's work.
+        RecommendationPlan Plan(bool partialCapability)
+        {
+            var recs = new RecsProjection()
+                .WorkType("Mining", "Mining", 400, "Mine", "DeepDrill")
+                .WorkType("Crafting", "Crafting", 300, "Stonecut", "CraftSimple")
+                .WorkType("Cleaning", null, 100, "Clean");
+            RecommendationRoleSource idle = recs.RoleByWorkType(1, 0, 100, "Mining", "Cleaning");
+            idle.Entries.Insert(1, new JobEntry(JobEntryKind.WorkGiver, "Stonecut"));
+            idle.PartialCapability = partialCapability;
+            var noCrafting = new PawnView { CapableWorkTypes = { "Mining", "Cleaning" } };
+            noCrafting.SkillLevels["Mining"] = 8;
+            var noneOfIt = new PawnView { CapableWorkTypes = { "Hauling" } };
+            var noMining = new PawnView { CapableWorkTypes = { "Crafting", "Cleaning" } };
+            noMining.SkillLevels["Crafting"] = 8;
+            return recs.Plan(noCrafting, noneOfIt, noMining);
+        }
+
+        RecommendationPlan strict = Plan(partialCapability: false);
+        RecommendationPlan partial = Plan(partialCapability: true);
+
+        await Assert.That(RecsProjection.Holds(strict, 0, 1)).IsFalse();
+        await Assert.That(RecsProjection.Holds(strict, 2, 1)).IsFalse();
+        await Assert.That(RecsProjection.Holds(partial, 0, 1)).IsTrue();
+        await Assert.That(RecsProjection.Holds(partial, 1, 1)).IsFalse();
+        await Assert.That(RecsProjection.Holds(partial, 2, 1)).IsTrue();
+    }
+
+    [Test]
     public async Task AutoAssignUsesTheSameSkilledVersusUnskilledCapabilityRule()
     {
         var recs = new RecsProjection()

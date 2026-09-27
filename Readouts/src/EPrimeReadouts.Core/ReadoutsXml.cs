@@ -399,6 +399,10 @@ namespace EPrimeReadouts.Core
                         {
                             if (!ModsPresent(slotEl, isModActive)) continue;
                             string slot = slotEl.Value.Trim();
+                            // "#id" is local to the save that wrote it and would
+                            // rebind to whichever pool import numbers the same;
+                            // export writes "pool:Name" instead.
+                            if (SlotToken.IsPoolRef(slot)) continue;
                             if (IsPortablePoolRef(slot))
                             {
                                 string referencedName = PortablePoolName(slot);

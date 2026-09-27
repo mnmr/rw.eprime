@@ -68,6 +68,49 @@ try {
     @('after ludeon.rimworld','regression.onlyinsource') | Set-Content $modSet
     $resolved = @(Build-ModSetList -SaveModIds @('ludeon.rimworld') -SetPath $modSet -ModSourceRoot $worktree)
     Check ($resolved.Count -eq 2 -and $resolved[1] -ceq 'regression.onlyinsource') 'Source-only mods must resolve without deployment, ignoring package-ID case.'
+    @('after ludeon.rimworld', 'remove Regression.Unwanted', 'regression.onlyinsource', 'remove regression.neverlisted') | Set-Content $modSet
+    $resolved = @(Build-ModSetList -SaveModIds @('ludeon.rimworld', 'regression.unwanted', 'regression.kept') -SetPath $modSet -ModSourceRoot $worktree)
+    Check (($resolved -join ',') -ceq 'ludeon.rimworld,regression.onlyinsource,regression.kept') 'A mod set must drop removed save mods (ignoring case and absent ids) and keep insertion order.'
+    # Stall rules decide when a live run is killed; a game cannot be made to
+    # stall on demand at each boundary, so the decision is checked on samples.
+    . (Join-Path $toolsRoot 'guard-common.ps1')
+    $t0 = [DateTime]::new(2026, 9, 27, 0, 0, 0, [DateTimeKind]::Utc)
+    function Sample([double]$At, [int]$Ticks, [bool]$Paused = $true, [double]$InputAge = 0, [double]$CommandAge = 0, [bool]$Loading = $false, [double]$HeartbeatAge = 0.2, [double]$ActivityAge = 0, [switch]$Pickle) {
+        $state = [pscustomobject]@{ ticks = $Ticks; paused = $Paused; forcePaused = $false; loading = $Loading; inputAgeSeconds = $InputAge
+            commandAgeSeconds = $CommandAge; blockers = @('Verse.Dialog_Example'); focused = 'Verse.Dialog_Example' }
+        Get-RunStallReason -Tracker $tracker -State $state -NowUtc $t0.AddSeconds($At) -HeartbeatUtc $t0.AddSeconds($At - $HeartbeatAge) -ActivityUtc $t0.AddSeconds($At - $ActivityAge) -Pickle:$Pickle
+    }
+    $tracker = New-RunStallTracker $t0
+    Check ($null -eq (Sample 9.9 5 -InputAge 9.9 -CommandAge 1)) 'A paused game without input is not a stall before 10 s.'
+    $reason = Sample 10 5 -InputAge 10 -CommandAge 1
+    Check ($reason -match 'no progress' -and $reason -match 'paused=True' -and $reason -match 'Dialog_Example') 'A paused game without input for 10 s is a stall that names the pause and the blocking window.'
+    $tracker = New-RunStallTracker $t0
+    foreach ($second in 1..30) { Check ($null -eq (Sample $second (5 + $second) -Paused $false -InputAge $second -CommandAge $second -ActivityAge 0.5)) 'Advancing ticks with bridge polling is progress.' }
+    $tracker = New-RunStallTracker $t0
+    Check ($null -eq (Sample 25 5 -Loading $true -InputAge 25 -CommandAge 1)) 'Loading is progress.'
+    $tracker = New-RunStallTracker $t0
+    foreach ($second in 1..9) { Sample $second (5 + $second) -Paused $false -InputAge $second -CommandAge $second -ActivityAge $second | Out-Null }
+    Check ((Sample 10 15 -Paused $false -InputAge 10 -CommandAge 10 -ActivityAge 10) -match 'idle') 'A driving script silent for 10 s is a stall even while the game ticks.'
+    $tracker = New-RunStallTracker $t0
+    foreach ($second in 1..9) { Sample $second (5 + $second) -Paused $false -InputAge $second -CommandAge $second -ActivityAge $second -Pickle | Out-Null }
+    Check ($null -eq (Sample 10 15 -Paused $false -InputAge 10 -CommandAge 10 -ActivityAge 10 -Pickle)) 'Pickle drives itself; script silence is not a stall.'
+    $tracker = New-RunStallTracker $t0
+    Check ((Sample 3 5 -HeartbeatAge 5.5) -match 'not responding') 'A stale game heartbeat is a stall.'
+    $tracker = New-RunStallTracker $t0
+    foreach ($second in 1..59) { Sample $second (5 + $second) -Paused $false -ActivityAge 0.5 | Out-Null }
+    Check ((Sample 60 65 -Paused $false -ActivityAge 0.5) -match 'cap') 'The hard cap stops a progressing run 60 s after ready.'
+    # The bridge wire format is the GABP boundary; a live game cannot isolate a
+    # framing error from a bridge fault, so the codec is checked on bytes.
+    . (Join-Path $toolsRoot 'bridge-common.ps1')
+    $wire = [pscustomobject]@{ Stream = [IO.MemoryStream]::new() }
+    Send-GabpFrame $wire '{"v":"gabp/1","text":"Försök ✓"}'
+    Send-GabpFrame $wire '{"n":2}'
+    $bytes = $wire.Stream.ToArray()
+    Check ([Text.Encoding]::ASCII.GetString($bytes, 0, 20) -ceq 'Content-Length: 36' + "`r`n") 'Content-Length must count UTF-8 bytes (36), not characters (32).'
+    $wire.Stream.Position = 0
+    Check ((Read-GabpFrame $wire) -ceq '{"v":"gabp/1","text":"Försök ✓"}') 'A framed UTF-8 body must round-trip exactly.'
+    Check ((Read-GabpFrame $wire) -ceq '{"n":2}') 'Back-to-back frames must split on their declared lengths.'
+    Rejects { Read-GabpFrame $wire } 'A closed stream must fail instead of returning a partial frame.'
     $installedRoot = $script:InstalledGameRoot
     try {
         $script:InstalledGameRoot = Join-Path $fixture 'game-installation'

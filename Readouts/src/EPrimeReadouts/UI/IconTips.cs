@@ -103,7 +103,7 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: current world/store presentation session.
-        // Key: canonical token.
+        // Key: slot token, or "?defName" for a search result.
         // Value: immutable StructuredTip/TipModel graph.
         // Dependencies: shared render snapshot identity, ThresholdsVersion,
         // CountRulesVersion, language revision, and the storage-only,
@@ -176,18 +176,30 @@ namespace EPrimeReadouts.UI
             }
         }
 
+        // Search results carry no token. Their tips are keyed apart from a
+        // group slot showing the same def, because a result counts on the
+        // global basis while the slot follows its token's count rule. The
+        // prefixed key is built once per def; slot tokens never start with it.
+        private const string ResultKeyPrefix = "?";
+
+        // Cache contract: as deferredTips, keyed by the result's defName.
+        private static readonly Dictionary<string, DeferredTip> deferredResultTips =
+            new Dictionary<string, DeferredTip>();
+
         internal static void TipHovered(
             ThingDef def,
             int count,
             string? token,
             RenderDataSnapshot<PoolSnapshot, RenderCountSnapshot>? renderData)
         {
-            // Use token as cache key (null-safe fallback to defName for plain slots)
-            string cacheKey = token ?? def.defName;
-            if (!deferredTips.TryGetValue(cacheKey, out var deferred))
+            bool result = token == null;
+            var table = result ? deferredResultTips : deferredTips;
+            string lookup = result ? def.defName : token!;
+            if (!table.TryGetValue(lookup, out var deferred))
             {
-                deferred = new DeferredTip(cacheKey);
-                deferredTips.Add(cacheKey, deferred);
+                deferred = new DeferredTip(
+                    result ? ResultKeyPrefix + def.defName : lookup);
+                table.Add(lookup, deferred);
             }
             deferred.Def = def;
             deferred.Count = count;
@@ -209,10 +221,11 @@ namespace EPrimeReadouts.UI
             // The tip shows the hovered token's numbers, so every stock figure
             // in it uses that token's resolved basis: its count rule where one
             // is stored, the global options otherwise — matching the slot sum.
+            // Search results (no token) always count on the global basis.
             var basisSettings = EPrimeReadoutsMod.Settings;
             bool basisStorageOnly = basisSettings.searchStorageOnly;
             bool basisHideForbidden = basisSettings.searchHideForbidden;
-            if (state.Store != null && state.Store.Model.CountRules.TryGetValue(
+            if (token != null && state.Store != null && state.Store.Model.CountRules.TryGetValue(
                     canonical, out CountRule tipRule))
             {
                 basisStorageOnly = tipRule.ResolveStorageOnly(basisStorageOnly);
@@ -510,6 +523,7 @@ namespace EPrimeReadouts.UI
         {
             cache.Clear();
             deferredTips.Clear();
+            deferredResultTips.Clear();
             StructuredTipPresenter.Reset();
         }
     }

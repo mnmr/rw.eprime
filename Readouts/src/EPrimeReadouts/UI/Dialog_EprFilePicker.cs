@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using EPrimeReadouts.Core;
+using RimShared.Common;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -108,7 +109,8 @@ namespace EPrimeReadouts.UI
             }
             try
             {
-                return Path.Combine(dir, name)
+                // Import lists only *.xml, so every export gets the extension.
+                return Path.Combine(dir, XmlFileName.WithExtension(name))
                     .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             }
             catch (Exception) { problem = UiText.Get("EPR.BadDirectory"); return null; }

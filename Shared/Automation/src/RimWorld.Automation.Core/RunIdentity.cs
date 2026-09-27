@@ -1,4 +1,5 @@
 using System;
+using System.Text.RegularExpressions;
 
 namespace RimWorld.Automation.Core;
 
@@ -16,4 +17,7 @@ public static class RunIdentity
         return string.Equals(profile.Replace('/', '\\').TrimEnd('\\'), RunsRoot + "\\" + id,
             StringComparison.OrdinalIgnoreCase);
     }
+    // Pickle runner flags only; no spaces or quotes, so one argument cannot smuggle another.
+    public static bool IsAllowedGameArgument(string argument) =>
+        argument != null && Regex.IsMatch(argument, @"^-pickle-[a-z-]+(=[^\s""]*)?\z", RegexOptions.CultureInvariant);
 }

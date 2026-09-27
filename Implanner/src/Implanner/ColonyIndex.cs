@@ -92,7 +92,10 @@ namespace Implanner
                 && pawnColony == itemColony;
         }
 
-        internal static ColonyIndex Build()
+        /// model supplies the items reinstall records wait for, which may
+        /// lie outside the catalog (an unplanned joywire pushed out of the
+        /// brain goes back too).
+        internal static ColonyIndex Build(Core.PlannerModel model)
         {
             var index = new ColonyIndex();
             Faction faction = ColonyScope.AuthoritativeFaction;
@@ -124,7 +127,7 @@ namespace Implanner
             // Only implant items matter: the kinds the catalog's surgeries
             // consume, looked up per def through the map's def lister
             // instead of walking every haulable thing.
-            List<ThingDef> itemDefs = ImplantItemDefs();
+            List<ThingDef> itemDefs = ImplantItemDefs(model);
             for (int c = 0; c < index.Colonies.Count; c++)
             {
                 Colony colony = index.Colonies[c];
@@ -184,8 +187,9 @@ namespace Implanner
         }
 
         /// The implant item kinds automation can consume, in defName
-        /// order: the catalog's spawnThingOnRemoved defs, deduplicated.
-        internal static List<ThingDef> ImplantItemDefs()
+        /// order: the catalog's spawnThingOnRemoved defs plus the items of
+        /// the model's reinstall records, deduplicated.
+        internal static List<ThingDef> ImplantItemDefs(Core.PlannerModel model)
         {
             var defs = new List<ThingDef>();
             var seen = new HashSet<ThingDef>();
@@ -196,6 +200,15 @@ namespace Implanner
                 if (item != null && seen.Add(item))
                     defs.Add(item);
             }
+            foreach (KeyValuePair<int, IReadOnlyList<Core.ReinstallRecord>> pair
+                in model.Reinstalls)
+                for (int i = 0; i < pair.Value.Count; i++)
+                {
+                    ThingDef? item = DefDatabase<HediffDef>
+                        .GetNamedSilentFail(pair.Value[i].ImplantDefName)?.spawnThingOnRemoved;
+                    if (item != null && seen.Add(item))
+                        defs.Add(item);
+                }
             defs.Sort(ByDefName);
             return defs;
         }

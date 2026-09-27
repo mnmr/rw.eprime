@@ -22,6 +22,8 @@ namespace QualityJobs
             if (effective == value) return;
             store.billManaged[billId] = value;
             store.NotifyBillConfigurationChanged(billId, affectsEligibility: true);
+            // Unmanaging hands already-paused items back to vanilla.
+            if (!value) store.ReleaseUnmanagedBillWork();
         }
 
         [SyncMethod]
@@ -172,6 +174,9 @@ namespace QualityJobs
             store.manageNewBillsDefault = value;
             store.NotifyBillDefaultsChanged(
                 BillDefaultField.Managed, affectsEligibility: true);
+            // Bills following the default are now unmanaged: release their
+            // paused items like the per-bill checkbox does.
+            if (!value) store.ReleaseUnmanagedBillWork();
         }
 
         [SyncMethod]
@@ -351,12 +356,11 @@ namespace QualityJobs
             requireSpecialist = requireSpecialist && ModsConfig.IdeologyActive;
             targetQuality = ConfigurationLimits.Quality(targetQuality);
 
-            var bill = new Bill_ProductionWithUft(recipe)
-            {
-                repeatMode = BillRepeatModeDefOf.RepeatCount,
-                repeatCount = 1,
-                suspended = false,
-            };
+            // The game's factory, so other mods' MakeNewBill hooks apply.
+            var bill = (Bill_ProductionWithUft)recipe.MakeNewBill();
+            bill.repeatMode = BillRepeatModeDefOf.RepeatCount;
+            bill.repeatCount = 1;
+            bill.suspended = false;
             giver.BillStack.AddBill(bill);
 
             string billId = BillIds.IdOf(bill);
@@ -368,6 +372,84 @@ namespace QualityJobs
             store.billTargetQuality[billId] = targetQuality;
             store.NotifyBillConfigurationChanged(
                 billId, affectsEligibility: true);
+        }
+
+        /// <summary>
+        /// Replay surface for QualityJobsApi.ManageBill. Replay resolves the
+        /// bill again by load ID and applies nothing when it is gone, is not a
+        /// managed recipe, or the quality is out of range.
+        /// </summary>
+        [SyncMethod]
+        public static void ManageBillFromApi(string billId, int targetQuality)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || billId == null
+                || !BillManagement.IsValidTargetQuality(targetQuality)
+                || FindApiBill(store, billId) == null)
+                return;
+            ApplyBillManagement(store, billId, BillManagement.Manage(
+                store.billManaged.TryGetValue(billId, out bool managed)
+                    ? managed : null,
+                store.manageNewBillsDefault,
+                store.billTargetQuality.TryGetValue(billId, out int target)
+                    ? target : null,
+                targetQuality));
+        }
+
+        /// <summary>
+        /// Replay surface for QualityJobsApi.UnmanageBill. Also hands the
+        /// bill's gate-locked unfinished items back to vanilla.
+        /// </summary>
+        [SyncMethod]
+        public static void UnmanageBillFromApi(string billId)
+        {
+            QualityJobsStore? store = QualityJobsStore.Active;
+            if (store == null || billId == null) return;
+            if (FindApiBill(store, billId) == null) return;
+            ApplyBillManagement(store, billId, BillManagement.Unmanage(
+                store.billManaged.TryGetValue(billId, out bool managed)
+                    ? managed : null,
+                store.manageNewBillsDefault));
+            store.ReleaseUnmanagedBillWork();
+        }
+
+        private static void ApplyBillManagement(QualityJobsStore store,
+            string billId, in BillManagementChange change)
+        {
+            if (change.IsNoOp) return;
+            if (change.WritesManaged) store.billManaged[billId] = change.Managed;
+            if (change.WritesTarget)
+                store.billTargetQuality[billId] = change.TargetQuality;
+            store.NotifyBillConfigurationChanged(billId, change.EligibilityChanged);
+        }
+
+        /// The live API-manageable bill with this load ID: a
+        /// Bill_ProductionWithUft on a spawned bill giver's stack, not one of
+        /// our finish bills, with a managed recipe. Scans bill givers; API
+        /// commands are rare explicit calls, never a tick or render path.
+        internal static Bill_ProductionWithUft? FindApiBill(
+            QualityJobsStore store, string billId)
+        {
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Thing> givers = maps[m].listerThings.ThingsInGroup(
+                    ThingRequestGroup.PotentialBillGiver);
+                for (int t = 0; t < givers.Count; t++)
+                {
+                    if (givers[t] is not IBillGiver giver || !givers[t].Spawned)
+                        continue;
+                    List<Bill> bills = giver.BillStack.Bills;
+                    for (int b = 0; b < bills.Count; b++)
+                        if (bills[b] is Bill_ProductionWithUft bill
+                            && BillIds.IdOf(bill) == billId)
+                            return !bill.DeletedOrDereferenced
+                                && !store.IsFinishBill(bill)
+                                && ManagedRecipes.IsManagedRecipe(bill.recipe)
+                                ? bill : null;
+                }
+            }
+            return null;
         }
 
         /// Spec §12: enable adds a fresh component seeded from the ISSUING

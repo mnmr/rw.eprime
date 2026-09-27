@@ -59,6 +59,7 @@ namespace Implanner.UI
         internal static string OptManualFloor = "";
         internal static string OptSurgeryConcurrency = "";
         internal static string OptCountHospitalized = "";
+        internal static string OptUpgradeByPriority = "";
         internal static string OptAutoFloor = "";
         internal static string OptImplantReserves = "";
         internal static string AddImplantReserve = "";
@@ -66,6 +67,7 @@ namespace Implanner.UI
         internal static string OptAutoProduction = "";
         internal static string OptConcurrency = "";
         internal static string OptIdleBenches = "";
+        internal static string OptDesignatedBenches = "";
         internal static string OptProductionSkill = "";
         internal static string OptIntermediaries = "";
         internal static string OptReserves = "";
@@ -142,6 +144,7 @@ namespace Implanner.UI
             OptManualFloor = "IMP_OptManualFloor".Translate();
             OptSurgeryConcurrency = "IMP_OptSurgeryConcurrency".Translate();
             OptCountHospitalized = "IMP_OptCountHospitalized".Translate();
+            OptUpgradeByPriority = "IMP_OptUpgradeByPriority".Translate();
             OptAutoFloor = "IMP_OptAutoFloor".Translate();
             OptImplantReserves = "IMP_OptImplantReserves".Translate();
             AddImplantReserve = "IMP_AddImplantReserve".Translate();
@@ -149,6 +152,7 @@ namespace Implanner.UI
             OptAutoProduction = "IMP_OptAutoProduction".Translate();
             OptConcurrency = "IMP_OptConcurrency".Translate();
             OptIdleBenches = "IMP_OptIdleBenches".Translate();
+            OptDesignatedBenches = "IMP_OptDesignatedBenches".Translate();
             OptProductionSkill = "IMP_OptProductionSkill".Translate();
             OptIntermediaries = "IMP_OptIntermediaries".Translate();
             OptReserves = "IMP_OptReserves".Translate();

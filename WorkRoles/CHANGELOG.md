@@ -1,5 +1,11 @@
 ﻿# Changelog
 
+## 1.6.2 — 2026-09-27
+
+- Added: New recommendation role option to allow roles to be recommended to colonists who can do only some jobs.
+- Added: Welcome dialog (shown once per save).
+- Fixed: Text clipping under role options when running at very low resolution.
+
 ## 1.6.1 — 2026-09-20
 
 - Added: Button on surgery bills to allow setting a role filter.

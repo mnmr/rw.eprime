@@ -40,6 +40,16 @@ namespace Implanner
             store.Bump(store.Model.DeletePlan(planId));
         }
 
+        /// quality 0 (Awful, any) … 6 (Legendary), as QualityCategory; the
+        /// model clamps anything else.
+        [SyncMethod]
+        public static void SetPlanMinQuality(int planId, int quality)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetPlanMinQuality(planId, quality));
+        }
+
         [SyncMethod]
         public static void RemoveImplant(int planId, string implantDefName)
         {
@@ -266,6 +276,15 @@ namespace Implanner
             store.Bump(store.Model.SetCountHospitalized(enabled));
         }
 
+        /// Better implant items go to higher-priority colonists.
+        [SyncMethod]
+        public static void SetUpgradeByPriority(bool enabled)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetUpgradeByPriority(enabled));
+        }
+
         /// Mod compatibility: whether bladder implants from different mods
         /// may be planned and installed side by side.
         [SyncMethod]
@@ -332,6 +351,79 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store == null) return;
             store.Bump(store.Model.SetAllowIntermediaries(enabled));
+        }
+
+        [SyncMethod]
+        public static void SetOnlyDesignatedBenches(bool enabled)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            store.Bump(store.Model.SetOnlyDesignatedBenches(enabled));
+        }
+
+        /// Hands a bench to Implanner or gives it back. Designating suspends
+        /// every bill Implanner does not own and remembers which bills were
+        /// already suspended; releasing resumes every bill except those, so
+        /// the bench returns to the state the player left it in. benchId is
+        /// the bench's thing id; a bench no longer on a map can still be
+        /// released (its record drops), never designated.
+        [SyncMethod]
+        public static void SetBenchDesignated(int benchId, bool designated)
+        {
+            ImplannerStore? store = ImplannerStore.Current;
+            if (store == null) return;
+            PlannerModel model = store.Model;
+            if (model.IsBenchDesignated(benchId) == designated)
+            {
+                store.Bump(PlannerChange.None);
+                return;
+            }
+            Building_WorkTable? bench = FindBench(benchId);
+            if (!designated)
+            {
+                if (bench != null)
+                {
+                    BillStack bills = bench.BillStack;
+                    for (int i = 0; i < bills.Count; i++)
+                        if (!model.WasSuspendedAtDesignation(
+                                benchId, bills[i].GetUniqueLoadID()))
+                            bills[i].suspended = false;
+                }
+                store.Bump(model.ReleaseBench(benchId));
+                return;
+            }
+            if (bench == null)
+            {
+                store.Bump(PlannerChange.None);
+                return;
+            }
+            var alreadySuspended = new List<string>();
+            BillStack stack = bench.BillStack;
+            for (int i = 0; i < stack.Count; i++)
+            {
+                Bill bill = stack[i];
+                string billId = bill.GetUniqueLoadID();
+                if (bill.suspended)
+                    alreadySuspended.Add(billId);
+                else if (!model.OwnedProductionBills.ContainsKey(billId))
+                    bill.suspended = true;
+            }
+            store.Bump(model.DesignateBench(benchId, alreadySuspended));
+        }
+
+        /// The player-faction worktable with the given thing id on any map.
+        private static Building_WorkTable? FindBench(int benchId)
+        {
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Building> buildings =
+                    maps[m].listerBuildings.allBuildingsColonist;
+                for (int b = 0; b < buildings.Count; b++)
+                    if (buildings[b].thingIDNumber == benchId)
+                        return buildings[b] as Building_WorkTable;
+            }
+            return null;
         }
 
         [SyncMethod]

@@ -110,11 +110,13 @@
   <EPR.DeletePoolConfirm>Delete pool "{0}"? Slots using it will be removed from all groups.</EPR.DeletePoolConfirm>
   <EPR.NameLabel>Name</EPR.NameLabel>
   <EPR.PoolNameTaken>A resource pool with this name already exists.</EPR.PoolNameTaken>
+  <EPR.GroupNameTaken>A group with this name already exists.</EPR.GroupNameTaken>
   <EPR.OK>OK</EPR.OK>
   <EPR.Cancel>Cancel</EPR.Cancel>
   <EPR.Export>Export</EPR.Export>
   <EPR.Import>Import</EPR.Import>
   <EPR.Exported>Exported to {0}</EPR.Exported>
+  <EPR.ExportOverwriteConfirm>{0} already exists. Replace it?</EPR.ExportOverwriteConfirm>
   <EPR.Imported>Import applied successfully.</EPR.Imported>
   <EPR.NoFiles>No export files found.</EPR.NoFiles>
 

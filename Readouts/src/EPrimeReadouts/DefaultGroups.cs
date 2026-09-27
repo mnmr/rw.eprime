@@ -158,7 +158,7 @@ namespace EPrimeReadouts
                     }
                     if (kept.Count > 0) layout.Add(kept);
                 }
-                if (layout.Count == 0) continue;
+                if (layout.Count == 0 || !model.CanUseGroupName(name)) continue;
                 var group = model.CreateGroup(takeGroupId(), name);
                 model.SetTiers(group.Id, layout);
             }

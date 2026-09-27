@@ -22,6 +22,8 @@ namespace Implanner
             ImplannerStore? store = ImplannerStore.Current;
             if (store != null)
                 PlannerReconciler.Tick(store);
+            if (Find.TickManager.TicksGame % PlannerReconciler.BoundaryTicks == 0)
+                ImplantQualities.CheckSettings();
         }
 
         // Cached: queued from the load path, potentially every load.
@@ -51,7 +53,24 @@ namespace Implanner
             if (settings.welcomeShownSaves.Contains(id)) return;
             settings.welcomeShownSaves.Add(id);
             ImplannerMod.Instance.WriteSettings();
-            Find.WindowStack?.Add(new Dialog_ImplannerWelcome());
+            Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
+                "IMP_WelcomeTitle".Translate(),
+                "IMP_WelcomeBody".Translate(),
+                "IMP_WelcomeFind".Translate(),
+                "IMP_WelcomeTakeMeThere".Translate(),
+                System.IO.Path.Combine(ImplannerMod.ContentRootDir,
+                    "About", "Preview.png"),
+                // The illustration's ink band (assets/preview.svg y
+                // 70.6..299.4 at half scale) padded by 16 logical units.
+                new UnityEngine.Rect(0f, 109.2f, 1280f, 521.6f),
+                OpenPlanner)
+            {
+                FindIcon = Patches.ImplannerTex.ToolbarButton,
+                FindTextColor = PlannerStyle.TierStarColor,
+            });
         }
+
+        private static void OpenPlanner() =>
+            Find.WindowStack.Add(new Dialog_Implanner());
     }
 }

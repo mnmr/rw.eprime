@@ -68,6 +68,9 @@ namespace WorkRoles.Core.Recs
         /// False routes repeat championships after this role through the
         /// occasional-work penalty instead of the full overlap/distinct tiers.
         public bool ChampionPenalty = true;
+        /// Player opt-in: a skilled role accepts a pawn who can do only some
+        /// of its work. Unskilled and hunting roles already do.
+        public bool PartialCapability;
         /// How important holding the role is for a colony; None = unclassified.
         public RoleCategory Category;
         /// How time-consuming the role's work is; None = unclassified.

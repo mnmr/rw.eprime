@@ -6,8 +6,8 @@ using Verse;
 namespace EPrimeReadouts
 {
     /// Builds the count payload used by GameRenderData. The caller owns the
-    /// 204-tick stock cadence; this class performs one deterministic stock pass
-    /// and merges the independently cached planned-work contribution.
+    /// 204-tick stock cadence; this class performs one deterministic pass over
+    /// stock and planned-work debt together.
     /// When the map belongs to a MultiFloors stack, the pass covers every
     /// level map in ascending level order so readouts show stack totals.
     public static class GameCounts
@@ -33,14 +33,17 @@ namespace EPrimeReadouts
 
         internal static RenderCountSnapshot BuildSnapshot(
             Map map,
-            int tick,
             CountSnapshotOptions options)
         {
             var accumulator = new CountAccumulator();
+            QualityJobsPlannedWorkSnapshot qualityJobs =
+                options.PlannedWork.QualityRework
+                    ? QualityJobsPlannedWork.Current()
+                    : QualityJobsPlannedWorkSnapshot.Empty;
             Dictionary<int, Map>? levels = LevelStacks.LevelsOf(map);
             if (levels == null)
             {
-                AccumulateMap(map, tick, accumulator, options);
+                AccumulateMap(map, accumulator, options, qualityJobs);
                 return accumulator.ToSnapshot();
             }
 
@@ -54,18 +57,18 @@ namespace EPrimeReadouts
                 Map level = levels[order[i]];
                 if (level == null || level.Disposed) continue;
                 if (ReferenceEquals(level, map)) sawQueriedMap = true;
-                AccumulateMap(level, tick, accumulator, options);
+                AccumulateMap(level, accumulator, options, qualityJobs);
             }
             if (!sawQueriedMap)
-                AccumulateMap(map, tick, accumulator, options);
+                AccumulateMap(map, accumulator, options, qualityJobs);
             return accumulator.ToSnapshot();
         }
 
         private static void AccumulateMap(
             Map map,
-            int tick,
             CountAccumulator accumulator,
-            CountSnapshotOptions options)
+            CountSnapshotOptions options,
+            QualityJobsPlannedWorkSnapshot qualityJobs)
         {
             // Zero-valued entries are skipped: consumers resolve a missing
             // key as zero, and the search candidate universe comes from
@@ -91,63 +94,72 @@ namespace EPrimeReadouts
             // RenderCountSnapshot.SearchCountOf, which falls back to the
             // vanilla AllCountedAmounts figure above as stored and
             // unforbidden.
-            bool includeScattered = options.IncludeScattered;
-            var things = map.listerThings.ThingsInGroup(
-                ThingRequestGroup.HaulableEver);
-            for (int i = 0; i < things.Count; i++)
+            // A modded thing can throw mid-pass (freshness, forbidden, fog
+            // lookups); the finally keeps its partial tallies out of the next
+            // pass, which would otherwise publish inflated counts.
+            try
             {
-                Thing thing = things[i];
-                bool stored = thing.IsInAnyStorage();
-                if (!stored && !includeScattered) continue;
-                var inner = thing.GetInnerIfMinified();
-                bool extra = GameResourceCatalog.IsExtraCountedDef(inner.def);
-                if (!extra && !inner.def.CountAsResource) continue;
-                if (inner.IsNotFresh()) continue;
-                if (thing.Position.Fogged(map)) continue;
-                bool forbidden = options.InspectForbidden
-                    && thing.IsForbidden(Faction.OfPlayer);
-                tallies.TryGetValue(inner.def, out DefTally tally);
-                if (stored)
+                bool includeScattered = options.IncludeScattered;
+                var things = map.listerThings.ThingsInGroup(
+                    ThingRequestGroup.HaulableEver);
+                for (int i = 0; i < things.Count; i++)
                 {
-                    if (extra) tally.ExtraStored += inner.stackCount;
-                    if (forbidden) tally.StoredForbidden += inner.stackCount;
-                    else tally.StoredUnforbidden += inner.stackCount;
+                    Thing thing = things[i];
+                    bool stored = thing.IsInAnyStorage();
+                    if (!stored && !includeScattered) continue;
+                    var inner = thing.GetInnerIfMinified();
+                    bool extra = GameResourceCatalog.IsExtraCountedDef(inner.def);
+                    if (!extra && !inner.def.CountAsResource) continue;
+                    if (inner.IsNotFresh()) continue;
+                    if (thing.Position.Fogged(map)) continue;
+                    bool forbidden = options.InspectForbidden
+                        && thing.IsForbidden(Faction.OfPlayer);
+                    tallies.TryGetValue(inner.def, out DefTally tally);
+                    if (stored)
+                    {
+                        if (extra) tally.ExtraStored += inner.stackCount;
+                        if (forbidden) tally.StoredForbidden += inner.stackCount;
+                        else tally.StoredUnforbidden += inner.stackCount;
+                    }
+                    else if (forbidden) tally.ScatteredForbidden += inner.stackCount;
+                    else tally.ScatteredUnforbidden += inner.stackCount;
+                    tallies[inner.def] = tally;
                 }
-                else if (forbidden) tally.ScatteredForbidden += inner.stackCount;
-                else tally.ScatteredUnforbidden += inner.stackCount;
-                tallies[inner.def] = tally;
-            }
 
-            // Flush the def-keyed tallies into the string-keyed accumulator.
-            // Emission order does not matter: search tallies are additive and
-            // the fingerprint folds commutatively.
-            foreach (var pair in tallies)
+                // Flush the def-keyed tallies into the string-keyed accumulator.
+                // Emission order does not matter: search tallies are additive and
+                // the fingerprint folds commutatively.
+                foreach (var pair in tallies)
+                {
+                    ThingDef def = pair.Key;
+                    DefTally tally = pair.Value;
+                    if (tally.ExtraStored != 0)
+                        accumulator.Add(def.defName, def.shortHash, tally.ExtraStored);
+                    if (tally.StoredUnforbidden != 0)
+                        accumulator.AddSearch(def.defName, def.shortHash,
+                            tally.StoredUnforbidden, stored: true, forbidden: false);
+                    if (tally.StoredForbidden != 0)
+                        accumulator.AddSearch(def.defName, def.shortHash,
+                            tally.StoredForbidden, stored: true, forbidden: true);
+                    if (tally.ScatteredUnforbidden != 0)
+                        accumulator.AddSearch(def.defName, def.shortHash,
+                            tally.ScatteredUnforbidden, stored: false, forbidden: false);
+                    if (tally.ScatteredForbidden != 0)
+                        accumulator.AddSearch(def.defName, def.shortHash,
+                            tally.ScatteredForbidden, stored: false, forbidden: true);
+                }
+            }
+            finally
             {
-                ThingDef def = pair.Key;
-                DefTally tally = pair.Value;
-                if (tally.ExtraStored != 0)
-                    accumulator.Add(def.defName, def.shortHash, tally.ExtraStored);
-                if (tally.StoredUnforbidden != 0)
-                    accumulator.AddSearch(def.defName, def.shortHash,
-                        tally.StoredUnforbidden, stored: true, forbidden: false);
-                if (tally.StoredForbidden != 0)
-                    accumulator.AddSearch(def.defName, def.shortHash,
-                        tally.StoredForbidden, stored: true, forbidden: true);
-                if (tally.ScatteredUnforbidden != 0)
-                    accumulator.AddSearch(def.defName, def.shortHash,
-                        tally.ScatteredUnforbidden, stored: false, forbidden: false);
-                if (tally.ScatteredForbidden != 0)
-                    accumulator.AddSearch(def.defName, def.shortHash,
-                        tally.ScatteredForbidden, stored: false, forbidden: true);
+                tallies.Clear();
             }
-            tallies.Clear();
 
-            // The expensive bill/buildable walk has its own 1020-tick cache.
-            // Replay its compact immutable result into every 204-tick stock
-            // refresh so debt remains present between planned-work scans.
+            // Planned-work debt is read on the same pass as stock: sampled at
+            // different ticks, material already picked up for a frame would
+            // leave stock and still count as owed.
             if (options.PlannedWork.Any)
-                GamePlannedWorkData.Get(map, tick,
-                    options.PlannedWork).AccumulateInto(accumulator);
+                PlannedWorkCounts.Accumulate(map, accumulator,
+                    options.PlannedWork, qualityJobs);
         }
 
         /// Current count for a single def from the shared render snapshot.

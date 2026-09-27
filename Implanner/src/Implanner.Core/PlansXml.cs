@@ -14,7 +14,7 @@ namespace Implanner.Core
     /// Format:
     /// <code>
     /// &lt;ImplannerPlans&gt;
-    ///   &lt;Plan Name="Full bionics" Extends="Essentials"&gt;
+    ///   &lt;Plan Name="Full bionics" Extends="Essentials" MinQuality="Good"&gt;
     ///     &lt;Implant Def="BionicArm" MayRequire="pkg.id"&gt;
     ///       &lt;Slot&gt;0&lt;/Slot&gt;
     ///       &lt;Slot&gt;1&lt;/Slot&gt;
@@ -77,6 +77,9 @@ namespace Implanner.Core
                     if (plan.BasePlanId != 0 && plan.BasePlanId != plan.Id
                         && idToName.TryGetValue(plan.BasePlanId, out string baseName))
                         planEl.SetAttributeValue("Extends", baseName);
+                    if (plan.MinQuality > ImplantQuality.Lowest)
+                        planEl.SetAttributeValue("MinQuality",
+                            ImplantQuality.NameOf(plan.MinQuality));
 
                     foreach (var goal in plan.Implants)
                     {
@@ -227,7 +230,10 @@ namespace Implanner.Core
 
                 keptNames.Add(name, tempId);
                 extendsNames.Add(((string)planEl.Attribute("Extends"))?.Trim());
-                plans.Add(new Plan(tempId, name, 0, goals));
+                // An unknown quality name reads as "any quality".
+                ImplantQuality.TryParse((string)planEl.Attribute("MinQuality"),
+                    out int minQuality);
+                plans.Add(new Plan(tempId, name, 0, goals, minQuality));
             }
 
             // Second pass: resolve Extends names onto temp ids. A target

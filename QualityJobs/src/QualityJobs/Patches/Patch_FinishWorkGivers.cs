@@ -38,7 +38,8 @@ namespace QualityJobs.Patches
             // Compute the set of relevant work types:
             //   - WorkTypeDefOf.Construction (always)
             //   - The work type of every recipe that has unfinishedThingDef != null
-            //     AND whose produced def has CompQuality. (ManagedRecipes uses the
+            //     AND whose produced def has CompQuality AND whose quality no
+            //     ingredient decides (IngredientQuality). (ManagedRecipes uses the
             //     same predicate but is built at StaticConstructorOnStartup — after
             //     def generation — so we duplicate the small predicate here.)
             //
@@ -61,12 +62,16 @@ namespace QualityJobs.Patches
 
             List<RecipeDef> recipes = DefDatabase<RecipeDef>.AllDefsListForReading;
             List<WorkGiverDef> givers = DefDatabase<WorkGiverDef>.AllDefsListForReading;
+            // Same exclusion as ManagedRecipes; it reads declared filter lists,
+            // so it is valid before the filters resolve.
+            List<ThingDef> ingredientQuality = IngredientQuality.MarkedDefs();
             for (int r = 0; r < recipes.Count; r++)
             {
                 RecipeDef recipe = recipes[r];
                 if (recipe.unfinishedThingDef == null) continue;
                 ThingDef? product = recipe.ProducedThingDef;
                 if (product == null || !product.HasComp(typeof(CompQuality))) continue;
+                if (IngredientQuality.Decides(recipe, ingredientQuality)) continue;
 
                 // Resolve work type the same way Dispatcher.WorkTypeForRecipe does.
                 WorkTypeDef? wt = null;

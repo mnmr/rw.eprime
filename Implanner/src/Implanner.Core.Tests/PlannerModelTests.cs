@@ -160,6 +160,20 @@ public class PlannerModelTests
     }
 
     [Test]
+    public async Task UpgradeByPriorityIsOffByDefaultAndPreservesNoOps()
+    {
+        var model = NewModel();
+
+        await Assert.That(model.UpgradeByPriority).IsFalse();
+        await Assert.That(model.SetUpgradeByPriority(false))
+            .IsEqualTo(PlannerChange.None);
+        await Assert.That(model.SetUpgradeByPriority(true))
+            .IsEqualTo(PlannerChange.Options);
+        await Assert.That(model.SetUpgradeByPriority(true))
+            .IsEqualTo(PlannerChange.None);
+    }
+
+    [Test]
     public async Task AssignPlanIsExplicitAndNoOpSafe()
     {
         var model = NewModel();
@@ -244,14 +258,14 @@ public class PlannerModelTests
             productionConcurrency: 99, onlyIdleBenches: true,
             productionSkill: -3, allowIntermediaries: true,
             allowMultipleBladders: false, allowMultipleHygieneEnhancers: false,
-            showPurchaseOnly: true);
+            showPurchaseOnly: true, onlyDesignatedBenches: false);
         model.AddLoadedDoctorFloor("home", 0);
         model.AddLoadedDoctorFloor("ship", 25);
 
         await Assert.That(model.Iteration).IsEqualTo(IterationStrategy.ImplantTier);
         await Assert.That(model.ManualDoctorFloor).IsEqualTo(99);
         await Assert.That(model.SurgeryConcurrency).IsEqualTo(PlannerModel.SurgeryConcurrencyMin);
-        await Assert.That(model.ProductionConcurrency).IsEqualTo(PlannerModel.ConcurrencyMax);
+        await Assert.That(model.ProductionConcurrency).IsEqualTo(50);
         await Assert.That(model.ProductionSkill).IsEqualTo(PlannerModel.DoctorFloorMin);
         await Assert.That(model.AllowMultipleBladders).IsFalse();
         await Assert.That(model.AllowMultipleHygieneEnhancers).IsFalse();
@@ -300,5 +314,11 @@ public class PlannerModelTests
         revisions.Bump(PlannerChange.None);
 
         await Assert.That(revisions.Version).IsEqualTo(1);
+
+        // Designations publish their own domain, not Production's.
+        revisions.Bump(PlannerChange.Benches);
+
+        await Assert.That(revisions.Benches).IsEqualTo(1);
+        await Assert.That(revisions.Production).IsEqualTo(0);
     }
 }

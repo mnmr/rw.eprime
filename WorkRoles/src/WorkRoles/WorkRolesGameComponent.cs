@@ -56,6 +56,69 @@ namespace WorkRoles
                 deferredUi.Dequeue()();
         }
 
+        // Cached: queued from the load path, potentially every load.
+        private static readonly System.Action queueWelcome = QueueWelcome;
+
+        /// LoadedGame and StartedNewGame run on the long-event WORKER
+        /// thread; adding a window (whose PreOpen measures text and loads a
+        /// texture) there crashes the player natively. Everything defers to
+        /// the main thread after the load event completes.
+        public override void StartedNewGame() =>
+            LongEventHandler.ExecuteWhenFinished(queueWelcome);
+
+        public override void LoadedGame() =>
+            LongEventHandler.ExecuteWhenFinished(queueWelcome);
+
+        /// The welcome dialog appears once per player per save, keyed by the
+        /// world's persistent random value in the per-player settings.
+        /// Marked seen the moment it is queued, so however it is dismissed it
+        /// never returns for this save. Presentation only: never touches
+        /// synced state.
+        private static void QueueWelcome()
+        {
+            RimWorld.Planet.World? world = Find.World;
+            WorkRolesSettings? settings = WorkRolesMod.Settings;
+            if (world == null || settings == null) return;
+            string id = world.info.persistentRandomValue.ToString();
+            if (settings.welcomeShownSaves.Contains(id)) return;
+            settings.welcomeShownSaves.Add(id);
+            settings.Write();
+            Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
+                "WR_WelcomeTitle".Translate(),
+                "WR_WelcomeBody".Translate(),
+                "WR_WelcomeFind".Translate(),
+                "WR_WelcomeTakeMeThere".Translate(),
+                System.IO.Path.Combine(WorkRolesMod.ContentRootDir,
+                    "About", "Preview.png"),
+                // The title and role chips; also leaves out the version
+                // badge in the top left corner.
+                new UnityEngine.Rect(130f, 190f, 1020f, 290f),
+                openWorkTab)
+            {
+                FindButtonLabel = WorkButton()?.LabelCap,
+                Warning = UI.MainTabWindow_WorkRoles.ScreenBelowDesignFloor
+                    ? "WR_WelcomeSmallScreen".Translate(
+                        UnityEngine.Mathf.RoundToInt(Verse.UI.screenWidth),
+                        UnityEngine.Mathf.RoundToInt(Verse.UI.screenHeight),
+                        UnityEngine.Mathf.RoundToInt(UI.MainTabWindow_WorkRoles.DesignScreenWidth),
+                        UnityEngine.Mathf.RoundToInt(UI.MainTabWindow_WorkRoles.DesignScreenHeight))
+                        .Resolve()
+                    : null,
+            });
+        }
+
+        private static readonly System.Action openWorkTab = OpenWorkTab;
+
+        /// ReplaceWorkTab.xml points the Work button at the main window.
+        private static MainButtonDef? WorkButton() =>
+            DefDatabase<MainButtonDef>.GetNamedSilentFail("Work");
+
+        private static void OpenWorkTab()
+        {
+            MainButtonDef? work = WorkButton();
+            if (work != null) Find.MainTabsRoot.SetCurrentTab(work);
+        }
+
         // Runs after both "new game started" and "save loaded".
         public override void FinalizeInit()
         {

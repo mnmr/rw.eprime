@@ -12,8 +12,10 @@ function Get-InstalledPackageIds {
             $about = Join-Path $_.FullName 'About\About.xml'
             if (-not (Test-Path -LiteralPath $about -PathType Leaf)) { return }
             try {
-                [xml]$meta = Get-Content -LiteralPath $about -Raw
-                $id = [string]$meta.ModMetaData.packageId
+                # Not $meta: the function scope's [xml]$meta below is an
+                # optimized local this child scope cannot re-constrain.
+                $workshopMeta = [xml](Get-Content -LiteralPath $about -Raw)
+                $id = [string]$workshopMeta.ModMetaData.packageId
                 if ($id) { $ids.Add($id.Trim()) | Out-Null }
             }
             catch { }
@@ -30,8 +32,9 @@ function Get-InstalledPackageIds {
 }
 
 # Builds the active mod list for a mod set: the save's ids in their saved
-# order with each set group inserted at its anchor. Throws on an unknown
-# anchor, a missing installed mod, or a line before the first anchor.
+# order with each set group inserted at its anchor. A "remove <id>" line drops
+# that mod if the list has it. Throws on an unknown anchor, a missing
+# installed mod, or a package line before the first anchor.
 function Build-ModSetList {
     param(
         [Parameter(Mandatory)][string[]]$SaveModIds,
@@ -45,6 +48,16 @@ function Build-ModSetList {
     foreach ($raw in Get-Content -LiteralPath $SetPath) {
         $line = ($raw -split '#')[0].Trim()
         if (-not $line) { continue }
+        if ($line -match '^(?i)remove\s+(\S+)$') {
+            $removeId = $Matches[1]
+            for ($i = $result.Count - 1; $i -ge 0; $i--) {
+                if ([string]::Equals($result[$i], $removeId, [StringComparison]::OrdinalIgnoreCase)) {
+                    $result.RemoveAt($i)
+                    if ($insertAt -gt $i) { $insertAt-- }
+                }
+            }
+            continue
+        }
         if ($line -match '^(?i)(after|before)\s+(\S+)$') {
             $anchor = $Matches[2]
             $index = -1
@@ -209,7 +222,7 @@ if ($ModSet) {
     }
     $activeMods = @(Build-ModSetList -SaveModIds $activeMods -SetPath $setPath -ModSourceRoot $ModSourceRoot)
 }
-if ($activeMods.Count -ne $saveModIds.Count) {
+if (($activeMods -join "`n") -cne ($saveModIds -join "`n")) {
     $profileModsConfigPath = Join-Path $profileConfig 'ModsConfig.xml'
     [xml]$profileModsConfig = Get-Content -LiteralPath $profileModsConfigPath -Raw
     $activeNode = $profileModsConfig.ModsConfigData.SelectSingleNode('activeMods')
@@ -220,7 +233,7 @@ if ($activeMods.Count -ne $saveModIds.Count) {
         $activeNode.AppendChild($li) | Out-Null
     }
     $profileModsConfig.Save($profileModsConfigPath)
-    Write-Host "automation runtime enabled; optional mod set '$ModSet'; $($activeMods.Count - $saveModIds.Count) extra mod(s)"
+    Write-Host "automation runtime enabled; optional mod set '$ModSet'; $($activeMods.Count) active mod(s), save lists $($saveModIds.Count)"
 }
 
 $state = [ordered]@{

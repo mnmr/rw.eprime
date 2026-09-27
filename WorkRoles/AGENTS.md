@@ -13,12 +13,15 @@ commands. Where this file is silent, the root contract governs.
 
 ## Layout floor
 
-- The design floor is vanilla's minimum screen, 1024x768 logical
-  (`ResolutionUtility.MinResolutionWidth/Height`). Smaller screens are not
-  supported. The main window never shrinks below 1024x733 (the floor less the
-  35px bottom bar), manual or automatic; every tab must render and scroll at
-  that size. Verify layout changes at 1920x1080 and above with a logical
-  1024x768 case (for example 2048x1536 at UI scale 2.0) in a managed run.
+- The design floor is 1536x864 logical (owner, 2026-09-26): 1920x1080 at
+  UI scale 1.25, the managed-run default. The main window never shrinks
+  below 1536x829 (the floor less the 35px bottom bar), manual or automatic,
+  capped at the screen; every tab must render and scroll at that size.
+- Smaller screens are not blocked but are not designed for or tested: the
+  window fills the screen, and the welcome dialog warns once per save
+  (`MainTabWindow_WorkRoles.ScreenBelowDesignFloor`). Help topic
+  `6-advanced/06-screen-size` documents the floor. Verify layout changes at
+  1920x1080 @1.25 and above in a managed run; do not verify below the floor.
 
 ## Canonical refresh boundaries
 
@@ -38,6 +41,7 @@ commands. Where this file is silent, the root contract governs.
 | Text fit widths (`WrText.FitWidth`) | `(font, text)` key; cleared when `UiVersion.Current` moves or on language change |
 | Map classification and locations (`ColonyScope`) | Classification invalidation per map, map-set changes, and the singular landed/traveling Gravship engine identity/state; publishes `LocationRevision` |
 | Window scope stamps (roster/recommendation/editor states) | `ScopeCacheStamp` of `UiVersion.Current` and `PawnListRevisionTracker.Revision` (advances on observed-map change or explicit invalidation) |
+| Welcome dialog assets (shared `RimShared.UiLib.WelcomeDialog`, built in `WorkRolesGameComponent.QueueWelcome`) | Translated strings and the below-floor warning resolved at construction; About/Preview.png loaded from disk and wrapped-text measurements resolved once in `PreOpen` (language, UI scale and screen size are not observed while open); window-owned, texture destroyed in `PostClose`; shown once per player per save via `WorkRolesSettings.welcomeShownSaves` keyed by the world's persistent random value |
 | Time-rule boundaries | `FixedTickBoundaryGate(2500)` hour boundary, game ticks only; mid-hour timezone crossings (caravan or live-map tile change) are event-patched via `WorldObject.Tile` and dispatched by `TimezoneCrossingPolicy`. The same per-map boundary observation drives `AutoOptimizer` (no additional gate, no per-tick polling) |
 
 Changes to these dependencies require updated behavioral tests in the same change.

@@ -39,8 +39,6 @@ namespace EPrimeReadouts.UI
         private static int dropToSlot;
         private static bool dropBandSourced;
         private static string? dropToken;
-        private static int dropFromTier;
-        private static int dropFromSlot;
 
         internal static void SetGroupDrop(int groupId, int targetIndex)
         {
@@ -50,7 +48,7 @@ namespace EPrimeReadouts.UI
         }
 
         internal static void SetTokenDrop(int groupId, int toTier, int toSlot,
-            bool bandSourced, string token, int fromTier, int fromSlot)
+            bool bandSourced, string token)
         {
             dropKind = DropKind.Token;
             dropGroupId = groupId;
@@ -58,8 +56,6 @@ namespace EPrimeReadouts.UI
             dropToSlot = toSlot;
             dropBandSourced = bandSourced;
             dropToken = token;
-            dropFromTier = fromTier;
-            dropFromSlot = fromSlot;
         }
 
         /// Register a press on a resource token slot. controlId is the IMGUI
@@ -160,14 +156,12 @@ namespace EPrimeReadouts.UI
                 return;
             }
 
-            var group = ReadoutStore.Current?.Model.GroupById(dropGroupId);
-            if (group == null) return;
-            var tiers = Core.TierOps.Clone(group.Tiers);
-            bool changed = dropBandSourced
-                ? Core.TierOps.Move(tiers, dropFromTier, dropFromSlot, dropToTier, dropToSlot)
-                : Core.TierOps.Add(tiers, dropToken!, dropToTier, dropToSlot); // set by SetTokenDrop
-            if (changed)
-                ReadoutCommands.SetGroupLayout(dropGroupId, Core.TierBlobCodec.Encode(tiers));
+            // The dragged token, not its drag-start index, identifies what
+            // moves: another edit may have shifted the slots in the meantime.
+            if (dropBandSourced)
+                ReadoutCommands.MoveGroupSlot(dropGroupId, dropToken!, dropToTier, dropToSlot); // set by SetTokenDrop
+            else
+                ReadoutCommands.AddGroupSlot(dropGroupId, dropToken!, dropToTier, dropToSlot);
         }
 
         public static void Cancel()
@@ -193,8 +187,6 @@ namespace EPrimeReadouts.UI
             dropToSlot = -1;
             dropBandSourced = false;
             dropToken = null;
-            dropFromTier = -1;
-            dropFromSlot = -1;
         }
     }
 }

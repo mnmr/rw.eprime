@@ -192,7 +192,8 @@ namespace EPrimeReadouts.UI
                         Find.WindowStack.Add(new Dialog_NameInput(
                             "EPR.RenameGroup", capturedName,
                             name => ReadoutCommands.RenameGroup(
-                                capturedId, name.Trim())));
+                                capturedId, name.Trim()),
+                            name => GroupListView.GroupNameProblem(name, capturedId)));
                     }
                 }
                 headerUsed += cachedNameRowHeight;
@@ -392,8 +393,7 @@ namespace EPrimeReadouts.UI
                             Widgets.DrawBoxSolid(new Rect(markerX, cellRect.y, 2f, cellRect.height),
                                 new Color(1f, 1f, 1f, 0.9f));
                             EprDrag.SetTokenDrop(group.Id, cell.Tier, insertSlot,
-                                EprDrag.FromTier >= 0, EprDrag.Payload!, // tokenDrag implies a payload
-                                EprDrag.FromTier, EprDrag.FromSlot);
+                                EprDrag.FromTier >= 0, EprDrag.Payload!); // tokenDrag implies a payload
                         }
                     }
 
@@ -416,10 +416,7 @@ namespace EPrimeReadouts.UI
                     else if (e.type == EventType.MouseDown && e.button == 1 && Mouse.IsOver(cellRect))
                     {
                         // Right-click: remove
-                        int groupId = group.Id;
-                        var tiers = TierOps.Clone(group.Tiers);
-                        if (TierOps.Remove(tiers, token))
-                            ReadoutCommands.SetGroupLayout(groupId, TierBlobCodec.Encode(tiers));
+                        ReadoutCommands.RemoveGroupSlot(group.Id, token);
                         if (owner.selectedCanonical == canonical) owner.selectedCanonical = null;
                         e.Use();
                     }
@@ -430,8 +427,7 @@ namespace EPrimeReadouts.UI
                     {
                         Widgets.DrawHighlight(cellRect);
                         EprDrag.SetTokenDrop(group.Id, cell.Tier, cell.Slot,
-                            EprDrag.FromTier >= 0, EprDrag.Payload!, // tokenDrag implies a payload
-                            EprDrag.FromTier, EprDrag.FromSlot);
+                            EprDrag.FromTier >= 0, EprDrag.Payload!); // tokenDrag implies a payload
                     }
                 }
             }
@@ -686,19 +682,8 @@ namespace EPrimeReadouts.UI
                 new Rect(rect.x, y, checkboxW, 22f),
                 UiText.Get("EPR.ShowWhenZero"), ref showWhenZero);
             if (showWhenZero != prevShow && storedToken != null)
-            {
-                string newToken = SlotToken.WithShowWhenZero(storedToken, showWhenZero);
-                string selectedCanonical = owner.selectedCanonical;
-                var tiers = TierOps.Clone(group.Tiers);
-                foreach (var tier in tiers)
-                    for (int i = 0; i < tier.Count; i++)
-                        if (SlotToken.Canonical(tier[i]) == selectedCanonical)
-                        {
-                            tier[i] = newToken;
-                            ReadoutCommands.SetGroupLayout(group.Id, TierBlobCodec.Encode(tiers));
-                            break;
-                        }
-            }
+                ReadoutCommands.SetGroupSlotShowWhenZero(
+                    group.Id, owner.selectedCanonical, showWhenZero);
             y += 22f + CaptionPadTop;
 
             // Line 2: threshold caption (Tiny, CaptionText style)
@@ -729,22 +714,20 @@ namespace EPrimeReadouts.UI
                     row.LowLabelW,
                     tinyMetrics.LineHeight),
                 UiText.Get("EPR.Low"));
-            DrawThresholdField(
+            thresholdEditor.EditLow(DrawThresholdField(
                 new Rect(rect.x + row.LowFieldX, controlY,
                     ThresholdRowLayout.FieldW, ControlH),
-                "EPR.LowThreshold", ref thresholdEditor.LowValue,
-                ref thresholdEditor.LowBuffer);
+                "EPR.LowThreshold", thresholdEditor.LowBuffer));
             TinyText.Label(new Rect(
                     rect.x + row.CriticalLabelX,
                     labelY,
                     row.CriticalLabelW,
                     tinyMetrics.LineHeight),
                 UiText.Get("EPR.Critical"));
-            DrawThresholdField(
+            thresholdEditor.EditCritical(DrawThresholdField(
                 new Rect(rect.x + row.CriticalFieldX, controlY,
                     ThresholdRowLayout.FieldW, ControlH),
-                "EPR.CriticalThreshold", ref thresholdEditor.CriticalValue,
-                ref thresholdEditor.CriticalBuffer);
+                "EPR.CriticalThreshold", thresholdEditor.CriticalBuffer));
             if (Widgets.ButtonText(new Rect(
                     rect.x + row.SetX, controlY, row.SetW, ControlH),
                 UiText.Get("EPR.Set")))
@@ -779,13 +762,13 @@ namespace EPrimeReadouts.UI
             BasisOverride storage = DrawRuleRow(rect, ref y,
                 ruleStorageLabel!, rule.StorageOnly);
             if (storage != rule.StorageOnly)
-                ReadoutCommands.SetCountRule(owner.selectedCanonical,
-                    (int)storage, (int)rule.HideForbidden);
+                ReadoutCommands.SetCountRuleStorageOnly(
+                    owner.selectedCanonical, (int)storage);
             BasisOverride forbidden = DrawRuleRow(rect, ref y,
                 ruleForbiddenLabel!, rule.HideForbidden);
             if (forbidden != rule.HideForbidden)
-                ReadoutCommands.SetCountRule(owner.selectedCanonical,
-                    (int)rule.StorageOnly, (int)forbidden);
+                ReadoutCommands.SetCountRuleHideForbidden(
+                    owner.selectedCanonical, (int)forbidden);
         }
 
         internal void Reset()
@@ -834,33 +817,20 @@ namespace EPrimeReadouts.UI
         {
             if (DialogInputFocus.TryHandleEscape(
                 "EPR.LowThreshold", thresholdEditor.LowBuffer,
-                () => thresholdEditor.LowBuffer = ""))
+                () => thresholdEditor.EditLow("")))
                 return true;
             return DialogInputFocus.TryHandleEscape(
                 "EPR.CriticalThreshold", thresholdEditor.CriticalBuffer,
-                () => thresholdEditor.CriticalBuffer = "");
+                () => thresholdEditor.EditCritical(""));
         }
 
         internal void Unfocus() => UnfocusThresholdInputs();
 
-        private static void DrawThresholdField(Rect rect, string controlName,
-            ref int value, ref string buffer)
+        private static string DrawThresholdField(Rect rect, string controlName,
+            string buffer)
         {
             GUI.SetNextControlName(controlName);
-            string edited = Widgets.TextField(rect, buffer);
-            if (string.Equals(edited, buffer, StringComparison.Ordinal)) return;
-            if (edited.Length == 0)
-            {
-                buffer = "";
-                return;
-            }
-            for (int i = 0; i < edited.Length; i++)
-                if (edited[i] < '0' || edited[i] > '9')
-                    return;
-            if (!int.TryParse(edited, out int parsed)) return;
-            if (parsed < 0 || parsed > 999999) return;
-            buffer = edited;
-            value = parsed;
+            return Widgets.TextField(rect, buffer);
         }
 
         private static void UnfocusThresholdInputs()

@@ -84,6 +84,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            TextInputCapture.Observe();
             using (GuiStateScope.Capture())
             {
             EnsureText();
@@ -160,17 +161,30 @@ namespace EPrimeReadouts.UI
             if (Widgets.ButtonText(saveRect, UiText.Get("EPR.Save"), active: path != null)
                 && path != null)
             {
-                if (ReadoutsFiles.TryWrite(path, xml!, out string? writeError)) // xml built with the snapshot
-                {
-                    Messages.Message("EPR.Exported".Translate(path),
-                        MessageTypeDefOf.TaskCompletion, historical: false);
-                    Close();
-                }
+                // Checked at the click, not from the path cache, so a file
+                // that appeared after the name was typed is still caught.
+                if (System.IO.File.Exists(path))
+                    Find.WindowStack.Add(new Dialog_CompactConfirm(
+                        "EPR.ExportOverwriteConfirm".Translate(path),
+                        () => Save(path), destructive: true));
                 else
-                {
-                    Messages.Message(writeError, MessageTypeDefOf.RejectInput, historical: false);
-                }
+                    Save(path);
             }
+            }
+        }
+
+        private void Save(string path)
+        {
+            if (xml == null) return; // store gone while the confirmation was open
+            if (ReadoutsFiles.TryWrite(path, xml, out string? writeError))
+            {
+                Messages.Message("EPR.Exported".Translate(path),
+                    MessageTypeDefOf.TaskCompletion, historical: false);
+                Close();
+            }
+            else
+            {
+                Messages.Message(writeError, MessageTypeDefOf.RejectInput, historical: false);
             }
         }
 

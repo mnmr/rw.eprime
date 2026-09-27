@@ -33,6 +33,48 @@ public class SurgeryPlannerTests
         return model;
     }
 
+    /// Vanilla Genetics Expanded's neuron reinforcement pushes out every
+    /// implant already on the brain. A brain implant in a better tier
+    /// pulls the reinforcement into its batch, and while the reinforcement
+    /// is ready it waits for it: the reinforcement goes in first, the
+    /// brain implant follows on a later pass and nothing is pushed out.
+    /// A held key never blocks the rest of the batch.
+    [Test]
+    public async Task APartWiperJoinsTheBatchAndGoesInBeforeWhatItWouldPushOut()
+    {
+        var model = new PlannerModel();
+        model.SetImplantStars("CircadianAssistant", 5);
+        var goals = new List<ImplantGoal>
+        {
+            new ImplantGoal(1, "CircadianAssistant", new[] { 0 }),
+            new ImplantGoal(1, "BionicEye", new[] { 0 }),
+            new ImplantGoal(1, "GR_NeuronReinforcement", new[] { 0 }),
+        };
+        model.SetImplantStars("BionicEye", 5);
+        var missing = new[]
+        {
+            "p1:CircadianAssistant:0", "p1:BionicEye:0", "p1:GR_NeuronReinforcement:0",
+        };
+        // The circadian assistant (index 0) must follow the reinforcement
+        // (index 2); nothing else depends on it.
+        var precededBy = new[] { 2, -1, -1 };
+
+        List<string> batch = SurgeryPlanner.ComputeBatch(missing, model, goals,
+            IterationStrategy.ImplantTier, optional: null, precededBy: precededBy);
+        await Assert.That(batch).IsEquivalentTo(missing);
+
+        // Everything is reserved on site; the circadian assistant is held
+        // until the reinforcement is in.
+        var ready = new[] { true, true, true };
+        var held = new bool[batch.Count];
+        for (int i = 0; i < batch.Count; i++)
+            held[i] = batch[i] == "p1:CircadianAssistant:0";
+        List<string> released = SurgeryPlanner.Releasable(batch, ready,
+            IterationStrategy.ImplantTier, optional: null, held: held);
+        await Assert.That(released).IsEquivalentTo(
+            new[] { "p1:BionicEye:0", "p1:GR_NeuronReinforcement:0" });
+    }
+
     [Test]
     public async Task ColonistIterationBatchesTheWholePlan()
     {
@@ -93,6 +135,52 @@ public class SurgeryPlannerTests
         await Assert.That(tier[0].GoalKey).IsEqualTo("p1:BionicArm:0");
         await Assert.That(tier[1].GoalKey).IsEqualTo("p1:BionicLeg:0");
         await Assert.That(tier[2].GoalKey).IsEqualTo("p1:BionicEye:0");
+    }
+
+    /// Within one star tier the player's arranged position decides, not
+    /// the implant's name: legs placed before arms go first even though
+    /// "BionicArm" sorts before "BionicLeg". Production crafts in this
+    /// order too, so a colonist's legs are built before their arms.
+    [Test]
+    public async Task ArrangedPositionOrdersKindsWithinATier()
+    {
+        var items = new List<SurgeryWorkItem>
+        {
+            Placed(1, "BionicArm", position: 1),
+            Placed(1, "BionicLeg", position: 0),
+            Placed(2, "BionicArm", position: 1),
+            Placed(2, "BionicLeg", position: 0),
+        };
+
+        var colonist = new List<SurgeryWorkItem>(items);
+        SurgeryPlanner.Order(colonist, IterationStrategy.Colonist);
+        await Assert.That(Keys(colonist))
+            .IsEqualTo("1 BionicLeg, 1 BionicArm, 2 BionicLeg, 2 BionicArm");
+
+        // Both colonists share the tier, so tier batching also finishes one
+        // colonist's tier before the next colonist's.
+        var tier = new List<SurgeryWorkItem>(items);
+        SurgeryPlanner.Order(tier, IterationStrategy.ImplantTier);
+        await Assert.That(Keys(tier))
+            .IsEqualTo("1 BionicLeg, 1 BionicArm, 2 BionicLeg, 2 BionicArm");
+
+        // ASAP hands out each kind across colonists.
+        var asap = new List<SurgeryWorkItem>(items);
+        SurgeryPlanner.Order(asap, IterationStrategy.Asap);
+        await Assert.That(Keys(asap))
+            .IsEqualTo("1 BionicLeg, 2 BionicLeg, 1 BionicArm, 2 BionicArm");
+    }
+
+    static SurgeryWorkItem Placed(int pawnId, string kind, int position) =>
+        new SurgeryWorkItem(pawnId, PlannerModel.PriorityNormal, StarRanking.TierOf(3),
+            "p1:" + kind + ":0", kind, LimbKind.None, default, position);
+
+    static string Keys(List<SurgeryWorkItem> items)
+    {
+        var keys = new List<string>();
+        for (int i = 0; i < items.Count; i++)
+            keys.Add(items[i].PawnId + " " + items[i].ImplantDefName);
+        return string.Join(", ", keys);
     }
 
     [Test]

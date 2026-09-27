@@ -15,6 +15,8 @@ namespace WorkRoles.UI
 
         public override Vector2 InitialSize => new Vector2(560f, 250f);
 
+        protected override bool AcceptsExactTypedName => true;
+
         // Owner: import dialog. Key: explicit open/mouse-down clipboard refresh.
         // Value: immutable clipboard string plus a scalar format precheck.
         // Dependencies: the external OS clipboard. Refresh: event-driven outside

@@ -46,6 +46,10 @@ namespace EPrimeReadouts.UI
 
         public static bool IsOverPoint(Vector2 point)
         {
+            // Rects count only while the panel is still drawing: once vanilla
+            // takes over (setting or fault ladder) OnGUI stops reaching the
+            // panel, and nothing else would clear them.
+            if (Time.frameCount - hotFrame > 1) return false;
             for (int i = 0; i < hotRects.Count; i++)
                 if (hotRects[i].Contains(point)) return true;
             return false;
@@ -129,9 +133,11 @@ namespace EPrimeReadouts.UI
 
         // Cache contract:
         // Owner: process/current main readout panel.
-        // Key: draw-model identity, panel position/viewport, and scroll offset.
+        // Key: draw-model identity, panel position/viewport, panel width and
+        // scroll offset.
         // Value: screen-space interaction Rect list.
-        // Dependencies: draw cells, x/header/content geometry and scroll.y.
+        // Dependencies: draw cells, x/header/content geometry, the configured
+        // panel width (header strip) and scroll.y.
         // Refresh policy: immediate when an exact dependency changes.
         // Equality policy: unchanged dependencies reuse the existing list contents.
         // Teardown: Hide/Reset clears rectangles and all retained identities.
@@ -142,7 +148,10 @@ namespace EPrimeReadouts.UI
         private static float hotOutWidth;
         private static float hotOutHeight;
         private static float hotScrollY;
+        private static float hotPanelWidth;
         private static bool hotVisible;
+        // Last frame the panel drew; IsOverPoint ignores older rects.
+        private static int hotFrame = -1;
 
         /// Call after any per-player view-state change (depth, search, settings).
         public static void BumpView() => viewStamp++;
@@ -482,8 +491,11 @@ namespace EPrimeReadouts.UI
             if (Current.ProgramState != ProgramState.Playing)
             { Hide(); return; }
             Map? currentMap = Find.CurrentMap;
+            // Screenshot mode filters Repaint and mouse events but still
+            // passes the scroll wheel, which the invisible panel would eat.
             if (currentMap == null
-                || Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu)
+                || Find.MainTabsRoot.OpenTab == MainButtonDefOf.Menu
+                || Find.UIRoot.screenshotMode.Active)
             { Hide(); return; }
             Map map = currentMap;
             ReadoutStore? currentStore = ReadoutStore.Current;
@@ -565,6 +577,8 @@ namespace EPrimeReadouts.UI
             float contentW = draw.Model.TotalWidth;
             bool scrolling = totalH > maxContentH;
             float contentH = scrolling ? maxContentH : totalH;
+            HandleScrollWheel(scrolling ? totalH - contentH : 0f,
+                new Rect(x, y + SearchRowH, contentW, contentH));
 
             // Direct drawing covers every frame the cached surfaces do not:
             // before they exist, and any repaint on which presenting them
@@ -700,6 +714,18 @@ namespace EPrimeReadouts.UI
                 && GUI.GetNameOfFocusedControl() == SearchControlName)
                 Verse.UI.UnfocusCurrentControl();
 
+            // A focused field keeps typing while the mouse merely rests over
+            // another window (keys don't follow the mouse). A click on that
+            // window, or a window that absorbs all input, takes focus away.
+            if (inputBlocked && searchFieldFocused
+                && (evt.type == EventType.MouseDown
+                    || PanelInput.HasAbsorbingWindow(Find.WindowStack,
+                        Prefs.DevMode, Find.UIRoot.screenshotMode.Active)))
+            {
+                Verse.UI.UnfocusCurrentControl();
+                searchFieldFocused = false;
+            }
+
             // Escape clears the filter and leaves the field. Consuming the
             // event here keeps vanilla's raw Escape handling — which runs
             // later in the frame and opens the menu — from also seeing it.
@@ -715,9 +741,8 @@ namespace EPrimeReadouts.UI
                 evt.Use();
             }
 
-            if (inputBlocked)
+            if (inputBlocked && !searchFieldFocused)
             {
-                searchFieldFocused = false;
                 if (drawStable)
                     GUI.Label(fieldRect, SearchText ?? "",
                         Text.CurTextFieldStyle);
@@ -867,7 +892,7 @@ namespace EPrimeReadouts.UI
             {
                 SlotHit hit = draw!.Model.SlotHits[target.Index];
                 MapSelection.SelectMembers(builtMap, hit.Members,
-                    settings.searchStorageOnly, settings.searchHideForbidden,
+                    hit.StorageOnly, hit.HideForbidden,
                     additive, settings.selectJumpCamera);
                 return;
             }
@@ -1007,23 +1032,31 @@ namespace EPrimeReadouts.UI
         /// amber gear means the direct renderer.
         private static readonly Color DirectGearTint = new Color(1f, 0.82f, 0.55f);
 
+        /// The wheel over the panel (content or header) scrolls it and never
+        /// reaches the map. Applied here, before presentation and before the
+        /// scroll view: Unity's own scroll view would apply the delta only on
+        /// the next BeginScrollView, so the following repaint would present
+        /// the old offset while hover and tooltips used the new one. While
+        /// scrolling, the whole viewport takes the wheel (as the scroll view
+        /// did), including gaps between groups.
+        private static void HandleScrollWheel(float maxScroll, Rect viewport)
+        {
+            var evt = Event.current;
+            if (evt.type != EventType.ScrollWheel || inputBlocked) return;
+            if (!IsOverPoint(evt.mousePosition)
+                && !(maxScroll > 0f && viewport.Contains(evt.mousePosition))) return;
+            scroll.y = Mathf.Clamp(scroll.y + evt.delta.y * 20f, 0f, maxScroll);
+            evt.Use();
+        }
+
         /// Anything not consumed by a control inside the panel must not leak
-        /// to the map (clicks would select things, wheel would zoom).
+        /// to the map (clicks would select things).
         private static void ConsumeStrayEvents()
         {
             if (inputBlocked) return;
             var evt = Event.current;
-            if (!IsOverPoint(evt.mousePosition)) return;
-            if (evt.type == EventType.ScrollWheel)
-            {
-                scroll.y += evt.delta.y * 20f;
-                if (scroll.y < 0f) scroll.y = 0f;
+            if (evt.type == EventType.MouseDown && IsOverPoint(evt.mousePosition))
                 evt.Use();
-            }
-            else if (evt.type == EventType.MouseDown)
-            {
-                evt.Use();
-            }
         }
 
         private static bool NeedsStructuralRebuild(
@@ -1167,6 +1200,11 @@ namespace EPrimeReadouts.UI
         private static void EnsureHotRects(float x, float headerY,
             float contentTop, Rect outRect, float scrollY)
         {
+            // The header strip follows the configured panel width, which can
+            // change while the draw model is kept (content wider than both
+            // widths compares equal), so it is part of the key.
+            float panelWidth = EPrimeReadoutsMod.Settings.panelWidth;
+            hotFrame = Time.frameCount;
             if (hotVisible
                 && ReferenceEquals(hotDraw, draw)
                 && hotX == x
@@ -1174,12 +1212,12 @@ namespace EPrimeReadouts.UI
                 && hotContentTop == contentTop
                 && hotOutWidth == outRect.width
                 && hotOutHeight == outRect.height
-                && hotScrollY == scrollY)
+                && hotScrollY == scrollY
+                && hotPanelWidth == panelWidth)
                 return;
 
             hotRects.Clear();
-            hotRects.Add(new Rect(x, headerY,
-                EPrimeReadoutsMod.Settings.panelWidth, SearchRowH));
+            hotRects.Add(new Rect(x, headerY, panelWidth, SearchRowH));
             var bands = draw!.Model.Bands; // rebuilt before Draw in OnGUI
             PanelBandRange visible = PanelViewport.VisibleBands(
                 bands, scrollY, scrollY + outRect.height);
@@ -1206,6 +1244,7 @@ namespace EPrimeReadouts.UI
             hotOutWidth = outRect.width;
             hotOutHeight = outRect.height;
             hotScrollY = scrollY;
+            hotPanelWidth = panelWidth;
             hotVisible = true;
         }
 

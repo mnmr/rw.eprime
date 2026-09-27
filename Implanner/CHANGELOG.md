@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.1.5 — 2026-09-27
+
+- Added: Support for Quality Bionics Remastered (quality in plans and production bills).
+- Added: Support for Vanilla Genetics Expanded (including workarounds for its bugs, to ensure surgeries never destroy existing implants).
+- Added: Additional options to control surgery/rollout order (and who gets quality items, if quality is enabled through mods like QBR).
+- Changed: Implanner now schedules production in the order items are needed, with 1 item per bill and at most two bills per bench.
+- Changed: If resource counts drop below the configured thresholds, queued bills are cancelled to preserve the reserved materials.
+- Fixed: Implants carried by pawns were not counted as in-stock.
+  
+## 1.1.4 — 2026-09-23
+
+- Changed: Increased bench limit to 50 since it turns out some folks have more than 10 benches - I salute you.
+
 ## 1.1.3 — 2026-09-13
 
 - Added: Option to configure what the upper skill limit of the game is (for mod compatibility).

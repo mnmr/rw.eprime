@@ -27,8 +27,10 @@ namespace Implanner
             List<BodyPartRecord> slotRecords, List<RecipeDef> surgeryRecipes,
             bool isReplacement, ImplantRegion region, LimbKind limb,
             List<string> incompatibleTags, bool mountsOnArtificialParts,
-            bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly)
+            bool requiresArtificialPart, string? upgradesFrom, bool purchaseOnly,
+            bool wipesPart)
         {
+            WipesPart = wipesPart;
             RequiresArtificialPart = requiresArtificialPart;
             UpgradesFrom = upgradesFrom;
             PurchaseOnly = purchaseOnly;
@@ -54,13 +56,20 @@ namespace Implanner
         internal string GroupLabel { get; }
 
         /// True when the implant is an artificial version of the part it
-        /// occupies rather than something mounted on it. Read from the
-        /// surgery's own worker class, which is the distinction RimWorld
-        /// itself draws: Recipe_InstallArtificialBodyPart swaps the part out,
-        /// Recipe_InstallImplant leaves it in place. A hediff with
-        /// addedPartProps counts too whatever its worker: the game treats it
-        /// as an added part once installed (in-place upgrades).
+        /// occupies rather than something mounted on it: its hediff is a
+        /// Hediff_AddedPart, the class every game check for an artificial
+        /// part tests (HediffSet.HasDirectlyAddedPartFor), whatever the
+        /// surgery worker. In-place upgrades count as replacements.
         internal bool IsReplacement { get; }
+
+        /// True when the surgery restores the part (and everything under
+        /// it) before adding an implant that is not an added part, leaving
+        /// the part natural: Recipe_InstallArtificialBodyPart used for an
+        /// implant-class hediff, or Vanilla Genetics Expanded's install
+        /// worker (ModCompatibility.ClearsPart). Implants installed after it
+        /// stay; implants already there are pushed out, so automation puts
+        /// it in first and reinstalls whatever it pushed out.
+        internal bool WipesPart { get; }
 
         /// True when at least one surgery recipe's worker inherits neither
         /// vanilla install worker, so it carries no refusal of parts that
@@ -259,7 +268,12 @@ namespace Implanner
                 bool purchaseOnly = IsPurchaseOnly(pair.Key, producible, implantItems);
                 var fixedParts = new List<BodyPartDef>(pair.Value);
                 fixedParts.Sort(ByDefName);
-                float efficiency = pair.Key.addedPartProps?.partEfficiency ?? 1f;
+                bool replacement = IsAddedPart(pair.Key);
+                // The game ignores addedPartProps on a hediff that is not an
+                // added part: the part keeps its natural efficiency.
+                float efficiency = replacement
+                    ? pair.Key.addedPartProps?.partEfficiency ?? 1f
+                    : 1f;
                 string groupLabel = fixedParts.Count > 0
                     ? fixedParts[0].LabelCap.ToString()
                     : "IMP_ImplantGroupOther".Translate().ToString();
@@ -270,9 +284,9 @@ namespace Implanner
                 if (!AnyHumanRecipe(surgeryRecipes)) continue;
                 BuildSlots(referenceBody, fixedParts,
                     out List<string> slotLabels, out List<BodyPartRecord> slotRecords);
-                bool replacement = IsReplacement(surgeryRecipes)
-                    || pair.Key.addedPartProps != null;
-                bool mounts = !replacement && MountsOnArtificialParts(surgeryRecipes);
+                bool wipes = !replacement && ClearsPart(surgeryRecipes);
+                bool mounts = !replacement && !wipes
+                    && MountsOnArtificialParts(surgeryRecipes);
                 result.Add(new ImplantCatalogEntry(
                     pair.Key, pair.Key.LabelCap.ToString(), efficiency,
                     fixedParts, groupLabel, slotLabels, slotRecords,
@@ -280,7 +294,7 @@ namespace Implanner
                     ClassifyRegion(slotRecords), ClassifyLimb(slotRecords),
                     IncompatibleTagsOf(surgeryRecipes), mounts,
                     mounts && !AnyVanillaImplantRecipe(surgeryRecipes), null,
-                    purchaseOnly));
+                    purchaseOnly, wipes));
             }
             AddUpgrades(result, upgrades, producible, implantItems);
             result.Sort(ByGroupThenLabel);
@@ -326,30 +340,33 @@ namespace Implanner
                     IncompatibleTagsOf(surgeryRecipes),
                     mountsOnArtificialParts: false, requiresArtificialPart: false,
                     baseEntry.Def.defName,
-                    baseEntry.PurchaseOnly || IsPurchaseOnly(def, producible, implantItems)));
+                    baseEntry.PurchaseOnly || IsPurchaseOnly(def, producible, implantItems),
+                    wipesPart: false));
             }
         }
 
         private static readonly Comparison<RecipeDef> ByRecipeDefName =
             (a, b) => string.CompareOrdinal(a.defName, b.defName);
 
-        private static bool IsReplacement(List<RecipeDef> surgeryRecipes)
+        /// Whether the hediff is an artificial part to the game.
+        internal static bool IsAddedPart(HediffDef def) =>
+            typeof(Hediff_AddedPart).IsAssignableFrom(def.hediffClass);
+
+        /// Whether any surgery recipe's worker restores the part before
+        /// adding its hediff (ModCompatibility.ClearsPart).
+        private static bool ClearsPart(List<RecipeDef> surgeryRecipes)
         {
             for (int i = 0; i < surgeryRecipes.Count; i++)
-            {
-                Type? worker = surgeryRecipes[i].workerClass;
-                if (worker != null
-                    && typeof(Recipe_InstallArtificialBodyPart).IsAssignableFrom(worker))
+                if (ModCompatibility.ClearsPart(surgeryRecipes[i].workerClass))
                     return true;
-            }
             return false;
         }
 
         /// Whether any surgery recipe's worker sits outside both vanilla
-        /// install workers: such a worker never inherited
-        /// Recipe_InstallImplant's added-part refusal, so the game lets it
-        /// target an artificial part (verified for Bionic modularity's
-        /// Recipe_InstallModule : Recipe_Surgery).
+        /// install workers and the known part-clearing workers: such a
+        /// worker never inherited Recipe_InstallImplant's added-part
+        /// refusal, so the game lets it target an artificial part (verified
+        /// for Bionic modularity's Recipe_InstallModule : Recipe_Surgery).
         private static bool MountsOnArtificialParts(List<RecipeDef> surgeryRecipes)
         {
             for (int i = 0; i < surgeryRecipes.Count; i++)
@@ -357,7 +374,7 @@ namespace Implanner
                 Type? worker = surgeryRecipes[i].workerClass;
                 if (worker != null
                     && !typeof(Recipe_InstallImplant).IsAssignableFrom(worker)
-                    && !typeof(Recipe_InstallArtificialBodyPart).IsAssignableFrom(worker))
+                    && !ModCompatibility.ClearsPart(worker))
                     return true;
             }
             return false;

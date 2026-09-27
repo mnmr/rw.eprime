@@ -10,6 +10,8 @@ function Assert-NoSharedRimWorldProcess {
 }
 function Get-ExactlyOneSharedRimWorldProcessInfo {
     $processes = @(Get-SharedRimWorldProcessInfo)
+    $stall = Join-Path $script:AutomationProfilePath 'stall.json'
+    if ($processes.Count -eq 0 -and (Test-Path -LiteralPath $stall)) { throw "Run stopped by its guard: $((Get-Content -LiteralPath $stall -Raw | ConvertFrom-Json).reason)" }
     if ($processes.Count -ne 1) { throw "Expected exactly one game for the selected run; found $($processes.Count)." }
     return $processes[0]
 }

@@ -162,6 +162,24 @@ public class ReadoutsXmlTests
         await Assert.That(groups.Count).IsEqualTo(0);
     }
 
+    [Test]
+    public async Task TryImport_SaveLocalPoolIdSlots_Dropped()
+    {
+        // "#id" numbers are local to the save that wrote them; import assigns
+        // new pool ids, so "#1" would silently point at whichever pool got
+        // id 1 (here "Metals"). Export writes "pool:Name" instead, so a raw
+        // id in a file is dropped rather than rebound.
+        string xml = @"<Readouts>
+  <Pools><Pool Name=""Metals""><Member>Steel</Member></Pool></Pools>
+  <Groups>
+    <Group Name=""G""><Tier><Slot>#1</Slot><Slot>~#1</Slot><Slot>WoodLog</Slot></Tier></Group>
+  </Groups>
+</Readouts>";
+        bool ok = ReadoutsXml.TryImport(xml, out _, out var groups, out _);
+        await Assert.That(ok).IsTrue();
+        await Assert.That(string.Join(",", groups[0].Tiers[0])).IsEqualTo("WoodLog");
+    }
+
     // ── TryImport malformed XML → false + non-empty error ────────────────
 
     [Test]

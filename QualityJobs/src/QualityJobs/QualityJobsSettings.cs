@@ -22,6 +22,11 @@ namespace QualityJobs
         // Presentation preference (per player, never synced or scribed per save).
         public bool showToolbarButton = true;
 
+        /// Saves (world persistent random values) whose one-time welcome
+        /// dialog this player has already seen.
+        public System.Collections.Generic.List<string> welcomeShownSaves =
+            new System.Collections.Generic.List<string>();
+
         // Construction defaults. These seed the per-save store on first load
         // (dual-pattern: store values are authoritative when a game is loaded).
         // Semantics: 0 = neutral (no skill gate, no retries).
@@ -51,6 +56,8 @@ namespace QualityJobs
             Scribe_Values.Look(ref defaultConstructionRequireSpecialist, "defaultConstructionRequireSpecialist", false);
             Scribe_Values.Look(ref defaultConstructionTargetQuality, "defaultConstructionTargetQuality", 0);
             Scribe_Values.Look(ref defaultConstructionAutoBest, "defaultConstructionAutoBest", false);
+            Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
+            welcomeShownSaves ??= new System.Collections.Generic.List<string>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 defaultMinSkill = ConfigurationLimits.Skill(defaultMinSkill);

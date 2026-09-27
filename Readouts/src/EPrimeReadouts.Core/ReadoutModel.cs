@@ -13,6 +13,15 @@ namespace EPrimeReadouts.Core
         public bool DefaultEnabled = true;
     }
 
+    /// Group names are unique under the same normalization and comparison as
+    /// pool names, in their own namespace.
+    public static class ReadoutGroupNames
+    {
+        public const string FallbackName = "Group";
+        public static StringComparer Comparer => PoolNameRules.Comparer;
+        public static string Normalize(string? name) => PoolNameRules.Normalize(name);
+    }
+
     public readonly struct ThresholdSpec
     {
         public readonly int Low;
@@ -48,12 +57,40 @@ namespace EPrimeReadouts.Core
             return sorted;
         }
 
+        public ReadoutGroup? GroupByName(string? name)
+        {
+            string normalized = ReadoutGroupNames.Normalize(name);
+            if (normalized.Length == 0) return null;
+            foreach (var group in Groups)
+                if (ReadoutGroupNames.Comparer.Equals(group.Name, normalized)) return group;
+            return null;
+        }
+
+        /// True when a normalized, non-empty name is unused by every group
+        /// other than <paramref name="exceptGroupId"/>. Unique names let the
+        /// UI find a group it just created by name, even when the synced
+        /// create lands frames later in multiplayer.
+        public bool CanUseGroupName(string? name, int exceptGroupId = -1)
+        {
+            string normalized = ReadoutGroupNames.Normalize(name);
+            if (normalized.Length == 0) return false;
+            foreach (var group in Groups)
+                if (group.Id != exceptGroupId
+                    && ReadoutGroupNames.Comparer.Equals(group.Name, normalized))
+                    return false;
+            return true;
+        }
+
         public ReadoutGroup CreateGroup(int id, string name)
         {
+            string normalized = ReadoutGroupNames.Normalize(name);
+            if (!CanUseGroupName(normalized))
+                throw new InvalidOperationException(
+                    "Group name \"" + normalized + "\" is empty or already in use.");
             int maxOrder = -1;
             foreach (var group in Groups)
                 if (group.OrderIndex > maxOrder) maxOrder = group.OrderIndex;
-            var created = new ReadoutGroup { Id = id, Name = name ?? "", OrderIndex = maxOrder + 1 };
+            var created = new ReadoutGroup { Id = id, Name = normalized, OrderIndex = maxOrder + 1 };
             Groups.Add(created);
             return created;
         }
@@ -62,10 +99,41 @@ namespace EPrimeReadouts.Core
         {
             var group = GroupById(id);
             if (group == null) return false;
-            string nextName = name ?? "";
+            string nextName = ReadoutGroupNames.Normalize(name);
+            if (!CanUseGroupName(nextName, id)) return false;
             if (group.Name == nextName) return false;
             group.Name = nextName;
             return true;
+        }
+
+        /// Renames later duplicates (display order) and blank names with a
+        /// " (n)" suffix no other group uses. Deterministic for the same
+        /// groups, so load and synced import converge on every client.
+        private void MakeGroupNamesUnique(List<ReadoutGroup> ordered)
+        {
+            var reserved = new HashSet<string>(ReadoutGroupNames.Comparer);
+            foreach (var group in ordered)
+            {
+                string normalized = ReadoutGroupNames.Normalize(group.Name);
+                if (normalized.Length != 0) reserved.Add(normalized);
+            }
+
+            var claimed = new HashSet<string>(ReadoutGroupNames.Comparer);
+            foreach (var group in ordered)
+            {
+                string baseName = ReadoutGroupNames.Normalize(group.Name);
+                string unique = baseName;
+                if (baseName.Length == 0 || !claimed.Add(baseName))
+                {
+                    if (baseName.Length == 0) baseName = ReadoutGroupNames.FallbackName;
+                    unique = baseName;
+                    int suffix = 2;
+                    while (!reserved.Add(unique))
+                        unique = baseName + " (" + suffix++ + ")";
+                    claimed.Add(unique);
+                }
+                group.Name = unique;
+            }
         }
 
         public bool DeleteGroup(int id)
@@ -150,6 +218,103 @@ namespace EPrimeReadouts.Core
                 return false;
             CountRules[token] = rule;
             return true;
+        }
+
+        // ── Intent edits ──────────────────────────────────────────────────
+        // Synced edits land frames after the click in multiplayer, so a second
+        // click is built from a model the first has not changed yet. These
+        // carry the intent and apply it to the model as it is when they run,
+        // so quick successive edits all survive and a repeated intent is a
+        // no-op rather than a toggle back.
+
+        /// Sets one count-rule option, keeping the other as it currently is.
+        public bool SetCountRuleStorageOnly(string token, BasisOverride state)
+        {
+            CountRules.TryGetValue(token, out CountRule current);
+            return SetCountRule(token, new CountRule(state, current.HideForbidden));
+        }
+
+        public bool SetCountRuleHideForbidden(string token, BasisOverride state)
+        {
+            CountRules.TryGetValue(token, out CountRule current);
+            return SetCountRule(token, new CountRule(current.StorageOnly, state));
+        }
+
+        /// Adds a token at (tier, slot); tier -1 appends to the last tier, or
+        /// the next one when it is full. Refused when the token is present.
+        public bool AddGroupSlot(int groupId, string token, int tier, int slot)
+        {
+            var group = GroupById(groupId);
+            if (group == null) return false;
+            var tiers = TierOps.Clone(group.Tiers);
+            if (tier < 0)
+            {
+                tier = tiers.Count == 0 ? 0 : tiers.Count - 1;
+                if (tier < tiers.Count && tiers[tier].Count >= TierOps.MaxSlotsPerTier)
+                    tier++;
+                slot = -1;
+            }
+            return TierOps.Add(tiers, token, tier, slot) && SetTiers(groupId, tiers);
+        }
+
+        public bool RemoveGroupSlot(int groupId, string token)
+        {
+            var group = GroupById(groupId);
+            if (group == null) return false;
+            var tiers = TierOps.Clone(group.Tiers);
+            return TierOps.Remove(tiers, token) && SetTiers(groupId, tiers);
+        }
+
+        /// Moves the token (found by canonical form, wherever it now is) to
+        /// (toTier, toSlot) as positioned in the layout the drop was aimed at.
+        public bool MoveGroupSlot(int groupId, string token, int toTier, int toSlot)
+        {
+            var group = GroupById(groupId);
+            if (group == null) return false;
+            if (!FindSlot(group.Tiers, token, out int fromTier, out int fromSlot))
+                return false;
+            var tiers = TierOps.Clone(group.Tiers);
+            return TierOps.Move(tiers, fromTier, fromSlot, toTier, toSlot)
+                && SetTiers(groupId, tiers);
+        }
+
+        public bool SetGroupSlotShowWhenZero(int groupId, string token, bool show)
+        {
+            var group = GroupById(groupId);
+            if (group == null) return false;
+            if (!FindSlot(group.Tiers, token, out int tier, out int slot)) return false;
+            var tiers = TierOps.Clone(group.Tiers);
+            tiers[tier][slot] = SlotToken.WithShowWhenZero(tiers[tier][slot], show);
+            return SetTiers(groupId, tiers);
+        }
+
+        private static bool FindSlot(List<List<string>> tiers, string token,
+            out int tier, out int slot)
+        {
+            string canonical = SlotToken.Canonical(token);
+            for (tier = 0; tier < tiers.Count; tier++)
+                for (slot = 0; slot < tiers[tier].Count; slot++)
+                    if (SlotToken.Canonical(tiers[tier][slot]) == canonical) return true;
+            tier = slot = -1;
+            return false;
+        }
+
+        public bool SetPoolMemberSelected(int poolId, string defName, bool selected,
+            IResourceCatalog catalog)
+        {
+            var pool = PoolById(poolId);
+            if (pool == null) return false;
+            return SetPoolMembers(poolId,
+                PoolTriState.SetDef(pool.Members, defName, selected, catalog));
+        }
+
+        public bool SetPoolCategoryScopeSelected(int poolId, string categoryDefName,
+            IReadOnlyList<string> scopedDefs, bool selected, IResourceCatalog catalog)
+        {
+            var pool = PoolById(poolId);
+            if (pool == null) return false;
+            return SetPoolMembers(poolId, PoolTriState.SetCategoryScope(
+                pool.Members, categoryDefName, scopedDefs, selected, catalog));
         }
 
         // ── Pool operations ───────────────────────────────────────────────
@@ -372,6 +537,7 @@ namespace EPrimeReadouts.Core
         public void CleanupMissing(Func<string, bool> tokenValid, Func<string, bool> memberValid)
         {
             NormalizeLegacyPoolNames();
+            MakeGroupNamesUnique(InDisplayOrder());
             foreach (var group in Groups) TierOps.Cleanup(group.Tiers, tokenValid);
 
             var stale = new List<string>();
@@ -494,6 +660,8 @@ namespace EPrimeReadouts.Core
 
                     Groups.Add(group);
                 }
+                // Files exported before names were unique may repeat them.
+                MakeGroupNamesUnique(Groups);
             }
             return change;
         }

@@ -45,6 +45,29 @@ public class ThresholdEditorStateTests
     }
 
     [Test]
+    public async Task EmptiedFieldSubmitsZeroNotTheHiddenStoredValue()
+    {
+        // Low shows 50; the player erases it. Set must send what the field
+        // shows (blank = 0, the same value an unset field displays), never
+        // the stored 50 hiding behind a blank field.
+        var thresholds = new Dictionary<string, ThresholdSpec>
+        {
+            ["Steel"] = new ThresholdSpec(50, 10),
+        };
+        var state = new ThresholdEditorState();
+        state.Select("Steel", 1, thresholds);
+
+        state.EditLow("");
+        state.EditCritical("7");
+        state.EditCritical("7x");
+
+        await Assert.That(state.LowBuffer).IsEqualTo("");
+        await Assert.That(state.LowValue).IsEqualTo(0);
+        await Assert.That(state.CriticalBuffer).IsEqualTo("7");
+        await Assert.That(state.CriticalValue).IsEqualTo(7);
+    }
+
+    [Test]
     public async Task ClearingSelectedThresholdResetsDraftValues()
     {
         var thresholds = new Dictionary<string, ThresholdSpec>

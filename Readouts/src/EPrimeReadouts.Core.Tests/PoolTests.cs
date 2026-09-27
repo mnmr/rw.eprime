@@ -144,6 +144,14 @@ public class PoolTests
     }
 
     [Test]
+    public async Task PoolMembersCodec_SeparatorsInsideMemberTextRoundTripUnchanged()
+    {
+        var members = new List<string> { "a,b", "Steel|Gold", @"back\slash", "WoodLog" };
+        var decoded = PoolMembersCodec.Decode(PoolMembersCodec.Encode(members));
+        await Assert.That(decoded).IsEquivalentTo(members);
+    }
+
+    [Test]
     public async Task PoolMembersCodec_DropsEmptyEntries()
     {
         // Blob with consecutive commas (shouldn't normally happen, but be safe)

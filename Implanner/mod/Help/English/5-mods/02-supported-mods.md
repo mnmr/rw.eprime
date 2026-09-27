@@ -36,6 +36,35 @@ These upgrades need EBSG Framework and are not offered while Medical
 System Expansion 2 is loaded. The modules themselves are inserted from
 the inventory without any surgery, so they are not listed.
 
+**Vanilla Genetics Expanded**: its hybrid implants for colonists are listed
+with the other implants. Its animal implants are not, since Implanner plans
+colonists only.
+
+Some hybrid implants replace a body part: the hibernation module replaces
+the brain. Others sit on the body part: neuron reinforcement sits on the
+brain. Regular implants can go on a body part that has a hybrid implant
+sitting on it, but not on one that has been replaced.
+
+Installing any hybrid implant pushes out everything already installed on
+that body part. The pushed-out implants drop next to the doctor.
+
+- Implanner installs the hybrid implant first, so nothing needs to come out.
+- If the colonist already has implants there, Implanner lets them drop out,
+  holds them for that colonist, and installs them again right after.
+- Implanner never installs a hybrid implant while something on that body
+  part would be lost for good.
+
+Hybrid implants take their quality from the genoframe they are made with
+(see [minimum quality](topic:minimum-quality)).
+
+**Quality Bionics Remastered**: bionics come in qualities, and a better
+bionic works better and has more hit points. The implant tooltip shows the
+part efficiency from awful to legendary, and each plan sets the lowest
+quality it installs (see [minimum quality](topic:minimum-quality)).
+
+**Elite Bionics Framework**: implants that raise or lower a body part's hit
+points show the change in their tooltip.
+
 ![The requirement prompt for a leg module](requirement-prompt.png)
 
 ![The plan after Add to plan: the bionic leg and the module are both picked](requirement-added.png)

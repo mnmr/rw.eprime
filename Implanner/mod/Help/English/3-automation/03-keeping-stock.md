@@ -3,10 +3,12 @@ title: Keeping stock
 ---
 Two settings stop automation from draining your stockpiles.
 
-**Keep in stock** sets resource floors for production. A bill is created
-only when the colony would still hold at least the configured amount of
-every ingredient after paying the bill's full cost. Steel at 2000 means
-implant crafting never drags your steel below 2000.
+**Keep in stock** sets resource floors for production. A crafting bill is
+only added when the colony can pay for it, on top of the materials its
+queued bills still need, and keep at least the configured amount of every
+ingredient. Steel at 2000 means implant crafting never drags your steel
+below 2000. If you spend materials and a bill nobody has started no longer
+fits, Implanner removes it and adds it again once the stock is back.
 
 ![The keep-in-stock resource floors](keep-in-stock.png)
 

@@ -709,12 +709,16 @@ namespace EPrimeReadouts.Core
                         metrics.CellW, metrics.CounterRowH),
                 });
 
+                ResolveBasis(input, canonical,
+                    out bool storageOnly, out bool hideForbidden);
                 model.SlotHits.Add(new SlotHit
                 {
                     Token = slot.Token,
                     Members = slot.Members,
                     Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
                     CellIndex = iconCellIndex,
+                    StorageOnly = storageOnly,
+                    HideForbidden = hideForbidden,
                 });
             }
         }
@@ -1012,13 +1016,16 @@ namespace EPrimeReadouts.Core
                             metrics.CellW, metrics.CounterRowH),
                     });
 
-                    // A result row is always a single plain def.
+                    // A result row is always a single plain def, counted on
+                    // the global basis.
                     model.SlotHits.Add(new SlotHit
                     {
                         Token = defName,
                         Members = SingleMember(defName),
                         Rect = new RectF(x, y, metrics.CellW, metrics.RowPairH),
                         CellIndex = iconCellIndex,
+                        StorageOnly = input.SearchStorageOnly,
+                        HideForbidden = input.SearchHideForbidden,
                     });
                 }
                 y += metrics.RowPairH;

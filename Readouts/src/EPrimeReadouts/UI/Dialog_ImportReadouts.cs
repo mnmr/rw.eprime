@@ -118,6 +118,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            TextInputCapture.Observe();
             using (GuiStateScope.Capture())
             {
             if (Event.current.type == EventType.MouseDown)

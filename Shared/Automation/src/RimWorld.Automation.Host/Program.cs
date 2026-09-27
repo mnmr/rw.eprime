@@ -51,8 +51,9 @@ internal static class Program
 
     private static void Main(string[] arguments)
     {
-        if (arguments.Length != 4) return;
+        if (arguments.Length < 4) return;
         string executable = arguments[0], profile = arguments[1], token = arguments[2], log = arguments[3];
+        string[] gameArguments = arguments[4..];
         IntPtr desktop = IntPtr.Zero;
         IntPtr job = IntPtr.Zero;
         ProcessInfo process = default;
@@ -79,6 +80,10 @@ internal static class Program
                 || !string.Equals(Path.GetFullPath(executable), Path.Combine(profile, "Game", "RimWorldWin64.exe"), StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(Path.GetFullPath(log), Path.Combine(profile, "Player.log"), StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("The host requires a managed run and its matching session token/executable/log.");
+            // Only test-runner flags may ride along; they cannot redirect the
+            // profile, log, token or display the run depends on.
+            foreach (string argument in gameArguments)
+                if (!RunIdentity.IsAllowedGameArgument(argument)) throw new InvalidOperationException("Unsupported game argument: " + argument);
             for (DirectoryInfo? parent = new DirectoryInfo(profile); parent != null; parent = parent.Parent)
                 if ((parent.Attributes & FileAttributes.ReparsePoint) != 0) throw new InvalidOperationException("Run ancestors cannot be links.");
             if (!File.Exists(Path.Combine(profile, "run.json")) || File.Exists(Path.Combine(profile, "removing.json")))
@@ -112,6 +117,7 @@ internal static class Program
             var startup = new StartupInfo { Size = Marshal.SizeOf<StartupInfo>(), Desktop = name, Flags = 1, ShowWindow = 1 };
             var command = new StringBuilder(Quote(executable) + " -savedatafolder=" + Quote(profile) + " -automationtoken=" + token
                 + " -logFile " + Quote(log) + " -screen-fullscreen 0 -screen-width 1920 -screen-height 1080");
+            foreach (string argument in gameArguments) command.Append(' ').Append(argument);
             if (!CreateProcess(executable, command, IntPtr.Zero, IntPtr.Zero, false, 4, IntPtr.Zero,
                 Path.GetDirectoryName(executable)!, ref startup, out process)) throw new Win32Exception();
             if (!AssignProcessToJobObject(job, process.Process)) throw new Win32Exception();

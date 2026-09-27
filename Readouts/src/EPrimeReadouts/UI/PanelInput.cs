@@ -26,6 +26,20 @@ namespace EPrimeReadouts.UI
             return false;
         }
 
+        /// True when a visible window takes all input (modal dialogs).
+        internal static bool HasAbsorbingWindow(
+            WindowStack windows, bool devMode, bool screenshotMode)
+        {
+            for (int i = windows.Count - 1; i >= 0; i--)
+            {
+                Window window = windows[i];
+                if (window.onlyDrawInDevMode && !devMode) continue;
+                if (!window.drawInScreenshotMode && screenshotMode) continue;
+                if (window.absorbInputAroundWindow) return true;
+            }
+            return false;
+        }
+
         /// The panel's visibility-aware input gate has already passed. Vanilla
         /// ButtonImage rechecks Mouse.IsOver against hidden windows for its tint;
         /// draw that feedback locally and keep the normal IMGUI button behavior.

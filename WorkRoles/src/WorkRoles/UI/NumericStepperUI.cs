@@ -34,6 +34,9 @@ namespace WorkRoles.UI
             return step;
         }
 
+        /// Row width right of the caption: the 108px controls plus an 8px gap.
+        internal const float ControlsReserve = 116f;
+
         /// One input row: dim caption left, then [-] editable value [+] with
         /// modifier-accelerated steps; a unit suffix ("%") renders as a dim
         /// glyph right of the field. Returns the requested value when the user
@@ -51,7 +54,7 @@ namespace WorkRoles.UI
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
-            Widgets.Label(new Rect(rect.x, rect.y, rect.width - 116f,
+            Widgets.Label(new Rect(rect.x, rect.y, rect.width - ControlsReserve,
                 rect.height), caption);
             GUI.color = Color.white;
             Text.Anchor = TextAnchor.UpperLeft;

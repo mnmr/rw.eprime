@@ -21,6 +21,20 @@ internal static class PlayerGuiEvent
         Copy(Event.current, Pointer(AutomationRunner.PendingEvent));
         AutomationRunner.PendingEvent = null;
         AutomationRunner.LastInjectionFrame = Time.frameCount;
+        AutomationRunner.RootInjected = true;
+    }
+}
+
+// Root's GUI pass (map, bottom bar, and the windows drawn in it) ends here;
+// record whether anything consumed the injected event.
+[HarmonyPatch(typeof(GUIUtility), "EndGUI")]
+internal static class PlayerGuiDelivery
+{
+    private static void Postfix()
+    {
+        if (!AutomationRunner.RootInjected) return;
+        AutomationRunner.RootInjected = false;
+        AutomationRunner.NoteDelivery(Event.current, "the root UI (map, bars, unfocused windows)");
     }
 }
 
@@ -41,7 +55,13 @@ internal static class WindowGuiEvent
         AutomationRunner.PendingEvent = null;
         AutomationRunner.LastInjectionFrame = Time.frameCount;
     }
-    private static void Finalizer(Event? __state) { if (__state != null) { Active = false; Event.current = __state; } }
+    private static void Finalizer(Window __instance, Event? __state)
+    {
+        if (__state == null) return;
+        Active = false;
+        AutomationRunner.NoteDelivery(Event.current, __instance.GetType().FullName);
+        Event.current = __state;
+    }
 }
 
 internal static class InputEventType
@@ -271,6 +291,7 @@ internal static class VirtualKey
             KeyCode.LeftAlt or KeyCode.RightAlt => (AutomationRunner.Modifiers & EventModifiers.Alt) != 0,
             _ => key != KeyCode.None && key == AutomationRunner.Key && AutomationRunner.KeyUpFrame < AutomationRunner.KeyDownFrame
         };
+        if (__result && key == AutomationRunner.Key) AutomationRunner.KeyPolled = true;
         return false;
     }
 }
@@ -278,7 +299,12 @@ internal static class VirtualKey
 internal static class VirtualKeyDown
 {
     private static bool Prefix(KeyCode key, ref bool __result)
-    { __result = (AutomationRunner.TargetWindow == null || WindowGuiEvent.Active) && key != KeyCode.None && key == AutomationRunner.Key && AutomationRunner.KeyDownFrame == Time.frameCount; return false; }
+    {
+        __result = (AutomationRunner.TargetWindow == null || WindowGuiEvent.Active) && key != KeyCode.None && key == AutomationRunner.Key && AutomationRunner.KeyDownFrame == Time.frameCount;
+        // A key read by polling instead of an event counts as consumed.
+        if (__result) AutomationRunner.KeyPolled = true;
+        return false;
+    }
 }
 [HarmonyPatch(typeof(Input), nameof(Input.GetKeyUp), new[] { typeof(KeyCode) })]
 internal static class VirtualKeyUp

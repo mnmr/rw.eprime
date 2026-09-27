@@ -16,6 +16,10 @@ implants can share a body:
 - **Removal on install**: some implants remove a rival anywhere on the
   body the moment they go in. Two implants that remove each other can
   never coexist.
+- **Surgeries that clear a body part**: some surgeries remove everything on
+  a body part before adding an implant that does not replace it. Implants
+  installed afterwards stay, so Implanner installs such an implant first
+  and puts back anything it pushes out.
 - **Modules that mount on bionics**: a surgery whose worker is written to
   install onto an artificial part shares that part with the bionic
   instead of replacing it.

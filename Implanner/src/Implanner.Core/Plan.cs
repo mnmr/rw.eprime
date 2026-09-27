@@ -49,12 +49,14 @@ namespace Implanner.Core
         /// Hydration path (load, import parsing): builds a fully populated
         /// plan in one step. Takes ownership of <paramref name="goals"/>:
         /// the caller must not retain or mutate the list afterwards.
-        public Plan(int id, string name, int basePlanId, List<ImplantGoal> goals)
+        public Plan(int id, string name, int basePlanId, List<ImplantGoal> goals,
+            int minQuality = 0)
         {
             Id = id;
             Name = name;
             BasePlanId = basePlanId;
             implants = goals;
+            MinQuality = ImplantQuality.Clamp(minQuality);
         }
 
         public int Id { get; }
@@ -62,6 +64,11 @@ namespace Implanner.Core
 
         /// The plan this plan extends; 0 = none.
         public int BasePlanId { get; internal set; }
+
+        /// The lowest item quality automation installs for this plan's
+        /// goals, inherited ones included (0 Awful = any). Applies only to
+        /// implants whose items carry a quality.
+        public int MinQuality { get; internal set; }
 
         /// The plan's own goals (inherited goals live only in the effective
         /// list). Read-only outside Core; the model edits MutableImplants.

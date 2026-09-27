@@ -198,6 +198,58 @@ public class LayoutEngineCountRuleTests
     }
 
     [Test]
+    public async Task SlotClickTargetsCarryTheBasisTheirCounterUsed()
+    {
+        // Global: stored only, forbidden shown. Steel's rule flips both, so a
+        // click on Steel must select map-wide unforbidden stacks (the 140 the
+        // counter shows), while Cow meat keeps the global basis. The search
+        // result for steel stays on the global basis like its counter.
+        var input = Input(Group("Steel", "Meat_Cow"), new Dictionary<string, SearchCount>
+        {
+            ["Steel"] = new SearchCount(150, 110, 140, 100),
+            ["Meat_Cow"] = new SearchCount(50, 30, 50, 30),
+        }, storageOnly: true);
+        input.SearchText = "steel";
+        input.CountRules = Rule("Steel",
+            BasisOverride.ForceOff, BasisOverride.ForceOn);
+        var model = ReadoutLayoutEngine.Build(input);
+
+        // Group slot icons carry their token; search result icons do not.
+        bool IsGroupSlot(SlotHit h) => model.Cells[h.CellIndex].Token != null;
+        SlotHit steel = model.SlotHits.Single(h => h.Token == "Steel" && IsGroupSlot(h));
+        SlotHit cow = model.SlotHits.Single(h => h.Token == "Meat_Cow");
+        SlotHit result = model.SlotHits.Single(h => h.Token == "Steel" && !IsGroupSlot(h));
+
+        await Assert.That(SlotCounter(model).Count).IsEqualTo(140);
+        await Assert.That(steel.StorageOnly).IsFalse();
+        await Assert.That(steel.HideForbidden).IsTrue();
+        await Assert.That(cow.StorageOnly).IsTrue();
+        await Assert.That(cow.HideForbidden).IsFalse();
+        await Assert.That(result.StorageOnly).IsTrue();
+        await Assert.That(result.HideForbidden).IsFalse();
+    }
+
+    [Test]
+    public async Task RuleChangeWithEqualCountsDefeatsModelIdentity()
+    {
+        // All steel is stored and unforbidden, so the rule leaves every count
+        // unchanged; only the click basis differs. Content equality must not
+        // let the publisher keep the old model and its stale click basis.
+        var counts = new Dictionary<string, SearchCount>
+        {
+            ["Steel"] = new SearchCount(120, 120, 120, 120),
+        };
+        var before = ReadoutLayoutEngine.Build(Input(Group("Steel"), counts));
+        var ruled = Input(Group("Steel"), counts);
+        ruled.CountRules = Rule("Steel",
+            BasisOverride.ForceOn, BasisOverride.Inherit);
+        var after = ReadoutLayoutEngine.Build(ruled);
+
+        await Assert.That(SlotCounter(after).Count).IsEqualTo(SlotCounter(before).Count);
+        await Assert.That(RenderModelEquality.ContentEquals(before, after)).IsFalse();
+    }
+
+    [Test]
     public async Task CountRefreshFastPathHonorsRules()
     {
         var input = Input(Group("Steel"), SteelBreakdown(), storageOnly: true);

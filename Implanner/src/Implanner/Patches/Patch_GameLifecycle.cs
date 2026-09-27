@@ -27,6 +27,9 @@ namespace Implanner.Patches
             PlannerReconciler.Reset();
             Patch_PlaySettings.ResetPresentation();
             ExternalPawnFacts.Reset();
+            BenchDesignations.Reset();
+            SurgeryBindings.Reset();
+            BenchLock.Reset();
         }
     }
 }

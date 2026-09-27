@@ -7,8 +7,9 @@ namespace EPrimeReadouts
 {
     /// Selects, on one map, the things behind a clicked readout slot. The
     /// candidate passes mirror GameCounts.AccumulateMap (stored stacks, then
-    /// scattered haulables) narrowed by the same storage-only/hide-forbidden
-    /// options, so the selection matches the displayed count. Selection is
+    /// scattered haulables) narrowed by the slot's resolved storage-only/
+    /// hide-forbidden basis (count rule or global options), so the selection
+    /// matches the displayed count. Selection is
     /// per-player presentation state — vanilla multiplayer does not sync it —
     /// so no command or revision is involved. Runs only from a discrete click
     /// event, never from a steady render pass.

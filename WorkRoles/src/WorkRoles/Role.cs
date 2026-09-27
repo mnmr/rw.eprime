@@ -36,6 +36,9 @@ namespace WorkRoles
         public RoleTime time;
         /// False = repeat championships use the occasional-work penalty.
         public bool championPenalty = true;
+        /// True = recommendations accept a pawn who can do only some of a
+        /// skilled role's work. Unskilled and hunting roles already do.
+        public bool partialCapability;
         /// Minimum biological age (years) for holding the role; 0 = no gate.
         /// -1 = not yet derived (pre-minAge saves and role files); load
         /// migration derives it from the covered work types' unlock ages.
@@ -187,6 +190,7 @@ namespace WorkRoles
             Scribe_Values.Look(ref category, "category", RoleCategory.None);
             Scribe_Values.Look(ref time, "time", RoleTime.None);
             Scribe_Values.Look(ref championPenalty, "championPenalty", true);
+            Scribe_Values.Look(ref partialCapability, "partialCapability");
             Scribe_Values.Look(ref minAge, "minAge", -1);
             Scribe_Values.Look(ref maxAge, "maxAge");
             Scribe_Values.Look(ref colonyMin, "colonyMin");

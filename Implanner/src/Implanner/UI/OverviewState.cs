@@ -52,6 +52,8 @@ namespace Implanner.UI
         internal string Name = "";
         internal int PlanId;
         internal string PlanName = "";
+        /// The assigned plan's minimum item quality, sampled at rebuild.
+        internal int MinQuality;
         internal float Progress;
         internal string ProgressText = "";
         internal ColonistStatus State;
@@ -608,9 +610,10 @@ namespace Implanner.UI
                         goalsByPlan.Add(plan.Id, goals);
                     }
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        store.Model, pawn, goals, away);
+                        store.Model, pawn, goals, away, plan.MinQuality);
                     row.Goals = goals;
                     row.PlanId = plan.Id;
+                    row.MinQuality = plan.MinQuality;
                     row.PlanName = plan.Name;
                     row.Progress = evaluation.Progress;
                     row.ProgressText = evaluation.SatisfiedUnits + " / " + evaluation.TotalUnits;
@@ -867,7 +870,8 @@ namespace Implanner.UI
                         StarRanking.TierOf(
                             store.Model.ImplantStarsOf(goal.ImplantDefName)),
                         GoalKeys.GoalToken(goal), goal.ImplantDefName,
-                        entry?.Limb ?? LimbKind.None, candidate));
+                        entry?.Limb ?? LimbKind.None, candidate,
+                        store.Model.ImplantOrderOf(goal.ImplantDefName)));
                     rowByPawn[row.PawnId] = row;
                 }
             }
@@ -876,11 +880,12 @@ namespace Implanner.UI
             OverviewRow next = rowByPawn[work[0].PawnId];
             IReadOnlyList<ImplantGoal> goals = next.Goals!;
 
-            List<string> missing =
-                PawnProjection.MissingImplantSlotKeys(store.Model, next.Pawn, goals);
+            List<string> missing = PawnProjection.MissingImplantSlotKeys(
+                store.Model, next.Pawn, goals, next.MinQuality);
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, store.Model, goals, store.Model.Iteration,
-                PlannerSurgery.OptionalFlags(next.Pawn, goals, missing));
+                PlannerSurgery.OptionalFlags(next.Pawn, goals, missing),
+                PlannerSurgery.PrecededBy(next.Pawn, goals, missing));
             if (batch.Count == 0) return;
             result.SurgeryBatchText = "IMP_StripBatchStars".Translate(
                 next.Name, PlannerStyle.TierStars[work[0].Tier]).ToString();
@@ -943,6 +948,10 @@ namespace Implanner.UI
             // upgrade over its installed base, which wants none (the same
             // per-slot rule reservation and production apply).
             var needed = new Dictionary<ThingDef, int>();
+            // The lowest quality any of those slots accepts per item: stock
+            // below it covers nothing (Quality Bionics Remastered, Vanilla
+            // Genetics Expanded).
+            var lowestAccepted = new Dictionary<ThingDef, int>();
             int neededTotal = 0;
             for (int i = 0; i < rows.Count; i++)
             {
@@ -950,7 +959,7 @@ namespace Implanner.UI
                 if (row.Evaluation == null || row.Goals == null) continue;
                 if (row.Evaluation.State == PawnPlanState.Complete) continue;
                 List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                    model, row.Pawn, row.Goals);
+                    model, row.Pawn, row.Goals, row.MinQuality);
                 for (int k = 0; k < missing.Count; k++)
                 {
                     if (!GoalKeys.TryResolveImplantSlot(
@@ -962,6 +971,15 @@ namespace Implanner.UI
                         ? PawnProjection.RequiredItem(row.Pawn, entry, ordinal)
                         : null;
                     if (item == null) continue;
+                    BodyPartRecord? part = PawnProjection.ResolveSlotPart(
+                        row.Pawn, entry!, ordinal);
+                    int minimum = part != null
+                        ? PawnProjection.MinimumAcceptableQuality(
+                            row.Pawn, entry!, part, row.MinQuality)
+                        : ImplantQuality.None;
+                    if (minimum == ImplantQuality.None) continue;
+                    if (!lowestAccepted.TryGetValue(item, out int lowest) || minimum < lowest)
+                        lowestAccepted[item] = minimum;
                     needed.TryGetValue(item, out int count);
                     needed[item] = count + 1;
                     neededTotal++;
@@ -978,6 +996,10 @@ namespace Implanner.UI
                     && LocationGrouping.Matches(Grouping!, locationId))
                     maps.Add(allMaps[m]);
             }
+            // Materials Implanner's queued bills have promised: the blocker
+            // text subtracts them from stock exactly like the dispatcher.
+            Dictionary<ThingDef, int> promised =
+                PlannerProduction.PromisedMaterials(model, maps);
 
             // Unforbidden stock of wanted items, less the player's hold-back
             // reserves (production keeps crafting past held-back items, so
@@ -995,7 +1017,8 @@ namespace Implanner.UI
                 {
                     Thing thing = haulables[i];
                     if (!needed.ContainsKey(thing.def)
-                        || thing.IsForbidden(RimWorld.Faction.OfPlayer))
+                        || thing.IsForbidden(RimWorld.Faction.OfPlayer)
+                        || ImplantQualities.QualityOf(thing) < lowestAccepted[thing.def])
                         continue;
                     stock.TryGetValue(thing.def, out int count);
                     stock[thing.def] = count + thing.stackCount;
@@ -1158,7 +1181,7 @@ namespace Implanner.UI
                 };
                 if (held > 0) result.HeldBackShown = true;
                 if (producing)
-                    ResolveRowStatus(row, item, model, maps, stock,
+                    ResolveRowStatus(row, item, model, maps, promised, stock,
                         item == chainTarget);
                 tipRows.Add(row);
             }
@@ -1209,9 +1232,11 @@ namespace Implanner.UI
                 int crafts = ProductionMath.CraftsNeeded(needed[item], have, 0,
                     PlannerProduction.OutputCount(recipe, item));
                 if (crafts <= 0) continue;
+                // The dispatcher sizes bills to what stock pays for, so only
+                // the next craft can block.
                 var visited = new HashSet<ThingDef> { item };
-                ThingDef? blocker = FindBlockingIngredient(model, maps,
-                    recipe, crafts, model.AllowIntermediaries, visited, 0);
+                ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
+                    recipe, 1, model.AllowIntermediaries, visited, 0);
                 result.ProductionSubText = blocker != null
                     ? "IMP_StripWaiting".Translate(blocker.label)
                         .CapitalizeFirst()
@@ -1248,8 +1273,8 @@ namespace Implanner.UI
         /// ingredient automation cannot craft for itself, or no bench
         /// under the cap yet.
         private static void ResolveRowStatus(ProductionTipRow row, ThingDef item,
-            PlannerModel model, List<Map> maps, Dictionary<ThingDef, int> stock,
-            bool chainTarget)
+            PlannerModel model, List<Map> maps, Dictionary<ThingDef, int> promised,
+            Dictionary<ThingDef, int> stock, bool chainTarget)
         {
             if (row.Queued <= 0)
             {
@@ -1281,8 +1306,8 @@ namespace Implanner.UI
                 return;
             }
             var visited = new HashSet<ThingDef> { item };
-            ThingDef? blocker = FindBlockingIngredient(model, maps, recipe,
-                crafts, model.AllowIntermediaries, visited, 0);
+            ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
+                recipe, 1, model.AllowIntermediaries, visited, 0);
             if (blocker != null)
             {
                 row.Status = ProductionRowStatus.WaitingFor;
@@ -1294,7 +1319,9 @@ namespace Implanner.UI
 
         /// The first fixed ingredient down the recipe's production chain
         /// that blocks crafting and that automation cannot resolve itself:
-        /// short of its reserve after the bill's cost, and either outside
+        /// short of its reserve after the given crafts' cost plus what
+        /// Implanner's queued bills have promised (callers pass the next
+        /// craft; every bill is one craft), and either outside
         /// intermediary production or not a craftable manufactured item
         /// (the dispatcher's whitelist — raw resources are always a real
         /// wait). With intermediary production active, a short craftable
@@ -1303,8 +1330,8 @@ namespace Implanner.UI
         /// expansion); null when automation will handle every shortfall on
         /// its own.
         private static ThingDef? FindBlockingIngredient(PlannerModel model,
-            List<Map> maps, RecipeDef recipe, int crafts,
-            bool intermediaries, HashSet<ThingDef> visited, int depth)
+            List<Map> maps, Dictionary<ThingDef, int> promised, RecipeDef recipe,
+            int crafts, bool intermediaries, HashSet<ThingDef> visited, int depth)
         {
             const int MaxDepth = 8;
             List<IngredientCount>? ingredients = recipe.ingredients;
@@ -1314,13 +1341,13 @@ namespace Implanner.UI
                 IngredientCount ingredient = ingredients[i];
                 if (!ingredient.IsFixedIngredient) continue;
                 ThingDef def = ingredient.FixedIngredient;
-                int cost = (int)System.Math.Ceiling(
-                    ingredient.GetBaseCount() * crafts);
+                int cost = ingredient.CountRequiredOfFor(def, recipe) * crafts;
                 int available = 0;
                 for (int m = 0; m < maps.Count; m++)
                     available += maps[m].resourceCounter.GetCount(def);
+                promised.TryGetValue(def, out int committed);
                 int reserve = model.ResourceReserveOf(def.defName);
-                if (available - cost >= reserve) continue;
+                if (available - committed - cost >= reserve) continue;
                 RecipeDef? subRecipe =
                     intermediaries && depth < MaxDepth
                     && PlannerProduction.IsManufactured(def)
@@ -1330,8 +1357,8 @@ namespace Implanner.UI
                 if (subRecipe == null) return def;
                 int output = PlannerProduction.OutputCount(subRecipe, def);
                 if (output <= 0) return def;
-                int shortfall = cost + reserve - available;
-                ThingDef? blocker = FindBlockingIngredient(model, maps,
+                int shortfall = cost + committed + reserve - available;
+                ThingDef? blocker = FindBlockingIngredient(model, maps, promised,
                     subRecipe, (shortfall + output - 1) / output,
                     intermediaries, visited, depth + 1);
                 if (blocker != null) return blocker;
@@ -1446,10 +1473,11 @@ namespace Implanner.UI
             // by the reconciler's own logic.
             Dictionary<string, PlannerSurgery.SlotStatus>? surgery = null;
             int effectiveFloor = 0;
+            string lossLabel = "";
             if (goals.Count > 0)
                 surgery = PlannerSurgery.PresentationFor(
                     store!.Model, selected.Pawn, plan, reservedByGoal,
-                    out effectiveFloor);
+                    out effectiveFloor, out lossLabel);
             // Per-goal rows with their grouping keys resolved once. The
             // panel reads in the order automation delivers: tier iteration
             // groups by star tier with the player-arranged position within,
@@ -1480,7 +1508,7 @@ namespace Implanner.UI
                 string statusText =
                     goal.IsComplete || pipeline == PlannerSurgery.SlotStatus.None
                     ? GoalStatusText(goal, reservedByGoal, reservedKey)
-                    : SurgeryStatusText(pipeline, effectiveFloor);
+                    : SurgeryStatusText(pipeline, effectiveFloor, lossLabel);
                 ImplantCatalogEntry? entry =
                     Catalogs.ImplantByDefName(implantGoal.ImplantDefName);
                 entries.Add(new DetailEntry
@@ -1490,12 +1518,11 @@ namespace Implanner.UI
                         Label = ImplantLabel(implantGoal),
                         StatusText = statusText,
                         Satisfied = goal.IsComplete,
-                        Blocked = pipeline
-                            == PlannerSurgery.SlotStatus.BlockedByFloor,
+                        Blocked = pipeline >= PlannerSurgery.SlotStatus.BlockedByFloor,
                         Active = !goal.IsComplete
                             && (reservedKey != null
                                 || (pipeline != PlannerSurgery.SlotStatus.None
-                                    && pipeline != PlannerSurgery.SlotStatus
+                                    && pipeline < PlannerSurgery.SlotStatus
                                         .BlockedByFloor)),
                     },
                     Satisfied = goal.Satisfied,
@@ -1643,10 +1670,12 @@ namespace Implanner.UI
         }
 
         private static string SurgeryStatusText(
-            PlannerSurgery.SlotStatus status, int effectiveFloor)
+            PlannerSurgery.SlotStatus status, int effectiveFloor, string lossLabel)
         {
             switch (status)
             {
+                case PlannerSurgery.SlotStatus.BlockedByLoss:
+                    return "IMP_GoalBlockedLoss".Translate(lossLabel);
                 case PlannerSurgery.SlotStatus.BlockedByFloor:
                     return "IMP_GoalBlockedFloor".Translate(effectiveFloor);
                 case PlannerSurgery.SlotStatus.Scheduled:

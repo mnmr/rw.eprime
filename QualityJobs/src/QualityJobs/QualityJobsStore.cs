@@ -395,7 +395,9 @@ namespace QualityJobs
                 && entry.DefinitionsRevision == definitionsRevision)
                 return entry.Snapshot;
 
-            RecipeDef recipe = bill.recipe;
+            // Registered def: stable while another mod swaps bill.recipe for a
+            // runtime clone (not a snapshot dependency).
+            RecipeDef recipe = ManagedRecipes.Registered(bill.recipe) ?? bill.recipe;
             string? product = ManagedRecipes.ProductDefName(recipe);
             var candidate = new BillPresentationSnapshot(
                 billId, ConfigFor(bill), TargetQualityFor(bill), CapFor(product),
@@ -778,6 +780,88 @@ namespace QualityJobs
             billAutoBest.Remove(billId);
             billPresentations.Remove(billId);
             billConfigRevisions.Remove(billId);
+        }
+
+        /// Removes every per-bill configuration key and presentation entry of
+        /// one bill, so nothing Quality Jobs recorded for it remains.
+        private void DropBillConfig(string billId)
+        {
+            bool had = billManaged.Remove(billId);
+            had |= billMinSkill.Remove(billId);
+            had |= billRequireInspired.Remove(billId);
+            had |= billRequireSpecialist.Remove(billId);
+            had |= billAutoBest.Remove(billId);
+            had |= billTargetQuality.Remove(billId);
+            billPresentations.Remove(billId);
+            billConfigRevisions.Remove(billId);
+            had |= pendingExistingBillMigrationIds.Remove(billId);
+            if (had) InvalidateManagedJobs();
+        }
+
+        /// Hands gate-locked items back to vanilla once their source bill is no
+        /// longer managed (the bill's checkbox, the "manage new bills" default,
+        /// or QualityJobsApi.UnmanageBill), so they stop waiting for a
+        /// qualifying finisher (UnmanagedWork policy). Items whose source bill
+        /// is gone keep following their finish bill. Commands call this after
+        /// the managed flag turns off; bounded scan of the tracked entries.
+        internal void ReleaseUnmanagedBillWork()
+        {
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                WorkItemEntry entry = entries[i];
+                Bill_ProductionWithUft? source = entry.sourceBill;
+                if (source == null || source.DeletedOrDereferenced
+                    || !UnmanagedWork.Releases(ConfigFor(source).Managed, entry.state))
+                    continue;
+                Dispatcher.ReleaseToVanilla(this, entry);
+                RemoveEntry(entry);
+            }
+        }
+
+        /// Load-time hand-back for recipes Quality Jobs does not manage: their
+        /// gate-locked items return to vanilla. Per-bill configuration is kept
+        /// for recipes an ingredient decides (the mod that makes them so is
+        /// still installed) and dropped otherwise, e.g. bionics after Quality
+        /// Bionics Remastered is removed (owner decision 2026-09-26); removing
+        /// a recipe's mod removes its bills, and save pruning drops their keys.
+        /// Runs every load, before the first tick and publication, so it is
+        /// deterministic for the same save and installed defs and idempotent.
+        private void ReleaseUnmanagedRecipeWork()
+        {
+            for (int i = entries.Count - 1; i >= 0; i--)
+            {
+                WorkItemEntry entry = entries[i];
+                if (!UnmanagedWork.Releases(
+                        ManagedRecipes.IsManagedRecipe(entry.uft?.Recipe), entry.state))
+                    continue;
+                Dispatcher.ReleaseToVanilla(this, entry);
+                RemoveEntry(entry);
+            }
+
+            List<ThingDef> ingredientQuality = IngredientQuality.MarkedDefs();
+            List<Map> maps = Find.Maps;
+            for (int m = 0; m < maps.Count; m++)
+            {
+                List<Thing> givers = maps[m].listerThings
+                    .ThingsInGroup(ThingRequestGroup.PotentialBillGiver);
+                for (int t = 0; t < givers.Count; t++)
+                {
+                    if (givers[t] is not IBillGiver giver) continue;
+                    List<Bill> bills = giver.BillStack.Bills;
+                    for (int b = 0; b < bills.Count; b++)
+                    {
+                        if (bills[b] is not Bill_ProductionWithUft bill
+                            || ManagedRecipes.IsManagedRecipe(bill.recipe))
+                            continue;
+                        string id = BillIds.IdOf(bill);
+                        // The first-install prompt must not count bills Quality
+                        // Jobs cannot manage, whichever way their keys go.
+                        if (IngredientQuality.Decides(bill.recipe, ingredientQuality))
+                            pendingExistingBillMigrationIds.Remove(id);
+                        else DropBillConfig(id);
+                    }
+                }
+            }
         }
 
         internal void ClearAuthoritativeCollectionsForDisable()
@@ -1384,12 +1468,56 @@ namespace QualityJobs
             int tick = Find.TickManager.TicksGame;
             periodicAuditGate.Observe(tick);
             responsivenessGate.Observe(tick);
+            // Before pooling, so released items can join the sharing pool.
+            ReleaseUnmanagedRecipeWork();
             // Sharing is independent from bill management. Adopt existing idle
             // unfinished items immediately so paused-on-load games do not wait.
             RecountAndPool();
             InitializeExistingBillMigration();
             PublishAllPresentation();
+            // After the migration prompt, so the welcome opens on top of it.
+            LongEventHandler.ExecuteWhenFinished(queueWelcome);
         }
+
+        public override void StartedNewGame() =>
+            LongEventHandler.ExecuteWhenFinished(queueWelcome);
+
+        // Cached: queued from the load path, potentially every load.
+        private static readonly System.Action queueWelcome = QueueWelcome;
+        private static readonly System.Action openSettings = OpenSettings;
+
+        /// The welcome dialog appears once per player per save, keyed by the
+        /// world's persistent random value in the per-player settings. Marked
+        /// seen the moment it is queued, so however it is dismissed it never
+        /// returns for this save. LoadedGame and StartedNewGame run on the
+        /// long-event worker thread, so this always runs deferred on the main
+        /// thread. Presentation only: never touches synced state.
+        private static void QueueWelcome()
+        {
+            RimWorld.Planet.World? world = Find.World;
+            QualityJobsSettings? settings = QualityJobsMod.Settings;
+            if (world == null || settings == null) return;
+            string id = world.info.persistentRandomValue.ToString();
+            if (settings.welcomeShownSaves.Contains(id)) return;
+            settings.welcomeShownSaves.Add(id);
+            QualityJobsMod.Instance.WriteSettings();
+            Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
+                "QJ_WelcomeTitle".Translate(),
+                "QJ_WelcomeBody".Translate(),
+                "QJ_WelcomeFind".Translate(),
+                "QJ_WelcomeTakeMeThere".Translate(),
+                System.IO.Path.Combine(QualityJobsMod.Instance.Content.RootDir,
+                    "About", "Preview.png"),
+                // The sparkling items and the title, glow included.
+                new UnityEngine.Rect(0f, 60f, 1280f, 610f),
+                openSettings)
+            {
+                FindIcon = QualityJobsTex.ToolbarButton,
+            });
+        }
+
+        private static void OpenSettings() =>
+            Find.WindowStack.Add(new Dialog_ModSettings(QualityJobsMod.Instance));
 
         private void InitializeExistingBillMigration()
         {
@@ -1549,6 +1677,22 @@ namespace QualityJobs
 
         public bool IsShared(UnfinishedThing uft)
             => FindByUft(uft)?.state == WorkItemState.Shared;
+
+        /// Whether the sharing pool holds an unfinished item it took from
+        /// this bill that still exists (spawned, carried, or reserved).
+        /// Allocation-free; read-only (float-menu safe).
+        internal bool HasPooledWorkFor(Bill bill)
+        {
+            for (int i = 0; i < entries.Count; i++)
+            {
+                WorkItemEntry e = entries[i];
+                if (e.state == WorkItemState.Shared
+                    && ReferenceEquals(e.sourceBill, bill)
+                    && e.uft != null && !e.uft.Destroyed)
+                    return true;
+            }
+            return false;
+        }
 
         public bool IsFinishBill(Bill? bill)
         {

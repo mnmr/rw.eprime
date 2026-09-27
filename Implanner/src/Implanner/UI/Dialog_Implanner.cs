@@ -1209,9 +1209,16 @@ namespace Implanner.UI
             float y = rect.y;
 
             // Header: plan name (width measured at snapshot build), rename
-            // icon, delete button.
+            // icon, the minimum-quality control while any implant item has
+            // a quality, delete button.
+            Rect deleteRect = new Rect(rect.xMax - 120f, y, 120f, RowHeight);
+            float qualityWidth = snapshot.MinQualityTextWidth + MinQualityPadding;
+            Rect qualityRect = new Rect(deleteRect.x - Pad - qualityWidth, y,
+                qualityWidth, RowHeight);
+            float nameRoom = (snapshot.ShowMinQuality ? qualityRect.x : deleteRect.x)
+                - rect.x - 36f;
             Text.Font = GameFont.Medium;
-            float nameWidth = snapshot.SelectedPlanNameWidth;
+            float nameWidth = Mathf.Min(snapshot.SelectedPlanNameWidth, nameRoom);
             Widgets.Label(new Rect(rect.x, y, nameWidth, 30f), snapshot.SelectedPlanName);
             Text.Font = GameFont.Small;
             Rect renameRect = new Rect(rect.x + nameWidth + 6f, y + 3f, 24f, 24f);
@@ -1222,7 +1229,13 @@ namespace Implanner.UI
                     snapshot.SelectedPlanName,
                     name => PlannerCommands.RenamePlan(planId, name)));
             }
-            Rect deleteRect = new Rect(rect.xMax - 120f, y, 120f, RowHeight);
+            if (snapshot.ShowMinQuality)
+            {
+                if (Widgets.ButtonText(qualityRect, snapshot.MinQualityText))
+                    Find.WindowStack.Add(new FloatMenu(
+                        MinQualityOptions(snapshot.SelectedPlanId)));
+                TooltipHandler.TipRegion(qualityRect, snapshot.MinQualityTip);
+            }
             if (Widgets.ButtonText(deleteRect, PlannerLabels.DeletePlan))
             {
                 int planId = snapshot.SelectedPlanId;
@@ -1301,6 +1314,24 @@ namespace Implanner.UI
                 Widgets.EndScrollView();
             }
             Text.WordWrap = true;
+        }
+
+        /// Room around the minimum-quality button's measured text.
+        private const float MinQualityPadding = 20f;
+
+        /// The quality choices, built on click only (an input event, never
+        /// a steady draw).
+        private static List<FloatMenuOption> MinQualityOptions(int planId)
+        {
+            var options = new List<FloatMenuOption>();
+            for (int q = ImplantQuality.Lowest; q <= ImplantQuality.Highest; q++)
+            {
+                int quality = q;
+                options.Add(new FloatMenuOption(
+                    ((QualityCategory)q).GetLabel().CapitalizeFirst(),
+                    () => PlannerCommands.SetPlanMinQuality(planId, quality)));
+            }
+            return options;
         }
 
         private const float TreeLine = PickerGeometry.Line;
@@ -1717,10 +1748,8 @@ namespace Implanner.UI
             DrawStepperRow(rect.x, ref y, width,
                 PlannerLabels.OptSurgeryConcurrency,
                 snapshot.SurgeryConcurrencyText,
-                static () => PlannerCommands.SetSurgeryConcurrency(
-                    (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) - 1),
-                static () => PlannerCommands.SetSurgeryConcurrency(
-                    (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) + 1),
+                static delta => PlannerCommands.SetSurgeryConcurrency(
+                    (ImplannerStore.Current?.Model.SurgeryConcurrency ?? 1) + delta),
                 tips.SurgeryConcurrency);
 
             // Nested: refines what the concurrency limit above counts.
@@ -1733,6 +1762,18 @@ namespace Implanner.UI
             if (nowHospitalized != hospitalized)
                 PlannerCommands.SetCountHospitalized(nowHospitalized);
             y += RowHeight + 2f;
+
+            if (snapshot.ShowUpgradeByPriority)
+            {
+                bool upgrade = snapshot.UpgradeByPriority;
+                bool nowUpgrade = upgrade;
+                var upgradeRect = new Rect(rect.x, y, width, RowHeight);
+                tips.UpgradeByPriority.Region(upgradeRect);
+                Widgets.CheckboxLabeled(upgradeRect,
+                    PlannerLabels.OptUpgradeByPriority, ref nowUpgrade);
+                if (nowUpgrade != upgrade) PlannerCommands.SetUpgradeByPriority(nowUpgrade);
+                y += RowHeight + 2f;
+            }
 
             bool autoFloor = snapshot.AutoDoctorFloor;
             bool now = autoFloor;
@@ -1839,10 +1880,8 @@ namespace Implanner.UI
 
             DrawStepperRow(rect.x, ref y, width, PlannerLabels.OptConcurrency,
                 snapshot.ConcurrencyText,
-                static () => PlannerCommands.SetProductionConcurrency(
-                    (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) - 1),
-                static () => PlannerCommands.SetProductionConcurrency(
-                    (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) + 1),
+                static delta => PlannerCommands.SetProductionConcurrency(
+                    (ImplannerStore.Current?.Model.ProductionConcurrency ?? 1) + delta),
                 tips.Concurrency);
 
             bool idle = snapshot.OnlyIdleBenches;
@@ -1852,6 +1891,15 @@ namespace Implanner.UI
             Widgets.CheckboxLabeled(idleRect,
                 PlannerLabels.OptIdleBenches, ref now);
             if (now != idle) PlannerCommands.SetOnlyIdleBenches(now);
+            y += RowHeight + 2f;
+
+            bool designatedOnly = snapshot.OnlyDesignatedBenches;
+            now = designatedOnly;
+            var designatedRect = new Rect(rect.x, y, width, RowHeight);
+            tips.DesignatedBenches.Region(designatedRect);
+            Widgets.CheckboxLabeled(designatedRect,
+                PlannerLabels.OptDesignatedBenches, ref now);
+            if (now != designatedOnly) PlannerCommands.SetOnlyDesignatedBenches(now);
             y += RowHeight + 2f;
 
             int skill = DrawSkillSliderRow(rect.x, ref y, width,
@@ -1900,21 +1948,25 @@ namespace Implanner.UI
         /// A label with -/value/+ controls right-aligned on one row. The
         /// label sits flush at x — indentation is the CALLER's statement of
         /// dependency, not this row's default. The optional tip covers the
-        /// whole row through the shared tooltip presenter.
+        /// whole row through the shared tooltip presenter. Shift steps by
+        /// ten, Ctrl by five; Shift wins when both are held. The callback
+        /// issues one command with the signed step; the model owns clamping.
         private static void DrawStepperRow(float x, ref float y, float width,
             string label, string valueText,
-            System.Action decrement, System.Action increment, WrTip? tip = null)
+            System.Action<int> adjust, WrTip? tip = null)
         {
+            // Read modifiers before a button consumes the current event.
+            int step = Event.current.shift ? 10 : Event.current.control ? 5 : 1;
             tip?.Region(new Rect(x, y, width, HeaderHeight));
             Widgets.Label(new Rect(x, y + 2f, width - 90f, HeaderHeight),
                 label);
             if (Widgets.ButtonText(new Rect(x + width - 86f, y, 24f, HeaderHeight), "-"))
-                decrement();
+                adjust(-step);
             Text.Anchor = TextAnchor.MiddleCenter;
             Widgets.Label(new Rect(x + width - 60f, y, 34f, HeaderHeight), valueText);
             Text.Anchor = TextAnchor.UpperLeft;
             if (Widgets.ButtonText(new Rect(x + width - 24f, y, 24f, HeaderHeight), "+"))
-                increment();
+                adjust(step);
             y += HeaderHeight + 4f;
         }
 
@@ -1927,6 +1979,8 @@ namespace Implanner.UI
                 + HeaderHeight + 4f                              // concurrency
                 + RowHeight + 2f                                 // hospitalized
                 + RowHeight + 2f;                                // auto floor
+            if (snapshot.ShowUpgradeByPriority)
+                height += RowHeight + 2f;                        // upgrade by priority
             if (!snapshot.AutoDoctorFloor)
                 height += skillRowHeight + 4f;                   // manual skill
             height += Pad + SectionHeader.SubHeight + 2f         // reservations
@@ -1942,6 +1996,7 @@ namespace Implanner.UI
             if (snapshot.AutoProduction)
                 height += HeaderHeight + 4f                      // concurrency
                     + RowHeight + 2f                             // idle benches
+                    + RowHeight + 2f                             // Implanner benches only
                     + skillRowHeight + 4f                        // crafting skill
                     + RowHeight + 2f                             // intermediaries
                     + Pad + SectionHeader.SubHeight + 2f         // keep-in-stock

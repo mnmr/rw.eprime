@@ -356,7 +356,7 @@ namespace WorkRoles.UI
         {
             float halfW = (width - ColumnGap) / 2f;
             float left = MiniHeaderH + OptionBlockH + 4f + OptionBlockH + 4f
-                + CheckRowH + 8f
+                + CheckRowH + CheckRowH + 8f
                 + MiniHeaderH + ScalingRowH + 2f + ScalingRowH;
             float right = MiniHeaderH
                 + detail.WorkTypesHeight
@@ -388,22 +388,21 @@ namespace WorkRoles.UI
             float halfW = (width - ColumnGap) / 2f;
             float rightX = x + halfW + ColumnGap;
 
-            // LEFT: Classification (importance and time sliders, penalty),
+            // LEFT: Classification (importance and time sliders, penalty,
+            // partial capability),
             // then Assignment Scaling.
             Text.Font = GameFont.Small;
             float ly = MiniHeader(x, y, halfW, detail.ClassificationHeader, null);
             int categoryPosition = detail.CategoryValue == 0
                 ? 1 : 3 - detail.CategoryValue;
             int pickedCategory = DrawOptionSegments(x, ly, halfW,
-                detail.CategoryCaption, "WR_RoleCategoryTip", categoryPosition,
-                detail.CategoryOptions);
+                detail.CategoryPicker, "WR_RoleCategoryTip", categoryPosition);
             if (pickedCategory != categoryPosition)
                 RoleCommands.SetRoleCategory(roleId, 3 - pickedCategory);
             ly += OptionBlockH + 4f;
             int timePosition = detail.TimeValue == 0 ? 1 : detail.TimeValue - 1;
             int pickedTime = DrawOptionSegments(x, ly, halfW,
-                detail.TimeCaption, "WR_RoleTimeTip", timePosition,
-                detail.TimeOptions);
+                detail.TimePicker, "WR_RoleTimeTip", timePosition);
             if (pickedTime != timePosition)
                 RoleCommands.SetRoleTime(roleId, pickedTime + 1);
             ly += OptionBlockH + 4f;
@@ -415,16 +414,30 @@ namespace WorkRoles.UI
             GUI.color = Color.white;
             if (champion != detail.ChampionPenalty)
                 RoleCommands.SetRoleChampionPenalty(roleId, champion);
+            ly += CheckRowH;
+            var partialRect = new Rect(x, ly, halfW, CheckRowH);
+            bool locked = detail.PartialCapabilityLocked;
+            WrTips.Key(locked ? "WR_PartialCapabilityLockedTip"
+                : "WR_PartialCapabilityTip").Region(partialRect);
+            bool partial = locked || detail.PartialCapability;
+            GUI.color = WrStyle.DimText;
+            Widgets.CheckboxLabeled(partialRect, detail.PartialCapabilityLabel,
+                ref partial, disabled: locked);
+            GUI.color = Color.white;
+            if (!locked && partial != detail.PartialCapability)
+                RoleCommands.SetRolePartialCapability(roleId, partial);
             ly += CheckRowH + 8f;
 
             ly = MiniHeader(x, ly, halfW, detail.ScalingHeader, null);
             DrawScalingRow(new Rect(x, ly, halfW, ScalingRowH),
-                detail.ColonyMinCaption, "WR_RoleColonyMinTip", null,
+                detail.ColonyMinCaption, "WR_RoleColonyMinTip",
+                detail.ColonyMinTip,
                 detail.ColonyMinLabel, detail.ColonyMin,
                 roleId, ScalingField.ColonyMin, "WR_ScaleColonyMin");
             ly += ScalingRowH + 2f;
             DrawScalingRow(new Rect(x, ly, halfW, ScalingRowH),
-                detail.CoverageCaption, "WR_RoleCoverageTip", null,
+                detail.CoverageCaption, "WR_RoleCoverageTip",
+                detail.CoverageTip,
                 detail.CoverageLabel, detail.Coverage,
                 roleId, ScalingField.Coverage, "WR_ScaleCoverage",
                 unitSuffix: "%");
@@ -458,35 +471,35 @@ namespace WorkRoles.UI
 
         /// One classification option: dim caption on the top row, a segmented
         /// single-click selector below. Every choice is visible; the active
-        /// segment gets the accent outline and full-brightness label.
+        /// segment gets the accent outline and full-brightness label. Cell
+        /// geometry and fitted labels come from the snapshot.
         /// Returns the picked position.
         private static int DrawOptionSegments(float x, float y, float width,
-            string caption, string tipKey, int position,
-            IReadOnlyList<string> options)
+            RecOptionPicker picker, string tipKey, int position)
         {
             var block = new Rect(x, y, width, OptionBlockH);
-            WrTips.Key(tipKey).Region(block);
+            if (picker.Tip != null)
+                StructuredTipPresenter.TipRegion(block, picker.Tip);
+            else
+                WrTips.Key(tipKey).Region(block);
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             GUI.color = WrStyle.DimText;
             // 19 tall, not 18: descenders need the extra pixel to render, and
             // the row below only starts at y+20 so no layout space is added.
-            Widgets.Label(new Rect(x, y, width, 19f), caption);
+            Widgets.Label(new Rect(x, y, width, 19f), picker.Caption);
             GUI.color = Color.white;
 
             const float SegmentH = 24f;
-            const float SegmentGap = 2f;
             int picked = position;
-            float segmentW = (width - (options.Count - 1) * SegmentGap)
-                / options.Count;
             float segmentY = y + 20f;
             Text.Anchor = TextAnchor.MiddleCenter;
             bool wrap = Text.WordWrap;
             Text.WordWrap = false;
-            for (int i = 0; i < options.Count; i++)
+            for (int i = 0; i < picker.Count; i++)
             {
-                var cell = new Rect(x + i * (segmentW + SegmentGap), segmentY,
-                    segmentW, SegmentH);
+                var cell = new Rect(x + picker.XAt(i), segmentY,
+                    picker.WidthAt(i), SegmentH);
                 bool active = i == position;
                 Widgets.DrawBoxSolid(cell, CellPanel);
                 if (active)
@@ -500,7 +513,7 @@ namespace WorkRoles.UI
                     GUI.color = WrStyle.DimText;
                     Widgets.DrawHighlightIfMouseover(cell);
                 }
-                Widgets.Label(cell, options[i]);
+                Widgets.Label(cell, picker.LabelAt(i));
                 GUI.color = Color.white;
                 if (Widgets.ButtonInvisible(cell)) picked = i;
             }
@@ -512,15 +525,22 @@ namespace WorkRoles.UI
         private enum ScalingField { ColonyMin, Coverage }
 
         /// One assignment-scaling input row: the shared stepper row plus this
-        /// panel's tip and command routing. The commands clamp and no-op at
-        /// the bounds.
+        /// panel's tip and command routing. The row tip covers the caption
+        /// only: overlapping the stepper's own tip regions would restart both
+        /// hover sessions every frame so neither ever opens. A truncated
+        /// caption's snapshot tip replaces the keyed one. The commands clamp
+        /// and no-op at the bounds.
         private static void DrawScalingRow(Rect rect, string caption,
-            string tipKey, string? tipArg, string valueLabel, int value,
-            int roleId, ScalingField field, string controlName,
+            string tipKey, StructuredTip? captionTip, string valueLabel,
+            int value, int roleId, ScalingField field, string controlName,
             string? unitSuffix = null)
         {
-            (tipArg == null ? WrTips.Key(tipKey) : WrTips.Key(tipKey, tipArg))
-                .Region(rect);
+            var captionRect = new Rect(rect.x, rect.y,
+                rect.width - NumericStepperUI.ControlsReserve, rect.height);
+            if (captionTip != null)
+                StructuredTipPresenter.TipRegion(captionRect, captionTip);
+            else
+                WrTips.Key(tipKey).Region(captionRect);
             int? requested = NumericStepperUI.DrawRow(rect, caption,
                 valueLabel, value, controlName, roleId, unitSuffix);
             if (requested.HasValue)

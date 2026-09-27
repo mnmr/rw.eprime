@@ -40,6 +40,21 @@ namespace Implanner
         private List<int>? reserveAmounts;
         private List<string>? productionBillIds;
         private List<string>? productionBillDefs;
+        // Parallel to productionBillIds; absent in older saves (no promise).
+        private List<int>? productionBillQualities;
+        // Parallel reinstall records, one entry per pushed-out implant.
+        private List<int>? reinstallPawnIds;
+        private List<string>? reinstallWiperKeys;
+        private List<string>? reinstallDefs;
+        private List<int>? reinstallParts;
+        private List<int>? reinstallQualities;
+        private List<bool>? reinstallActive;
+        private List<int>? designatedBenchIds;
+        // Parallel pairs: each bill that was already suspended when its
+        // bench was designated, keyed by that bench.
+        private List<int>? designatedBillBenches;
+        private List<string>? designatedBillIds;
+        private bool onlyDesignatedBenches;
         private bool automationPaused;
         private int iteration = (int)IterationStrategy.ImplantTier;
         private int manualDoctorFloor;
@@ -66,6 +81,7 @@ namespace Implanner
         private bool allowMultipleBladders = true;
         private bool allowMultipleHygieneEnhancers = true;
         private bool showPurchaseOnly;
+        private bool upgradeByPriority;
 
         private readonly PlannerRevisions revisions = new PlannerRevisions();
 
@@ -77,10 +93,13 @@ namespace Implanner
         public int RankingsVersion => revisions.Rankings;
         public int SurgeryVersion => revisions.Surgery;
         public int ProductionVersion => revisions.Production;
+        public int BenchesVersion => revisions.Benches;
 
         public ImplannerStore(World world) : base(world)
         {
             Model.SetSlotConflictResolver(ImplantConflicts.Resolver);
+            BenchDesignations.Publish(Model);
+            SurgeryBindings.Publish(Model);
         }
 
         public static ImplannerStore? Current => Find.World?.GetComponent<ImplannerStore>();
@@ -105,15 +124,24 @@ namespace Implanner
         {
             pendingReconcile = true;
             if (change == PlannerChange.None) return;
-            revisions.Bump(change);
-            if ((change & PlannerChange.Production) != 0)
+            Publish(change);
+            if ((change & (PlannerChange.Production | PlannerChange.Benches)) != 0)
                 pendingProductionPass = true;
         }
 
         /// The reconcile pass's own bookkeeping: published without
         /// requesting another pass, so the pass's mutations never re-trigger
         /// it on the following tick.
-        internal void PublishPass(PlannerChange change) => revisions.Bump(change);
+        internal void PublishPass(PlannerChange change) => Publish(change);
+
+        private void Publish(PlannerChange change)
+        {
+            revisions.Bump(change);
+            if ((change & PlannerChange.Benches) != 0)
+                BenchDesignations.Publish(Model);
+            if ((change & (PlannerChange.Surgery | PlannerChange.Reservations)) != 0)
+                SurgeryBindings.Publish(Model);
+        }
 
         internal void ClearPendingReconcile() => pendingReconcile = false;
 
@@ -167,7 +195,7 @@ namespace Implanner
             if (!surgeryConcurrencySeeded)
                 SeedSurgeryConcurrency(ColonyScope.AllPlanableColonists(
                     ColonyScope.AuthoritativeFaction).Count);
-            revisions.Bump(PlannerChange.All);
+            Publish(PlannerChange.All);
         }
 
         /// Drops model state of pawns that no longer exist anywhere (maps,
@@ -275,9 +303,52 @@ namespace Implanner
                 productionBillIds = new List<string>(Model.OwnedProductionBills.Keys);
                 productionBillIds.Sort(System.StringComparer.Ordinal);
                 productionBillDefs = new List<string>();
+                productionBillQualities = new List<int>();
                 for (int i = 0; i < productionBillIds.Count; i++)
+                {
                     productionBillDefs.Add(
                         Model.OwnedProductionBills[productionBillIds[i]]);
+                    productionBillQualities.Add(
+                        Model.ProductionBillQualityOf(productionBillIds[i]));
+                }
+
+                reinstallPawnIds = new List<int>();
+                reinstallWiperKeys = new List<string>();
+                reinstallDefs = new List<string>();
+                reinstallParts = new List<int>();
+                reinstallQualities = new List<int>();
+                reinstallActive = new List<bool>();
+                var reinstallPawns = new List<int>(Model.Reinstalls.Keys);
+                reinstallPawns.Sort();
+                for (int i = 0; i < reinstallPawns.Count; i++)
+                {
+                    IReadOnlyList<ReinstallRecord> records = Model.Reinstalls[reinstallPawns[i]];
+                    for (int k = 0; k < records.Count; k++)
+                    {
+                        reinstallPawnIds.Add(reinstallPawns[i]);
+                        reinstallWiperKeys.Add(records[k].WiperKey);
+                        reinstallDefs.Add(records[k].ImplantDefName);
+                        reinstallParts.Add(records[k].PartIndex);
+                        reinstallQualities.Add(records[k].Quality);
+                        reinstallActive.Add(records[k].Active);
+                    }
+                }
+
+                designatedBenchIds = new List<int>(Model.DesignatedBenches.Keys);
+                designatedBenchIds.Sort();
+                designatedBillBenches = new List<int>();
+                designatedBillIds = new List<string>();
+                for (int i = 0; i < designatedBenchIds.Count; i++)
+                {
+                    IReadOnlyList<string> suspended =
+                        Model.DesignatedBenches[designatedBenchIds[i]];
+                    for (int k = 0; k < suspended.Count; k++)
+                    {
+                        designatedBillBenches.Add(designatedBenchIds[i]);
+                        designatedBillIds.Add(suspended[k]);
+                    }
+                }
+                onlyDesignatedBenches = Model.OnlyDesignatedBenches;
 
                 automationPaused = Model.AutomationPaused;
                 iteration = (int)Model.Iteration;
@@ -297,6 +368,7 @@ namespace Implanner
                 allowMultipleBladders = Model.AllowMultipleBladders;
                 allowMultipleHygieneEnhancers = Model.AllowMultipleHygieneEnhancers;
                 showPurchaseOnly = Model.ShowPurchaseOnly;
+                upgradeByPriority = Model.UpgradeByPriority;
             }
 
             Scribe_Collections.Look(ref planRecords, "plans", LookMode.Deep);
@@ -322,6 +394,17 @@ namespace Implanner
             Scribe_Collections.Look(ref reserveAmounts, "reserveAmounts", LookMode.Value);
             Scribe_Collections.Look(ref productionBillIds, "productionBillIds", LookMode.Value);
             Scribe_Collections.Look(ref productionBillDefs, "productionBillDefs", LookMode.Value);
+            Scribe_Collections.Look(ref productionBillQualities, "productionBillQualities", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallPawnIds, "reinstallPawns", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallWiperKeys, "reinstallWipers", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallDefs, "reinstallDefs", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallParts, "reinstallParts", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallQualities, "reinstallQualities", LookMode.Value);
+            Scribe_Collections.Look(ref reinstallActive, "reinstallActive", LookMode.Value);
+            Scribe_Collections.Look(ref designatedBenchIds, "designatedBenches", LookMode.Value);
+            Scribe_Collections.Look(ref designatedBillBenches, "designatedBillBenches", LookMode.Value);
+            Scribe_Collections.Look(ref designatedBillIds, "designatedBillIds", LookMode.Value);
+            Scribe_Values.Look(ref onlyDesignatedBenches, "onlyDesignatedBenches", false);
             Scribe_Values.Look(ref automationPaused, "automationPaused", false);
             Scribe_Values.Look(ref iteration, "iteration",
                 (int)IterationStrategy.ImplantTier);
@@ -340,6 +423,7 @@ namespace Implanner
             Scribe_Values.Look(ref allowMultipleHygieneEnhancers,
                 "allowMultipleHygieneEnhancers", true);
             Scribe_Values.Look(ref showPurchaseOnly, "showPurchaseOnly", false);
+            Scribe_Values.Look(ref upgradeByPriority, "upgradeByPriority", false);
             Scribe_Values.Look(ref pendingReconcile, "pendingReconcile", false);
             Scribe_Values.Look(ref pendingProductionPass, "pendingProductionPass", false);
 
@@ -443,18 +527,55 @@ namespace Implanner
                                 reserveDefs[i], reserveAmounts[i]);
                 if (productionBillIds != null && productionBillDefs != null
                     && productionBillIds.Count == productionBillDefs.Count)
+                {
+                    bool qualitiesValid = productionBillQualities != null
+                        && productionBillQualities.Count == productionBillIds.Count;
                     for (int i = 0; i < productionBillIds.Count; i++)
                         if (!productionBillIds[i].NullOrEmpty()
                             && !productionBillDefs[i].NullOrEmpty())
                             Model.AddLoadedProductionBill(
-                                productionBillIds[i], productionBillDefs[i]);
+                                productionBillIds[i], productionBillDefs[i],
+                                qualitiesValid
+                                    ? productionBillQualities![i]
+                                    : ProductionQueue.UnknownQuality);
+                }
+                if (reinstallPawnIds != null && reinstallWiperKeys != null
+                    && reinstallDefs != null && reinstallParts != null
+                    && reinstallQualities != null && reinstallActive != null
+                    && reinstallPawnIds.Count == reinstallWiperKeys.Count
+                    && reinstallPawnIds.Count == reinstallDefs.Count
+                    && reinstallPawnIds.Count == reinstallParts.Count
+                    && reinstallPawnIds.Count == reinstallQualities.Count
+                    && reinstallPawnIds.Count == reinstallActive.Count)
+                    for (int i = 0; i < reinstallPawnIds.Count; i++)
+                        if (!reinstallWiperKeys[i].NullOrEmpty()
+                            && !reinstallDefs[i].NullOrEmpty())
+                            Model.AddLoadedReinstall(reinstallPawnIds[i],
+                                new ReinstallRecord(reinstallWiperKeys[i],
+                                    reinstallDefs[i], reinstallParts[i],
+                                    reinstallQualities[i], reinstallActive[i]));
+                if (designatedBenchIds != null)
+                {
+                    bool pairsValid = designatedBillBenches != null
+                        && designatedBillIds != null
+                        && designatedBillBenches.Count == designatedBillIds.Count;
+                    for (int i = 0; i < designatedBenchIds.Count; i++)
+                    {
+                        var suspended = new List<string>();
+                        if (pairsValid)
+                            for (int k = 0; k < designatedBillBenches!.Count; k++)
+                                if (designatedBillBenches[k] == designatedBenchIds[i])
+                                    suspended.Add(designatedBillIds![k]);
+                        Model.AddLoadedDesignatedBench(designatedBenchIds[i], suspended);
+                    }
+                }
                 Model.LoadOptions(automationPaused,
                     (IterationStrategy)iteration, manualDoctorFloor, autoDoctorFloor,
                     surgeryConcurrency, countHospitalized,
                     autoProduction, productionConcurrency,
                     onlyIdleBenches, productionSkill, allowIntermediaries,
                     allowMultipleBladders, allowMultipleHygieneEnhancers,
-                    showPurchaseOnly);
+                    showPurchaseOnly, onlyDesignatedBenches, upgradeByPriority);
                 // Deferred so maps and pawns are fully loaded when existence
                 // checks run; executes before play begins on every client.
                 LongEventHandler.ExecuteWhenFinished(FinishInit);
@@ -486,6 +607,16 @@ namespace Implanner
                 reserveAmounts = null;
                 productionBillIds = null;
                 productionBillDefs = null;
+                productionBillQualities = null;
+                reinstallPawnIds = null;
+                reinstallWiperKeys = null;
+                reinstallDefs = null;
+                reinstallParts = null;
+                reinstallQualities = null;
+                reinstallActive = null;
+                designatedBenchIds = null;
+                designatedBillBenches = null;
+                designatedBillIds = null;
             }
         }
 
@@ -528,6 +659,7 @@ namespace Implanner
         private int id;
         private string name = "";
         private int basePlanId;
+        private int minQuality;
         private List<ImplantRecord>? implants;
 
         public PlanRecord() { }
@@ -537,6 +669,7 @@ namespace Implanner
             id = plan.Id;
             name = plan.Name;
             basePlanId = plan.BasePlanId;
+            minQuality = plan.MinQuality;
             implants = new List<ImplantRecord>();
             foreach (ImplantGoal goal in plan.Implants)
                 implants.Add(new ImplantRecord(goal));
@@ -561,7 +694,7 @@ namespace Implanner
                         (legacyGoals ??= new Dictionary<int, (int, string)>())
                             [record.LegacyId] = (planIndex, goal.ImplantDefName);
                 }
-            return new Plan(id, name, basePlanId, goals);
+            return new Plan(id, name, basePlanId, goals, minQuality);
         }
 
         public void ExposeData()
@@ -569,6 +702,7 @@ namespace Implanner
             Scribe_Values.Look(ref id, "id");
             Scribe_Values.Look(ref name, "name", "");
             Scribe_Values.Look(ref basePlanId, "basePlanId");
+            Scribe_Values.Look(ref minQuality, "minQuality", 0);
             Scribe_Collections.Look(ref implants, "implants", LookMode.Deep);
         }
     }

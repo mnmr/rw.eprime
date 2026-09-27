@@ -31,6 +31,8 @@ namespace WorkRoles.Core.Recs
         public bool PreserveRecommendationOrder;
         /// False = repeat championships use the occasional-work penalty.
         public bool ChampionPenalty = true;
+        /// True = a skilled role accepts a pawn who can do only some of its work.
+        public bool PartialCapability;
         public RoleCategory Category;
         public RoleTime Time;
         /// Minimum biological age (years) for holding the role; 0 = no gate.
@@ -209,6 +211,7 @@ namespace WorkRoles.Core.Recs
                 PreserveRecommendationOrder =
                     source.PreserveRecommendationOrder,
                 ChampionPenalty = source.ChampionPenalty,
+                PartialCapability = source.PartialCapability,
                 Category = source.Category,
                 Time = source.Time,
                 MinAge = source.MinAge,

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SettingsBlock>
+	<ModSettings Class="QualityJobs.QualityJobsSettings">
+		<welcomeShownSaves>
+			<li>-633476771</li>
+			<li>-1328483240</li>
+			<li>1205135655</li>
+		</welcomeShownSaves>
+	</ModSettings>
+</SettingsBlock>

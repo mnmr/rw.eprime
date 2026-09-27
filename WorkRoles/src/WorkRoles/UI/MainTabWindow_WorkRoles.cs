@@ -69,16 +69,22 @@ namespace WorkRoles.UI
             return new Vector2(w, h);
         }
 
-        /// The design floor is vanilla's minimum screen, 1024x768 logical
-        /// (ResolutionUtility.MinResolutionWidth/Height): smaller screens are
-        /// not supported, and the window never shrinks below the whole width
-        /// and the height left above the 35px bottom bar. Tab contents scroll
-        /// internally at this size.
-        internal const float DesignScreenWidth = 1024f;
-        internal const float DesignScreenHeight = 768f;
+        /// The design floor is 1536x864 logical (1920x1080 at UI scale 1.25):
+        /// the window never shrinks below its whole width and the height left
+        /// above the 35px bottom bar. Smaller screens stay usable but are not
+        /// designed for: the minimum caps at the screen and the welcome
+        /// dialog warns about it. Tab contents scroll internally.
+        internal const float DesignScreenWidth = 1536f;
+        internal const float DesignScreenHeight = 864f;
         private const float BottomBarHeight = 35f;
         private static Vector2 MinManualSize => new Vector2(
-            DesignScreenWidth, DesignScreenHeight - BottomBarHeight);
+            Mathf.Min(DesignScreenWidth, Verse.UI.screenWidth),
+            Mathf.Min(DesignScreenHeight, Verse.UI.screenHeight)
+                - BottomBarHeight);
+
+        internal static bool ScreenBelowDesignFloor =>
+            Verse.UI.screenWidth < DesignScreenWidth
+            || Verse.UI.screenHeight < DesignScreenHeight;
 
         /// Re-applies the persisted size each open, clamped between the manual
         /// minimums and the screen; bottom-left anchor holds.

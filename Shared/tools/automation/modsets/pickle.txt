@@ -1,0 +1,6 @@
+# Pickle (Workshop 3791648678) and its RimLogging dependency (Workshop
+# 3733484696) for in-game Gherkin runs. Launch with
+# launch.ps1 -GameArguments '-pickle-run=...' -AllowExit.
+after brrainz.harmony
+rimworks.rimlogging
+rimworks.pickle

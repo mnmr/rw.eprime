@@ -1,4 +1,5 @@
 using EPrimeReadouts.Core;
+using RimWorld;
 using UnityEngine;
 using Verse;
 
@@ -13,7 +14,10 @@ namespace EPrimeReadouts.UI
 
         private Vector2 scroll;
         private string newName = "";
-        private string? pendingSelect;
+        // Group just created from the footer: its id once known, else its
+        // (unique) name until the synced create lands.
+        private int pendingSelectId = -1;
+        private string? pendingSelectName;
 
         private struct GroupRow
         {
@@ -59,10 +63,20 @@ namespace EPrimeReadouts.UI
 
             EnsureRows(store);
 
-            if (pendingSelect != null)
+            if (pendingSelectId < 0 && pendingSelectName != null)
             {
                 for (int i = 0; i < rows!.Length; i++) // built by EnsureRows above
-                    if (rows[i].Name == pendingSelect)
+                    if (ReadoutGroupNames.Comparer.Equals(rows[i].Name, pendingSelectName))
+                    {
+                        pendingSelectId = rows[i].Id;
+                        pendingSelectName = null;
+                        break;
+                    }
+            }
+            if (pendingSelectId >= 0)
+            {
+                for (int i = 0; i < rows!.Length; i++)
+                    if (rows[i].Id == pendingSelectId)
                     {
                         owner.SelectGroup(rows[i].Id);
                         string newKey = rows[i].DepthKey;
@@ -72,7 +86,7 @@ namespace EPrimeReadouts.UI
                         ReadoutPanel.BumpView();
                         break;
                     }
-                pendingSelect = null;
+                pendingSelectId = -1;
             }
 
             var listRect = new Rect(rect.x, rect.y + headerUsed, rect.width,
@@ -170,13 +184,33 @@ namespace EPrimeReadouts.UI
             newName = Widgets.TextField(
                 new Rect(footer.x, footer.y, footer.width - 60f, 24f), newName);
             if (Widgets.ButtonText(new Rect(footer.xMax - 56f, footer.y, 56f, 24f),
-                    UiText.Get("EPR.Add"))
-                && !newName.NullOrEmpty())
+                    UiText.Get("EPR.Add")))
+                TryCreate(store);
+        }
+
+        private void TryCreate(ReadoutStore store)
+        {
+            string name = ReadoutGroupNames.Normalize(newName);
+            if (name.Length == 0) return;
+            string? problem = GroupNameProblem(name, -1);
+            if (problem != null)
             {
-                ReadoutCommands.CreateGroup(newName.Trim());
-                pendingSelect = newName.Trim();
-                newName = "";
+                Messages.Message(problem, MessageTypeDefOf.RejectInput, historical: false);
+                return;
             }
+            ReadoutCommands.CreateGroup(name);
+            ReadoutGroup? created = store.Model.GroupByName(name);
+            if (created != null) pendingSelectId = created.Id;
+            else pendingSelectName = name;
+            newName = "";
+        }
+
+        internal static string? GroupNameProblem(string name, int exceptGroupId)
+        {
+            ReadoutStore? store = ReadoutStore.Current;
+            if (store == null || store.Model.CanUseGroupName(name, exceptGroupId))
+                return null;
+            return UiText.Get("EPR.GroupNameTaken");
         }
 
         private static int DisplayIndex(GroupRow[] ordered, int groupId)
@@ -221,7 +255,8 @@ namespace EPrimeReadouts.UI
             builtGroupsVersion = -1;
             builtPresentationVersion = -1;
             rows = null;
-            pendingSelect = null;
+            pendingSelectId = -1;
+            pendingSelectName = null;
             newName = "";
             scroll = Vector2.zero;
         }

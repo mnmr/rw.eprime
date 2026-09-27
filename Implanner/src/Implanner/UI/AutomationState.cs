@@ -46,8 +46,14 @@ namespace Implanner.UI
         }
         internal bool AutoDoctorFloor;
         internal bool CountHospitalized;
+        /// The "better implants to high-priority colonists" row shows only
+        /// while a catalog implant's item carries a quality (static per
+        /// session).
+        internal bool ShowUpgradeByPriority;
+        internal bool UpgradeByPriority;
         internal bool AutoProduction;
         internal bool OnlyIdleBenches;
+        internal bool OnlyDesignatedBenches;
         internal bool AllowIntermediaries;
         internal int ManualFloor;
         internal int ProductionSkill;
@@ -227,8 +233,11 @@ namespace Implanner.UI
                 AutomationSnapshot.DisplayIndexOf(model.Iteration);
             result.AutoDoctorFloor = model.AutoDoctorFloor;
             result.CountHospitalized = model.CountHospitalized;
+            result.ShowUpgradeByPriority = ImplantQualities.AnyInCatalog();
+            result.UpgradeByPriority = model.UpgradeByPriority;
             result.AutoProduction = model.AutoProduction;
             result.OnlyIdleBenches = model.OnlyIdleBenches;
+            result.OnlyDesignatedBenches = model.OnlyDesignatedBenches;
             result.AllowIntermediaries = model.AllowIntermediaries;
             result.ManualFloor = model.ManualDoctorFloor;
             result.ProductionSkill = model.ProductionSkill;

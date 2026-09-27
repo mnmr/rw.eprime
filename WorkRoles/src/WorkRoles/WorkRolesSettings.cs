@@ -82,6 +82,9 @@ namespace WorkRoles
         /// Player knowledge, so it lives here and never in the savegame.
         public System.Collections.Generic.List<string> helpTopicsRead = new System.Collections.Generic.List<string>();
         public bool helpTourCelebrated;
+        /// Saves (world persistent random values) whose one-time welcome
+        /// dialog this player has already seen.
+        public System.Collections.Generic.List<string> welcomeShownSaves = new System.Collections.Generic.List<string>();
 
         /// Per-player presentation command used by the Options UI. Returning
         /// false for a no-op keeps persistence and snapshot refresh exact.
@@ -151,6 +154,7 @@ namespace WorkRoles
             Scribe_Collections.Look(ref warnedGiverBypass, "warnedGiverBypass", LookMode.Value);
             Scribe_Collections.Look(ref helpTopicsRead, "helpTopicsRead", LookMode.Value);
             Scribe_Values.Look(ref helpTourCelebrated, "helpTourCelebrated", false);
+            Scribe_Collections.Look(ref welcomeShownSaves, "welcomeShownSaves", LookMode.Value);
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
                 skillColumns ??= new System.Collections.Generic.List<string>();
@@ -159,6 +163,7 @@ namespace WorkRoles
                 warnedPriorityMods ??= new System.Collections.Generic.List<string>();
                 warnedGiverBypass ??= new System.Collections.Generic.List<string>();
                 helpTopicsRead ??= new System.Collections.Generic.List<string>();
+                welcomeShownSaves ??= new System.Collections.Generic.List<string>();
                 groupBy ??= "none";
                 sortColumn ??= "";
             }
@@ -170,6 +175,7 @@ namespace WorkRoles
                 warnedPriorityMods ??= new System.Collections.Generic.List<string>();
                 warnedGiverBypass ??= new System.Collections.Generic.List<string>();
                 helpTopicsRead ??= new System.Collections.Generic.List<string>();
+                welcomeShownSaves ??= new System.Collections.Generic.List<string>();
             }
         }
     }

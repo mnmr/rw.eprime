@@ -5,11 +5,16 @@ using Verse;
 namespace QualityJobs
 {
     /// Recipe scope (spec §2): unfinishedThingDef != null AND the produced def
-    /// has CompQuality.
+    /// has CompQuality AND the crafter's skill decides that quality (recipes an
+    /// ingredient decides are excluded, see IngredientQuality; the finisher
+    /// work-giver generation applies the same rule).
     ///
-    /// Cache — Owner: process (def-derived only). Key: none (two sets built
-    /// once). Value: immutable after startup. Dependencies: def database
-    /// contents; rebuilt on demand after definition reload via Invalidate().
+    /// Cache — Owner: process (def-derived only). Key: UFT def set; managed
+    /// recipes by defName. Value: immutable after startup. Dependencies: def database
+    /// contents (recipe unfinishedThingDef and products, product CompQuality,
+    /// ingredient filters' declared things/categories and the marked defs'
+    /// modExtensions types);
+    /// rebuilt on demand after definition reload via Invalidate().
     /// Refresh: eager at startup ([StaticConstructorOnStartup]); Invalidate()
     /// also clears Dispatcher.s_workTypeCache (same dependency set) so both
     /// caches stay coherent after a definition reload.
@@ -20,7 +25,11 @@ namespace QualityJobs
         // Initialized inline so fields are never null; rebuilt atomically in Build().
         private static HashSet<ThingDef> uftDefs = new HashSet<ThingDef>();
         private static ThingDef[] uftDefArray = System.Array.Empty<ThingDef>();
-        private static HashSet<RecipeDef> managed = new HashSet<RecipeDef>();
+        // Keyed by defName, not RecipeDef: Craft with Color swaps bill.recipe
+        // for an unregistered runtime clone (same defName, extra dye
+        // ingredient) whose defNameHash is never resolved, so Def equality
+        // misses it. The value is the registered def.
+        private static Dictionary<string, RecipeDef> managed = new Dictionary<string, RecipeDef>();
         // Cached static delegate — HashSet order is process-nondeterministic; MP requires stable iteration order.
         private static readonly System.Comparison<ThingDef> DefNameComparison =
             (a, b) => string.CompareOrdinal(a.defName, b.defName);
@@ -41,14 +50,16 @@ namespace QualityJobs
         private static void Build()
         {
             var newUftDefs = new HashSet<ThingDef>();
-            var newManaged = new HashSet<RecipeDef>();
+            var newManaged = new Dictionary<string, RecipeDef>();
+            List<ThingDef> ingredientQuality = IngredientQuality.MarkedDefs();
             foreach (RecipeDef recipe in DefDatabase<RecipeDef>.AllDefsListForReading)
             {
                 if (recipe.unfinishedThingDef == null) continue;
                 newUftDefs.Add(recipe.unfinishedThingDef);
                 ThingDef? product = recipe.ProducedThingDef;
-                if (product != null && product.HasComp(typeof(CompQuality)))
-                    newManaged.Add(recipe);
+                if (product != null && product.HasComp(typeof(CompQuality))
+                    && !IngredientQuality.Decides(recipe, ingredientQuality))
+                    newManaged[recipe.defName] = recipe;
             }
             uftDefs = newUftDefs;
             var array = new ThingDef[newUftDefs.Count];
@@ -60,7 +71,14 @@ namespace QualityJobs
         }
 
         public static bool IsManagedRecipe(RecipeDef? recipe)
-            => recipe != null && managed.Contains(recipe);
+            => Registered(recipe) != null;
+
+        /// The registered managed def for recipe (itself, or the def a runtime
+        /// clone was copied from), or null when unmanaged. Identity-keyed
+        /// consumers must use this instead of bill.recipe / uft.Recipe.
+        public static RecipeDef? Registered(RecipeDef? recipe)
+            => recipe?.unfinishedThingDef != null
+                && managed.TryGetValue(recipe.defName, out RecipeDef def) ? def : null;
 
         /// All UFT ThingDefs (managed or not) — sharing (§8) and cap counting
         /// (§9) enumerate spawned UFTs through these. Returns a plain array so

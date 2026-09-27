@@ -152,6 +152,16 @@ namespace Implanner.UI
         /// Medium-font fit width of SelectedPlanName, measured at build.
         internal float SelectedPlanNameWidth;
 
+        /// The selected plan's minimum-quality control: shown only while a
+        /// catalog implant's item carries a quality (Quality Bionics
+        /// Remastered, Vanilla Genetics Expanded), with its button text and
+        /// tooltip resolved at build.
+        internal bool ShowMinQuality;
+        internal string MinQualityText = "";
+        internal string MinQualityTip = "";
+        /// Small-font fit width of MinQualityText, measured at build.
+        internal float MinQualityTextWidth;
+
         /// The tree: region-filtered body-part groups with their slots, or,
         /// while a search is active, one flat list of the matching slots
         /// across every region (no nodes, every row at depth 0).
@@ -443,6 +453,25 @@ namespace Implanner.UI
             {
                 Text.Font = font;
             }
+            result.ShowMinQuality = selected != null && ImplantQualities.AnyInCatalog();
+            if (result.ShowMinQuality)
+            {
+                result.MinQualityText = "IMP_PlanMinQuality".Translate(
+                    ((QualityCategory)selected!.MinQuality).GetLabel());
+                Text.Font = GameFont.Small;
+                try
+                {
+                    result.MinQualityTextWidth = WrText.MeasureFitWidth(result.MinQualityText);
+                }
+                finally
+                {
+                    Text.Font = font;
+                }
+                result.MinQualityTip = QualityJobsBridge.Available
+                    ? "IMP_PlanMinQualityTip".Translate().ToString()
+                    : "IMP_PlanMinQualityTip".Translate() + "\n\n"
+                        + "IMP_PlanMinQualityNoQualityJobs".Translate();
+            }
 
             // Enlisted colonists per plan: the same pawn set and evaluation
             // the overview uses, so the card counts and bars never disagree
@@ -478,7 +507,7 @@ namespace Implanner.UI
                 for (int p = 0; planPawns != null && p < planPawns.Count; p++)
                 {
                     PlanEvaluation evaluation = PawnProjection.Evaluate(
-                        model, planPawns[p], planGoals, away: false);
+                        model, planPawns[p], planGoals, away: false, plan.MinQuality);
                     satisfied += evaluation.SatisfiedUnits;
                     total += evaluation.TotalUnits;
                 }

@@ -1,5 +1,12 @@
 ﻿# Changelog
 
+## 1.3.6 — 2026-09-27
+
+- Fixed: Group names are now trimmed and must be unique.
+- Fixed: Export did not add .xml to the name, so the file would not appear in the Import list.
+- Fixed: Typing (WASD) in the config dialog inputs would still move the camera.
+- Fixed: Lots of tiny little fixes for various edge cases.
+
 ## 1.3.5 — 2026-09-20
 
 - Fixed: Possible fix for readout vanishing after minimize/restore on Linux (GPU depth test).

@@ -167,6 +167,9 @@
   <WR_RoleTimeOpportunistic>Opportunistic</WR_RoleTimeOpportunistic>
   <WR_ChampionPenalty>Repeat champion penalty</WR_ChampionPenalty>
   <WR_ChampionPenaltyTip>When enabled, a colonist who already champions other roles is penalized when competing to champion this one. Disable it for roles where repeat championships are fine, such as occasional work.</WR_ChampionPenaltyTip>
+  <WR_PartialCapability>Allow partial capability</WR_PartialCapability>
+  <WR_PartialCapabilityTip>When enabled, this role is recommended for colonists who can do some of its jobs but not all of them. Colonists who can do none of its jobs are never recommended it. Useful for broad roles that every colonist should hold, such as a shared role for idle work.</WR_PartialCapabilityTip>
+  <WR_PartialCapabilityLockedTip>This role is already recommended for colonists who can do some of its jobs but not all of them. Roles without skilled work and hunting roles always allow this.</WR_PartialCapabilityLockedTip>
   <WR_RoleAgeBandsLabel>Age groups that may be assigned this role:</WR_RoleAgeBandsLabel>
   <WR_RoleAgeBandsTip>Colonists outside the selected age bands are never assigned or recommended this role. Click a band outside the selection to include everything up to it, click the first or last selected band to remove it, and click a middle band to select only that band. Band edges follow the ages at which the game unlocks work. Every job in this role is possible from age {0}.</WR_RoleAgeBandsTip>
   <WR_WorkTypesLabel>Work types</WR_WorkTypesLabel>
@@ -551,6 +554,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <!-- {0} = file path or error message -->
   <WR_ExportSaved>Saved to {0}</WR_ExportSaved>
   <WR_ExportFailed>Could not save: {0}</WR_ExportFailed>
+  <WR_ExportOverwriteConfirm>{0} already exists. Replace it?</WR_ExportOverwriteConfirm>
   <!-- {0} = role label, {1} = number of jobs moved away by mods -->
   <WR_RestoreMovedJobs>{0} (recover {1} moved jobs)</WR_RestoreMovedJobs>
   <!-- {0} = training path name -->
@@ -785,5 +789,13 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_SeedDropFailure>{0}: lost {1} (was priority {2})</WR_SeedDropFailure>
   <!-- {0} = colonist, {1} = error text -->
   <WR_SeedPawnFailure>{0}: migration failed ({1})</WR_SeedPawnFailure>
+
+  <!-- ===== Welcome dialog (shown once per player per save) ===== -->
+  <WR_WelcomeTitle>WorkRoles</WR_WelcomeTitle>
+  <WR_WelcomeBody>WorkRoles sets your colonists' work priorities from named roles like Doctor, Smith or Farmer that you assign to them.</WR_WelcomeBody>
+  <WR_WelcomeFind>Open WorkRoles with the Work button at the bottom of the screen. The Help tab starts with a guided tour.</WR_WelcomeFind>
+  <WR_WelcomeTakeMeThere>Take me there now</WR_WelcomeTakeMeThere>
+  <!-- {0}x{1} = the game screen (resolution divided by UI scale), {2}x{3} = the design size -->
+  <WR_WelcomeSmallScreen>Your game screen is {0}x{1} (resolution divided by UI scale). WorkRoles is designed for {2}x{3} or larger, for example 1920x1080 at UI scale 1.25. It still works on a smaller screen, but some labels are shortened and the tabs need more scrolling. Lowering the UI scale in the game's options gives the window more room.</WR_WelcomeSmallScreen>
 
 </LanguageData>

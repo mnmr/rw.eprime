@@ -14,7 +14,6 @@ namespace EPrimeReadouts
         private struct BuildState
         {
             internal Map Map;
-            internal int Tick;
             internal ReadoutStore Store;
             internal CountSnapshotOptions Options;
         }
@@ -22,8 +21,7 @@ namespace EPrimeReadouts
         private static readonly Func<BuildState, PoolSnapshot> buildPools =
             state => PoolSnapshot.Build(state.Store.Model.Pools, GameResourceCatalog.Instance);
         private static readonly Func<BuildState, PoolSnapshot, RenderCountSnapshot> buildCounts =
-            (state, _) => GameCounts.BuildSnapshot(
-                state.Map, state.Tick, state.Options);
+            (state, _) => GameCounts.BuildSnapshot(state.Map, state.Options);
 
         // Cache contract:
         // Owner: one ReadoutStore/world at a time.
@@ -33,8 +31,8 @@ namespace EPrimeReadouts
         // Dependencies: PoolsVersion immediately, 204 elapsed game ticks for
         //               counts, the derived collection needs (count-basis
         //               options unioned with the stored count rules) and
-        //               planned-work options immediately; planned-work scans
-        //               independently every 1020 elapsed game ticks;
+        //               planned-work options immediately (planned-work debt
+        //               is read on the same pass as stock);
         //               and (while MultiFloors is active) the map-set stamp so
         //               stack membership changes rebuild entries.
         // Refresh policy: immediate structure; tick-throttled counts, except
@@ -78,7 +76,6 @@ namespace EPrimeReadouts
             if (!ReferenceEquals(cacheOwner, store))
             {
                 cache.Clear();
-                GamePlannedWorkData.Reset();
                 QualityJobsPlannedWork.Reset();
                 cacheOwner = store;
                 unionRulesVersion = -1;
@@ -87,7 +84,6 @@ namespace EPrimeReadouts
                 && cacheMapSetStamp != LevelStacks.MapSetStamp)
             {
                 cache.Clear();
-                GamePlannedWorkData.Reset();
                 cacheMapSetStamp = LevelStacks.MapSetStamp;
             }
 
@@ -97,8 +93,6 @@ namespace EPrimeReadouts
             CountSnapshotOptions options = CurrentOptions(store);
             if (!cacheOptions.Equals(options))
             {
-                if (!cacheOptions.PlannedWork.Equals(options.PlannedWork))
-                    GamePlannedWorkData.Reset();
                 cacheOptions = options;
                 cache.InvalidateCounts();
             }
@@ -112,7 +106,6 @@ namespace EPrimeReadouts
                 new BuildState
                 {
                     Map = map,
-                    Tick = tick,
                     Store = store,
                     Options = options,
                 },
@@ -151,7 +144,6 @@ namespace EPrimeReadouts
         {
             if (map == null) return;
             cache.Remove(map);
-            GamePlannedWorkData.Remove(map);
             QualityJobsPlannedWork.Reset();
             if (cache.Count == 0) cacheOwner = null;
         }
@@ -159,7 +151,6 @@ namespace EPrimeReadouts
         internal static void Reset()
         {
             cache.Clear();
-            GamePlannedWorkData.Reset();
             cacheOwner = null;
             cacheMapSetStamp = -1;
             cacheOptions = default;

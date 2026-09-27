@@ -128,6 +128,7 @@ namespace EPrimeReadouts.UI
 
         public override void DoWindowContents(Rect inRect)
         {
+            TextInputCapture.Observe();
             var store = ReadoutStore.Current;
             if (store == null) return;
 

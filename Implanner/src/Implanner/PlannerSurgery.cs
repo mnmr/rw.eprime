@@ -34,7 +34,9 @@ namespace Implanner
             if (model.AutomationPaused) return change;
 
             change |= EvaluateDoctorFloors(model, pass);
+            change |= PlannerReinstall.Reconcile(model, pass);
             change |= AllocateImplantItems(model, pass);
+            change |= PlannerUpgrades.Reconcile(model, pass);
             change |= ScheduleOperations(model, pass);
             return change;
         }
@@ -152,10 +154,14 @@ namespace Implanner
                 // Pending work on this colony's pawns, traversal-ordered.
                 // ASAP ranks candidates on live pawn facts (move speed,
                 // weapon, skills), sampled once per pawn with pending work;
-                // the batch strategies never read them.
+                // the batch strategies never read them. Each slot also
+                // carries the lowest item quality it accepts: the plan's
+                // minimum, raised until the implant leaves the part no
+                // worse than it is now; a slot nothing can satisfy waits.
                 bool asap = model.Iteration == IterationStrategy.Asap;
                 var work = new List<SurgeryWorkItem>();
                 var requiredItemDef = new Dictionary<(int, string), ThingDef>();
+                var minimumQuality = new Dictionary<(int, string), int>();
                 for (int i = 0; i < colony.PawnIds.Count; i++)
                 {
                     int pawnId = colony.PawnIds[i];
@@ -182,26 +188,45 @@ namespace Implanner
                             ? PawnProjection.RequiredItem(pawn, entry, ordinal)
                             : null;
                         if (item == null) continue;
+                        BodyPartRecord? part =
+                            PawnProjection.ResolveSlotPart(pawn, entry!, ordinal);
+                        if (part == null) continue;
+                        // The same implant is already on its way back to
+                        // this part (a reinstall or the install half of an
+                        // upgrade): that record brings its own item.
+                        if (model.ReinstallsFor(pawnId) != null
+                            && model.IsActiveReinstall(pawnId, GoalKeys.Reinstall(
+                                entry!.Def.defName, pawn.RaceProps.body.GetIndexOfPart(part))))
+                            continue;
+                        int minimum = PawnProjection.MinimumAcceptableQuality(
+                            pawn, entry!, part, evaluation.Plan.MinQuality);
+                        if (minimum == ImplantQuality.None) continue;
                         if (!sampled)
                         {
                             candidate = PawnProjection.CandidateOf(pawn);
                             sampled = true;
                         }
                         requiredItemDef[(pawnId, key)] = item;
+                        minimumQuality[(pawnId, key)] = minimum;
                         work.Add(new SurgeryWorkItem(pawnId, priority,
                             StarRanking.TierOf(model.ImplantStarsOf(goal.ImplantDefName)),
-                            key, goal.ImplantDefName, entry!.Limb, candidate));
+                            key, goal.ImplantDefName, entry!.Limb, candidate,
+                            model.ImplantOrderOf(goal.ImplantDefName)));
                     }
                 }
                 if (work.Count == 0) continue;
                 SurgeryPlanner.Order(work, model.Iteration);
 
-                // This colony's unreserved implant stock per kind, resolved
-                // on first demand; the index's ids are pre-sorted, so
-                // allocation stays lowest-id first, and each kind advances
-                // its own cursor as items are taken.
+                // This colony's unreserved implant stock per kind with each
+                // item's quality, resolved on first demand; the index's ids
+                // are pre-sorted, so among equal qualities the oldest item
+                // goes first. Each slot takes the best item it accepts
+                // (ImplantQuality.Choose; the rollout order decides who
+                // gets the best), or the lowest with "better implants to
+                // high-priority colonists" on: PlannerUpgrades then moves
+                // the better items by priority.
                 var stockByDef = new Dictionary<ThingDef, List<Thing>>();
-                var cursor = new Dictionary<ThingDef, int>();
+                var qualitiesByDef = new Dictionary<ThingDef, List<int>>();
 
                 for (int i = 0; i < work.Count; i++)
                 {
@@ -215,11 +240,19 @@ namespace Implanner
                     {
                         stock = FreeStock(colony, index, required, reservedItems);
                         stockByDef.Add(required, stock);
+                        var qualities = new List<int>(stock.Count);
+                        for (int s = 0; s < stock.Count; s++)
+                            qualities.Add(ImplantQualities.QualityOf(stock[s]));
+                        qualitiesByDef.Add(required, qualities);
                     }
-                    cursor.TryGetValue(required, out int at);
-                    if (at >= stock.Count) continue;
-                    Thing thing = stock[at];
-                    cursor[required] = at + 1;
+                    List<int> stockQualities = qualitiesByDef[required];
+                    int pick = ImplantQuality.Choose(stockQualities,
+                        minimumQuality[(unit.PawnId, unit.GoalKey)],
+                        preferLowest: model.UpgradeByPriority);
+                    if (pick < 0) continue;
+                    Thing thing = stock[pick];
+                    stock.RemoveAt(pick);
+                    stockQualities.RemoveAt(pick);
                     change |= model.Reserve(
                         thing.thingIDNumber, unit.PawnId, unit.GoalKey);
                     reservedItems.Add(thing.thingIDNumber);
@@ -303,6 +336,9 @@ namespace Implanner
             Recovering = 2,
             Scheduled = 3,
             BlockedByFloor = 4,
+            /// The surgery would destroy something on the part that cannot
+            /// come back (WouldDestroy), so it is never scheduled.
+            BlockedByLoss = 5,
         }
 
         /// Presentation projection of one pawn's surgery pipeline, derived
@@ -315,12 +351,14 @@ namespace Implanner
         /// so a reservation stranded at another colony reads as merely
         /// Reserved, never Recovering or AwaitingBatch. Returns slot goal
         /// key → status for every missing slot that is at least ready or
-        /// scheduled.
+        /// scheduled, or blocked because its surgery would destroy
+        /// lossLabel (the first such hediff's label).
         internal static Dictionary<string, SlotStatus> PresentationFor(
             PlannerModel model, Pawn pawn, Plan plan,
             Dictionary<string, bool> reservationReadiness,
-            out int effectiveFloor)
+            out int effectiveFloor, out string lossLabel)
         {
+            lossLabel = "";
             var statuses = new Dictionary<string, SlotStatus>(StringComparer.Ordinal);
             PawnPlace place = ColonyScope.PlaceOf(pawn);
             // The patient never operates on themselves: the floor and the
@@ -332,11 +370,12 @@ namespace Implanner
             if (goals.Count == 0) return statuses;
 
             List<string> missing = PawnProjection.MissingImplantSlotKeys(
-                model, pawn, goals);
+                model, pawn, goals, plan.MinQuality);
             if (missing.Count == 0) return statuses;
             List<string> batch = SurgeryPlanner.ComputeBatch(
                 missing, model, goals, model.Iteration,
-                OptionalFlags(pawn, goals, missing));
+                OptionalFlags(pawn, goals, missing),
+                PrecededBy(pawn, goals, missing));
 
             var ready = new bool[batch.Count];
             for (int i = 0; i < batch.Count; i++)
@@ -344,13 +383,21 @@ namespace Implanner
                     || (reservationReadiness.TryGetValue(batch[i], out bool keyReady)
                         && keyReady);
             List<string> releasable = SurgeryPlanner.Releasable(
-                batch, ready, model.Iteration, OptionalFlags(pawn, goals, batch));
+                batch, ready, model.Iteration, OptionalFlags(pawn, goals, batch),
+                HeldFlags(pawn, goals, batch, ready));
             bool gated = releasable.Count > 0 && !HealthGate(pawn);
             bool floorBlocked = effectiveFloor > bestOther;
 
             for (int i = 0; i < missing.Count; i++)
             {
                 string key = missing[i];
+                Hediff? loss = LossOf(pawn, goals, key);
+                if (loss != null)
+                {
+                    statuses[key] = SlotStatus.BlockedByLoss;
+                    if (lossLabel.Length == 0) lossLabel = loss.LabelCap;
+                    continue;
+                }
                 if (model.OwnedBill(pawn.thingIDNumber, key) != null)
                 {
                     statuses[key] = floorBlocked
@@ -389,6 +436,134 @@ namespace Implanner
                     && PlannerProduction.ProductionRecipeFor(item) == null;
             }
             return flags;
+        }
+
+        /// Per key, the index of another key whose part-wiping surgery
+        /// (ImplantCatalogEntry.WipesPart: Vanilla Genetics Expanded's
+        /// neuron reinforcement) would push its implant out, because the
+        /// wiper sits on the same part or above it; -1 otherwise. Null when
+        /// no key is a wiper, the common case. Pass-scoped allocation.
+        internal static int[]? PrecededBy(
+            Pawn pawn, IReadOnlyList<ImplantGoal> goals, List<string> keys)
+        {
+            ResolveParts(pawn, goals, keys, out BodyPartRecord?[]? parts,
+                out bool[]? wipes);
+            if (parts == null) return null;
+            var result = new int[keys.Count];
+            for (int i = 0; i < keys.Count; i++)
+            {
+                result[i] = -1;
+                if (parts[i] == null) continue;
+                for (int j = 0; j < keys.Count; j++)
+                    if (j != i && wipes![j] && parts[j] != null
+                        && IsSameOrAncestor(parts[j]!, parts[i]!))
+                    {
+                        result[i] = j;
+                        break;
+                    }
+            }
+            return result;
+        }
+
+        /// Per batch key, whether it waits for a READY part wiper that would
+        /// push it out (SurgeryPlanner.Releasable's held flags): the wiper
+        /// goes in first, the key on a later pass. A wiper still waiting for
+        /// its item holds nothing back; if it arrives later, what it pushes
+        /// out is reinstalled (PlannerReinstall). Null when nothing waits.
+        internal static bool[]? HeldFlags(Pawn pawn, IReadOnlyList<ImplantGoal> goals,
+            List<string> batch, bool[] ready)
+        {
+            ResolveParts(pawn, goals, batch, out BodyPartRecord?[]? parts,
+                out bool[]? wipes);
+            if (parts == null) return null;
+            var held = new bool[batch.Count];
+            for (int i = 0; i < batch.Count; i++)
+            {
+                if (parts[i] == null) continue;
+                for (int j = 0; j < batch.Count && !held[i]; j++)
+                    held[i] = j != i && wipes![j] && ready[j] && parts[j] != null
+                        && IsSameOrAncestor(parts[j]!, parts[i]!);
+            }
+            return held;
+        }
+
+        /// The slot part and wiper flag of each key; both null when no key
+        /// is a part wiper.
+        private static void ResolveParts(Pawn pawn, IReadOnlyList<ImplantGoal> goals,
+            List<string> keys, out BodyPartRecord?[]? parts, out bool[]? wipes)
+        {
+            parts = null;
+            wipes = null;
+            bool anyWiper = false;
+            for (int i = 0; i < keys.Count && !anyWiper; i++)
+                anyWiper = GoalKeys.TryResolveImplantSlot(goals, keys[i],
+                        out ImplantGoal candidate, out _)
+                    && Catalogs.ImplantByDefName(candidate.ImplantDefName)?.WipesPart == true;
+            if (!anyWiper) return;
+            wipes = new bool[keys.Count];
+            parts = new BodyPartRecord?[keys.Count];
+            for (int i = 0; i < keys.Count; i++)
+            {
+                if (!GoalKeys.TryResolveImplantSlot(
+                        goals, keys[i], out ImplantGoal goal, out int ordinal))
+                    continue;
+                ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
+                if (entry == null) continue;
+                wipes[i] = entry.WipesPart;
+                parts[i] = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+            }
+        }
+
+        /// Whether ancestor is the part itself or one of its parents.
+        internal static bool IsSameOrAncestor(BodyPartRecord ancestor, BodyPartRecord part)
+        {
+            for (BodyPartRecord? walk = part; walk != null; walk = walk.parent)
+                if (walk == ancestor) return true;
+            return false;
+        }
+
+        /// The hediff the slot's surgery would destroy (WouldDestroy), or
+        /// null: surgeries that restore the part only.
+        private static Hediff? LossOf(Pawn pawn, IReadOnlyList<ImplantGoal> goals, string key)
+        {
+            if (!GoalKeys.TryResolveImplantSlot(goals, key, out ImplantGoal goal, out int ordinal))
+                return null;
+            ImplantCatalogEntry? entry = Catalogs.ImplantByDefName(goal.ImplantDefName);
+            if (entry == null) return null;
+            BodyPartRecord? part = PawnProjection.ResolveSlotPart(pawn, entry, ordinal);
+            return part != null ? WouldDestroy(pawn, entry, part) : null;
+        }
+
+        /// What installing the entry at the part would destroy for good.
+        /// A surgery that restores the part (replacements, part wipers)
+        /// removes every hediff on it and below it; items drop for those
+        /// that have one, harmful conditions (scars, old injuries) are
+        /// happily gone, and hediffs the game keeps through restoration
+        /// (psylink, mechlink) stay. Anything else would be lost, and so
+        /// would an implant a part wiper pushes out that no surgery can
+        /// install again right now (PlannerReinstall puts the others back).
+        /// Implanner never schedules such a surgery (owner, 2026-09-26).
+        /// In-place upgrades remove only their base and are exempt.
+        internal static Hediff? WouldDestroy(Pawn pawn, ImplantCatalogEntry entry,
+            BodyPartRecord part)
+        {
+            if (entry.UpgradesFrom != null || (!entry.IsReplacement && !entry.WipesPart))
+                return null;
+            List<Hediff> hediffs = pawn.health.hediffSet.hediffs;
+            for (int i = 0; i < hediffs.Count; i++)
+            {
+                Hediff hediff = hediffs[i];
+                if (hediff.Part == null || !IsSameOrAncestor(part, hediff.Part))
+                    continue;
+                HediffDef def = hediff.def;
+                if (def == entry.Def || def.isBad || def.keepOnBodyPartRestoration)
+                    continue;
+                if (def.spawnThingOnRemoved == null) return hediff;
+                if (entry.WipesPart
+                    && PlannerReinstall.RecipeFor(pawn, def, hediff.Part, checkWorker: false) == null)
+                    return hediff;
+            }
+            return null;
         }
 
         /// Whether the slot needs no implant item delivered (an upgrade over
@@ -458,6 +633,11 @@ namespace Implanner
                 List<string>? stale = null;
                 foreach (KeyValuePair<string, string> pair in owned)
                 {
+                    // Reinstall operations and upgrade removals answer to
+                    // their records (PlannerReinstall), never to the plan.
+                    if (model.IsActiveReinstall(pawnId, pair.Key)
+                        || GoalKeys.IsUpgrade(pair.Key))
+                        continue;
                     if (!evaluation.Missing.Contains(pair.Key))
                         (stale ??= new List<string>()).Add(pair.Key);
                     else if (pass.FindBill(pawn.BillStack, pair.Value) is Bill_Medical bill)
@@ -483,6 +663,68 @@ namespace Implanner
             // Implanner operations after retraction. New colonists only
             // start while the colony stays under SurgeryConcurrency; one
             // already scheduled keeps completing its batch regardless.
+            Dictionary<string, int> plannedByColony = PlannedByColony(model, index);
+
+            for (int i = 0; i < pawnIds.Count; i++)
+            {
+                int pawnId = pawnIds[i];
+                Colony? colony = index.ColonyOfPawn(pawnId);
+                // Away pawns receive no new surgery automation.
+                if (colony == null) continue;
+                PawnEvaluation? evaluation = pass.Evaluate(pawnId);
+                if (evaluation == null) continue;
+                Pawn pawn = index.PawnsById[pawnId];
+                List<string> batch = evaluation.Batch;
+                if (batch.Count == 0) continue;
+
+                // A key is ready when its reserved item exists at the pawn's
+                // colony, or when it needs no item at all. The batch
+                // strategies release the whole batch only once every key is
+                // ready; ASAP releases every ready key.
+                var ready = new bool[batch.Count];
+                for (int k = 0; k < batch.Count; k++)
+                {
+                    ready[k] = NeedsNoItem(pawn, evaluation.Goals, batch[k])
+                        || (reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
+                            && index.ItemsById.ContainsKey(itemId)
+                            && index.SameColony(pawnId, itemId));
+                }
+                List<string> releasable = SurgeryPlanner.Releasable(
+                    batch, ready, model.Iteration,
+                    OptionalFlags(pawn, evaluation.Goals, batch),
+                    HeldFlags(pawn, evaluation.Goals, batch, ready));
+
+                // Batch membership and health gate the RELEASE of new
+                // operations — an already-scheduled valid operation is
+                // never pulled back because the pawn got wounded or the
+                // batch grew.
+                if (releasable.Count == 0 || !HealthGate(pawn)) continue;
+                int floor = PatientFloor(model, index, colony, pawn, pawnId);
+
+                // The cap gates only colonists without scheduled operations.
+                IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
+                if (owned == null || owned.Count == 0)
+                {
+                    plannedByColony.TryGetValue(
+                        colony.LocationId, out int planned);
+                    if (planned >= model.SurgeryConcurrency) continue;
+                    plannedByColony[colony.LocationId] = planned + 1;
+                }
+
+                for (int k = 0; k < releasable.Count; k++)
+                    change |= EnsureOperation(model, pass, pawn, pawnId,
+                        evaluation.Goals, releasable[k], floor);
+            }
+            SweepUnassigned(model, pass, ref change);
+            return change;
+        }
+
+        /// Colonists per colony occupying a concurrent-surgery slot: those
+        /// holding Implanner operations, plus hospitalized colony pawns when
+        /// CountHospitalized is on.
+        internal static Dictionary<string, int> PlannedByColony(PlannerModel model,
+            ColonyIndex index)
+        {
             var plannedByColony = new Dictionary<string, int>();
             var countedPawns = new HashSet<int>();
             foreach (KeyValuePair<int, IReadOnlyDictionary<string, string>> pair
@@ -528,62 +770,18 @@ namespace Implanner
                     }
                 }
             }
+            return plannedByColony;
+        }
 
-            for (int i = 0; i < pawnIds.Count; i++)
-            {
-                int pawnId = pawnIds[i];
-                Colony? colony = index.ColonyOfPawn(pawnId);
-                // Away pawns receive no new surgery automation.
-                if (colony == null) continue;
-                PawnEvaluation? evaluation = pass.Evaluate(pawnId);
-                if (evaluation == null) continue;
-                Pawn pawn = index.PawnsById[pawnId];
-                List<string> batch = evaluation.Batch;
-                if (batch.Count == 0) continue;
-
-                // A key is ready when its reserved item exists at the pawn's
-                // colony, or when it needs no item at all. The batch
-                // strategies release the whole batch only once every key is
-                // ready; ASAP releases every ready key.
-                var ready = new bool[batch.Count];
-                for (int k = 0; k < batch.Count; k++)
-                {
-                    ready[k] = NeedsNoItem(pawn, evaluation.Goals, batch[k])
-                        || (reservedItemByGoal.TryGetValue((pawnId, batch[k]), out int itemId)
-                            && index.ItemsById.ContainsKey(itemId)
-                            && index.SameColony(pawnId, itemId));
-                }
-                List<string> releasable = SurgeryPlanner.Releasable(
-                    batch, ready, model.Iteration,
-                    OptionalFlags(pawn, evaluation.Goals, batch));
-
-                // Batch membership and health gate the RELEASE of new
-                // operations — an already-scheduled valid operation is
-                // never pulled back because the pawn got wounded or the
-                // batch grew.
-                if (releasable.Count == 0 || !HealthGate(pawn)) continue;
-                int floor = PatientFloor(model, index, colony, pawn, pawnId);
-
-                // The cap gates only colonists without scheduled operations.
-                IReadOnlyDictionary<string, string>? owned = model.OwnedBillsFor(pawnId);
-                if (owned == null || owned.Count == 0)
-                {
-                    plannedByColony.TryGetValue(
-                        colony.LocationId, out int planned);
-                    if (planned >= model.SurgeryConcurrency) continue;
-                    plannedByColony[colony.LocationId] = planned + 1;
-                }
-
-                for (int k = 0; k < releasable.Count; k++)
-                    change |= EnsureOperation(model, pass, pawn, pawnId,
-                        evaluation.Goals, releasable[k], floor);
-            }
-
-            // Sweep records of pawns that lost their assignment or left
-            // play entirely (no longer alive anywhere as our colonist); a
-            // still-present pawn also loses the orphaned bills themselves.
-            // A pawn merely away (caravan, transporter or gravship in
-            // flight, held in a casket) is present and keeps its records.
+        /// Sweeps records of pawns that lost their assignment or left play
+        /// entirely (no longer alive anywhere as our colonist); a
+        /// still-present pawn also loses the orphaned bills themselves. A
+        /// pawn merely away (caravan, transporter or gravship in flight,
+        /// held in a casket) is present and keeps its records.
+        private static void SweepUnassigned(PlannerModel model, ReconcilePass pass,
+            ref PlannerChange change)
+        {
+            ColonyIndex index = pass.Index;
             var billPawns = new List<int>(model.OwnedBills.Keys);
             billPawns.Sort();
             for (int i = 0; i < billPawns.Count; i++)
@@ -597,6 +795,9 @@ namespace Implanner
                 keys.Sort(StringComparer.Ordinal);
                 for (int k = 0; k < keys.Count; k++)
                 {
+                    // A present pawn gets pushed-out implants back even
+                    // without a plan.
+                    if (present && model.IsActiveReinstall(pawnId, keys[k])) continue;
                     if (present)
                     {
                         Bill? bill = pass.FindBill(pawn.BillStack, owned[keys[k]]);
@@ -605,7 +806,6 @@ namespace Implanner
                     change |= model.RemoveOwnedBill(pawnId, keys[k]);
                 }
             }
-            return change;
         }
 
         /// The floor this patient's operations enforce: the colony floor,
@@ -662,20 +862,36 @@ namespace Implanner
             }
             if (recipe == null) return PlannerChange.None;
 
-            // Our recorded operation still stands: keep it, tracking the
-            // effective doctor floor.
             string? recordedId = model.OwnedBill(pawnId, goalKey);
             Bill? recorded = recordedId != null
                 ? pass.FindBill(pawn.BillStack, recordedId)
                 : null;
+            var change = PlannerChange.None;
+
+            // Never a surgery that destroys something for good: our own
+            // operation is withdrawn if such a hediff appeared since, and
+            // none is created while one is there.
+            if (WouldDestroy(pawn, entry, part) != null)
+            {
+                if (recorded != null) pawn.BillStack.Delete(recorded);
+                if (recordedId != null) change |= model.RemoveOwnedBill(pawnId, goalKey);
+                return change | model.DropReinstalls(pawnId, goalKey);
+            }
+
+            // Our recorded operation still stands: keep it, tracking the
+            // effective doctor floor. A part wiper pushes out the implants
+            // already on the part; while its operation waits, the set it
+            // will push out is kept current (PlannerReinstall).
             if (recorded is Bill_Medical mine
                 && mine.recipe == recipe && mine.Part == part)
             {
                 if (mine.allowedSkillRange.min != floor)
                     mine.allowedSkillRange.min = floor;
-                return PlannerChange.None;
+                if (entry.WipesPart)
+                    change |= model.SetPendingReinstalls(pawnId, goalKey,
+                        PlannerReinstall.PushedOut(pawn, entry, part));
+                return change;
             }
-            var change = PlannerChange.None;
             if (recordedId != null)
             {
                 // The recorded operation no longer matches the selected
@@ -696,12 +912,40 @@ namespace Implanner
                     && existing.recipe == recipe && existing.Part == part)
                     return change;
 
+            change |= model.SetOwnedBill(pawnId, goalKey,
+                pass.BillId(CreateOperation(pawn, recipe, part, floor)));
+            if (entry.WipesPart)
+                change |= model.SetPendingReinstalls(pawnId, goalKey,
+                    PlannerReinstall.PushedOut(pawn, entry, part));
+            return change;
+        }
+
+        /// A new operation bill on the pawn, the way the health tab creates
+        /// one (HealthCardUtility.CreateSurgeryBill without its messages),
+        /// at the enforced doctor floor. Its implant item is bound through
+        /// SurgeryBindings once the reservation and bill record publish.
+        internal static Bill_Medical CreateOperation(Pawn pawn, RecipeDef recipe,
+            BodyPartRecord part, int floor)
+        {
             var bill = new Bill_Medical(recipe, null);
-            bills.AddBill(bill);
+            pawn.BillStack.AddBill(bill);
             bill.Part = part;
             bill.allowedSkillRange.min = floor;
-            return change | model.SetOwnedBill(pawnId, goalKey, pass.BillId(bill));
+            return bill;
         }
+
+        /// The floor a patient's operations enforce at their colony, for
+        /// callers outside this class.
+        internal static int FloorFor(PlannerModel model, ColonyIndex index,
+            Colony colony, Pawn pawn) =>
+            PatientFloor(model, index, colony, pawn, pawn.thingIDNumber);
+
+        /// The surgery health gate, for callers outside this class.
+        internal static bool Healthy(Pawn pawn) => HealthGate(pawn);
+
+        /// Whether the recipe's own part filter accepts the part.
+        internal static bool AppliesTo(RecipeDef recipe, Pawn pawn, BodyPartRecord part) =>
+            WorkerAppliesTo(recipe, pawn, part);
 
         /// The deterministic surgery recipe for an implant at a part: lowest
         /// defName among the currently available candidates. A recipe with

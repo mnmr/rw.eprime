@@ -9,74 +9,13 @@ namespace EPrimeReadouts
     /// Scans one map for work the colony has planned but not yet paid for, and
     /// folds the material it owes into the shared count accumulator.
     ///
-    /// Generic work is read inside the tick-throttled count builder. QJA work is
-    /// projected only behind QJA's source-reference invalidation gate and then
-    /// reused by that count builder. Reads game state; mutates nothing.
+    /// Everything is read inside the tick-throttled count builder, on the same
+    /// pass as stock, so stock and debt always describe the same tick. QJA
+    /// supplies only which bills and targets it manages; what they still owe
+    /// is read live here like any other work. Reads game state; mutates nothing.
     internal static class PlannedWorkCounts
     {
-        private sealed class QualityMapBuilder
-        {
-            internal QualityMapBuilder(Map map)
-            {
-                Map = map;
-            }
-
-            internal readonly Map Map;
-            internal readonly List<Bill_Production> Bills =
-                new List<Bill_Production>();
-            internal readonly List<Thing> Targets = new List<Thing>();
-            internal readonly Dictionary<ThingDef, List<QualityJobsWorkEntry>>
-                WorkByResource = new Dictionary<ThingDef,
-                    List<QualityJobsWorkEntry>>(IdentityComparer<ThingDef>.Instance);
-            internal readonly List<ThingDef> Resources = new List<ThingDef>();
-            internal Dictionary<CarriedKey, int>? Carried;
-            internal bool CarriedBuilt;
-
-            internal void Add(ThingDef resource, QualityJobsWorkEntry work)
-            {
-                if (!WorkByResource.TryGetValue(
-                        resource, out List<QualityJobsWorkEntry> entries))
-                {
-                    entries = new List<QualityJobsWorkEntry>();
-                    WorkByResource.Add(resource, entries);
-                    Resources.Add(resource);
-                }
-                entries.Add(work);
-            }
-
-            internal QualityJobsMapWorkSnapshot Build()
-            {
-                ThingDef[] resources = Resources.ToArray();
-                System.Array.Sort(resources, compareResourceDefs);
-                var projected = new QualityJobsResourceWork[resources.Length];
-                for (int i = 0; i < resources.Length; i++)
-                {
-                    ThingDef resource = resources[i];
-                    QualityJobsWorkEntry[] entries =
-                        WorkByResource[resource].ToArray();
-                    System.Array.Sort(entries, compareQualityWork);
-                    projected[i] = new QualityJobsResourceWork(
-                        resource, entries);
-                }
-                Bill_Production[] bills = Bills.ToArray();
-                System.Array.Sort(bills, compareBills);
-                Thing[] targets = Targets.ToArray();
-                System.Array.Sort(targets, compareTargets);
-                return new QualityJobsMapWorkSnapshot(
-                    Map, bills, targets, projected);
-            }
-        }
-
-        private static readonly System.Comparison<ThingDef> compareResourceDefs =
-            CompareResourceDefs;
-        private static readonly System.Comparison<QualityMapBuilder>
-            compareQualityMaps = CompareQualityMaps;
-        private static readonly System.Comparison<Bill_Production> compareBills =
-            CompareBills;
-        private static readonly System.Comparison<Thing> compareTargets =
-            CompareTargets;
-        private static readonly System.Comparison<QualityJobsWorkEntry>
-            compareQualityWork = CompareQualityWork;
+        private static readonly System.Comparison<Map> compareMaps = CompareMaps;
 
         private readonly struct CarriedKey : System.IEquatable<CarriedKey>
         {
@@ -112,64 +51,77 @@ namespace EPrimeReadouts
                 ? qualityJobs?.For(map)
                 : null;
             if (options.ReserveBills)
+            {
                 AccumulateBills(map, accumulator, managed);
+                if (managed != null)
+                    for (int i = 0; i < managed.BillJobs.Length; i++)
+                        AccumulateManagedBill(managed.BillJobs[i], accumulator);
+            }
             if (options.ReserveBuildables)
-                AccumulateBuildables(map, accumulator, managed);
-            managed?.Accumulate(
-                accumulator, options.ReserveBills, options.ReserveBuildables);
+            {
+                // One carried-material table per map: generic and managed
+                // targets are disjoint, so each takes only its own credit.
+                Dictionary<CarriedKey, int>? carried = CarriedToBuildables(map);
+                AccumulateConstructibles(map, ThingRequestGroup.Blueprint,
+                    accumulator, managed, carried);
+                AccumulateConstructibles(map, ThingRequestGroup.BuildingFrame,
+                    accumulator, managed, carried);
+                if (managed != null)
+                    for (int i = 0; i < managed.ConstructionJobs.Length; i++)
+                        AccumulateManagedConstruction(
+                            managed.ConstructionJobs[i], accumulator, carried);
+            }
         }
 
+        /// Groups QJA's jobs by map, maps in uniqueID order and jobs in QJA's
+        /// own order, so the projection is deterministic.
         internal static QualityJobsPlannedWorkSnapshot BuildQualityJobsSnapshot(
             QualityJobsBridge.ManagedJobsSnapshot source)
         {
             if (source.Bills.Length == 0 && source.Construction.Length == 0)
                 return QualityJobsPlannedWorkSnapshot.Empty;
 
-            var byMap = new Dictionary<Map, QualityMapBuilder>(
+            var bills = new Dictionary<Map, List<QualityJobsBridge.ManagedBillJob>>(
                 IdentityComparer<Map>.Instance);
-            var maps = new List<QualityMapBuilder>();
-
+            var construction = new Dictionary<Map,
+                List<QualityJobsBridge.ManagedConstructionJob>>(
+                IdentityComparer<Map>.Instance);
+            var maps = new List<Map>();
             for (int i = 0; i < source.Bills.Length; i++)
-            {
-                QualityJobsBridge.ManagedBillJob job = source.Bills[i];
-                QualityMapBuilder map = BuilderFor(job.Map, byMap, maps);
-                map.Bills.Add(job.Bill);
-                ProjectManagedBill(job, map);
-            }
-
+                ListFor(bills, source.Bills[i].Map, maps).Add(source.Bills[i]);
             for (int i = 0; i < source.Construction.Length; i++)
-            {
-                QualityJobsBridge.ManagedConstructionJob job =
-                    source.Construction[i];
-                QualityMapBuilder map = BuilderFor(job.Map, byMap, maps);
-                for (int target = 0; target < job.Targets.Length; target++)
-                    map.Targets.Add(job.Targets[target]);
-                ProjectManagedConstruction(job, map);
-            }
+                ListFor(construction, source.Construction[i].Map, maps)
+                    .Add(source.Construction[i]);
 
-            maps.Sort(compareQualityMaps);
+            maps.Sort(compareMaps);
             var projected = new QualityJobsMapWorkSnapshot[maps.Count];
             for (int i = 0; i < maps.Count; i++)
-                projected[i] = maps[i].Build();
+            {
+                Map map = maps[i];
+                projected[i] = new QualityJobsMapWorkSnapshot(map,
+                    bills.TryGetValue(map, out var mapBills)
+                        ? mapBills.ToArray()
+                        : System.Array.Empty<QualityJobsBridge.ManagedBillJob>(),
+                    construction.TryGetValue(map, out var mapConstruction)
+                        ? mapConstruction.ToArray()
+                        : System.Array.Empty<QualityJobsBridge.ManagedConstructionJob>());
+            }
             return new QualityJobsPlannedWorkSnapshot(projected);
         }
 
-        private static QualityMapBuilder BuilderFor(
-            Map map,
-            Dictionary<Map, QualityMapBuilder> byMap,
-            List<QualityMapBuilder> ordered)
+        private static List<T> ListFor<T>(
+            Dictionary<Map, List<T>> byMap, Map map, List<Map> maps)
         {
-            if (byMap.TryGetValue(map, out QualityMapBuilder builder))
-                return builder;
-            builder = new QualityMapBuilder(map);
-            byMap.Add(map, builder);
-            ordered.Add(builder);
-            return builder;
+            if (byMap.TryGetValue(map, out List<T> list)) return list;
+            list = new List<T>();
+            byMap.Add(map, list);
+            if (!maps.Contains(map)) maps.Add(map);
+            return list;
         }
 
-        private static void ProjectManagedBill(
+        private static void AccumulateManagedBill(
             QualityJobsBridge.ManagedBillJob job,
-            QualityMapBuilder map)
+            CountAccumulator accumulator)
         {
             int queued = job.RemainingAcceptedIterations;
             List<IngredientCount> ingredients = job.Recipe.ingredients;
@@ -188,30 +140,21 @@ namespace EPrimeReadouts
                 int drain = PlannedWorkMath.BillDebt(
                     unitCost, queued, attempts);
                 if (drain <= 0) continue;
-                map.Add(resource, new QualityJobsWorkEntry(
-                    PlannedWorkKind.Bill,
-                    job.Product.defName,
-                    stuffDefName: null,
-                    queued,
-                    unitCost,
-                    drain));
+                accumulator.AddBillWork(resource.defName, resource.shortHash,
+                    job.Product.defName, queued, unitCost, drain,
+                    PlannedWorkSource.QualityJob);
             }
         }
 
-        private static void ProjectManagedConstruction(
+        private static void AccumulateManagedConstruction(
             QualityJobsBridge.ManagedConstructionJob job,
-            QualityMapBuilder map)
+            CountAccumulator accumulator,
+            Dictionary<CarriedKey, int>? carried)
         {
             if (job.Targets.Length == 0) return;
             List<ThingDefCountClass> cost = job.BuildableDef.CostListAdjusted(
                 job.Stuff, errorOnNullStuff: false);
             if (cost == null || cost.Count == 0) return;
-
-            if (!map.CarriedBuilt)
-            {
-                map.Carried = CarriedToBuildables(map.Map);
-                map.CarriedBuilt = true;
-            }
 
             float attempts = PlannedWorkMath.ExpectedAttempts(job.Probability);
             float baseReturned = job.BuildableDef.resourcesFractionWhenDeconstructed;
@@ -237,7 +180,7 @@ namespace EPrimeReadouts
                     {
                         int outstanding = constructible.ThingCountNeeded(resource);
                         int inTransit = TakeCarried(
-                            map.Carried, target, resource, outstanding);
+                            carried, target, resource, outstanding);
                         targetDebt = PlannedWorkMath.BuildableDebt(
                             outstanding - inTransit,
                             item.count,
@@ -257,13 +200,10 @@ namespace EPrimeReadouts
                 }
 
                 if (drain <= 0) continue;
-                map.Add(resource, new QualityJobsWorkEntry(
-                    PlannedWorkKind.Buildable,
-                    job.BuildableDef.defName,
-                    job.Stuff?.defName,
-                    queued: job.Targets.Length,
-                    unitCost: item.count,
-                    drain));
+                accumulator.AddBuildableWork(resource.defName, resource.shortHash,
+                    job.BuildableDef.defName, job.Stuff?.defName,
+                    queued: job.Targets.Length, unitCost: item.count, drain,
+                    PlannedWorkSource.QualityJob);
             }
         }
 
@@ -274,37 +214,8 @@ namespace EPrimeReadouts
                 ? int.MaxValue : left + right;
         }
 
-        private static int CompareResourceDefs(ThingDef left, ThingDef right)
-            => string.Compare(left?.defName, right?.defName,
-                System.StringComparison.Ordinal);
-
-        private static int CompareQualityMaps(
-            QualityMapBuilder left, QualityMapBuilder right)
-            => left.Map.uniqueID.CompareTo(right.Map.uniqueID);
-
-        private static int CompareBills(Bill_Production left, Bill_Production right)
-            => string.Compare(left.GetUniqueLoadID(), right.GetUniqueLoadID(),
-                System.StringComparison.Ordinal);
-
-        private static int CompareTargets(Thing left, Thing right)
-            => left.thingIDNumber.CompareTo(right.thingIDNumber);
-
-        private static int CompareQualityWork(
-            QualityJobsWorkEntry left, QualityJobsWorkEntry right)
-        {
-            int compare = left.Kind.CompareTo(right.Kind);
-            if (compare != 0) return compare;
-            compare = string.Compare(left.WorkDefName, right.WorkDefName,
-                System.StringComparison.Ordinal);
-            if (compare != 0) return compare;
-            compare = string.Compare(left.StuffDefName, right.StuffDefName,
-                System.StringComparison.Ordinal);
-            if (compare != 0) return compare;
-            compare = left.UnitCost.CompareTo(right.UnitCost);
-            if (compare != 0) return compare;
-            compare = left.Queued.CompareTo(right.Queued);
-            return compare != 0 ? compare : left.Drain.CompareTo(right.Drain);
-        }
+        private static int CompareMaps(Map left, Map right)
+            => left.uniqueID.CompareTo(right.uniqueID);
 
         // ---- bills -------------------------------------------------------
 
@@ -454,18 +365,6 @@ namespace EPrimeReadouts
         }
 
         // ---- buildables --------------------------------------------------
-
-        private static void AccumulateBuildables(
-            Map map,
-            CountAccumulator accumulator,
-            QualityJobsMapWorkSnapshot? managed)
-        {
-            Dictionary<CarriedKey, int>? carried = CarriedToBuildables(map);
-            AccumulateConstructibles(map, ThingRequestGroup.Blueprint,
-                accumulator, managed, carried);
-            AccumulateConstructibles(map, ThingRequestGroup.BuildingFrame,
-                accumulator, managed, carried);
-        }
 
         private static void AccumulateConstructibles(
             Map map, ThingRequestGroup group,

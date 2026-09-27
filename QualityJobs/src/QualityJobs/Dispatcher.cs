@@ -57,7 +57,7 @@ namespace QualityJobs
             // Store only calls TryDispatch with non-null spawned UFTs; guard defensively.
             if (uft == null || !uft.Spawned) return;
 
-            RecipeDef? recipe = uft.Recipe;
+            RecipeDef? recipe = ManagedRecipes.Registered(uft.Recipe) ?? uft.Recipe;
             if (recipe == null) return;
 
             ResumeCondition condition = ConditionFor(store, entry);
@@ -96,7 +96,8 @@ namespace QualityJobs
             RecipeDef recipe, Pawn finisher)
         {
             StyleSnapshot? snap = entry.snapshot;
-            var bill = new Bill_ProductionWithUft(recipe, snap?.precept);
+            // The game's factory, so other mods' MakeNewBill hooks apply.
+            var bill = (Bill_ProductionWithUft)recipe.MakeNewBill(snap?.precept);
             if (snap != null && snap.known)
             {
                 bill.style = snap.style;
@@ -346,6 +347,9 @@ namespace QualityJobs
 
         internal static WorkGiverDef? WorkGiverForRecipe(RecipeDef recipe)
         {
+            // Runtime clones (unresolved defNameHash) would all collide on one
+            // key and miss ThingDef.recipes benches; resolve to the registered def.
+            recipe = ManagedRecipes.Registered(recipe) ?? recipe;
             if (s_workTypeCache.TryGetValue(recipe, out WorkGiverDef? cached))
                 return cached;
             List<WorkGiverDef> givers = DefDatabase<WorkGiverDef>.AllDefsListForReading;
@@ -665,31 +669,37 @@ namespace QualityJobs
         public static void RestoreAllToVanilla(QualityJobsStore store)
         {
             for (int i = store.entries.Count - 1; i >= 0; i--)
-            {
-                WorkItemEntry e = store.entries[i];
-                DeleteFinishBill(store, e);
-                if (e.uft != null && !e.uft.Destroyed
-                    && (e.state == WorkItemState.Paused || e.state == WorkItemState.Dispatched))
-                {
-                    e.uft.BoundBill = null;
-                    Pawn? owner = null;
-                    // Skip SelectFinisher when recipe is null to avoid NRE.
-                    if (e.uft.Map != null && e.uft.Recipe != null)
-                        owner = SelectFinisher(e.uft.Map, e.uft.Recipe, default, relaxed: true);
-                    if (owner == null && e.originalCreator != null && !e.originalCreator.Dead)
-                        owner = e.originalCreator;
-                    if (owner != null) UftAuthor.Assign(e.uft, owner);
-                    // M5: no owner could be assigned — clear the reserved label so
-                    // post-disable saves don't carry the mod label on authorless items.
-                    else UftAuthor.ClearLabelIfReserved(e.uft);
-                }
-            }
+                ReleaseToVanilla(store, store.entries[i]);
             // Construction plan cleanup (spec §10): remove our Deconstruct
             // designations before clearing plans, so frames complete vanilla-style
             // after disable.
             for (int i = store.plans.Count - 1; i >= 0; i--)
                 RemoveOurDeconstructDesignation(store.plans[i]);
             store.ClearAuthoritativeCollectionsForDisable();
+        }
+
+        /// Hands one tracked item back to vanilla: deletes its finish bill and,
+        /// for gate-locked (paused or dispatched) work, unbinds the item and
+        /// restores an author so a vanilla bill can resume it. Deterministic
+        /// for MP (relaxed ranking, then the original creator). The caller
+        /// removes the entry.
+        internal static void ReleaseToVanilla(QualityJobsStore store, WorkItemEntry e)
+        {
+            DeleteFinishBill(store, e);
+            if (e.uft == null || e.uft.Destroyed
+                || (e.state != WorkItemState.Paused && e.state != WorkItemState.Dispatched))
+                return;
+            e.uft.BoundBill = null;
+            Pawn? owner = null;
+            // Skip SelectFinisher when recipe is null to avoid NRE.
+            if (e.uft.Map != null && e.uft.Recipe != null)
+                owner = SelectFinisher(e.uft.Map, e.uft.Recipe, default, relaxed: true);
+            if (owner == null && e.originalCreator != null && !e.originalCreator.Dead)
+                owner = e.originalCreator;
+            if (owner != null) UftAuthor.Assign(e.uft, owner);
+            // M5: no owner could be assigned — clear the reserved label so
+            // post-disable saves don't carry the mod label on authorless items.
+            else UftAuthor.ClearLabelIfReserved(e.uft);
         }
     }
 }

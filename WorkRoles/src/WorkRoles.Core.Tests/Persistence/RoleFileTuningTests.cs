@@ -16,6 +16,7 @@ public class RoleFileTuningTests
                 category = RoleCategory.Important,
                 time = RoleTime.PartTime,
                 championPenalty = false,
+                partialCapability = true,
                 minAge = 10,
                 maxAge = 12,
                 requiredSkills = ["Medicine"],
@@ -30,6 +31,7 @@ public class RoleFileTuningTests
         await Assert.That(doctor.category).IsEqualTo(RoleCategory.Important);
         await Assert.That(doctor.time).IsEqualTo(RoleTime.PartTime);
         await Assert.That(doctor.championPenalty).IsFalse();
+        await Assert.That(doctor.partialCapability).IsTrue();
         await Assert.That(doctor.minAge).IsEqualTo(10);
         await Assert.That(doctor.maxAge).IsEqualTo(12);
         await Assert.That(string.Join(",", doctor.requiredSkills)).IsEqualTo("Medicine");
@@ -78,6 +80,7 @@ public class RoleFileTuningTests
         FileRole chores = parsed.roles.Single();
         await Assert.That(chores.hasTuning).IsTrue();
         await Assert.That(chores.championPenalty).IsTrue();
+        await Assert.That(chores.partialCapability).IsFalse();
         await Assert.That(chores.minAge).IsEqualTo(-1);
         await Assert.That(chores.maxAge).IsEqualTo(0);
         await Assert.That(chores.category).IsEqualTo(RoleCategory.None);

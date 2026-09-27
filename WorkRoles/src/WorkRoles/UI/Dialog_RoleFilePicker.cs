@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text;
+using RimShared.Common;
 using RimShared.UiLib;
 using UnityEngine;
 using Verse;
@@ -135,13 +136,30 @@ namespace WorkRoles.UI
             cachedCustomDir = customDir;
             cachedPath = ResolvedPath(out cachedProblem);
             cachedExists = cachedPath != null && File.Exists(cachedPath);
+            if (!cachedExists && AcceptsExactTypedName)
+            {
+                // Exports written before ".xml" was added keep loading by the
+                // name they were saved under.
+                string? exact = ResolvedPath(out _, addExtension: false);
+                if (exact != null && File.Exists(exact))
+                {
+                    cachedPath = exact;
+                    cachedExists = true;
+                }
+            }
             cacheValid = true;
         }
 
-        /// Full destination, or null (with a reason) when not usable. The result
+        /// Import overrides this to also find a file saved under the exact
+        /// typed name when no ".xml" file exists.
+        protected virtual bool AcceptsExactTypedName => false;
+
+        /// Full destination, or null (with a reason) when not usable. The file
+        /// name gains ".xml" unless it already ends with it, so export and
+        /// import resolve the same typed name to the same file. The result
         /// uses the platform's directory separator throughout (game paths arrive
         /// with '/', Path.Combine joins with the native one — never mix them).
-        protected string? ResolvedPath(out string? problem)
+        protected string? ResolvedPath(out string? problem, bool addExtension = true)
         {
             problem = null;
             string name = fileName.Trim();
@@ -158,7 +176,7 @@ namespace WorkRoles.UI
             }
             try
             {
-                return Path.Combine(dir, name)
+                return Path.Combine(dir, addExtension ? XmlFileName.WithExtension(name) : name)
                     .Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
             }
             catch (Exception) { problem = "WR_BadDirectory".Translate(); return null; }

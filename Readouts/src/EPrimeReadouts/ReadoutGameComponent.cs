@@ -33,7 +33,24 @@ namespace EPrimeReadouts
             string id = world.info.persistentRandomValue.ToString();
             if (settings.welcomeShownSaves.Contains(id)) return;
             EPrimeReadoutsMod.Persist(s => s.welcomeShownSaves.Add(id));
-            Find.WindowStack?.Add(new Dialog_ReadoutsWelcome());
+            Find.WindowStack?.Add(new RimShared.UiLib.WelcomeDialog(
+                "EPR.WelcomeTitle".Translate(),
+                "EPR.WelcomeBody".Translate(),
+                "EPR.WelcomeFind".Translate(),
+                "EPR.WelcomeTakeMeThere".Translate(),
+                System.IO.Path.Combine(EPrimeReadoutsMod.ContentRootDir,
+                    "About", "Preview.png"),
+                // The readout bands run from y 60 to 660: trim the empty
+                // margins to a 30px pad on each side.
+                new UnityEngine.Rect(0f, 30f, 1280f, 660f),
+                OpenEditor)
+            {
+                FindIcon = ReadoutTextures.Gear,
+                FindTextColor = EprStyle.SelectionTint,
+            });
         }
+
+        private static void OpenEditor() =>
+            Find.WindowStack.Add(new Dialog_ReadoutConfig());
     }
 }

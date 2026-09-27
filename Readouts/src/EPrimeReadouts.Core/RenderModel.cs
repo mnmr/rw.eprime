@@ -40,13 +40,16 @@ namespace EPrimeReadouts.Core
     /// Clickable slot region in the main readout: the icon+counter cell
     /// column plus the member defNames that map selection operates on. The
     /// list is built at layout time and owned by the render model; consumers
-    /// must not mutate it.
+    /// must not mutate it. StorageOnly/HideForbidden are the resolved count
+    /// basis the slot's counter used, so a click selects what was counted.
     public struct SlotHit
     {
         public string Token;
         public IReadOnlyList<string> Members;
         public RectF Rect;
         public int CellIndex;
+        public bool StorageOnly;
+        public bool HideForbidden;
     }
 
     /// One vertically ordered, non-overlapping panel section. Its ranges point

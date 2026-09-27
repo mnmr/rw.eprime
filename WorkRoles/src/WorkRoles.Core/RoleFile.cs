@@ -53,6 +53,7 @@ namespace WorkRoles.Core
         public RoleCategory category;
         public RoleTime time;
         public bool championPenalty = true;
+        public bool partialCapability;
         /// Minimum holding age in years; -1 = absent (pre-minAge file).
         public int minAge = -1;
         /// Maximum holding age in years, inclusive; 0 = no gate.
@@ -337,6 +338,8 @@ namespace WorkRoles.Core
                     tuning.Add(new XAttribute("time", role.time));
                 if (!role.championPenalty)
                     tuning.Add(new XAttribute("championPenalty", "false"));
+                if (role.partialCapability)
+                    tuning.Add(new XAttribute("partialCapability", "true"));
                 if (role.minAge >= 0)
                     tuning.Add(new XAttribute("minAge", role.minAge));
                 if (role.maxAge > 0)
@@ -730,6 +733,9 @@ namespace WorkRoles.Core
                     role.championPenalty = !string.Equals(
                         tuningEl.Attribute("championPenalty")?.Value?.Trim(),
                         "false", StringComparison.OrdinalIgnoreCase);
+                    role.partialCapability = string.Equals(
+                        tuningEl.Attribute("partialCapability")?.Value?.Trim(),
+                        "true", StringComparison.OrdinalIgnoreCase);
                     if (int.TryParse(tuningEl.Attribute("minAge")?.Value,
                             out int minAge))
                         role.minAge = minAge;

@@ -40,6 +40,22 @@ namespace Implanner.Core
                 + ":" + implantDefName
                 + ":" + ordinal.ToString(CultureInfo.InvariantCulture);
 
+        /// An implant a part-wiping surgery pushed out, to go back on the
+        /// same part: "r[partIndex]:[defName]". Never parses as a plan slot,
+        /// so plan-goal code passes over it.
+        public static string Reinstall(string implantDefName, int partIndex) =>
+            "r" + partIndex.ToString(CultureInfo.InvariantCulture) + ":" + implantDefName;
+
+        /// The removal half of a quality upgrade (QualityRebalance): the
+        /// installed implant comes out so a better item of the same kind can
+        /// go in, "u[partIndex]:[defName]". The install half is an ordinary
+        /// reinstall record under Reinstall(defName, partIndex).
+        public static string Upgrade(string implantDefName, int partIndex) =>
+            "u" + partIndex.ToString(CultureInfo.InvariantCulture) + ":" + implantDefName;
+
+        public static bool IsUpgrade(string key) =>
+            key != null && key.Length > 0 && key[0] == 'u';
+
         /// Goal-level token (no slot) for deterministic ordering and
         /// grouping of whole goals; never persisted.
         public static string GoalToken(ImplantGoal goal) =>

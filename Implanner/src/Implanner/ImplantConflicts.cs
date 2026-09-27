@@ -40,12 +40,15 @@ namespace Implanner
 
         /// Whether an INSTALLED implant kind excludes installing a planned
         /// kind on the same anatomy instance — the evaluator's substitution
-        /// gate: an artificial part occupies its slot (nothing can be
-        /// mounted on or swapped under it without destroying it, except a
-        /// module whose worker mounts on artificial parts: that goal stays
-        /// installable, so the bionic never stands in for it), and
-        /// recipe/hediff tag clashes are mutually exclusive; everything else
-        /// coexists, so a joywire never satisfies a neurocalculator goal.
+        /// gate (ImplantConflictRules.CompeteForSlot): an artificial part
+        /// occupies its slot (nothing can be mounted on or swapped under it
+        /// without destroying it, except a module whose worker mounts on
+        /// artificial parts: that goal stays installable, so the bionic
+        /// never stands in for it), two part-clearing installs push each
+        /// other out, and recipe/hediff tag clashes are mutually exclusive;
+        /// everything else coexists, so a joywire never satisfies a
+        /// neurocalculator goal and neuron reinforcement (a part wiper that
+        /// leaves the brain natural) never satisfies a brain implant goal.
         /// Cached static delegate: reached from the reconcile tick path via
         /// PawnProjection and must not allocate per call.
         internal static readonly Func<string, string, bool> SameSlotExclusive =
@@ -63,8 +66,10 @@ namespace Implanner
                     && Catalogs.UpgradeChainContains(goal, installedDef))
                     return false;
                 InstalledFacts installed = InstalledFactsOf(installedDef);
-                if (installed.OccupiesPart) return !goal.MountsOnArtificialParts;
-                if (goal.IsReplacement) return true;
+                if (ImplantConflictRules.CompeteForSlot(installed.OccupiesPart,
+                        installed.WipesPart, installed.MountsOnArtificialParts,
+                        goal.IsReplacement, goal.WipesPart, goal.MountsOnArtificialParts))
+                    return true;
                 List<string>? goalTags = goal.Def.tags;
                 return ImplantConflictRules.TagsClash(
                         goal.IncompatibleTags, installed.Tags)
@@ -76,7 +81,8 @@ namespace Implanner
         /// outside the catalog (excluded kinds like joywire, mutant or
         /// modded content), so facts fall back to the HediffDef itself: an
         /// added part occupies the slot, tags come from the def, and an
-        /// off-catalog kind contributes no recipe incompatibility tags.
+        /// off-catalog kind contributes no recipe incompatibility tags and
+        /// counts as neither a part wiper nor a module.
         // Cache contract:
         // Owner: process.
         // Key: installed implant HediffDef name.
@@ -89,6 +95,8 @@ namespace Implanner
         private sealed class InstalledFacts
         {
             internal bool OccupiesPart;
+            internal bool WipesPart;
+            internal bool MountsOnArtificialParts;
             internal IReadOnlyList<string> Tags = NoTags;
             internal IReadOnlyList<string> IncompatibleTags = NoTags;
         }
@@ -105,6 +113,8 @@ namespace Implanner
             if (entry != null)
             {
                 result.OccupiesPart = entry.IsReplacement;
+                result.WipesPart = entry.WipesPart;
+                result.MountsOnArtificialParts = entry.MountsOnArtificialParts;
                 List<string>? tags = entry.Def.tags;
                 if (tags != null && tags.Count > 0) result.Tags = tags;
                 result.IncompatibleTags = entry.IncompatibleTags;
@@ -112,7 +122,8 @@ namespace Implanner
             else
             {
                 HediffDef? def = DefDatabase<HediffDef>.GetNamedSilentFail(defName);
-                result.OccupiesPart = def?.addedPartProps != null;
+                result.OccupiesPart = def != null
+                    && typeof(Hediff_AddedPart).IsAssignableFrom(def.hediffClass);
                 List<string>? tags = def?.tags;
                 if (tags != null && tags.Count > 0) result.Tags = tags;
             }
@@ -168,7 +179,7 @@ namespace Implanner
                 slots[i] = new PlannedSlotFacts(defName, entry.IsReplacement,
                     body.GetIndexOfPart(record), ancestors,
                     tags, entry.IncompatibleTags, removeWith,
-                    entry.MountsOnArtificialParts);
+                    entry.MountsOnArtificialParts, entry.WipesPart);
             }
             return slots;
         }

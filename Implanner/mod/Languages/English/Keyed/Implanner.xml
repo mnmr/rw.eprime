@@ -132,6 +132,8 @@
   <IMP_GoalRecovering>Recovering</IMP_GoalRecovering>
   <!-- {0}=effective minimum Medical skill -->
   <IMP_GoalBlockedFloor>Blocked by doctor floor ({0})</IMP_GoalBlockedFloor>
+  <!-- {0}=label of the hediff the surgery would destroy -->
+  <IMP_GoalBlockedLoss>Would destroy {0}</IMP_GoalBlockedLoss>
 
   <!-- ===== Plans tab ===== -->
   <IMP_PlansHeader>Plans</IMP_PlansHeader>
@@ -152,6 +154,10 @@
   <IMP_PlanColonists>{0} colonists</IMP_PlanColonists>
   <IMP_Rename>Rename</IMP_Rename>
   <IMP_DeletePlan>Delete plan</IMP_DeletePlan>
+  <!-- {0}=quality name, e.g. "good" -->
+  <IMP_PlanMinQuality>Minimum quality: {0}</IMP_PlanMinQuality>
+  <IMP_PlanMinQualityTip>Implants for this plan are installed and crafted at this quality or better. Implants without a quality are not affected.\n\nAn implant never replaces a healthy body part with a worse one. A low-quality bionic waits for a better item unless the body part is missing or damaged.</IMP_PlanMinQualityTip>
+  <IMP_PlanMinQualityNoQualityJobs>Quality Jobs is not loaded, so any crafter may finish an implant. An implant that comes out below this quality is crafted again.</IMP_PlanMinQualityNoQualityJobs>
   <!-- {0}=plan name -->
   <IMP_DeletePlanConfirm>Delete plan "{0}"? Colonists assigned to it will lose their assignment, and plans extending it will stop inheriting.</IMP_DeletePlanConfirm>
   <IMP_ImplantGroupOther>Other</IMP_ImplantGroupOther>
@@ -165,6 +171,10 @@
   <!-- {0}=value for all tip lines -->
   <IMP_TipPartEfficiency>Part efficiency: {0}</IMP_TipPartEfficiency>
   <IMP_TipCapacity>Body part: {0}</IMP_TipCapacity>
+  <!-- {0}=lowest, {1}=highest part efficiency across item qualities -->
+  <IMP_TipPartEfficiencyRange>Part efficiency: {0} to {1}, by quality</IMP_TipPartEfficiencyRange>
+  <!-- Elite Bionics Framework; {0}=e.g. "125%", "+10" or "125% +10" -->
+  <IMP_TipMaxHp>Body part max HP: {0}</IMP_TipMaxHp>
 
   <!-- Picker region segments, in ImplantRegion order -->
   <IMP_RegionLimbs>Limbs</IMP_RegionLimbs>
@@ -191,6 +201,7 @@
   <IMP_OptIteration>Iteration strategy</IMP_OptIteration>
   <IMP_OptSurgeryConcurrency>Concurrent surgeries</IMP_OptSurgeryConcurrency>
   <IMP_OptCountHospitalized>Count hospitalized pawns</IMP_OptCountHospitalized>
+  <IMP_OptUpgradeByPriority>Give the best implants to high-priority colonists</IMP_OptUpgradeByPriority>
   <IMP_IterTier>Tier batching</IMP_IterTier>
   <IMP_IterColonist>Full sets</IMP_IterColonist>
   <IMP_IterAsap>ASAP</IMP_IterAsap>
@@ -203,6 +214,7 @@
   <IMP_OptAutoProduction>Automatically add crafting bills for missing implants</IMP_OptAutoProduction>
   <IMP_OptConcurrency>Benches that may hold bills</IMP_OptConcurrency>
   <IMP_OptIdleBenches>Only allow bill creation at idle benches</IMP_OptIdleBenches>
+  <IMP_OptDesignatedBenches>Only use Implanner benches</IMP_OptDesignatedBenches>
   <IMP_OptProductionSkill>Required crafting skill for production bills</IMP_OptProductionSkill>
   <IMP_OptIntermediaries>Allow production bills for missing intermediaries</IMP_OptIntermediaries>
   <IMP_OptReserves>Keep in stock (after bill costs)</IMP_OptReserves>
@@ -225,8 +237,9 @@
   <IMP_OptEnableTip>The master switch for everything Implanner does on its own: reserving implant items, scheduling operations, and creating crafting bills. Switched off, Implanner still tracks plans and progress; it just stops acting on them. Switching it off also asks which of its existing bills to keep.</IMP_OptEnableTip>
   <IMP_OptIterationTip>The order automation works through missing implants. Colonist priority on the Overview tab always decides who goes first.\n\nTier batching: everyone receives the highest-tier implants first, then work moves down the tier list. A colonist goes into surgery once their whole tier is reserved.\n\nFull sets: finish one colonist's whole plan before starting the next. Surgery waits until the whole plan is reserved.\n\nASAP: every implant in stock is scheduled right away for the highest-priority colonist missing it. At equal priority, legs go to the slowest colonist, and arms go to melee fighters first, then to the best crafter or researcher.</IMP_OptIterationTip>
   <IMP_OptAutoFloorTip>Surgery bills are restricted to your best available doctor, so a novice medic never fumbles a bionic installation just because they reached the operating table first. The restriction follows the best doctor at each colony as people come and go. Nobody can operate on themselves, so the best doctor's own surgeries go to the next best doctor.\n\nTurn this off to set a fixed minimum skill yourself.</IMP_OptAutoFloorTip>
-  <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists.</IMP_OptSurgeryConcurrencyTip>
+  <IMP_OptSurgeryConcurrencyTip>How many colonists per colony may have surgeries planned at the same time. Higher values queue more colonists in parallel; lower values keep the hospital and your doctors free. Starts at one per ten colonists. Hold Shift while clicking +/- to change by 10, or Ctrl to change by 5.</IMP_OptSurgeryConcurrencyTip>
   <IMP_OptCountHospitalizedTip>Colonists and slaves lying in medical beds or downed and awaiting treatment also take up surgery slots. New Implanner surgeries wait until the hospital has room under the limit above. Prisoners, guests and visiting patients from other factions never take up a slot. Switch it off to schedule implant surgeries regardless of who is already being treated.</IMP_OptCountHospitalizedTip>
+  <IMP_OptUpgradeByPriorityTip>Implants of higher quality go to the colonists with the highest priority on the Overview tab. New surgeries use the lowest quality the plan accepts, which keeps the better implants free.\n\nWhen a better implant is available, the highest-priority colonist with a worse one of the same kind gets it. Their old implant is removed first and then goes to the next colonist in line. An implant already reserved for a lower-priority colonist is handed over too, as long as their surgery is not scheduled yet.\n\nEvery exchange is an extra surgery. Turned off, each colonist gets the best implant in stock when their turn comes.</IMP_OptUpgradeByPriorityTip>
   <IMP_OptManualFloorTip>The minimum Medicine skill a doctor needs to perform Implanner surgeries. Bills wait until a doctor at or above this level is available. The value starts from your current best doctor when automatic assignment is switched off.</IMP_OptManualFloorTip>
   <IMP_OptImplantReservesTip>Implants held back for manual use. Automation only reserves stock beyond these counts, so you always keep this many of each listed implant free for emergency surgery or trade. Production does not count held-back items as available, and keeps crafting until automation can proceed without them.</IMP_OptImplantReservesTip>
   <IMP_AddImplantReserveTip>Pick an implant to hold back from automation.</IMP_AddImplantReserveTip>
@@ -238,11 +251,17 @@
   <IMP_OptShowPurchaseOnlyTip>Lists implants whose item no workbench can craft, such as archotech parts. They only arrive through trade, quests or salvage. Switch this on to plan them anyway. Automation reserves the item as soon as it is in stock and installs it with the next batch; a missing one never holds up the other implants. A mod that adds a crafting recipe makes the implant an ordinary one automatically.\n\nAffected implants:\n{0}</IMP_OptShowPurchaseOnlyTip>
   <IMP_OptCompatNoneLoaded>None of the affected implants are loaded.</IMP_OptCompatNoneLoaded>
   <IMP_OptAutoProductionTip>Missing implants get crafting bills automatically. Implanner counts what plans still need at each colony, subtracts stock and bills already queued, and places bills at capable benches. Bills it created are removed again when the need disappears.</IMP_OptAutoProductionTip>
-  <IMP_OptConcurrencyTip>How many benches per colony may hold Implanner crafting bills at once, one bill per bench. More benches craft implants in parallel, but your crafters spend more of their time on implants and less on everything else.</IMP_OptConcurrencyTip>
+  <IMP_OptConcurrencyTip>How many benches per colony may hold Implanner crafting bills at once. Each bill crafts one implant, and a bench holds up to two so the next bill is already waiting when the first is done. More benches craft implants in parallel, but your crafters spend more of their time on implants and less on everything else. Hold Shift while clicking +/- to change by 10, or Ctrl to change by 5.</IMP_OptConcurrencyTip>
   <IMP_OptIdleBenchesTip>Only benches with no work waiting receive new Implanner bills. Your own production queues keep priority and implant crafting fills the gaps. Turn this off to let implant bills queue up behind your own.</IMP_OptIdleBenchesTip>
+  <IMP_OptDesignatedBenchesTip>Crafting bills only go to benches with "Implanner bench" checked on their Bills tab, so a colony without one crafts no implants. Switched off, Implanner benches get bills first and other benches are used once every Implanner bench holds two bills. The "Benches that may hold bills" limit applies either way.</IMP_OptDesignatedBenchesTip>
+  <!-- Bills tab of a workbench -->
+  <IMP_BenchToggle>Implanner bench</IMP_BenchToggle>
+  <IMP_BenchToggleTip>Implanner places its crafting bills on this bench before any other, and the bills already here are suspended. While it is checked, you cannot add, paste, suspend or resume bills here.\n\nUncheck it to take the bench back. Bills that were already suspended when you checked it stay suspended, and the rest resume.</IMP_BenchToggleTip>
+  <IMP_BenchLockedTip>You cannot paste, suspend or resume bills on an Implanner bench. Uncheck "Implanner bench" at the top of the Bills tab to take the bench back.</IMP_BenchLockedTip>
+  <IMP_BenchNoNewBills>Uncheck "Implanner bench" to add bills here</IMP_BenchNoNewBills>
   <IMP_OptProductionSkillTip>The minimum Crafting skill for Implanner production bills. Higher values keep expensive components away from low-skill crafters; lower values let more colonists help. Bills wait until a qualifying crafter picks them up.</IMP_OptProductionSkillTip>
   <IMP_OptIntermediariesTip>When an implant bill cannot be paid because an ingredient such as components is missing, Implanner may queue a bill for that ingredient too, if it is a craftable manufactured item. Shortfalls are followed down the whole production chain. Raw resources such as steel are never crafted; you still have to gather them yourself.</IMP_OptIntermediariesTip>
-  <IMP_OptReservesTip>Resource floors for automatic crafting. A bill is only created when the colony would still have at least this much of every ingredient left after paying the bill's full cost. Raise a number to protect a stockpile; set it to zero to let production spend freely.</IMP_OptReservesTip>
+  <IMP_OptReservesTip>Resource floors for automatic crafting. A crafting bill is only added when the colony can pay for it, on top of the materials its queued bills still need, and keep at least this much of every ingredient. Raise a number to protect a stockpile; set it to zero to let production spend freely.</IMP_OptReservesTip>
 
   <!-- ===== Help tab ===== -->
   <IMP_HelpChapterBasics>Basics</IMP_HelpChapterBasics>
