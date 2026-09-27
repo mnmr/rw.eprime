@@ -15,7 +15,10 @@ namespace QualityJobs
     /// ingredient filters' declared things/categories and the marked defs'
     /// modExtensions types);
     /// rebuilt on demand after definition reload via Invalidate().
-    /// Refresh: eager at startup ([StaticConstructorOnStartup]); Invalidate()
+    /// Refresh: once at startup, queued by the static constructor to run after
+    /// every mod's static constructor (Quality Bionics Remastered adds
+    /// CompQuality to bionic items in its own, and the game runs them in no
+    /// guaranteed order); empty until then, before any game can load. Invalidate()
     /// also clears Dispatcher.s_workTypeCache (same dependency set) so both
     /// caches stay coherent after a definition reload.
     /// Equality: n/a. Teardown/reset: Invalidate replaces all def-derived sets.
@@ -34,7 +37,9 @@ namespace QualityJobs
         private static readonly System.Comparison<ThingDef> DefNameComparison =
             (a, b) => string.CompareOrdinal(a.defName, b.defName);
 
-        static ManagedRecipes() => Build();
+        // StaticConstructorOnStartupUtility.CallAll runs as one queued
+        // long-event action; an action queued from inside it runs after it.
+        static ManagedRecipes() => LongEventHandler.ExecuteWhenFinished(Build);
 
         public static void Invalidate()
         {

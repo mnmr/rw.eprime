@@ -1,0 +1,9 @@
+# Mod set: Quality Bionics Remastered and EPOE-Forked loaded AFTER Quality
+# Jobs. QBR adds CompQuality to bionic items in its own static constructor,
+# so this order exercises Quality Jobs' startup-order dependency on it.
+# EPOE-Forked moves bionic crafting to its bionics workbench (TableBionics).
+
+after eprime.qualityjobs
+v1024.ebframework
+vat.epoeforked
+assassinsbro.qualitybionicsremastered

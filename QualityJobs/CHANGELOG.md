@@ -1,5 +1,9 @@
 ﻿# Changelog
 
+## 1.1.5 — 2026-09-28
+
+- Fixed: Mod load order could break support for Quality Bionics Remastered and EPOE (fixed so load order doesn't matter).
+
 ## 1.1.4 — 2026-09-27
 
 - Added: Support for Craft with Color (dye matters) and Vanilla Genetics Expanded (genoframe recipes are left alone).

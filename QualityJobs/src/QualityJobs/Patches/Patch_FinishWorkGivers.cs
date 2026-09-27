@@ -38,10 +38,11 @@ namespace QualityJobs.Patches
             // Compute the set of relevant work types:
             //   - WorkTypeDefOf.Construction (always)
             //   - The work type of every recipe that has unfinishedThingDef != null
-            //     AND whose produced def has CompQuality AND whose quality no
-            //     ingredient decides (IngredientQuality). (ManagedRecipes uses the
-            //     same predicate but is built at StaticConstructorOnStartup — after
-            //     def generation — so we duplicate the small predicate here.)
+            //     AND whose produced def has CompQuality (or is a body part item
+            //     Quality Bionics Remastered may give it later) AND whose quality
+            //     no ingredient decides (IngredientQuality). (ManagedRecipes uses
+            //     the same predicate but is built after the static constructors —
+            //     after def generation — so we duplicate the small predicate here.)
             //
             // The work-type resolution below intentionally duplicates the logic in
             // Dispatcher.WorkTypeForRecipe rather than calling it or using
@@ -70,7 +71,12 @@ namespace QualityJobs.Patches
                 RecipeDef recipe = recipes[r];
                 if (recipe.unfinishedThingDef == null) continue;
                 ThingDef? product = recipe.ProducedThingDef;
-                if (product == null || !product.HasComp(typeof(CompQuality))) continue;
+                // Quality Bionics Remastered adds CompQuality to body part items
+                // (isTechHediff) only in its static constructor, after this
+                // runs; count them here so their work type gets a finisher.
+                // One it leaves without quality only adds an idle giver.
+                if (product == null
+                    || !(product.HasComp(typeof(CompQuality)) || product.isTechHediff)) continue;
                 if (IngredientQuality.Decides(recipe, ingredientQuality)) continue;
 
                 // Resolve work type the same way Dispatcher.WorkTypeForRecipe does.
