@@ -87,6 +87,14 @@ namespace WorkRoles.Patches
             RoleStore.Current?.UnmanagePawn(___pawn);
     }
 
+    /// Ticked ageing and growth-vat ageing both land here once per year gained.
+    [HarmonyPatch(typeof(Pawn_AgeTracker), "BirthdayBiological")]
+    public static class Patch_PawnAgeTracker_BirthdayBiological
+    {
+        public static void Postfix(Pawn ___pawn, int birthdayAge) =>
+            Seeding.ApplyBirthdayRoles(___pawn, birthdayAge);
+    }
+
     /// A reverted mutant rejoins the colony like any other joiner. Reverts that
     /// are part of dying (shambler cleanup) must not assign roles to a corpse.
     [HarmonyPatch(typeof(Pawn_MutantTracker), nameof(Pawn_MutantTracker.Revert))]

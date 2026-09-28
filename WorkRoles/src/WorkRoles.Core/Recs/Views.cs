@@ -77,11 +77,9 @@ namespace WorkRoles.Core.Recs
         public RoleTime Time;
         /// Minimum biological age (years) for holding the role; 0 = no gate.
         public int MinAge;
-        public long MinAgeTicks => MinAge * BiologicalAge.TicksPerYear;
         /// Maximum biological age (years, inclusive) for holding the role;
-        /// 0 = no gate. The exclusive tick bound is one year past the cap.
+        /// 0 = no gate. See AgeBands.Admits.
         public int MaxAge;
-        public long MaxAgeTicks => (MaxAge + 1L) * BiologicalAge.TicksPerYear;
         /// Authored demand: minimum assignment count and ideal colonist
         /// percentage. EngineContext precomputes the resulting requirement
         /// per plan build (RoleDemand.RequirementFor).

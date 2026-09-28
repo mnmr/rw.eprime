@@ -728,7 +728,7 @@ namespace WorkRoles
                 RoleDef? template = role.templateDefName == null ? null
                     : DefDatabase<RoleDef>.GetNamedSilentFail(role.templateDefName);
                 role.minAge = template?.tuning != null && template.tuning.minAge >= 0
-                    ? template.tuning.minAge
+                    ? UnityEngine.Mathf.Clamp(template.tuning.minAge, 0, AgeBands.OldestGate)
                     : RecsAdapter.MinUnlockAgeOf(role);
             }
             if (roles.All(role => role.tuningSeeded)) return;

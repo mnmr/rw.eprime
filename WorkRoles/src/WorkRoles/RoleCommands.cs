@@ -94,8 +94,9 @@ namespace WorkRoles
                 skillGatesSeeded = true,
             };
             role.minAge = def.tuning.minAge >= 0
-                ? def.tuning.minAge : RecsAdapter.MinUnlockAgeOf(role);
-            role.maxAge = UnityEngine.Mathf.Clamp(def.tuning.maxAge, 0, 18);
+                ? UnityEngine.Mathf.Clamp(def.tuning.minAge, 0, AgeBands.OldestGate)
+                : RecsAdapter.MinUnlockAgeOf(role);
+            role.maxAge = UnityEngine.Mathf.Clamp(def.tuning.maxAge, 0, AgeBands.OldestGate);
             if (!def.group.NullOrEmpty())
             {
                 RoleGroup? group = ResolveOrCreateGroup(
@@ -1153,7 +1154,12 @@ namespace WorkRoles
         }
 
         [SyncMethod]
-        public static void RemoveRoleFromPawn(Pawn pawn, int roleId)
+        public static void RemoveRoleFromPawn(Pawn pawn, int roleId) =>
+            RemoveRoleDirect(pawn, roleId);
+
+        /// Engine-initiated path (birthday age gates): runs inside the synced
+        /// simulation on every client, so it must NOT go through sync interception.
+        internal static void RemoveRoleDirect(Pawn pawn, int roleId)
         {
             // TryGetValue, not SetFor: a removal against an unmanaged pawn must not
             // create (and scribe) an empty set for it.

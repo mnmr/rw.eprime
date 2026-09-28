@@ -249,7 +249,7 @@ namespace WorkRoles
                 signalSnapshot, facts, pawn.CombinedDisabledWorkTags, ageBlocked);
         }
 
-        private static bool AgeLimitsApplyTo(Pawn pawn)
+        internal static bool AgeLimitsApplyTo(Pawn pawn)
         {
             List<LifeStageWorkSettings> settings =
                 pawn.RaceProps.lifeStageWorkSettings;
@@ -346,7 +346,7 @@ namespace WorkRoles
                 int age = WorkTypeUnlockAge(workType);
                 if (age < min) min = age;
             }
-            return min == int.MaxValue ? 0 : min;
+            return min == int.MaxValue ? 0 : Math.Min(min, AgeBands.OldestGate);
         }
 
         /// Age (years) at which every covered work type is unlocked. Cached on

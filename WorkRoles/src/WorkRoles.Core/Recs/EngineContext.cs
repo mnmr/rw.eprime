@@ -134,10 +134,8 @@ namespace WorkRoles.Core.Recs
             !role.RequiresMechanitor || pawn.IsMechanitor;
 
         private static bool WithinAgeLimits(PawnView pawn, RoleView role) =>
-            !pawn.AgeLimitsApply
-            || (pawn.BiologicalAgeTicks >= role.MinAgeTicks
-                && (role.MaxAge <= 0
-                    || pawn.BiologicalAgeTicks < role.MaxAgeTicks));
+            AgeBands.Admits(role.MinAge, role.MaxAge,
+                pawn.BiologicalAgeTicks, pawn.AgeLimitsApply);
 
         public int SkillLevel(int pawnIndex, string skill) =>
             skill != null

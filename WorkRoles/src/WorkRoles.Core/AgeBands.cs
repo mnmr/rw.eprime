@@ -10,6 +10,8 @@ namespace WorkRoles.Core
         /// Inclusive band tops; 0 = open (the last band has no cap).
         public static readonly int[] Ends = { 6, 9, 12, 17, 0 };
         public const int Count = 5;
+        /// Highest stored gate on either end; every gate write clamps to it.
+        public const int OldestGate = 18;
 
         /// Selection shown for stored gates: a band is selected when it
         /// overlaps [minAge, maxAge] (0 = unbounded on that end). Overlap of
@@ -37,6 +39,17 @@ namespace WorkRoles.Core
         {
             return (lo == 0 ? 0 : Starts[lo], hi == Count - 1 ? 0 : Ends[hi]);
         }
+
+        /// Whether a pawn of this biological age may hold a role gated at
+        /// [minAge, maxAge] years (0 or less = no gate on that end; the cap
+        /// is inclusive, so over-age starts one year past it). Pawns the
+        /// game does not age-gate pass every role.
+        public static bool Admits(int minAge, int maxAge, long ageTicks,
+            bool ageLimitsApply) =>
+            !ageLimitsApply
+            || (ageTicks >= System.Math.Max(0, minAge) * Recs.BiologicalAge.TicksPerYear
+                && (maxAge <= 0
+                    || ageTicks < (maxAge + 1L) * Recs.BiologicalAge.TicksPerYear));
 
         /// True when nobody in the band can do any of the role's work: even
         /// the band's oldest age is below the earliest unlock age.

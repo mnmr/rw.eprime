@@ -1,3 +1,5 @@
+using WorkRoles.Core.Recs;
+
 namespace WorkRoles.Core.Tests.UI;
 
 /// The age-band selector's mapping and click transitions: bands 3-6, 7-9,
@@ -40,6 +42,22 @@ public class AgeBandsTests
     public async Task ClickingBandProducesExpectedContiguousSelection(int firstBand, int lastBand, int clickedBand, int expectedFirstBand, int expectedLastBand)
     {
         await Assert.That(AgeBands.Click(firstBand, lastBand, clickedBand)).IsEqualTo((expectedFirstBand, expectedLastBand));
+    }
+
+    /// Split adult (10+) and child (3-9) roles: each pawn is admitted by
+    /// exactly one, the cap holds through the capped year, and a pawn the
+    /// game does not age-gate is admitted by both.
+    [Test]
+    [Arguments(5.0, true, false, true)]
+    [Arguments(9.99, true, false, true)]
+    [Arguments(10.0, true, true, false)]
+    [Arguments(40.0, true, true, false)]
+    [Arguments(5.0, false, true, true)]
+    public async Task SplitAdultAndChildRolesAdmitByAge(double ageYears, bool ageLimitsApply, bool expectedAdult, bool expectedChild)
+    {
+        long ageTicks = (long)(ageYears * BiologicalAge.TicksPerYear);
+        await Assert.That(AgeBands.Admits(10, 0, ageTicks, ageLimitsApply)).IsEqualTo(expectedAdult);
+        await Assert.That(AgeBands.Admits(3, 9, ageTicks, ageLimitsApply)).IsEqualTo(expectedChild);
     }
 
     [Test]

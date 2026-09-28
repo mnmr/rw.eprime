@@ -713,7 +713,7 @@ The job was not interrupted. This notice is shown once per savegame.</WR_GiverBy
   <WR_ConditionalRole>Conditional role</WR_ConditionalRole>
   <WR_ConditionalRoleTip>Conditional roles turn themselves on and off based on rules: active hours and location. A role is conditional whenever any rule is set.</WR_ConditionalRoleTip>
   <WR_AutoAssign>Auto-assign</WR_AutoAssign>
-  <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role.</WR_AutoAssignTip>
+  <WR_AutoAssignTip>Newcomers (recruits, wanderers) automatically receive this role if they are in its age groups.</WR_AutoAssignTip>
   <!-- Editor: custom color swatch row -->
   <WR_CustomSwatchEmpty>Empty slot: click to pick a custom color. Custom colors are shared across all roles.</WR_CustomSwatchEmpty>
   <WR_CustomSwatchTip>Click to use this color. Right-click to redefine the slot.</WR_CustomSwatchTip>

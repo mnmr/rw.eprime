@@ -355,7 +355,8 @@ namespace WorkRoles
             return priorities;
         }
 
-        /// Assigns only the auto-assign roles (Basics) — used for pawns joining
+        /// Assigns only the auto-assign roles (Basics) whose age gates admit
+        /// the pawn (AgeBands.Admits) — used for pawns joining
         /// mid-game, mirroring vanilla's minimal auto-enable; vocational roles are the
         /// player's call (the Recommended Roles panel covers it). Assignment
         /// happens at the joining event itself (generation, faction change,
@@ -381,11 +382,51 @@ namespace WorkRoles
                 return;
             if (store.IsManaged(pawn)) return;
 
+            long ageTicks = pawn.ageTracker?.AgeBiologicalTicks ?? long.MaxValue;
+            bool ageLimitsApply = RecsAdapter.AgeLimitsApplyTo(pawn);
             foreach (var role in store.roles)
             {
-                if (role.autoAssign)
+                if (role.autoAssign && AgeBands.Admits(
+                        role.minAge, role.maxAge, ageTicks, ageLimitsApply))
                     RoleCommands.AssignRoleDirect(pawn, role.id);
             }
+        }
+
+        /// A biological birthday moves the pawn across role age gates: gains
+        /// the auto-assign roles it now enters, loses held roles it has aged
+        /// out of (BirthdayRoles has the rule). Gains land before losses so a
+        /// swap never passes through an unmanaged pawn. Runs in deterministic
+        /// tick code on every client, like joiner auto-assign.
+        public static void ApplyBirthdayRoles(Pawn pawn, int birthdayAge)
+        {
+            // Adults past every gate: the common birthday costs one compare.
+            if (!BirthdayRoles.CanChangeRoles(birthdayAge)) return;
+            if (Current.ProgramState != ProgramState.Playing) return;
+            if (Scribe.mode != LoadSaveMode.Inactive) return;
+            if (pawn == null || pawn.Dead || pawn.Destroyed) return;
+            if (!pawn.IsColonist && !pawn.IsSlaveOfColony) return;
+            var store = RoleStore.Current;
+            if (store == null || !store.seeded) return;
+
+            var roles = new List<AgeGatedRole>(store.roles.Count);
+            foreach (var role in store.roles)
+                roles.Add(new AgeGatedRole(role.id, role.autoAssign, role.minAge, role.maxAge));
+            var held = new HashSet<int>();
+            if (store.pawnSets.TryGetValue(pawn, out var set))
+                foreach (var assignment in set.assignments)
+                    held.Add(assignment.roleId);
+
+            BirthdayRoleChanges changes = BirthdayRoles.Plan(
+                roles, held, birthdayAge, RecsAdapter.AgeLimitsApplyTo(pawn));
+            if (changes.IsEmpty) return;
+            foreach (int roleId in changes.Gained)
+                RoleCommands.AssignRoleDirect(pawn, roleId);
+            foreach (int roleId in changes.Lost)
+                RoleCommands.RemoveRoleDirect(pawn, roleId);
+            // Losses enqueue their own reconcile; a gained blocker role can
+            // veto the current job too.
+            if (changes.Gained.Count > 0 && store.IsManaged(pawn))
+                CompiledJobOrders.EnqueueReconcile(pawn);
         }
 
         /// A newly seen work type that RoleDefs declare (MayRequire compat

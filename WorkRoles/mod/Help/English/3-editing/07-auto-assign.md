@@ -2,7 +2,11 @@
 title: Auto-assign
 ---
 Auto-assign is the welcome committee: recruits, wanderers, and anyone
-else who joins receives the role automatically. Where such a role lands
+else who joins receives the role automatically. A newcomer outside the
+role's age groups is skipped, so separate child and adult roles can both
+use it. Birthdays follow the same age groups: a colonist who grows into
+an auto-assign role receives it, and a colonist who grows past any role
+they hold loses it. Where such a role lands
 in a recommended row is governed by its
 [role options](topic:role-options), like any other role.
 

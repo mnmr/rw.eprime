@@ -1,5 +1,10 @@
 ﻿# Changelog
 
+## 1.6.3 — 2026-09-28
+
+- Added: Auto-assigned roles are now gated by the role age brackets.
+- Added: WorkRoles now checks colonist birthdays, so it can auto-assign age-gated roles.
+  
 ## 1.6.2 — 2026-09-27
 
 - Added: New recommendation role option to allow roles to be recommended to colonists who can do only some jobs.
